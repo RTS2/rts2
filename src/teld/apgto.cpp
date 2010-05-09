@@ -1708,8 +1708,8 @@ APGTO::valueChanged (Rts2Value * changed_value)
       APslew_rate->setValueInteger(-1); 
       logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_slew_rate failed" << sendLog;
       // return -1 ;
-      return ;
     }
+    return ;
   } else if (changed_value ==APmove_rate) {
     if(( move_rate= APmove_rate->getValueInteger())== 600) {
       command= MOVE_RATE_060000 ;
@@ -1730,11 +1730,12 @@ APGTO::valueChanged (Rts2Value * changed_value)
       APmove_rate->setValueInteger(-1); 
       logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_move_rate failed" << sendLog;
       // return -1 ;
-      return ;
     }
+    return ;
   }
   Telescope::valueChanged (changed_value);
 }
+
 int 
 APGTO::commandAuthorized (Rts2Conn *conn)
 {
@@ -1757,7 +1758,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       return -1;
     }
     return 0 ;
-  } else if (conn->isCommand ("rot")) { // move is used for a slew to a position
+  } else if (conn->isCommand ("rot")) { // move is used for a slew to a specific position
     char *direction ;
     if (conn->paramNextStringNull (&direction) || !conn->paramEnd ()) { 
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot failed" << sendLog;
@@ -1819,8 +1820,9 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     startCupolaSync() ;
     return startResync ();
 
-  } else if ((conn->isCommand ("sync"))||(conn->isCommand ("sync_sg"))||(conn->isCommand ("sync_ha"))||(conn->isCommand ("sync_ha_sg"))) {
+  } else if ((conn->isCommand("sync"))||(conn->isCommand("sync_sg"))||(conn->isCommand("sync_ha"))||(conn->isCommand("sync_ha_sg")||(conn->isCommand("sync_delta")))) {
     double sync_ra, sync_dec ;
+    double sync_delta_ra, sync_delta_dec ; // defined for calrity
     double sync_ha ;
     if(conn->isCommand ("sync")){
       if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
@@ -1869,11 +1871,52 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       }
       double JD= ln_get_julian_from_sys ();
       sync_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - sync_ha; // RA is a right, HA left system
+    } else if (conn->isCommand ("sync_delta")) {
+      // This command is intended for use only in conjunction with an astrometric calibration script.
+      // In order that the mount syncs to the correct location independent of the actual location
+      // the offset is added to the mount's current location
+      // This can happen even the mount is tracking or exposing
+      // Note:
+      // If this feature is used the script doing the astrometric calibration must return
+      // $crval1-$oira= $crval2-$oirdec= 0. :
+      //
+      //   $img_id, $crval1, $crval2, $crval1-$oira, $crval2-$oirdec
+      //   as e.g.
+      //   1 131.254623 18.904446 (0.,0.)
+      //
+      // in order to bypass rts2's offset (OFFS) mechanism.
+      // This feature is doomed to disappear again in future.
+
+      if (conn->paramNextDouble (&sync_delta_ra) || conn->paramNextDouble (&sync_delta_dec) || !conn->paramEnd ()) { 
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_delta paramNextDouble ra or dec failed" << sendLog;
+	return -2;
+      }
+
+      if (tel_read_ra () || tel_read_dec ()) {
+	logStream (MESSAGE_ERROR) << "APGTO::valueChanged could not retrieve ra, dec  " << sendLog;
+	return -1;
+      }
+      double tdec= 91. ;
+      if((tdec= getTelDec () + sync_delta_dec) >= 90.) {
+	logStream (MESSAGE_ERROR) << "APGTO::valueChanged do not sync dec .ge. 90 deg: " << tdec << sendLog;
+	return -1;
+      }
+      sync_ra = fmod( getTelRa ()  + sync_delta_ra + 360., 360.);
+      sync_dec= fmod( getTelDec () + sync_delta_dec, 90.);
+
+      logStream (MESSAGE_INFO) << "APGTO::valueChanged syncing astrometrically calibrated to ra " << sync_ra << ", dec " << sync_dec << sendLog;
     }
-    if(( ret= setTo(sync_ra, sync_dec)) !=0) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
-      return -1 ;
+    // do not sync while slewing
+    // this can occur if a script tries to sync after e.g. an astrometric calibration
+    //
+    while( slew_state->getValueBool()) {
+      logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometryOffsetRaDec, sleeping while slewing" << sendLog;
+      sleep( 1) ;
     }
+    //if(( ret= setTo(sync_ra, sync_dec)) !=0) {
+    //  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
+    //  return -1 ;
+    //}
     if( tel_check_declination_axis()) {
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed, this message will never appear." << sendLog;
       return -1;
@@ -1915,7 +1958,7 @@ APGTO::info ()
     flip= 0 ;
   } else {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve angle (declination axis, hour axis), exiting  " << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve angle (declination axis, hour axis)" << sendLog;
   }
   
   telFlip->setValueInteger (flip);
@@ -2148,7 +2191,7 @@ APGTO::checkSiderealTime()
 			    << APlocal_sidereal_time->getValueDouble() 
 			    << " difference ----------" << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
 	
-  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./8. ) { // 30 time seconds
+  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./120. ) { // 30 time seconds
     logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << sendLog;
     return -1 ;
   } 
@@ -2162,15 +2205,27 @@ APGTO::setBasicData()
   struct ln_zonedate ltm;
 
 
+  if(( ret= tel_set_slew_rate(SLEW_RATE_0600)) < 0 ) { /* slew rate 2 = 600x, this the slowest */
+    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting slew rate failed." << sendLog;
+    return -1;
+  }
+  APslew_rate->setValueInteger(600);
+
+  if(( ret= tel_set_move_rate(MOVE_RATE_000100)) < 0 ) { /* move rate MOVE_RATE_000100 = 1x */
+    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
+    return -1;
+  }
+  APmove_rate->setValueInteger(1);
   if(! ( strcmp(initialization, "warm"))) {
     logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing an option specified warm start" << sendLog;
     return 0;
   }
-  // if the sidereal time read from the mount is correct then consider it as a warm start 
+  //if the sidereal time read from the mount is correct then consider it as a warm start 
   if( (ret= checkSiderealTime()) == 0 ) {
     logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
     return 0 ;
   }
+
   if(setAPClearBuffer() < 0) {
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
     return -1;
@@ -2236,17 +2291,6 @@ APGTO::setBasicData()
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
     return -1;
   }
-  if(( ret= tel_set_slew_rate(SLEW_RATE_0600)) < 0 ) { /* slew rate 2 = 600x, this the slowest */
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting slew rate failed." << sendLog;
-    return -1;
-  }
-  APslew_rate->setValueInteger(600);
-
-  if(( ret= tel_set_move_rate(MOVE_RATE_000100)) < 0 ) { /* move rate MOVE_RATE_000100 = 1x */
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
-    return -1;
-  }
-  APmove_rate->setValueInteger(1);
 
   if(! ( strcmp(initialization, "cold"))) {
     logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
@@ -2254,10 +2298,8 @@ APGTO::setBasicData()
       logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
       return -1;
     }
-  } else {
-    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a warm start" << sendLog;
   }
-  logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking successful" << sendLog;
+  logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking (cold start) successful" << sendLog;
   
   return 0 ;
 }
@@ -2395,7 +2437,7 @@ APGTO::initValues ()
   } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
     flip= 0 ;
   } else {
-    logStream (MESSAGE_ERROR) << "APGTO::initValues could not retrieve angle (declination axis, hour axis), exiting  " << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::initValues could not retrieve angle (declination axis, hour axis), exiting" << sendLog;
     exit(1) ;
   }
   telFlip->setValueInteger (flip);
@@ -2498,21 +2540,21 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
   addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
 
-  createValue (APAltAz,                  "APALTAZ",    "AP mount Alt/Az[deg]",              true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
   createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
-  createValue (slew_state,               "SLEW",       "true: mount slews",                 false);
-  createValue (mount_tracking,           "TRACKING",   "mount tracking (true: enabled)",    false);
-  createValue (transition_while_tracking,"TRANSITION", "transition while tracking",         false);
-  createValue (DECaxis_HAcoordinate,     "DECXHA",     "DEC axis HA coordinate, West/East", false);
-  createValue (APslew_rate,              "APSLEWRATE", "AP slew rate (1200, 900, 600)",     false, RTS2_VALUE_WRITABLE);
-  createValue (APmove_rate,              "APMOVERATE", "AP move rate (600, 64, 12, 1)",     false, RTS2_VALUE_WRITABLE);
-  createValue (APlocal_sidereal_time,    "APLOCSIDTIME","AP mount local sidereal time",     true, RTS2_DT_RA);
-  createValue (APlocal_time,             "APLOCTIME",  "AP mount local time",               true, RTS2_DT_RA);
-  createValue (APutc_offset,             "APUTCOFFSET","AP mount UTC offset",               true, RTS2_DT_RA);
-  createValue (APfirmware,               "APVERSION",  "AP mount firmware revision",        true);
-  createValue (APlongitude,              "APLONGITUDE","AP mount longitude",                true, RTS2_DT_DEGREES);
-  createValue (APlatitude,               "APLATITUDE", "AP mount latitude",                 true, RTS2_DT_DEGREES);
-  createValue (assume_parked,            "ASSUME_PARKED", "true check initial psoition",    false);
+  createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
+  createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
+  createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
+  createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",false);
+  createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
+  createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
+  createValue (APlocal_sidereal_time,    "APLOCSIDTIME","AP mount local sidereal time",     true,  RTS2_DT_RA);
+  createValue (APlocal_time,             "APLOCTIME",   "AP mount local time",              true,  RTS2_DT_RA);
+  createValue (APAltAz,                  "APALTAZ",     "AP mount Alt/Az[deg]",             true,  RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+  createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
+  createValue (APfirmware,               "APVERSION",   "AP mount firmware revision",       true);
+  createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",               true,  RTS2_DT_DEGREES);
+  createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
+  createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
 
   slew_state->setValueBool(false) ;
   block_sync_move->setValueBool(false) ;
