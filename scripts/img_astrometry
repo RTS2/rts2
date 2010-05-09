@@ -4,24 +4,37 @@
 #
 #   img_astrometry
 #   usage: img_atrometry /path/to/file.fits
-#
-#   It is usually called by rts2-executor to perform the astrometric
-#   calibration of the just acquired image. rts2-executor feeds the
-#   corrections to the rts2-teld-* telescope dirver.
+#   or
+#          img_atrometry_sync /path/to/file.fits
+#         
+#   It is usually called by rts2-imgproc or possibly by rts2-executor 
+#   to perform the astrometric calibration of the just acquired image. 
+#   rts2-executor feeds the corrections to the rts2-teld-* telescope 
+#   dirver.
 # 
 #   Configuration:
 my $scale_at_binning_1= 1.41 ;   # scale in [arcsec/pixel]
 my $scale_relative_error= 0.05 ; # the scale used by solve-field
 #                                  is allowed to vary by this quantity
-my $down_sample= 2 ; # astrometry as somtimes problems, seit to 1 for
+my $down_sample= 2 ; # astrometry has somtimes problems, set it to 1 for
 #                      moderate sized CCD chips
 #
 #   This script calls solve-filed see http://astrometry.net/
 #   and returns 
-#   $img_id, $crval1, $crval2, $crval1-$oira, $crval2-$oirdec
+#   $img_id, $crval1, $crval2, $crval1-$orira, $crval2-$oridec
 #   as e.g.
 #   1 131.254623 18.904446 (1.162623,-0.767654)
 #
+#   If it is called as img_atrometry_sync (create a sym link) then
+#   the output is 
+#
+#   $img_id, $crval1, $crval2, 0. 0.
+#
+#   and the command
+#   rts2-scriptexec -d CCD_FLI  -s ' exe /tmp/sync_mount '   
+#
+#   is executed. The script /tmp/sync_mount is created on the fly since
+#   exe ... does not pass arguments.
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -39,7 +52,6 @@ my $down_sample= 2 ; # astrometry as somtimes problems, seit to 1 for
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-
 use strict;
 use Getopt::Long qw(:config no_ignore_case) ;
 #
@@ -47,19 +59,39 @@ use constant TRUE_STR                   => "TRUE" ;
 use constant FALSE_STR                  => "FALSE" ;
 use constant TRUE_VAL                   => 1 ;
 use constant FALSE_VAL                  => -1 ;
+my $scriptname = $0;
+$scriptname =~ s/.*\///g;     # remove directory path from script file path
+
+if( ! defined $ARGV[1]) {
+
+    `logger $scriptname ARGV 1 not defined` ;
+}
+if(  $ARGV[0]=~ /.+/) {
+    if(defined $ARGV[1]) {
+	`logger $scriptname  $ARGV[0] $ARGV[1]`;
+    } else {
+	`logger $scriptname  $ARGV[0]`;
+    }
+} else {
+    if(defined $ARGV[1]) {
+	`logger $scriptname no arguments $ARGV[0], $ARGV[1]` ;
+    } else {
+	`logger $scriptname no arguments $ARGV[0]` ;
+    }
+    print "$scriptname no arguments received, exiting" ;
+    exit(1) ;
+}
+
 
 my $fits_file= $ARGV[0] ;
+# avoid creating files in rts2 queue subdirectories
+#
+`cp $fits_file /tmp/astrometry.fits` ;
+
+$fits_file= "/tmp/astrometry.fits" ;
 my @fits_file_name_parts= split( /\.fits$/, $fits_file) ;
 my $scale ;
 my $img_id ;
-
-if(  $ARGV[0]=~ /.+/) {
-    `logger img_process  $ARGV[0]`;
-} else {
-    `logger img_process no arguments $ARGV[0], $ARGV[1]` ;
-    print "img_process no arguments received" ;
-    exit(1) ;
-}
 # Files to be deleted at the end (and at the beginning)
 # remove these
 #test.fits
@@ -108,18 +140,16 @@ while(my $line= <RTS2IMAGE>){
 # Check if fits key word OBJECT exists
 #
 	if( $line=~ m/OBJECT/) {
-	    # print "img_process inserting OBJECT\n";
-	    # FAKE `fitsheader -w OBJECT=\"GRB 091202.965 by img_process\" $fits_file` ;
+	    # print "$scriptname inserting OBJECT\n";
+	    # FAKE `fitsheader -w OBJECT=\"GRB 091202.965 by $scriptname\" $fits_file` ;
 	} else {
 	    $missing= TRUE_VAL ;
-	    #print "img_process: in file $fits_file fits keyword missing: $line\n" ;
+	    #print "$scriptname: in file $fits_file fits keyword missing: $line\n" ;
 	    last ;
 	}
     }
-    #print "img_process OBJECT OBJECT OBJECT OBJECT OBJECT\n" ;
     my @items= split(/[ ]+/, $line) ;
-
-    $img_id   =$items[0] ;
+    $img_id  = $items[0] ;
 
     if( $items[1]=~ m/1x1/) {
 	$scale= 1. * $scale_at_binning_1 ;
@@ -127,33 +157,32 @@ while(my $line= <RTS2IMAGE>){
 	$scale= 2. * $scale_at_binning_1 ;
     } else {
 	$missing= TRUE_VAL ;
-	print "img_process DO not understand binning \n" ;
+	print "$scriptname DO not understand binning" ;
     }
 }
 if( $missing== TRUE_VAL) {
-    print "img_process:$fits_file,  missing fits header key words \@IMGID, \@OBJECT and/or \@BINNING\n" ;
-    exit ;
+    print "$scriptname:$fits_file,  missing fits header key words \@IMGID, \@OBJECT and/or \@BINNING, exiting" ;
+    exit(1) ;
 }
 # solve-field
 #
-
 my $scale_low=  $scale - $scale_relative_error * $scale ;   
 my $scale_high= $scale + $scale_relative_error * $scale ;
-`logger img_process  $fits_file begin solve-field`;
-open( SOLVEFIELD, "/usr/local/astrometry/bin/solve-field --downsample $down_sample --no-plots --no-fits2fits --no-verify  --scale-units arcsecperpix --scale-low $scale_low --scale-high $scale_high $fits_file >/dev/null 2>&1 |") or die "img_process: can't start solve-field: $!";
+`logger $scriptname  $fits_file begin solve-field`;
+open( SOLVEFIELD, "/usr/local/astrometry/bin/solve-field --downsample $down_sample --no-plots --no-fits2fits --no-verify  --scale-units arcsecperpix --scale-low $scale_low --scale-high $scale_high $fits_file >/dev/null 2>&1 |") or die "$scriptname: can't start solve-field: $!";
 while(my $line= <SOLVEFIELD>){
 ##### if debug is required   print $line ;
 }
 close ( SOLVEFIELD) ;
-`logger img_process  end solve-field`;
+`logger $scriptname  end solve-field`;
 # read the results from, solve-field created file *.new
 #
 my $fits_file_new= $fits_file_name_parts[0] . ".new" ;
 
 my $crval1 ;
 my $crval2 ;
-my $oira ;
-my $oirdec ;
+my $orira ;
+my $oridec ;
 # ori open(RTS2IMAGE, "rts2-image -p \'\@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC\' $fits_file_new 2>/dev/null|") or die "get_fits_files: can't start rts2-image: $!";
 open(RTS2IMAGE, "rts2-image -p \'\@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC\' $fits_file_new |") or die "get_fits_files: can't start rts2-image: $!";
 
@@ -163,25 +192,65 @@ while(my $line= <RTS2IMAGE>){
     `logger RTS2IMAGE imhead return values $line` ;
     if( $line=~ m/@/) {
 	$missing= TRUE_VAL ;
-	#print "img_process: in file $fits_file fits keyword missing: $line\n" ;
+	#print "$scriptname: in file $fits_file fits keyword missing: $line\n" ;
 	last ;
     }
     my @items= split(/[ ]+/, $line) ;
 
     $crval1   =$items[0] ;
     $crval2   =$items[1] ;
-    $oira     =$items[2] ;
-    $oirdec   =$items[3] ;
+    $orira    =$items[2] ;
+    $oridec   =$items[3] ;
 }
 if( $missing== TRUE_VAL)
 {
-    print "img_process: $fits_file, $fits_file_new, missing fits header key words \@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC \n" ;
-    `logger img_process  $fits_file no astrometric calibration`;
+    print "$scriptname: $fits_file, $fits_file_new, missing fits header key words \@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC" ;
+    `logger $scriptname  $fits_file no astrometric calibration`;
 
 } else {
+#
+# feed the result into OFFS or sync the mount (only rts2-teld-apgto)
+# 
+    `logger $scriptname  $fits_file successful astrometric calibration`;
+    if($scriptname ne "img_astrometry_sync") {
 
-    printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, $crval1- $oira,$crval2-$oirdec);
-    `logger img_process  $fits_file successful astrometric calibration`;
+	printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, $crval1- $orira,$crval2-$oridec);
+    } else {
+	printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, 0.,0.);
+
+	my $device_ccd  = "CCD_FLI" ;
+	my $device_mount= "MNT_APG" ;
+	my $deltaRa     = $crval1- $orira ;
+	my $deltaDec    = $crval2-$oridec ;
+	my $tmp_file    = "/tmp/sync_mount" ;
+
+	open(SCRIPT, ">$tmp_file") or die "$scriptname: can not write /tmp/sync_mount: $!";
+	printf( SCRIPT "#!/bin/bash\n") ;
+	printf( SCRIPT "# created on the fly by $scriptname\n") ;
+	printf( SCRIPT "echo \"C $device_mount sync_delta $deltaRa $deltaDec\"\n") ;
+	my $deltaRa_str ;
+	my $deltaDec_str ;
+	if( $deltaRa < 0.) {
+	    $deltaRa *= -1 ;
+	    $deltaRa_str= "minus $deltaRa";
+	} else {
+	    $deltaRa_str= "$deltaRa";
+	}
+	if( $deltaDec < 0.) {
+	    $deltaDec *= -1 ;
+	    $deltaDec_str= "minus $deltaDec";
+	} else {
+	    $deltaDec_str= "$deltaDec";
+	}
+	printf( SCRIPT "logger relative sync C $device_mount sync_delta $deltaRa_str $deltaDec_str\n") ;
+	close( SCRIPT) ;
+        my $mode = 0774;   
+        chmod $mode, '$tmp_file';
+	open(EXECUTE, "rts2-scriptexec -d $device_ccd  -s ' exe $tmp_file '|") or die "$scriptname: $!";
+	while(<EXECUTE>){;}
+	close(EXECUTE) ;
+    } 
+# clean up
 }
 foreach my $extension( @extensions) {
     `rm $fits_file_name_parts[0]$extension >/dev/null 2>&1` ;
