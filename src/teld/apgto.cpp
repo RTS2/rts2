@@ -1891,7 +1891,6 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_delta paramNextDouble ra or dec failed" << sendLog;
 	return -2;
       }
-
       if (tel_read_ra () || tel_read_dec ()) {
 	logStream (MESSAGE_ERROR) << "APGTO::valueChanged could not retrieve ra, dec  " << sendLog;
 	return -1;
@@ -1901,9 +1900,20 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	logStream (MESSAGE_ERROR) << "APGTO::valueChanged do not sync dec .ge. 90 deg: " << tdec << sendLog;
 	return -1;
       }
+      struct ln_equ_posn tel, sync;
+      getTelRaDec (&tel);
+
       sync_ra = fmod( getTelRa ()  + sync_delta_ra + 360., 360.);
       sync_dec= fmod( getTelDec () + sync_delta_dec, 90.);
 
+      sync.ra= sync_ra ;
+      sync.dec= sync_dec ;
+
+      double sdist= ln_get_angular_separation (&tel, &sync) ;
+      if( sdist > 5.) { // ToDo ad hoc limit
+	logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometric calibrated sync " << sdist << " is larger than ad hoc limit of 5. degrees " << sendLog;
+	return -1;
+      }
       logStream (MESSAGE_INFO) << "APGTO::valueChanged syncing astrometrically calibrated to ra " << sync_ra << ", dec " << sync_dec << sendLog;
     }
     // do not sync while slewing
@@ -1913,10 +1923,10 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometryOffsetRaDec, sleeping while slewing" << sendLog;
       sleep( 1) ;
     }
-    //if(( ret= setTo(sync_ra, sync_dec)) !=0) {
-    //  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
-    //  return -1 ;
-    //}
+    if(( ret= setTo(sync_ra, sync_dec)) !=0) {
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
+      return -1 ;
+    }
     if( tel_check_declination_axis()) {
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed, this message will never appear." << sendLog;
       return -1;
@@ -2189,7 +2199,7 @@ APGTO::checkSiderealTime()
   logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
 			    << APlocal_sidereal_time->getValueDouble() 
-			    << " difference ----------" << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
+			    << " difference " << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
 	
   if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./120. ) { // 30 time seconds
     logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << sendLog;
