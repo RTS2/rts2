@@ -345,7 +345,7 @@ int Execute::defnextCommand (Rts2DevClient * _client, Rts2Command ** new_command
 		int ret = connExecute->init ();
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot execute script controll command, ending script." << sendLog;
+			logStream (MESSAGE_ERROR) << "Cannot execute script control command, ending script." << sendLog;
 			return NEXT_COMMAND_END_SCRIPT;
 		}
 		client = _client;

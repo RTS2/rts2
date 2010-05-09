@@ -130,7 +130,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	waitState = 0;
 
-	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual controll", false, RTS2_VALUE_WRITABLE);
+	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual control", false, RTS2_VALUE_WRITABLE);
 	enabled->setValueBool (true);
 
 	createValue (acqusitionOk, "acqusition_ok", "number of acqusitions completed sucesfully", false);
