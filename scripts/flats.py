@@ -14,6 +14,7 @@
 # does not look like error message on standard output.
 
 import sys
+import string
 import time
 import rts2comm
 
@@ -321,7 +322,7 @@ class FlatScript (rts2comm.Rts2Comm):
 			  	badFlats.append(sig)
 
 		if (self.email != None):
-			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n' % (datetime.today(),goodFlats.join(';'),badFlats.join(','))
+			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
 
 			mimsg = MIMEText(msg)
 			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
