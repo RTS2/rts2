@@ -316,7 +316,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	sig = self.usedFlats[i].signature()
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (sig))
-				self.createMasterFits('/tmp/master_%s.fits' % (sig, self.flatImages[i]))
+				self.createMasterFits('/tmp/master_%s.fits' % (sig), self.flatImages[i])
 				goodFlats.append(sig)
 			else:
 			  	badFlats.append(sig)
