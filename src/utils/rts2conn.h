@@ -443,11 +443,21 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Search for value by value name.
 		 *
-		 * @param value_name  Name of the searched value.
+		 * @param value_name   name of the searched value
 		 *
 		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
 		 */
 		Rts2Value *getValue (const char *value_name);
+
+		/**
+		 * Returns value with given name and type. Throw error if such value does not exists.
+		 *
+		 * @param value_name   name of the searched value
+		 * @param value_type   required type of the value
+		 *
+		 * @throw Error 
+		 */
+		Rts2Value *getValueType (const char *value_name, int value_type);
 
 		int getOtherType ();
 		// set to -1 if we don't need timeout checks..

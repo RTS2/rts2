@@ -1742,6 +1742,16 @@ Rts2Value * Rts2Conn::getValue (const char *value_name)
 	return values.getValue (value_name);
 }
 
+Rts2Value * Rts2Conn::getValueType (const char *value_name, int value_type)
+{
+	Rts2Value * ret = getValue (value_name);
+	if (ret == NULL)
+		throw Error (std::string ("cannot find value with name ") + value_name);
+	if (ret->getValueType () != value_type)
+		throw Error (std::string ("value ") + value_name + std::string ("has wrong type"));
+	return ret;
+}
+
 void Rts2Conn::addValue (Rts2Value * value)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))
