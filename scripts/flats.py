@@ -317,9 +317,9 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (sig))
 				self.createMasterFits('/tmp/master_%s.fits' % (sig), self.flatImages[i])
-				goodFlats.append(sig)
+				goodFlats.append(self.usedFlats[i])
 			else:
-			  	badFlats.append(sig)
+			  	badFlats.append(self.usedFlats[i])
 
 		if (self.email != None):
 			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
