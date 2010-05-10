@@ -17,6 +17,11 @@ import sys
 import time
 import rts2comm
 
+# email communication
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime
+
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
 	def __init__(self,filter,binning=None,ngood=None,window=None):
@@ -58,6 +63,11 @@ class FlatScript (rts2comm.Rts2Comm):
 		# not met flat requirements. This is particularly usefull for
 		# debugging.
 		self.unusableExpression = None 
+
+		# report flat production to this email
+		self.email = None
+
+		self.observatoryName = '<please fill here observatory name>'
 
 		self.flat = None
 
@@ -299,10 +309,27 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
+		goodFlats = []
+		badFlats = []
 		for i in range(0,len(self.flatImages)):
+		  	sig = self.usedFlats[i].signature()
 		  	if (len(self.flatImages[i]) >= 3):
-			  	self.log('I',"creating master flat for %s" % (self.usedFlats[i].signature()))
-				self.createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
+			  	self.log('I',"creating master flat for %s" % (sig))
+				self.createMasterFits('/tmp/master_%s.fits' % (sig, self.flatImages[i]))
+				goodFlats.append(sig)
+			else:
+			  	badFlats.append(sig)
+
+		if (self.email != None):
+			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n' % (datetime.today(),goodFlats.join(';'),badFlats.join(','))
+
+			mimsg = MIMEText(msg)
+			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
+			mimsg['To'] = self.email
+
+			s = smtplib.SMTP()
+			s.sendmail('test',self.email.split(','),mimsg.as_string())
+			s.quit()
 
 		self.log('I','flat scripts finished, waiting for change of next target')
 		while (True):
