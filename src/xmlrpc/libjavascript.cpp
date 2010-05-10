@@ -18,6 +18,7 @@
  */
 
 #include "libjavascript.h"
+#include "xmlrpcd.h"
 #include "../utils/utilsfunc.h"
 #include "../utils/error.h"
 
@@ -720,11 +721,26 @@ const char *tableScript = "var sortcol = 0;\n"
   "updateTable(false);\n"
 "}\n";
 
+const char *widgetsScript = 
+"function refresh (api_name, prefix){\n"
+  "window.alert('widgets refresh ' + api_name + ' ' + prefix);\n"
+"}\n";
+
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
 	
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
+
+	if (vals.size () == 2)
+	{
+		if (vals[0] == "vrml")
+			processVrml (vals[1], response_type, response, response_length);
+		else
+			throw rts2core::Error ("File not found");
+		return;
+	}
+
 	if (vals.size () != 1)
 		throw rts2core::Error ("File not found");
 
@@ -736,11 +752,56 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 	  	reply = targetEditScript;
 	else if (vals[0] == "table.js")
 		reply = tableScript;
-	else 
+	else if (vals[0] == "widgets.js")
+	  	reply = widgetsScript;
+	else
 		throw rts2core::Error ("JavaScript not found");
 
 	response_length = strlen (reply);
 	response = new char[response_length];
 	response_type = "text/javascript";
 	memcpy (response, reply, response_length);
+}
+
+void LibJavaScript::processVrml (std::string file, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+
+	XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+	connections_t::iterator iter = master->getConnections ()->begin ();
+	master->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
+	if (iter == master->getConnections ()->end ())
+	  	throw XmlRpcException ("Telescope is not connected");
+	
+	_os << "function initialize() {\n";
+
+	if (file == "RA_script.js")
+	{
+		Rts2ValueDouble *telHa = (Rts2ValueDouble *) ((*iter)->getValueType ("HA", RTS2_VALUE_DOUBLE));
+	 	_os << "RA = " << ln_deg_to_rad (telHa->getValueDouble ()) << ";  // Rektascenze v radianech (-1.57 - 1.57)\n"
+			"RA_rot = new SFRotation(0, 1, 0, RA);\n"
+			"set_state = RA_rot;\n";
+	}
+	else if (file == "DEC_script.js")
+	{
+		Rts2ValueRaDec *telRaDec = (Rts2ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
+		_os << "DEC = " << ln_deg_to_rad (telRaDec->getDec ()) << ";  // Deklinace v radianech (-1.57 - 1.57)\n"
+		    	"DEC_rot = new SFRotation(0, 1, 0, DEC);\n"
+			"set_state = DEC_rot;\n";
+	}
+	else if (file == "roof_script.js")
+	{
+	    	_os << "set_state = 'opened'; // 'closed' OR 'opened'\n";
+	}
+	else
+	{
+		throw XmlRpcException ("");
+	}
+
+	_os << "}";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
 }

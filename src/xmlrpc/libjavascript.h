@@ -36,6 +36,8 @@ class LibJavaScript: public GetRequestAuthorized
 		LibJavaScript (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+	private:
+		void processVrml (std::string file, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }
