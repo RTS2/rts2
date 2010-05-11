@@ -897,6 +897,14 @@ void Rts2Device::sendMessage (messageType_t in_messageType, const char *in_messa
 
 int Rts2Device::killAll ()
 {
+	// remove all queued changes - do not perform them
+	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); )
+	{
+		delete *iter;
+		iter = queValues.erase (iter);
+	}
+	// reset all errors
+	maskState (DEVICE_ERROR_HW | DEVICE_NOT_READY, 0, "reseting all errors");
 	return 0;
 }
 
