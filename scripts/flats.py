@@ -328,8 +328,8 @@ class FlatScript (rts2comm.Rts2Comm):
 			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
 			mimsg['To'] = self.email
 
-			s = smtplib.SMTP()
-			s.sendmail('test',self.email.split(','),mimsg.as_string())
+			s = smtplib.SMTP('localhost')
+			s.sendmail('robtel@example.com',self.email.split(','),mimsg.as_string())
 			s.quit()
 
 		self.log('I','flat scripts finished, waiting for change of next target')
