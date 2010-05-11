@@ -28,7 +28,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
   	std::ostringstream os;
 
 	// widgets - divs with informations
-	if (vals.size () >= 1 && vals[1] == "w")
+	if (vals.size () >= 2 && vals[0] == "w")
 	{
 		getWidgets (vals, params, response_type, response, response_length);
 		return;
@@ -45,6 +45,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (iter == master->getConnections ()->end ())
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter);
+		}
+		else
+		{
+			throw XmlRpcException ("invalid request " + path);
 		}
 	}
 	os << "}";
@@ -88,12 +92,20 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 {
 	std::ostringstream os;
 
+	includeJavaScript (os, "widgets.js");
+
 	if (vals[1] == "executor")
 	{
-		os << "<div id='executor'><table>"
+		os << "<div id='executor'>\n<table>"
 			"<tr><td>Current</td><td><div id='ex:current'></div></td></tr>"
 			"<tr><td>Next</td><td><div id='ex:next'></div></td></tr>"
-			"</table></div>";
+			"</table>\n"
+			"<button type='button' onClick=\"refresh('executor','ex:','executor');\">Refresh</button>\n"
+			"</div>\n";
+	}
+	else
+	{
+		throw XmlRpcException ("Widget " + vals[1] + " is not defined.");
 	}
 
 	response_type = "text/html";

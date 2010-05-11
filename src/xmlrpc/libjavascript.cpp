@@ -722,8 +722,26 @@ const char *tableScript = "var sortcol = 0;\n"
 "}\n";
 
 const char *widgetsScript = 
-"function refresh (api_name, prefix){\n"
-  "window.alert('widgets refresh ' + api_name + ' ' + prefix);\n"
+"function refresh (api_name, prefix, id){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../' + api_name,true);\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+    "var sta = JSON.parse(hr.responseText);\n"
+    "var el = document.getElementById(id);\n"
+    "var pl = prefix.length;\n"
+    "var childs = el.getElementsByTagName('*');\n"
+    "for (di in childs){\n"
+      "var ce = childs[di];\n"
+      "try{\n"
+        "if (ce.id.substr(0,pl) == prefix){\n"
+          "var name = ce.id.substr(pl);\n"
+	  "ce.innerHTML = sta[name];\n"
+        "}\n"
+      "} catch(e) {}\n"
+    "}\n"
+  "}\n"
+  "hr.send(null);\n"
 "}\n";
 
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
