@@ -905,7 +905,7 @@ int Rts2Device::killAll ()
 	}
 	// reset all errors
 	maskState (DEVICE_ERROR_HW | DEVICE_NOT_READY, 0, "reseting all errors");
-	return 0;
+	return scriptEnds ();
 }
 
 int Rts2Device::scriptEnds ()
