@@ -59,6 +59,7 @@ using namespace Magick;
 #include "libjavascript.h"
 #include "libcss.h"
 #include "api.h"
+#include "images.h"
 
 #include "r2x.h"
 
@@ -1100,6 +1101,8 @@ LibJavaScript javaScriptRequests ("/js", &xmlrpc_server);
 LibCSS cssRequests ("/css", &xmlrpc_server);
 
 API api ("/api", &xmlrpc_server);
+
+ImageReq imageReq ("/images", &xmlrpc_server);
 
 #ifdef HAVE_PGSQL
 /*
