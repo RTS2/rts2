@@ -64,11 +64,20 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 			else
 				throw rts2core::Error ("Invalid path for all observations");
 		case 3:
-			day = atoi (vals[2].c_str ());
+			if (vals[2] == "api")
+				action = API;
+			else
+				day = atoi (vals[2].c_str ());
 		case 2:
-			month = atoi (vals[1].c_str ());
+			if (vals[1] == "api")
+				action = API;
+			else
+				month = atoi (vals[1].c_str ());
 		case 1:
-			year = atoi (vals[0].c_str ());
+			if (vals[0] == "api")
+				action = API;
+			else
+				year = atoi (vals[0].c_str ());
 		case 0:
 			switch (action)
 			{
@@ -87,10 +96,7 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 					break;
 #endif // HAVE_LIBJPEG
 				default:
-					if (vals.size () > 0 && vals[vals.size () - 1] == "api")
-						callAPI (year, month, day, response, response_type, response_length);
-					else
-						printTable (year, month, day, response, response_length);
+					printTable (year, month, day, response, response_length);
 			}
 			break;
 		default:
@@ -255,12 +261,14 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 {
 	std::ostringstream _os;
 
-	if (year == 0 || month == 0 || day == 0)
+	std::cout << "callAPI " << year << " " << month << " " << day << std::endl;
+
+	if (year <= 0 || month <= 0 || day <= 0)
 	{
 		_os << "{\"h\":["
-			"{\"n\":\"Date part\",\"t\":\"n\",\"c\":0,\"prefix\":\"\",\"href\":0},"
-			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1}],"
-			"\"d\" : [";
+			"{\"n\":\"Date part\",\"t\":\"a\",\"c\":0,\"prefix\":\"\",\"href\":0},"
+			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1}"
+			"],\"d\":[";
 
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
 		as.load (year, month, day);
@@ -279,8 +287,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"/observations/\",\"href\":0},"
 			"{\"n\":\"Target name\",\"t\":\"s\",\"c\":1},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":3}]"
-			"\"d\" : [";
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":3}"
+			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
 
@@ -300,7 +308,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			_os << "[" << iter->getObsId () << ","
 				<< "\"" << iter->getTargetName () << "\",\""
 				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getObsEnd ()) << "\"]";
+				<< LibnovaDateDouble (iter->getObsEnd ()) << "\"]\n";
 		}
 
 		_os << "]}";
