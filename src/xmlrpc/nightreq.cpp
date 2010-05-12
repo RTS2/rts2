@@ -284,7 +284,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 	else
 	{
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"/observations/\",\"href\":0},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
 			"{\"n\":\"Target name\",\"t\":\"s\",\"c\":1},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":3}"
