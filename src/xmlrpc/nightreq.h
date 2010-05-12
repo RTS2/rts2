@@ -38,8 +38,8 @@ class Night: public GetRequestAuthorized
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
-		void listObs (int year, int month, int day, std::ostringstream &_os);
 		void printAllImages (int year, int month, int day, XmlRpc::HttpParams *params, char* &response, size_t &response_length);
+		void callAPI(int year, int month, int day, char* &response, const char* &response_type, size_t &response_length);
 		void printTable (int year, int month, int day, char* &response, size_t &response_length);
 #ifdef HAVE_LIBJPEG
 		void printAlt (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);

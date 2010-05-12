@@ -717,6 +717,7 @@ const char *tableScript =
     "switch (type){\n"
       "case 't':\n"
       "case 'a':\n"
+      "case 's':\n"
         "this.data.sort(function (a,b){\n"
           "var ret = (a[table.sortcol] < b[table.sortcol]) - (b[table.sortcol] < a[table.sortcol]);\n"
           "if (table.asc) return ret;\n"

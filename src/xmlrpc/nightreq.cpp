@@ -45,7 +45,7 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	int month = -1;
 	int day = -1;
 	
-	enum {NONE, IMAGES, ALT, ALTAZ} action = NONE;
+	enum {NONE, IMAGES, API, ALT, ALTAZ} action = NONE;
 
 	switch (vals.size ())
 	{
@@ -53,6 +53,8 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 			// print all images..
 			if (vals[3] == "all")
 				action = IMAGES;
+			else if (vals[3] == "api")
+				action = API;
 #ifdef HAVE_LIBJPEG
 			else if (vals[3] == "alt")
 				action = ALT;
@@ -73,6 +75,9 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				case IMAGES:
 					printAllImages (year, month, day, params, response, response_length);
 					break;
+				case API:
+					callAPI (year, month, day, response, response_type, response_length);
+					break;
 #ifdef HAVE_LIBJPEG
 				case ALT:
 					printAlt (year, month, day, params, response_type, response, response_length);
@@ -82,34 +87,14 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 					break;
 #endif // HAVE_LIBJPEG
 				default:
-					printTable (year, month, day, response, response_length);
+					if (vals.size () > 0 && vals[vals.size () - 1] == "api")
+						callAPI (year, month, day, response, response_type, response_length);
+					else
+						printTable (year, month, day, response, response_length);
 			}
 			break;
 		default:
 			throw rts2core::Error ("Invalid path for observations!");
-	}
-}
-
-void Night::listObs (int year, int month, int day, std::ostringstream &_os)
-{
-	rts2db::ObservationSet os = rts2db::ObservationSet ();
-
-	time_t from;
-	int64_t duration;
-
-	getNightDuration (year, month, day, from, duration);
-
-	time_t end = from + duration;
-
-	os.loadTime (&from, &end);
-
-	for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
-	{
-		_os << "<tr><td><a href='" <<  ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/" << iter->getObsId () << "'>"
-			<< iter->getObsId () << " " << iter->getTargetName () << "</a>"
-			<< "</td><td>" << LibnovaDateDouble (iter->getObsStart ())
-			<< "</td><td>" << LibnovaDateDouble (iter->getObsEnd ())
-			<< "</td></tr>";
 	}
 }
 
@@ -266,55 +251,101 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 }
 #endif // HAVE_LIBJPEG
 
-void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
+void Night::callAPI (int year, int month, int day, char* &response, const char* &response_type, size_t &response_length)
 {
-	bool do_list = false;
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Observations";
-
-	if (year > 0)
-	{
-		_os << " for " << year;
-		if (month > 0)
-		{
-			_os << "-" << month;
-			if (day > 0)
-			{
-				_os << "-" << day;
-				do_list = true;
-			}
-		}
-	}
-
 	if (year == 0 || month == 0 || day == 0)
-		do_list = true;
-
-	_os << "</title></head><body><p><a href='all'>All images</a>";
-
-#ifdef HAVE_LIBJPEG
-	_os << "&nbsp;<a href='altaz'>Night images alt-az plot</a>&nbsp;<a href='alt'>Night images alt</a>";
-#endif // HAVE_LIBJPEG
-
-	_os << "</p><p><table>";
-
-	if (do_list == true)
 	{
-		listObs (year, month, day, _os);
-	}
-	else
-	{
+		_os << "{\"h\":["
+			"{\"n\":\"Date part\",\"t\":\"n\",\"c\":0,\"prefix\":\"\",\"href\":0},"
+			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1}],"
+			"\"d\" : [";
+
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
 		as.load (year, month, day);
 
 		for (rts2db::ObservationSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
 		{
-			_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
+			if (iter != as.begin ())
+				_os << ",";
+			_os << "[" << iter->first << "," << iter->second << "]\n";
+		}
+		_os << "]}";
+	}
+	else
+	{
+		_os << "{\"h\":["
+			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"/observations/\",\"href\":0},"
+			"{\"n\":\"Target name\",\"t\":\"s\",\"c\":1},"
+			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":3}]"
+			"\"d\" : [";
+
+		rts2db::ObservationSet os = rts2db::ObservationSet ();
+
+		time_t from;
+		int64_t duration;
+
+		getNightDuration (year, month, day, from, duration);
+
+		time_t end = from + duration;
+
+		os.loadTime (&from, &end);
+
+		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
+		{
+			if (iter != os.begin ())
+				_os << ",";
+			_os << "[" << iter->getObsId () << ","
+				<< "\"" << iter->getTargetName () << "\",\""
+				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
+				<< LibnovaDateDouble (iter->getObsEnd ()) << "\"]";
 		}
 
+		_os << "]}";
 	}
 
-	_os << "</table><p>";
+	returnJSON (_os, response_type, response, response_length);
+}
+
+void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
+{
+	std::ostringstream _os, _title;
+
+	_title << "Observations";
+
+	if (year > 0)
+	{
+		_title << " for " << year;
+		if (month > 0)
+		{
+			_title << "-" << month;
+			if (day > 0)
+			{
+				_title << "-" << day;
+			}
+		}
+	}
+
+	printHeader (_os, _title.str ().c_str (), NULL, "/css/table.css", "observations.refresh ()");
+
+	includeJavaScript (_os, "table.js");
+
+	_os << "<p><a href='all'>All images</a>";
+
+	_os << "<script type='text/javascript'>\n"
+		"observations = new Table('api/','observations','observations');\n"
+
+		"</script>\n";
+
+#ifdef HAVE_LIBJPEG
+	_os << "&nbsp;<a href='altaz'>Night images alt-az plot</a>&nbsp;<a href='alt'>Night images alt</a>";
+#endif // HAVE_LIBJPEG
+
+	_os << "</p><p><div id='observations'>Loading..</div>";
+
+	_os << "</p>";
 	
 	printFooter (_os);
 
