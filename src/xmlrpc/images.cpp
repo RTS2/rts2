@@ -45,6 +45,8 @@ void ImageReq::execute (std::string path, XmlRpc::HttpParams *params, int &http_
 
 	http_code = HTTP_OK;
 
+	cacheMaxAge (86400);
+
 	response_type = "image/png";
 	response_length = selImage->len;
 	response = new char[response_length];

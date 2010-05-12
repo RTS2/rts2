@@ -129,55 +129,23 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	printHeader (_os, "List of targets", NULL, NULL, "refreshTargets();");
+	printHeader (_os, "List of targets", NULL, "/css/table.css", "table.refresh();");
 
 	includeJavaScript (_os, "equ.js");
 	includeJavaScript (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"
-		"var targets = [];\n"
-		"function refreshTargets(){\n"
-			"var hr = new XMLHttpRequest();\n"
-			"hr.open('GET','api/',true);\n"
-			"hr.onreadystatechange = function() {\n"
-				"if (hr.readyState == 4 && hr.status == 200) {\n"
-					"t = JSON.parse(hr.responseText);\n"
-					"targets = t.d;\n"
-					"var tab = document.createElement('table');\n"
-					"tab.id = 'tartab';\n"
-					// write header
-					"var th = tab.createTHead();\n"
-					"var tr = th.insertRow(0);\n"
-					"for (var h in t.h) {\n"
-						"var td = tr.insertCell(-1);\n"
-						"td.innerHTML = t.h[h].n;\n"
-						"switch(t.h[h].t){\n"
-							"case 'a':\n"
-								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_str); return true;');\n"
-								"break;\n"
-							"default:\n"
-								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_num); return true;');\n"
-						"}\n"
-					"}\n"
-					"fillTable(tab);\n"
-					"var e = document.getElementById('targets');\n"
-					"e.innerHTML = '';\n"
-					"e.appendChild(tab);\n"
-					"updateTable(true);\n"
-				"}\n"
-			"}\n"
-			"hr.send(null);\n"
-		"}\n"
+                "table = new Table('api/','targets','table');\n"
 
-		"function updateTable(settimer) {\n"
+		"table.updateTable = function(settimer) {\n"
 			"var jd = ln_get_julian_from_sys();\n"
 			"var st = ln_get_mean_sidereal_time(jd);\n"
 			"hAz = new DMS();\n"
 			"hAlt = new DMS();\n"
 			"observer = new LngLat(" << Rts2Config::instance ()->getObserver ()->lng << "," << Rts2Config::instance ()->getObserver ()->lat << ")\n;"
-			"for (var i in targets) {\n"
-				"var t = targets[i];\n"
-				"var radec = new RaDec(targets[i][2],targets[i][3], observer);\n"
+			"for (var i in this.data) {\n"
+				"var t = this.data[i];\n"
+				"var radec = new RaDec(table.data[i][2],table.data[i][3], observer);\n"
 				"var altaz = radec.altaz();\n"
 				"t[4] = altaz.alt;\n"
 				"t[5] = altaz.az;\n"
@@ -186,7 +154,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
 				"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
 			"}\n"
-			"if (settimer) setTimeout('updateTable(true)',2000);\n"
+			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',2000);\n"
 		"}\n"
 
 		"</script>\n";
@@ -769,7 +737,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 {
 	std::ostringstream _os;
 
-	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, NULL, "refreshObservations();");
+	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, NULL, "targetObs.refresh();");
 	printTargetHeader (tar->getTargetID (), _os);
 
 	_os << "<h1>Observations of target " << tar->getTargetName () << "</h1>\n";
@@ -778,42 +746,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 	includeJavaScript (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"
-		"var targets = [];\n"
-		"function refreshObservations(){\n"
-			"var hr = new XMLHttpRequest();\n"
-			"hr.open('GET','../api/obs',true);\n"
-			"hr.onreadystatechange = function() {\n"
-				"if (hr.readyState == 4 && hr.status == 200) {\n"
-					"t = JSON.parse(hr.responseText);\n"
-					"targets = t.d;\n"
-					"var tab = document.createElement('table');\n"
-					"tab.id = 'tartab';\n"
-					// write header
-					"var th = tab.createTHead();\n"
-					"var tr = th.insertRow(0);\n"
-					"for (var h in t.h) {\n"
-						"var td = tr.insertCell(-1);\n"
-						"td.innerHTML = t.h[h].n;\n"
-						"switch(t.h[h].t){\n"
-							"case 't':\n"
-							"case 'a':\n"
-								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_str); return true;');\n"
-								"break;\n"
-							"default:\n"
-								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_num); return true;');\n"
-						"}\n"
-					"}\n"
-					"fillTable(tab);\n"
-					"var e = document.getElementById('observations');\n"
-					"e.innerHTML = '';\n"
-					"e.appendChild(tab);\n"
-				"}\n"
-			"}\n"
-			"hr.send(null);\n"
-		"}\n"
-
-		"function updateTable(addTimer){\n"
-		"}\n"
+		"targetObs = new Table('../api/obs','observations','targetObs');\n"
 
 		"</script>\n"
 		"<div id='observations'>Loading..</div>\n";

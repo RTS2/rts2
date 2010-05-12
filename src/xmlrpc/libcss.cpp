@@ -134,6 +134,12 @@ static const char *calendarCss =
 "  border: 1px solid #FFF;\n"
 "}\n";
 
+const char *tableCss =
+".TableHead {\n"
+  "background-color: #CCC;\n"
+  "border: 1px solid #000;\n"
+"}\n";
+
 void LibCSS::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
@@ -144,6 +150,8 @@ void LibCSS::authorizedExecute (std::string path, XmlRpc::HttpParams *params, co
 
 	if (vals[0] == "calendar.css")
 		reply = calendarCss;
+	else if (vals[0] == "table.css")
+		reply = tableCss;
 	else 
 		throw rts2core::Error ("CSS not found");
 
