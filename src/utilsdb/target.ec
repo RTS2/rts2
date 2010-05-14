@@ -1514,7 +1514,6 @@ void Target::printShortInfo (std::ostream & _os, double JD)
 	_os
 		<< std::setw (5) << getTargetID () << SEP
 		<< getTargetType () << SEP
-		<< std::left << std::setw (25) << (name ? name :  "null") << std::right << SEP
 		<< raDec << SEP << ha << SEP;
 	writeAirmass (_os, JD);
 	_os << SEP << hrzP << SEP;
@@ -1526,6 +1525,7 @@ void Target::printShortInfo (std::ostream & _os, double JD)
 		_os << "transiting";
 
 	_os << SEP;
+	_os << std::left << std::setw (25) << (name ? name :  "null") << std::right << SEP;
 	_os.precision (old_prec);
 }
 
