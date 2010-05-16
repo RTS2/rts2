@@ -138,6 +138,7 @@ const char *tableCss =
 ".TableHead {\n"
   "background-color: #CCC;\n"
   "border: 1px solid #000;\n"
+  "cursor: pointer;\n"
 "}\n";
 
 void LibCSS::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
