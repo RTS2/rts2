@@ -30,8 +30,12 @@ ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const cha
 
 ConnExecute::~ConnExecute ()
 {
-	if (masterElement != NULL && masterElement->getClient () != NULL)
-		masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+	if (masterElement != NULL)
+	{
+		if (masterElement->getClient () != NULL)
+			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+		masterElement->deleteExecConn ();
+	}
 
 	for (std::list <Rts2Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
@@ -44,8 +48,12 @@ void ConnExecute::connectionError (int last_data_size)
 {
 	rts2core::ConnFork::connectionError (last_data_size);
 	// inform master to delete us..
-	if (masterElement != NULL && masterElement->getClient () != NULL)
-		masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+	if (masterElement != NULL)
+	{
+		if (masterElement->getClient () != NULL)
+			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+		masterElement->deleteExecConn ();
+	}
 	masterElement = NULL;
 }
 
@@ -315,7 +323,7 @@ Execute::~Execute ()
 	{
 		connExecute->nullMasterElement ();
 		connExecute->endConnection ();
-		connExecute = NULL;
+		deleteExecConn ();
 	}
 	client = NULL;
 }

@@ -86,6 +86,8 @@ class Execute:public Element
 
 		virtual int processImage (Rts2Image *image);
 
+		void deleteExecConn () { connExecute = NULL; }
+
 	private:
 		ConnExecute *connExecute;
 
