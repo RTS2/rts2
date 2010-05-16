@@ -653,6 +653,16 @@ const char *targetEditScript =
 "}\n";
 
 const char *tableScript = 
+"function include(filename){\n"
+  "var head = document.getElementsByTagName('head')[0];\n"
+  "script = document.createElement('script');\n"
+  "script.src = filename;\n"
+  "script.type = 'text/javascript';\n"
+  "head.appendChild(script)\n"
+"}\n"
+
+"include('pagePrefix.js')\n"
+
 "function Table(api_access, element_id, objectName){\n"
   "this.api_access = api_access;\n"
   "this.element_id = element_id;\n"
@@ -753,7 +763,7 @@ const char *tableScript =
           "tdiv.innerHTML = t.h[h].n;\n"
           "td.appendChild(tdiv);\n"
           "var img_up = new Image (24,34);\n"
-          "img_up.src = '/images/up.png';\n"
+          "img_up.src = pagePrefix + '/images/up.png';\n"
           "td.appendChild(img_up);\n"
           "td.setAttribute('onclick', table.objectName + '.resortTable(' + t.h[h].c + ',\"' + t.h[h].t + '\"); return true;');\n"
         "}\n"
@@ -807,6 +817,8 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 		return;
 	}
 
+	cacheMaxAge (CACHE_MAX_STATIC);
+
 	if (vals.size () != 1)
 		throw rts2core::Error ("File not found");
 
@@ -820,6 +832,10 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 		reply = tableScript;
 	else if (vals[0] == "widgets.js")
 	  	reply = widgetsScript;
+	else if (vals[0] == "pagePrefix.js")
+	{
+		pagePrefix (response_type, response, response_length);
+	}
 	else
 		throw rts2core::Error ("JavaScript not found");
 
@@ -866,8 +882,19 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 
 	_os << "}";
 
-	response_type = "text/html";
+	response_type = "text/javascript";
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void LibJavaScript::pagePrefix (const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream os;
+	os << "pagePrefix = '" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "';\n";
+
+	response_type = "text/javascript";
+	response_length = os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, os.str ().c_str (), response_length);
 }

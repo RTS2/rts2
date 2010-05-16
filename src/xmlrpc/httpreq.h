@@ -42,6 +42,9 @@
 #include "../utils/libnova_cpp.h"
 #include <string.h>
 
+// maximal age of static documents
+#define CACHE_MAX_STATIC   864000
+
 namespace rts2xmlrpc
 {
 

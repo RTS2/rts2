@@ -127,7 +127,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 
 	Magick::Image mimage = image.getMagickImage (label);
 
-	cacheMaxAge (86400);
+	cacheMaxAge (CACHE_MAX_STATIC);
 
 	mimage.write (&blob, "jpeg");
 	response_length = blob.length();
@@ -164,7 +164,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 		image.writeLabel (mimage, 1, prevsize - 2, 10, label);
 
-		cacheMaxAge (86400);
+		cacheMaxAge (CACHE_MAX_STATIC);
 
 		mimage.write (&blob, "jpeg");
 		response_length = blob.length();
