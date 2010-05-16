@@ -643,8 +643,8 @@ int ConnShooter::receive (fd_set * set)
 
 				// move unprocessed to begging
 				it++;
-				memmove (nbuf, it, nbuf_end - (it - nbuf));
 				nbuf_end -= it - nbuf;
+				memmove (nbuf, it, nbuf_end);
 				it = nbuf;
 			}
 			else
@@ -652,6 +652,8 @@ int ConnShooter::receive (fd_set * set)
 				it++;
 			}
 		}
+
+		nbuf_pos = it - nbuf;
 
 		if (!isnan (last_auger_date))
 		{
