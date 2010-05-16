@@ -825,6 +825,7 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 	else if (vals[0] == "pagePrefix.js")
 	{
 		pagePrefix (response_type, response, response_length);
+		return;
 	}
 	else
 		throw rts2core::Error ("JavaScript not found");
