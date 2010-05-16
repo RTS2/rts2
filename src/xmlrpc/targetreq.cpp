@@ -132,6 +132,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	printHeader (_os, "List of targets", NULL, "/css/table.css", "table.refresh();");
 
 	includeJavaScript (_os, "equ.js");
+	includeJavaScript (_os, "pagePrefix.js");
 	includeJavaScript (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"
@@ -743,6 +744,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 	_os << "<h1>Observations of target " << tar->getTargetName () << "</h1>\n";
 
 	includeJavaScript (_os, "equ.js");
+	includeJavaScript (_os, "pagePrefix.js");
 	includeJavaScript (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"

@@ -653,16 +653,6 @@ const char *targetEditScript =
 "}\n";
 
 const char *tableScript = 
-"function include(filename){\n"
-  "var head = document.getElementsByTagName('head')[0];\n"
-  "script = document.createElement('script');\n"
-  "script.src = filename;\n"
-  "script.type = 'text/javascript';\n"
-  "head.appendChild(script)\n"
-"}\n"
-
-"include('pagePrefix.js')\n"
-
 "function Table(api_access, element_id, objectName){\n"
   "this.api_access = api_access;\n"
   "this.element_id = element_id;\n"
