@@ -175,6 +175,7 @@ using namespace rts2camd;
 
 int Andor::stopExposure ()
 {
+	nullExposureConn ();
 	AbortAcquisition ();
 	FreeInternalMemory ();
 	return Camera::stopExposure ();
