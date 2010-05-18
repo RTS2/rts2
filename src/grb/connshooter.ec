@@ -597,7 +597,7 @@ int ConnShooter::init ()
 
 void ConnShooter::connectionError (int last_data_size)
 {
-	logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
+	logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError " << last_data_size << sendLog;
 	if (sock > 0)
 	{
 		close (sock);
@@ -621,7 +621,12 @@ int ConnShooter::receive (fd_set * set)
 		{
 			setConnState (CONN_CONNECTED);
 		}
-		else if (ret <= 0)
+		else if (ret == 0)
+		{
+			logStream (MESSAGE_WARNING) << "read 0 bytes from augershooter connection - that should not happen" << sendLog;
+			return 0;
+		}
+		else if (ret < 0)
 		{
 			connectionError (ret);
 			return -1;
