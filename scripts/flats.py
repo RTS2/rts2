@@ -151,7 +151,12 @@ class FlatScript (rts2comm.Rts2Comm):
 			else:
 				expMulti = self.morningMultiply
 
-		if (abs(1.0 - ratio) <= self.optimalRange): # Images within optimalRange of the optimal flux value
+		if (ratio <= 0): # special case, ratio is bellow bias
+			self.log('W','average is bellow bias: average %f bias %f. Please adjust BiasLevel in flats script.' % avrg, self.BiasLevel)
+			self.unusableImage(img)
+                        ratio = 0.000000001
+			ret = -1
+		elif (abs(1.0 - ratio) <= self.optimalRange): # Images within optimalRange of the optimal flux value
 			ret = 0
 		  	if (self.isSubWindow):
 				self.fullWindow()
