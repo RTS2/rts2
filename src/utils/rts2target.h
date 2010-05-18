@@ -151,6 +151,8 @@ class Rts2Target
 			obs_state = 0;
 			selected = 0;
 			acquired = 0;
+			target_type = 0;
+			target_name = NULL;
 		}
 
 		virtual ~ Rts2Target (void)
