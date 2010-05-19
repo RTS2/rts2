@@ -325,7 +325,7 @@ void Rts2DevClientCameraExec::exposureFailed (int status)
 {
 	// in case of an error..
 	Rts2DevClientCameraImage::exposureFailed (status);
-	logStream (MESSAGE_WARNING) << "exposure failed detected. Continuing with the script" << sendLog;
+	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script" << sendLog;
 	nextCommand ();
 }
 
