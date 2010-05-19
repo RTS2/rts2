@@ -24,7 +24,7 @@
 
 #include "augershooter.h"
 
-#define AUGER_BUF_SIZE  5000
+#define AUGER_BUF_SIZE  20000
 
 namespace rts2grbd
 {

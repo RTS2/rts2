@@ -623,7 +623,7 @@ int ConnShooter::receive (fd_set * set)
 		}
 		else if (ret == 0)
 		{
-			logStream (MESSAGE_WARNING) << "read 0 bytes from augershooter connection - that should not happen" << sendLog;
+			logStream (MESSAGE_WARNING) << "read 0 bytes from augershooter connection - that should not happen " << (sizeof (nbuf) - nbuf_pos) << sendLog;
 			return 0;
 		}
 		else if (ret < 0)
