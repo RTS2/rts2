@@ -79,7 +79,11 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.BiasLevel = 390 # although this could be set to 0 and should not make much difference
 		self.defaultNumberFlats = 10 # Number of flats that we want to obtain
 		self.sleepTime = 1 # number of seconds to wait for optimal flat conditions
-		self.startExpTime = 1 # starting exposure time
+
+		self.expTimes = range(1,20) # allowed exposure times
+		self.expTimes = map(lambda x: x/2.0, self.expTimes)
+
+		self.startExpTime = self.expTimes[0] # starting exposure time. Must be within expTimes[0] .. expTimes[-1]
 
 		self.eveningMultiply = 1 # evening multiplying - good for cameras with long readout times
 		self.morningMultiply = 1 # morning multiplying
@@ -90,9 +94,6 @@ class FlatScript (rts2comm.Rts2Comm):
 		# self.waitingSubWindow = '100 100 200 200' # x y w h of subwindow while waiting for good flat level
 		self.waitingSubWindow = None # do not use subwindow to wait for flats
 		self.isSubWindow = False
-
-		self.expTimes = range(1,20) # allowed exposure times
-		self.expTimes = map(lambda x: x/2.0, self.expTimes)
 
 		self.flatNum = 0
 		self.flatImages = []
