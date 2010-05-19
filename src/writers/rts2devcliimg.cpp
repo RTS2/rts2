@@ -170,7 +170,7 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
 		#endif						 /* DEBUG_EXTRA */
 	}
-	catch (rts2core::Error ex)
+	catch (rts2core::Error &ex)
 	{
 		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
@@ -196,41 +196,49 @@ void Rts2DevClientCameraImage::exposureStarted ()
 	struct timeval expStart;
 	const char *focuser;
 	gettimeofday (&expStart, NULL);
-	Rts2Image *image = createImage (&expStart);
-	if (image == NULL)
+	try
+	{
+		Rts2Image *image = createImage (&expStart);
+		if (image == NULL)
+			return;
+		image->setExposureLength (exposureTime);
+	
+		image->setCameraName (getName ());
+		image->setInstrument (instrume.c_str ());
+		image->setTelescope (telescop.c_str ());
+		image->setOrigin (origin.c_str ());
+	
+		image->setEnvironmentalValues ();
+	
+		if (image->getTargetType (false) == TYPE_TERESTIAL
+			&& !isnan (ter_xoa) && !isnan (ter_yoa))
+		{
+			image->setXoA (ter_xoa);
+			image->setYoA (ter_yoa);
+		}
+		else
+		{
+			image->setXoA (xoa);
+			image->setYoA (yoa);
+		}
+		focuser = getConnection ()->getValueChar ("focuser");
+		if (focuser)
+		{
+			image->setFocuserName (focuser);
+		}
+		// delete old image
+		delete actualImage;
+		// create image
+		actualImage = new CameraImage (image, getMaster ()->getNow ());
+		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
+	
+		lastImage = image;
+	}
+	catch (rts2core::Error &ex)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create image for exposure " << ex << sendLog;
 		return;
-	image->setExposureLength (exposureTime);
-
-	image->setCameraName (getName ());
-	image->setInstrument (instrume.c_str ());
-	image->setTelescope (telescop.c_str ());
-	image->setOrigin (origin.c_str ());
-
-	image->setEnvironmentalValues ();
-
-	if (image->getTargetType (false) == TYPE_TERESTIAL
-		&& !isnan (ter_xoa) && !isnan (ter_yoa))
-	{
-		image->setXoA (ter_xoa);
-		image->setYoA (ter_yoa);
 	}
-	else
-	{
-		image->setXoA (xoa);
-		image->setYoA (yoa);
-	}
-	focuser = getConnection ()->getValueChar ("focuser");
-	if (focuser)
-	{
-		image->setFocuserName (focuser);
-	}
-	// delete old image
-	delete actualImage;
-	// create image
-	actualImage = new CameraImage (image, getMaster ()->getNow ());
-	actualImage->image->writeConn (getConnection (), EXPOSURE_START);
-
-	lastImage = image;
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
 	rts2core::Rts2DevClientCamera::exposureStarted ();
 }
