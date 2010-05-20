@@ -631,7 +631,7 @@ int ConnShooter::receive (fd_set * set)
 			connectionError (ret);
 			return -1;
 		}
-		int nbuf_end = ret + nbuf_pos;
+		int nbuf_end = nbuf_pos + ret;
 		nbuf[nbuf_end] = '\0';
 		// find '\n', mark it, copy buffer, mark next one,..
 		char *it = nbuf;
@@ -649,7 +649,7 @@ int ConnShooter::receive (fd_set * set)
 				// move unprocessed to begging
 				it++;
 				nbuf_end -= it - nbuf;
-				memmove (nbuf, it, nbuf_end);
+				memmove (nbuf, it, nbuf_end + 1);
 				it = nbuf;
 			}
 			else
