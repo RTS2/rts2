@@ -456,7 +456,7 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
 	createValue (hourRa, "HR_RA", "[???] RA axis tracking rate", true);
-	hourRa->setValueLong (43067265);
+	hourRa->setValueLong (-43067265);
 	createValue (baseRa, "BR_RA", "[???] RA axis base rate", true, RTS2_VALUE_WRITABLE);
 	baseRa->setValueLong (hourRa->getValueLong ());
 	createValue (baseDec, "BR_DEC", "[???] DEC axis base rate", true, RTS2_VALUE_WRITABLE);
@@ -600,6 +600,7 @@ int Paramount::init ()
 		// swap values which are opposite for south hemispehere
 		haZero *= -1.0;
 		haCpd *= -1.0;
+		hourRa->setValueLong (-1 * hourRa->getValueLong ());
 	}
 
 	ret = MKS3Init ((char *) device_name);
