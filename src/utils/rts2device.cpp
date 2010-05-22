@@ -903,9 +903,10 @@ int Rts2Device::killAll ()
 		delete *iter;
 		iter = queValues.erase (iter);
 	}
+	int ret = scriptEnds ();
 	// reset all errors
 	maskState (DEVICE_ERROR_HW | DEVICE_NOT_READY, 0, "reseting all errors");
-	return scriptEnds ();
+	return ret;
 }
 
 int Rts2Device::scriptEnds ()
