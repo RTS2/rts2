@@ -118,7 +118,7 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueInteger *img_id;
 };
 
-};
+}
 
 using namespace rts2plan;
 
@@ -170,7 +170,6 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 }
-
 
 Executor::~Executor (void)
 {

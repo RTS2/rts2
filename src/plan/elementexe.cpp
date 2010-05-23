@@ -89,6 +89,7 @@ void ConnExecute::processLine ()
 			(*iter)->toDark ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
 			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
+			delete *iter;
 			images.erase (iter);
 		}
 	}
@@ -102,6 +103,7 @@ void ConnExecute::processLine ()
 			(*iter)->toFlat ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
 			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
+			delete *iter;
 			images.erase (iter);
 		}
 	}
@@ -175,6 +177,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
+			delete *iter;
 			images.erase (iter);
 		}
 	}
