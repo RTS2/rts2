@@ -552,12 +552,7 @@ int Rts2Image::toArchive ()
 // move to dark images area..
 int Rts2Image::toDark ()
 {
-	if (getTargetId () == TARGET_DARK)
-	{
-		return renameImageExpand (Rts2Config::instance ()->observatoryDarkPath ());
-	}
-	// else..
-	return renameImageExpand ("%b/archive/%t/%c/darks/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryDarkPath ());
 }
 
 int Rts2Image::toFlat ()
