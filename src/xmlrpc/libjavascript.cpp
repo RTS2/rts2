@@ -851,20 +851,34 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	if (file == "RA_script.js")
 	{
 		Rts2ValueDouble *telHa = (Rts2ValueDouble *) ((*iter)->getValueType ("HA", RTS2_VALUE_DOUBLE));
-	 	_os << "RA = " << ln_deg_to_rad (telHa->getValueDouble ()) << ";  // Rektascenze v radianech (-1.57 - 1.57)\n"
+		Rts2ValueInteger *telFlip = (Rts2ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
+		double ha = telHa->getValueDouble ();
+		if (telFlip->getValueInteger () == 1)
+			ha -= 180;
+		if (ha > 180)
+			ha -= 360;
+	 	_os << "RA = " << ln_deg_to_rad (ha) << ";  // Rektascenze v radianech (-1.57 - 1.57)\n"
 			"RA_rot = new SFRotation(0, 1, 0, RA);\n"
 			"set_state = RA_rot;\n";
 	}
 	else if (file == "DEC_script.js")
 	{
 		Rts2ValueRaDec *telRaDec = (Rts2ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
-		_os << "DEC = " << ln_deg_to_rad (telRaDec->getDec ()) << ";  // Deklinace v radianech (-1.57 - 1.57)\n"
+		Rts2ValueInteger *telFlip = (Rts2ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
+		double dec = telRaDec->getDec ();
+		if (telFlip->getValueInteger () == 1)
+			dec -= 2*(90-fabs(dec));
+		_os << "DEC = " << ln_deg_to_rad (dec) << ";  // Deklinace v radianech (-1.57 - 1.57)\n"
 		    	"DEC_rot = new SFRotation(0, 1, 0, DEC);\n"
 			"set_state = DEC_rot;\n";
 	}
 	else if (file == "roof_script.js")
 	{
-	    	_os << "set_state = 'opened'; // 'closed' OR 'opened'\n";
+		connections_t::iterator iter_dome = master->getConnections ()->begin ();
+		master->getOpenConnectionType (DEVICE_TYPE_DOME, iter);
+		if (iter_dome == master->getConnections ()->end ())
+		  	throw XmlRpcException ("Dome is not connected");
+	    	_os << "set_state = " << (((*iter_dome)->getState () & DOME_OPENED) ? "opened" : "closed") << "; // closed OR opened\n";
 	}
 	else
 	{
