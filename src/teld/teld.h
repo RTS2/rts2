@@ -619,6 +619,8 @@ class Telescope:public Rts2Device
 		 */
 		Rts2ValueDouble *ignoreCorrection;
 
+		Rts2ValueDouble *defIgnoreCorrection;
+
 		/**
 		 * If correction is bellow that value, it is considered as small correction.
 		 */

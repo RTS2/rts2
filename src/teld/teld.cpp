@@ -152,6 +152,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	ignoreCorrection->setValueDouble (0);
 
+	createValue (defIgnoreCorrection, "def_ignore_cor", "default ignore correction. ignore_correction is changed to this value at the end of the script", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	defIgnoreCorrection->setValueDouble (0);
+
 	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	smallCorrection->setValueDouble (0);
 
@@ -234,7 +237,8 @@ int Telescope::processOption (int in_opt)
 			telFov->setValueDouble (atof (optarg));
 			break;
 		case 'c':
-			ignoreCorrection->setValueDouble (atof (optarg));
+			defIgnoreCorrection->setValueCharArr (optarg);
+			ignoreCorrection->setValueDouble (defIgnoreCorrection->getValueDouble ());
 			break;
 		case OPT_BLOCK_ON_STANDBY:
 			blockOnStandby->setValueBool (true);
@@ -434,7 +438,7 @@ void Telescope::incMoveNum ()
 
 	moveNum->inc ();
 
-	ignoreCorrection->setValueDouble (0);
+	ignoreCorrection->setValueDouble (defIgnoreCorrection->getValueDouble ());
 
 	corrImgId->setValueInteger (0);
 	wCorrImgId->setValueInteger (0);
