@@ -453,18 +453,16 @@ void Camera::checkQueChanges (int fakeState)
 
 int Camera::killAll ()
 {
-	quedExpNumber->setValueInteger (0);
-	sendValueAll (quedExpNumber);
-
 	waitingForNotBop->setValueBool (false);
-	sendValueAll (waitingForNotBop);
 
 	waitingForEmptyQue->setValueBool (false);
-	sendValueAll (waitingForEmptyQue);
 
 	if (isExposing ())
 		stopExposure ();
-	
+
+	sendValueAll (waitingForNotBop);
+	sendValueAll (waitingForEmptyQue);
+
 	return Rts2ScriptDevice::killAll ();
 }
 
@@ -1012,7 +1010,7 @@ int Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 
 	// if it is currently exposing
 	// or performing other op that can block command execution
-	// or there are qued values which needs to be dealed before we can start exposing
+	// or there are queued values which needs to be dealed before we can start exposing
 	if ((chipState & CAM_EXPOSING)
 		|| ((chipState & CAM_READING) && !supportFrameTransfer ())
 		|| (!queValues.empty () && fromQue == false)
