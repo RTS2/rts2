@@ -515,6 +515,9 @@ void Client::usage ()
 		<< "  " << getAppName () << " -s T0.ORI \"10 20\"" << std::endl
 		<< " So to run random pointing, run: " << std::endl
 		<< "  " << getAppName () << " -s T0.ORI \"`rts2-telmodeltest -r`\"" << std::endl
+		<< "  " << getAppName () << " -c <device name>.<command>" << std::endl
+		<< " So to run park command on T0 device:" << std::endl
+		<< "  " << getAppName () << " -c T0.park" << std::endl
 		<< "  " << getAppName () << " -i <device name>.<variable name> <value>" << std::endl
 		<< " So to increase value T0.OFFS by 0.1 in RA and DEC, run: " << std::endl
 		<< "  " << getAppName () << " -i T0.OFFS \"0.1 0.1\"" << std::endl

@@ -70,6 +70,9 @@
         <arg choice="plain"><option>-v</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-c <replaceable>device</replaceable>.<replaceable>command</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-g</option></arg>
       </arg>
       <arg choice="opt">
@@ -184,6 +187,12 @@ authorization = "user:password"
       </varlistentry>
       <varlistentry>
         <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c <replaceable>device</replaceable>.<replaceable>command</replaceable></option></term>
         <listitem>
           <para>Show version of program.</para>
         </listitem>
