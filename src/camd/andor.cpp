@@ -248,14 +248,7 @@ long Andor::isExposing ()
 		return -1;
 	if (status == DRV_ACQUIRING)
 	{
-		// 100 second timeout for acqusition
-		if (getNow () > getExposureEnd () + 100)
-		{
-			logStream (MESSAGE_ERROR) << "Exposure running for too long, aborting" << sendLog;
-			AbortAcquisition ();
-			return -1;
-		}
-		return 100;
+		return 0;
 	}
 	return 0;
 }
@@ -265,6 +258,21 @@ long Andor::isExposing ()
 // lines from dest.
 int Andor::doReadout ()
 {
+	int status;
+	if (GetStatus (&status) != DRV_SUCCESS)
+		return -1;
+	// if camera is still acquiring
+	if (status == DRV_ACQUIRING)
+	{
+		return 0;
+	}
+	// 10 seconds timeout for acqusition
+	if (getNow () > getExposureEnd () + 10)
+	{
+		logStream (MESSAGE_ERROR) << "exposure running for too long, aborting" << sendLog;
+		AbortAcquisition ();
+		return -1;
+	}
 	int ret;
 	switch (getDataType ())
 	{
