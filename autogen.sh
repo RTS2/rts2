@@ -1,5 +1,7 @@
 #!/bin/sh
 
+rm -f aclocal.m4
+
 #AC_VERSION=-1.7
 AC_VERSION=""
 
