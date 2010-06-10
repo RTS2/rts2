@@ -235,7 +235,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "?lb=" << label_encoded << "'>" << fname << "</a> ";
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "'>" << fname << "</a> ";
 		}
 	}
 

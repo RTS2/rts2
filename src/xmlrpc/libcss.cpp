@@ -138,9 +138,9 @@ const char *tableCss =
 ".TableHead {\n"
   "background-color: #CCC;\n"
   "border: 1px solid #000;\n"
-  "-moz-border-radius: 5px;\n"
-  "-webkit-border-radius: 5px;\n"
-  "border-radius: 5px;\n"
+  "-moz-border-radius: 10px;\n"
+  "-webkit-border-radius: 10px;\n"
+  "border-radius: 10px;\n"
   "cursor: pointer;\n"
 "}\n";
 
