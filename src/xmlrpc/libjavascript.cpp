@@ -857,6 +857,7 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 			ha -= 180;
 		if (ha > 180)
 			ha -= 360;
+		ha -= 90;
 	 	_os << "RA = " << ln_deg_to_rad (ha) << ";  // Rektascenze v radianech (-1.57 - 1.57)\n"
 			"RA_rot = new SFRotation(0, 1, 0, RA);\n"
 			"set_state = RA_rot;\n";
@@ -875,7 +876,7 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	else if (file == "roof_script.js")
 	{
 		connections_t::iterator iter_dome = master->getConnections ()->begin ();
-		master->getOpenConnectionType (DEVICE_TYPE_DOME, iter);
+		master->getOpenConnectionType (DEVICE_TYPE_DOME, iter_dome);
 		if (iter_dome == master->getConnections ()->end ())
 		  	throw XmlRpcException ("Dome is not connected");
 	    	_os << "set_state = " << (((*iter_dome)->getState () & DOME_OPENED) ? "opened" : "closed") << "; // closed OR opened\n";
