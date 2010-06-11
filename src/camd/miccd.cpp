@@ -28,7 +28,7 @@
 namespace rts2camd
 {
 /**
- * Driver for MI CCD.
+ * Driver for MI CCD. http://ccd.mii.cz
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -73,6 +73,8 @@ class MICCD:public Camera
 		virtual int doReadout ();
 
 	private:
+		void addFilters (char *opt);
+
 		Rts2ValueLong *id;
 		Rts2ValueSelection *mode;
 		Rts2ValueFloat *tempRamp;
@@ -114,6 +116,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
+	addOption ('f', NULL, 1, "filter names (separated with :)");
 }
 
 MICCD::~MICCD ()
@@ -154,6 +157,9 @@ int MICCD::processOption (int opt)
 		case 'p':
 			id->setValueCharArr (optarg);
 			break;
+		case 'f':
+			addFilters (optarg);
+			break;
 		default:
 			return Camera::processOption (opt);
 	}
@@ -177,12 +183,6 @@ int MICCD::init ()
 		logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
 		return -1;
 	}
-
-	camFilterVal->addSelVal ("C");
-	camFilterVal->addSelVal ("B");
-	camFilterVal->addSelVal ("V");
-	camFilterVal->addSelVal ("R");
-	camFilterVal->addSelVal ("I");
 
 	return 0;
 }
@@ -298,6 +298,20 @@ int MICCD::doReadout ()
 	if (getWriteBinaryDataSize () == 0)
 		return -2;
 	return 0;
+}
+
+void MICCD::addFilters (char *opt)
+{
+	char *s = opt;
+	for (char *o = opt; *o != '\0'; o++)
+	{
+		if (*o == ':')
+		{
+			*o = '\0';
+			camFilterVal->addSelVal (s);
+			s = o + 1;
+		}
+	}
 }
 
 int main (int argc, char **argv)
