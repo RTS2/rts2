@@ -303,7 +303,8 @@ int MICCD::doReadout ()
 void MICCD::addFilters (char *opt)
 {
 	char *s = opt;
-	for (char *o = opt; *o != '\0'; o++)
+	char *o = s;
+	for (; *o != '\0'; o++)
 	{
 		if (*o == ':')
 		{
@@ -312,6 +313,8 @@ void MICCD::addFilters (char *opt)
 			s = o + 1;
 		}
 	}
+	if (o != s)
+		camFilterVal->addSelVal (s);
 }
 
 int main (int argc, char **argv)
