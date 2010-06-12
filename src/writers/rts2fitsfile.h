@@ -19,7 +19,7 @@
 
 #include "../utils/expander.h"
 #include "../utils/error.h"
-#include "../utils/rts2valuearray.h"
+#include "../utils/valuearray.h"
 
 #include <fitsio.h>
 

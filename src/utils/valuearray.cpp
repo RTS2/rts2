@@ -18,7 +18,7 @@
  */
 
 #include "rts2conn.h"
-#include "rts2valuearray.h"
+#include "valuearray.h"
 
 #include "utilsfunc.h"
 

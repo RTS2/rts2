@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2valuearray.h"
+#include "../utils/valuearray.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 #include "rts2execcli.h"

@@ -216,7 +216,6 @@ class Camera:public Rts2ScriptDevice
 
 		// focuser functions
 		int setFocuser (int new_set);
-		int stepFocuser (int step_count);
 		int getFocPos ();
 
 		bool isIdle ();
@@ -722,8 +721,15 @@ class Camera:public Rts2ScriptDevice
 		 */
 		int getExpType () { return expType->getValueInteger ();	}
 
+		/**
+		 * Set camera filter.
+		 *
+		 * @param @new_filter   new filter number
+		 */
 		virtual int setFilterNum (int new_filter);
 		virtual int getFilterNum ();
+
+		void offsetForFilter (int new_filter);
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
@@ -811,6 +817,7 @@ class Camera:public Rts2ScriptDevice
 
 	protected:
 		Rts2ValueSelection *camFilterVal;
+		rts2core::IntegerArray *camFilterOffsets;
 	
 	private:
 		Rts2ValueInteger *camFocVal;
@@ -846,6 +853,8 @@ class Camera:public Rts2ScriptDevice
 		bool sendOkInExposure;
 
 		long calculateDataSize;
+
+		void setFilterOffsets (char *opt);
 };
 
 }

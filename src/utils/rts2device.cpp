@@ -752,7 +752,7 @@ void Rts2Device::checkQueChanges (int fakeState)
 		// free qued values
 		if (!queValueChange (queVal->getCondValue (), fakeState))
 		{
-			std::string newValStr = std::string (queVal->getNewValue ()->getValue ());
+			std::string newValStr = std::string (queVal->getNewValue ()->getDisplayValue ());
 			ret = doSetValue (
 				queVal->getCondValue (),
 				queVal->getOperation (),

@@ -25,7 +25,7 @@
 #include "rts2valuestat.h"
 #include "rts2valueminmax.h"
 #include "rts2valuerectangle.h"
-#include "rts2valuearray.h"
+#include "valuearray.h"
 
 #include <iostream>
 

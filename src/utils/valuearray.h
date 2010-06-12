@@ -187,6 +187,8 @@ class IntegerArray: public Rts2Value
 
 		size_t size () { return value.size (); }
 
+		int getValueAt (int i) { return value[i]; }
+
 	private:
 		std::vector <int> value;
 		std::string _os;

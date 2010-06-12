@@ -33,13 +33,14 @@
 #include "clifocuser.h"
 #include "../utils/timestamp.h"
 
-#define OPT_FLIP          OPT_LOCAL + 401
-#define OPT_PLATE         OPT_LOCAL + 402
-#define OPT_FOCUS         OPT_LOCAL + 403
-#define OPT_WHEEL         OPT_LOCAL + 404
-#define OPT_WITHSHM       OPT_LOCAL + 405
+#define OPT_FLIP              OPT_LOCAL + 401
+#define OPT_PLATE             OPT_LOCAL + 402
+#define OPT_FOCUS             OPT_LOCAL + 403
+#define OPT_WHEEL             OPT_LOCAL + 404
+#define OPT_WITHSHM           OPT_LOCAL + 405
+#define OPT_FILTER_OFFSETS    OPT_LOCAL + 406
 
-#define EVENT_TEMP_CHECK  RTS2_LOCAL_EVENT + 676
+#define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
 using namespace rts2camd;
 
@@ -353,6 +354,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	createValue (subExposure, "subexposure", "current subexposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+	createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 
 	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
@@ -376,6 +378,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	// other options..
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
 	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
+	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('s', "subexposure", 1, "default subexposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
@@ -500,6 +503,9 @@ int Camera::processOption (int in_opt)
 			break;
 		case OPT_WHEEL:
 			wheelDevice = optarg;
+			break;
+		case OPT_FILTER_OFFSETS:
+			setFilterOffsets (optarg);
 			break;
 		case 'e':
 			exposure->setValueCharArr (optarg);
@@ -805,7 +811,9 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		return setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		if (ret == 0)
+			offsetForFilter (new_value->getValueInteger ());
 	}
 	if (old_value == tempSet)
 	{
@@ -1147,6 +1155,23 @@ int Camera::setFilterNum (int new_filter)
 	return ret;
 }
 
+void Camera::offsetForFilter (int new_filter)
+{
+	if (!focuserDevice)
+		return;
+	if (new_filter >= camFilterOffsets->size ())
+		return;
+	struct focuserMove fm;
+	fm.focuserName = focuserDevice;
+	fm.value = camFilterOffsets->getValueAt (new_filter);
+	fm.conn = this;
+	postEvent (new Rts2Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
+	if (fm.focuserName)
+		return;
+	focuserMoving->setValueBool (true);
+	sendValueAll (focuserMoving);
+}
+
 int Camera::getStateChip (int chip)
 {
 	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
@@ -1186,22 +1211,6 @@ int Camera::setFocuser (int new_set)
 		return -1;
 	focuserMoving->setValueBool (true);
 	sendValueAll (focuserMoving);
-	return 0;
-}
-
-int Camera::stepFocuser (int step_count)
-{
-	if (!focuserDevice)
-	{
-		return -1;
-	}
-	struct focuserMove fm;
-	fm.focuserName = focuserDevice;
-	fm.value = step_count;
-	fm.conn = this;
-	postEvent (new Rts2Event (EVENT_FOCUSER_STEP, (void *) &fm));
-	if (fm.focuserName)
-		return -1;
 	return 0;
 }
 
@@ -1309,4 +1318,22 @@ void Camera::setFullBopState (int new_state)
 		quedExpNumber->dec ();
 		camStartExposureWithoutCheck ();
 	}
+}
+
+void Camera::setFilterOffsets (char *opt)
+{
+	char *s = opt;
+	char *o = s;
+
+	for (; *o; o++)
+	{
+		if (*o == ':')
+		{
+			*o = '\0';
+			camFilterOffsets->addValue (atoi (s));
+			s = o + 1;
+		}
+	}
+	if (s != 0)
+		camFilterOffsets->addValue (atoi (s));
 }
