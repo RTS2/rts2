@@ -1,6 +1,6 @@
 /* 
  * Observation class set.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -152,31 +152,50 @@ class ObservationSet:public std::vector <Observation >
 };
 
 /**
- * Load data from night observation table, grouped by various depth of grouping time parameter.
+ * Represents statistic for given time period.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ObservationSetDate:public std::map <int, int>
+class ObservationStatistics
+{
+	public:
+		ObservationStatistics (int _numObs) { numObs = _numObs; }
+	private:
+		int numObs;
+};
+
+/**
+ * Load data from night observation table, grouped by various depth of date (month, year,..).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ObservationSetDate:public std::map <int, std::pair <int, int> >
 {
 	public:
 		ObservationSetDate () {}
 
 		/**
-		 * Construct set targets for Auger target. It select targets from auger informations. The parameters
-		 * select which part of the date should be considered. If the date paremeter is -1, the load method
-		 * select all targets, regardless of the date value. If it is > 0, select run on all
-		 * dates which have the component equal to this value.
-		 * This works great for hierarchical browsing. Suppose that we would like to select all targets
-		 * in year 2009 and 2010. We offer user a choice which month are available. If he click on December 2009,
-		 * we select all targets for December 2009, and allow user to select day. For each entry, it then creates entry in the map,
-		 * together with number of targets.
+		 * Construct set targets for given time period. The parameters
+		 * specify which part of the date should be considered. If the
+		 * paremeter is -1, the load method select all targets,
+		 * regardless of the date value for given part. If it is > 0,
+		 * select run on all dates which have the component equal to
+		 * this value. This is handy for hierarchical browsing.
+		 * Suppose that we would like to select all targets in year
+		 * 2009 and 2010. We offer user a choice which months are
+		 * available. If he/she click on December 2009, we select all
+		 * targets for December 2009, and allow user to select day. For
+		 * each entry, it then creates entry in the map, together with
+		 * number of observations and some statistics.
 		 *
-		 * @param year    Year of selection.
-		 * @param month   Month of selection.
-		 * @param day     Selection day.
+		 * @param year    year of selection
+		 * @param month   month of selection
+		 * @param day     selection day
+		 * @param hour    selection hour
+		 * @param minutes selection minutes
 		 */
 		void load (int year = -1, int month = -1, int day = -1, int hour = 1, int minutes = -1);
 };
 
 }
-#endif							 /* !__RTS2_OBS_SET__ */
+#endif	 /* !__RTS2_OBS_SET__ */

@@ -68,7 +68,11 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
 	clear ();
 	for (; ptr != NULL; ptr = ptr->next)
 	{
-		if (ptr->children == NULL)
+		if (ptr->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (ptr->children == NULL)
 		{
 			push_back (new ExpandStringString ((char *) ptr->content));
 		}
@@ -116,7 +120,9 @@ void EmailAction::parse (xmlNodePtr emailNode, const char *defaultDeviceName)
 
 	for (xmlNodePtr ptr = emailNode->children; ptr != NULL; ptr = ptr->next)
 	{
-		if (ptr->children == NULL)
+		if (ptr->type == XML_COMMENT_NODE)
+			continue;
+		else if (ptr->children == NULL)
 			throw XmlEmptyNode (ptr);
 		// check for to, cc, bcc, subject and body..
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "to"))

@@ -1,6 +1,6 @@
 /* 
  * Observation class set.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -471,6 +471,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_value;
 	int d_c;
+	int d_i;
 	char *stmp_c;
 	EXEC SQL END DECLARE SECTION;
 
@@ -522,10 +523,10 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 		}
 	}
 
-	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (*) as c FROM observations ";
+	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (observations.*) as c, count (images.*) as i FROM observations, images WHERE observations.obs_id = images.obs_id";
 	
 	if (_where.str ().length () > 0)
-		_os << "WHERE " << _where.str ();
+		_os << " and " << _where.str ();
 
 	_os << " GROUP BY value;";
 
@@ -543,10 +544,11 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	{
 		EXEC SQL FETCH next FROM obsdate_cur INTO
 			:d_value,
-			:d_c;
+			:d_c,
+			:d_i;
 		if (sqlca.sqlcode)
 			break;
-		(*this)[d_value] = d_c;
+		(*this)[d_value] = std::pair <int,int> (d_c, d_i);
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{

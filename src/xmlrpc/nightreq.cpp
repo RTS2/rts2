@@ -267,7 +267,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 	{
 		_os << "{\"h\":["
 			"{\"n\":\"Date part\",\"t\":\"a\",\"c\":0,\"prefix\":\"\",\"href\":0},"
-			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1}"
+			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1},"
+			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":1}"
 			"],\"d\":[";
 
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
@@ -277,7 +278,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		{
 			if (iter != as.begin ())
 				_os << ",";
-			_os << "[" << iter->first << "," << iter->second << "]\n";
+			_os << "[" << iter->first << "," << iter->second.first << "," << iter->second.second << "]\n";
 		}
 		_os << "]}";
 	}

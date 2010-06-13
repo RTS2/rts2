@@ -101,41 +101,48 @@ void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
 
 		Rts2Value *val = *variter;
 
-		switch (val->getValueBaseType ())
+		switch (val->getValueExtType ())
 		{
-			case RTS2_VALUE_INTEGER:
-				int int_val;
-				int_val = (*variter)->getValueInteger ();
-				retVar["value"] = int_val;
-				break;
-			case RTS2_VALUE_DOUBLE:
-				double dbl_value;
-				dbl_value = (*variter)->getValueDouble ();
-				retVar["value"] = dbl_value;
-				break;
-			case RTS2_VALUE_FLOAT:
-				float float_val;
-				float_val = (*variter)->getValueFloat ();
-				retVar["value"] = float_val;
-				break;
-			case RTS2_VALUE_BOOL:
-				bool bool_val;
-				bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
-				retVar["value"] = bool_val;
-				break;
-			case RTS2_VALUE_LONGINT:
-				int_val = (*variter)->getValueLong ();
-				retVar["value"] = int_val;
-				break;
-			case RTS2_VALUE_TIME:
-				struct tm tm_s;
-				long usec;
-				((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
-				retVar["value"] = XmlRpcValue (&tm_s);
+			case RTS2_VALUE_RECTANGLE:
+				retVar["value"] = (*variter)->getDisplayValue ();
 				break;
 			default:
-				retVar["value"] = (*variter)->getValue ();
-				break;
+				switch (val->getValueBaseType ())
+				{
+					case RTS2_VALUE_INTEGER:
+						int int_val;
+						int_val = (*variter)->getValueInteger ();
+						retVar["value"] = int_val;
+						break;
+					case RTS2_VALUE_DOUBLE:
+						double dbl_value;
+						dbl_value = (*variter)->getValueDouble ();
+						retVar["value"] = dbl_value;
+						break;
+					case RTS2_VALUE_FLOAT:
+						float float_val;
+						float_val = (*variter)->getValueFloat ();
+						retVar["value"] = float_val;
+						break;
+					case RTS2_VALUE_BOOL:
+						bool bool_val;
+						bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
+						retVar["value"] = bool_val;
+						break;
+					case RTS2_VALUE_LONGINT:
+						int_val = (*variter)->getValueLong ();
+						retVar["value"] = int_val;
+						break;
+					case RTS2_VALUE_TIME:
+						struct tm tm_s;
+						long usec;
+						((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
+						retVar["value"] = XmlRpcValue (&tm_s);
+						break;
+					default:
+						retVar["value"] = (*variter)->getValue ();
+						break;
+				}
 		}
 		result[i] = retVar;
 	}

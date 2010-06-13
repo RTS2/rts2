@@ -70,7 +70,11 @@ void Events::parseState (xmlNodePtr event, std::string deviceName)
 
 	for (; action != NULL; action = action->next)
 	{
-		if (xmlStrEqual (action->name, (xmlChar *) "record"))
+		if (action->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
 			stateCommands.push_back (new StateChangeRecord (deviceName, changeMask, newStateValue));
 		}
@@ -116,7 +120,11 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 	xmlNodePtr action = event->children;
 	for (; action != NULL; action = action->next)
 	{
-		if (xmlStrEqual (action->name, (xmlChar *) "record"))
+		if (action->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
 			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency, test));
 		}
@@ -142,7 +150,11 @@ void Events::parseHttp (xmlNodePtr ev)
 {
 	for (; ev; ev = ev->next)
 	{
-		if (xmlStrEqual (ev->name, (xmlChar *) "public"))
+		if (ev->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "public"))
 		{
 			if (ev->children == NULL || ev->children->content == NULL)
 				throw XmlMissingElement (ev, "content of public path");
@@ -180,7 +192,11 @@ void Events::parseEvents (xmlNodePtr ev)
 {
 	for (; ev; ev = ev->next)
 	{
-		if (xmlStrEqual (ev->name, (xmlChar *) "device"))
+		if (ev->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "device"))
 		{
 			// parse it...
 			std::string deviceName;
@@ -197,7 +213,11 @@ void Events::parseEvents (xmlNodePtr ev)
 			for (xmlNodePtr event = ev->children; event != NULL; event = event->next)
 			{
 				// switch on action
-				if (xmlStrEqual (event->name, (xmlChar *) "state"))
+				if (event->type == XML_COMMENT_NODE)
+				{
+					continue;
+				}
+				else if (xmlStrEqual (event->name, (xmlChar *) "state"))
 				{
 						parseState (event, deviceName);
 				}
@@ -228,7 +248,11 @@ void Events::parseBB (xmlNodePtr ev)
 
 	for (xmlNodePtr chil = ev->children; chil; chil = chil->next)
 	{
-		if (xmlStrEqual (chil->name, (xmlChar *) "server"))
+		if (chil->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (chil->name, (xmlChar *) "server"))
 		{
 			sn = (char *)chil->children->content;
 		}
@@ -280,7 +304,11 @@ void Events::load (const char *file)
 	}
 	for (; ev; ev = ev->next)
 	{
-		if (xmlStrEqual (ev->name, (xmlChar *) "http"))
+		if (ev->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "http"))
 		{
 			parseHttp (ev->children);
 		}
