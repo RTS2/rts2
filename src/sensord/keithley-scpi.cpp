@@ -43,6 +43,8 @@ class Keithley:public Gpib
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
+		virtual bool canCallInfoFromTimer () { return getDeviceBopState () & BOP_TEL_MOVE ? false : true; }
+
 	private:
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
