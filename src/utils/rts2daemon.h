@@ -482,6 +482,15 @@ class Rts2Daemon:public Rts2Block
 
 		virtual void sigHUP (int sig);
 
+		/**
+		 * Called to verify that the infoAll call can be called.
+		 *
+		 * @return True if infoAll can be called. When returns False, infoAll will not be called from timer.
+		 *
+		 * @see setIdleInfoInterval()
+		 */
+		virtual bool canCallInfoFromTimer () { return true; }
+
 	private:
 		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
 		enum { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;

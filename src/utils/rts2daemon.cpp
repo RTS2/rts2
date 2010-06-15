@@ -341,7 +341,8 @@ void Rts2Daemon::postEvent (Rts2Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_TIMER_INFOALL:
-			infoAll ();
+			if (canCallInfoFromTimer ())
+				infoAll ();
 			// next timer..
 			if (idleInfoInterval > 0)
 			{
