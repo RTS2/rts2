@@ -20,7 +20,12 @@ import rts2comm
 
 # email communication
 import smtplib
-from email.mime.text import MIMEText
+# try pre 4.0 email version
+try:
+        from email.mime.text import MIMEText
+except:
+        from email.MIMEText import MIMEText
+
 from datetime import datetime
 
 class Flat:
