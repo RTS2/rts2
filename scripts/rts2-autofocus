@@ -53,6 +53,9 @@ use vars qw(
   $path_to_filter
   %distribution_fwhm
   %distribution_flux
+  %ccd_window
+  %acceptance_circle
+  %transformed_acceptance_circle
   );
 %default_configuration= (
 # programs
@@ -63,30 +66,32 @@ use vars qw(
 'C_FOCROOTB'=> "rts2-fit-focus 0" ,       # "batch"  
 # constants
 #
-'C_BASE_DIRECTORY'=> "/tmp" ,             # the base directory, data are in subdirectories named after the filters
-#                                           unless C_FITS_DRECTORY= TRUE_STR is specified
-'C_FITS_IN_BASE_DIRECTORY'=> FALSE_STR ,  # if TRUE_STR is specified, data are stored in C_BASE_DIRECTORY, everything else
-#                                           means data are stored in subdirectories named after the filters
-'C_FILTERS'       => "U:B:V:R:I:X:Y",     # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
-'C_SELECT_RATIO'  => 0.05,                # this a threshold to avoid matching images from completely different focus runs.
-#                                           $number_of_selected_objects/$number_of_reference_objects 
-'C_ANALYSIS_LOWER_LIMIT'=> 0,             # lower focuser limit for offline data analysis 
-'C_ANALYSIS_UPPER_LIMIT'=> 1e12,          # upper focuser limit for offline data analysis 
-'C_MINIMUM_OBJECTS'=> 5,                  # is the minimal number of objects identified in all images
+'C_BASE_DIRECTORY'=> "/tmp" ,              # the base directory, data are in subdirectories named after the filters
+#                                            unless C_FITS_DRECTORY= TRUE_STR is specified
+'C_FITS_IN_BASE_DIRECTORY'=> FALSE_STR ,   # if TRUE_STR is specified, data are stored in C_BASE_DIRECTORY, everything else
+#                                            means data are stored in subdirectories named after the filters
+'C_FILTERS'       => "U:B:V:R:I:X:Y",      # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+'C_SELECT_RATIO'  => 0.05,                 # this a threshold to avoid matching images from completely different focus runs.
+#                                            $number_of_selected_objects/$number_of_reference_objects 
+'C_ANALYSIS_LOWER_LIMIT'=> 0,              # lower focuser limit for offline data analysis 
+'C_ANALYSIS_UPPER_LIMIT'=> 1e12,           # upper focuser limit for offline data analysis 
+'C_MINIMUM_OBJECTS'=> 5,                   # is the minimal number of objects identified in all images
 # if TAKE_DATA == TRUE then data taking with rts2 devices
 # consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
-'C_TAKE_DATA'  => FALSE_STR,              # TRUE: data taking, FALSE: offline analysis
-'C_TAKE_PROOF' => TRUE_STR,               # TRUE: taka a proof image at fitted foc_pos
-'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
-'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
-'C_CCD_BINNING'=> 0    ,                  # 0: 1x1, 1: 2x2,.... see your driver
-'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is usable, test connection to rts2-centrald and exit.
-'C_AUTO_FOCUS'             => TRUE_STR,   # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
-'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR,  # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
-#                                           images extension .fits is renamed to .fitsAUTO_FOCUS_RUN_EXTENSION (see below)
-'C_NUMBER_OF_AUTO_FOCUS_IMAGES'=> 10,     # used if TAKE_DATA == (TRUE)
-'C_FOCAL_RATIO' => 7 ,                    # telescope's focal ratio
+'C_TAKE_DATA'  => FALSE_STR,               # TRUE: data taking, FALSE: offline analysis
+'C_TAKE_PROOF' => TRUE_STR,                # TRUE: taka a proof image at fitted foc_pos
+'C_SET_FOCUS'  => FALSE_STR,               # set the focus position if only one filter is defined
+'C_CCD_CAMERA' => "CD" ,                   # this CCD and its associate devices are used if TAKE_DATA == TRUE
+'C_CCD_BINNING'=> 0    ,                   # 0: 1x1, 1: 2x2,.... see your driver
+                                           # are accepted
+                                           # Negative: object outside this radius are accepted
+'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR,  # Check if the RTS2 configuration is usable, test connection to rts2-centrald and exit.
+'C_AUTO_FOCUS'             => TRUE_STR,    # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
+'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR,   # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
+#                                            images extension .fits is renamed to .fitsAUTO_FOCUS_RUN_EXTENSION (see below)
+'C_NUMBER_OF_AUTO_FOCUS_IMAGES'=> 10,      # used if TAKE_DATA == (TRUE)
+'C_FOCAL_RATIO' => 7 ,                     # telescope's focal ratio
 # data taking, files
 #
 'C_RTS2_DEVICES' => "/etc/rts2/devices" ,
@@ -140,6 +145,20 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
 'FOCUSER_RESOLUTION'           => 20, # unit ticks
 'FOCUSER_ABSOLUTE_LOWER_LIMIT' => 1501,
 'FOCUSER_ABSOLUTE_UPPER_LIMIT' => 6002, 
+) ;
+# FLI 36 21 4096 4096
+# used to set the window, not yet implemented
+%ccd_window=(
+'LOWER_X' => 36,
+'LOWER_Y' => 21,
+'UPPER_X' => 4096,
+'UPPER_Y' => 4086,
+) ;
+# coordinates relative to ccd_window
+%acceptance_circle=(
+'CENTER_OFFSET_X'   => 150, # unit pixel
+'CENTER_OFFSET_Y'   => 193, # unit pixel
+'RADIUS'            => -1698, # unit pixel
 ) ;
 # sex-autofocus analysis, this format is mandatory
 #
@@ -322,7 +341,9 @@ sub get_rts2_centrald
     }
     if( $number_failed != 0)
     {
-	return FALSE_VAL ;
+	print "CORRECT ME\n";
+	return TRUE_VAL ;
+#	return FALSE_VAL ;
     }
     else
     {
@@ -334,14 +355,18 @@ sub get_rts2_ccd_property
 {
     my $camd= shift @_ ;
     my $property = shift @_ ;
-
-    my $property_value= CCD_TEMPERATURE ;
+    my $property_value= FALSE_VAL ;
     open( READCCD, "rts2-xmlrpcclient -g $camd.$property|") or die "get_rts2_ccd_property: Can't open rts2-xmlrpcclient -g $camd.$property: $!" ;
     while( my $response= <READCCD>)
     {
 	if( $response=~ m/$camd(.|_)$property=([\-\+0-9]+\.[0-9]+|[\-\+0-9]+\.|[\-\+0-9]+)/)
 	{
 	    $property_value= $2 ;
+	    last ;
+
+	} elsif ( $response=~ m/.+WINDOW=\"([\-\+0-9]+ [\-\+0-9]+ [\-\+0-9]+ [\-\+0-9]+)\"/) {
+# CCD_FLI_WINDOW="36 21 4096 4096"
+	    $property_value= $1 ;
 	    last ;
 	}
     }
@@ -731,6 +756,11 @@ sub get_fitted_focus
     $date= $date_reference ; # ToDo: what's that
     $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference, \%data_points) ;
 
+    if( $ret_ret == FALSE_VAL)
+    {
+	return FALSE_VAL ;
+    }
+
 #ToDo: check the spatial distribution and update the reference DS9 reg file
 #      calculate the center of mass and compare it with the CCD dimensions from fits file (incl. binning)
 #ToDo: make a selection on spatial distribution
@@ -1031,7 +1061,7 @@ sub analyse_catalogue
       my @items= split(/[ ]+/, $line) ;
 # select the objects in a similar way like raw_analysis() 
 
-      if( check_properties( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED)
+      if( check_properties( $items[X_IMAGE], $items[Y_IMAGE], $items[FLAGS], $items[ELLIPTICITY]) != SELECTED)
       {
 	  goto  NEXT_OBJECT;
       }
@@ -1256,7 +1286,7 @@ sub cleanup_catalogue
 	$line=~ s/^[ ]+//g ;
 	my @items= split(/[ ]+/, $line) ;#
 	    
-	if( check_properties( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
+	if( check_properties( $items[X_IMAGE], $items[Y_IMAGE], $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
 	{
 	    if( $verbose eq TRUE_STR)
 	    {
@@ -1290,6 +1320,8 @@ sub cleanup_catalogue
 #ToDo: make it uniform with the raw_analysis subroutine
 sub check_properties
 {
+    my $x_image       = shift @_  ;
+    my $y_image       = shift @_  ;
     my $flags       = shift @_  ;
     my $ellipticity = shift @_  ;
     
@@ -1300,6 +1332,11 @@ sub check_properties
     if(  $ellipticity>  $default_configuration{C_ELLIPTICITY_REFERENCE})
     {
 	return NOT_ELLIPTICITY ;
+    }
+    my $ret= within_acceptance_circle( $x_image, $y_image) ;
+    if( $ret== FALSE_VAL )
+    {
+	return NOT_ELLIPTICITY_REF ;
     }
     return SELECTED;
 }
@@ -1647,11 +1684,53 @@ sub retrieve_data
     if( $number_of_objects_found_in_all_files < $default_configuration{C_MINIMUM_OBJECTS})
     {
 	print "retrieve_data: all DS9 region files written\n" ;
-	print "retrieve_data: to few objects matched in all files, exiting\n" ;
-	exit 1 ;
+	print "retrieve_data: to few objects matched in all files, continuing with next filter\n" ;
+	return FALSE_VAL ;
     }
  
    return TRUE_VAL ;
+}
+sub transform_acceptance_circle
+{
+# sextractor returns image coordinates and not absolute, meaning physical ccd pixels 
+#    $transformed_acceptance_circle{'CENTER_X'}= $ccd_window{'LOWER_X'} + ($ccd_window{'UPPER_X'}- $ccd_window{'LOWER_X'})/2 + $acceptance_circle{'CENTER_OFFSET_X'} ;
+#    $transformed_acceptance_circle{'CENTER_Y'}= $ccd_window{'LOWER_Y'} + ($ccd_window{'UPPER_Y'}- $ccd_window{'LOWER_Y'})/2 + $acceptance_circle{'CENTER_OFFSET_X'} ;
+    $transformed_acceptance_circle{'CENTER_X'}= ($ccd_window{'UPPER_X'}- $ccd_window{'LOWER_X'})/2 + $acceptance_circle{'CENTER_OFFSET_X'} ;
+    $transformed_acceptance_circle{'CENTER_Y'}= ($ccd_window{'UPPER_Y'}- $ccd_window{'LOWER_Y'})/2 + $acceptance_circle{'CENTER_OFFSET_Y'} ;
+    $transformed_acceptance_circle{'RADIUS'}  = $acceptance_circle{'RADIUS'};
+
+    print "Center X: $transformed_acceptance_circle{'CENTER_X'}\n";
+    print "Center Y: $transformed_acceptance_circle{'CENTER_Y'}\n";
+}
+sub within_acceptance_circle
+{
+    my $object_x= shift @_ ;
+    my $object_y= shift @_ ;
+
+    my $distance= sqrt( ($object_x- $transformed_acceptance_circle{'CENTER_X'})**2 + ($object_y- $transformed_acceptance_circle{'CENTER_Y'})**2) ;
+
+    if( $transformed_acceptance_circle{'RADIUS'} >= 0)
+    {
+	if( $distance < abs($transformed_acceptance_circle{'RADIUS'})) 
+	{
+	    return TRUE_VAL ;
+	} 
+	else
+	{
+	    return FALSE_VAL ;
+	}
+    } 
+    else
+    {
+	if( $distance < abs($transformed_acceptance_circle{'RADIUS'})) 
+	{
+	    return FALSE_VAL ;
+	} 
+	else
+	{
+	    return TRUE_VAL ;
+	}
+    }
 }
 sub write_default_configuration
 {
@@ -1702,6 +1781,22 @@ sub write_default_configuration
 	$line= $line . "]\n" ;
 	$line=~ s/,]/]/g ;
 	print $line ;
+    }
+# print the ccd window properties
+    print "#\n" ;
+    print "# ccd_window section\n" ;
+    print "#\n" ;
+    foreach my $identifier ( sort keys %ccd_window)
+    {
+	printf( "%-28s = %s\n", $identifier, $ccd_window{ $identifier}) ;
+    }
+# print the properties of the acceptance circle
+    print "#\n" ;
+    print "# acceptance section\n" ;
+    print "#\n" ;
+    foreach my $identifier ( sort keys %acceptance_circle)
+    {
+	printf( "%-28s = %s\n", $identifier, $acceptance_circle{ $identifier}) ;
     }
 }
 sub read_configuration
@@ -1982,7 +2077,6 @@ if( ! ( $sexreference_param=~ /^\//))
 {
     $sexreference_param= $base_directory."/".$sexreference_param ;
 }
-
 if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
 {
 # open RTS2 device file, read device names and extract the filters from wheel
@@ -2138,16 +2232,28 @@ if( $take_data eq TRUE_STR)
 # test ccd camera device 
 #
     my $ccd_temperature= CCD_TEMPERATURE ;
+
     $ccd_temperature=get_rts2_ccd_property( $rts2_device_camd_from_centrald, "CCD_TEMP") ;
-    if( $ccd_temperature  == CCD_TEMPERATURE) # ToDo: I do not know why I can not put it into if() 
+    if( $ccd_temperature== FALSE_VAL) # ToDo: I do not know why I can not put it into if() 
     {
 	print "$scriptname: no response from ccd camera $rts2_device_camd_from_centrald\n" ;
 	exit 1 ;
     }
-    else
+    print "$scriptname: CCD device $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
+    my $ccd_window=get_rts2_ccd_property("CCD_FLI", "WINDOW") ;
+    if( $ccd_window== FALSE_VAL ) # ToDo: I do not know why I can not put it into if() 
     {
-	print "$scriptname: CCD device $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
+	print "$scriptname: no response from ccd camera $rts2_device_camd_from_centrald\n" ;
+	exit 1 ;
+    } else {
+# parse "50 70 4000 4001"
+	my @coordinates= split( /[ ]+/, $ccd_window) ;
+	$ccd_window{'LOWER_X'}= $coordinates[0] ;
+	$ccd_window{'LOWER_Y'}= $coordinates[1] ;
+	$ccd_window{'UPPER_X'}= $coordinates[2] ;
+	$ccd_window{'UPPER_Y'}= $coordinates[3] ;
     }
+
     if($rts2_device_filterd_present== TRUE_VAL)
     {
 # test filter device    
@@ -2163,6 +2269,8 @@ if( $take_data eq TRUE_STR)
     set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
     get_rts2_focus( $rts2_device_focusd, $middle) ;
 }
+
+transform_acceptance_circle() ;
 
 # offline analysis, data taking
 #
