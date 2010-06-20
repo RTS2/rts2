@@ -21,7 +21,7 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
-# ToDo: killall rts2-executor before start
+# ToDo: disable EXEC before start
 #
 # ToDo: GLOBAL: check limits of focuser run
 use strict;
@@ -51,8 +51,8 @@ use vars qw(
   %focuser_properties
   $base_directory
   $path_to_filter
-  %distribution_fwhm
-  %distribution_flux
+  %distribution_points_fwhm
+  %distribution_points_flux
   %ccd_window
   %acceptance_circle
   %transformed_acceptance_circle
@@ -84,7 +84,6 @@ use vars qw(
 'C_SET_FOCUS'  => FALSE_STR,               # set the focus position if only one filter is defined
 'C_CCD_CAMERA' => "CD" ,                   # this CCD and its associate devices are used if TAKE_DATA == TRUE
 'C_CCD_BINNING'=> 0    ,                   # 0: 1x1, 1: 2x2,.... see your driver
-                                           # are accepted
                                            # Negative: object outside this radius are accepted
 'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR,  # Check if the RTS2 configuration is usable, test connection to rts2-centrald and exit.
 'C_AUTO_FOCUS'             => TRUE_STR,    # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
@@ -118,6 +117,7 @@ use vars qw(
 'C_DS9_REFERENCE'    => TRUE_STR,         # create reference region file (green circles) and the DS9 command file
 'C_DS9_MATCHED'      => TRUE_STR,         # create reference region file including those which matched (blue circles),  and the DS9 command file
 'C_DS9_ALL'          => TRUE_STR,         # create reference region file including those which matched or not (red circles),  and the DS9 command file
+'C_DS9_DISPLAY_ACCEPTANCE_AREA'=> TRUE_STR, # display center and circle of acceptance area
 'C_DS9_REGION_FILE'  => "/tmp/ds9-autofocus.reg" ,
     ) ;
 # ToDo: discuss with Petr default focuser positions per filter (to conig file!)
@@ -147,18 +147,18 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
 'FOCUSER_ABSOLUTE_UPPER_LIMIT' => 6002, 
 ) ;
 # FLI 36 21 4096 4096
-# used to set the window, not yet implemented
+# only used to set the window, not yet implemented
 %ccd_window=(
 'LOWER_X' => 36,
 'LOWER_Y' => 21,
 'UPPER_X' => 4096,
-'UPPER_Y' => 4086,
+'UPPER_Y' => 4096,
 ) ;
 # coordinates relative to ccd_window
 %acceptance_circle=(
-'CENTER_OFFSET_X'   => 150, # unit pixel
-'CENTER_OFFSET_Y'   => 193, # unit pixel
-'RADIUS'            => -1698, # unit pixel
+'CENTER_OFFSET_X'   => 0, # unit pixel
+'CENTER_OFFSET_Y'   => 0, # unit pixel
+'RADIUS'            => 1200, # unit pixel
 ) ;
 # sex-autofocus analysis, this format is mandatory
 #
@@ -249,11 +249,6 @@ use constant IND_SEL_FOC_POS          =>  0 ;
 use constant IND_SEL_DATA             =>  1 ;
 use constant IND_SEL_X_IMAGE          =>  2 ; 
 use constant IND_SEL_Y_IMAGE          =>  3 ; 
-# indices %objects
-use constant IND_OBJ_FOC_POS          =>  0 ;
-use constant IND_OBJ_DATA             =>  1 ;
-use constant IND_OBJ_X_IMAGE          =>  2 ; 
-use constant IND_OBJ_Y_IMAGE          =>  3 ; 
 # auxiliary constants
 use constant LOWER => 10 ;
 use constant UPPER => 11 ;
@@ -654,14 +649,13 @@ sub get_fits_files
 	    printf( "get_fits_files: filter $fltr, at foc_pos $foc_pos: %4d image%s\n", $number_of_images_at_foc_pos{ $foc_pos}, ($number_of_images_at_foc_pos{ $foc_pos}==1)? "": "s") ;
 	}
     }
-    my $noff= TOO_FEW_FITS_FILES ;
-    if( $number_of_fits_files< $noff)
+    if( $number_of_fits_files< TOO_FEW_FITS_FILES)
     {
 	foreach my $fits_file ( sort by_foc_pos keys %fits_files)
 	{
 	    print "get_fits_files: FILE $fits_file, $fits_files{$fits_file}[IND_FILTER_FILE], $fits_files{$fits_file}[IND_FOC_POS_FILE]\n" ;
 	}
-	print "in $directory" ;
+	print "get_fits_files: in $directory" ;
 	if( $number_of_fits_files> 0)
 	{
 	    print " only $number_of_fits_files" ;
@@ -670,7 +664,7 @@ sub get_fits_files
 	{
 	    print " no" ;
 	}
-	print " fits files found matching filter $fltr, required are $noff (TOO_FEW_FITS_FILES), returning\n" ;
+	printf( " fits files found matching filter $fltr, required are %d (TOO_FEW_FITS_FILES), returning\n", TOO_FEW_FITS_FILES) ;
 	return FALSE_VAL ;
     }
 # stop if something is wrong, simple approach
@@ -719,14 +713,11 @@ sub get_fitted_focus
     my $set_limits_on_sanity_checks = shift @_ ;
     my $find_focus                  = shift @_ ;
     my $fits_file_reference         = shift @_ ;
-
+    my $data_maximum_fwhm ;
     my $ret_get_fits= FALSE_VAL ;
     my $ret_ret     = FALSE_VAL ;
     my $ret_fit     = FALSE_VAL ;
     my $fit_focus   = FALSE_VAL ;
-    my %data_points;
-    my @fwhm_data_file_names ;
-    my @flux_data_file_names ;
     my @mean_focus=(FALSE_VAL,FALSE_VAL) ;
     my $date= "" ;
 
@@ -754,157 +745,118 @@ sub get_fitted_focus
     }
 
     $date= $date_reference ; # ToDo: what's that
-    $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference, \%data_points) ;
+    $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference) ;
 
     if( $ret_ret == FALSE_VAL)
     {
 	return FALSE_VAL ;
     }
-
 #ToDo: check the spatial distribution and update the reference DS9 reg file
 #      calculate the center of mass and compare it with the CCD dimensions from fits file (incl. binning)
 #ToDo: make a selection on spatial distribution
 
-    my @data_minimum         = (1e12,1e12) ;
-    my @data_maximum         = (0,0) ;
-    for( my $qty=0 ; $qty < 2; $qty++)
-    {
-	my $foc_pos_minimum      = 1e12 ;
-	my $foc_pos_minimum_index= 0 ;
-
-	my $foc_pos_maximum      = 1e12 ;
-	my $foc_pos_maximum_index= 0 ;
 # find extrema
-	my @focuser_positions ;
-	sub numeric { $a <=> $b ; } # surprise, that works!
-	foreach my $foc_pos ( sort numeric keys %data_points) # yes!
-	{
-# ToDo: replace data_points by $distribution_f*
-#       this is a cleaner approach   
 
-	    push(@focuser_positions, $foc_pos) ;
-	    if( $data_points{$foc_pos}[$qty] < $data_minimum[$qty])
-	    {
-		$foc_pos_minimum= $foc_pos ;
-		$foc_pos_minimum_index++ ;
-		$data_minimum[$qty]= $data_points{$foc_pos}[$qty] ;
-	    }
-	    if( $data_points{$foc_pos}[$qty] > $data_maximum[$qty])
-	    {
-		$foc_pos_maximum= $foc_pos ;
-		$foc_pos_maximum_index++ ;
-		$data_maximum[$qty]= $data_points{$foc_pos}[$qty] ;
-	    }	
-	}
-# check if the location of the extrema is symmetric with respect of foc_pos (ul-ll)/2 + ul from data
-#
-	my $data_minimum_centered_to_data_limits= TRUE_VAL; 
-	my $limits_minimum_difference= FALSE_VAL ;
-	if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
-	{
-	    $data_minimum_centered_to_data_limits= FALSE_VAL ;
-	    if( $verbose eq TRUE_STR)
-	    {
-		printf( "get_fitted_focus: quantity: %s, data minimum ($data_minimum[$qty]) is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
-	    }
-	}
-	my $data_maximum_centered_to_data_limits= TRUE_VAL; 
-	my $limits_maximum_difference= FALSE_VAL ;
-	if ( abs($foc_pos_maximum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
-	{
-	    $data_maximum_centered_to_data_limits= FALSE_VAL ;
-	    if( $verbose eq TRUE_STR)
-	    {
-		printf( "get_fitted_focus: quantity: %s, data maximum ($data_maximum[$qty]) is not centered, lower limit $focuser_positions[0], data maximum $foc_pos_maximum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
-	    }
-	}
+    my $distribution_sanity_fwhm  = Statistics::Descriptive::Full->new();
+    my $distribution_fwhm  = Statistics::Descriptive::Full->new();
+    my $distribution_flux  = Statistics::Descriptive::Full->new();
+
+    my @focuser_positions ;
+    sub numeric { $a <=> $b ; } # surprise, that works!
+    foreach my $foc_pos ( sort numeric keys %distribution_points_fwhm) # yes!
+    {
+	push(@focuser_positions, $foc_pos) ;
+	$distribution_fwhm->add_data([$distribution_points_fwhm{$foc_pos}->mean()],[1]);
+	$distribution_flux->add_data([$distribution_points_flux{$foc_pos}->mean()],[1]);
+	my $mean   = $distribution_points_fwhm{$foc_pos}->mean();
+    }
+
 # find out if lower or upper limit is nearer to the minimum
 #ToDo: abs() might not be a good idea, loosing information
 
-	my $lower_limit= $focuser_positions[0] ; 
-	my $upper_limit= $focuser_positions[$#focuser_positions] ;
+    my $lower_limit= $focuser_positions[0] ; 
+    my $upper_limit= $focuser_positions[$#focuser_positions] ;
 
-	my $cosmetics ; # make a nicer plot (y axis is for FWHM [px] and for FLUX_MAX [a.u.])
-	if( $qty==0) # ToDo ugly but quick, FWHM
-	{
-	    $cosmetics= $number_of_objects_found_in_all_files ; 
-	    if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
-	    {
-# distance to upper limit is smaller than to lower limit, set symmetric value lower limit
-		$limits_minimum_difference= LOWER ;
-		if( $set_limits_on_sanity_checks eq TRUE_STR)
-		{
-		    $lower_limit= $foc_pos_minimum - abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) ;
-		}
-	    }
-	    else
-	    {
-# distance to lower limit is smaller than to upper limit, set symmetric value upper limit
-		$limits_minimum_difference= UPPER ;
-		if( $set_limits_on_sanity_checks eq TRUE_STR)
-		{
-		    $upper_limit= $foc_pos_minimum + abs($focuser_positions[0]- $foc_pos_minimum) ;
-		}
-	    }
-	}
-	else # FLUX_MAX
-	{
-	    $cosmetics= $number_of_objects_found_in_all_files * $data_maximum[1] / $data_maximum[0]    ; #  
-	    if( abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) < abs($focuser_positions[0]- $foc_pos_maximum))
-	    {
-# distance to upper limit is smaller than to lower limit, set symmetric value lower limit
-		$limits_minimum_difference= LOWER ;
-		if( $set_limits_on_sanity_checks eq TRUE_STR)
-		{
-		    $lower_limit= $foc_pos_maximum - abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) ;
-		}
-	    }
-	    else
-	    {
-# distance to lower limit is smaller than to upper limit, set symmetric value upper limit
-		$limits_minimum_difference= UPPER ;
-		if( $set_limits_on_sanity_checks eq TRUE_STR)
-		{
-		    $upper_limit= $foc_pos_maximum + abs($focuser_positions[0]- $foc_pos_maximum) ;
-		}
-	    }
-	} 
-	if( $verbose eq TRUE_STR)
-	{
-	    printf( "get_fitted_focus: quantity: %s, lower limit set to $lower_limit upper limit set to $upper_limit\n", ($qty==0)?"FWHM":"FLUX") ;
-	}
-# write the data files and store their names
-	if(( $fitprg eq $default_configuration{C_FOCROOTI}) ||($fitprg eq $default_configuration{C_FOCROOTB}))
-	{
-	    my $data_file_name= $fit_result_file ; # just a reminder
-# ToDo: replace data_points by $distribution_f*
-#       this is a cleaner approach   
-	    my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $cosmetics, $qty, $set_limits_on_sanity_checks, \%data_points)  ;
-# store file name for fitting
-	    if( $qty== 0) # FWHM, FLUX_MAX
-	    {
-		push (@fwhm_data_file_names, $file_name) ;
-	    }
-	    else
-	    {
-		push (@flux_data_file_names, $file_name) ;
-	    }
-	}
-    }
-
-# fit
-    if( $#fwhm_data_file_names !=  $#flux_data_file_names )
+    if( abs($focuser_positions[$#focuser_positions]- $focuser_positions[$distribution_fwhm->mindex()]) < abs($focuser_positions[0]- $focuser_positions[$distribution_fwhm->mindex()]))
     {
-	printf( "get_fitted_focus: difference between number of fwhm and flux fits: %d != %d, returning\n", $#fwhm_data_file_names, $#flux_data_file_names) ;
-	return FALSE_VAL ;
+# distance to upper limit is smaller than to lower limit, set symmetric value lower limit
+	if( $set_limits_on_sanity_checks eq TRUE_STR)
+	{
+	    $lower_limit= $focuser_positions[$distribution_fwhm->mindex()] - abs($focuser_positions[$#focuser_positions]- $focuser_positions[$distribution_fwhm->mindex()]) ;
+	}
     }
     else
     {
-	for( my $fn=0 ; $fn< $#fwhm_data_file_names+ 1; $fn++)
+# distance to lower limit is smaller than to upper limit, set symmetric value upper limit
+	if( $set_limits_on_sanity_checks eq TRUE_STR)
 	{
-	    @mean_focus= fit_and_read_results( $fltr, $date, $fitprg, $fit_result_file, $fwhm_data_file_names[$fn], $flux_data_file_names[$fn])
+	    $upper_limit= $focuser_positions[$distribution_fwhm->mindex()] + abs($focuser_positions[0]- $focuser_positions[$distribution_fwhm->mindex()]) ;
 	}
     }
+    if( $verbose eq TRUE_STR)
+    {
+	printf( "get_fitted_focus: quantity:FWHM, lower limit set to $lower_limit upper limit set to $upper_limit\n") ;
+    }
+
+    if( $set_limits_on_sanity_checks eq TRUE_STR)
+    {
+	my $data_maximum_sanity= 0 ;
+	foreach my $foc_pos ( @focuser_positions) 
+	{
+	    if(( $foc_pos >=  $lower_limit )&&($foc_pos <= $upper_limit)) 
+	    {
+		$distribution_sanity_fwhm->add_data([$distribution_points_fwhm{$foc_pos}->mean()],[1]);
+	    }	
+	}
+	$data_maximum_fwhm=  $distribution_sanity_fwhm->max() ;
+    }
+    else
+    {
+	$data_maximum_fwhm=  $distribution_fwhm->max() ;
+    }
+# write the data files and store their names
+    my $data_file_name= $fit_result_file ; # just a reminder
+# ToDo: replace data_points by $distribution_f*
+#       this is a cleaner approach   
+
+    my $normalize=1. ; # make a nicer plot (y axis is for FWHM [px] and for FLUX_MAX [a.u.])
+
+    my $file_name_fwhm= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $normalize, "-FWHM_IMAGE.", $set_limits_on_sanity_checks, \%distribution_points_fwhm)  ;
+
+    if( $data_maximum_fwhm > $distribution_flux->max())
+    {
+	if( $set_limits_on_sanity_checks eq TRUE_STR)
+	{
+	    $normalize= $distribution_sanity_fwhm->max()/$distribution_flux->max();
+	}
+	else
+	{
+	    $normalize= $data_maximum_fwhm/$distribution_flux->max(); 
+	}
+    }
+    else
+    {
+	if( $set_limits_on_sanity_checks eq TRUE_STR)
+	{
+	    $normalize= $distribution_flux->max()/$distribution_sanity_fwhm->max();
+	}
+	else
+	{
+	    $normalize= $distribution_flux->max()/$data_maximum_fwhm;
+	}
+    }
+    #$normalize *= $number_of_objects_found_in_all_files ;
+    my $file_name_flux= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $normalize, "-FLUX_MAX.", $set_limits_on_sanity_checks, \%distribution_points_flux)  ;
+
+    foreach my $foc_pos ( @focuser_positions)
+    {
+	$distribution_points_fwhm{$foc_pos}->clear() ;
+	$distribution_points_flux{$foc_pos}->clear() ;
+    }
+#
+# fit
+    @mean_focus= fit_and_read_results( $fltr, $date, $fitprg, $fit_result_file, $file_name_fwhm, $file_name_flux) ;
+
     if(($mean_focus[0] != FALSE_VAL)&&($mean_focus[1] != FALSE_VAL))
     {
 	if(abs($mean_focus[0]- $mean_focus[1])  < $focuser_properties{FOCUSER_RESOLUTION})
@@ -934,67 +886,34 @@ sub write_data_files
     my $fit_result_file= shift @_ ;
     my $lower_lmt      = shift @_ ;
     my $upper_lmt      = shift @_ ;
-    my $cosmetics      = shift @_ ;
-    my $qty            = shift @_ ;
+    my $normalize      = shift @_ ;
+    my $extension            = shift @_ ;
     my $set_limits_on_sanity_checks = shift @_ ;
     my $number_of_lines= 0 ;
 
     my @fit_items= split(/\./, $fit_result_file) ;
     my $tmp_fit_file_name ;
-    if( $qty==0)
-    {
-	$tmp_fit_file_name=  $fit_items[0]."-".$fltr."-".$date."-FWHM_IMAGE.".$fit_items[1];
-    }
-    else
-    {
-	$tmp_fit_file_name=  $fit_items[0]."-".$fltr."-".$date."-FLUX_MAX.".$fit_items[1];
-    }
+    $tmp_fit_file_name=  $fit_items[0]."-".$fltr."-".$date.$extension.$fit_items[1];
     open( DATA, ">$tmp_fit_file_name") or die "write_data_files: can't write to file: $tmp_fit_file_name, $!" ;
 
-    foreach my $foc_pos ( sort keys %{$_[0]})
+    foreach my $foc_pos ( sort keys %{$_[0]}) # %data_points
     {
  	if(($foc_pos>= $lower_lmt)&&($foc_pos<= $upper_lmt))
 	{
-	    if( $qty==0) 
-	    {
-		my $mean   = $distribution_fwhm{$foc_pos}->mean();
-		my $min    = $distribution_fwhm{$foc_pos}->min();
-		my $max    = $distribution_fwhm{$foc_pos}->max();
-		my $std_dev= $distribution_fwhm{$foc_pos}->standard_deviation() ;
+	    my $mean   = ${$_[0]}{$foc_pos}->mean();
+	    my $min    = ${$_[0]}{$foc_pos}->min();
+	    my $max    = ${$_[0]}{$foc_pos}->max();
+	    my $std_dev= ${$_[0]}{$foc_pos}->standard_deviation() ;
 
-		printf( "%04d    %7.2f, %7.2f, %7.2f; %7.2f, %7.2f\n", $foc_pos, $mean,  $std_dev, ($std_dev/$mean), $min, $max) ;  
-		if( ($std_dev/$mean) < 10.) # ToDo: experimental, should not hurt
-		{
-		    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalise 
-		}
-	    }
-	    else
-	    {
-		
-		my $mean   = $distribution_flux{$foc_pos}->mean();
-		my $min    = $distribution_flux{$foc_pos}->min();
-		my $max    = $distribution_flux{$foc_pos}->max();
-		my $std_dev= $distribution_flux{$foc_pos}->standard_deviation() ;
-
-		printf( "%04d    %7.2f, %7.2f, %7.2f; %7.2f, %7.2f\n", $foc_pos, $mean,  $std_dev, ($std_dev/$mean), $min, $max) ;  
-		if( ($std_dev/$mean) < 100.1)  # ToDo: experimental, should not hurt
-		{
-		    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalise 
-		}
+	    if($mean != 0) {
+		printf( "write_data_files: %04d    %7.2f, %7.2f, %7.2f; %7.2f, %7.2f\n", $foc_pos, $mean,  $std_dev, ($std_dev/$mean), $min, $max) ;  
+	    
+#	    if( ($std_dev/$mean) < 100.1)  # ToDo: experimental, should not hurt
+#	    {
+		printf( DATA "%04d    %e\n", $foc_pos, $mean/$normalize) ; # ToDo: normalise 
+#	    }
 	    }
 	    $number_of_lines++ ;
-
-	    if( $verbose eq TRUE_STR)
-	    {
-		printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ;
-	    }
-	}
-	else
-	{
-	    if( $set_limits_on_sanity_checks ne TRUE_STR)
-	    {
-	  	printf(     "write_data_files: wrong limits?: ll=$lower_lmt ul=$upper_lmt, %04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ;  
-	    }
 	}
     }
     close(DATA) ;
@@ -1076,14 +995,11 @@ sub get_foc_pos_at_maximum_number_of_objects
     my $cfg                 = shift @_ ;
     my $param_reference     = shift @_ ;
     my $rename              = shift @_ ;
-
     my $maximum_objects= 0 ;
-
     my $auto_focus_run_extension= AUTO_FOCUS_RUN_EXTENSION ;
     my $fits_file_reference= FALSE_STR ;
     my $catalogue_tmp= $default_configuration{C_SEX_TMP_CATALOGUE} ;
     my $catalogue_tmp_max= $catalogue_tmp.".max" ;
-
     my $distribution  = Statistics::Descriptive::Weighted::Full->new();
 
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
@@ -1374,12 +1290,11 @@ sub retrieve_data
 #
     my %objects_selected ;
     my %objects_all ; # used to calculate the distances from the references objects
+    my %number_per_object ;
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
     {
-# ToDo: replace data_points by $distribution_f*
-	$distribution_fwhm{$fits_files{$fits_file}[IND_FOC_POS_FILE]}  = Statistics::Descriptive::Weighted::Full->new();
-	$distribution_flux{$fits_files{$fits_file}[IND_FOC_POS_FILE]}  = Statistics::Descriptive::Weighted::Full->new();
-
+	$distribution_points_fwhm{$fits_files{$fits_file}[IND_FOC_POS_FILE]}  = Statistics::Descriptive::Weighted::Full->new();
+	$distribution_points_flux{$fits_files{$fits_file}[IND_FOC_POS_FILE]}  = Statistics::Descriptive::Weighted::Full->new();
 # receive results from SExtractor
 #
 	my @cat_items= split(/\./, $cat) ;
@@ -1427,14 +1342,18 @@ sub retrieve_data
 	    $line=~ s/^[ ]+//g ;
 	    my @items= split(/[ ]+/, $line) ;
 
+	    if( ! defined $items[NUMBER_REF]) 
+	    {
+		print "WARNING $fits_file no NUMBER_REF on $line\n";
+	    }
 	    $reference_object_number= $items[NUMBER_REF];
 # do not analyse objects which belong to the same reference object
 	    next if( $multiplicity_of_reference_objects{$reference_object_number} > 1) ;
-	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
-	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
-	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
-	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= FALSE_VAL ;
-	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= FALSE_VAL ;
+	    $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]= FALSE_VAL ;
+	    $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE]= FALSE_VAL ;
+	    $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
+	    $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0]= FALSE_VAL ;
+	    $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1]= FALSE_VAL ;
 
 	    $object_number= $items[NUMBER_REF]; 
 	    $objects_all{$fits_file}{$object_number}[IND_SEL_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ; # currently not used
@@ -1447,16 +1366,12 @@ sub retrieve_data
 	    my $ret= raw_analysis( @items) ; # select good objects
 	    if( $ret== SELECTED)
 	    {
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ;
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= $items[X_IMAGE];
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= $items[Y_IMAGE];
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= $items[FWHM_IMAGE] ; # this is the quantity to be fitted
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= $items[FLUX_MAX]   ; # this is the quantity to be fitted
-
-# ToDo: replace data_points by $distribution_f*
-#       this is a cleaner approach   
-		$distribution_fwhm{$fits_files{$fits_file}[IND_FOC_POS_FILE]}->add_data([$items[FWHM_IMAGE]],[1]);
-		$distribution_flux{$fits_files{$fits_file}[IND_FOC_POS_FILE]}->add_data([$items[FLUX_MAX]],[1]);
+		$number_per_object{$reference_object_number}++ ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE]= $items[X_IMAGE];
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE]= $items[Y_IMAGE];
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0]= $items[FWHM_IMAGE] ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1]= $items[FLUX_MAX] ;
 
 		$number_of_selected_objects++ ;
 	    }
@@ -1474,24 +1389,15 @@ sub retrieve_data
 	    printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	}
 	printf("(sel./ref.): %6.3f, %4d, %4d, sex.obj.:%4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects, $number_of_objects) ;
-# check multiplicity	    
-#	    foreach my $object ( sort keys  %multiplicity_of_reference_objects)
-#	    {
-#		if( $multiplicity_of_reference_objects{$object} > 1)
-#		{
-#		    print "retrieve_data: reference_object $object counted $multiplicity_of_reference_objects{$object} times\n" ;
-#		}
-#	    }
-
 	if(($number_of_objects== 0) ||( $number_of_selected_objects/$number_of_reference_objects) < $default_configuration{C_SELECT_RATIO})
 	{
-	    foreach my $reference_object_number( keys %{$objects_selected{$fits_file}})
+	    foreach my $reference_object_number( keys %objects_selected)
 	    {
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= FALSE_VAL ;
-		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= FALSE_VAL ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]= FALSE_VAL ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE]= FALSE_VAL ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0]= FALSE_VAL ;
+		$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1]= FALSE_VAL ;
 	    }
 	    $number_of_images_at_foc_pos{ $fits_files{$fits_file}[IND_FOC_POS_FILE]}-- ;
 	    $number_of_fits_files-- ;
@@ -1515,13 +1421,20 @@ sub retrieve_data
 		    printf( DS9REGION "global color=blue font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
 		}
 		printf( DS9REGION "image\n") ; # not physical
-		foreach my $reference_object_number (sort keys %{$objects_selected{$fits_file}})
+		if($default_configuration{C_DS9_DISPLAY_ACCEPTANCE_AREA} eq TRUE_STR ) 
+	        {
+# display the acceptance circle and its center
+# point(2010,2078) # point=circle
+		    printf( DS9REGION "point\(%f,%f\) # color=magenta text = {center acceptance}\n", $transformed_acceptance_circle{'CENTER_X'}, $transformed_acceptance_circle{'CENTER_Y'}) ;
+		    printf( DS9REGION "circle\(%f,%f,%f\) # color=magenta text = {radius acceptance}\n", $transformed_acceptance_circle{'CENTER_X'}, $transformed_acceptance_circle{'CENTER_Y'}, abs($transformed_acceptance_circle{'RADIUS'})) ;
+		}
+		foreach my $reference_object_number (sort keys %objects_selected)
 		{
-		    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
-		    {
-			my $region_radius= 1. * $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
-			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
-		    }
+# not all $reference_object_number are found in a given 
+		    next if( ! defined $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]) ;
+
+		    my $region_radius= 1. * $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0] ;
+		    printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE],$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE], $region_radius, $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS], $reference_object_number) ;
 		}
 		if( $default_configuration{C_DS9_ALL} eq TRUE_STR)
 		{
@@ -1529,11 +1442,8 @@ sub retrieve_data
 		    printf( DS9REGION "image\n") ; # not physical
 		    foreach my $reference_object_number (sort keys %{$objects_all{$fits_file}})
 		    {
-			if( ! ($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL))
-			{
-			    my $region_radius= 2.+ 1. * $objects_all{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
-			    printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_all{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_all{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
-			}
+			my $region_radius= 2.+ 1. * $objects_all{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
+			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_all{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_all{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
 		    }
 		}
 		close( DS9REGION) ;
@@ -1544,79 +1454,46 @@ sub retrieve_data
 	}
     } # end loop fits files
     print "\n" ;
-# count the objects
-#
-    my %objects_tmp ;
-    my %number_per_object ;
-    foreach my $fits_file ( keys %objects_selected)
-    {
-	foreach my $reference_object_number ( keys %{$objects_selected{$fits_file}})
-	{
-	    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL)
-	    {
-		$number_per_object{$reference_object_number}= 0 ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]= FALSE_VAL;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0]= 0;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1]= 0;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE]= FALSE_VAL;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE]= FALSE_VAL;
-	    }
-	}
-    }
-    foreach my $fits_file ( keys %objects_selected)
-    {
-	foreach my $reference_object_number ( sort keys %{$objects_selected{$fits_file}})
-	{
-	    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL)
-	    {
-		$number_per_object{$reference_object_number}++ ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1] ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE] ;
-		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE] ;
-	    }
-	}
-    }
-    if( $verbose eq TRUE_STR)
-    {
-	print "retrieve_data: number of fits files $number_of_fits_files\n" ;
-    }
 # define those objects which appeared in all files
 # fit the obtained DATA values 
 #
     my %objects_found_in_all_files ;
-    foreach my $reference_object_number ( keys %objects_tmp)
+    foreach my $reference_object_number ( keys %objects_selected)
     {
 	if( $verbose eq TRUE_STR)
 	{
 	    printf( "retrieve_data: filter %3s, number per object %5s: %4d\n", $fltr, $reference_object_number, $number_per_object{$reference_object_number}) ;
 	}
-	foreach my $fits_file ( keys %{$objects_tmp{$reference_object_number}})
+	foreach my $fits_file ( keys %{$objects_selected{$reference_object_number}})
 	{
 	    if( $number_per_object{$reference_object_number}== $number_of_fits_files) # object must appear in all files
 	    {
 		# the fits file names appear still in the lists, so they are here neglected
-		if( $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] != FALSE_VAL)
+		if( $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS] != FALSE_VAL)
 		{
-		    if( $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]} >0)
+
+		    next if( ! defined $number_of_images_at_foc_pos{ $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]}) ;
+		    if( $number_of_images_at_foc_pos{ $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]} >0)
 		    {
-# ToDo: replace data_points by $distribution_f*
-#       this is a cleaner approach   
-# creating the data point,  
-#                       %data_points
-			${$_[0]}{$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]}[0] += $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]/ $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
-			${$_[0]}{$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]}[1] += $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]/ $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
+# standard		$items[FWHM_IMAGE]; 
+# standard		$items[FLUX_MAX]   ; 
+# 		        $items[FWHM_IMAGE]**2/$items[ISOAREA_IMAGE] ; 
+#		        $items[FLUX_MAX]**2/$items[ISOAREA_IMAGE]   ; 
+#		        $items[FWHM_IMAGE]/$items[FLUX_ISO] ; 
+#		        $items[FLUX_MAX]/$items[FLUX_ISO]   ; 
+
+			$distribution_points_fwhm{$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]}->add_data([($objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0])],[1]);
+			$distribution_points_flux{$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]}->add_data([($objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1])],[1]);
 # book keeping:
 			$objects_found_in_all_files{$reference_object_number}[0]++ ;
-			$objects_found_in_all_files{$reference_object_number}[1]    = $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] ;
-			$objects_found_in_all_files{$reference_object_number}[2]    = $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] ;
-			$objects_found_in_all_files{$reference_object_number}[3][0]+= $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0] ;
-			$objects_found_in_all_files{$reference_object_number}[4][1]+= $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1] ;
+			$objects_found_in_all_files{$reference_object_number}[1]    = $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE] ;
+			$objects_found_in_all_files{$reference_object_number}[2]    = $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE] ;
+			$objects_found_in_all_files{$reference_object_number}[3][0]+= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0] ;
+			$objects_found_in_all_files{$reference_object_number}[4][1]+= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1] ;
 		    }
 		    else
 		    {
-			 printf "retrieve_data: attention $fits_file, foc_pos=$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS], object $reference_object_number has number of images >>$number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}<<\n" ;
+			 printf "retrieve_data: attention $fits_file, foc_pos=$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS], object $reference_object_number has number of images >>$number_of_images_at_foc_pos{ $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]}<<\n" ;
 		    }
 		}
 		else
@@ -1643,7 +1520,14 @@ sub retrieve_data
 	printf( DS9REGION "# Filter: $fltr, $date\n") ;
 	printf( DS9REGION "global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
 	printf( DS9REGION "image\n") ;
+	if($default_configuration{C_DS9_DISPLAY_ACCEPTANCE_AREA} eq TRUE_STR ) 
+	{
 
+# display the acceptance circle and its center
+# point(2010,2078) # point=circle
+	printf( DS9REGION "point\(%f,%f\) # color=magenta text = {center acceptance}\n", $transformed_acceptance_circle{'CENTER_X'}, $transformed_acceptance_circle{'CENTER_Y'}) ;
+	printf( DS9REGION "circle\(%f,%f,%f\) # color=magenta text = {radius acceptance}\n", $transformed_acceptance_circle{'CENTER_X'}, $transformed_acceptance_circle{'CENTER_Y'}, abs($transformed_acceptance_circle{'RADIUS'})) ;
+	}
 	$number_of_objects_found_in_all_files= 0;
 	foreach my $reference_object_number ( sort keys %objects_found_in_all_files)
 	{
@@ -1653,7 +1537,12 @@ sub retrieve_data
 	    {
 		printf("retrieve_data: object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
 	    }
-	    printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_tmp{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
+######### Attention, wildi
+	    if(! defined $objects_selected{$fits_file_reference}{$reference_object_number}[IND_SEL_DATA][0]) {
+		print "WARNING: object reference_object_number=$reference_object_number has a problem\n";
+		next ;
+	    } 
+	    printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_selected{$fits_file_reference}{$reference_object_number}[IND_SEL_DATA][0]) ;
 	    printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d %6.1f %6.1f}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number, $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2]) ;
 
 	    if( $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files)
@@ -2291,6 +2180,7 @@ if( $take_data eq FALSE_STR) # offline analysis
 	{
 	    $tmp_directory= $base_directory."/".$filter ;
 	}
+	# ToDo, this global:
 	$path_to_filter=  $tmp_directory ;
 	chdir $tmp_directory  or die "$scriptname: can not change to directory $tmp_directory: $!" ;
 	$ret_get_fits= get_fits_files( $filter, $base_directory."/".$filter, $include_auto_focus_run) ;
