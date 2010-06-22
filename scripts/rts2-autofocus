@@ -760,7 +760,6 @@ sub get_fitted_focus
     my $distribution_sanity_fwhm  = Statistics::Descriptive::Full->new();
     my $distribution_fwhm  = Statistics::Descriptive::Full->new();
     my $distribution_flux  = Statistics::Descriptive::Full->new();
-
     my @focuser_positions ;
     sub numeric { $a <=> $b ; } # surprise, that works!
     foreach my $foc_pos ( sort numeric keys %distribution_points_fwhm) # yes!
@@ -905,13 +904,14 @@ sub write_data_files
 	    my $max    = ${$_[0]}{$foc_pos}->max();
 	    my $std_dev= ${$_[0]}{$foc_pos}->standard_deviation() ;
 
-	    if($mean != 0) {
+	    if( ${$_[0]}{$foc_pos}->count() > 0) 
+	    {
 		printf( "write_data_files: %04d    %7.2f, %7.2f, %7.2f; %7.2f, %7.2f\n", $foc_pos, $mean,  $std_dev, ($std_dev/$mean), $min, $max) ;  
-	    
-#	    if( ($std_dev/$mean) < 100.1)  # ToDo: experimental, should not hurt
-#	    {
-		printf( DATA "%04d    %e\n", $foc_pos, $mean/$normalize) ; # ToDo: normalise 
-#	    }
+		if( ($std_dev/$mean) < 100.1)  # ToDo: experimental, should not hurt
+		{
+		    printf( DATA "%04d    %e\n", $foc_pos, $mean/$normalize) ; # ToDo: normalise 
+		}
+		${$_[0]}{$foc_pos}->clear() ; # can not undef
 	    }
 	    $number_of_lines++ ;
 	}
