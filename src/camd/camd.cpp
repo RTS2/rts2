@@ -454,6 +454,16 @@ void Camera::checkQueChanges (int fakeState)
 	}
 }
 
+void Camera::checkQueuedExposures ()
+{
+	if (quedExpNumber->getValueInteger () > 0)
+	{
+		quedExpNumber->dec ();
+		camExpose (exposureConn, getStateChip (0), false);
+	}
+	infoAll ();
+}
+
 int Camera::killAll ()
 {
 	waitingForNotBop->setValueBool (false);
@@ -880,27 +890,14 @@ void Camera::postEvent (Rts2Event * event)
 			if (event->getArg () == this && filterMoving->getValueBool ())
 			{
 				filterMoving->setValueBool (false);
-				/// check for exposure..
-				if (quedExpNumber->getValueInteger () > 0)
-				{
-					quedExpNumber->dec ();
-					camExpose (exposureConn, getStateChip (0), false);
-				}
-				infoAll ();
+				checkQueuedExposures ();
 			}
 			break;
 		case EVENT_FOCUSER_END_MOVE:
 			if (event->getArg () == this && focuserMoving->getValueBool ())
 			{
 				focuserMoving->setValueBool (false);
-				/// check for exposure..
-				if (quedExpNumber->getValueInteger () > 0)
-				{
-					quedExpNumber->dec ();
-					camExpose (exposureConn, getStateChip (0), false);
-				}
-				// update info about FW
-				infoAll ();
+				checkQueuedExposures ();
 			}
 			break;
 		case EVENT_TEMP_CHECK:
@@ -1159,7 +1156,7 @@ void Camera::offsetForFilter (int new_filter)
 {
 	if (!focuserDevice)
 		return;
-	if (new_filter >= camFilterOffsets->size ())
+	if ((size_t) new_filter >= camFilterOffsets->size ())
 		return;
 	struct focuserMove fm;
 	fm.focuserName = focuserDevice;

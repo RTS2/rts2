@@ -250,7 +250,9 @@ int MICCD::setCoolTemp (float new_temp)
 
 int MICCD::setFilterNum (int new_filter)
 {
-	return miccd_filter (&camera, new_filter) ? -1 : 0;
+	int ret = miccd_filter (&camera, new_filter) ? -1 : 0;
+	checkQueuedExposures ();
+	return ret;
 }
 
 int MICCD::startExposure ()

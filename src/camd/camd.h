@@ -475,6 +475,8 @@ class Camera:public Rts2ScriptDevice
 
 		virtual void checkQueChanges (int fakeState);
 
+		void checkQueuedExposures ();
+
 		void initCameraChip ();
 		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
 
