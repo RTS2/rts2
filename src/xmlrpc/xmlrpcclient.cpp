@@ -452,17 +452,19 @@ int Client::getVariables ()
 			if ((*riter).second[j]["name"] == std::string (dot))
 			{
 				bool printEndAmp = false;
-				std::string val = (*riter).second[j]["value"];
+				std::ostringstream osv;
                                 if (getVariablesPrintNames)
 				{
 				        std::cout << a << "_" << dot << "=";
+					osv << (*riter).second[j]["value"];
+					std::string val = osv.str ();
 					if (val.find (' ') != std::string::npos)
 					{
 						std::cout << '"';
 						printEndAmp = true;
 					}
 				}
-				std::cout << val;
+				std::cout << (*riter).second[j]["value"];
 				if (printEndAmp)
 					std::cout << '"';
 				std::cout << std::endl;

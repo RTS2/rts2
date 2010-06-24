@@ -741,7 +741,7 @@ class ListValuesDevice: public ListValues
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
 			int i = 0;
-			// print results for single device..
+			// print results for a single device..
 			if (params.size() == 1)
 			{
 				if (((std::string) params[0]).length () == 0)
