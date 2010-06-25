@@ -163,8 +163,6 @@ class Dummy:public Camera
 			addDataType (RTS2_DATA_ULONG);
 		}
 
-		virtual int setGain (double in_gain) { return 0; }
-
 	private:
 		bool supportFrameT;
 		int infoSleep;
