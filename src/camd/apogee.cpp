@@ -88,8 +88,6 @@ class Apogee:public Camera
 
 		virtual int info ();
 
-		virtual int camChipInfo (int chip);
-
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 };
@@ -875,16 +873,7 @@ Apogee::info ()
 	return Camera::info ();
 }
 
-
-int
-Apogee::camChipInfo (int chip)
-{
-	return 0;
-}
-
-
-void
-Apogee::afterNight ()
+void Apogee::afterNight ()
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();

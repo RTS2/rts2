@@ -79,7 +79,6 @@ class Andor:public Camera
 		// callback functions for Camera alone
 		virtual int info ();
 		virtual int scriptEnds ();
-		virtual int camChipInfo (int chip);
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 
@@ -1303,11 +1302,6 @@ int Andor::info ()
 		getTemp ();
 	}
 	return Camera::info ();
-}
-
-int Andor::camChipInfo (int chip)
-{
-	return 0;
 }
 
 int Andor::setCoolTemp (float new_temp)

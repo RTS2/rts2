@@ -53,10 +53,6 @@ class Urvc2:public Camera
 
 		virtual int init ();
 		virtual int info ();
-		virtual int camChipInfo (int chip)
-		{
-			return 0;
-		}
 
 		virtual int setCoolTemp (float coolpoint);
 		virtual void afterNight ();

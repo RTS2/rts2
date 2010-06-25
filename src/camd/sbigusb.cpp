@@ -129,7 +129,6 @@ class Sbig:public Camera
 
 		// callback functions for Camera alone
 		virtual int info ();
-		virtual int camChipInfo ();
 		virtual long camWaitExpose ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
@@ -448,11 +447,6 @@ int Sbig::info ()
 	tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
 	coolingPower->setValueInteger (qtsr.power);
 	return Camera::info ();
-}
-
-int Sbig::camChipInfo ()
-{
-	return 0;
 }
 
 long Sbig::camWaitExpose ()

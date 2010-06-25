@@ -42,8 +42,6 @@ class Alta:public Camera
 
 		virtual int info ();
 
-		virtual int camChipInfo (int chip);
-
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 
@@ -314,11 +312,6 @@ int Alta::info ()
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
 	fanMode->setValueInteger (alta->read_FanMode ());
 	return Camera::info ();
-}
-
-int Alta::camChipInfo (int chip)
-{
-	return 0;
 }
 
 int Alta::setCoolTemp (float new_temp)

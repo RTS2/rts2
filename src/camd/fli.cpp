@@ -51,8 +51,6 @@ class Fli:public Camera
 
 		virtual int init ();
 
-		virtual int camChipInfo (int chip);
-
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 	protected:
@@ -533,11 +531,6 @@ void Fli::temperatureCheck ()
 	if (ret)
 		return;
 	addTempCCDHistory (fliTemp);
-}
-
-int Fli::camChipInfo (int chip)
-{
-	return 0;
 }
 
 int Fli::setCoolTemp (float new_temp)

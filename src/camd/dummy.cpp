@@ -127,8 +127,6 @@ class Dummy:public Camera
 			tempCCD->setValueDouble (100);
 			return Camera::info ();
 		}
-		virtual int camChipInfo () { return 0; }
-
 		virtual int startExposure () { return 0; }
 		virtual long suggestBufferSize ()
 		{
