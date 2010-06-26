@@ -151,8 +151,8 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
 %ccd_window=(
 'LOWER_X' => 36,
 'LOWER_Y' => 21,
-'UPPER_X' => 2096,
-'UPPER_Y' => 2096,
+'UPPER_X' => 4096,
+'UPPER_Y' => 4096,
 ) ;
 # coordinates relative to ccd_window
 %acceptance_circle=(
@@ -768,7 +768,6 @@ sub get_fitted_focus
     }
 #ToDo: check the spatial distribution and update the reference DS9 reg file
 #      calculate the center of mass and compare it with the CCD dimensions from fits file (incl. binning)
-#ToDo: make a selection on spatial distribution
 
 # find extrema
 
@@ -871,24 +870,36 @@ sub get_fitted_focus
 # fit
     @mean_focus= fit_and_read_results( $fltr, $date, $fitprg, $fit_result_file, $file_name_fwhm, $file_name_flux) ;
 
+
+    print "get_fitted_focus: RESULTS:\n" ;
+    print "--------------------------\n" ;
     if(($mean_focus[0] != FALSE_VAL)&&($mean_focus[1] != FALSE_VAL))
     {
 	if(abs($mean_focus[0]- $mean_focus[1])  < $focuser_properties{FOCUSER_RESOLUTION})
 	{
-	    print "get_fitted_focus: SUCCESS SUCCESS: $mean_focus[0]- $mean_focus[1] < $focuser_properties{FOCUSER_RESOLUTION}\n" ;
+	    printf ("get_fitted_focus: filter $fltr, #objects %3d, fitted extrema FWHM %7.1f, FLUX %7.1f differ less than focuser resolution %7.1f\n", $number_of_objects_found_in_all_files, $mean_focus[0], $mean_focus[1], $focuser_properties{FOCUSER_RESOLUTION}) ;
 	    return ($mean_focus[0]+ $mean_focus[1])/2. ;
 	}
 	else
 	{
-	    print "get_fitted_focus: NO SUCCESS $mean_focus[0]- $mean_focus[1] > $focuser_properties{FOCUSER_RESOLUTION}\n" ;
-	    printf ("get_fitted_focus: NO SUCCESS $mean_focus[0]- $mean_focus[1]= %f > $focuser_properties{FOCUSER_RESOLUTION}\n", $mean_focus[0]- $mean_focus[1]) ;
+	    printf ("get_fitted_focus: filter $fltr, #objects %3d, fitted extrema FWHM %7.1f, FLUX %7.1f differ more than focuser resolution %7.1f\n", $number_of_objects_found_in_all_files, $mean_focus[0], $mean_focus[1], $focuser_properties{FOCUSER_RESOLUTION}) ;
 # preliminary: use chi2 to decide which value to be returned
 	    return $mean_focus[0] ;
 	}
     }
+    elsif($mean_focus[0] != FALSE_VAL)
+    {
+	printf ("get_fitted_focus: filter $fltr, #objects %3d, fitted extremum FWHM %7.1f, no FLUX fit result\n", $number_of_objects_found_in_all_files, $mean_focus[0]) ;
+	return $mean_focus[0] ;
+    }
+    elsif($mean_focus[1] != FALSE_VAL)
+    {
+	printf ("get_fitted_focus: filter $fltr, #objects %3d, fitted extremum FLUX %7.1f, no FWHM fit result\n", $number_of_objects_found_in_all_files, $mean_focus[1]) ;
+	return $mean_focus[1] ;
+    }
     else
     {
-	print "get_fitted_focus: NO SUCCESS $mean_focus[0], $mean_focus[1]\n" ;
+	print "get_fitted_focus: no fitted extrma\n" ;
     }
     return FALSE_VAL ;
 }
@@ -968,13 +979,11 @@ sub fit_and_read_results
     {
 	if( $line=~ m/^FWHM_FOCUS ([0-9]+\.[0-9]+)/)
 	{
-	    print "fit_and_read_results: got fwhm $1\n" ;
 	    $fwhm_focus= $1 ;
 	    $number_of_results++ ;
 	}
 	elsif( $line=~ m/^FLUX_FOCUS ([0-9]+\.[0-9]+)/)
 	{
-	    print "fit_and_read_results: got flux $1\n" ;
 	    $flux_focus= $1 ;
 	    $number_of_results++ ;
 	}
@@ -1509,10 +1518,8 @@ sub retrieve_data
 			$distribution_points_flux{$objects_selected{$reference_object_number}{$fits_file}[IND_SEL_FOC_POS]}->add_data([($objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1])],[1]);
 # book keeping:
 			$objects_found_in_all_files{$reference_object_number}[0]++ ;
-			$objects_found_in_all_files{$reference_object_number}[1]    = $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE] ;
-			$objects_found_in_all_files{$reference_object_number}[2]    = $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE] ;
-# to be dropped			$objects_found_in_all_files{$reference_object_number}[3][0]+= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][0] ;
-# to be dropped			$objects_found_in_all_files{$reference_object_number}[4][1]+= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_DATA][1] ;
+			$objects_found_in_all_files{$reference_object_number}[1]= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_X_IMAGE] ;
+			$objects_found_in_all_files{$reference_object_number}[2]= $objects_selected{$reference_object_number}{$fits_file}[IND_SEL_Y_IMAGE] ;
 		    }
 		    else
 		    {
@@ -1620,7 +1627,7 @@ sub transform_acceptance_circle
 #    $transformed_acceptance_circle{'CENTER_X'}= $ccd_window{'LOWER_X'} + ($ccd_window{'UPPER_X'}- $ccd_window{'LOWER_X'})/2 + $acceptance_circle{'CENTER_OFFSET_X'} ;
 #    $transformed_acceptance_circle{'CENTER_Y'}= $ccd_window{'LOWER_Y'} + ($ccd_window{'UPPER_Y'}- $ccd_window{'LOWER_Y'})/2 + $acceptance_circle{'CENTER_OFFSET_X'} ;
     $transformed_acceptance_circle{'CENTER_X'}= ($u_x- $l_x)/2 + $o_x ;
-    $transformed_acceptance_circle{'CENTER_Y'}= ($u_x- $l_x)/2 + $o_x ;
+    $transformed_acceptance_circle{'CENTER_Y'}= ($u_y- $l_y)/2 + $o_y ;
     $transformed_acceptance_circle{'RADIUS'}  = $o_r/$binning;
 
     print "transform_acceptance_circle: center X: $transformed_acceptance_circle{'CENTER_X'}\n";
@@ -1807,6 +1814,14 @@ sub read_configuration
 		}
 	    }
 	    $focuser_properties{$identifier}= $value ;	
+	}
+	elsif( defined $ccd_window{$identifier})
+	{
+	    $ccd_window{$identifier}= $value;
+	}
+	elsif( defined $acceptance_circle{$identifier})
+	{
+	    $acceptance_circle{$identifier}= $value;
 	}
 ## NO: do not know the filter names!:	elsif( defined $filter_focus_properties{$identifier})
 	else
