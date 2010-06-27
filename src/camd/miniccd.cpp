@@ -58,15 +58,13 @@ class Miniccd:public Camera
 		virtual ~ Miniccd (void);
 
 		virtual int setCoolTemp (float _temp);
-		virtual int camFilter (int new_filter);
 };
 
 };
 
 using namespace rts2camd;
 
-int
-Miniccd::initChips ()
+int Miniccd::initChips ()
 {
 	int in_width;
 	int in_height;
@@ -120,9 +118,7 @@ Miniccd::initChips ()
 	return 0;
 }
 
-
-void
-Miniccd::initDataTypes ()
+void Miniccd::initDataTypes ()
 {
 	switch (sizeof_pixel)
 	{
@@ -135,9 +131,7 @@ Miniccd::initDataTypes ()
 	}
 }
 
-
-int
-Miniccd::startExposure ()
+int Miniccd::startExposure ()
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_EXP_LEN / CCD_ELEM_SIZE];
 	int exposure_msec = (int) (getExposure () * 1000);
@@ -166,9 +160,7 @@ Miniccd::startExposure ()
 	return -1;
 }
 
-
-long
-Miniccd::isExposing ()
+long Miniccd::isExposing ()
 {
 	fd_set set;
 	struct timeval read_tout;
@@ -208,9 +200,7 @@ Miniccd::isExposing ()
 	return 100;
 }
 
-
-int
-Miniccd::doReadout ()
+int Miniccd::doReadout ()
 {
 	int ret;
 
@@ -230,9 +220,7 @@ Miniccd::doReadout ()
 	return 0;
 }
 
-
-int
-Miniccd::stopExposure ()
+int Miniccd::stopExposure ()
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_ABORT_LEN / CCD_ELEM_SIZE];
 	/*
@@ -246,9 +234,7 @@ Miniccd::stopExposure ()
 	return Camera::stopExposure ();
 }
 
-
-Miniccd::Miniccd (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Miniccd::Miniccd (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	fd_ccd = -1;
 	device_file = NULL;
@@ -258,15 +244,12 @@ Camera (in_argc, in_argv)
 	addOption ('f', "device_file", 1, "miniccd device file (/dev/xxx entry)");
 }
 
-
 Miniccd::~Miniccd (void)
 {
 	close (fd_ccd);
 }
 
-
-int
-Miniccd::processOption (int in_opt)
+int Miniccd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -279,9 +262,7 @@ Miniccd::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Miniccd::init ()
+int Miniccd::init ()
 {
 	int ret;
 	int msg_len;
@@ -339,9 +320,7 @@ Miniccd::init ()
 	return initChips ();
 }
 
-
-int
-Miniccd::setCoolTemp (float _temp)
+int Miniccd::setCoolTemp (float _temp)
 {
 	if (!tempControl->getValueBool ())
 		return 0;
@@ -356,19 +335,10 @@ Miniccd::setCoolTemp (float _temp)
 	msg[CCD_TEMP_SET_LO_INDEX] = 0;
 	write (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
 	read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
-	return 0;
+	return Camera::setCoolTemp (_temp);
 }
 
-
-int
-Miniccd::camFilter (int in_filter)
-{
-	return 0;
-}
-
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Miniccd device = Miniccd (argc, argv);
 	return device.run ();

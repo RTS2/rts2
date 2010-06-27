@@ -174,9 +174,7 @@ Urvc2::init_shutter ()
 	}
 }
 
-
-int
-Urvc2::set_fan (bool fan_state)
+int Urvc2::set_fan (bool fan_state)
 {
 	MiscellaneousControlParams ctrl;
 	StatusResults sr;
@@ -214,17 +212,13 @@ Urvc2::setcool (int reg, int setpt, int prel)
 	return 0;
 }
 
-
-int
-Urvc2::initChips ()
+int Urvc2::initChips ()
 {
 	OpenCCD (0, &C);
 	return Camera::initChips ();
 }
 
-
-int
-Urvc2::startExposure ()
+int Urvc2::startExposure ()
 {
 	#ifdef INIT_SHUTTER
 	init_shutter ();
@@ -235,9 +229,7 @@ Urvc2::startExposure ()
 	return (CCDExpose (C, (int) (100 * (getExposure ()) + 0.5), getExpType () ? 0 : 1));
 }
 
-
-long
-Urvc2::isExposing ()
+long Urvc2::isExposing ()
 {
 	int ret;
 	ret = Camera::isExposing ();
@@ -254,9 +246,7 @@ Urvc2::isExposing ()
 	return -2;
 }
 
-
-int
-Urvc2::doReadout ()
+int Urvc2::doReadout ()
 {
 	if (CCDReadout ((short unsigned int *) dataBuffer, C, chipUsedReadout->getXInt () / binningVertical (),
 		chipUsedReadout->getYInt () / binningHorizontal (),
@@ -273,9 +263,7 @@ Urvc2::doReadout ()
 	return -2;
 }
 
-
-int
-Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -302,7 +290,6 @@ Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
 Urvc2::Urvc2 (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
@@ -326,15 +313,12 @@ Urvc2::Urvc2 (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	cameraID = DEFAULT_CAMERA;
 }
 
-
 Urvc2::~Urvc2 (void)
 {
 	CloseCCD (C);
 }
 
-
-int
-Urvc2::init ()
+int Urvc2::init ()
 {
 	short base;
 	int i;
@@ -399,9 +383,7 @@ Urvc2::init ()
 	return initChips ();
 }
 
-
-int
-Urvc2::info ()
+int Urvc2::info ()
 {
 	StatusResults gvr;
 	QueryTemperatureStatusResults qtsr;
@@ -419,9 +401,7 @@ Urvc2::info ()
 	return Camera::info ();
 }
 
-
-int
-Urvc2::stopExposure ()
+int Urvc2::stopExposure ()
 {
 	EndExposureParams eep;
 	eep.ccd = 0;
@@ -430,25 +410,21 @@ Urvc2::stopExposure ()
 		return -1;
 
 	return 0;
-};
-
-
-int
-Urvc2::setCoolTemp (float coolpoint)
-{
-	return setcool (1, ccd_c2ad (coolpoint) + 0x7, 0xaf);
 }
 
+int Urvc2::setCoolTemp (float coolpoint)
+{
+	if (setcool (1, ccd_c2ad (coolpoint) + 0x7, 0xaf))
+		return -1;
+	return Camera::setCoolTemp (coolpoint);
+}
 
-void
-Urvc2::afterNight ()
+void Urvc2::afterNight ()
 {
 	setcool (0, 0, 0);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Urvc2 device = Urvc2 (argc, argv);
 	return device.run ();

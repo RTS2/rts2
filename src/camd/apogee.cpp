@@ -885,9 +885,7 @@ void Apogee::afterNight ()
 		camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
 }
 
-
-int
-Apogee::setCoolTemp (float new_temp)
+int Apogee::setCoolTemp (float new_temp)
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();
@@ -896,12 +894,10 @@ Apogee::setCoolTemp (float new_temp)
 		camera->write_CoolerMode (Camera_CoolerMode_Off);
 	camera->write_CoolerSetPoint (new_temp);
 	camera->write_CoolerMode (Camera_CoolerMode_On);
-	return 0;
+	return Camera::setCoolTemp (new_temp);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Apogee device = Apogee (argc, argv);
 	return device.run ();

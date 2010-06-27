@@ -80,7 +80,6 @@ class MiniccdIl:public Camera
 		virtual ~ MiniccdIl (void);
 
 		virtual int setCoolTemp (float new_temp);
-		virtual int camFilter (int new_filter);
 };
 
 };
@@ -673,9 +672,7 @@ MiniccdIl::init ()
 	return initChips ();
 }
 
-
-int
-MiniccdIl::setCoolTemp (float _temp)
+int MiniccdIl::setCoolTemp (float _temp)
 {
 	if (!tempControl->getValueBool ())
 		return 0;
@@ -690,16 +687,8 @@ MiniccdIl::setCoolTemp (float _temp)
 	msg[CCD_TEMP_SET_LO_INDEX] = 0;
 	write (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
 	read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
-	return 0;
+	return Camera::setCoolTemp (_temp);
 }
-
-
-int
-MiniccdIl::camFilter (int in_filter)
-{
-	return 0;
-}
-
 
 int
 main (int argc, char **argv)

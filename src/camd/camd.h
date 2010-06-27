@@ -178,13 +178,17 @@ class Camera:public Rts2ScriptDevice
 		virtual long camWaitExpose ();
 
 		/**
-		 * Sets camera cooling temperature.
+		 * Sets camera cooling temperature. Descendants should call
+		 * Camera::setCoolTemp to make sure that the set temperature is
+		 * updated.
 		 *
 		 * @param new_temp New cooling temperature.
 		 */
 		virtual int setCoolTemp (float new_temp)
 		{
-			return -1;
+			tempSet->setValueDouble (new_temp);
+			sendValueAll (tempSet);
+			return 0;
 		}
 
 

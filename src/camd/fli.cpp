@@ -539,8 +539,7 @@ int Fli::setCoolTemp (float new_temp)
 	ret = FLISetTemperature (dev, new_temp);
 	if (ret)
 		return -1;
-	tempSet->setValueDouble (new_temp);
-	return 0;
+	return Camera::setCoolTemp (new_temp);
 }
 
 void Fli::afterNight ()

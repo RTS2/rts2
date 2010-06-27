@@ -530,7 +530,9 @@ int Sbig::setCoolTemp (float new_temp)
 		return -1;
 	temp.ccdSetpoint = ccd_c2ad (new_temp);
 	ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-	return checkSbigHw (ret);
+	if (checkSbigHw (ret))
+		return -1;
+	return Camera::setCoolTemp (new_temp);
 }
 
 int Sbig::afterNight ()

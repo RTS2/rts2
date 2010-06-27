@@ -1319,8 +1319,7 @@ int Andor::setCoolTemp (float new_temp)
 		logStream (MESSAGE_ERROR) << "Cannot set cooling tempereture, status: " << status << sendLog;
 		return -1;
 	}
-	tempSet->setValueDouble (new_temp);
-	return 0;
+	return Camera::setCoolTemp (new_temp);
 }
 
 void Andor::afterNight ()

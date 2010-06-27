@@ -245,7 +245,7 @@ int MICCD::setCoolTemp (float new_temp)
 	deleteTimers (EVENT_TE_RAMP);
 	tempTarget->setValueFloat (tempCCD->getValueFloat ());
 	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
-	return 0;
+	return Camera::setCoolTemp (new_temp);
 }
 
 int MICCD::setFilterNum (int new_filter)

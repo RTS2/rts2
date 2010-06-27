@@ -319,7 +319,7 @@ int Alta::setCoolTemp (float new_temp)
 	alta->write_CoolerEnable (true);
 	alta->write_FanMode (Apn_FanMode_High);
 	alta->write_CoolerSetPoint (new_temp);
-	return 0;
+	return Camera::setCoolTemp (new_temp);
 }
 
 void Alta::afterNight ()
