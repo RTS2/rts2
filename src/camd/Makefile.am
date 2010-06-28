@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy rts2-camd-sidecar
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
 noinst_HEADERS = camd.h ccd_msg.h cliwheel.h clifocuser.h
 
@@ -23,8 +23,6 @@ rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a
 rts2_camd_apogee_SOURCES = apogee.cpp apogee/CameraIO_LinuxPCI.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
-
-rts2_camd_sidecar_SOURCES = sidecar.cpp
 
 EXTRA_DIST = 
 
