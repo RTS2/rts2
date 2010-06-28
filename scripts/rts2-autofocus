@@ -2121,8 +2121,11 @@ if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
 #
     if(!(($rts2_device_camd_focusd eq $rts2_device_focusd) && ( $rts2_device_camd_filterd eq $rts2_device_filterd)))
     {
-	print "$scriptname: device mismatch, can not take data $rts2_device_camd_focusd eq $rts2_device_focusd, $rts2_device_camd_filterd eq $rts2_device_filterd\n" ;
+	if( $filters[0] ne "NOFILTER") 
+	{
+	    print "$scriptname: device mismatch, can not take data $rts2_device_camd_focusd eq $rts2_device_focusd, $rts2_device_camd_filterd eq $rts2_device_filterd\n" ;
 	exit 1 ;
+	}
     }
     if($rts2_device_filterd_present== TRUE_VAL)
     {
@@ -2181,19 +2184,19 @@ if( $take_data eq TRUE_STR)
 	exit 1 ;
     }
     print "$scriptname: CCD device $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
-    my $ccd_window=get_rts2_ccd_property("CCD_FLI", "WINDOW") ;
-    if( $ccd_window== FALSE_VAL ) # ToDo: I do not know why I can not put it into if() 
-    {
-	print "$scriptname: no response from ccd camera $rts2_device_camd_from_centrald\n" ;
-	exit 1 ;
-    } else {
+#    my $ccd_window=get_rts2_ccd_property("CCD_FLI", "WINDOW") ;
+#    if( $ccd_window == FALSE_VAL ) # ToDo: I do not know why I can not put it into if() 
+#    {
+#	print "$scriptname: no response from ccd camera $rts2_device_camd_from_centrald\n" ;
+#	exit 1 ;
+#    } else {
 # parse "50 70 4000 4001"
-	my @coordinates= split( /[ ]+/, $ccd_window) ;
-	$ccd_window{'LOWER_X'}= $coordinates[0] ;
-	$ccd_window{'LOWER_Y'}= $coordinates[1] ;
-	$ccd_window{'UPPER_X'}= $coordinates[2] ;
-	$ccd_window{'UPPER_Y'}= $coordinates[3] ;
-    }
+#	my @coordinates= split( /[ ]+/, $ccd_window) ;
+#	$ccd_window{'LOWER_X'}= $coordinates[0] ;
+#	$ccd_window{'LOWER_Y'}= $coordinates[1] ;
+#	$ccd_window{'UPPER_X'}= $coordinates[2] ;
+#	$ccd_window{'UPPER_Y'}= $coordinates[3] ;
+#    }
 
     if($rts2_device_filterd_present== TRUE_VAL)
     {
