@@ -63,6 +63,7 @@ class MICCD:public Camera
 		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
 
 		virtual int setFilterNum (int new_filter);
 		virtual int getFilterNum () { return getCamFilterNum (); }
@@ -253,6 +254,11 @@ int MICCD::setCoolTemp (float new_temp)
 	tempTarget->setValueFloat (val);
 	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
 	return Camera::setCoolTemp (new_temp);
+}
+
+void MICCD::afterNight ()
+{
+	setCoolTemp (+50);
 }
 
 int MICCD::setFilterNum (int new_filter)
