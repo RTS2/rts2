@@ -242,8 +242,15 @@ int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 
 int MICCD::setCoolTemp (float new_temp)
 {
+	float val;
+	int ret = miccd_environment_temperature (&camera, &val);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot retrieve environmental temperature, cannot start cooling" << sendLog;
+		return -1;
+	}
 	deleteTimers (EVENT_TE_RAMP);
-	tempTarget->setValueFloat (tempCCD->getValueFloat ());
+	tempTarget->setValueFloat (val);
 	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
 	return Camera::setCoolTemp (new_temp);
 }
