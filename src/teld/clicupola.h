@@ -25,6 +25,7 @@
 #define EVENT_CUP_START_SYNC    RTS2_LOCAL_EVENT + 550
 #define EVENT_CUP_SYNCED        RTS2_LOCAL_EVENT + 551
 #define EVENT_CUP_ENDED         RTS2_LOCAL_EVENT + 552
+#define EVENT_CUP_NOT_MOVE      RTS2_LOCAL_EVENT + 553
 
 namespace rts2teld
 {
@@ -35,6 +36,7 @@ class ClientCupola:public rts2core::Rts2DevClientCupola
 		ClientCupola (Rts2Conn * conn);
 		virtual ~ ClientCupola ();
 		virtual void syncFailed (int status);
+		virtual void notMoveFailed (int status);
 		virtual void postEvent (Rts2Event * event);
 	protected:
 		virtual void syncEnded ();

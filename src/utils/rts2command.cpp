@@ -524,6 +524,23 @@ Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
+Rts2CommandCupolaNotMove::Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copula)
+:Rts2Command (_copula->getMaster ())
+{
+	std::ostringstream _os;
+	copula = _copula;
+	_os << "stop" ;
+	setCommand (_os);
+}
+
+int
+Rts2CommandCupolaNotMove::commandReturnFailed (int status, Rts2Conn * conn)
+{
+	if (copula)
+		copula->notMoveFailed (status);
+	return Rts2Command::commandReturnFailed (status, conn);
+}
+
 
 void
 Rts2CommandChangeFocus::change (int _steps)

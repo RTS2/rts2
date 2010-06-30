@@ -513,6 +513,14 @@ class Rts2CommandCupolaMove:public Rts2Command
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
+class Rts2CommandCupolaNotMove:public Rts2Command
+{
+	Rts2DevClientCupola * copula;
+	public:
+		Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copula);
+		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+};
+
 class Rts2CommandChangeFocus:public Rts2Command
 {
 	private:

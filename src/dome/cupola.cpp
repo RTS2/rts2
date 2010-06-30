@@ -183,5 +183,9 @@ int Cupola::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return moveTo (conn, tar_ra, tar_dec);
 	}
+	else if (conn->isCommand ("stop"))
+	{
+	        return moveStop() ;
+	}
 	return Dome::commandAuthorized (conn);
 }

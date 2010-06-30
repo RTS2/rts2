@@ -226,6 +226,7 @@ class Rts2DevClientCupola:public Rts2DevClientDome
 	public:
 		Rts2DevClientCupola (Rts2Conn * in_connection);
 		virtual void syncFailed (int status);
+		virtual void notMoveFailed (int status);
 		virtual void stateChanged (Rts2ServerState * state);
 };
 

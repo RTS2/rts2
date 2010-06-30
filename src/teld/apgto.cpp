@@ -181,6 +181,7 @@ namespace rts2teld
 
   protected:
     virtual void startCupolaSync ();
+    virtual void notMoveCupola ();
 
   public:
     APGTO (int argc, char **argv);
@@ -431,14 +432,17 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
   // Invalid argumentwbuf >-É99*59:48<
   // Invalid argumentwbuf >-É89*09:27<
   // Invalid argumentwbuf >-É89*02:54<
+  // Invalid argumentwbuf >Y19:55:49.4<
+
   // ...
   if (errno) {
     logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << "wbuf >" << wbuf << "<" <<sendLog;
     errno= 0 ;
-    if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms failed to stop any tracking and motion" << sendLog;
-    }
     block_sync_move->setValueBool(true) ;
+    while( (abortAnyMotion () !=0)) {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
+      sleep(1) ;
+    }
     logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading RA/DEC"<< sendLog;
     return -1;
   }
@@ -669,8 +673,9 @@ APGTO::setAPMotionStop()
     
   if ( (error_type = tel_write( "#:Q#", 4)) < 0)
     return error_type;
-  mount_tracking->setValueBool(false) ;
 
+  mount_tracking->setValueBool(false) ;
+  notMoveCupola ();
   return 0 ;
 }
 
@@ -746,6 +751,7 @@ APGTO::selectAPTrackingMode(int trackMode)
     if ( (error_type = tel_write( "#:RT9#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(false) ;
+    notMoveCupola() ;
 
     if( tel_read_ra ()) {
       logStream (MESSAGE_ERROR) <<"APGTO::selectAPTrackingMode can not read RA." << sendLog;
@@ -763,6 +769,8 @@ APGTO::selectAPTrackingMode(int trackMode)
     if ( (error_type = tel_write( "#:RT9#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(false) ;
+    notMoveCupola() ;
+
     break;
   default:
     return -1;
@@ -1309,11 +1317,13 @@ APGTO::tel_slew_to (double ra, double dec)
   double JD;
 
   if( block_sync_move->getValueBool()) {
-
-    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE" << sendLog;
+    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
     return -1 ;
   }
-
+  if( slew_state->getValueBool()) {
+    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to mount is slewing, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
+    return -1 ;
+  }
   if( !( collision_detection->getValueBool())) {
 
     logStream (MESSAGE_INFO) << "APGTO::tel_slew_to collision detection is disabled" << sendLog;
@@ -1400,6 +1410,7 @@ APGTO::tel_slew_to (double ra, double dec)
     if( ! mount_tracking->getValueBool()) {
       if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
 	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
+	notMoveCupola() ;
 	return -1;
       } else {
 	logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
@@ -1506,6 +1517,11 @@ void APGTO::startCupolaSync ()
   }
 }
 
+void APGTO::notMoveCupola ()
+{
+  postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
+}
+
 int
 APGTO::isMoving ()
 {
@@ -1569,7 +1585,10 @@ APGTO::setTo (double ra, double dec)
     logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
     return -1 ;
   }
-
+  if( slew_state->getValueBool()) {
+    logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
+      return -1 ;
+  }
   if( !( collision_detection->getValueBool())) {
 
     logStream (MESSAGE_INFO) << "APGTO::setTo collision detection is disabled, enable it" << sendLog;
@@ -1620,6 +1639,7 @@ APGTO::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 int
 APGTO::startPark ()
 {
+  notMoveCupola() ;
   struct ln_lnlat_posn observer;
   observer.lng = telLongitude->getValueDouble ();
   observer.lat = telLatitude->getValueDouble ();
@@ -1762,6 +1782,7 @@ APGTO::valueChanged (Rts2Value * changed_value)
     }
     return ;
   } else if (changed_value ==APmove_rate) {
+
     if(( move_rate= APmove_rate->getValueInteger())== 600) {
       command= MOVE_RATE_060000 ;
     } else if( APmove_rate->getValueInteger()== 64) {
@@ -2099,6 +2120,7 @@ APGTO::info ()
 	if( APAltAz->getAlt() < 10.) {
 	  if( mount_tracking->getValueBool()) {
 	    stop= 1 ;
+	    notMoveCupola() ;
 	    logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
 	  }
 	}
@@ -2213,6 +2235,7 @@ APGTO::info ()
     }
     if( fabs( diff) > DIFFERENCE_MAX_WHILE_NOT_TRACKING) {
       logStream (MESSAGE_INFO) << "APGTO::info HA changed while mount is not tracking." << sendLog;
+      notMoveCupola() ;
       if ( selectAPTrackingMode(TRACK_MODE_ZERO) < 0 ) {
 	logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
 	return -1;

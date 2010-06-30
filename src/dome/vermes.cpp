@@ -127,6 +127,9 @@ int Vermes::moveStart ()
   if(target_coordinate_changed) {
     logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_equ.ra  << " Dec " << tel_equ.dec << sendLog ;
   }
+
+  movementState= TRACKING_ENABLED ; 
+  logStream (MESSAGE_DEBUG) << "Vermes::moveStart tracking enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
 
@@ -137,7 +140,8 @@ double Vermes::getSplitWidth (double alt)
 
 void Vermes::parkCupola ()
 {
-  logStream (MESSAGE_INFO) << "Vermes::parkCupola doing nothing" << sendLog ;
+  movementState= TRACKING_DISABLED ; 
+  logStream (MESSAGE_DEBUG) << "Vermes::parkCupola tracking disabled"<< sendLog ;
 }
 
 int Vermes::standby ()
@@ -149,11 +153,6 @@ int Vermes::standby ()
 
 int Vermes::off ()
 {
-//   if(connectSSD650vDevice(SSD650V_CMD_DISCONNECT))
-//     {
-//       logStream (MESSAGE_ERROR) << "Vermes::off a general failure occured" << sendLog ;
-//     }
-
   logStream (MESSAGE_DEBUG) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
   parkCupola ();
   return Cupola::off ();
@@ -213,6 +212,11 @@ int Vermes::info ()
   target_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   ssd650v_current->setValueDouble(current_percentage) ;
+  if ((getState () & DOME_CUP_MASK) == DOME_CUP_NOT_MOVE) {
+    logStream (MESSAGE_ERROR) << "Vermes::info stopping cupola: "<< sendLog ;
+    movementState= TRACKING_DISABLED ; 
+  }
+
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 
     logStream (MESSAGE_ERROR) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;

@@ -295,6 +295,9 @@ void Rts2DevClientCupola::syncEnded ()
 void Rts2DevClientCupola::syncFailed (int status)
 {
 }
+void Rts2DevClientCupola::notMoveFailed (int status)
+{
+}
 
 void Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
 {
