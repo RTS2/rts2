@@ -2024,7 +2024,7 @@ APGTO::info ()
   // tracking is reenabled in case a new target has been acquired
   if(mount_tracking->getValueBool()) {
     if (ccdDevice) {
-      Rts2Conn * conn = getOpenConnection (DEVICE_TYPE_CCD);
+      Rts2Conn * conn = getOpenConnection (ccdDevice);
       if( conn) {
 	Rts2Value * flitime = conn->getValue ("exposure_end");
 	if( flitime) {
