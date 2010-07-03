@@ -64,7 +64,7 @@ namespace rts2dome
     Rts2ValueString  *ssd650v_state ;
     Rts2ValueDouble  *ssd650v_read_setpoint ;
     Rts2ValueDouble  *ssd650v_setpoint ;
-    Rts2ValueBool    *cupola_tracking ;
+    Rts2ValueBool    *synchronizeTelescope ;
     Rts2ValueDouble  *ssd650v_min_setpoint ;
     Rts2ValueDouble  *ssd650v_max_setpoint ;
     Rts2ValueDouble  *ssd650v_current ;
@@ -73,6 +73,7 @@ namespace rts2dome
     virtual int moveStart () ;
     virtual int moveEnd () ;
     virtual long isMoving () ;
+    virtual int moveStop () ;
     // there is no dome door to open 
     virtual int startOpen (){return 0;}
     virtual long isOpened (){return -2;}
@@ -96,6 +97,28 @@ namespace rts2dome
 
 int Vermes::moveEnd ()
 {
+  return Cupola::moveEnd ();
+}
+int Vermes::moveStop ()
+{
+
+  logStream (MESSAGE_ERROR) << "Vermes::moveStop stopping cupola: "<< sendLog ;
+  movementState= SYNCHRONIZATION_DISABLED ; 
+
+  struct timespec rep_slv ;
+  struct timespec rep_rsl ;
+  rep_slv.tv_sec= 0 ;
+  rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
+  int ret ;
+
+  while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
+    fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+    errno= 0;
+    ret= nanosleep( &rep_slv, &rep_rsl) ;
+    if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
+      fprintf( stderr, "move_to_target_az: signal, or error in nanosleep %d\n", ret) ;
+    }
+  }
   return Cupola::moveEnd ();
 }
 long Vermes::isMoving ()
@@ -128,7 +151,7 @@ int Vermes::moveStart ()
     logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_equ.ra  << " Dec " << tel_equ.dec << sendLog ;
   }
 
-  movementState= TRACKING_ENABLED ; 
+  movementState= SYNCHRONIZATION_ENABLED ; 
   logStream (MESSAGE_DEBUG) << "Vermes::moveStart tracking enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
@@ -140,13 +163,12 @@ double Vermes::getSplitWidth (double alt)
 
 void Vermes::parkCupola ()
 {
-  movementState= TRACKING_DISABLED ; 
+  movementState= SYNCHRONIZATION_DISABLED ; 
   logStream (MESSAGE_DEBUG) << "Vermes::parkCupola tracking disabled"<< sendLog ;
 }
 
 int Vermes::standby ()
 {
-  logStream (MESSAGE_INFO) << "Vermes::standby doing nothing" << sendLog ;
   parkCupola ();
   return Cupola::standby ();
 }
@@ -161,13 +183,23 @@ int Vermes::off ()
 void Vermes::valueChanged (Rts2Value * changed_value)
 {
   int ret ;
-
+  static int lastMovementState ;
   if (changed_value == ssd650v_setpoint) {
-    movementState= MANUAL ;
-    if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-      logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor off " << sendLog ;
-      ssd650v_state->setValueString("motor undefined") ;
+ 
+    if( ssd650v_setpoint->getValueDouble() != 0.) {
+      lastMovementState= movementState ;
+      movementState= SYNCHRONIZATION_DISABLED ;
+      if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
+	logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor off " << sendLog ;
+	ssd650v_state->setValueString("motor undefined") ;
+      } else {
+	logStream (MESSAGE_INFO) << "Vermes::valueChanged switched synchronization off" << sendLog ;
+      }
+    } else {
+      movementState= lastMovementState ;
+      logStream (MESSAGE_INFO) << "Vermes::valueChanged restored synchronization mode" << sendLog ;
     } 
+    
     float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
     float getpoint ;
     if(isnan( getpoint= set_setpoint( setpoint)))  {
@@ -181,13 +213,13 @@ void Vermes::valueChanged (Rts2Value * changed_value)
       }
     }
     return ; // ask Petr what to do in general if something fails within ::valueChanged
-  } else   if (changed_value == cupola_tracking) {
-    if( cupola_tracking->getValueBool()) {
-      movementState= TRACKING_ENABLED ; 
+  } else   if (changed_value == synchronizeTelescope) {
+    if( synchronizeTelescope->getValueBool()) {
+      movementState= SYNCHRONIZATION_ENABLED ; 
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts tracking the telescope"<< sendLog ;
     } else {
       // motor is turned off in thread
-      movementState= TRACKING_DISABLED ;
+      movementState= SYNCHRONIZATION_DISABLED ;
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola tracking stoped"<< sendLog ;
     }
     return ;
@@ -212,20 +244,16 @@ int Vermes::info ()
   target_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   ssd650v_current->setValueDouble(current_percentage) ;
-  if ((getState () & DOME_CUP_MASK) == DOME_CUP_NOT_MOVE) {
-    logStream (MESSAGE_ERROR) << "Vermes::info stopping cupola: "<< sendLog ;
-    movementState= TRACKING_DISABLED ; 
-  }
 
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 
     logStream (MESSAGE_ERROR) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;
 
   }
-  if( movementState == TRACKING_ENABLED) {
-    cupola_tracking->setValueBool(true) ;
+  if( movementState == SYNCHRONIZATION_ENABLED) {
+    synchronizeTelescope->setValueBool(true) ;
   } else  {
-    cupola_tracking->setValueBool(false) ;
+    synchronizeTelescope->setValueBool(false) ;
   }
 
   if( motorState== SSD650V_MS_RUNNING) {
@@ -283,7 +311,7 @@ Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
   // since this driver is Obs. Vermes specific no options are really required
   createValue (target_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES  );
   createValue (azimut_difference,    "AZdiff",          "(cupola - target) AZ reading",       false, RTS2_DT_DEGREES  );
-  createValue (cupola_tracking,      "Tracking",        "telescope tracking (true: enabled, false:motor off)", false, RTS2_VALUE_WRITABLE);
+  createValue (synchronizeTelescope, "Synchronize",     "synchronize with telescope (true: enabled, false:manual mode)", false, RTS2_VALUE_WRITABLE);
   createValue (barcode_reader_state, "BCRstate",        "barcodereader status (0: CUP_AZ valid, 1:invalid)", false);
   createValue (ssd650v_state,        "SSDstate",        "ssd650v inverter status",            false);
   createValue (ssd650v_current,      "SSDcurrent",      "ssd650v current as percentage of maximum", false);

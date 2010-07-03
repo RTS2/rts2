@@ -18,9 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define TRACKING_ENABLED   0
-#define TRACKING_DISABLED  1
-#define MANUAL             2
+#define SYNCHRONIZATION_ENABLED   0
+#define SYNCHRONIZATION_DISABLED  1
 
 
 #define NOT_SYNCED         0 

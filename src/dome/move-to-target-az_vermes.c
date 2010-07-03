@@ -46,7 +46,7 @@ double target_az ;
 double curMaxSetPoint= 80. ;
 double curMinSetPoint= 40. ;
 double readSetPoint ;
-int movementState= TRACKING_DISABLED ; 
+int movementState= SYNCHRONIZATION_DISABLED ; 
 double current_percentage ;
 
 extern int motorState ;
@@ -128,22 +128,7 @@ void *move_to_target_azimuth( void *value)
       snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
       //fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
     }
-    if( movementState == TRACKING_DISABLED) {
-
-      struct timespec rep_slv ;
-      struct timespec rep_rsl ;
-      rep_slv.tv_sec= 0 ;
-      rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
-
-      while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
-	fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
-	errno= 0;
-	ret= nanosleep( &rep_slv, &rep_rsl) ;
-	if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
-	  fprintf( stderr, "move_to_target_az: signal, or error in nanosleep %d\n", ret) ;
-	}
-      }
-    } else if ( movementState == TRACKING_ENABLED) {
+    if ( movementState == SYNCHRONIZATION_ENABLED) {
       target_az= dome_target_az( tel_equ, obs_location, obsvermes) ;
       curAzimutDifference=  barcodereader_az- target_az;
       // fmod is here just in case if there is something out of bounds
