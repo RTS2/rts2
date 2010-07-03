@@ -56,6 +56,7 @@
 #define OPT_APGTO_INIT           OPT_LOCAL + 54
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
+#define OPT_APGTO_CCD_DEVICE     OPT_LOCAL + 57
 
 #define SLEW_RATE_1200 '2'
 #define SLEW_RATE_0900 '1'
@@ -91,12 +92,17 @@
 #define TRACK_MODE_ZERO          3 
 #define TRACK_MODE_ZERO_NO_RESET 4 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
+
+#define TIMEOUT_CCD_NOTTAKING_IMAGE 300. // seconds
+
+
 namespace rts2teld
 {
   class APGTO:public Telescope {
   private:
     const char *device_file;
     char initialization[256];
+    char *ccdDevice;
     int apgto_fd;
     int force_start ;
     double on_set_HA ;
@@ -191,6 +197,7 @@ namespace rts2teld
     virtual int initValues ();
     virtual int info ();
     virtual int idle ();
+    virtual int willConnect (Rts2Address * in_addr);
 
     virtual int setTo (double set_ra, double set_dec);
     virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
@@ -2010,6 +2017,35 @@ APGTO::info ()
   int ret ;
   int flip= -1 ;
   int error= -1 ;
+  // if there are more than one CCD running use an iterator
+  // and find the appropriate camera
+  // if no images have been taken with TIMEOUT_CCD_NOTTACKING_IMAGE secons
+  // stop tracking.
+  // tracking is reenabled in case a new target has been acquired
+  if(mount_tracking->getValueBool()) {
+    if (ccdDevice) {
+      Rts2Conn * conn = getOpenConnection (DEVICE_TYPE_CCD);
+      if( conn) {
+	Rts2Value * flitime = conn->getValue ("exposure_end");
+	if( flitime) {
+	  if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
+	    time_t now;
+	    if( (flitime->getValueDouble() - time(&now)) < TIMEOUT_CCD_NOTTAKING_IMAGE) {
+	      logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out"<< sendLog;
+	      if( (abortAnyMotion () !=0)) {
+		logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion, due to not tacking an image" << sendLog;
+	      }
+	    }
+	  } else {
+	    logStream (MESSAGE_ERROR) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
+	  }
+	}
+      }
+    }
+  }
+  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
+    logStream (MESSAGE_INFO) << "APGTO::info state   " << sendLog;
+  }
 
   if (tel_read_ra () || tel_read_dec ()) {
     error = ERROR_IN_INFO ;
@@ -2131,7 +2167,7 @@ APGTO::info ()
       // set collision_detection to true if that occurs
       if( collision_detection->getValueBool()) {
 	if( (abortAnyMotion () !=0)) {
-	  logStream (MESSAGE_ERROR) << "APGTO::indo failed to stop any tracking and motion" << sendLog;
+	  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion" << sendLog;
 	  return -1;
 	}
       } else {
@@ -2251,6 +2287,15 @@ APGTO::idle ()
   info() ;
 
   return Telescope::idle() ;
+}
+int 
+APGTO::willConnect (Rts2Address * in_addr)
+{
+  if (ccdDevice && in_addr->getType () == DEVICE_TYPE_CCD) {
+    logStream (MESSAGE_INFO) << "APGTO::willConnect to DEVICE_TYPE_CCD: "<< ccdDevice << sendLog;
+    return 1;
+  }
+  return Telescope::willConnect (in_addr);
 }
 double
 APGTO::siderealTime() {
@@ -2423,6 +2468,7 @@ APGTO::setBasicData()
 int
 APGTO::init ()
 {
+
   struct termios tel_termios;
 
   int status;
@@ -2474,6 +2520,7 @@ APGTO::initValues ()
 {
   int ret = -1 ;
   int flip= -1 ;
+  addConstValue ("ccd", ccdDevice);
 
   strcpy (telType, "APGTO");
 
@@ -2611,6 +2658,9 @@ APGTO::processOption (int in_opt)
   case OPT_APGTO_FORCE_START:
     force_start= true;
     break;
+  case OPT_APGTO_CCD_DEVICE:
+    ccdDevice = optarg;
+    break;
   default:
     return Telescope::processOption (in_opt);
   }
@@ -2625,6 +2675,7 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   addOption (OPT_APGTO_INIT,          "init",        1, "initialization cold (after power cycle), warm");
   addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
   addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
+  addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
 
   createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
   createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
@@ -2648,6 +2699,9 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   block_sync_move->setValueBool(false) ;
   transition_while_tracking->setValueBool(false) ;
   assume_parked->setValueBool(false);
+
+  ccdDevice = NULL;
+
 }
 int
 main (int argc, char **argv)
