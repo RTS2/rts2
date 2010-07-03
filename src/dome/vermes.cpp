@@ -102,7 +102,7 @@ int Vermes::moveEnd ()
 int Vermes::moveStop ()
 {
 
-  logStream (MESSAGE_ERROR) << "Vermes::moveStop stopping cupola: "<< sendLog ;
+  logStream (MESSAGE_INFO) << "Vermes::moveStop stopping cupola: "<< sendLog ;
   movementState= SYNCHRONIZATION_DISABLED ; 
 
   struct timespec rep_slv ;
@@ -119,7 +119,7 @@ int Vermes::moveStop ()
       fprintf( stderr, "move_to_target_az: signal, or error in nanosleep %d\n", ret) ;
     }
   }
-  return Cupola::moveEnd ();
+  return Cupola::moveStop ();
 }
 long Vermes::isMoving ()
 {
