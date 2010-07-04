@@ -93,7 +93,8 @@
 #define TRACK_MODE_ZERO_NO_RESET 4 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
 
-#define TIMEOUT_CCD_NOTTAKING_IMAGE 300. // seconds
+#define TIMEOUT_CCD_NOTTAKING_IMAGE 300. // [second]
+#define TIMEOUT_SLEW_START 300. // [second]
 
 
 namespace rts2teld
@@ -110,6 +111,7 @@ namespace rts2teld
     double lastMoveRa, lastMoveDec;  
     enum { NOTMOVE, MOVE_REAL } move_state;
     time_t move_timeout;
+    time_t slew_start_time;
 
     int f_scansexa (const char *str0, double *dp);
     void getSexComponents(double value, int *d, int *m, int *s) ;
@@ -1394,6 +1396,21 @@ APGTO::tel_slew_to (double ra, double dec)
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, not slewing, tel_write_dec return value was " << ret << sendLog ;
     return -1;
   }
+  // (re-)enable tracking
+  // in case the mount detected a collision, tracking and any motion is stopped
+  // but:
+  // if target position is ok, mount can track again
+  // renable tracking before slew
+  if( ! mount_tracking->getValueBool()) {
+    if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
+      notMoveCupola() ;
+      return -1;
+    } else {
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
+    }
+  }
+  // slew now
   if (( ret=tel_write_read ("#:MS#", 5, &retstr, 1)) < 0) {
     logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to, not slewing, tel_write_read #:MS# failed" << sendLog;
     return -1;
@@ -1408,19 +1425,6 @@ APGTO::tel_slew_to (double ra, double dec)
     } else {
       if( (abortAnyMotion () !=0)) {
 	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to stoped any tracking and motion" << sendLog;
-      }
-    }
-    // (re-)enable tracking
-    // in case the mount detected a collision, tracking and any motion is stopped
-    // but:
-    // if target position is ok, mount can track again
-    if( ! mount_tracking->getValueBool()) {
-      if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
-	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
-	notMoveCupola() ;
-	return -1;
-      } else {
-	logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
       }
     }
     on_set_HA= target_HA ; // used for defining state transition while tracking
@@ -1502,6 +1506,7 @@ APGTO::startResync ()
     return -1;
   move_state = MOVE_REAL;
   slew_state->setValueBool(true) ;
+  time(&slew_start_time);
   set_move_timeout (100);
   return 0 ; 
 }
@@ -2022,26 +2027,29 @@ APGTO::info ()
   // if no images have been taken with TIMEOUT_CCD_NOTTACKING_IMAGE secons
   // stop tracking.
   // tracking is reenabled in case a new target has been acquired
-  if(mount_tracking->getValueBool()) {
-    if (ccdDevice) {
-      Rts2Conn * conn = getOpenConnection (ccdDevice);
-      if( conn) {
-	Rts2Value * flitime = conn->getValue ("exposure_end");
-	if( flitime) {
-	  if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
-	    time_t now;
-	    if( (flitime->getValueDouble() - time(&now)) < TIMEOUT_CCD_NOTTAKING_IMAGE) {
-	      logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out"<< sendLog;
-	      if( (abortAnyMotion () !=0)) {
-		logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion, due to not tacking an image" << sendLog;
+  time_t now;
+  if (ccdDevice) {
+    if(fabs(( slew_start_time - time(&now))) > TIMEOUT_SLEW_START) {
+      if(mount_tracking->getValueBool()) {
+	Rts2Conn * conn = getOpenConnection (ccdDevice);
+	if( conn) {
+	  Rts2Value * flitime = conn->getValue ("exposure_end");
+	  if( flitime) {
+	    if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
+	      logStream (MESSAGE_DEBUG) << "APGTO::info time " << fabs((flitime->getValueDouble() - time(&now))) << " < " << TIMEOUT_CCD_NOTTAKING_IMAGE<< sendLog;
+	      if( fabs((flitime->getValueDouble() - time(&now))) > TIMEOUT_CCD_NOTTAKING_IMAGE) {
+		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out"<< sendLog;
+		if( (abortAnyMotion () !=0)) {
+		  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion, due to not tacking an image" << sendLog;
+		}
 	      }
+	    } else {
+	      logStream (MESSAGE_DEBUG) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
 	    }
-	  } else {
-	    logStream (MESSAGE_ERROR) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
 	  }
 	}
       }
-    }
+    } 
   }
   if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
     logStream (MESSAGE_INFO) << "APGTO::info state   " << sendLog;
@@ -2474,8 +2482,10 @@ APGTO::init ()
   int status;
   on_set_HA= 0. ;
   force_start= false ;
+  slew_state->setValueBool(false) ;
+  time(&slew_start_time) ;
   status = Telescope::init ();
-
+  
   if (status)
     return status;
 
@@ -2520,7 +2530,7 @@ APGTO::initValues ()
 {
   int ret = -1 ;
   int flip= -1 ;
-  addConstValue ("ccd", ccdDevice);
+  addConstValue ("CCD", ccdDevice);
 
   strcpy (telType, "APGTO");
 
@@ -2552,6 +2562,8 @@ APGTO::initValues ()
 
   // Check if the sidereal time read from the mount is correct 
   if( (ret= checkSiderealTime( 1./120.)) != 0 ) {
+
+    logStream (MESSAGE_ERROR) << "initValues sidereal time larger than 1./120, exiting" << sendLog;
     exit (1) ; // do not go beyond, at least for the moment
   }
   logStream (MESSAGE_DEBUG) << "APGTO::initValues ra "
@@ -2618,7 +2630,7 @@ APGTO::initValues ()
     if( block) {
       tracking_mode= TRACK_MODE_ZERO ; 
       block_sync_move->setValueBool(true) ;
-      logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << "dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
     } 
   }
   // force_start knocks out APGTO::tel_check_declination_axis ()
