@@ -24,8 +24,7 @@
 
 Rts2Config *Rts2Config::pInstance = NULL;
 
-int
-Rts2Config::getSpecialValues ()
+int Rts2Config::getSpecialValues ()
 {
 	int ret = 0;
 	std::string horizon_file;
@@ -33,7 +32,8 @@ Rts2Config::getSpecialValues ()
 	// get some commonly used values
 	ret += getDouble ("observatory", "longitude", observer.lng);
 	ret += getDouble ("observatory", "latitude", observer.lat);
-	ret += getDouble ("observatory", "altitude", observatoryAltitude, nan("f"));
+	ret += getDouble ("observatory", "altitude", observatoryAltitude);
+
 	// load horizon file..
 	getString ("observatory", "horizon", horizon_file, "-");
 
@@ -72,7 +72,6 @@ Rts2Config::getSpecialValues ()
 	return Rts2ConfigRaw::getSpecialValues ();
 }
 
-
 Rts2Config::Rts2Config ():Rts2ConfigRaw ()
 {
 	observer.lat = 0;
@@ -82,45 +81,34 @@ Rts2Config::Rts2Config ():Rts2ConfigRaw ()
 	astrometryTimeout = 120;
 }
 
-
 Rts2Config::~Rts2Config (void)
 {
 	delete checker;
 }
 
-
-Rts2Config *
-Rts2Config::instance ()
+Rts2Config * Rts2Config::instance ()
 {
 	if (!pInstance)
 		pInstance = new Rts2Config ();
 	return pInstance;
 }
 
-
-struct ln_lnlat_posn *
-Rts2Config::getObserver ()
+struct ln_lnlat_posn * Rts2Config::getObserver ()
 {
 	return &observer;
 }
 
-
-ObjectCheck *
-Rts2Config::getObjectChecker ()
+ObjectCheck * Rts2Config::getObjectChecker ()
 {
 	return checker;
 }
 
-
-int
-Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
+int Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
 {
 	return getDouble (device, "minflux", minFlux);
 }
 
-
-time_t
-Rts2Config::getNight ()
+time_t Rts2Config::getNight ()
 {
 	time_t now = getNight (time (NULL));
 	struct tm *tm_s = gmtime (&now);

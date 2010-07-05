@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,43 +46,12 @@
  */
 class Rts2Config:public Rts2ConfigRaw
 {
-	private:
-		static Rts2Config *pInstance;
-		struct ln_lnlat_posn observer;
-		double observatoryAltitude;
-		ObjectCheck *checker;
-		int astrometryTimeout;
-		double minFlatHeigh;
-		double calibrationAirmassDistance;
-		double calibrationLunarDist;
-		int calibrationValidTime;
-		int calibrationMaxDelay;
-		float calibrationMinBonus;
-		float calibrationMaxBonus;
-
-		float swift_min_horizon;
-		float swift_soft_horizon;
-
-		bool grbd_follow_transients;
-		int grbd_validity;
-
-		std::vector <std::string> obs_requiredDevices;
-		std::vector <std::string> imgproc_astrometryDevices;
-
-		std::string obs_quePath;
-		std::string obs_acqPath;
-		std::string obs_archive;
-		std::string obs_trash;
-		std::string obs_flats;
-		std::string obs_darks;
-	protected:
-		virtual int getSpecialValues ();
-
 	public:
 		/**
-		 * Construct RTS2 class
+		 * Construct RTS2 class. 
 		 */
 		Rts2Config ();
+
 		/**
 		 * Deletes object checker.
 		 */
@@ -428,5 +397,38 @@ class Rts2Config:public Rts2ConfigRaw
 		 * @return Time of night start - UT midi of day on which night starts.
 		 */
 		time_t getNight (int year, int month, int day);
+
+	protected:
+		virtual int getSpecialValues ();
+
+	private:
+		static Rts2Config *pInstance;
+		struct ln_lnlat_posn observer;
+		double observatoryAltitude;
+		ObjectCheck *checker;
+		int astrometryTimeout;
+		double minFlatHeigh;
+		double calibrationAirmassDistance;
+		double calibrationLunarDist;
+		int calibrationValidTime;
+		int calibrationMaxDelay;
+		float calibrationMinBonus;
+		float calibrationMaxBonus;
+
+		float swift_min_horizon;
+		float swift_soft_horizon;
+
+		bool grbd_follow_transients;
+		int grbd_validity;
+
+		std::vector <std::string> obs_requiredDevices;
+		std::vector <std::string> imgproc_astrometryDevices;
+
+		std::string obs_quePath;
+		std::string obs_acqPath;
+		std::string obs_archive;
+		std::string obs_trash;
+		std::string obs_flats;
+		std::string obs_darks;
 };
 #endif							 /* !__RTS2_CONFIG__ */

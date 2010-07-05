@@ -43,7 +43,6 @@ std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val)
 	return _os;
 }
 
-
 Rts2ConfigSection::Rts2ConfigSection (const char *name)
 {
 	sectName = std::string (name);
@@ -53,15 +52,12 @@ Rts2ConfigSection::Rts2ConfigSection (const char *name)
 	#endif						 /* DEBUG_EXTRA */
 }
 
-
 Rts2ConfigSection::~Rts2ConfigSection (void)
 {
 	delete blockedBy;
 }
 
-
-Rts2ConfigValue *
-Rts2ConfigSection::getValue (const char *valueName, bool verbose)
+Rts2ConfigValue * Rts2ConfigSection::getValue (const char *valueName, bool verbose)
 {
 	std::string name (valueName);
 	for (Rts2ConfigSection::iterator iter = begin (); iter != end (); iter++)
@@ -80,9 +76,7 @@ Rts2ConfigSection::getValue (const char *valueName, bool verbose)
 	return NULL;
 }
 
-
-void
-Rts2ConfigSection::createBlockedBy (std::string val)
+void Rts2ConfigSection::createBlockedBy (std::string val)
 {
 	delete blockedBy;
 	blockedBy = new std::vector < std::string >;
@@ -119,9 +113,7 @@ Rts2ConfigSection::createBlockedBy (std::string val)
 	}
 }
 
-
-const bool
-Rts2ConfigSection::containedInBlockedBy (const char *querying_device)
+const bool Rts2ConfigSection::containedInBlockedBy (const char *querying_device)
 {
 	if (blockedBy == NULL)
 		return true;
@@ -129,9 +121,7 @@ Rts2ConfigSection::containedInBlockedBy (const char *querying_device)
 		std::string (querying_device)) != blockedBy->end ();
 }
 
-
-void
-Rts2ConfigRaw::clearSections ()
+void Rts2ConfigRaw::clearSections ()
 {
 	for (Rts2ConfigRaw::iterator iter = begin (); iter != end (); iter++)
 	{
@@ -141,9 +131,7 @@ Rts2ConfigRaw::clearSections ()
 	clear ();
 }
 
-
-int
-Rts2ConfigRaw::parseConfigFile (const char *filename)
+int Rts2ConfigRaw::parseConfigFile (const char *filename)
 {
 	int ln = 0;
 	Rts2ConfigSection *sect = NULL;
@@ -297,21 +285,17 @@ Rts2ConfigRaw::parseConfigFile (const char *filename)
 	return 0;
 }
 
-
 Rts2ConfigRaw::Rts2ConfigRaw ()
 {
 	verboseEntry = true;
 	configStream = NULL;
 }
 
-
 Rts2ConfigRaw::~Rts2ConfigRaw (void)
 {
 }
 
-
-int
-Rts2ConfigRaw::loadFile (const char *filename)
+int Rts2ConfigRaw::loadFile (const char *filename)
 {
 	clearSections ();
 
@@ -345,9 +329,7 @@ Rts2ConfigRaw::loadFile (const char *filename)
 	return 0;
 }
 
-
-Rts2ConfigSection *
-Rts2ConfigRaw::getSection (const char *section, bool verbose)
+Rts2ConfigSection * Rts2ConfigRaw::getSection (const char *section, bool verbose)
 {
 	std::string name (section);
 	for (Rts2ConfigRaw::iterator iter = begin (); iter != end (); iter++)
@@ -364,9 +346,7 @@ Rts2ConfigRaw::getSection (const char *section, bool verbose)
 	return NULL;
 }
 
-
-Rts2ConfigValue *
-Rts2ConfigRaw::getValue (const char *section, const char *valueName)
+Rts2ConfigValue * Rts2ConfigRaw::getValue (const char *section, const char *valueName)
 {
 	Rts2ConfigSection *sect = getSection (section, verboseEntry);
 	if (!sect)
@@ -376,9 +356,7 @@ Rts2ConfigRaw::getValue (const char *section, const char *valueName)
 	return sect->getValue (valueName, verboseEntry);
 }
 
-
-int
-Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf)
+int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf)
 {
 	Rts2ConfigValue *val = getValue (section, valueName);
 	if (!val)
