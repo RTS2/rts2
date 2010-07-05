@@ -26,7 +26,7 @@
 #include <iomanip>
 
 #include "r2x.h"
-#include "../utils/rts2config.h"
+#include "../utils/rts2configraw.h"
 
 using namespace XmlRpc;
 
@@ -679,11 +679,11 @@ int Client::init ()
 		strcpy (configFile + homeLen, "/.rts2");
 	}
 
-	Rts2Config *config = Rts2Config::instance ();
-	config->loadFile (configFile);
+	Rts2ConfigRaw config = Rts2ConfigRaw ();
+	config.loadFile (configFile);
 	if (xmlUsername == NULL)
 	{
-		ret = config->getString ("xmlrpc", "authorization", xmlAuthorization);
+		ret = config.getString ("xmlrpc", "authorization", xmlAuthorization);
 		if ((ret || xmlAuthorization.length()) == 0 && xmlOp != HTTP_GET)
 		{
 			std::cerr << "You don't specify authorization string in XML-RPC config file, nor on command line." << std::endl;
