@@ -67,16 +67,12 @@ class Hlohovec:public Telescope
 
 }
 
-
-void
-Hlohovec::usage ()
+void Hlohovec::usage ()
 {
 	std::cout << "\t" << getAppName () << " --ra /dev/ttyS0 --dec /dev/ttyS1" << std::endl;
 }
 
-
-int
-Hlohovec::processOption (int opt)
+int Hlohovec::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -92,9 +88,7 @@ Hlohovec::processOption (int opt)
 	return 0;
 }
 
-
-int
-Hlohovec::init ()
+int Hlohovec::init ()
 {
 	int ret;
 	ret = Telescope::init ();
@@ -134,9 +128,7 @@ Hlohovec::init ()
 	return 0;
 }
 
-
-int
-Hlohovec::info ()
+int Hlohovec::info ()
 {
 	ra_dPos->setValueInteger (raDrive->read4b (TGA_TARPOS));
 	ra_rPos->setValueInteger (raDrive->read4b (TGA_CURRPOS));
@@ -150,44 +142,32 @@ Hlohovec::info ()
 	return Telescope::info ();
 }
 
-
-int
-Hlohovec::startResync ()
+int Hlohovec::startResync ()
 {
 	return 0;
 }
 
-
-int
-Hlohovec::stopMove ()
+int Hlohovec::stopMove ()
 {
 	return 0;
 }
 
-
-int
-Hlohovec::endMove ()
+int Hlohovec::endMove ()
 {
 	return 0;
 }
 
-
-int
-Hlohovec::startPark ()
+int Hlohovec::startPark ()
 {
 	return 0;
 }
 
-
-int
-Hlohovec::endPark ()
+int Hlohovec::endPark ()
 {
 	return 0;
 }
 
-
-int
-Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == ra_dPos)
 	{
@@ -203,7 +183,6 @@ Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	return Telescope::setValue (old_value, new_value);
 }
-
 
 Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 {
@@ -222,16 +201,13 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
 }
 
-
 Hlohovec::~Hlohovec ()
 {
 	delete raDrive;
 	delete decDrive;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Hlohovec device = Hlohovec (argc, argv);
 	return device.run ();

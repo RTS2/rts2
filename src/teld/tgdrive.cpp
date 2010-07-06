@@ -113,9 +113,7 @@ void TGDrive::writeMsg (char op, int16_t address)
 		throw TGDriveError (1);
 }
 
-
-void
-TGDrive::writeMsg (char op, int16_t address, char *data, int len)
+void TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 {
 	logStream (MESSAGE_ERROR) << "writeMsg " << len << sendLog;
 	char msg[6 + len];
