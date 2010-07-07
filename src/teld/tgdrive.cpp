@@ -137,7 +137,7 @@ void TGDrive::readStatus ()
 	ecRead (msg, 3);
 }
 
-TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS9600, rts2core::C8, rts2core::NONE, 20)
+TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
 {
 	setLogAsHex (true);
 }

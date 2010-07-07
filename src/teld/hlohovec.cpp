@@ -44,8 +44,13 @@ class Hlohovec:public Telescope
 
 		Rts2ValueInteger *ra_rPos;
 		Rts2ValueInteger *ra_dPos;
+		Rts2ValueInteger *ra_appStatus;
+		Rts2ValueInteger *ra_faults;
+
 		Rts2ValueInteger *dec_rPos;
 		Rts2ValueInteger *dec_dPos;
+		Rts2ValueInteger *dec_appStatus;
+		Rts2ValueInteger *dec_faults;
 	protected:
 		virtual void usage ();
 		virtual int processOption (int opt);
@@ -132,11 +137,15 @@ int Hlohovec::info ()
 {
 	ra_dPos->setValueInteger (raDrive->read4b (TGA_TARPOS));
 	ra_rPos->setValueInteger (raDrive->read4b (TGA_CURRPOS));
+	ra_appStatus->setValueInteger (raDrive->read2b (TGA_STATUS));
+	ra_faults->setValueInteger (raDrive->read2b (TGA_FAULTS));
 
 	if (decDrive)
 	{
 		dec_dPos->setValueInteger (decDrive->read4b (TGA_TARPOS));
 		dec_rPos->setValueInteger (decDrive->read4b (TGA_CURRPOS));
+		ra_appStatus->setValueInteger (decDrive->read2b (TGA_STATUS));
+		ra_faults->setValueInteger (decDrive->read2b (TGA_FAULTS));
 	}
 
 	return Telescope::info ();
@@ -194,8 +203,13 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 
 	createValue (ra_dPos, "AX_RA_T", "Target RA position", true, RTS2_VALUE_WRITABLE);
 	createValue (ra_rPos, "AX_RA_C", "Current RA position", true);
-	createValue (dec_rPos, "AX_DEC_T", "Target DEC position", true);
+	createValue (ra_appStatus, "AX_RA_S", "RA axis status", true, RTS2_DT_HEX);
+	createValue (ra_faults, "AX_RA_F", "RA axis faults", true, RTS2_DT_HEX);
+
+	createValue (dec_rPos, "AX_DEC_T", "Target DEC position", true, RTS2_VALUE_WRITABLE);
 	createValue (dec_dPos, "AX_DEC_C", "Current DEC position", true);
+	createValue (dec_appStatus, "AX_DEC_S", "DEC axis status", true, RTS2_DT_HEX);
+	createValue (dec_faults, "AX_DEC_F", "DEC axis faults", true, RTS2_DT_HEX);
 
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");

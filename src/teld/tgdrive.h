@@ -21,6 +21,12 @@
 
 // interesting addresses
 
+/** TGA status. */
+#define TGA_STATUS                       0x01A0
+
+/** TGA falts. */
+#define TGA_FAULTS                       0x01A1
+
 /** Servo control mode. */
 #define TGA_MODE                         0x01EF
 
