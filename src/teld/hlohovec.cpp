@@ -118,7 +118,9 @@ int Hlohovec::init ()
 	if (ret)
 		return ret;
 
-	raDrive->write2b (0x1ED, 2);
+	raDrive->write2b (TGA_MASTER_CMD, 0x02);
+	raDrive->write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
+	raDrive->write2b (TGA_MASTER_CMD, 0x20);
 
 	if (devDEC != NULL)
 	{
@@ -128,6 +130,7 @@ int Hlohovec::init ()
 		ret = decDrive->init ();
 		if (ret)
 			return ret;
+		decDrive->write2b (TGA_MASTER_CMD, 0x02);
 	}
 
 	return 0;

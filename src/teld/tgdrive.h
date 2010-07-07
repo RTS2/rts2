@@ -27,6 +27,9 @@
 /** TGA falts. */
 #define TGA_FAULTS                       0x01A1
 
+/** Servo master command. */
+#define TGA_MASTER_CMD                   0x01ED
+
 /** Servo control mode. */
 #define TGA_MODE                         0x01EF
 
