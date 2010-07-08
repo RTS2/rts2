@@ -35,6 +35,8 @@ class Keithley:public Gpib
 		Keithley (int argc, char **argv);
 		virtual ~ Keithley (void);
 
+		virtual void setFullBopState (int new_state);
+
 		virtual int info ();
 
 	protected:
@@ -43,7 +45,7 @@ class Keithley:public Gpib
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-		virtual bool canCallInfoFromTimer () { return getDeviceBopState () & BOP_TEL_MOVE ? false : true; }
+		virtual bool canCallInfoFromTimer () { return (triggerMode->getValueInteger () == 1) && (getDeviceBopState () & BOP_TEL_MOVE ? false : true); }
 
 	private:
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
@@ -51,6 +53,10 @@ class Keithley:public Gpib
 		void waitOpc ();
 
 		Rts2ValueBool *azero;
+
+		// triggering mode
+		Rts2ValueSelection *triggerMode;
+
 		// current statistics and value
 		Rts2ValueDoubleStat *scurrent;
 		rts2core::DoubleArray *current;
@@ -113,6 +119,12 @@ void Keithley::waitOpc ()
 Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	createValue (azero, "AZERO", "SYSTEM:AZERO value", true, RTS2_VALUE_WRITABLE);
+
+	createValue (triggerMode, "trigger_mode", "triggering mode", true, RTS2_VALUE_WRITABLE);
+	triggerMode->addSelVal ("before exposure");
+	triggerMode->addSelVal ("manual");
+	triggerMode->setValueInteger (0);
+
 	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
 	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
 	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_TRIGGERED);
@@ -182,6 +194,10 @@ int Keithley::init ()
 	 	logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
+	if (triggerMode->getValueInteger () == 0)
+	{
+		maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for exposure");
+	}
 	return 0;
 }
 
@@ -195,6 +211,19 @@ int Keithley::initValues ()
 
 int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
+	if (old_value == triggerMode)
+	{
+		switch (new_value->getValueInteger ())
+		{
+			case 0:
+				maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for exposure trigger");
+				break;
+			case 1:
+				maskState (BOP_TRIG_EXPOSE, 0, "end wait for exposure trigger - trigerring mode changed");
+				break;
+		}
+		return 0;
+	}
 	try
 	{
 		if (old_value == azero)
@@ -224,6 +253,25 @@ int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return -2;
 	}
 	return Gpib::setValue (old_value, new_value);
+}
+
+void Keithley::setFullBopState (int new_state)
+{
+	if (triggerMode->getValueInteger () == 0)
+	{
+		if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
+		{
+			maskState (BOP_TRIG_EXPOSE, 0, "end waiting for exposure trigger");
+			logStream (MESSAGE_DEBUG) << "triggering infoAll" << sendLog;
+			infoAll ();
+			logStream (MESSAGE_DEBUG) << "infoAll triggered" << sendLog;
+		}
+		if (new_state & BOP_TEL_MOVE)
+		{
+			maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for exposure");
+		}
+	}
+	Gpib::setFullBopState (new_state);
 }
 
 int Keithley::info ()

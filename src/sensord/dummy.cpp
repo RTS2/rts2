@@ -80,18 +80,18 @@ class Dummy:public Sensor
 			Sensor::postEvent (event);
 		}
 
-		/** Log status info calls. Usefull for system debugging. */
+		/** Handles logic of BOP_WILL_EXPOSE and BOP_TRIG_EXPOSE. */
 		virtual void setFullBopState (int new_state)
 		{
 		 	Sensor::setFullBopState (new_state);
 			if (new_state & BOP_WILL_EXPOSE)
 			{
 				sleep (10);
-				maskState (BOP_MASK, 0, "enabled exposure");
+				maskState (BOP_TRIG_EXPOSE, 0, "enabled exposure");
 			}
 			if (new_state & BOP_TEL_MOVE)
 			{
-				maskState (BOP_MASK, BOP_TRIG_EXPOSE, "waiting for next exposure");
+				maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for next exposure");
 			}
 		}
 
@@ -148,7 +148,7 @@ class Dummy:public Sensor
 				return ret;
 			// initialize timer
 			addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
-			maskState (BOP_MASK, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
+			maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
 			return 0;
 		}
 	private:
