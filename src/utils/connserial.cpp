@@ -163,9 +163,7 @@ int ConnSerial::init ()
 	return 0;
 }
 
-
-int
-ConnSerial::setVTime (int _vtime)
+int ConnSerial::setVTime (int _vtime)
 {
 	s_termios.c_cc[VTIME] = _vtime;
 	if (setAttr ())
@@ -308,7 +306,10 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 		char *tmp_b = new char[rlen + 1];
 		memcpy (tmp_b, rbuf, rlen);
 		tmp_b[rlen] = '\0';
-		logStream (MESSAGE_DEBUG) << "readed from port '" << tmp_b << "'" << sendLog;
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "readed from port '";
+		logBuffer (ls, rbuf, rlen);
+		ls << "'" << sendLog;
 		delete []tmp_b;
 	}
 	return rlen;
