@@ -168,6 +168,7 @@
 #define RTS2_VWHEN_AFTER_START        0x00001000
 #define RTS2_VWHEN_BEFORE_END         0x00002000
 #define RTS2_VWHEN_AFTER_END          0x00003000
+#define RTS2_VWHEN_TRIGGERED          0x00004000
 
 #define RTS2_TYPE_MASK                0x00ff0000
 #define RTS2_DT_RA                    0x00010000

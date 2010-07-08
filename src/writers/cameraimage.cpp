@@ -39,13 +39,10 @@ void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double aft
 bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 {
 	bool ret = false;
-	for (std::vector < ImageDeviceWait * >::iterator iter =
-		deviceWaits.begin (); iter != deviceWaits.end ();)
+	for (std::vector < ImageDeviceWait * >::iterator iter = deviceWaits.begin (); iter != deviceWaits.end ();)
 	{
 		ImageDeviceWait *idw = *iter;
-		if (idw->getClient () == devClient
-			&& (isnan (devClient->getConnection ()->getInfoTime ())
-			|| idw->getAfter () < devClient->getConnection ()->getInfoTime ()))
+		if (idw->getClient () == devClient && (isnan (devClient->getConnection ()->getInfoTime ()) || idw->getAfter () < devClient->getConnection ()->getInfoTime ()))
 		{
 			delete idw;
 			iter = deviceWaits.erase (iter);
@@ -69,9 +66,21 @@ bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 	return ret;
 }
 
+bool CameraImage::wasTriggered (rts2core::Rts2DevClient * devClient)
+{
+	for (std::vector < rts2core::Rts2DevClient * >::iterator iter = triggerWaits.begin (); iter != triggerWaits.end (); iter++)
+	{
+		if (*iter == devClient)
+		{
+			image->writeConn (devClient->getConnection (), TRIGGERED);
+			triggerWaits.erase (iter);
+			return true;
+		}
+	}
+	return false;
+}
 
-bool
-CameraImage::canDelete ()
+bool CameraImage::canDelete ()
 {
 	if (isnan (exEnd) || !dataWriten)
 		return false;
@@ -136,6 +145,29 @@ void CameraImages::infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2
 	{
 		CameraImage *ci = (*iter).second;
 		if (ci->waitingFor (client))
+		{
+			if (ci->canDelete ())
+			{
+				master->processCameraImage (iter++);
+			}
+			else
+			{
+				iter++;
+			}
+		}
+		else
+		{
+			iter++;
+		}
+	}
+}
+
+void CameraImages::wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+{
+	for (CameraImages::iterator iter = begin (); iter != end ();)
+	{
+		CameraImage *ci = (*iter).second;
+		if (ci->wasTriggered (client))
 		{
 			if (ci->canDelete ())
 			{

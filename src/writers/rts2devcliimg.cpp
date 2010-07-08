@@ -1,6 +1,6 @@
 /* 
  * Client which produces images.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -87,6 +87,11 @@ void Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 			// check also actualImage
 			if (actualImage)
 				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
+			break;
+		case EVENT_TRIGGERED:
+			images.wasTriggered (this, (rts2core::Rts2DevClient *) event->getArg ());
+			if (actualImage)
+			  	actualImage->wasTriggered ((rts2core::Rts2DevClient *) event->getArg ());
 			break;
 		case EVENT_NUMBER_OF_IMAGES:
 			*((int *)event->getArg ()) += images.size ();
@@ -391,6 +396,10 @@ void Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 				queCommand (new rts2core::Rts2CommandInfo (getMaster ()));
 				ci->waitForDevice (this, getMaster ()->getNow ());
 			}
+			if (connection->existWriteType (RTS2_VWHEN_TRIGGERED))
+			{
+				ci->waitForTrigger (this);
+			}
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *) event->getArg ();
@@ -411,6 +420,11 @@ void Rts2DevClientWriteImage::infoFailed ()
 	connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_FAILED, this));
 }
 
+void Rts2DevClientWriteImage::stateChanged (Rts2ServerState * state)
+{
+	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE))
+		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
+}
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {

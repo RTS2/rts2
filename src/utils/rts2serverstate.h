@@ -1,6 +1,6 @@
 /* 
- * Server state.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Server state support.
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,10 +34,6 @@
  */
 class Rts2ServerState
 {
-	private:
-		int value;
-		int oldValue;
-		time_t lastUpdate;
 	public:
 		Rts2ServerState ()
 		{
@@ -45,26 +41,24 @@ class Rts2ServerState
 			oldValue = 0;
 			value = DEVICE_NOT_READY;
 		}
-		virtual ~ Rts2ServerState (void)
-		{
-		}
+
+		virtual ~ Rts2ServerState (void) {}
+
 		void setValue (int new_value)
 		{
 			time (&lastUpdate);
 			oldValue = value;
 			value = new_value;
 		}
-		int getValue ()
-		{
-			return value;
-		}
-		int getOldValue ()
-		{
-			return oldValue;
-		}
-		bool maskValueChanged (int q_mask)
-		{
-			return (getValue () & q_mask) != (getOldValue () & q_mask);
-		}
+
+		int getValue () { return value; }
+
+		int getOldValue () { return oldValue; }
+
+		bool maskValueChanged (int q_mask) { return (getValue () & q_mask) != (getOldValue () & q_mask); }
+	private:
+		int value;
+		int oldValue;
+		time_t lastUpdate;
 };
 #endif							 /* !__RTS2_SERVER_STATE__ */

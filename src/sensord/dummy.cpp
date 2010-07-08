@@ -37,13 +37,13 @@ class Dummy:public Sensor
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
-			createValue (testOnOff, "test_on_off", "test true/false displayed as on/off", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (testOnOff, "test_on_off", "test true/false displayed as on/off", false, RTS2_VALUE_WRITABLE | RTS2_VWHEN_TRIGGERED | RTS2_DT_ONOFF);
 			goodWeather->setValueBool (false);
 			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
 			createValue (statTest, "test_stat", "test stat value", true);
 
-			createValue (statContent1, "test_content1", "test content 1", true, RTS2_WR_GROUP_NUMBER(0));
-			createValue (statContent2, "test_content2", "test content 2", true, RTS2_WR_GROUP_NUMBER(0));
+			createValue (statContent1, "test_content1", "test content 1", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
+			createValue (statContent2, "test_content2", "test content 2", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
 
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);

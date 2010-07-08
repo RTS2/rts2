@@ -152,6 +152,8 @@ class Rts2DevClientWriteImage:public rts2core::Rts2DevClient
 
 		virtual void infoOK ();
 		virtual void infoFailed ();
+
+		virtual void stateChanged (Rts2ServerState * state);
 };
 
 class Rts2CommandQueImage:public rts2core::Rts2Command

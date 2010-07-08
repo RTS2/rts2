@@ -2264,6 +2264,10 @@ void Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
 						writeConnValue (conn, val);
 					break;
+				case TRIGGERED:
+					if (val->getValueWriteFlags () == RTS2_VWHEN_TRIGGERED)
+					  	writeConnValue (conn, val);
+					break;
 				case EXPOSURE_END:
 					// check to write change of value
 					if (val->writeWhenChanged ())

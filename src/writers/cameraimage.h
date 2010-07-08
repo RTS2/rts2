@@ -1,6 +1,6 @@
 /* 
  * Classes for camera image.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,15 +46,9 @@ class ImageDeviceWait
 			after = in_after;
 		}
 
-		rts2core::Rts2DevClient *getClient ()
-		{
-			return devclient;
-		}
+		rts2core::Rts2DevClient *getClient () { return devclient; }
 
-		double getAfter ()
-		{
-			return after;
-		}
+		double getAfter () { return after; }
 };
 
 /**
@@ -62,8 +56,6 @@ class ImageDeviceWait
  */
 class CameraImage
 {
-	private:
-		std::vector < ImageDeviceWait * >deviceWaits;
 	public:
 		double exStart;
 		double exEnd;
@@ -82,17 +74,17 @@ class CameraImage
 		void waitForDevice (rts2core::Rts2DevClient * devClient, double after);
 		bool waitingFor (rts2core::Rts2DevClient * devClient);
 
-		void setExEnd (double in_exEnd)
-		{
-			exEnd = in_exEnd;
-		}
+		void waitForTrigger (rts2core::Rts2DevClient * devClient) { triggerWaits.push_back (devClient); }
+		bool wasTriggered (rts2core::Rts2DevClient * devClient);
 
-		void setDataWriten ()
-		{
-			dataWriten = true;
-		}
+		void setExEnd (double in_exEnd) { exEnd = in_exEnd; }
+
+		void setDataWriten () { dataWriten = true; }
 
 		bool canDelete ();
+	private:
+		std::vector < ImageDeviceWait * > deviceWaits;
+		std::vector < rts2core::Rts2DevClient * > triggerWaits;
 };
 
 /**
@@ -102,14 +94,13 @@ class CameraImage
 class CameraImages:public std::map <int, CameraImage * >
 {
 	public:
-		CameraImages ()
-		{
-		}
+		CameraImages () {}
 		virtual ~CameraImages (void);
 
 		void deleteOld ();
 
 		void infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 		void infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		void wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 };
 #endif							 /* !__RTS2_CAMERA_IMAGE__ */

@@ -58,6 +58,9 @@
 /** Recconect for UDP connections. */
 #define EVENT_UDP_RECONECT_TIMER   21
 
+/** Called on change of the trigger state. */
+#define EVENT_TRIGGERED            22
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 

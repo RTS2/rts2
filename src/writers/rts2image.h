@@ -71,7 +71,7 @@ typedef enum
 shutter_t;
 
 typedef enum
-{ EXPOSURE_START, INFO_CALLED, EXPOSURE_END }
+{ EXPOSURE_START, INFO_CALLED, EXPOSURE_END, TRIGGERED }
 imageWriteWhich_t;
 
 /**
