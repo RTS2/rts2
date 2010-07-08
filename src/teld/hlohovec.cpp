@@ -118,9 +118,14 @@ int Hlohovec::init ()
 	if (ret)
 		return ret;
 
-	raDrive->write2b (TGA_MASTER_CMD, 0x02);
+	raDrive->write2b (TGA_MASTER_CMD, 2);
 	raDrive->write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
-	raDrive->write2b (TGA_MASTER_CMD, 0x20);
+	raDrive->write2b (TGA_MASTER_CMD, 5);
+	raDrive->write4b (TGA_MODE, 0x4004);
+
+	raDrive->write4b (TGA_ACCEL, 8947850);
+	raDrive->write4b (TGA_DECEL, 8947850);
+	raDrive->write4b (TGA_VMAX, 858993459);
 
 	if (devDEC != NULL)
 	{

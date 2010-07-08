@@ -72,12 +72,20 @@
 /** After reset enabled */
 #define TGA_AFTER_RESET_ENABLED         2
 
-/**
- * Target position */
+/** Target position */
 #define TGA_TARPOS                      0x0192
 
 /** Current positon */
 #define TGA_CURRPOS                     0x0196
+
+/** Maximal speed */
+#define TGA_VMAX                        0x01D2
+
+/** Acceleration */
+#define TGA_ACCEL                       0x01D4
+
+/** Deceleration */
+#define TGA_DECEL                       0x01D6
 
 namespace rts2teld
 {
