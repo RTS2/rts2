@@ -62,11 +62,13 @@ class Hlohovec:public Telescope
 
 		Rts2ValueInteger *ra_rPos;
 		Rts2ValueInteger *ra_dPos;
+		Rts2ValueInteger *ra_aCur;
 		Rts2ValueInteger *ra_appStatus;
 		Rts2ValueInteger *ra_faults;
 
 		Rts2ValueInteger *dec_rPos;
 		Rts2ValueInteger *dec_dPos;
+		Rts2ValueInteger *dec_aCur;
 		Rts2ValueInteger *dec_appStatus;
 		Rts2ValueInteger *dec_faults;
 };
@@ -128,6 +130,8 @@ int Hlohovec::init ()
 	raDrive->write4b (TGA_DECEL, 8947850);
 	raDrive->write4b (TGA_VMAX, 858993459);
 
+	raDrive->write2b (TGA_DESCUR, 500);
+
 	if (devDEC != NULL)
 	{
 		decDrive = new TGDrive (devDEC, this);
@@ -146,6 +150,7 @@ int Hlohovec::info ()
 {
 	ra_dPos->setValueInteger (raDrive->read4b (TGA_TARPOS));
 	ra_rPos->setValueInteger (raDrive->read4b (TGA_CURRPOS));
+	ra_aCur->setValueInteger (raDrive->read2b (TGA_ACTCUR));
 	ra_appStatus->setValueInteger (raDrive->read2b (TGA_STATUS));
 	ra_faults->setValueInteger (raDrive->read2b (TGA_FAULTS));
 
@@ -153,6 +158,7 @@ int Hlohovec::info ()
 	{
 		dec_dPos->setValueInteger (decDrive->read4b (TGA_TARPOS));
 		dec_rPos->setValueInteger (decDrive->read4b (TGA_CURRPOS));
+		dec_aCur->setValueInteger (decDrive->read2b (TGA_ACTCUR));
 		ra_appStatus->setValueInteger (decDrive->read2b (TGA_STATUS));
 		ra_faults->setValueInteger (decDrive->read2b (TGA_FAULTS));
 	}
@@ -224,13 +230,15 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 	devRA = NULL;
 	devDEC = NULL;
 
-	createValue (ra_dPos, "AX_RA_T", "Target RA position", true, RTS2_VALUE_WRITABLE);
-	createValue (ra_rPos, "AX_RA_C", "Current RA position", true);
+	createValue (ra_dPos, "AX_RA_T", "target RA position", true, RTS2_VALUE_WRITABLE);
+	createValue (ra_rPos, "AX_RA_C", "current RA position", true);
+	createValue (ra_aCur, "AX_RA_CU", "actual RA current", false);
 	createValue (ra_appStatus, "AX_RA_S", "RA axis status", true, RTS2_DT_HEX);
 	createValue (ra_faults, "AX_RA_F", "RA axis faults", true, RTS2_DT_HEX);
 
-	createValue (dec_rPos, "AX_DEC_T", "Target DEC position", true, RTS2_VALUE_WRITABLE);
-	createValue (dec_dPos, "AX_DEC_C", "Current DEC position", true);
+	createValue (dec_rPos, "AX_DEC_T", "target DEC position", true, RTS2_VALUE_WRITABLE);
+	createValue (dec_dPos, "AX_DEC_C", "current DEC position", true);
+	createValue (dec_aCur, "AX_DEC_CU", "actual DEC current", false);
 	createValue (dec_appStatus, "AX_DEC_S", "DEC axis status", true, RTS2_DT_HEX);
 	createValue (dec_faults, "AX_DEC_F", "DEC axis faults", true, RTS2_DT_HEX);
 

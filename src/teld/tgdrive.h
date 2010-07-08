@@ -72,6 +72,12 @@
 /** After reset enabled */
 #define TGA_AFTER_RESET_ENABLED         1
 
+/** Desired current */
+#define TGA_DESCUR                      0x0190
+
+/** Actual current */
+#define TGA_ACTCUR                      0x01A8
+
 /** Target position */
 #define TGA_TARPOS                      0x0192
 
