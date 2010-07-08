@@ -427,6 +427,16 @@ std::string Rts2Conn::getStateString ()
 		_os << " | BLOCK TELESCOPE MOVEMENT";
 	else if (getFullBopState () & BOP_TEL_MOVE)
 		_os << " # BLOCK TELESCOPE MOVEMENT";
+	
+	if (getState () & BOP_WILL_EXPOSE)
+	  	_os << " | WILL EXPOSE";
+	else if (getFullBopState () & BOP_WILL_EXPOSE)
+	  	_os << " # WILL EXPOSE";
+
+	if (getState () & BOP_TRIG_EXPOSE)
+	  	_os << " | WAIT TRIG EXPOSE";
+	else if (getFullBopState () & BOP_TRIG_EXPOSE)
+	  	_os << " # WAIT TRIG EXPOSE";
 
 	return _os.str ();
 }

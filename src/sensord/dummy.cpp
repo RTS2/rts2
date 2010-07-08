@@ -32,29 +32,6 @@ namespace rts2sensord
  */
 class Dummy:public Sensor
 {
-	private:
-		Rts2ValueInteger *testInt;
-		Rts2ValueBool *goodWeather;
-		Rts2ValueBool *testOnOff;
-		Rts2ValueDoubleStat *statTest;
-		rts2core::DoubleArray *statContent1;
-		rts2core::DoubleArray *statContent2;
-		Rts2ValueDoubleStat *statTest5;
-		Rts2ValueDoubleMinMax *minMaxTest;
-		Rts2ValueBool *hwError;
-
-		Rts2ValueBool *timerEnabled;
-		Rts2ValueLong *timerCount;
-	protected:
-		virtual int init ()
-		{
-			int ret = Sensor::init ();
-			if (ret)
-				return ret;
-			// initialize timer
-			addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
-			return 0;
-		}
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
@@ -103,6 +80,21 @@ class Dummy:public Sensor
 			Sensor::postEvent (event);
 		}
 
+		/** Log status info calls. Usefull for system debugging. */
+		virtual void setFullBopState (int new_state)
+		{
+		 	Sensor::setFullBopState (new_state);
+			if (new_state & BOP_WILL_EXPOSE)
+			{
+				sleep (10);
+				maskState (BOP_MASK, 0, "enabled exposure");
+			}
+			if (new_state & BOP_TEL_MOVE)
+			{
+				maskState (BOP_MASK, BOP_TRIG_EXPOSE, "waiting for next exposure");
+			}
+		}
+
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
 		{
 		  	if (old_value == hwError)
@@ -148,6 +140,30 @@ class Dummy:public Sensor
 			}
 			return Sensor::commandAuthorized (conn);
 		}
+	protected:
+		virtual int init ()
+		{
+			int ret = Sensor::init ();
+			if (ret)
+				return ret;
+			// initialize timer
+			addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+			maskState (BOP_MASK, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
+			return 0;
+		}
+	private:
+		Rts2ValueInteger *testInt;
+		Rts2ValueBool *goodWeather;
+		Rts2ValueBool *testOnOff;
+		Rts2ValueDoubleStat *statTest;
+		rts2core::DoubleArray *statContent1;
+		rts2core::DoubleArray *statContent2;
+		Rts2ValueDoubleStat *statTest5;
+		Rts2ValueDoubleMinMax *minMaxTest;
+		Rts2ValueBool *hwError;
+
+		Rts2ValueBool *timerEnabled;
+		Rts2ValueLong *timerCount;
 };
 
 }

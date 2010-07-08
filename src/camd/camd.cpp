@@ -161,7 +161,7 @@ int Camera::endExposure ()
 
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, BOP_TEL_MOVE, 0, "chip exposure interrupted");
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, BOP_TEL_MOVE | BOP_WILL_EXPOSE, 0, "chip exposure interrupted");
 	return 0;
 }
 
@@ -943,6 +943,8 @@ int Camera::camStartExposure ()
 		&& (
 			(getDeviceBopState () & BOP_EXPOSURE)
 			|| (getMasterStateFull () & BOP_EXPOSURE)
+			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
+			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
 			|| filterMoving->getValueBool () == true
 			|| focuserMoving->getValueBool () == true
 		))
@@ -950,6 +952,9 @@ int Camera::camStartExposure ()
 		// no conflict, as when we are called, quedExpNumber will already be decreased
 		quedExpNumber->inc ();
 		sendValueAll (quedExpNumber);
+
+		if ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE))
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
 
 		if (waitingForNotBop->getValueBool () == false)
 		{
@@ -974,7 +979,7 @@ int Camera::camStartExposureWithoutCheck ()
 		return ret;
 
 	infoAll ();
-	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
+	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure chip started");
 
 	logStream (MESSAGE_INFO) << "exposing for '"
 		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
@@ -1307,7 +1312,7 @@ int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 void Camera::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
-	if (!(new_state & BOP_EXPOSURE) 
+	if (!(new_state & BOP_EXPOSURE) && !(new_state & BOP_TRIG_EXPOSE)
 		&& quedExpNumber->getValueInteger () > 0
 		&& waitingForNotBop->getValueBool ())
 	{

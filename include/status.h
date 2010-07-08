@@ -24,8 +24,8 @@
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-#ifndef __RTS__STATUS__
-#define __RTS__STATUS__
+#ifndef __RTS2__STATUS__
+#define __RTS2__STATUS__
 
 // number of seconds in msec
 #define USEC_SEC    1000000
@@ -71,6 +71,19 @@
  */
 #define BOP_TEL_MOVE        0x04000000
 
+/**
+ * Detector status issued before the detector takes an exposure.
+ *
+ * @ingroup RTS2Block
+ */
+#define BOP_WILL_EXPOSE     0x08000000
+
+/**
+ * Waiting for exposure trigger.
+ *
+ * @ingroup RTS2Block
+ */
+#define BOP_TRIG_EXPOSE     0x10000000
 
 /**
  * Mask for device weather voting.
@@ -316,6 +329,4 @@
 #define DEVICE_TYPE_LOGD      25
 #define DEVICE_TYPE_SCRIPTOR  26
 
-// and more to come..
-
-#endif							 /* __RTS__STATUS__ */
+#endif	 /* __RTS2__STATUS__ */
