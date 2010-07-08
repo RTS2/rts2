@@ -35,6 +35,24 @@ namespace rts2teld
  */
 class Hlohovec:public Telescope
 {
+	public:
+		Hlohovec (int argc, char **argv);
+		virtual ~Hlohovec ();
+	protected:
+		virtual void usage ();
+		virtual int processOption (int opt);
+		virtual int init ();
+		virtual int info ();
+
+		virtual int resetMount ();
+
+		virtual int startResync ();
+		virtual int stopMove ();
+		virtual int endMove ();
+		virtual int startPark ();
+		virtual int endPark ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	private:
 		TGDrive *raDrive;
 		TGDrive *decDrive;
@@ -51,23 +69,6 @@ class Hlohovec:public Telescope
 		Rts2ValueInteger *dec_dPos;
 		Rts2ValueInteger *dec_appStatus;
 		Rts2ValueInteger *dec_faults;
-	protected:
-		virtual void usage ();
-		virtual int processOption (int opt);
-		virtual int init ();
-		virtual int info ();
-
-		virtual int startResync ();
-		virtual int stopMove ();
-		virtual int endMove ();
-		virtual int startPark ();
-		virtual int endPark ();
-
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-		
-	public:
-		Hlohovec (int argc, char **argv);
-		virtual ~Hlohovec ();
 };
 
 }
@@ -157,6 +158,20 @@ int Hlohovec::info ()
 	}
 
 	return Telescope::info ();
+}
+
+int Hlohovec::resetMount ()
+{
+	try
+	{
+		raDrive->write2b (TGA_MASTER_CMD, 5);
+		return Telescope::resetMount ();
+	}
+	catch (TGDriveError e)
+	{
+	  	logStream (MESSAGE_ERROR) << "error reseting mount" << sendLog;
+		return -1;
+	}
 }
 
 int Hlohovec::startResync ()

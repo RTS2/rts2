@@ -115,7 +115,6 @@ void TGDrive::writeMsg (char op, int16_t address)
 
 void TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 {
-	logStream (MESSAGE_ERROR) << "writeMsg " << len << sendLog;
 	char msg[6 + len];
 	msg[0] = MSG_START;
 	msg[1] = op;
@@ -126,8 +125,6 @@ void TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 	{
 		msg[i + 6] = data[i];
 	}
-
-	logStream (MESSAGE_ERROR) << "ecWrite " << sendLog;
 	ecWrite (msg);
 }
 

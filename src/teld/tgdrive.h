@@ -67,10 +67,10 @@
 #define TGA_AFTER_RESET                 0x01EE
 
 /** After reset disabled */
-#define TGA_AFTER_RESET_DISABLED        1
+#define TGA_AFTER_RESET_DISABLED        2
 
 /** After reset enabled */
-#define TGA_AFTER_RESET_ENABLED         2
+#define TGA_AFTER_RESET_ENABLED         1
 
 /** Target position */
 #define TGA_TARPOS                      0x0192
