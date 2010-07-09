@@ -97,8 +97,8 @@ class Rts2LogStream
 		 * when it cannot be represented as character.  Hex values are
 		 * prefixed with 0x and separated by blanks.
 		 *
-		 * @param arr  Array which will be logged.  @param len  Lenght
-		 * of logged array.
+		 * @param arr  array which will be logged
+		 * @param len  length of logged array
 		 */
 		void logArr (const char *arr, int len);
 
