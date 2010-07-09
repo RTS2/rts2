@@ -160,6 +160,8 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 		if (waitForExposure)
 			return;
+		if (waitForMetaData ())
+		  	return;
 	}
 
 	// send command to other device

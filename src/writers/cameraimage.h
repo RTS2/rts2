@@ -82,6 +82,11 @@ class CameraImage
 		void setDataWriten () { dataWriten = true; }
 
 		bool canDelete ();
+
+		/**
+		 * Return true if the image is waiting for some of the metadata.
+		 */
+		bool waitForMetaData () { return !deviceWaits.empty () || !triggerWaits.empty (); }
 	private:
 		std::vector < ImageDeviceWait * > deviceWaits;
 		std::vector < rts2core::Rts2DevClient * > triggerWaits;

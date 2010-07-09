@@ -84,9 +84,8 @@ bool CameraImage::canDelete ()
 {
 	if (isnan (exEnd) || !dataWriten)
 		return false;
-	return deviceWaits.empty () && triggerWaits.empty ();
+	return !waitForMetaData ();
 }
-
 
 CameraImages::~CameraImages (void)
 {

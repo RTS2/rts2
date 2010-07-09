@@ -40,62 +40,6 @@ imageProceRes;
  */
 class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 {
-	private:
-		void writeFilter (Rts2Image *img);
-
-		// we have to allocate that field as soon as we get the knowledge of
-		// camera chip numbers..
-		CameraImages images;
-
-		// current image
-		CameraImage *actualImage;
-
-		// last image
-		Rts2Image *lastImage;
-
-		// number of exposure
-		int expNum;
-
-	protected:
-
-		/**
-		 * Returns image on top of the que.
-		 */
-		Rts2Image *getActualImage ()
-		{
-			return lastImage;
-		}
-
-		void clearImages ()
-		{
-			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
-			{
-				delete (*iter).second;
-			}
-			images.clear ();
-		}
-
-		Rts2Image *setImage (Rts2Image * old_img, Rts2Image * new_image);
-
-		int getExposureNumber ()
-		{
-			return ++expNum;
-		}
-
-		int chipNumbers;
-		int saveImage;
-
-		// some camera characteristics..
-		double xoa;
-		double yoa;
-		double ter_xoa;
-		double ter_yoa;
-		std::string instrume;
-		std::string telescop;
-		std::string origin;
-
-		virtual void exposureStarted ();
-		virtual void exposureEnd ();
 	public:
 		Rts2DevClientCameraImage (Rts2Conn * in_connection);
 		virtual ~Rts2DevClientCameraImage (void);
@@ -118,10 +62,58 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 
 		void processCameraImage (CameraImages::iterator cis);
 
-		void setSaveImage (int in_saveImage)
+		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
+	protected:
+
+		/**
+		 * Returns image on top of the que.
+		 */
+		Rts2Image *getActualImage () { return lastImage; }
+
+		void clearImages ()
 		{
-			saveImage = in_saveImage;
+			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
+			{
+				delete (*iter).second;
+			}
+			images.clear ();
 		}
+
+		Rts2Image *setImage (Rts2Image * old_img, Rts2Image * new_image);
+
+		int getExposureNumber () { return ++expNum; }
+
+		int chipNumbers;
+		int saveImage;
+
+		// some camera characteristics..
+		double xoa;
+		double yoa;
+		double ter_xoa;
+		double ter_yoa;
+		std::string instrume;
+		std::string telescop;
+		std::string origin;
+
+		virtual void exposureStarted ();
+		virtual void exposureEnd ();
+
+		bool waitForMetaData () { return actualImage && actualImage->waitForMetaData (); }
+	private:
+		void writeFilter (Rts2Image *img);
+
+		// we have to allocate that field as soon as we get the knowledge of
+		// camera chip numbers..
+		CameraImages images;
+
+		// current image
+		CameraImage *actualImage;
+
+		// last image
+		Rts2Image *lastImage;
+
+		// number of exposure
+		int expNum;
 };
 
 class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
