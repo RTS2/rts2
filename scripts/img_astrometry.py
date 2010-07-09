@@ -96,8 +96,9 @@ class imgAstrometryScript:
             binning = hdulist_object[0].header['BINNING']
             objectId= hdulist_object[0].header['OBJECT']
         except:
-            os.system("logger %s could not find one or more of fits key words IMGID, BINNING and OBJECT in hdulist of %s" % (sys.argv[0], self.fits_tmp_path))
+            os.system("logger %s could not find one or more of fits key words IMGID, BINNING and OBJECT in hdulist of %s" % (sys.argv[0], sys.argv[1]))
             sys.exit(1)
+
         hdulist_object.close()
 
         if re.search('1x1', binning):
@@ -105,7 +106,7 @@ class imgAstrometryScript:
         elif re.search('2x2', binning):
             self.scale= 2. * self.scale_at_binning_1
         else:
-            os.system( 'logger %s do not understand binning %s in  %s' % (sys.argv[0], binning, self.fits_tmp_path))
+            os.system( 'logger %s do not understand binning %s in  %s' % (sys.argv[0], binning, sys.argv[1]))
 
         scale_low = self.scale * ( 1. - self.scale_relative_error)  ;   
         scale_high= self.scale * ( 1. + self.scale_relative_error) ;
@@ -128,12 +129,13 @@ class imgAstrometryScript:
             orira  = hdulist_object[0].header['ORIRA']
             oridec = hdulist_object[0].header['ORIDEC']
         except:
-            os.system("logger %s could not find one or more of fits key words CRVAL1, CRVAL2, ORIRA, ORIDEC in hdulist of %s" % (sys.argv[0], self.fits_tmp_path))
+            os.system("logger %s could not find one or more of fits key words CRVAL1, CRVAL2, ORIRA, ORIDEC in hdulist of %s" % (sys.argv[0], sys.argv[1]))
             sys.exit(1)
 
         hdulist_object.close()
-        os.system("logger %s return values to EXEC %d %f %f \(%f,%f\)" % ( sys.argv[0], imgId, crval1, crval2, crval1- orira, crval2- oridec)) 
-        print '%d %f %f (%f,%f)\n' % ( imgId, crval1, crval2, crval1- orira, crval2- oridec) 
+        os.system("logger %s return values to EXEC for %s %d %f %f \(%f,%f\)" % ( sys.argv[0], sys.argv[1], imgId, crval1, crval2, crval1- orira, crval2- oridec)) 
+        print '%d %f %f (%f,%f)' % ( imgId, crval1, crval2, crval1- orira, crval2- oridec) 
         os.system("logger %s  END\n" % (sys.argv[0]))
+
 if __name__ == '__main__':
     imgAstrometryScript().main()
