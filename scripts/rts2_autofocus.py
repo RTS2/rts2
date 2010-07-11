@@ -40,6 +40,8 @@ import time
 import numpy
 import pyfits
 
+
+
 class defaultConfiguration:
     """default configuration"""
     
@@ -58,14 +60,14 @@ class defaultConfiguration:
         self.values[('basic', 'CCD_CAMERA')]= 'CD'
         self.values[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
 
-        self.values[('filter properties', 'U')]= '[0, 5074, -1500, 1500, 100, 40]'
-        self.values[('filter properties', 'B')]= '[1, 4712, -1500, 1500, 100, 30]'
-        self.values[('filter properties', 'V')]= '[2, 4678, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'R')]= '[4, 4700, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'I')]= '[4, 4700, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'X')]= '[5, 3270, -1500, 1500, 100, 10]'
-        self.values[('filter properties', 'Y')]= '[6, 3446, -1500, 1500, 100, 10]'
-        self.values[('filter properties', 'NOFILTER')]= '[6, 3446, -1500, 1500, 109, 19]'
+        self.values[('filter properties', 'U')]= '[0, U, 5074, -1500, 1500, 100, 40]'
+        self.values[('filter properties', 'B')]= '[1, B, 4712, -1500, 1500, 100, 30]'
+        self.values[('filter properties', 'V')]= '[2, V, 4678, -1500, 1500, 100, 20]'
+        self.values[('filter properties', 'R')]= '[4, R, 4700, -1500, 1500, 100, 20]'
+        self.values[('filter properties', 'I')]= '[4, I, 4700, -1500, 1500, 100, 20]'
+        self.values[('filter properties', 'X')]= '[5, X, 3270, -1500, 1500, 100, 10]'
+        self.values[('filter properties', 'Y')]= '[6, Y, 3446, -1500, 1500, 100, 10]'
+        self.values[('filter properties', 'NOFILTER')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
         
         self.values[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.values[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
@@ -185,6 +187,11 @@ class main(Script):
 
         args = parser.parse_args()
 
+        if( args.write):
+            dc.writeDefaultConfiguration()
+            print 'wrote default configuration to ' +  dc.configurationFileName()
+            sys.exit(0)
+
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
@@ -216,7 +223,8 @@ class main(Script):
             values[identifier]= value
 
 # over write the defaults
-        for (section, identifier), xvalue in dc.configIdentifiers():
+        filterProperties={}
+        for (section, identifier), value in dc.configIdentifiers():
 
             try:
                 value = config.get( section, identifier)
@@ -246,10 +254,29 @@ class main(Script):
 
             else:
                 values[identifier]= value
- 
+                if( section == 'filter properties'): 
+                    items=[] ;
+                    items= value[1:-1].split(',')
+#, ToDo, hm
+                    for item in items: 
+                        item.replace(' ', '')
+
+                    filterProperties[(items[1], 'Nr')]         = string.atoi(items[0]) # found that too
+                    filterProperties[(items[1], 'FOC_DEF')]    = string.atoi(items[2])
+                    filterProperties[(items[1], 'LOWER_LIMIT')]= string.atoi(items[3])
+                    filterProperties[(items[1], 'UPPER_LIMIT')]= string.atoi(items[4])
+                    filterProperties[(items[1], 'STEP')]       = string.atoi(items[5])
+                    filterProperties[(items[1], 'EXP_TIME')]   = string.atoi(items[6])
+
+
         if(args.verbose):
             for (identifier), value in dc.identifiers():
                 print "over ", identifier, values[(identifier)]
+
+        if( args.verbose):
+            for (filter, property), value in sorted(filterProperties.iteritems()):
+                print 'Filter ' + filter + ' ' + property + '=' + str(filterProperties[(filter, property)])
+
 
 
 if __name__ == '__main__':
