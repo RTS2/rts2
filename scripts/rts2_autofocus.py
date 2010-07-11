@@ -2,7 +2,10 @@
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   rts-autofocus.py.py 
+#   rts_autofocus.py --help
+#   
+#   see man 1 rts2_autofocus.py
+#   see rts2_autofocus_unittest.py for unit tests
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -20,10 +23,13 @@
 #
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
+# required packages:
+# wget 'http://argparse.googlecode.com/files/argparse-1.1.zip
 
 __author__ = 'markus.wildi@one-arcsec.org'
 
 import ConfigParser
+import argparse
 import io
 import os
 import re
@@ -34,15 +40,14 @@ import time
 import numpy
 import pyfits
 
-
 class defaultConfiguration:
     """default configuration"""
     
-    def __init__(self, fileName='rts2-autofocus.cfgX'):
+    def __init__(self, fileName='rts2-autofocus-offline.cfg'):
         self.configFileName = fileName
 
         self.values={}
-        self.dalues={}
+        self.defaults={}
 
         self.config = ConfigParser.RawConfigParser()
         
@@ -108,20 +113,30 @@ class defaultConfiguration:
         
         self.values[('rts2', 'RTS2_DEVICES')]= '/etc/rts2/devices'
         
-    def configurationFileName( self):
+        for (section, identifier), value in sorted(self.values.iteritems()):
+            self.defaults[(identifier)]= value
+#            print 'value ', self.defaults[(identifier)]
+ 
+
+    def configurationFileName(self):
         return self.configFileName
+
+    def identifiers(self):
+        return sorted(self.defaults.iteritems())
+
+    def configIdentifiers(self):
+        return sorted(self.values.iteritems())
         
     def defaultValue( self, identifier):
-        return self.dalues[ identifier]
+        return self.defaults[ identifier]
 
     def writeDefaultConfiguration(self):
         for (section, identifier), value in sorted(self.values.iteritems()):
-            print section, '=>', identifier, '=>', value
+#            print section, '=>', identifier, '=>', value
             if( self.config.has_section(section)== False):
                 self.config.add_section(section)
 
             self.config.set(section, identifier, value)
-            self.dalues[identifier]= value
 
         with open( self.configFileName, 'wb') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
@@ -131,35 +146,114 @@ class defaultConfiguration:
             configfile.write('#\n')
             configfile.write('#\n')
             self.config.write(configfile)
-    
 
 
-class rts2AutofocusScript:
+class Script:
+    def __init__(self, scriptName):
+        self.scriptName= scriptName
+
+
+class main(Script):
     """define the focus from a series of images"""
-#    def __init__(self):
+    def __init__(self, scriptName='main' ):
+        self.scriptName= scriptName
 
     def main(self):
-        if len(sys.argv) == 1:
-            print 'Usage: %s  <configuration file>' % (sys.argv[0])
-            os.system("logger %s Usage: %s configuration file" % (sys.argv[0], sys.argv[0]))
-            sys.exit(1)
 
         dc= defaultConfiguration()
-        dc.writeDefaultConfiguration()
+        parser = argparse.ArgumentParser(description='RTS2 autofocus', epilog="See man 1 rts2-autofocus.py for mor information")
+#        parser.add_argument(
+#            '--write', action='store', metavar='FILE NAME', 
+#            type=argparse.FileType('w'), 
+#            default=sys.stdout,
+#            help='the file name where the default configuration will be written default: write to stdout')
+
+        parser.add_argument(
+            '-w', '--write', action='store_true', 
+            help='write defaults to configuration file ' + dc.configurationFileName())
+
+        parser.add_argument('--config', dest='fileName',
+                            metavar='CONFIG FILE', nargs=1, type=str,
+                            help='configuration file')
+
+#        parser.add_argument('-t', '--test', dest='test', action='store', 
+#                            metavar='TEST', nargs=1,
+#    no default means None                        default='myTEST',
+#                            help=' test case, default: myTEST')
+
+        parser.add_argument('-v', dest='verbose', action='store_true')
+
+        args = parser.parse_args()
+
+        configFileName=''
+        if( args.fileName):
+            configFileName= args.fileName[0]  
+        else:
+            configFileName= dc.configurationFileName()
+            cmd= 'logger no config file specified, taking default' + configFileName
+            print cmd 
+            os.system( cmd)
+
+        if(args.verbose):
+            print 'config file, taking ' + configFileName
+        
+        if(args.verbose):
+            for (identifier), value in dc.identifiers():
+                print "dump defaults :", ', ', identifier, '=>', value
+
+        config = ConfigParser.ConfigParser()
+        try:
+            config.readfp(open(configFileName))
+        except:
+            cmd= 'logger config file ' + configFileName + ' not found'
+            print cmd
+            os.system( cmd)
+            sys.exit(1)
+
+# read the defaults
+        values={}
+        for (section, identifier), value in dc.configIdentifiers():
+            values[identifier]= value
+
+# over write the defaults
+        for (section, identifier), xvalue in dc.configIdentifiers():
+
+            try:
+                value = config.get( section, identifier)
+            except:
+                cmd= 'logger no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName
+                os.system( cmd)
+# first bool, then int !
+            if(isinstance(values[identifier], bool)):
+#ToDO, looking for a direct way
+                if( value == 'True'):
+                    values[identifier]= True
+                else:
+                    values[identifier]= False
+            elif( isinstance(values[identifier], int)):
+                try:
+                    values[identifier]= int(value)
+                except:
+                    cmd= 'logger no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName
+                    os.system( cmd)
+
+            elif(isinstance(values[identifier], float)):
+                try:
+                    values[identifier]= float(value)
+                except:
+                    cmd= 'logger no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName
+                    os.system( cmd)
+
+            else:
+                values[identifier]= value
  
-        print dc.defaultValue('SEX_TMP_CATALOGUE')
-        
+        if(args.verbose):
+            for (identifier), value in dc.identifiers():
+                print "over ", identifier, values[(identifier)]
 
-        configFN= dc.configurationFileName()  
-        config = ConfigParser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
-        config.read(configFN)
-        
-#        for (section, identifier), value in sorted(myValues.values.iteritems()):
-#            print section, '=>', identifier, '=>', value
-
-
-#        for (section, identifier), value in sorted(values.iteritems()):
-#            print config.get( section, value)
 
 if __name__ == '__main__':
-    rts2AutofocusScript().main()
+    main().main()
+
+
+
