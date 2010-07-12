@@ -20,6 +20,8 @@
 #include "dome.h"
 #include "../utils/connmodbus.h"
 
+#define EVENT_DEADBUT    RTS2_LOCAL_EVENT + 1350
+
 // Zelio registers
 
 #define ZREG_J1XT1       16
@@ -94,9 +96,10 @@ class Zelio:public Dome
 
 		virtual int info ();
 
+		virtual void postEvent (Rts2Event * event);
+
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int idle ();
 
 		virtual int init ();
 
@@ -115,7 +118,6 @@ class Zelio:public Dome
 	private:
 		HostString *host;
 		int16_t deadManNum;
-		time_t nextDeadCheck;
 
 		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
@@ -265,6 +267,7 @@ int Zelio::startOpen ()
 		return -1;
 	}
 	deadManNum = 0;
+	addTimer (deadTimeout->getValueInteger () / 5.0, new Rts2Event (EVENT_DEADBUT, this));
 	return 0;
 }
 
@@ -439,14 +442,12 @@ int Zelio::processOption (int in_opt)
 	return 0;
 }
 
-int Zelio::idle ()
+void Zelio::postEvent (Rts2Event *event)
 {
-	if (isGoodWeather ())
+	switch (event->getType ())
 	{
-		if ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING)
-		{
-			time_t now = time (NULL);
-			if (now > nextDeadCheck)
+		case EVENT_DEADBUT:
+			if (isGoodWeather () && ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING))
 			{
 			  	try
 				{
@@ -457,11 +458,11 @@ int Zelio::idle ()
 					logStream (MESSAGE_ERROR) << err << sendLog;
 				}
 				deadManNum = (++deadManNum) % 2;
-				nextDeadCheck = now + deadTimeout->getValueInteger () / 5;
+				addTimer (deadTimeout->getValueInteger () / 5.0, event);
+				return;
 			}
-		}
 	}
-	return Dome::idle ();
+	Dome::postEvent (event);
 }
 
 Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
@@ -489,7 +490,6 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	host = NULL;
 	deadManNum = 0;
-	nextDeadCheck = 0;
 
 	battery = NULL;
 	batteryMin = NULL;
@@ -697,7 +697,7 @@ int Zelio::init ()
 		case ZELIO_UNKNOW:
 			return -1;
 	}
-	setIdleInfoInterval (20);
+	addTimer (1, new Rts2Event (EVENT_DEADBUT, this));
 	return 0;
 }
 
