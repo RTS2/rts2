@@ -1152,8 +1152,8 @@ int Rts2Conn::bopStatus ()
 	int masterBopState;
 	if (paramNextInteger (&masterStatus) || paramNextInteger (&masterBopState) || !paramEnd ())
 		return -2;
-	setState (masterStatus, NULL);
 	setBopState (masterBopState);
+	setState (masterStatus, NULL);
 	return -1;
 }
 
