@@ -85,6 +85,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.defaultNumberFlats = 10 # Number of flats that we want to obtain
 		self.sleepTime = 1 # number of seconds to wait for optimal flat conditions
 
+		self.maxDarkCycles = None
+
 		self.expTimes = range(1,20) # allowed exposure times
 		self.expTimes = map(lambda x: x/2.0, self.expTimes)
 
@@ -267,11 +269,15 @@ class FlatScript (rts2comm.Rts2Comm):
 	def takeDarks(self):
 		"""Take flats dark images in spare time."""
 		self.setValue('SHUTTER','DARK')
+		i = 0
 		while (True):
+			if (self.maxDarkCycles is not None and i >= self.maxDarkCycles):
+				return
+			i += 1
 			for exp in self.usedExpTimes:
 				sun_alt = self.getValueFloat('sun_alt','centrald')
 				next_t = self.getValueInteger('next','EXEC')
-				if (sun_alt >= -0.5 or not (next_t == 2 or next_t == -1)):
+				if (sun_alt >= 0.5 or not (next_t == 2 or next_t == -1)):
 					self.setValue('SHUTTER','LIGHT')
 					return
 				self.setValue('exposure',exp)
@@ -347,7 +353,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		while (True):
 			sun_alt = self.getValueFloat('sun_alt','centrald')
 			next_t = self.getValueInteger('next','EXEC')
-			if (sun_alt >= -0.5 or not (next_t == 2 or next_t == -1)):
+			if (sun_alt >= 0.5 or not (next_t == 2 or next_t == -1)):
 				self.setValue('SHUTTER','LIGHT')
 				return
 			time.sleep(10)
