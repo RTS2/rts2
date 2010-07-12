@@ -52,6 +52,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 	lastImage = NULL;
 
 	expNum = 0;
+
+	triggered = false;
 }
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
@@ -261,6 +263,26 @@ void Rts2DevClientCameraImage::exposureEnd ()
 	rts2core::Rts2DevClientCamera::exposureEnd ();
 }
 
+bool Rts2DevClientCameraImage::waitForMetaData ()
+{
+	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
+		triggered = false;
+	if (getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE)
+	{
+		if (triggered)
+			return true;
+		triggered = true;
+	}
+	if (actualImage && actualImage->waitForMetaData ())
+		return true;
+	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
+	{
+		if (((*iter).second)->waitForMetaData ())
+			return true;
+	}
+	return false;
+}
+
 Rts2DevClientTelescopeImage::Rts2DevClientTelescopeImage (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
 {
 }
@@ -423,7 +445,9 @@ void Rts2DevClientWriteImage::infoFailed ()
 void Rts2DevClientWriteImage::stateChanged (Rts2ServerState * state)
 {
 	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE))
+	{
 		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
+	}
 }
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)

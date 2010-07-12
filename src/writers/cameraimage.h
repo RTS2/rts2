@@ -86,7 +86,7 @@ class CameraImage
 		/**
 		 * Return true if the image is waiting for some of the metadata.
 		 */
-		bool waitForMetaData () { return !deviceWaits.empty () || !triggerWaits.empty (); }
+		bool waitForMetaData () { return !(deviceWaits.empty ()) || !(triggerWaits.empty ()); }
 	private:
 		std::vector < ImageDeviceWait * > deviceWaits;
 		std::vector < rts2core::Rts2DevClient * > triggerWaits;

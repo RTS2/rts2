@@ -98,7 +98,7 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
 
-		bool waitForMetaData () { return actualImage && actualImage->waitForMetaData (); }
+		bool waitForMetaData (); 
 	private:
 		void writeFilter (Rts2Image *img);
 
@@ -114,6 +114,8 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 
 		// number of exposure
 		int expNum;
+
+		bool triggered;
 };
 
 class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope

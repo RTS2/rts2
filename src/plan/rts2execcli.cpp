@@ -50,7 +50,8 @@ Rts2Image * Rts2DevClientCameraExec::createImage (const struct timeval *expStart
 void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
 	Rts2Image *image;
-	switch (event->getType ())
+	int type = event->getType ();
+	switch (type)
 	{
 		case EVENT_QUE_IMAGE:
 		case EVENT_AFTER_COMMAND_FINISHED:
@@ -68,6 +69,9 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	}
 	DevScript::postEvent (event);
 	Rts2DevClientCameraImage::postEvent (event);
+	// must be done after processing trigger in parent
+	if (type == EVENT_TRIGGERED)
+		nextCommand ();
 }
 
 void Rts2DevClientCameraExec::startTarget ()
@@ -137,6 +141,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 		// before target was moved
 		if (currentTarget && !currentTarget->wasMoved())
 			return;
+		// do not execute next exposure before all meta data of the current exposure are written
+		if (waitForMetaData ())
+		  	return;
 	}
 
 	Rts2Value *val;
@@ -160,8 +167,6 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 		if (waitForExposure)
 			return;
-		if (waitForMetaData ())
-		  	return;
 	}
 
 	// send command to other device
