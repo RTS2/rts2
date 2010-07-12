@@ -334,11 +334,6 @@ class Rts2Device:public Rts2Daemon
 		virtual void centraldConnRunning (Rts2Conn *conn);
 
 		/**
-		 * Send device status info to given connection.
-		 */
-		void sendStateInfo (Rts2Conn * conn);
-
-		/**
 		 * Send full state, including device full BOP state.
 		 */
 		void sendFullStateInfo (Rts2Conn * conn);

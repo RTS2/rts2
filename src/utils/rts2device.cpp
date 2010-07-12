@@ -800,11 +800,6 @@ void Rts2Device::stateChanged (int new_state, int old_state, const char *descrip
 	sendStatusMessage (getState (), description);
 }
 
-void Rts2Device::sendStateInfo (Rts2Conn * conn)
-{
-	sendStatusMessage (getState (), conn);
-}
-
 void Rts2Device::sendFullStateInfo (Rts2Conn * conn)
 {
 	sendBopMessage (getState (), fullBopState, conn);
