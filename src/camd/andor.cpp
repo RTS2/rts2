@@ -620,7 +620,6 @@ int Andor::startExposure ()
 		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) != DRV_SUCCESS)
 			return -1;
 		setExposure (nAcc * acq_exp);
-		checkValueSave (subExposure);
 		setSubExposure (acq_exp);
 	}
 
