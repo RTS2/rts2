@@ -123,7 +123,7 @@ int Rts2NewTarget::saveTarget ()
 					break;
 			}
 		}
-		while (n_tar_id >= 50000 || n_tar_id <= 0);
+		while (n_tar_id >= 50000 || (n_tar_id <= 0 && n_tar_id != INT_MIN));
 	}
 	// create target if we don't create it..
 	if (n_tar_name == NULL)
