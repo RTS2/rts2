@@ -202,6 +202,8 @@ class EdtSao:public Camera
 		virtual int init ();
 		virtual int initValues ();
 
+		virtual int scriptEnds ();
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -504,6 +506,8 @@ int EdtSao::setADOffset (int ch, int offset)
 		return -1;
 
 	logStream (MESSAGE_INFO) << "setting A/D offset on channel " << ch << " to " << offset << sendLog;
+
+	return 0;
 }
 
 void EdtSao::probe ()
@@ -1216,7 +1220,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('v', "verbose", 0, "verbose report");
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
 
-	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	splitMode->setValueInteger (0);
 
 	// add possible split modes
@@ -1224,14 +1228,14 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	splitMode->addSelVal ("RIGHT");
 	splitMode->addSelVal ("BOTH");
 
-	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	edtGain->addSelVal ("HIGH");
 	edtGain->addSelVal ("LOW");
 
 	edtGain->setValueInteger (0);
 
-	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	parallelClockSpeed->setValueInteger (6);
 
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true, RTS2_VALUE_WRITABLE);
@@ -1456,6 +1460,22 @@ int EdtSao::initValues ()
 	addConstValue ("DEVNT", "device no timeout", notimeout);
 	addConstValue ("SDELAY", "device serial delay", sdelay);
 	return Camera::initValues ();
+}
+
+int EdtSao::scriptEnds ()
+{
+	edtGain->setValueInteger (0);
+	setEDTGain (0);
+	sendValueAll (edtGain);
+
+	splitMode->setValueInteger (0);
+	sendValueAll (splitMode);
+
+	parallelClockSpeed->setValueInteger (6);
+	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
+	sendValueAll (parallelClockSpeed);
+
+	return Camera::scriptEnds ();
 }
 
 int main (int argc, char **argv)

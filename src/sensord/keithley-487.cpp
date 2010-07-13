@@ -55,7 +55,7 @@ using namespace rts2sensord;
 
 Keithley487::Keithley487 (int argc,char **argv):Gpib (argc, argv)
 {
-	createValue (curr, "CURRENT", "[pA] measured current (in picoAmps)", true, RTS2_VWHEN_BEFORE_END, 0, false);
+	createValue (curr, "CURRENT", "[pA] measured current (in picoAmps)", true, RTS2_VWHEN_BEFORE_END, 0);
 	createValue (sourceOn, "ON", "If voltage source is switched on", true, RTS2_VALUE_WRITABLE);
 	createValue (voltage, "VOLTAGE", "[V] voltage level", true, RTS2_VALUE_WRITABLE);
 
