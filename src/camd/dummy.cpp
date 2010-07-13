@@ -41,7 +41,7 @@ class Dummy:public Camera
 
 			supportFrameT = false;
 			infoSleep = 0;
-			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			readoutSleep->setValueDouble (0);
 
 			createValue (genType, "gen_type", "data generation algorithm", true, RTS2_VALUE_WRITABLE);

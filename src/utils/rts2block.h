@@ -50,8 +50,6 @@
 #define PROTO_VALUE            "V"
 /** The command set variable value. @ingroup RTS2Protocol */
 #define PROTO_SET_VALUE        "X"
-/** The command set default value of variable. @ingroup RTS2Protocol */
-#define PROTO_SET_VALUE_DEF    "Y"
 /** The command is authorization request. @ingroup RTS2Protocol */
 #define PROTO_AUTH             "A"
 /** The command set device status. @ingroup RTS2Protocol */
@@ -510,7 +508,7 @@ class Rts2Block: public Rts2App
 		{
 		}
 
-		virtual int setValue (Rts2Conn * conn, bool overwriteSaved)
+		virtual int setValue (Rts2Conn * conn)
 		{
 			return -2;
 		}

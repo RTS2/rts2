@@ -231,11 +231,10 @@ class Rts2Device:public Rts2Daemon
 		 * Values for each device can be specified in modefiles.
 		 *
 		 * @param new_mode       New mode number.
-		 * @param defaultValues  If true, will set default values.
 		 *
 		 * @return -1 on error, 0 if sucessful.
 		 */
-		int setMode (int new_mode, bool defaultValues = false);
+		int setMode (int new_mode);
 
 		int blockState;
 		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;

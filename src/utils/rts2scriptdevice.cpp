@@ -21,19 +21,19 @@
 
 Rts2ScriptDevice::Rts2ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
 {
-	createValue (scriptRepCount, "SCRIPREP", "script loop count", true, RTS2_VALUE_WRITABLE, 0, true);
+	createValue (scriptRepCount, "SCRIPREP", "script loop count", true, RTS2_VALUE_WRITABLE, 0);
 	scriptRepCount->setValueInteger (0);
 
-	createValue (runningScript, "SCRIPT", "script used to take this images", true, RTS2_DT_SCRIPT | RTS2_VALUE_WRITABLE, 0, true);
+	createValue (runningScript, "SCRIPT", "script used to take this images", true, RTS2_DT_SCRIPT | RTS2_VALUE_WRITABLE, 0);
 	runningScript->setValueCharArr ("");
 
-	createValue (scriptComment, "SCR_COMM", "comment recorded for this script", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (scriptComment, "SCR_COMM", "comment recorded for this script", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
-	createValue (commentNumber, "COMM_NUM", "comment order within current script", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (commentNumber, "COMM_NUM", "comment order within current script", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
-	createValue (scriptPosition, "scriptPosition", "position within script", false, RTS2_VALUE_WRITABLE, 0, true);
+	createValue (scriptPosition, "scriptPosition", "position within script", false, RTS2_VALUE_WRITABLE, 0);
 	scriptPosition->setValueInteger (0);
 
-	createValue (scriptLen, "scriptLen", "length of the current script element", false, RTS2_VALUE_WRITABLE, 0, true);
+	createValue (scriptLen, "scriptLen", "length of the current script element", false, RTS2_VALUE_WRITABLE, 0);
 	scriptPosition->setValueInteger (0);
 }

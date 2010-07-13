@@ -35,7 +35,7 @@ class Dummy:public Sensor
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
-			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0, false);
+			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (testOnOff, "test_on_off", "test true/false displayed as on/off", false, RTS2_VALUE_WRITABLE | RTS2_VWHEN_TRIGGERED | RTS2_DT_ONOFF);
 			goodWeather->setValueBool (false);

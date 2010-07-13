@@ -690,11 +690,7 @@ void Rts2Conn::processLine ()
 	}
 	else if (isCommand (PROTO_SET_VALUE))
 	{
-		ret = master->setValue (this, false);
-	}
-	else if (isCommand (PROTO_SET_VALUE_DEF))
-	{
-		ret = master->setValue (this, true);
+		ret = master->setValue (this);
 	}
 	else if (isCommand (PROTO_BINARY))
 	{

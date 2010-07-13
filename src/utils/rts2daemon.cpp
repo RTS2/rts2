@@ -84,7 +84,6 @@ Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_ar
 
 Rts2Daemon::~Rts2Daemon (void)
 {
-	savedValues.clear ();
 	if (listen_sock >= 0)
 		close (listen_sock);
 	if (lock_file)
@@ -444,74 +443,9 @@ void Rts2Daemon::selectSuccess ()
 	Rts2Block::selectSuccess ();
 }
 
-void Rts2Daemon::saveValue (Rts2CondValue * val)
+void Rts2Daemon::addValue (Rts2Value * value, int queCondition)
 {
-	Rts2Value *old_value = duplicateValue (val->getValue (), true);
-	savedValues.push_back (old_value);
-	val->setValueSave ();
-}
-
-void Rts2Daemon::deleteSaveValue (Rts2CondValue * val)
-{
-	for (Rts2ValueVector::iterator iter = savedValues.begin (); iter != savedValues.end (); iter++)
-	{
-		Rts2Value *new_val = *iter;
-		if (new_val->isValue (val->getValue ()->getName ().c_str ()))
-		{
-			savedValues.erase (iter);
-			return;
-		}
-	}
-}
-
-void Rts2Daemon::loadValues ()
-{
-	int ret;
-	for (Rts2ValueVector::iterator iter = savedValues.begin (); iter != savedValues.end ();)
-	{
-		Rts2Value *new_val = *iter;
-		Rts2CondValue *old_val = getCondValue (new_val->getName ().c_str ());
-		if (old_val == NULL)
-		{
-			logStream (MESSAGE_ERROR) << "Rts2Daemon::loadValues cannot get value " << new_val->getName () << sendLog;
-		}
-		// we don't need to save this one
-		else if (old_val->ignoreLoad ())
-		{
-			// just reset it..
-			old_val->clearIgnoreSave ();
-		}
-		// if there was error setting value
-		else
-		{
-			ret = setCondValue (old_val, '=', new_val);
-
-			if (ret == 0 || ret == -2)
-			{
-				old_val->clearValueSave ();
-				// this will put to iter next value..
-				iter = savedValues.erase (iter);
-				continue;
-			}
-			else if (ret == -1)
-			{
-				// if change was qued
-				iter = savedValues.erase (iter);
-				continue;
-			}
-			else
-			{
-			  	old_val->setValueSaveAfterLoad ();
-				old_val->loadFromQue ();
-			}
-		}
-		iter++;
-	}
-}
-
-void Rts2Daemon::addValue (Rts2Value * value, int queCondition, bool save_value)
-{
-	values.push_back (new Rts2CondValue (value, queCondition, save_value));
+	values.push_back (new Rts2CondValue (value, queCondition));
 }
 
 Rts2Value * Rts2Daemon::getOwnValue (const char *v_name)
@@ -720,12 +654,6 @@ int Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value *
 
 	Rts2Value *old_value = old_cond_value->getValue ();
 
-	// save values before first change
-	if (old_cond_value->needSaveValue ())
-	{
-		saveValue (old_cond_value);
-	}
-
 	ret = new_value->doOpValue (op, old_value);
 	if (ret)
 	{
@@ -748,18 +676,11 @@ int Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value *
 		}
 	}
 
-	// if in previous step we put ignore load, reset it now
-	if (old_cond_value->ignoreLoad ())
-	{
-		saveValue (old_cond_value);
-		old_cond_value->clearIgnoreSave ();
-	}
-
 	// if the previous one was postponed, clear that flag..
 	if (old_cond_value->loadedFromQue ())
 	{
 		old_cond_value->clearLoadedFromQue ();
-		deleteSaveValue (old_cond_value);
+		delete old_cond_value;
 	}
 	else
 	{
@@ -889,13 +810,6 @@ void Rts2Daemon::sendValueAll (Rts2Value * value)
 	}
 }
 
-void Rts2Daemon::checkValueSave (Rts2Value *val)
-{
-	Rts2CondValue *cond_val = getCondValue (val);
-	if (cond_val && cond_val->needSaveValue ())
-		saveValue (cond_val);
-}
-
 int Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
 	int ret;
@@ -919,7 +833,7 @@ int Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	return 0;
 }
 
-int Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
+int Rts2Daemon::setValue (Rts2Conn * conn)
 {
 	char *v_name;
 	char *op;
@@ -947,12 +861,6 @@ int Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 	ret = newValue->setValue (conn);
 	if (ret)
 		goto err;
-
-	if (overwriteSaved)
-	{
-		old_value_cond->setIgnoreSave ();
-		deleteSaveValue (old_value_cond);
-	}
 
 	ret = setCondValue (old_value_cond, *op, newValue);
 	// value change was qued

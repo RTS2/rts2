@@ -106,90 +106,26 @@ class Rts2CondValue
 {
 	private:
 		Rts2Value *value;
-		int save;
 		int stateCondition;
+		int save;
 	public:
-		Rts2CondValue (Rts2Value * in_value, int in_stateCondition, bool in_save_value)
+		Rts2CondValue (Rts2Value * in_value, int in_stateCondition)
 		{
 			value = in_value;
-			save = in_save_value ? 0x01 : 0x00;
 			stateCondition = in_stateCondition;
+			save = 0;
 		}
-		~Rts2CondValue (void)
-		{
-			delete value;
-		}
-		int getStateCondition ()
-		{
-			return stateCondition;
-		}
-		bool queValueChange (int state)
-		{
-			return (getStateCondition () & state);
-		}
-		/**
-		 * Returns true if value should be saved before it will be changed.
-		 */
-		bool saveValue ()
-		{
-			return save & 0x01;
-		}
-		/**
-		 * Returns true if value needs to be saved.
-		 */
-		bool needSaveValue ()
-		{
-			return save == 0x01;
-		}
-		void setValueSave ()
-		{
-			save |= 0x02;
-		}
-		void clearValueSave ()
-		{
-			save &= ~0x02;
-		}
-		void setIgnoreSave ()
-		{
-			save |= 0x04;
-		}
-		bool ignoreLoad ()
-		{
-			return save & 0x04;
-		}
-		void clearIgnoreSave ()
-		{
-			save &= ~0x04;
-		}
+		~Rts2CondValue (void) { delete value; }
+
+		int getStateCondition () { return stateCondition; }
+
+		bool queValueChange (int state) { return (getStateCondition () & state); }
 		// mark that next operation value loads from que..
-		void loadFromQue ()
-		{
-			save |= 0x08;
-		}
-		void clearLoadedFromQue ()
-		{
-			save &= ~0x08;
-		}
-		bool loadedFromQue ()
-		{
-			return save & 0x08;
-		}
-		void setValueSaveAfterLoad ()
-		{
-		  	save |= 0x10;
-		}
-		void clearValueSaveAfterLoad ()
-		{
-		  	save &= ~0x10;
-		}
-		bool needClearValueSaveAfterLoad ()
-		{
-			return save & 0x10;
-		}
-		Rts2Value *getValue ()
-		{
-			return value;
-		}
+		void loadFromQue () { save |= 0x08; }
+		void clearLoadedFromQue () { save &= ~0x08; }
+		bool loadedFromQue () { return save & 0x08; }
+
+		Rts2Value *getValue () { return value; }
 };
 
 /**
@@ -202,9 +138,7 @@ class Rts2CondValue
 class Rts2CondValueVector:public std::vector < Rts2CondValue * >
 {
 	public:
-		Rts2CondValueVector ()
-		{
-		}
+		Rts2CondValueVector () {}
 
 		~Rts2CondValueVector (void)
 		{

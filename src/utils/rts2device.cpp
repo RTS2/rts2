@@ -589,17 +589,17 @@ int Rts2Device::loadModefile ()
 	if (ret)
 		return ret;
 
-	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0, true);
+	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
 
 	for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
 		iter != modeconf->end (); iter++)
 	{
 		modesel->addSelVal ((*iter)->getName ());
 	}
-	return setMode (0, true);
+	return setMode (0);
 }
 
-int Rts2Device::setMode (int new_mode, bool defaultValues)
+int Rts2Device::setMode (int new_mode)
 {
 	if (modesel == NULL)
 	{
@@ -663,11 +663,6 @@ int Rts2Device::setMode (int new_mode, bool defaultValues)
 			return -1;
 		}
 		Rts2CondValue *cond_val = getCondValue (val->getName ().c_str ());
-		if (defaultValues)
-		{
-			cond_val->setIgnoreSave ();
-			deleteSaveValue (cond_val);
-		}
 		ret = setCondValue (cond_val, '=', new_value);
 		if (ret == -2)
 		{
@@ -772,11 +767,6 @@ void Rts2Device::checkQueChanges (int fakeState)
 					<< "' from que with operator " << queVal->getOperation ()
 					<< " and operand " << newValStr
 					<< sendLog;
-			if (queVal->getCondValue ()->needClearValueSaveAfterLoad ())
-			{
-				queVal->getCondValue ()->clearValueSave ();
-				queVal->getCondValue ()->clearValueSaveAfterLoad ();
-			}
 			delete queVal;
 			iter = queValues.erase (iter);
 			changed = true;
@@ -906,7 +896,11 @@ int Rts2Device::killAll ()
 
 int Rts2Device::scriptEnds ()
 {
-	loadValues ();
+	if (modesel)
+	{
+		setMode (0);
+		sendValueAll (modesel);
+	}
 	logStream (MESSAGE_DEBUG) << "executed script ends, all values changed to defaults" << sendLog;
 	return 0;
 }

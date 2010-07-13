@@ -77,7 +77,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
-	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0, true);
+	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0);
 
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
@@ -92,7 +92,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
 
-	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
+	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0);
 	pointingModel->addSelVal ("EQU");
 	pointingModel->addSelVal ("ALT-AZ");
 	pointingModel->addSelVal ("ALT-ALT");

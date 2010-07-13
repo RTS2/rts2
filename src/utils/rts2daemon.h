@@ -99,7 +99,7 @@ class Rts2Daemon:public Rts2Block
 
 		int sendMetaInfo (Rts2Conn * conn);
 
-		virtual int setValue (Rts2Conn * conn, bool overwriteSaved);
+		virtual int setValue (Rts2Conn * conn);
 
 		/**
 		 * Return full device state. You are then responsible
@@ -124,13 +124,6 @@ class Rts2Daemon:public Rts2Block
 		 * Send new value over the wire to all connections.
 		 */
 		void sendValueAll (Rts2Value * value);
-
-		/**
-		 * If value needs to be saved, save it.
-		 *
-		 * @param val Value which will be checked and possibly saved.
-		 */
-		void checkValueSave (Rts2Value *val);
 
 		int checkLockFile (const char *_lock_fname);
 		void setNotDaemonize ()
@@ -213,8 +206,6 @@ class Rts2Daemon:public Rts2Block
 		 */
 		Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
 
-		void loadValues ();
-
 		/**
 		 * Create new value, and return pointer to it.
 		 * It also saves value pointer to the internal values list.
@@ -225,7 +216,6 @@ class Rts2Daemon:public Rts2Block
 		 * @param writeToFits    When true, value will be writen to FITS.
 		 * @param valueFlags     Value display type, one of the RTS2_DT_xxx constant.
 		 * @param queCondition   Conditions in which the change will be put to que.
-		 * @param save_value     True if value is saved and reseted at end of script execution.
 		 */
 		template < typename T > void createValue (
 			T * &val,
@@ -233,11 +223,10 @@ class Rts2Daemon:public Rts2Block
 			std::string in_description,
 			bool writeToFits = true,
 			int32_t valueFlags = 0,
-			int queCondition = 0,
-			bool save_value = false)
+			int queCondition = 0)
 		{
 			val = new T (in_val_name, in_description, writeToFits, valueFlags);
-			addValue (val, queCondition, save_value);
+			addValue (val, queCondition);
 		}
 		/**
 		 * Create new constant value, and return pointer to it.
@@ -520,20 +509,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @param value Rts2Value which will be added.
 		 */
-		void addValue (Rts2Value * value, int queCondition = 0, bool save_value = false);
-
-		/**
-		 * Holds vector of values which are indendet to be saved. There
-		 * are two methods, saveValues and loadValues.  saveValues is
-		 * called from setValue(Rts2Value,char,Rts2ValueVector) before
-		 * first value value is changed. Once values are saved,
-		 * values_were_saved turns to true and we don't call saveValues
-		 * before loadValues is called.  loadValues reset
-		 * values_were_saved flag, load all values from savedValues
-		 */
-		Rts2ValueVector savedValues;
-
-		void saveValue (Rts2CondValue * val);
+		void addValue (Rts2Value * value, int queCondition = 0);
 
 		bool doHupIdleLoop;
 

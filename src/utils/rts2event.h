@@ -82,6 +82,7 @@
 // telds                  1200-1249
 // phot                   1250-1299
 // clouds                 1300-1349
+// zelio                  1350-1399
 
 /**
  * Event class.

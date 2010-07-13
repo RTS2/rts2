@@ -64,7 +64,7 @@ OpenTpl::OpenTpl (int argc, char **argv):Focusd (argc, argv)
 	openTPLServer = NULL;
 	opentplConn = NULL;
 
-	createValue (realPos, "FOC_REAL", "real position of the focuser", true, 0, 0, false);
+	createValue (realPos, "FOC_REAL", "real position of the focuser", true, 0, 0);
 
 	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
 }

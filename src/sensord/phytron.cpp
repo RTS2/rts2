@@ -171,7 +171,7 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 	dev = "/dev/ttyS0";
 
 	createValue (runFreq, "RUNFREQ", "current run frequency", true, RTS2_VALUE_WRITABLE);
-	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0, false);
+	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0);
 
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
