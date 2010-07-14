@@ -53,6 +53,9 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	int type = event->getType ();
 	switch (type)
 	{
+		case EVENT_KILL_ALL:
+			waitForExposure = false;
+			break;
 		case EVENT_QUE_IMAGE:
 		case EVENT_AFTER_COMMAND_FINISHED:
 			image = (Rts2Image *) event->getArg ();
