@@ -301,12 +301,11 @@ class FlatScript (rts2comm.Rts2Comm):
 			os.unlink(of)
 		f = pyfits.open(of,mode='append')
 		m = numpy.median(d,axis=0)
-		flat_max = numpy.max(d)
 		# normalize
-		m = m / flat_max
+		m = m / numpy.max(m)
 		i = pyfits.PrimaryHDU(data=m)
 		f.append(i)
-		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),flat_max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
+		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
 	def run(self):
