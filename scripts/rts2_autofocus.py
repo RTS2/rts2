@@ -28,8 +28,6 @@
 
 __author__ = 'markus.wildi@one-arcsec.org'
 
-import ConfigParser
-import argparse
 import io
 import os
 import re
@@ -39,158 +37,19 @@ import sys
 import time
 import numpy
 import pyfits
+import rts2comm 
+import rts2af 
 
-
-
-class defaultConfiguration:
-    """default configuration"""
-    
-    def __init__(self, fileName='rts2-autofocus-offline.cfg'):
-        self.configFileName = fileName
-
-        self.values={}
-        self.defaults={}
-
-        self.config = ConfigParser.RawConfigParser()
-        
-        self.values[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/autofocus/rts2-autofocus.cfg'
-        
-        self.values[('basic', 'BASE_DIRECTORY')]= '/tmp'
-        self.values[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
-        self.values[('basic', 'CCD_CAMERA')]= 'CD'
-        self.values[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
-
-        self.values[('filter properties', 'U')]= '[0, U, 5074, -1500, 1500, 100, 40]'
-        self.values[('filter properties', 'B')]= '[1, B, 4712, -1500, 1500, 100, 30]'
-        self.values[('filter properties', 'V')]= '[2, V, 4678, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'R')]= '[4, R, 4700, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'I')]= '[4, I, 4700, -1500, 1500, 100, 20]'
-        self.values[('filter properties', 'X')]= '[5, X, 3270, -1500, 1500, 100, 10]'
-        self.values[('filter properties', 'Y')]= '[6, Y, 3446, -1500, 1500, 100, 10]'
-        self.values[('filter properties', 'NOFILTER')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
-        
-        self.values[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
-        self.values[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
-        self.values[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
-
-        self.values[('acceptance circle', 'CENTER_OFFSET_X')]= 0
-        self.values[('acceptance circle', 'CENTER_OFFSET_Y')]= 0
-        self.values[('acceptance circle', 'RADIUS')]= 2000.
-        
-        self.values[('filters', 'filters')]= 'U:B:V:R:I:X:Y'
-        
-        self.values[('DS9', 'DS9_REFERENCE')]= True
-        self.values[('DS9', 'DS9_MATCHED')]= True
-        self.values[('DS9', 'DS9_ALL')]= True
-        self.values[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
-        self.values[('DS9', 'DS9_REGION_FILE')]= '/tmp/ds9-autofocus.reg'
-        
-        self.values[('analysis', 'ANALYSIS_UPPER_LIMIT')]= 1.e12
-        self.values[('analysis', 'ANALYSIS_LOWER_LIMIT')]= 0.
-        self.values[('analysis', 'MINIMUM_OBJECTS')]= 5
-        self.values[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
-        self.values[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
-        self.values[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
-        self.values[('analysis', 'FIT_RESULT_FILE')]= '/tmp/fit-autofocus.dat'
-        
-        self.values[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
-        
-        self.values[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
-        self.values[('SExtractor', 'SEXCFG')]= '/etc/rts2/autofocus/sex-autofocus.cfg'
-        self.values[('SExtractor', 'SEXPARAM')]= '/etc/rts2/autofocus/sex-autofocus.param'
-        self.values[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/autofocus/sex-autofocus-reference.param'
-        self.values[('SExtractor', 'OBJECT_SEPARATION')]= 10.
-        self.values[('SExtractor', 'ELLIPTICITY')]= .1
-        self.values[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .1
-        self.values[('SExtractor', 'SEXSKY_LIST')]= '/tmp/sex-autofocus-assoc-sky.list'
-        self.values[('SExtractor', 'SEXCATALOGUE')]= '/tmp/sex-autofocus.cat'
-        self.values[('SExtractor', 'SEX_TMP_CATALOGUE')]= '/tmp/sex-autofocus-tmp.cat'
-        self.values[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
-        
-        self.values[('mode', 'TAKE_DATA')]= True
-        self.values[('mode', 'SET_FOCUS')]= True
-        self.values[('mode', 'CCD_BINNING')]= 0
-        self.values[('mode', 'AUTO_FOCUS')]= False
-        self.values[('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')]= 10
-        
-        self.values[('rts2', 'RTS2_DEVICES')]= '/etc/rts2/devices'
-        
-        for (section, identifier), value in sorted(self.values.iteritems()):
-            self.defaults[(identifier)]= value
-#            print 'value ', self.defaults[(identifier)]
- 
-
-    def configurationFileName(self):
-        return self.configFileName
-
-    def identifiers(self):
-        return sorted(self.defaults.iteritems())
-
-    def configIdentifiers(self):
-        return sorted(self.values.iteritems())
-        
-    def defaultValue( self, identifier):
-        return self.defaults[ identifier]
-
-    def writeDefaultConfiguration(self):
-        for (section, identifier), value in sorted(self.values.iteritems()):
-#            print section, '=>', identifier, '=>', value
-            if( self.config.has_section(section)== False):
-                self.config.add_section(section)
-
-            self.config.set(section, identifier, value)
-
-        with open( self.configFileName, 'wb') as configfile:
-            configfile.write('# 2010-07-10, Markus Wildi\n')
-            configfile.write('# default configuration for rts2-autofocus.py\n')
-            configfile.write('# generated with rts2-autofous.py -p\n')
-            configfile.write('# see man rts2-autofocus.py for details\n')
-            configfile.write('#\n')
-            configfile.write('#\n')
-            self.config.write(configfile)
-
-
-class Script:
-    def __init__(self, scriptName):
-        self.scriptName= scriptName
-
-
-class main(Script):
+class main(rts2af.AFScript):
     """define the focus from a series of images"""
-    def __init__(self, scriptName='main' ):
+    def __init__(self, scriptName='main'):
         self.scriptName= scriptName
 
     def main(self):
 
-        dc= defaultConfiguration()
-        parser = argparse.ArgumentParser(description='RTS2 autofocus', epilog="See man 1 rts2-autofocus.py for mor information")
-#        parser.add_argument(
-#            '--write', action='store', metavar='FILE NAME', 
-#            type=argparse.FileType('w'), 
-#            default=sys.stdout,
-#            help='the file name where the default configuration will be written default: write to stdout')
+        dc= rts2af.Configuration()
 
-        parser.add_argument(
-            '-w', '--write', action='store_true', 
-            help='write defaults to configuration file ' + dc.configurationFileName())
-
-        parser.add_argument('--config', dest='fileName',
-                            metavar='CONFIG FILE', nargs=1, type=str,
-                            help='configuration file')
-
-#        parser.add_argument('-t', '--test', dest='test', action='store', 
-#                            metavar='TEST', nargs=1,
-#    no default means None                        default='myTEST',
-#                            help=' test case, default: myTEST')
-
-        parser.add_argument('-v', dest='verbose', action='store_true')
-
-        args = parser.parse_args()
-
-        if( args.write):
-            dc.writeDefaultConfiguration()
-            print 'wrote default configuration to ' +  dc.configurationFileName()
-            sys.exit(0)
+        args= self.arguments(dc)
 
         configFileName=''
         if( args.fileName):
@@ -198,89 +57,36 @@ class main(Script):
         else:
             configFileName= dc.configurationFileName()
             cmd= 'logger no config file specified, taking default' + configFileName
-            print cmd 
+            #print cmd 
             os.system( cmd)
 
         if(args.verbose):
             print 'config file, taking ' + configFileName
-        
-        if(args.verbose):
-            for (identifier), value in dc.identifiers():
-                print "dump defaults :", ', ', identifier, '=>', value
 
-        config = ConfigParser.ConfigParser()
-        try:
-            config.readfp(open(configFileName))
-        except:
-            cmd= 'logger config file ' + configFileName + ' not found'
-            print cmd
-            os.system( cmd)
-            sys.exit(1)
-
-# read the defaults
-        values={}
-        for (section, identifier), value in dc.configIdentifiers():
-            values[identifier]= value
-
-# over write the defaults
-        filterProperties={}
-        for (section, identifier), value in dc.configIdentifiers():
-
-            try:
-                value = config.get( section, identifier)
-            except:
-                cmd= 'logger no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName
-                os.system( cmd)
-# first bool, then int !
-            if(isinstance(values[identifier], bool)):
-#ToDO, looking for a direct way
-                if( value == 'True'):
-                    values[identifier]= True
-                else:
-                    values[identifier]= False
-            elif( isinstance(values[identifier], int)):
-                try:
-                    values[identifier]= int(value)
-                except:
-                    cmd= 'logger no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName
-                    os.system( cmd)
-
-            elif(isinstance(values[identifier], float)):
-                try:
-                    values[identifier]= float(value)
-                except:
-                    cmd= 'logger no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName
-                    os.system( cmd)
-
-            else:
-                values[identifier]= value
-                if( section == 'filter properties'): 
-                    items=[] ;
-                    items= value[1:-1].split(',')
-#, ToDo, hm
-                    for item in items: 
-                        item.replace(' ', '')
-
-                    filterProperties[(items[1], 'Nr')]         = string.atoi(items[0]) # found that too
-                    filterProperties[(items[1], 'FOC_DEF')]    = string.atoi(items[2])
-                    filterProperties[(items[1], 'LOWER_LIMIT')]= string.atoi(items[3])
-                    filterProperties[(items[1], 'UPPER_LIMIT')]= string.atoi(items[4])
-                    filterProperties[(items[1], 'STEP')]       = string.atoi(items[5])
-                    filterProperties[(items[1], 'EXP_TIME')]   = string.atoi(items[6])
+        dc.readConfiguration(configFileName, args.verbose)
 
 
-        if(args.verbose):
-            for (identifier), value in dc.identifiers():
-                print "over ", identifier, values[(identifier)]
 
-        if( args.verbose):
-            for (filter, property), value in sorted(filterProperties.iteritems()):
-                print 'Filter ' + filter + ' ' + property + '=' + str(filterProperties[(filter, property)])
+        for  identifier, value in dc.valuesIdentifiers():
+             print "actual configuration values :", ', ', identifier, '=>', value
+
+        for filter in dc.filtersInUse:
+            print 'filters--------' + filter
+
+ # talk to centrald
+
+#        con= rts2comm.Rts2Comm()
+#        if( con.isEvening()):
+#            cmd= 'logger evening' 
+#        else:
+#            cmd= 'logger morning'
+
+#        os.system( cmd)
 
 
 
 if __name__ == '__main__':
-    main().main()
+    main(sys.argv[0]).main()
 
 
 

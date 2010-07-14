@@ -25,17 +25,17 @@ __author__ = 'markus.wildi@one-arcsec.org'
 
 
 import unittest
-from rts2_autofocus import defaultConfiguration
+from rts2af import Configuration
 
 
-class testDefaultConfiguration(unittest.TestCase):
+class testConfiguration(unittest.TestCase):
 
     # ToDo def setUp(self):
     # ToDo  def tearDown():
 
     def test_configuration(self):
 
-        dc= defaultConfiguration()
+        dc= Configuration()
         values={}
 
         for (section, identifier), value in dc.configIdentifiers():
@@ -46,7 +46,7 @@ class testDefaultConfiguration(unittest.TestCase):
 
     def test_basic(self):
 
-        dc= defaultConfiguration()
+        dc= Configuration()
         values={}
         for (section, identifier), value in dc.configIdentifiers():
             values[identifier]= value
@@ -61,6 +61,6 @@ class testDefaultConfiguration(unittest.TestCase):
         self.assertTrue( values['TAKE_DATA'])
         self.assertEqual( dc.defaultValue('SEXPRG'), 'sex 2>/dev/null') 
 
-suite = unittest.TestLoader().loadTestsFromTestCase(testDefaultConfiguration)
+suite = unittest.TestLoader().loadTestsFromTestCase(testConfiguration)
 unittest.TextTestRunner(verbosity=2).run(suite)
 
