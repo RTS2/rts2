@@ -53,7 +53,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 
 	expNum = 0;
 
-	triggered = false;
+	triggered = NOT;
 }
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
@@ -149,6 +149,8 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataAb
 
 Rts2Image * Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
+	if (triggered == WAIT)
+		triggered = CONFIRMED;
 	return new Rts2Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
 }
 
@@ -265,20 +267,28 @@ void Rts2DevClientCameraImage::exposureEnd ()
 
 bool Rts2DevClientCameraImage::waitForMetaData ()
 {
-	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
-		triggered = false;
+	if (triggered == CONFIRMED && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
+	{
+		triggered = NOT;
+	}
 	if (getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE)
 	{
-		if (triggered)
+		if (triggered == CONFIRMED)
+		{
 			return true;
-		triggered = true;
+		}
+		triggered = WAIT;
 	}
 	if (actualImage && actualImage->waitForMetaData ())
+	{
 		return true;
+	}
 	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		if (((*iter).second)->waitForMetaData ())
+		{
 			return true;
+		}
 	}
 	return false;
 }

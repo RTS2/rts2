@@ -115,7 +115,7 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		// number of exposure
 		int expNum;
 
-		bool triggered;
+		enum {NOT, WAIT, CONFIRMED} triggered;
 };
 
 class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
