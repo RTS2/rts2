@@ -83,16 +83,16 @@ class Dummy:public Sensor
 		/** Handles logic of BOP_WILL_EXPOSE and BOP_TRIG_EXPOSE. */
 		virtual void setFullBopState (int new_state)
 		{
-		 	Sensor::setFullBopState (new_state);
-			if (new_state & BOP_WILL_EXPOSE)
+			if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
 			{
-				sleep (10);
 				maskState (BOP_TRIG_EXPOSE, 0, "enabled exposure");
+				sleep (10);
 			}
 			if (new_state & BOP_TEL_MOVE)
 			{
 				maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for next exposure");
 			}
+		 	Sensor::setFullBopState (new_state);
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
