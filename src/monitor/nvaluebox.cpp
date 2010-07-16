@@ -69,7 +69,7 @@ void ValueBoxBool::draw ()
 		mvwprintw (getWriteWindow (), 0, 1, "true");
 		mvwprintw (getWriteWindow (), 1, 1, "false");
 	}
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxBool::sendValue (Rts2Conn * connection)
@@ -97,7 +97,7 @@ keyRet ValueBoxString::injectKey (int key)
 void ValueBoxString::draw ()
 {
 	NWindowEdit::draw ();
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxString::sendValue (Rts2Conn * connection)
@@ -129,7 +129,7 @@ keyRet ValueBoxInteger::injectKey (int key)
 void ValueBoxInteger::draw ()
 {
 	NWindowEditIntegers::draw ();
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxInteger::sendValue (Rts2Conn * connection)
@@ -157,7 +157,7 @@ keyRet ValueBoxLongInteger::injectKey (int key)
 void ValueBoxLongInteger::draw ()
 {
 	NWindowEditIntegers::draw ();
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxLongInteger::sendValue (Rts2Conn * connection)
@@ -194,7 +194,7 @@ keyRet ValueBoxFloat::injectKey (int key)
 void ValueBoxFloat::draw ()
 {
 	NWindowEditDigits::draw ();
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxFloat::sendValue (Rts2Conn * connection)
@@ -235,7 +235,7 @@ keyRet ValueBoxDouble::injectKey (int key)
 void ValueBoxDouble::draw ()
 {
 	NWindowEditDigits::draw ();
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxDouble::sendValue (Rts2Conn * connection)
@@ -304,7 +304,7 @@ void ValueBoxSelection::draw ()
 	{
 		drawRow ((*iter).name.c_str ());
 	}
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxSelection::sendValue (Rts2Conn * connection)
@@ -328,7 +328,7 @@ void ValueBoxTimeDiff::draw ()
 		_os << "+" << ((maxrow + 1) * 2) << " min";
 		drawRow (_os.str ().c_str ());
 	}
-	refresh ();
+	winrefresh ();
 }
 
 void ValueBoxTimeDiff::sendValue (Rts2Conn * connection)
@@ -410,9 +410,9 @@ void ValueBoxRectangle::draw ()
 	mvwprintw (getWriteWindow (), 1, 0, "w:");
 	mvwprintw (getWriteWindow (), 1, 13, "h:");
 
-	refresh ();
+	winrefresh ();
 	for (int i = 0; i < 4; i++)
-		edt[i]->refresh ();
+		edt[i]->winrefresh ();
 }
 
 void ValueBoxRectangle::sendValue (Rts2Conn * connection)
@@ -487,9 +487,9 @@ void ValueBoxRaDec::draw ()
 	mvwprintw (getWriteWindow (), 0, 0, " RA:");
 	mvwprintw (getWriteWindow (), 0, 15, "DEC:");
 
-	refresh ();
+	winrefresh ();
 	for (int i = 0; i < 2; i++)
-		edt[i]->refresh ();
+		edt[i]->winrefresh ();
 }
 
 void ValueBoxRaDec::sendValue (Rts2Conn * connection)

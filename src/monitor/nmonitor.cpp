@@ -64,7 +64,7 @@ void NMonitor::sendCommand ()
 	{
 		oldCommand = new rts2core::Rts2Command (this, cmd_top);
 		conn->queCommand (oldCommand);
-		comWindow->clear ();
+		comWindow->winclear ();
 		comWindow->printCommand (command);
 		wmove (comWindow->getWriteWindow (), 0, 0);
 	}

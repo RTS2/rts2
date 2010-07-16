@@ -93,7 +93,7 @@ keyRet NSelWindow::injectKey (int key)
 	return RKEY_HANDLED;
 }
 
-void NSelWindow::refresh ()
+void NSelWindow::winrefresh ()
 {
 	int x, y;
 	int w, h;
@@ -114,7 +114,7 @@ void NSelWindow::refresh ()
 			mvwchgat (scrolpad, maxrow - 1, 0, w, A_REVERSE, 0, NULL);
 		}
 	}
-	NWindow::refresh ();
+	NWindow::winrefresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	// normalize selrow
@@ -158,7 +158,7 @@ void NDevListWindow::draw ()
 	}
 	wprintw (scrolpad, "status");
 	maxrow++;
-	refresh ();
+	winrefresh ();
 }
 
 void NCentraldWindow::printState (Rts2Conn * conn)
@@ -200,5 +200,5 @@ void NCentraldWindow::draw ()
 	{
 		drawDevice (*iter);
 	}
-	refresh ();
+	winrefresh ();
 }

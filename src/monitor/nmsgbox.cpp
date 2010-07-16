@@ -75,5 +75,5 @@ void NMsgBox::draw ()
 		mvwprintw (window, 2, 2 + i * 30 / 2, buttons[i]);
 	}
 	wattroff (window, A_REVERSE);
-	refresh ();
+	winrefresh ();
 }

@@ -35,25 +35,19 @@ class NComWin:public NWindow
 		virtual ~ NComWin (void);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void refresh ();
+		virtual void winrefresh ();
 
-		virtual void clear ()
+		virtual void winclear ()
 		{
 			werase (comwin);
-			NWindow::clear ();
+			NWindow::winclear ();
 		}
 
 		virtual bool setCursor ();
 
-		virtual WINDOW *getWriteWindow ()
-		{
-			return comwin;
-		}
+		virtual WINDOW *getWriteWindow () { return comwin; }
 
-		void getWinString (char *buf, int n)
-		{
-			mvwinnstr (comwin, 0, 0, buf, n);
-		}
+		void getWinString (char *buf, int n) { mvwinnstr (comwin, 0, 0, buf, n); }
 		void printCommand (char *cmd)
 		{
 			mvwprintw (statuspad, 0, 0, "%s", cmd);

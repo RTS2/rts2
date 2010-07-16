@@ -125,7 +125,7 @@ void NMenu::draw ()
 		if (submenu == selSubmenu)
 		{
 			submenu->drawSubmenu ();
-			submenu->refresh ();
+			submenu->winrefresh ();
 		}
 		submenu->draw (window);
 	}
@@ -136,7 +136,7 @@ void NMenu::draw ()
 	wcolor_set (window, CLR_TEXT, NULL);
 	mvwprintw (window, 0, getWidth () - strlen (buf) - 1, "%s", buf);
 
-	refresh ();
+	winrefresh ();
 }
 
 void NMenu::enter ()
@@ -153,6 +153,6 @@ void NMenu::addSubmenu (NSubmenu * in_submenu)
 {
 	submenus.push_back (in_submenu);
 	selSubmenuIter = submenus.begin ();
-	in_submenu->move (top_x, 0);
+	in_submenu->winmove (top_x, 0);
 	top_x += in_submenu->getWidth () + 2;
 }

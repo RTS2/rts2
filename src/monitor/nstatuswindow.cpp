@@ -49,5 +49,5 @@ void NStatusWindow::draw ()
 	mvwprintw (window, 0, COLS - 19, "%19s", dateBuf);
 	wcolor_set (window, CLR_DEFAULT, NULL);
 
-	refresh ();
+	winrefresh ();
 }

@@ -58,13 +58,13 @@ keyRet NComWin::injectKey (int key)
 void NComWin::draw ()
 {
 	NWindow::draw ();
-	refresh ();
+	winrefresh ();
 }
-void NComWin::refresh ()
+void NComWin::winrefresh ()
 {
 	int x, y;
 	int w, h;
-	NWindow::refresh ();
+	NWindow::winrefresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	if (pnoutrefresh (comwin, 0, 0, y, x, y + 1, x + w - 1) == ERR)

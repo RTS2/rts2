@@ -96,8 +96,7 @@ void NMsgWindow::draw ()
 	mvwaddch (window, 0, 15, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, 15, ACS_BTEE);
 
-
-	refresh ();
+	winrefresh ();
 }
 
 void NMsgWindow::add (Rts2Message & msg)

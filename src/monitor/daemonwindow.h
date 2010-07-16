@@ -38,38 +38,22 @@ namespace rts2ncurses
  */
 class NSelWindow:public NWindow
 {
-	protected:
-		int selrow;
-		int maxrow;
-		int padoff_x;
-		int padoff_y;
-		int lineOffset;
-		WINDOW *scrolpad;
 	public:
 		NSelWindow (int x, int y, int w, int h, int border = 1, int sw = 300, int sh = 100);
 		virtual ~ NSelWindow (void);
 		virtual keyRet injectKey (int key);
-		virtual void refresh ();
+		virtual void winrefresh ();
 		int getSelRow ()
 		{
 			if (selrow == -1)
 				return (maxrow - 1);
 			return selrow;
 		}
-		void setSelRow (int new_sel)
-		{
-			selrow = new_sel;
-		}
+		void setSelRow (int new_sel) { selrow = new_sel; }
 
-		virtual void erase ()
-		{
-			werase (scrolpad);
-		}
+		virtual void winerase () { werase (scrolpad); }
 
-		virtual WINDOW *getWriteWindow ()
-		{
-			return scrolpad;
-		}
+		virtual WINDOW *getWriteWindow () { return scrolpad; }
 
 		int getScrollWidth ()
 		{
@@ -83,36 +67,37 @@ class NSelWindow:public NWindow
 			getmaxyx (scrolpad, h, w);
 			return h;
 		}
-		void setLineOffset (int new_lineOffset)
-		{
-			lineOffset = new_lineOffset;
-		}
-		int getPadoffY ()
-		{
-			return padoff_y;
-		}
+		void setLineOffset (int new_lineOffset) { lineOffset = new_lineOffset; }
+		int getPadoffY () { return padoff_y; }
+	protected:
+		int selrow;
+		int maxrow;
+		int padoff_x;
+		int padoff_y;
+		int lineOffset;
+		WINDOW *scrolpad;
 };
 
 class NDevListWindow:public NSelWindow
 {
-	private:
-		Rts2Block * block;
 	public:
 		NDevListWindow (Rts2Block * in_block);
 		virtual ~ NDevListWindow (void);
 		virtual void draw ();
+	private:
+		Rts2Block * block;
 };
 
 class NCentraldWindow:public NSelWindow
 {
-	private:
-		Rts2Client * client;
-		void printState (Rts2Conn * conn);
-		void drawDevice (Rts2Conn * conn);
 	public:
 		NCentraldWindow (Rts2Client * in_client);
 		virtual ~ NCentraldWindow (void);
 		virtual void draw ();
+	private:
+		Rts2Client * client;
+		void printState (Rts2Conn * conn);
+		void drawDevice (Rts2Conn * conn);
 };
 
 }

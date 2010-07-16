@@ -89,10 +89,10 @@ keyRet NWindowEdit::injectKey (int key)
 	return RKEY_HANDLED;
 }
 
-void NWindowEdit::refresh ()
+void NWindowEdit::winrefresh ()
 {
 	int w, h;
-	NWindow::refresh ();
+	NWindow::winrefresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	// window coordinates

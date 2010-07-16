@@ -34,7 +34,7 @@ class NDeviceWindow:public NSelWindow
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
-		virtual void refresh ();
+		virtual void winrefresh ();
 		virtual bool setCursor ();
 		virtual bool hasEditBox () { return valueBox != NULL; }
 

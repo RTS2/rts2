@@ -32,18 +32,6 @@ namespace rts2ncurses
  */
 class NWindowEdit:public NWindow
 {
-	private:
-		WINDOW * comwin;
-		int ex, ey, ew, eh;
-		// current cursor position
-		int x, y;
-	protected:
-		/**
-		 * Returns true if key should be wadded to comwin.
-		 * Returns false if the key is not supported (e.g. numeric 
-		 * edit box don't want to get alnum). Default is to return isalnum (key).
-		 */
-		virtual bool passKey (int key);
 	public:
 		/**
 		 * Creates edit window.
@@ -55,19 +43,27 @@ class NWindowEdit:public NWindow
 		 * @param ex, ey, ew and eh are position of (single) edit box within this window.
 		 * @param border  True if border will be presented.
 		 */
-		NWindowEdit (int _x, int _y, int w, int h,
-			int _ex, int _ey, int _ew, int _eh, bool border = true);
+		NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
 		virtual ~ NWindowEdit (void);
 
 		virtual keyRet injectKey (int key);
-		virtual void refresh ();
+		virtual void winrefresh ();
 
 		virtual bool setCursor ();
 
-		virtual WINDOW *getWriteWindow ()
-		{
-			return comwin;
-		}
+		virtual WINDOW *getWriteWindow () { return comwin; }
+	protected:
+		/**
+		 * Returns true if key should be wadded to comwin.
+		 * Returns false if the key is not supported (e.g. numeric 
+		 * edit box don't want to get alnum). Default is to return isalnum (key).
+		 */
+		virtual bool passKey (int key);
+	private:
+		WINDOW * comwin;
+		int ex, ey, ew, eh;
+		// current cursor position
+		int x, y;
 };
 
 /**

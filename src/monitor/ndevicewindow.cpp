@@ -265,12 +265,12 @@ void NDeviceWindow::draw ()
 	Rts2Value *val = getSelValue ();
 	if (val != NULL)
 		printValueDesc (val);
-	refresh ();
+	winrefresh ();
 }
 
-void NDeviceWindow::refresh ()
+void NDeviceWindow::winrefresh ()
 {
-	NSelWindow::refresh ();
+	NSelWindow::winrefresh ();
 	if (valueBox)
 		valueBox->draw ();
 }

@@ -65,26 +65,17 @@ class NWindow:public Layout
 		int getWriteWidth ();
 		int getWriteHeight ();
 
-		void setX (int x)
-		{
-			move (x, getY ());
-		}
+		void setX (int x) { winmove (x, getY ()); }
 
-		void setY (int y)
-		{
-			move (getX (), y);
-		}
+		void setY (int y) { winmove (getX (), y); }
 
-		virtual void clear (void)
-		{
-			werase (window);
-		}
+		virtual void winclear (void) { werase (window);	}
 
-		void move (int x, int y);
+		void winmove (int x, int y);
 		virtual void resize (int x, int y, int w, int h);
 		void grow (int max_w, int h_dif);
 
-		virtual void refresh ();
+		virtual void winrefresh ();
 
 		/**
 		 * Gets called when window get focus.

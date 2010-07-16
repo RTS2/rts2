@@ -138,7 +138,7 @@ void NWindow::errorMove (const char *op, int y, int x, int h, int w)
 	exit (EXIT_FAILURE);
 }
 
-void NWindow::move (int x, int y)
+void NWindow::winmove (int x, int y)
 {
 	int _x, _y;
 	getbegyx (window, _y, _x);
@@ -152,7 +152,7 @@ void NWindow::resize (int x, int y, int w, int h)
 {
 	if (wresize (window, h, w) == ERR)
 		errorMove ("wresize", 0, 0, h, w);
-	move (x, y);
+	winmove (x, y);
 }
 
 void NWindow::grow (int max_w, int h_dif)
@@ -165,7 +165,7 @@ void NWindow::grow (int max_w, int h_dif)
 	resize (x, y, w, h + h_dif);
 }
 
-void NWindow::refresh ()
+void NWindow::winrefresh ()
 {
 	wnoutrefresh (window);
 }
