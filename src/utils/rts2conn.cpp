@@ -709,15 +709,16 @@ void Rts2Conn::processLine ()
 		}
 		else
 		{
-			readData[data_conn] = new DataRead (data_size, data_type);
+			readChannels[data_conn] = new DataChannels ();
+			readChannels[data_conn]->push_back (new DataRead (data_size, data_type));
 			newDataConn (data_conn);
 			ret = -1;
 		}
 	}
 	else if (isCommand (PROTO_DATA))
 	{
-		if (paramNextInteger (&activeReadData)
-			|| readData[activeReadData]->readDataSize (this)
+		if (paramNextInteger (&activeReadData) || paramNextInteger (&activeReadChannel)
+			|| readChannels[activeReadData]->readChannel (activeReadChannel, this)
 			|| !paramEnd ())
 		{
 			// end connection - bad binary data header
@@ -779,8 +780,9 @@ void Rts2Conn::processLine ()
 			std::cout << "PROTO_SHARED_FULL" << std::endl;
 			if (otherDevice)
 			{
-				DataShared _data (activeSharedMem);
-				otherDevice->fullDataReceived (-1, &_data);
+/*				DataChannels _channel();
+				_channel.push_back (new DataShared (activeSharedMem));
+				otherDevice->fullDataReceived (-1, &_channel); */
 			}
 			ret = -1;
 		}
@@ -851,7 +853,7 @@ void Rts2Conn::processBuffer ()
 			if (activeReadData >= 0)
 			{
 				long readSize = full_data_end - buf_top;
-				readSize = readData[activeReadData]->addData (buf_top, readSize);
+				readSize = readChannels[activeReadData]->addData (activeReadChannel, buf_top, readSize);
 				dataReceived ();
 				// move binary data away
 				memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
@@ -884,7 +886,7 @@ int Rts2Conn::receive (fd_set * readset)
 		// we are receiving binary data
 		if (activeReadData >= 0)
 		{
-			data_size = readData[activeReadData]->getData (sock);
+			data_size = readChannels[activeReadData]->getData (activeReadChannel, sock);
 			if (data_size == -1)
 			{
 				connectionError (data_size);
@@ -1366,7 +1368,7 @@ int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 	char *binaryEnd = data + dataSize;
 
 	std::ostringstream _os;
-	_os << PROTO_DATA " " << data_conn << " " << dataSize;
+	_os << PROTO_DATA " " << data_conn << " 0 " << dataSize;
 	int ret;
 	ret = sendMsg (_os);
 	if (ret)
@@ -1724,20 +1726,20 @@ void Rts2Conn::newDataConn (int data_conn)
 
 void Rts2Conn::dataReceived ()
 {
-	std::map <int, DataRead *>::iterator iter = readData.find (activeReadData);
+	std::map <int, DataChannels *>::iterator iter = readChannels.find (activeReadData);
 	// inform device that we read some data
 	if (otherDevice)
-		otherDevice->dataReceived ((*iter).second);
+		otherDevice->dataReceived (((*iter).second)->at(activeReadChannel));
 	getMaster ()->binaryDataArrived (this);
 	if (((*iter).second)->getRestSize () == 0)
 	{
 		if (otherDevice)
 			otherDevice->fullDataReceived ((*iter).first, (*iter).second);
 		delete (*iter).second;
-		readData.erase (iter);
+		readChannels.erase (iter);
 		activeReadData = -1;
 	}
-	else if (((*iter).second)->getChunkSize () == 0)
+	else if (((*iter).second)->getChunkSize (activeReadChannel) == 0)
 	{
 		activeReadData = -1;
 	}

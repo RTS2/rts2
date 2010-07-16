@@ -673,8 +673,9 @@ class Rts2Conn:public Rts2Object
 		time_t lastData;
 		time_t lastSendReady;
 
-		std::map <int, rts2core::DataRead *> readData;
+		std::map <int, rts2core::DataChannels *> readChannels;
 		int activeReadData;
+		int activeReadChannel;
 
 		int activeSharedId;
 		char *activeSharedMem;

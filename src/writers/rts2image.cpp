@@ -1174,7 +1174,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop)
 
 	// either put it as a new extension, or keep it in primary..
 
-	if (true)
+	if (false)
 	{
 		if (imageType == RTS2_DATA_SBYTE)
 		{

@@ -46,7 +46,7 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual void postEvent (Rts2Event * event);
 
 		virtual void newDataConn (int data_conn);
-		virtual void fullDataReceived (int data_conn, rts2core::DataAbstractRead *data);
+		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
 

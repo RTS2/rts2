@@ -124,13 +124,16 @@ void Rts2DevClientCameraImage::newDataConn (int data_conn)
 	actualImage = NULL;
 }
 
-void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataAbstractRead *data)
+void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChannels *data)
 {
 	CameraImages::iterator iter = images.find (data_conn);
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;
-		ci->writeData (data->getDataBuff (), data->getDataTop ());
+
+		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
+			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop ());
+
 		cameraImageReady (ci->image);
 		if (ci->canDelete ())
 		{

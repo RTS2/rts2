@@ -66,7 +66,7 @@ void Rts2DevClient::dataReceived (DataRead *data)
 {
 }
 
-void Rts2DevClient::fullDataReceived (int data_conn, DataAbstractRead *data)
+void Rts2DevClient::fullDataReceived (int data_conn, DataChannels *data)
 {
 	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }

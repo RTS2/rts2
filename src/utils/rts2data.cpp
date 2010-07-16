@@ -26,3 +26,17 @@ int DataRead::readDataSize (Rts2Conn *conn)
 {
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
+
+DataChannels::~DataChannels ()
+{
+	for (std::vector <DataRead *>::iterator iter = begin (); iter != end (); iter++)
+		delete (*iter);
+}
+
+long DataChannels::getRestSize ()
+{
+	long ret = 0;
+	for (std::vector <DataRead *>::iterator iter = begin (); iter != end (); iter++)
+		ret += (*iter)->getRestSize ();
+	return ret;	
+}

@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <vector>
 
 class Rts2Conn;
 
@@ -88,7 +89,7 @@ class DataRead:public DataAbstractRead
 		/**
 		 * Receive data from socket.
 		 *
-		 * @return -1 on error, otherwise size of readed data.
+		 * @return -1 on error, otherwise size of read data.
 		 */
 		int getData (int sock)
 		{
@@ -175,6 +176,37 @@ class DataWrite
 	private:
 		// connection data size
 		long binaryWriteDataSize;
+};
+
+/**
+ * Structure holding all channels of the data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataChannels:public std::vector <DataRead *>
+{
+	public:
+		DataChannels () {}
+		~DataChannels ();
+
+		/**
+		 * Read data for given channel.
+		 *
+		 * @param chan  channel number
+		 * @param conn  connection which will be used to read the data
+		 */
+		int readChannel (int chan, Rts2Conn *conn) { return at(chan)->readDataSize (conn); }
+
+		long addData (int chan, char *_data, long data_size) { return at(chan)->addData (_data, data_size); }
+
+		int getData (int chan, int sock) { return at(chan)->getData (sock); }
+
+		/**
+		 * Return remaining size of chunk, which has to be read from actual data chunk.
+		 */
+		long getChunkSize (int chan) { return at(chan)->getChunkSize (); }
+
+		long getRestSize ();
 };
 
 }

@@ -97,7 +97,7 @@ class Rts2DevClient:public Rts2Object
 		 * @param data_conn data connection ID. Can be < 0 for shared memory data.
 		 * @param data      pointer to Rts2DataRead object holding full data.
 		 */
-		virtual void fullDataReceived (int data_conn, DataAbstractRead *data);
+		virtual void fullDataReceived (int data_conn, DataChannels *data);
 
 		virtual void stateChanged (Rts2ServerState * state);
 

@@ -374,6 +374,7 @@ void Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messa
 			// otherwise write it to syslog..
 			switch (in_messageType)
 			{
+				case MESSAGE_CRITICAL:
 				case MESSAGE_ERROR:
 					prio = LOG_ERR;
 					break;
