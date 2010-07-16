@@ -275,12 +275,9 @@ bool Rts2DevClientCameraImage::waitForMetaData ()
 		if (((*iter).second)->waitForMetaData ())
 			return true;
 	}
-	if (getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE)
-	{
-		if (triggered)
-			return true;
-		triggered = true;
-	}
+	// wait if we the program is already waiting for an exposure to be send
+	if (triggered && (getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
+		return true;
 	return false;
 }
 
