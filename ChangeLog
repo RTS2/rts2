@@ -1,3 +1,9 @@
+2010-07-15
+ * support for multiple extension images (on client side)
+
+2010-07-11
+ * BOP_WAIT_TRIG, BOP_WILL_EXPOSE and related machinery
+
 2010-06-12
  * Camera filter focusing offsets
 

@@ -166,24 +166,15 @@ class DataShared: public DataAbstractRead
  */
 class DataWrite
 {
-	private:
-		// number of data to write on conection
-		long binaryWriteDataSize;
 	public:
-		DataWrite (int in_dataSize)
-		{
-			binaryWriteDataSize = in_dataSize;
-		}
+		DataWrite (int in_dataSize) { binaryWriteDataSize = in_dataSize; }
+		long getDataSize () { return binaryWriteDataSize; }
 
-		long getDataSize ()
-		{
-			return binaryWriteDataSize;
-		}
+		void dataWritten (int size) { binaryWriteDataSize -= size; }
 
-		void dataWritten (int size)
-		{
-			binaryWriteDataSize -= size;
-		}
+	private:
+		// connection data size
+		long binaryWriteDataSize;
 };
 
 }

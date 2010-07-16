@@ -1,6 +1,6 @@
 /* 
  * Class which represents image.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@
 #include "imghdr.h"
 
 #include "rts2fitsfile.h"
+#include "channel.h"
 
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2devclient.h"
@@ -138,10 +139,7 @@ class Rts2Image:public Rts2FitsFile
 
 		virtual img_type_t getImageType ();
 
-		shutter_t getShutter ()
-		{
-			return shutter;
-		}
+		shutter_t getShutter () { return shutter; }
 
 		/**
 		 * Rename images to new path.
@@ -204,7 +202,12 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		int linkImageExpand (std::string link_ex);
 
-		int saveImageData (const char *save_filename, unsigned short *in_data);
+		// int saveImageData (const char *save_filename, unsigned short *in_data);
+
+		/**
+		 * Move CHDU.
+		 */
+		void moveHDU (int hdu, int *hdutype = NULL);
 
 		void setValue (const char *name, bool value, const char *comment);
 		void setValue (const char *name, int value, const char *comment);
@@ -240,37 +243,34 @@ class Rts2Image:public Rts2FitsFile
 		void getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
 		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
-		int writeImgHeader (struct imghdr *im_h);
-
-		/**
-		 * Record image physical coordinates.
-		 *
-		 * @param x     X offset of the image.
-		 * @param y     Y offset of the image.
-		 * @param bin_x Binning along X axis.
-		 * @param bin_y Binning along Y axis.
-		 */
-		void writePhysical (int x, int y, int bin_x, int bin_y);
-
 		int writeData (char *in_data, char *fullTop);
 
 		/**
 		 * Build image histogram.
 		 *
-		 * @param histogram Array of size nbins.
-		 * @param nbins     Number of histogram bins.
+		 * @param histogram array for calculated histogram
+		 * @param nbins     number of histogram bins
 		 */
 		void getHistogram (long *histogram, long nbins);
 
 		/**
+		 * Build channel histogram.
+		 *
+		 * @param chan      channel number 
+		 * @param histogram array for calculated histogram
+		 * @param nbins     number of histogram bins
+		 */
+		void getChannelHistogram (int chan, long *histogram, long nbins);
+
+		/**
 		 * Returns image grayscaled buffer. Black have value equal to black parameter, white is 0.
 		 *
-		 * @param buf        Buffer (will be allocated by image routine). You must delete it.
-		 * @param black      Black value.
-		 * @param quantiles  Quantiles in 0-1 range for image scaling.
-		 * @param 
+		 * @param chan       channel number
+		 * @param buf        buffer (will be allocated by image routine). You must delete it.
+		 * @param black      black value.
+		 * @param quantiles  quantiles in 0-1 range for image scaling.
 		 */
-		template <typename bt> void getGrayscaleBuffer (bt * &buf, bt black, float quantiles=0.005);
+		template <typename bt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles=0.005);
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		/**
@@ -280,7 +280,7 @@ class Rts2Image:public Rts2FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005);
+		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = 0);
 
 		/**
 		 * Write lable to given position. Label text will be expanded.
@@ -408,19 +408,15 @@ class Rts2Image:public Rts2FitsFile
 
 		void keepImage () { flags |= IMAGE_KEEP_DATA; }
 
-		void closeData ()
-		{
-			delete imageData;
-			imageData = NULL;
-		}
+		void closeData () { channels.clear (); }
 
 		/**
 		 * @throw rts2core::Error
 		 */
-		void loadData ();
+		void loadChannels ();
 
-		void *getData ();
-		unsigned short *getDataUShortInt ();
+		const void *getChannelData (int chan);
+		unsigned short *getChannelDataUShortInt (int chan);
 
 		int getPixelByteSize ()
 		{
@@ -429,9 +425,9 @@ class Rts2Image:public Rts2FitsFile
 			return abs (imageType) / 8;
 		}
 
-		void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
+		//void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
 
-		int substractDark (Rts2Image * darkImage);
+		//int substractDark (Rts2Image * darkImage);
 
 		int setAstroResults (double ra, double dec, double ra_err, double dec_err);
 
@@ -450,19 +446,24 @@ class Rts2Image:public Rts2FitsFile
 		// Put center coordinates in pixels to x and y
 
 		// helpers, get row & line center
-		int getCenterRow (long row, int row_width, double &x);
-		int getCenterCol (long col, int col_width, double &y);
+		//int getCenterRow (long row, int row_width, double &x);
+		//int getCenterCol (long col, int col_width, double &y);
 
-		int getCenter (double &x, double &y, int bin);
+		//int getCenter (double &x, double &y, int bin);
 
-		long getWidth () { return naxis[0]; }
+		long getChannelWidth (int chan) { return channels[chan]->getWidth (); }
 
-		long getHeight () { return naxis[1]; }
+		long getChannelHeight (int chan) { return channels[chan]->getHeight (); }
 
 		/**
-		 * Returns number of pixels.
+		 * Returns number of pixels in a given channel.
 		 */
-		long getNPixels () { return getWidth () * getHeight (); }
+		long getChannelNPixels (int chan) { return channels[chan]->getNPixels (); }
+
+		/**
+		 * Returns sum of pixel sizes of all channels.
+		 */
+		long getSumNPixels ();
 
 		/**
 		 * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)
@@ -472,12 +473,10 @@ class Rts2Image:public Rts2FitsFile
 		 * to decrease RA.
 		 */
 
-		int getOffset (double x, double y, double &chng_ra, double &chng_dec,
-			double &sep_angle);
+		int getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle);
 
 		// returns pixels [x1,y1] and [x2,y2] offset in ra and dec degrees
-		int getOffset (double x1, double y1, double x2, double y2, double &chng_ra,
-			double &chng_dec, double &sep_angle);
+		int getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle);
 
 		/**
 		 * This function is good only for HAM source detection on FRAM telescope in Argentina.
@@ -527,10 +526,7 @@ class Rts2Image:public Rts2FitsFile
 		 *
 		 * @param in_mnt_flip New mount flip value (0 or 1).
 		 */
-		void setMountFlip (int in_mnt_flip)
-		{
-			mnt_flip = in_mnt_flip;
-		}
+		void setMountFlip (int in_mnt_flip) { mnt_flip = in_mnt_flip; }
 
 		/**
 		 * Increase image rotang.
@@ -607,15 +603,9 @@ class Rts2Image:public Rts2FitsFile
 
 		std::string getOnlyFileName ();
 
-		virtual bool haveOKAstrometry ()
-		{
-			return false;
-		}
+		virtual bool haveOKAstrometry () { return false; }
 
-		virtual bool isProcessed ()
-		{
-			return false;
-		}
+		virtual bool isProcessed () { return false; }
 
 		void printFileName (std::ostream & _os);
 
@@ -623,12 +613,12 @@ class Rts2Image:public Rts2FitsFile
 
 		void setInstrument (const char *instr)
 		{
-			setValue ("INSTRUME", instr, "instrument used for acqusition");
+			setValue ("INSTRUME", instr, "name of the data acqusition instrument");
 		}
 
 		void setTelescope (const char *tel)
 		{
-			setValue ("TELESCOP", tel, "telescope used for acqusition");
+			setValue ("TELESCOP", tel, "name of the data acqusition telescope");
 		}
 
 		void setObserver ()
@@ -646,8 +636,7 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		void setEnvironmentalValues ();
 
-		void writeConn (Rts2Conn * conn, imageWriteWhich_t which =
-			EXPOSURE_START);
+		void writeConn (Rts2Conn * conn, imageWriteWhich_t which = EXPOSURE_START);
 
 		/**
 		 * This will create WCS from record available at the FITS file.
@@ -683,8 +672,7 @@ class Rts2Image:public Rts2FitsFile
 		int aperture (unsigned short *data, struct pixel pix, struct pixel *ret);
 		int centroid (unsigned short *data, struct pixel pix, float *px, float *py);
 		int radius (unsigned short *data, double px, double py, int rmax);
-		int integrate (unsigned short *data, double px, double py, int size,
-			float *ret);
+		int integrate (unsigned short *data, double px, double py, int size, float *ret);
 		int evalAF (float *result, float *error);
 
 		std::vector < pixel > list;
@@ -732,11 +720,9 @@ class Rts2Image:public Rts2FitsFile
 		bool loadHeader;
 		bool verbose;
 
-		char *imageData;
+		rts2image::Channels channels;
 		int imageType;
 		int focPos;
-		// we assume that image is 2D
-		long naxis[2];
 		float signalNoise;
 		int getFailed;
 		double average;
@@ -761,6 +747,18 @@ class Rts2Image:public Rts2FitsFile
 		std::map <int, std::pair <std::string, std::list <ColumnData *> > > arrayGroups;
 
 		void initData ();
+
+		int writeImgHeader (struct imghdr *im_h);
+
+		/**
+		 * Record image physical coordinates.
+		 *
+		 * @param x     X offset of the image.
+		 * @param y     Y offset of the image.
+		 * @param bin_x Binning along X axis.
+		 * @param bin_y Binning along Y axis.
+		 */
+		void writePhysical (int x, int y, int bin_x, int bin_y);
 
 		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
 

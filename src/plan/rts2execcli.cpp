@@ -201,12 +201,14 @@ void Rts2DevClientCameraExec::nextCommand ()
 		return;
 	}
 
-	#ifdef DEBUG_EXTRA
+	//#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " << nextComd->getText () << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+	//#endif						 /* DEBUG_EXTRA */
 	waitForExposure = nextComd->getBopMask () & BOP_EXPOSURE;
 	queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted
+	if (waitForExposure)
+		setTriggered ();
 }
 
 void Rts2DevClientCameraExec::queImage (Rts2Image * image)

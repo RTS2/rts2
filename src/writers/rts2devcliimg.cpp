@@ -130,11 +130,11 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataAb
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;
-		ci->image->writeData (data->getDataBuff (), data->getDataTop ());
-		ci->setDataWriten ();
+		ci->writeData (data->getDataBuff (), data->getDataTop ());
+		cameraImageReady (ci->image);
 		if (ci->canDelete ())
 		{
-			processCameraImage (iter++);
+			processCameraImage (iter);
 		}
 		else
 		{
@@ -157,7 +157,8 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 	CameraImage *ci = (*cis).second;
 	try
 	{
-		// create new image of requsted type
+		// move to the first HDU before writing data
+		ci->image->moveHDU (1);
 		beforeProcess (ci->image);
 		if (saveImage)
 		{

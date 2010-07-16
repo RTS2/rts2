@@ -79,7 +79,7 @@ class CameraImage
 
 		void setExEnd (double in_exEnd) { exEnd = in_exEnd; }
 
-		void setDataWriten () { dataWriten = true; }
+		void writeData (char *_data, char *_fullTop) { image->writeData (_data, _fullTop); dataWriten = true; }
 
 		bool canDelete ();
 

@@ -167,17 +167,12 @@ void Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 
 int Rts2FitsFile::closeFile ()
 {
-	if ((flags & IMAGE_SAVE) && getFitsFile ())
+	if (getFitsFile ())
 	{
 		fits_close_file (getFitsFile (), &fits_status);
 		flags &= ~IMAGE_SAVE;
+		setFitsFile (NULL);
 	}
-	else if (getFitsFile ())
-	{
-		// close ffile to free resources..
-		fits_close_file (getFitsFile (), &fits_status);
-	}
-	setFitsFile (NULL);
 	return 0;
 }
 
@@ -319,6 +314,9 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 		if ((*iter)->data)
 			fits_write_col (ffile, TDOUBLE, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
 	}
+
+	for (i = 0; i < values.size (); i++)
+		delete[] cols[i];
 
 	// move back to primary HDU
 	int hdutype;

@@ -216,18 +216,19 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	popSize = 0;
 
 	mutateDurationRatio = 0.45;
-	mutateSchedRatio = 0.45;
+	mutateSchedRatio = 0.75;
 
 	maxTimeChange = 300;
-	minObsDuration = 30;
+	minObsDuration = 10;
 
 	eliteSize = 0;
 
 	// fill in parameters for NSGA
 	objectives.push_back (ALTITUDE);
 	objectives.push_back (ACCOUNT);
-	objectives.push_back (DISTANCE);
+	// objectives.push_back (DISTANCE);
 	objectives.push_back (DIVERSITY_TARGET);
+	objectives.push_back (DIVERSITY_OBSERVATIONS);
 
 	constraints.push_back (CONSTR_VISIBILITY);
 	constraints.push_back (CONSTR_SCHEDULE_TIME);

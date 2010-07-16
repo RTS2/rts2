@@ -47,4 +47,8 @@
       </value>
     </device>
   </events>
+  <bb>
+    <server>localhost:8889</server>
+    <observatory>Test</observatory>
+  </bb>
 </config>

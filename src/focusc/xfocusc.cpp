@@ -117,6 +117,22 @@ class Rts2xfocus:public Rts2GenFocClient
 
 class Rts2xfocusCamera:public Rts2GenFocCamera
 {
+	public:
+		Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
+			Rts2xfocus * in_master);
+		virtual ~ Rts2xfocusCamera (void);
+
+		virtual void postEvent (Rts2Event * event);
+
+		void setCrossType (int in_crossType);
+
+		// process possible change requests
+		virtual void idle ();
+	protected:
+		virtual void cameraImageReady (Rts2Image * image);
+
+		double classical_median(ushort *q, int n, double *sigma);
+		virtual void printFWHMTable ();
 	private:
 		Rts2xfocus * master;
 
@@ -170,23 +186,6 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		double change_val;		 // change value in degrees
 
 		int mouseTelChange_x, mouseTelChange_y;
-
-	protected:
-		double classical_median(ushort *q, int n, double *sigma);
-		virtual void printFWHMTable ();
-
-	public:
-		Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
-			Rts2xfocus * in_master);
-		virtual ~ Rts2xfocusCamera (void);
-
-		virtual void postEvent (Rts2Event * event);
-
-		virtual imageProceRes processImage (Rts2Image * image);
-		void setCrossType (int in_crossType);
-
-		// process possible change requests
-		virtual void idle ();
 };
 
 int cmpdouble(const void *a, const void *b)
@@ -271,18 +270,11 @@ void Rts2xfocusCamera::buildWindow ()
 	XTextProperty window_title;
 	char *cameraName;
 
-	window =
-		XCreateWindow (master->getDisplay (), DefaultRootWindow (master->getDisplay ()),
-			0, 0, 100, 100, 0, master->getDepth (), InputOutput,
-			master->getVisual (), 0, &xswa);
-	pixmap =
-		XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight,
-		master->getDepth ());
+	window = XCreateWindow (master->getDisplay (), DefaultRootWindow (master->getDisplay ()), 0, 0, 100, 100, 0, master->getDepth (), InputOutput, 	master->getVisual (), 0, &xswa);
+	pixmap = XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight, master->getDepth ());
 
 	gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
-	XSelectInput (master->getDisplay (), window,
-		KeyPressMask | ButtonPressMask | ExposureMask |
-		PointerMotionMask);
+	XSelectInput (master->getDisplay (), window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask);
 	XMapRaised (master->getDisplay (), window);
 
 	cameraName = new char[strlen (connection->getName ()) + 1];
@@ -299,9 +291,7 @@ void Rts2xfocusCamera::rebuildWindow ()
 		XFreeGC (master->getDisplay (), gc);
 	if (pixmap)
 		XFreePixmap (master->getDisplay (), pixmap);
-	pixmap =
-		XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight,
-		master->getDepth ());
+	pixmap = XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight, master->getDepth ());
 
 	if (ximage)
 	{
@@ -328,9 +318,7 @@ void Rts2xfocusCamera::drawCross1 ()
 	int xc, yc;
 	XRectangle *rectangles;
 
-	rectNum =
-		(pixmapWidth / 40 >
-		pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+	rectNum = (pixmapWidth / 40 > pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
 	rectangles = new XRectangle[rectNum];
 
 	XRectangle *rect = rectangles;
@@ -364,9 +352,7 @@ void Rts2xfocusCamera::drawCross2 ()
 	int xc, yc;
 	XArc *arcs;
 
-	arcNum =
-		(pixmapWidth / 40 >
-		pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
+	arcNum = (pixmapWidth / 40 > pixmapHeight / 40) ? pixmapHeight / 40 : pixmapWidth / 40;
 	arcs = new XArc[arcNum];
 
 	XArc *arc = arcs;
@@ -404,14 +390,10 @@ void Rts2xfocusCamera::drawCross3 ()
 	int w = pixmapWidth / 7;
 	int h = pixmapHeight / 7;
 	XDrawLine (master->getDisplay (), pixmap, gc, 0, 0, w, h);
-	XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, 0,
-		pixmapWidth - w, h);
-	XDrawLine (master->getDisplay (), pixmap, gc, 0, pixmapHeight, w,
-		pixmapHeight - h);
-	XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, pixmapHeight,
-		pixmapWidth - w, pixmapHeight - h);
-	XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4,
-		pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
+	XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, 0, pixmapWidth - w, h);
+	XDrawLine (master->getDisplay (), pixmap, gc, 0, pixmapHeight, w, pixmapHeight - h);
+	XDrawLine (master->getDisplay (), pixmap, gc, pixmapWidth, pixmapHeight, pixmapWidth - w, pixmapHeight - h);
+	XDrawRectangle (master->getDisplay (), pixmap, gc, pixmapWidth / 4, pixmapHeight / 4, pixmapWidth / 2, pixmapHeight / 2);
 	// draw center..
 	xc = pixmapWidth / 2;
 	yc = pixmapHeight / 2;
@@ -433,8 +415,7 @@ void Rts2xfocusCamera::drawCross3 ()
 	points[4].y = yc;
 
 	XDrawLines (master->getDisplay (), pixmap, gc, points, 5, CoordModeOrigin);
-	XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15,
-		xc, yc + pixmapHeight / 15);
+	XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15, xc, yc + pixmapHeight / 15);
 }
 
 void Rts2xfocusCamera::drawStars (Rts2Image * image)
@@ -445,8 +426,7 @@ void Rts2xfocusCamera::drawStars (Rts2Image * image)
 	sr = image->sexResults;
 	for (int i = 0; i < image->sexResultNum; i++, sr++)
 	{
-		XDrawArc (master->getDisplay (), pixmap, gc, (int) sr->X - 10,
-			(int) sr->Y - 10, 20, 20, 0, 23040);
+		XDrawArc (master->getDisplay (), pixmap, gc, (int) sr->X - 10, (int) sr->Y - 10, 20, 20, 0, 23040);
 	}
 }
 
@@ -455,22 +435,17 @@ void Rts2xfocusCamera::printInfo ()
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
 	std::ostringstream _os;
 	_os << "L: " << low << " M: " << med << " H: " << hig << " Min: " << min << " Max: " << max;
-	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
-		20, _os.str ().c_str (), _os.str ().length ());
+	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100, 20, _os.str ().c_str (), _os.str ().length ());
 	std::ostringstream _os1;
 	_os1.precision (2);
 	_os1 << "avg " << average;
-	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
-		32, _os1.str ().c_str (), _os1.str ().length ());
+	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50, 32, _os1.str ().c_str (), _os1.str ().length ());
 
 	if (lastImage)
 	{
 	  	std::ostringstream _os2;
-		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY
-			<< "] binn: " << binningsX << ":" << binningsY
-			<< " exposureTime: " << getConnection ()->getValue ("exposure")->getValueDouble ();
-		XDrawImageString (master->getDisplay (), pixmap, gc,
-			pixmapWidth / 2 - 150, pixmapHeight - 20, _os2.str ().c_str (), _os2.str ().length ());
+		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY << "] binn: " << binningsX << ":" << binningsY << " exposureTime: " << getConnection ()->getValue ("exposure")->getValueDouble ();
+		XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 150, pixmapHeight - 20, _os2.str ().c_str (), _os2.str ().length ());
 	}
 }
 
@@ -481,8 +456,7 @@ void Rts2xfocusCamera::printMouse ()
 	len = snprintf (stringBuf, 20, "%04i %04i", mouseX, mouseY);
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
 	XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
-	XDrawImageString (master->getDisplay (), pixmap, gc, 30, 30, stringBuf,
-		len);
+	XDrawImageString (master->getDisplay (), pixmap, gc, 30, 30, stringBuf, len);
 	if (buttonX >= 0 && buttonY >= 0)
 		drawCenterCross (buttonX, buttonY);
 }
@@ -490,8 +464,7 @@ void Rts2xfocusCamera::printMouse ()
 void Rts2xfocusCamera::redrawMouse ()
 {
 	XClearArea (master->getDisplay (), window, 0, 0, 200, 40, False);
-	XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20,
-		20, False);
+	XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20, 20, False);
 }
 
 void Rts2xfocusCamera::redraw ()
@@ -530,9 +503,7 @@ void Rts2xfocusCamera::XeventLoop ()
 	KeySym ks;
 	struct ln_equ_posn change;
 
-	if (XCheckWindowEvent (master->getDisplay (), window,
-		KeyPressMask | ButtonPressMask | ExposureMask |
-		PointerMotionMask, &event))
+	if (XCheckWindowEvent (master->getDisplay (), window, KeyPressMask | ButtonPressMask | ExposureMask | PointerMotionMask, &event))
 	{
 		switch (event.type)
 		{
@@ -575,8 +546,7 @@ void Rts2xfocusCamera::XeventLoop ()
 						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 0.01));
 						break;
 					case XK_f:
-						connection->
-							queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
+						connection->queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
 						break;
 					case XK_c:
 						connection->queCommand (new Rts2Command (master, "center 0"));
@@ -598,33 +568,25 @@ void Rts2xfocusCamera::XeventLoop ()
 					case XK_Left:
 						change.ra = -1 * change_val;
 						change.dec = 0;
-						master->
-							postEvent (new
-							Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_j:
 					case XK_Down:
 						change.ra = 0;
 						change.dec = -1 * change_val;
-						master->
-							postEvent (new
-							Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_k:
 					case XK_Up:
 						change.ra = 0;
 						change.dec = change_val;
-						master->
-							postEvent (new
-							Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_l:
 					case XK_Right:
 						change.ra = change_val;
 						change.dec = 0;
-						master->
-							postEvent (new
-							Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_Escape:
 						master->endRunLoop ();
@@ -664,22 +626,16 @@ void Rts2xfocusCamera::XeventLoop ()
 					{
 						// calculate distance travelled, print it, pixels / sec travelled, discard button
 						timersub (&exposureStart, &buttonImageTime, &exposureStart);
-						double del =
-							exposureStart.tv_sec +
-							(double) exposureStart.tv_usec / USEC_SEC;
+						double del = exposureStart.tv_sec + (double) exposureStart.tv_usec / USEC_SEC;
 						double offsetX = buttonX - mouseX;
 						double offsetY = buttonY - mouseY;
 						if (del > 0)
 						{
-							printf
-								("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n",
-								del, offsetX, offsetX / del, offsetY, offsetY / del);
+							printf ("Delay %.4f sec\nX offset: %.1f drift: %.1f pixels/sec\nY offset: %.1f drift: %1.f pixels/sec\n", del, offsetX, offsetX / del, offsetY, offsetY / del);
 						}
 						else
 						{
-							printf
-								("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n",
-								del, offsetX, offsetY);
+							printf ("Delay %.4f sec\nX offset: %.1f\nY offset: %.1f\n", del, offsetX, offsetY);
 						}
 						// clear results
 						buttonX = -1;
@@ -727,17 +683,14 @@ void Rts2xfocusCamera::idle ()
 	Rts2GenFocCamera::idle ();
 }
 
-imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
+void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 {
 	int i, j;
 
 	if (window == 0L)
 		buildWindow ();
 
-	// get to upper classes as well
-	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
-
-	if (ximage && (pixmapWidth < image->getWidth () || pixmapHeight < image->getHeight ()))
+	if (ximage && (pixmapWidth < image->getChannelWidth (0) || pixmapHeight < image->getChannelHeight (0)))
 	{
 		XDestroyImage (ximage);
 		ximage = NULL;
@@ -751,15 +704,15 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 		pixmapHeight = wa.height / 2;
 
 		// if window is too large, set to 1/4 of required size, so we will see nine effect
-		if (pixmapWidth > image->getWidth () * master->zoom)
-			pixmapWidth = (int) ceil (image->getWidth () * master->zoom);
-		if (pixmapHeight > image->getHeight () * master->zoom)
-		  	pixmapHeight = (int) ceil (image->getHeight () * master->zoom);
+		if (pixmapWidth > image->getChannelWidth (0) * master->zoom)
+			pixmapWidth = (int) ceil (image->getChannelWidth (0) * master->zoom);
+		if (pixmapHeight > image->getChannelHeight (0) * master->zoom)
+		  	pixmapHeight = (int) ceil (image->getChannelHeight (0) * master->zoom);
 	}
 	else
 	{
-		pixmapWidth = (int) ceil (image->getWidth () * master->zoom);
-		pixmapHeight = (int) ceil (image->getHeight () * master->zoom);
+		pixmapWidth = (int) ceil (image->getChannelWidth (0) * master->zoom);
+		pixmapHeight = (int) ceil (image->getChannelHeight (0) * master->zoom);
 	}
 
 	if (pixmapWidth != windowWidth || pixmapHeight != windowHeight)
@@ -768,27 +721,20 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 		windowHeight = pixmapHeight;
 		rebuildWindow ();
 	}
-	std::cout
-		<< "Get data : [" << image->getWidth () << "x" << image->getHeight () << "]"
-		<< std::endl;
+	std::cout << "Get data : [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "]" << std::endl;
 	// draw window with image..
 	if (!ximage)
 	{
 		std::cout << "Create ximage " << pixmapWidth << "x" << pixmapHeight << std::endl;
-		ximage = XCreateImage
-			(
-			master->getDisplay (), master->getVisual (),
-			master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
-			pixmapHeight, 8, 0
-			);
+		ximage = XCreateImage (master->getDisplay (), master->getVisual (), master->getDepth (), ZPixmap, 0, 0, pixmapWidth, pixmapHeight, 8, 0);
 		ximage->data = (char *) malloc (ximage->bytes_per_line * pixmapHeight);
 
 		std::cout << "Ximage created" << std::endl;
 	}
 
 	// default vertical and horizontal image origins - center image
-	int vorigin = (int) floor (master->zoom * (double) image->getWidth () / 2.0) - pixmapWidth / 2;
-	int horigin = (int) floor (master->zoom * (double) image->getHeight () / 2.0) - pixmapHeight / 2;
+	int vorigin = (int) floor (master->zoom * (double) image->getChannelWidth (0) / 2.0) - pixmapWidth / 2;
+	int horigin = (int) floor (master->zoom * (double) image->getChannelHeight (0) / 2.0) - pixmapHeight / 2;
 
 	// create array which will hold the image
 	// this will be then zoomed to pixmap array
@@ -801,9 +747,9 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 	ushort *iP = (ushort *) malloc (iW * iH * sizeof(ushort));
 	ushort *iTop = iP;
 	// pointer to top line of square image subset
-	ushort *iNineTop = image->getDataUShortInt ();
+	ushort *iNineTop = image->getChannelDataUShortInt (0);
 	// prepare the image data to be processed
-	ushort *im_ptr = image->getDataUShortInt () + vorigin + horigin * image->getWidth ();
+	ushort *im_ptr = image->getChannelDataUShortInt (0) + vorigin + horigin * image->getChannelWidth (0);
 
 	// fill IP
 	// copy image center..
@@ -820,28 +766,28 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * (int) ceil ((double) iW / 3.0));
 			iTop += (int) ceil ((double) iW / 3.0);
 
-			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
+			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), sizeof(ushort) * (iW / 3));
 			iTop += iW / 3;
 
-			iNineTop += image->getWidth ();
+			iNineTop += image->getChannelWidth (0);
 		}
 		else
 		{
 			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
 			iTop += iW;
 		}
-		im_ptr += image->getWidth ();
+		im_ptr += image->getChannelWidth (0);
 	}
 	// only center in all cases..
 	for (;i < 2 * iH / 3; i++)
 	{
 		memcpy (iTop, im_ptr, sizeof(ushort) * iW);
-		im_ptr += image->getWidth ();
+		im_ptr += image->getChannelWidth (0);
 		iTop += iW;
 	}
 
 	if (master->GoNine)
-		iNineTop += image->getWidth () * (image->getHeight () - (int) floor (2 * iH / 3.0));
+		iNineTop += image->getChannelWidth (0) * (image->getChannelHeight (0) - (int) floor (2 * iH / 3.0));
 
 	// followed again by edge squares for end..
 	for (;i < iH; i++)
@@ -856,16 +802,16 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * ((int) ceil ((double) iW / 3.0)));
 			iTop += (int) ceil ((double) iW / 3.0);
 
-			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
+			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), sizeof(ushort) * (iW / 3));
 			iTop += iW / 3;
-			iNineTop += image->getWidth ();
+			iNineTop += image->getChannelWidth (0);
 		}
 		else
 		{
 			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
 			iTop += iW;
 		}
-		im_ptr += image->getWidth ();
+		im_ptr += image->getChannelWidth (0);
 	}
 
 	// get cuts
@@ -874,8 +820,7 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 	low = (short unsigned int) (median - 3 * sigma);
 	hig = (short unsigned int) (median + 5 * sigma);
 
-	std::cout << "Window median:" << median << " sigma " << sigma
-		<< " low:" << low << " hig:" << hig << std::endl;
+	std::cout << "Window median:" << median << " sigma " << sigma << " low:" << low << " hig:" << hig << std::endl;
 
 	// transfer iP to pixmap, zoom it on fly
 	for (i = 0; i < pixmapHeight; i++)
@@ -923,8 +868,8 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 	// some info values
 	image->getValue ("X", lastX);
 	image->getValue ("Y", lastY);
-	lastSizeX = image->getWidth ();
-	lastSizeY = image->getHeight ();
+	lastSizeX = image->getChannelWidth (0);
+	lastSizeY = image->getChannelHeight (0);
 	image->getValue ("BIN_V", binningsX);
 	image->getValue ("BIN_H", binningsY);
 
@@ -936,31 +881,22 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 
 	// process mouse change events..
 
-	if (mouseTelChange_x != INT_MAX
-		&& mouseTelChange_y != INT_MAX
-		&& getActualImage ())
+	if (mouseTelChange_x != INT_MAX && mouseTelChange_y != INT_MAX && getActualImage ())
 	{
-		struct ln_equ_posn
-			change;
-		getActualImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra,
-			change.dec);
+		struct ln_equ_posn change;
+		getActualImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra, change.dec);
 
 		change.ra -= getActualImage ()->getCenterRa ();
 		change.dec -= getActualImage ()->getCenterDec ();
 
-		logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" <<
-			mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.
-			dec << sendLog;
-		master->
-			postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+		logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" << mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.dec << sendLog;
+		master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 		mouseTelChange_x = INT_MAX;
 		mouseTelChange_y = INT_MAX;
 	}
 
 	redraw ();
 	XFlush (master->getDisplay ());
-
-	return res;
 }
 
 void Rts2xfocusCamera::setCrossType (int in_crossType)

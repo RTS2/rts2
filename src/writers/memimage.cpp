@@ -31,6 +31,8 @@ MemImage::MemImage (const struct timeval *_exposureStart): Rts2Image ()
 
 MemImage::~MemImage ()
 {
+	closeFile ();
+	free (imgbuf);
 }
 
 int MemImage::createFile ()

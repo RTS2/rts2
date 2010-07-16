@@ -12,18 +12,14 @@ Rts2DevClientCameraExecDb::~Rts2DevClientCameraExecDb (void)
 
 }
 
-
-void
-Rts2DevClientCameraExecDb::exposureStarted ()
+void Rts2DevClientCameraExecDb::exposureStarted ()
 {
 	if (currentTarget)
 		currentTarget->startObservation (getMaster ());
 	Rts2DevClientCameraExec::exposureStarted ();
 }
 
-
-Rts2Image *
-Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
+Rts2Image * Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 {
 	imgCount++;
 	exposureScript = getScript ();
@@ -36,9 +32,7 @@ Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 	return NULL;
 }
 
-
-void
-Rts2DevClientCameraExecDb::beforeProcess (Rts2Image * image)
+void Rts2DevClientCameraExecDb::beforeProcess (Rts2Image * image)
 {
 	Rts2Image *outimg = setImage (image, setValueImageType (image));
 	img_type_t imageType = outimg->getImageType ();

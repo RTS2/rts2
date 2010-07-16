@@ -1,6 +1,6 @@
 /* 
  * Class which represents image.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -89,7 +89,6 @@ void Rts2Image::initData ()
 	stdev = 0;
 	bg_stdev = 0;
 	min = max = mean = 0;
-	imageData = NULL;
 	imageType = RTS2_DATA_USHORT;
 	sexResults = NULL;
 	sexResultNum = 0;
@@ -132,12 +131,10 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	filter = in_image->filter;
 	in_image->filter = NULL;
 	exposureLength = in_image->exposureLength;
-	imageData = in_image->imageData;
+	channels = in_image->channels;
 	imageType = in_image->imageType;
-	in_image->imageData = NULL;
+	in_image->channels.clear ();
 	focPos = in_image->focPos;
-	naxis[0] = in_image->naxis[0];
-	naxis[1] = in_image->naxis[1];
 	signalNoise = in_image->signalNoise;
 	getFailed = in_image->getFailed;
 	average = in_image->average;
@@ -312,9 +309,7 @@ Rts2Image::~Rts2Image (void)
 	delete[]cameraName;
 	delete[]mountName;
 	delete[]focName;
-	if (!(flags & IMAGE_DONT_DELETE_DATA))
-		delete[]imageData;
-	imageData = NULL;
+
 	imageType = RTS2_DATA_USHORT;
 	delete[]filter;
 	if (sexResults)
@@ -376,19 +371,27 @@ int Rts2Image::createImage ()
 	flags = IMAGE_NOT_SAVE;
 	shutter = SHUT_UNKNOW;
 
-	naxis[0] = 1;
-	naxis[1] = 1;
-	fits_create_img (getFitsFile (), USHORT_IMG, 2, naxis, &fits_status);
+	fits_create_hdu (getFitsFile (), &fits_status);
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Error while creating image "
-			<< getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot create primary HDU: " << getFitsErrors () << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
+
+	fits_write_key_log (getFitsFile (), "SIMPLE", 1, "conform to FITS standard", &fits_status);
+	fits_write_key_lng (getFitsFile (), "BITPIX", 16, "unsigned short data", &fits_status);
+	fits_write_key_lng (getFitsFile (), "NAXIS", 0, "number of axes", &fits_status);
+	fits_write_key_log (getFitsFile (), "EXTEND", 1, "this is FITS with extensions", &fits_status);
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot write keys to primary HDU: " << getFitsErrors () << sendLog;
+		return -1;
+	}
 
 	// add history
 	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
+
+	logStream (MESSAGE_DEBUG) << "creating image " << getFileName () << sendLog;
 
 	flags = IMAGE_SAVE;
 	return 0;
@@ -424,11 +427,6 @@ void Rts2Image::openImage (const char *_filename, bool readOnly)
 void Rts2Image::getHeaders ()
 {
 	struct timeval tv;
-
-	naxis[0] = 0;
-	naxis[1] = 0;
-
-	getValues ("NAXIS", naxis, 2, false);
 
 	getValue ("CTIME", tv.tv_sec, verbose);
 	getValue ("USEC", tv.tv_usec, verbose);
@@ -765,18 +763,20 @@ int Rts2Image::linkImageExpand (std::string link_ex)
 	return linkImage (link_filename.c_str ());
 }
 
-int Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
+/*int Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
 {
 	fitsfile *fp;
 	fits_status = 0;
-	long fpixel = 1;
 
 	fits_open_file (&fp, save_filename, READWRITE, &fits_status);
-	fits_write_img (fp, TUSHORT, fpixel, naxis[0] * naxis[1], in_data, &fits_status);
+	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
+	{
+		fits_write_img (fp, TUSHORT, 1, iter->getNPixels (), in_data, &fits_status);
+	}
 	fits_close_file (fp, &fits_status);
 
 	return 0;
-}
+}*/
 
 int Rts2Image::writeExposureStart ()
 {
@@ -793,6 +793,15 @@ char * Rts2Image::getImageBase ()
 	static char buf[12];
 	strcpy (buf, "/images/");
 	return buf;
+}
+
+void Rts2Image::moveHDU (int hdu, int *hdutype)
+{
+	fits_movabs_hdu (getFitsFile (), hdu, hdutype, &fits_status);
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot move HDU to " << hdu << ": " << getFitsErrors () << sendLog;
+	}
 }
 
 void Rts2Image::setValue (const char *name, bool value, const char *comment)
@@ -1085,25 +1094,8 @@ void Rts2Image::getValues (const char *name, char **values, int num, bool requir
 
 int Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
-	if (!getFitsFile ())
-		return 0;
 	writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
 	filter_i = ntohs (im_h->filter);
-	setValue ("CAM_FILT", ntohs (filter_i), "filter used for image");
-	setValue ("SHUTTER", ntohs (im_h->shutter),
-		"shutter state (1 - open, 2 - closed, 3 - synchro)");
-	// dark images don't need to wait till imgprocess will pick them up for reprocessing
-	switch (ntohs (im_h->shutter))
-	{
-		case 0:
-			shutter = SHUT_OPENED;
-			break;
-		case 1:
-			shutter = SHUT_CLOSED;
-			break;
-		default:
-			shutter = SHUT_UNKNOW;
-	}
 	return 0;
 }
 
@@ -1134,30 +1126,27 @@ int Rts2Image::writeData (char *in_data, char *fullTop)
 	flags |= IMAGE_SAVE;
 	imageType = ntohs (im_h->data_type);
 
-	naxis[0] = ntohl (im_h->sizes[0]);
-	naxis[1] = ntohl (im_h->sizes[1]);
-
-	delete[]imageData;
+	long sizes[2];
+	sizes[0] = ntohl (im_h->sizes[0]);
+	sizes[1] = ntohl (im_h->sizes[1]);
 
 	long dataSize = (fullTop - in_data) - sizeof (struct imghdr);
 	char *pixelData = in_data + sizeof (struct imghdr);
 
+	Channel *ch;
+
 	if (flags & IMAGE_KEEP_DATA)
 	{
-		imageData = new char[dataSize];
-		memcpy (imageData, pixelData, dataSize);
+		ch = new Channel (pixelData, dataSize, 2, sizes);
 	}
 	else
 	{
-		imageData = pixelData;
+		ch = new Channel (pixelData, 2, sizes);
 	}
 
+	channels.push_back (ch);
+
 	computeStatistics ();
-
-	if (!(flags & IMAGE_KEEP_DATA))
-		imageData = NULL;
-
-	ret = writeImgHeader (im_h);
 
 	if (!getFitsFile () || !(flags & IMAGE_SAVE))
 	{
@@ -1168,59 +1157,89 @@ int Rts2Image::writeData (char *in_data, char *fullTop)
 		return 0;
 	}
 
-	if (imageType == RTS2_DATA_SBYTE)
+	setValue ("CAM_FILT", ntohs (filter_i), "filter used for image");
+	setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
+	// dark images don't need to wait till imgprocess will pick them up for reprocessing
+	switch (ntohs (im_h->shutter))
 	{
-		fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, ntohs (im_h->naxes), naxis, &fits_status);
+		case 0:
+			shutter = SHUT_OPENED;
+			break;
+		case 1:
+			shutter = SHUT_CLOSED;
+			break;
+		default:
+			shutter = SHUT_UNKNOW;
+	}
+
+	// either put it as a new extension, or keep it in primary..
+
+	if (true)
+	{
+		if (imageType == RTS2_DATA_SBYTE)
+		{
+			fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
+		}
+		else
+		{
+			fits_resize_img (getFitsFile (), imageType, 2, sizes, &fits_status);
+		}
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
+				<< "imageType " << imageType << sendLog;
+			return -1;
+		}
 	}
 	else
 	{
-		fits_resize_img (getFitsFile (), imageType, ntohs (im_h->naxes), naxis, &fits_status);
+		if (imageType == RTS2_DATA_SBYTE)
+		{
+			fits_create_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
+		}
+		else
+		{
+			fits_create_img (getFitsFile (), imageType, 2, sizes, &fits_status);
+		}
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "cannot create new image: " << getFitsErrors ()
+				<< "imageType " << imageType << sendLog;
+			return -1;
+		}
 	}
-	if (fits_status)
-	{
-		logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
-			<< "imageType " << imageType << sendLog;
-		return -1;
-	}
+
+	ret = writeImgHeader (im_h);
+
 	long pixelSize = dataSize / getPixelByteSize ();
 	switch (imageType)
 	{
 		case RTS2_DATA_BYTE:
-			fits_write_img_byt (getFitsFile (), 0, 1, pixelSize,
-				(unsigned char *) pixelData, &fits_status);
+			fits_write_img_byt (getFitsFile (), 0, 1, pixelSize, (unsigned char *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_SHORT:
-			fits_write_img_sht (getFitsFile (), 0, 1, pixelSize,
-				(int16_t *) pixelData, &fits_status);
+			fits_write_img_sht (getFitsFile (), 0, 1, pixelSize, (int16_t *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_LONG:
-			fits_write_img_lng (getFitsFile (), 0, 1, pixelSize,
-				(long int *) pixelData, &fits_status);
+			fits_write_img_lng (getFitsFile (), 0, 1, pixelSize, (long int *) pixelData, &fits_status);
 			break;
-
 		case RTS2_DATA_LONGLONG:
-			fits_write_img_lnglng (getFitsFile (), 0, 1, pixelSize,
-				(LONGLONG *) pixelData, &fits_status);
+			fits_write_img_lnglng (getFitsFile (), 0, 1, pixelSize, (LONGLONG *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_FLOAT:
-			fits_write_img_flt (getFitsFile (), 0, 1, pixelSize,
-				(float *) pixelData, &fits_status);
+			fits_write_img_flt (getFitsFile (), 0, 1, pixelSize, (float *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_DOUBLE:
-			fits_write_img_dbl (getFitsFile (), 0, 1, pixelSize,
-				(double *) pixelData, &fits_status);
+			fits_write_img_dbl (getFitsFile (), 0, 1, pixelSize, (double *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_SBYTE:
-			fits_write_img_sbyt (getFitsFile (), 0, 1, pixelSize,
-				(signed char *) pixelData, &fits_status);
+			fits_write_img_sbyt (getFitsFile (), 0, 1, pixelSize, (signed char *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_USHORT:
-			fits_write_img_usht (getFitsFile (), 0, 1, pixelSize,
-				(short unsigned int *) pixelData, &fits_status);
+			fits_write_img_usht (getFitsFile (), 0, 1, pixelSize, (short unsigned int *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_ULONG:
-			fits_write_img_ulng (getFitsFile (), 0, 1, pixelSize,
-				(unsigned long *) pixelData, &fits_status);
+			fits_write_img_ulng (getFitsFile (), 0, 1, pixelSize, (unsigned long *) pixelData, &fits_status);
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType << sendLog;
@@ -1244,13 +1263,38 @@ void Rts2Image::getHistogram (long *histogram, long nbins)
 {
 	memset (histogram, 0, nbins * sizeof(int));
 	int bins;
-	if (imageData == NULL)
-		loadData ();
+	if (channels.size () == 0)
+		loadChannels ();
+
 	switch (imageType)
 	{
 		case RTS2_DATA_USHORT:
 			bins = 65535 / nbins;
-			for (uint16_t *d = (uint16_t *)imageData; d < ((uint16_t *)imageData) + getNPixels (); d++)
+			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
+			{
+				for (uint16_t *d = (uint16_t *)((*iter)->getData ()); d < ((uint16_t *)((*iter)->getData ())) + ((*iter)->getNPixels ()); d++)
+				{
+					histogram[*d / bins]++;
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void Rts2Image::getChannelHistogram (int chan, long *histogram, long nbins)
+{
+	memset (histogram, 0, nbins * sizeof(int));
+	int bins;
+	if (channels.size () == 0)
+		loadChannels ();
+
+	switch (imageType)
+	{
+		case RTS2_DATA_USHORT:
+			bins = 65535 / nbins;
+			for (uint16_t *d = (uint16_t *)(channels[chan]->getData ()); d < ((uint16_t *)(channels[chan]->getData ()) + channels[chan]->getNPixels ()); d++)
 			{
 				histogram[*d / bins]++;
 			}
@@ -1260,10 +1304,11 @@ void Rts2Image::getHistogram (long *histogram, long nbins)
 	}
 }
 
-template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, float quantiles)
+
+template <typename bt> void Rts2Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles)
 {
 	long hist[65535];
-	getHistogram (hist, 65535);
+	getChannelHistogram (chan, hist, 65535);
 
 	long psum = 0;
 	int low = -1;
@@ -1271,11 +1316,13 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 
 	int i;
 
+	int s = getChannelNPixels (chan);
+
 	// find quantiles
 	for (i = 0; i < 65535; i++)
 	{
 		psum += hist[i];
-		if (psum > getNPixels() * quantiles)
+		if (psum > s * quantiles)
 		{
 			low = i;
 			break;
@@ -1292,7 +1339,7 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 		for (; i < 65535; i++)
 		{
 			psum += hist[i];
-			if (psum > getNPixels () * (1 - quantiles))
+			if (psum > s * (1 - quantiles))
 			{
 				high = i;
 				break;
@@ -1304,13 +1351,15 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 		}
 	}
 
-	buf = new bt[getHeight () * getWidth ()];
+	buf = new bt[s];
 
 	long k = 0;
 
 	std::cout << "low " << low << " high " << high << std::endl;
 
-	for (i = 0; i < getNPixels (); i++)
+	const void *imageData = getChannelData (chan);
+
+	for (i = 0; i < s; i++)
 	{
 		bt n;
 		uint16_t pix = ((uint16_t *)imageData)[i];
@@ -1333,13 +1382,13 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-Image Rts2Image::getMagickImage (const char *label, float quantiles)
+Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 {
 	unsigned char *buf = NULL;
 	try
 	{
-		getGrayscaleBuffer (buf, (unsigned char) 255);
-		Image image = Image (getWidth (), getHeight (), "K", CharPixel, buf);
+		getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255);
+		Image image = Image (getChannelWidth (chan), getChannelHeight (chan), "K", CharPixel, buf);
 		image.font("helvetica");
 		image.strokeColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
@@ -1511,38 +1560,51 @@ void Rts2Image::setFilter (const char *in_filter)
 
 void Rts2Image::computeStatistics ()
 {
-	if (imageData == NULL)
-		loadData ();
+	if (channels.size () == 0)
+		loadChannels ();
 
-	// calculate average..
-	unsigned short *pixel = (unsigned short *) imageData;
-	unsigned short *fullTop = pixel + getNPixels ();
-	while (pixel < (unsigned short *) fullTop)
+	const unsigned short *pixel;
+	const unsigned short *fullTop;
+
+	long totalSize = 0;
+
+	// calculate average of all channels..
+	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
-		average += *pixel;
-		pixel++;
+		pixel = (const unsigned short *) (*iter)->getData ();
+		fullTop = pixel + (*iter)->getNPixels ();
+		totalSize += (*iter)->getNPixels ();
+		while (pixel < fullTop)
+		{
+			average += *pixel;
+			pixel++;
+		}
 	}
 
 	int bg_size = 0;
 
-	if (getNPixels () > 0)
+	if (totalSize > 0)
 	{
-		average /= getNPixels ();
+		average /= totalSize;
 		// calculate stdev
-		pixel = (unsigned short *) imageData;
-		while (pixel < fullTop)
+		for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 		{
-			long double tmp_s = *pixel - average;
-			long double tmp_ss = tmp_s * tmp_s;
-			if (fabs (tmp_s) < average / 10)
+			pixel = (const unsigned short *) (*iter)->getData ();
+			fullTop = pixel + (*iter)->getNPixels ();
+			while (pixel < fullTop)
 			{
-				bg_stdev += tmp_ss;
-				bg_size++;
+				long double tmp_s = *pixel - average;
+				long double tmp_ss = tmp_s * tmp_s;
+				if (fabs (tmp_s) < average / 10)
+				{
+					bg_stdev += tmp_ss;
+					bg_size++;
+				}
+				stdev += tmp_ss;
+				pixel++;
 			}
-			stdev += tmp_ss;
-			pixel++;
 		}
-		stdev = sqrt (stdev / getNPixels ());
+		stdev = sqrt (stdev / totalSize);
 		bg_stdev = sqrt (bg_stdev / bg_size);
 	}
 	else
@@ -1552,90 +1614,111 @@ void Rts2Image::computeStatistics ()
 	}
 }
 
-void Rts2Image::loadData ()
+void Rts2Image::loadChannels ()
 {
 	// try to load data..
 	int anyNull = 0;
 	if (!getFitsFile ())
 		openImage (NULL, true);
 
-	fits_get_img_equivtype (getFitsFile (), &imageType, &fits_status);
-	fitsStatusGetValue ("image equivType loadData", true);
-	imageData = new char[getNPixels () * getPixelByteSize ()];
-	switch (imageType)
-	{
-		case RTS2_DATA_BYTE:
-			fits_read_img_byt (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(unsigned char *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_SHORT:
-			fits_read_img_sht (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(int16_t *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_LONG:
-			fits_read_img_lng (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(long int *) imageData, &anyNull, &fits_status);
-			break;
+	imageType = 0;
+	int hdutype;
 
-		case RTS2_DATA_LONGLONG:
-			fits_read_img_lnglng (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(LONGLONG *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_FLOAT:
-			fits_read_img_flt (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(float *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_DOUBLE:
-			fits_read_img_dbl (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(double *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_SBYTE:
-			fits_read_img_sbyt (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(signed char *) imageData, &anyNull, &fits_status);
-			break;
-		case RTS2_DATA_USHORT:
-			fits_read_img_usht (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(short unsigned int *) imageData, &anyNull,
-				&fits_status);
-			break;
-		case RTS2_DATA_ULONG:
-			fits_read_img_ulng (getFitsFile (), 0, 1,
-				getNPixels (), 0,
-				(unsigned long *) imageData, &anyNull,
-				&fits_status);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType <<
-				sendLog;
-			delete[]imageData;
-			imageData = NULL;
-			throw ErrorOpeningFitsFile (getFileName ());
-	}
-	if (fits_status)
+	// open all channels
+	for (moveHDU (1, &hdutype); fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
 	{
-		delete[]imageData;
-		imageData = NULL;
-		imageType = RTS2_DATA_USHORT;
-		throw ErrorOpeningFitsFile (getFileName ());
+		// first check that it is image
+		if (hdutype != IMAGE_HDU)
+			continue;
+
+		// check that it has some axis..
+		int naxis = 0;
+		getValue ("NAXIS", naxis, true);
+		if (naxis == 0)
+			continue;
+
+		// check it type (bits per pixel)
+		int it;
+		fits_get_img_equivtype (getFitsFile (), &it, &fits_status);
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "cannot retrieve image type: " << getFitsErrors () << sendLog;
+			return;
+		}
+		if (imageType == 0)
+		{
+			imageType = it;
+		}
+		else if (imageType != it)
+		{
+			logStream (MESSAGE_ERROR) << getFileName () << " has extension with different image type, which is not supported" << sendLog;
+			return;
+		}
+
+		// get its size..
+		long sizes[naxis];
+		getValues ("NAXIS", sizes, naxis, true);
+
+		long pixelSize = sizes[0];
+		for (int i = 1; i < naxis; i++)
+			pixelSize *= sizes[i];
+
+		char *imageData = new char[pixelSize * getPixelByteSize ()];
+		switch (imageType)
+		{
+			case RTS2_DATA_BYTE:
+				fits_read_img_byt (getFitsFile (), 0, 1, pixelSize, 0, (unsigned char *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_SHORT:
+				fits_read_img_sht (getFitsFile (), 0, 1, pixelSize, 0, (int16_t *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_LONG:
+				fits_read_img_lng (getFitsFile (), 0, 1, pixelSize, 0, (long int *) imageData, &anyNull, &fits_status);
+				break;
+	
+			case RTS2_DATA_LONGLONG:
+				fits_read_img_lnglng (getFitsFile (), 0, 1, pixelSize, 0, (LONGLONG *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_FLOAT:
+				fits_read_img_flt (getFitsFile (), 0, 1, pixelSize, 0, (float *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_DOUBLE:
+				fits_read_img_dbl (getFitsFile (), 0, 1, pixelSize, 0, (double *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_SBYTE:
+				fits_read_img_sbyt (getFitsFile (), 0, 1, pixelSize, 0, (signed char *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_USHORT:
+				fits_read_img_usht (getFitsFile (), 0, 1, pixelSize, 0,(short unsigned int *) imageData, &anyNull, &fits_status);
+				break;
+			case RTS2_DATA_ULONG:
+				fits_read_img_ulng (getFitsFile (), 0, 1, pixelSize, 0, (unsigned long *) imageData, &anyNull, &fits_status);
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType << sendLog;
+				delete[] imageData;
+				imageType = 0;
+				throw ErrorOpeningFitsFile (getFileName ());
+		}
+		if (fits_status)
+		{
+			delete[] imageData;
+			imageType = 0;
+			throw ErrorOpeningFitsFile (getFileName ());
+		}
+		fitsStatusGetValue ("image loadChannels", true);
+
+		channels.push_back (new Channel (imageData, naxis, sizes));
 	}
-	fitsStatusGetValue ("image loadData", true);
 }
 
-void* Rts2Image::getData ()
+const void* Rts2Image::getChannelData (int chan)
 {
-	if (!imageData)
+	if (channels.size () == 0)
 	{
 		try
 		{
-			loadData ();
+			loadChannels ();
 		}
 		catch (rts2core::Error er)
 		{
@@ -1643,31 +1726,30 @@ void* Rts2Image::getData ()
 			return NULL;
 		}
 	}
-	return (void *) imageData;
+	return channels[chan]->getData ();
 }
 
-unsigned short * Rts2Image::getDataUShortInt ()
+unsigned short * Rts2Image::getChannelDataUShortInt (int chan)
 {
-	if (getData () == NULL)
+	if (getChannelData (0) == NULL)
 		return NULL;
 	// switch by format
 	if (imageType == RTS2_DATA_USHORT)
-		return (unsigned short *) imageData;
+		return (unsigned short *) getChannelData (0);
 	// convert type to ushort int
 	return NULL;
 }
 
-void Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
+/*void Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
-	delete[]imageData;
 	imageData = (char *) in_data;
 	imageType = RTS2_DATA_USHORT;
 	naxis[0] = in_naxis[0];
 	naxis[1] = in_naxis[1];
 	flags |= IMAGE_DONT_DELETE_DATA;
-}
+} */
 
-int Rts2Image::substractDark (Rts2Image * darkImage)
+/*int Rts2Image::substractDark (Rts2Image * darkImage)
 {
 	unsigned short *img_data;
 	unsigned short *dark_data;
@@ -1685,7 +1767,7 @@ int Rts2Image::substractDark (Rts2Image * darkImage)
 			*img_data = *img_data - *dark_data;
 	}
 	return 0;
-}
+}*/
 
 int Rts2Image::setAstroResults (double in_ra, double in_dec, double in_ra_err, double in_dec_err)
 {
@@ -1702,8 +1784,7 @@ int Rts2Image::addStarData (struct stardata *sr)
 	if (sr->F <= 0)				 // flux is not significant..
 		return -1;
 	// do not take stars on edge..
-	if (sr->X == 0 || sr->X == getWidth ()
-		|| sr->Y == 0 || sr->Y == getHeight ())
+	if (sr->X == 0 || sr->X == getChannelWidth (0) || sr->Y == 0 || sr->Y == getChannelHeight (0))
 		return -1;
 
 	sexResultNum++;
@@ -1775,6 +1856,7 @@ unsigned short getShortMean (unsigned short *averageData, int sub)
 	return (averageData[(sub / 2) - 1] + averageData[(sub / 2)]) / 2;
 }
 
+/*
 int Rts2Image::getCenterRow (long row, int row_width, double &x)
 {
 	unsigned short *tmp_data;
@@ -1805,7 +1887,7 @@ int Rts2Image::getCenterRow (long row, int row_width, double &x)
 		rowData[j] = getShortMean (averageData, row_width);
 	}
 	// bin data in row..
-	/* i = j = k = 0;
+	/ i = j = k = 0;
 	   while (j < getWidth ())
 	   {
 	   // last bit..
@@ -1815,7 +1897,7 @@ int Rts2Image::getCenterRow (long row, int row_width, double &x)
 	   (k > getWidth ())? (k - getWidth ()) : row_width);
 	   i++;
 	   j = k;
-	   } */
+	   } /
 	// decide, which part of slope we are in
 	// i hold size of reduced rowData array
 	// find maximum..
@@ -1874,7 +1956,7 @@ int Rts2Image::getCenterCol (long col, int col_width, double &y)
 		colData[j] = getShortMean (averageData, col_width);
 	}
 	// bin data in row..
-	/* i = j = k = 0;
+	/ i = j = k = 0;
 	   while (j < getHeight ())
 	   {
 	   // last bit..
@@ -1885,7 +1967,7 @@ int Rts2Image::getCenterCol (long col, int col_width, double &y)
 	   i++;
 	   j = k;
 	   }
-	 */
+	 /
 	// find gauss on image..
 	//ret = findGauss (colData, i, y);
 	data_max = colData[0];
@@ -1937,6 +2019,14 @@ int Rts2Image::getCenter (double &x, double &y, int bin)
 		i += bin;
 	}
 	return 0;
+}*/
+
+long Rts2Image::getSumNPixels ()
+{
+	long ret = 0;
+	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
+		ret += (*iter)->getNPixels ();
+	return ret;
 }
 
 int Rts2Image::getError (double &eRa, double &eDec, double &eRad)
@@ -2303,8 +2393,8 @@ double Rts2Image::getExposureLST ()
 std::ostream & operator << (std::ostream & _os, Rts2Image & image)
 {
 	_os << "C " << image.getCameraName ()
-		<< " [" << image.getWidth () << ":"
-		<< image.getHeight () << "]"
+		<< " [" << image.getChannelWidth (0) << ":"
+		<< image.getChannelHeight (0) << "]"
 		<< " RA " << image.getCenterRa () << " (" << LibnovaDegArcMin (image.
 		ra_err)
 		<< ") DEC " << image.getCenterDec () << " (" << LibnovaDegArcMin (image.

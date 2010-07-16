@@ -159,7 +159,7 @@ int AppImage::insert (Rts2ImageDb * image)
 
 void AppImage::testImage (Rts2Image * image)
 {
-	double ra, dec, x, y;
+	double ra, dec; //, x, y;
 	std::cout
 		<< image << std::endl
 		<< "average " << image->getAverage () << std::endl
@@ -176,10 +176,10 @@ void AppImage::testImage (Rts2Image * image)
 		<< " YPLATE: " << image->getYPlate () << std::endl
 		<< "RA and DEC of [XoA:YoA]: " << ra << ", " << dec << std::endl
 		<< image->getRaDec (0, 0, ra, dec) << "RA and DEC of [0:0]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (image->getWidth (), 0, ra, dec) << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (0, image->getHeight (), ra, dec) << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (image->getWidth (), image->getHeight (), ra, dec) << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
-		<< "Rts2Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x << ":" << y << std::endl
+		<< image->getRaDec (image->getChannelWidth (0), 0, ra, dec) << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
+		<< image->getRaDec (0, image->getChannelHeight (0), ra, dec) << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
+		<< image->getRaDec (image->getChannelWidth (0), image->getChannelHeight (0), ra, dec) << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
+		// << "Rts2Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x << ":" << y << std::endl
 		<< "Expression %b/%t/%i/%c/%f '" << image->expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl
 		<< "Expression $DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '" << image->expandPath (std::string ("$DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits")) << '\'' << std::endl
 		<< "Target Type " << image->getTargetType () << std::endl;

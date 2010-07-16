@@ -83,9 +83,9 @@ int Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 {
 	int x, y, max_x, max_y, pix = 0;
 
-	for (x = 0; x < naxis[0]; x++)
+	for (x = 0; x < getChannelWidth (0); x++)
 	{
-		for (y = 0; y < naxis[1]; y++)
+		for (y = 0; y < getChannelHeight (0); y++)
 		{
 			if (getPixel (in_data, x, y) > pix)
 			{
@@ -103,7 +103,7 @@ int Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 
 unsigned short Rts2Image::getPixel (unsigned short *in_data, int x, int y)
 {
-	return in_data[x + (naxis[0] * y)];
+	return in_data[x + (getChannelWidth (0) * y)];
 }
 
 int Rts2Image::findStar (unsigned short *in_data)
@@ -116,11 +116,11 @@ int Rts2Image::findStar (unsigned short *in_data)
 	bool first = true;
 	bool sedi = true;
 
-	assert (naxis[0] >= APP_SIZE && naxis[1] >= APP_SIZE);
+	assert (getChannelWidth (0) >= APP_SIZE && getChannelHeight (0) >= APP_SIZE);
 
-	for (r = 0; r < naxis[1] - APP_SIZE; r++)
+	for (r = 0; r < getChannelHeight (0) - APP_SIZE; r++)
 	{
-		row_start_ptr = in_data + r * naxis[0];
+		row_start_ptr = in_data + r * getChannelWidth (0);
 		sum = 0;
 
 		for (i = 0; i < APP_SIZE - 1; i++)
@@ -131,7 +131,7 @@ int Rts2Image::findStar (unsigned short *in_data)
 			for (j = 0; j < APP_SIZE; j++)
 			{
 				cols_sum[i] += *data_ptr;
-				data_ptr += naxis[0];
+				data_ptr += getChannelWidth (0);
 			}
 			sum += cols_sum[i];
 			row_start_ptr++;
@@ -139,7 +139,7 @@ int Rts2Image::findStar (unsigned short *in_data)
 
 		cols_sum[APP_SIZE - 1] = 0;
 
-		for (c = APP_SIZE - 1; c < naxis[0]; c++)
+		for (c = APP_SIZE - 1; c < getChannelWidth (0); c++)
 		{
 			data_ptr = row_start_ptr;
 			sum -= cols_sum[c % APP_SIZE];
@@ -148,7 +148,7 @@ int Rts2Image::findStar (unsigned short *in_data)
 			for (j = 0; j < APP_SIZE; j++)
 			{
 				cols_sum[c % APP_SIZE] += *data_ptr;
-				data_ptr += naxis[0];
+				data_ptr += getChannelWidth (0);
 			}
 
 			sum += cols_sum[c % APP_SIZE];
@@ -346,7 +346,7 @@ int Rts2Image::integrate (unsigned short *in_data, double px, double py, int siz
 int Rts2Image::evalAF (float *result, float *error)
 {
 	int i, r;
-	long npixels = naxis[0] * naxis[1];
+	long npixels = getChannelWidth (0) * getChannelHeight (0);
 	double *imd;
 	struct pixel tmp, ret;
 	float px, py, xx, vysledek = 0, chyba;
@@ -355,7 +355,7 @@ int Rts2Image::evalAF (float *result, float *error)
 
 	_data = (unsigned short *) malloc (npixels * sizeof (unsigned short));
 
-	_data = getDataUShortInt ();
+	_data = getChannelDataUShortInt (0);
 
 	imd = (double *) malloc (npixels * sizeof (double));
 	for (i = 0; i < npixels; i++)

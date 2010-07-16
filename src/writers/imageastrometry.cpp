@@ -306,8 +306,8 @@ int Rts2Image::createWCS (double x_off, double y_off)
 	setValue ("CROTA1", rotang, "WCS rotang");
 	setValue ("CROTA2", rotang, "WCS rotang");
 
-	setValue ("CRPIX1", naxis[0] / 2.0 + x_off, "X center");
-	setValue ("CRPIX2", naxis[1] / 2.0 + y_off, "Y center");
+	setValue ("CRPIX1", getChannelWidth (0) / 2.0 + x_off, "X center");
+	setValue ("CRPIX2", getChannelHeight (0) / 2.0 + y_off, "Y center");
 
 	setValue ("EPOCH", 2000.0, "WCS equinox");
 

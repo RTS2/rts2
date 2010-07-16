@@ -50,16 +50,6 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
 
-		/**
-		 * This function carries image processing.  Based on the return value, image
-		 * will be deleted when new image is taken, or deleting of the image will
-		 * become responsibility of process which forked with this call.
-		 *
-		 * @return IMAGE_DO_BASIC_PROCESSING when image still should be handled by
-		 * connection, or IMAGE_KEEP_COPY if processing instance will delete image.
-		 */
-		virtual imageProceRes processImage (Rts2Image * image);
-
 		void processCameraImage (CameraImages::iterator cis);
 
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
@@ -69,6 +59,21 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		 * Returns image on top of the que.
 		 */
 		Rts2Image *getActualImage () { return lastImage; }
+
+		/**
+		 * Called before processImage, as soon as data becomes available.
+		 */
+		virtual void cameraImageReady (Rts2Image *image) {}
+
+		/**
+		 * This function carries image processing.  Based on the return value, image
+		 * will be deleted when new image is taken, or deleting of the image will
+		 * become responsibility of process which forked with this call.
+		 *
+		 * @return IMAGE_DO_BASIC_PROCESSING when image still should be handled by
+		 * connection, or IMAGE_KEEP_COPY if processing instance will delete image.
+		 */
+		virtual imageProceRes processImage (Rts2Image * image);
 
 		void clearImages ()
 		{
@@ -98,7 +103,9 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
 
-		bool waitForMetaData (); 
+		bool waitForMetaData ();
+		void setTriggered () { triggered = true; }
+
 	private:
 		void writeFilter (Rts2Image *img);
 
