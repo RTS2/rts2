@@ -71,6 +71,8 @@ class MICCD:public Camera
 		virtual int startExposure ();
 		virtual int endExposure ();
 
+		virtual int stopExposure ();
+
 		virtual int doReadout ();
 
 	private:
@@ -85,6 +87,8 @@ class MICCD:public Camera
 
 		camera_t camera;
 		camera_info_t cami;
+
+		bool reseted_shutter;
 };
 
 }
@@ -115,9 +119,10 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 	mode->setValueInteger (1);
 
-
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
+
+	reseted_shutter = false;
 }
 
 MICCD::~MICCD ()
@@ -271,32 +276,44 @@ int MICCD::setFilterNum (int new_filter)
 int MICCD::startExposure ()
 {
 	int ret;
-	
+
 	ret = miccd_clear (&camera);
 	if (ret)
 		return -1;
 	ret = miccd_hclear (&camera);
 	if (ret)
 		return -1;
-	if (getExpType () == 1)
-		ret = miccd_close_shutter (&camera);
-	else
+	if (getExpType () != 1)
+	{
 		ret = miccd_open_shutter (&camera);
-	if (ret)
-		return -1;
+		if (ret)
+			return -1;
+	}
 	return 0;
 }
 
 int MICCD::endExposure ()
 {
 	int ret;
-	ret = miccd_close_shutter (&camera);
-	if (ret)
-		return ret;
+	if (getExpType () != 1)
+	{
+		ret = miccd_close_shutter (&camera);
+		if (ret)
+			return ret;
+	}
 	ret = miccd_shift_to0 (&camera);
 	if (ret)
 		return ret;
 	return Camera::endExposure ();
+}
+
+int MICCD::stopExposure ()
+{
+ 	int ret;
+	ret = miccd_close_shutter (&camera);
+	if (ret)
+		return -1;
+	return 0;
 }
 
 int MICCD::doReadout ()

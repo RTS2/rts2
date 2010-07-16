@@ -141,7 +141,7 @@ int Camera::center (int in_w, int in_h)
 long Camera::isExposing ()
 {
 	double n = getNow ();
-	if (n > exposureEnd->getValueDouble ())
+	if (n >= exposureEnd->getValueDouble ())
 	{
 		return 0;				 // exposure ended
 	}
