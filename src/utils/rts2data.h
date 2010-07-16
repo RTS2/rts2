@@ -67,7 +67,7 @@ class DataRead:public DataAbstractRead
 		// remaining size of binary data chunk which needed to be read
 		long binaryReadChunkSize;
 	public:
-		DataRead (int in_binaryReadDataSize, int in_type)
+		DataRead (long in_binaryReadDataSize, int in_type)
 		{
 			binaryReadDataSize = in_binaryReadDataSize;
 			binaryReadBuff = new char[binaryReadDataSize];
@@ -168,14 +168,14 @@ class DataShared: public DataAbstractRead
 class DataWrite
 {
 	public:
-		DataWrite (int in_dataSize) { binaryWriteDataSize = in_dataSize; }
-		long getDataSize () { return binaryWriteDataSize; }
+		DataWrite (int channum, long *chansize);
+		long getDataSize ();
 
-		void dataWritten (int size) { binaryWriteDataSize -= size; }
+		void dataWritten (int chan, long size) { binaryWriteDataSize[chan] -= size; }
 
 	private:
 		// connection data size
-		long binaryWriteDataSize;
+		std::vector <long> binaryWriteDataSize;
 };
 
 /**
@@ -188,6 +188,13 @@ class DataChannels:public std::vector <DataRead *>
 	public:
 		DataChannels () {}
 		~DataChannels ();
+
+		/**
+		 * Initiliaze data channels from connection. Expect to receive number of channels and their size.
+		 *
+		 * @param conn connection from which data channel will be initialized
+		 */
+		void initFromConnection (Rts2Conn *conn);
 
 		/**
 		 * Read data for given channel.

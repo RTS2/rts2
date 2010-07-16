@@ -220,7 +220,8 @@ void Camera::startImageData (Rts2Conn * conn)
 	}
 	else
 	{
-		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+		long chansize[1] = { chipByteSize () + sizeof (imghdr) };
+		currentImageData = conn->startBinaryData (dataType->getValueInteger (), 1, chansize);
 		exposureConn = conn;
 	}
 }
@@ -258,7 +259,7 @@ int Camera::sendFirstLine ()
 		*((unsigned long *) shmBuffer) = 0;
 	// send it out - but do not include it in average etc. calculations
 	if (exposureConn && currentImageData >= 0)
-		return exposureConn->sendBinaryData (currentImageData, (char *) focusingHeader, sizeof (imghdr));
+		return exposureConn->sendBinaryData (currentImageData, 0, (char *) focusingHeader, sizeof (imghdr));
 	return 0;
 }
 
@@ -634,7 +635,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 		*((unsigned long *) shmBuffer) += dataSize;
 
 	if (exposureConn && currentImageData >= 0)
-		return exposureConn->sendBinaryData (currentImageData, data, dataSize);
+		return exposureConn->sendBinaryData (currentImageData, 0, data, dataSize);
 	return 0;
 }
 

@@ -694,13 +694,9 @@ void Rts2Conn::processLine ()
 	}
 	else if (isCommand (PROTO_BINARY))
 	{
-		int data_conn, data_type;
-		long data_size;
+		int data_conn;
 		// we expect binary data
-		if (paramNextInteger (&data_conn)
-			|| paramNextLong (&data_size)
-			|| paramNextInteger (&data_type)
-			|| !paramEnd ())
+		if (paramNextInteger (&data_conn))
 		{
 			// end connection - we cannot process this command
 			activeReadData = -1;
@@ -709,8 +705,9 @@ void Rts2Conn::processLine ()
 		}
 		else
 		{
-			readChannels[data_conn] = new DataChannels ();
-			readChannels[data_conn]->push_back (new DataRead (data_size, data_type));
+			DataChannels * chann = new DataChannels ();
+			chann->initFromConnection (this);
+			readChannels[data_conn] = chann;
 			newDataConn (data_conn);
 			ret = -1;
 		}
@@ -1348,27 +1345,29 @@ int Rts2Conn::sendMsg (std::ostringstream &_os)
 	return sendMsg (_os.str ().c_str ());
 }
 
-int Rts2Conn::startBinaryData (long dataSize, int dataType)
+int Rts2Conn::startBinaryData (int dataType, int channum, long *chansize)
 {
 	std::ostringstream _os;
 	dataConn++;
-	_os << PROTO_BINARY " " << dataConn << " " << dataSize << " " << dataType;
+	_os << PROTO_BINARY " " << dataConn << " " << dataType << " " << channum;
+	for (int i = 0; i < channum; i++)
+		_os << " " << chansize[i];
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)
 		return -1;
-	writeData[dataConn] = new DataWrite (dataSize);
+	writeChannels[dataConn] = new DataWrite (channum, chansize);
 	return dataConn;
 }
 
-int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
+int Rts2Conn::sendBinaryData (int data_conn, int chan, char *data, long dataSize)
 {
 	char *binaryWriteTop, *binaryWriteBuff;
 	binaryWriteTop = binaryWriteBuff = data;
 	char *binaryEnd = data + dataSize;
 
 	std::ostringstream _os;
-	_os << PROTO_DATA " " << data_conn << " 0 " << dataSize;
+	_os << PROTO_DATA " " << data_conn << " " << chan << " " << dataSize;
 	int ret;
 	ret = sendMsg (_os);
 	if (ret)
@@ -1395,14 +1394,14 @@ int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 		{
 			binaryWriteTop += ret;
 			dataSize -= ret;
-			std::map <int, DataWrite *>::iterator iter = writeData.find (data_conn);
-			if (iter != writeData.end ())
+			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			if (iter != writeChannels.end ())
 			{
-				((*iter).second)->dataWritten (ret);
-				if (writeData[data_conn]->getDataSize () <= 0)
+				((*iter).second)->dataWritten (chan, ret);
+				if (((*iter).second)->getDataSize () <= 0)
 				{
 					delete ((*iter).second);
-					writeData.erase (iter);
+					writeChannels.erase (iter);
 				}
 			}
 		}

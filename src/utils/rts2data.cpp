@@ -27,10 +27,40 @@ int DataRead::readDataSize (Rts2Conn *conn)
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
 
+DataWrite::DataWrite (int channum, long *chansize)
+{
+	for (int i = 0; i < channum; i++)
+		binaryWriteDataSize.push_back (chansize[i]);
+}
+
+long DataWrite::getDataSize ()
+{
+	long ret = 0;
+	for (std::vector <long>::iterator iter = binaryWriteDataSize.begin (); iter != binaryWriteDataSize.end (); iter++)
+		ret += *iter;
+	return ret;
+}
+
 DataChannels::~DataChannels ()
 {
 	for (std::vector <DataRead *>::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
+}
+
+void DataChannels::initFromConnection (Rts2Conn *conn)
+{
+	int data_type, channum;
+	if (conn->paramNextInteger (&data_type) || conn->paramNextInteger (&channum))
+		throw Error ("cannot read number of channels");
+	for (int i = 0; i < channum; i++)
+	{
+		long chansize;
+		if (conn->paramNextLong (&chansize))
+			throw Error ("cannot get parse channel size");
+		push_back (new DataRead (chansize, data_type));
+	}
+	if (!conn->paramEnd ())
+		throw Error ("too much parameters in PROTO_BINARY data header");
 }
 
 long DataChannels::getRestSize ()

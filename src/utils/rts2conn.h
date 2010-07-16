@@ -196,21 +196,23 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Switch connection to binary connection.
 		 *
-		 * @param dataSize Size of data (in bytes)
-		 * @param dataType Type of data
+		 * @param dataType type of data
+		 * @param channum  number of channels
+		 * @param chansize size of channels
 		 *
 		 * @return -1 on error, otherwise ID of data connection.
 		 */
-		int startBinaryData (long dataSize, int dataType);
+		int startBinaryData (int dataType, int channum, long *chansize);
 
 		/**
 		 * Sends part of binary data.
 		 *
-		 * @param data_conn  ID of data connection.
-		 * @param data       Data to send.
-		 * @param dataSize   Size of data to send (in bytes).
+		 * @param data_conn  ID of data connection
+		 * @param chan       data channel
+		 * @param data       data to send
+		 * @param dataSize   size of data to send (in bytes)
 		 */
-		int sendBinaryData (int data_conn, char *data, long dataSize);
+		int sendBinaryData (int data_conn, int chan, char *data, long dataSize);
 
 		/**
 		 * Image data will be transfered in shared memory, attachable by key.
@@ -535,8 +537,8 @@ class Rts2Conn:public Rts2Object
 		long getWriteBinaryDataSize (int data_conn)
 		{
 			// if it exists..
-			std::map <int, rts2core::DataWrite *>::iterator iter = writeData.find (data_conn);
-			if (iter == writeData.end ())
+			std::map <int, rts2core::DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			if (iter == writeChannels.end ())
 				return 0;
 			return ((*iter).second)->getDataSize ();
 		}
@@ -680,7 +682,7 @@ class Rts2Conn:public Rts2Object
 		int activeSharedId;
 		char *activeSharedMem;
 
-		std::map <int, rts2core::DataWrite *> writeData;
+		std::map <int, rts2core::DataWrite *> writeChannels;
 		// ID of outgoing data connection
 		int dataConn;
 
