@@ -19,7 +19,7 @@ fi
 # build database
 
 $PSQLDB < create/language.sql
-$PSQLDB < create/typ_wcs.sql
+$PSQLDB < create/typ_wcs2.sql
 $PSQLDB < create/functions.sql
 $PSQLDB < create/tables.sql
 $PSQLDB < create/views.sql

@@ -177,7 +177,7 @@ CREATE TABLE images (
 	img_alt		float,
 	img_az		float,
 	/* astrometry */
-	astrometry	wcs,
+	astrometry	wcs2,
 	med_id		integer NOT NULL REFERENCES medias(med_id),
 	
 	camera_name	varchar(8) REFERENCES cameras(camera_name),
