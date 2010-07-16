@@ -562,11 +562,13 @@ EOF
 fi
 
 if test "x$epics" != "xno"; then
-	AC_CHECK_LIB([readline],[readline],,[cat << EOF
+	if test `uname` == 'Linux'; then
+		AC_CHECK_LIB([readline],[readline],,[cat << EOF
 **** You do not have readline library. For some reasons, it is
 **** needed if you build with EPICS. Please install readline-dev package.
 EOF
-		exit 1])
+			exit 1])
+	fi
   	if test "x$epics" != "xyes"; then
 		if test "x$EPICS_HOST_ARCH" = "x"; then
 		  	cat << EOF
