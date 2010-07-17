@@ -2,9 +2,9 @@
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   rts_autofocus.py --help
+#   rts_catalogue.py --help
 #   
-#   see man 1 rts2_autofocus.py
+#   see man 1 rts2_catalogue.py
 #   see rts2_autofocus_unittest.py for unit tests
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -35,8 +35,6 @@ import shutil
 import string
 import sys
 import time
-import shlex 
-import subprocess
 
 import numpy
 import pyfits
@@ -44,55 +42,50 @@ import rts2comm
 import rts2af 
 
 class main(rts2af.AFScript):
-    """define the focus from a series of images"""
+    """extract the catalgue of an images"""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
 
     def main(self):
 
-        dc= rts2af.Configuration()
-
-        args= self.arguments(dc)
+        runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
+        args      = self.arguments()
+        logger    = self.configureLogger()
+        rts2af.sfo= rts2af.ServiceFileOperations()
 
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
         else:
-            configFileName= dc.configurationFileName()
+            configFileName= runTimeConfig.configurationFileName()
             cmd= 'logger no config file specified, taking default' + configFileName
             #print cmd 
             os.system( cmd)
 
-        if(args.verbose):
-            print 'config file, taking ' + configFileName
+        runTimeConfig.readConfiguration(configFileName)
 
-        dc.readConfiguration(configFileName, args.verbose)
+        print "main " + runTimeConfig.value('SEXPRG')
+        print "main " + repr(runTimeConfig.value('TAKE_DATA'))
 
-        if(args.verbose):
-            for  identifier, value in dc.valuesIdentifiers():
-                print "actual configuration values :", identifier, '=>', value
-        
-        #retcode = subprocess.call(["ls", "-l"])
-        # Python 2.7
-        #subprocess.check_output(["ls", "-l", "/dev/null"])
 
-        #pid = subprocess.Popen(['ls', '-l']).pid
-        output1 = subprocess.Popen(['logger', 'hallo 1'], stdout=subprocess.PIPE).communicate()[0]
-        #output2 = subprocess.Popen(['sleep', '5'], stdout=subprocess.PIPE).communicate()[0]
-        pid= subprocess.Popen(['./schlaf', '5']).pid
-        output3 = subprocess.Popen(['logger', 'hallo 2'], stdout=subprocess.PIPE).communicate()[0]
-        time.sleep(1)
-        print "out "+ output1
-# talk to centrald
+        ffs= rts2af.FitsFiles()
+        hdu= rts2af.FitsFile('20100626103442-779-RA.fits', False, 'cccccccccc')
+        ffs.add(hdu)
+        hdu1= rts2af.FitsFile('20100626103210-295-RA.fits', True, 'cccccccccc')
+        ffs.add(hdu1)
+        ffs.add(hdu)
+        ffs.add(hdu)
+        ffs.add(hdu)
 
-#        con= rts2comm.Rts2Comm()
-#        if( con.isEvening()):
-#            cmd= 'logger evening' 
-#        else:
-#            cmd= 'logger morning'
 
-#        os.system( cmd)
+        ffs.validate()
 
+        for fits in ffs.fitsFiles():
+            print '=======' + fits.filter + '===' + repr(fits.isValid) + '= %d' % ffs.fitsFiles().count(hdu)
+
+
+        cat= rts2af.Catalogue('20100626103210-295-RA.fits')
+        cat.create_catalogue_reference()
 
 
 if __name__ == '__main__':

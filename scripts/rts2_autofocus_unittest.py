@@ -59,7 +59,11 @@ class testConfiguration(unittest.TestCase):
         self.assertEqual( f, 1.1)
         # bool
         self.assertTrue( values['TAKE_DATA'])
-        self.assertEqual( dc.defaultValue('SEXPRG'), 'sex 2>/dev/null') 
+        self.assertEqual( dc.defaultsValue('SEXPRG'), 'sex 2>/dev/null') 
+
+        for filter in dc.filtersInUse:
+# ToDo find an assert
+            print 'filters--------' + filter
 
 suite = unittest.TestLoader().loadTestsFromTestCase(testConfiguration)
 unittest.TextTestRunner(verbosity=2).run(suite)
