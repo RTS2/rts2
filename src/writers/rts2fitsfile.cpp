@@ -315,7 +315,7 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 			fits_write_col (ffile, TDOUBLE, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
 	}
 
-	for (i = 0; i < values.size (); i++)
+	for (i = 0; i < (int) (values.size ()); i++)
 		delete[] cols[i];
 
 	// move back to primary HDU

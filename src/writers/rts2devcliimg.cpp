@@ -131,8 +131,10 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 	{
 		CameraImage *ci = (*iter).second;
 
+		ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()));
+
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
-			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop ());
+			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
 
 		cameraImageReady (ci->image);
 		if (ci->canDelete ())

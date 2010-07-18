@@ -1095,7 +1095,6 @@ void Rts2Image::getValues (const char *name, char **values, int num, bool requir
 int Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
 	writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
-	filter_i = ntohs (im_h->filter);
 	return 0;
 }
 
@@ -1107,16 +1106,44 @@ void Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
-int Rts2Image::writeData (char *in_data, char *fullTop)
+void Rts2Image::writeMetaData (struct imghdr *im_h)
 {
-	struct imghdr *im_h;
+	if (!getFitsFile () || !(flags & IMAGE_SAVE))
+	{
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "not saving data " << getFitsFile () << " "
+			<< (flags & IMAGE_SAVE) << sendLog;
+		#endif					 /* DEBUG_EXTRA */
+		return;
+	}
+
+	filter_i = ntohs (im_h->filter);
+
+	setValue ("CAM_FILT", filter_i, "filter used for image");
+	setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
+	// dark images don't need to wait till imgprocess will pick them up for reprocessing
+	switch (ntohs (im_h->shutter))
+	{
+		case 0:
+			shutter = SHUT_OPENED;
+			break;
+		case 1:
+			shutter = SHUT_CLOSED;
+			break;
+		default:
+			shutter = SHUT_UNKNOW;
+	}
+}
+
+int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
+{
+	struct imghdr *im_h = (struct imghdr *) in_data;
 	int ret;
 
 	average = 0;
 	stdev = 0;
 	bg_stdev = 0;
 
-	im_h = (struct imghdr *) in_data;
 	// we have to copy data to FITS anyway, so let's do it right now..
 	if (ntohs (im_h->naxes) != 2)
 	{
@@ -1157,24 +1184,9 @@ int Rts2Image::writeData (char *in_data, char *fullTop)
 		return 0;
 	}
 
-	setValue ("CAM_FILT", ntohs (filter_i), "filter used for image");
-	setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
-	// dark images don't need to wait till imgprocess will pick them up for reprocessing
-	switch (ntohs (im_h->shutter))
-	{
-		case 0:
-			shutter = SHUT_OPENED;
-			break;
-		case 1:
-			shutter = SHUT_CLOSED;
-			break;
-		default:
-			shutter = SHUT_UNKNOW;
-	}
-
 	// either put it as a new extension, or keep it in primary..
 
-	if (false)
+	if (nchan == 1)
 	{
 		if (imageType == RTS2_DATA_SBYTE)
 		{
