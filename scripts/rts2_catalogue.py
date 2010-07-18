@@ -66,40 +66,46 @@ class main(rts2af.AFScript):
 
         print "main " + runTimeConfig.value('SEXPRG')
         print "main " + repr(runTimeConfig.value('TAKE_DATA'))
+        
+        testFitsList=[]
+        testFitsList=rts2af.serviceFileOp.findFitsFiles()
 
+        if( rts2af.verbose):
+            for fitsFiles in testFitsList:
+                print 'FitsFile to be analyzed: '+ fitsFiles
 
         ffs= rts2af.FitsFiles()
-        hdu= rts2af.FitsFile('20100626103442-779-RA.fits', True)
-        ffs.append(hdu)
-        hdu1= rts2af.FitsFile('20100626103210-295-RA.fits', False)
-        ffs.append(hdu1)
-        ffs.append(hdu)
-        ffs.append(hdu)
-        ffs.append(hdu)
+# ToDO, tmp reference catalog, fake
+# replace it by a reference catalogue which has the
+# the smallest average FWHM for a given filter
+# after the validate
+#
+# loop over fits file names
+        for fits in testFitsList:
+            hdu= rts2af.FitsFile( fits)
+            ffs.append(hdu)
 
-
-        ffs.validate()
-
-        for fits in ffs.fitsFiles():
-            print '=======' + fits.filter + '===' + repr(fits.isValid) + '= %d' % ffs.fitsFiles().count(hdu)
+        #ffs.validate()
 
 # loop over hdus
         cats= rts2af.Catalogues()
-        cat1= rts2af.Catalogue(hdu1)
-        cats.append(cat1)
+        for hdu  in ffs.fitsFiles():
+            if( rts2af.verbose):
+                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % ffs.fitsFiles().count(hdu)
 
-        cat1.extractToCatalogue()
-        #cat1.createCatalogue()
-        #cat1.average('FWHM_IMAGE')
-
-
-        cat= rts2af.Catalogue(hdu)
-        cats.append(cat)
-
-
+            cat= rts2af.Catalogue(hdu)
+            cat.extractToCatalogue()
+            cat.createCatalogue()
+            cats.append(cat)
 
         cats.validate()
 
+        for cat in cats.catalogues():
+            if(rts2af.verbose):
+                print "fits file: "+ cat.hdu().fitsFileName
+            cat.average('FWHM_IMAGE')
+
+        print "THIS IS THE END"
 if __name__ == '__main__':
     main(sys.argv[0]).main()
 

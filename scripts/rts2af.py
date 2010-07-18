@@ -119,6 +119,7 @@ class Configuration:
         
         self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
+        self.cp[('basic', 'FILE_GLOB')]= 'X/*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.cp[('basic', 'CCD_CAMERA')]= 'CD'
         self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
@@ -236,7 +237,7 @@ class Configuration:
         try:
             config.readfp(open(configFileName))
         except:
-            logger.error('readConfiguration: config file ' + configFileName + ' not found, exiting')
+            logger.error('Configuration.readConfiguration: config file ' + configFileName + ' not found, exiting')
             sys.exit(1)
 
 # read the defaults
@@ -250,7 +251,7 @@ class Configuration:
             try:
                 value = config.get( section, identifier)
             except:
-                logger.info('readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
+                logger.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
 # first bool, then int !
             if(isinstance(self.values[identifier], bool)):
 #ToDO, looking for a direct way
@@ -262,14 +263,14 @@ class Configuration:
                 try:
                     self.values[identifier]= int(value)
                 except:
-                    logger.error('readConfiguration: no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
+                    logger.error('Configuration.readConfiguration: no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
                     
 
             elif(isinstance(self.values[identifier], float)):
                 try:
                     self.values[identifier]= float(value)
                 except:
-                    logger.error('readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
+                    logger.error('Configuration.readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
 
             else:
                 self.values[identifier]= value
@@ -286,7 +287,7 @@ class Configuration:
                     for item in items:
                         item.replace(' ', '')
                         if(verbose):
-                            print 'filterInUse---------:' + item
+                            print 'filterInUse---------: ' + item
                         self.filtersInUse.append(item)
 
         if(verbose):
@@ -339,9 +340,12 @@ class Catalogue():
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsFile.fitsFileName)
         self.catalogue = {}
         self.elements  = {}
-        self.isReference = self.fitsFile.isReference
+        self.isReference = False
         self.isValid= False
         print "===============================" + repr(self.isReference) + "=========="  + self.fitsFile.fitsFileName
+
+    def hdu(self):
+        return self.fitsFile
 
     def extractToCatalogue(self):
         if( verbose):
@@ -387,19 +391,19 @@ class Catalogue():
             element = pElement.match(line)
             data    = pData.match(line)
             if( element):
-                if(verbose):
-                    print "element.group(1) : ", element.group(1)
-                    print "element.group(2) : ", element.group(2)
+#                if(verbose):
+#                    print "element.group(1) : ", element.group(1)
+#                    print "element.group(2) : ", element.group(2)
                 self.elements[element.group(1)]=element.group(2)
 
             elif( data):
-                if(verbose):
-                    print line
+#                if(verbose):
+#                    print line
 
                 items= line.split()
-                if(verbose):
-                    for item in items:
-                        print item
+#                if(verbose):
+#                    for item in items:
+#                        print item
 
                 for (i, item) in enumerate(items):
                     try:
@@ -408,25 +412,27 @@ class Catalogue():
                         print 'readCatalogue: exception %d' % i +  ' '+ self.elements[str(i+1)] + ' ' + item 
                         sys.exit(1)
             else:
-                logger.error( 'readCatalogue: no match on line %d' % i)
-                logger.error( 'readCatalogue: ' + line)
+                logger.error( 'Catalogue.readCatalogue: no match on line %d' % i)
+                logger.error( 'Catalogue.readCatalogue: ' + line)
 
-            if(verbose):    
-                for item, value in  sorted(self.catalogue.iteritems()):
-                    print "item " + item + "value " + value
+#            if(verbose):    
+#                for item, value in  sorted(self.catalogue.iteritems()):
+#                    print "item " + item + "value " + value
 
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
         i= 0
         for item, value in  sorted(self.catalogue.iteritems()):
-
             if( item == variable):
                 sum += float(value)
                 i += 1
 
         if(verbose):
-            print 'averrage %f' % (sum/ float(i)) 
+            if( i != 0):
+                print 'average %f' % (sum/ float(i))
+            else:
+                print 'Error in average i=0'
 
 class Catalogues():
     """Class holding Catalogues"""
@@ -441,11 +447,14 @@ class Catalogues():
     def catalogues(self):
         return self.CataloguesList
 
+    def isValid():
+        return self.isValid
+
     def reference(self):
         for cat in self.CataloguesList:
             if( cat.isReference):
                 if( verbose):
-                    print 'Catalogues.reference: reference catalogue found for file:' + cat.fitsFile.fitsFileName
+                    print 'Catalogues.reference: reference catalogue found for file: ' + cat.fitsFile.fitsFileName
                 return cat
 
         if( verbose):
@@ -468,6 +477,10 @@ class Catalogues():
                         print 'Catalogues.validate: valid cat for: ' + cat.fitsFile.fitsFileName
                     cat.isValid= True
 
+                if( verbose):
+                    print "catalog set to valid again"
+                    cat.isValid= True
+
                 if(cat.isValid==False):
                     if( verbose):
                         print 'Catalogues.validate: removed cat for: ' + cat.fitsFile.fitsFileName
@@ -480,19 +493,18 @@ class Catalogues():
 
         return False
  
-    def isValid():
-        return self.isValid
 
 import sys
 import pyfits
 
 class FitsFile():
     """Class holding fits file name and ist properties"""
-    def __init__(self, fitsFileName=None, isReference=False):
+    def __init__(self, fitsFileName=None):
         self.fitsFileName= fitsFileName
-        self.isReference = isReference
         self.isValid= False
 
+        if( verbose):
+            print "fits file path: " + self.fitsFileName
         try:
             hdulist = pyfits.fitsopen(fitsFileName)
         except:
@@ -504,13 +516,14 @@ class FitsFile():
         if( verbose):
             hdulist.info()
 
-        self.filter = hdulist[0].header['FILTER']
-        self.foc_pos= hdulist[0].header['FOC_POS']
-        self.binning= hdulist[0].header['BINNING']
-        self.naxis1 = hdulist[0].header['NAXIS1']
-        self.naxis2 = hdulist[0].header['NAXIS2']
-        self.oira   = hdulist[0].header['ORIRA']
-        self.oridec = hdulist[0].header['ORIDEC']
+        self.headerElements={}
+        self.headerElements['FILTER'] = hdulist[0].header['FILTER']
+        self.headerElements['FOC_POS']= hdulist[0].header['FOC_POS']
+        self.headerElements['BINNING']= hdulist[0].header['BINNING']
+        self.headerElements['NAXIS1'] = hdulist[0].header['NAXIS1']
+        self.headerElements['NAXIS2'] = hdulist[0].header['NAXIS2']
+        self.headerElements['ORIRA']  = hdulist[0].header['ORIRA']
+        self.headerElements['ORIDEC'] = hdulist[0].header['ORIDEC']
 
         hdulist.close()
 
@@ -526,52 +539,40 @@ class FitsFiles():
     def fitsFiles(self):
         return self.fitsFilesList
 
-    def reference(self):
-        for hdu in self.fitsFilesList:
-            if( hdu.isReference):
-                if( verbose):
-                    print 'FitsFiles: reference fits file found:' + hdu.fitsFileName
-                return hdu
-
-        if( verbose):
-            print 'FitsFiles: no reference fits file found'
-
-        return False
-
-    def validate(self):
-        
-        hdur= self.reference()
-        if( hdur== None):
-            return self.isValid
-
-        if( len(self.fitsFilesList) > 1):
-            # default is False
-            for hdu in self.fitsFilesList:
-                if( hdu.filter== hdur.filter):
-                    if( hdu.binning== hdur.binning):
-                        if( hdu.naxis1== hdur.naxis1):
-                            if( hdu.naxis2== hdur.naxis2):
-                                if( verbose):
-                                    print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName
-                                hdu.isValid= True
-
-                if(hdu.isValid==False):
-                    if( verbose):
-                        print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName
-                    self.fitsFilesList.remove(hdu)
-
-            if( len(self.fitsFilesList) > 0):
-                self.isValid= True
-
-            return self.isValid
-
-        return False
-        
     def isValid():
         return self.isValid
 
+    def validate( elements):
+        i= 0
+        for hdu in self.fitsFilesList:
+## elents should become a dict, compare values with values and count
+            for element in elements:
+                if( element== self.headerElements[element]):
+                    i += 1
+
+            if( i == self.headerElements.size()):
+                hdu.isValid= True
+                if( verbose):
+                    print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName
+            else:
+                try:
+                    self.fitsFilesList.remove(hdu)
+                except:
+                    logger.error('FitsFiles.validate: could not remove hdu for ' + hdu.fitsFileName)
+                if(verbose):
+                    print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsFilesList.index(hdu)
+
+
+        if( len(self.fitsFilesList) > 0):
+            self.isValid= True
+
+        return self.isValid
+
+        
+
 import time
 import datetime
+import glob
 class ServiceFileOperations():
     """Class performing various task on files, e.g. expansio to (full) path"""
     def __init__(self):
@@ -582,16 +583,28 @@ class ServiceFileOperations():
 
     def expandToTmp( self, fileName=None):
         if( fileName==None):
-            logger.error('expandToTmp: no file name given')
-        
+            logger.error('ServiceFileOperations.expandToTmp: no file name given')
+
         fileName= runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
 
     def expandToCat( self, fileName=None):
         if( fileName==None):
-            logger.error('expandToCat: no file name given')
-        fileName= self.prefix() + fileName.split('.fits')[0] + '-' + self.now + '.cat'
+            logger.error('ServiceFileOperations.expandToCat: no file name given')
+
+        items= fileName.split('/')[-1]
+        fileName= self.prefix() + items.split('.fits')[0] + '-' + self.now + '.cat'
         return self.expandToTmp(fileName)
+
+#    def expandToPath( self, fileName=None):
+#        if( fileName==None):
+#            logger.error('ServiceFileOperations.expandToCat: no file name given')
+        
+
+    def findFitsFiles( self):
+        if( verbose):
+            print "searching in " + runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB')
+        return glob.glob( runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB'))
 
 #
 # stub, will be called in main script 
