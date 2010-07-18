@@ -280,9 +280,6 @@ int MICCD::startExposure ()
 	ret = miccd_clear (&camera);
 	if (ret)
 		return -1;
-	ret = miccd_hclear (&camera);
-	if (ret)
-		return -1;
 	if (getExpType () != 1)
 	{
 		ret = miccd_open_shutter (&camera);
@@ -301,9 +298,6 @@ int MICCD::endExposure ()
 		if (ret)
 			return ret;
 	}
-	ret = miccd_shift_to0 (&camera);
-	if (ret)
-		return ret;
 	return Camera::endExposure ();
 }
 
