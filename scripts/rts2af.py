@@ -334,17 +334,16 @@ import subprocess
 import re
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, fitsFileName=None):
-        self.fitsFileName     = fitsFileName
-        self.catalogueFileName= serviceFileOp.expandToCat(fitsFileName)
+    def __init__(self, fitsFile=None):
+        self.fitsFile  = fitsFile
+        self.catalogueFileName= serviceFileOp.expandToCat(self.fitsFile.fitsFileName)
         self.catalogue = {}
         self.elements  = {}
+        self.isReference = self.fitsFile.isReference
+        self.isValid= False
+        print "===============================" + repr(self.isReference) + "=========="  + self.fitsFile.fitsFileName
 
-    def create_catalogue_reference(self):
-        self.create_catalogue()
-        self.readCatalogue()
-
-    def create_catalogue(self):
+    def extractToCatalogue(self):
         if( verbose):
             print 'sextractor  ' + runTimeConfig.value('SEXPRG')
             print 'sextractor  ' + runTimeConfig.value('SEXCFG')
@@ -353,27 +352,28 @@ class Catalogue():
         (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
         # 2>/dev/null swallowed by PIPE
         cmd= [  prg,
-                self.fitsFileName, 
+                self.fitsFile.fitsFileName, 
                 '-c ',
                 runTimeConfig.value('SEXCFG'),
                 '-CATALOG_NAME',
                 self.catalogueFileName,
                 '-PARAMETERS_NAME',
                 runTimeConfig.value('SEXREFERENCE_PARAM'),]
-                
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'create_catalogue: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'extractToCatalogue: I/O error({0}): {1}'.format(errno, strerror))
             sys.exit(1)
 
         except:
-            logging.error('create_catalogue: '+ repr(cmd) + ' died')
+            logging.error('extractToCatalogue: '+ repr(cmd) + ' died')
             sys.exit(1)
 
+
+
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
-    def readCatalogue(self):
+    def createCatalogue(self):
         cat= open( self.catalogueFileName, 'r')
         lines= cat.readlines()
         # rely on the fact that first line is stored as first element in list
@@ -381,7 +381,6 @@ class Catalogue():
         ##   2 X_IMAGE                Object position along x                                    [pixel]
         #         1   2976.000      7.473     2773.781     219.8691     42.19405  -5.8554   0.2084     120.5605         6  26     4.05      5.330    0.823
  
-        #element= re.compile("#[ ]+[0-9]+[ ]+(\w)")
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
         for (i, line) in enumerate(lines):
@@ -404,22 +403,92 @@ class Catalogue():
 
                 for (i, item) in enumerate(items):
                     try:
-                        self.catalogue[(i, self.elements[i+1])]= item
+                        self.catalogue[self.elements[str(i+1)]]= item
                     except:
-                        for element, value in self.elements.iteritems():
-                            print "element" + element + " " + value 
+                        print 'readCatalogue: exception %d' % i +  ' '+ self.elements[str(i+1)] + ' ' + item 
+                        sys.exit(1)
             else:
                 logger.error( 'readCatalogue: no match on line %d' % i)
                 logger.error( 'readCatalogue: ' + line)
-                
 
+            if(verbose):    
+                for item, value in  sorted(self.catalogue.iteritems()):
+                    print "item " + item + "value " + value
+
+# example how to access the catalogue
+    def average(self, variable):
+        sum= 0
+        i= 0
+        for item, value in  sorted(self.catalogue.iteritems()):
+
+            if( item == variable):
+                sum += float(value)
+                i += 1
+
+        if(verbose):
+            print 'averrage %f' % (sum/ float(i)) 
+
+class Catalogues():
+    """Class holding Catalogues"""
+    def __init__(self):
+        self.CataloguesList= []
+        self.isReference = False
+        self.isValid= False
+
+    def append( self, Catalogue):
+        self.CataloguesList.append(Catalogue)
+
+    def catalogues(self):
+        return self.CataloguesList
+
+    def reference(self):
+        for cat in self.CataloguesList:
+            if( cat.isReference):
+                if( verbose):
+                    print 'Catalogues.reference: reference catalogue found for file:' + cat.fitsFile.fitsFileName
+                return cat
+
+        if( verbose):
+            print 'Catalogues: no reference fits file found'
+
+        return False
+
+    def validate(self):
+        
+        catr= self.reference()
+        if( catr== None):
+            return self.isValid
+
+        if( len(self.CataloguesList) > 1):
+            # default is False
+            for cat in self.CataloguesList:
+# dummy
+                if( cat.isValid== catr.isValid):
+                    if( verbose):
+                        print 'Catalogues.validate: valid cat for: ' + cat.fitsFile.fitsFileName
+                    cat.isValid= True
+
+                if(cat.isValid==False):
+                    if( verbose):
+                        print 'Catalogues.validate: removed cat for: ' + cat.fitsFile.fitsFileName
+                    self.CataloguesList.remove(cat)
+
+            if( len(self.CataloguesList) > 0):
+                self.isValid= True
+
+            return self.isValid
+
+        return False
+ 
+    def isValid():
+        return self.isValid
 
 import sys
 import pyfits
 
 class FitsFile():
     """Class holding fits file name and ist properties"""
-    def __init__(self, fitsFileName=None, isReference=False, catalogueFileName= None):
+    def __init__(self, fitsFileName=None, isReference=False):
         self.fitsFileName= fitsFileName
         self.isReference = isReference
         self.isValid= False
@@ -451,7 +520,7 @@ class FitsFiles():
         self.fitsFilesList= []
         self.isValid= False
 
-    def add( self, FitsFile):
+    def append( self, FitsFile):
         self.fitsFilesList.append(FitsFile)
 
     def fitsFiles(self):
@@ -461,14 +530,13 @@ class FitsFiles():
         for hdu in self.fitsFilesList:
             if( hdu.isReference):
                 if( verbose):
-                    print 'reference fits file found:' + hdu.fitsFileName
+                    print 'FitsFiles: reference fits file found:' + hdu.fitsFileName
                 return hdu
 
         if( verbose):
-            print 'no reference fits file found'
+            print 'FitsFiles: no reference fits file found'
 
-        print 'no reference fits file found'
-        return None
+        return False
 
     def validate(self):
         
@@ -478,25 +546,30 @@ class FitsFiles():
 
         if( len(self.fitsFilesList) > 1):
             # default is False
-            for hdu in self.fitsFilesList[0:]:
+            for hdu in self.fitsFilesList:
                 if( hdu.filter== hdur.filter):
                     if( hdu.binning== hdur.binning):
                         if( hdu.naxis1== hdur.naxis1):
                             if( hdu.naxis2== hdur.naxis2):
-                                print 'OK'
+                                if( verbose):
+                                    print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName
                                 hdu.isValid= True
 
                 if(hdu.isValid==False):
-                    print "rem"
+                    if( verbose):
+                        print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName
                     self.fitsFilesList.remove(hdu)
 
             if( len(self.fitsFilesList) > 0):
                 self.isValid= True
 
             return self.isValid
-                
+
+        return False
+        
     def isValid():
         return self.isValid
+
 import time
 import datetime
 class ServiceFileOperations():

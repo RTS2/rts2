@@ -69,13 +69,13 @@ class main(rts2af.AFScript):
 
 
         ffs= rts2af.FitsFiles()
-        hdu= rts2af.FitsFile('20100626103442-779-RA.fits', False, 'cccccccccc')
-        ffs.add(hdu)
-        hdu1= rts2af.FitsFile('20100626103210-295-RA.fits', True, 'cccccccccc')
-        ffs.add(hdu1)
-        ffs.add(hdu)
-        ffs.add(hdu)
-        ffs.add(hdu)
+        hdu= rts2af.FitsFile('20100626103442-779-RA.fits', True)
+        ffs.append(hdu)
+        hdu1= rts2af.FitsFile('20100626103210-295-RA.fits', False)
+        ffs.append(hdu1)
+        ffs.append(hdu)
+        ffs.append(hdu)
+        ffs.append(hdu)
 
 
         ffs.validate()
@@ -83,10 +83,22 @@ class main(rts2af.AFScript):
         for fits in ffs.fitsFiles():
             print '=======' + fits.filter + '===' + repr(fits.isValid) + '= %d' % ffs.fitsFiles().count(hdu)
 
+# loop over hdus
+        cats= rts2af.Catalogues()
+        cat1= rts2af.Catalogue(hdu1)
+        cats.append(cat1)
 
-        cat= rts2af.Catalogue('20100626103210-295-RA.fits')
-        cat.create_catalogue_reference()
+        cat1.extractToCatalogue()
+        #cat1.createCatalogue()
+        #cat1.average('FWHM_IMAGE')
 
+
+        cat= rts2af.Catalogue(hdu)
+        cats.append(cat)
+
+
+
+        cats.validate()
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()
