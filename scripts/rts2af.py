@@ -109,6 +109,7 @@ class Configuration:
     def __init__(self, fileName='rts2-autofocus-offline.cfg'):
         self.configFileName = fileName
         self.values={}
+        self.filters=[]
         self.filtersInUse=[]
 
         self.cp={}
@@ -211,8 +212,26 @@ class Configuration:
         for (identifier), value in self.valuesIdentifiers():
             print "dump values :", ', ', identifier, '=>', value
 
+    def filters(self):
+        return self.filters
+
+    def filterByName(self, name):
+        for filter in  self.filters:
+            print "NAME>" + name + "<>" + filter.filterName
+            if( name == filter.filterName):
+                print "NAME" + name + filter.filterName
+                return filter
+
+        return False
+
     def filtersInUse(self):
         return self.filtersInUse
+
+    def filterInUseByName(self, name):
+        for filter in  self.filtersInUse:
+            if( name == filter.filterName):
+                return filter
+        return False
 
     def writeDefaultConfiguration(self):
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -245,7 +264,6 @@ class Configuration:
              self.values[identifier]= value
 
 # over write the defaults
-        filters=[]
         for (section, identifier), value in self.configIdentifiers():
 
             try:
@@ -278,16 +296,19 @@ class Configuration:
                 if( section == 'filter properties'): 
                     items= value[1:-1].split(',')
 #, ToDo, hm
-                    for item in items: 
-                        item.replace(' ', '')
 
-                    filters.append( Filter( items[1], string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5]), string.atoi(items[6])))
+                    for item in items: 
+                        item= string.replace( item, ' ', '')
+
+                    items[1]= string.replace( items[1], ' ', '')
+                    print '-----------filterInUse---------:>' + items[1] + '<'
+                    self.filters.append( Filter( items[1], string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5]), string.atoi(items[6])))
                 elif( section == 'filters'):
                     items= value.split(':')
                     for item in items:
                         item.replace(' ', '')
                         if(verbose):
-                            print 'filterInUse---------: ' + item
+                            print 'filterInUse---------:>' + item + '<'
                         self.filtersInUse.append(item)
 
         if(verbose):
@@ -295,13 +316,13 @@ class Configuration:
                print "over ", identifier, self.values[(identifier)]
 
         if(verbose):
-           for filter in filters:
+           for filter in self.filters:
                print 'Filter --------' + filter.filterName
                print 'Filter --------%d'  % filter.exposure 
 
         if(verbose):
-            for filters in self.filtersInUse:
-                print "used filters :", filters
+            for filter in self.filtersInUse:
+                print "used filters :", filter
 
         return self.values
 
@@ -329,6 +350,8 @@ class Filter:
         return self.stepSize
     def exposure(self):
         return self.exposure
+
+
 
 import shlex
 import subprocess
@@ -499,33 +522,43 @@ import pyfits
 
 class FitsFile():
     """Class holding fits file name and ist properties"""
-    def __init__(self, fitsFileName=None):
+    def __init__(self, fitsFileName=None, filter=None):
         self.fitsFileName= fitsFileName
+        self.filter= filter
         self.isValid= False
 
+        FitsFile.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+
+    def isFilter(self):
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
-            hdulist = pyfits.fitsopen(fitsFileName)
+            hdulist = pyfits.fitsopen(self.fitsFileName)
         except:
-            if( fitsFileName):
-                logger.error('FitsFile: file not found : ' + fitsFileName)
+            if( self.fitsFileName):
+                logger.error('FitsFile: file not found : ' + self.fitsFileName)
             else:
                 logger.error('FitsFile: file name not given (None), exiting')
             sys.exit(1)
-        if( verbose):
-            hdulist.info()
-
-        self.headerElements={}
-        self.headerElements['FILTER'] = hdulist[0].header['FILTER']
-        self.headerElements['FOC_POS']= hdulist[0].header['FOC_POS']
-        self.headerElements['BINNING']= hdulist[0].header['BINNING']
-        self.headerElements['NAXIS1'] = hdulist[0].header['NAXIS1']
-        self.headerElements['NAXIS2'] = hdulist[0].header['NAXIS2']
-        self.headerElements['ORIRA']  = hdulist[0].header['ORIRA']
-        self.headerElements['ORIDEC'] = hdulist[0].header['ORIDEC']
 
         hdulist.close()
+
+#        if( verbose):
+#            hdulist.info()
+
+        if( self.filter==hdulist[0].header['FILTER']):
+            self.headerElements={}
+            self.headerElements['FILTER'] = hdulist[0].header['FILTER']
+            self.headerElements['FOC_POS']= hdulist[0].header['FOC_POS']
+            self.headerElements['BINNING']= hdulist[0].header['BINNING']
+            self.headerElements['NAXIS1'] = hdulist[0].header['NAXIS1']
+            self.headerElements['NAXIS2'] = hdulist[0].header['NAXIS2']
+            self.headerElements['ORIRA']  = hdulist[0].header['ORIRA']
+            self.headerElements['ORIDEC'] = hdulist[0].header['ORIDEC']
+            return True
+
+        else:
+            return False
 
 class FitsFiles():
     """Class holding FitsFile"""
@@ -539,6 +572,16 @@ class FitsFiles():
     def fitsFiles(self):
         return self.fitsFilesList
 
+    def findReference(self):
+
+        filter= runTimeConfig.filterByName('X')
+        
+        for hdu in sorted(self.fitsFilesList):
+            if( filter.foc_pos < hdu.headerElements['FOC_POS']):
+                print "FOUND ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
+                return hdu
+        return False
+
     def isValid():
         return self.isValid
 
@@ -547,10 +590,10 @@ class FitsFiles():
         for hdu in self.fitsFilesList:
 ## elents should become a dict, compare values with values and count
             for element in elements:
-                if( element== self.headerElements[element]):
+                if( element== hdu.headerElements[element]):
                     i += 1
 
-            if( i == self.headerElements.size()):
+            if( i == self.headerElements.len()):
                 hdu.isValid= True
                 if( verbose):
                     print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName

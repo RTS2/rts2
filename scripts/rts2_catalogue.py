@@ -70,9 +70,9 @@ class main(rts2af.AFScript):
         testFitsList=[]
         testFitsList=rts2af.serviceFileOp.findFitsFiles()
 
-        if( rts2af.verbose):
-            for fitsFiles in testFitsList:
-                print 'FitsFile to be analyzed: '+ fitsFiles
+#        if( rts2af.verbose):
+#            for fitsFiles in testFitsList:
+#                print 'FitsFile to be analyzed: '+ fitsFiles
 
         ffs= rts2af.FitsFiles()
 # ToDO, tmp reference catalog, fake
@@ -82,10 +82,13 @@ class main(rts2af.AFScript):
 #
 # loop over fits file names
         for fits in testFitsList:
-            hdu= rts2af.FitsFile( fits)
-            ffs.append(hdu)
+            hdu= rts2af.FitsFile( fits, 'X')
+            if( hdu.isFilter()):
+                ffs.append(hdu)
 
-        #ffs.validate()
+        ffs.findReference()
+        sys.exit(1)
+        ffs.validate()
 
 # loop over hdus
         cats= rts2af.Catalogues()
