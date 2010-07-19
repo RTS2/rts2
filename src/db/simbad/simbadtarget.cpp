@@ -100,6 +100,14 @@ int SimbadTarget::load ()
 		return -1;
 	}
 
+	if (!(xpathObj->nodesetval->nodeTab[0]->children))
+	{
+		logStream (MESSAGE_ERROR) << "Simbad server not reposponding. Is it down? Failed URL is: " << os.str () << sendLog;
+		xmlXPathFreeContext (xpathCtx);
+		xmlFreeDoc (xml);
+		return -1;
+	}
+
 	istringstream *iss = new istringstream ();
 	iss->str ((char *) xpathObj->nodesetval->nodeTab[0]->children->content);
 
