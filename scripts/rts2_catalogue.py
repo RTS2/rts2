@@ -70,6 +70,9 @@ class main(rts2af.AFScript):
         testFitsList=[]
         testFitsList=rts2af.serviceFileOp.findFitsFiles()
 
+        paramsSexctractor= rts2af.SExtractorParams()
+        paramsSexctractor.readSExtractorParams()
+        sys.exit(1)
 #        if( rts2af.verbose):
 #            for fitsFiles in testFitsList:
 #                print 'FitsFile to be analyzed: '+ fitsFiles
@@ -81,13 +84,15 @@ class main(rts2af.AFScript):
 # after the validate
 #
 # loop over fits file names
+        hdu= rts2af.FitsFile('/scratch/focus/2010-06-25-T21:04:53/X/20100625211258-885-RA.fits', True)
+        hdu.isFilter('X')
+        ffs.append(hdu)
+
         for fits in testFitsList:
-            hdu= rts2af.FitsFile( fits, 'X')
-            if( hdu.isFilter()):
+            hdu= rts2af.FitsFile( fits)
+            if(hdu.isFilter('X')):
                 ffs.append(hdu)
 
-        ffs.findReference()
-        sys.exit(1)
         ffs.validate()
 
 # loop over hdus
@@ -101,7 +106,10 @@ class main(rts2af.AFScript):
             cat.createCatalogue()
             cats.append(cat)
 
-        cats.validate()
+        if(cats.validate()):
+            print "catalogues is valid"
+        else:
+            print "catalogues is in valid"
 
         for cat in cats.catalogues():
             if(rts2af.verbose):

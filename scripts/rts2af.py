@@ -1,6 +1,4 @@
 """Class definitions for rts2_autofocus"""
-
-
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
@@ -30,8 +28,6 @@
 
 __author__ = 'markus.wildi@one-arcsec.org'
 
-
-
 import argparse
 import logging
 # globals
@@ -60,6 +56,10 @@ class AFScript:
         parser.add_argument('--config', dest='fileName',
                             metavar='CONFIG FILE', nargs=1, type=str,
                             help='configuration file')
+
+        parser.add_argument('-r', '--reference', dest='reference',
+                            metavar='REFERENCE', nargs=1, type=str,
+                            help='reference file name')
 
         parser.add_argument('-l', '--logging', dest='logLevel', action='store', 
                             metavar='LOGLEVEL', nargs=1, type=str,
@@ -148,7 +148,7 @@ class Configuration:
         self.cp[('DS9', 'DS9_MATCHED')]= True
         self.cp[('DS9', 'DS9_ALL')]= True
         self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
-        self.cp[('DS9', 'DS9_REGION_FILE')]= '/tmp/ds9-autofocus.reg'
+        self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-autofocus.reg'
         
         self.cp[('analysis', 'ANALYSIS_UPPER_LIMIT')]= 1.e12
         self.cp[('analysis', 'ANALYSIS_LOWER_LIMIT')]= 0.
@@ -156,7 +156,7 @@ class Configuration:
         self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
         self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
         self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
-        self.cp[('analysis', 'FIT_RESULT_FILE')]= '/tmp/fit-autofocus.dat'
+        self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
         
         self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
         
@@ -167,9 +167,9 @@ class Configuration:
         self.cp[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
         self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .1
-        self.cp[('SExtractor', 'SEXSKY_LIST')]= '/tmp/sex-autofocus-assoc-sky.list'
-        self.cp[('SExtractor', 'SEXCATALOGUE')]= '/tmp/sex-autofocus.cat'
-        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= '/tmp/sex-autofocus-tmp.cat'
+        self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-autofocus-assoc-sky.list'
+        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex-autofocus.cat'
+        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         
         self.cp[('mode', 'TAKE_DATA')]= True
@@ -326,6 +326,34 @@ class Configuration:
 
         return self.values
 
+class SExtractorParams():
+    def __init__(self, paramsFileName=None):
+# ToDo, calrify 
+        if( paramsFileName== None):
+            self.paramsFileName= runTimeConfig.value('SEXREFERENCE_PARAM')
+        else:
+            self.paramsFileName= paramsFileName
+        self.paramsSExtractor= []
+
+    def readSExtractorParams(self):
+        tmpList= []
+        params=open( self.paramsFileName, 'r')
+        lines= params.readlines()
+        pElement = re.compile( r'([\w]+)')
+        for (i, line) in enumerate(lines):
+            element = pElement.match(line)
+            if( element):
+                if(verbose):
+                    print "element.group(1) : ", element.group(1)
+                self.paramsSExtractor.append(element.group(1))
+                tmpList.append(element.group(1))
+        for element in tmpList:
+            self.paramsSExtractor.append(element)
+###VECTOR_ASSOC(14)
+###NUMBER_ASSOC
+        for element in self.paramsSExtractor:
+             print "element : ", element
+
 
 class Filter:
     """Class for filter properties"""
@@ -376,16 +404,31 @@ class Catalogue():
             print 'sextractor  ' + runTimeConfig.value('SEXCFG')
             print 'sextractor  ' + runTimeConfig.value('SEXREFERENCE_PARAM')
 
-        (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
         # 2>/dev/null swallowed by PIPE
-        cmd= [  prg,
-                self.fitsFile.fitsFileName, 
-                '-c ',
-                runTimeConfig.value('SEXCFG'),
-                '-CATALOG_NAME',
-                self.catalogueFileName,
-                '-PARAMETERS_NAME',
-                runTimeConfig.value('SEXREFERENCE_PARAM'),]
+        (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
+
+        if( not self.fitsFile.isReference):
+            cmd= [  prg,
+                    self.fitsFile.fitsFileName, 
+                    '-c ',
+                    runTimeConfig.value('SEXCFG'),
+                    '-CATALOG_NAME',
+                    self.catalogueFileName,
+                    '-PARAMETERS_NAME',
+                    runTimeConfig.value('SEXPARAM'),
+                    '-ASSOC_NAME',
+                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER'])
+                    ]
+        else:
+
+            cmd= [  prg,
+                    self.fitsFile.fitsFileName, 
+                    '-c ',
+                    runTimeConfig.value('SEXCFG'),
+                    '-CATALOG_NAME',
+                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']),
+                    '-PARAMETERS_NAME',
+                    runTimeConfig.value('SEXREFERENCE_PARAM'),]
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
@@ -401,7 +444,10 @@ class Catalogue():
 
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
     def createCatalogue(self):
-        cat= open( self.catalogueFileName, 'r')
+        if( not self.fitsFile.isReference):
+            cat= open( self.catalogueFileName, 'r')
+        else:
+            cat= open( serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']), 'r')
         lines= cat.readlines()
         # rely on the fact that first line is stored as first element in list
         # match, element, data
@@ -414,19 +460,19 @@ class Catalogue():
             element = pElement.match(line)
             data    = pData.match(line)
             if( element):
-#                if(verbose):
-#                    print "element.group(1) : ", element.group(1)
-#                    print "element.group(2) : ", element.group(2)
+                if(verbose):
+                    print "element.group(1) : ", element.group(1)
+                    print "element.group(2) : ", element.group(2)
                 self.elements[element.group(1)]=element.group(2)
 
             elif( data):
-#                if(verbose):
-#                    print line
+                if(verbose):
+                    print line
 
                 items= line.split()
-#                if(verbose):
-#                    for item in items:
-#                        print item
+                if(verbose):
+                    for item in items:
+                        print item
 
                 for (i, item) in enumerate(items):
                     try:
@@ -473,22 +519,19 @@ class Catalogues():
     def isValid():
         return self.isValid
 
-    def reference(self):
+    def findReference(self):
         for cat in self.CataloguesList:
-            if( cat.isReference):
+            if( cat.findReference):
                 if( verbose):
-                    print 'Catalogues.reference: reference catalogue found for file: ' + cat.fitsFile.fitsFileName
+                    print 'Catalogues.findReference: reference catalogue found for file: ' + cat.fitsFile.fitsFileName
                 return cat
-
         if( verbose):
             print 'Catalogues: no reference fits file found'
-
         return False
 
     def validate(self):
-        
-        catr= self.reference()
-        if( catr== None):
+        catr= self.findReference()
+        if( catr== False):
             return self.isValid
 
         if( len(self.CataloguesList) > 1):
@@ -522,14 +565,17 @@ import pyfits
 
 class FitsFile():
     """Class holding fits file name and ist properties"""
-    def __init__(self, fitsFileName=None, filter=None):
+    def __init__(self, fitsFileName=None, isReference=False):
         self.fitsFileName= fitsFileName
-        self.filter= filter
+        self.isReference= isReference
         self.isValid= False
+        self.headerElements={}
 
         FitsFile.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+    def keys(self):
+        return self.headerElements.keys()
 
-    def isFilter(self):
+    def isFilter(self, filter):
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
@@ -542,12 +588,10 @@ class FitsFile():
             sys.exit(1)
 
         hdulist.close()
-
 #        if( verbose):
 #            hdulist.info()
 
-        if( self.filter==hdulist[0].header['FILTER']):
-            self.headerElements={}
+        if( filter == hdulist[0].header['FILTER']):
             self.headerElements['FILTER'] = hdulist[0].header['FILTER']
             self.headerElements['FOC_POS']= hdulist[0].header['FOC_POS']
             self.headerElements['BINNING']= hdulist[0].header['BINNING']
@@ -556,7 +600,6 @@ class FitsFile():
             self.headerElements['ORIRA']  = hdulist[0].header['ORIRA']
             self.headerElements['ORIDEC'] = hdulist[0].header['ORIDEC']
             return True
-
         else:
             return False
 
@@ -566,44 +609,57 @@ class FitsFiles():
         self.fitsFilesList= []
         self.isValid= False
 
-    def append( self, FitsFile):
+    def append(self, FitsFile):
         self.fitsFilesList.append(FitsFile)
 
     def fitsFiles(self):
         return self.fitsFilesList
 
     def findReference(self):
-
-        filter= runTimeConfig.filterByName('X')
-        
         for hdu in sorted(self.fitsFilesList):
-            if( filter.foc_pos < hdu.headerElements['FOC_POS']):
-                print "FOUND ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
+            if( hdu.isReference):
                 return hdu
         return False
 
-    def isValid():
+    def findReferenceByFocPos(self, filterName):
+        filter=  runTimeConfig.filterByName(filterName)
+#        for hdu in sorted(self.fitsFilesList):
+        for hdu in sorted(self.fitsFilesList):
+            if( filter.focDef < hdu.headerElements['FOC_POS']):
+                print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
+                return hdu
+        return False
+
+    def isValid(self):
         return self.isValid
 
-    def validate( elements):
+    def validate(self):
+        hdur= self.findReference()
+        if( hdur== False):
+            hdur= self.findReferenceByFocPos()
+            if( hdur== False):
+                if( verbose):
+                    print "Nothing found in  findReference and findReferenceByFocPos"
+                    return self.isValid
+
+        keys= hdur.keys()
         i= 0
         for hdu in self.fitsFilesList:
-## elents should become a dict, compare values with values and count
-            for element in elements:
-                if( element== hdu.headerElements[element]):
-                    i += 1
-
-            if( i == self.headerElements.len()):
+            for key in keys:
+                if(key == 'FOC_POS'):
+                    continue
+                if( hdur.headerElements[key]!= hdu.headerElements[key]):
+                    try:
+                        self.fitsFilesList.remove(hdu)
+                    except:
+                        logger.error('FitsFiles.validate: could not remove hdu for ' + hdu.fitsFileName)
+                        if(verbose):
+                            print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsFilesList.index(hdu)
+                    break
+            else:
                 hdu.isValid= True
                 if( verbose):
                     print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName
-            else:
-                try:
-                    self.fitsFilesList.remove(hdu)
-                except:
-                    logger.error('FitsFiles.validate: could not remove hdu for ' + hdu.fitsFileName)
-                if(verbose):
-                    print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsFilesList.index(hdu)
 
 
         if( len(self.fitsFilesList) > 0):
@@ -630,6 +686,17 @@ class ServiceFileOperations():
 
         fileName= runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
+
+    def expandToSkyList( self, filter=None):
+        if( filter==None):
+            logger.error('ServiceFileOperations.expandToTmp: no filter name given')
+        
+        items= runTimeConfig.value('SEXSKY_LIST').split('.')
+        fileName= self.prefix() + items[0] + '-' + filter + '-' +  self.now + '.' + items[1]
+        if(verbose):
+            print 'ServiceFileOperations:expandToSkyList expanded to ' + fileName
+        
+        return  self.expandToTmp(fileName)
 
     def expandToCat( self, fileName=None):
         if( fileName==None):
