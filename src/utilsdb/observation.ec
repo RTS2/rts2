@@ -18,6 +18,7 @@
  */
 
 #include "observation.h"
+#include "sqlerror.h"
 #include "target.h"
 #include "rts2taruser.h"
 #include "../utils/libnova_cpp.h"
@@ -43,7 +44,6 @@ Observation::Observation (int in_obs_id)
 	displayCounts = 0;
 	printHeader = true;
 }
-
 
 Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra,
 double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
@@ -246,9 +246,50 @@ Observation::loadCounts ()
 	return 0;
 }
 
+void Observation::startObservation ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_obs_id = getObsId ();
+	EXEC SQL END DECLARE SECTION;
+	EXEC SQL
+		UPDATE
+			observations
+		SET
+			obs_start = now ()
+		WHERE
+			obs_id = :d_obs_id;
+	if (sqlca.sqlcode != 0)
+	{
+		throw SqlError ();
+	}
+	EXEC SQL COMMIT;
+}
 
-void
-Observation::printObsHeader (std::ostream & _os)
+void Observation::endObservation (int _obs_state)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_obs_id = getObsId ();
+	int d_obs_state = obs_state;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL
+		UPDATE
+			observations
+		SET
+			obs_end = now (),
+			obs_state = :d_obs_state
+		WHERE
+			obs_id = :d_obs_id;
+	if (sqlca.sqlcode != 0)
+	{
+		EXEC SQL ROLLBACK;
+		obs_id = -1;
+		throw SqlError ();
+	}
+	EXEC SQL COMMIT;
+}
+
+void Observation::printObsHeader (std::ostream & _os)
 {
 	if (!printHeader)
 		return;

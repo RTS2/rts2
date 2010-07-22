@@ -66,16 +66,16 @@ class Observation
 		int loadImages ();
 		int loadCounts ();
 
+		void startObservation ();
+		void endObservation (int _obs_state);
+
 		void printObsHeader (std::ostream & _os);
 
 		void printCountsShort (std::ostream & _os);
 		void printCounts (std::ostream & _os);
 		void printCountsSummary (std::ostream & _os);
 
-		void setPrintImages (int in_printImages)
-		{
-			displayImages = in_printImages;
-		}
+		void setPrintImages (int in_printImages) { displayImages = in_printImages; }
 
 		void setPrintCounts (int in_printCounts)
 		{
@@ -84,10 +84,7 @@ class Observation
 			displayCounts = in_printCounts;
 		}
 
-		void setPrintHeader (bool in_printHeader)
-		{
-			printHeader = in_printHeader;
-		}
+		void setPrintHeader (bool in_printHeader) { printHeader = in_printHeader; }
 
 		/**
 		 * Return target structure.
@@ -109,43 +106,25 @@ class Observation
 		 *
 		 * @return Target id.
 		 */
-		int getTargetId ()
-		{
-			return tar_id;
-		}
+		int getTargetId () { return tar_id; }
 
-		char getTargetType ()
-		{
-			return tar_type;
-		}
+		char getTargetType () { return tar_type; }
 
 		/**
 		 * Return name of observation target.
 		 *
 		 * @return Target name.
 		 */
-		const std::string getTargetName ()
-		{
-			return tar_name;
-		}
+		const std::string getTargetName () { return tar_name; }
 
-		int getObsId ()
-		{
-			return obs_id;
-		}
+		int getObsId () { return obs_id; }
 
 		/**
 		 * Return time when telescope started slewing to observation location.
 		 */
-		double getObsSlew ()
-		{
-			return obs_slew;
-		}
+		double getObsSlew () { return obs_slew; }
 
-		double getObsStart ()
-		{
-			return obs_start;
-		}
+		double getObsStart () { return obs_start; }
 
 		double getObsJDStart ()
 		{
@@ -166,10 +145,7 @@ class Observation
 			return ln_get_julian_from_timet (&mid);
 		}
 
-		double getObsEnd ()
-		{
-			return obs_end;
-		}
+		double getObsEnd () { return obs_end; }
 
 		double getObsJDEnd ()
 		{
@@ -188,7 +164,6 @@ class Observation
 		 * @return Merit (=number between 0 and 1, higher means better).
 		 */
 		double altitudeMerit (double _start, double _end);
-
 
 		/**
 		 * Get equatiorial position of the target at the beginning of the observation.
@@ -220,20 +195,11 @@ class Observation
 			return 0;
 		}
 
-		double getObsRa ()
-		{
-			return obs_ra;
-		}
+		double getObsRa () { return obs_ra; }
 
-		double getObsDec ()
-		{
-			return obs_dec;
-		}
+		double getObsDec () { return obs_dec; }
 
-		ImageSet *getImageSet ()
-		{
-			return imgset;
-		}
+		ImageSet *getImageSet () { return imgset; }
 
 		int getUnprocessedCount ();
 
@@ -258,8 +224,7 @@ class Observation
 		/**
 		 * Return -1 when previous position cannot
 		 */
-		int getPrevPosition (struct ln_equ_posn &prevPoz,
-			struct ln_hrz_posn &hrzPoz);
+		int getPrevPosition (struct ln_equ_posn &prevPoz, struct ln_hrz_posn &hrzPoz);
 
 		void getEqu (struct ln_equ_posn &equ)
 		{
@@ -353,8 +318,6 @@ class Observation
 
 class ObservationState
 {
-	private:
-		int state;
 	public:
 		ObservationState (int in_state)
 		{
@@ -384,6 +347,8 @@ class ObservationState
 		
 			return _os;
 		}
+	private:
+		int state;
 };
 
 }

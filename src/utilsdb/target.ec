@@ -40,8 +40,7 @@ EXEC SQL include sqlca;
 
 using namespace rts2db;
 
-void
-Target::logMsgDb (const char *message, messageType_t msgType)
+void Target::logMsgDb (const char *message, messageType_t msgType)
 {
 	logStream (msgType) << "SQL error: " << sqlca.sqlcode << " " <<
 		sqlca.sqlerrm.sqlerrmc << " (at " << message << ")" << sendLog;
@@ -214,9 +213,7 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	}
 }
 
-
-void
-Target::printAltTable (std::ostream & _os, double JD)
+void Target::printAltTable (std::ostream & _os, double JD)
 {
 	double jd_start = ((int) JD) - 0.5;
 	_os
@@ -232,16 +229,12 @@ Target::printAltTable (std::ostream & _os, double JD)
 	printAltTable (_os, jd_start, 12, 24);
 }
 
-
-void
-Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step)
+void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step)
 {
 	printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
-
-Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):
-Rts2Target ()
+Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
@@ -264,7 +257,6 @@ Rts2Target ()
 
 	observationStart = -1;
 }
-
 
 Target::Target ()
 {
@@ -300,7 +292,6 @@ Target::Target ()
 	setTargetEnabled (n_tar_enabled, false);
 }
 
-
 Target::~Target (void)
 {
 	endObservation (-1);
@@ -309,16 +300,12 @@ Target::~Target (void)
 	delete observation;
 }
 
-
-int
-Target::load ()
+int Target::load ()
 {
 	return loadTarget (getObsTargetID ());
 }
 
-
-int
-Target::loadTarget (int in_tar_id)
+int Target::loadTarget (int in_tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
@@ -407,9 +394,7 @@ Target::loadTarget (int in_tar_id)
 	return 0;
 }
 
-
-int
-Target::save (bool overwrite)
+int Target::save (bool overwrite)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_new_id = getTargetID ();
@@ -433,9 +418,7 @@ Target::save (bool overwrite)
 	return save (overwrite, db_new_id);
 }
 
-
-int
-Target::save (bool overwrite, int tar_id)
+int Target::save (bool overwrite, int tar_id)
 {
 	// first, try an update..
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -576,9 +559,7 @@ Target::save (bool overwrite, int tar_id)
 	return 0;
 }
 
-
-int
-Target::compareWithTarget (Target *in_target, double in_sep_limit)
+int Target::compareWithTarget (Target *in_target, double in_sep_limit)
 {
 	struct ln_equ_posn other_position;
 	in_target->getPosition (&other_position);
@@ -586,17 +567,15 @@ Target::compareWithTarget (Target *in_target, double in_sep_limit)
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-
-moveType
-Target::startSlew (struct ln_equ_posn *position)
+moveType Target::startSlew (struct ln_equ_posn *position)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_tar_id = getObsTargetID ();
-		int d_obs_id;
-		double d_obs_ra;
-		double d_obs_dec;
-		float d_obs_alt;
-		float d_obs_az;
+	int d_tar_id = getObsTargetID ();
+	int d_obs_id;
+	double d_obs_ra;
+	double d_obs_dec;
+	float d_obs_alt;
+	float d_obs_az;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_hrz_posn hrz;
@@ -647,42 +626,23 @@ Target::startSlew (struct ln_equ_posn *position)
 	}
 	EXEC SQL COMMIT;
 	setObsId (d_obs_id);
+	observation = new Observation (d_obs_id);
 	return afterSlewProcessed ();
 }
 
-
-moveType
-Target::afterSlewProcessed ()
+moveType Target::afterSlewProcessed ()
 {
 	return OBS_MOVE;
 }
 
-
-int
-Target::startObservation (Rts2Block *master)
+int Target::startObservation (Rts2Block *master)
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-		int d_obs_id = getObsId ();
-	EXEC SQL END DECLARE SECTION;
 	if (observationStarted ())
 		return 0;
 	time (&observationStart);
-	if (getObsId () > 0)
+	if (observation && getObsId () > 0)
 	{
-		EXEC SQL
-			UPDATE
-				observations
-			SET
-				obs_start = now ()
-			WHERE
-				obs_id = :d_obs_id;
-		if (sqlca.sqlcode != 0)
-		{
-			logMsgDb ("cannot start observation", MESSAGE_ERROR);
-			EXEC SQL ROLLBACK;
-			return -1;
-		}
-		EXEC SQL COMMIT;
+		observation->startObservation ();
 		obsStarted ();
 	}
 	return 0;
@@ -701,59 +661,30 @@ int Target::endObservation (int in_next_id, Rts2Block *master)
 	return ret;
 }
 
-
-int
-Target::endObservation (int in_next_id)
+int Target::endObservation (int in_next_id)
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-		int d_obs_id = getObsId ();
-		int d_obs_state = getObsState ();
-	EXEC SQL END DECLARE SECTION;
-
 	if (isContinues () == 1 && in_next_id == getTargetID ())
 		return 1;
 	if (getObsId () > 0)
 	{
-		EXEC SQL
-			UPDATE
-				observations
-			SET
-				obs_end = now (),
-				obs_state = :d_obs_state
-			WHERE
-				obs_id = :d_obs_id;
-		if (sqlca.sqlcode != 0)
-		{
-			logMsgDb ("cannot end observation", MESSAGE_ERROR);
-			EXEC SQL ROLLBACK;
-			setObsId (-1);
-			return -1;
-		}
-		EXEC SQL COMMIT;
-
+		observation->endObservation (getObsState ());
 		setObsId (-1);
 	}
 	observationStart = -1;
 	return 0;
 }
 
-
-int
-Target::isContinues ()
+int Target::isContinues ()
 {
 	return 0;
 }
 
-
-int
-Target::observationStarted ()
+int Target::observationStarted ()
 {
 	return (observationStart > 0) ? 1 : 0;
 }
 
-
-int
-Target::secToObjectSet (double JD)
+int Target::secToObjectSet (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
@@ -767,9 +698,7 @@ Target::secToObjectSet (double JD)
 	return ret;
 }
 
-
-int
-Target::secToObjectRise (double JD)
+int Target::secToObjectRise (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
@@ -783,9 +712,7 @@ Target::secToObjectRise (double JD)
 	return ret;
 }
 
-
-int
-Target::secToObjectMeridianPass (double JD)
+int Target::secToObjectMeridianPass (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
@@ -799,17 +726,13 @@ Target::secToObjectMeridianPass (double JD)
 	return ret;
 }
 
-
-int
-Target::beforeMove ()
+int Target::beforeMove ()
 {
 	startCalledNum++;
 	return 0;
 }
 
-
-int
-Target::postprocess ()
+int Target::postprocess ()
 {
 	return 0;
 }
@@ -932,9 +855,7 @@ void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 	ln_get_hrz_from_equ (&object, observer, JD, hrz);
 }
 
-
-void
-Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
+void Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
 {
 	struct ln_equ_posn mid;
 	double midJD = (_start + _end) / 2.0;
@@ -988,17 +909,14 @@ Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
 		_min = absLat - 90 + mid.dec;
 }
 
-void
-Target::getGalLng (struct ln_gal_posn *gal, double JD)
+void Target::getGalLng (struct ln_gal_posn *gal, double JD)
 {
 	struct ln_equ_posn curr;
 	getPosition (&curr, JD);
 	ln_get_gal_from_equ (&curr, gal);
 }
 
-
-double
-Target::getGalCenterDist (double JD)
+double Target::getGalCenterDist (double JD)
 {
 	static struct ln_equ_posn cntr = { 265.610844, -28.916790 };
 	struct ln_equ_posn curr;
@@ -1006,9 +924,7 @@ Target::getGalCenterDist (double JD)
 	return ln_get_angular_separation (&curr, &cntr);
 }
 
-
-double
-Target::getAirmass (double JD)
+double Target::getAirmass (double JD)
 {
 	struct ln_hrz_posn hrz;
 	getAltAz (&hrz, JD);
@@ -1042,51 +958,40 @@ double Target::getDistance (struct ln_equ_posn *in_pos, double JD)
 	return ln_get_angular_separation (&object, in_pos);
 }
 
-
-double
-Target::getRaDistance (struct ln_equ_posn *in_pos, double JD)
+double Target::getRaDistance (struct ln_equ_posn *in_pos, double JD)
 {
 	struct ln_equ_posn object;
 	getPosition (&object, JD);
 	return ln_range_degrees (object.ra - in_pos->ra);
 }
 
-
-double
-Target::getSolarDistance (double JD)
+double Target::getSolarDistance (double JD)
 {
 	struct ln_equ_posn eq_sun;
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	return getDistance (&eq_sun, JD);
 }
 
-
-double
-Target::getSolarRaDistance (double JD)
+double Target::getSolarRaDistance (double JD)
 {
 	struct ln_equ_posn eq_sun;
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	return getRaDistance (&eq_sun, JD);
 }
 
-
-double
-Target::getLunarDistance (double JD)
+double Target::getLunarDistance (double JD)
 {
 	struct ln_equ_posn moon;
 	ln_get_lunar_equ_coords (JD, &moon);
 	return getDistance (&moon, JD);
 }
 
-
-double
-Target::getLunarRaDistance (double JD)
+double Target::getLunarRaDistance (double JD)
 {
 	struct ln_equ_posn moon;
 	ln_get_lunar_equ_coords (JD, &moon);
 	return getRaDistance (&moon, JD);
 }
-
 
 /**
  * This method is called to check that target which was selected as good is
@@ -1095,8 +1000,7 @@ Target::getLunarRaDistance (double JD)
  * It should reload from DB values, which are important for selection process,
  * and if they indicate that target should not be observed, it should return -1.
  */
-int
-Target::selectedAsGood ()
+int Target::selectedAsGood ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		bool d_tar_enabled;
@@ -1154,39 +1058,31 @@ Target::selectedAsGood ()
 	return -1;
 }
 
-
 /**
  * return 0 if we cannot observe that target, 1 if it's above horizon.
  */
-bool
-Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
+bool Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
 {
 	struct ln_hrz_posn hrz;
 	getAltAz (&hrz, JD);
 	return isAboveHorizon (&hrz);
 }
 
-
-bool
-Target::isGood (double JD)
+bool Target::isGood (double JD)
 {
 	struct ln_equ_posn pos;
 	getPosition (&pos, JD);
 	return isGood (ln_get_mean_sidereal_time (JD) + observer->lng / 15.0, JD, &pos);
 }
 
-
-bool
-Target::isAboveHorizon (struct ln_hrz_posn *hrz)
+bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 {
 	if (hrz->alt < getMinObsAlt ())
 		return 0;
 	return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
 }
 
-
-int
-Target::considerForObserving (double JD)
+int Target::considerForObserving (double JD)
 {
 	// horizon constrain..
 	struct ln_equ_posn curr_position;
@@ -1248,9 +1144,7 @@ Target::considerForObserving (double JD)
 	return selectedAsGood ();
 }
 
-
-int
-Target::dropBonus ()
+int Target::dropBonus ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id;
@@ -1273,16 +1167,12 @@ Target::dropBonus ()
 	return 0;
 }
 
-
-float
-Target::getBonus (double JD)
+float Target::getBonus (double JD)
 {
 	return tar_priority + tar_bonus;
 }
 
-
-int
-Target::changePriority (int pri_change, time_t *time_ch)
+int Target::changePriority (int pri_change, time_t *time_ch)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getObsTargetID ();
@@ -1307,18 +1197,14 @@ Target::changePriority (int pri_change, time_t *time_ch)
 	return 0;
 }
 
-
-int
-Target::changePriority (int pri_change, double validJD)
+int Target::changePriority (int pri_change, double validJD)
 {
 	time_t next;
 	ln_get_timet_from_julian (validJD, &next);
 	return changePriority (pri_change, &next);
 }
 
-
-int
-Target::setNextObservable (time_t *time_ch)
+int Target::setNextObservable (time_t *time_ch)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getObsTargetID ();
@@ -1355,18 +1241,14 @@ Target::setNextObservable (time_t *time_ch)
 	return 0;
 }
 
-
-int
-Target::setNextObservable (double validJD)
+int Target::setNextObservable (double validJD)
 {
 	time_t next;
 	ln_get_timet_from_julian (validJD, &next);
 	return setNextObservable (&next);
 }
 
-
-int
-Target::getNumObs (time_t *start_time, time_t *end_time)
+int Target::getNumObs (time_t *start_time, time_t *end_time)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_start_time = (int) *start_time;
@@ -1393,9 +1275,7 @@ Target::getNumObs (time_t *start_time, time_t *end_time)
 	return d_count;
 }
 
-
-double
-Target::getLastObsTime ()
+double Target::getLastObsTime ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = getTargetID ();
@@ -1427,8 +1307,7 @@ Target::getLastObsTime ()
 	return d_time_diff;
 }
 
-double
-Target::getFirstObs ()
+double Target::getFirstObs ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getTargetID ();
@@ -1452,9 +1331,7 @@ Target::getFirstObs ()
 	return ret;
 }
 
-
-double
-Target::getLastObs ()
+double Target::getLastObs ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getTargetID ();
@@ -1478,9 +1355,7 @@ Target::getLastObs ()
 	return ret;
 }
 
-
-void
-Target::printExtra (Rts2InfoValStream &_os, double JD)
+void Target::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	if (getTargetEnabled ())
 	{
@@ -1529,18 +1404,14 @@ void Target::printShortInfo (std::ostream & _os, double JD)
 	_os.precision (old_prec);
 }
 
-
-void
-Target::printDS9Reg (std::ostream & _os, double JD)
+void Target::printDS9Reg (std::ostream & _os, double JD)
 {
 	struct ln_equ_posn pos;
 	getPosition (&pos, JD);
 	_os << "circle(" << pos.ra << "," << pos.dec << "," << getSDiam (JD) << ")" << std::endl;
 }
 
-
-void
-Target::printShortBonusInfo (std::ostream & _os, double JD)
+void Target::printShortBonusInfo (std::ostream & _os, double JD)
 {
 	struct ln_equ_posn pos;
 	struct ln_hrz_posn hrz;
@@ -1562,9 +1433,7 @@ Target::printShortBonusInfo (std::ostream & _os, double JD)
 	_os.precision (old_prec);
 }
 
-
-int
-Target::printObservations (double radius, double JD, std::ostream &_os)
+int Target::printObservations (double radius, double JD, std::ostream &_os)
 {
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
@@ -1576,12 +1445,10 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
 	return obsset.size ();
 }
 
-
 rts2db::TargetSet Target::getTargets (double radius)
 {
 	return getTargets (radius, ln_get_julian_from_sys ());
 }
-
 
 rts2db::TargetSet Target::getTargets (double radius, double JD)
 {
@@ -1593,9 +1460,7 @@ rts2db::TargetSet Target::getTargets (double radius, double JD)
 	return tarset;
 }
 
-
-int
-Target::printTargets (double radius, double JD, std::ostream &_os)
+int Target::printTargets (double radius, double JD, std::ostream &_os)
 {
 	rts2db::TargetSet tarset = getTargets (radius, JD);
 	_os << tarset;
@@ -1603,9 +1468,7 @@ Target::printTargets (double radius, double JD, std::ostream &_os)
 	return tarset.size ();
 }
 
-
-int
-Target::printImages (double JD, std::ostream &_os, int flags)
+int Target::printImages (double JD, std::ostream &_os, int flags)
 {
 	struct ln_equ_posn tar_pos;
 	int ret;
@@ -1621,7 +1484,6 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 
 	return img_set.size ();
 }
-
 
 Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
@@ -1847,9 +1709,7 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< std::endl;
 }
 
-
-void
-Target::sendInfo (Rts2InfoValStream & _os, double JD)
+void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 {
 	struct ln_equ_posn pos;
 	double gst;
@@ -1901,9 +1761,7 @@ rts2db::TargetSet * Target::getCalTargets (double JD, double minaird)
 	return ret;
 }
 
-
-void
-Target::writeToImage (Rts2Image * image, double JD)
+void Target::writeToImage (Rts2Image * image, double JD)
 {
 	// write lunar distance
 	struct ln_equ_posn moon;
@@ -1918,18 +1776,14 @@ Target::writeToImage (Rts2Image * image, double JD)
 	image->setValue ("MOONAZ", hmoon.az, "lunar azimuth");
 }
 
-
-std::ostream &
-operator << (std::ostream &_os, Target &target)
+std::ostream & operator << (std::ostream &_os, Target &target)
 {
 	Rts2InfoValOStream _ivos = Rts2InfoValOStream (&_os);
 	target.sendInfo (_ivos);
 	return _os;
 }
 
-
-Rts2InfoValStream &
-operator << (Rts2InfoValStream &_os, Target &target)
+Rts2InfoValStream & operator << (Rts2InfoValStream &_os, Target &target)
 {
 	target.sendInfo (_os);
 	return _os;
