@@ -193,6 +193,8 @@ int A3200::setIO (AXISINDEX ax, bool state)
 		logErr ("setIO", eRc);
 		return -1;
 	}
+	usleep (USEC_SEC / 2);
+	AerSysFaultAck (hAerCtrl, ax, TASKMASK_ALL, 0);
 	return 0;
 }
 
@@ -238,9 +240,9 @@ A3200::A3200 (int in_argc, char **in_argv)
 	createValue (ax2, "AX2", "second axis", true, RTS2_VALUE_WRITABLE);
 	createValue (ax3, "AX3", "third axis", true, RTS2_VALUE_WRITABLE);
 
-	createValue (out1, "DRIVER_OUT1", "output state of X signal", false, RTS2_VALUE_WRITABLE);
-	createValue (out2, "DRIVER_OUT2", "output state of Y signal", false, RTS2_VALUE_WRITABLE);
-	createValue (out3, "DRIVER_OUT3", "output state of Z signal", false, RTS2_VALUE_WRITABLE);
+	createValue (out1, "IO1", "output state of the first axis IO", false, RTS2_VALUE_WRITABLE);
+	createValue (out2, "IO2", "output state of the second axis IO", false, RTS2_VALUE_WRITABLE);
+	createValue (out3, "IO3", "output state of the third axis IO", false, RTS2_VALUE_WRITABLE);
 
 	out1->setValueBool (false);
 	out2->setValueBool (false);
