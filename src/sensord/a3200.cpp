@@ -34,6 +34,20 @@ namespace rts2sensord
 
 class A3200:public Sensor
 {
+
+	public:
+		A3200 (int in_argc, char **in_argv);
+		virtual ~ A3200 (void);
+
+		virtual int init ();
+		virtual int info ();
+
+		int commandAuthorized (Rts2Conn * conn);
+
+	protected:
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int processOption (int in_opt);
+
 	private:
 		HAERCTRL hAerCtrl;
 		AXISINDEX mAxis;
@@ -41,6 +55,10 @@ class A3200:public Sensor
 		Rts2ValueDoubleMinMax *ax1;
 		Rts2ValueDoubleMinMax *ax2;
 		Rts2ValueDoubleMinMax *ax3;
+
+		Rts2ValueBool *out1;
+		Rts2ValueBool *out2;
+		Rts2ValueBool *out3;
 
 		Rts2ValueInteger *moveCount;
 
@@ -51,27 +69,15 @@ class A3200:public Sensor
 		int moveEnable ();
 		int home ();
 		int moveAxis (AXISINDEX ax, LONG tar);
-
-	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-		virtual int processOption (int in_opt);
-
-	public:
-		A3200 (int in_argc, char **in_argv);
-		virtual ~ A3200 (void);
-
-		virtual int init ();
-		virtual int info ();
-
-		int commandAuthorized (Rts2Conn * conn);
-};
+		int setIO (AXISINDEX ax, bool state);
 
 };
+
+}
 
 using namespace rts2sensord;
 
-void
-A3200::logErr (char *proc, AERERR_CODE eRc)
+void A3200::logErr (char *proc, AERERR_CODE eRc)
 {
 	TCHAR szMsg[MAX_TEXT_LEN];
 
@@ -80,8 +86,7 @@ A3200::logErr (char *proc, AERERR_CODE eRc)
 }
 
 
-int
-A3200::moveEnable ()
+int A3200::moveEnable ()
 {
 	AERERR_CODE eRc;
 	eRc = AerMoveMEnable (hAerCtrl, mAxis);
@@ -100,13 +105,14 @@ A3200::moveEnable ()
 }
 
 
-int
-A3200::home ()
+int A3200::home ()
 {
 	AERERR_CODE eRc;
 	int ret = moveEnable ();
 	if (ret)
 		return ret;
+	if (setIO (AXISINDEX_1, true) || setIO (AXISINDEX_2, true) || setIO (AXISINDEX_3, true))
+		return -1;
 	logStream (MESSAGE_DEBUG) << "All axis enabled, homing" << sendLog;
 	// first home Z axis..
 	eRc = AerMoveHome (hAerCtrl, AXISINDEX_3);
@@ -135,12 +141,13 @@ A3200::home ()
 		return -1;
 	}
 	logStream (MESSAGE_DEBUG) << "All axis homed properly" << sendLog;
+	if (setIO (AXISINDEX_1, false) || setIO (AXISINDEX_2, false) || setIO (AXISINDEX_3, false))
+		return -1;
 	return 0;
 }
 
 
-int
-A3200::moveAxis (AXISINDEX ax, LONG tar)
+int A3200::moveAxis (AXISINDEX ax, LONG tar)
 {
 	AERERR_CODE eRc;
 	blockExposure ();
@@ -152,6 +159,11 @@ A3200::moveAxis (AXISINDEX ax, LONG tar)
 			return ret;
 	}
 	moveCount->inc ();
+	if (setIO (ax, true))
+	{
+		clearExposure ();
+		return -1;
+	}
 	eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
 	if (eRc != AERERR_NOERR)
 	{
@@ -167,24 +179,49 @@ A3200::moveAxis (AXISINDEX ax, LONG tar)
 		return -1;
 	}
 	clearExposure ();
+	if (setIO (ax, false))
+		return -1;
+	return 0;
+}
+
+int A3200::setIO (AXISINDEX ax, bool state)
+{
+	AERERR_CODE eRc;
+	eRc = AerIOSetDriveOutputDWord (hAerCtrl, ax, state ? 0xf00 : 0x000);
+	if (eRc != AERERR_NOERR)
+	{
+		logErr ("setIO", eRc);
+		return -1;
+	}
 	return 0;
 }
 
 
-int
-A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == ax1)
 	{
-		return moveAxis (AXISINDEX_1, new_value->getValueDouble () * AX_SCALE1);
+		return moveAxis (AXISINDEX_1, (long) (new_value->getValueDouble () * AX_SCALE1));
 	}
 	if (old_value == ax2)
 	{
-		return moveAxis (AXISINDEX_2, new_value->getValueDouble () * AX_SCALE2);
+		return moveAxis (AXISINDEX_2, (long) (new_value->getValueDouble () * AX_SCALE2));
 	}
 	if (old_value == ax3)
 	{
-		return moveAxis (AXISINDEX_3, new_value->getValueDouble () * AX_SCALE3);
+		return moveAxis (AXISINDEX_3, (long) (new_value->getValueDouble () * AX_SCALE3));
+	}
+	if (old_value == out1)
+	{
+		return setIO (AXISMASK_1, ((Rts2ValueBool *) new_value)->getValueBool ());
+	}
+	if (old_value == out2)
+	{
+		return setIO (AXISMASK_2, ((Rts2ValueBool *) new_value)->getValueBool ());
+	}
+	if (old_value == out3)
+	{
+		return setIO (AXISMASK_3, ((Rts2ValueBool *) new_value)->getValueBool ());
 	}
 	return Sensor::setValue (old_value, new_value);
 }
@@ -201,6 +238,14 @@ A3200::A3200 (int in_argc, char **in_argv)
 	createValue (ax2, "AX2", "second axis", true, RTS2_VALUE_WRITABLE);
 	createValue (ax3, "AX3", "third axis", true, RTS2_VALUE_WRITABLE);
 
+	createValue (out1, "DRIVER_OUT1", "output state of X signal", false, RTS2_VALUE_WRITABLE);
+	createValue (out2, "DRIVER_OUT2", "output state of Y signal", false, RTS2_VALUE_WRITABLE);
+	createValue (out3, "DRIVER_OUT3", "output state of Z signal", false, RTS2_VALUE_WRITABLE);
+
+	out1->setValueBool (false);
+	out2->setValueBool (false);
+	out3->setValueBool (false);
+
 	createValue (moveCount, "moveCount", "number of axis movements", false);
 	moveCount->setValueInteger (0);
 
@@ -214,8 +259,7 @@ A3200::~A3200 (void)
 }
 
 
-int
-A3200::processOption (int in_opt)
+int A3200::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -227,8 +271,7 @@ A3200::processOption (int in_opt)
 }
 
 
-int
-A3200::init ()
+int A3200::init ()
 {
 	AERERR_CODE eRc = AERERR_NOERR;
 	int ret;
@@ -236,8 +279,8 @@ A3200::init ()
 	if (ret)
 		return ret;
 
-	eRc =
-		AerSysInitialize (0, initFile, 1, &hAerCtrl, NULL, NULL, NULL, NULL, NULL,
+	eRc = 
+ 		AerSysInitialize (0, initFile, 1, &hAerCtrl, NULL, NULL, NULL, NULL, NULL,
 		NULL, NULL, NULL);
 
 	if (eRc != AERERR_NOERR)
@@ -250,8 +293,7 @@ A3200::init ()
 }
 
 
-int
-A3200::info ()
+int A3200::info ()
 {
 	DWORD dwUnits;
 	DWORD dwDriveStatus[MAX_REQUESTED];
@@ -265,11 +307,7 @@ A3200::info ()
 
 	dwUnits = 0;				 // we want counts as units for the pos/vels
 
-	eRc = AerStatusGetAxisInfoEx (hAerCtrl, mAxis, dwUnits,
-		dwDriveStatus,
-		dwAxisStatus,
-		dwFault,
-		dPosition, dPositionCmd, dVelocityAvg);
+	eRc = AerStatusGetAxisInfoEx (hAerCtrl, mAxis, dwUnits, dwDriveStatus, dwAxisStatus, dwFault, dPosition, dPositionCmd, dVelocityAvg);
 	if (eRc != AERERR_NOERR)
 	{
 		logErr ("info AerStatusGetAxisInfoEx", eRc);
@@ -282,8 +320,7 @@ A3200::info ()
 }
 
 
-int
-A3200::commandAuthorized (Rts2Conn * conn)
+int A3200::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -295,8 +332,7 @@ A3200::commandAuthorized (Rts2Conn * conn)
 }
 
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	A3200 device = A3200 (argc, argv);
 	return device.run ();
