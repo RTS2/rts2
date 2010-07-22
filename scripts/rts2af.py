@@ -333,10 +333,10 @@ class SExtractorParams():
             self.paramsFileName= runTimeConfig.value('SEXREFERENCE_PARAM')
         else:
             self.paramsFileName= paramsFileName
-        self.paramsSExtractor= []
+        self.paramsSExtractorReference= []
+        self.paramsSExtractorAssoc= []
 
     def readSExtractorParams(self):
-        tmpList= []
         params=open( self.paramsFileName, 'r')
         lines= params.readlines()
         pElement = re.compile( r'([\w]+)')
@@ -345,15 +345,58 @@ class SExtractorParams():
             if( element):
                 if(verbose):
                     print "element.group(1) : ", element.group(1)
-                self.paramsSExtractor.append(element.group(1))
-                tmpList.append(element.group(1))
-        for element in tmpList:
-            self.paramsSExtractor.append(element)
-###VECTOR_ASSOC(14)
-###NUMBER_ASSOC
-        for element in self.paramsSExtractor:
-             print "element : ", element
+                self.paramsSExtractorReference.append(element.group(1))
+                self.paramsSExtractorAssoc.append(element.group(1))
 
+# current structure of the reference catalogue
+#   1 NUMBER                 Running object number
+#   2 X_IMAGE                Object position along x                                    [pixel]
+#   3 Y_IMAGE                Object position along y                                    [pixel]
+#   4 FLUX_ISO               Isophotal flux                                             [count]
+#   5 FLUX_APER              Flux vector within fixed circular aperture(s)              [count]
+#   6 FLUXERR_APER           RMS error vector for aperture flux(es)                     [count]
+#   7 MAG_APER               Fixed aperture magnitude vector                            [mag]
+#   8 MAGERR_APER            RMS error vector for fixed aperture mag.                   [mag]
+#   9 FLUX_MAX               Peak flux above background                                 [count]
+#  10 ISOAREA_IMAGE          Isophotal area above Analysis threshold                    [pixel**2]
+#  11 FLAGS                  Extraction flags
+#  12 FWHM_IMAGE             FWHM assuming a gaussian core                              [pixel]
+#  13 FLUX_RADIUS            Fraction-of-light radii                                    [pixel]
+#  14 ELLIPTICITY            1 - B_IMAGE/A_IMAGE
+
+# current structure of the associated catalogue
+#   1 NUMBER                 Running object number
+#   2 X_IMAGE                Object position along x                                    [pixel]
+#   3 Y_IMAGE                Object position along y                                    [pixel]
+#   4 FLUX_ISO               Isophotal flux                                             [count]
+#   5 FLUX_APER              Flux vector within fixed circular aperture(s)              [count]
+#   6 FLUXERR_APER           RMS error vector for aperture flux(es)                     [count]
+#   7 MAG_APER               Fixed aperture magnitude vector                            [mag]
+#   8 MAGERR_APER            RMS error vector for fixed aperture mag.                   [mag]
+#   9 FLUX_MAX               Peak flux above background                                 [count]
+#  10 ISOAREA_IMAGE          Isophotal area above Analysis threshold                    [pixel**2]
+#  11 FLAGS                  Extraction flags
+#  12 FWHM_IMAGE             FWHM assuming a gaussian core                              [pixel]
+#  13 FLUX_RADIUS            Fraction-of-light radii                                    [pixel]
+#  14 ELLIPTICITY            1 - B_IMAGE/A_IMAGE
+#  15 VECTOR_ASSOC           ASSOCiated parameter vector
+#  29 NUMBER_ASSOC           Number of ASSOCiated IDs
+            
+        self.paramsSExtractorAssoc.append('VECTOR_ASSOC')
+        self.paramsSExtractorAssoc.append('NUMBER_ASSOC')
+
+
+        for element in self.paramsSExtractorReference:
+            self.paramsSExtractorAssoc.append(element)
+
+        for element in  self.paramsSExtractorReference:
+            print "Reference element : >"+ element+"<"
+        for element in  self.paramsSExtractorAssoc:
+            print "Association element : >" + element+"<"
+
+
+    def index(self, element):
+        return self.paramsSExtractorAssoc(element)
 
 class Filter:
     """Class for filter properties"""
@@ -379,8 +422,6 @@ class Filter:
     def exposure(self):
         return self.exposure
 
-
-
 import shlex
 import subprocess
 import re
@@ -393,10 +434,11 @@ class Catalogue():
         self.elements  = {}
         self.isReference = False
         self.isValid= False
-        print "===============================" + repr(self.isReference) + "=========="  + self.fitsFile.fitsFileName
 
     def hdu(self):
         return self.fitsFile
+    def isReference(self):
+        return self.isReference
 
     def extractToCatalogue(self):
         if( verbose):
@@ -407,7 +449,17 @@ class Catalogue():
         # 2>/dev/null swallowed by PIPE
         (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
 
-        if( not self.fitsFile.isReference):
+        if( self.fitsFile.isReference):
+            self.isReference = True 
+            cmd= [  prg,
+                    self.fitsFile.fitsFileName, 
+                    '-c ',
+                    runTimeConfig.value('SEXCFG'),
+                    '-CATALOG_NAME',
+                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']),
+                    '-PARAMETERS_NAME',
+                    runTimeConfig.value('SEXREFERENCE_PARAM'),]
+        else:
             cmd= [  prg,
                     self.fitsFile.fitsFileName, 
                     '-c ',
@@ -419,31 +471,25 @@ class Catalogue():
                     '-ASSOC_NAME',
                     serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER'])
                     ]
-        else:
-
-            cmd= [  prg,
-                    self.fitsFile.fitsFileName, 
-                    '-c ',
-                    runTimeConfig.value('SEXCFG'),
-                    '-CATALOG_NAME',
-                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']),
-                    '-PARAMETERS_NAME',
-                    runTimeConfig.value('SEXREFERENCE_PARAM'),]
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'extractToCatalogue: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'Catalogue.extractToCatalogue: I/O error({0}): {1}'.format(errno, strerror))
             sys.exit(1)
 
         except:
-            logging.error('extractToCatalogue: '+ repr(cmd) + ' died')
+            logging.error('Catalogue.extractToCatalogue: '+ repr(cmd) + ' died')
             sys.exit(1)
 
 
 
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
-    def createCatalogue(self):
+    def createCatalogue(self, SExtractorParams=None):
+        if( SExtractorParams==None):
+            logger.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
+            return False
+
         if( not self.fitsFile.isReference):
             cat= open( self.catalogueFileName, 'r')
         else:
@@ -460,29 +506,43 @@ class Catalogue():
             element = pElement.match(line)
             data    = pData.match(line)
             if( element):
-                if(verbose):
-                    print "element.group(1) : ", element.group(1)
-                    print "element.group(2) : ", element.group(2)
-                self.elements[element.group(1)]=element.group(2)
-
+#                if(verbose):
+#                    print "element.group(1) : ", element.group(1)
+#                    print "element.group(2) : ", element.group(2)
+            
+                try:
+                    SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
+                except:
+                    logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
+                    break
             elif( data):
-                if(verbose):
-                    print line
+#                if(verbose):
+#                    print line
 
                 items= line.split()
-                if(verbose):
-                    for item in items:
-                        print item
+#                if(verbose):
+#                    for item in items:
+#                        print item
 
-                for (i, item) in enumerate(items):
+                for (j, item) in enumerate(items):
+#                    print "file " + self.fitsFile.fitsFileName + "======= %d" % j + ' value ' + item + ' name ' + SExtractorParams.paramsSExtractorAssoc[j] 
+
+#                    sys.exit(1)
                     try:
-                        self.catalogue[self.elements[str(i+1)]]= item
+                        self.catalogue[(i, SExtractorParams.paramsSExtractorAssoc[j])]= item
                     except:
-                        print 'readCatalogue: exception %d' % i +  ' '+ self.elements[str(i+1)] + ' ' + item 
-                        sys.exit(1)
+                        print 'readCatalogue: exception %d' % j +  ' '+ self.elements[str(j)] + ' ' + item 
+                        break
+                else:
+                    pass
             else:
                 logger.error( 'Catalogue.readCatalogue: no match on line %d' % i)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
+                break
+        else: # exhausted
+            self.isValid= True
+            
+        return self.isValid
 
 #            if(verbose):    
 #                for item, value in  sorted(self.catalogue.iteritems()):
@@ -492,14 +552,16 @@ class Catalogue():
     def average(self, variable):
         sum= 0
         i= 0
-        for item, value in  sorted(self.catalogue.iteritems()):
+#        for item, value in  sorted(self.catalogue.iteritems()):
+        for (i,item), value in  self.catalogue.items():
             if( item == variable):
+#                print "==" + item + "================ %f" % float(value)
                 sum += float(value)
                 i += 1
 
         if(verbose):
             if( i != 0):
-                print 'average %f' % (sum/ float(i))
+                print 'average %f ' % (sum/ float(i)) 
             else:
                 print 'Error in average i=0'
 
@@ -521,7 +583,7 @@ class Catalogues():
 
     def findReference(self):
         for cat in self.CataloguesList:
-            if( cat.findReference):
+            if( cat.isReference):
                 if( verbose):
                     print 'Catalogues.findReference: reference catalogue found for file: ' + cat.fitsFile.fitsFileName
                 return cat
@@ -537,25 +599,26 @@ class Catalogues():
         if( len(self.CataloguesList) > 1):
             # default is False
             for cat in self.CataloguesList:
-# dummy
-                if( cat.isValid== catr.isValid):
+                if( cat.isValid== True):
                     if( verbose):
                         print 'Catalogues.validate: valid cat for: ' + cat.fitsFile.fitsFileName
-                    cat.isValid= True
-
-                if( verbose):
-                    print "catalog set to valid again"
-                    cat.isValid= True
-
-                if(cat.isValid==False):
+                    continue
+                else:
                     if( verbose):
                         print 'Catalogues.validate: removed cat for: ' + cat.fitsFile.fitsFileName
-                    self.CataloguesList.remove(cat)
 
-            if( len(self.CataloguesList) > 0):
-                self.isValid= True
+                    try:
+                        self.CataloguesList.remove(cat)
+                    except:
+                        logger.error('Catalogues.validate: could not remove cat for ' + cat.fitsFile.fitsFileName)
+                        if(verbose):
+                            print "Catalogues.validate: failed to removed cat: " + cat.fitsFile.fitsFileName
+                    break
+            else:
+                if( len(self.CataloguesList) > 0):
+                    self.isValid= True
+                    return self.isValid
 
-            return self.isValid
 
         return False
  
@@ -570,8 +633,8 @@ class FitsFile():
         self.isReference= isReference
         self.isValid= False
         self.headerElements={}
-
         FitsFile.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+
     def keys(self):
         return self.headerElements.keys()
 
@@ -655,8 +718,8 @@ class FitsFiles():
                         logger.error('FitsFiles.validate: could not remove hdu for ' + hdu.fitsFileName)
                         if(verbose):
                             print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsFilesList.index(hdu)
-                    break
-            else:
+                    break # really break out the keys loop 
+            else: # exhausted
                 hdu.isValid= True
                 if( verbose):
                     print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName

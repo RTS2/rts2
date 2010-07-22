@@ -72,7 +72,7 @@ class main(rts2af.AFScript):
 
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
-        sys.exit(1)
+
 #        if( rts2af.verbose):
 #            for fitsFiles in testFitsList:
 #                print 'FitsFile to be analyzed: '+ fitsFiles
@@ -103,7 +103,7 @@ class main(rts2af.AFScript):
 
             cat= rts2af.Catalogue(hdu)
             cat.extractToCatalogue()
-            cat.createCatalogue()
+            cat.createCatalogue(paramsSexctractor)
             cats.append(cat)
 
         if(cats.validate()):
