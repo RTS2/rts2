@@ -878,7 +878,7 @@ class Camera:public Rts2ScriptDevice
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
 		void startImageData (Rts2Conn * conn);
-		int sendFirstLine (int chan = 0);
+		int sendFirstLine (int chan);
 
 		// if true, send command OK after exposure is started
 		bool sendOkInExposure;

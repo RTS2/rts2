@@ -1106,7 +1106,14 @@ int Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 
 int Camera::readoutStart ()
 {
-	return sendFirstLine ();
+	int ret;
+	for (int i = 0; i < dataChannels->getValueInteger (); i++)
+	{
+		ret = sendFirstLine (i);
+		if (ret)
+			return ret;
+	}
+	return ret;
 }
 
 int Camera::camReadout (Rts2Conn * conn)
