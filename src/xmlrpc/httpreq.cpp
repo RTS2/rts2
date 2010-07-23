@@ -203,9 +203,11 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 			pos.ra = ((Rts2ValueRaDec *) val)->getRa ();
 			pos.dec  = ((Rts2ValueRaDec *) val)->getDec ();
 
-			ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
-
-			altaz.plotCross (&hrz, NULL, "blue");
+			if (!(isnan (pos.ra) || isnan (pos.dec)))
+			{
+				ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
+				altaz.plotCross (&hrz, NULL, "blue");
+			}
 		}
 	}
 

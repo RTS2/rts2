@@ -22,6 +22,7 @@
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 
 #include <math.h>
+#include <iostream>
 
 using namespace rts2xmlrpc;
 
@@ -72,6 +73,12 @@ void AltAz::plotAltAzGrid ()
 void AltAz::plotCross (struct ln_hrz_posn *hrz, const char* label, const char* color)
 {
 	// calculate x and y
+
+	if (isnan (hrz->alt) || isnan (hrz->az))
+	{
+		std::cerr << "Cannot plot nan coordinates: " << hrz->alt << " " << hrz->az << std::endl;
+		return;
+	}
 	
 	double alt = l * (90 - hrz->alt) / 90; 
 	double az = ln_deg_to_rad (hrz->az) + rotation;
