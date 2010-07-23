@@ -170,6 +170,7 @@ class DataWrite
 	public:
 		DataWrite (int channum, long *chansize);
 		long getDataSize ();
+		long getChannelSize (int chan) { return binaryWriteDataSize[chan]; }
 
 		void dataWritten (int chan, long size) { binaryWriteDataSize[chan] -= size; }
 

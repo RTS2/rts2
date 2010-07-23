@@ -543,6 +543,18 @@ class Rts2Conn:public Rts2Object
 			return ((*iter).second)->getDataSize ();
 		}
 
+		/**
+		 * Return size of data we have to write on given channel.
+		 */
+		long getWriteBinaryDataSize (int data_conn, int chan)
+		{
+			// if it exists..
+			std::map <int, rts2core::DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			if (iter == writeChannels.end ())
+				return 0;
+			return ((*iter).second)->getChannelSize (chan);
+		}
+
 	protected:
 		char *buf;
 		size_t buf_size;

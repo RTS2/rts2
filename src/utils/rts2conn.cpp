@@ -1730,7 +1730,7 @@ void Rts2Conn::dataReceived ()
 	if (otherDevice)
 		otherDevice->dataReceived (((*iter).second)->at(activeReadChannel));
 	getMaster ()->binaryDataArrived (this);
-	if (((*iter).second)->getRestSize () == 0)
+	if (((*iter).second)->at(activeReadChannel)->getRestSize () == 0)
 	{
 		if (otherDevice)
 			otherDevice->fullDataReceived ((*iter).first, (*iter).second);
