@@ -370,7 +370,7 @@ class Camera:public Rts2ScriptDevice
 		 */
 		int sendImage (char *data, size_t dataSize);
 
-		int sendReadoutData (char *data, size_t dataSize);
+		int sendReadoutData (char *data, size_t dataSize, int chan = 0);
 		
 		/**
 		 * Return number of bytes which are left from the image.
@@ -386,6 +386,23 @@ class Camera:public Rts2ScriptDevice
 				return calculateDataSize;
 			if (exposureConn)
 				return exposureConn->getWriteBinaryDataSize (currentImageData);
+			return 0;
+		}
+
+		/**
+		 * Return number of bytes which are left from the image for the given channel.
+		 *
+		 * @return Number of bytes left from the image.
+		 */
+		long getWriteBinaryDataSize (int chan)
+		{
+			if (currentImageData == -2)
+				return dataBufferSize - *((unsigned long*) shmBuffer);
+			if (currentImageData < 0 && calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+				// end bytes
+				return calculateDataSize;
+			if (exposureConn)
+				return exposureConn->getWriteBinaryDataSize (currentImageData, chan);
 			return 0;
 		}
 
@@ -462,6 +479,9 @@ class Camera:public Rts2ScriptDevice
 
 		int willConnect (Rts2Address * in_addr);
 		char *device_file;
+		// number of data channels
+		Rts2ValueInteger *dataChannels;
+
 		// temperature and others; all in deg Celsius
 		Rts2ValueFloat *tempAir;
 		Rts2ValueFloat *tempCCD;
@@ -653,6 +673,11 @@ class Camera:public Rts2ScriptDevice
 		 * @param @data     Optional data associated with enumeration.
 		 */
 		void addShutterType (const char *enumName, Rts2SelData *data = NULL) { expType->addSelVal (enumName, data); }
+
+		/**
+		 * CCDs with multiple data channels.
+		 */
+		void createDataChannels () { createValue (dataChannels, "DATA_CHANNELS", "total number of data channels"); }
 
 		/**
 		 * Create value for air temperature camera sensor. Use on CCDs which
@@ -853,7 +878,7 @@ class Camera:public Rts2ScriptDevice
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
 		void startImageData (Rts2Conn * conn);
-		int sendFirstLine ();
+		int sendFirstLine (int chan = 0);
 
 		// if true, send command OK after exposure is started
 		bool sendOkInExposure;

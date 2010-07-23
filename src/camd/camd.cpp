@@ -220,13 +220,16 @@ void Camera::startImageData (Rts2Conn * conn)
 	}
 	else
 	{
-		long chansize[1] = { chipByteSize () + sizeof (imghdr) };
-		currentImageData = conn->startBinaryData (dataType->getValueInteger (), 1, chansize);
+		int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
+		long chansize[chnTot];
+		for (int i = 0; i < chnTot; i++)
+			chansize[i] = chipByteSize () + sizeof (imghdr);
+		currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
 		exposureConn = conn;
 	}
 }
 
-int Camera::sendFirstLine ()
+int Camera::sendFirstLine (int chan)
 {
 	int w, h;
 	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
@@ -246,7 +249,7 @@ int Camera::sendFirstLine ()
 	else
 		focusingHeader->shutter = 0;
 
-	focusingHeader->channel = 0;
+	focusingHeader->channel = chan;
 	focusingHeader->totalChannel = 1;
 
 	sum->setValueDouble (0);
@@ -259,7 +262,7 @@ int Camera::sendFirstLine ()
 		*((unsigned long *) shmBuffer) = 0;
 	// send it out - but do not include it in average etc. calculations
 	if (exposureConn && currentImageData >= 0)
-		return exposureConn->sendBinaryData (currentImageData, 0, (char *) focusingHeader, sizeof (imghdr));
+		return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
 	return 0;
 }
 
@@ -277,6 +280,8 @@ int Camera::setSubExposure (double in_subexposure)
 Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
 	expType = NULL;
+
+	dataChannels = NULL;
 
 	tempAir = NULL;
 	tempCCD = NULL;
@@ -576,11 +581,11 @@ int Camera::sendImage (char *data, size_t dataSize)
 		if (currentImageData == -1)
 			return -1;
 	}
-	sendFirstLine ();
+	sendFirstLine (0);
 	return sendReadoutData (data, dataSize);
 }
 
-int Camera::sendReadoutData (char *data, size_t dataSize)
+int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 {
 	// calculated..
 	if (calculateStatistics->getValueInteger () != STATISTIC_NO)
@@ -635,7 +640,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 		*((unsigned long *) shmBuffer) += dataSize;
 
 	if (exposureConn && currentImageData >= 0)
-		return exposureConn->sendBinaryData (currentImageData, 0, data, dataSize);
+		return exposureConn->sendBinaryData (currentImageData, chan, data, dataSize);
 	return 0;
 }
 
@@ -1010,7 +1015,7 @@ int Camera::camStartExposureWithoutCheck ()
 	}
 
 	// increas buffer size
-	if (dataBufferSize < suggestBufferSize ())
+	if (suggestBufferSize () > 0 && dataBufferSize < suggestBufferSize ())
 	{
 		delete[] dataBuffer;
 		dataBufferSize = suggestBufferSize ();
