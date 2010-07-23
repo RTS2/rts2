@@ -254,35 +254,6 @@ class Rts2Daemon:public Rts2Block
 		void addConstValue (const char *in_name, int in_value);
 
 		/**
-		 * BOP management routines.
-		 * Those routines are used to manage BOP (Block OPeration) mask. It is used
-		 * to decide, which actions can be performed without disturbing observation flow.
-		 *
-		 * @param in_value Value which will be added to blocking values.
-		 *
-		 * @note This function and @see Rts2Daemon::removeBopValue are called
-		 * dynamically during execution of value changes when it is discovered, that
-		 * value cannot be changed due to different state of device then is required.
-		 */
-		void addBopValue (Rts2Value * in_value);
-
-		/**
-		 * Remove value from BOP list.
-		 *
-		 * @see Rts2Daemon::addBopValue
-		 *
-		 * @param in_value Value which will be removed.
-		 *
-		 * @pre Value was sucessfully updated.
-		 */
-		void removeBopValue (Rts2Value * in_value);
-
-		/**
-		 * Check if some of the BOP values can be removed from the list.
-		 */
-		void checkBopStatus ();
-
-		/**
 		 * Set value. This is the function that get called when user want to change some value, either interactively through
 		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables 
 		 * beiing overwritten. If variable has flag RTS2_VALUE_WRITABLE, default implemetation returns sucess. If setting variable
@@ -495,10 +466,6 @@ class Rts2Daemon:public Rts2Block
 		// values which do not change, they are send only once at connection
 		// initialization
 		Rts2ValueVector constValues;
-
-		// This vector holds list of values which are currenlty beeing changed
-		// It is used to manage BOP mask
-		Rts2ValueVector bopValues;
 
 		Rts2ValueTime *info_time;
 

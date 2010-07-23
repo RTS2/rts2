@@ -540,38 +540,6 @@ void Rts2Daemon::addConstValue (Rts2Value * value)
 	constValues.push_back (value);
 }
 
-void Rts2Daemon::addBopValue (Rts2Value * value)
-{
-	bopValues.push_back (value);
-	// create status mask and send it..
-	checkBopStatus ();
-}
-
-void Rts2Daemon::removeBopValue (Rts2Value * value)
-{
-	for (Rts2ValueVector::iterator iter = bopValues.begin ();
-		iter != bopValues.end ();)
-	{
-		if (*iter == value)
-			iter = bopValues.erase (iter);
-		else
-			iter++;
-	}
-	checkBopStatus ();
-}
-
-void Rts2Daemon::checkBopStatus ()
-{
-	int new_state = getState ();
-	for (Rts2ValueVector::iterator iter = bopValues.begin ();
-		iter != bopValues.end (); iter++)
-	{
-		Rts2Value *val = *iter;
-		new_state |= val->getBopMask ();
-	}
-	setState (new_state, "changed due to bop");
-}
-
 void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
