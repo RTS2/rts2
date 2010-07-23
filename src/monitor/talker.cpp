@@ -59,7 +59,7 @@ Talker::Talker (int argc, char **argv):Rts2Client (argc, argv)
 void Talker::message (Rts2Message & msg)
 {
 	if (devices.size () == 0 || std::find (devices.begin (), devices.end (),  std::string (msg.getMessageOName ())) != devices.end ())
-		std::cout << msg << std::endl;
+		std::cout << msg;
 }
 
 int Talker::processOption (int opt)
