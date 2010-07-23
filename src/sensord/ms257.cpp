@@ -1,6 +1,6 @@
 /* 
  * Class for Newport MS-256 monochromator.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,8 +61,7 @@ class MS257:public Sensor
 		int readPort (int &ret, const char *cmd);
 		int readPort (double &ret, const char *cmd);
 
-		template < typename T > int writeValue (const char *valueName, T val,
-			char qStr = '=');
+		template < typename T > int writeValue (const char *valueName, T val, char qStr = '=', Rts2Value *value = NULL);
 		template < typename T > int readValue (const char *valueName, T & val);
 
 		int readRts2Value (const char *valueName, Rts2Value * val);
@@ -71,7 +70,7 @@ class MS257:public Sensor
 		const char *dev;
 };
 
-};
+}
 
 using namespace rts2sensord;
 
@@ -122,8 +121,7 @@ int MS257::readPort (char **rstr, const char *cmd)
 	buf[i] = '\0';
 	if (**rstr == 'E')
 	{
-		logStream (MESSAGE_ERROR) << "Command: " << cmd << " Error: " << *rstr <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "Command: " << cmd << " Error: " << *rstr << sendLog;
 		return -1;
 	}
 	return 0;
@@ -151,11 +149,13 @@ int MS257::readPort (double &ret, const char *cmd)
 	return 0;
 }
 
-template < typename T > int MS257::writeValue (const char *valueName, T val, char qStr)
+template < typename T > int MS257::writeValue (const char *valueName, T val, char qStr, Rts2Value *value)
 {
 	int ret;
 	char *rstr;
 	blockExposure ();
+	if (value)
+		logStream (MESSAGE_INFO) << "changing " << value->getName () << " from " << value->getDisplayValue () << " to " << val << "." << sendLog;
 	std::ostringstream _os;
 	_os << qStr << valueName << ' ' << val;
 	ret = writePort (_os.str ().c_str ());
@@ -165,6 +165,8 @@ template < typename T > int MS257::writeValue (const char *valueName, T val, cha
 		return ret;
 	}
 	ret = readPort (&rstr, _os.str ().c_str ());
+	if (value)
+		logStream (MESSAGE_INFO) << value->getName () << " changed from " << value->getDisplayValue () << " to " << val << "." << sendLog;
 	clearExposure ();
 	return ret;
 }
@@ -198,8 +200,7 @@ int MS257::readRts2Value (const char *valueName, Rts2Value * val)
 			((Rts2ValueDouble *) val)->setValueDouble (dret);
 			return ret;
 	}
-	logStream (MESSAGE_ERROR) << "Reading unknow value type " << val->
-		getValueType () << sendLog;
+	logStream (MESSAGE_ERROR) << "Reading unknow value type " << val->getValueType () << sendLog;
 	return -1;
 }
 
@@ -257,36 +258,34 @@ int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == wavelenght)
 	{
-		return writeValue ("GW", new_value->getValueDouble (), '!');
+		return writeValue ("GW", new_value->getValueDouble (), '!', wavelenght);
 	}
 	if (old_value == slitA)
 	{
-		return writeValue ("SLITA", new_value->getValueInteger (), '!');
+		return writeValue ("SLITA", new_value->getValueInteger (), '!', slitA);
 	}
 	if (old_value == slitB)
 	{
-		return writeValue ("SLITB", new_value->getValueInteger (), '!');
+		return writeValue ("SLITB", new_value->getValueInteger (), '!', slitB);
 	}
 	if (old_value == slitC)
 	{
-		return writeValue ("SLITC", new_value->getValueInteger (), '!');
+		return writeValue ("SLITC", new_value->getValueInteger (), '!', slitC);
 	}
 	if (old_value == bandPass)
 	{
-		return writeValue ("BANDPASS", new_value->getValueInteger (), '=');
+		return writeValue ("BANDPASS", new_value->getValueInteger (), '=', bandPass);
 	}
 	if (old_value == shutter)
 	{
 		const char *shttypes[] = { "S", "F", "M" };
-		if (new_value->getValueInteger () > 2
-			|| new_value->getValueInteger () < 0)
+		if (new_value->getValueInteger () > 2 || new_value->getValueInteger () < 0)
 			return -1;
-		return writeValue ("SHTRTYPE", shttypes[new_value->getValueInteger ()],
-			'=');
+		return writeValue ("SHTRTYPE", shttypes[new_value->getValueInteger ()], '=');
 	}
 	if (old_value == filter1)
 	{
-		return writeValue ("FILT1", new_value->getValueInteger (), '!');
+		return writeValue ("FILT1", new_value->getValueInteger (), '!', filter1);
 	}
 	/*  if (old_value == filter2)
 		{
@@ -294,11 +293,11 @@ int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		} */
 	if (old_value == msteps)
 	{
-		return writeValue ("GS", new_value->getValueInteger (), '!');
+		return writeValue ("GS", new_value->getValueInteger (), '!', msteps);
 	}
 	if (old_value == grat)
 	{
-		return writeValue ("GRAT", new_value->getValueInteger (), '!');
+		return writeValue ("GRAT", new_value->getValueInteger (), '!', grat);
 	}
 	return Sensor::setValue (old_value, new_value);
 }
