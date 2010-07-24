@@ -35,11 +35,15 @@ import shutil
 import string
 import sys
 import time
+from operator import itemgetter, attrgetter
+
 
 import numpy
 import pyfits
 import rts2comm 
 import rts2af 
+
+
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
@@ -68,28 +72,28 @@ class main(rts2af.AFScript):
         print "main " + repr(runTimeConfig.value('TAKE_DATA'))
         
         testFitsList=[]
-        testFitsList=rts2af.serviceFileOp.findFitsFiles()
+        testFitsList=rts2af.serviceFileOp.findFitsHDUs()
 
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
 
 #        if( rts2af.verbose):
-#            for fitsFiles in testFitsList:
-#                print 'FitsFile to be analyzed: '+ fitsFiles
+#            for fitsHDUs in testFitsList:
+#                print 'FitsHDU to be analyzed: '+ fitsHDUs
 
-        ffs= rts2af.FitsFiles()
+        ffs= rts2af.FitsHDUs()
 # ToDO, tmp reference catalog, fake
 # replace it by a reference catalogue which has the
 # the smallest average FWHM for a given filter
 # after the validate
 #
 # loop over fits file names
-        hdu= rts2af.FitsFile('/scratch/focus/2010-06-25-T21:04:53/X/20100625211258-885-RA.fits', True)
+        hdu= rts2af.FitsHDU('./X/20100625211258-885-RA.fits', True)
         hdu.isFilter('X')
         ffs.append(hdu)
 
         for fits in testFitsList:
-            hdu= rts2af.FitsFile( fits)
+            hdu= rts2af.FitsHDU( fits)
             if(hdu.isFilter('X')):
                 ffs.append(hdu)
 
@@ -97,13 +101,14 @@ class main(rts2af.AFScript):
 
 # loop over hdus
         cats= rts2af.Catalogues()
-        for hdu  in ffs.fitsFiles():
+        for hdu  in ffs.fitsHDUs():
             if( rts2af.verbose):
-                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % ffs.fitsFiles().count(hdu)
+                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % ffs.fitsHDUs().count(hdu)
 
             cat= rts2af.Catalogue(hdu)
             cat.extractToCatalogue()
             cat.createCatalogue(paramsSexctractor)
+#            cat.printCatalogue()
             cats.append(cat)
 
         if(cats.validate()):
@@ -111,10 +116,23 @@ class main(rts2af.AFScript):
         else:
             print "catalogues is in valid"
 
-        for cat in cats.catalogues():
+        for cat in sorted(cats.catalogues(), key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
             if(rts2af.verbose):
-                print "fits file: "+ cat.hdu().fitsFileName
+                print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
             cat.average('FWHM_IMAGE')
+#            cat.printCatalogue()
+            print "============"
+            cat.printObject(2)
+            cat.removeObject(2)
+#            cat.removeObject(2)
+#            cat.removeObject(2)
+#            cat.removeObject(2)
+#            cat.removeObject(2)
+            print "============"
+            cat.printObject(2)
+            
+
+        
 
         print "THIS IS THE END"
 if __name__ == '__main__':

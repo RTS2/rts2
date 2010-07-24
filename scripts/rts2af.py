@@ -30,6 +30,7 @@ __author__ = 'markus.wildi@one-arcsec.org'
 
 import argparse
 import logging
+from operator import itemgetter
 # globals
 LOG_FILENAME = '/var/log/rts2-autofocus'
 logger= logging.getLogger('rts2_af_logger') ;
@@ -336,6 +337,16 @@ class SExtractorParams():
         self.paramsSExtractorReference= []
         self.paramsSExtractorAssoc= []
 
+    def lengthAssoc(self):
+        return len(self.paramsSExtractorAssoc)
+
+    def elementIndex(self, element):
+        for ele in  self.paramsSExtractorAssoc:
+            if( element== ele) : 
+                return self.paramsSExtractorAssoc.index(ele)
+        else:
+            return False
+
     def readSExtractorParams(self):
         params=open( self.paramsFileName, 'r')
         lines= params.readlines()
@@ -382,12 +393,10 @@ class SExtractorParams():
 #  15 VECTOR_ASSOC           ASSOCiated parameter vector
 #  29 NUMBER_ASSOC           Number of ASSOCiated IDs
             
-        self.paramsSExtractorAssoc.append('VECTOR_ASSOC')
-        self.paramsSExtractorAssoc.append('NUMBER_ASSOC')
-
-
         for element in self.paramsSExtractorReference:
-            self.paramsSExtractorAssoc.append(element)
+            self.paramsSExtractorAssoc.append('ASSOC_'+ element)
+
+        self.paramsSExtractorAssoc.append('NUMBER_ASSOC')
 
         for element in  self.paramsSExtractorReference:
             print "Reference element : >"+ element+"<"
@@ -427,16 +436,19 @@ import subprocess
 import re
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, fitsFile=None):
-        self.fitsFile  = fitsFile
-        self.catalogueFileName= serviceFileOp.expandToCat(self.fitsFile.fitsFileName)
-        self.catalogue = {}
+    def __init__(self, fitsHDU=None):
+        self.fitsHDU  = fitsHDU
+        self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
+        self.catalogue = []
+        self.positions = []
         self.elements  = {}
         self.isReference = False
         self.isValid= False
+        Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
-    def hdu(self):
-        return self.fitsFile
+    def fitsHDU(self):
+        return self.fitsHDU
+
     def isReference(self):
         return self.isReference
 
@@ -449,19 +461,19 @@ class Catalogue():
         # 2>/dev/null swallowed by PIPE
         (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
 
-        if( self.fitsFile.isReference):
+        if( self.fitsHDU.isReference):
             self.isReference = True 
             cmd= [  prg,
-                    self.fitsFile.fitsFileName, 
+                    self.fitsHDU.fitsFileName, 
                     '-c ',
                     runTimeConfig.value('SEXCFG'),
                     '-CATALOG_NAME',
-                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']),
+                    serviceFileOp.expandToSkyList(self.fitsHDU),
                     '-PARAMETERS_NAME',
                     runTimeConfig.value('SEXREFERENCE_PARAM'),]
         else:
             cmd= [  prg,
-                    self.fitsFile.fitsFileName, 
+                    self.fitsHDU.fitsFileName, 
                     '-c ',
                     runTimeConfig.value('SEXCFG'),
                     '-CATALOG_NAME',
@@ -469,7 +481,7 @@ class Catalogue():
                     '-PARAMETERS_NAME',
                     runTimeConfig.value('SEXPARAM'),
                     '-ASSOC_NAME',
-                    serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER'])
+                    serviceFileOp.expandToSkyList(self.fitsHDU)
                     ]
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
@@ -482,18 +494,16 @@ class Catalogue():
             logging.error('Catalogue.extractToCatalogue: '+ repr(cmd) + ' died')
             sys.exit(1)
 
-
-
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
     def createCatalogue(self, SExtractorParams=None):
         if( SExtractorParams==None):
             logger.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
             return False
 
-        if( not self.fitsFile.isReference):
+        if( not self.fitsHDU.isReference):
             cat= open( self.catalogueFileName, 'r')
         else:
-            cat= open( serviceFileOp.expandToSkyList(self.fitsFile.headerElements['FILTER']), 'r')
+            cat= open( serviceFileOp.expandToSkyList(self.fitsHDU), 'r')
         lines= cat.readlines()
         # rely on the fact that first line is stored as first element in list
         # match, element, data
@@ -502,7 +512,8 @@ class Catalogue():
  
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
-        for (i, line) in enumerate(lines):
+
+        for (lineNumber, line) in enumerate(lines):
             element = pElement.match(line)
             data    = pData.match(line)
             if( element):
@@ -510,60 +521,111 @@ class Catalogue():
 #                    print "element.group(1) : ", element.group(1)
 #                    print "element.group(2) : ", element.group(2)
             
-                try:
-                    SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
-                except:
-                    logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
-                    break
+                if( not ( element.group(2)== 'VECTOR_ASSOC')):
+                    try:
+                        SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
+                    except:
+                        logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
+                        break
             elif( data):
 #                if(verbose):
 #                    print line
-
                 items= line.split()
+                objectNumber= items[0] # NUMBER
 #                if(verbose):
 #                    for item in items:
 #                        print item
 
                 for (j, item) in enumerate(items):
-#                    print "file " + self.fitsFile.fitsFileName + "======= %d" % j + ' value ' + item + ' name ' + SExtractorParams.paramsSExtractorAssoc[j] 
+#                    print "file " + self.fitsHDU.fitsFileName + "======= %d" % j + ' value ' + item + ' name ' + SExtractorParams.paramsSExtractorAssoc[j] 
 
-#                    sys.exit(1)
+                    if( item == 'X_IMAGE'):
+                        x= value
+                    if( item == 'Y_IMAGE'):
+                        y= value
+
                     try:
-                        self.catalogue[(i, SExtractorParams.paramsSExtractorAssoc[j])]= item
+                        self.catalogue.append((int(objectNumber), int(j), SExtractorParams.paramsSExtractorAssoc[j], float(item)))
                     except:
-                        print 'readCatalogue: exception %d' % j +  ' '+ self.elements[str(j)] + ' ' + item 
+                        print 'readCatalogue: exception on line %d' % j + ' ' + line 
                         break
-                else:
-                    pass
             else:
-                logger.error( 'Catalogue.readCatalogue: no match on line %d' % i)
+                logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
                 break
-        else: # exhausted
+
+            try:
+                self.positions.append((int(objectNumber), x, y))
+            except:
+                logger.error( 'Catalogue.readCatalogue: no (x,y) positions on line %d' % lineNumber)
+                logger.error( 'Catalogue.readCatalogue: ' + line)
+
+        else: # exhausted 
+            logger.error( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
             self.isValid= True
-            
+
         return self.isValid
 
-#            if(verbose):    
-#                for item, value in  sorted(self.catalogue.iteritems()):
-#                    print "item " + item + "value " + value
+    def printObject(self, objectNumber):
+        for (oNr, pos, item, value) in self.catalogue:
+            if( objectNumber== oNr):
+                print "Object number %d" %  oNr + repr((oNr, pos, item, value))
+        else:
+             print "Object number %d" % objectNumber + " is not there anymore"
+
+    def removeObject(self, objectNumber):
+        # ToDo, hm, if not sorted not all item.objectNumber are removed
+        for (oNr, pos, item, value) in sorted(self.catalogue):
+            if( objectNumber== oNr):
+                self.catalogue.remove((oNr, pos, item, value))
+
+    def opjectPosition(self, objectNumber):
+        for object in positions:
+            if( objectNumber== objNr[0]):
+                return object
+
+    def cleanUpReference(self, paramsSexctractor):
+        if( not self.catalogue):
+            logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue') 
+            return False
+ 
+        for (objectNumber, pos, item, value) in sorted(tup[0:-len(paramsSexctractor.lengthAssoc.length())], key=itemgetter(0,1), reverse=True):
+            print "===============%d"% objectNumber +  " x %f" % self.positions + " %f" % value
+#            for (objectNumberI, posI, itemI, valueI) in sorted(tup[0:-(2*(paramsSexctractor.lengthAssoc.length()))], key=itemgetter(0,1), reverse=True):
+#                pass
+
+    def prinPositions(self):
+        for (objectNumber, x, y) in sorted( self.positions, key=itemgetter(0,1)):
+            print "===" + repr((objectNumber, x, y))
+            if( int(objectNumber) > 3):
+                print objectNumber
+                return
+
+    def printCatalogue(self, name=None):
+        if( name== None):
+            for (objectNumber, pos, item, value) in sorted( self.catalogue, key=itemgetter(0,1)):
+                print "===" + repr((objectNumber, pos, item, value))
+                if( int(objectNumber) > 3):
+                    print objectNumber
+                    return
+
 
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
         i= 0
-#        for item, value in  sorted(self.catalogue.iteritems()):
-        for (i,item), value in  self.catalogue.items():
+        for (objectNumber,pos,item, value) in self.catalogue:
             if( item == variable):
-#                print "==" + item + "================ %f" % float(value)
                 sum += float(value)
                 i += 1
 
         if(verbose):
             if( i != 0):
-                print 'average %f ' % (sum/ float(i)) 
+                print 'average ' + variable + ' %f ' % (sum/ float(i)) 
+                return (sum/ float(i))
             else:
                 print 'Error in average i=0'
+                return False
 
 class Catalogues():
     """Class holding Catalogues"""
@@ -585,7 +647,7 @@ class Catalogues():
         for cat in self.CataloguesList:
             if( cat.isReference):
                 if( verbose):
-                    print 'Catalogues.findReference: reference catalogue found for file: ' + cat.fitsFile.fitsFileName
+                    print 'Catalogues.findReference: reference catalogue found for file: ' + cat.fitsHDU.fitsFileName
                 return cat
         if( verbose):
             print 'Catalogues: no reference fits file found'
@@ -601,18 +663,18 @@ class Catalogues():
             for cat in self.CataloguesList:
                 if( cat.isValid== True):
                     if( verbose):
-                        print 'Catalogues.validate: valid cat for: ' + cat.fitsFile.fitsFileName
+                        print 'Catalogues.validate: valid cat for: ' + cat.fitsHDU.fitsFileName
                     continue
                 else:
                     if( verbose):
-                        print 'Catalogues.validate: removed cat for: ' + cat.fitsFile.fitsFileName
+                        print 'Catalogues.validate: removed cat for: ' + cat.fitsHDU.fitsFileName
 
                     try:
                         self.CataloguesList.remove(cat)
                     except:
-                        logger.error('Catalogues.validate: could not remove cat for ' + cat.fitsFile.fitsFileName)
+                        logger.error('Catalogues.validate: could not remove cat for ' + cat.fitsHDU.fitsFileName)
                         if(verbose):
-                            print "Catalogues.validate: failed to removed cat: " + cat.fitsFile.fitsFileName
+                            print "Catalogues.validate: failed to removed cat: " + cat.fitsHDU.fitsFileName
                     break
             else:
                 if( len(self.CataloguesList) > 0):
@@ -626,14 +688,14 @@ class Catalogues():
 import sys
 import pyfits
 
-class FitsFile():
+class FitsHDU():
     """Class holding fits file name and ist properties"""
     def __init__(self, fitsFileName=None, isReference=False):
         self.fitsFileName= fitsFileName
         self.isReference= isReference
         self.isValid= False
         self.headerElements={}
-        FitsFile.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+        FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
 
     def keys(self):
         return self.headerElements.keys()
@@ -642,52 +704,58 @@ class FitsFile():
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
-            hdulist = pyfits.fitsopen(self.fitsFileName)
+            fitsHDU = pyfits.fitsopen(self.fitsFileName)
         except:
             if( self.fitsFileName):
-                logger.error('FitsFile: file not found : ' + self.fitsFileName)
+                logger.error('FitsHDU: file not found : ' + self.fitsFileName)
             else:
-                logger.error('FitsFile: file name not given (None), exiting')
+                logger.error('FitsHDU: file name not given (None), exiting')
             sys.exit(1)
 
-        hdulist.close()
+        fitsHDU.close()
 #        if( verbose):
-#            hdulist.info()
+#            fitsHDU.info()
 
-        if( filter == hdulist[0].header['FILTER']):
-            self.headerElements['FILTER'] = hdulist[0].header['FILTER']
-            self.headerElements['FOC_POS']= hdulist[0].header['FOC_POS']
-            self.headerElements['BINNING']= hdulist[0].header['BINNING']
-            self.headerElements['NAXIS1'] = hdulist[0].header['NAXIS1']
-            self.headerElements['NAXIS2'] = hdulist[0].header['NAXIS2']
-            self.headerElements['ORIRA']  = hdulist[0].header['ORIRA']
-            self.headerElements['ORIDEC'] = hdulist[0].header['ORIDEC']
+        if( filter == fitsHDU[0].header['FILTER']):
+            self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
+            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+            self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
+            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
+            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+            self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
+            self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
             return True
         else:
             return False
 
-class FitsFiles():
-    """Class holding FitsFile"""
+class FitsHDUs():
+    """Class holding FitsHDU"""
     def __init__(self):
-        self.fitsFilesList= []
+        self.fitsHDUsList= []
         self.isValid= False
 
-    def append(self, FitsFile):
-        self.fitsFilesList.append(FitsFile)
+    def append(self, FitsHDU):
+        self.fitsHDUsList.append(FitsHDU)
 
-    def fitsFiles(self):
-        return self.fitsFilesList
+    def fitsHDUs(self):
+        return self.fitsHDUsList
+
+    def findFintsFileByName( self, fileName):
+        for hdu in sorted(self.fitsHDUsList):
+            if( fileName== hdu.fitsFileName):
+                return hdu
+        return False
 
     def findReference(self):
-        for hdu in sorted(self.fitsFilesList):
+        for hdu in sorted(self.fitsHDUsList):
             if( hdu.isReference):
                 return hdu
         return False
 
     def findReferenceByFocPos(self, filterName):
         filter=  runTimeConfig.filterByName(filterName)
-#        for hdu in sorted(self.fitsFilesList):
-        for hdu in sorted(self.fitsFilesList):
+#        for hdu in sorted(self.fitsHDUsList):
+        for hdu in sorted(self.fitsHDUsList):
             if( filter.focDef < hdu.headerElements['FOC_POS']):
                 print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
                 return hdu
@@ -707,30 +775,28 @@ class FitsFiles():
 
         keys= hdur.keys()
         i= 0
-        for hdu in self.fitsFilesList:
+        for hdu in self.fitsHDUsList:
             for key in keys:
                 if(key == 'FOC_POS'):
                     continue
                 if( hdur.headerElements[key]!= hdu.headerElements[key]):
                     try:
-                        self.fitsFilesList.remove(hdu)
+                        self.fitsHDUsList.remove(hdu)
                     except:
-                        logger.error('FitsFiles.validate: could not remove hdu for ' + hdu.fitsFileName)
+                        logger.error('FitsHDUs.validate: could not remove hdu for ' + hdu.fitsFileName)
                         if(verbose):
-                            print "FitsFiles.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsFilesList.index(hdu)
+                            print "FitsHDUs.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsHDUsList.index(hdu)
                     break # really break out the keys loop 
             else: # exhausted
                 hdu.isValid= True
                 if( verbose):
-                    print 'FitsFiles.validate: valid hdu: ' + hdu.fitsFileName
+                    print 'FitsHDUs.validate: valid hdu: ' + hdu.fitsFileName
 
 
-        if( len(self.fitsFilesList) > 0):
+        if( len(self.fitsHDUsList) > 0):
             self.isValid= True
 
         return self.isValid
-
-        
 
 import time
 import datetime
@@ -743,6 +809,10 @@ class ServiceFileOperations():
     def prefix( self):
         return 'rts2af-'
 
+    def notFits(self, fileName):
+        items= fileName.split('/')[-1]
+        return items.split('.fits')[0]
+
     def expandToTmp( self, fileName=None):
         if( fileName==None):
             logger.error('ServiceFileOperations.expandToTmp: no file name given')
@@ -750,23 +820,21 @@ class ServiceFileOperations():
         fileName= runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
 
-    def expandToSkyList( self, filter=None):
-        if( filter==None):
-            logger.error('ServiceFileOperations.expandToTmp: no filter name given')
+    def expandToSkyList( self, fitsHDU=None):
+        if( fitsHDU==None):
+            logger.error('ServiceFileOperations.expandToCat: no hdu given')
         
         items= runTimeConfig.value('SEXSKY_LIST').split('.')
-        fileName= self.prefix() + items[0] + '-' + filter + '-' +  self.now + '.' + items[1]
+        fileName= self.prefix() + items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1]
         if(verbose):
             print 'ServiceFileOperations:expandToSkyList expanded to ' + fileName
         
         return  self.expandToTmp(fileName)
 
-    def expandToCat( self, fileName=None):
-        if( fileName==None):
-            logger.error('ServiceFileOperations.expandToCat: no file name given')
-
-        items= fileName.split('/')[-1]
-        fileName= self.prefix() + items.split('.fits')[0] + '-' + self.now + '.cat'
+    def expandToCat( self, fitsHDU=None):
+        if( fitsHDU==None):
+            logger.error('ServiceFileOperations.expandToCat: no hdu given')
+        fileName= self.prefix() + self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat'
         return self.expandToTmp(fileName)
 
 #    def expandToPath( self, fileName=None):
@@ -774,7 +842,7 @@ class ServiceFileOperations():
 #            logger.error('ServiceFileOperations.expandToCat: no file name given')
         
 
-    def findFitsFiles( self):
+    def findFitsHDUs( self):
         if( verbose):
             print "searching in " + runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB')
         return glob.glob( runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB'))
