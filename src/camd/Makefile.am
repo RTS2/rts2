@@ -44,10 +44,13 @@ EXTRA_DIST += andor.cpp
 endif
 
 if ALTA
-bin_PROGRAMS += rts2-camd-alta
+bin_PROGRAMS += rts2-camd-alta rts2-camd-altanet
 rts2_camd_alta_SOURCES = alta.cpp
-rts2_camd_alta_LDADD = @LIB_ALTA@ @LIB_M@ ${LDADD}
+rts2_camd_alta_LDADD = @LIB_ALTA_USB@ @LIB_M@ ${LDADD}
 rts2_camd_alta_CXXFLAGS = @INC_ALTA@
+rts2_camd_altanet_SOURCES = alta.cpp
+rts2_camd_altanet_LDADD = @LIB_ALTA_NET@ @LIB_M@ ${LDADD}
+rts2_camd_altanet_CXXFLAGS = @INC_ALTA@
 else
 EXTRA_DIST += alta.cpp
 endif
