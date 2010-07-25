@@ -439,11 +439,14 @@ class Catalogue():
     def __init__(self, fitsHDU=None):
         self.fitsHDU  = fitsHDU
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
+        self.lines= []
         self.catalogue = []
+        self.objects={}
         self.positions = []
         self.elements  = {}
         self.isReference = False
         self.isValid= False
+
         Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
     def fitsHDU(self):
@@ -451,6 +454,31 @@ class Catalogue():
 
     def isReference(self):
         return self.isReference
+
+    def writeCatalogue(self):
+        if( not self.isReference):
+            logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
+            return False
+        pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
+        pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
+
+        SXcat= open( '/tmp/test', 'wb')
+        for line in self.lines:
+            element = pElement.search(line)
+            data= pData.search(line)
+            if(element):
+                SXcat.write(line)
+            else:
+# ToDo, hm, is that pythonesian?
+                for objectNumber in self.objects.keys():
+                    if(  str(data.group(1)) == objectNumber):
+                        try:
+                            SXcat.write(self.objects[str(data.group(1))])
+                        except:
+                            logger.error( 'Catalogue.writeCatalogue: no object found for ' + data.group(1))
+                        break
+
+        SXcat.close()
 
     def extractToCatalogue(self):
         if( verbose):
@@ -501,10 +529,13 @@ class Catalogue():
             return False
 
         if( not self.fitsHDU.isReference):
-            cat= open( self.catalogueFileName, 'r')
+            SXcat= open( self.catalogueFileName, 'r')
         else:
-            cat= open( serviceFileOp.expandToSkyList(self.fitsHDU), 'r')
-        lines= cat.readlines()
+            SXcat= open( serviceFileOp.expandToSkyList(self.fitsHDU), 'r')
+
+        self.lines= SXcat.readlines()
+        SXcat.close()
+
         # rely on the fact that first line is stored as first element in list
         # match, element, data
         ##   2 X_IMAGE                Object position along x                                    [pixel]
@@ -513,9 +544,11 @@ class Catalogue():
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
 
-        for (lineNumber, line) in enumerate(lines):
+        for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
+            x= -1
+            y= -1
             if( element):
 #                if(verbose):
 #                    print "element.group(1) : ", element.group(1)
@@ -549,16 +582,18 @@ class Catalogue():
                     except:
                         print 'readCatalogue: exception on line %d' % j + ' ' + line 
                         break
+                try:
+                    self.objects[str(objectNumber)]=line
+                except:
+                    logger.error( 'Catalogue.readCatalogue: objects append error ' + line)
+                try:
+                    self.positions.append((int(objectNumber), x, y))
+                except:
+                    logger.error( 'Catalogue.readCatalogue: positions append error ' + line)
             else:
                 logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
                 break
-
-            try:
-                self.positions.append((int(objectNumber), x, y))
-            except:
-                logger.error( 'Catalogue.readCatalogue: no (x,y) positions on line %d' % lineNumber)
-                logger.error( 'Catalogue.readCatalogue: ' + line)
 
         else: # exhausted 
             logger.error( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
@@ -585,7 +620,7 @@ class Catalogue():
                 return object
 
     def cleanUpReference(self, paramsSexctractor):
-        if( not self.catalogue):
+        if( not self.isReference):
             logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue') 
             return False
  

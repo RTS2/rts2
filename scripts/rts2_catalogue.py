@@ -43,8 +43,6 @@ import pyfits
 import rts2comm 
 import rts2af 
 
-
-
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
     def __init__(self, scriptName='main'):
@@ -77,6 +75,8 @@ class main(rts2af.AFScript):
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
 
+        if( paramsSexctractor==None):
+            sys.exit(1)
 #        if( rts2af.verbose):
 #            for fitsHDUs in testFitsList:
 #                print 'FitsHDU to be analyzed: '+ fitsHDUs
@@ -130,9 +130,7 @@ class main(rts2af.AFScript):
 #            cat.removeObject(2)
             print "============"
             cat.printObject(2)
-            
-
-        
+            cat.writeCatalogue()
 
         print "THIS IS THE END"
 if __name__ == '__main__':
