@@ -1728,17 +1728,17 @@ void Rts2Conn::dataReceived ()
 	std::map <int, DataChannels *>::iterator iter = readChannels.find (activeReadData);
 	// inform device that we read some data
 	if (otherDevice)
-		otherDevice->dataReceived (((*iter).second)->at(activeReadChannel));
+		otherDevice->dataReceived ((iter->second)->at(activeReadChannel));
 	getMaster ()->binaryDataArrived (this);
-	if (((*iter).second)->at(activeReadChannel)->getRestSize () == 0)
+	if ((iter->second)->getRestSize () == 0)
 	{
 		if (otherDevice)
-			otherDevice->fullDataReceived ((*iter).first, (*iter).second);
-		delete (*iter).second;
-		readChannels.erase (iter);
+			otherDevice->fullDataReceived (iter->first, iter->second);
+		delete iter->second->at(activeReadData);
+		iter->second->at(activeReadData) = NULL;
 		activeReadData = -1;
 	}
-	else if (((*iter).second)->getChunkSize (activeReadChannel) == 0)
+	else if ((iter->second)->getChunkSize (activeReadChannel) == 0)
 	{
 		activeReadData = -1;
 	}
