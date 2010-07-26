@@ -930,7 +930,7 @@ int EdtSao::sendChannel (int chan, u_char *buf, int chanorder, int totalchanel)
 {
 	uint16_t *sb = new uint16_t[chipUsedSize ()];
 	uint16_t *psb = sb;
-	for (uint16_t *p = (uint16_t *) buf; (u_char*) p < buf + chipByteSize () * totalchanel; p += totalchanel)
+	for (uint16_t *p = ((uint16_t *) buf) + chanorder; (u_char*) p < buf + chipByteSize () * totalchanel; p += totalchanel)
 	{
 		*psb = *p;
 		psb++;
@@ -1019,6 +1019,7 @@ int EdtSao::doReadout ()
 			ret = sendChannel (i, bufs[0], j, dataChannels->getValueInteger ());
 			if (ret < 0)
 				return -1;
+			j++;
 		}
 	}
 
