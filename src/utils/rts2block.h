@@ -551,16 +551,6 @@ class Rts2Block: public Rts2App
 		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
 
 		/**
-		 * Called when we have new binary data on connection. Childs
-		 * should overwite this method.
-		 *
-		 * @param conn Connection which received binary data
-		 */
-		virtual void binaryDataArrived (Rts2Conn *conn)
-		{
-		}
-
-		/**
 		 * Add new user timer.
 		 *
 		 * @param timer_time  Timer time in seconds, counted from now.

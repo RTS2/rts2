@@ -1729,7 +1729,6 @@ void Rts2Conn::dataReceived ()
 	// inform device that we read some data
 	if (otherDevice)
 		otherDevice->dataReceived ((iter->second)->at(activeReadChannel));
-	getMaster ()->binaryDataArrived (this);
 	if ((iter->second)->getRestSize () == 0)
 	{
 		if (otherDevice)
