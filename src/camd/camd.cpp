@@ -1107,7 +1107,7 @@ int Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 int Camera::readoutStart ()
 {
 	int ret;
-	for (int i = 0; i < dataChannels->getValueInteger (); i++)
+	for (int i = 0; i < (dataChannels ? dataChannels->getValueInteger () : 1); i++)
 	{
 		ret = sendFirstLine (i);
 		if (ret)
