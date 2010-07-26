@@ -1733,8 +1733,8 @@ void Rts2Conn::dataReceived ()
 	{
 		if (otherDevice)
 			otherDevice->fullDataReceived (iter->first, iter->second);
-		delete iter->second->at(activeReadData);
-		iter->second->at(activeReadData) = NULL;
+		delete iter->second;
+		readChannels.erase (iter);
 		activeReadData = -1;
 	}
 	else if ((iter->second)->getChunkSize (activeReadChannel) == 0)
