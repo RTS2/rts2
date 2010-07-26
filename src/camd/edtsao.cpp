@@ -1,6 +1,6 @@
 /* 
  * EDT controller driver
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -780,11 +780,17 @@ int EdtSao::startExposure ()
 	if (ret)
 		return ret;
 
+	dataChannels->setValueInteger (0);
+
 	// write channels and their order..
 	for (int i = 0; i < totalChannels; i++)
 	{
 		setChannel (i, channels[i]->getValueBool (), i + 1 == totalChannels);
+		if (channels[i]->getValueBool ())
+			dataChannels->inc ();
 	}
+
+	sendValueAll (dataChannels);
 
 	bool dofcl = true;
 
