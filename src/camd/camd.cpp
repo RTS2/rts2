@@ -96,9 +96,9 @@ int Camera::box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *re
 {
 	// tests for -1 -> full size
 	if (_x == -1)
-		_x = 0;
+		_x = chipSize->getXInt ();
 	if (_y == -1)
-		_y = 0;
+		_y = chipSize->getYInt ();
 	if (_width == -1)
 		_width = chipSize->getWidthInt ();
 	if (_height == -1)
