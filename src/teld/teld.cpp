@@ -1228,7 +1228,9 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			// correction was accepted, will be carried once it will be possible
 			return 0;
 		}
-		conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is for incorrect movement mark");
+		std::ostringstream _os;
+		_os << "ignoring correction - cor_mark " << cor_mark << " moveNum " << moveNum->getValueInteger () << " corr_img " << corr_img << " corrImgId " << corrImgId->getValueInteger () << " img_id " << img_id << " wCorrImgId " << wCorrImgId->getValueInteger ();
+		conn->sendCommandEnd (DEVDEM_E_IGNORE, _os.str ().c_str ());
 		return -1;
 	}
 	else if (conn->isCommand ("park"))
