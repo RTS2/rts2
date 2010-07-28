@@ -208,6 +208,12 @@ class Paramount:public GEM
 		Rts2ValueLong *axRa;
 		Rts2ValueLong *axDec;
 
+		Rts2ValueLong *homeOffsetRa;
+		Rts2ValueLong *homeOffsetDec;
+
+		Rts2ValueLong *encoderRa;
+		Rts2ValueLong *encoderDec;
+
 		int saveAxis (std::ostream & os, const MKS3Id & axis);
 
 		int moveState;
@@ -218,6 +224,8 @@ class Paramount:public GEM
 		struct timeval track_next;
 		MKS3ObjTrackInfo *track0;
 		MKS3ObjTrackInfo *track1;
+
+		int getHomeOffsetAxis (MKS3Id axis, int32_t & off);
 
 		// return RA and DEC value pair
 		int getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec);
@@ -410,19 +418,24 @@ int Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
 	return 0;
 }
 
-int Paramount::getHomeOffset (int32_t & off)
+int Paramount::getHomeOffsetAxis (MKS3Id axis, int32_t & off)
 {
 	int ret;
 	CWORD32 en0, pos0;
 
-	ret = MKS3PosEncoderGet (axis0, &en0);
+	ret = MKS3PosEncoderGet (axis, &en0);
 	if (ret != MKS_OK)
 		return ret;
-	ret = MKS3PosCurGet (axis0, &pos0);
+	ret = MKS3PosCurGet (axis, &pos0);
 	if (ret != MKS_OK)
 		return ret;
 	off = en0 - pos0;
 	return 0;
+}
+
+int Paramount::getHomeOffset (int32_t & off)
+{
+	return getHomeOffsetAxis (axis0, off);
 }
 
 int Paramount::updateLimits ()
@@ -451,6 +464,12 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 
 	createValue (axRa, "AXRA", "RA axis count", true);
 	createValue (axDec, "AXDEC", "DEC axis count", true);
+
+	createValue (homeOffsetRa, "HOMEAXRA", "RA home offset", false);
+	createValue (homeOffsetDec, "HOMEAXDEC", "DEC home offset", false);
+
+	createValue (encoderRa, "ENCODER_RA", "RA encoder value", false);
+	createValue (encoderDec, "ENCODER_DEC", "DEC encoder value", false);
 
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
@@ -814,8 +833,25 @@ int Paramount::info ()
 	setTelDec (t_telDec);
 	axRa->setValueLong (ac);
 	axDec->setValueLong (dc);
+
+
+	ret = getHomeOffsetAxis (axis0, ac);
 	if (ret)
 		return ret;
+	ret = getHomeOffsetAxis (axis1, dc);
+	if (ret)
+		return ret;
+	homeOffsetRa->setValueLong (ac);
+	homeOffsetDec->setValueLong (dc);
+
+	ret0 = MKS3PosEncoderGet (axis0, &ac);
+	ret1 = MKS3PosEncoderGet (axis1, &dc);
+	ret = checkRet ();
+	if (ret)
+		return ret;
+	encoderRa->setValueLong (ac);
+	encoderDec->setValueLong (dc);
+
   	ret = getParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 	if (ret)
 		return ret;
@@ -909,6 +945,10 @@ int Paramount::startResync ()
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Paramount::startResync " << ac << " " << dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
+
+	ret1 = MKS3PosRelativeSet (axis1, 0);
+
+	ret1 = _MKS3DoSetVal32 (axis1, CMD_VAL32_ENCODER_POS, 0);
 
 	ret0 = MKS3PosTargetSet (axis0, (long) ac);
 	ret1 = MKS3PosTargetSet (axis1, (long) dc);
