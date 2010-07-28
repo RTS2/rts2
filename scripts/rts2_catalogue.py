@@ -108,8 +108,10 @@ class main(rts2af.AFScript):
             cat= rts2af.Catalogue(hdu)
             cat.extractToCatalogue()
             cat.createCatalogue(paramsSexctractor)
+            cat.cleanUpReference(paramsSexctractor)
 #            cat.printCatalogue()
             cats.append(cat)
+            cat.writeCatalogue()
 
         if(cats.validate()):
             print "catalogues is valid"
@@ -130,7 +132,6 @@ class main(rts2af.AFScript):
 #            cat.removeObject(2)
             print "============"
             cat.printObject(2)
-            cat.writeCatalogue()
 
         print "THIS IS THE END"
 if __name__ == '__main__':

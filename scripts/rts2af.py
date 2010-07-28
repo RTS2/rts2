@@ -297,7 +297,6 @@ class Configuration:
                 if( section == 'filter properties'): 
                     items= value[1:-1].split(',')
 #, ToDo, hm
-
                     for item in items: 
                         item= string.replace( item, ' ', '')
 
@@ -329,7 +328,7 @@ class Configuration:
 
 class SExtractorParams():
     def __init__(self, paramsFileName=None):
-# ToDo, calrify 
+# ToDo, clarify 
         if( paramsFileName== None):
             self.paramsFileName= runTimeConfig.value('SEXREFERENCE_PARAM')
         else:
@@ -431,9 +430,28 @@ class Filter:
     def exposure(self):
         return self.exposure
 
+class Position:
+    """Class holding the coordinates and the iformation if it is close to its neighbors"""
+    def __init__(self, x=None, y=None, distance=True):    
+        self.x = x
+        self.y = y
+        self.distance= distance
+
+    def distanceOK(self, ok=None):
+        if( ok== None):
+            return self.distance
+        else:
+            self.distance= ok
+
+    def printPosition(self):
+        print "=== %f %f" %  (x, y)
+
+
+
 import shlex
 import subprocess
 import re
+from math import sqrt
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
     def __init__(self, fitsHDU=None):
@@ -441,8 +459,7 @@ class Catalogue():
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
         self.lines= []
         self.catalogue = []
-        self.objects={}
-        self.positions = []
+        self.positions = {}
         self.elements  = {}
         self.isReference = False
         self.isValid= False
@@ -457,8 +474,9 @@ class Catalogue():
 
     def writeCatalogue(self):
         if( not self.isReference):
-            logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
+            logger.error( 'Catalogue.writeCatalogue: clean up only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
             return False
+
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
 
@@ -469,15 +487,15 @@ class Catalogue():
             if(element):
                 SXcat.write(line)
             else:
-# ToDo, hm, is that pythonesian?
-                for objectNumber in self.objects.keys():
-                    if(  str(data.group(1)) == objectNumber):
-                        try:
-                            SXcat.write(self.objects[str(data.group(1))])
-                        except:
-                            logger.error( 'Catalogue.writeCatalogue: no object found for ' + data.group(1))
+                if( self.positions[str(data.group(1))].distance):
+                    
+                    try:
+                        SXcat.write(line)
+                    except:
+                        logger.error( 'Catalogue.writeCatalogue: no object found for ' + data.group(1))
                         break
-
+                #else:
+                #    print "=========" + str(data.group(1))
         SXcat.close()
 
     def extractToCatalogue(self):
@@ -543,17 +561,17 @@ class Catalogue():
  
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
+        objectNumber= -1
+        itemNrX_IMAGE= SExtractorParams.paramsSExtractorAssoc.index('X_IMAGE')
+        itemNrY_IMAGE= SExtractorParams.paramsSExtractorAssoc.index('Y_IMAGE')
 
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
             x= -1
             y= -1
+
             if( element):
-#                if(verbose):
-#                    print "element.group(1) : ", element.group(1)
-#                    print "element.group(2) : ", element.group(2)
-            
                 if( not ( element.group(2)== 'VECTOR_ASSOC')):
                     try:
                         SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
@@ -561,33 +579,25 @@ class Catalogue():
                         logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
                         break
             elif( data):
-#                if(verbose):
-#                    print line
                 items= line.split()
                 objectNumber= items[0] # NUMBER
-#                if(verbose):
-#                    for item in items:
-#                        print item
-
+                
                 for (j, item) in enumerate(items):
-#                    print "file " + self.fitsHDU.fitsFileName + "======= %d" % j + ' value ' + item + ' name ' + SExtractorParams.paramsSExtractorAssoc[j] 
-
-                    if( item == 'X_IMAGE'):
-                        x= value
-                    if( item == 'Y_IMAGE'):
-                        y= value
+                    
+                    if( j == itemNrX_IMAGE):
+                        x= float(item)
+                    if( j == itemNrY_IMAGE):
+                        y=  float(item)
 
                     try:
                         self.catalogue.append((int(objectNumber), int(j), SExtractorParams.paramsSExtractorAssoc[j], float(item)))
                     except:
                         print 'readCatalogue: exception on line %d' % j + ' ' + line 
                         break
+
                 try:
-                    self.objects[str(objectNumber)]=line
-                except:
-                    logger.error( 'Catalogue.readCatalogue: objects append error ' + line)
-                try:
-                    self.positions.append((int(objectNumber), x, y))
+                    self.positions[objectNumber]= Position(x, y, True) # position, bool is used for clean up
+                    #print "========" + repr( self.positions[objectNumber])
                 except:
                     logger.error( 'Catalogue.readCatalogue: positions append error ' + line)
             else:
@@ -614,27 +624,25 @@ class Catalogue():
             if( objectNumber== oNr):
                 self.catalogue.remove((oNr, pos, item, value))
 
-    def opjectPosition(self, objectNumber):
-        for object in positions:
-            if( objectNumber== objNr[0]):
-                return object
+    def distanceOK( self, position1, position2):
+
+        distance= sqrt((position2.x- position1.x)**2 + (position2.y- position1.y)**2)        
+
+        if( distance < runTimeConfig.value('OBJECT_SEPARATION')):
+            position1.distance= position2.distance= False
+
 
     def cleanUpReference(self, paramsSexctractor):
-        if( not self.isReference):
+        if( not  self.isReference):
             logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue') 
             return False
- 
-        for (objectNumber, pos, item, value) in sorted(tup[0:-len(paramsSexctractor.lengthAssoc.length())], key=itemgetter(0,1), reverse=True):
-            print "===============%d"% objectNumber +  " x %f" % self.positions + " %f" % value
-#            for (objectNumberI, posI, itemI, valueI) in sorted(tup[0:-(2*(paramsSexctractor.lengthAssoc.length()))], key=itemgetter(0,1), reverse=True):
-#                pass
 
-    def prinPositions(self):
-        for (objectNumber, x, y) in sorted( self.positions, key=itemgetter(0,1)):
-            print "===" + repr((objectNumber, x, y))
-            if( int(objectNumber) > 3):
-                print objectNumber
-                return
+
+        for objectNumber1 in sorted(self.positions.keys(), key=lambda x:self.positions[x], reverse=True):
+            for objectNumber2 in sorted(self.positions.keys(), key=lambda x:self.positions[x], reverse=True):
+                self.distanceOK( self.positions[objectNumber1], self.positions[objectNumber2])
+
+
 
     def printCatalogue(self, name=None):
         if( name== None):
@@ -748,8 +756,6 @@ class FitsHDU():
             sys.exit(1)
 
         fitsHDU.close()
-#        if( verbose):
-#            fitsHDU.info()
 
         if( filter == fitsHDU[0].header['FILTER']):
             self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
@@ -871,11 +877,6 @@ class ServiceFileOperations():
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
         fileName= self.prefix() + self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat'
         return self.expandToTmp(fileName)
-
-#    def expandToPath( self, fileName=None):
-#        if( fileName==None):
-#            logger.error('ServiceFileOperations.expandToCat: no file name given')
-        
 
     def findFitsHDUs( self):
         if( verbose):
