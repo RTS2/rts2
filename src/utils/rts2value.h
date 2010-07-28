@@ -197,12 +197,11 @@
 #define RTS2_DT_SCRIPT                0x00100000
 
 /**
- * Group mask - if & with value type, value can be grouped in FITS table. Usefull primary for arrays.
+ * Group number - specify in which extension value should be recorded. Usefull primary for arrays.
  */
-#define RTS2_WR_GROUP_MASK            0x00600000
 #define RTS2_WR_GROUP_NR_MASK         0x006f0000
 
-#define RTS2_WR_GROUP_NUMBER(x)       (((0x20 + x) << 4) & 0x006f0000)
+#define RTS2_WR_GROUP_NUMBER(x)       (((0x20 + x) << 16) & 0x006f0000)
 
 /**
  * If set. value is read-write. When not set, value is read only.
@@ -385,9 +384,7 @@ class Rts2Value
 		 */
 		void changed () { rts2Type |= RTS2_VALUE_CHANGED | RTS2_VALUE_NEED_SEND; }
 
-		bool haveWriteGroup () { return rts2Type & RTS2_WR_GROUP_MASK; }
-
-		int getWriteGroup () { return ((rts2Type & RTS2_WR_GROUP_NR_MASK) >> 4) - 0x20; }
+		int getWriteGroup () { return ((rts2Type & RTS2_WR_GROUP_NR_MASK) >> 16) - 0x20; }
 
 	protected:
 		char buf[VALUE_BUF_LEN];
