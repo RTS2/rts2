@@ -33,7 +33,11 @@ CameraImage::~CameraImage (void)
 
 void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double after)
 {
-	deviceWaits.push_back (new ImageDeviceWait (devClient, after));
+	// check if this device was not prematurely triggered
+	if (std::find (prematurelyReceived.begin (), prematurelyReceived.end (), devClient) == prematurelyReceived.end ())
+		deviceWaits.push_back (new ImageDeviceWait (devClient, after));
+	else
+		std::cout << "prematurely received " << devClient->getName () << std::endl;
 }
 
 bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
@@ -64,6 +68,15 @@ bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 		image->writeConn (devClient->getConnection (), INFO_CALLED);
 	}
 	return ret;
+}
+
+void CameraImage::waitForTrigger (rts2core::Rts2DevClient * devClient)
+{
+	// check if this device was not prematurely triggered
+	if (std::find (prematurelyReceived.begin (), prematurelyReceived.end (), devClient) == prematurelyReceived.end ())
+		triggerWaits.push_back (devClient);
+	else
+		std::cout << "received premature trigger " << devClient->getName () << std::endl;
 }
 
 bool CameraImage::wasTriggered (rts2core::Rts2DevClient * devClient)
@@ -161,25 +174,25 @@ void CameraImages::infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2
 	}
 }
 
-void CameraImages::wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+bool CameraImages::wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
+	bool ret = false;
+
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
 		CameraImage *ci = (*iter).second;
 		if (ci->wasTriggered (client))
 		{
+			ret = true;
 			if (ci->canDelete ())
-			{
 				master->processCameraImage (iter++);
-			}
 			else
-			{
 				iter++;
-			}
 		}
 		else
 		{
 			iter++;
 		}
 	}
+	return ret;
 }

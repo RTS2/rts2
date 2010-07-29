@@ -36,9 +36,6 @@ class Rts2DevClientCameraImage;
  */
 class ImageDeviceWait
 {
-	private:
-		rts2core::Rts2DevClient * devclient;
-		double after;
 	public:
 		ImageDeviceWait (rts2core::Rts2DevClient * in_devclient, double in_after)
 		{
@@ -49,6 +46,10 @@ class ImageDeviceWait
 		rts2core::Rts2DevClient *getClient () { return devclient; }
 
 		double getAfter () { return after; }
+
+	private:
+		rts2core::Rts2DevClient * devclient;
+		double after;
 };
 
 /**
@@ -62,19 +63,20 @@ class CameraImage
 		bool dataWriten;
 		Rts2Image *image;
 
-		CameraImage (Rts2Image * in_image, double in_exStart)
+		CameraImage (Rts2Image * in_image, double in_exStart, std::vector < rts2core::Rts2DevClient * > &_prematurelyReceived)
 		{
 			image = in_image;
 			exStart = in_exStart;
 			exEnd = nan ("f");
 			dataWriten = false;
+			prematurelyReceived = _prematurelyReceived;
 		}
 		virtual ~ CameraImage (void);
 
 		void waitForDevice (rts2core::Rts2DevClient * devClient, double after);
 		bool waitingFor (rts2core::Rts2DevClient * devClient);
 
-		void waitForTrigger (rts2core::Rts2DevClient * devClient) { triggerWaits.push_back (devClient); }
+		void waitForTrigger (rts2core::Rts2DevClient * devClient);
 		bool wasTriggered (rts2core::Rts2DevClient * devClient);
 
 		void setExEnd (double in_exEnd) { exEnd = in_exEnd; }
@@ -88,10 +90,11 @@ class CameraImage
 		/**
 		 * Return true if the image is waiting for some of the metadata.
 		 */
-		bool waitForMetaData () { return !(deviceWaits.empty ()) || !(triggerWaits.empty ()); }
+		bool waitForMetaData () { return !(deviceWaits.empty () && triggerWaits.empty ()); }
 	private:
 		std::vector < ImageDeviceWait * > deviceWaits;
 		std::vector < rts2core::Rts2DevClient * > triggerWaits;
+		std::vector < rts2core::Rts2DevClient * > prematurelyReceived;
 };
 
 /**
@@ -108,6 +111,6 @@ class CameraImages:public std::map <int, CameraImage * >
 
 		void infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 		void infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
-		void wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		bool wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 };
 #endif							 /* !__RTS2_CAMERA_IMAGE__ */

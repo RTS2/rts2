@@ -60,56 +60,6 @@ class ColumnData
  */
 class Rts2FitsFile: public rts2core::Expander
 {
-	private:
-		/**
-		 * Pointer to fits file.
-		 */
-		fitsfile *ffile;
-
-		char *fileName;
-		char *absoluteFileName;
-
-	protected:
-		int fits_status;
-		int flags;
-
-		/**
-		 * Return explanation for fits errors. This method returns only
-		 * explanation for the latest failed call. There is not a history
-		 * of errors messages.
-		 *
-		 * @return Explanation for current fits_status.
-		 */
-		std::string getFitsErrors ();
-
-		void setFileName (const char *_filename);
-
-		virtual int createFile ();
-		int createFile (const char *_filename);
-		int createFile (std::string _filename);
-
-		void openFile (const char *_filename = NULL, bool readOnly = false);
-
-		/**
-		 * Return pointer to fitsfile structure.
-		 *
-		 * @return fitsfile pointer.
-		 */
-		fitsfile *getFitsFile ()
-		{
-			return ffile; 
-		}
-
-		void setFitsFile (fitsfile *_fitsfile)
-		{
-			ffile = _fitsfile;
-		}
-
-		int fitsStatusValue (const char *valname, const char *operation, bool required);
-
-		void fitsStatusSetValue (const char *valname, bool required = true);
-		void fitsStatusGetValue (const char *valname, bool required);
-
 	public:
 		/**
 		 * Creates file only in memory, do not write anything on disk.
@@ -158,18 +108,12 @@ class Rts2FitsFile: public rts2core::Expander
 		 * @return Filename of this FITS file.
 		 * @see setFileName()
 		 */
-		const char *getFileName ()
-		{
-			return fileName;
-		}
+		const char *getFileName () { return fileName; }
 
 		/**
 		 * Return absolute filename.
 		 */
-		const char *getAbsoluteFileName ()
-		{
-			return absoluteFileName;
-		}
+		const char *getAbsoluteFileName () { return absoluteFileName; }
 
 		/**
 		 * Close file.
@@ -178,7 +122,6 @@ class Rts2FitsFile: public rts2core::Expander
 		 */
 		virtual int closeFile ();
 
-		
 		/**
 		 * Expand FITS path.
 		 *
@@ -186,10 +129,12 @@ class Rts2FitsFile: public rts2core::Expander
 		 *
 		 * @return Expanded path.
 		 */
-		std::string expandPath (std::string pathEx)
-		{
-			return expand (pathEx);
-		}
+		std::string expandPath (std::string pathEx) { return expand (pathEx); }
+
+		/**
+		 * Move current HDU.
+		 */
+		void moveHDU (int hdu, int *hdutype = NULL);
 
 		/**
 		 * Appends history string.
@@ -219,10 +164,51 @@ class Rts2FitsFile: public rts2core::Expander
 		 *
 		 * @return True if images shall be written.
 		 */
-		bool shouldSaveImage ()
-		{
-			return (flags & IMAGE_SAVE);
-		}
+		bool shouldSaveImage () { return (flags & IMAGE_SAVE); }
+
+	protected:
+		int fits_status;
+		int flags;
+
+		/**
+		 * Return explanation for fits errors. This method returns only
+		 * explanation for the latest failed call. There is not a history
+		 * of errors messages.
+		 *
+		 * @return Explanation for current fits_status.
+		 */
+		std::string getFitsErrors ();
+
+		void setFileName (const char *_filename);
+
+		virtual int createFile ();
+		int createFile (const char *_filename);
+		int createFile (std::string _filename);
+
+		void openFile (const char *_filename = NULL, bool readOnly = false);
+
+		/**
+		 * Return pointer to fitsfile structure.
+		 *
+		 * @return fitsfile pointer.
+		 */
+		fitsfile *getFitsFile () { return ffile; }
+
+		void setFitsFile (fitsfile *_fitsfile) { ffile = _fitsfile; }
+
+		int fitsStatusValue (const char *valname, const char *operation, bool required);
+
+		void fitsStatusSetValue (const char *valname, bool required = true);
+		void fitsStatusGetValue (const char *valname, bool required);
+
+	private:
+		/**
+		 * Pointer to fits file.
+		 */
+		fitsfile *ffile;
+
+		char *fileName;
+		char *absoluteFileName;
 };
 
 

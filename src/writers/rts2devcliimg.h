@@ -123,6 +123,9 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		int expNum;
 
 		bool triggered;
+
+		// already received informations from those devices..
+		std::vector < rts2core::Rts2DevClient * > prematurelyReceived;
 };
 
 class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope

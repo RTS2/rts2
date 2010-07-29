@@ -80,6 +80,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 		virtual void nextCommand ();
 		void queImage (Rts2Image * image);
 		virtual imageProceRes processImage (Rts2Image * image);
+		virtual void stateChanged (Rts2ServerState * state);
 		virtual void exposureFailed (int status);
 	protected:
 		ScriptPtr exposureScript;

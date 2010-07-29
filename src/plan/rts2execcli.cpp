@@ -190,6 +190,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 				return;
 			}
 
+			if ((getConnection ()->getState () & CAM_EXPOSING) || (getConnection ()->getBopState () & BOP_TEL_MOVE) || (getConnection ()->getFullBopState () & BOP_TEL_MOVE))
+				return;
+
 			nextComd->setBopMask (nextComd->getBopMask () & ~BOP_TEL_MOVE);
 		}
 
@@ -331,6 +334,13 @@ void Rts2DevClientCameraExec::exposureEnd ()
 
 	// send readout after we deal with next command - which can be filter move
 	Rts2DevClientCameraImage::exposureEnd ();
+}
+
+void Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
+{
+	Rts2DevClientCameraImage::stateChanged (state);
+	if (nextComd && cmdConn && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
+		nextCommand ();
 }
 
 void Rts2DevClientCameraExec::exposureFailed (int status)

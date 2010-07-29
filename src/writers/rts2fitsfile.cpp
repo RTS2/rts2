@@ -176,6 +176,15 @@ int Rts2FitsFile::closeFile ()
 	return 0;
 }
 
+void Rts2FitsFile::moveHDU (int hdu, int *hdutype)
+{
+	fits_movabs_hdu (getFitsFile (), hdu, hdutype, &fits_status);
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot move HDU to " << hdu << ": " << getFitsErrors () << sendLog;
+	}
+}
+
 int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool required)
 {
 	int ret = 0;

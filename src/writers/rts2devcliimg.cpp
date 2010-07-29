@@ -76,6 +76,7 @@ Rts2Image * Rts2DevClientCameraImage::setImage (Rts2Image * old_img, Rts2Image *
 
 void Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 {
+	bool ret_all,ret_actual;
 	switch (event->getType ())
 	{
 		case EVENT_INFO_DEVCLI_OK:
@@ -91,9 +92,34 @@ void Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
 			break;
 		case EVENT_TRIGGERED:
-			images.wasTriggered (this, (rts2core::Rts2DevClient *) event->getArg ());
+			ret_all = images.wasTriggered (this, (rts2core::Rts2DevClient *) event->getArg ());
 			if (actualImage)
-			  	actualImage->wasTriggered ((rts2core::Rts2DevClient *) event->getArg ());
+			{
+			  	ret_actual = actualImage->wasTriggered ((rts2core::Rts2DevClient *) event->getArg ());
+			}
+			else
+			{
+				ret_actual = false;
+			}
+			// this trigger was not handled..
+			if (ret_all == false && ret_actual == false)
+			{
+				// we have a problem, those data were received before exposure. They are most probably invalid.
+				prematurelyReceived.push_back ((rts2core::Rts2DevClient *) event->getArg ());
+				std::cout << "will ignore trigger from " << ((rts2core::Rts2DevClient *) event->getArg ())->getName () << std::endl;
+			}
+
+			// check that no image is waiting for trigger - e.g. this was last EVENT_TRIGGERED received
+			if (actualImage && actualImage->waitForMetaData ())
+				break;
+
+			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
+			{
+				if (((*iter).second)->waitForMetaData ())
+					break;
+			}
+			// before we check that no image is waiting for trigger - this is last EVENT_TRIGGERED received
+			triggered = false;
 			break;
 		case EVENT_NUMBER_OF_IMAGES:
 			*((int *)event->getArg ()) += images.size ();
@@ -136,6 +162,8 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
 
+		ci->image->moveHDU (1);
+
 		cameraImageReady (ci->image);
 		if (ci->canDelete ())
 		{
@@ -163,7 +191,6 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 	try
 	{
 		// move to the first HDU before writing data
-		ci->image->moveHDU (1);
 		beforeProcess (ci->image);
 		if (saveImage)
 		{
@@ -242,7 +269,10 @@ void Rts2DevClientCameraImage::exposureStarted ()
 		// delete old image
 		delete actualImage;
 		// create image
-		actualImage = new CameraImage (image, getMaster ()->getNow ());
+		actualImage = new CameraImage (image, getMaster ()->getNow (), prematurelyReceived);
+
+		prematurelyReceived.clear ();
+
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 	
 		lastImage = image;
@@ -447,10 +477,9 @@ void Rts2DevClientWriteImage::infoFailed ()
 
 void Rts2DevClientWriteImage::stateChanged (Rts2ServerState * state)
 {
-	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE))
-	{
+	Rts2DevClient::stateChanged (state);
+	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE) && !(state->getOldValue () & DEVICE_NOT_READY))
 		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
-	}
 }
 
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)

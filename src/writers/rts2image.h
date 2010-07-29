@@ -204,11 +204,6 @@ class Rts2Image:public Rts2FitsFile
 
 		// int saveImageData (const char *save_filename, unsigned short *in_data);
 
-		/**
-		 * Move CHDU.
-		 */
-		void moveHDU (int hdu, int *hdutype = NULL);
-
 		void setValue (const char *name, bool value, const char *comment);
 		void setValue (const char *name, int value, const char *comment);
 		void setValue (const char *name, long value, const char *comment);

@@ -795,15 +795,6 @@ char * Rts2Image::getImageBase ()
 	return buf;
 }
 
-void Rts2Image::moveHDU (int hdu, int *hdutype)
-{
-	fits_movabs_hdu (getFitsFile (), hdu, hdutype, &fits_status);
-	if (fits_status)
-	{
-		logStream (MESSAGE_ERROR) << "cannot move HDU to " << hdu << ": " << getFitsErrors () << sendLog;
-	}
-}
-
 void Rts2Image::setValue (const char *name, bool value, const char *comment)
 {
 	if (!getFitsFile ())
