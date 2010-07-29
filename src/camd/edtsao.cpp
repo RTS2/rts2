@@ -219,6 +219,9 @@ class EdtSao:public Camera
 		// number of lines to skip in serial mode
 		Rts2ValueInteger *skipLines;
 
+		Rts2ValueBool *edtSplit;
+		Rts2ValueBool *edtUni;
+
 		bool verbose;
 
 		int edtwrite (unsigned long lval);
@@ -623,6 +626,11 @@ int EdtSao::initChips ()
 
 	dataChannels->setValueInteger (totalChannels);
 
+	ret = setEDTSplit (edtSplit->getValueBool ());
+	if (ret)
+		return ret;
+	ret = setEDTUni (edtUni->getValueBool ());
+
 	return ret;
 }
 
@@ -786,12 +794,6 @@ int EdtSao::writePartialPattern ()
 int EdtSao::startExposure ()
 {
 	int ret;
-	ret = setEDTSplit (true);
-	if (ret)
-		return ret;
-	ret = setEDTUni (false);
-	if (ret)
-		return ret;
 
 	dataChannels->setValueInteger (0);
 
@@ -1089,9 +1091,14 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
 
 	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-
 	edtGain->addSelVal ("HIGH");
 	edtGain->addSelVal ("LOW");
+
+	createValue (edtSplit, "SPLIT", "split mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
+	edtSplit->setValueBool (true);
+
+	createValue (edtSplit, "UNI", "uni mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
+	edtSplit->setValueBool (false);
 
 	edtGain->setValueInteger (0);
 
@@ -1262,6 +1269,15 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return (setGrayScale (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
 	}
+	if (old_value == edtSplit)
+	{
+		return (setEDTSplit (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+	}
+	if (old_value == edtUni)
+	{
+		return (setEDTUni (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+	}
+
 	for (int i = 0; i < totalChannels; i++)
 	{
 		if (old_value == ADoffsets[i])
