@@ -39,7 +39,7 @@ namespace rts2ncurses
 class NSelWindow:public NWindow
 {
 	public:
-		NSelWindow (int x, int y, int w, int h, int border = 1, int sw = 300, int sh = 100);
+		NSelWindow (int x, int y, int w, int h, int border = 1, int sw = 300, int sh = 500);
 		virtual ~ NSelWindow (void);
 		virtual keyRet injectKey (int key);
 		virtual void winrefresh ();
