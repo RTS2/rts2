@@ -26,7 +26,9 @@ Subdirectories:
 
 * create - contains script to create database. When you will run in on
   live database, new script tables will be created, old preserved.
-  
+ 
+* data - default data. Includes data for dummy devices.
+
 * drop - contains drop scripts. USE ON LIVE DATABASE (e.g. with data) ON YOUR
   OWN RISK. Please note, that most probably you will drop database
   with all data by running sql scripts in this subdirectory.
