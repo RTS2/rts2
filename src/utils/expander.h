@@ -58,25 +58,13 @@ class Expander
 		const struct timeval *getExpandDate ();
 
 		// date related functions
-		std::string getYearString ()
-		{
-			return getYearString (getYear ());
-		}
+		std::string getYearString () { return getYearString (getYear ()); }
 		std::string getYearString (int year);
-		std::string getShortYearString ()
-		{
-			return getShortYearString (getYear ());
-		}
+		std::string getShortYearString () { return getShortYearString (getYear ()); }
 		std::string getShortYearString (int year);
-		std::string getMonthString ()
-		{
-			return getMonthString (getMonth ());
-		}
+		std::string getMonthString () { return getMonthString (getMonth ()); }
 		std::string getMonthString (int month);
-		std::string getDayString ()
-		{
-			return getDayString (getDay ());
-		}
+		std::string getDayString () { return getDayString (getDay ()); }
 		std::string getDayString (int day);
 		std::string getYDayString ();
 
@@ -87,15 +75,9 @@ class Expander
 
 		std::string getNightString ();
 
-		long getCtimeSec ()
-		{
-			return expandTv.tv_sec;
-		}
+		long getCtimeSec () { return expandTv.tv_sec; }
 
-		long getCtimeUsec ()
-		{
-			return expandTv.tv_usec;
-		}
+		long getCtimeUsec () { return expandTv.tv_usec; }
 
 	protected:
 		/**
@@ -114,55 +96,25 @@ class Expander
 
 		std::string getEpochString ();
 
-		int getYear ()
-		{
-			return expandDate->tm_year + 1900;
-		}
+		int getYear () { return expandDate->tm_year + 1900; }
 
-		int getMonth ()
-		{
-			return expandDate->tm_mon + 1;
-		}
+		int getMonth () { return expandDate->tm_mon + 1; }
 
-		int getDay ()
-		{
-			return expandDate->tm_mday;
-		}
+		int getDay () { return expandDate->tm_mday; }
 
-		int getYDay ()
-		{
-			return expandDate->tm_yday;
-		}
+		int getYDay () { return expandDate->tm_yday; }
 
-		int getHour ()
-		{
-			return expandDate->tm_hour;
-		}
+		int getHour () { return expandDate->tm_hour; }
 
-		int getMin ()
-		{
-			return expandDate->tm_min;
-		}
+		int getMin () { return expandDate->tm_min; }
 
-		int getSec ()
-		{
-			return expandDate->tm_sec;
-		}
+		int getSec () { return expandDate->tm_sec; }
 
-		int getNightYear ()
-		{
-			return nightDate.tm_year + 1900;
-		}
+		int getNightYear () { return nightDate.tm_year + 1900; }
 
-		int getNightMonth ()
-		{
-			return nightDate.tm_mon + 1;
-		}
+		int getNightMonth () { return nightDate.tm_mon + 1; }
 
-		int getNightDay ()
-		{
-			return nightDate.tm_mday;
-		}
+		int getNightDay () { return nightDate.tm_mday; }
 };
 
 };
