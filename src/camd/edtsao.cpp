@@ -292,6 +292,8 @@ class EdtSao:public Camera
 
 		int setParallelClockSpeed (int new_clockSpeed);
 
+		int setGrayScale (bool _grayScale, int board);
+
 		int setGrayScale (bool _grayScale);
 
 		// registers
@@ -552,11 +554,23 @@ int EdtSao::setParallelClockSpeed (int new_speed)
 	return edtwrite (ns);
 }
 
+int EdtSao::setGrayScale (bool _grayScale, int board)
+{
+	edtwrite ((_grayScale ? 0x30c00000 : 0x30400000) | (board << 24));
+	return 0;
+}
 
 int EdtSao::setGrayScale (bool _grayScale)
 {
-	edtwrite (_grayScale ? 0x30c00000 : 0x30400000);
-	return 0;
+	switch (controllerType)
+	{
+		case CHANNEL_16:
+			setGrayScale (_grayScale, 3);
+			setGrayScale (_grayScale, 2);
+			setGrayScale (_grayScale, 1);
+		case CHANNEL_4:
+			return setGrayScale (_grayScale, 0);
+	}
 }
 
 int EdtSao::initChips ()
@@ -1012,6 +1026,8 @@ int EdtSao::doReadout ()
 		}
 		printf ("\n");
 	}
+
+	pdv_free (bufs[0]);
 
 	// swap for split mode
 
