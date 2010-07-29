@@ -222,6 +222,8 @@ class EdtSao:public Camera
 		Rts2ValueBool *edtSplit;
 		Rts2ValueBool *edtUni;
 
+		Rts2ValueString *signalFile;
+
 		bool verbose;
 
 		int edtwrite (unsigned long lval);
@@ -366,7 +368,7 @@ class EdtSao:public Camera
 		int sendChannel (int chan, u_char *buf, int chanorder, int totalchanel);
 };
 
-};
+}
 
 int EdtSao::edtwrite (unsigned long lval)
 {
@@ -387,7 +389,12 @@ int EdtSao::writeBinFile (const char *filename)
 	int loops;
 	int nwrite;
 
-	std::string full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
+	std::string full_name;
+
+	if (*filename != '/')
+		full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
+	else
+		full_name = std::string (filename);
 
 	fp = fopen (full_name.c_str(), "r");
 	if (!fp)
@@ -1029,7 +1036,7 @@ int EdtSao::doReadout ()
 		printf ("\n");
 	}
 
-	pdv_free (bufs[0]);
+	//pdv_free (bufs[0]);
 
 	// swap for split mode
 
@@ -1093,14 +1100,15 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	edtGain->addSelVal ("HIGH");
 	edtGain->addSelVal ("LOW");
+	edtGain->setValueInteger (0);
+
+	createValue (signalFile, "SIGFILE", "signal (low-level) file", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	createValue (edtSplit, "SPLIT", "split mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 	edtSplit->setValueBool (true);
 
-	createValue (edtSplit, "UNI", "uni mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
-	edtSplit->setValueBool (false);
-
-	edtGain->setValueInteger (0);
+	createValue (edtUni, "UNI", "uni mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
+	edtUni->setValueBool (false);
 
 	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	parallelClockSpeed->setValueInteger (0);
@@ -1276,6 +1284,10 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == edtUni)
 	{
 		return (setEDTUni (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+	}
+	if (old_value == signalFile)
+	{
+		return writeBinFile (signalFile->getValue ()) == 0 ? 0 : -2;
 	}
 
 	for (int i = 0; i < totalChannels; i++)
