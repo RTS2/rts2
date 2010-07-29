@@ -210,7 +210,7 @@ class EdtSao:public Camera
 		bool notimeout;
 		int sdelay;
 
-		enum {CHANNEL_2, CHANNEL_16} controllerType;
+		enum {CHANNEL_4, CHANNEL_16} controllerType;
 
 		u_int status;
 
@@ -375,7 +375,6 @@ int EdtSao::edtwrite (unsigned long lval)
 
 int EdtSao::writeBinFile (const char *filename)
 {
-	return 0;
 	// taken from edtwriteblk.c, heavily modified
 	FILE *fp;
 	u_int cbuf;
@@ -831,7 +830,7 @@ int EdtSao::startExposure ()
 				break;
 			}
 			edtwrite (0x50000080);
-		case CHANNEL_2:
+		case CHANNEL_4:
 			edtwrite (0x52000000 | (long) (getExposure () * 100));
 			break;
 	}
@@ -845,7 +844,7 @@ int EdtSao::startExposure ()
 				edtwrite (0x50030300);
 				break;
 			}
-		case CHANNEL_2:
+		case CHANNEL_4:
 			edtwrite (0x50030000);		 /* open shutter */
 			break;
 	}
@@ -1055,12 +1054,12 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	notimeout = 0;
 	sdelay = 0;
 
-	controllerType = CHANNEL_2;
+	controllerType = CHANNEL_4;
 
 	createExpType ();
 
 	createDataChannels ();
-	totalChannels = 2;
+	totalChannels = 4;
 
 	addOption ('p', "devname", 1, "device name");
 	addOption ('n', "devunit", 1, "device unit number");
@@ -1284,7 +1283,7 @@ int EdtSao::init ()
 			createValue (grayScale, "gray_scale", "turns on simulated grayscale", true, RTS2_VALUE_WRITABLE);
 			grayScale->setValueBool (false);
 			break;
-		case CHANNEL_2:
+		case CHANNEL_4:
 			break;
 	}
 
