@@ -971,14 +971,14 @@ int Camera::camStartExposure ()
 		quedExpNumber->inc ();
 		sendValueAll (quedExpNumber);
 
-		if ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE))
-			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
-
 		if (waitingForNotBop->getValueBool () == false)
 		{
 			waitingForNotBop->setValueBool (true);
 			sendValueAll (waitingForNotBop);
 		}
+
+		if (!((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)) && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
 
 		return 0;
 	}
@@ -1337,13 +1337,19 @@ int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 void Camera::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
-	if (!(new_state & BOP_EXPOSURE) && !(new_state & BOP_TRIG_EXPOSE)
-		&& quedExpNumber->getValueInteger () > 0
-		&& waitingForNotBop->getValueBool ())
+	if (!(new_state & BOP_EXPOSURE) && quedExpNumber->getValueInteger () > 0 && waitingForNotBop->getValueBool ())
 	{
-		waitingForNotBop->setValueBool (false);
-		quedExpNumber->dec ();
-		camStartExposureWithoutCheck ();
+		if ((new_state & BOP_TRIG_EXPOSE) && !(getState () & BOP_WILL_EXPOSE))
+		{
+			// this will trigger device transition from BOP_TRIG_EXPOSE to not BOP_TRIG_EXPOSE, which will trigger this code again..
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
+		}
+		else
+		{
+			waitingForNotBop->setValueBool (false);
+			quedExpNumber->dec ();
+			camStartExposureWithoutCheck ();
+		}
 	}
 }
 
