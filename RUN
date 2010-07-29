@@ -52,7 +52,11 @@ user@host:$ createdb stars  # you must be user which have granted database acces
 user@host:$ cd rts2/src/sql
 user@host:$ ./rts2-builddb stars
 
-If you want planets and Landolt fields, answer the questions with y.
+If you want planets and Landolt fields, answer the questions with y. If you
+want to run RTS2 with dummy devices as configured in conf/devices file, run:
+
+user@host:$ cd rts2/src/sql/data
+user@host:$ psql stars < dummy.sql
 
 Try the database with:
 
