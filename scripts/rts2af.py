@@ -104,9 +104,7 @@ import ConfigParser
 import string
 
 class Configuration:
-    """Configuration for any AFScript"""
-    
-
+    """Configuration for any AFScript"""    
     def __init__(self, fileName='rts2-autofocus-offline.cfg'):
         self.configFileName = fileName
         self.values={}
@@ -432,10 +430,11 @@ class Filter:
 
 class Position:
     """Class holding the coordinates and the iformation if it is close to its neighbors"""
-    def __init__(self, x=None, y=None, distance=True):    
+    def __init__(self, x=None, y=None, distance=True, properties=True):    
         self.x = x
         self.y = y
-        self.distance= distance
+        self.distance  = distance
+        self.properties= properties
 
     def distanceOK(self, ok=None):
         if( ok== None):
@@ -454,7 +453,7 @@ import re
 from math import sqrt
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, fitsHDU=None):
+    def __init__(self, fitsHDU=None, SExtractorParams=None):
         self.fitsHDU  = fitsHDU
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
         self.lines= []
@@ -462,7 +461,11 @@ class Catalogue():
         self.positions = {}
         self.elements  = {}
         self.isReference = False
-        self.isValid= False
+        self.isValid     = False
+        self.objectSeparation2= runTimeConfig.value('OBJECT_SEPARATION')**2
+        self.SExtractorParams = SExtractorParams
+        self.indexeFlag      = self.SExtractorParams.index('FLAGS') 
+        self.indexellipticity= self.SExtractorParams.index('ELLIPTICITY')
 
         Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
@@ -474,7 +477,7 @@ class Catalogue():
 
     def writeCatalogue(self):
         if( not self.isReference):
-            logger.error( 'Catalogue.writeCatalogue: clean up only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
+            logger.error( 'Catalogue.writeCatalogue: write is only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
             return False
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
@@ -494,8 +497,6 @@ class Catalogue():
                     except:
                         logger.error( 'Catalogue.writeCatalogue: no object found for ' + data.group(1))
                         break
-                #else:
-                #    print "=========" + str(data.group(1))
         SXcat.close()
 
     def extractToCatalogue(self):
@@ -541,8 +542,8 @@ class Catalogue():
             sys.exit(1)
 
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
-    def createCatalogue(self, SExtractorParams=None):
-        if( SExtractorParams==None):
+    def createCatalogue(self):
+        if( self.SExtractorParams==None):
             logger.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
             return False
 
@@ -562,8 +563,8 @@ class Catalogue():
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
         objectNumber= -1
-        itemNrX_IMAGE= SExtractorParams.paramsSExtractorAssoc.index('X_IMAGE')
-        itemNrY_IMAGE= SExtractorParams.paramsSExtractorAssoc.index('Y_IMAGE')
+        itemNrX_IMAGE= self.SExtractorParams.paramsSExtractorAssoc.index('X_IMAGE')
+        itemNrY_IMAGE= self.SExtractorParams.paramsSExtractorAssoc.index('Y_IMAGE')
 
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
@@ -574,7 +575,7 @@ class Catalogue():
             if( element):
                 if( not ( element.group(2)== 'VECTOR_ASSOC')):
                     try:
-                        SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
+                        self.SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
                     except:
                         logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
                         break
@@ -590,14 +591,14 @@ class Catalogue():
                         y=  float(item)
 
                     try:
-                        self.catalogue.append((int(objectNumber), int(j), SExtractorParams.paramsSExtractorAssoc[j], float(item)))
+#                        self.catalogue.append((int(objectNumber), int(j), SExtractorParams.paramsSExtractorAssoc[j], float(item)))
+                        self.catalogue[(objectNumber, self.SExtractorParams.paramsSExtractorAssoc[j])]=  float(item)
                     except:
                         print 'readCatalogue: exception on line %d' % j + ' ' + line 
                         break
 
                 try:
-                    self.positions[objectNumber]= Position(x, y, True) # position, bool is used for clean up
-                    #print "========" + repr( self.positions[objectNumber])
+                    self.positions[objectNumber]= Position(x, y) # position, bool is used for clean up (default True, True)
                 except:
                     logger.error( 'Catalogue.readCatalogue: positions append error ' + line)
             else:
@@ -626,10 +627,12 @@ class Catalogue():
 
     def distanceOK( self, position1, position2):
 
-        distance= sqrt((position2.x- position1.x)**2 + (position2.y- position1.y)**2)        
+        dx= abs(position2.x- position1.x)
+        dy= abs(position2.y- position1.y)
 
-        if( distance < runTimeConfig.value('OBJECT_SEPARATION')):
-            position1.distance= position2.distance= False
+        if(( dx < runTimeConfig.value('OBJECT_SEPARATION')) and ( dy< runTimeConfig.value('OBJECT_SEPARATION'))):
+            if( (dx**2 + dy**2) < self.objectSeparation2):
+                position1.distance= position2.distance= False
 
 
     def cleanUpReference(self, paramsSexctractor):
@@ -637,10 +640,25 @@ class Catalogue():
             logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue') 
             return False
 
+        discardedObjects= 0
+        for objectNumber1, position1 in self.positions.iteritems():
+            for objectNumber2, position2 in self.positions.iteritems():
+                if( objectNumber1 != objectNumber2):
+                    self.distanceOK( position1, position2)
 
-        for objectNumber1 in sorted(self.positions.keys(), key=lambda x:self.positions[x], reverse=True):
-            for objectNumber2 in sorted(self.positions.keys(), key=lambda x:self.positions[x], reverse=True):
-                self.distanceOK( self.positions[objectNumber1], self.positions[objectNumber2])
+
+            self.checkProperties(objectNumber1)
+
+
+        logger.error("Number of objects discarded %d " % discardedObjects) 
+
+
+    def checkProperties(self, objectNumber):
+
+        if( self.catalogue(( objectNumber, 'FLAGS')) != 0): # ToDo, ATTENTION
+            position.distance= False
+        elif( self.catalogue(( objectNumber, 'ELLIPTICITY')) < runTimeConfig.value('ELLIPTICITY_REFERENCE')): # ToDo, ATTENTION
+            position.distance= False
 
 
 
@@ -657,7 +675,7 @@ class Catalogue():
     def average(self, variable):
         sum= 0
         i= 0
-        for (objectNumber,pos,item, value) in self.catalogue:
+        for (objectNumber,item), value in self.catalogue.iteritems():
             if( item == variable):
                 sum += float(value)
                 i += 1

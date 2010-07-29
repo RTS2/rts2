@@ -105,10 +105,10 @@ class main(rts2af.AFScript):
             if( rts2af.verbose):
                 print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % ffs.fitsHDUs().count(hdu)
 
-            cat= rts2af.Catalogue(hdu)
+            cat= rts2af.Catalogue(hdu,paramsSexctractor)
             cat.extractToCatalogue()
-            cat.createCatalogue(paramsSexctractor)
-            cat.cleanUpReference(paramsSexctractor)
+            cat.createCatalogue()
+            cat.cleanUpReference()
 #            cat.printCatalogue()
             cats.append(cat)
             cat.writeCatalogue()
@@ -133,6 +133,7 @@ class main(rts2af.AFScript):
             print "============"
             cat.printObject(2)
 
+        logger.error("THIS IS THE END")
         print "THIS IS THE END"
 if __name__ == '__main__':
     main(sys.argv[0]).main()
