@@ -40,6 +40,8 @@ class Keithley:public Gpib
 		virtual int info ();
 
 	protected:
+		virtual int processOption (int opt);
+
 		virtual int init ();
 		virtual int initValues ();
 
@@ -51,6 +53,7 @@ class Keithley:public Gpib
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
 		void waitOpc ();
+		void readErrors ();
 
 		Rts2ValueBool *azero;
 
@@ -64,9 +67,11 @@ class Keithley:public Gpib
 
 		Rts2ValueInteger *countNum;
 		Rts2ValueFloat *nplc;
+
+		int groupNumber;
 };
 
-};
+}
 
 using namespace rts2sensord;
 
@@ -116,27 +121,59 @@ void Keithley::waitOpc ()
 	throw rts2core::Error ("waitOpc timeout");
 }
 
+void Keithley::readErrors ()
+{
+	int count = 0;
+	readInt ("SYST:ERR:COUN?", count);
+	for (; count >= 0; count--)
+	{
+		char rb[400];
+		gpibWriteRead ("SYST:ERR?", rb, 200);
+		char *sep = strchr (rb, '\n');
+		if (sep)
+			*sep = '\0';
+		if (atoi (rb) != 0)
+			logStream (MESSAGE_ERROR) << "error " << rb << sendLog;
+	}
+	gpibWrite ("TRAC:CLE");
+}
+
 Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	createValue (azero, "AZERO", "SYSTEM:AZERO value", true, RTS2_VALUE_WRITABLE);
 
 	createValue (triggerMode, "trigger_mode", "triggering mode", true, RTS2_VALUE_WRITABLE);
 	triggerMode->addSelVal ("before exposure");
+	triggerMode->addSelVal ("block move, before exposure");
 	triggerMode->addSelVal ("manual");
 	triggerMode->setValueInteger (0);
 
-	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
-	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
-	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_TRIGGERED);
 	createValue (countNum, "COUNT", "[counts] number of measurements averaged", true, RTS2_VALUE_WRITABLE);
 	countNum->setValueInteger (100);
 
 	createValue (nplc, "MEAS_NPLC", "Time of each measurment. In Hz multiples (1 = 1/60 sec)", true, RTS2_VALUE_WRITABLE);
 	nplc->setValueFloat (1.0);
+
+	groupNumber = 0;
+
+	addOption ('g', NULL, 1, "FITS extension group number");
 }
 
 Keithley::~Keithley (void)
 {
+}
+
+int Keithley::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 'g':
+			groupNumber = atoi (optarg);
+			break;
+		default:
+			return Gpib::processOption (opt);
+	}
+	return 0;
 }
 
 int Keithley::init ()
@@ -144,6 +181,11 @@ int Keithley::init ()
 	int ret = Gpib::init ();
 	if (ret)
 		return ret;
+
+	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+
 	try
 	{
 		// start and setup measurements..
@@ -257,14 +299,19 @@ int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 void Keithley::setFullBopState (int new_state)
 {
-	if (triggerMode->getValueInteger () == 0)
+	if (triggerMode->getValueInteger () == 0 || triggerMode->getValueInteger () == 1)
 	{
 		if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
 		{
-			maskState (BOP_TRIG_EXPOSE, 0, "end waiting for exposure trigger");
+			if (triggerMode->getValueInteger () == 1)
+				maskState (BOP_TRIG_EXPOSE | BOP_TEL_MOVE, BOP_TEL_MOVE, "end waiting for exposure trigger");
+			else
+				maskState (BOP_TRIG_EXPOSE, 0, "end waiting for exposure trigger");
 			logStream (MESSAGE_DEBUG) << "triggering infoAll" << sendLog;
 			infoAll ();
 			logStream (MESSAGE_DEBUG) << "infoAll triggered" << sendLog;
+			if (triggerMode->getValueInteger () == 1)
+				maskState (BOP_TEL_MOVE, 0, "measurement completed");
 		}
 		if (new_state & BOP_TEL_MOVE)
 		{
@@ -301,7 +348,9 @@ int Keithley::info ()
 		gpibWaitSRQ ();
 		sleep (1);
 		getGPIB ("TRAC:DATA?", scurrent, current, meas_times, countNum->getValueInteger ());
-		gpibWrite ("TRAC:CLE");
+
+		readErrors ();
+
 		gpibWrite ("TRAC:FEED:CONT NEXT");
 		if (countNum->getValueInteger () > 200)
 			setTimeout (3);
