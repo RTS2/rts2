@@ -46,6 +46,7 @@ class MS257:public Sensor
 		Rts2ValueInteger *slitC;
 		Rts2ValueInteger *bandPass;
 		Rts2ValueSelection *shutter;
+		Rts2ValueBool *openShutter;
 		Rts2ValueInteger *filter1;
 		//  Rts2ValueInteger *filter2;
 		Rts2ValueInteger *msteps;
@@ -241,6 +242,9 @@ MS257::MS257 (int in_argc, char **in_argv):Sensor (in_argc, in_argv)
 	shutter->addSelVal ("FAST");
 	shutter->addSelVal ("MANUAL");
 
+	createValue (openShutter, "open_shutter", "open shutter - must be in slow mode", false, RTS2_VALUE_WRITABLE);
+	openShutter->setValueBool (false);
+
 	createValue (filter1, "FILT_1", "filter 1 position", true, RTS2_VALUE_WRITABLE);
 	//  createValue (filter2, "FILT_2", "filter 2 position", true, RTS2_VALUE_WRITABLE);
 	createValue (msteps, "MSTEPS", "Current grating position in terms of motor steps", true, RTS2_VALUE_WRITABLE);
@@ -282,6 +286,10 @@ int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		if (new_value->getValueInteger () > 2 || new_value->getValueInteger () < 0)
 			return -1;
 		return writeValue ("SHTRTYPE", shttypes[new_value->getValueInteger ()], '=');
+	}
+	if (old_value == openShutter)
+	{
+		return writeValue ("SHUTTER", ((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0, '!');
 	}
 	if (old_value == filter1)
 	{
@@ -345,7 +353,7 @@ int MS257::init ()
 		return ret;
 
 	// open shutter - init
-	ret = writeValue ("SHUTTER", 0, '!');
+	ret = writeValue ("SHUTTER", openShutter->getValueBool () ? 1 : 0, '!');
 	if (ret)
 		return ret;
 
