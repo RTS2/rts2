@@ -219,6 +219,10 @@ class EdtSao:public Camera
 		// number of lines to skip in serial mode
 		Rts2ValueInteger *skipLines;
 
+		Rts2ValueBool *dofcl;
+		Rts2ValueInteger *fclrNum;
+		Rts2ValueInteger *fclrFailed;
+
 		Rts2ValueBool *edtSplit;
 		Rts2ValueBool *edtUni;
 
@@ -549,13 +553,20 @@ int EdtSao::fclr (int num)
 
 void EdtSao::fclr_r (int num)
 {
-	while (fclr (num) != 0)
+	fclrFailed->setValueInteger (0);
+	sendValueAll (fclrFailed);
+
+	while (fclr (num) != 0 && fclrFailed->getValueInteger () < 5)
 	{
-		logStream (MESSAGE_ERROR)
-			<< "Cannot do fclr, trying again." << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot do fclr, trying again." << sendLog;
+		fclrFailed->inc ();
+		sendValueAll (fclrFailed);
 		sleep (10);
 	}
 }
+
+
+
 
 int EdtSao::setParallelClockSpeed (int new_speed)
 {
@@ -814,13 +825,13 @@ int EdtSao::startExposure ()
 
 	sendValueAll (dataChannels);
 
-	bool dofcl = true;
+	dofcl->setValueBool (true);
 
 	if (partialReadout->getValueInteger () != 0)
 	{
 		ret = writePartialPattern ();
 		chipUsedReadout->setInts (chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), (int) (fabs (partialReadout->getValueInteger ())));
-		dofcl = false;
+		dofcl->setValueBool (false);
 	}
 	else
 	{
@@ -829,16 +840,18 @@ int EdtSao::startExposure ()
 			lastPartialReadout = partialReadout->getValueInteger ();
 			setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 			lastW = -1;
-			dofcl = false;
+			dofcl->setValueBool (false);
 		}
 		// create and write pattern..
 		ret = writePattern ();
 	}
+	sendValueAll (dofcl);
 	if (ret)
 		return ret;
 	writeBinFile ("e2v_nidlesc.bin");
-	if (dofcl == true)
-		fclr_r (5);
+	if (dofcl->getValueBool ())
+		fclr_r (fclrNum->getValueInteger ());
+
 	writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
@@ -1116,6 +1129,13 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true, RTS2_VALUE_WRITABLE);
 	skipLines->setValueInteger (0);
 
+	createValue (dofcl, "DOFCLR", "[bool] if fast clear was done");
+	createValue (fclrNum, "FCLR_NUM", "number of fast clears done before exposure");
+	fclrNum->setValueInteger (5);
+
+	createValue (fclrFailed, "FCLR_FAILED", "number of failed FCLR attemps");
+	fclrFailed->setValueInteger (0);
+
 	createValue (chipWidth, "width", "chip width - number of collumns", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	chipWidth->setValueInteger (2024);
 
@@ -1358,6 +1378,9 @@ int EdtSao::scriptEnds ()
 	parallelClockSpeed->setValueInteger (6);
 	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
 	sendValueAll (parallelClockSpeed);
+
+	fclrNum->setValueInteger (5);
+	sendValueAll (fclrNum);
 
 	return Camera::scriptEnds ();
 }
