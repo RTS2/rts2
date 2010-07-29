@@ -1307,7 +1307,7 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == signalFile)
 	{
-		return writeBinFile (signalFile->getValue ()) == 0 ? 0 : -2;
+		return writeBinFile (new_value->getValue ()) == 0 ? 0 : -2;
 	}
 
 	for (int i = 0; i < totalChannels; i++)
