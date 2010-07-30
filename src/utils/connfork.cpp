@@ -20,8 +20,8 @@
 #include "connfork.h"
 
 #include <errno.h>
-#include <signal.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <unistd.h>
 
 using namespace rts2core;
@@ -160,9 +160,7 @@ void ConnFork::connectionError (int last_data_size)
 {
 	if (last_data_size < 0 && errno == EAGAIN)
 	{
-		logStream (MESSAGE_DEBUG) <<
-			"ConnFork::connectionError reported EAGAIN - that should not happen, ignoring"
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it" << sendLog;
 		return;
 	}
 	Rts2Conn::connectionError (last_data_size);
@@ -178,7 +176,7 @@ void ConnFork::initFailed ()
 
 void ConnFork::processErrorLine (char *errbuf)
 {
-	logStream (MESSAGE_ERROR) << "From error pipe received: " << errbuf << "." << sendLog;
+	logStream (MESSAGE_ERROR) << exePath << " error stream: " << errbuf << sendLog;
 }
 
 int ConnFork::newProcess ()
@@ -337,6 +335,34 @@ int ConnFork::init ()
 		logStream (MESSAGE_ERROR) << "ConnFork::init " << exePath << " newProcess return : " <<
 			ret << " " << strerror (errno) << sendLog;
 	exit (0);
+}
+
+int ConnFork::run ()
+{
+	int ret;
+	ret = init ();
+	if (ret)
+		return ret;
+	
+	fd_set read_set, write_set, exp_set;
+	struct timeval read_tout;
+	read_tout.tv_sec = 10;
+	read_tout.tv_usec = 0;
+
+	while (sock > 0)
+	{
+		FD_ZERO (&read_set);
+		FD_ZERO (&write_set);
+		FD_ZERO (&exp_set);
+
+		add (&read_set, &write_set, &exp_set);
+		ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
+		if (ret == -1)
+			return -1;
+		idle ();
+	}
+
+	return 0;
 }
 
 void ConnFork::stop ()

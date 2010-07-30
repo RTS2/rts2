@@ -78,6 +78,16 @@ class ConnFork:public Rts2ConnNoSend
 		virtual int newProcess ();
 
 		virtual int init ();
+
+		/**
+		 * Run the forked process. This assumes that the calling
+		 * processes is willing to loose controll over program
+		 * execution - this is blocking call, which will return after
+		 * executed process has ended. Do not use this to run processes
+		 * which might take a long time to execute.
+		 */
+		int run ();
+
 		virtual void stop ();
 		void term ();
 
@@ -129,5 +139,5 @@ class ConnFork:public Rts2ConnNoSend
 		void fillConnectionEnv (Rts2Conn *conn, const char *name);
 };
 
-};
+}
 #endif							 /* !__RTS2_CONN_FORK__ */
