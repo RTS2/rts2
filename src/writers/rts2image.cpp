@@ -298,10 +298,9 @@ Rts2Image::~Rts2Image (void)
 {
 	saveImage ();
 
-	for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
+	for (std::map <int, TableData *>::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
 	{
-		for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
-			delete *ci;
+		delete iter->second;
 		arrayGroups.erase (iter++);
 	}
 
@@ -515,13 +514,14 @@ int Rts2Image::closeFile ()
 				setValue ("ROTANG", total_rotang, "Image rotang over X axis");
 			}
 			// save array data
-			for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
+			for (std::map <int, TableData *>::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
 			{
-				writeConnArray (iter->second.first.c_str (), iter->second.second);
-				for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
-					delete *ci;
+				writeConnArray (iter->second);
+				delete iter->second;
 				arrayGroups.erase (iter++);
 			}
+
+			moveHDU (1);
 			setCreationDate ();
 		}
 		catch (rts2core::Error &er)
@@ -2178,7 +2178,7 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 	}
 }
 
-void Rts2Image::writeConnArray (const char *name, std::list <ColumnData *> &values)
+void Rts2Image::writeConnArray (TableData *tableData)
 {
 	if (!getFitsFile ())
 	{
@@ -2186,7 +2186,8 @@ void Rts2Image::writeConnArray (const char *name, std::list <ColumnData *> &valu
 			return;
 		openImage ();
 	}
-	writeArray (name,  values);
+	writeArray (tableData->getName (), tableData);
+	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
 void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
@@ -2206,7 +2207,7 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 		strcat (name, val->getName ().c_str ());
 	}
 
-	std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator ai;
+	std::map <int, TableData *>::iterator ai;
 
 	switch (val->getValueExtType ())
 	{
@@ -2218,13 +2219,17 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 
 			if (ai == arrayGroups.end ())
 			{
-				std::list <ColumnData *> vl;
-				vl.push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
-				arrayGroups[val->getWriteGroup ()] = std::pair <std::string, std::list <ColumnData *> > (std::string (name), vl);
+				Rts2Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
+				if (infoTime)
+				{
+					TableData *td = new TableData (name, infoTime->getValueDouble ());
+					td->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+					arrayGroups[val->getWriteGroup ()] = td;
+				}
 			}
 			else
 			{
-				ai->second.second.push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+				ai->second->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
 			}
 
 			break;

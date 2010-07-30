@@ -51,6 +51,37 @@ class ColumnData
 };
 
 /**
+ * Hold data which should be written to the FITS file.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TableData:public std::list <ColumnData *>
+{
+	public:
+		TableData (const char *_name, double _date)
+		{
+			name = std::string (_name);
+			date = _date;
+		}
+
+		virtual ~TableData ()
+		{
+			for (std::list <ColumnData *>::iterator iter = begin (); iter != end (); iter++)
+				delete *iter;
+		}
+
+		const char *getName () { return name.c_str (); }
+
+		double getDate () { return date; }
+
+		void addColumn (ColumnData *new_data) { push_back (new_data); }
+
+	private:
+		std::string name;
+		double date;
+};
+
+/**
  * Class representing FITS file. This class represents FITS file. Usually you
  * will be looking for Rts2Image class for Rts2Image, or for Rts2FitsTable for
  * FITS table. This class only creates FITS file and manage keywords at primary
@@ -157,7 +188,7 @@ class Rts2FitsFile: public rts2core::Expander
 		/**
 		 * Create table extension from DoubleArray
 		 */
-		int writeArray (const char *extname, std::list <ColumnData *> & values);
+		int writeArray (const char *extname, TableData *values);
 
 		/**
 		 * Return true if image shall be written to disk before it is closed.

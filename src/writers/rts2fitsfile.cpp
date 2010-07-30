@@ -283,18 +283,18 @@ void Rts2FitsFile::writeComment (const char *comment)
 	fitsStatusSetValue ("comment", true);
 }
 
-int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & values)
+int Rts2FitsFile::writeArray (const char *extname, TableData *values)
 {
-	char *cols[values.size ()];
-	const char *types[values.size ()];
-	const char *units[values.size ()];
+	char *cols[values->size ()];
+	const char *types[values->size ()];
+	const char *units[values->size ()];
 
 	size_t maxsize = 0;
 	
 	int i = 0;
 	std::list <ColumnData *>::iterator iter;
 
-	for (iter = values.begin (); iter != values.end (); iter++, i++)
+	for (iter = values->begin (); iter != values->end (); iter++, i++)
 	{
 		cols[i] = new char[(*iter)->name.length () + 1];
 		strcpy (cols[i], (*iter)->name.c_str ());
@@ -308,7 +308,7 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 			maxsize = (*iter)->len;
 	}
 
-	fits_create_tbl (ffile, BINARY_TBL, maxsize, values.size (), (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
+	fits_create_tbl (ffile, BINARY_TBL, maxsize, values->size (), (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
 
 	if (fits_status)
 	{
@@ -318,19 +318,14 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 
 	i = 1;
 
-	for (iter = values.begin (); iter != values.end (); iter++, i++)
+	for (iter = values->begin (); iter != values->end (); iter++, i++)
 	{
 		if ((*iter)->data)
 			fits_write_col (ffile, TDOUBLE, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
 	}
 
-	for (i = 0; i < (int) (values.size ()); i++)
+	for (i = 0; i < (int) (values->size ()); i++)
 		delete[] cols[i];
-
-	// move back to primary HDU
-	int hdutype;
-
-	fits_movabs_hdu (ffile, 1, &hdutype, &fits_status);
 
 	if (fits_status)
 	{
