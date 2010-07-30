@@ -20,6 +20,8 @@
 #include "camd.h"
 #include "edtsao/interface.h"
 
+#include "../utils/connfork.h"
+
 #define OPT_NOTIMEOUT  OPT_LOCAL + 3
 
 /*
@@ -242,6 +244,12 @@ class EdtSao:public Camera
 
 		int writeBinFile (const char *filename);
 
+		/**
+		 * Check if its a signal file (ending with .sig). If it is, it
+		 * will first translate it to .bin file using sigtosc.pl.
+		 */
+		int writeSignalFile (const char *filename);
+
 		Rts2ValueBool **channels;
 		int totalChannels;
 
@@ -420,10 +428,41 @@ int EdtSao::writeBinFile (const char *filename)
 		loops++;
 	}
 	fclose (fp);
-	logStream (MESSAGE_DEBUG) << "From " << full_name
-		<< " written " << loops << " serial commands."
-		<< sendLog;
+	logStream (MESSAGE_DEBUG) << "from " << full_name << " written " << loops << " serial commands." << sendLog;
 	return 0;
+}
+
+int EdtSao::writeSignalFile (const char *filename)
+{
+
+	std::string full_name;
+
+	if (*filename != '/')
+		full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
+	else
+		full_name = std::string (filename);
+
+	size_t l = full_name.length ();
+	if (l > 4 && full_name.substr (l-4) == ".sig")
+	{
+		// translate file..
+		rts2core::ConnFork c (this, "/usr/local/bin/sigtosc.pl", false, false);
+		c.addArg (full_name);
+		// TODO replace .sig with .bin?
+		c.addArg ("/tmp/rts2.bin");
+		int ret = c.run ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "cannot translate " << full_name << sendLog;
+			return ret;
+		}
+		logStream (MESSAGE_DEBUG) << "translated " << full_name << " to /tmp/rts2.bin" << sendLog;
+		return writeBinFile ("/tmp/rts2.bin");
+	}
+	else
+	{
+		return writeBinFile (filename);
+	}
 }
 
 void EdtSao::reset ()
@@ -564,9 +603,6 @@ void EdtSao::fclr_r (int num)
 		sleep (10);
 	}
 }
-
-
-
 
 int EdtSao::setParallelClockSpeed (int new_speed)
 {
@@ -1307,7 +1343,7 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == signalFile)
 	{
-		return writeBinFile (new_value->getValue ()) == 0 ? 0 : -2;
+		return writeSignalFile (new_value->getValue ()) == 0 ? 0 : -2;
 	}
 
 	for (int i = 0; i < totalChannels; i++)
