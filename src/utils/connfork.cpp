@@ -359,6 +359,8 @@ int ConnFork::run ()
 		ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 		if (ret == -1)
 			return -1;
+		if (receive (&read_set) == -1 || writable (&write_set) == -1)
+			return 0;
 		idle ();
 	}
 
