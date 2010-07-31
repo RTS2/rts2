@@ -344,6 +344,16 @@ class SExtractorParams():
         else:
             return False
 
+    def index(self, element):
+        return self.paramsSExtractorAssoc(element)
+
+    def identifiersReference(self):
+        return self.paramsSExtractorReference
+
+    def identifiersAssoc(self):
+        return self.paramsSExtractorAssoc
+
+
     def readSExtractorParams(self):
         params=open( self.paramsFileName, 'r')
         lines= params.readlines()
@@ -401,9 +411,6 @@ class SExtractorParams():
             print "Association element : >" + element+"<"
 
 
-    def index(self, element):
-        return self.paramsSExtractorAssoc(element)
-
 class Filter:
     """Class for filter properties"""
 
@@ -415,7 +422,7 @@ class Filter:
         self.stepSize  = resolution # [tick]
         self.exposure  = exposure
 
-    def filerName(self):
+    def filterName(self):
         return self.filterName
     def focDef(self):
         return self.focDef 
@@ -428,13 +435,33 @@ class Filter:
     def exposure(self):
         return self.exposure
 
-class Position:
-    """Class holding the coordinates and the iformation if it is close to its neighbors"""
-    def __init__(self, x=None, y=None, distance=True, properties=True):    
-        self.x = x
-        self.y = y
+
+class SXobject():
+    """Class holding the used properties of SExtractor object"""
+    def __init__(self, objectNumber=None, position=None, fwhm=None, flux=None, distance=True, properties=True, isSelected=False):
+        self.objectNumber= objectNumber
+        self.position= position # is a list (x,y)
+        self.isSelected= isSelected
+        self.fwhm=-1
+        self.flux=-1
         self.distance  = distance
         self.properties= properties
+
+
+    def position(self):
+        return self.position
+
+    def isSelected(self, isSelected=None):
+        if( isSelected==None) :
+            return  self.isSelected
+        else:
+             self.isSelected= isSelected
+
+    def fwhm(self):
+        return  self.fwhm
+
+    def flux(self):
+        return  self.flux
 
     def distanceOK(self, ok=None):
         if( ok== None):
@@ -442,10 +469,23 @@ class Position:
         else:
             self.distance= ok
 
+    def propertiesOK(self, ok=None):
+        if( ok== None):
+            return self.properties
+        else:
+            self.distance= ok
+
     def printPosition(self):
-        print "=== %f %f" %  (x, y)
-
-
+        print "=== %f %f" %  (self.x, self.y)
+    
+    def isValid(self):
+        if( self.objectNumber != None):
+            if( self.x != None):
+                if( self.y != None):
+                    if( self.fwhm != None):
+                        if( self.flux != None):
+                            return True
+        return False
 
 import shlex
 import subprocess
@@ -457,15 +497,15 @@ class Catalogue():
         self.fitsHDU  = fitsHDU
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
         self.lines= []
-        self.catalogue = []
-        self.positions = {}
-        self.elements  = {}
+        self.catalogue = {}
+        self.sxobjects = {}
+        self.multiplicity = {}
         self.isReference = False
         self.isValid     = False
         self.objectSeparation2= runTimeConfig.value('OBJECT_SEPARATION')**2
         self.SExtractorParams = SExtractorParams
-        self.indexeFlag      = self.SExtractorParams.index('FLAGS') 
-        self.indexellipticity= self.SExtractorParams.index('ELLIPTICITY')
+        self.indexeFlag       = self.SExtractorParams.paramsSExtractorAssoc.index('FLAGS')  
+        self.indexellipticity = self.SExtractorParams.paramsSExtractorAssoc.index('ELLIPTICITY')
 
         Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
@@ -477,25 +517,28 @@ class Catalogue():
 
     def writeCatalogue(self):
         if( not self.isReference):
-            logger.error( 'Catalogue.writeCatalogue: write is only for a reference catalogue, not for ' + self.fitsHDU.fitsFileName) 
             return False
+        else:
+            logger.error( 'Catalogue.writeCatalogue: writing reference catalogue, for ' + self.fitsHDU.fitsFileName) 
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
 
         SXcat= open( '/tmp/test', 'wb')
+        logger.error( "writeCatalogue====================Catalogue.removeObject: length %d"  % len(self.sxobjects))
+
         for line in self.lines:
-            element = pElement.search(line)
-            data= pData.search(line)
+            element= pElement.search(line)
+            data   = pData.search(line)
             if(element):
                 SXcat.write(line)
             else:
-                if( self.positions[str(data.group(1))].distance):
-                    
+                if((data.group(1)) in self.sxobjects):
                     try:
                         SXcat.write(line)
                     except:
-                        logger.error( 'Catalogue.writeCatalogue: no object found for ' + data.group(1))
+                        logger.error( 'Catalogue.writeCatalogue: could not write line for object ' + data.group(1))
+                        sys.exit(1)
                         break
         SXcat.close()
 
@@ -565,13 +608,17 @@ class Catalogue():
         objectNumber= -1
         itemNrX_IMAGE= self.SExtractorParams.paramsSExtractorAssoc.index('X_IMAGE')
         itemNrY_IMAGE= self.SExtractorParams.paramsSExtractorAssoc.index('Y_IMAGE')
+        itemNrFWHM_IMAGE= self.SExtractorParams.paramsSExtractorAssoc.index('FWHM_IMAGE')
+        itemNrFLUX_MAX= self.SExtractorParams.paramsSExtractorAssoc.index('FLUX_MAX')
+
+        itemNrASSOC_NUMBER= self.SExtractorParams.paramsSExtractorAssoc.index('ASSOC_NUMBER')
 
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
             x= -1
             y= -1
-
+            objectNumberASSOC= '-1'
             if( element):
                 if( not ( element.group(2)== 'VECTOR_ASSOC')):
                     try:
@@ -588,19 +635,20 @@ class Catalogue():
                     if( j == itemNrX_IMAGE):
                         x= float(item)
                     if( j == itemNrY_IMAGE):
-                        y=  float(item)
+                        y= float(item)
+                    if( not self.isReference):
+                        if( j == itemNrASSOC_NUMBER):
+                            objectNumberASSOC= item 
+                    # here
+                    self.catalogue[(objectNumber, self.SExtractorParams.paramsSExtractorAssoc[j])]=  float(item)
 
-                    try:
-#                        self.catalogue.append((int(objectNumber), int(j), SExtractorParams.paramsSExtractorAssoc[j], float(item)))
-                        self.catalogue[(objectNumber, self.SExtractorParams.paramsSExtractorAssoc[j])]=  float(item)
-                    except:
-                        print 'readCatalogue: exception on line %d' % j + ' ' + line 
-                        break
 
-                try:
-                    self.positions[objectNumber]= Position(x, y) # position, bool is used for clean up (default True, True)
-                except:
-                    logger.error( 'Catalogue.readCatalogue: positions append error ' + line)
+                self.sxobjects[objectNumber]= SXobject(objectNumber, (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), items[itemNrFWHM_IMAGE], items[itemNrFLUX_MAX]) # position, bool is used for clean up (default True, True)
+                if( not self.isReference):
+                    if( objectNumberASSOC in self.multiplicity): # interesting
+                        self.multiplicity[objectNumberASSOC] += 1
+                    else:
+                        self.multiplicity[objectNumberASSOC]= 1
             else:
                 logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
@@ -612,71 +660,125 @@ class Catalogue():
 
         return self.isValid
 
+    def printCatalogue(self):
+        for (objectNumber,identifier), value in sorted( self.catalogue.iteritems()):
+# ToDo, remove me:
+            if( objectNumber== "12"):
+                print  "printCatalogue " + objectNumber + ">"+ identifier + "< %f"% value 
+
+
     def printObject(self, objectNumber):
-        for (oNr, pos, item, value) in self.catalogue:
-            if( objectNumber== oNr):
-                print "Object number %d" %  oNr + repr((oNr, pos, item, value))
+        if( self.isReference):
+            
+            for itentifier in self.SExtractorParams.identifiersReference():
+            
+                if(((objectNumber, itentifier)) in self.catalogue):
+                    print "printObject: reference object number " + objectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(objectNumber, itentifier)]
+                else:
+                    logger.error( "Catalogue.printObject: reference Object number " + objectNumber + " for >" + itentifier + "< not found, break")
+                    break
+            else:
+#                logger.error( "Catalogue.printObject: for object number " + objectNumber + " all elements printed")
+                return True
         else:
-             print "Object number %d" % objectNumber + " is not there anymore"
+            for itentifier in self.SExtractorParams.identifiersAssoc():
+                if(((objectNumber, itentifier)) in self.catalogue):
+                    print "printObject: object number " + objectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(objectNumber, itentifier)]
+                else:
+                    logger.error( "Catalogue.printObject: object number " + objectNumber + " for >" + itentifier + "< not found, break")
+                    break
+            else:
+#                logger.error( "Catalogue.printObject: for object number " + objectNumber + " all elements printed")
+                return True
+
+        return False
 
     def removeObject(self, objectNumber):
-        # ToDo, hm, if not sorted not all item.objectNumber are removed
-        for (oNr, pos, item, value) in sorted(self.catalogue):
-            if( objectNumber== oNr):
-                self.catalogue.remove((oNr, pos, item, value))
+        if( not objectNumber in self.sxobjects):
+            logger.error( "Catalogue.removeObject: reference Object number " + objectNumber + " for >" + itentifier + "< not found in sxobjects")
+        else:
+            if( objectNumber in self.sxobjects):
+                del self.sxobjects[objectNumber]
+            else:
+                logger.error( "Catalogue.removeObject: object number " + objectNumber + " not found")
+
+        if( self.isReference):
+            for itentifier in self.SExtractorParams.identifiersReference():
+                if(((objectNumber, itentifier)) in self.catalogue):
+                    del self.catalogue[(objectNumber, itentifier)]
+                else:
+                    logger.error( "Catalogue.removeObject: reference Object number " + objectNumber + " for >" + itentifier + "< not found, break")
+                    break
+            else:
+#                logger.error( "Catalogue.removeObject: for object number " + objectNumber + " all elements deleted")
+                return True
+        else:
+            for itentifier in self.SExtractorParams.identifiersAssoc():
+                if(((objectNumber, itentifier)) in self.catalogue):
+                    del self.catalogue[(objectNumber, itentifier)]
+                else:
+                    logger.error( "Catalogue.removeObject: object number " + objectNumber + " for >" + itentifier + "< not found, break")
+                    break
+            else:
+#                logger.error( "Catalogue.removeObject: for object number " + objectNumber + " all elements deleted")
+                return True
+
+        return False
 
     def distanceOK( self, position1, position2):
 
-        dx= abs(position2.x- position1.x)
-        dy= abs(position2.y- position1.y)
-
+        dx= abs(position2[0]- position1[0])
+        dy= abs(position2[1]- position1[1])
         if(( dx < runTimeConfig.value('OBJECT_SEPARATION')) and ( dy< runTimeConfig.value('OBJECT_SEPARATION'))):
             if( (dx**2 + dy**2) < self.objectSeparation2):
-                position1.distance= position2.distance= False
+                return False
+        # TRUE    
+        return True
 
-
-    def cleanUpReference(self, paramsSexctractor):
-        if( not  self.isReference):
-            logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue') 
+    # now done on catalogue for the sake of flexibility
+    # ToDo, define if that shoud go into SXobject (now, better not)
+    def checkProperties(self, objectNumber): 
+        if( self.catalogue[( objectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
             return False
+        elif( self.catalogue[( objectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY_REFERENCE')): # ToDo, ATTENTION
+            return False
+        # TRUE    
+        return True
+
+    def cleanUpReference(self):
+        if( not  self.isReference):
+            logger.error( 'Catalogue.cleanUpReference: clean up only for a reference catalogue, I am : ' + self.fitsHDU.fitsFileName) 
+            return False
+        else:
+            logger.error( 'Catalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
+
+        for objectNumber1, sxobject1 in self.sxobjects.iteritems():
+            for objectNumber2, sxobject2 in self.sxobjects.iteritems():
+                if( objectNumber1 != objectNumber2):
+                    if( not self.distanceOK( sxobject1.position, sxobject2.position)):
+                        sxobject1.distanceOK(False)
+                        sxobject2.distanceOK(False)
+
+            else:
+                if( not self.checkProperties(objectNumber1)):
+                    sxobject1.propertiesOK(False)
 
         discardedObjects= 0
-        for objectNumber1, position1 in self.positions.iteritems():
-            for objectNumber2, position2 in self.positions.iteritems():
-                if( objectNumber1 != objectNumber2):
-                    self.distanceOK( position1, position2)
-
-
-            self.checkProperties(objectNumber1)
-
+        objectNumbers= self.sxobjects.keys()
+        for objectNumber in objectNumbers:
+            if(( not self.sxobjects[objectNumber].distanceOK()) or ( not self.sxobjects[objectNumber].propertiesOK())):
+                if( not self.sxobjects[objectNumber].distanceOK()):
+                    self.removeObject( objectNumber)
+                    discardedObjects += 1
 
         logger.error("Number of objects discarded %d " % discardedObjects) 
-
-
-    def checkProperties(self, objectNumber):
-
-        if( self.catalogue(( objectNumber, 'FLAGS')) != 0): # ToDo, ATTENTION
-            position.distance= False
-        elif( self.catalogue(( objectNumber, 'ELLIPTICITY')) < runTimeConfig.value('ELLIPTICITY_REFERENCE')): # ToDo, ATTENTION
-            position.distance= False
-
-
-
-    def printCatalogue(self, name=None):
-        if( name== None):
-            for (objectNumber, pos, item, value) in sorted( self.catalogue, key=itemgetter(0,1)):
-                print "===" + repr((objectNumber, pos, item, value))
-                if( int(objectNumber) > 3):
-                    print objectNumber
-                    return
-
 
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
         i= 0
-        for (objectNumber,item), value in self.catalogue.iteritems():
-            if( item == variable):
+        for (objectNumber,identifier), value in self.catalogue.iteritems():
+            if( identifier == variable):
                 sum += float(value)
                 i += 1
 
@@ -741,10 +843,7 @@ class Catalogues():
                 if( len(self.CataloguesList) > 0):
                     self.isValid= True
                     return self.isValid
-
-
         return False
- 
 
 import sys
 import pyfits
@@ -910,3 +1009,5 @@ class Service():
     """Temporary class for uncategorized methods"""
     def __init__(self):
         print
+
+#  LocalWords:  itentifier

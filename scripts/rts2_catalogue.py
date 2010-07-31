@@ -81,35 +81,43 @@ class main(rts2af.AFScript):
 #            for fitsHDUs in testFitsList:
 #                print 'FitsHDU to be analyzed: '+ fitsHDUs
 
-        ffs= rts2af.FitsHDUs()
+        HDUs= rts2af.FitsHDUs()
 # ToDO, tmp reference catalog, fake
 # replace it by a reference catalogue which has the
 # the smallest average FWHM for a given filter
 # after the validate
 #
 # loop over fits file names
-        hdu= rts2af.FitsHDU('./X/20100625211258-885-RA.fits', True)
-        hdu.isFilter('X')
-        ffs.append(hdu)
-
-        for fits in testFitsList:
-            hdu= rts2af.FitsHDU( fits)
-            if(hdu.isFilter('X')):
-                ffs.append(hdu)
-
-        ffs.validate()
-
-# loop over hdus
         cats= rts2af.Catalogues()
-        for hdu  in ffs.fitsHDUs():
-            if( rts2af.verbose):
-                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % ffs.fitsHDUs().count(hdu)
+        hdu= rts2af.FitsHDU('./20100625211258-885-RA.fits', True)
+        hdu.isFilter('X')
+        HDUs.append(hdu)
 
+# reference catalogue
+        for hdu  in HDUs.fitsHDUs():
             cat= rts2af.Catalogue(hdu,paramsSexctractor)
             cat.extractToCatalogue()
             cat.createCatalogue()
             cat.cleanUpReference()
-#            cat.printCatalogue()
+            cat.writeCatalogue()
+            cats.append(cat)
+
+        for fits in testFitsList:
+            hdu= rts2af.FitsHDU( fits)
+            if(hdu.isFilter('X')):
+                HDUs.append(hdu)
+
+        HDUs.validate()
+
+# loop over hdus
+        
+        for hdu  in HDUs.fitsHDUs():
+            if( rts2af.verbose):
+                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % HDUs.fitsHDUs().count(hdu)
+            
+            cat= rts2af.Catalogue(hdu,paramsSexctractor)
+            cat.extractToCatalogue()
+            cat.createCatalogue()
             cats.append(cat)
             cat.writeCatalogue()
 
@@ -122,16 +130,9 @@ class main(rts2af.AFScript):
             if(rts2af.verbose):
                 print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
             cat.average('FWHM_IMAGE')
-#            cat.printCatalogue()
-            print "============"
-            cat.printObject(2)
-            cat.removeObject(2)
-#            cat.removeObject(2)
-#            cat.removeObject(2)
-#            cat.removeObject(2)
-#            cat.removeObject(2)
-            print "============"
-            cat.printObject(2)
+#            for objectNumber, value in cat.multiplicity.iteritems():
+#                if(  cat.multiplicity[objectNumber]> 1):
+#                    print "====Ob" + objectNumber + "= %d" % cat.multiplicity[objectNumber] 
 
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
