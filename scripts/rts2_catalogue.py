@@ -55,6 +55,7 @@ class main(rts2af.AFScript):
         logger    = self.configureLogger()
         rts2af.sfo= rts2af.ServiceFileOperations()
 
+
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
@@ -81,55 +82,55 @@ class main(rts2af.AFScript):
 #            for fitsHDUs in testFitsList:
 #                print 'FitsHDU to be analyzed: '+ fitsHDUs
 
+
         HDUs= rts2af.FitsHDUs()
-# ToDO, tmp reference catalog, fake
-# replace it by a reference catalogue which has the
-# the smallest average FWHM for a given filter
-# after the validate
-#
-        cats= rts2af.Catalogues()
         catrs= rts2af.Catalogues()
 
         hdur= rts2af.FitsHDU('./20100625211258-885-RA.fits', True)
         hdur.isFilter('X')
-
 # reference catalogue
         catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
         catr.extractToCatalogue()
         catr.createCatalogue()
         catr.cleanUpReference()
         catr.writeCatalogue()
-        catrs.append(catr)
+        catrs.CataloguesList.append(catr)
+
+        cats= rts2af.Catalogues(catr)
 
         for fits in testFitsList:
             hdu= rts2af.FitsHDU( fits)
             if(hdu.isFilter('X')):
-                HDUs.append(hdu)
+                HDUs.fitsHDUsList.append(hdu)
 
         HDUs.validate()
 
 # loop over hdus (including reference catalog currently)
-        for hdu  in HDUs.fitsHDUs():
+        for hdu  in HDUs.fitsHDUsList:
             if( rts2af.verbose):
-                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % HDUs.fitsHDUs().count(hdu)
+                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % HDUs.fitsHDUsList.count(hdu)
             
             cat= rts2af.Catalogue(hdu,paramsSexctractor)
             cat.extractToCatalogue()
             cat.createCatalogue()
-            cats.append(cat)
+            cat.cleanUp()
+            cat.matching(catr)
+            cats.CataloguesList.append(cat)
 
         if(cats.validate()):
             print "catalogues is valid"
         else:
             print "catalogues is in valid"
 
-        for cat in sorted(cats.catalogues(), key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+        for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
             if(rts2af.verbose):
                 print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
             cat.average('FWHM_IMAGE')
-#            for objectNumber, value in cat.multiplicity.iteritems():
-#                if(  cat.multiplicity[objectNumber]> 1):
-#                    print "====Ob" + objectNumber + "= %d" % cat.multiplicity[objectNumber] 
+
+
+        cats.average(catr)
+        cats.writeFitValues()
+        cats.fitTheValues()
 
         logger.error("THIS IS THE END")
         print "THIS IS THE END"

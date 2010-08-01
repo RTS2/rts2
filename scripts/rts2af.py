@@ -52,7 +52,7 @@ class AFScript:
 
         parser.add_argument(
             '-w', '--write', action='store_true', 
-            help='write defaults to configuration file ' + runTimeConfig.configurationFileName())
+            help='write defaults to configuration file ' + runTimeConfig.configFileName)
 
         parser.add_argument('--config', dest='fileName',
                             metavar='CONFIG FILE', nargs=1, type=str,
@@ -184,9 +184,6 @@ class Configuration:
             self.defaults[(identifier)]= value
 #            print 'value ', self.defaults[(identifier)]
  
-    def configurationFileName(self):
-        return self.configFileName
-
     def configIdentifiers(self):
         return sorted(self.cp.iteritems())
 
@@ -211,9 +208,6 @@ class Configuration:
         for (identifier), value in self.valuesIdentifiers():
             print "dump values :", ', ', identifier, '=>', value
 
-    def filters(self):
-        return self.filters
-
     def filterByName(self, name):
         for filter in  self.filters:
             print "NAME>" + name + "<>" + filter.filterName
@@ -222,9 +216,6 @@ class Configuration:
                 return filter
 
         return False
-
-    def filtersInUse(self):
-        return self.filtersInUse
 
     def filterInUseByName(self, name):
         for filter in  self.filtersInUse:
@@ -331,28 +322,15 @@ class SExtractorParams():
             self.paramsFileName= runTimeConfig.value('SEXREFERENCE_PARAM')
         else:
             self.paramsFileName= paramsFileName
-        self.paramsSExtractorReference= []
-        self.paramsSExtractorAssoc= []
-
-    def lengthAssoc(self):
-        return len(self.paramsSExtractorAssoc)
+        self.reference= []
+        self.assoc= []
 
     def elementIndex(self, element):
-        for ele in  self.paramsSExtractorAssoc:
+        for ele in  self.assoc:
             if( element== ele) : 
-                return self.paramsSExtractorAssoc.index(ele)
+                return self.assoc.index(ele)
         else:
             return False
-
-    def index(self, element):
-        return self.paramsSExtractorAssoc(element)
-
-    def identifiersReference(self):
-        return self.paramsSExtractorReference
-
-    def identifiersAssoc(self):
-        return self.paramsSExtractorAssoc
-
 
     def readSExtractorParams(self):
         params=open( self.paramsFileName, 'r')
@@ -363,8 +341,8 @@ class SExtractorParams():
             if( element):
                 if(verbose):
                     print "element.group(1) : ", element.group(1)
-                self.paramsSExtractorReference.append(element.group(1))
-                self.paramsSExtractorAssoc.append(element.group(1))
+                self.reference.append(element.group(1))
+                self.assoc.append(element.group(1))
 
 # current structure of the reference catalogue
 #   1 NUMBER                 Running object number
@@ -400,14 +378,14 @@ class SExtractorParams():
 #  15 VECTOR_ASSOC           ASSOCiated parameter vector
 #  29 NUMBER_ASSOC           Number of ASSOCiated IDs
             
-        for element in self.paramsSExtractorReference:
-            self.paramsSExtractorAssoc.append('ASSOC_'+ element)
+        for element in self.reference:
+            self.assoc.append('ASSOC_'+ element)
 
-        self.paramsSExtractorAssoc.append('NUMBER_ASSOC')
+        self.assoc.append('NUMBER_ASSOC')
 
-        for element in  self.paramsSExtractorReference:
+        for element in  self.reference:
             print "Reference element : >"+ element+"<"
-        for element in  self.paramsSExtractorAssoc:
+        for element in  self.assoc:
             print "Association element : >" + element+"<"
 
 class Filter:
@@ -421,52 +399,21 @@ class Filter:
         self.stepSize  = resolution # [tick]
         self.exposure  = exposure
 
-    def filterName(self):
-        return self.filterName
-    def focDef(self):
-        return self.focDef 
-    def lowerLimit(self):
-        return self.lowerLimit
-    def upperLimit(self):
-        return  self.upperLimit
-    def stepSize(self):
-        return self.stepSize
-    def exposure(self):
-        return self.exposure
 
 class SXObject():
     """Class holding the used properties of SExtractor object"""
-    def __init__(self, objectNumber=None, position=None, fwhm=None, flux=None, associatedSXobject=None, distance=True, properties=True):
+    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, associatedSXobject=None, distanceOK=True, propertiesOK=True):
         self.objectNumber= objectNumber
+        self.focusPosition= focusPosition
         self.position= position # is a list (x,y)
-        self.matchedReference= False
-        self.foundInAll= False
+        self.matched= False
         self.fwhm= fwhm
         self.flux= flux
         self.associatedSXobject= associatedSXobject
-        self.distance  = distance
-        self.properties= properties
+        self.distanceOK  = distanceOK
+        self.propertiesOK= propertiesOK
 
-    def position(self):
-        return self.position
 
-    def fwhm(self):
-        return  self.fwhm
-
-    def flux(self):
-        return  self.flux
-
-    def distanceOK(self, ok=None):
-        if( ok== None):
-            return self.distance
-        else:
-            self.distance= ok
-
-    def propertiesOK(self, ok=None):
-        if( ok== None):
-            return self.properties
-        else:
-            self.distance= ok
 
     def printPosition(self):
         print "=== %f %f" %  (self.x, self.y)
@@ -483,18 +430,24 @@ class SXObject():
 
 class SXReferenceObject(SXObject):
     """Class holding the used properties of SExtractor object"""
-    def __init__(self, objectNumber=None, position=None, fwhm=None, flux=None, distance=True, properties=True):
+    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, distanceOK=True, propertiesOK=True):
         self.objectNumber= objectNumber
+        self.focusPosition= focusPosition
         self.position= position # is a list (x,y)
         self.matchedReference= False
         self.foundInAll= False
         self.fwhm= fwhm
         self.flux= flux
-        self.distance  = distance
-        self.properties= properties
+        self.distanceOK  = distanceOK
+        self.propertiesOK= propertiesOK
         self.multiplicity=0
+        self.numberOfMatches=0
+        self.matchedsxObjects=[]
 
 
+    def append(self, sxObject):
+        self.matchedsxObjects.append(sxObject)
+        
 
 import shlex
 import subprocess
@@ -513,16 +466,10 @@ class Catalogue():
         self.isValid     = False
         self.SExtractorParams = SExtractorParams
         self.referenceCatalogue= referenceCatalogue
-        self.indexeFlag       = self.SExtractorParams.paramsSExtractorAssoc.index('FLAGS')  
-        self.indexellipticity = self.SExtractorParams.paramsSExtractorAssoc.index('ELLIPTICITY')
-
+        self.indexeFlag       = self.SExtractorParams.assoc.index('FLAGS')  
+        self.indexellipticity = self.SExtractorParams.assoc.index('ELLIPTICITY')
+        
         Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
-
-    def fitsHDU(self):
-        return self.fitsHDU
-
-    def isReference(self):
-        return self.isReference
 
     def extractToCatalogue(self):
         if( verbose):
@@ -576,39 +523,40 @@ class Catalogue():
  
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
-        SXobjectNumber= -1
-        itemNrX_IMAGE     = self.SExtractorParams.paramsSExtractorAssoc.index('X_IMAGE')
-        itemNrY_IMAGE     = self.SExtractorParams.paramsSExtractorAssoc.index('Y_IMAGE')
-        itemNrFWHM_IMAGE  = self.SExtractorParams.paramsSExtractorAssoc.index('FWHM_IMAGE')
-        itemNrFLUX_MAX    = self.SExtractorParams.paramsSExtractorAssoc.index('FLUX_MAX')
-        itemNrASSOC_NUMBER= self.SExtractorParams.paramsSExtractorAssoc.index('ASSOC_NUMBER')
+        sxObjectNumber= -1
+        itemNrX_IMAGE     = self.SExtractorParams.assoc.index('X_IMAGE')
+        itemNrY_IMAGE     = self.SExtractorParams.assoc.index('Y_IMAGE')
+        itemNrFWHM_IMAGE  = self.SExtractorParams.assoc.index('FWHM_IMAGE')
+        itemNrFLUX_MAX    = self.SExtractorParams.assoc.index('FLUX_MAX')
+        itemNrASSOC_NUMBER= self.SExtractorParams.assoc.index('ASSOC_NUMBER')
 
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
             x= -1
             y= -1
-            SXobjectNumberASSOC= '-1'
+            sxObjectNumberASSOC= '-1'
             if( element):
                 if( not ( element.group(2)== 'VECTOR_ASSOC')):
                     try:
-                        self.SExtractorParams.paramsSExtractorAssoc.index(element.group(2))
+                        self.SExtractorParams.assoc.index(element.group(2))
                     except:
                         logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
                         break
             elif( data):
                 items= line.split()
-                SXobjectNumber= items[0] # NUMBER
+                sxObjectNumber= items[0] # NUMBER
+                sxObjectNumberASSOC= items[itemNrASSOC_NUMBER]
                 
                 for (j, item) in enumerate(items):
-                    self.catalogue[(SXobjectNumber, self.SExtractorParams.paramsSExtractorAssoc[j])]=  float(item)
+                    self.catalogue[(sxObjectNumber, self.SExtractorParams.assoc[j])]=  float(item)
 
 
-                self.sxObjects[SXobjectNumber]= SXObject(SXobjectNumber, (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX]), int(items[itemNrASSOC_NUMBER])) # position, bool is used for clean up (default True, True)
-                if( SXobjectNumberASSOC in self.multiplicity): # interesting
-                    self.multiplicity[SXobjectNumberASSOC] += 1
+                self.sxObjects[sxObjectNumber]= SXObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX]), items[itemNrASSOC_NUMBER]) # position, bool is used for clean up (default True, True)
+                if( sxObjectNumberASSOC in self.multiplicity): # interesting
+                    self.multiplicity[sxObjectNumberASSOC] += 1
                 else:
-                    self.multiplicity[SXobjectNumberASSOC]= 1
+                    self.multiplicity[sxObjectNumberASSOC]= 1
             else:
                 logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
@@ -621,60 +569,83 @@ class Catalogue():
         return self.isValid
 
     def printCatalogue(self):
-        for (SXobjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
+        for (sxObjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
 # ToDo, remove me:
-            if( SXobjectNumber== "12"):
-                print  "printCatalogue " + SXobjectNumber + ">"+ identifier + "< %f"% value 
+            if( sxObjectNumber== "12"):
+                print  "printCatalogue " + sxObjectNumber + ">"+ identifier + "< %f"% value 
 
 
-    def printObject(self, SXobjectNumber):
-        for itentifier in self.SExtractorParams.identifiersAssoc():
-            if(((SXobjectNumber, itentifier)) in self.catalogue):
-                print "printObject: object number " + SXobjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(SXobjectNumber, itentifier)]
+    def printObject(self, sxObjectNumber):
+        for itentifier in self.SExtractorParams.identifiersAssoc:
+            if(((sxObjectNumber, itentifier)) in self.catalogue):
+                print "printObject: object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "Catalogue.printObject: object number " + SXobjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "Catalogue.printObject: for object number " + SXobjectNumber + " all elements printed")
+#                logger.error( "Catalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
             return True
 
         return False
 
-    def removeObject(self, SXobjectNumber):
-        if( not SXobjectNumber in self.sxObjects):
-            logger.error( "Catalogue.removeObject: reference Object number " + SXobjectNumber + " for >" + itentifier + "< not found in sxObjects")
+    def removeObject(self, sxObjectNumber):
+        if( not sxObjectNumber in self.sxObjects):
+            logger.error( "Catalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
         else:
-            if( SXobjectNumber in self.sxObjects):
-                del self.sxObjects[SXobjectNumber]
+            if( sxObjectNumber in self.sxObjects):
+                del self.sxObjects[sxObjectNumber]
             else:
-                logger.error( "Catalogue.removeObject: object number " + SXobjectNumber + " not found")
+                logger.error( "Catalogue.removeObject: object number " + sxObjectNumber + " not found")
 
-        for itentifier in self.SExtractorParams.identifiersAssoc():
-            if(((SXobjectNumber, itentifier)) in self.catalogue):
-                del self.catalogue[(SXobjectNumber, itentifier)]
+        for itentifier in self.SExtractorParams.reference:
+            if(((sxObjectNumber, itentifier)) in self.catalogue):
+                del self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "Catalogue.removeObject: object number " + SXobjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "Catalogue.removeObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "Catalogue.removeObject: for object number " + SXobjectNumber + " all elements deleted")
+#                logger.error( "Catalogue.removeObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
         return False
 
     # now done on catalogue for the sake of flexibility
     # ToDo, define if that shoud go into SXObject (now, better not)
-    def checkProperties(self, SXobjectNumber): 
-        if( self.catalogue[( SXobjectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
+    def checkProperties(self, sxObjectNumber): 
+        if( self.catalogue[( sxObjectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
             return False
-        elif( self.catalogue[( SXobjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY_REFERENCE')): # ToDo, ATTENTION
+        elif( self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY')): # ToDo, ATTENTION
             return False
         # TRUE    
         return True
 
+    def cleanUp(self):
+        logger.error( 'Catalogue.cleanUp: catalogue, I am : ' + self.fitsHDU.fitsFileName)
+
+        discardedObjects= 0
+        sxObjectNumbers= self.sxObjects.keys()
+        for sxObjectNumber in sxObjectNumbers:
+            if( not self.checkProperties(sxObjectNumber)):
+                self.removeObject( sxObjectNumber)
+                discardedObjects += 1
+
+        logger.error("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
+
+    def matching(self, ReferenceCatalogue):
+        for sxObjectNumber, sxObject in self.sxObjects.items():
+                sxReferenceObject= ReferenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                if( sxReferenceObject != None):
+                    if( self.multiplicity[sxReferenceObject.objectNumber] == 1): 
+                        sxObject.matched= True 
+                        sxReferenceObject.numberOfMatches += 1
+                        sxReferenceObject.matchedsxObjects.append(sxObject)
+                    else:
+                        if( verbose):
+                            print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
         i= 0
-        for (SXobjectNumber,identifier), value in self.catalogue.iteritems():
+        for (sxObjectNumber,identifier), value in self.catalogue.iteritems():
             if( identifier == variable):
                 sum += float(value)
                 i += 1
@@ -699,10 +670,16 @@ class ReferenceCatalogue(Catalogue):
         self.isValid     = False
         self.objectSeparation2= runTimeConfig.value('OBJECT_SEPARATION')**2
         self.SExtractorParams = SExtractorParams
-        self.indexeFlag       = self.SExtractorParams.paramsSExtractorReference.index('FLAGS')  
-        self.indexellipticity = self.SExtractorParams.paramsSExtractorReference.index('ELLIPTICITY')
+        self.indexeFlag       = self.SExtractorParams.reference.index('FLAGS')  
+        self.indexellipticity = self.SExtractorParams.reference.index('ELLIPTICITY')
+        self.skyList= serviceFileOp.expandToSkyList(self.fitsHDU)
 
         ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
+
+    def sxObjectByNumber(self, sxObjectNumber):
+        if(sxObjectNumber in self.sxObjects):
+            return self.sxObjects[sxObjectNumber]
+        return None
 
     def writeCatalogue(self):
         logger.error( 'ReferenceCatalogue.writeCatalogue: writing reference catalogue, for ' + self.fitsHDU.fitsFileName) 
@@ -741,7 +718,7 @@ class ReferenceCatalogue(Catalogue):
                 '-c ',
                 runTimeConfig.value('SEXCFG'),
                 '-CATALOG_NAME',
-                serviceFileOp.expandToSkyList(self.fitsHDU),
+                self.skyList,
                 '-PARAMETERS_NAME',
                 runTimeConfig.value('SEXREFERENCE_PARAM'),]
         try:
@@ -764,7 +741,7 @@ class ReferenceCatalogue(Catalogue):
         # if( not self.fitsHDU.isReference):
         #SXcat= open( self.catalogueFileName, 'r')
         #else:
-        SXcat= open( serviceFileOp.expandToSkyList(self.fitsHDU), 'r')
+        SXcat= open( self.skyList, 'r')
 
         self.lines= SXcat.readlines()
         SXcat.close()
@@ -776,29 +753,29 @@ class ReferenceCatalogue(Catalogue):
  
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'')
-        SXobjectNumber= -1
-        itemNrX_IMAGE     = self.SExtractorParams.paramsSExtractorReference.index('X_IMAGE')
-        itemNrY_IMAGE     = self.SExtractorParams.paramsSExtractorReference.index('Y_IMAGE')
-        itemNrFWHM_IMAGE  = self.SExtractorParams.paramsSExtractorReference.index('FWHM_IMAGE')
-        itemNrFLUX_MAX    = self.SExtractorParams.paramsSExtractorReference.index('FLUX_MAX')
+        sxObjectNumber= -1
+        itemNrX_IMAGE     = self.SExtractorParams.reference.index('X_IMAGE')
+        itemNrY_IMAGE     = self.SExtractorParams.reference.index('Y_IMAGE')
+        itemNrFWHM_IMAGE  = self.SExtractorParams.reference.index('FWHM_IMAGE')
+        itemNrFLUX_MAX    = self.SExtractorParams.reference.index('FLUX_MAX')
 
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
             x= -1
             y= -1
-            SXobjectNumberASSOC= '-1'
+            sxObjectNumberASSOC= '-1'
             if( element):
                 pass
             elif( data):
                 items= line.split()
-                SXobjectNumber= items[0] # NUMBER
+                sxObjectNumber= items[0] # NUMBER
                 
                 for (j, item) in enumerate(items):
-                    self.catalogue[(SXobjectNumber, self.SExtractorParams.paramsSExtractorReference[j])]=  float(item)
+                    self.catalogue[(sxObjectNumber, self.SExtractorParams.reference[j])]=  float(item)
 
 
-                self.sxObjects[SXobjectNumber]= SXReferenceObject(SXobjectNumber, (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX])) # position, bool is used for clean up (default True, True)
+                self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX])) # position, bool is used for clean up (default True, True)
             else:
                 logger.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'ReferenceCatalogue.readCatalogue: ' + line)
@@ -810,41 +787,49 @@ class ReferenceCatalogue(Catalogue):
 
         return self.isValid
 
-    def printObject(self, SXobjectNumber):
+    def printObject(self, sxObjectNumber):
             
-        for itentifier in self.SExtractorParams.identifiersReference():
+        for itentifier in self.SExtractorParams.reference():
             
-            if(((SXobjectNumber, itentifier)) in self.catalogue):
-                print "printObject: reference object number " + SXobjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(SXobjectNumber, itentifier)]
+            if(((sxObjectNumber, itentifier)) in self.catalogue):
+                print "printObject: reference object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "ReferenceCatalogue.printObject: reference Object number " + SXobjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "ReferenceCatalogue.printObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "ReferenceCatalogue.printObject: for object number " + SXobjectNumber + " all elements printed")
+#                logger.error( "ReferenceCatalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
             return True
 
         return False
 
-    def removeObject(self, SXobjectNumber):
-        if( not SXobjectNumber in self.sxObjects):
-            logger.error( "ReferenceCatalogue.removeObject: reference Object number " + SXobjectNumber + " for >" + itentifier + "< not found in sxObjects")
+    def removeObject(self, sxObjectNumber):
+        if( not sxObjectNumber in self.sxObjects):
+            logger.error( "ReferenceCatalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
         else:
-            if( SXobjectNumber in self.sxObjects):
-                del self.sxObjects[SXobjectNumber]
+            if( sxObjectNumber in self.sxObjects):
+                del self.sxObjects[sxObjectNumber]
             else:
-                logger.error( "ReferenceCatalogue.removeObject: object number " + SXobjectNumber + " not found")
+                logger.error( "ReferenceCatalogue.removeObject: object number " + sxObjectNumber + " not found")
 
-        for itentifier in self.SExtractorParams.identifiersReference():
-            if(((SXobjectNumber, itentifier)) in self.catalogue):
-                del self.catalogue[(SXobjectNumber, itentifier)]
+        for itentifier in self.SExtractorParams.reference:
+            if(((sxObjectNumber, itentifier)) in self.catalogue):
+                del self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "ReferenceCatalogue.removeObject: reference Object number " + SXobjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "ReferenceCatalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "ReferenceCatalogue.removeObject: for object number " + SXobjectNumber + " all elements deleted")
+#                logger.error( "ReferenceCatalogue.removeObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
 
         return False
+
+    def checkProperties(self, sxObjectNumber): 
+        if( self.catalogue[( sxObjectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
+            return False
+        elif( self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY_REFERENCE')): # ToDo, ATTENTION
+            return False
+        # TRUE    
+        return True
 
     def distanceOK( self, position1, position2):
 
@@ -863,42 +848,46 @@ class ReferenceCatalogue(Catalogue):
         else:
             logger.error( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
 
-        for SXobjectNumber1, sxObject1 in self.sxObjects.iteritems():
-            for SXobjectNumber2, sxObject2 in self.sxObjects.iteritems():
-                if( SXobjectNumber1 != SXobjectNumber2):
+        for sxObjectNumber1, sxObject1 in self.sxObjects.iteritems():
+            for sxObjectNumber2, sxObject2 in self.sxObjects.iteritems():
+                if( sxObjectNumber1 != sxObjectNumber2):
                     if( not self.distanceOK( sxObject1.position, sxObject2.position)):
-                        sxObject1.distanceOK(False)
-                        sxObject2.distanceOK(False)
+                        sxObject1.distanceOK=False
+                        sxObject2.distanceOK=False
 
             else:
-                if( not self.checkProperties(SXobjectNumber1)):
-                    sxObject1.propertiesOK(False)
+                if( not self.checkProperties(sxObjectNumber1)):
+                    sxObject1.propertiesOK=False
 
         discardedObjects= 0
-        SXobjectNumbers= self.sxObjects.keys()
-        for SXobjectNumber in SXobjectNumbers:
-            if(( not self.sxObjects[SXobjectNumber].distanceOK()) or ( not self.sxObjects[SXobjectNumber].propertiesOK())):
-                if( not self.sxObjects[SXobjectNumber].distanceOK()):
-                    self.removeObject( SXobjectNumber)
+        sxObjectNumbers= self.sxObjects.keys()
+        for sxObjectNumber in sxObjectNumbers:
+            if(( not self.sxObjects[sxObjectNumber].distanceOK) or ( not self.sxObjects[sxObjectNumber].propertiesOK)):
+                if( not self.sxObjects[sxObjectNumber].distanceOK):
+                    self.removeObject( sxObjectNumber)
                     discardedObjects += 1
 
         logger.error("Number of objects discarded %d " % discardedObjects) 
 
+import numpy
+from collections import defaultdict
 class Catalogues():
     """Class holding Catalogues"""
-    def __init__(self):
+    def __init__(self,referenceCatalogue=None):
         self.CataloguesList= []
         self.isReference = False
         self.isValid= False
-
-    def append( self, Catalogue):
-        self.CataloguesList.append(Catalogue)
-
-    def catalogues(self):
-        return self.CataloguesList
-
-    def isValid():
-        return self.isValid
+        self.averageFwhm= {}
+        self.averageFlux={}
+        self.referenceCatalogue= referenceCatalogue
+        if( self.referenceCatalogue != None):
+            self.dataFileNameFwhm= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FWHM_IMAGE')
+            self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
+        self.maxFwhm= 0.
+        self.minFwhm= 0.
+        self.maxFlux= 0.
+        self.minFlux= 0.
+        self.numberOfObjects= 0.
 
     def findReference(self):
         for cat in self.CataloguesList:
@@ -927,7 +916,7 @@ class Catalogues():
                         print 'Catalogues.validate: removed cat for: ' + cat.fitsHDU.fitsFileName
 
                     try:
-                        self.CataloguesList.remove(cat)
+                        del self.CataloguesList[cat]
                     except:
                         logger.error('Catalogues.validate: could not remove cat for ' + cat.fitsHDU.fitsFileName)
                         if(verbose):
@@ -939,6 +928,70 @@ class Catalogues():
                     return self.isValid
         return False
 
+    def average(self, ReferenceCatalogue):
+        fwhm= defaultdict(list)
+        flux= defaultdict(list)
+        lenFwhm = []
+        for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
+            if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
+                for sxObject in sxReferenceObject.matchedsxObjects:
+                    if( sxObject.focusPosition > 2800):
+                    #if( verbose):
+                    #    print "Ref "+ sxReferenceObject.objectNumber + " Obj "+ sxObject.objectNumber + " foc pos %d" % sxObject.focusPosition     
+                        fwhm[sxObject.focusPosition].append(sxObject.fwhm)
+                        flux[sxObject.focusPosition].append(sxObject.flux)
+                lenFwhm.append(len(fwhm))
+
+        fwhmList=[]
+        fluxList=[]
+        for focPos in fwhm:
+            self.averageFwhm[focPos] = numpy.mean(fwhm[focPos], axis=0)
+            fwhmList.append(self.averageFwhm[focPos])
+            
+        for focPos in flux:
+            self.averageFlux[focPos] = numpy.mean(flux[focPos], axis=0)
+            fluxList.append(self.averageFlux[focPos])
+
+        self.maxFwhm= numpy.amax(fwhmList)
+        self.minFwhm= numpy.amax(fwhmList)
+        self.maxFlux= numpy.amax(fluxList)
+        self.minFlux= numpy.amax(fluxList)
+        
+        self.numberOfObjects=  numpy.amin(lenFwhm)
+        print "numberOfObjects========================= %d " % (self.numberOfObjects)
+
+        for focPos in sorted(fwhm):
+            print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
+
+    def writeFitValues(self):
+        fitInput= open( self.dataFileNameFwhm, 'wb')
+
+        for focPos in sorted(self.averageFwhm):
+            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
+            fitInput.write(line)
+
+        fitInput.close()
+        fitInput= open( self.dataFileNameFlux, 'wb')
+
+        for focPos in sorted(self.averageFlux):
+            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
+            fitInput.write(line)
+
+        fitInput.close()
+
+    def fitTheValues(self):
+# ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
+        cmd= [ runTimeConfig.value('FOCROOT'),
+                                   "1", # 1 interactive, 0 batch
+                                   self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
+                                   serviceFileOp.now,
+                                   str(self.numberOfObjects),
+                                   self.dataFileNameFwhm,
+                                   self.dataFileNameFlux,
+                                   '/tmp/fitData.out']
+        
+        output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+        print output
 import sys
 import pyfits
 
@@ -950,9 +1003,6 @@ class FitsHDU():
         self.isValid= False
         self.headerElements={}
         FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
-
-    def keys(self):
-        return self.headerElements.keys()
 
     def isFilter(self, filter):
         if( verbose):
@@ -986,13 +1036,7 @@ class FitsHDUs():
         self.fitsHDUsList= []
         self.isValid= False
 
-    def append(self, FitsHDU):
-        self.fitsHDUsList.append(FitsHDU)
-
-    def fitsHDUs(self):
-        return self.fitsHDUsList
-
-    def findFintsFileByName( self, fileName):
+    def findHDUByFitsFileName( self, fileName):
         for hdu in sorted(self.fitsHDUsList):
             if( fileName== hdu.fitsFileName):
                 return hdu
@@ -1012,9 +1056,6 @@ class FitsHDUs():
                 print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
                 return hdu
         return False
-
-    def isValid(self):
-        return self.isValid
 
     def validate(self, filterName=None):
         if( filterName==None):
@@ -1036,7 +1077,7 @@ class FitsHDUs():
                     continue
                 if( hdur.headerElements[key]!= hdu.headerElements[key]):
                     try:
-                        self.fitsHDUsList.remove(hdu)
+                        del self.fitsHDUsList[hdu]
                     except:
                         logger.error('FitsHDUs.validate: could not remove hdu for ' + hdu.fitsFileName)
                         if(verbose):
@@ -1090,6 +1131,11 @@ class ServiceFileOperations():
         if( fitsHDU==None):
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
         fileName= self.prefix() + self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat'
+        return self.expandToTmp(fileName)
+
+    def expandToFitInput(self, fitsHDU=None, element=None):
+        items= runTimeConfig.value('FIT_RESULT_FILE').split('.')
+        fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
         return self.expandToTmp(fileName)
 
     def findFitsHDUs( self):
