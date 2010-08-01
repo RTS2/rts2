@@ -87,20 +87,19 @@ class main(rts2af.AFScript):
 # the smallest average FWHM for a given filter
 # after the validate
 #
-# loop over fits file names
         cats= rts2af.Catalogues()
-        hdu= rts2af.FitsHDU('./20100625211258-885-RA.fits', True)
-        hdu.isFilter('X')
-        HDUs.append(hdu)
+        catrs= rts2af.Catalogues()
+
+        hdur= rts2af.FitsHDU('./20100625211258-885-RA.fits', True)
+        hdur.isFilter('X')
 
 # reference catalogue
-        for hdu  in HDUs.fitsHDUs():
-            cat= rts2af.Catalogue(hdu,paramsSexctractor)
-            cat.extractToCatalogue()
-            cat.createCatalogue()
-            cat.cleanUpReference()
-            cat.writeCatalogue()
-            cats.append(cat)
+        catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
+        catr.extractToCatalogue()
+        catr.createCatalogue()
+        catr.cleanUpReference()
+        catr.writeCatalogue()
+        catrs.append(catr)
 
         for fits in testFitsList:
             hdu= rts2af.FitsHDU( fits)
@@ -109,8 +108,7 @@ class main(rts2af.AFScript):
 
         HDUs.validate()
 
-# loop over hdus
-        
+# loop over hdus (including reference catalog currently)
         for hdu  in HDUs.fitsHDUs():
             if( rts2af.verbose):
                 print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % HDUs.fitsHDUs().count(hdu)
@@ -119,7 +117,6 @@ class main(rts2af.AFScript):
             cat.extractToCatalogue()
             cat.createCatalogue()
             cats.append(cat)
-            cat.writeCatalogue()
 
         if(cats.validate()):
             print "catalogues is valid"
