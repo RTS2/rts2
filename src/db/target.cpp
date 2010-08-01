@@ -74,7 +74,6 @@ class Rts2TargetApp:public Rts2AppDb
 		virtual int doProcessing ();
 	private:
 		int op;
-		int obs_id;
 		std::list < int >tar_ids;
 		rts2db::TargetSet *target_set;
 
@@ -99,8 +98,6 @@ Rts2AppDb (in_argc, in_argv)
 
 	camera = NULL;
 
-	obs_id = 0;
-
 	addOption ('e', NULL, 0, "enable given targets");
 	addOption ('d', NULL, 0, "disable given targets (they will not be picked up by selector");
 	addOption ('p', NULL, 1, "set target (fixed) priority");
@@ -112,9 +109,9 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('s', NULL, 1, "set script for target and camera");
 	addOption ('N', NULL, 0, "do not pretty print");
 
-	addOption (OPT_OBSERVE_START, "observe", 0, "mark start of observation. Return observation ID");
-	addOption (OPT_OBSERVE_SLEW, "slew", 1, "mark start of observation (after telescope slew in). Requires observation ID");
-	addOption (OPT_OBSERVE_END, "end", 1, "mark end of observation. Requires observation ID");
+	addOption (OPT_OBSERVE_SLEW, "slew", 0, "mark telescope slewing to observation. Return observation ID");
+	addOption (OPT_OBSERVE_START, "observe", 0, "mark start of observation (after telescope slew in). Requires observation ID");
+	addOption (OPT_OBSERVE_END, "end", 0, "mark end of observation. Requires observation ID");
 }
 
 Rts2TargetApp::~Rts2TargetApp ()
@@ -172,15 +169,13 @@ int Rts2TargetApp::processOption (int in_opt)
 		case 'N':
 			std::cout << pureNumbers;
 			break;
+		case OPT_OBSERVE_SLEW:
+			op |= OP_OBS_SLEW;
+			break;
 		case OPT_OBSERVE_START:
 			op |= OP_OBS_START;
 			break;
-		case OPT_OBSERVE_SLEW:
-			obs_id = atoi (optarg);
-			op |= OP_OBS_SLEW;
-			break;
 		case OPT_OBSERVE_END:
-			obs_id = atoi (optarg);
 			op |= OP_OBS_END;
 			break;
 		default:
@@ -257,6 +252,20 @@ int Rts2TargetApp::runInteractive ()
 
 int Rts2TargetApp::doProcessing ()
 {
+	if ((op & OP_OBS_START) || (op & OP_OBS_END))
+	{
+		if (tar_ids.size () != 1)
+		{
+			std::cerr << "You must specify only a single observation ID." << std::endl;
+			return -1;
+		}
+		rts2db::Observation obs (*(tar_ids.begin ()));
+		if (op & OP_OBS_START)
+			obs.startObservation ();
+		if (op & OP_OBS_END)
+		  	obs.endObservation (OBS_BIT_MOVED | OBS_BIT_STARTED | OBS_BIT_PROCESSED);
+		return 0;
+	}
 	if (tar_ids.size () == 0)
 	{
 		std::cerr << "No target specified, exiting." << std::endl;
@@ -319,27 +328,19 @@ int Rts2TargetApp::doProcessing ()
 	{
 		target_set->setNextObservable (NULL);
 	}
-	if (op & OP_OBS_START)
+	if (op & OP_OBS_SLEW)
 	{
 		if (target_set->size () != 1)
 		{
 			std::cerr << "You must specify only single target which observation will be started." << std::endl;
 			return -1;
 		}
-		Target *tar = (*(target_set->begin ())).second;
+		Target *tar = (target_set->begin ())->second;
 		struct ln_equ_posn pos;
 		tar->getPosition (&pos);
 		tar->startSlew (&pos);
 		std::cout << tar->getObsId () << std::endl;
-		return 0;
-	}
-	if ((op & OP_OBS_SLEW) || (op & OP_OBS_END))
-	{
-		rts2db::Observation obs (obs_id);
-		if (op & OP_OBS_SLEW)
-			obs.startObservation ();
-		if (op & OP_OBS_END)
-		  	obs.endObservation (OBS_BIT_MOVED | OBS_BIT_STARTED | OBS_BIT_PROCESSED);
+		tar->setObsId (-1);
 		return 0;
 	}
 	if (op == OP_NONE)
