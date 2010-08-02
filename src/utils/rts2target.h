@@ -1,6 +1,6 @@
 /* 
  * Abstract target class.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -120,25 +120,11 @@ typedef enum
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * \see Rts2TargetDb, Rts2ScriptTarget
+ * @see Rts2TargetDb, Rts2ScriptTarget
  */
 class Rts2Target
 {
-	private:
-		int obs_id;
-		int moveCount;
-		int img_id;				 // count for images
-		bool tar_enabled;
-		// mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
-		int obs_state;			 // 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
-		int selected;			 // how many times startObservation was called
-		int acquired;
-		int epochId;
-	protected:
-		int target_id;
-		int obs_target_id;
-		char target_type;
-		char *target_name;
+
 	public:
 		Rts2Target ()
 		{
@@ -177,10 +163,7 @@ class Rts2Target
 		 * @param pos  Pointer to returned target position.
 		 *
 		 */
-		virtual void getPosition (struct ln_equ_posn *pos)
-		{
-			getPosition (pos, ln_get_julian_from_sys ());
-		}
+		virtual void getPosition (struct ln_equ_posn *pos) { getPosition (pos, ln_get_julian_from_sys ()); }
 
 		/**
 		 * Return target position at given time. This method must be
@@ -193,45 +176,21 @@ class Rts2Target
 
 		// move functions
 
-		void moveStarted ()
-		{
-			moveCount = 1;
-		}
+		void moveStarted () { moveCount = 1; }
 
-		void moveEnded ()
-		{
-			moveCount = 2;
-		}
+		void moveEnded () { moveCount = 2; }
 
-		void moveFailed ()
-		{
-			moveCount = 3;
-		}
+		void moveFailed () { moveCount = 3; }
 
-		bool moveWasStarted ()
-		{
-			return (moveCount != 0);
-		}
+		bool moveWasStarted () { return (moveCount != 0); }
 
-		bool wasMoved ()
-		{
-			return (moveCount == 2 || moveCount == 3);
-		}
+		bool wasMoved () { return (moveCount == 2 || moveCount == 3); }
 
-		int getCurrImgId ()
-		{
-			return img_id;
-		}
+		int getCurrImgId () { return img_id; }
 
-		int getNextImgId ()
-		{
-			return ++img_id;
-		}
+		int getNextImgId () { return ++img_id; }
 
-		bool getTargetEnabled ()
-		{
-			return tar_enabled;
-		}
+		bool getTargetEnabled () { return tar_enabled; }
 		void setTargetEnabled (bool new_en = true, bool logit = false)
 		{
 			if (tar_enabled != new_en)
@@ -249,10 +208,7 @@ class Rts2Target
 		virtual int save (bool overwrite) = 0;
 		virtual int save (bool overwrite, int tar_id) = 0;
 
-		int getTargetID ()
-		{
-			return target_id;
-		}
+		int getTargetID () { return target_id; }
 		virtual int getObsTargetID ()
 		{
 			if (obs_target_id > 0)
@@ -261,23 +217,14 @@ class Rts2Target
 		}
 
 		// called when we can move to next observation - good to generate next target in mosaic observation etc..
-		virtual int beforeMove ()
-		{
-			return 0;
-		}
+		virtual int beforeMove () { return 0; }
 
 		virtual moveType startSlew (struct ln_equ_posn * position) = 0;
 		virtual int startObservation (Rts2Block * master) = 0;
 
-		int getObsId ()
-		{
-			return obs_id;
-		}
+		int getObsId () { return obs_id; }
 
-		int getSelected ()
-		{
-			return selected;
-		}
+		int getSelected () { return selected; }
 
 		/**
 		 * Set observation ID and start observation.
@@ -291,40 +238,19 @@ class Rts2Target
 			obs_state |= OBS_BIT_MOVED;
 		}
 
-		int getObsState ()
-		{
-			return obs_state;
-		}
+		int getObsState () { return obs_state; }
 
 		// called when waiting for acqusition..
-		int isAcquired ()
-		{
-			return (acquired == 1);
-		}
-		int getAcquired ()
-		{
-			return acquired;
-		}
-		void nullAcquired ()
-		{
-			acquired = 0;
-		}
+		int isAcquired () { return (acquired == 1); }
+		int getAcquired () { return acquired; }
+		void nullAcquired () { acquired = 0; }
 
 		// return 0 when acquistion isn't running, non 0 when we are currently
 		// acquiring target (searching for correct field)
-		int isAcquiring ()
-		{
-			return (obs_state & OBS_BIT_ACQUSITION);
-		}
-		void obsStarted ()
-		{
-			obs_state |= OBS_BIT_STARTED;
-		}
+		int isAcquiring () { return (obs_state & OBS_BIT_ACQUSITION); }
+		void obsStarted () { obs_state |= OBS_BIT_STARTED; }
 
-		virtual void acqusitionStart ()
-		{
-			obs_state |= OBS_BIT_ACQUSITION;
-		}
+		virtual void acqusitionStart () { obs_state |= OBS_BIT_ACQUSITION; }
 
 		void acqusitionEnd ()
 		{
@@ -332,10 +258,7 @@ class Rts2Target
 			acquired = 1;
 		}
 
-		void interupted ()
-		{
-			obs_state |= OBS_BIT_INTERUPED;
-		}
+		void interupted () { obs_state |= OBS_BIT_INTERUPED; }
 
 		void acqusitionFailed ()
 		{
@@ -345,28 +268,13 @@ class Rts2Target
 
 		virtual void writeToImage (Rts2Image * image, double JD) = 0;
 
-		int getEpoch ()
-		{
-			return epochId;
-		}
+		int getEpoch () { return epochId; }
 
-		void setEpoch (int in_epochId)
-		{
-			epochId = in_epochId;
-		}
+		void setEpoch (int in_epochId) { epochId = in_epochId; }
 
-		char getTargetType ()
-		{
-			return target_type;
-		}
-		void setTargetType (char in_target_type)
-		{
-			target_type = in_target_type;
-		}
-		const char *getTargetName ()
-		{
-			return target_name;
-		}
+		char getTargetType () { return target_type; }
+		void setTargetType (char in_target_type) { target_type = in_target_type; }
+		const char *getTargetName () { return target_name; }
 
 		/**
 		 * Set target name.
@@ -379,6 +287,28 @@ class Rts2Target
 			target_name = new char[strlen (_target_name) + 1];
 			strcpy (target_name, _target_name);
 		}
+
+		/**
+		 * Check if target ID is equal to given value.
+		 *
+		 * @param v integer to check with
+		 */
+		bool operator == (const int &v) { return getTargetID () == v; }
+	protected:
+		int target_id;
+		int obs_target_id;
+		char target_type;
+		char *target_name;
+	private:
+		int obs_id;
+		int moveCount;
+		int img_id;				 // count for images
+		bool tar_enabled;
+		// mask with 0xf0 - 0x00 - nominal end 0x10 - interupted 0x20 - acqusition don't converge
+		int obs_state;			 // 0 - not started 0x01 - slew started 0x02 - images taken 0x04 - acquistion started
+		int selected;			 // how many times startObservation was called
+		int acquired;
+		int epochId;
 };
 
 #endif							 /* !__RTS2_TARGET__ */
