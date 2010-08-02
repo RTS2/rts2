@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,10 +24,7 @@
 #include <time.h>
 #include <sstream>
 
-Rts2Message::Rts2Message (const struct timeval &in_messageTime,
-std::string in_messageOName,
-messageType_t in_messageType,
-std::string in_messageString)
+Rts2Message::Rts2Message (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString)
 {
 	messageTime = in_messageTime;
 	messageOName = in_messageOName;
@@ -35,37 +32,7 @@ std::string in_messageString)
 	messageString = in_messageString;
 }
 
-
-Rts2Message::Rts2Message (const struct timeval &in_messageTime,
-std::string in_messageOName,
-int in_messageType, std::string in_messageString)
-{
-	messageTime = in_messageTime;
-	messageOName = in_messageOName;
-	switch (in_messageType)
-	{
-		case MESSAGE_ERROR:
-			messageType = MESSAGE_ERROR;
-			break;
-		case MESSAGE_WARNING:
-			messageType = MESSAGE_WARNING;
-			break;
-		case MESSAGE_INFO:
-			messageType = MESSAGE_INFO;
-			break;
-		case MESSAGE_DEBUG:
-			messageType = MESSAGE_DEBUG;
-			break;
-		default:
-			messageType = MESSAGE_DEBUG;
-	}
-	messageString = in_messageString;
-}
-
-
-Rts2Message::Rts2Message (const char *in_messageOName,
-messageType_t in_messageType,
-const char *in_messageString)
+Rts2Message::Rts2Message (const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
 {
 	gettimeofday (&messageTime, NULL);
 	messageOName = std::string (in_messageOName);
@@ -73,11 +40,9 @@ const char *in_messageString)
 	messageString = std::string (in_messageString);
 }
 
-
-Rts2Message::~Rts2Message (void)
+Rts2Message::~Rts2Message ()
 {
 }
-
 
 std::string Rts2Message::toConn ()
 {
@@ -105,7 +70,6 @@ std::string Rts2Message::toConn ()
 	return os.str ();
 }
 
-
 std::string Rts2Message::toString ()
 {
 	std::ostringstream os;
@@ -114,7 +78,6 @@ std::string Rts2Message::toString ()
 		<< " " << messageOName << " " << messageType << " " << messageString;
 	return os.str ();
 }
-
 
 std::ostream & operator << (std::ostream & _of, Rts2Message & msg)
 {

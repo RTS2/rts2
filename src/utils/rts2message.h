@@ -46,33 +46,20 @@ class Rts2Message
 		std::string messageString;
 
 	public:
-		Rts2Message (const struct timeval &in_messageTime,
-			std::string in_messageOName, messageType_t in_messageType,
-			std::string in_messageString);
-		Rts2Message (const struct timeval &in_messageTime,
-			std::string in_messageOName, int in_messageType,
-			std::string in_messageString);
-		Rts2Message (const char *in_messageOName, messageType_t in_messageType,
-			const char *in_messageString);
+		Rts2Message (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
+
+		Rts2Message (const char *in_messageOName, messageType_t in_messageType, const char *in_messageString);
+
 		virtual ~ Rts2Message (void);
 
 		std::string toConn ();
 		std::string toString ();
 
-		const char *getMessageOName ()
-		{
-			return messageOName.c_str ();
-		}
+		const char *getMessageOName () { return messageOName.c_str (); }
 
-		const char *getMessageString ()
-		{
-			return messageString.c_str ();
-		}
+		const char *getMessageString () { return messageString.c_str (); }
 
-		bool passMask (int in_mask)
-		{
-			return (((int) messageType) & in_mask);
-		}
+		bool passMask (int in_mask) { return (((int) messageType) & in_mask); }
 
 		/**
 		 * Check if message is debug message.
@@ -80,20 +67,14 @@ class Rts2Message
 		 * @return True if message is not debugging messages, and hence
 		 * have to be stored in more permament location.
 		 */
-		bool isNotDebug ()
-		{
-			return (!(messageType & MESSAGE_DEBUG));
-		}
+		bool isNotDebug () { return (!(messageType & MESSAGE_DEBUG)); }
 
 		/**
 		 * Returns message flags.
 		 *
 		 * @return Message flags.
 		 */
-		messageType_t getType ()
-		{
-			return messageType;
-		}
+		messageType_t getType () { return messageType; }
 
 		/**
 		 * Return message type as string.
