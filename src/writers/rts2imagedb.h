@@ -53,18 +53,6 @@
  */
 class Rts2ImageDb:public Rts2Image
 {
-	protected:
-		virtual void initDbImage ();
-		void reportSqlError (const char *msg);
-
-		virtual int updateDB ()
-		{
-			return -1;
-		}
-
-		void getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
-		void getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
-
 	public:
 		Rts2ImageDb (Rts2Image * in_image);
 		Rts2ImageDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart);
@@ -79,21 +67,19 @@ class Rts2ImageDb:public Rts2Image
 		virtual int renameImage (const char *new_filename);
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);
+
+	protected:
+		virtual void initDbImage ();
+		void reportSqlError (const char *msg);
+
+		virtual int updateDB () { return -1; }
+
+		void getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
+		void getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
 };
 
 class Rts2ImageSkyDb:public Rts2ImageDb
 {
-	private:
-		int updateAstrometry ();
-
-		int processBitfiedl;
-		inline int isCalibrationImage ();
-		void updateCalibrationDb ();
-
-	protected:
-		virtual void initDbImage ();
-		virtual int updateDB ();
-
 	public:
 		Rts2ImageSkyDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStartd);
 		Rts2ImageSkyDb (const char *in_filename);
@@ -118,22 +104,22 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
-		virtual bool haveOKAstrometry ()
-		{
-			return (processBitfiedl & ASTROMETRY_OK);
-		}
+		virtual bool haveOKAstrometry () { return (processBitfiedl & ASTROMETRY_OK); }
 
-		virtual bool isProcessed ()
-		{
-			return (processBitfiedl & ASTROMETRY_PROC);
-		}
+		virtual bool isProcessed () { return (processBitfiedl & ASTROMETRY_PROC); }
 
 		virtual std::string getFileNameString ();
 
-		virtual img_type_t getImageType ()
-		{
-			return IMGTYPE_OBJECT;
-		}
+		virtual img_type_t getImageType () { return IMGTYPE_OBJECT; }
+	protected:
+		virtual void initDbImage ();
+		virtual int updateDB ();
+	private:
+		int updateAstrometry ();
+
+		int processBitfiedl;
+		inline int isCalibrationImage ();
+		void updateCalibrationDb ();
 };
 
 template < class img > img * setValueImageType (img * in_image)

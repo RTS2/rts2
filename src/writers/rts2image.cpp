@@ -498,7 +498,7 @@ void Rts2Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _o
 
 int Rts2Image::closeFile ()
 {
-	if ((flags & IMAGE_SAVE) && getFitsFile ())
+	if (shouldSaveImage () && getFitsFile ())
 	{
 		try
 		{

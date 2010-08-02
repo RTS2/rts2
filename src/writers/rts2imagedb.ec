@@ -545,8 +545,6 @@ int Rts2ImageSkyDb::toTrash ()
 // write changes of image to DB..
 int Rts2ImageSkyDb::saveImage ()
 {
-	if (!shouldSaveImage())
-		return 0;
 	int ret = Rts2ImageDb::saveImage ();
 	if (ret)
 		return ret;
