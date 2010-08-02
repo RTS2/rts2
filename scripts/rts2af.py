@@ -402,7 +402,7 @@ class Filter:
 
 class SXObject():
     """Class holding the used properties of SExtractor object"""
-    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, associatedSXobject=None, distanceOK=True, propertiesOK=True):
+    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
         self.objectNumber= objectNumber
         self.focusPosition= focusPosition
         self.position= position # is a list (x,y)
@@ -410,8 +410,9 @@ class SXObject():
         self.fwhm= fwhm
         self.flux= flux
         self.associatedSXobject= associatedSXobject
-        self.distanceOK  = distanceOK
+        self.separationOK= separationOK
         self.propertiesOK= propertiesOK
+        self.acceptanceOK= acceptanceOK
 
 
 
@@ -430,7 +431,7 @@ class SXObject():
 
 class SXReferenceObject(SXObject):
     """Class holding the used properties of SExtractor object"""
-    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, distanceOK=True, propertiesOK=True):
+    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
         self.objectNumber= objectNumber
         self.focusPosition= focusPosition
         self.position= position # is a list (x,y)
@@ -438,8 +439,9 @@ class SXReferenceObject(SXObject):
         self.foundInAll= False
         self.fwhm= fwhm
         self.flux= flux
-        self.distanceOK  = distanceOK
+        self.separationOK= separationOK
         self.propertiesOK= propertiesOK
+        self.acceptanceOK= acceptanceOK
         self.multiplicity=0
         self.numberOfMatches=0
         self.matchedsxObjects=[]
@@ -673,6 +675,8 @@ class ReferenceCatalogue(Catalogue):
         self.indexeFlag       = self.SExtractorParams.reference.index('FLAGS')  
         self.indexellipticity = self.SExtractorParams.reference.index('ELLIPTICITY')
         self.skyList= serviceFileOp.expandToSkyList(self.fitsHDU)
+        self.circle= AcceptanceRegion( self.fitsHDU) 
+
 
         ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
@@ -831,8 +835,7 @@ class ReferenceCatalogue(Catalogue):
         # TRUE    
         return True
 
-    def distanceOK( self, position1, position2):
-
+    def checkSeparation( self, position1, position2):
         dx= abs(position2[0]- position1[0])
         dy= abs(position2[1]- position1[1])
         if(( dx < runTimeConfig.value('OBJECT_SEPARATION')) and ( dy< runTimeConfig.value('OBJECT_SEPARATION'))):
@@ -840,6 +843,19 @@ class ReferenceCatalogue(Catalogue):
                 return False
         # TRUE    
         return True
+
+    def checkAcceptance(self, sxObject=None, circle=None):
+        distance= sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
+        if( circle.transformedRadius >= 0):
+            if( distance < abs( circle.transformedRadius)):
+                return True
+            else:
+                return False
+        else:
+            if( distance < abs( circle.transformedRadius)):
+                return False
+            else:
+                return True
 
     def cleanUpReference(self):
         if( not  self.isReference):
@@ -851,23 +867,50 @@ class ReferenceCatalogue(Catalogue):
         for sxObjectNumber1, sxObject1 in self.sxObjects.iteritems():
             for sxObjectNumber2, sxObject2 in self.sxObjects.iteritems():
                 if( sxObjectNumber1 != sxObjectNumber2):
-                    if( not self.distanceOK( sxObject1.position, sxObject2.position)):
-                        sxObject1.distanceOK=False
-                        sxObject2.distanceOK=False
+                    if( not self.checkSeparation( sxObject1.position, sxObject2.position)):
+                        sxObject1.separationOK=False
+                        sxObject2.separationOK=False
 
             else:
                 if( not self.checkProperties(sxObjectNumber1)):
                     sxObject1.propertiesOK=False
+                if(not self.checkAcceptance(sxObject1, self.circle)):
+                    sxObject1.acceptanceOK=False
 
         discardedObjects= 0
         sxObjectNumbers= self.sxObjects.keys()
         for sxObjectNumber in sxObjectNumbers:
-            if(( not self.sxObjects[sxObjectNumber].distanceOK) or ( not self.sxObjects[sxObjectNumber].propertiesOK)):
-                if( not self.sxObjects[sxObjectNumber].distanceOK):
-                    self.removeObject( sxObjectNumber)
-                    discardedObjects += 1
+            if(( not self.sxObjects[sxObjectNumber].separationOK) or ( not self.sxObjects[sxObjectNumber].propertiesOK) or ( not self.sxObjects[sxObjectNumber].acceptanceOK)):
+                self.removeObject( sxObjectNumber)
+                discardedObjects += 1
 
-        logger.error("Number of objects discarded %d " % discardedObjects) 
+
+
+        logger.error("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d " % discardedObjects) 
+
+class AcceptanceRegion():
+    """Class holding the properties of the acceptance circle"""
+    def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
+        self.fitsHDU= fitsHDU
+# 1x1 
+#        self.binning= float(fitsHDU.headerElements['BINNING'])
+        self.binning= 1.
+        self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
+        self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
+        if( centerOffsetX==None):
+            self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))
+        if( centerOffsetY==None):
+            self.centerOffsetY= float(runTimeConfig.value('CENTER_OFFSET_Y'))
+        if( radius==None):
+            self.radius = float(runTimeConfig.value('RADIUS'))
+        u_x= 0. # window (ev.)
+        u_y= 0.
+        self.transformedCenterX= (u_x- self.naxis1)/2 + self.centerOffsetX 
+        self.transformedCenterY= (u_y- self.naxis2)/2 + self.centerOffsetY
+        self.transformedRadius= self.radius/ self.binning
+
+
+
 
 import numpy
 from collections import defaultdict
@@ -935,7 +978,7 @@ class Catalogues():
         for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
                 for sxObject in sxReferenceObject.matchedsxObjects:
-                    if( sxObject.focusPosition > 2800):
+                    if( sxObject.focusPosition > 2600):
                     #if( verbose):
                     #    print "Ref "+ sxReferenceObject.objectNumber + " Obj "+ sxObject.objectNumber + " foc pos %d" % sxObject.focusPosition     
                         fwhm[sxObject.focusPosition].append(sxObject.fwhm)
