@@ -38,7 +38,7 @@ int Dome::domeOpenStart ()
 		return -1;
 	}
 	maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
-	logStream (MESSAGE_INFO) << "starting to open the dome" << sendLog;
+	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
 	return 0;
 }
 
