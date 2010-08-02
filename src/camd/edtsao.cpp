@@ -382,7 +382,6 @@ int EdtSao::edtwrite (unsigned long lval)
 	unsigned long lsval = lval;
 	if (ft_byteswap ())
 		swap4 ((char *) &lsval, (char *) &lval, sizeof (lval));
-	std::cerr << "edtwrite 0x" << std::hex << lval << std::endl;
 	ccd_serial_write (pd, (u_char *) (&lsval), 4);
 	return 0;
 }
@@ -816,8 +815,6 @@ int EdtSao::startExposure ()
 
 	sendValueAll (dataChannels);
 
-	dofcl->setValueBool (true);
-
 	if (partialReadout->getValueInteger () != 0)
 	{
 		ret = writePartialPattern ();
@@ -1116,8 +1113,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true, RTS2_VALUE_WRITABLE);
 	skipLines->setValueInteger (0);
 
-	createValue (dofcl, "DOFCLR", "[bool] if fast clear was done");
-	createValue (fclrNum, "FCLR_NUM", "number of fast clears done before exposure");
+	createValue (dofcl, "DOFCLR", "[bool] if fast clear was done", true, RTS2_VALUE_WRITABLE);
+	createValue (fclrNum, "FCLR_NUM", "number of fast clears done before exposure", true, RTS2_VALUE_WRITABLE);
 	fclrNum->setValueInteger (5);
 
 	createValue (fclrFailed, "FCLR_FAILED", "number of failed FCLR attemps");
@@ -1384,6 +1381,9 @@ int EdtSao::scriptEnds ()
 	parallelClockSpeed->setValueInteger (6);
 	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
 	sendValueAll (parallelClockSpeed);
+
+	dofcl->setValueBool (true);
+	sendValueAll (dofcl);
 
 	fclrNum->setValueInteger (5);
 	sendValueAll (fclrNum);
