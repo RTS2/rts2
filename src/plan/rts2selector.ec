@@ -105,13 +105,22 @@ int Selector::selectNext (int masterState)
 	return -1;					 // we don't have any target to take observation..
 }
 
+struct findTargetById
+{
+	int ct;
+
+	bool operator () (Target * tar) const { return ct == tar->getTargetID (); }
+};
+
 void Selector::considerTarget (int consider_tar_id, double JD)
 {
 	std::list < Target * >::iterator target_list;
 	Target *newTar;
 	int ret;
 
-	if (stl::find (possibleTargets.begin (), possibleTargets.end (), consider_tar_id))
+	findTargetById ct = { consider_tar_id };
+
+	if (std::find_if (possibleTargets.begin (), possibleTargets.end (), ct) == possibleTargets.end ())
 		return;
 
 	// add us..

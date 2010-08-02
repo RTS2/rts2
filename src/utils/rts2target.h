@@ -208,7 +208,7 @@ class Rts2Target
 		virtual int save (bool overwrite) = 0;
 		virtual int save (bool overwrite, int tar_id) = 0;
 
-		int getTargetID () { return target_id; }
+		const int getTargetID () { return target_id; }
 		virtual int getObsTargetID ()
 		{
 			if (obs_target_id > 0)
