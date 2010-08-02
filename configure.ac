@@ -709,6 +709,7 @@ AC_OUTPUT([Makefile
 	   src/sql/Makefile
 	   src/sql/auger/Makefile
 	   src/sql/create/Makefile
+	   src/sql/data/Makefile
 	   src/sql/drop/Makefile
 	   src/sql/update/Makefile
 	   src/sql/telma/Makefile
