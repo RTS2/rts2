@@ -1,6 +1,6 @@
 /* 
  * Observation entry.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,9 +45,7 @@ Observation::Observation (int in_obs_id)
 	printHeader = true;
 }
 
-Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra,
-double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
-int in_obs_state, double in_obs_end)
+Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra, double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start, int in_obs_state, double in_obs_end)
 {
 	tar_id = in_tar_id;
 	tar_name = std::string (in_tar_name);
@@ -67,7 +65,6 @@ int in_obs_state, double in_obs_end)
 	printHeader = true;
 }
 
-
 Observation::~Observation (void)
 {
 	std::vector <Rts2Image *>::iterator img_iter;
@@ -80,9 +77,7 @@ Observation::~Observation (void)
 	}
 }
 
-
-int
-Observation::load ()
+int Observation::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
@@ -179,9 +174,7 @@ Observation::load ()
 	return 0;
 }
 
-
-int
-Observation::loadImages ()
+int Observation::loadImages ()
 {
 	int ret;
 	if (imgset)
@@ -195,9 +188,7 @@ Observation::loadImages ()
 	return imgset->load ();
 }
 
-
-int
-Observation::loadCounts ()
+int Observation::loadCounts ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
@@ -603,9 +594,7 @@ Observation::maskState (int newBits)
 	obs_state |= newBits;
 }
 
-
-void
-Observation::unmaskState (int newBits)
+void Observation::unmaskState (int newBits)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
@@ -627,4 +616,3 @@ Observation::unmaskState (int newBits)
 	EXEC SQL COMMIT;
 	obs_state |= newBits;
 }
-

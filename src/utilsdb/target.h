@@ -89,7 +89,7 @@ class CameraMissingExcetion:public rts2core::Error
 class Rts2Image;
 
 /**
- * Class for one observation.
+ * Class for one observation target.
  *
  * It is created when it's possible to observer such target, and when such
  * observation have some scientific value.
@@ -347,7 +347,6 @@ class Target:public Rts2Target
 		// similar to startSlew - return 0 if observation ends, 1 if
 		// it doesn't ends (ussually in case when in_next_id == target_id),
 		// -1 on errror
-
 		int endObservation (int in_next_id, Rts2Block * master);
 
 		virtual int endObservation (int in_next_id);
@@ -362,7 +361,7 @@ class Target:public Rts2Target
 
 		int observationStarted ();
 
-								 // called when we can move to next observation - good to generate next target in mosaic observation etc..
+		// called when we can move to next observation - good to generate next target in mosaic observation etc..
 		virtual int beforeMove ();
 		int postprocess ();
 		virtual bool isGood (double lst, double JD, struct ln_equ_posn *pos);
@@ -427,7 +426,6 @@ class Target:public Rts2Target
 		 */
 		void printAltTable (std::ostream & _os, double JD);
 
-
 		/**
 		 * Print short version of target informations.
 		 *
@@ -446,7 +444,6 @@ class Target:public Rts2Target
 		/**
 		 * Prints one-line info with bonus inforamtions
 		 */
-
 		void printShortBonusInfo (std::ostream & _os) { printShortBonusInfo (_os, ln_get_julian_from_sys ()); }
 
 		virtual void printShortBonusInfo (std::ostream & _os, double JD);
@@ -597,14 +594,8 @@ class FlatTarget:public ConstTarget
 // possible calibration target
 class PosCalibration:public Target
 {
-	private:
-		double currAirmass;
-		char type_id;
-		struct ln_equ_posn object;
 	public:
-		PosCalibration (int in_tar_id, double ra, double dec, char in_type_id,
-			char *in_tar_name, struct ln_lnlat_posn *in_observer,
-			double JD):Target (in_tar_id, in_observer)
+		PosCalibration (int in_tar_id, double ra, double dec, char in_type_id, char *in_tar_name, struct ln_lnlat_posn *in_observer, double JD):Target (in_tar_id, in_observer)
 		{
 			struct ln_hrz_posn hrz;
 
@@ -616,10 +607,7 @@ class PosCalibration:public Target
 			setTargetType (in_type_id);
 			setTargetName (in_tar_name);
 		}
-		double getCurrAirmass ()
-		{
-			return currAirmass;
-		}
+		double getCurrAirmass () { return currAirmass; }
 
 		virtual void getPosition (struct ln_equ_posn *in_pos, double JD)
 		{
@@ -634,14 +622,14 @@ class PosCalibration:public Target
 			ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 			return 0;
 		}
+	private:
+		double currAirmass;
+		char type_id;
+		struct ln_equ_posn object;
 };
 
 class CalibrationTarget:public ConstTarget
 {
-	private:
-		struct ln_equ_posn airmassPosition;
-		time_t lastImage;
-		int needUpdate;
 	public:
 		CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual int load ();
@@ -649,11 +637,12 @@ class CalibrationTarget:public ConstTarget
 		virtual int endObservation (int in_next_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
-		virtual int changePriority (int pri_change, time_t * time_ch)
-		{
-			return 0;
-		}
+		virtual int changePriority (int pri_change, time_t * time_ch) { return 0; }
 		virtual float getBonus (double JD);
+	private:
+		struct ln_equ_posn airmassPosition;
+		time_t lastImage;
+		int needUpdate;
 };
 
 class FocusingTarget:public ConstTarget
