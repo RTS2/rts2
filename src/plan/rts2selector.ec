@@ -111,15 +111,9 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 	Target *newTar;
 	int ret;
 
-	for (target_list = possibleTargets.begin ();
-		target_list != possibleTargets.end (); target_list++)
-	{
-		Target *tar = *target_list;
-		if (tar->getTargetID () == consider_tar_id)
-		{
-			return;
-		}
-	}
+	if (stl::find (possibleTargets.begin (), possibleTargets.end (), consider_tar_id))
+		return;
+
 	// add us..
 	newTar = createTarget (consider_tar_id, observer);
 	if (!newTar)
@@ -183,8 +177,7 @@ void Selector::findNewTargets ()
 
 	// drop targets which gets bellow horizont..
 
-	for (std::list < Target * >::iterator target_list =
-		possibleTargets.begin (); target_list != possibleTargets.end ();)
+	for (std::list < Target * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
 	{
 		Target *tar = *target_list;
 		ret = tar->considerForObserving (JD);
@@ -222,8 +215,7 @@ void Selector::findNewTargets ()
 	EXEC SQL OPEN findnewtargets;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.
-			sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return;
 	}
@@ -246,8 +238,7 @@ void Selector::findNewTargets ()
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		// some DB error..strange, let's get out
-		logStream (MESSAGE_DEBUG) << "findNewTargets DB error: " << sqlca.
-			sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_DEBUG) << "findNewTargets DB error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		exit (1);
 	}
 	EXEC SQL CLOSE findnewtargets;
@@ -261,15 +252,12 @@ int Selector::selectNextNight (int in_bonusLimit)
 	float tar_bonus;
 	findNewTargets ();
 	// find target with highest bonus and move us to it..
-	for (std::list < Target * >::iterator target_list =
-		possibleTargets.begin (); target_list != possibleTargets.end ();
-		target_list++)
+	for (std::list < Target * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
 		Target *tar = *target_list;
 		tar_bonus = tar->getBonus ();
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "target: " << tar->
-			getTargetID () << " bonus: " << tar_bonus << sendLog;
+		logStream (MESSAGE_DEBUG) << "target: " << tar->getTargetID () << " bonus: " << tar_bonus << sendLog;
 		#endif
 		if (tar_bonus > maxBonus)
 		{
