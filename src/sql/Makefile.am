@@ -1,5 +1,3 @@
-# $Id$
-
 sqldatadir = ${datadir}/doc/@PACKAGE@/sql
 
 SUBDIRS = auger data create drop update telma
