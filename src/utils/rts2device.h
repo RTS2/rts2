@@ -42,17 +42,6 @@ class Rts2Device;
  */
 class Rts2DevConn:public Rts2Conn
 {
-	private:
-		// in case we know address of other side..
-		Rts2Address * address;
-
-		Rts2Device *master;
-
-	protected:
-		virtual int command ();
-		virtual int init ();
-
-		virtual void connConnected ();
 	public:
 		Rts2DevConn (int in_sock, Rts2Device * in_master);
 
@@ -64,6 +53,16 @@ class Rts2DevConn:public Rts2Conn
 
 		void setDeviceKey (int _centraldId, int _key);
 		virtual void setConnState (conn_state_t new_conn_state);
+	protected:
+		virtual int command ();
+		virtual int init ();
+
+		virtual void connConnected ();
+	private:
+		// in case we know address of other side..
+		Rts2Address * address;
+
+		Rts2Device *master;
 };
 
 /**
@@ -75,21 +74,6 @@ class Rts2DevConn:public Rts2Conn
  */
 class Rts2DevConnMaster:public Rts2Conn
 {
-	private:
-		char *device_host;
-		char master_host[HOST_NAME_MAX];
-		int master_port;
-		int centrald_num;
-		char device_name[DEVICE_NAME_SIZE];
-		int device_type;
-		int device_port;
-		time_t nextTime;
-	protected:
-		virtual int command ();
-		virtual void setState (int in_value, char * msg);
-		virtual void setBopState (int in_value);
-		virtual void connConnected ();
-		virtual void connectionError (int last_data_size);
 	public:
 		/**
 		 * Construct new connection to central server.
@@ -113,6 +97,21 @@ class Rts2DevConnMaster:public Rts2Conn
 		int authorize (Rts2DevConn * conn);
 
 		virtual void setConnState (conn_state_t new_conn_state);
+	protected:
+		virtual int command ();
+		virtual void setState (int in_value, char * msg);
+		virtual void setBopState (int in_value);
+		virtual void connConnected ();
+		virtual void connectionError (int last_data_size);
+	private:
+		char *device_host;
+		char master_host[HOST_NAME_MAX];
+		int master_port;
+		int centrald_num;
+		char device_name[DEVICE_NAME_SIZE];
+		int device_type;
+		int device_port;
+		time_t nextTime;
 };
 
 namespace rts2core
@@ -179,8 +178,6 @@ class Rts2CommandRegister:public Rts2Command
  */
 class Rts2CommandDeviceStatusInfo:public Rts2Command
 {
-	private:
-		Rts2Conn * owner_conn;
 	public:
 		Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn);
 		virtual int commandReturnOK (Rts2Conn * conn);
@@ -192,6 +189,8 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		}
 
 		virtual void deleteConnection (Rts2Conn * conn);
+	private:
+		Rts2Conn * owner_conn;
 };
 
 }
@@ -204,102 +203,6 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
  */
 class Rts2Device:public Rts2Daemon
 {
-	private:
-		std::list <HostString> centraldHosts;
-
-		// device current full BOP state
-		int fullBopState;
-
-		// mode related variable
-		char *modefile;
-		Rts2ConfigRaw *modeconf;
-		Rts2ValueSelection *modesel;
-
-		int loadModefile ();
-
-		int device_port;
-		const char *device_name;
-		int device_type;
-
-		int log_option;
-
-		char *device_host;
-
-		/**
-		 * Set mode from modefile.
-		 *
-		 * Values for each device can be specified in modefiles.
-		 *
-		 * @param new_mode       New mode number.
-		 *
-		 * @return -1 on error, 0 if sucessful.
-		 */
-		int setMode (int new_mode);
-
-		int blockState;
-		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;
-
-	protected:
-		/**
-		 * Process on option, when received from getopt () call.
-		 *
-		 * @param in_opt  return value of getopt
-		 * @return 0 on success, -1 if option wasn't processed
-		 */
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual int initValues ();
-
-		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK); }
-
-		/**
-		 * Return device BOP state.
-		 * This state is specific for device, and contains BOP values
-		 * only from devices which can block us.
-		 */
-		int getDeviceBopState () { return fullBopState;	}
-
-		/**
-		 * Return central connection for given central server name.
-		 */
-		Rts2Conn *getCentraldConn (const char *server);
-
-		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
-
-		// sends operation block commands to master
-		// this functions should mark critical blocks during device execution
-		void blockExposure () { maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible"); }
-
-		/**
-		 * Get blocking exposure status.
-		 *
-		 * @return true if device is blocking exposure.
-		 */
-		bool blockingExposure () { return getState () & BOP_EXPOSURE; }
-
-		void clearExposure () { maskState (BOP_EXPOSURE, 0, "exposure possible"); }
-
-		void blockReadout () { maskState (BOP_READOUT, BOP_READOUT, "readout not possible"); }
-
-		void clearReadout () { maskState (BOP_READOUT, 0, "readout possible"); }
-
-		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
-		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
-
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
-
-		/**
-		 * Loop through que values and tries to free as much of them as is possible.
-		 *
-		 * @param fakeState State of the device. This one is not set in
-		 * server state, it's only used during value tests.
-		 */
-		virtual void checkQueChanges (int fakeState);
-
-		virtual void stateChanged (int new_state, int old_state, const char *description);
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 	public:
 		Rts2Device (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 		virtual ~Rts2Device (void);
@@ -393,6 +296,102 @@ class Rts2Device:public Rts2Daemon
 		}
 
 		virtual void signaledHUP ();
+	protected:
+		/**
+		 * Process on option, when received from getopt () call.
+		 *
+		 * @param in_opt  return value of getopt
+		 * @return 0 on success, -1 if option wasn't processed
+		 */
+		virtual int processOption (int in_opt);
+		virtual int init ();
+		virtual int initValues ();
+
+		virtual void beforeRun ();
+
+		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK); }
+
+		/**
+		 * Return device BOP state.
+		 * This state is specific for device, and contains BOP values
+		 * only from devices which can block us.
+		 */
+		int getDeviceBopState () { return fullBopState;	}
+
+		/**
+		 * Return central connection for given central server name.
+		 */
+		Rts2Conn *getCentraldConn (const char *server);
+
+		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
+
+		// sends operation block commands to master
+		// this functions should mark critical blocks during device execution
+		void blockExposure () { maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible"); }
+
+		/**
+		 * Get blocking exposure status.
+		 *
+		 * @return true if device is blocking exposure.
+		 */
+		bool blockingExposure () { return getState () & BOP_EXPOSURE; }
+
+		void clearExposure () { maskState (BOP_EXPOSURE, 0, "exposure possible"); }
+
+		void blockReadout () { maskState (BOP_READOUT, BOP_READOUT, "readout not possible"); }
+
+		void clearReadout () { maskState (BOP_READOUT, 0, "readout possible"); }
+
+		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
+		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
+
+		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+
+		/**
+		 * Loop through que values and tries to free as much of them as is possible.
+		 *
+		 * @param fakeState State of the device. This one is not set in
+		 * server state, it's only used during value tests.
+		 */
+		virtual void checkQueChanges (int fakeState);
+
+		virtual void stateChanged (int new_state, int old_state, const char *description);
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+	private:
+		std::list <HostString> centraldHosts;
+
+		// device current full BOP state
+		int fullBopState;
+
+		// mode related variable
+		char *modefile;
+		Rts2ConfigRaw *modeconf;
+		Rts2ValueSelection *modesel;
+
+		int loadModefile ();
+
+		int device_port;
+		const char *device_name;
+		int device_type;
+
+		int log_option;
+
+		char *device_host;
+
+		/**
+		 * Set mode from modefile.
+		 *
+		 * Values for each device can be specified in modefiles.
+		 *
+		 * @param new_mode       New mode number.
+		 *
+		 * @return -1 on error, 0 if sucessful.
+		 */
+		int setMode (int new_mode);
+
+		int blockState;
+		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 };
 
 #endif							 /* !__RTS2_DEVICE__ */

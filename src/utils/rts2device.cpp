@@ -589,10 +589,12 @@ int Rts2Device::loadModefile ()
 	if (ret)
 		return ret;
 
-	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
+	if (modesel)
+		modesel->clear ();
+	else
+		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
 
-	for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
-		iter != modeconf->end (); iter++)
+	for (Rts2ConfigRaw::iterator iter = modeconf->begin (); iter != modeconf->end (); iter++)
 	{
 		modesel->addSelVal ((*iter)->getName ());
 	}
@@ -603,8 +605,7 @@ int Rts2Device::setMode (int new_mode)
 {
 	if (modesel == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Called setMode without modesel."
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Called setMode without modesel." << sendLog;
 		return -1;
 	}
 	if (new_mode < 0 || new_mode >= modesel->selSize ())
@@ -804,23 +805,6 @@ int Rts2Device::init ()
 	if (ret)
 		return ret;
 
-	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
-	ret = checkLockFile (s.c_str ());
-	if (ret < 0)
-		return ret;
-	ret = doDaemonize ();
-	if (ret)
-		return ret;
-#ifndef HAVE_FLOCK
-	// reopen..
-	ret = checkLockFile (s.c_str ());
-	if (ret < 0)
-		return ret;
-#endif
-	ret = lockFile ();
-	if (ret)
-		return ret;
-
 	// add localhost and server..
 	if (centraldHosts.size () == 0)
 	{
@@ -841,6 +825,26 @@ int Rts2Device::init ()
 int Rts2Device::initValues ()
 {
 	return loadModefile ();
+}
+
+void Rts2Device::beforeRun ()
+{
+	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
+	int ret = checkLockFile (s.c_str ());
+	if (ret < 0)
+		exit (ret);
+	ret = doDaemonize ();
+	if (ret)
+		exit (ret);
+#ifndef HAVE_FLOCK
+	// reopen..
+	ret = checkLockFile (s.c_str ());
+	if (ret < 0)
+		exit (ret);
+#endif
+	ret = lockFile ();
+	if (ret)
+		exit (ret);
 }
 
 int Rts2Device::authorize (int centrald_num, Rts2DevConn * conn)

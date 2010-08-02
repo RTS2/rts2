@@ -141,6 +141,11 @@ class Rts2Daemon:public Rts2Block
 		}
 
 		/**
+		 * Called before main daemon loop.
+		 */
+		virtual void beforeRun () {}
+
+		/**
 		 * Returns true if connection is running.
 		 */
 		virtual bool isRunning (Rts2Conn *conn) = 0;

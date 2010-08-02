@@ -192,7 +192,7 @@ class EdtSao:public Camera
 		virtual int processOption (int in_opt);
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-		virtual int initChips ();
+		virtual void beforeRun ();
 		virtual void initBinnings ();
 
 		virtual int startExposure ();
@@ -229,6 +229,8 @@ class EdtSao:public Camera
 		Rts2ValueBool *edtUni;
 
 		Rts2ValueString *signalFile;
+		Rts2ValueString *signalFileDir;
+		Rts2ValueString *sigtosc;
 
 		bool verbose;
 
@@ -269,13 +271,6 @@ class EdtSao:public Camera
 				return edtwrite (SAO_UNI_ON);
 			return edtwrite (SAO_UNI_OFF);
 		}
-
-		/**
-		 * Setup D/A controller. This takes system defaults. It is
-		 * called only if camera reset was specified on command line,
-		 * as one of the parameters.
-		 */
-		int setDAC ();
 
 		/**
 		 * Set A/D offset of given channel.
@@ -477,33 +472,6 @@ void EdtSao::reset ()
 	sleep (1);
 }
 
-int EdtSao::setDAC ()
-{
-	// values taken from ccdsetup script
-
-/*	setEdtValue (rd, 9);
-	sleep (1);
-
-	setEdtValue (phi, 2);
-	setEdtValue (plo, -9);
-
-	setEdtValue (shi, 3);
-	setEdtValue (slo, -7);
-
-	setEdtValue (rhi, 5);
-	setEdtValue (rlo, -5);
-
-	setEdtValue (od1r, 20);
-	setEdtValue (od2l, 20);
-
-	setEdtValue (og1r, -5);
-	setEdtValue (og2l, -2);
-
-	setEdtValue (dd, 15); */
-
-	return 0;
-}
-
 int EdtSao::setADOffset (int ch, int offset)
 {
 	if (offset < 0 || offset > 0xfff)
@@ -630,8 +598,21 @@ int EdtSao::setGrayScale (bool _grayScale)
 	}
 }
 
-int EdtSao::initChips ()
+void EdtSao::beforeRun ()
 {
+	if (sigtosc->getValueString ().length () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "sigtosc signal translator was not specified" << sendLog;
+		exit (110);
+	}
+
+	Camera::beforeRun ();
+
+	for (int i = 0; i < totalChannels; i++)
+	{
+		setADOffset (i, ADoffsets[i]->getValueInteger ());
+	}
+
 	int ret;
 
 	depth = 2;
@@ -641,51 +622,25 @@ int EdtSao::initChips ()
 
 	ret = setEDTGain (true);
 	if (ret)
-		return ret;
+		exit (ret);
 	ret = edtwrite (SAO_PARALER_SP);
 	if (ret)
-		return ret;
+		exit (ret);
 
 	ret = writeBinFile ("e2vsc.bin");
 	if (ret)
-		return ret;
+		exit (ret);
 
 	ret = writeBinFile ("e2v_pidlesc.bin");
 	if (ret)
-		return ret;
+		exit (ret);
 
 	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 
-	ret = setDAC ();
-
-	channels = new Rts2ValueBool*[totalChannels];
-	ADoffsets = new Rts2ValueInteger*[totalChannels];
-
-	char *chname = new char[8];
-	char *daoname = new char[7];
-
-	for (int i = 0; i < totalChannels; i++)
-	{
-		sprintf (chname, "CHAN_%02d", i + 1);
-		createValue (channels[i], chname, "channel on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
-		channels[i]->setValueBool (true);
-
-		sprintf (daoname, "DAO_%02d", i + 1);
-		createValue (ADoffsets[i], daoname, "[ADU] D/A offset", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-		setADOffset (i, 0x100);
-	}
-
-	delete[] daoname;
-	delete[] chname;
-
-	dataChannels->setValueInteger (totalChannels);
-
 	ret = setEDTSplit (edtSplit->getValueBool ());
 	if (ret)
-		return ret;
+		exit (ret);
 	ret = setEDTUni (edtUni->getValueBool ());
-
-	return ret;
 }
 
 void EdtSao::initBinnings ()
@@ -1021,8 +976,6 @@ int EdtSao::doReadout ()
 {
 	int i, j;
 	int ret;
-	u_int dsx1, dsx2;
-	short diff;
 	int x = -1;
 
 	/*
@@ -1087,10 +1040,6 @@ int EdtSao::doReadout ()
 
 	//pdv_free (bufs[0]);
 
-	// swap for split mode
-
-	int width = chipUsedReadout->getWidthInt ();
-
 	for (i = 0, j = 0; i < totalChannels; i++)
 	{
 		if (channels[i]->getValueBool ())
@@ -1152,6 +1101,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	edtGain->setValueInteger (0);
 
 	createValue (signalFile, "SIGFILE", "signal (low-level) file", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (signalFileDir, "SIGFILEDIR", "default directory with signal files", true, RTS2_VALUE_WRITABLE);
+	createValue (sigtosc, "SIGTOSC", "sigtosc.pl binary location", true, RTS2_VALUE_WRITABLE);
 
 	createValue (edtSplit, "SPLIT", "split mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 	edtSplit->setValueBool (true);
@@ -1365,8 +1316,7 @@ int EdtSao::init ()
 	pd = ccd_gopen (devname, devunit);
 	if (pd == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot init " << devname << " unit " <<
-			devunit << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot init " << devname << " unit " << devunit << sendLog;
 		return -1;
 	}
 
@@ -1374,8 +1324,6 @@ int EdtSao::init ()
 		ccd_picture_timeout (pd, 0);
 
 	ccd_set_serial_delay (pd, sdelay);
-
-	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
 
 	switch (controllerType)
 	{
@@ -1387,7 +1335,29 @@ int EdtSao::init ()
 			break;
 	}
 
-	return initChips ();
+	channels = new Rts2ValueBool*[totalChannels];
+	ADoffsets = new Rts2ValueInteger*[totalChannels];
+
+	char *chname = new char[8];
+	char *daoname = new char[7];
+
+	for (int i = 0; i < totalChannels; i++)
+	{
+		sprintf (chname, "CHAN_%02d", i + 1);
+		createValue (channels[i], chname, "channel on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
+		channels[i]->setValueBool (true);
+
+		sprintf (daoname, "DAO_%02d", i + 1);
+		createValue (ADoffsets[i], daoname, "[ADU] D/A offset", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+		ADoffsets[i]->setValueInteger (0x100);
+	}
+
+	delete[] daoname;
+	delete[] chname;
+
+	dataChannels->setValueInteger (totalChannels);
+
+	return 0;
 }
 
 int EdtSao::initValues ()

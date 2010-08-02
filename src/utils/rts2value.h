@@ -699,10 +699,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		int getSelIndex (std::string in_val);
 
-		virtual const char *getDisplayValue ()
-		{
-			return getSelName ();
-		}
+		virtual const char *getDisplayValue () { return getSelName (); }
 
 		virtual int setValueInteger (int in_value)
 		{
@@ -726,27 +723,17 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		 *
 		 * @param sel_name String identifing new selection value.
 		 */
-		void addSelVal (const char *sel_name, Rts2SelData *data = NULL)
-		{
-			addSelVal (std::string (sel_name), data);
-		}
+		void addSelVal (const char *sel_name, Rts2SelData *data = NULL) { addSelVal (std::string (sel_name), data); }
 
-		void addSelVal (std::string sel_name, Rts2SelData *data = NULL)
-		{
-			addSelVal (SelVal (sel_name, data));
-		}
+		void addSelVal (std::string sel_name, Rts2SelData *data = NULL) { addSelVal (SelVal (sel_name, data)); }
 
-		void addSelVal (SelVal val)
-		{
-			values.push_back (val);
-		}
+		void addSelVal (SelVal val) { values.push_back (val); }
 
 		void addSelVals (const char **vals);
 
-		const char* getSelName ()
-		{
-			return getSelName (getValueInteger ());
-		}
+		void clear () { values.clear (); }
+
+		const char* getSelName () { return getSelName (getValueInteger ()); }
 
 		const char* getSelName (int index)
 		{
@@ -756,10 +743,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 			return val->name.c_str ();
 		}
 
-		Rts2SelData *getData ()
-		{
-			return getData (getValueInteger ());
-		}
+		Rts2SelData *getData () { return getData (getValueInteger ()); }
 
 		Rts2SelData *getData (int index)
 		{
@@ -769,10 +753,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 			return val->data;
 		}
 
-		const SelVal* getSelVal ()
-		{
-			return getSelVal (getValueInteger ());
-		}
+		const SelVal* getSelVal () { return getSelVal (getValueInteger ()); }
 
 		const SelVal* getSelVal (int index)
 		{
@@ -786,20 +767,11 @@ class Rts2ValueSelection:public Rts2ValueInteger
 			return &(*iter);
 		}
 
-		std::vector < SelVal >::iterator selBegin ()
-		{
-			return values.begin ();
-		}
+		std::vector < SelVal >::iterator selBegin () { return values.begin (); }
 
-		std::vector < SelVal >::iterator selEnd ()
-		{
-			return values.end ();
-		}
+		std::vector < SelVal >::iterator selEnd () { return values.end (); }
 
-		int selSize ()
-		{
-			return values.size ();
-		}
+		int selSize () { return values.size (); }
 
 		void duplicateSelVals (Rts2ValueSelection * otherValue);
 

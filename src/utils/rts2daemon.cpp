@@ -76,10 +76,8 @@ Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_ar
 	idleInfoInterval = -1;
 
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
-	addOption (OPT_LOCALPORT, "local-port", 1,
-		"define local port on which we will listen to incoming requests");
-	addOption (OPT_LOCKPREFIX, "lock-prefix", 1,
-		"prefix for lock file");
+	addOption (OPT_LOCALPORT, "local-port", 1, "define local port on which we will listen to incoming requests");
+	addOption (OPT_LOCKPREFIX, "lock-prefix", 1, "prefix for lock file");
 }
 
 Rts2Daemon::~Rts2Daemon (void)
@@ -134,12 +132,10 @@ int Rts2Daemon::checkLockFile (const char *_lock_fname)
 	{
 		if (errno == EWOULDBLOCK)
 		{
-			logStream (MESSAGE_ERROR) << "lock file " << lock_fname <<
-				" owned by another process" << sendLog;
+			logStream (MESSAGE_ERROR) << "lock file " << lock_fname << " owned by another process" << sendLog;
 			return -1;
 		}
-		logStream (MESSAGE_DEBUG) << "cannot flock " << lock_fname << ": " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_DEBUG) << "cannot flock " << lock_fname << ": " << strerror (errno) << sendLog;
 		return -1;
 	}
 	return 0;
@@ -158,8 +154,7 @@ int Rts2Daemon::doDaemonize ()
 	ret = fork ();
 	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR)
-			<< "Rts2Daemon::int daemonize fork " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2Daemon::int daemonize fork " << strerror (errno) << sendLog;
 		exit (2);
 	}
 	if (ret)
@@ -270,13 +265,13 @@ void Rts2Daemon::initDaemon ()
 	ret = init ();
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot init daemon, exiting" << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot init daemon, exiting" << sendLog;
 		exit (ret);
 	}
 	ret = initValues ();
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot init values in daemon, exiting" <<
+		logStream (MESSAGE_ERROR) << "cannot init values in daemon, exiting" <<
 			sendLog;
 		exit (ret);
 	}
@@ -297,6 +292,7 @@ void Rts2Daemon::setIdleInfoInterval (double interval)
 int Rts2Daemon::run ()
 {
 	initDaemon ();
+	beforeRun ();
 	while (!getEndLoop ())
 	{
 		oneRunLoop ();
