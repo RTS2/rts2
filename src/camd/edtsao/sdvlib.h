@@ -1,4 +1,4 @@
-#pragma ident "@(#)sdvlib.h	1.8 02/07/02"
+//#pragma ident "@(#)sdvlib.h	1.8 02/07/02"
 
 /*
  * sdvlib.h

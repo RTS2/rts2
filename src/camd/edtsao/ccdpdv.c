@@ -5,6 +5,7 @@ static int ccd_serial_block_size = 0;
 
 #define DBG2 PDVLIB_MSG_INFO_2
 
+void
 ccd_setdev (dev)
      int dev;
 {
@@ -75,18 +76,18 @@ ccd_stop_hardware_continuous (fd)
 }
 
 void
+pdv_waitdone (fd, waitcount)
+     PdvDev *fd;
+     int waitcount;
+{
+}
+
+void
 ccd_waitdone (fd, waitcount)
      EdtDev *fd;
      int waitcount;
 {
   pdv_waitdone (fd);
-}
-
-int
-pdv_waitdone (fd, waitcount)
-     PdvDev *fd;
-     int waitcount;
-{
 }
 
 caddr_t
@@ -139,6 +140,7 @@ ccd_flush_fifo (fd)
   return;
 }
 
+void
 ccd_crst (fd)
      PdvDev *fd;
 {
@@ -193,36 +195,19 @@ ccd_picture_timeout (fd, timeout)
   pdv_picture_timeout (fd, (timeout * 100));
 }
 
-int
-ccd_set_serial_delay (fd, delay)
-     PdvDev *fd;
-     int delay;
-{
-  pdv_set_serial_delay ((PdvDev *) fd, delay);
-}
-
-int
+void
 pdv_set_serial_delay (fd, delay)
      PdvDev *fd;
      int delay;
 {
 }
 
-int
-ccd_serial_write (fd, value, count)
+void
+ccd_set_serial_delay (fd, delay)
      PdvDev *fd;
-     u_char *value;
-     int count;
+     int delay;
 {
-  int ret = 3;
-#ifdef __linux__
-  /* ret=new_ccd_serial_write(fd,value,count); */
-  ret = new_ccd_serial_write (fd, value, count);
-#else
-  ret = old_ccd_serial_write (fd, value, count);
-#endif
-
-  return ret;
+  pdv_set_serial_delay ((PdvDev *) fd, delay);
 }
 
 /* OLD really means the Solaris devices runnting EDT 1.0 or
@@ -260,6 +245,7 @@ old_ccd_serial_write (fd, value, count)
   that don't wait for response.  (flagged routine not available 
   in old releases (on Sun)
 */
+int
 new_ccd_serial_write (fd, value, count)
      PdvDev *fd;
      u_char *value;
@@ -294,18 +280,32 @@ new_ccd_serial_write (fd, value, count)
 }
 
 int
+ccd_serial_write (fd, value, count)
+     PdvDev *fd;
+     u_char *value;
+     int count;
+{
+  int ret = 3;
+#ifdef __linux__
+  /* ret=new_ccd_serial_write(fd,value,count); */
+  ret = new_ccd_serial_write (fd, value, count);
+#else
+  ret = old_ccd_serial_write (fd, value, count);
+#endif
+
+  return ret;
+}
+
+int
 pdv_serial_write_one (PdvDev * pdv_p, char *buf, int size)
 {
   int avail = 0;
-  int left = size;
   int ret = 0;
-  int offset = 0;
   int speed = pdv_get_baud (pdv_p);
   int sleepval;
   int loop = 0;
 
   int chunk = ccd_serial_block_size;
-  int ss;
 
   if (size > chunk)
     {
@@ -338,7 +338,6 @@ int
 ccd_serial_wait_done (PdvDev * pdv_p)
 {
   int avail = 0;
-  int ret = 0;
   int loop = 0;
   /* int bufsize = pdv_serial_block_size; */
   int bufsize;
@@ -413,7 +412,7 @@ ccd_open (dvname, unit)
   return pd;
 }
 
-
+void
 ccd_serial_wait (fd, time, number)
      PdvDev *fd;
      int time;
