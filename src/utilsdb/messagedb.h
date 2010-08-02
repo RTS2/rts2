@@ -22,18 +22,23 @@
 
 #include "../utils/rts2message.h"
 
+namespace rts2db
+{
+
 /**
  * Class for message database manipulation.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2MessageDB:public Rts2Message
+class MessageDB:public Rts2Message
 {
 	public:
-		Rts2MessageDB (Rts2Message & msg):Rts2Message (msg) {}
-		Rts2MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
-		virtual ~ Rts2MessageDB (void);
+		MessageDB (Rts2Message & msg):Rts2Message (msg) {}
+		MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
+		virtual ~ MessageDB (void);
 		void insertDB ();
 };
+
+}
 
 #endif							 /* ! __RTS2_MESSAGEDB__ */

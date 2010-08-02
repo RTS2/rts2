@@ -18,22 +18,24 @@
  */
 
 
-#include "rts2messagedb.h"
+#include "messagedb.h"
 #include "../utils/rts2block.h"
 
 #include <iostream>
 
 EXEC SQL include sqlca;
 
-Rts2MessageDB::Rts2MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString): Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
+using namespace rts2db;
+
+MessageDB::MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString): Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
 {
 }
 
-Rts2MessageDB::~Rts2MessageDB (void)
+MessageDB::~MessageDB (void)
 {
 }
 
-void Rts2MessageDB::insertDB ()
+void MessageDB::insertDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_message_time = messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;

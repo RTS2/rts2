@@ -27,7 +27,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/imageset.h"
 #include "../utilsdb/observationset.h"
-#include "../utilsdb/rts2messagedb.h"
+#include "../utilsdb/messagedb.h"
 #include "../utilsdb/targetset.h"
 #include "../utilsdb/user.h"
 #include "../utilsdb/sqlerror.h"
@@ -369,7 +369,7 @@ void XmlRpcd::message (Rts2Message & msg)
 #ifdef HAVE_PGSQL
 	if (msg.isNotDebug ())
 	{
-		Rts2MessageDB msgDB (msg);
+		rts2db::MessageDB msgDB (msg);
 		msgDB.insertDB ();
 	}
 #endif
