@@ -82,7 +82,6 @@ ValueEdt::ValueEdt (std::string in_val_name):Rts2ValueDoubleMinMax (in_val_name)
 
 ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
 {
-
 }
 
 ValueEdt::~ValueEdt (void)
@@ -599,12 +598,6 @@ int EdtSao::setGrayScale (bool _grayScale)
 
 void EdtSao::beforeRun ()
 {
-	if (sigtosc->getValueString ().length () == 0)
-	{
-		logStream (MESSAGE_ERROR) << "sigtosc signal translator was not specified" << sendLog;
-		exit (110);
-	}
-
 	Camera::beforeRun ();
 
 	for (int i = 0; i < totalChannels; i++)
@@ -1097,9 +1090,9 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	edtGain->addSelVal ("LOW");
 	edtGain->setValueInteger (0);
 
-	createValue (signalFile, "SIGFILE", "signal (low-level) file", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (signalFile, "SIGFILE", "signal (low-level) file", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	createValue (signalFileDir, "SIGFILEDIR", "default directory with signal files", true, RTS2_VALUE_WRITABLE);
-	createValue (sigtosc, "SIGTOSC", "sigtosc.pl binary location", true, RTS2_VALUE_WRITABLE);
+	createValue (sigtosc, "SIGTOSC", "sigtosc.pl binary location", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL);
 
 	createValue (edtSplit, "SPLIT", "split mode (on or off)", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 	edtSplit->setValueBool (true);

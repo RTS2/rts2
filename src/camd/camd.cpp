@@ -271,12 +271,6 @@ bool Camera::supportFrameTransfer ()
 	return false;
 }
 
-int Camera::setSubExposure (double in_subexposure)
-{
-	subExposure->setValueDouble (in_subexposure);
-	return 0;
-}
-
 Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
 	expType = NULL;
@@ -358,7 +352,6 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);
 
-	createValue (subExposure, "subexposure", "current subexposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 	createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 
@@ -386,7 +379,6 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption ('e', NULL, 1, "default exposure");
-	addOption ('s', "subexposure", 1, "default subexposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption ('r', NULL, 1, "camera rotang");
 	addOption (OPT_FLIP, "flip", 1, "camera flip (default to 1)");
@@ -537,9 +529,6 @@ int Camera::processOption (int in_opt)
 			break;
 		case 'e':
 			exposure->setValueCharArr (optarg);
-			break;
-		case 's':
-			setSubExposure (atof (optarg));
 			break;
 		case 't':
 			ccdRealType = optarg;
@@ -693,9 +682,15 @@ void Camera::initDataTypes ()
 
 int Camera::initValues ()
 {
-	// TODO init focuser - try to read focuser offsets & initial position from file
-	addConstValue ("focuser", focuserDevice);
-	addConstValue ("wheel", wheelDevice);
+	if (focuserDevice)
+	{
+		addConstValue ("focuser", focuserDevice);
+	}
+
+	if (wheelDevice)
+	{
+		addConstValue ("wheel", wheelDevice);
+	}
 
 	addConstValue ("CCD_TYPE", "camera type", ccdRealType);
 	addConstValue ("CCD_SER", "camera serial number", serialNumber);
@@ -833,10 +828,6 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return setFocuser (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
-	if (old_value == subExposure)
-	{
-		return setSubExposure (new_value->getValueDouble ()) == 0 ? 0 : -2;
-	}
 	if (old_value == camFilterVal)
 	{
 		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -885,8 +876,7 @@ void Camera::addTempCCDHistory (float temp)
 void Camera::deviceReady (Rts2Conn * conn)
 {
 	// if that's filter wheel
-	if (wheelDevice && !strcmp (conn->getName (), wheelDevice)
-		&& conn->getOtherDevClient ())
+	if (wheelDevice && !strcmp (conn->getName (), wheelDevice) && conn->getOtherDevClient ())
 	{
 		// copy content of device filter variable to our list..
 		Rts2Value *val = conn->getValue ("filter");
@@ -905,14 +895,14 @@ void Camera::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			if (event->getArg () == this && filterMoving->getValueBool ())
+			if (event->getArg () == this && filterMoving && filterMoving->getValueBool ())
 			{
 				filterMoving->setValueBool (false);
 				checkQueuedExposures ();
 			}
 			break;
 		case EVENT_FOCUSER_END_MOVE:
-			if (event->getArg () == this && focuserMoving->getValueBool ())
+			if (event->getArg () == this && focuserMoving && focuserMoving->getValueBool ())
 			{
 				focuserMoving->setValueBool (false);
 				checkQueuedExposures ();
@@ -963,8 +953,8 @@ int Camera::camStartExposure ()
 			|| (getMasterStateFull () & BOP_EXPOSURE)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
-			|| filterMoving->getValueBool () == true
-			|| focuserMoving->getValueBool () == true
+			|| (filterMoving && filterMoving->getValueBool () == true)
+			|| (focuserMoving && focuserMoving->getValueBool () == true)
 		))
 	{
 		// no conflict, as when we are called, quedExpNumber will already be decreased
@@ -1195,8 +1185,11 @@ void Camera::offsetForFilter (int new_filter)
 	postEvent (new Rts2Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
 	if (fm.focuserName)
 		return;
-	focuserMoving->setValueBool (true);
-	sendValueAll (focuserMoving);
+	if (focuserMoving)
+	{
+		focuserMoving->setValueBool (true);
+		sendValueAll (focuserMoving);
+	}
 }
 
 int Camera::getStateChip (int chip)
@@ -1236,8 +1229,11 @@ int Camera::setFocuser (int new_set)
 	postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
-	focuserMoving->setValueBool (true);
-	sendValueAll (focuserMoving);
+	if (focuserMoving)
+	{
+		focuserMoving->setValueBool (true);
+		sendValueAll (focuserMoving);
+	}
 	return 0;
 }
 

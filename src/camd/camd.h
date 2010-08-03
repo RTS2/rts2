@@ -285,8 +285,6 @@ class Camera:public Rts2ScriptDevice
 
 		Rts2ValueDouble *pixelsSecond;
 
-		Rts2ValueDouble *subExposure;
-
 		//! number of connection waiting to be executed
 		Rts2ValueInteger *quedExpNumber;
 
@@ -740,10 +738,6 @@ class Camera:public Rts2ScriptDevice
 			exposure->setValueFloat (in_exp);
 			sendValueAll (exposure);
 		}
-
-		int setSubExposure (double in_subexposure);
-
-		double getSubExposure (void) { return subExposure->getValueDouble (); }
 
 		/**
 		 * Returns exposure type.
