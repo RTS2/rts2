@@ -32,7 +32,7 @@ typedef enum
 	SPINAC_3,
 	SPINAC_4,
 	PLUG_4,
-	PLUG_3,
+	PLUG_PARA,
 	PLUG_PHOTOMETER,
 	PLUG_1
 } extraOuts;
@@ -54,9 +54,9 @@ class Fram:public Sensor
 		Rts2ValueDouble *wdcTemperature;
 
 		Rts2ValueBool *switchBatBack;
-		Rts2ValueBool *plug1;
+		Rts2ValueBool *plug_para;
 		Rts2ValueBool *plug_photometer;
-		Rts2ValueBool *plug3;
+		Rts2ValueBool *plug1;
 		Rts2ValueBool *plug4;
 
 		int openWDC ();
@@ -287,16 +287,19 @@ int Fram::init ()
 
 		extraSwitch->VYP (SWITCH_BATBACK);
 
-		createValue (switchBatBack, "bat_backup", "state of batery backup switch", false, RTS2_VALUE_WRITABLE);
+		createValue (switchBatBack, "bat_backup", "state of batery backup switch", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		switchBatBack->setValueBool (false);
 
-		createValue (plug1, "plug_1", "1st plug", false, RTS2_VALUE_WRITABLE);
-		createValue (plug_photometer, "plug_photometer", "1st plug", false, RTS2_VALUE_WRITABLE);
+		createValue (plug1, "plug_1", "1st plug", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+		createValue (plug_photometer, "plug_photometer", "photometer plug", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		extraSwitch->ZAP (PLUG_PHOTOMETER);
 		plug_photometer->setValueBool (true);
+		createValue (plug_para, "plug_para", "paramount plug", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		extraSwitch->ZAP (PLUG_PARA);
+		plug_para->setValueBool (true);
 
-		createValue (plug3, "plug_3", "3rd plug", false, RTS2_VALUE_WRITABLE);
-		createValue (plug4, "plug_4", "4th plug", false, RTS2_VALUE_WRITABLE);
+		createValue (plug4, "plug_4", "4th plug", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	}
 	if (wdc_file)
 	{
@@ -326,13 +329,13 @@ int Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	{
 		return setValueSwitch (PLUG_PHOTOMETER, ((Rts2ValueBool *) newValue)->getValueBool ());
 	}
+	if (oldValue == plug_para)
+	{
+		return setValueSwitch (PLUG_PARA, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
 	if (oldValue == plug1)
 	{
 		return setValueSwitch (PLUG_1, ((Rts2ValueBool *) newValue)->getValueBool ());
-	}
-	if (oldValue == plug3)
-	{
-		return setValueSwitch (PLUG_3, ((Rts2ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug4)
 	{
@@ -363,9 +366,9 @@ Fram::Fram (int argc, char **argv):Sensor (argc, argv)
 	extraSwitchFile = NULL;
 	extraSwitch = NULL;
 
-	plug1 = NULL;
+	plug_para = NULL;
 	plug_photometer = NULL;
-	plug3 = NULL;
+	plug1 = NULL;
 	plug4 = NULL;
 
 	addOption (OPT_WDC_DEV, "wdc-dev", 1, "/dev file with watch-dog card");
