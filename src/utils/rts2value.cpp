@@ -56,6 +56,12 @@ Rts2Value::Rts2Value (std::string _val_name, std::string _description, bool writ
 	setValueFlags (flags);
 }
 
+int Rts2Value::checkNotNull ()
+{
+	logStream (MESSAGE_ERROR) << getName () << " not set";
+	return 1;
+}
+
 int Rts2Value::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
@@ -63,8 +69,7 @@ int Rts2Value::doOpValue (char op, Rts2Value * old_value)
 		case '=':
 			return 0;
 		default:
-			logStream (MESSAGE_ERROR) << "unknow op '" << op << "' for type " <<
-				getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "unknow op '" << op << "' for type " << getValueType () << sendLog;
 			return -1;
 	}
 }
@@ -72,10 +77,7 @@ int Rts2Value::doOpValue (char op, Rts2Value * old_value)
 int Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
 {
 	std::ostringstream _os;
-	_os
-		<< PROTO_METAINFO << " "
-		<< rts2Type << " "
-		<< '"' << getName () << "\" " << '"' << description << "\" ";
+	_os << PROTO_METAINFO << " " << rts2Type << " " << '"' << getName () << "\" " << '"' << description << "\" ";
 	return connection->sendMsg (_os.str ());
 }
 
@@ -158,6 +160,13 @@ bool Rts2ValueString::isEqual (Rts2Value *other_value)
 	return strcmp (getValue (), other_value->getValue ()) == 0;
 }
 
+int Rts2ValueString::checkNotNull ()
+{
+	if (value.length () > 0)
+		return 0;
+	return Rts2Value::checkNotNull ();
+}
+
 Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name): Rts2Value (in_val_name)
 {
 	value = 0;
@@ -166,7 +175,7 @@ Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name): Rts2Value (in_val_
 
 Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = 0;
+	value = (flags & RTS2_VALUE_NOTNULL) ? INT_MIN : 0;
 	rts2Type |= RTS2_VALUE_INTEGER;
 }
 
@@ -216,6 +225,13 @@ void Rts2ValueInteger::setFromValue (Rts2Value * newValue)
 bool Rts2ValueInteger::isEqual (Rts2Value * other_value)
 {
 	return getValueInteger () == other_value->getValueInteger ();
+}
+
+int Rts2ValueInteger::checkNotNull ()
+{
+	if (value != INT_MIN)
+		return 0;
+	return Rts2Value::checkNotNull ();
 }
 
 Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value (in_val_name)
@@ -293,6 +309,13 @@ void Rts2ValueDouble::setFromValue (Rts2Value * newValue)
 bool Rts2ValueDouble::isEqual (Rts2Value *other_value)
 {
 	return getValueDouble () == other_value->getValueDouble ();
+}
+
+int Rts2ValueDouble::checkNotNull ()
+{
+	if (!isnan (value))
+		return 0;
+	return Rts2Value::checkNotNull ();
 }
 
 Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble (in_val_name)

@@ -1,6 +1,6 @@
 /* 
  * Min-max value.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,16 +28,12 @@
 
 class Rts2ValueDoubleMinMax:public Rts2ValueDouble
 {
-	private:
-		double min;
-		double max;
 	public:
 		Rts2ValueDoubleMinMax (std::string in_val_name);
-		Rts2ValueDoubleMinMax (std::string in_val_name,
-			std::string in_description, bool writeToFits =
-			true, int32_t flags = 0);
+		Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 
 		virtual int setValue (Rts2Conn * connection);
+		virtual int checkNotNull ();
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
@@ -49,32 +45,20 @@ class Rts2ValueDoubleMinMax:public Rts2ValueDouble
 			max = from->getMax ();
 		}
 
-		void setMin (double in_min)
-		{
-			min = in_min;
-		}
+		void setMin (double in_min) { min = in_min; }
 
-		double getMin ()
-		{
-			return min;
-		}
+		double getMin () { return min; }
 
-		void setMax (double in_max)
-		{
-			max = in_max;
-		}
+		void setMax (double in_max) { max = in_max; }
 
-		double getMax ()
-		{
-			return max;
-		}
+		double getMax () { return max; }
 
 		/**
 		 * @return False if new float value is invalid.
 		 */
-		bool testValue (double in_v)
-		{
-			return (in_v >= getMin () && in_v <= getMax ());
-		}
+		bool testValue (double in_v) { return (in_v >= getMin () && in_v <= getMax ()); }
+	private:
+		double min;
+		double max;
 };
 #endif							 /* !__RTS2_VALUE_MINMAX__ */

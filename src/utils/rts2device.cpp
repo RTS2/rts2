@@ -1,6 +1,6 @@
 /* 
  * Device basic class.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -238,10 +238,7 @@ void Rts2DevConn::setConnState (conn_state_t new_conn_state)
 	}
 }
 
-Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * _master, char *_device_host, int _device_port,
-	const char *_device_name, int _device_type,
-	const char *_master_host, int _master_port, int _serverNum)
-:Rts2Conn (-1, _master)
+Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Rts2Conn (-1, _master)
 {
 	device_host = _device_host;
 	device_port = _device_port;
@@ -508,12 +505,13 @@ Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, const c
 
 	deviceStatusCommand = NULL;
 
+	doCheck = true;
+
 	// now add options..
-	addOption (OPT_LOCALHOST, "localhost", 1,
-		"hostname, if it different from return of gethostname()");
-	addOption (OPT_SERVER, "server", 1,
-		"hostname (and possibly port number, separated by :) of central server");
+	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
+	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
+	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some reccomended values are not set");
 	addOption ('d', NULL, 1, "name of device");
 }
 
@@ -690,6 +688,9 @@ int Rts2Device::processOption (int in_opt)
 		case OPT_MODEFILE:
 			modefile = optarg;
 			break;
+		case OPT_NOTCHECKNULL:
+			doCheck = false;
+			break;
 		case 'd':
 			device_name = optarg;
 			break;
@@ -829,6 +830,11 @@ int Rts2Device::initValues ()
 
 void Rts2Device::beforeRun ()
 {
+	if (doCheck && checkNotNulls ())
+	{
+		logStream (MESSAGE_ERROR) << "some values are not set. Please see above errors and fix them, or run driver with --nocheck option" << sendLog;
+		exit (1);
+	}
 	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
 	int ret = checkLockFile (s.c_str ());
 	if (ret < 0)

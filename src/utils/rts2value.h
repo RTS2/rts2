@@ -208,6 +208,17 @@
  */
 #define RTS2_VALUE_WRITABLE           0x02000000
 
+/**
+ * If set, value is reseted at the end of script execution to hardcoded
+ * (sensible) default.
+*/
+#define RTS2_VALUE_SCRIPTENDRESET     0x04000000
+
+/**
+ * If set, value is checked before run if it is set.
+ */
+#define RTS2_VALUE_NOTNULL            0x08000000
+
 #define VALUE_BUF_LEN                 200
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)
@@ -285,6 +296,14 @@ class Rts2Value
 		 * @return True if value is equal to other value, otherwise false.
 		 */
 		virtual bool isEqual (Rts2Value *other_value) = 0;
+
+		/**
+		 * Check if variable is not null. Returns number of violations. This
+		 * call is used during device initialization to check for null values.
+		 *
+		 * @return number of violations
+		 */
+		virtual int checkNotNull ();
 
 		int setValueString (std::string in_value) { return setValueCharArr (in_value.c_str ()); }
 
@@ -414,11 +433,8 @@ class Rts2ValueString:public Rts2Value
 {
 	public:
 		Rts2ValueString (std::string in_val_name);
-		Rts2ValueString (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
-		virtual ~ Rts2ValueString (void)
-		{
-		}
+		Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0); 
+		virtual ~ Rts2ValueString (void) {}
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
@@ -427,6 +443,7 @@ class Rts2ValueString:public Rts2Value
 		virtual void send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+		virtual int checkNotNull ();
 	private:
 		std::string value;
 };
@@ -438,12 +455,9 @@ class Rts2ValueString:public Rts2Value
  */
 class Rts2ValueInteger:public Rts2Value
 {
-	private:
-		int value;
 	public:
 		Rts2ValueInteger (std::string in_val_name);
-		Rts2ValueInteger (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		/**
@@ -476,6 +490,9 @@ class Rts2ValueInteger:public Rts2Value
 		}
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+		virtual int checkNotNull ();
+	private:
+		int value;
 };
 
 /**
@@ -485,8 +502,6 @@ class Rts2ValueInteger:public Rts2Value
  */
 class Rts2ValueDouble:public Rts2Value
 {
-	protected:
-		double value;
 	public:
 		Rts2ValueDouble (std::string in_val_name);
 		Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
@@ -520,6 +535,9 @@ class Rts2ValueDouble:public Rts2Value
 		}
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+		virtual int checkNotNull ();
+	protected:
+		double value;
 };
 
 /**

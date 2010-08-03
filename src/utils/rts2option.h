@@ -1,6 +1,6 @@
 /* 
  * Infrastructure for option parser.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,6 +46,8 @@
 #define OPT_LOGFILE         1007
 #define OPT_LOCKPREFIX      1008
 #define OPT_OPENTPL_SERVER  1009 
+
+#define OPT_NOTCHECKNULL    1010
 
 /**
  * Start of local option number playground.

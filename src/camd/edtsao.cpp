@@ -1131,46 +1131,46 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	grayScale = NULL;
 
-	createValue (vhi, "VHI", "[V] V high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (vhi, "VHI", "[V] V high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	vhi->initEdt (0xA0080, A_plus);
 
-	createValue (vlo, "VLO", "[V] V low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (vlo, "VLO", "[V] V low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	vlo->initEdt (0xA0188, A_minus);
 
-	createValue (phi, "PHI", "[V] P high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (phi, "PHI", "[V] P high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
-	createValue (plo, "PLO", "[V] P low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (plo, "PLO", "[V] P low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	plo->initEdt (0xA0184, A_minus);
 
-	createValue (shi, "SHI", "[V] S high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (shi, "SHI", "[V] S high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	shi->initEdt (0xA008C, A_plus);
 
-	createValue (slo, "SLO", "[V] S low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (slo, "SLO", "[V] S low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	slo->initEdt (0xA0180, A_minus);
 
-	createValue (rhi, "RHI", "[V] R high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rhi, "RHI", "[V] R high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	rhi->initEdt (0xA0088, A_plus);
 
-	createValue (rlo, "RLO", "[V] R low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rlo, "RLO", "[V] R low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	rlo->initEdt (0xA018C, A_minus);
 
-	createValue (rd, "RD", "[V] RD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rd, "RD", "[V] RD", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	rd->initEdt (0xA0384, C);
 
-	createValue (od1r, "OD1_R", "[V] OD 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (od1r, "OD1_R", "[V] OD 1 right", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	od1r->initEdt (0xA0388, D);
 
-	createValue (od2l, "OD2_L", "[V] OD 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (od2l, "OD2_L", "[V] OD 2 left", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	od2l->initEdt (0xA038C, D);
 
-	createValue (og1r, "OG1_R", "[V] OG 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (og1r, "OG1_R", "[V] OG 1 right", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	og1r->initEdt (0xA0288, B);
 
-	createValue (og2l, "OG2_L", "[V] OG 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (og2l, "OG2_L", "[V] OG 2 left", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	og2l->initEdt (0xA028C, B);
 
-	createValue (dd, "DD", "[V] DD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (dd, "DD", "[V] DD", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
 	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
@@ -1322,15 +1322,15 @@ int EdtSao::init ()
 
 	ccd_set_serial_delay (pd, sdelay);
 
-	switch (controllerType)
+/*	switch (controllerType)
 	{
-		case CHANNEL_16:
+		case CHANNEL_16: */
 			createValue (grayScale, "gray_scale", "turns on simulated grayscale", true, RTS2_VALUE_WRITABLE);
 			grayScale->setValueBool (false);
-			break;
+/*			break;
 		case CHANNEL_4:
 			break;
-	}
+	} */
 
 	channels = new Rts2ValueBool*[totalChannels];
 	ADoffsets = new Rts2ValueInteger*[totalChannels];

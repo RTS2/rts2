@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -139,6 +139,17 @@ int Rts2Daemon::checkLockFile (const char *_lock_fname)
 		return -1;
 	}
 	return 0;
+}
+
+int Rts2Daemon::checkNotNulls ()
+{
+	int failed = 0;
+	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	{
+		if ((*iter)->getValue ()->getFlags () & RTS2_VALUE_NOTNULL)
+			failed += (*iter)->getValue ()->checkNotNull ();
+	}
+	return failed;
 }
 
 int Rts2Daemon::doDaemonize ()
