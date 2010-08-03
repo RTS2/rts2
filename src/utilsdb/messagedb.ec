@@ -19,6 +19,7 @@
 
 
 #include "messagedb.h"
+#include "sqlerror.h"
 #include "../utils/rts2block.h"
 
 #include <iostream>
@@ -28,6 +29,10 @@ EXEC SQL include sqlca;
 using namespace rts2db;
 
 MessageDB::MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString): Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
+{
+}
+
+MessageDB::MessageDB (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString):Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
 {
 }
 
@@ -74,5 +79,54 @@ void MessageDB::insertDB ()
 		EXEC SQL ROLLBACK;
 		return;
 	}
+	EXEC SQL COMMIT;
+}
+
+void MessageSet::load (double from, double to, int type_mask)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	double d_from = from;
+	double d_to = to;
+	int d_type_mask = type_mask;
+
+	double d_message_time;
+	varchar d_message_oname[8];
+	int d_message_type;
+	varchar d_message_string[200];
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DECLARE cur_message CURSOR FOR 
+	SELECT
+		EXTRACT (EPOCH FROM message_time),
+		message_oname,
+		message_type,
+		message_string
+	FROM
+		message
+	WHERE
+		message_time BETWEEN to_timestamp (:d_from) AND to_timestamp (:d_to)
+		AND (message_type & :d_type_mask) <> 0
+	ORDER BY
+		message_time ASC;
+	
+	EXEC SQL OPEN cur_message;
+	while (true)
+	{
+		EXEC SQL FETCH next FROM cur_message INTO
+			:d_message_time,
+			:d_message_oname,
+			:d_message_type,
+			:d_message_string;
+		if (sqlca.sqlcode)
+			break;
+		push_back (MessageDB (d_message_time, d_message_oname.arr, d_message_time, d_message_string.arr));
+	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE cur_message;
+		EXEC SQL ROLLBACK;
+		throw SqlError ();
+	}
+	EXEC SQL CLOSE cur_message;
 	EXEC SQL COMMIT;
 }

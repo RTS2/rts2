@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,16 +39,11 @@
  */
 class Rts2Message
 {
-	protected:
-		struct timeval messageTime;
-		std::string messageOName;
-		messageType_t messageType;
-		std::string messageString;
-
 	public:
 		Rts2Message (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
 
 		Rts2Message (const char *in_messageOName, messageType_t in_messageType, const char *in_messageString);
+		Rts2Message (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString);
 
 		virtual ~ Rts2Message (void);
 
@@ -101,6 +96,12 @@ class Rts2Message
 		time_t getMessageTimeSec () { return messageTime.tv_sec; }
 
 		int getMessageTimeUSec () { return messageTime.tv_usec; }
+
+	protected:
+		struct timeval messageTime;
+		std::string messageOName;
+		messageType_t messageType;
+		std::string messageString;
 };
 
 std::ostream & operator << (std::ostream & _of, Rts2Message & msg);

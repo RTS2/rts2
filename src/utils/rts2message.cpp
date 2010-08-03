@@ -40,6 +40,15 @@ Rts2Message::Rts2Message (const char *in_messageOName, messageType_t in_messageT
 	messageString = std::string (in_messageString);
 }
 
+Rts2Message::Rts2Message (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
+{
+	messageTime.tv_sec = trunc (in_messageTime);
+	messageTime.tv_usec = USEC_SEC * (in_messageTime - messageTime.tv_sec);
+	messageOName = std::string (in_messageOName);
+	messageType = in_messageType;
+	messageString = std::string (in_messageString);
+}
+
 Rts2Message::~Rts2Message ()
 {
 }

@@ -22,6 +22,8 @@
 
 #include "../utils/rts2message.h"
 
+#include <vector>
+
 namespace rts2db
 {
 
@@ -35,8 +37,30 @@ class MessageDB:public Rts2Message
 	public:
 		MessageDB (Rts2Message & msg):Rts2Message (msg) {}
 		MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
+		MessageDB (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString);
 		virtual ~ MessageDB (void);
 		void insertDB ();
+};
+
+/**
+ * Set of messages retrieved from database for given period.
+ *
+ * @author Petr KUbanek <petr@kubanek.net>
+ */
+class MessageSet:public std::vector <MessageDB>
+{
+	public:
+		MessageSet () {}
+		/**
+		 * Retrieve messages within given period.
+		 *
+		 * @param from       start of the period
+		 * @param to         end of the period
+		 * @param type_mask  type mask to filter messages
+		 *
+		 * @throw SqlError
+		 */
+		void load (double from, double to, int type_mask);
 };
 
 }
