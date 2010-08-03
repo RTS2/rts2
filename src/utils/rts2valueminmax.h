@@ -23,7 +23,9 @@
 #include "rts2value.h"
 
 /**
- * This class is double value with limits.
+ * Class holding double value with its limits.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 
 class Rts2ValueDoubleMinMax:public Rts2ValueDouble

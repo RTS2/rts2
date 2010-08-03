@@ -58,7 +58,7 @@ Rts2Value::Rts2Value (std::string _val_name, std::string _description, bool writ
 
 int Rts2Value::checkNotNull ()
 {
-	logStream (MESSAGE_ERROR) << getName () << " not set";
+	logStream (MESSAGE_ERROR) << getName () << " not set" << sendLog;
 	return 1;
 }
 
