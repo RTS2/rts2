@@ -997,8 +997,8 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 		if (!getFitsFile ())
 			openImage (NULL, true);
 	
-		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment,
-			&fits_status);
+                fits_status = 0;
+		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
 		strncpy (value, val, valLen);
 		value[valLen - 1] = '\0';
 		fitsStatusGetValue (name, true);
