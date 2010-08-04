@@ -189,9 +189,38 @@ class IntegerArray: public Rts2Value
 
 		int getValueAt (int i) { return value[i]; }
 
-	private:
-		std::vector <int> value;
+		int operator[] (int i) { return value[i]; }
+
+	protected:
 		std::string _os;
+		std::vector <int> value;
+};
+
+/**
+ * Array for booleans.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class BoolArray: public IntegerArray
+{
+	public:
+		BoolArray (std::string _val_name);
+		BoolArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
+
+		virtual const char *getDisplayValue ();
+
+		void setValueBool (int i, bool v) { value[i] = v; }
+
+		void addValue (bool val)
+		{
+			value.push_back (val);
+			changed ();
+		}
+
+		virtual void setFromValue (Rts2Value *newValue);
+		virtual bool isEqual (Rts2Value *other_val);
+
+		bool operator[] (int i) { return value[i] ? true : false; }
 };
 
 }

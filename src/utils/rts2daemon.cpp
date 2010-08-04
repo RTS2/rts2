@@ -491,7 +491,7 @@ Rts2CondValue * Rts2Daemon::getCondValue (const Rts2Value *val)
 Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 {
 	// create new value, which will be passed to hook
-	Rts2Value *dup_val;
+	Rts2Value *dup_val = NULL;
 	switch (old_value->getValueExtType ())
 	{
 		case 0:
@@ -504,7 +504,7 @@ Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 					break;
 			}
 			if (withVal)
-				((Rts2ValueString *) dup_val)->setValueCharArr (old_value->getValue ());
+				((Rts2ValueString *) dup_val)->setFromValue (old_value);
 			break;
 		case RTS2_VALUE_STAT:
 			dup_val = new Rts2ValueDoubleStat (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
@@ -528,13 +528,17 @@ Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 				case RTS2_VALUE_INTEGER:
 					dup_val = new IntegerArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;
+				case RTS2_VALUE_BOOL:
+					dup_val = new BoolArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
+					break;
 				default:
 					logStream (MESSAGE_ERROR) << "unknow array type: " << old_value->getValueBaseType () << sendLog;
 					break;
 			}
-
+			if (dup_val)
+				break;
 		default:
-			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->getValueExtType () << sendLog;
 			return NULL;
 	}
 	if (withVal)

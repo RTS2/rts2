@@ -1,6 +1,6 @@
 /* 
  * Array values.
- * Copyright (C) 2008,2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,20 +24,17 @@
 
 using namespace rts2core;
 
-StringArray::StringArray (std::string _val_name)
-:Rts2Value (_val_name)
+StringArray::StringArray (std::string _val_name):Rts2Value (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
-StringArray::StringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
-:Rts2Value (_val_name, _description, writeToFits, flags)
+StringArray::StringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
-int
-StringArray::setValue (Rts2Conn * connection)
+int StringArray::setValue (Rts2Conn * connection)
 {
 	value.clear ();
 
@@ -53,18 +50,14 @@ StringArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-StringArray::setValueCharArr (const char *_value)
+int StringArray::setValueCharArr (const char *_value)
 {
 	value = SplitStr (std::string (_value), std::string (" "));
 	changed ();
 	return 0;
 }
 
-
-const char *
-StringArray::getValue ()
+const char * StringArray::getValue ()
 {
 	_os = std::string ();
 	std::vector <std::string>::iterator iter = value.begin ();
@@ -79,34 +72,27 @@ StringArray::getValue ()
 	return _os.c_str ();
 }
 
-
-void
-StringArray::setFromValue (Rts2Value * newValue)
+void StringArray::setFromValue (Rts2Value * newValue)
 {
 	setValueCharArr (newValue->getValue ());
 }
 
-
-bool
-StringArray::isEqual (Rts2Value *other_val)
+bool StringArray::isEqual (Rts2Value *other_val)
 {
 	return !strcmp (getValue (), other_val->getValue ());
 }
 
-DoubleArray::DoubleArray (std::string _val_name)
-:Rts2Value (_val_name)
+DoubleArray::DoubleArray (std::string _val_name):Rts2Value (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
 }
 
-DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
-:Rts2Value (_val_name, _description, writeToFits, flags)
+DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
 }
 
-int
-DoubleArray::setValue (Rts2Conn * connection)
+int DoubleArray::setValue (Rts2Conn * connection)
 {
 	value.clear ();
 
@@ -122,9 +108,7 @@ DoubleArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-DoubleArray::setValueCharArr (const char *_value)
+int DoubleArray::setValueCharArr (const char *_value)
 {
 	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
 	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
@@ -135,9 +119,7 @@ DoubleArray::setValueCharArr (const char *_value)
 	return 0;
 }
 
-
-const char *
-DoubleArray::getValue ()
+const char * DoubleArray::getValue ()
 {
 	std::ostringstream oss;
 	std::vector <double>::iterator iter = value.begin ();
@@ -154,9 +136,7 @@ DoubleArray::getValue ()
 	return _os.c_str ();
 }
 
-
-void
-DoubleArray::setFromValue (Rts2Value * newValue)
+void DoubleArray::setFromValue (Rts2Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 	{
@@ -172,9 +152,7 @@ DoubleArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-
-bool
-DoubleArray::isEqual (Rts2Value *other_val)
+bool DoubleArray::isEqual (Rts2Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 	{
@@ -194,21 +172,17 @@ DoubleArray::isEqual (Rts2Value *other_val)
 	return false;
 }
 
-
-IntegerArray::IntegerArray (std::string _val_name)
-:Rts2Value (_val_name)
+IntegerArray::IntegerArray (std::string _val_name):Rts2Value (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
 }
 
-IntegerArray::IntegerArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
-:Rts2Value (_val_name, _description, writeToFits, flags)
+IntegerArray::IntegerArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
 }
 
-int
-IntegerArray::setValue (Rts2Conn * connection)
+int IntegerArray::setValue (Rts2Conn * connection)
 {
 	value.clear ();
 
@@ -224,9 +198,7 @@ IntegerArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-IntegerArray::setValueCharArr (const char *_value)
+int IntegerArray::setValueCharArr (const char *_value)
 {
 	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
 	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
@@ -237,18 +209,16 @@ IntegerArray::setValueCharArr (const char *_value)
 	return 0;
 }
 
-
-const char *
-IntegerArray::getValue ()
+const char * IntegerArray::getValue ()
 {
 	std::ostringstream oss;
-	std::vector <int>::iterator iter = value.begin ();
+	std::vector <int>::iterator iter = valueBegin ();
 	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
-	while (iter != value.end ())
+	while (iter != valueEnd ())
 	{
-		oss << (*iter);
+		oss << *iter;
 		iter++;
-		if (iter == value.end ())
+		if (iter == valueEnd ())
 			break;
 		oss << std::string (" ");
 	}
@@ -256,9 +226,7 @@ IntegerArray::getValue ()
 	return _os.c_str ();
 }
 
-
-void
-IntegerArray::setFromValue (Rts2Value * newValue)
+void IntegerArray::setFromValue (Rts2Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
 	{
@@ -274,13 +242,79 @@ IntegerArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-
-bool
-IntegerArray::isEqual (Rts2Value *other_val)
+bool IntegerArray::isEqual (Rts2Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
 	{
 		IntegerArray *ov = (IntegerArray *) other_val;
+		if (ov->size () != value.size ())
+			return false;
+		
+		std::vector <int>::iterator iter1;
+		std::vector <int>::iterator iter2;
+		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
+		{
+			if (*iter1 != *iter2)
+				return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+BoolArray::BoolArray (std::string val_name):IntegerArray (val_name)
+{
+	rts2Type &= ~RTS2_VALUE_INTEGER;
+	rts2Type |= RTS2_VALUE_BOOL;
+}
+
+BoolArray::BoolArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):IntegerArray (_val_name, _description, writeToFits, flags)
+{
+	rts2Type &= ~RTS2_VALUE_INTEGER;
+	rts2Type |= RTS2_VALUE_BOOL;
+}
+
+const char * BoolArray::getDisplayValue ()
+{
+	std::ostringstream oss;
+	std::vector <int>::iterator iter = valueBegin ();
+	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	while (iter != valueEnd ())
+	{
+		if (getFlags () & RTS2_DT_ONOFF)
+			oss << (*iter ? "on" : "off");
+		else
+			oss << (*iter ? "true" : "false");
+		iter++;
+		if (iter == valueEnd ())
+			break;
+		oss << std::string (" ");
+	}
+	_os = oss.str ();
+	return _os.c_str ();
+}
+
+void BoolArray::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_BOOL))
+	{
+		value.clear ();
+		BoolArray *nv = (BoolArray *) newValue;
+		for (std::vector <int>::iterator iter = nv->valueBegin (); iter != nv->valueEnd (); iter++)
+			value.push_back (*iter);
+		changed ();
+	}
+	else
+	{
+		setValueCharArr (newValue->getValue ());
+	}
+}
+
+bool BoolArray::isEqual (Rts2Value *other_val)
+{
+	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_BOOL))
+	{
+		BoolArray *ov = (BoolArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
 		
