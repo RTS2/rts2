@@ -24,12 +24,12 @@
 
 using namespace rts2core;
 
-StringArray::StringArray (std::string _val_name):Rts2Value (_val_name)
+StringArray::StringArray (std::string _val_name):ValueArray (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
-StringArray::StringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
+StringArray::StringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):ValueArray (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
@@ -82,12 +82,12 @@ bool StringArray::isEqual (Rts2Value *other_val)
 	return !strcmp (getValue (), other_val->getValue ());
 }
 
-DoubleArray::DoubleArray (std::string _val_name):Rts2Value (_val_name)
+DoubleArray::DoubleArray (std::string _val_name):ValueArray (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
 }
 
-DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
+DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):ValueArray (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
 }
@@ -172,12 +172,12 @@ bool DoubleArray::isEqual (Rts2Value *other_val)
 	return false;
 }
 
-IntegerArray::IntegerArray (std::string _val_name):Rts2Value (_val_name)
+IntegerArray::IntegerArray (std::string _val_name):ValueArray (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
 }
 
-IntegerArray::IntegerArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):Rts2Value (_val_name, _description, writeToFits, flags)
+IntegerArray::IntegerArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):ValueArray (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
 }

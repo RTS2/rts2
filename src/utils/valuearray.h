@@ -27,13 +27,31 @@ namespace rts2core
 {
 
 /**
+ * Abstract value array class. Provides interface to basic array operations.\
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueArray: public Rts2Value
+{
+	public:
+		ValueArray (std::string _val_name):Rts2Value (_val_name) {}
+		ValueArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0):Rts2Value (_val_name, _description, writeToFits, flags) {}
+
+		virtual ~ValueArray () {}
+		/**
+		 * Return size of an array.
+		 */
+		virtual size_t size () = 0;
+};
+
+/**
  * String array value. Holds unlimited number of strings.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup RTS2Value
  */
-class StringArray: public Rts2Value
+class StringArray: public ValueArray
 {
 	public:
 		StringArray (std::string _val_name);
@@ -63,6 +81,8 @@ class StringArray: public Rts2Value
 			value.push_back (_val);
 			changed ();
 		}
+
+		size_t size () { return value.size (); }
 
 		/**
 		 * Returns true if given string is present in the array.
@@ -96,7 +116,7 @@ class StringArray: public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class DoubleArray: public Rts2Value
+class DoubleArray: public ValueArray
 {
 	public:
 		DoubleArray (std::string _val_name);
@@ -150,7 +170,7 @@ class DoubleArray: public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class IntegerArray: public Rts2Value
+class IntegerArray: public ValueArray
 {
 	public:
 		IntegerArray (std::string _val_name);
