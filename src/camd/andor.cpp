@@ -120,6 +120,8 @@ class Andor:public Camera
 		Rts2ValueInteger *VSAmp;
 		Rts2ValueBool *FTShutter;
 
+		Rts2ValueDouble *subExposure;
+
 		// informational values
 		Rts2ValueSelection *ADChannel;
 		Rts2ValueBool *EMOn;
@@ -358,6 +360,8 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	FTShutter->setValueBool (false);
 
+	createValue (subExposure, "subexposure", "subexposure length", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+
 	createValue (useFT, "USEFT", "Use FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	useFT->setValueBool (true);
 
@@ -570,7 +574,7 @@ int Andor::startExposure ()
 	}
 
 	float acq_exp, acq_acc, acq_kinetic;
-	if (isnan (getSubExposure ()))
+	if (isnan (subExposure->getValueDouble ()))
 	{
 		if (supportFrameTransfer ())
 		{
@@ -604,7 +608,7 @@ int Andor::startExposure ()
 	}
 	else
 	{
-		nAcc = (int) (round (getExposure () / getSubExposure ()));
+		nAcc = (int) (round (getExposure () / subExposure->getValueDouble ()));
 		if (nAcc == 0)
 		{
 			nAcc = 1;
@@ -613,14 +617,14 @@ int Andor::startExposure ()
 		// Acquisition mode 2 is "accumulate"
 		if (setAcquisitionMode (2))
 			return -1;
-		if (SetExposureTime (getSubExposure ()) != DRV_SUCCESS)
+		if (SetExposureTime (subExposure->getValueDouble ()) != DRV_SUCCESS)
 			return -1;
 		if (SetNumberAccumulations (nAcc) != DRV_SUCCESS)
 			return -1;
 		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) != DRV_SUCCESS)
 			return -1;
 		setExposure (nAcc * acq_exp);
-		setSubExposure (acq_exp);
+		subExposure->setValueDouble (acq_exp);
 	}
 
 	int new_state = (getExpType () == 0) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
