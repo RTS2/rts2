@@ -120,7 +120,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 
 	findTargetById ct = { consider_tar_id };
 
-	if (std::find_if (possibleTargets.begin (), possibleTargets.end (), ct) == possibleTargets.end ())
+	if (std::find_if (possibleTargets.begin (), possibleTargets.end (), ct) != possibleTargets.end ())
 		return;
 
 	// add us..
