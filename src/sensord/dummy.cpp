@@ -44,6 +44,10 @@ class Dummy:public Sensor
 
 			createValue (statContent1, "test_content1", "test content 1", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
 			createValue (statContent2, "test_content2", "test content 2", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
+			createValue (boolArray, "bools", "tests of boolean array", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			boolArray->addValue (false);
+			boolArray->addValue (true);
+			boolArray->addValue (true);
 
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
@@ -158,6 +162,7 @@ class Dummy:public Sensor
 		Rts2ValueDoubleStat *statTest;
 		rts2core::DoubleArray *statContent1;
 		rts2core::DoubleArray *statContent2;
+		rts2core::BoolArray *boolArray;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 		Rts2ValueBool *hwError;
