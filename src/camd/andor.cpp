@@ -1090,6 +1090,10 @@ int Andor::init ()
 	if ((ret = Camera::init ()) != 0)
 		return ret;
 
+	ret = doDaemonize ();
+	if (ret)
+		exit (ret);
+
 	err = Initialize (andorRoot);
 	if (err != DRV_SUCCESS)
 	{
