@@ -46,7 +46,7 @@ bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 	for (std::vector < ImageDeviceWait * >::iterator iter = deviceWaits.begin (); iter != deviceWaits.end ();)
 	{
 		ImageDeviceWait *idw = *iter;
-		if (idw->getClient () == devClient && (isnan (devClient->getConnection ()->getInfoTime ()) || idw->getAfter () < devClient->getConnection ()->getInfoTime ()))
+		if (idw->getClient () == devClient && (isnan (devClient->getConnection ()->getInfoTime ()) || idw->getAfter () <= devClient->getConnection ()->getInfoTime ()))
 		{
 			delete idw;
 			iter = deviceWaits.erase (iter);

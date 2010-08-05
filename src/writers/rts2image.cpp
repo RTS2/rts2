@@ -1001,7 +1001,15 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
 		strncpy (value, val, valLen);
 		value[valLen - 1] = '\0';
-		fitsStatusGetValue (name, true);
+		if (required)
+		{
+			fitsStatusGetValue (name, true);
+		}
+		else
+		{
+			if (fits_status == 0)
+				return;
+		}
 	}
 	catch (rts2core::Error &er)
 	{
@@ -1013,6 +1021,8 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 		if (required)
 			throw (er);
 	}
+	if (defVal)
+		strncpy (value, defVal, valLen);
 }
 
 void Rts2Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
