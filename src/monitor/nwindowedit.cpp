@@ -178,8 +178,6 @@ NWindowEditBool::NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey
 
 bool NWindowEditBool::passKey (int key)
 {
-	if (isdigit (key) || key == '+' || key == '-')
-		return true;
 	return false;
 }
 

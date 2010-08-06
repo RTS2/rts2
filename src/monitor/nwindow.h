@@ -67,6 +67,8 @@ class NWindow:public Layout
 
 		void winmove (int x, int y);
 		virtual void resize (int x, int y, int w, int h);
+		
+		void setWidth (int w) { resize (getX (), getY(), w, getHeight ()); }
 		void grow (int max_w, int h_dif);
 
 		virtual void winrefresh ();
@@ -87,14 +89,14 @@ class NWindow:public Layout
 		 */
 		virtual bool setCursor ();
 
-		void setNormal () { wchgat (getWriteWindow (), getWriteWidth (), A_NORMAL, 0, NULL); }
+		void setNormal () { wattrset (getWriteWindow (), A_NORMAL); }
 
 		/**
 		 * Set reverse attribute for full pad (e.g. invert colors in pad).
 		 */
-		void setReverse () { wchgat (getWriteWindow (), getWriteWidth (), A_REVERSE, 0, NULL); }
+		void setReverse () { wattrset (getWriteWindow (), A_REVERSE); }
 
-		void setUnderline () { wchgat (getWriteWindow (), getWriteWidth (), A_UNDERLINE, 0, NULL); }
+		void setUnderline () { wattrset (getWriteWindow (), A_UNDERLINE); }
 
 		/**
 		 * Returns window which is used to write text

@@ -121,7 +121,9 @@ class NWindowEditBool:public NWindowEdit
 {
 	public:
 		NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
-		
+
+		virtual void draw () { NWindowEdit::draw (); setValueBool (getValueBool ()); }
+
 		/**
 		 * Sets edit window value.
 		 */

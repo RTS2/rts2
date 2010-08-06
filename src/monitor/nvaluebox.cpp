@@ -432,25 +432,32 @@ ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x
 		case RTS2_VALUE_BOOL:
 			break;
 	}
+	int w = 0;
 	for (size_t i = 0; i < _val->size (); i++)
 	{
 		switch (_val->getValueBaseType ())
 		{
 			case RTS2_VALUE_DOUBLE:
-				edt.push_back (new NWindowEditDigits (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				edt.push_back (new NWindowEditDigits (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				w += 10;
 				break;
 			case RTS2_VALUE_INTEGER:
-				edt.push_back (new NWindowEditIntegers (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				edt.push_back (new NWindowEditIntegers (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				w += 10;
 				break;
 			case RTS2_VALUE_BOOL:
 				{
-					NWindowEditBool *winbool = new NWindowEditBool (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 25, 1, 0, 0, 300, 1, false);
+					int cw = ((i + 1) == _val->size () ) ? 5 : 6;
+					NWindowEditBool *winbool = new NWindowEditBool (top->getX () + _x + 1 + w, top->getY () + _y + 1, cw, 1, 0, 0, 300, 1, false);
 					winbool->setValueBool ((*((rts2core::BoolArray *) _val))[i]);
 					edt.push_back (winbool);
+					w += 6;
 				}
 				break;
 		}
 	}
+	setWidth (w + 2);
+
 	edtSelected = 0;
 }
 
@@ -472,10 +479,7 @@ keyRet ValueBoxArray::injectKey (int key)
 			return RKEY_HANDLED;
 		case KEY_BTAB:
 			edt[edtSelected]->setNormal ();
-			if (edtSelected == 0)
-				edtSelected = 3;
-			else
-				edtSelected--;
+			edtSelected = (edtSelected - 1) % edt.size ();
 			draw ();
 			return RKEY_HANDLED;
 		case KEY_LEFT:
@@ -503,11 +507,12 @@ void ValueBoxArray::draw ()
 	// draw border..
 	NWindowEdit::draw ();
 	werase (getWriteWindow ());
+
+	edt[edtSelected]->setReverse ();
+
 	// draws entry boxes..
 	for (size_t i = 0; i < edt.size (); i++)
 		edt[i]->draw ();
-
-	edt[edtSelected]->setReverse ();
 
 	winrefresh ();
 	for (size_t i = 0; i < edt.size (); i++)
