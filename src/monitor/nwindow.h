@@ -37,12 +37,6 @@ namespace rts2ncurses
  */
 class NWindow:public Layout
 {
-	private:
-		bool _haveBox;
-		bool active;
-	protected:
-		WINDOW * window;
-		void errorMove (const char *op, int y, int x, int h, int w);
 	public:
 		NWindow (int x, int y, int w, int h, bool border = true);
 		virtual ~ NWindow (void);
@@ -93,54 +87,39 @@ class NWindow:public Layout
 		 */
 		virtual bool setCursor ();
 
-		void setNormal ()
-		{
-			wchgat (getWriteWindow (), getWriteWidth (), A_NORMAL, 0, NULL);
-		}
+		void setNormal () { wchgat (getWriteWindow (), getWriteWidth (), A_NORMAL, 0, NULL); }
 
 		/**
 		 * Set reverse attribute for full pad (e.g. invert colors in pad).
 		 */
-		void setReverse ()
-		{
-			wchgat (getWriteWindow (), getWriteWidth (), A_REVERSE, 0, NULL);
-		}
+		void setReverse () { wchgat (getWriteWindow (), getWriteWidth (), A_REVERSE, 0, NULL); }
 
-		void setUnderline ()
-		{
-			wchgat (getWriteWindow (), getWriteWidth (), A_UNDERLINE, 0, NULL);
-		}
+		void setUnderline () { wchgat (getWriteWindow (), getWriteWidth (), A_UNDERLINE, 0, NULL); }
 
 		/**
 		 * Returns window which is used to write text
 		 */
-		virtual WINDOW *getWriteWindow ()
-		{
-			return window;
-		}
+		virtual WINDOW *getWriteWindow () { return window; }
 
-		bool haveBox ()
-		{
-			return _haveBox;
-		}
+		bool haveBox () { return _haveBox; }
 
 		/**
 		 * Indicate this window needs enter, so enter and tab keys will not be stolen for wait command.
 		 */
-		virtual bool hasEditBox ()
-		{
-			return false;
-		}
+		virtual bool hasEditBox () { return false; }
 
 		/**
 		 * Return window active state. That is true if window is active and receives keyboard inputs.
 		 *
 		 * @return window active state.
 		 */
-		bool isActive ()
-		{
-			return active;
-		}
+		bool isActive () { return active; }
+	protected:
+		WINDOW * window;
+		void errorMove (const char *op, int y, int x, int h, int w);
+	private:
+		bool _haveBox;
+		bool active;
 };
 
 }

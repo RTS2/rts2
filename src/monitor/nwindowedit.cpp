@@ -171,3 +171,21 @@ double NWindowEditDigits::getValueDouble ()
 	}
 	return tval;
 }
+
+NWindowEditBool::NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+{
+}
+
+bool NWindowEditBool::passKey (int key)
+{
+	if (isdigit (key) || key == '+' || key == '-')
+		return true;
+	return false;
+}
+
+bool NWindowEditBool::getValueBool ()
+{
+	char buf[200];
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
+	return strncasecmp (buf, "true", 4) ? false : true;
+}

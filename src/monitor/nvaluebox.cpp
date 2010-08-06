@@ -340,14 +340,10 @@ void ValueBoxTimeDiff::sendValue (Rts2Conn * connection)
 
 ValueBoxRectangle::ValueBoxRectangle (NWindow * top, Rts2ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
 {
-	edt[0] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1,
-		10, 1, 0, 0, 300, 1, false);
-	edt[1] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 1,
-		10, 1, 0, 0, 300, 1, false);
-	edt[2] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 2,
-		10, 1, 0, 0, 300, 1, false);
-	edt[3] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 2,
-		10, 1, 0, 0, 300, 1, false);
+	edt[0] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[2] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 2, 10, 1, 0, 0, 300, 1, false);
+	edt[3] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 2, 10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueInteger (_val->getXInt ());
 	edt[1]->setValueInteger (_val->getYInt ());
@@ -429,12 +425,128 @@ bool ValueBoxRectangle::setCursor ()
 	return edt[edtSelected]->setCursor ();
 }
 
+ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 3, 1, 1, 300, 1)
+{
+	switch (_val->getValueBaseType ())
+	{
+		case RTS2_VALUE_BOOL:
+			break;
+	}
+	for (size_t i = 0; i < _val->size (); i++)
+	{
+		switch (_val->getValueBaseType ())
+		{
+			case RTS2_VALUE_DOUBLE:
+				edt.push_back (new NWindowEditDigits (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				break;
+			case RTS2_VALUE_INTEGER:
+				edt.push_back (new NWindowEditIntegers (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
+				break;
+			case RTS2_VALUE_BOOL:
+				{
+					NWindowEditBool *winbool = new NWindowEditBool (top->getX () + _x + 3 + 15 * i, top->getY () + _y + 1, 25, 1, 0, 0, 300, 1, false);
+					winbool->setValueBool ((*((rts2core::BoolArray *) _val))[i]);
+					edt.push_back (winbool);
+				}
+				break;
+		}
+	}
+	edtSelected = 0;
+}
+
+ValueBoxArray::~ValueBoxArray ()
+{
+	for (std::vector <NWindowEdit *>::iterator iter = edt.begin (); iter != edt.end (); iter++)
+		delete *iter;
+}
+
+keyRet ValueBoxArray::injectKey (int key)
+{
+	switch (key)
+	{
+		case '\t':
+		case KEY_STAB:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected + 1) % edt.size ();
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_BTAB:
+			edt[edtSelected]->setNormal ();
+			if (edtSelected == 0)
+				edtSelected = 3;
+			else
+				edtSelected--;
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_LEFT:
+		case KEY_RIGHT:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected + (key == KEY_RIGHT ? 1 : -1 )) % edt.size ();
+			draw ();
+			return RKEY_HANDLED;
+		case ' ':
+			if (getValue ()->getFlags () & RTS2_VALUE_BOOL)
+			{
+				NWindowEditBool *winbool = (NWindowEditBool *) (edt[edtSelected]);
+				winbool->setValueBool (!winbool->getValueBool ());
+				draw ();
+				return RKEY_HANDLED;
+			}
+			break;
+	}
+
+	return edt[edtSelected]->injectKey (key);
+}
+
+void ValueBoxArray::draw ()
+{
+	// draw border..
+	NWindowEdit::draw ();
+	werase (getWriteWindow ());
+	// draws entry boxes..
+	for (size_t i = 0; i < edt.size (); i++)
+		edt[i]->draw ();
+
+	edt[edtSelected]->setReverse ();
+
+	winrefresh ();
+	for (size_t i = 0; i < edt.size (); i++)
+		edt[i]->winrefresh ();
+}
+
+void ValueBoxArray::sendValue (Rts2Conn * connection)
+{
+	if (!connection->getOtherDevClient ())
+		return;
+	std::ostringstream os;
+	for (size_t i = 0; i < edt.size (); i++)
+	{
+		switch (getValue ()->getValueBaseType ())
+		{
+			case RTS2_VALUE_DOUBLE:
+				os << ((NWindowEditIntegers *)edt[i])->getValueInteger ();
+				break;
+			case RTS2_VALUE_INTEGER:
+				os << ((NWindowEditDigits *)edt[i])->getValueDouble ();
+				break;
+			case RTS2_VALUE_BOOL:
+				os << ((NWindowEditBool *)edt[i])->getValueBool ();
+				break;
+		}
+		os << " ";
+	}
+	connection->queCommand (new rts2core::Rts2CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', os.str (), true));
+}
+
+bool ValueBoxArray::setCursor ()
+{
+	return edt[edtSelected]->setCursor ();
+}
+
 ValueBoxRaDec::ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
 {
-	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1,
-		10, 1, 0, 0, 300, 1, false);
-	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1,
-		10, 1, 0, 0, 300, 1, false);
+	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueDouble (_val->getRa ());
 	edt[1]->setValueDouble (_val->getDec ());

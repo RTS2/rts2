@@ -208,8 +208,11 @@ void NDeviceWindow::createValueBox ()
 				case RTS2_VALUE_RECTANGLE:
 					valueBox = new ValueBoxRectangle (this, (Rts2ValueRectangle *) val, 21, s - 1);
 					break;
+				case RTS2_VALUE_ARRAY:
+					valueBox = new ValueBoxArray (this, (rts2core::ValueArray *) val, 21, s);
+					break;
 				default:
-					logStream (MESSAGE_WARNING) << "Cannot find box for value '" <<  val->getName () << " type " << val->getValueType () << sendLog;
+					logStream (MESSAGE_WARNING) << "cannot find box for value '" <<  val->getName () << " type " << val->getValueType () << sendLog;
 					valueBox = new ValueBoxString (this, val, 21, s - 1);
 					break;
 

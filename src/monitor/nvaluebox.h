@@ -20,6 +20,7 @@
 #ifndef __RTS2_NVALUEBOX__
 #define __RTS2_NVALUEBOX__
 
+#include "../utils/valuearray.h"
 #include "../utils/rts2value.h"
 #include "../utils/rts2valuerectangle.h"
 
@@ -204,7 +205,26 @@ class ValueBoxRectangle:public ValueBox, NWindowEdit
 };
 
 /**
- * Edit box for editting  RA Dec.
+ * Edit box for editting array (of different types)
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueBoxArray:public ValueBox, NWindowEdit
+{
+	public:
+		ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x, int _y);
+		virtual ~ValueBoxArray ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
+	private:
+		std::vector <NWindowEdit *> edt;
+		int edtSelected;
+};
+
+/**
+ * Edit box for editting RA Dec.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */

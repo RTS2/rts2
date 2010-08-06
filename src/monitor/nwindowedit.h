@@ -73,24 +73,20 @@ class NWindowEdit:public NWindow
  */
 class NWindowEditIntegers:public NWindowEdit
 {
-	protected:
-		virtual bool passKey (int key);
 	public:
-		NWindowEditIntegers (int _x, int _y, int w, int h,
-			int _ex, int _ey, int _ew, int _eh, bool border = true);
+		NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
 		
 		/**
 		 * Sets edit window value.
 		 */
-		void setValueInteger (int _val)
-		{
-			wprintw (getWriteWindow (), "%i", _val);
-		}
+		void setValueInteger (int _val) { wprintw (getWriteWindow (), "%i", _val); }
 
 		/**
 		 * Returns integer value of the field. Returns 0 if field is empty.
 		 */
 		int getValueInteger ();
+	protected:
+		virtual bool passKey (int key);
 };
 
 /**
@@ -100,25 +96,43 @@ class NWindowEditIntegers:public NWindowEdit
  */
 class NWindowEditDigits:public NWindowEdit
 {
-	protected:
-		virtual bool passKey (int key);
 	public:
-		NWindowEditDigits (int _x, int _y, int w, int h,
-			int _ex, int _ey, int _ew, int _eh, bool border = true);
+		NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
 
 		/**
 		 * Sets edit window value.
 		 */
-		void setValueDouble (double _val)
-		{
-			wprintw (getWriteWindow (), "%f", _val);
-		}
+		void setValueDouble (double _val) { wprintw (getWriteWindow (), "%f", _val); }
 
 		/**
 		 * Returns integer value of the field. Returns 0 if field is empty.
 		 */
 		double getValueDouble ();
+	protected:
+		virtual bool passKey (int key);
+};
 
+/**
+ * Window with edit box for boolean.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
+class NWindowEditBool:public NWindowEdit
+{
+	public:
+		NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
+		
+		/**
+		 * Sets edit window value.
+		 */
+		void setValueBool (bool _val) { wprintw (getWriteWindow (), (_val ? "true " : "false")); }
+
+		/**
+		 * Returns boolean value of the field.
+		 */
+		bool getValueBool ();
+	protected:
+		virtual bool passKey (int key);
 };
 
 }
