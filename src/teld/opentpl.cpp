@@ -113,6 +113,8 @@ class OpenTPL:public Telescope
 
 		std::string errorList;
 
+		Rts2ValueBool *debugConn;
+
 		Rts2ValueBool *cabinetPower;
 		Rts2ValueFloat *cabinetPowerState;
 
@@ -178,7 +180,7 @@ void OpenTPL::powerOff ()
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "powerOff: power_state " << status << sendLog;
-			opentplConn->setDebug (false);
+			opentplConn->setDebug (debugConn->getValueBool ());
 			return;
 		}
 		sleep (3);
@@ -189,11 +191,11 @@ void OpenTPL::powerOff ()
 			cabinetPowerState->setValueFloat (power_state);
 			sendValueAll (cabinetPower);
 			sendValueAll (cabinetPowerState);
-			opentplConn->setDebug (false);
+			opentplConn->setDebug (debugConn->getValueBool ());
 			return;
 		}
 	}
-	opentplConn->setDebug (false);
+	opentplConn->setDebug (debugConn->getValueBool ());
 	cabinetPowerState->setValueFloat (power_state);
 	sendValueAll (cabinetPowerState);
 	logStream (MESSAGE_ERROR) << "powerOff: timeouted waiting for sucessfull poweroff" << sendLog;
@@ -248,11 +250,16 @@ int OpenTPL::setTelescopeTrack (int new_track)
 int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int status = TPL_OK;
+	if (old_value == debugConn)
+	{
+		opentplConn->setDebug (((Rts2ValueBool *) new_value)->getValueBool ());
+		return 0;
+	}
 	if (old_value == cabinetPower)
 	{
 	  	opentplConn->setDebug ();
 		status = opentplConn->set ("CABINET.POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
-	  	opentplConn->setDebug (false);
+	  	opentplConn->setDebug (debugConn->getValueBool ());
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -343,6 +350,9 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 	derotatorPower = NULL;
 
 	cover = NULL;
+
+	createValue (debugConn, "debug_connection", "debug TCP/IP connection to NTM", false, RTS2_VALUE_WRITABLE);
+	debugConn->setValueBool (false);
 
 	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
@@ -675,13 +685,13 @@ void OpenTPL::checkPower ()
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
-		opentplConn->setDebug (false);
+		opentplConn->setDebug (debugConn->getValueBool ());
 		return;
 	}
 
 	if (power_state == 1)
 	{
-		opentplConn->setDebug (false);
+		opentplConn->setDebug (debugConn->getValueBool ());
 		return;
 	}
 
@@ -692,7 +702,7 @@ void OpenTPL::checkPower ()
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
-			opentplConn->setDebug (false);
+			opentplConn->setDebug (debugConn->getValueBool ());
 			return;
 		}
 	}
@@ -709,7 +719,7 @@ void OpenTPL::checkPower ()
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
-				opentplConn->setDebug (false);
+				opentplConn->setDebug (debugConn->getValueBool ());
 				return;
 			}
 		}
@@ -722,7 +732,7 @@ void OpenTPL::checkPower ()
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "checkPower get referenced " << status << sendLog;
-			opentplConn->setDebug (false);
+			opentplConn->setDebug (debugConn->getValueBool ());
 			return;
 		}
 		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
@@ -739,7 +749,7 @@ void OpenTPL::checkPower ()
 			}
 		} */
 	}
-	opentplConn->setDebug (false);
+	opentplConn->setDebug (debugConn->getValueBool ());
 	if (cover)
 	{
 		// force close of cover..
