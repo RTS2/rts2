@@ -53,7 +53,6 @@
 //#define DEBUG_ALL_PORT_COMM
 
 #define OPT_APGTO_DEVICE         OPT_LOCAL + 53
-#define OPT_APGTO_INIT           OPT_LOCAL + 54
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_CCD_DEVICE     OPT_LOCAL + 57
@@ -102,7 +101,6 @@ namespace rts2teld
   class APGTO:public Telescope {
   private:
     const char *device_file;
-    char initialization[256];
     char *ccdDevice;
     int apgto_fd;
     int force_start ;
@@ -215,6 +213,7 @@ namespace rts2teld
     virtual int startDir (char *dir);
     virtual int stopDir (char *dir);
     virtual int abortAnyMotion () ;
+    virtual bool shutterClosed() ;
     virtual int commandAuthorized (Rts2Conn * conn);
     virtual void valueChanged (Rts2Value * changed_value) ;
   };
@@ -385,7 +384,7 @@ APGTO::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount
   }
   if((tmp_rcount = tel_read_hash (rbuf, rcount)) < 0) {
 
-    logStream (MESSAGE_ERROR) << "APGTO::tel_write_read_hash tel_read failed" << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::tel_write_read_hash failed, read rbuf >>" << rbuf << "<<" << sendLog;
     return -1;
   }
   return tmp_rcount;
@@ -442,17 +441,57 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
   // Invalid argumentwbuf >-É89*09:27<
   // Invalid argumentwbuf >-É89*02:54<
   // Invalid argumentwbuf >Y19:55:49.4<
-
+  //                      >-Ê01*57:31<
   // ...
   if (errno) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << "wbuf >" << wbuf << "<" <<sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
     errno= 0 ;
     block_sync_move->setValueBool(true) ;
+    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading HMS"<< sendLog;
     while( (abortAnyMotion () !=0)) {
       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
       sleep(1) ;
     }
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading RA/DEC"<< sendLog;
+    sleep(1) ;
+    // trying to recover
+    if(setAPClearBuffer() < 0) {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms clearing the buffer failed" << sendLog;
+    } else {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms clearing the buffer successfully" << sendLog;
+    }
+    sleep(1) ;
+    if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
+      return -1;
+    }
+    *hmsptr = hmstod (wbuf);
+    if (errno) {
+       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
+       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing serial port" <<sendLog;
+       errno= 0 ;
+
+       sleep(1) ;
+       if (tcflush (apgto_fd, TCIOFLUSH) < 0) {
+         logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing failed, giving up " <<sendLog;
+	 return -1;
+       }
+       sleep(2) ;
+       if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
+	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
+	 return -1;
+       }
+       *hmsptr = hmstod (wbuf);
+       if(errno) {
+	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
+	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: giving up" <<sendLog;
+	 errno= 0 ;
+       }
+    } else {
+
+       block_sync_move->setValueBool(false) ;
+       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms unblocking telescope movement after second trial, received wbuf >>"<< wbuf << "<<"<< sendLog;
+       return 0 ;
+    }
     return -1;
   }
   return 0;
@@ -1128,9 +1167,9 @@ APGTO::tel_check_declination_axis ()
   snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
 	
   if( tel_read_declination_axis()) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
     block_sync_move->setValueBool(true) ;
     stop = 1 ;
+    logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
   }
   if (!strcmp("West", DECaxis_HAcoordinate->getValue())) {
     if(( HA > 180.) && ( HA <= 360.)) {
@@ -1161,6 +1200,7 @@ APGTO::tel_check_declination_axis ()
     if( (abortAnyMotion () !=0)) {
       logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis failed to stop any tracking and motion" << sendLog;
     }
+
     return -1 ;
   } else {
     return 0 ;
@@ -1428,6 +1468,7 @@ APGTO::tel_slew_to (double ra, double dec)
       }
     }
     on_set_HA= target_HA ; // used for defining state transition while tracking
+    time(&slew_start_time);
     return 0;
   }
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " dec " << target_equ.dec << " got '0'!= >" << retstr<<"<END, NOT syncing cupola"  << sendLog;
@@ -1506,7 +1547,6 @@ APGTO::startResync ()
     return -1;
   move_state = MOVE_REAL;
   slew_state->setValueBool(true) ;
-  time(&slew_start_time);
   set_move_timeout (100);
   return 0 ; 
 }
@@ -1764,7 +1804,24 @@ APGTO::abortAnyMotion ()
       return -1 ;
     }
 }
+bool
+APGTO::shutterClosed() {
 
+  Rts2Conn * conn_shutter = getOpenConnection (ccdDevice);
+  if( conn_shutter) {
+    Rts2Value * flishutter =  conn_shutter->getValue ("SHUTTER");
+    if( flishutter) {
+      if(flishutter->getValueType()== RTS2_VALUE_SELECTION) {
+	if( flishutter->getValueInteger() !=0)  { //0=LIGHT, 1=DARK
+	  return true ;
+	}
+      }
+    } else {
+      logStream (MESSAGE_DEBUG) << "APGTO::shutterClosed flishutter=NULL : "<< sendLog;
+    }
+  }
+  return false ;
+}
 void 
 APGTO::valueChanged (Rts2Value * changed_value)
 {
@@ -2022,38 +2079,55 @@ APGTO::info ()
   int ret ;
   int flip= -1 ;
   int error= -1 ;
+
+  
   // if there are more than one CCD running use an iterator
   // and find the appropriate camera
   // if no images have been taken with TIMEOUT_CCD_NOTTACKING_IMAGE secons
   // stop tracking.
   // tracking is reenabled in case a new target has been acquired
+  // this section is relying on that for each image a slew is performed
   time_t now;
   if (ccdDevice) {
-    if(fabs(( slew_start_time - time(&now))) > TIMEOUT_SLEW_START) {
+    if((( slew_start_time - time(&now) + TIMEOUT_SLEW_START) < 0.) || (transition_while_tracking->getValueBool())) {
       if(mount_tracking->getValueBool()) {
-	Rts2Conn * conn = getOpenConnection (ccdDevice);
-	if( conn) {
-	  Rts2Value * flitime = conn->getValue ("exposure_end");
+	if( shutterClosed()) {
+	  if( (abortAnyMotion () !=0)) {
+	    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+	    return -1;
+	  } else {
+	    logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to shutter closed" << sendLog;
+	  }
+	}
+	Rts2Conn * conn_time = getOpenConnection (ccdDevice);
+	if( conn_time) {
+	  Rts2Value * flitime = conn_time->getValue ("exposure_end"); // it is time when shutter closes!
 	  if( flitime) {
 	    if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
-	      logStream (MESSAGE_DEBUG) << "APGTO::info time " << fabs((flitime->getValueDouble() - time(&now))) << " < " << TIMEOUT_CCD_NOTTAKING_IMAGE<< sendLog;
-	      if( fabs((flitime->getValueDouble() - time(&now))) > TIMEOUT_CCD_NOTTAKING_IMAGE) {
+	      if(( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) < 0.) {
 		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out"<< sendLog;
 		if( (abortAnyMotion () !=0)) {
-		  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion, due to not tacking an image" << sendLog;
+		  logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+		  return -1;
+		}  else {
+		  logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to ccd data tacking timed out" << sendLog;
 		}
+	      } else {
+		//logStream (MESSAGE_DEBUG) << "APGTO::info fli time " << ( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) << " > 0." << sendLog;
 	      }
 	    } else {
 	      logStream (MESSAGE_DEBUG) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
 	    }
-	  }
+	  }	
 	}
       }
-    } 
+    } else {
+      //      logStream (MESSAGE_DEBUG) << "APGTO::info slew time " << ( slew_start_time - time(&now) + TIMEOUT_SLEW_START)  << " < 0. slew_start " << slew_start_time << sendLog;
+    }
   }
-  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
-    logStream (MESSAGE_INFO) << "APGTO::info state   " << sendLog;
-  }
+  //  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
+  //    logStream (MESSAGE_INFO) << "APGTO::info state TEL_MOVING" << sendLog;
+  //  }
 
   if (tel_read_ra () || tel_read_dec ()) {
     error = ERROR_IN_INFO ;
@@ -2353,10 +2427,6 @@ APGTO::setBasicData()
     return -1;
   }
   APmove_rate->setValueInteger(1);
-  if(! ( strcmp(initialization, "warm"))) {
-    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing an option specified warm start" << sendLog;
-    return 0;
-  }
   //if the sidereal time read from the mount is correct then consider it as a warm start 
   if( (ret= checkSiderealTime( 1./60.)) == 0 ) {
     logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
@@ -2431,12 +2501,10 @@ APGTO::setBasicData()
     return -1;
   }
 
-  if(! ( strcmp(initialization, "cold"))) {
-    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
-    if(( ret= setAPUnPark()) < 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
-      return -1;
-    }
+  logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
+  if(( ret= setAPUnPark()) < 0) {
+    logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
+    return -1;
   }
   logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking (cold start) successful" << sendLog;
   
@@ -2530,7 +2598,7 @@ APGTO::initValues ()
 {
   int ret = -1 ;
   int flip= -1 ;
-  addConstValue ("CCD", ccdDevice);
+  addConstValue ("CCD", ccdDevice, "ccd camera device name to monitor for data tacking timeouts");
 
   strcpy (telType, "APGTO");
 
@@ -2661,9 +2729,6 @@ APGTO::processOption (int in_opt)
   case OPT_APGTO_DEVICE:
     device_file = optarg;
     break;
-  case OPT_APGTO_INIT:
-    strcpy( initialization, optarg) ;
-    break;
   case OPT_APGTO_ASSUME_PARKED:
     assume_parked->setValueBool(true);
     break;
@@ -2684,7 +2749,6 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   device_file = "/dev/apmount";
 	
   addOption (OPT_APGTO_DEVICE,        "device_file", 1, "device file");
-  addOption (OPT_APGTO_INIT,          "init",        1, "initialization cold (after power cycle), warm");
   addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
   addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
   addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
