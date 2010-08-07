@@ -101,7 +101,18 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 */
 		void printFooter (std::ostream &os);
 
+		/**
+		 * Prints command to include JavaScript page from JavaScript library direcotry.
+		 *
+		 * @param os    output streem
+		 * @param name  document name (without directory prefix)
+		 */
 		void includeJavaScript (std::ostream &os, const char *name);
+
+		/**
+		 * Prints command for inclusion of JavaScript, preceeded by pagePrefix = xx.
+		 */
+		void includeJavaScriptWithPrefix (std::ostream &os, const char *name);
 
 		/**
 		 * Return true if user can execute commands (make changes, set next targets, ..).

@@ -339,8 +339,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 
 	printHeader (_os, _title.str ().c_str (), NULL, "/css/table.css", "observations.refresh ()");
 
-	includeJavaScript (_os, "pagePrefix.js");
-	includeJavaScript (_os, "table.js");
+	includeJavaScriptWithPrefix (_os, "table.js");
 
 	_os << "<p><a href='all'>All images</a>";
 

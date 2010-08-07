@@ -822,11 +822,6 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 		reply = tableScript;
 	else if (vals[0] == "widgets.js")
 	  	reply = widgetsScript;
-	else if (vals[0] == "pagePrefix.js")
-	{
-		pagePrefix (response_type, response, response_length);
-		return;
-	}
 	else
 		throw rts2core::Error ("JavaScript not found");
 
@@ -892,15 +887,4 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
-}
-
-void LibJavaScript::pagePrefix (const char* &response_type, char* &response, size_t &response_length)
-{
-	std::ostringstream os;
-	os << "pagePrefix = '" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "';\n";
-
-	response_type = "text/javascript";
-	response_length = os.str ().length ();
-	response = new char[response_length];
-	memcpy (response, os.str ().c_str (), response_length);
 }

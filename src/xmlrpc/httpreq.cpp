@@ -101,6 +101,12 @@ void GetRequestAuthorized::includeJavaScript (std::ostream &os, const char *name
 	os << "<script type='text/javascript' src='" << ((rts2xmlrpc::XmlRpcd *)getMasterApp ())->getPagePrefix () << "/js/" << name << "'></script>\n";
 }
 
+void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const char *name)
+{
+	os << "<script type='text/javascript'>pagePrefix = '" << ((rts2xmlrpc::XmlRpcd *)getMasterApp ())->getPagePrefix () << "';</script>\n";
+	includeJavaScript (os, name);
+}
+
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
