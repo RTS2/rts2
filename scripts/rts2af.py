@@ -641,8 +641,9 @@ class Catalogue():
                         sxReferenceObject.numberOfMatches += 1
                         sxReferenceObject.matchedsxObjects.append(sxObject)
                     else:
-                        if( verbose):
-                            print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
+                        pass
+                        #if( verbose):
+                        #    print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
@@ -689,7 +690,7 @@ class ReferenceCatalogue(Catalogue):
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
-        SXcat= open( '/tmp/test', 'wb')
+        SXcat= open( self.skyList, 'wb')
 
         for line in self.lines:
             element= pElement.search(line)
@@ -891,9 +892,6 @@ class ReferenceCatalogue(Catalogue):
 
         logger.error("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
 
-    def printSelectedSXobjects(self):
-        for sxObject in self.sxObjects.iter():
-            print "======== %f %f" +  sxObject.position
 
 
 class AcceptanceRegion():
@@ -902,7 +900,7 @@ class AcceptanceRegion():
         self.fitsHDU= fitsHDU
 # 1x1 
 #        self.binning= float(fitsHDU.headerElements['BINNING'])
-        self.binning= 1.
+        self.binning= 2.
         self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
         self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
         if( centerOffsetX==None):
@@ -987,13 +985,14 @@ class Catalogues():
         lenFwhm = []
         for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
+                self.numberOfObjects += 1
                 for sxObject in sxReferenceObject.matchedsxObjects:
-                    if( sxObject.focusPosition > 2600):
+             #       if( sxObject.focusPosition > 2600):
                     #if( verbose):
                     #    print "Ref "+ sxReferenceObject.objectNumber + " Obj "+ sxObject.objectNumber + " foc pos %d" % sxObject.focusPosition     
-                        fwhm[sxObject.focusPosition].append(sxObject.fwhm)
-                        flux[sxObject.focusPosition].append(sxObject.flux)
-                        sxReferenceObject.foundInAll= True
+                    fwhm[sxObject.focusPosition].append(sxObject.fwhm)
+                    flux[sxObject.focusPosition].append(sxObject.flux)
+                    sxReferenceObject.foundInAll= True
                 lenFwhm.append(len(fwhm))
 
         fwhmList=[]
@@ -1011,7 +1010,6 @@ class Catalogues():
         self.maxFlux= numpy.amax(fluxList)
         self.minFlux= numpy.amax(fluxList)
         
-        self.numberOfObjects=  numpy.amin(lenFwhm)
         print "numberOfObjects========================= %d " % (self.numberOfObjects)
 
         for focPos in sorted(fwhm):
@@ -1042,10 +1040,16 @@ class Catalogues():
                                    str(self.numberOfObjects),
                                    self.dataFileNameFwhm,
                                    self.dataFileNameFlux,
-                                   '/tmp/fitData.out']
+                                   '/tmp/fitData.png']
         
         output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
         print output
+
+    def printSelectedSXobjects(self, ReferenceCatalogue):
+        for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
+            if( sxReferenceObject.foundInAll): 
+                print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
+
 import sys
 import pyfits
 
