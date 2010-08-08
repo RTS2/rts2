@@ -137,8 +137,8 @@ class Configuration:
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
 
-        self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0
-        self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0
+        self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
+        self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
         self.cp[('acceptance circle', 'RADIUS')]= 2000.
         
         self.cp[('filters', 'filters')]= 'U:B:V:R:I:X:Y'
@@ -165,7 +165,7 @@ class Configuration:
         self.cp[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/autofocus/sex-autofocus-reference.param'
         self.cp[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
-        self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .1
+        self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
         self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-autofocus-assoc-sky.list'
         self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex-autofocus.cat'
         self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
@@ -414,8 +414,6 @@ class SXObject():
         self.propertiesOK= propertiesOK
         self.acceptanceOK= acceptanceOK
 
-
-
     def printPosition(self):
         print "=== %f %f" %  (self.x, self.y)
     
@@ -590,23 +588,23 @@ class Catalogue():
 
         return False
 
-    def removeObject(self, sxObjectNumber):
+    def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "Catalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
+            logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
             else:
-                logger.error( "Catalogue.removeObject: object number " + sxObjectNumber + " not found")
+                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " not found")
 
         for itentifier in self.SExtractorParams.reference:
             if(((sxObjectNumber, itentifier)) in self.catalogue):
                 del self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "Catalogue.removeObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "Catalogue.removeObject: for object number " + sxObjectNumber + " all elements deleted")
+#                logger.error( "Catalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
         return False
 
@@ -614,8 +612,10 @@ class Catalogue():
     # ToDo, define if that shoud go into SXObject (now, better not)
     def checkProperties(self, sxObjectNumber): 
         if( self.catalogue[( sxObjectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
+            #print "checkProperties flags %d" % self.catalogue[( sxObjectNumber, 'FLAGS')]
             return False
         elif( self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY')): # ToDo, ATTENTION
+            #print "checkProperties elli %f %f" %  (self.catalogue[( sxObjectNumber, 'ELLIPTICITY')],runTimeConfig.value('ELLIPTICITY'))
             return False
         # TRUE    
         return True
@@ -627,7 +627,7 @@ class Catalogue():
         sxObjectNumbers= self.sxObjects.keys()
         for sxObjectNumber in sxObjectNumbers:
             if( not self.checkProperties(sxObjectNumber)):
-                self.removeObject( sxObjectNumber)
+                # self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
         logger.error("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
@@ -676,7 +676,6 @@ class ReferenceCatalogue(Catalogue):
         self.indexellipticity = self.SExtractorParams.reference.index('ELLIPTICITY')
         self.skyList= serviceFileOp.expandToSkyList(self.fitsHDU)
         self.circle= AcceptanceRegion( self.fitsHDU) 
-
 
         ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
@@ -806,23 +805,23 @@ class ReferenceCatalogue(Catalogue):
 
         return False
 
-    def removeObject(self, sxObjectNumber):
+    def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "ReferenceCatalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
+            logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
             else:
-                logger.error( "ReferenceCatalogue.removeObject: object number " + sxObjectNumber + " not found")
+                logger.error( "ReferenceCatalogue.removeSXObject: object number " + sxObjectNumber + " not found")
 
         for itentifier in self.SExtractorParams.reference:
             if(((sxObjectNumber, itentifier)) in self.catalogue):
                 del self.catalogue[(sxObjectNumber, itentifier)]
             else:
-                logger.error( "ReferenceCatalogue.removeObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
         else:
-#                logger.error( "ReferenceCatalogue.removeObject: for object number " + sxObjectNumber + " all elements deleted")
+#                logger.error( "ReferenceCatalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
 
         return False
@@ -846,6 +845,7 @@ class ReferenceCatalogue(Catalogue):
 
     def checkAcceptance(self, sxObject=None, circle=None):
         distance= sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
+        
         if( circle.transformedRadius >= 0):
             if( distance < abs( circle.transformedRadius)):
                 return True
@@ -863,30 +863,38 @@ class ReferenceCatalogue(Catalogue):
             return False
         else:
             logger.error( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
-
+        flaggedSeparation= 0
+        flaggedProperties= 0
+        flaggedAcceptance= 0
         for sxObjectNumber1, sxObject1 in self.sxObjects.iteritems():
             for sxObjectNumber2, sxObject2 in self.sxObjects.iteritems():
                 if( sxObjectNumber1 != sxObjectNumber2):
                     if( not self.checkSeparation( sxObject1.position, sxObject2.position)):
                         sxObject1.separationOK=False
                         sxObject2.separationOK=False
+                        flaggedSeparation += 1
 
             else:
                 if( not self.checkProperties(sxObjectNumber1)):
                     sxObject1.propertiesOK=False
+                    flaggedProperties += 1
                 if(not self.checkAcceptance(sxObject1, self.circle)):
                     sxObject1.acceptanceOK=False
+                    flaggedAcceptance += 1
 
         discardedObjects= 0
         sxObjectNumbers= self.sxObjects.keys()
         for sxObjectNumber in sxObjectNumbers:
             if(( not self.sxObjects[sxObjectNumber].separationOK) or ( not self.sxObjects[sxObjectNumber].propertiesOK) or ( not self.sxObjects[sxObjectNumber].acceptanceOK)):
-                self.removeObject( sxObjectNumber)
+                self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
+        logger.error("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
 
+    def printSelectedSXobjects(self):
+        for sxObject in self.sxObjects.iter():
+            print "======== %f %f" +  sxObject.position
 
-        logger.error("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d " % discardedObjects) 
 
 class AcceptanceRegion():
     """Class holding the properties of the acceptance circle"""
@@ -903,11 +911,13 @@ class AcceptanceRegion():
             self.centerOffsetY= float(runTimeConfig.value('CENTER_OFFSET_Y'))
         if( radius==None):
             self.radius = float(runTimeConfig.value('RADIUS'))
-        u_x= 0. # window (ev.)
-        u_y= 0.
-        self.transformedCenterX= (u_x- self.naxis1)/2 + self.centerOffsetX 
-        self.transformedCenterY= (u_y- self.naxis2)/2 + self.centerOffsetY
+        l_x= 0. # window (ev.)
+        l_y= 0.
+        self.transformedCenterX= (self.naxis1- l_x)/2 + self.centerOffsetX 
+        self.transformedCenterY= (self.naxis2- l_y)/2 + self.centerOffsetY
         self.transformedRadius= self.radius/ self.binning
+        if( verbose):
+            print "AcceptanceRegion %f %f %f %f %f %f  %f %f %f" % (self.binning, self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
 
 
 
@@ -983,6 +993,7 @@ class Catalogues():
                     #    print "Ref "+ sxReferenceObject.objectNumber + " Obj "+ sxObject.objectNumber + " foc pos %d" % sxObject.focusPosition     
                         fwhm[sxObject.focusPosition].append(sxObject.fwhm)
                         flux[sxObject.focusPosition].append(sxObject.flux)
+                        sxReferenceObject.foundInAll= True
                 lenFwhm.append(len(fwhm))
 
         fwhmList=[]

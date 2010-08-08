@@ -55,7 +55,6 @@ class main(rts2af.AFScript):
         logger    = self.configureLogger()
         rts2af.sfo= rts2af.ServiceFileOperations()
 
-
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
@@ -132,6 +131,8 @@ class main(rts2af.AFScript):
         cats.writeFitValues()
         cats.fitTheValues()
 
+
+        catr.printSelectedSXobjects()
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
 if __name__ == '__main__':
