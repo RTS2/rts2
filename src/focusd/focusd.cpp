@@ -108,14 +108,15 @@ int Focusd::setPosition (int num)
 	int ret;
 	target->setValueInteger (num);
 	sendValueAll (target);
+	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
 	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
 	ret = setTo (num);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set focuser to " << num << sendLog;
+		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change started");
 		return ret;
 	}
-	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
 	return ret;
 }
 
