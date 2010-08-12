@@ -20,12 +20,6 @@
 #include "davis.h"
 #include "davisudp.h"
 
-// we should get packets every minute; 5 min timeout, as data from meteo station
-// aren't as precise as we want and we observe dropouts quite often
-#define BART_WEATHER_TIMEOUT        360
-
-#define DEF_WEATHER_TIMEOUT         600
-
 #define OPT_UDP                     OPT_LOCAL + 1001
 #define OPT_AVG_WINDSPEED           OPT_LOCAL + 1002
 #define OPT_PEEK_WINDSPEED          OPT_LOCAL + 1003
@@ -56,16 +50,14 @@ int Davis::processOption (int _opt)
 	return 0;
 }
 
-int
-Davis::init ()
+int Davis::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
-	weatherConn = new DavisUdp (udpPort->getValueInteger (), BART_WEATHER_TIMEOUT,
-		BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
+	weatherConn = new DavisUdp (udpPort->getValueInteger (), connTimeout->getValueInteger (), BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
 	weatherConn->init ();
 	addConnection (weatherConn);
 
@@ -87,6 +79,9 @@ int Davis::idle ()
 
 Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 {
+  	createValue (connTimeout, "conn_timeout", "connection timeout", false, RTS2_VALUE_WRITABLE);
+	connTimeout->setValueInteger (360);
+
 	createValue (temperature, "DOME_TMP", "temperature in degrees C", true);
 	createValue (humidity, "DOME_HUM", "(outside) humidity", true);
 	createValue (rain, "RAIN", "whenever is raining", true);
@@ -120,17 +115,23 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
 }
 
-
-int
-Davis::info ()
+int Davis::info ()
 {
 	// do not call infotime update..
 	return 0;
 }
 
+int Davis::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == connTimeout)
+	{
+		weatherConn->setConnTimeout (new_value->getValueInteger ());
+		return 0;
+	}
+	return SensorWeather::setValue (old_value, new_value);
+}
 
-void
-Davis::setWetness (double _wetness)
+void Davis::setWetness (double _wetness)
 {
       if (wetness == NULL)
       {
@@ -140,9 +141,7 @@ Davis::setWetness (double _wetness)
       wetness->setValueDouble (_wetness);
 }
 
-
-void
-Davis::setCloud (double _cloud, double _top, double _bottom)
+void Davis::setCloud (double _cloud, double _top, double _bottom)
 {
       if (cloud == NULL)
       {
@@ -163,9 +162,7 @@ Davis::setCloud (double _cloud, double _top, double _bottom)
       }
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Davis device = Davis (argc, argv);
 	return device.run ();

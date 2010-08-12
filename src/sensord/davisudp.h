@@ -60,6 +60,22 @@ class WeatherBuf
 
 class DavisUdp:public Rts2ConnNoSend
 {
+	public:
+		DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master);
+
+		virtual int init ();
+
+		virtual int receive (fd_set * set);
+
+		void setConnTimeout (int _ct) { conn_timeout = _ct; }
+	protected:
+		void setWeatherTimeout (time_t wait_time, const char *msg);
+
+		virtual void connectionError (int last_data_size)
+		{
+			// do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
+			return;
+		}
 	private:
 		Davis *master;
 		int weather_port;
@@ -72,24 +88,6 @@ class DavisUdp:public Rts2ConnNoSend
 		float avgWindSpeed;
 		time_t lastWeatherStatus;
 		time_t lastBadWeather;
-
-	protected:
-		void setWeatherTimeout (time_t wait_time, const char *msg);
-
-		virtual void connectionError (int last_data_size)
-		{
-			// do NOT call Rts2Conn::connectionError. Weather connection must be kept even when error occurs.
-			return;
-		}
-
-	public:
-		DavisUdp (int _weather_port, int _weather_timeout,
-			int _conn_timeout, int _bad_weather_timeout,
-			Davis * _master);
-
-		virtual int init ();
-
-		virtual int receive (fd_set * set);
 };
 
 }

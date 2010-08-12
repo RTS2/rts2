@@ -40,40 +40,8 @@ namespace rts2sensord
  */
 class Davis: public SensorWeather
 {
-	private:
-		DavisUdp *weatherConn;
-
-		Rts2ValueFloat *temperature;
-		Rts2ValueFloat *humidity;
-		Rts2ValueBool *rain;
-
-		Rts2ValueFloat *avgWindSpeed;
-		Rts2ValueFloat *peekWindSpeed;
-
-		Rts2ValueFloat *rainRate;
-
-		Rts2ValueDouble *wetness;
-
-		Rts2ValueDouble *cloud;
-		Rts2ValueDouble *cloudTop;
-		Rts2ValueDouble *cloudBottom;
-		Rts2ValueDouble *cloud_bad;
-
-		Rts2ValueFloat *maxWindSpeed;
-		Rts2ValueFloat *maxPeekWindSpeed;
-
-		Rts2ValueInteger *udpPort;
-
-	protected:
-		virtual int processOption (int _opt);
-		virtual int init ();
-
-		virtual int idle ();
-
 	public:
 		Davis (int argc, char **argv);
-
-		virtual int info ();
 
 		void setTemperature (float in_temp)
 		{
@@ -136,6 +104,39 @@ class Davis: public SensorWeather
 		{
 			return maxWindSpeed->getValueFloat ();
 		}
+	protected:
+		virtual int processOption (int _opt);
+		virtual int init ();
+
+		virtual int idle ();
+
+		virtual int info ();
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+	private:
+		DavisUdp *weatherConn;
+
+		Rts2ValueInteger *connTimeout;
+
+		Rts2ValueFloat *temperature;
+		Rts2ValueFloat *humidity;
+		Rts2ValueBool *rain;
+
+		Rts2ValueFloat *avgWindSpeed;
+		Rts2ValueFloat *peekWindSpeed;
+
+		Rts2ValueFloat *rainRate;
+
+		Rts2ValueDouble *wetness;
+
+		Rts2ValueDouble *cloud;
+		Rts2ValueDouble *cloudTop;
+		Rts2ValueDouble *cloudBottom;
+		Rts2ValueDouble *cloud_bad;
+
+		Rts2ValueFloat *maxWindSpeed;
+		Rts2ValueFloat *maxPeekWindSpeed;
+
+		Rts2ValueInteger *udpPort;
 };
 
 }
