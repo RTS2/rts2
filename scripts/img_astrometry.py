@@ -96,7 +96,7 @@ class imgAstrometryScript:
             binning = hdulist_object[0].header['BINNING']
             objectId= hdulist_object[0].header['OBJECT']
         except:
-            os.system("logger %s could not find one or more of fits key words IMGID, BINNING and OBJECT in hdulist of %s" % (sys.argv[0], sys.argv[1]))
+            os.system("logger %s could not find one or more of fits key words IMGID, BINNING and OBJECT in hdulist of %s" % (sys.argv[0], self.fits_tmp_path))
             sys.exit(1)
 
         hdulist_object.close()
@@ -106,7 +106,7 @@ class imgAstrometryScript:
         elif re.search('2x2', binning):
             self.scale= 2. * self.scale_at_binning_1
         else:
-            os.system( 'logger %s do not understand binning %s in  %s' % (sys.argv[0], binning, sys.argv[1]))
+            os.system( 'logger %s do not understand binning %s in  %s' % (sys.argv[0], binning, self.fits_tmp_path))
 
         scale_low = self.scale * ( 1. - self.scale_relative_error)  ;   
         scale_high= self.scale * ( 1. + self.scale_relative_error) ;
@@ -129,12 +129,23 @@ class imgAstrometryScript:
             orira  = hdulist_object[0].header['ORIRA']
             oridec = hdulist_object[0].header['ORIDEC']
         except:
-            os.system("logger %s could not find one or more of fits key words CRVAL1, CRVAL2, ORIRA, ORIDEC in hdulist of %s" % (sys.argv[0], sys.argv[1]))
+            os.system("logger %s could not find one or more of fits key words CRVAL1, CRVAL2, ORIRA, ORIDEC in hdulist of %s" % (sys.argv[0], self.fits_tmp_path))
             sys.exit(1)
 
         hdulist_object.close()
-        os.system("logger %s return values to EXEC for %s %d %f %f \(%f,%f\)" % ( sys.argv[0], sys.argv[1], imgId, crval1, crval2, crval1- orira, crval2- oridec)) 
-        print '%d %f %f (%f,%f)' % ( imgId, crval1, crval2, crval1- orira, crval2- oridec) 
+        os.system("logger %s return values to EXEC %d %f %f \(%f,%f\)" % ( sys.argv[0], imgId, crval1, crval2, crval1- orira, crval2- oridec)) 
+
+        # see http://rts2.org/wiki/faq :
+        # Assuming your image centre is at RA DEC 12:00:00 05:00:00 
+        # and the telescope pointed to 
+        #                                         12:01:00 05:01:00, 
+        # the output string should be: 
+        #                          1 180.0 5.0 (.2499999990 .0166666666)
+        #            
+        # => coord(Telescope - Image) 
+        # The correction values are in units of deg
+        #
+        print '%d %f %f (%f,%f)' % ( imgId, crval1, crval2, orira- crval1, oridec- crval2) 
         os.system("logger %s  END\n" % (sys.argv[0]))
 
 if __name__ == '__main__':
