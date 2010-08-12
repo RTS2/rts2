@@ -246,11 +246,13 @@ int DavisUdp::receive (fd_set * set)
 					ceil (10 *
 					((116.9 + 237.3 * log (vapor)) / (16.78 -
 					log (vapor)))) / 10;
+				#ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) <<
 					"DavisUdp::parse rtCloudBottom " << rtCloudBottom <<
 					" rtCloudTop " << rtCloudTop << " rtRainRate " << rtRainRate
 					<< " rtWetness " << rtWetness << " vapor " << vapor << " dew "
 					<< dew << sendLog;
+				#endif
 				if ((rtCloudBottom - rtCloudTop) > 2.5 && rtRainRate == 0
 					&& rtWetness < 15.0 && fabs (rtOutsideTemp - dew) < 3.0)
 					rain = 0;
