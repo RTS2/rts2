@@ -58,7 +58,7 @@ class AFScript:
                             metavar='CONFIG FILE', nargs=1, type=str,
                             help='configuration file')
 
-        parser.add_argument('-r', '--reference', dest='reference',
+        parser.add_argument('-r', '--reference', dest='referenceFitsFileName',
                             metavar='REFERENCE', nargs=1, type=str,
                             help='reference file name')
 
@@ -82,7 +82,8 @@ class AFScript:
         if(self.args.verbose):
             global verbose
             verbose= self.args.verbose
-            runTimeConfig.dumpDefaults()
+            if( verbose):
+                runTimeConfig.dumpDefaults()
 
         if( self.args.write):
             runTimeConfig.writeDefaultConfiguration()
@@ -119,7 +120,7 @@ class Configuration:
         
         self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
-        self.cp[('basic', 'FILE_GLOB')]= 'X/*fits'
+        self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.cp[('basic', 'CCD_CAMERA')]= 'CD'
         self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
@@ -290,7 +291,8 @@ class Configuration:
                         item= string.replace( item, ' ', '')
 
                     items[1]= string.replace( items[1], ' ', '')
-                    print '-----------filterInUse---------:>' + items[1] + '<'
+                    if(verbose):
+                        print '-----------filterInUse---------:>' + items[1] + '<'
                     self.filters.append( Filter( items[1], string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5]), string.atoi(items[6])))
                 elif( section == 'filters'):
                     items= value.split(':')
@@ -383,10 +385,11 @@ class SExtractorParams():
 
         self.assoc.append('NUMBER_ASSOC')
 
-        for element in  self.reference:
-            print "Reference element : >"+ element+"<"
-        for element in  self.assoc:
-            print "Association element : >" + element+"<"
+        if(verbose):
+            for element in  self.reference:
+                print "Reference element : >"+ element+"<"
+            for element in  self.assoc:
+                print "Association element : >" + element+"<"
 
 class Filter:
     """Class for filter properties"""
@@ -578,7 +581,8 @@ class Catalogue():
     def printObject(self, sxObjectNumber):
         for itentifier in self.SExtractorParams.identifiersAssoc:
             if(((sxObjectNumber, itentifier)) in self.catalogue):
-                print "printObject: object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
+                if(verbose):
+                    print "printObject: object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
             else:
                 logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
                 break
@@ -1009,8 +1013,8 @@ class Catalogues():
         self.minFwhm= numpy.amax(fwhmList)
         self.maxFlux= numpy.amax(fluxList)
         self.minFlux= numpy.amax(fluxList)
-        
-        print "numberOfObjects========================= %d " % (self.numberOfObjects)
+        if(verbose):
+            print "numberOfObjects========================= %d " % (self.numberOfObjects)
 
         for focPos in sorted(fwhm):
             print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
@@ -1055,14 +1059,20 @@ import pyfits
 
 class FitsHDU():
     """Class holding fits file name and ist properties"""
-    def __init__(self, fitsFileName=None, isReference=False):
-        self.fitsFileName= fitsFileName
-        self.isReference= isReference
+    def __init__(self, fitsFileName=None, referenceFitsHDU=None):
+        if(referenceFitsHDU==None):
+            self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName)
+        else:
+            self.fitsFileName= fitsFileName
+
+        self.referenceFitsHDU= referenceFitsHDU
         self.isValid= False
         self.headerElements={}
         FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
 
-    def isFilter(self, filter):
+
+    def headerProperties(self):
+
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
@@ -1072,11 +1082,13 @@ class FitsHDU():
                 logger.error('FitsHDU: file not found : ' + self.fitsFileName)
             else:
                 logger.error('FitsHDU: file name not given (None), exiting')
-            sys.exit(1)
+            return False
 
         fitsHDU.close()
+        if( self.referenceFitsHDU== None):
+            if(verbose):
+                print "headerProperties I'm compatible with myself"
 
-        if( filter == fitsHDU[0].header['FILTER']):
             self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
             self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
             self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
@@ -1084,9 +1096,31 @@ class FitsHDU():
             self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
             self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
             self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
+            self.isValid= True
             return True
-        else:
-            return False
+
+
+        keys= self.referenceFitsHDU.headerElements.keys()
+        i= 0
+        for key in keys:
+            if(key == 'FOC_POS'):
+                self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+                continue
+
+            if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
+                logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
+                break
+
+        else: # exhausted
+            self.isValid= True
+            if( verbose):
+                print 'headerProperties: header ok : ' + self.fitsFileName
+            return True
+        
+        logger.error("headerProperties: fits file " + self.fitsFileName + " has different header properties")
+        return False
+
+
 
 class FitsHDUs():
     """Class holding FitsHDU"""
@@ -1111,7 +1145,8 @@ class FitsHDUs():
 #        for hdu in sorted(self.fitsHDUsList):
         for hdu in sorted(self.fitsHDUsList):
             if( filter.focDef < hdu.headerElements['FOC_POS']):
-                print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
+                if(verbose):
+                    print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
                 return hdu
         return False
 
@@ -1155,10 +1190,13 @@ class FitsHDUs():
 import time
 import datetime
 import glob
+import os
+
 class ServiceFileOperations():
-    """Class performing various task on files, e.g. expansio to (full) path"""
+    """Class performing various task on files, e.g. expansion to (full) path"""
     def __init__(self):
         self.now= datetime.datetime.now().isoformat()
+        self.runTimePath=None
 
     def prefix( self):
         return 'rts2af-'
@@ -1196,11 +1234,29 @@ class ServiceFileOperations():
         fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
         return self.expandToTmp(fileName)
 
-    def findFitsHDUs( self):
-        if( verbose):
-            print "searching in " + runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB')
-        return glob.glob( runTimeConfig.value('BASE_DIRECTORY') + '/' + runTimeConfig.value('FILE_GLOB'))
+    def expandToRunTimePath(self, fileName=None):
+        if( fileName==None):
+            logger.error('ServiceFileOperations.expandToBase: no file name given')
 
+        return self.runTimePath + '/' + fileName
+
+    def defineRunTimePath(self, fileName=None):
+        if( fileName==None):
+            logger.error('ServiceFileOperations.defineRunTimePath: no file name given')
+
+        for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
+            if( fileName in names):
+                self.runTimePath= root
+                return True
+        return False
+
+    def fitsFilesInRunTimePath( self):
+        if( verbose):
+            print "searching in " + repr(glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB')))
+        return glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB'))
+
+
+        
 #
 # stub, will be called in main script 
 runTimeConfig= Configuration()

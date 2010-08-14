@@ -49,11 +49,10 @@ class main(rts2af.AFScript):
         self.scriptName= scriptName
 
     def main(self):
-
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         args      = self.arguments()
         logger    = self.configureLogger()
-        rts2af.sfo= rts2af.ServiceFileOperations()
+        rts2af.serviceFileOp= rts2af.ServiceFileOperations()
 
         configFileName=''
         if( args.fileName):
@@ -66,43 +65,59 @@ class main(rts2af.AFScript):
 
         runTimeConfig.readConfiguration(configFileName)
 
-        print "main " + runTimeConfig.value('SEXPRG')
-        print "main " + repr(runTimeConfig.value('TAKE_DATA'))
-        
+        if( args.referenceFitsFileName):
+            referenceFitsFileName = args.referenceFitsFileName[0]
+            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
+                logger.error('main: reference file '+ referenceFitsFileName + 'not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                sys.exit(1)
+
+
         testFitsList=[]
-        testFitsList=rts2af.serviceFileOp.findFitsHDUs()
+        testFitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
 
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
 
         if( paramsSexctractor==None):
+            print "exiting"
             sys.exit(1)
-#        if( rts2af.verbose):
-#            for fitsHDUs in testFitsList:
-#                print 'FitsHDU to be analyzed: '+ fitsHDUs
 
 
         HDUs= rts2af.FitsHDUs()
         catrs= rts2af.Catalogues()
 
-        hdur= rts2af.FitsHDU('./20100625211258-885-RA.fits', True)
-        hdur.isFilter('X')
-# reference catalogue
-        catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
-        catr.extractToCatalogue()
-        catr.createCatalogue()
-        catr.cleanUpReference()
-        catr.writeCatalogue()
-        catrs.CataloguesList.append(catr)
-
-        cats= rts2af.Catalogues(catr)
+# load the reference file first
 
         for fits in testFitsList:
-            hdu= rts2af.FitsHDU( fits)
-            if(hdu.isFilter('X')):
+            if( fits.find(referenceFitsFileName) >= 0):
+                break
+        else:
+            logger.error("main: reference file " + referenceFitsFileName + " not found")
+            sys.exit(1)
+
+        
+        hdur= rts2af.FitsHDU(referenceFitsFileName)
+        rts2af.FitsHDU( fits, hdur)
+        if(hdur.headerProperties()):
+            # reference catalogue
+            catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
+            catr.extractToCatalogue()
+            catr.createCatalogue()
+            catr.cleanUpReference()
+            catr.writeCatalogue()
+            catrs.CataloguesList.append(catr)
+            cats= rts2af.Catalogues(catr)
+
+
+
+        for fits in testFitsList:
+            hdu= rts2af.FitsHDU( fits, hdur)
+            if(hdu.headerProperties()):
+                print "append "+ hdu.fitsFileName
                 HDUs.fitsHDUsList.append(hdu)
 
-        HDUs.validate()
+
+#        HDUs.validate()
 
 # loop over hdus (including reference catalog currently)
         for hdu  in HDUs.fitsHDUsList:
@@ -135,6 +150,7 @@ class main(rts2af.AFScript):
         catr.printSelectedSXobjects()
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
+
 if __name__ == '__main__':
     main(sys.argv[0]).main()
 
