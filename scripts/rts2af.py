@@ -152,11 +152,13 @@ class Configuration:
         
         self.cp[('analysis', 'ANALYSIS_UPPER_LIMIT')]= 1.e12
         self.cp[('analysis', 'ANALYSIS_LOWER_LIMIT')]= 0.
-        self.cp[('analysis', 'MINIMUM_OBJECTS')]= 5
+        self.cp[('analysis', 'MINIMUM_OBJECTS')]= 20
+        self.cp[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
         self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
         self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
+        self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         
         self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
         
@@ -172,7 +174,7 @@ class Configuration:
         self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         
-        self.cp[('mode', 'TAKE_DATA')]= True
+        self.cp[('mode', 'TAKE_DATA')]= False
         self.cp[('mode', 'SET_FOCUS')]= True
         self.cp[('mode', 'CCD_BINNING')]= 0
         self.cp[('mode', 'AUTO_FOCUS')]= False
@@ -637,10 +639,12 @@ class Catalogue():
         logger.error("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
 
     def matching(self, ReferenceCatalogue):
+        matched= 0
         for sxObjectNumber, sxObject in self.sxObjects.items():
                 sxReferenceObject= ReferenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
                 if( sxReferenceObject != None):
                     if( self.multiplicity[sxReferenceObject.objectNumber] == 1): 
+                        matched += 1
                         sxObject.matched= True 
                         sxReferenceObject.numberOfMatches += 1
                         sxReferenceObject.matchedsxObjects.append(sxObject)
@@ -648,6 +652,17 @@ class Catalogue():
                         pass
                         #if( verbose):
                         #    print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
+
+        if(verbose):
+            print "number of matched sxObjects %d=" % matched + "of %d "% len(ReferenceCatalogue.sxObjects) + " required %f " % ( runTimeConfig.value('MATCHED_RATIO') * len(ReferenceCatalogue.sxObjects))
+
+        if( (float(matched)/float(len(ReferenceCatalogue.sxObjects))) > runTimeConfig.value('MATCHED_RATIO')):
+            return True
+        else:
+            logger.error("main: too few sxObjects matched %d" % matched + " of %d" % len(ReferenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(ReferenceCatalogue.sxObjects)) + " sxobjects at FOC_POS+ %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+            return False
+
+
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
@@ -922,15 +937,12 @@ class AcceptanceRegion():
             print "AcceptanceRegion %f %f %f %f %f %f  %f %f %f" % (self.binning, self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
 
 
-
-
 import numpy
 from collections import defaultdict
 class Catalogues():
     """Class holding Catalogues"""
     def __init__(self,referenceCatalogue=None):
         self.CataloguesList= []
-        self.isReference = False
         self.isValid= False
         self.averageFwhm= {}
         self.averageFlux={}
@@ -938,28 +950,16 @@ class Catalogues():
         if( self.referenceCatalogue != None):
             self.dataFileNameFwhm= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FWHM_IMAGE')
             self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
+            self.imageFilename= serviceFileOp.expandToFitImage( self.referenceCatalogue.fitsHDU)
         self.maxFwhm= 0.
         self.minFwhm= 0.
         self.maxFlux= 0.
         self.minFlux= 0.
         self.numberOfObjects= 0.
-
-    def findReference(self):
-        for cat in self.CataloguesList:
-            if( cat.isReference):
-                if( verbose):
-                    print 'Catalogues.findReference: reference catalogue found for file: ' + cat.fitsHDU.fitsFileName
-                return cat
-        if( verbose):
-            print 'Catalogues: no reference fits file found'
-        return False
+        self.numberOfObjectsFoundInAllFiles= 0.
 
     def validate(self):
-        catr= self.findReference()
-        if( catr== False):
-            return self.isValid
-
-        if( len(self.CataloguesList) > 1):
+        if( len(self.CataloguesList) > 0):
             # default is False
             for cat in self.CataloguesList:
                 if( cat.isValid== True):
@@ -978,16 +978,75 @@ class Catalogues():
                             print "Catalogues.validate: failed to removed cat: " + cat.fitsHDU.fitsFileName
                     break
             else:
+                # still catalogues here
                 if( len(self.CataloguesList) > 0):
                     self.isValid= True
                     return self.isValid
+                else:
+                    logger.error('Catalogues.validate: no catalogues found after validation')
+        else:
+            logger.error('Catalogues.validate: no catalogues found')
         return False
 
-    def average(self, ReferenceCatalogue):
+    def countObjectsFoundInAllFiles(self):
+        self.numberOfObjectsFoundInAllFiles= 0
+        for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
+            if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
+                self.numberOfObjectsFoundInAllFiles += 1
+
+
+    def writeFitInputValues(self):
+        self.countObjectsFoundInAllFiles()
+
+        if( self.numberOfObjectsFoundInAllFiles < runTimeConfig.value('MINIMUM_OBJECTS')):
+            logger.error('Catalogues.writeFitInputValues: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
+            return False
+        else:
+
+            fitInput= open( self.dataFileNameFwhm, 'wb')
+            for focPos in sorted(self.averageFwhm):
+                line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
+                fitInput.write(line)
+
+            fitInput.close()
+            fitInput= open( self.dataFileNameFlux, 'wb')
+            for focPos in sorted(self.averageFlux):
+                line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
+                fitInput.write(line)
+
+            fitInput.close()
+
+        return True
+
+    def fitTheValues(self):
+        if( self.writeFitInputValues()):
+
+
+# ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
+            cmd= [ runTimeConfig.value('FOCROOT'),
+                   "1", # 1 interactive, 0 batch
+                   self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
+                   serviceFileOp.now,
+                   str(self.numberOfObjectsFoundInAllFiles),
+                   self.dataFileNameFwhm,
+                   self.dataFileNameFlux,
+                   self.imageFilename]
+        
+            output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+            print output
+        else:
+            logger.error('Catalogues.fitTheValues: do not fit')
+
+    def printSelectedSXobjects(self):
+        for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
+            if( sxReferenceObject.foundInAll): 
+                print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
+
+    def average(self):
         fwhm= defaultdict(list)
         flux= defaultdict(list)
         lenFwhm = []
-        for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
+        for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
                 self.numberOfObjects += 1
                 for sxObject in sxReferenceObject.matchedsxObjects:
@@ -1018,41 +1077,6 @@ class Catalogues():
 
         for focPos in sorted(fwhm):
             print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
-
-    def writeFitValues(self):
-        fitInput= open( self.dataFileNameFwhm, 'wb')
-
-        for focPos in sorted(self.averageFwhm):
-            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
-            fitInput.write(line)
-
-        fitInput.close()
-        fitInput= open( self.dataFileNameFlux, 'wb')
-
-        for focPos in sorted(self.averageFlux):
-            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
-            fitInput.write(line)
-
-        fitInput.close()
-
-    def fitTheValues(self):
-# ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
-        cmd= [ runTimeConfig.value('FOCROOT'),
-                                   "1", # 1 interactive, 0 batch
-                                   self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
-                                   serviceFileOp.now,
-                                   str(self.numberOfObjects),
-                                   self.dataFileNameFwhm,
-                                   self.dataFileNameFlux,
-                                   '/tmp/fitData.png']
-        
-        output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
-        print output
-
-    def printSelectedSXobjects(self, ReferenceCatalogue):
-        for sxReferenceObjectNumber, sxReferenceObject in ReferenceCatalogue.sxObjects.items():
-            if( sxReferenceObject.foundInAll): 
-                print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
 
 import sys
 import pyfits
@@ -1099,34 +1123,34 @@ class FitsHDU():
             self.isValid= True
             return True
 
-
         keys= self.referenceFitsHDU.headerElements.keys()
         i= 0
         for key in keys:
             if(key == 'FOC_POS'):
                 self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
                 continue
-
             if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
                 logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
                 break
+            else:
+                self.headerElements[key] = fitsHDU[0].header[key]
 
         else: # exhausted
             self.isValid= True
             if( verbose):
                 print 'headerProperties: header ok : ' + self.fitsFileName
+
             return True
         
         logger.error("headerProperties: fits file " + self.fitsFileName + " has different header properties")
         return False
-
-
 
 class FitsHDUs():
     """Class holding FitsHDU"""
     def __init__(self):
         self.fitsHDUsList= []
         self.isValid= False
+        self.numberOfFocusPositions= 0 
 
     def findHDUByFitsFileName( self, fileName):
         for hdu in sorted(self.fitsHDUsList):
@@ -1135,8 +1159,10 @@ class FitsHDUs():
         return False
 
     def findReference(self):
-        for hdu in sorted(self.fitsHDUsList):
-            if( hdu.isReference):
+        for hdu in self.fitsHDUsList:
+            if( hdu.referenceFitsHDU== None):
+                if(verbose):
+                    print "FitsHDUs.findReference: FOUND------------------HDU "+ hdu.fitsFileName
                 return hdu
         return False
 
@@ -1151,22 +1177,21 @@ class FitsHDUs():
         return False
 
     def validate(self, filterName=None):
-        if( filterName==None):
-            logger.error('FitsHDUs.validate: no filter name given')
-            return self.isValid
         hdur= self.findReference()
         if( hdur== False):
             hdur= self.findReferenceByFocPos(filterName)
             if( hdur== False):
                 if( verbose):
-                    print "Nothing found in  findReference and findReferenceByFocPos"
+                    print "Nothing found in findReference and findReferenceByFocPos"
                 return self.isValid
 
-        keys= hdur.keys()
+        keys= hdur.headerElements.keys()
         i= 0
+        differentFocuserPositions={}
         for hdu in self.fitsHDUsList:
             for key in keys:
                 if(key == 'FOC_POS'):
+                    differentFocuserPositions[str(hdu.headerElements['FOC_POS'])]= 1 # means nothing
                     continue
                 if( hdur.headerElements[key]!= hdu.headerElements[key]):
                     try:
@@ -1181,11 +1206,23 @@ class FitsHDUs():
                 if( verbose):
                     print 'FitsHDUs.validate: valid hdu: ' + hdu.fitsFileName
 
+        self.numberOfFocusPositions= len(differentFocuserPositions.keys())
 
-        if( len(self.fitsHDUsList) > 0):
-            self.isValid= True
-
+        if( self.numberOfFocusPositions >= runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
+            if( len(self.fitsHDUsList) > 0):
+                logger.error('FitsHDUs.validate: hdus are valid')
+                self.isValid= True
+        else:
+            logger.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+        logger.error('FitsHDUs.validate: hdus are invalid')
         return self.isValid
+    def countFocuserPositions(self):
+        differentFocuserPositions={}
+        for hdu in self.fitsHDUsList:
+            differentFocuserPositions(hdu.headerElements['FOC_POS'])
+            
+        
+        return len(differentFocuserPositions)
 
 import time
 import datetime
@@ -1198,8 +1235,8 @@ class ServiceFileOperations():
         self.now= datetime.datetime.now().isoformat()
         self.runTimePath=None
 
-    def prefix( self):
-        return 'rts2af-'
+    def prefix( self, fileName):
+        return 'rts2af-' +fileName
 
     def notFits(self, fileName):
         items= fileName.split('/')[-1]
@@ -1217,7 +1254,7 @@ class ServiceFileOperations():
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
         
         items= runTimeConfig.value('SEXSKY_LIST').split('.')
-        fileName= self.prefix() + items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1]
+        fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1])
         if(verbose):
             print 'ServiceFileOperations:expandToSkyList expanded to ' + fileName
         
@@ -1226,13 +1263,25 @@ class ServiceFileOperations():
     def expandToCat( self, fitsHDU=None):
         if( fitsHDU==None):
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
-        fileName= self.prefix() + self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat'
+        fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat')
         return self.expandToTmp(fileName)
 
     def expandToFitInput(self, fitsHDU=None, element=None):
         items= runTimeConfig.value('FIT_RESULT_FILE').split('.')
+        if((fitsHDU==None) or ( element==None)):
+            logger.error('ServiceFileOperations.expandToFitInput: no hdu or elementgiven')
+
         fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
-        return self.expandToTmp(fileName)
+        return self.expandToTmp(self.prefix(fileName))
+
+    def expandToFitImage(self, fitsHDU=None):
+        if( fitsHDU==None):
+            logger.error('ServiceFileOperations.expandToFitImage: no hdu given')
+
+        items= runTimeConfig.value('FIT_RESULT_FILE').split('.') 
+# ToDo png
+        fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now + ".png"
+        return self.expandToTmp(self.prefix(fileName))
 
     def expandToRunTimePath(self, fileName=None):
         if( fileName==None):
@@ -1255,8 +1304,6 @@ class ServiceFileOperations():
             print "searching in " + repr(glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB')))
         return glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB'))
 
-
-        
 #
 # stub, will be called in main script 
 runTimeConfig= Configuration()

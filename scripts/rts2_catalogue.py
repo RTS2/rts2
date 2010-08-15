@@ -70,11 +70,10 @@ class main(rts2af.AFScript):
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
                 logger.error('main: reference file '+ referenceFitsFileName + 'not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
                 sys.exit(1)
-
-
+# get the list of fits files
         testFitsList=[]
         testFitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
-
+# read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
 
@@ -82,12 +81,11 @@ class main(rts2af.AFScript):
             print "exiting"
             sys.exit(1)
 
-
+# create the administrative objects 
         HDUs= rts2af.FitsHDUs()
         catrs= rts2af.Catalogues()
 
 # load the reference file first
-
         for fits in testFitsList:
             if( fits.find(referenceFitsFileName) >= 0):
                 break
@@ -95,11 +93,11 @@ class main(rts2af.AFScript):
             logger.error("main: reference file " + referenceFitsFileName + " not found")
             sys.exit(1)
 
-        
+# create the reference catalogue
         hdur= rts2af.FitsHDU(referenceFitsFileName)
-        rts2af.FitsHDU( fits, hdur)
+
         if(hdur.headerProperties()):
-            # reference catalogue
+            HDUs.fitsHDUsList.append(hdur)
             catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
             catr.extractToCatalogue()
             catr.createCatalogue()
@@ -108,33 +106,38 @@ class main(rts2af.AFScript):
             catrs.CataloguesList.append(catr)
             cats= rts2af.Catalogues(catr)
 
-
-
+# read the files 
         for fits in testFitsList:
             hdu= rts2af.FitsHDU( fits, hdur)
             if(hdu.headerProperties()):
-                print "append "+ hdu.fitsFileName
+                if(rts2af.verbose):
+                    print "append "+ hdu.fitsFileName
                 HDUs.fitsHDUsList.append(hdu)
 
-
-#        HDUs.validate()
+        if( not HDUs.validate()):
+            logger.error("main: HDUs are not valid, exiting")
+            sys.exit(1)
 
 # loop over hdus (including reference catalog currently)
         for hdu  in HDUs.fitsHDUsList:
             if( rts2af.verbose):
-                print '=======' + hdu.headerElements['FILTER'] + '===' + repr(hdu.isValid) + '= %d' % HDUs.fitsHDUsList.count(hdu)
+                print '=======' + hdu.headerElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.headerElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
             
             cat= rts2af.Catalogue(hdu,paramsSexctractor)
             cat.extractToCatalogue()
             cat.createCatalogue()
             cat.cleanUp()
-            cat.matching(catr)
-            cats.CataloguesList.append(cat)
+            # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
+            if( cat.matching(catr)):
+                print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
+                cats.CataloguesList.append(cat)
+            else:
+                logger.error("main: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
 
         if(cats.validate()):
-            print "catalogues is valid"
+            print "main: catalogues are valid"
         else:
-            print "catalogues is in valid"
+            print "main: catalogues are invalid"
 
         for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
             if(rts2af.verbose):
@@ -142,12 +145,10 @@ class main(rts2af.AFScript):
             cat.average('FWHM_IMAGE')
 
 
-        cats.average(catr)
-        cats.writeFitValues()
+        cats.average()
         cats.fitTheValues()
 
-
-        catr.printSelectedSXobjects()
+        cats.printSelectedSXobjects()
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
 
