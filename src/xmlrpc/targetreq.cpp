@@ -737,7 +737,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 {
 	std::ostringstream _os;
 
-	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, NULL, "targetObs.refresh();");
+	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, "/css/table.css", "targetObs.refresh();");
 	printTargetHeader (tar->getTargetID (), _os);
 
 	_os << "<h1>Observations of target " << tar->getTargetName () << "</h1>\n";
