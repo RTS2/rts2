@@ -179,7 +179,7 @@ AC_ARG_WITH(pgsql,
 esac],[psql=yes])
 
 AC_ARG_WITH(wcs,
-[  --with-libwcs           path to WCS programs],
+[  --with-wcs           path to WCS programs],
 [case "${withval}" in
 	yes) libwcs=yes ;;
 	no)  libwcs=no ;;
