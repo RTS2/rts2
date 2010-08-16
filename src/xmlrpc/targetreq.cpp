@@ -377,7 +377,7 @@ void Targets::callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpPa
 		os.loadTarget (tar->getTargetID ());
 
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"../../..//observations/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
 			"{\"n\":\"DEC\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
