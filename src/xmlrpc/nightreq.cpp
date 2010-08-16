@@ -286,9 +286,10 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 	{
 		_os << "{\"h\":["
 			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
-			"{\"n\":\"Target name\",\"t\":\"s\",\"c\":1},"
-			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":3}"
+			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
+			"{\"n\":\"Start\",\"t\":\"t\",\"c\":3},"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":4}"
 			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
@@ -307,6 +308,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			if (iter != os.begin ())
 				_os << ",";
 			_os << "[" << iter->getObsId () << ","
+				<< iter->getTargetId () << ","
 				<< "\"" << iter->getTargetName () << "\",\""
 				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
 				<< LibnovaDateDouble (iter->getObsEnd ()) << "\"]\n";
