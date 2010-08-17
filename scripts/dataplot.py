@@ -3,6 +3,7 @@
 import numpy
 import pyfits
 import sys
+import time
 
 from matplotlib.pyplot import *
 import matplotlib.pyplot
@@ -26,6 +27,7 @@ for arg in sys.argv[1:]:
 			dat1 = hdulist['AMP0.MEAS_TIMES'].header['TSTART']
 			dat2 = hdulist['AMP1.MEAS_TIMES'].header['TSTART']
 			tdiff = dat2 - dat1
+			print time.ctime(dat1), time.ctime(dat2), tdiff
 		except Exception as ex:
 			print 'failed to read header', ex,
 
