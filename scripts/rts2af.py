@@ -476,7 +476,7 @@ class Catalogue():
         
         Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
-    def extractToCatalogue(self):
+    def runSExtractor(self):
         if( verbose):
             print 'sextractor  ' + runTimeConfig.value('SEXPRG')
             print 'sextractor  ' + runTimeConfig.value('SEXCFG')
@@ -500,11 +500,11 @@ class Catalogue():
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'Catalogue.extractToCatalogue: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'Catalogue.runSExtractor: I/O error({0}): {1}'.format(errno, strerror))
             sys.exit(1)
 
         except:
-            logging.error('Catalogue.extractToCatalogue: '+ repr(cmd) + ' died')
+            logging.error('Catalogue.runSExtractor: '+ repr(cmd) + ' died')
             sys.exit(1)
 
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
@@ -672,13 +672,13 @@ class Catalogue():
                 sum += float(value)
                 i += 1
 
-        if(verbose):
-            if( i != 0):
-                print 'average ' + variable + ' %f ' % (sum/ float(i)) 
-                return (sum/ float(i))
-            else:
-                print 'Error in average i=0'
-                return False
+        #if(verbose):
+        if( i != 0):
+            print 'average ' + variable + ' %f ' % (sum/ float(i)) 
+            return (sum/ float(i))
+        else:
+            print 'Error in average i=0'
+            return False
 
 class ReferenceCatalogue(Catalogue):
     """Class for a catalogue (SExtractor result)"""
@@ -726,7 +726,7 @@ class ReferenceCatalogue(Catalogue):
                         break
         SXcat.close()
 
-    def extractToCatalogue(self):
+    def runSExtractor(self):
         if( verbose):
             print 'sextractor  ' + runTimeConfig.value('SEXPRG')
             print 'sextractor  ' + runTimeConfig.value('SEXCFG')
@@ -748,11 +748,11 @@ class ReferenceCatalogue(Catalogue):
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'ReferenceCatalogue.extractToCatalogue: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'ReferenceCatalogue.runSExtractor: I/O error({0}): {1}'.format(errno, strerror))
             sys.exit(1)
 
         except:
-            logging.error('ReferenceCatalogue.extractToCatalogue: '+ repr(cmd) + ' died')
+            logging.error('ReferenceCatalogue.runSExtractor: '+ repr(cmd) + ' died')
             sys.exit(1)
 
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
@@ -764,7 +764,11 @@ class ReferenceCatalogue(Catalogue):
         # if( not self.fitsHDU.isReference):
         #SXcat= open( self.catalogueFileName, 'r')
         #else:
-        SXcat= open( self.skyList, 'r')
+        try:
+            SXcat= open( self.skyList, 'r')
+        except:
+            logger.error("could not open file " + self.skyList + ", exiting")
+            sys.exit(1) 
 
         self.lines= SXcat.readlines()
         SXcat.close()
@@ -919,9 +923,16 @@ class AcceptanceRegion():
         self.fitsHDU= fitsHDU
 # 1x1 
 #        self.binning= float(fitsHDU.headerElements['BINNING'])
+
         self.binning= 2.
-        self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
-        self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
+        print "binning set to 2"
+        logger.error("binning set to 2") 
+        try:
+            self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
+            self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
+        except:
+            logger.error("AcceptanceRegion.__init__: something went wrong here")
+
         if( centerOffsetX==None):
             self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))
         if( centerOffsetY==None):
@@ -1019,9 +1030,8 @@ class Catalogues():
         return True
 
     def fitTheValues(self):
+        self.__average__()
         if( self.writeFitInputValues()):
-
-
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
             cmd= [ runTimeConfig.value('FOCROOT'),
                    "1", # 1 interactive, 0 batch
@@ -1042,7 +1052,7 @@ class Catalogues():
             if( sxReferenceObject.foundInAll): 
                 print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
 
-    def average(self):
+    def __average__(self):
         fwhm= defaultdict(list)
         flux= defaultdict(list)
         lenFwhm = []
@@ -1105,7 +1115,7 @@ class FitsHDU():
             if( self.fitsFileName):
                 logger.error('FitsHDU: file not found : ' + self.fitsFileName)
             else:
-                logger.error('FitsHDU: file name not given (None), exiting')
+                logger.error('FitsHDU: file name not given (None)')
             return False
 
         fitsHDU.close()
@@ -1113,15 +1123,20 @@ class FitsHDU():
             if(verbose):
                 print "headerProperties I'm compatible with myself"
 
-            self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
-            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
-            self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
-            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
-            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
-            self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
-            self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
-            self.isValid= True
-            return True
+            try:
+                self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
+                self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+                self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
+                self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
+                self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+                self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
+                self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
+                self.isValid= True
+                return True
+            except:
+                logger.error('FitsHDU: the required header element not found, exiting')
+                sys.exit(1)
+                return False
 
         keys= self.referenceFitsHDU.headerElements.keys()
         i= 0
@@ -1233,7 +1248,7 @@ class ServiceFileOperations():
     """Class performing various task on files, e.g. expansion to (full) path"""
     def __init__(self):
         self.now= datetime.datetime.now().isoformat()
-        self.runTimePath=None
+        self.runTimePath='/'
 
     def prefix( self, fileName):
         return 'rts2af-' +fileName
@@ -1242,9 +1257,25 @@ class ServiceFileOperations():
         items= fileName.split('/')[-1]
         return items.split('.fits')[0]
 
-    def expandToTmp( self, fileName=None):
+    def absolutePath(self, fileName=None):
         if( fileName==None):
-            logger.error('ServiceFileOperations.expandToTmp: no file name given')
+            logger.error('ServiceFileOperations.absolutePath: no file name given')
+
+        pLeadingSlash = re.compile( r'\/.*')
+        leadingSlash = pLeadingSlash.match(fileName)
+        if( leadingSlash):
+            return True
+        else:
+            return False
+
+    def fitsFilesInRunTimePath( self):
+        if( verbose):
+            print "searching in " + repr(glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB')))
+        return glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB'))
+
+    def expandToTmp( self, fileName=None):
+        if( self.absolutePath(fileName)):
+            return fileName
 
         fileName= runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
@@ -1254,7 +1285,11 @@ class ServiceFileOperations():
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
         
         items= runTimeConfig.value('SEXSKY_LIST').split('.')
-        fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1])
+        try:
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1])
+        except:
+            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
+            
         if(verbose):
             print 'ServiceFileOperations:expandToSkyList expanded to ' + fileName
         
@@ -1263,7 +1298,11 @@ class ServiceFileOperations():
     def expandToCat( self, fitsHDU=None):
         if( fitsHDU==None):
             logger.error('ServiceFileOperations.expandToCat: no hdu given')
-        fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat')
+        try:
+            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat')
+        except:
+            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + self.now + '.cat')
+
         return self.expandToTmp(fileName)
 
     def expandToFitInput(self, fitsHDU=None, element=None):
@@ -1284,14 +1323,14 @@ class ServiceFileOperations():
         return self.expandToTmp(self.prefix(fileName))
 
     def expandToRunTimePath(self, fileName=None):
-        if( fileName==None):
-            logger.error('ServiceFileOperations.expandToBase: no file name given')
-
-        return self.runTimePath + '/' + fileName
+        if( self.absolutePath(fileName)):
+            return fileName
+        else:
+            return self.runTimePath + '/' + fileName
 
     def defineRunTimePath(self, fileName=None):
-        if( fileName==None):
-            logger.error('ServiceFileOperations.defineRunTimePath: no file name given')
+        if( self.absolutePath(fileName)):
+            return fileName
 
         for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
             if( fileName in names):
@@ -1299,10 +1338,6 @@ class ServiceFileOperations():
                 return True
         return False
 
-    def fitsFilesInRunTimePath( self):
-        if( verbose):
-            print "searching in " + repr(glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB')))
-        return glob.glob( self.runTimePath + '/' + runTimeConfig.value('FILE_GLOB'))
 
 #
 # stub, will be called in main script 

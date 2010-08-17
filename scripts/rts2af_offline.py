@@ -2,7 +2,7 @@
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   rts_catalogue.py --help
+#   rtsaf_offline.py --help
 #   
 #   see man 1 rts2_catalogue.py
 #   see rts2_autofocus_unittest.py for unit tests
@@ -99,7 +99,7 @@ class main(rts2af.AFScript):
         if(hdur.headerProperties()):
             HDUs.fitsHDUsList.append(hdur)
             catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
-            catr.extractToCatalogue()
+            catr.runSExtractor()
             catr.createCatalogue()
             catr.cleanUpReference()
             catr.writeCatalogue()
@@ -124,7 +124,7 @@ class main(rts2af.AFScript):
                 print '=======' + hdu.headerElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.headerElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
             
             cat= rts2af.Catalogue(hdu,paramsSexctractor)
-            cat.extractToCatalogue()
+            cat.runSExtractor()
             cat.createCatalogue()
             cat.cleanUp()
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
@@ -145,7 +145,7 @@ class main(rts2af.AFScript):
             cat.average('FWHM_IMAGE')
 
 
-        cats.average()
+        #cats.average()
         cats.fitTheValues()
 
         cats.printSelectedSXobjects()
