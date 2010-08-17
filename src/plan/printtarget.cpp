@@ -20,6 +20,7 @@
 #include "printtarget.h"
 
 #define OPT_FULL_DAY   OPT_LOCAL + 200
+#define OPT_NAME       OPT_LOCAL + 201
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -88,6 +89,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_FULL_DAY, "full-day", 0, "prints informations for 24 hours");
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
+	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
 }
 
 PrintTarget::~PrintTarget ()
@@ -174,6 +176,9 @@ int PrintTarget::processOption (int in_opt)
 		case 'N':
 			std::cout << pureNumbers;
 			break;
+		case OPT_NAME:
+			printExtended = -1;
+			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
 	}
@@ -238,7 +243,12 @@ void PrintTarget::printTarget (Target *target)
 	  	// default print of the target
 		if (!(printImages & DISPLAY_FILENAME))
 		{
-			if (printExtended == 0)
+			if (printExtended == -1)
+			{
+				std::cout << target->getTargetName () << std::endl;
+
+			}
+			else if (printExtended == 0)
 			{
 				target->printShortInfo (std::cout, JD);
 				std::cout << std::endl;

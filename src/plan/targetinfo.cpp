@@ -20,7 +20,7 @@
 #include "printtarget.h"
 #include "../utilsdb/target_auger.h"
 
-#define OPT_AUGER_ID   OPT_LOCAL + 201
+#define OPT_AUGER_ID   OPT_LOCAL + 501
 
 namespace rts2plan
 {
