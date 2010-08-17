@@ -31,6 +31,7 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2Va
 {
 	expandPath = _expandPath;
 	waitForExposure = false;
+	waitMetaData = false;
 	imgCount = 0;
 }
 
@@ -138,6 +139,8 @@ void Rts2DevClientCameraExec::nextCommand ()
 	if (!ret)
 		return;
 
+	waitMetaData = false;
+
 	if (nextComd->getBopMask () & BOP_EXPOSURE)
 	{
 		// if command cannot be executed when telescope is moving, do not execute it
@@ -146,29 +149,46 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 		// do not execute next exposure before all meta data of the current exposure are written
 		if (waitForMetaData ())
+		{
+			waitMetaData = true;
 		  	return;
+		}
 	}
 
 	Rts2Value *val;
+
+	//std::cout << "bopMask " << std::hex << nextComd->getBopMask () << std::endl;
 
 	if (nextComd->getBopMask () & BOP_WHILE_STATE)
 	{
 		// if there are queued exposures, do not execute command
 		val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
+		{
+			//std::cout << "val > 0" << std::endl;
 			return;
+		}
 		// if there are commands in queue, do not execute command
 		if (!connection->queEmptyForOriginator (this))
+		{
+			//std::cout << "not empty " << std::endl;
 			return;
+		}
 	}
 	else if (nextComd->getBopMask () & BOP_TEL_MOVE)
 	{
 		// if there are queued exposures, do not execute command
 		val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
+		{
+			//std::cout << "TEL_MOVE val > 0" << std::endl;
 			return;
+		}
 		if (waitForExposure)
+		{
+			//std::cout << "wait for exposure" << std::endl;
 			return;
+		}
 	}
 
 	// send command to other device
@@ -179,6 +199,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 			// if there are some commands in que, do not proceed, as they might change state of the device
 			if (!connection->queEmptyForOriginator (this))
 			{
+				//std::cout << "queue not empty" << std::endl;
 				return;
 			}
 
@@ -190,7 +211,10 @@ void Rts2DevClientCameraExec::nextCommand ()
 			}
 
 			if ((getConnection ()->getState () & CAM_EXPOSING) || (getConnection ()->getBopState () & BOP_TEL_MOVE) || (getConnection ()->getFullBopState () & BOP_TEL_MOVE))
+			{
+				//std::cout << "wrong state" << std::endl;
 				return;
+			}
 
 			nextComd->setBopMask (nextComd->getBopMask () & ~BOP_TEL_MOVE);
 		}
@@ -263,6 +287,9 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
 	int ret;
+	// make sure script continues if it is waiting for metadata
+	if (waitMetaData)
+		nextCommand ();
 	// try processing in script..
 	if (exposureScript.get ())
 	{

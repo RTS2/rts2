@@ -115,6 +115,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 	private:
 		Rts2ValueString *expandPath;
 		bool waitForExposure;
+		bool waitMetaData;
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
