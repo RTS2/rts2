@@ -59,6 +59,9 @@ class ElementBlock:public Element
 
 		virtual int idleCall ();
 
+		virtual void prettyPrint (std::ostream &os);
+		virtual void printXml (std::ostream &os);
+
 	protected:
 		std::list < Element * > blockElements;
 		std::list < Element * >::iterator curr_element;
@@ -158,6 +161,8 @@ class ElementFor:public ElementBlock
 {
 	public:
 		ElementFor (Script * _script, int _max):ElementBlock (_script) { max = _max; }
+		virtual void prettyPrint (std::ostream &os);
+		virtual void printXml (std::ostream &os);
 	protected:
 		virtual bool endLoop () { return getLoopCount () >= max; }
 	private:

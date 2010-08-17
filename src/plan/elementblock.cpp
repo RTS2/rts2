@@ -228,6 +228,26 @@ int ElementBlock::idleCall ()
 	return Element::idleCall ();
 }
 
+void ElementBlock::prettyPrint (std::ostream &os)
+{
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+	{
+		os << "   ";
+		(*iter)->prettyPrint (os);
+		os << std::endl;
+	}
+}
+
+void ElementBlock::printXml (std::ostream &os)
+{
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+	{
+		os << "   ";
+		(*iter)->printXml (os);
+		os << std::endl;
+	}
+}
+
 ElementSignalEnd::ElementSignalEnd (Script * in_script, int end_sig_num):ElementBlock (in_script)
 {
 	sig_num = end_sig_num;
@@ -390,6 +410,19 @@ void ElementAcquired::addElseElement (Element * element)
 bool ElementElse::endLoop ()
 {
 	return (getLoopCount () != 0);
+}
+
+void ElementFor::prettyPrint (std::ostream &os)
+{
+	os << "for " << max << std::endl;
+	ElementBlock::prettyPrint (os);
+}
+
+void ElementFor::printXml (std::ostream &os)
+{
+	os << "<for count='" << max << "'>" << std::endl;
+	ElementBlock::printXml (os);
+	os << "</for>";
 }
 
 int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
