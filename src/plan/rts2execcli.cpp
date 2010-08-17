@@ -161,8 +161,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		if (!connection->queEmptyForOriginator (this))
 			return;
 	}
-
-	if (nextComd->getBopMask () & BOP_TEL_MOVE)
+	else if (nextComd->getBopMask () & BOP_TEL_MOVE)
 	{
 		// if there are queued exposures, do not execute command
 		val = getConnection ()->getValue ("que_exp_num");

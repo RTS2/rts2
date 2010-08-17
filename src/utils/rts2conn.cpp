@@ -1185,10 +1185,11 @@ void Rts2Conn::sendCommand ()
 			std::cout << "waiting for " << runningCommand->getText () << " "
 				<< std::hex << runningCommand->getBopMask () << " "
 				<< std::hex << getMaster()->getMasterStateFull ()
+				<< " " << getFullBopState ()
 				<< " " << runningCommand
 				<< std::endl;
 			#endif
-			if (getMaster()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
+			if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
 			{
 				// just wait for finish
 				if (runningCommand->getStatusCallProgress () == CIP_WAIT)
@@ -1213,8 +1214,7 @@ void Rts2Conn::sendCommand ()
 		switch (runningCommand->getStatusCallProgress ())
 		{
 			case CIP_NOT_CALLED:
-				statInfoCall =
-					new Rts2CommandDeviceStatus (getMaster (), this);
+				statInfoCall = new Rts2CommandDeviceStatus (getMaster (), this);
 				conn = runningCommand->getConnection ();
 				// we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
 				statInfoCall->setConnection (this);

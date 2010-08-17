@@ -67,13 +67,6 @@ namespace rts2core
  */
 class Rts2Command
 {
-	private:
-		int bopMask;
-		Rts2Object * originator;
-	protected:
-		Rts2Block * owner;
-		Rts2Conn * connection;
-		char * text;
 	public:
 		Rts2Command (Rts2Block * _owner);
 		Rts2Command (Rts2Block * _owner, const char *_text);
@@ -94,30 +87,23 @@ class Rts2Command
 		 */
 		void setCommand (const char * _text);
 
-		void setConnection (Rts2Conn * conn)
-		{
-			connection = conn;
-		}
-		Rts2Conn * getConnection ()
-		{
-			return connection;
-		}
+		void setConnection (Rts2Conn * conn) { connection = conn; }
+
+		Rts2Conn * getConnection () { return connection; }
+
 		virtual int send ();
 		int commandReturn (int status, Rts2Conn * conn);
-		char * getText ()
-		{
-			return text;
-		}
+		/**
+		 * Returns command test.
+		 */
+		char * getText () { return text; }
 
 		/**
 		 * Set command Block of OPeration mask.
 		 *
 		 * @param _bopMask New BOP mask.
 		 */
-		void setBopMask (int _bopMask)
-		{
-			bopMask = _bopMask;
-		}
+		void setBopMask (int _bopMask) { bopMask = _bopMask; }
 
 		/**
 		 * Return command BOP mask.
@@ -126,10 +112,7 @@ class Rts2Command
 		 *
 		 * @return Commmand BOP mask.
 		 */
-		int getBopMask ()
-		{
-			return bopMask;
-		}
+		int getBopMask () { return bopMask; }
 
 		/**
 		 * Set call originator.
@@ -141,10 +124,7 @@ class Rts2Command
 		 *
 		 * @callergraph
 		 */
-		void setOriginator (Rts2Object * _originator)
-		{
-			originator = _originator;
-		}
+		void setOriginator (Rts2Object * _originator) { originator = _originator; }
 
 		/**
 		 * Return true if testOriginator is originator
@@ -155,10 +135,7 @@ class Rts2Command
 		 * @return True if testOriginator is command
 		 * originator.
 		 */
-		bool isOriginator (Rts2Object * testOriginator)
-		{
-			return originator == testOriginator;
-		}
+		bool isOriginator (Rts2Object * testOriginator) { return originator == testOriginator; }
 
 		/**
 		 * Returns status of info call, issued against central server.
@@ -170,10 +147,7 @@ class Rts2Command
 		 *
 		 * @return Status of info call.
 		 */
-		cip_state_t getStatusCallProgress ()
-		{
-			return (cip_state_t) (bopMask & BOP_CIP_MASK);
-		}
+		cip_state_t getStatusCallProgress () { return (cip_state_t) (bopMask & BOP_CIP_MASK); }
 
 		/**
 		 * Sets status of info call.
@@ -237,6 +211,13 @@ class Rts2Command
 		 * @param conn Connection which will be removed.
 		 */
 		virtual void deleteConnection (Rts2Conn * conn);
+	protected:
+		Rts2Block * owner;
+		Rts2Conn * connection;
+		char * text;
+	private:
+		int bopMask;
+		Rts2Object * originator;
 };
 
 /**
