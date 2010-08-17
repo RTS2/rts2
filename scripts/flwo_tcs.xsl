@@ -11,7 +11,7 @@ echo 'exposure done'
 <xsl:template match="/script/set">
 	<xsl:if test='@value = "filter"'>
 echo -n 'Moving filter wheel to <xsl:value-of select='@operands'/>'
-rts2_tele_filter <xsl:value-of select='@operands'/>
+source $RTS2/rts2_tele_filter <xsl:value-of select='@operands'/>
 	</xsl:if>
 </xsl:template>
 
