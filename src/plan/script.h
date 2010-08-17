@@ -76,6 +76,11 @@ class ParsingError:public rts2core::Error
 };
 
 /**
+ * Types of script output.
+ */
+typedef enum { PRINT_TEXT, PRINT_XML } printType;
+
+/**
  * Holds script to execute on given device.
  * Script might include commands to other devices; in such case device
  * name must be given in script, separated from command with .
@@ -142,6 +147,8 @@ class Script:public Rts2Object
 		int getParsedStartPos () { return commandStart - cmdBuf + lineOffset; }
 
 		int idle ();
+
+		void prettyPrint (std::ostream &os, printType pt);
 
 	private:
 		char *cmdBuf;

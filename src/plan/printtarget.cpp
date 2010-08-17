@@ -19,8 +19,9 @@
 
 #include "printtarget.h"
 
-#define OPT_FULL_DAY   OPT_LOCAL + 200
-#define OPT_NAME       OPT_LOCAL + 201
+#define OPT_FULL_DAY       OPT_LOCAL + 200
+#define OPT_NAME           OPT_LOCAL + 201
+#define OPT_PARSE_SCRIPT   OPT_LOCAL + 202
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -90,6 +91,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
+	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 }
 
 PrintTarget::~PrintTarget ()
@@ -179,6 +181,10 @@ int PrintTarget::processOption (int in_opt)
 		case OPT_NAME:
 			printExtended = -1;
 			break;
+		case OPT_PARSE_SCRIPT:
+			printExtended = -2;
+			scriptCameras.push_back (std::string (optarg));
+			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
 	}
@@ -243,7 +249,18 @@ void PrintTarget::printTarget (Target *target)
 	  	// default print of the target
 		if (!(printImages & DISPLAY_FILENAME))
 		{
-			if (printExtended == -1)
+			if (printExtended == -2)
+			{
+				for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
+				{
+					std::string script_buf;
+					// parse and pretty print script
+					rts2script::Script script = rts2script::Script ();
+					script.setTarget ((*iter).c_str (), target);
+					script.prettyPrint (std::cout, rts2script::PRINT_XML);
+				}
+			}
+			else if (printExtended == -1)
 			{
 				std::cout << target->getTargetName () << std::endl;
 

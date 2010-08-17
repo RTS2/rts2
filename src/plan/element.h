@@ -142,6 +142,9 @@ class Element:public Rts2Object
 		 */
 		virtual int idle ();
 
+		virtual void prettyPrint (std::ostream &os) { os << "unknow element"; }
+		virtual void printXml (std::ostream &os) {}
+
 	protected:
 		Script * script;
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
@@ -157,6 +160,9 @@ class ElementExpose:public Element
 	public:
 		ElementExpose (Script * _script, float in_expTime);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
 	private:
 		float expTime;
 };
@@ -166,6 +172,8 @@ class ElementDark:public Element
 	public:
 		ElementDark (Script * _script, float in_expTime);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
 	private:
 		float expTime;
 };
@@ -175,6 +183,8 @@ class ElementBox:public Element
 	public:
 		ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "box " << x << " " << y << " " << w << " " << h; }
 	private:
 		int x, y, w, h;
 };
@@ -184,6 +194,8 @@ class ElementCenter:public Element
 	public:
 		ElementCenter (Script * _script, int in_w, int in_h);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "camera center "; }
 	private:
 		int w, h;
 };
@@ -199,6 +211,8 @@ class ElementChange:public Element
 			ra = in_ra;
 			dec = in_dec;
 		}
+
+		virtual void prettyPrint (std::ostream &os) { os << "offset " << ra << " " << dec; }
 	private:
 		char *deviceName;
 		double ra;
@@ -210,6 +224,8 @@ class ElementWait:public Element
 	public:
 		ElementWait (Script * _script);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "wait "; }
 };
 
 class ElementWaitAcquire:public Element
@@ -267,6 +283,9 @@ class ElementChangeValue:public Element
 		ElementChangeValue (Script * _script, const char *in_device_value, const char *chng_str);
 		virtual ~ ElementChangeValue (void);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "set on " << deviceName << " value " << valName << " " << op << " " << operands; }
+		virtual void printXml (std::ostream &os) { os << "  <set device='" << deviceName << "' value='" << valName << "' op='" << op << "' operands='" << operands << "'/>"; }
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:

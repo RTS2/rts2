@@ -60,6 +60,7 @@ class PrintTarget:public Rts2AppDb
 
 	private:
 		Rts2CamList cameras;
+		std::vector <std::string> scriptCameras;
 		int printExtended;
 		bool printCalTargets;
 		bool printObservations;

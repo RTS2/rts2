@@ -804,3 +804,27 @@ int Script::idle ()
 		return (*el_iter)->idleCall ();
 	return NEXT_COMMAND_KEEP;
 }
+
+void Script::prettyPrint (std::ostream &os, printType pt)
+{
+	switch (pt)
+	{
+		case PRINT_TEXT:
+			for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+			{
+				(*el_iter)->prettyPrint (os);
+				os << std::endl;
+			}
+			break;
+		case PRINT_XML:
+			os << "<script device='" << defaultDevice << "'>" << std::endl;
+			for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+			{
+				(*el_iter)->printXml (os);
+				os << std::endl;
+			}
+			os << "</script>" << std::endl;
+			break;
+
+	}
+}
