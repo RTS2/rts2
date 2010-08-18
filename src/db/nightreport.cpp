@@ -35,6 +35,8 @@
 #define STAT_COLLOCATE       1
 #define STAT_SUPER           2
 
+#define OPT_NOMESSAGES       OPT_LOCAL + 600
+
 /**
  * Produces night report output.
  *
@@ -66,7 +68,7 @@ class Rts2NightReport:public Rts2AppDb
 
 		int observationsNights;
 
-		void printObsList ();
+		void printObsList (time_t *t_end);
 		void printStatistics ();
 		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
 		rts2db::ObservationSet *obs_set;
@@ -74,6 +76,7 @@ class Rts2NightReport:public Rts2AppDb
 		std::vector <rts2db::ObservationSet *> allObs;
 
 		rts2db::MessageSet messages;
+		int messageMask;
 };
 
 Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -93,6 +96,8 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_arg
 	totalGoodImages = 0;
 	totalObs = 0;
 
+	messageMask = 0x0f;
+
 	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
 	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours. Date is in YYYY-MM-DD format.");
 	addOption ('n', NULL, 1, "report for night around given date. Date format is YYYY-MM-DD.");
@@ -105,6 +110,7 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_arg
 	addOption ('s', NULL, 0, "print night statistics");
 	addOption ('S', NULL, 0, "print night statistics - % of time used for observation");
 	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
+	addOption (OPT_NOMESSAGES, "nomsg", 0, "do not print messages");
 }
 
 Rts2NightReport::~Rts2NightReport (void)
@@ -172,6 +178,9 @@ int Rts2NightReport::processOption (int in_opt)
 		case 'c':
 			statType = STAT_COLLOCATE;
 			break;
+		case OPT_NOMESSAGES:
+			messageMask = 0;
+			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
 	}
@@ -194,15 +203,14 @@ int Rts2NightReport::init ()
 	{
 		// let's calculate time from..t_from will contains start of night
 		// local 12:00 will be at ~ give time..
-		Rts2Night night =
-			Rts2Night (tm_night, Rts2Config::instance ()->getObserver ());
+		Rts2Night night = Rts2Night (tm_night, Rts2Config::instance ()->getObserver ());
 		t_from = *(night.getFrom ());
 		t_to = *(night.getTo ());
 	}
 	return 0;
 }
 
-void Rts2NightReport::printObsList ()
+void Rts2NightReport::printObsList (time_t *t_end)
 {
 	if (printImages)
 		obs_set->printImages (printImages);
@@ -221,12 +229,12 @@ void Rts2NightReport::printObsList ()
 			break;
 		if (isnan (o_next))
 		{
-		  	messages.printUntil (m_next, std::cout);
+		  	messages.printUntil (*t_end + 1, std::cout);
 			break;
 		}
 		if (isnan (m_next))
 		{
-		  	obs_set->printUntil (o_next, std::cout);
+		  	obs_set->printUntil (*t_end + 1, std::cout);
 			break;
 		}
 		if (m_next < o_next)
@@ -246,7 +254,7 @@ void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEm
 	obs_set = new rts2db::ObservationSet ();
 	obs_set->loadTime (t_start, t_end);
 
-	messages.load (*t_start, *t_end, 0x0f);
+	messages.load (*t_start, *t_end, messageMask);
 
 	if (!printEmpty && obs_set->empty ())
 	{
@@ -270,7 +278,7 @@ void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEm
 		// from which date to which..
 		std::cout << "From " << Timestamp (*t_start) << " to " << Timestamp (*t_end) << std::endl;
 
-		printObsList ();
+		printObsList (t_end);
 
 		if (printStat)
 			printStatistics ();
