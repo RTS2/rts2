@@ -154,7 +154,7 @@ NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 {
 	lampSerial = NULL;
 
-	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE);
+	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	createValue (status, "status", "power supply status", false, RTS2_DT_HEX);
 	createValue (esr, "esr", "power supply error register", false, RTS2_DT_HEX);
