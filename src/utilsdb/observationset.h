@@ -21,6 +21,7 @@
 #define __RTS2_OBS_SET__
 
 #include "observation.h"
+#include "timelog.h"
 
 #include <string>
 #include <vector>
@@ -38,7 +39,7 @@ namespace rts2db {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ObservationSet:public std::vector <Observation >
+class ObservationSet:public std::vector <Observation>, public TimeLog
 {
 	public:
 		ObservationSet (void);
@@ -127,6 +128,9 @@ class ObservationSet:public std::vector <Observation >
 
 		friend std::ostream & operator << (std::ostream & _os, ObservationSet & obs_set) { return obs_set.print (_os); }
 
+		virtual void rewind () { timeLogIter = begin (); }
+		virtual double getNextCtime ();
+		virtual void printUntil (double time, std::ostream &os);
 	private:
 		int images;
 		int counts;
@@ -149,6 +153,8 @@ class ObservationSet:public std::vector <Observation >
 		double errAvgRa;
 		double errAvgDec;
 		double errAvgRad;
+
+		std::vector <Observation>::iterator timeLogIter;
 };
 
 /**

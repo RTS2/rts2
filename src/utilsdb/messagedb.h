@@ -21,6 +21,7 @@
 #define __RTS2_MESSAGEDB__
 
 #include "../utils/rts2message.h"
+#include "timelog.h"
 
 #include <vector>
 
@@ -47,7 +48,7 @@ class MessageDB:public Rts2Message
  *
  * @author Petr KUbanek <petr@kubanek.net>
  */
-class MessageSet:public std::vector <MessageDB>
+class MessageSet:public std::vector <MessageDB>, public TimeLog
 {
 	public:
 		MessageSet () {}
@@ -61,6 +62,13 @@ class MessageSet:public std::vector <MessageDB>
 		 * @throw SqlError
 		 */
 		void load (double from, double to, int type_mask);
+
+		virtual void rewind () { timeLogIter = begin (); }
+
+		virtual double getNextCtime ();
+		virtual void printUntil (double time, std::ostream &os);
+	private:
+		std::vector <MessageDB>::iterator timeLogIter;
 };
 
 }

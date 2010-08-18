@@ -6,7 +6,7 @@ noinst_HEADERS = sqlerror.h rts2devicedb.h target.h rts2appdb.h rts2sqlcolumn.h 
 	rts2taruser.h rts2count.h imageset.h targetset.h rts2plan.h rts2planset.h rts2prop.h \
 	rts2camlist.h target_auger.h messagedb.h rts2targetplanet.h rts2targetgrb.h scriptcommands.h \
 	imagesetstat.h rts2targetell.h user.h userset.h account.h accountset.h recvals.h records.h recordsavg.h \
-	augerset.h
+	augerset.h timelog.h
 
 EXTRA_DIST = sqlerror.ec rts2devicedb.ec target.ec sub_targets.ec rts2appdb.ec airmasscale.ec rts2sqlcolumn.ec observation.ec \
 	observationset.ec rts2taruser.ec rts2count.ec imageset.ec targetset.ec rts2plan.ec rts2planset.ec rts2prop.ec \

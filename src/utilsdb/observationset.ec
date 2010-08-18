@@ -458,12 +458,31 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 		}
 		else
 		{
-			(*obs_iter).setPrintImages (getPrintImages ());
-			(*obs_iter).setPrintCounts (getPrintCounts ());
+			obs_iter->setPrintImages (getPrintImages ());
+			obs_iter->setPrintCounts (getPrintCounts ());
 			_os << (*obs_iter);
 		}
 	}
 	return _os;
+}
+
+double ObservationSet::getNextCtime ()
+{
+	if (timeLogIter != end ())
+		return timeLogIter->getObsSlew ();
+	return rts2_nan ("f");
+}
+
+void ObservationSet::printUntil (double time, std::ostream &os)
+{
+	while (timeLogIter != end () && timeLogIter->getObsSlew () <= time)
+	{
+		timeLogIter->setPrintImages (getPrintImages ());
+		timeLogIter->setPrintCounts (getPrintCounts ());
+		os << (*timeLogIter);
+	
+		timeLogIter++;
+	}
 }
 
 void ObservationSetDate::load (int year, int month, int day, int hour, int minutes)

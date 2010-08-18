@@ -1,6 +1,6 @@
 /* 
  * Night reporting utility.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2format.h"
 #include "../utilsdb/rts2appdb.h"
+#include "../utilsdb/messagedb.h"
 #include "../utilsdb/observationset.h"
 
 #include "imgdisplay.h"
@@ -41,6 +42,16 @@
  */
 class Rts2NightReport:public Rts2AppDb
 {
+	public:
+		Rts2NightReport (int argc, char **argv);
+		virtual ~ Rts2NightReport (void);
+	protected:
+		virtual void usage ();
+
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int doProcessing ();
 	private:
 		time_t t_from, t_to;
 		struct ln_date *tm_night;
@@ -62,21 +73,10 @@ class Rts2NightReport:public Rts2AppDb
 
 		std::vector <rts2db::ObservationSet *> allObs;
 
-	protected:
-		virtual void usage ();
-
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-
-		virtual int doProcessing ();
-	public:
-		Rts2NightReport (int argc, char **argv);
-		virtual ~ Rts2NightReport (void);
+		rts2db::MessageSet messages;
 };
 
-Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	t_from = 0;
 	t_to = 0;
@@ -107,7 +107,6 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
 }
 
-
 Rts2NightReport::~Rts2NightReport (void)
 {
 	delete tm_night;
@@ -118,16 +117,13 @@ Rts2NightReport::~Rts2NightReport (void)
 	allObs.clear ();
 }
 
-
-void
-Rts2NightReport::usage ()
+void Rts2NightReport::usage ()
 {
 	std::cout << "\t" << getAppName () << "-n 2007-12-31" << std::endl
 		<< "\t" << getAppName () << "-f 2007-12-15 -t 2007-12-18" << std::endl;
 }
 
-int
-Rts2NightReport::processOption (int in_opt)
+int Rts2NightReport::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -182,9 +178,7 @@ Rts2NightReport::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2NightReport::init ()
+int Rts2NightReport::init ()
 {
 	int ret;
 	ret = Rts2AppDb::init ();
@@ -208,9 +202,7 @@ Rts2NightReport::init ()
 	return 0;
 }
 
-
-void
-Rts2NightReport::printObsList ()
+void Rts2NightReport::printObsList ()
 {
 	if (printImages)
 		obs_set->printImages (printImages);
@@ -218,22 +210,43 @@ Rts2NightReport::printObsList ()
 		obs_set->printCounts (printCounts);
 	if (statType == STAT_COLLOCATE)
 		obs_set->collocate ();
-	std::cout << *obs_set;
+	// mix with messages..
+	messages.rewind ();
+	obs_set->rewind ();
+	while (true)	
+	{
+		double o_next = obs_set->getNextCtime ();
+		double m_next = messages.getNextCtime ();
+		if (isnan (o_next) && isnan (m_next))
+			break;
+		if (isnan (o_next))
+		{
+		  	messages.printUntil (m_next, std::cout);
+			break;
+		}
+		if (isnan (m_next))
+		{
+		  	obs_set->printUntil (o_next, std::cout);
+			break;
+		}
+		if (m_next < o_next)
+			messages.printUntil (o_next, std::cout);
+		else
+			obs_set->printUntil (m_next, std::cout);
+	}
 }
 
-
-void
-Rts2NightReport::printStatistics ()
+void Rts2NightReport::printStatistics ()
 {
 	obs_set->printStatistics (std::cout);
 }
 
-
-void
-Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
+void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 {
 	obs_set = new rts2db::ObservationSet ();
 	obs_set->loadTime (t_start, t_end);
+
+	messages.load (*t_start, *t_end, 0x0f);
 
 	if (!printEmpty && obs_set->empty ())
 	{
@@ -265,9 +278,7 @@ Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 	}
 }
 
-
-int
-Rts2NightReport::doProcessing ()
+int Rts2NightReport::doProcessing ()
 {
 	//  char *whereStr;
 	Rts2Config *config;
@@ -336,9 +347,7 @@ Rts2NightReport::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2NightReport app = Rts2NightReport (argc, argv);
 	return app.run ();

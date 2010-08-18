@@ -130,3 +130,19 @@ void MessageSet::load (double from, double to, int type_mask)
 	EXEC SQL CLOSE cur_message;
 	EXEC SQL COMMIT;
 }
+
+double MessageSet::getNextCtime ()
+{
+	if (timeLogIter != end ())
+		return timeLogIter->getMessageTime ();
+	return rts2_nan ("f");
+}
+
+void MessageSet::printUntil (double time, std::ostream &os)
+{
+	while (timeLogIter != end () && timeLogIter->getMessageTime () <= time)
+	{
+		os << (*timeLogIter);
+		timeLogIter++;
+	}
+}
