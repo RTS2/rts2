@@ -6,5 +6,6 @@ noinst_HEADERS = config.h	\
 		telescope_info.h \
 		imgdisplay.h	\
 		message.h	\
-		strtok.h
+		strtok.h	\
+		xmlerror.h
 
