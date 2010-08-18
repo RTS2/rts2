@@ -74,7 +74,7 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	DevScript::postEvent (event);
 	Rts2DevClientCameraImage::postEvent (event);
 	// must be done after processing trigger in parent
-	if (type == EVENT_TRIGGERED)
+	if (type == EVENT_TRIGGERED && !waitForExposure)
 		nextCommand ();
 }
 
@@ -190,6 +190,11 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 		}
 	}
+	else if (nextComd->getBopMask () & BOP_EXPOSURE)
+	{
+		if (waitForExposure)
+			return;
+	}
 
 	// send command to other device
 	if (cmdConn)
@@ -288,7 +293,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
 	int ret;
 	// make sure script continues if it is waiting for metadata
-	if (waitMetaData)
+	if (waitMetaData && !waitForExposure)
 		nextCommand ();
 	// try processing in script..
 	if (exposureScript.get ())
