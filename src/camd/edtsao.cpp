@@ -397,7 +397,7 @@ int EdtSao::writeBinFile (const char *filename)
 	std::string full_name;
 
 	if (*filename != '/')
-		full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
+		full_name = signalFileDir->getValue () + std::string (filename);
 	else
 		full_name = std::string (filename);
 
@@ -431,7 +431,7 @@ int EdtSao::writeSignalFile (const char *filename)
 	std::string full_name;
 
 	if (*filename != '/')
-		full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
+		full_name = signalFileDir->getValue () + std::string (filename);
 	else
 		full_name = std::string (filename);
 
@@ -1337,8 +1337,8 @@ int EdtSao::init ()
 		createValue (channels[i], chname, "channel on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
 		channels[i]->setValueBool (true);
 
-		sprintf (daoname, "DAO_%02d", i + 1);
-		createValue (ADoffsets[i], daoname, "[ADU] D/A offset", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+		sprintf (daoname, "ADO_%02d", i + 1);
+		createValue (ADoffsets[i], daoname, "[ADU] A/D offset", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		ADoffsets[i]->setValueInteger (0x100);
 	}
 
