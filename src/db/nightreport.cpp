@@ -36,6 +36,7 @@
 #define STAT_SUPER           2
 
 #define OPT_NOMESSAGES       OPT_LOCAL + 600
+#define OPT_MESSAGEALL       OPT_LOCAL + 601
 
 /**
  * Produces night report output.
@@ -96,7 +97,7 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_arg
 	totalGoodImages = 0;
 	totalObs = 0;
 
-	messageMask = 0x0f;
+	messageMask = MESSAGE_REPORTIT;
 
 	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
 	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours. Date is in YYYY-MM-DD format.");
@@ -111,6 +112,7 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_arg
 	addOption ('S', NULL, 0, "print night statistics - % of time used for observation");
 	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
 	addOption (OPT_NOMESSAGES, "nomsg", 0, "do not print messages");
+	addOption (OPT_MESSAGEALL, "allmsg", 0, "print all messages");
 }
 
 Rts2NightReport::~Rts2NightReport (void)
@@ -180,6 +182,9 @@ int Rts2NightReport::processOption (int in_opt)
 			break;
 		case OPT_NOMESSAGES:
 			messageMask = 0;
+			break;
+		case OPT_MESSAGEALL:
+			messageMask = 0x0f;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
