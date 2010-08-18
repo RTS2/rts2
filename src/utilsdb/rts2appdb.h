@@ -50,11 +50,11 @@ class Rts2SqlQuery
 
 class Rts2AppDb:public Rts2CliApp
 {
-	private:
-		char *connectString;
-		char *configFile;
+	public:
+		Rts2AppDb (int argc, char **argv);
+		virtual ~ Rts2AppDb (void);
 
-		int initDB ();
+		virtual int init ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -65,15 +65,10 @@ class Rts2AppDb:public Rts2CliApp
 		 */
 		virtual bool doInitDB ();
 		virtual void afterProcessing ();
+	private:
+		char *connectString;
+		char *configFile;
 
-	public:
-		Rts2AppDb (int argc, char **argv);
-		virtual ~ Rts2AppDb (void);
-
-		virtual int init ();
-
-		int parseDate (const char *in_date, double &JD);
-
-		int parseDate (const char *in_date, time_t *out_time);
+		int initDB ();
 };
 #endif							 /* !__RTS2_APPDB__ */

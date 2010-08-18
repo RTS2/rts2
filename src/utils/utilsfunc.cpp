@@ -21,6 +21,7 @@
 
 #include <errno.h>
 #include <malloc.h>
+#include <iostream>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -61,6 +62,61 @@ int mkpath (const char *path, mode_t mode)
 	}
 	free (cp_path);
 	return ret;
+}
+
+int parseDate (const char *in_date, struct ln_date *out_time)
+{
+	int ret;
+	int ret2;
+	out_time->hours = out_time->minutes = 0;
+	out_time->seconds = 0;
+	ret = sscanf (in_date, "%d-%d-%d%n", &out_time->years, &out_time->months, &out_time->days, &ret2);
+	if (ret == 3)
+	{
+		in_date += ret2;
+		// we end with is T, let's check if it contains time..
+		if (*in_date == 'T' || isspace (*in_date))
+		{
+			in_date++;
+			ret2 = 	sscanf (in_date, "%u:%u:%lf", &out_time->hours,	&out_time->minutes, &out_time->seconds);
+			if (ret2 == 3)
+				return 0;
+			ret2 = 	sscanf (in_date, "%u:%u", &out_time->hours, &out_time->minutes);
+			if (ret2 == 2)
+				return 0;
+			ret2 = sscanf (in_date, "%d", &out_time->hours);
+			if (ret2 == 1)
+				return 0;
+			std::cerr << "Cannot parse time of the date: " << in_date << std::endl;
+			return -1;
+		}
+		// only year..
+		return 0;
+	}
+	std::cerr << "Cannot parse date: " << in_date << std::endl;
+	return -1;
+}
+
+int parseDate (const char *in_date, double &JD)
+{
+	struct ln_date l_date;
+	int ret;
+	ret = parseDate (in_date, &l_date);
+	if (ret)
+		return ret;
+	JD = ln_get_julian_day (&l_date);
+	return 0;
+}
+
+int parseDate (const char *in_date, time_t *out_time)
+{
+	int ret;
+	struct ln_date l_date;
+	ret = parseDate (in_date, &l_date);
+	if (ret)
+		return ret;
+	ln_get_timet_from_julian (ln_get_julian_day (&l_date), out_time);
+	return 0;
 }
 
 std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter)

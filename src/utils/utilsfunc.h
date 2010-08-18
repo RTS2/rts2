@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sstream>
+#include <libnova/libnova.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +63,20 @@ double random_num ();
  * @return 0 on success, otherwise error code.
  */
 int mkpath (const char *path, mode_t mode);
+
+/**
+ * Parses and initialize tm structure from char.
+ *
+ * String can contain either date, in that case it will be converted to night
+ * starting on that date, or full date with time (hour, hour:min, or hour:min:sec).
+ *
+ * @return -1 on error, 0 on succes
+ */
+int parseDate (const char *in_date, struct ln_date *out_time);
+
+int parseDate (const char *in_date, double &JD);
+
+int parseDate (const char *in_date, time_t *out_time);
 
 /**
  * Split std::string to vector of strings.

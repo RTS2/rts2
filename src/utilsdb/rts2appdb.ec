@@ -45,7 +45,6 @@ Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
 	where = NULL;
 }
 
-
 Rts2SqlQuery::~Rts2SqlQuery (void)
 {
 	std::list <Rts2SqlColumn *>::iterator col_iter1, col_iter2;
@@ -64,9 +63,7 @@ Rts2SqlQuery::~Rts2SqlQuery (void)
 		delete[] where;
 }
 
-
-void
-Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
+void Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
 {
 	columns.push_back (add_column);
 	if (sql)
@@ -74,16 +71,12 @@ Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
 	sql = NULL;
 }
 
-
-void
-Rts2SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
+void Rts2SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
 {
 	Rts2SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name, in_order));
 }
 
-
-void
-Rts2SqlQuery::addWhere (const char *in_where)
+void Rts2SqlQuery::addWhere (const char *in_where)
 {
 	if (!where)
 	{
@@ -101,9 +94,7 @@ Rts2SqlQuery::addWhere (const char *in_where)
 	}
 }
 
-
-char *
-Rts2SqlQuery::genSql ()
+char * Rts2SqlQuery::genSql ()
 {
 	std::string query;
 	std::string order_by;
@@ -160,9 +151,7 @@ Rts2SqlQuery::genSql ()
 	return sql;
 }
 
-
-void
-Rts2SqlQuery::displayMinusPlusLine ()
+void Rts2SqlQuery::displayMinusPlusLine ()
 {
 	std::list <Rts2SqlColumn *>::iterator col_iter;
 	for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
@@ -175,9 +164,7 @@ Rts2SqlQuery::displayMinusPlusLine ()
 	std::cout << std::endl;
 }
 
-
-void
-Rts2SqlQuery::display ()
+void Rts2SqlQuery::display ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		char *stmp;
@@ -353,7 +340,6 @@ Rts2SqlQuery::display ()
 	EXEC SQL DEALLOCATE DESCRIPTOR disp_desc;
 }
 
-
 Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_argv)
 {
 	connectString = NULL;
@@ -364,16 +350,13 @@ Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_arg
 	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
-
 Rts2AppDb::~Rts2AppDb ()
 {
 	if (connectString)
 		delete connectString;
 }
 
-
-int
-Rts2AppDb::processOption (int in_opt)
+int Rts2AppDb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -393,16 +376,12 @@ Rts2AppDb::processOption (int in_opt)
 	return 0;
 }
 
-
-bool
-Rts2AppDb::doInitDB ()
+bool Rts2AppDb::doInitDB ()
 {
 	return true;
 }
 
-
-void
-Rts2AppDb::afterProcessing ()
+void Rts2AppDb::afterProcessing ()
 {
 	if (doInitDB ())
 	{
@@ -410,9 +389,7 @@ Rts2AppDb::afterProcessing ()
 	}
 }
 
-
-int
-Rts2AppDb::initDB ()
+int Rts2AppDb::initDB ()
 {
 	std::string cs;
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -478,9 +455,7 @@ Rts2AppDb::initDB ()
 	return 0;
 }
 
-
-int
-Rts2AppDb::init ()
+int Rts2AppDb::init ()
 {
 	Rts2Config *config;
 	int ret;
@@ -503,27 +478,3 @@ Rts2AppDb::init ()
 }
 
 
-int
-Rts2AppDb::parseDate (const char *in_date, double &JD)
-{
-	struct ln_date l_date;
-	int ret;
-	ret = Rts2CliApp::parseDate (in_date, &l_date);
-	if (ret)
-		return ret;
-	JD = ln_get_julian_day (&l_date);
-	return 0;
-}
-
-
-int
-Rts2AppDb::parseDate (const char *in_date, time_t *out_time)
-{
-	int ret;
-	struct ln_date l_date;
-	ret = Rts2CliApp::parseDate (in_date, &l_date);
-	if (ret)
-		return ret;
-	ln_get_timet_from_julian (ln_get_julian_day (&l_date), out_time);
-	return 0;
-}
