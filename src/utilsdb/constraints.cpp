@@ -23,6 +23,8 @@
 
 bool between (double val, double low, double upper)
 {
+	if (isnan (val))
+		return false;
 	if (isnan (low) && isnan (upper))
 		return true;
 	if (isnan (low))
