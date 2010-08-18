@@ -19,6 +19,7 @@
 
 #include "constraints.h"
 #include "../utils/utilsfunc.h"
+#include "../utils/rts2config.h"
 #include <xmlerror.h>
 
 bool between (double val, double low, double upper)
@@ -41,9 +42,43 @@ bool ConstraintTimeInterval::satisfy (Target *target, double JD)
 	return between (JD, from, to);
 }
 
+bool ConstraintDoubleInterval::isBetween (double val)
+{
+	return between (val, getLower (), getUpper ());
+}
+
 bool ConstraintAirmass::satisfy (Target *tar, double JD)
 {
-	return between (tar->getAirmass (JD), getLower (), getUpper ());
+	return isBetween (tar->getAirmass (JD));
+}
+
+bool ConstraintHA::satisfy (Target *tar, double JD)
+{
+	return isBetween (tar->getHourAngle (JD));
+}
+
+bool ConstraintLunarDistance::satisfy (Target *tar, double JD)
+{
+	return isBetween (tar->getLunarDistance (JD));
+}
+
+bool ConstraintLunarPhase::satisfy (Target *tar, double JD)
+{
+	return isBetween (ln_get_lunar_phase (JD));
+}
+
+bool ConstraintSolarDistance::satisfy (Target *tar, double JD)
+{
+	return isBetween (tar->getSolarDistance (JD));
+}
+
+bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
+{
+	struct ln_equ_posn eq_sun;
+	struct ln_hrz_posn hrz_sun;
+	ln_get_solar_equ_coords (JD, &eq_sun);
+	ln_get_hrz_from_equ (&eq_sun, Rts2Config::instance ()->getObserver (), JD, &hrz_sun);
+	return isBetween (hrz_sun.alt);
 }
 
 Constraints::~Constraints ()
@@ -108,6 +143,16 @@ void Constraints::load (xmlNodePtr _node)
 			}
 			if (xmlStrEqual (cons->name, (xmlChar *) "airmass"))
 				push_back (new ConstraintAirmass (lower, upper));
+			else if (xmlStrEqual (cons->name, (xmlChar *) "HA"))
+				push_back (new ConstraintHA (lower, upper));
+			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarDistance"))
+				push_back (new ConstraintLunarDistance (lower, upper));
+			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarPhase"))
+				push_back (new ConstraintLunarPhase (lower, upper));
+			else if (xmlStrEqual (cons->name, (xmlChar *) "solarDistance"))
+				push_back (new ConstraintSolarDistance (lower, upper));
+			else if (xmlStrEqual (cons->name, (xmlChar *) "sunAltitude"))
+				push_back (new ConstraintSunAltitude (lower, upper));
 			else
 				throw XmlUnexpectedNode (cons);
 		}

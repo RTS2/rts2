@@ -54,6 +54,8 @@ class ConstraintDoubleInterval:public Constraint
 	protected:
 		double getLower () { return lower; }
 		double getUpper () { return upper; }
+		bool isBetween (double val);
+
 	private:
 		double lower;
 		double upper;
@@ -63,6 +65,41 @@ class ConstraintAirmass:public ConstraintDoubleInterval
 {
 	public:
 		ConstraintAirmass (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		virtual bool satisfy (Target *tar, double JD);
+};
+
+class ConstraintHA:public ConstraintDoubleInterval
+{
+	public:
+		ConstraintHA (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		virtual bool satisfy (Target *tar, double JD);
+};
+
+class ConstraintLunarDistance:public ConstraintDoubleInterval
+{
+	public:
+		ConstraintLunarDistance (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		virtual bool satisfy (Target *tar, double JD);
+};
+
+class ConstraintLunarPhase:public ConstraintDoubleInterval
+{
+	public:
+		ConstraintLunarPhase (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		virtual bool satisfy (Target *tar, double JD);
+};
+
+class ConstraintSolarDistance:public ConstraintDoubleInterval
+{
+	public:
+		ConstraintSolarDistance (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		virtual bool satisfy (Target *tar, double JD);
+};
+
+class ConstraintSunAltitude:public ConstraintDoubleInterval
+{
+	public:
+		ConstraintSunAltitude (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
