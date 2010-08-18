@@ -320,7 +320,7 @@ Rts2ScheduleApp::processOption (int _opt)
 			break;
 		case 'o':
 			obsNight = new struct ln_date;
-			return Rts2CliApp::parseDate (optarg, obsNight);
+			return parseDate (optarg, obsNight);
 		case OPT_START_DATE:
 			return parseDate (optarg, startDate);
 		case OPT_END_DATE:
