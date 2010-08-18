@@ -230,6 +230,13 @@ imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 	return IMAGE_DO_BASIC_PROCESSING;
 }
 
+void Rts2DevClientCameraImage::stateChanged (Rts2ServerState * state)
+{
+	rts2core::Rts2DevClientCamera::stateChanged (state);
+	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
+		triggered = false;
+}
+
 void Rts2DevClientCameraImage::exposureStarted ()
 {
 	double exposureTime = getConnection ()->getValueDouble ("exposure");

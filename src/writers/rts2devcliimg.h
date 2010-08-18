@@ -51,7 +51,8 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual void beforeProcess (Rts2Image * image);
 
 		void processCameraImage (CameraImages::iterator cis);
-
+		virtual void stateChanged (Rts2ServerState * state);
+ 
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
 	protected:
 
