@@ -19,6 +19,9 @@
 
 #include "target.h"
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+
 namespace rts2db
 {
 
@@ -59,14 +62,38 @@ class ConstraintDoubleInterval:public Constraint
 class ConstraintAirmass:public ConstraintDoubleInterval
 {
 	public:
+		ConstraintAirmass (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class Constraints:public std::vector <Constraints *>
+class Constraints:public std::vector <Constraint *>
 {
 	public:
 		Constraints () {}
+
+		~Constraints ();
+		/**
+		 * Check if constrains are satisfied.
+		 *
+		 * @param tar   target for which constraints will be checked
+		 * @param JD    Julian date of constraints check
+		 */
 		bool satisfy (Target *tar, double JD);
+
+		/**
+		 * Return number of violated constainst.
+		 *
+		 * @param tar   target for which violated constrains will be calculated
+		 * @param JD    Julian date of constraints check
+		 */
+		size_t violated (Target *tar, double JD);
+
+		/**
+		 * Load constraints from XML constraint node. Please see constraints.xsd for details.
+		 *
+		 * @throw XmlError
+		 */
+		void load (xmlNodePtr _node);
 };
 
 }

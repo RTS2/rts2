@@ -18,6 +18,8 @@
  */
 
 #include "constraints.h"
+#include "../utils/utilsfunc.h"
+#include <xmlerror.h>
 
 bool between (double val, double low, double upper)
 {
@@ -42,6 +44,13 @@ bool ConstraintAirmass::satisfy (Target *tar, double JD)
 	return between (tar->getAirmass (JD), getLower (), getUpper ());
 }
 
+Constraints::~Constraints ()
+{
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+		delete *iter;
+	clear ();
+}
+
 bool Constraints::satisfy (Target *tar, double JD)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
@@ -50,4 +59,55 @@ bool Constraints::satisfy (Target *tar, double JD)
 			return false;
 	}
 	return true;
+}
+
+size_t Constraints::violated (Target *tar, double JD)
+{
+	size_t vn = 0;
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (!((*iter)->satisfy (tar, JD)))
+			vn++;
+	}
+	return vn;
+}
+
+void Constraints::load (xmlNodePtr _node)
+{
+	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)
+	{
+		if (xmlStrEqual (cons->name, (xmlChar *) "time"))
+		{
+			double from = rts2_nan ("f");
+			double to = rts2_nan ("f");
+			for (xmlNodePtr par = cons->children; par != NULL; par = par->next)
+			{
+				if (xmlStrEqual (par->name, (xmlChar *) "from"))
+					parseDate ((const char *) par->children->content, from);
+				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
+					parseDate ((const char *) par->children->content, to);
+				else
+					throw XmlUnexpectedNode (par);
+			}
+			push_back (new ConstraintTimeInterval (from, to));
+		}
+		else // assume it is DoubleInterval node
+		{
+			double lower = rts2_nan ("f");
+			double upper = rts2_nan ("f");
+			for (xmlNodePtr par = cons->children; par != NULL; par = par->next)
+			{
+				if (xmlStrEqual (par->name, (xmlChar *) "lower"))
+					lower = atof ((const char *) par->children->content);
+				else if (xmlStrEqual (par->name, (xmlChar *) "upper"))
+					upper = atof ((const char *) par->children->content);
+				else
+					throw XmlUnexpectedNode (par);
+			}
+			if (xmlStrEqual (cons->name, (xmlChar *) "airmass"))
+				push_back (new ConstraintAirmass (lower, upper));
+			else
+				throw XmlUnexpectedNode (cons);
+		}
+	}
 }
