@@ -47,7 +47,7 @@ class Keithley:public Gpib
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-		virtual bool canCallInfoFromTimer () { return (triggerMode->getValueInteger () == 1) && (getDeviceBopState () & BOP_TEL_MOVE ? false : true); }
+		virtual bool canCallInfoFromTimer () { return false; }
 
 	private:
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
@@ -94,15 +94,11 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 		rval *= 1e+12;
 		sval->addValue (rval);
 		val->addValue (rval);
-		/*logStream (MESSAGE_DEBUG) << "data "
-			<< *((float *) (top + 0)) << " "
-			<< *((float *) (top + 4)) << " "
-			<< *((float *) (top + 8)) << sendLog; */
 		times->addValue (*((float *) (top + 4)));
 		count--;
 		top += 12;
 	}
-	logStream (MESSAGE_DEBUG) << "size " << sval->getNumMes () << " " << val->size () << " count " << count << sendLog;
+	logStream (MESSAGE_DEBUG) << "received " << sval->getNumMes () << " readings." << sendLog;
 	delete[]rbuf;
 }
 
@@ -307,7 +303,6 @@ void Keithley::setFullBopState (int new_state)
 				maskState (BOP_TRIG_EXPOSE | BOP_TEL_MOVE, BOP_TEL_MOVE, "end waiting for exposure trigger");
 			else
 				maskState (BOP_TRIG_EXPOSE, 0, "end waiting for exposure trigger");
-			logStream (MESSAGE_DEBUG) << "triggering infoAll" << sendLog;
 			infoAll ();
 			logStream (MESSAGE_DEBUG) << "infoAll triggered" << sendLog;
 			if (triggerMode->getValueInteger () == 1)
@@ -344,6 +339,8 @@ int Keithley::info ()
 		int ret = Gpib::info ();
 		if (ret)
 			return ret;
+
+		logStream (MESSAGE_DEBUG) << "trigger readout" << sendLog;
 		// now wait for SQR
 		gpibWaitSRQ ();
 		sleep (1);

@@ -150,7 +150,7 @@ int Phytron::setAxis (int new_val)
 {
 	int ret;
 	sprintf (cmdbuf, "01A%i", new_val);
-	logStream (MESSAGE_DEBUG) << "Change axis to " << new_val << sendLog;
+	logStream (MESSAGE_DEBUG) << "commanding axis to " << new_val << sendLog;
 	ret = writePort (cmdbuf);
 	if (ret)
 		return ret;
@@ -162,6 +162,7 @@ int Phytron::setAxis (int new_val)
 		ret = readAxis ();
 	}
 	while (axis0->getValueInteger () != new_val);
+	logStream (MESSAGE_DEBUG) << "axis reached " << new_val << sendLog;
 	return 0;
 }
 
