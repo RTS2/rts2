@@ -59,12 +59,12 @@ int Dome::domeCloseStart ()
 
 	if (startClose ())
 	{
-		logStream (MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
+		logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
 		return -1;
 	}
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
 	{
-		logStream (MESSAGE_INFO) << "closing dome" << sendLog;
+		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
 	}
 	maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
 	return 0;
@@ -74,7 +74,7 @@ int Dome::domeCloseEnd ()
 {
  	if (endClose ())
 	{
-		logStream (MESSAGE_ERROR) << "cannot end closing of the dome" << sendLog;
+		logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot end closing of the dome" << sendLog;
 	}
 	maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
 	return 0;
