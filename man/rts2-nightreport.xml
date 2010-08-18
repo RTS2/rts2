@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.2</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2007,2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -103,6 +103,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--nomsg</option></arg>
+      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -110,8 +113,7 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>rts2-targetsinfo</command> list various informations about target(s) given by target id or other parameters at the 
-      command line.
+      <command>rts2-nightreport</command> prints night(s) reports.
     </para>
 
   </refsect1>
@@ -172,263 +174,19 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-e</option></term>
+        <term><option>--nomsg</option></term>
         <listitem>
-          <para>Print extended information about source - visibility in next 10 hours and next 10 days.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></term>
-        <listitem>
-          <para>
-	    Print commands for gnuplot. Usual call with -g option will be:
-	    <screen>
-	      <command>&dhpackage;</command> <option>-g</option> | <command>gnuplot</command>
-	    </screen>
-	    Please do not make space between -g and <replaceable>gnuplot-option</replaceable>.
-	    <replaceable>gnuplot-option</replaceable> can be one of the following:
-	    <variablelist>
-	      <varlistentry>
-	        <term><option>x11</option></term>
-		<listitem>
-		  <para>Prints command for plot to X11 terminal.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>ps</option></term>
-		<listitem>
-		  <para>Tell gnuplot to output to the ps file.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>png</option></term>
-		<listitem>
-		  <para>Tell gnuplot to output to the png file.</para>
-		</listitem>
-	      </varlistentry>
-	    </variablelist>
-	  .</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-b</option></term>
-	<listitem>
-	  <para>
-	    Prints target(s) bonus. This option does not print target
-	    altitude and airmass. This option activate gnuplot mode - see
-	    <option>-g</option> option for details how to use its output. 
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-B</option></term>
-	<listitem>
-	  <para>
-	    Prints target(s) bonus. This option print target altitude and
-	    airmass, so the output is a bit messy. This option activate gnuplot
-	    mode - see <option>-g</option> option for details how to use its
-	    output. 
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-m</option></term>
-        <listitem>
-          <para>Plot moon coordinates at the graph.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-c</option></term>
-        <listitem>
-          <para>Find calibration files for given source and print them.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-o</option></term>
-        <listitem>
-          <para>Print observations of given target(s).</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-i</option></term>
-        <listitem>
-          <para>Print acquired images as well.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-I</option></term>
-        <listitem>
-          <para>Images summary rows.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-p</option></term>
-        <listitem>
-          <para>Print counts measured by photometer.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-P</option></term>
-        <listitem>
-          <para>Summary of photometer counts.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-t <replaceable class="parameter">target type</replaceable></option></term>
-        <listitem>
-          <para>List information for given target types. <replaceable>target type</replaceable> can be one of the following:
-	    <variablelist>
-	      <varlistentry>
-	        <term><option>O</option></term>
-		<listitem>
-		  <para>Opportunity targets, various observations stuff.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>G</option></term>
-		<listitem>
-		  <para>Gamma Ray Bursts, as received from GCN.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>S</option></term>
-		<listitem>
-		  <para>Sky survey targets.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>E</option></term>
-		<listitem>
-		  <para>Elliptical targets, various small solar system bodies.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>P</option></term>
-		<listitem>
-		  <para>Gallactic plane scan.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>H</option></term>
-		<listitem>
-		  <para>HETE field of view target.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>t</option></term>
-		<listitem>
-		  <para>Technical target, so far not used.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>T</option></term>
-		<listitem>
-		  <para>Terrestial target. This one have fixed HA and DEC.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>m</option></term>
-		<listitem>
-		  <para>Modelling target. That one is used to build telescope pointing model.</para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term><option>L</option></term>
-		<listitem>
-		  <para>Planets. Used to observe Sun, all solar system planes including one dwarf planet (Pluto) and the Moon.</para>
-		</listitem>
-	      </varlistentry>
-	    </variablelist>
-	    You can find all targets type in "types" table in the database.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-9</option></term>
-        <listitem>
-          <para>Prints out DS9 .reg file. That is especially usefull for GRB observations, when it prints out various error boxes.</para>
+          <para>Do not print messages.</para>
         </listitem>
       </varlistentry>
     </variablelist>
-  </refsect1>
-  <refsect1>
-    <title>TARGET INFO OUTPUT</title>
-
-    <para>
-      Default target info call will output various target values. Those should
-      be easy to understand, as they are written in plain english and describe
-      basic celestial body properties.
-    </para>
-
-    <para>
-      A bit tricky to understand can be HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE,
-      SUN POSITION table. It list various target parameters, spaced by 1 hour.
-      First row in table is UT hour, -1 is 1 hour before start interval which can be read from table header.
-      Following abrevations are used inside table:
-    </para>
-
-    <variablelist>
-      <varlistentry>
-        <term><option>H</option></term>
-        <listitem>
-          <para>Hour from start date.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>ALT</option></term>
-        <listitem>
-          <para>Object altitude.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>AZ</option></term>
-        <listitem>
-          <para>Object azimuth.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>AIR</option></term>
-        <listitem>
-          <para>Object airmass at give time.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>LD</option></term>
-        <listitem>
-          <para>Object-Lunar distance in degrees.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>SD</option></term>
-        <listitem>
-          <para>Object-Solar distance in degrees.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>SAL</option></term>
-        <listitem>
-          <para>Altitude of the Sun.</para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>SAZ</option></term>
-        <listitem>
-          <para>Azimuth of the Sun.</para>
-	</listitem>
-      </varlistentry>
-    </variablelist>
-
-  </refsect1>
+   </refsect1>
 
   <refsect1>
     <title>EXAMPLES</title>
 
     <screen>
-      <command>&dhpackage;</command> <option>-b</option> <option>-g<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
-    </screen>
-
-    <screen>
-      <command>&dhpackage;</command> <option>-c</option> <replaceable>1000</replaceable>
+      <command>&dhpackage;</command> <option>-n</option> <replaceable>2007-12-12</replaceable>
     </screen>
 
   </refsect1>
