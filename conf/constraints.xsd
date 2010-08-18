@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Validation file for scheduler files.
+  Validate with xmllint -schema schedule.xsd schedule
+
+  Copyright 2010 Petr Kubanek petr@kubanek.net
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:complexType name="timeInterval">
+   <xs:sequence minOccurs="1" maxOccurs="unbounded">
+     <xs:element name="from" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+     <xs:element name="to" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+   </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="doubleIterval">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="lower" type="xs:double" minOccurs="0"/>
+      <xs:element name="upper" type="xs:double" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="constraints">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="time" type="timeInterval"/>
+      <xs:element name="airmass" type="doubleIterval"/>
+      <xs:element name="HA" type="doubleIterval"/>
+      <xs:element name="measuredSeeing" type="doubleIterval"/>
+      <xs:element name="expectedSeeing" type="doubleIterval"/>
+      <xs:element name="lunarDistance" type="doubleIterval"/>
+      <xs:element name="lunarPhase" type="doubleIterval"/>
+      <xs:element name="solarDistance" type="doubleIterval"/>
+      <xs:element name="sunAltitude" type="doubleIterval"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:element name="constraints" type="constraints"/>
+</xs:schema>

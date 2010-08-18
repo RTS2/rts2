@@ -1,0 +1,14 @@
+<!--
+  Scheduler request.
+  Petr Kubanek <petr@kubanek.net>
+-->
+<cronos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:cronos.xsd">
+  <event>
+    <conditions>
+      <afterRoofOpens timeout="300"/>
+    </conditions>
+    <actions>
+      <now>1027</now>
+    </actions>
+  </event>
+</cronos>

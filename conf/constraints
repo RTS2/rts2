@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<constraints>
+	<time>
+		<to>2010-08-08T14:13:12</to>
+	</time>
+	<time>
+		<from>2010-10-08T14:15:16</from>
+		<to>2010-11-08T11:12:13</to>
+	</time>
+	<airmass>
+		<lower>1.2</lower>
+	</airmass>
+</constraints>

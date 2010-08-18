@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Validation file for cronos files. Holds fixed time entries.
+  Validate with xmllint -schema cronos.xsd cronos
+
+  Copyright 2010 Petr Kubanek petr@kubanek.net
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="afterRoofOpens">
+    <xs:attribute name="timeout" type="xs:double"/>
+  </xs:complexType>
+
+  <xs:complexType name="conditions">
+    <xs:sequence>
+      <xs:element name="afterRoofOpens" type="afterRoofOpens"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="actions">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element name="now" type="xs:integer"/>
+      <xs:element name="clear"/>
+      <xs:element name="queue" type="xs:integer"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="event">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="conditions" type="conditions"/>
+      <xs:element name="actions" type="actions"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="cronos">
+    <xs:sequence maxOccurs="unbounded">
+      <xs:element name="event" type="event"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="cronos" type="cronos"/>
+</xs:schema>
