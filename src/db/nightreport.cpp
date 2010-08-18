@@ -142,7 +142,7 @@ int Rts2NightReport::processOption (int in_opt)
 			break;
 		case 'n':
 			tm_night = new struct ln_date;
-			return Rts2CliApp::parseDate (optarg, tm_night);
+			return parseDate (optarg, tm_night);
 		case 'N':
 			std::cout << pureNumbers;	
 			break;

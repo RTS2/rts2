@@ -18,6 +18,7 @@
  */
 
 #include "printtarget.h"
+#include "../utils/utilsfunc.h"
 
 #define OPT_FULL_DAY       OPT_LOCAL + 200
 #define OPT_NAME           OPT_LOCAL + 201
