@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "../utilsdb/constraints.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
@@ -81,6 +82,9 @@ class PrintTarget:public Rts2AppDb
 		double gbeg, gend;
 
 		double airmd;
+
+		const char *constraintFile;
+		rts2db::Constraints *constraints;
 };
 
 }

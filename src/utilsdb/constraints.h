@@ -94,6 +94,13 @@ class Constraints:public std::vector <Constraint *>
 		 * @throw XmlError
 		 */
 		void load (xmlNodePtr _node);
+
+		/**
+		 * Load constraints from file.
+		 *
+		 * @param filename   name of file holding constraints in XML
+		 */
+		void load (const char *filename);
 };
 
 }

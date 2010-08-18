@@ -111,3 +111,21 @@ void Constraints::load (xmlNodePtr _node)
 		}
 	}
 }
+
+void Constraints::load (const char *filename)
+{
+	LIBXML_TEST_VERSION
+
+	xmlLineNumbersDefault (1);
+	xmlDoc *doc = xmlReadFile (filename, NULL, XML_PARSE_NOBLANKS);
+	if (doc == NULL)
+		throw XmlError ("cannot parse constraint file " + std::string (filename));
+
+	xmlNodePtr root_element = xmlDocGetRootElement (doc);
+	if (!xmlStrEqual (root_element->name, (xmlChar *) "constraints"))
+		throw XmlUnexpectedNode (root_element);
+
+	load (root_element);
+	xmlFreeDoc (doc);
+	xmlCleanupParser ();
+}

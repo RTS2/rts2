@@ -20,9 +20,10 @@
 #include "printtarget.h"
 #include "../utils/utilsfunc.h"
 
-#define OPT_FULL_DAY       OPT_LOCAL + 200
-#define OPT_NAME           OPT_LOCAL + 201
-#define OPT_PARSE_SCRIPT   OPT_LOCAL + 202
+#define OPT_FULL_DAY              OPT_LOCAL + 200
+#define OPT_NAME                  OPT_LOCAL + 201
+#define OPT_PARSE_SCRIPT          OPT_LOCAL + 202
+#define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 203
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -74,6 +75,8 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 
 	airmd = rts2_nan ("f");
 
+	constraintFile = NULL;
+
 	addOption ('e', NULL, 0, "print extended informations (visibility prediction,..)");
 	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
@@ -93,6 +96,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
+	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 }
 
 PrintTarget::~PrintTarget ()
@@ -185,6 +189,9 @@ int PrintTarget::processOption (int in_opt)
 		case OPT_PARSE_SCRIPT:
 			printExtended = -2;
 			scriptCameras.push_back (std::string (optarg));
+			break;
+		case OPT_CHECK_CONSTRAINTS:
+			constraintFile = optarg;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -290,6 +297,13 @@ void PrintTarget::printTarget (Target *target)
 				}
 				printScripts (target, "script for camera ");
 			}
+		}
+		// test and print constraints
+		if (constraintFile && constraints)
+		{
+			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl
+				<< "number of violations " << constraints->violated (target, JD) << std::endl;
+			
 		}
 		// print recomended calibrations targets
 		if (printCalTargets)
@@ -616,6 +630,12 @@ int PrintTarget::init ()
 	ret = cameras.load ();
 	if (ret)
 		return -1;
+
+	if (constraintFile)
+	{
+		constraints = new rts2db::Constraints ();
+		constraints->load (constraintFile);
+	}
 
 	return 0;
 }
