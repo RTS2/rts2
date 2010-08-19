@@ -29,6 +29,32 @@ namespace rts2plan
 {
 
 /**
+ * Holds target together with its bonus. Used to order targets by bonus for
+ * selection.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TargetEntry
+{
+	public:
+		TargetEntry (Target *_target) { target = _target; bonus = rts2_nan ("f"); }
+		~TargetEntry () { delete target; }
+		Target * target;
+		double bonus;
+		void updateBonus () { bonus = target->getBonus (); }
+};
+
+/**
+ * For sorting TargetEntry by bonus.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+struct bonusSort: public std::binary_function <TargetEntry *, TargetEntry *, bool>
+{
+	bool operator () (TargetEntry * t1, TargetEntry * t2) { return t1->bonus > t2->bonus; }
+};
+
+/**
  * Select next target. Traverse list of targets which are enabled and select
  * target with biggest priority.
  *
@@ -36,31 +62,6 @@ namespace rts2plan
  */
 class Selector
 {
-	private:
-		std::list < Target * >possibleTargets;
-		void considerTarget (int consider_tar_id, double JD);
-		std::vector <char> nightDisabledTypes;
-		void checkTargetObservability ();
-		void checkTargetBonus ();
-		void findNewTargets ();
-		int selectFlats ();
-		int selectDarks ();
-		struct ln_lnlat_posn *observer;
-		double flat_sun_min;
-		double flat_sun_max;
-
-		/**
-		 * Checks if type is among types disabled for night selection.
-		 *
-		 * @param type_id   Type id which will be checked for incursion in nightDisabledTypes.
-		 *
-		 * @return True if type is among disabled types.
-		 */
-		bool isInNightDisabledTypes (char target_type)
-		{
-			return (std::find (nightDisabledTypes.begin (), nightDisabledTypes.end (), target_type) != nightDisabledTypes.end ());
-		}
-
 	public:
 		Selector (struct ln_lnlat_posn *in_observer);
 		virtual ~ Selector (void);
@@ -90,6 +91,30 @@ class Selector
 		 * @return -1 if list is incorrect, otherwise 0.
 		 */
 		int setNightDisabledTypes (const char *types);
+	private:
+		std::vector < TargetEntry* > possibleTargets;
+		void considerTarget (int consider_tar_id, double JD);
+		std::vector <char> nightDisabledTypes;
+		void checkTargetObservability ();
+		void checkTargetBonus ();
+		void findNewTargets ();
+		int selectFlats ();
+		int selectDarks ();
+		struct ln_lnlat_posn *observer;
+		double flat_sun_min;
+		double flat_sun_max;
+
+		/**
+		 * Checks if type is among types disabled for night selection.
+		 *
+		 * @param type_id   Type id which will be checked for incursion in nightDisabledTypes.
+		 *
+		 * @return True if type is among disabled types.
+		 */
+		bool isInNightDisabledTypes (char target_type)
+		{
+			return (std::find (nightDisabledTypes.begin (), nightDisabledTypes.end (), target_type) != nightDisabledTypes.end ());
+		}
 };
 
 }

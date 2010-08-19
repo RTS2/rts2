@@ -59,14 +59,10 @@ Selector::Selector (struct ln_lnlat_posn * in_observer)
 
 Selector::~Selector (void)
 {
-	for (std::list < Target * >::iterator target_list =
-		possibleTargets.begin (); target_list != possibleTargets.end ();
-		target_list++)
+	for (std::vector <TargetEntry *>::iterator iter = possibleTargets.begin (); iter != possibleTargets.end (); iter++)
 	{
-		Target *tar = *target_list;
-		delete tar;
+		delete *iter;
 	}
-	possibleTargets.clear ();
 }
 
 int Selector::selectNext (int masterState)
@@ -109,12 +105,11 @@ struct findTargetById
 {
 	int ct;
 
-	bool operator () (Target * tar) const { return ct == tar->getTargetID (); }
+	bool operator () (TargetEntry *tar) const { return ct == tar->target->getTargetID (); }
 };
 
 void Selector::considerTarget (int consider_tar_id, double JD)
 {
-	std::list < Target * >::iterator target_list;
 	Target *newTar;
 	int ret;
 
@@ -138,7 +133,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		return;
 	}
 	// add to possible targets..
-	possibleTargets.push_back (newTar);
+	possibleTargets.push_back (new TargetEntry (newTar));
 }
 
 // enable targets which become observable
@@ -184,19 +179,18 @@ void Selector::findNewTargets ()
 	checkTargetObservability ();
 	checkTargetBonus ();
 
-	// drop targets which gets bellow horizont..
-
-	for (std::list < Target * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
+	// drop targets which gets bellow horizon..
+	for (std::vector < TargetEntry * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
 	{
-		Target *tar = *target_list;
+		Target *tar = (*target_list)->target;
 		ret = tar->considerForObserving (JD);
 		if (ret)
 		{
 			// don't observe us - we are bellow horizont etc..
+			delete *target_list;
 			target_list = possibleTargets.erase (target_list);
 			logStream (MESSAGE_DEBUG) << "remove target tar_id " << tar->
 				getTargetID () << " from possible targets" << sendLog;
-			delete tar;
 		}
 		else
 		{
@@ -256,34 +250,36 @@ void Selector::findNewTargets ()
 int Selector::selectNextNight (int in_bonusLimit)
 {
 	// search for new observation targets..
-	int maxId;
-	float maxBonus = -1;
-	float tar_bonus;
 	findNewTargets ();
-	// find target with highest bonus and move us to it..
-	for (std::list < Target * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
+	// create structure which will hold bonus for targets..
+
+	std::vector < TargetEntry *>::iterator target_list;
+
+	// sort targets by bonus..first calcaulate them..
+	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
-		Target *tar = *target_list;
-		tar_bonus = tar->getBonus ();
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "target: " << tar->getTargetID () << " bonus: " << tar_bonus << sendLog;
-		#endif
-		if (tar_bonus > maxBonus)
-		{
-			maxId = tar->getTargetID ();
-			maxBonus = tar_bonus;
-		}
+		(*target_list)->updateBonus ();
 	}
-	if (maxBonus < in_bonusLimit)
+	
+	// sort them..
+	std::sort (possibleTargets.begin (), possibleTargets.end (), bonusSort ());
+
+	// find highest that meets constraints..
+
+	double JD = ln_get_julian_from_sys ();
+
+	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
-		// we don't get any target..so take some darks..
-		if (in_bonusLimit == 0)
-			return selectDarks ();
-		else
-			// indicate error
-			return -1;
+		std::cout << (*target_list)->bonus << " " << (*target_list)->target->getBonus () << std::endl;
+		if ((*target_list)->target->checkConstraints (JD))
+			break;
 	}
-	return maxId;
+
+	if (target_list == possibleTargets.end () || (*target_list)->bonus < in_bonusLimit)
+	{
+		return selectDarks ();
+	}
+	return (*target_list)->target->getTargetID ();
 }
 
 int Selector::selectFlats ()
