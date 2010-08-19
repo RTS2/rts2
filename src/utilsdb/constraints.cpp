@@ -37,14 +37,88 @@ bool between (double val, double low, double upper)
 
 using namespace rts2db;
 
-bool ConstraintTimeInterval::satisfy (Target *target, double JD)
+bool ConstraintTimeInterval::satisfy (double JD)
 {
 	return between (JD, from, to);
 }
 
-bool ConstraintDoubleInterval::isBetween (double val)
+void ConstraintTime::load (xmlNodePtr cons)
 {
-	return between (val, getLower (), getUpper ());
+	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
+	{
+		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
+		{
+			double from = rts2_nan ("f");
+			double to = rts2_nan ("f");
+
+			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
+			{
+				if (xmlStrEqual (par->name, (xmlChar *) "from"))
+					parseDate ((const char *) par->children->content, from);
+				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
+					parseDate ((const char *) par->children->content, to);
+				else
+					throw XmlUnexpectedNode (par);
+			}
+			addInterval (from, to);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (inter);
+		}
+	}
+}
+
+bool ConstraintTime::satisfy (Target *target, double JD)
+{
+	for (std::list <ConstraintTimeInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter->satisfy (JD))
+			return true;
+	}
+	return false;
+}
+
+bool ConstraintDoubleInterval::satisfy (double val)
+{
+	return between (val, lower, upper);
+}
+
+void ConstraintDouble::load (xmlNodePtr cons)
+{
+	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
+	{
+		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
+		{
+			double lower = rts2_nan ("f");
+			double upper = rts2_nan ("f");
+
+			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
+			{
+				if (xmlStrEqual (par->name, (xmlChar *) "lower"))
+					lower = atof ((const char *) par->children->content);
+				else if (xmlStrEqual (par->name, (xmlChar *) "upper"))
+					upper = atof ((const char *) par->children->content);
+				else
+					throw XmlUnexpectedNode (par);
+			}
+			addInterval (lower, upper);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (inter);
+		}
+	}
+}
+
+bool ConstraintDouble::isBetween (double val)
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter->satisfy (val))
+			return true;
+	}
+	return false;
 }
 
 bool ConstraintAirmass::satisfy (Target *tar, double JD)
@@ -115,46 +189,48 @@ void Constraints::load (xmlNodePtr _node)
 	{
 		if (xmlStrEqual (cons->name, (xmlChar *) "time"))
 		{
-			double from = rts2_nan ("f");
-			double to = rts2_nan ("f");
-			for (xmlNodePtr par = cons->children; par != NULL; par = par->next)
+			ConstraintTime *tc = new ConstraintTime ();
+			try
 			{
-				if (xmlStrEqual (par->name, (xmlChar *) "from"))
-					parseDate ((const char *) par->children->content, from);
-				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
-					parseDate ((const char *) par->children->content, to);
-				else
-					throw XmlUnexpectedNode (par);
+				tc->load (cons);
 			}
-			push_back (new ConstraintTimeInterval (from, to));
+			catch (XmlError er)
+			{
+				delete tc;
+				throw er;
+			}
+			push_back (tc);
 		}
 		else // assume it is DoubleInterval node
 		{
-			double lower = rts2_nan ("f");
-			double upper = rts2_nan ("f");
-			for (xmlNodePtr par = cons->children; par != NULL; par = par->next)
-			{
-				if (xmlStrEqual (par->name, (xmlChar *) "lower"))
-					lower = atof ((const char *) par->children->content);
-				else if (xmlStrEqual (par->name, (xmlChar *) "upper"))
-					upper = atof ((const char *) par->children->content);
-				else
-					throw XmlUnexpectedNode (par);
-			}
+			ConstraintDouble *cdi;
 			if (xmlStrEqual (cons->name, (xmlChar *) "airmass"))
-				push_back (new ConstraintAirmass (lower, upper));
+				cdi = new ConstraintAirmass ();
 			else if (xmlStrEqual (cons->name, (xmlChar *) "HA"))
-				push_back (new ConstraintHA (lower, upper));
+				cdi = new ConstraintHA ();
 			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarDistance"))
-				push_back (new ConstraintLunarDistance (lower, upper));
+				cdi = new ConstraintLunarDistance ();
 			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarPhase"))
-				push_back (new ConstraintLunarPhase (lower, upper));
+				cdi = new ConstraintLunarPhase ();
 			else if (xmlStrEqual (cons->name, (xmlChar *) "solarDistance"))
-				push_back (new ConstraintSolarDistance (lower, upper));
+				cdi = new ConstraintSolarDistance ();
 			else if (xmlStrEqual (cons->name, (xmlChar *) "sunAltitude"))
-				push_back (new ConstraintSunAltitude (lower, upper));
+				cdi = new ConstraintSunAltitude ();
 			else
+			{
+				delete cdi;
 				throw XmlUnexpectedNode (cons);
+			}
+			try
+			{
+				cdi->load (cons);
+			}
+			catch (XmlError er)
+			{
+				delete cdi;
+				throw er;
+			}
+			push_back (cdi);
 		}
 	}
 }

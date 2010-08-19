@@ -36,70 +36,80 @@ class Constraint
 		virtual bool satisfy (Target *tar, double JD) = 0;
 };
 
-class ConstraintTimeInterval:public Constraint
+class ConstraintTimeInterval
 {
 	public:
 		ConstraintTimeInterval (double _from, double _to) { from = _from; to = _to; }
-
-		virtual bool satisfy (Target *tar, double JD);
+		virtual bool satisfy (double JD);
 	private:
 		double from;
 		double to;
 };
 
-class ConstraintDoubleInterval:public Constraint
+class ConstraintTime:public Constraint
+{
+	public:
+		void load (xmlNodePtr cons);
+		virtual bool satisfy (Target *tar, double JD);
+	private:
+		void addInterval (double from, double to) { intervals.push_back (ConstraintTimeInterval (from, to)); }	
+		std::list <ConstraintTimeInterval> intervals;
+};
+
+class ConstraintDoubleInterval
 {
 	public:
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
-	protected:
-		double getLower () { return lower; }
-		double getUpper () { return upper; }
-		bool isBetween (double val);
-
+		bool satisfy (double val);
 	private:
 		double lower;
 		double upper;
 };
 
-class ConstraintAirmass:public ConstraintDoubleInterval
+class ConstraintDouble:public Constraint
 {
 	public:
-		ConstraintAirmass (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
+		void load (xmlNodePtr cons);
+	protected:
+		virtual bool isBetween (double JD);
+	private:
+		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); };
+		std::list <ConstraintDoubleInterval> intervals;
+};
+
+class ConstraintAirmass:public ConstraintDouble
+{
+	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintHA:public ConstraintDoubleInterval
+class ConstraintHA:public ConstraintDouble
 {
 	public:
-		ConstraintHA (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintLunarDistance:public ConstraintDoubleInterval
+class ConstraintLunarDistance:public ConstraintDouble
 {
 	public:
-		ConstraintLunarDistance (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintLunarPhase:public ConstraintDoubleInterval
+class ConstraintLunarPhase:public ConstraintDouble
 {
 	public:
-		ConstraintLunarPhase (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintSolarDistance:public ConstraintDoubleInterval
+class ConstraintSolarDistance:public ConstraintDouble
 {
 	public:
-		ConstraintSolarDistance (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintSunAltitude:public ConstraintDoubleInterval
+class ConstraintSunAltitude:public ConstraintDouble
 {
 	public:
-		ConstraintSunAltitude (double _lower, double _upper):ConstraintDoubleInterval (_lower, _upper) {}
 		virtual bool satisfy (Target *tar, double JD);
 };
 
