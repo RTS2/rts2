@@ -20,7 +20,6 @@
 #include "constraints.h"
 #include "../utils/utilsfunc.h"
 #include "../utils/rts2config.h"
-#include <xmlerror.h>
 
 bool between (double val, double low, double upper)
 {

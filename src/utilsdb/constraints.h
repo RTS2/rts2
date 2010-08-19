@@ -22,6 +22,8 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include <xmlerror.h>
+
 namespace rts2db
 {
 

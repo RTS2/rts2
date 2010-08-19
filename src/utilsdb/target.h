@@ -59,6 +59,9 @@
 #define TARGET_SHOWER        12
 
 namespace rts2db {
+
+class Constraints;
+
 class Observation;
 
 /**
@@ -497,6 +500,16 @@ class Target:public Rts2Target
 		 */
 		virtual void writeToImage (Rts2Image * image, double JD);
 
+		/**
+		 * Return location of constraint file.
+		 */
+		const char *getConstraintFile ();
+
+		/**
+		 * Check constraints for given date.
+		 */
+		virtual bool checkConstraints (double JD);
+
 	protected:
 		char *target_comment;
 		struct ln_lnlat_posn *observer;
@@ -536,6 +549,9 @@ class Target:public Rts2Target
 		time_t tar_next_observable;
 
 		void writeAirmass (std::ostream & _os, double jd);
+
+		char *constraintFile;
+		rts2db::Constraints *constraints;
 };
 
 class ConstTarget:public Target

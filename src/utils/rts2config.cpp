@@ -47,6 +47,8 @@ int Rts2Config::getSpecialValues ()
 	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
 	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
 
+	getString ("observatory", "target_path", targetDir, "/etc/rts2/targets");
+
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 
 	checker = new ObjectCheck (horizon_file.c_str ());
@@ -60,7 +62,6 @@ int Rts2Config::getSpecialValues ()
 
 	getFloat ("swift", "min_horizon", swift_min_horizon, 0);
 	getFloat ("swift", "soft_horizon", swift_soft_horizon, swift_min_horizon);
-
 
 	// GRD section
 	grbd_follow_transients = getBoolean ("grbd", "know_transients", true);

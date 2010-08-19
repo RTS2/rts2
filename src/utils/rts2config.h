@@ -398,6 +398,8 @@ class Rts2Config:public Rts2ConfigRaw
 		 */
 		time_t getNight (int year, int month, int day);
 
+		const char *getTargetDir () { return targetDir.c_str (); }
+
 	protected:
 		virtual int getSpecialValues ();
 
@@ -430,5 +432,7 @@ class Rts2Config:public Rts2ConfigRaw
 		std::string obs_trash;
 		std::string obs_flats;
 		std::string obs_darks;
+
+		std::string targetDir;
 };
 #endif							 /* !__RTS2_CONFIG__ */

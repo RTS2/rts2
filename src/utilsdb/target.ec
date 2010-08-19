@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "constraints.h"
 #include "target.h"
 #include "target_auger.h"
 #include "rts2targetplanet.h"
@@ -254,6 +255,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	startCalledNum = 0;
 
 	airmassScale = 750.0;
+	constraintFile = NULL;
+	constraints = NULL;
 
 	observationStart = -1;
 }
@@ -278,6 +281,8 @@ Target::Target ()
 	startCalledNum = 0;
 
 	airmassScale = 750.0;
+	constraintFile = NULL;
+	constraints = NULL;
 
 	observationStart = -1;
 
@@ -298,6 +303,8 @@ Target::~Target (void)
 	delete[] target_name;
 	delete[] target_comment;
 	delete observation;
+	delete constraints;
+	delete[] constraintFile;
 }
 
 int Target::load ()
@@ -1706,6 +1713,9 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaDeg360> ("LUNAR DIST.", LibnovaDeg360 (getLunarDistance (JD)))
 		<< InfoVal<LibnovaDeg180> ("LUNAR RA DIST.", LibnovaDeg180 (getLunarRaDistance (JD)))
 		<< InfoVal<LibnovaDeg360> ("LUNAR PHASE", LibnovaDeg360 (ln_get_lunar_phase (JD)))
+		<< std::endl
+		<< InfoVal<const char*> ("CONSTRAINT FILE", getConstraintFile ())
+		<< InfoVal<bool> ("CONSTRAINTS", checkConstraints (JD))
 		<< std::endl;
 }
 
@@ -1774,6 +1784,33 @@ void Target::writeToImage (Rts2Image * image, double JD)
 	image->setValue ("MOONPHA", ln_get_lunar_phase (JD) / 1.8, "moon phase");
 	image->setValue ("MOONALT", hmoon.alt, "lunar altitude");
 	image->setValue ("MOONAZ", hmoon.az, "lunar azimuth");
+}
+
+const char *Target::getConstraintFile ()
+{
+	if (constraintFile)
+		return constraintFile;
+
+	std::ostringstream os;
+	os << Rts2Config::instance ()->getTargetDir () << "/" << getTargetID () << "/constraints.xml";
+	constraintFile = new char[os.str ().length () + 1];
+	strcpy (constraintFile, os.str ().c_str ());
+	return constraintFile;
+}
+
+bool Target::checkConstraints (double JD)
+{
+	if (constraints)
+		return constraints->satisfy (this, JD);
+	constraints = new Constraints ();
+	try
+	{
+		constraints->load (getConstraintFile ());
+	}
+	catch (XmlError er)
+	{
+	}
+	return constraints->satisfy (this, JD);
 }
 
 std::ostream & operator << (std::ostream &_os, Target &target)
