@@ -120,7 +120,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 {
 	response_type = "image/jpeg";
 	Rts2Image image;
-	image.openImage (path.c_str (), true);
+	image.openImage (path.c_str (), false, true);
 	Blob blob;
 
 	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
