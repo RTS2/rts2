@@ -1655,8 +1655,18 @@ void Rts2Image::loadChannels ()
 	imageType = 0;
 	int hdutype;
 
+	// get number of channels
+	fits_status = 0;
+	int tothdu;
+	fits_get_num_hdus (getFitsFile (), &tothdu, &fits_status);
+	if (fits_status)
+	{
+	  	logStream (MESSAGE_ERROR) << "cannot retrieve total number of HDUs: " << getFitsErrors () << sendLog;
+		return;
+	}
+
 	// open all channels
-	for (moveHDU (1, &hdutype); fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
+	for (moveHDU (1, &hdutype); fits_status == 0 && tothdu > 1; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status), tothdu--)
 	{
 		// first check that it is image
 		if (hdutype != IMAGE_HDU)
@@ -1741,6 +1751,7 @@ void Rts2Image::loadChannels ()
 
 		channels.push_back (new Channel (imageData, naxis, sizes));
 	}
+	moveHDU (1);
 }
 
 const void* Rts2Image::getChannelData (int chan)
