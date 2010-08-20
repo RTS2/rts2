@@ -1665,8 +1665,11 @@ void Rts2Image::loadChannels ()
 		return;
 	}
 
+	// first HDU is already opened
+	tothdu--;
+
 	// open all channels
-	for (moveHDU (1, &hdutype); fits_status == 0 && tothdu > 1; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status), tothdu--)
+	for (moveHDU (1, &hdutype); fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
 	{
 		// first check that it is image
 		if (hdutype != IMAGE_HDU)
@@ -1750,6 +1753,10 @@ void Rts2Image::loadChannels ()
 		fitsStatusGetValue ("image loadChannels", true);
 
 		channels.push_back (new Channel (imageData, naxis, sizes));
+
+		tothdu--;
+		if (tothdu <= 0)
+		  	break;
 	}
 	moveHDU (1);
 }
