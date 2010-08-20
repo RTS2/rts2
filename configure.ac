@@ -390,7 +390,11 @@ AC_SUBST(INC_A3200)
 # Define prefix variable
 
 AH_TEMPLATE([RTS2_PREFIX],[prefix])
-AC_DEFINE_UNQUOTED(RTS2_PREFIX, "$prefix", [prefix])
+if test "x${prefix}" = "xNONE"; then
+        AC_DEFINE_UNQUOTED(RTS2_PREFIX, "", [prefix])
+else
+        AC_DEFINE_UNQUOTED(RTS2_PREFIX, "$prefix", [prefix])
+fi
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
