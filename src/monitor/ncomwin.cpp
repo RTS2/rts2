@@ -36,9 +36,7 @@ NComWin::~NComWin (void)
 
 keyRet NComWin::injectKey (int key)
 {
-	int
-		x,
-		y;
+	int x, y;
 	switch (key)
 	{
 		case KEY_BACKSPACE:

@@ -38,13 +38,18 @@ void NStatusWindow::draw ()
 	time_t now;
 	time (&now);
 
+	int x, y;
+
 	NWindow::draw ();
 	werase (window);
 
 	wcolor_set (window, CLR_STATUS, NULL);
 	mvwhline (window, 0, 0, ' ', getWidth ());
-	mvwprintw (window, 0, 0, "%s %x %i", master->getMasterStateString ().c_str (), master->getMasterState (),
-		comWin->getCurX ());
+	mvwprintw (window, 0, 0, "%s %x", master->getMasterStateString ().c_str (), master->getMasterState ());
+	getyx (window, y, x);
+	if (x + 22  <= COLS - 19)
+		mvwprintw (window, 0, x + 1, "| F9 menu F10 exit |");
+
 	strftime (dateBuf, 20, "%Y-%m-%d %H:%M:%S", gmtime (&now));
 	mvwprintw (window, 0, COLS - 19, "%19s", dateBuf);
 	wcolor_set (window, CLR_DEFAULT, NULL);
