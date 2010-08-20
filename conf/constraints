@@ -15,4 +15,10 @@
 			<upper>2.0</upper>
 		</interval>
 	</airmass>
+	<HA>
+		<interval>
+			<lower>-2</lower>
+			<upper>2</upper>
+		</interval>
+	</HA>
 </constraints>
