@@ -23,6 +23,7 @@ using namespace rts2dome;
 
 #define OPT_WEATHER_OPENS     OPT_LOCAL + 200
 #define OPT_STATE_MASTER      OPT_LOCAL + 201
+#define OPT_DONOTCLOSE        OPT_LOCAL + 202
 
 int Dome::domeOpenStart ()
 {
@@ -95,6 +96,7 @@ Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc
 
 	addOption (OPT_WEATHER_OPENS, "weather-can-open", 0, "specified that option if weather signal is allowed to open dome");
 	addOption (OPT_STATE_MASTER, "state-master", 1, "state master - server which guverns opening and closing of dome for evening and morning");
+	addOption (OPT_DONOTCLOSE, "notclose", 0, "do not close (switch to bad weather) on startup");
 	addOption ('I', NULL, 0, "whenever to ignore meteo station. Ignore time will be set to 610 seconds.");
 }
 
@@ -117,6 +119,9 @@ int Dome::processOption (int in_opt)
 			break;
 		case 'I':
 			ignoreTimeout->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT + 10);
+			break;
+		case OPT_DONOTCLOSE:
+			nextGoodWeather->setValueDouble (getNow () - 300);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
