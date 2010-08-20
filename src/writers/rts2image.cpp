@@ -427,8 +427,18 @@ void Rts2Image::getHeaders ()
 {
 	struct timeval tv;
 
-	getValue ("CTIME", tv.tv_sec, verbose);
-	getValue ("USEC", tv.tv_usec, verbose);
+	try
+	{
+		getValue ("CTIME", tv.tv_sec, false);
+		getValue ("USEC", tv.tv_usec, false);
+	}
+	catch (rts2core::Error )
+	{
+		char daobs[100];
+		getValue ("DATE-OBS", daobs, 100, NULL, verbose);
+		parseDate (daobs, &tv.tv_sec);
+		tv.tv_usec = 0;
+	}
 	setExposureStart (&tv);
 	// if EXPTIM fails..
 	try
@@ -452,11 +462,11 @@ void Rts2Image::getHeaders ()
 	focPos = -1;
 	getValue ("FOC_POS", focPos, false);
 
-	getValue ("CAM_FILT", filter_i, verbose);
+	getValue ("CAM_FILT", filter_i, false);
 
 	filter = new char[5];
 	getValue ("FILTER", filter, 5, "UNK", verbose);
-	getValue ("AVERAGE", average, verbose);
+	getValue ("AVERAGE", average, false);
 	getValue ("STDEV", stdev, false);
 	getValue ("BGSTDEV", bg_stdev, false);
 	getValue ("RA_ERR", ra_err, false);
@@ -476,12 +486,13 @@ void Rts2Image::getHeaders ()
 
 void Rts2Image::getTargetHeaders ()
 {
-	// get info..
+	// get IRAF info..
+	targetName = new char[FLEN_VALUE];
+	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
+	// get info
 	getValue ("TARGET", targetId, verbose);
 	getValue ("TARSEL", targetIdSel, verbose);
 	getValue ("TARTYPE", targetType, verbose);
-	targetName = new char[FLEN_VALUE];
-	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
 	getValue ("OBSID", obsId, verbose);
 	getValue ("IMGID", imgId, verbose);
 }
@@ -1553,6 +1564,20 @@ std::string Rts2Image::getExposureLengthString ()
 	std::ostringstream _os;
 	_os << getExposureLength ();
 	return _os.str ();
+}
+
+int Rts2Image::getImgId ()
+{
+	try
+	{
+		if (imgId < 0)
+			getTargetHeaders ();
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot read image header " << er << sendLog;
+	}
+	return imgId;
 }
 
 void Rts2Image::setFocuserName (const char *in_focuserName)

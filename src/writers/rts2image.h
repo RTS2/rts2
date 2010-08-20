@@ -376,9 +376,11 @@ class Rts2Image:public Rts2FitsFile
 
 		char getTargetType (bool do_load = true) { if (do_load && targetType == TYPE_UNKNOW) getTargetHeaders (); return targetType; }
 
-		int getObsId () { if (obsId < 0) getTargetHeaders (); return obsId; }
+		int getObsId () { if(obsId < 0) getTargetHeaders (); return obsId; }
+		void setObsId (int _obsid) { obsId = _obsid; }
 
-		int getImgId () { if(imgId < 0) getTargetHeaders (); return imgId; }
+		int getImgId ();
+		void setImgId (int _imgid) { imgId = _imgid; }
 
 		const char *getFilter () { return filter; }
 

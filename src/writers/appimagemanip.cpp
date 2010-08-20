@@ -53,8 +53,11 @@
 #define IMAGEOP_DISTANCE  0x2000
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
-#define OPT_EVERY     OPT_LOCAL + 6
 #define OPT_ADDHELIO  OPT_LOCAL + 6
+#define OPT_OBSID     OPT_LOCAL + 7
+#define OPT_IMGID     OPT_LOCAL + 8
+#define OPT_CAMNAME   OPT_LOCAL + 9
+#define OPT_MOUNTNAME OPT_LOCAL + 10
 
 namespace rts2image
 {
@@ -103,6 +106,12 @@ class AppImage:public Rts2AppImage
 		const char* link_expr;
 		const char* move_expr;
 		const char* jpeg_expr;
+
+		int obsid;
+		int imgid;
+
+		const char *cameraName;
+		const char *mountName;
 };
 
 }
@@ -143,8 +152,7 @@ int AppImage::addDate (Rts2Image * image)
 	time_t t;
 	std::cout << "Adding date " << image->getFileName () << "..";
 	t = image->getExposureSec ();
-	image->setValue ("DATE-OBS", &t, image->getExposureUsec (),
-		"date of observation");
+	image->setValue ("DATE-OBS", &t, image->getExposureUsec (),"date of observation");
 	ret = image->saveImage ();
 	std::cout << (ret ? "failed" : "OK") << std::endl;
 	return ret;
@@ -153,6 +161,15 @@ int AppImage::addDate (Rts2Image * image)
 #ifdef HAVE_PGSQL
 int AppImage::insert (Rts2ImageDb * image)
 {
+  	if (obsid > 0)
+	  	image->setObsId (obsid);
+	if (imgid > 0)
+	  	image->setImgId (imgid);
+	if (cameraName)
+	  	image->setCameraName (cameraName);
+	if (mountName)
+	  	image->setMountName (mountName);
+
 	return image->saveImage ();
 }
 #endif							 /* HAVE_PGSQL */
@@ -302,6 +319,18 @@ int AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_INSERT;
 			break;
 		#endif					 /* HAVE_PGSQL */
+		case OPT_OBSID:
+			obsid = atoi (optarg);
+			break;
+		case OPT_IMGID:
+			imgid = atoi (optarg);
+			break;
+		case OPT_CAMNAME:
+			cameraName = optarg;
+			break;
+		case OPT_MOUNTNAME:
+			mountName = optarg;
+			break;
 		case 'm':
 			if (move_expr)
 				return -1;
@@ -443,6 +472,12 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	move_expr = NULL;
 	jpeg_expr = NULL;
 
+	obsid = -1;
+	imgid = -1;
+
+	cameraName = NULL;
+	mountName = NULL;
+
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
@@ -453,6 +488,10 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentrict time)");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
+	addOption (OPT_OBSID, "obsid", 1, "force observation ID for image operations");
+	addOption (OPT_IMGID, "imgid", 1, "force image ID for image operations");
+	addOption (OPT_CAMNAME, "camera", 1, "force camera name for image operations");
+	addOption (OPT_MOUNTNAME, "telescope", 1, "force telescope name for image operations");
 	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('e', NULL, 0, "image evaluation for AF purpose");

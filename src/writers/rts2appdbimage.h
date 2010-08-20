@@ -38,8 +38,16 @@ class Rts2AppDbImage:public Rts2AppDb
 				img_iter++)
 			{
 				const char *an_name = *img_iter;
-				Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false, readOnly);
-				Rts2ImageDb *image = getValueImageType (imagedb);
+				Rts2ImageDb *image;
+				try
+				{
+					Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false, readOnly);
+					image = getValueImageType (imagedb);
+				}
+				catch (rts2core::Error err)
+				{
+					std::cerr << err << std::endl;
+				}
 				ret = processImage (image);
 				delete image;
 				if (ret)

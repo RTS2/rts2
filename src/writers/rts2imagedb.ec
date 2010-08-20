@@ -488,10 +488,8 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_
 Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name, const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec, double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
 	setTargetHeaders (in_tar_id, in_obs_id, in_img_id, in_obs_subtype);
-	cameraName = new char[strlen (in_camera_name) + 1];
-	strcpy (cameraName, in_camera_name);
-	mountName = new char[strlen (in_mount_name) + 1];
-	strcpy (mountName, in_mount_name);
+	setCameraName (in_camera_name);
+	setMountName (in_mount_name);
 	focName = NULL;
 	// construct image name..
 
