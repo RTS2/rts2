@@ -301,7 +301,8 @@ int Dome::off ()
 int Dome::setMasterStandby ()
 {
 	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
-		&& getMasterState () != SERVERD_UNKNOW && (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		&& getMasterState () != SERVERD_UNKNOW && (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY
+		&& !centralServerInState (SERVERD_HARD_OFF))
 	{
 		return sendMasters ("standby");
 	}

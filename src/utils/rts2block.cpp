@@ -1,6 +1,6 @@
 /* 
  * Basic RTS2 devices and clients building block.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -448,6 +448,16 @@ void Rts2Block::updateMetaInformations (Rts2Value *value)
 		value->sendMetaInfo (*iter);
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		value->sendMetaInfo (*iter);
+}
+
+bool Rts2Block::centralServerInState (int state)
+{
+	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+	{
+		if ((*iter)->getState () & state)
+			return true;
+	}
+	return false;
 }
 
 int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)

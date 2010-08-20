@@ -1,6 +1,6 @@
 /* 
  * Basic RTS2 devices and clients building block.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -681,6 +681,13 @@ class Rts2Block: public Rts2App
 		 * @param _conn New master state connection.
 		 */
 		void setMasterConn (Rts2Conn *_conn) { stateMasterConn = _conn; }
+
+		/**
+		 * Check if some of the central connections is in given server
+		 * state. This routine is used to check if some of the servers
+		 * is in HARD_OFF state.
+		 */
+		bool centralServerInState (int state);
 
 	private:
 		int port;
