@@ -1,3 +1,6 @@
+2010-08-18
+ * constraints support (.xsd and .xml for constraint files..)
+
 2010-08-04
  * boolean array support
 
