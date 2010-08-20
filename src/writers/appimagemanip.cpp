@@ -33,6 +33,10 @@
 
 #include <list>
 
+#ifdef HAVE_LIBJPEG
+#include <Magick++.h>
+#endif // HAVE_LIBJPEG
+
 #define IMAGEOP_NOOP      0x0000
 #define IMAGEOP_ADDDATE   0x0001
 #ifdef HAVE_PGSQL
@@ -70,8 +74,12 @@ class AppImage:public Rts2AppImage
 {
 	public:
 		AppImage (int in_argc, char **in_argv, bool in_readOnly);
+		virtual ~AppImage ();
 	protected:
 		virtual int processOption (int in_opt);
+	#ifdef HAVE_LIBJPEG
+		virtual int init ();
+	#endif
 	#ifdef HAVE_PGSQL
 		virtual bool doInitDB ();
 
@@ -368,7 +376,7 @@ int AppImage::processOption (int in_opt)
 				off_y = off_x;
 			}
 			break;
-		#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+		#ifdef HAVE_LIBJPEG
 		case 'j':
 			if (jpeg_expr)
 				return -1;
@@ -386,6 +394,21 @@ int AppImage::processOption (int in_opt)
 	}
 	return 0;
 }
+
+#ifdef HAVE_LIBJPEG
+int AppImage::init ()
+{
+#ifdef HAVE_PGSQL
+	int ret = Rts2AppDbImage::init ();
+#else
+	int ret = Rts2AppImage::init ();
+#endif /* HAVE_PGSQL */
+	if (ret)
+		return ret;
+	Magick::InitializeMagick (".");
+	return 0;
+}
+#endif /* HAVE_LIBJPEG */
 
 #ifdef HAVE_PGSQL
 bool AppImage::doInitDB ()
@@ -437,7 +460,7 @@ int AppImage::processImage (Rts2Image * image)
 		testEval (image);
 	if (operation & IMAGEOP_CREATEWCS)
 		createWCS (image);
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, 0);
 #endif /* HAVE_LIBJPEG */
@@ -498,8 +521,15 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
+#endif /* HAVE_LIBJPEG */
+}
+
+AppImage::~AppImage ()
+{
+#ifdef HAVE_LIBJPEG
+  	MagickLib::DestroyMagick ();
 #endif /* HAVE_LIBJPEG */
 }
 

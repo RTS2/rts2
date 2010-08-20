@@ -1415,7 +1415,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 	try
 	{
 		getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255);
-		Image image = Image (getChannelWidth (chan), getChannelHeight (chan), "K", CharPixel, buf);
+		Image image (getChannelWidth (chan), getChannelHeight (chan), "K", CharPixel, buf);
 		image.font("helvetica");
 		image.strokeColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
