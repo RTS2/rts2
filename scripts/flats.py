@@ -270,6 +270,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		"""Take flats dark images in spare time."""
 		self.setValue('SHUTTER','DARK')
 		i = 0
+		if (len(self.usedExpTimes) == 0):
+			self.usedExpTimes = [self.expTimes[0],self.expTimes[-1]]
 		while (True):
 			if (self.maxDarkCycles is not None and i >= self.maxDarkCycles):
 				return
