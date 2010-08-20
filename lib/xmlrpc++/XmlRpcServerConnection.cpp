@@ -521,7 +521,7 @@ void XmlRpcServerConnection::executeGet()
 		<< "\r\nServer: XMLRCP\r\nContent-Type: " << response_type
 		<< "\r\nContent-length: " << _get_response_length;
 
-	for (std::list <std::pair <const char*, const char*> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
+	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
 	  	_os << "\r\n" << iter->first << ": " << iter->second;
 	
 	_os << "\r\n\r\n";

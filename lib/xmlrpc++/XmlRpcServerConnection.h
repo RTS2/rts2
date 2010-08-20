@@ -58,7 +58,8 @@ namespace XmlRpc
 			 * @param name  Name of extra header
 			 * @param value Extra header value
 			 */
-			void addExtraHeader (const char *name, const char *value) { _extra_headers.push_back (std::pair <const char *, const char *> (name, value)); }
+			void addExtraHeader (const char *name, const char *value) { _extra_headers.push_back (std::pair <const char *, std::string> (name, std::string (value))); }
+			void addExtraHeader (const char *name, std::string value) { _extra_headers.push_back (std::pair <const char *, std::string> (name, value)); }
 
 		protected:
 
@@ -126,7 +127,7 @@ namespace XmlRpc
 
 			// Response to GET request - header
 			std::string _get_response_header;
-			std::list <std::pair <const char*, const char*> > _extra_headers;
+			std::list <std::pair <const char*, std::string> > _extra_headers;
 
 			// Response for GET request - data
 			char *_get_response;

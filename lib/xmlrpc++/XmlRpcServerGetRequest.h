@@ -112,7 +112,7 @@ namespace XmlRpc
 			{
 				std::ostringstream _os;
 				_os << "max-age=" << maxage;
-				connection->addExtraHeader ("Cache-Control", _os.str ().c_str ());
+				connection->addExtraHeader ("Cache-Control", _os.str ());
 			}
 		private:
 			std::string _prefix;
