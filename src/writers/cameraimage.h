@@ -81,7 +81,7 @@ class CameraImage
 
 		void setExEnd (double in_exEnd) { exEnd = in_exEnd; }
 
-		void writeMetaData (struct imghdr *im_h) { image->writeMetaData (im_h); }
+		void writeMetaData (struct imghdr *im_h, double xoa, double yoa) { image->writeMetaData (im_h, xoa, yoa); }
 
 		void writeData (char *_data, char *_fullTop, int nchan) { image->writeData (_data, _fullTop, nchan); dataWriten = true; }
 

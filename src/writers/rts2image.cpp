@@ -377,8 +377,8 @@ int Rts2Image::createImage ()
 		return -1;
 	}
 
-	fits_write_key_log (getFitsFile (), "SIMPLE", 1, "conform to FITS standard", &fits_status);
-	fits_write_key_lng (getFitsFile (), "BITPIX", 16, "unsigned short data", &fits_status);
+	fits_write_key_log (getFitsFile (), (char *) "SIMPLE", 1, "conform to FITS standard", &fits_status);
+	fits_write_key_lng (getFitsFile (), (char *) "BITPIX", 16, "unsigned short data", &fits_status);
 	fits_write_key_lng (getFitsFile (), "NAXIS", 0, "number of axes", &fits_status);
 	fits_write_key_log (getFitsFile (), "EXTEND", 1, "this is FITS with extensions", &fits_status);
 	if (fits_status)
@@ -1118,7 +1118,7 @@ void Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
-void Rts2Image::writeMetaData (struct imghdr *im_h)
+void Rts2Image::writeMetaData (struct imghdr *im_h, double _xoa, double _yoa)
 {
 	if (!getFitsFile () || !(flags & IMAGE_SAVE))
 	{
@@ -1128,6 +1128,9 @@ void Rts2Image::writeMetaData (struct imghdr *im_h)
 		#endif					 /* DEBUG_EXTRA */
 		return;
 	}
+
+	setXoA (_xoa - im_h->x);
+	setYoA (_yoa - im_h->y);
 
 	filter_i = ntohs (im_h->filter);
 

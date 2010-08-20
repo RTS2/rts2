@@ -157,7 +157,14 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 	{
 		CameraImage *ci = (*iter).second;
 
-		ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()));
+		if (ci->image->getTargetType (false) == TYPE_TERESTIAL && !isnan (ter_xoa) && !isnan (ter_yoa))
+		{
+			ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()), ter_xoa, ter_yoa);
+		}
+		else
+		{
+			ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()), xoa, yoa);
+		}
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
@@ -257,17 +264,6 @@ void Rts2DevClientCameraImage::exposureStarted ()
 	
 		image->setEnvironmentalValues ();
 	
-		if (image->getTargetType (false) == TYPE_TERESTIAL
-			&& !isnan (ter_xoa) && !isnan (ter_yoa))
-		{
-			image->setXoA (ter_xoa);
-			image->setYoA (ter_yoa);
-		}
-		else
-		{
-			image->setXoA (xoa);
-			image->setYoA (yoa);
-		}
 		focuser = getConnection ()->getValueChar ("focuser");
 		if (focuser)
 		{
@@ -317,7 +313,7 @@ bool Rts2DevClientCameraImage::waitForMetaData ()
 		if (((*iter).second)->waitForMetaData ())
 			return true;
 	}
-	// wait if we the program is already waiting for an exposure to be send
+	// wait if the program is already waiting for an exposure to be send
 	if (triggered && (getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
 		return true;
 	return false;

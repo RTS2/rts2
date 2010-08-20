@@ -238,7 +238,7 @@ class Rts2Image:public Rts2FitsFile
 		void getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
 		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
-		void writeMetaData (struct imghdr *im_h);
+		void writeMetaData (struct imghdr *im_h, double xoa, double yoa);
 
 		int writeData (char *in_data, char *fullTop, int nchan);
 

@@ -87,15 +87,13 @@ double Rts2Image::getYoA ()
 void Rts2Image::setXoA (double in_xoa)
 {
 	xoa = in_xoa;
-	setValue ("CAM_XOA", in_xoa,
-		"center in X axis (divide by binning (BIN_H)!)");
+	setValue ("CAM_XOA", in_xoa, "center in X axis (divide by binning (BIN_H)!)");
 }
 
 void Rts2Image::setYoA (double in_yoa)
 {
 	yoa = in_yoa;
-	setValue ("CAM_YOA", in_yoa,
-		"center in Y axis (divide by binning (BIN_V)!)");
+	setValue ("CAM_YOA", in_yoa, "center in Y axis (divide by binning (BIN_V)!)");
 }
 
 double Rts2Image::getRotang ()
