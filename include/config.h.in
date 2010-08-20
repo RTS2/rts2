@@ -267,6 +267,9 @@
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
+/* prefix */
+#undef RTS2_PREFIX
+
 /* Define to the type of arg 1 for `select'. */
 #undef SELECT_TYPE_ARG1
 
