@@ -28,8 +28,7 @@
 
 EXEC SQL include sqlca;
 
-void
-Rts2ImageDb::initDbImage ()
+void Rts2ImageDb::initDbImage ()
 {
 }
 
@@ -52,7 +51,6 @@ void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *
 	}
 }
 
-
 void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
 {
 	try
@@ -64,6 +62,11 @@ void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *c
 		value = 100;
 		ind = -1;
 	}
+}
+
+Rts2ImageDb::Rts2ImageDb (): Rts2Image ()
+{
+	initDbImage ();
 }
 
 Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
@@ -94,7 +97,6 @@ Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
 	// fill in imageType
 	// fill in imageName
 }
-
 
 Rts2ImageDb::Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Rts2Image (in_img_date, in_img_usec, in_img_exposure)
 {
