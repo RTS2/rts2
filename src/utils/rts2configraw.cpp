@@ -301,7 +301,7 @@ int Rts2ConfigRaw::loadFile (const char *filename)
 
 	if (!filename)
 		// default
-		filename = RTS2_PREFIX "/etc/rts2.ini";
+		filename = RTS2_PREFIX "/etc/rts2/rts2.ini";
 	configStream = new std::ifstream ();
 	configStream->open (filename);
 	if (configStream->fail ())
