@@ -245,6 +245,9 @@ int XmlRpcd::init ()
 	// get page prefix
 	Rts2Config::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
 
+#ifdef HAVE_LIBJPEG
+	Magick::InitializeMagick (".");
+#endif /* HAVE_LIBJPEG */
 	return ret;
 }
 
@@ -319,6 +322,9 @@ XmlRpcd::~XmlRpcd ()
 		delete (*iter).second;
 	}
 	sessions.clear ();
+#ifdef HAVE_LIBJPEG
+	MagickLib::DestroyMagick ();
+#endif /* HAVE_LIBJPEG */
 }
 
 rts2core::Rts2DevClient * XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)

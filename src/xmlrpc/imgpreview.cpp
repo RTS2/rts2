@@ -119,8 +119,8 @@ using namespace Magick;
 void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
-	Rts2Image image (path.c_str (), false, true);
-	image.openImage ();
+	Rts2Image image;
+	image.openImage (path.c_str (), true);
 	Blob blob;
 
 	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
@@ -156,8 +156,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	{
 		response_type = "image/jpeg";
 
-		Rts2Image image (absPath, false, true);
-		image.openImage ();
+		Rts2Image image;
+		image.openImage (absPath, false, true);
 		Blob blob;
 		Magick::Image mimage = image.getMagickImage ();
 		mimage.zoom (Magick::Geometry (prevsize, prevsize));

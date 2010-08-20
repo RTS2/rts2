@@ -112,13 +112,11 @@ class Rts2Image:public Rts2FitsFile
 		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
 		// create image in que
 		Rts2Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
-		// open image from disk..
-		Rts2Image (const char *_filename, bool _verbose = true, bool readOnly = false);
 		virtual ~ Rts2Image (void);
 
 		virtual int closeFile ();
 
-		void openImage (const char *_filename = NULL, bool readOnly = false);
+		void openImage (const char *_filename = NULL, bool _verbose = true, bool readOnly = false);
 		void getHeaders ();
 		/**
 		 * Retrieve from image target related headers.

@@ -41,7 +41,8 @@ class Rts2AppDbImage:public Rts2AppDb
 				Rts2ImageDb *image;
 				try
 				{
-					Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false, readOnly);
+					Rts2ImageDb *imagedb = new Rts2ImageDb ();
+					imagedb->openImage (an_name, false, readOnly);
 					image = getValueImageType (imagedb);
 				}
 				catch (rts2core::Error err)

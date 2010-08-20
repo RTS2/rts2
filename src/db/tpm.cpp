@@ -48,8 +48,7 @@ class TPM:public Rts2CliApp
 		double dec_step;
 		double dec_offset;
 
-		enum { TARGET, BEST, MOUNT }
-		tarCorType;
+		enum { TARGET, BEST, MOUNT } tarCorType;
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
@@ -63,8 +62,7 @@ class TPM:public Rts2CliApp
 		virtual void help ();
 };
 
-TPM::TPM (int in_argc, char **in_argv):
-Rts2CliApp (in_argc, in_argv)
+TPM::TPM (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
 	selFlip = -1;
@@ -72,26 +70,20 @@ Rts2CliApp (in_argc, in_argv)
 	ra_offset = 0;
 	dec_step = nan ("f");
 	dec_offset = 0;
-	addOption ('t', NULL, 1,
-		"target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
+	addOption ('t', NULL, 1, "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
 	addOption ('f', NULL, 1, "select images with given flip (0 or 1)");
-	addOption ('r', NULL, 1,
-		"step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
+	addOption ('r', NULL, 1, "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
 	addOption ('R', NULL, 1, "ra offset in raw counts");
-	addOption ('d', NULL, 1,
-		"step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
+	addOption ('d', NULL, 1, "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
 	addOption ('D', NULL, 1, "dec offset in raw counts");
 }
-
 
 TPM::~TPM (void)
 {
 	filenames.clear ();
 }
 
-
-int
-TPM::processOption (int in_opt)
+int TPM::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -108,8 +100,7 @@ TPM::processOption (int in_opt)
 					tarCorType = MOUNT;
 					break;
 				default:
-					std::cerr << "Invalit coordinates type (" << *optarg <<
-						"), expected t, b or m" << std::endl;
+					std::cerr << "Invalit coordinates type (" << *optarg << "), expected t, b or m" << std::endl;
 					return -1;
 			}
 			break;
@@ -120,8 +111,7 @@ TPM::processOption (int in_opt)
 				selFlip = 0;
 			else
 			{
-				std::cout << "You entered invalid flip, please select either 0 or 1" <<
-					std::endl;
+				std::cout << "You entered invalid flip, please select either 0 or 1" << std::endl;
 				help ();
 				return -1;
 			}
@@ -144,17 +134,13 @@ TPM::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-TPM::processArgs (const char *arg)
+int TPM::processArgs (const char *arg)
 {
 	filenames.push_back (arg);
 	return 0;
 }
 
-
-int
-TPM::init ()
+int TPM::init ()
 {
 	int ret;
 	ret = Rts2CliApp::init ();
@@ -169,16 +155,13 @@ TPM::init ()
 	return 0;
 }
 
-
-int
-TPM::doProcessing ()
+int TPM::doProcessing ()
 {
 	bool firstLine = false;
-	for (std::vector < std::string >::iterator iter = filenames.begin ();
-		iter != filenames.end (); iter++)
+	for (std::vector < std::string >::iterator iter = filenames.begin (); iter != filenames.end (); iter++)
 	{
-		Rts2Image *image = new Rts2Image ((*iter).c_str (), true, true);
-		image->openImage (NULL, false);
+		Rts2Image *image = new Rts2Image ();
+		image->openImage (iter->c_str (), true, true);
 		if (!firstLine)
 		{
 			headline (image, std::cout);
@@ -191,9 +174,7 @@ TPM::doProcessing ()
 	return 0;
 }
 
-
-void
-TPM::help ()
+void TPM::help ()
 {
 	std::cout << "Process list of images with astrometry, and creates file which you can feed to TPoint"
 		<< std::endl
@@ -204,9 +185,7 @@ TPM::help ()
 	Rts2CliApp::help ();
 }
 
-
-int
-TPM::headline (Rts2Image * image, std::ostream & _os)
+int TPM::headline (Rts2Image * image, std::ostream & _os)
 {
 	obs.lat = Rts2Config::instance ()->getObserver ()->lat;
 	obs.lng = Rts2Config::instance ()->getObserver ()->lng;
@@ -244,9 +223,7 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
 	return 0;
 }
 
-
-int
-TPM::printImage (Rts2Image * image, std::ostream & _os)
+int TPM::printImage (Rts2Image * image, std::ostream & _os)
 {
 	LibnovaRaDec actual;
 	LibnovaRaDec target;
@@ -322,9 +299,8 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 	return 0;
 }
 
+int main (int argc, char **argv)
 
-int
-main (int argc, char **argv)
 {
 	TPM app = TPM (argc, argv);
 	return app.run ();

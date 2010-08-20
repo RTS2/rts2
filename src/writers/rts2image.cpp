@@ -283,17 +283,6 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * c
 	currTarget->writeToImage (this, getExposureJD ());
 }
 
-
-Rts2Image::Rts2Image (const char *_filename, bool _verbose, bool readOnly):Rts2FitsFile ()
-{
-	initData ();
-
-	loadHeader = true;
-	verbose = _verbose;
-
-	setFileName (_filename);
-}
-
 Rts2Image::~Rts2Image (void)
 {
 	saveImage ();
@@ -410,8 +399,9 @@ int Rts2Image::createImage (char *in_filename)
 	return createImage ();
 }
 
-void Rts2Image::openImage (const char *_filename, bool readOnly)
+void Rts2Image::openImage (const char *_filename, bool _verbose, bool readOnly)
 {
+  	verbose = _verbose;
 	if (_filename)
 		setFileName (_filename);
 

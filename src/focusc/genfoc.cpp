@@ -84,7 +84,8 @@ Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	{
 	  	std::ostringstream _os;
 		_os << "!/tmp/" << connection->getName () << "_" << getpid () << ".fits";
-		image = new Rts2Image (_os.str ().c_str (), expStart);
+		image = new Rts2Image ();
+		image->openImage (_os.str ().c_str (), expStart);
 		image->keepImage ();
 		return image;
 	}

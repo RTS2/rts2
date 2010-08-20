@@ -60,8 +60,8 @@ int ConnImgProcess::init ()
 {
 	try
 	{
-		Rts2Image image = Rts2Image (imgPath.c_str ());
-		image.openImage ();
+		Rts2Image image;
+		image.openImage (imgPath.c_str ());
 		if (image.getShutter () == SHUT_CLOSED)
 		{
 			astrometryStat = DARK;
@@ -118,12 +118,15 @@ void ConnImgProcess::connectionError (int last_data_size)
 	Rts2ImageDb *image;
 	try
 	{
-		image = getValueImageType (new Rts2ImageDb (imgPath.c_str ()));
+	  	Rts2ImageDb *imagedb = new Rts2ImageDb ();
+		imagedb->openImage (imgPath.c_str ());
+		image = getValueImageType (imagedb);
 #else
 	Rts2Image *image = NULL;
 	try
 	{
-		image = new Rts2Image (imgPath.c_str ());
+		image = new Rts2Image ();
+		image->openImage (imgPath.c_str ());
 #endif
 		if (image->getImageType () == IMGTYPE_FLAT || image->getImageType () == IMGTYPE_DARK)
 		{

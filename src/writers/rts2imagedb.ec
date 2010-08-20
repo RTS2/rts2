@@ -76,13 +76,6 @@ Rts2Image (currTarget, camera, expStart)
 	initDbImage ();
 }
 
-
-Rts2ImageDb::Rts2ImageDb (const char *_filename, bool _verbose, bool readOnly) : Rts2Image (_filename, _verbose, readOnly)
-{
-	initDbImage ();
-}
-
-
 Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
 {
 	initDbImage ();
@@ -466,11 +459,6 @@ void Rts2ImageSkyDb::updateCalibrationDb ()
 }
 
 Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart):Rts2ImageDb (currTarget, camera, expStart)
-{
-	initDbImage ();
-}
-
-Rts2ImageSkyDb::Rts2ImageSkyDb (const char *in_filename) : Rts2ImageDb (in_filename)
 {
 	initDbImage ();
 }
