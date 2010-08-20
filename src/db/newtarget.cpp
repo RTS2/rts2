@@ -33,6 +33,16 @@
 
 class Rts2NewTarget:public Rts2TargetApp
 {
+	public:
+		Rts2NewTarget (int in_argc, char **in_argv);
+		virtual ~ Rts2NewTarget (void);
+
+		virtual int doProcessing ();
+	protected:
+		virtual void help ();
+
+		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
 	private:
 		int n_tar_id;
 		const char *n_tar_name;
@@ -40,16 +50,6 @@ class Rts2NewTarget:public Rts2TargetApp
 		double radius;
 
 		int saveTarget ();
-	protected:
-		virtual void help ();
-
-		virtual int processOption (int in_opt);
-		virtual int processArgs (const char *arg);
-	public:
-		Rts2NewTarget (int in_argc, char **in_argv);
-		virtual ~ Rts2NewTarget (void);
-
-		virtual int doProcessing ();
 };
 
 Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_argc, in_argv)
@@ -183,7 +183,16 @@ int Rts2NewTarget::saveTarget ()
 		}
 	}
 
-	std::cout << *target;
+	struct ln_equ_posn pos;
+	target->getPosition (&pos);
+
+	struct ln_hrz_posn hrz;
+	target->getAltAz (&hrz);
+
+	std::cout << "Created target #" << target->getTargetID ()
+		<< " named " << target->getTargetName ()
+		<< " on J2000.0 coordinates " << LibnovaRaDec (&pos)
+		<< " horizontal " << LibnovaHrz (&hrz) << std::endl;
 
 	if (ret)
 	{
