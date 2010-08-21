@@ -409,8 +409,7 @@ void Rts2Image::openImage (const char *_filename, bool _verbose, bool readOnly)
 
 	if (readOnly == false)
 		flags |= IMAGE_SAVE;
-	if (loadHeader)
-		getHeaders ();
+	getHeaders ();
 }
 
 void Rts2Image::getHeaders ()
