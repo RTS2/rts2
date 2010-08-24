@@ -67,7 +67,7 @@ class Selector
 		virtual ~ Selector (void);
 								 // return next observation..
 		int selectNext (int masterState);
-		int selectNextNight (int in_bonusLimit = 0);
+		int selectNextNight (int in_bonusLimit = 0, bool verbose = false);
 
 		double getFlatSunMin () { return flat_sun_min; }
 		double getFlatSunMax () { return flat_sun_max; }

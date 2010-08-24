@@ -246,7 +246,7 @@ void Selector::findNewTargets ()
 	EXEC SQL CLOSE findnewtargets;
 };
 
-int Selector::selectNextNight (int in_bonusLimit)
+int Selector::selectNextNight (int in_bonusLimit, bool verbose)
 {
 	// search for new observation targets..
 	findNewTargets ();
@@ -267,17 +267,40 @@ int Selector::selectNextNight (int in_bonusLimit)
 
 	double JD = ln_get_julian_from_sys ();
 
+	std::vector < TargetEntry *>::iterator tar_best = possibleTargets.end ();
+
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
-		if ((*target_list)->target->checkConstraints (JD))
-			break;
+		Target *tar = (*target_list)->target;
+		if (tar->checkConstraints (JD))
+		{
+			if (!verbose)
+			{
+				tar_best = target_list;
+				break;
+			}
+			if (tar_best == possibleTargets.end ())
+			{
+			  	logStream (MESSAGE_DEBUG) << "Best target " << tar->getTargetName () << " #" << tar->getTargetID () << " with bonus " << tar->getTargetBonus () << sendLog;
+				tar_best = target_list;
+			}
+			else
+			{
+				logStream (MESSAGE_DEBUG) << "Target " << tar->getTargetName () << " #" << tar->getTargetID () << " bonus " << tar->getTargetBonus () << sendLog;
+			}
+		}
+		else if (verbose)
+		{
+			logStream (MESSAGE_DEBUG) << "Target " << tar->getTargetName () << " #" << tar->getTargetID () << " violates constraints - ignoring it" << sendLog;
+		}
 	}
 
-	if (target_list == possibleTargets.end () || (*target_list)->bonus < in_bonusLimit)
+	if (tar_best == possibleTargets.end () || (*tar_best)->bonus < in_bonusLimit)
 	{
+		logStream (MESSAGE_INFO) << "None target selected, selecting darks" << sendLog;
 		return selectDarks ();
 	}
-	return (*target_list)->target->getTargetID ();
+	return (*tar_best)->target->getTargetID ();
 }
 
 int Selector::selectFlats ()

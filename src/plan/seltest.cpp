@@ -35,7 +35,10 @@ class SelectorApp:public PrintTarget
 		virtual ~ SelectorApp (void);
 
 	protected:
+		virtual int processOption (int opt);
 		virtual int doProcessing ();
+	private:
+		int verbosity;
 };
 
 }
@@ -44,10 +47,25 @@ using namespace rts2plan;
 
 SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv)
 {
+	verbosity = 0;
+	addOption ('v', NULL, 0, "increase verbosity");
 }
 
 SelectorApp::~SelectorApp (void)
 {
+}
+
+int SelectorApp::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 'v':
+			verbosity++;
+			break;
+		default:
+			return PrintTarget::processOption (opt);
+	}
+	return 0;
 }
 
 int SelectorApp::doProcessing ()
@@ -66,7 +84,7 @@ int SelectorApp::doProcessing ()
 
 	sel = new rts2plan::Selector (observer);
 
-	next_tar = sel->selectNextNight ();
+	next_tar = sel->selectNextNight (0, verbosity);
 
 	tar = createTarget (next_tar, observer);
 	if (tar)
