@@ -187,10 +187,9 @@ void Selector::findNewTargets ()
 		if (ret)
 		{
 			// don't observe us - we are bellow horizont etc..
+			logStream (MESSAGE_DEBUG) << "remove target " << tar->getTargetName () << " # " << tar->getTargetID () << " from possible targets" << sendLog;
 			delete *target_list;
 			target_list = possibleTargets.erase (target_list);
-			logStream (MESSAGE_DEBUG) << "remove target tar_id " << tar->
-				getTargetID () << " from possible targets" << sendLog;
 		}
 		else
 		{
