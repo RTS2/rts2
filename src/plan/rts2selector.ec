@@ -270,7 +270,6 @@ int Selector::selectNextNight (int in_bonusLimit)
 
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
-		std::cout << (*target_list)->bonus << " " << (*target_list)->target->getBonus () << std::endl;
 		if ((*target_list)->target->checkConstraints (JD))
 			break;
 	}
