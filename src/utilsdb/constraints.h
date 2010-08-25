@@ -27,6 +27,16 @@
 namespace rts2db
 {
 
+class ConstraintDoubleInterval
+{
+	public:
+		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
+		bool satisfy (double val);
+	private:
+		double lower;
+		double upper;
+};
+
 /**
  * Abstract class for constraints.
  *
@@ -37,18 +47,14 @@ class Constraint
 	public:
 		Constraint () {};
 
-		virtual void load (xmlNodePtr cons) = 0;	
+		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD) = 0;
-};
-
-class ConstraintTimeInterval
-{
-	public:
-		ConstraintTimeInterval (double _from, double _to) { from = _from; to = _to; }
-		virtual bool satisfy (double JD);
+	protected:
+		void clearIntervals () { intervals.clear (); }
+		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
+		virtual bool isBetween (double JD);
 	private:
-		double from;
-		double to;
+		std::list <ConstraintDoubleInterval> intervals;
 };
 
 /**
@@ -61,63 +67,39 @@ class ConstraintTime:public Constraint
 	public:
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD);
-	private:
-		void addInterval (double from, double to) { intervals.push_back (ConstraintTimeInterval (from, to)); }	
-		std::list <ConstraintTimeInterval> intervals;
 };
 
-class ConstraintDoubleInterval
-{
-	public:
-		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
-		bool satisfy (double val);
-	private:
-		double lower;
-		double upper;
-};
-
-class ConstraintDouble:public Constraint
-{
-	public:
-		virtual void load (xmlNodePtr cons);
-	protected:
-		virtual bool isBetween (double JD);
-	private:
-		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); };
-		std::list <ConstraintDoubleInterval> intervals;
-};
-
-class ConstraintAirmass:public ConstraintDouble
+class ConstraintAirmass:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintHA:public ConstraintDouble
+class ConstraintHA:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintLunarDistance:public ConstraintDouble
+class ConstraintLunarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintLunarPhase:public ConstraintDouble
+class ConstraintLunarPhase:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintSolarDistance:public ConstraintDouble
+class ConstraintSolarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class ConstraintSunAltitude:public ConstraintDouble
+class ConstraintSunAltitude:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);

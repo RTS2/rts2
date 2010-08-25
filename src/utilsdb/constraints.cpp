@@ -36,55 +36,22 @@ bool between (double val, double low, double upper)
 
 using namespace rts2db;
 
-bool ConstraintTimeInterval::satisfy (double JD)
-{
-	return between (JD, from, to);
-}
-
-void ConstraintTime::load (xmlNodePtr cons)
-{
-	intervals.clear ();
-	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
-	{
-		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
-		{
-			double from = rts2_nan ("f");
-			double to = rts2_nan ("f");
-
-			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
-			{
-				if (xmlStrEqual (par->name, (xmlChar *) "from"))
-					parseDate ((const char *) par->children->content, from);
-				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
-					parseDate ((const char *) par->children->content, to);
-				else
-					throw XmlUnexpectedNode (par);
-			}
-			addInterval (from, to);
-		}
-		else
-		{
-			throw XmlUnexpectedNode (inter);
-		}
-	}
-}
-
-bool ConstraintTime::satisfy (Target *target, double JD)
-{
-	for (std::list <ConstraintTimeInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
-	{
-		if (iter->satisfy (JD))
-			return true;
-	}
-	return false;
-}
-
 bool ConstraintDoubleInterval::satisfy (double val)
 {
 	return between (val, lower, upper);
 }
 
-void ConstraintDouble::load (xmlNodePtr cons)
+bool Constraint::isBetween (double val)
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter->satisfy (val))
+			return true;
+	}
+	return false;
+}
+
+void Constraint::load (xmlNodePtr cons)
 {
 	intervals.clear ();
 	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
@@ -112,14 +79,37 @@ void ConstraintDouble::load (xmlNodePtr cons)
 	}
 }
 
-bool ConstraintDouble::isBetween (double val)
+void ConstraintTime::load (xmlNodePtr cons)
 {
-	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	clearIntervals ();
+	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
 	{
-		if (iter->satisfy (val))
-			return true;
+		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
+		{
+			double from = rts2_nan ("f");
+			double to = rts2_nan ("f");
+
+			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
+			{
+				if (xmlStrEqual (par->name, (xmlChar *) "from"))
+					parseDate ((const char *) par->children->content, from);
+				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
+					parseDate ((const char *) par->children->content, to);
+				else
+					throw XmlUnexpectedNode (par);
+			}
+			addInterval (from, to);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (inter);
+		}
 	}
-	return false;
+}
+
+bool ConstraintTime::satisfy (Target *target, double JD)
+{
+	return isBetween (JD);
 }
 
 bool ConstraintAirmass::satisfy (Target *tar, double JD)
