@@ -301,8 +301,21 @@ void PrintTarget::printTarget (Target *target)
 		// test and print constraints
 		if (constraintFile && constraints)
 		{
-			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl
-				<< "number of violations " << constraints->violated (target, JD) << std::endl;
+			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl;
+			std::list <std::string> vn;
+			constraints->violated (target, JD, vn);
+			std::cout << "number of violations " << vn.size ();
+			if (vn.size () > 0)
+			{
+				std::cout << " - violated in ";
+				for (std::list <std::string>::iterator iter = vn.begin (); iter != vn.end (); iter++)
+				{
+					if (iter != vn.begin ())
+						std::cout << ", ";
+					std::cout << *iter;
+				}
+			}
+			std::cout << std::endl;
 			
 		}
 		// print recomended calibrations targets

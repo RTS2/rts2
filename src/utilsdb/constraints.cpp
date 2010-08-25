@@ -43,6 +43,7 @@ bool ConstraintTimeInterval::satisfy (double JD)
 
 void ConstraintTime::load (xmlNodePtr cons)
 {
+	intervals.clear ();
 	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
 	{
 		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
@@ -85,6 +86,7 @@ bool ConstraintDoubleInterval::satisfy (double val)
 
 void ConstraintDouble::load (xmlNodePtr cons)
 {
+	intervals.clear ();
 	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
 	{
 		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
@@ -154,10 +156,14 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	return isBetween (hrz_sun.alt);
 }
 
+Constraints::Constraints (Constraints &cs)
+{
+}
+
 Constraints::~Constraints ()
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
-		delete *iter;
+		delete iter->second;
 	clear ();
 }
 
@@ -165,71 +171,51 @@ bool Constraints::satisfy (Target *tar, double JD)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (!((*iter)->satisfy (tar, JD)))
+		if (!(iter->second->satisfy (tar, JD)))
 			return false;
 	}
 	return true;
 }
 
-size_t Constraints::violated (Target *tar, double JD)
+size_t Constraints::violated (Target *tar, double JD, std::list <std::string> &names)
 {
-	size_t vn = 0;
+	names.clear ();
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (!((*iter)->satisfy (tar, JD)))
-			vn++;
+		if (!(iter->second->satisfy (tar, JD)))
+			names.push_back (iter->first);
 	}
-	return vn;
+	return names.size ();
 }
 
 void Constraints::load (xmlNodePtr _node)
 {
 	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)
 	{
-		if (xmlStrEqual (cons->name, (xmlChar *) "time"))
+	  	Constraint *con;
+		Constraints::iterator candidate = find (std::string ((const char *) cons->name));
+		if (candidate != end ())
 		{
-			ConstraintTime *tc = new ConstraintTime ();
-			try
-			{
-				tc->load (cons);
-			}
-			catch (XmlError er)
-			{
-				delete tc;
-				throw er;
-			}
-			push_back (tc);
+			con = candidate->second;
 		}
-		else // assume it is DoubleInterval node
+		else 
 		{
-			ConstraintDouble *cdi;
-			if (xmlStrEqual (cons->name, (xmlChar *) "airmass"))
-				cdi = new ConstraintAirmass ();
-			else if (xmlStrEqual (cons->name, (xmlChar *) "HA"))
-				cdi = new ConstraintHA ();
-			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarDistance"))
-				cdi = new ConstraintLunarDistance ();
-			else if (xmlStrEqual (cons->name, (xmlChar *) "lunarPhase"))
-				cdi = new ConstraintLunarPhase ();
-			else if (xmlStrEqual (cons->name, (xmlChar *) "solarDistance"))
-				cdi = new ConstraintSolarDistance ();
-			else if (xmlStrEqual (cons->name, (xmlChar *) "sunAltitude"))
-				cdi = new ConstraintSunAltitude ();
-			else
-			{
-				delete cdi;
+			con = createConstraint ((const char *) cons->name);
+			if (con == NULL)
 				throw XmlUnexpectedNode (cons);
-			}
-			try
-			{
-				cdi->load (cons);
-			}
-			catch (XmlError er)
-			{
-				delete cdi;
-				throw er;
-			}
-			push_back (cdi);
+		}
+		try
+		{
+			con->load (cons);
+		}
+		catch (XmlError er)
+		{
+			delete con;
+			throw er;
+		}
+		if (candidate == end ())
+		{
+			(*this)[std::string ((const char *) cons->name)] = con;
 		}
 	}
 }
@@ -250,4 +236,23 @@ void Constraints::load (const char *filename)
 	load (root_element);
 	xmlFreeDoc (doc);
 	xmlCleanupParser ();
+}
+
+Constraint *Constraints::createConstraint (const char *name)
+{
+	if (!strcmp (name, "time"))
+		return new ConstraintTime ();
+	else if (!strcmp (name, "airmass"))
+		return new ConstraintAirmass ();
+	else if (!strcmp (name, "HA"))
+		return new ConstraintHA ();
+	else if (!strcmp (name, "lunarDistance"))
+		return new ConstraintLunarDistance ();
+	else if (!strcmp (name, "lunarPhase"))
+		return new ConstraintLunarPhase ();
+	else if (!strcmp (name, "solarDistance"))
+		return new ConstraintSolarDistance ();
+	else if (!strcmp (name, "sunAltitude"))
+		return new ConstraintSunAltitude ();
+	return NULL;
 }

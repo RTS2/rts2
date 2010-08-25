@@ -29,12 +29,15 @@ namespace rts2db
 
 /**
  * Abstract class for constraints.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Constraint
 {
 	public:
 		Constraint () {};
-		
+
+		virtual void load (xmlNodePtr cons) = 0;	
 		virtual bool satisfy (Target *tar, double JD) = 0;
 };
 
@@ -48,10 +51,15 @@ class ConstraintTimeInterval
 		double to;
 };
 
+/**
+ * Class for time intervals.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ConstraintTime:public Constraint
 {
 	public:
-		void load (xmlNodePtr cons);
+		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD);
 	private:
 		void addInterval (double from, double to) { intervals.push_back (ConstraintTimeInterval (from, to)); }	
@@ -71,7 +79,7 @@ class ConstraintDoubleInterval
 class ConstraintDouble:public Constraint
 {
 	public:
-		void load (xmlNodePtr cons);
+		virtual void load (xmlNodePtr cons);
 	protected:
 		virtual bool isBetween (double JD);
 	private:
@@ -115,10 +123,15 @@ class ConstraintSunAltitude:public ConstraintDouble
 		virtual bool satisfy (Target *tar, double JD);
 };
 
-class Constraints:public std::vector <Constraint *>
+class Constraints:public std::map <std::string, Constraint *>
 {
 	public:
 		Constraints () {}
+
+		/**
+		 * Copy constructor. Creates new constraint members, so if they are changed in copy, they do not affect master.
+		 */
+		Constraints (Constraints &cs);
 
 		~Constraints ();
 		/**
@@ -130,12 +143,13 @@ class Constraints:public std::vector <Constraint *>
 		bool satisfy (Target *tar, double JD);
 
 		/**
-		 * Return number of violated constainst.
+		 * Return number and name of violated constainst.
 		 *
 		 * @param tar   target for which violated constrains will be calculated
 		 * @param JD    Julian date of constraints check
+		 * @param names return names of violated constraints
 		 */
-		size_t violated (Target *tar, double JD);
+		size_t violated (Target *tar, double JD, std::list <std::string> &names);
 
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.
@@ -150,6 +164,9 @@ class Constraints:public std::vector <Constraint *>
 		 * @param filename   name of file holding constraints in XML
 		 */
 		void load (const char *filename);
+
+	private:
+		Constraint *createConstraint (const char *name);
 };
 
 }
