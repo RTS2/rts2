@@ -1118,8 +1118,8 @@ void Rts2Image::writeMetaData (struct imghdr *im_h, double _xoa, double _yoa)
 		return;
 	}
 
-	setXoA (_xoa - im_h->x);
-	setYoA (_yoa - im_h->y);
+	setXoA (_xoa - ntohs (im_h->x));
+	setYoA (_yoa - ntohs (im_h->y));
 
 	filter_i = ntohs (im_h->filter);
 
