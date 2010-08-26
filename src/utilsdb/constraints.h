@@ -47,10 +47,16 @@ class Constraint
 	public:
 		Constraint () {};
 
+		/**
+		 * Copy constraint intervals.
+		 */
+		Constraint (Constraint &cons);
+
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD) = 0;
 	protected:
 		void clearIntervals () { intervals.clear (); }
+		void add (const ConstraintDoubleInterval &inte) { intervals.push_back (inte); }
 		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
 		virtual bool isBetween (double JD);
 	private:

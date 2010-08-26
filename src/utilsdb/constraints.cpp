@@ -41,14 +41,10 @@ bool ConstraintDoubleInterval::satisfy (double val)
 	return between (val, lower, upper);
 }
 
-bool Constraint::isBetween (double val)
+Constraint::Constraint (Constraint &cons)
 {
-	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
-	{
-		if (iter->satisfy (val))
-			return true;
-	}
-	return false;
+	for (std::list <ConstraintDoubleInterval>::iterator iter = cons.intervals.begin (); iter != cons.intervals.end (); iter++)
+		add (*iter);
 }
 
 void Constraint::load (xmlNodePtr cons)
@@ -77,6 +73,16 @@ void Constraint::load (xmlNodePtr cons)
 			throw XmlUnexpectedNode (inter);
 		}
 	}
+}
+
+bool Constraint::isBetween (double val)
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter->satisfy (val))
+			return true;
+	}
+	return false;
 }
 
 void ConstraintTime::load (xmlNodePtr cons)
