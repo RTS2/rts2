@@ -40,7 +40,7 @@ using namespace rts2grbd;
 void ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
 	// we need to handle somehow better leap seconds, but that can wait
-	out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
+	out_time = GPSsec + GPS_OFFSET + GPSusec / (1000 * USEC_SEC) + 14.0;
 }
 
 
