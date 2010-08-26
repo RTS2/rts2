@@ -1714,8 +1714,10 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaDeg180> ("LUNAR RA DIST.", LibnovaDeg180 (getLunarRaDistance (JD)))
 		<< InfoVal<LibnovaDeg360> ("LUNAR PHASE", LibnovaDeg360 (ln_get_lunar_phase (JD)))
 		<< std::endl
+		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", Rts2Config::instance ()->getMasterConstraintFile ())
+		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstaintFile ())
 		<< InfoVal<const char*> ("CONSTRAINT FILE", getConstraintFile ())
-		<< InfoVal<bool> ("CONSTRAINTS", checkConstraints (JD))
+		<< InfoVal<const char*> ("CONSTRAINTS", checkConstraints (JD) ? "satisfied" : "not met")
 		<< std::endl;
 }
 
@@ -1798,10 +1800,23 @@ const char *Target::getConstraintFile ()
 	return constraintFile;
 }
 
+const char *Target::getGroupConstaintFile ()
+{
+	if (groupConstraintFile)
+		return groupConstraintFile;
+	
+	std::ostringstream os;
+	os << Rts2Config::instance ()->getTargetDir () << "/groups/" << getTargetType () << ".xml";
+	groupConstraintFile = new char[os.str ().length () + 1];
+	strcpy (groupConstraintFile, os.str ().c_str ());
+	return groupConstraintFile;
+}
+
 bool Target::checkConstraints (double JD)
 {
 	if (constraints)
 		return constraints->satisfy (this, JD);
+	// check for system level constraints
 	try
 	{
 		constraints = new Constraints (MasterConstraints::getConstraint ());
@@ -1811,6 +1826,16 @@ bool Target::checkConstraints (double JD)
 		logStream (MESSAGE_ERROR) << "cannot load master constraint file:" << er << sendLog;
 		constraints = new Constraints ();
 	}
+	// check for group constraint
+	try
+	{
+		constraints->load (getGroupConstaintFile ());
+	}
+	catch (XmlError er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot load group constraint file " << getGroupConstaintFile () << ":" << er << sendLog;
+	}
+	// load target constrainst
 	try
 	{
 		constraints->load (getConstraintFile ());

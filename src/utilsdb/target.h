@@ -500,6 +500,12 @@ class Target:public Rts2Target
 		 */
 		virtual void writeToImage (Rts2Image * image, double JD);
 
+
+		/**
+		 * Return group constraint file.
+		 */
+		const char *getGroupConstaintFile ();
+
 		/**
 		 * Return location of constraint file.
 		 */
@@ -551,6 +557,7 @@ class Target:public Rts2Target
 		void writeAirmass (std::ostream & _os, double jd);
 
 		char *constraintFile;
+		char *groupConstraintFile;
 		rts2db::Constraints *constraints;
 };
 
