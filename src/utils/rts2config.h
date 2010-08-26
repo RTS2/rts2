@@ -400,6 +400,8 @@ class Rts2Config:public Rts2ConfigRaw
 
 		const char *getTargetDir () { return targetDir.c_str (); }
 
+		const char *getMasterConstraintFile () { return masterConsFile.c_str (); }
+
 	protected:
 		virtual int getSpecialValues ();
 
@@ -434,5 +436,6 @@ class Rts2Config:public Rts2ConfigRaw
 		std::string obs_darks;
 
 		std::string targetDir;
+		std::string masterConsFile;
 };
 #endif							 /* !__RTS2_CONFIG__ */

@@ -157,4 +157,17 @@ class Constraints:public std::map <std::string, Constraint *>
 		Constraint *createConstraint (const char *name);
 };
 
+/**
+ * Master constraint singleton.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class MasterConstraints
+{
+  	public:
+		static Constraints & getConstraint ();
+	private:
+		static Constraints *cons;
+};
+
 }

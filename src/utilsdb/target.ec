@@ -1802,7 +1802,15 @@ bool Target::checkConstraints (double JD)
 {
 	if (constraints)
 		return constraints->satisfy (this, JD);
-	constraints = new Constraints ();
+	try
+	{
+		constraints = new Constraints (MasterConstraints::getConstraint ());
+	}
+	catch (XmlError er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot load master constraint file:" << er << sendLog;
+		constraints = new Constraints ();
+	}
 	try
 	{
 		constraints->load (getConstraintFile ());

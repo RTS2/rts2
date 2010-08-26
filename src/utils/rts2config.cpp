@@ -48,6 +48,7 @@ int Rts2Config::getSpecialValues ()
 	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
 
 	getString ("observatory", "target_path", targetDir, "/etc/rts2/targets");
+	masterConsFile = targetDir + "/constraints.xml";
 
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 

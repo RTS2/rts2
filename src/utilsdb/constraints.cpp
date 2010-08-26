@@ -63,10 +63,16 @@ void Constraint::load (xmlNodePtr cons)
 					lower = atof ((const char *) par->children->content);
 				else if (xmlStrEqual (par->name, (xmlChar *) "upper"))
 					upper = atof ((const char *) par->children->content);
+				else if (par->type == XML_COMMENT_NODE)
+				  	continue;
 				else
 					throw XmlUnexpectedNode (par);
 			}
 			addInterval (lower, upper);
+		}
+		else if (inter->type == XML_COMMENT_NODE)
+		{
+			continue;
 		}
 		else
 		{
@@ -101,10 +107,16 @@ void ConstraintTime::load (xmlNodePtr cons)
 					parseDate ((const char *) par->children->content, from);
 				else if (xmlStrEqual (par->name, (xmlChar *) "to"))
 					parseDate ((const char *) par->children->content, to);
+				else if (par->type == XML_COMMENT_NODE)
+					continue;
 				else
 					throw XmlUnexpectedNode (par);
 			}
 			addInterval (from, to);
+		}
+		else if (inter->type == XML_COMMENT_NODE)
+		{
+			continue;
 		}
 		else
 		{
@@ -152,7 +164,7 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	return isBetween (hrz_sun.alt);
 }
 
-Constraints::Constraints (Constraints &cs)
+Constraints::Constraints (Constraints &cs): std::map <std::string, Constraint *> (cs)
 {
 }
 
@@ -188,6 +200,8 @@ void Constraints::load (xmlNodePtr _node)
 {
 	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)
 	{
+		if (cons->type == XML_COMMENT_NODE)
+			continue;
 	  	Constraint *con;
 		Constraints::iterator candidate = find (std::string ((const char *) cons->name));
 		if (candidate != end ())
@@ -251,4 +265,15 @@ Constraint *Constraints::createConstraint (const char *name)
 	else if (!strcmp (name, "sunAltitude"))
 		return new ConstraintSunAltitude ();
 	return NULL;
+}
+
+Constraints *MasterConstraints::cons = NULL;
+
+Constraints & MasterConstraints::getConstraint ()
+{
+	if (cons)
+		return *cons;
+	cons = new Constraints ();
+	cons->load (Rts2Config::instance ()->getMasterConstraintFile ());
+	return *cons;
 }
