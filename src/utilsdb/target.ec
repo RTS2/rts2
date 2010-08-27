@@ -258,6 +258,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	constraintFile = NULL;
 	constraints = NULL;
 
+	groupConstraintFile = NULL;
+
 	observationStart = -1;
 }
 
@@ -283,6 +285,8 @@ Target::Target ()
 	airmassScale = 750.0;
 	constraintFile = NULL;
 	constraints = NULL;
+
+	groupConstraintFile = NULL;
 
 	observationStart = -1;
 
