@@ -25,13 +25,19 @@ while [ "x$1" != "x" ]; do
   case $1 in
     -h)
       cat << EOF
-Build RTS2 PostgreSQL database. Options:
+Build RTS2 PostgreSQL database.
+
+Usage:
+To fill in stars database:
+  rts2-builddb starts
+
+Options:
   -h .. this help
   -d .. directory with initialization files
   -I .. do not fill database with initialization data
   -T .. do not fill database with standard targets
 
-Options must be folowed by name of created database. You must create database with createdb binary.
+Options must be folowed by name of an existing database. You must create database with createdb binary.
 
 WARNING: Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifying -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do.
 
