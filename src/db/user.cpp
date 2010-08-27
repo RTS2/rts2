@@ -63,10 +63,10 @@ class Rts2UserApp:public Rts2AppDb
 void Rts2UserApp::usage ()
 {
 	std::cout << "\t" << getAppName () << " -l" << std::endl
-		<< "\t" << getAppName () << "-a <user_name>" << std::endl
-		<< "\t" << getAppName () << "-p <user_name>" << std::endl
-		<< "\t" << getAppName () << "-e <user_name>" << std::endl
-		<< "\t" << getAppName () << "-m <user_name>" << std::endl;
+		<< "\t" << getAppName () << " -a <user_name>" << std::endl
+		<< "\t" << getAppName () << " -p <user_name>" << std::endl
+		<< "\t" << getAppName () << " -e <user_name>" << std::endl
+		<< "\t" << getAppName () << " -m <user_name>" << std::endl;
 }
 
 int Rts2UserApp::processOption (int in_opt)
