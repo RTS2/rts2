@@ -124,8 +124,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		return;
 	ret = newTar->considerForObserving (JD);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "considerForObserving tar_id: " << newTar->
-		getTargetID () << " ret: " << ret << sendLog;
+	logStream (MESSAGE_DEBUG) << "considerForObserving tar_id: " << newTar->getTargetID () << " ret: " << ret << sendLog;
 	#endif
 	if (ret)
 	{
@@ -209,8 +208,7 @@ void Selector::findNewTargets ()
 		AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.
-			sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		return;
 	}
 
@@ -281,24 +279,24 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose)
 			}
 			if (tar_best == possibleTargets.end ())
 			{
-			  	logStream (MESSAGE_DEBUG) << "Best target " << tar->getTargetName () << " #" << tar->getTargetID () << " with bonus " << tar->getTargetBonus () << sendLog;
+			  	logStream (MESSAGE_DEBUG) << "best target " << tar->getTargetName () << " #" << tar->getTargetID () << " with bonus " << tar->getTargetBonus () << sendLog;
 				tar_best = target_list;
 			}
 			else
 			{
-				logStream (MESSAGE_DEBUG) << "Target " << tar->getTargetName () << " #" << tar->getTargetID () << " bonus " << tar->getTargetBonus () << sendLog;
+				logStream (MESSAGE_DEBUG) << "target " << tar->getTargetName () << " #" << tar->getTargetID () << " bonus " << tar->getTargetBonus () << sendLog;
 			}
 		}
 		else if (verbose)
 		{
-			logStream (MESSAGE_DEBUG) << "Target " << tar->getTargetName () << " #" << tar->getTargetID () << " violates constraints - ignoring it" << sendLog;
+			logStream (MESSAGE_DEBUG) << "target " << tar->getTargetName () << " #" << tar->getTargetID () << " violates constraints - ignoring it" << sendLog;
 		}
 	}
 
 	if (tar_best == possibleTargets.end () || (*tar_best)->bonus < in_bonusLimit)
 	{
-		logStream (MESSAGE_INFO) << "None target selected, selecting darks" << sendLog;
-		return selectDarks ();
+		logStream (MESSAGE_INFO) << "no target selected, letting system to decide what to do" << sendLog;
+		return -1;
 	}
 	return (*tar_best)->target->getTargetID ();
 }
