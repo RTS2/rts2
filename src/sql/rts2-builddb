@@ -29,8 +29,12 @@ Build RTS2 PostgreSQL database. Options:
   -h .. this help
   -d .. directory with initialization files
   -I .. do not fill database with initialization data
-  -T .. do not fill database with standard targets 
-Options must be folowed by name of created database. You can create database with createdb tool. Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifiin -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do.
+  -T .. do not fill database with standard targets
+
+Options must be folowed by name of created database. You must create database with createdb binary.
+
+WARNING: Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifying -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do.
+
 EOF
       exit 1
       ;;
