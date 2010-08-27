@@ -72,10 +72,17 @@ if [ "x$DBNAME" == "x" ]; then
   exit 1
 fi
 
+LOGFILE="build_$DBNAME.log"
+
+rm -f $LOGFILE
+
+echo "Logs generated in $LOGFILE"
+
 function run_psql
 {
   echo -n $1 " ."
-  $PSQLDB --echo-all < $2|while read x; do echo -n "."; done
+  echo "running $PSQLDB < $2" >> $LOGFILE
+  $PSQLDB --echo-all 2>> $LOGFILE < $2|while read x; do echo -n "."; done
   echo " OK"
 }
 
@@ -136,7 +143,10 @@ run_psql "Granting database rights" $INITDIR/grant.sql
 
 cat << EOF
 
-Database $DBNAME created.
+Database $DBNAME created. Please examine $LOGFILE if something in RTS2 does not work.
+
+You can now access database through RTS2 commands, or with psql $DBNAME.
+
 EOF
 
 if [ $doinit != 1 ]; then
