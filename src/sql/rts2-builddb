@@ -75,7 +75,7 @@ fi
 function run_psql
 {
   echo -n $1 " ."
-  $PSQLDB < $2|while read x; do echo -n "."; done
+  $PSQLDB --echo-all < $2|while read x; do echo -n "."; done
   echo " OK"
 }
 
@@ -134,4 +134,11 @@ fi
 # grant rights
 run_psql "Granting database rights" $INITDIR/grant.sql
 
-echo "database created"
+cat << EOF
+
+Database $DBNAME created.
+EOF
+
+if [ $doinit != 1 ]; then
+  echo "Some of the initialization was skipped. Brave for consequences, or rerun without -T or -I options."
+fi
