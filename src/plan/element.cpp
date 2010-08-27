@@ -108,31 +108,58 @@ int Element::idle ()
 ElementExpose::ElementExpose (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;
+	callProgress = first;
 }
 
 int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
-	// change values of the exposur
-	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
-	// EXP_LIGHT, expTime);
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 	getDevice (new_device);
+	if (callProgress == first && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
+	{
+		callProgress = SHUTTER;
+		*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
+		return NEXT_COMMAND_KEEP;
+	}
+	callProgress = SHUTTER;
+	// change values of the exposure
+	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
+	{
+		callProgress = EXPOSURE;
+		*new_command = new Rts2CommandChangeValue (camera, "exposure", '=', expTime);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
+		return NEXT_COMMAND_KEEP;
+	}
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	return 0;
 }
 
 ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;
+	callProgress = first;
 }
 
 int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
-	// change values of the exposure
-	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	getDevice (new_device);
+	if (callProgress == first && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 1)
+	{
+		callProgress = SHUTTER;
+		*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
+		return NEXT_COMMAND_KEEP;
+	}
+	callProgress = SHUTTER;
+	// change values of the exposure
+	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
+	{
+		callProgress = EXPOSURE;
+		*new_command = new Rts2CommandChangeValue (camera, "exposure", '=', expTime);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
+		return NEXT_COMMAND_KEEP;
+	}
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	return 0;
 }
 
@@ -254,8 +281,7 @@ int ElementSendSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** ne
 	// when some else script will wait reach point when it has to wait for
 	// this signal, it will not wait as it will ask before enetring wait
 	// if some script will send required signal
-	script->getMaster ()->
-		postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+	script->getMaster ()->postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
 	askedFor = false;
 	return NEXT_COMMAND_NEXT;
 }
@@ -275,11 +301,9 @@ int ElementWaitSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** ne
 
 	// nobody will send us a signal..end script
 	ret = sig;
-	script->getMaster ()->
-		postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+	script->getMaster ()->postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "ElementWaitSignal::defnextCommand "
-		<< ret << " (" << script->getDefaultDevice () << ")" << sendLog;
+	logStream (MESSAGE_DEBUG) << "ElementWaitSignal::defnextCommand " << ret << " (" << script->getDefaultDevice () << ")" << sendLog;
 	#endif
 	if (ret != -1)
 		return NEXT_COMMAND_NEXT;

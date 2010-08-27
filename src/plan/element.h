@@ -165,6 +165,7 @@ class ElementExpose:public Element
 		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
 	private:
 		float expTime;
+		enum {first, SHUTTER, EXPOSURE } callProgress;
 };
 
 class ElementDark:public Element
@@ -176,6 +177,7 @@ class ElementDark:public Element
 		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
 	private:
 		float expTime;
+		enum {first, SHUTTER, EXPOSURE } callProgress;
 };
 
 class ElementBox:public Element
