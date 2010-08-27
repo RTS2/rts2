@@ -6,7 +6,7 @@ COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabl
 3	o	Focusing frames	0	0	Used to focusc cameras	t	0	0	\N
 4	m	Default model	0	0	Used to model get enought pictures for mount model	t	0	0	\N
 6	c	Master calibration target	0	0	Used to calibration frames	t	0	0	\N
-7	p	Master plan	0	0	Observe by plan	t	100	0	\N
+7	p	Master plan	0	0	Observe by plan	t	1	0	\N
 10	W	Swift FOV	0	0	Swift Field of View, based on GCN	t	0	0	\N
 11	I	Integral FOV	0	0	Integral Field of View, based on GCN	t	0	0	\N
 \.
