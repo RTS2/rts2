@@ -21,11 +21,3 @@ CREATE TABLE plan (
 CREATE SEQUENCE plan_id;
 
 CREATE INDEX plan_plan_start ON plan (plan_start);
-
-COPY types FROM stdin;
-p	Plan target
-\.
-
-COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabled, tar_priority, tar_bonus, tar_bonus_time) FROM stdin;
-7	p	Master plan	0	0	Observe by plan	t	100	0	\N
-\.

@@ -33,7 +33,3 @@ INSERT INTO filters (filter_id, standart_name) SELECT DISTINCT img_filter, img_f
 ALTER TABLE images ADD CONSTRAINT "fk_images_filters" FOREIGN KEY (img_filter) REFERENCES filters(filter_id);
 
 CREATE INDEX images_filters ON images (img_filter);
-
-COPY types FROM stdin;
-L	Planets
-\.

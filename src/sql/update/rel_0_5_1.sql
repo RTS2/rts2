@@ -28,16 +28,6 @@ CREATE TABLE airmass_cal_images (
 FOREIGN KEY (obs_id, img_id) REFERENCES images (obs_id, img_id)
 );
 
--- we forget calibration type..
-COPY types FROM stdin;
-c	Opportunity targets
-\.
-
--- add entry for calibartion master target
-COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabled, tar_priority, tar_bonus, tar_bonus_time) FROM stdin;
-6	c	Master calibration target	0	0	Used to calibration frames	t	0	0	\N
-\.
-
 CREATE OR REPLACE FUNCTION img_wcs_naxis1 (wcs)
   RETURNS int AS 'pg_wcs.so', 'img_wcs_naxis1' LANGUAGE 'C';
 

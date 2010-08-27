@@ -1,3 +1,3 @@
 sqldatadir = ${datadir}/doc/@PACKAGE@/sql
 
-dist_sqldata_DATA = dummy.sql landolt.sql planets.sql
+dist_sqldata_DATA = init.sql targets.sql dummy.sql landolt.sql planets.sql flats_iac.sql
