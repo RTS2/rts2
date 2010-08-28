@@ -28,6 +28,18 @@ except:
 
 from datetime import datetime
 
+class FlatAttempt:
+	"""Class used to log attempts to produce flat."""
+	def __init__ (self, exptime, average, ratio, res):
+		self.date = datetime.today()
+		self.exptime = exptime
+		self.average = average
+		self.ratio = ratio
+		self.res = res
+
+	def toString(self):
+		return "%s %f: %f ratio %f result %s" % (self.date, self.exptime, self.average, self.ratio, self.res)
+
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
 	def __init__(self,filter,binning=None,ngood=None,window=None):
@@ -35,6 +47,16 @@ class Flat:
 		self.binning = binning
 		self.ngood = ngood
 		self.window = window
+		self.log = []
+
+	def attempt(self, exptime, average, ratio, res):
+		self.log.append(FlatAttempt(exptime, average, ratio, res))
+	
+	def logString(self):
+		ret = ""
+		for a in self.log:
+			ret += a.toString () + '\n'
+		return ret
 
 	def signature(self):
 		"""Return signature string of given flat image configuration."""
@@ -220,7 +242,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		else:
 			self.numberFlats = self.defaultNumberFlats
 	
-	def executeEvening(self):
+	def execute(self, evening):
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
@@ -229,42 +251,28 @@ class FlatScript (rts2comm.Rts2Comm):
 
 		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
-			if (imgstatus == -1 and self.exptime >= self.expTimes[-1]):
-				# too dim image and exposure time change cannot correct it
-				return
-			elif (imgstatus == 1):
-				time.sleep(self.sleepTime)
-			# 0 mean good image, just continue..
+			if (evening):
+				if (imgstatus == -1 and self.exptime >= self.expTimes[-1]):
+					# too dim image and exposure time change cannot correct it
+					return
+				elif (imgstatus == 1):
+					time.sleep(self.sleepTime)
+				# 0 mean good image, just continue..
+			else:
+				# morning
+				if (imgstatus == 1 and self.exptime <= self.expTimes[0]):
+					# too bright image and exposure time change cannot correct it
+					return
+				elif (imgstatus == -1):
+					time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
+				# good image, just continue as usuall
 	
-	def runEvening(self):
-		for self.flatNum in range(0,len(self.eveningFlats)): # starting from the bluest and ending with the redest
-		  	self.flat = self.eveningFlats[self.flatNum]
+	def takeFlats(self, evening):
+		for self.flatNum in range(0,len(self.usedFlats)): # starting from the bluest and ending with the redest
+		  	self.flat = self.usedFlats[self.flatNum]
 			self.flatImages.append([])
 			self.setConfiguration()
-			self.executeEvening()
-
-	def executeMorning(self):
-		self.exptime = self.startExpTime
-
-		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
-			self.isSubWindow = True
-			self.setValue('WINDOW',self.waitingSubWindow)
-
-		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
-			imgstatus = self.acquireImage()
-			if (imgstatus == 1 and self.exptime <= self.expTimes[0]):
-				# too bright image and exposure time change cannot correct it
-				return
-			elif (imgstatus == -1):
-				time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
-			# good image, just continue as usuall
-
-	def runMorning(self):
-		for self.flatNum in range(0,len(self.morningFlats)): # starting from the redest and ending with the bluest
-		  	self.flat = self.morningFlats[self.flatNum]
-			self.flatImages.append([])
-			self.setConfiguration()
-			self.executeMorning()
+			self.execute(evening)
 
 	def takeDarks(self):
 		"""Take flats dark images in spare time."""
@@ -316,10 +324,10 @@ class FlatScript (rts2comm.Rts2Comm):
 		# choose filter sequence..
 		if (self.isEvening()):
 		  	self.usedFlats = self.eveningFlats
-			self.runEvening()
+			self.takeFlats(True)
 		else:
 		  	self.usedFlats = self.morningFlats
-			self.runMorning()
+			self.takeFlats(False)
 
 		if (self.doDarks):
 			self.log('I','finished flats, taking calibration darks')
@@ -340,7 +348,9 @@ class FlatScript (rts2comm.Rts2Comm):
 			  	badFlats.append(self.usedFlats[i])
 
 		if (self.email != None):
-			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
+			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
+			for flat in self.usedFlats:
+				msg += "\n\n" + flat.signature() + ':\n' + flat.logString()
 
 			mimsg = MIMEText(msg)
 			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
