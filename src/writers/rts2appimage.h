@@ -34,7 +34,8 @@ class Rts2AppImage:public Rts2CliApp
 			for (img_iter = imageNames.begin (); img_iter != imageNames.end (); img_iter++)
 			{
 				const char *an_name = *img_iter;
-				Rts2Image *image = new Rts2Image (an_name, false, readOnly);
+				Rts2Image *image = new Rts2Image ();
+				image->openImage (an_name, false, readOnly);
 				ret = processImage (image);
 				delete image;
 				if (ret)
