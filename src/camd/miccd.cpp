@@ -85,6 +85,8 @@ class MICCD:public Camera
 		Rts2ValueInteger *power;
 		Rts2ValueInteger *gain;
 
+		Rts2ValueInteger *shift;
+
 		camera_t camera;
 		camera_info_t cami;
 
@@ -118,6 +120,9 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	mode->addSelVal ("ULTRA LOW NOISE");
 
 	mode->setValueInteger (1);
+
+	createValue (shift, "SHIFT", "shift (for partial, not cleared readout)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	shift->setValueInteger (0);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 	addOption ('f', NULL, 1, "filter names (separated with :)");
@@ -204,7 +209,7 @@ int MICCD::initValues ()
 	cami.serial[10] = '\0';
 	cami.chip[10] = '\0';
 
-	addConstValue ("DESCRIPTION", "camera descriptio", cami.description);
+	addConstValue ("DESCRIPTION", "camera description", cami.description);
 	addConstValue ("SERIAL", "camera serial number", cami.serial);
 	addConstValue ("CHIP", "camera chip", cami.chip);
 
@@ -277,9 +282,20 @@ int MICCD::startExposure ()
 {
 	int ret;
 
-	ret = miccd_clear (&camera);
-	if (ret)
-		return -1;
+	if (shift->getValueInteger () == 0)
+	{
+		ret = miccd_clear (&camera);
+		if (ret)
+			return -1;
+	}
+	else if (shift->getValueInteger () < 0)
+	{
+		setHeight (getHeight ());
+	}
+	else
+	{
+		setHeight (shift->getValueInteger ());
+	}
 	if (getExpType () != 1)
 	{
 		ret = miccd_open_shutter (&camera);

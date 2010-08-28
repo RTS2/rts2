@@ -538,6 +538,11 @@ class Camera:public Rts2ScriptDevice
 			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
 		}
 
+		void setHeight (int in_height)
+		{
+			chipUsedReadout->setHeight (in_height);
+		}
+
 		/**
 		 * Suggest size of data buffer.  Data buffer is used to readout
 		 * and then send the data. It should be big enought to hold
