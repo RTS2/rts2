@@ -69,7 +69,7 @@ Rts2ConfigValue * Rts2ConfigSection::getValue (const char *valueName, bool verbo
 	if (verbose && find (missingValues.begin (), missingValues.end (), name) == missingValues.end ())
 	{
 	  	// check if that wasn't reported..
-		logStream (MESSAGE_WARNING) << "Cannot find value '" << name <<
+		logStream (MESSAGE_WARNING) << "cannot find value '" << name <<
 			"' in section '" << sectName << "'." << sendLog;
 		missingValues.push_back (name);
 	}
@@ -155,7 +155,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 			if (el == std::string::npos)
 			{
 				logStream (MESSAGE_ERROR) <<
-					"Cannot find end delimiter for section '" << line <<
+					"cannot find end delimiter for section '" << line <<
 					"' on line " << ln << " infile " << filename << "." << sendLog;
 				return -1;
 			}
@@ -167,7 +167,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 		{
 			if (!sect)
 			{
-				logStream (MESSAGE_ERROR) << "Value without section on line " <<
+				logStream (MESSAGE_ERROR) << "value without section on line " <<
 					ln << ": " << line <<  sendLog;
 				return -1;
 			}
@@ -255,7 +255,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 			}
 			if (pstate == VAL_QUT)
 			{
-				logStream (MESSAGE_ERROR) << "Missing \" on line " << ln
+				logStream (MESSAGE_ERROR) << "missing \" on line " << ln
 					<< " of file " << filename << sendLog;
 				return -1;
 			}
@@ -266,7 +266,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 			}
 			if (pstate != VAL_END)
 			{
-				logStream (MESSAGE_ERROR) << "Invalid configuration line " << ln 
+				logStream (MESSAGE_ERROR) << "invalid configuration line " << ln 
 					<< " of file " << filename << sendLog;
 				return -1;
 			}
@@ -306,7 +306,7 @@ int Rts2ConfigRaw::loadFile (const char *filename)
 	configStream->open (filename);
 	if (configStream->fail ())
 	{
-		logStream (MESSAGE_ERROR) << "Cannot open configuration file '" << filename <<
+		logStream (MESSAGE_ERROR) << "cannot open configuration file '" << filename <<
 			"'." << sendLog;
 		delete configStream;
 		return -1;
@@ -340,7 +340,7 @@ Rts2ConfigSection * Rts2ConfigRaw::getSection (const char *section, bool verbose
 	}
 	if (verbose && find (missingSections.begin (), missingSections.end (), name) == missingSections.end ())
 	{
-		logStream (MESSAGE_ERROR) << "Cannot find section '" << section << "'." << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot find section '" << section << "'." << sendLog;
 		missingSections.push_back (name);
 	}
 	return NULL;
@@ -417,7 +417,7 @@ int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &
 	value = strtol (valbuf.c_str (), &retv, 0);
 	if (*retv != '\0')
 	{
-		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
 			<< "] value '" << valueName 
 			<< "' to float number. Please check configuration file." << sendLog;
@@ -453,7 +453,7 @@ int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &
 #endif	
 	if (*retv != '\0')
 	{
-		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
 			<< "] value '" << valueName 
 			<< "' to float number. Please check configuration file." << sendLog;
@@ -498,7 +498,7 @@ int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double
 	value = strtod (valbuf.c_str (), &retv);
 	if (*retv != '\0')
 	{
-		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+		logStream (MESSAGE_ERROR) << "cannot convert " << valbuf
 			<< " in section [" << section
 			<< "] value '" << valueName 
 			<< "' to float number. Please check configuration file." << sendLog;
