@@ -39,6 +39,9 @@ class MICCD:public Camera
 		virtual ~MICCD ();
 
 		virtual void postEvent (Rts2Event *event);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -77,6 +80,7 @@ class MICCD:public Camera
 
 	private:
 		void addFilters (char *opt);
+		int clearCCD (int nclears);
 
 		Rts2ValueLong *id;
 		Rts2ValueSelection *mode;
@@ -357,6 +361,26 @@ void MICCD::addFilters (char *opt)
 	}
 	if (o != s)
 		camFilterVal->addSelVal (s);
+}
+
+int MICCD::clearCCD (int nclear)
+{
+	for (; nclear > 0; nclear--)
+		miccd_clear (&camera);
+	return 0;
+}
+
+int MICCD::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("clear"))
+	{
+		int nclear;
+		if (conn->paramNextInteger (&nclear)
+			|| !conn->paramEnd ())
+			return -2;
+		return clearCCD (nclear);
+	}
+	return Camera::commandAuthorized (conn);
 }
 
 int main (int argc, char **argv)
