@@ -197,10 +197,6 @@ class Rts2FitsFile: public rts2core::Expander
 		 */
 		bool shouldSaveImage () { return (flags & IMAGE_SAVE); }
 
-	protected:
-		int fits_status;
-		int flags;
-
 		/**
 		 * Return explanation for fits errors. This method returns only
 		 * explanation for the latest failed call. There is not a history
@@ -209,6 +205,10 @@ class Rts2FitsFile: public rts2core::Expander
 		 * @return Explanation for current fits_status.
 		 */
 		std::string getFitsErrors ();
+
+	protected:
+		int fits_status;
+		int flags;
 
 		void setFileName (const char *_filename);
 
@@ -227,7 +227,7 @@ class Rts2FitsFile: public rts2core::Expander
 
 		void setFitsFile (fitsfile *_fitsfile) { ffile = _fitsfile; }
 
-		int fitsStatusValue (const char *valname, const char *operation, bool required);
+		int fitsStatusValue (const char *valname, const char *operation);
 
 		void fitsStatusSetValue (const char *valname, bool required = true);
 		void fitsStatusGetValue (const char *valname, bool required);
@@ -257,7 +257,7 @@ class KeyNotFound:public rts2core::Error
 		KeyNotFound (Rts2FitsFile *_image, const char *_header):rts2core::Error ()
 		{
 			std::ostringstream _os;
-			_os << "keyword " << _header <<  " missing in file " << _image->getFileName ();
+			_os << "keyword " << _header <<  " missing in file " << _image->getFileName () << ":" << _image->getFitsErrors ();
 			setMsg (_os.str ());
 		}
 };
@@ -280,9 +280,9 @@ class ErrorOpeningFitsFile: public rts2core::Error
 class ErrorSettingKey: public rts2core::Error
 {
 	public:
-		ErrorSettingKey (const char *valname):rts2core::Error ()
+		ErrorSettingKey (Rts2FitsFile *ff, const char *valname):rts2core::Error ()
 		{
-			setMsg (std::string ("Cannot set key ") + valname);
+			setMsg (std::string ("Cannot set key ") + valname + std::string (":") + ff->getFitsErrors ());
 		}
 };
 

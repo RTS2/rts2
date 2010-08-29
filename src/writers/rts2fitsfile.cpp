@@ -185,17 +185,12 @@ void Rts2FitsFile::moveHDU (int hdu, int *hdutype)
 	}
 }
 
-int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool required)
+int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation)
 {
 	int ret = 0;
 	if (fits_status)
 	{
 		ret = -1;
-		if (required)
-		{
-			logStream (MESSAGE_ERROR) << operation << " value " << valname <<
-				" error " << getFitsErrors () << sendLog;
-		}
 	}
 	fits_status = 0;
 	return ret;
@@ -203,14 +198,14 @@ int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, b
 
 void Rts2FitsFile::fitsStatusSetValue (const char *valname, bool required)
 {
-	int ret = fitsStatusValue (valname, "SetValue", required);
+	int ret = fitsStatusValue (valname, "SetValue");
 	if (ret && required)
-		throw ErrorSettingKey (valname);
+		throw ErrorSettingKey (this, valname);
 }
 
 void Rts2FitsFile::fitsStatusGetValue (const char *valname, bool required)
 {
-	int ret = fitsStatusValue (valname, "GetValue", required);
+	int ret = fitsStatusValue (valname, "GetValue");
 	if (ret && required)
 		throw KeyNotFound (this, valname);
 }
