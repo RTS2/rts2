@@ -288,7 +288,8 @@ int Rts2ImageSkyDb::updateDB ()
 				process_bitfield = :d_proccess_bitfield,
 				img_fwhm = :d_img_fwhm :d_img_fwhm_ind,
 				img_limmag = :d_img_limmag :d_img_limmag_ind,
-				img_qmagmax = :d_img_qmagmax :d_img_qmagmax_ind
+				img_qmagmax = :d_img_qmagmax :d_img_qmagmax_ind,
+				img_filter = :d_img_filter
 			WHERE
 				img_id = :d_img_id AND obs_id = :d_obs_id;
 		// still error.. return -1
