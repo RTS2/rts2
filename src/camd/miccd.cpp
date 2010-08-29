@@ -365,8 +365,13 @@ void MICCD::addFilters (char *opt)
 
 int MICCD::clearCCD (int nclear)
 {
+	int n = nclear;
 	for (; nclear > 0; nclear--)
+	{
 		miccd_clear (&camera);
+		for (int i = 0; i < n; i++)
+			miccd_hclear (&camera);
+	}
 	return 0;
 }
 
