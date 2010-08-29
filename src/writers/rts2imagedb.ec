@@ -221,7 +221,7 @@ int Rts2ImageSkyDb::updateDB ()
 
 	getValueInd ("CCD_TEMP", d_img_temperature, d_img_temperature_ind);
 	getValueInd ("FWHM", d_img_fwhm, d_img_fwhm_ind);
-	getValueInd ("QMAGMAX", d_img_qmagmax, d_img_limmag_ind);
+	getValueInd ("QMAGMAX", d_img_qmagmax, d_img_qmagmax_ind);
 	getValueInd ("LIMMAG", d_img_limmag, d_img_limmag_ind);
 
 	EXEC SQL
