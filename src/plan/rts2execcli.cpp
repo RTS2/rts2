@@ -249,8 +249,6 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 	if (!minConn)
 		return;
 
-	image->saveImage ();
-
 	// if it is dark image..
 	if (image->getShutter () != SHUT_OPENED || image->getImageType () == IMGTYPE_DARK)
 	{

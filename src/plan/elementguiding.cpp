@@ -150,9 +150,9 @@ void ElementGuiding::postEvent (Rts2Event * event)
 					}
 				}
 			}
-			// que us for processing
-			script->getMaster ()->
-				postEvent (new Rts2Event (EVENT_QUE_IMAGE, (void *) image));
+			// queue us for processing
+			image->saveImage ();
+			script->getMaster ()-> postEvent (new Rts2Event (EVENT_QUE_IMAGE, (void *) image));
 			break;
 	}
 	Element::postEvent (event);
