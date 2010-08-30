@@ -86,9 +86,7 @@ void Ifw::shutdown (void)
 	}
 	else
 	{
-		logStream (MESSAGE_DEBUG) <<
-			"filter ifw shutdown Filter wheel shutdown: " << filter_buff <<
-			sendLog;
+		logStream (MESSAGE_DEBUG) << "filter ifw shutdown Filter wheel shutdown: " << filter_buff << sendLog;
 	}
 }
 
@@ -202,9 +200,7 @@ int Ifw::setFilterNum (int new_filter)
 
 	if (new_filter > 7 || new_filter < 0)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"filter ifw setFilterNum bad filter number: " << new_filter <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "filter ifw setFilterNum bad filter number: " << new_filter << sendLog;
 		return -1;
 	}
 
@@ -219,14 +215,15 @@ int Ifw::setFilterNum (int new_filter)
 
 	if (filter_buff[0] != '*')
 	{
-		logStream (MESSAGE_ERROR) <<
-			"filter ifw setFilterNum FILTER WHEEL ERROR" << sendLog;
+		logStream (MESSAGE_ERROR) << "filter ifw setFilterNum FILTER WHEEL ERROR" << sendLog;
 		ifwConn->flushPortIO ();
 		// make sure we will home filter, but home only once if there is still error
 		if (homeCount == 0)
 		{
 			homeFilter ();
 			homeCount++;
+			// try to set filter number again after homing
+			setFilterNum (new_filter);
 		}
 		ret = -1;
 	}
