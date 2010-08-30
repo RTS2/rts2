@@ -42,7 +42,8 @@ void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *
 {
 	try
 	{
-		getValue (name, value, comment);
+		getValue (name, value, true, comment);
+                ind = 0;
 	}
 	catch (rts2core::Error &er)
 	{
@@ -55,7 +56,8 @@ void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *c
 {
 	try
 	{
-		getValue (name, value, comment);
+		getValue (name, value, true, comment);
+                ind = 0;
 	}
 	catch (rts2core::Error &er)
 	{
