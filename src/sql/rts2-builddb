@@ -29,7 +29,7 @@ Build RTS2 PostgreSQL database.
 
 Usage:
 To fill in stars database:
-  rts2-builddb starts
+  rts2-builddb stars
 
 Options:
   -h .. this help
@@ -162,3 +162,7 @@ EOF
 if [ $doinit != 1 ]; then
   echo "Some of the initialization was skipped. Brave for consequences, or rerun without -T or -I options."
 fi
+
+echo "
+Please configure database with rts2-configdb tool for camera, telescope and filters.
+"

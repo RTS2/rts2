@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# Configuration file read routines.
+# Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+DBNAME=$1
+shift
+
+function print_help
+{
+  cat << EOF
+Add telescope, camera or filters to the database.
+
+Usage:
+To fill in stars database:
+  rts2-builddb start
+
+Options:
+  -h .. this help
+  -t .. add telescope to the database
+  -c .. add camera to the database
+  -f .. add filters to the database
+
+Options must be folowed by name of an existing database, which has basic structure build with rts2-builddb.
+
+EOF
+}
+
+if [ "x$DBNAME" == "x" ]; then
+  print_help
+  exit 0
+fi
+
+PSQL=psql
+
+PSQLDB="$PSQL $DBNAME"
+
+LOGFILE="build_$DBNAME.log"
+
+rm -f $LOGFILE
+
+echo "Logs generated in $LOGFILE"
+
+function test_empty
+{
+  if [ "$1" == "x" ]; then
+    echo "Empty argument."
+    exit 2
+  fi
+}
+
+function run_psql
+{
+  echo -n $1 " ."
+  echo "running $PSQLDB -c \"$2\"" >> $LOGFILE
+  $PSQLDB --echo-all -c "$2" 2>> $LOGFILE|while read x; do echo -n "."; done
+  echo " OK"
+}
+
+while [ "x$1" != "x" ]; do
+  case $1 in
+    -h)
+      print_help
+      exit 0
+      ;;
+    -t)
+      shift
+      tel=$1
+      test_empty "x$tel"
+      run_psql "Adding telescope $tel" "insert into mounts values ('$tel',NULL,NULL,NULL,'$tel inserted from rts2-configdb');"
+      ;;
+    -c)
+      shift
+      cam=$1
+      test_empty "x$cam"
+      run_psql "Adding camera $cam" "insert into cameras values ('$cam','$cam inserted from rts2-configdb');"
+      ;;
+    -f)
+      shift
+      fil=$1
+      test_empty "x$fil"
+      run_psql "Adding filter $fil" "insert into filters values ('$fil',NULL,NULL,'$fil','$fil inserted from rts2-configdb',NULL,NULL);"
+      ;;
+    *)
+      echo "unknow argument $1"
+      exit 1
+      ;;
+  esac
+  shift
+done
