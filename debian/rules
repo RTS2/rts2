@@ -69,7 +69,7 @@ install: build
 	mkdir $(CURDIR)/debian/rts2/etc
 	mkdir $(CURDIR)/debian/rts2/etc/rts2
 	mkdir $(CURDIR)/debian/rts2/etc/init.d
-	cp $(CURDIR)/rts2.ini $(CURDIR)/centrald $(CURDIR)/devices $(CURDIR)/services $(CURDIR)/debian/rts2/etc/rts2
+	cp $(CURDIR)/conf/rts2.ini $(CURDIR)/conf/centrald $(CURDIR)/conf/devices $(CURDIR)/conf/services $(CURDIR)/debian/rts2/etc/rts2
 	cp $(CURDIR)/rts2.initd $(CURDIR)/debian/rts2/etc/init.d/rts2
 
 # Build architecture-independent files here.
