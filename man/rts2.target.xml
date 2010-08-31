@@ -127,12 +127,12 @@
       <programlisting>
 <![CDATA[
 <airmass>
-        <interval>
-                <upper>2.0</upper>
-        </interval>
+	<interval>
+		<upper>2.0</upper>
+	</interval>
 	<interval>
 		<lower>2.5</lower>
-                <upper>3.0</upper>
+		<upper>3.0</upper>
 	</interval>
 </airmass>
 ]]>
