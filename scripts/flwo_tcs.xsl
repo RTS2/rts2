@@ -11,13 +11,19 @@
 if ( -e $rts2abort ) source $RTS2/bin/.rts2-runabort
 </xsl:variable>
 
+<xsl:template match="disable">
+$RTS2/bin/rts2-target -d $tar_id
+</xls:template>
+
+<xsl:template match="tempdisable">
+
 <xsl:template match="exposure">
 echo `date` 'starting exposure <xsl:value-of select='@length'/>'
 <xsl:copy-of select='$abort'/>
 ccd gowait <xsl:value-of select='@length'/>
 <xsl:copy-of select='$abort'/>
 dstore
-#$RTS2/bin/rts2image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $image
+#$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $image
 echo `date` 'exposure done'
 <xsl:copy-of select='$abort'/>
 </xsl:template>

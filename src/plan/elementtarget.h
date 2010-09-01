@@ -44,6 +44,9 @@ class ElementDisable:public ElementTarget
 	public:
 		ElementDisable (Script * in_script, Rts2Target * in_target):ElementTarget (in_script, in_target) {}
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "disable target"; }
+		virtual void printXml (std::ostream &os) { os << "  <disable>"; }
 };
 
 class ElementTempDisable:public ElementTarget
@@ -52,6 +55,10 @@ class ElementTempDisable:public ElementTarget
 		ElementTempDisable (Script * in_script, Rts2Target * in_target, int in_seconds):ElementTarget (in_script, in_target)
 			{ seconds = in_seconds; }
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << seconds << " seconds"; }
+		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << seconds << "</tempdisable>"; }
+
 	private:
 		int seconds;
 };
