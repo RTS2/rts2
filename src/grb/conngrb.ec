@@ -448,7 +448,7 @@ int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 		throw rts2db::SqlError ("cannot insert swift trigger");
 	}
 	EXEC SQL COMMIT;
-	master->updateSwift (obstime, swiftLastRa, swiftLastDec);
+	master->updateSwift (swiftLastPoint, swiftLastRa, swiftLastDec);
 	return 0;
 }
 
