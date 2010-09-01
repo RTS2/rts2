@@ -61,6 +61,9 @@
 /** Called on change of the trigger state. */
 #define EVENT_TRIGGERED            22
 
+/** Lost connection to the database. */
+#define EVENT_DB_LOST_CONN         23
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 

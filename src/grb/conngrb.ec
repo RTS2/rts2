@@ -19,6 +19,7 @@
 
 #include "conngrb.h"
 #include "../utils/connfork.h"
+#include "../utilsdb/sqlerror.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -319,8 +320,7 @@ int ConnGrb::pr_swift_without_radec ()
 				AND grb_type <= :d_grb_type_end;
 			if (sqlca.sqlcode)
 			{
-				logStream (MESSAGE_ERROR) << "ConnGrb::pr_swift_without_radec sql errro: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-				EXEC SQL ROLLBACK;
+				throw rts2db::SqlError ("cannot update Swift GRB with POS_NACK_SRC");
 			}
 			else
 			{
@@ -445,9 +445,7 @@ int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 		);
 	if (sqlca.sqlcode != 0)
 	{
-		logStream (MESSAGE_ERROR) << "ConnGrb cannot insert swift: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		return -1;
+		throw rts2db::SqlError ("cannot insert swift trigger");
 	}
 	EXEC SQL COMMIT;
 	return 0;
@@ -480,9 +478,7 @@ int ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 			);
 	if (sqlca.sqlcode != 0)
 	{
-		logStream (MESSAGE_ERROR) << "ConnGrb cannot insert integral: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		return -1;
+		throw rts2db::SqlError ("cannot insert INTEGRAL pointing");
 	}
 	EXEC SQL COMMIT;
 	return 0;
@@ -735,6 +731,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		// insert part..we do care about HETE burst without coordinates
 		if (d_grb_ra < -300 && d_grb_dec < -300)
 		{
+			
 			logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint HETE GRB without coords? ra="
 				<< d_grb_ra << " dec=" << d_grb_dec << sendLog;
 			EXEC SQL ROLLBACK;
@@ -753,10 +750,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot get next value from grb_tar_id sequence "
-				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-			EXEC SQL ROLLBACK;
-			return -1;
+		  	throw rts2db::SqlError ("cannot retrieve next value from grb_tar_id sequence");
 		}
 
 		// insert new target
@@ -790,9 +784,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			);
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint insert target error: "
-				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-			EXEC SQL ROLLBACK;
+			throw rts2db::SqlError ("cannot add GCN coordinates");
 		}
 		grb_isnew = 1;
 		// insert new grb packet
@@ -826,10 +818,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			);
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot insert new GCN : "
-				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-			EXEC SQL ROLLBACK;
-			ret = -1;
+			throw rts2db::SqlError ("cannot insert new GCN coordinates");
 		}
 		else
 		{
@@ -844,9 +833,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	}
 	else if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint SQL error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		return -1;
+		throw rts2db::SqlError ("cannot check for GRB coordinates in the database");
 	}
 	else
 	{
@@ -877,9 +864,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 					tar_id = :d_tar_id;
 			if (sqlca.sqlcode)
 			{
-				logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update targets: "
-					<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-				EXEC SQL ROLLBACK;
+			  	throw rts2db::SqlError ("cannot update GRB target coordinates");
 			}
 			// update grb informations..
 			// do updates only when new position is better then old one
@@ -904,10 +889,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update GCN : "
-						<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
-					EXEC SQL ROLLBACK;
-					ret = -1;
+					throw rts2db::SqlError ("cannot update GRB GCN entry");
 				}
 				else
 				{
@@ -924,10 +906,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 						tar_id = :d_tar_id;
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update GCN errorbox: "
-						<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-					EXEC SQL ROLLBACK;
-					ret = -1;
+					throw rts2db::SqlError ("cannot update GCN error box");
 				}
 				else
 				{
@@ -954,10 +933,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 					tar_id = :d_tar_id;
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update grb_is_grb : "
-						<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
-					EXEC SQL ROLLBACK;
-					ret = -1;
+					throw rts2db::SqlError ("cannot update grb_is_grb");
 				}
 				else
 				{
@@ -984,10 +960,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			tar_id = :d_tar_id;
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update tar_enabled : "
-				<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
-			EXEC SQL ROLLBACK;
-			return -1;
+			throw rts2db::SqlError ("cannot update tar_enabled");
 		}
 		EXEC SQL COMMIT;
 		return 0;
@@ -1174,10 +1147,7 @@ int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 			);
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "ConnGrb::addGcnRaw cannot insert new gcn packet: "
-			<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		return -1;
+		throw rts2db::SqlError ("cannot insert raw GCN packet");
 	}
 	else
 	{
@@ -1432,145 +1402,152 @@ int ConnGrb::receive (fd_set *set)
 	}
 	else if (sock >= 0 && FD_ISSET (sock, set))
 	{
-		ret = read (sock, ((char*) nbuf) + gcnReceivedBytes, sizeof (nbuf) - gcnReceivedBytes);
-		if (ret == 0 && isConnState (CONN_CONNECTING))
+		try
 		{
-			setConnState (CONN_CONNECTED);
+			ret = read (sock, ((char*) nbuf) + gcnReceivedBytes, sizeof (nbuf) - gcnReceivedBytes);
+			if (ret == 0 && isConnState (CONN_CONNECTING))
+			{
+				setConnState (CONN_CONNECTED);
+			}
+			else if (ret < 0)
+			{
+				connectionError (ret);
+				return -1;
+			}
+			gcnReceivedBytes += ret;
+			// we don't receive full packet..
+			if (gcnReceivedBytes < (int) (SIZ_PKT * sizeof(nbuf[0])))
+				return ret;
+			gcnReceivedBytes = 0;
+			successfullRead ();
+			gettimeofday (&last_packet, NULL);
+			// swap bytes..
+			for (int i=0; i < SIZ_PKT; i++)
+			{
+				lbuf[i] = ntohl (nbuf[i]);
+			}
+	
+			/* Immediately echo back the packet so GCN can monitor:
+			 * (1) the actual receipt by the site, and
+			 * (2) the roundtrip travel times.
+			 * Everything except KILL's get echo-ed back.            */
+			if(lbuf[PKT_TYPE] != TYPE_KILL_SOCKET)
+			{
+				write (sock, (char *)nbuf, sizeof(nbuf));
+				successfullSend ();
+			}
+			t = gmtime (&last_packet.tv_sec);
+			here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
+	
+			// switch based on packet content
+			switch (lbuf[PKT_TYPE])
+			{
+				case TYPE_TEST_COORDS:
+					pr_test ();
+					break;
+				case TYPE_IM_ALIVE:
+					pr_imalive ();
+					break;
+					// pondtirs messages with history..
+				case TYPE_INTEGRAL_POINTDIR_SRC:
+					pr_integral_point ();
+					break;
+									 // 83  // Swift Pointing Direction
+				case TYPE_SWIFT_POINTDIR_SRC:
+					pr_swift_point ();
+					break;
+				case TYPE_AGILE_POINTDIR:
+					pr_agile_point ();
+					break;
+				case TYPE_FERMI_POINTDIR:
+					pr_fermi_point ();
+					break;
+				// hete, integral & swift GRB observations
+				case TYPE_HETE_ALERT_SRC:
+				case TYPE_HETE_UPDATE_SRC:
+				case TYPE_HETE_FINAL_SRC:
+				case TYPE_HETE_GNDANA_SRC:
+				case TYPE_HETE_TEST:
+				case TYPE_GRB_CNTRPART_SRC:
+					pr_hete ();
+					break;
+				case TYPE_INTEGRAL_WAKEUP_SRC:
+				case TYPE_INTEGRAL_REFINED_SRC:
+				case TYPE_INTEGRAL_OFFLINE_SRC:
+					pr_integral ();
+					break;
+					// integral spiacs
+				case TYPE_INTEGRAL_SPIACS_SRC:
+					pr_integral_spicas ();
+					break;
+				case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
+				case TYPE_SWIFT_BAT_GRB_LC_SRC:
+				case TYPE_SWIFT_FOM_2OBSAT_SRC:
+				case TYPE_SWIFT_FOSC_2OBSAT_SRC:
+				case TYPE_SWIFT_XRT_POSITION_SRC:
+				case TYPE_SWIFT_XRT_SPECTRUM_SRC:
+				case TYPE_SWIFT_XRT_IMAGE_SRC:
+				case TYPE_SWIFT_XRT_LC_SRC:
+				case TYPE_SWIFT_UVOT_SLIST_SRC:
+					// processed messages
+				case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
+				case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
+				case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
+				case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
+				case TYPE_SWIFT_UVOT_POS_SRC:
+					// transient
+				case TYPE_SWIFT_BAT_TRANS:
+					pr_swift_with_radec ();
+					break;
+				case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
+				case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
+				case TYPE_SWIFT_SCALEDMAP_SRC:
+				case TYPE_SWIFT_XRT_CENTROID_SRC:
+				case TYPE_SWIFT_UVOT_IMAGE_SRC:
+					// processed messages
+				case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
+				case TYPE_SWIFT_UVOT_NACK_POSITION:
+					pr_swift_without_radec ();
+					break;
+				case TYPE_AGILE_GRB_WAKEUP:
+				case TYPE_AGILE_GRB_PROMPT:
+				case TYPE_AGILE_GRB_REFINED:
+				case TYPE_AGILE_TRANS:
+				case TYPE_AGILE_GRB_POS_TEST:
+					pr_agile ();
+					break;
+				case TYPE_FERMI_GBM_ALERT:
+					break;
+				case TYPE_FERMI_GBM_FLT_POS:
+				case TYPE_FERMI_GBM_GND_POS:
+				case TYPE_FERMI_GBM_LC:
+				case TYPE_FERMI_GBM_TRANS:
+					pr_fermi_gbm ();
+					break;
+				case TYPE_FERMI_LAT_POS_INI:
+				case TYPE_FERMI_LAT_POS_UPD:
+				case TYPE_FERMI_LAT_POS_DIAG:
+				case TYPE_FERMI_LAT_TRANS:
+					pr_fermi_lat ();
+					break;
+				case TYPE_FERMI_OBS_REQ:
+				case TYPE_FERMI_SC_SLEW:
+					pr_fermi_sc ();
+					break;
+				case TYPE_KILL_SOCKET:
+					connectionError (-1);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "ConnGrb::receive unknow packet type: " << lbuf[PKT_TYPE] << sendLog;
+					break;
+			}
+			// enable others to catch-up (FW connections will forward packet to their sockets)
+			getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_GRB_PACKET, nbuf));
 		}
-		else if (ret < 0)
+		catch (rts2core::Error er)
 		{
-			connectionError (ret);
-			return -1;
+			logStream (MESSAGE_ERROR) << er << sendLog;
 		}
-		gcnReceivedBytes += ret;
-		// we don't receive full packet..
-		if (gcnReceivedBytes < (int) (SIZ_PKT * sizeof(nbuf[0])))
-			return ret;
-		gcnReceivedBytes = 0;
-		successfullRead ();
-		gettimeofday (&last_packet, NULL);
-		// swap bytes..
-		for (int i=0; i < SIZ_PKT; i++)
-		{
-			lbuf[i] = ntohl (nbuf[i]);
-		}
-
-		/* Immediately echo back the packet so GCN can monitor:
-		 * (1) the actual receipt by the site, and
-		 * (2) the roundtrip travel times.
-		 * Everything except KILL's get echo-ed back.            */
-		if(lbuf[PKT_TYPE] != TYPE_KILL_SOCKET)
-		{
-			write (sock, (char *)nbuf, sizeof(nbuf));
-			successfullSend ();
-		}
-		t = gmtime (&last_packet.tv_sec);
-		here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
-
-		// switch based on packet content
-		switch (lbuf[PKT_TYPE])
-		{
-			case TYPE_TEST_COORDS:
-				pr_test ();
-				break;
-			case TYPE_IM_ALIVE:
-				pr_imalive ();
-				break;
-				// pondtirs messages with history..
-			case TYPE_INTEGRAL_POINTDIR_SRC:
-				pr_integral_point ();
-				break;
-								 // 83  // Swift Pointing Direction
-			case TYPE_SWIFT_POINTDIR_SRC:
-				pr_swift_point ();
-				break;
-			case TYPE_AGILE_POINTDIR:
-				pr_agile_point ();
-				break;
-			case TYPE_FERMI_POINTDIR:
-				pr_fermi_point ();
-				break;
-			// hete, integral & swift GRB observations
-			case TYPE_HETE_ALERT_SRC:
-			case TYPE_HETE_UPDATE_SRC:
-			case TYPE_HETE_FINAL_SRC:
-			case TYPE_HETE_GNDANA_SRC:
-			case TYPE_HETE_TEST:
-			case TYPE_GRB_CNTRPART_SRC:
-				pr_hete ();
-				break;
-			case TYPE_INTEGRAL_WAKEUP_SRC:
-			case TYPE_INTEGRAL_REFINED_SRC:
-			case TYPE_INTEGRAL_OFFLINE_SRC:
-				pr_integral ();
-				break;
-				// integral spiacs
-			case TYPE_INTEGRAL_SPIACS_SRC:
-				pr_integral_spicas ();
-				break;
-			case TYPE_SWIFT_BAT_GRB_POS_ACK_SRC:
-			case TYPE_SWIFT_BAT_GRB_LC_SRC:
-			case TYPE_SWIFT_FOM_2OBSAT_SRC:
-			case TYPE_SWIFT_FOSC_2OBSAT_SRC:
-			case TYPE_SWIFT_XRT_POSITION_SRC:
-			case TYPE_SWIFT_XRT_SPECTRUM_SRC:
-			case TYPE_SWIFT_XRT_IMAGE_SRC:
-			case TYPE_SWIFT_XRT_LC_SRC:
-			case TYPE_SWIFT_UVOT_SLIST_SRC:
-				// processed messages
-			case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
-			case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
-			case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
-			case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
-			case TYPE_SWIFT_UVOT_POS_SRC:
-				// transient
-			case TYPE_SWIFT_BAT_TRANS:
-				pr_swift_with_radec ();
-				break;
-			case TYPE_SWIFT_BAT_GRB_ALERT_SRC:
-			case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
-			case TYPE_SWIFT_SCALEDMAP_SRC:
-			case TYPE_SWIFT_XRT_CENTROID_SRC:
-			case TYPE_SWIFT_UVOT_IMAGE_SRC:
-				// processed messages
-			case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
-			case TYPE_SWIFT_UVOT_NACK_POSITION:
-				pr_swift_without_radec ();
-				break;
-			case TYPE_AGILE_GRB_WAKEUP:
-			case TYPE_AGILE_GRB_PROMPT:
-			case TYPE_AGILE_GRB_REFINED:
-			case TYPE_AGILE_TRANS:
-			case TYPE_AGILE_GRB_POS_TEST:
-				pr_agile ();
-				break;
-			case TYPE_FERMI_GBM_ALERT:
-				break;
-			case TYPE_FERMI_GBM_FLT_POS:
-			case TYPE_FERMI_GBM_GND_POS:
-			case TYPE_FERMI_GBM_LC:
-			case TYPE_FERMI_GBM_TRANS:
-				pr_fermi_gbm ();
-				break;
-			case TYPE_FERMI_LAT_POS_INI:
-			case TYPE_FERMI_LAT_POS_UPD:
-			case TYPE_FERMI_LAT_POS_DIAG:
-			case TYPE_FERMI_LAT_TRANS:
-				pr_fermi_lat ();
-				break;
-			case TYPE_FERMI_OBS_REQ:
-			case TYPE_FERMI_SC_SLEW:
-				pr_fermi_sc ();
-				break;
-			case TYPE_KILL_SOCKET:
-				connectionError (-1);
-				break;
-			default:
-				logStream (MESSAGE_ERROR) << "ConnGrb::receive unknow packet type: " << lbuf[PKT_TYPE] << sendLog;
-				break;
-		}
-		// enable others to catch-up (FW connections will forward packet to their sockets)
-		getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_GRB_PACKET, nbuf));
 	}
 	return ret;
 }

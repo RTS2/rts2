@@ -23,19 +23,14 @@
 
 EXEC SQL include sqlca;
 
-int
-Rts2DeviceDb::willConnect (Rts2Address * in_addr)
+int Rts2DeviceDb::willConnect (Rts2Address * in_addr)
 {
-	if (in_addr->getType () < getDeviceType ()
-		|| (in_addr->getType () == getDeviceType ()
-		&& strcmp (in_addr->getName (), getDeviceName ()) < 0))
+	if (in_addr->getType () < getDeviceType () || (in_addr->getType () == getDeviceType () && strcmp (in_addr->getName (), getDeviceName ()) < 0))
 		return 1;
 	return 0;
 }
 
-
-Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name)
-:Rts2Device (argc, argv, in_device_type, default_name)
+Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):Rts2Device (argc, argv, in_device_type, default_name)
 {
 	connectString = NULL;		 // defualt DB
 	configFile = NULL;
@@ -45,7 +40,6 @@ Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const cha
 	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
-
 Rts2DeviceDb::~Rts2DeviceDb (void)
 {
 	EXEC SQL DISCONNECT;
@@ -53,9 +47,23 @@ Rts2DeviceDb::~Rts2DeviceDb (void)
 		delete connectString;
 }
 
+void Rts2DeviceDb::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_DB_LOST_CONN:
+			EXEC SQL DISCONNECT;
+			if (initDB ())
+			{
+				addTimer (20, event);
+				return;
+			}
+			break;
+	}
+	Rts2Device::postEvent (event);
+}
 
-int
-Rts2DeviceDb::processOption (int in_opt)
+int Rts2DeviceDb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -75,9 +83,7 @@ Rts2DeviceDb::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2DeviceDb::reloadConfig ()
+int Rts2DeviceDb::reloadConfig ()
 {
 	Rts2Config *config;
 
@@ -87,9 +93,7 @@ Rts2DeviceDb::reloadConfig ()
 	return config->loadFile (configFile);
 }
 
-
-int
-Rts2DeviceDb::initDB ()
+int Rts2DeviceDb::initDB ()
 {
 	int ret;
 	std::string cs;
@@ -121,7 +125,6 @@ Rts2DeviceDb::initDB ()
 
 	std::string db_username;
 	std::string db_password;
-
 
 	if (config->getString ("database", "username", db_username, "") == 0)
 	{
@@ -164,9 +167,7 @@ Rts2DeviceDb::initDB ()
 	return 0;
 }
 
-
-int
-Rts2DeviceDb::init ()
+int Rts2DeviceDb::init ()
 {
 	int ret;
 
@@ -178,18 +179,14 @@ Rts2DeviceDb::init ()
 	return initDB ();
 }
 
-
-void
-Rts2DeviceDb::forkedInstance ()
+void Rts2DeviceDb::forkedInstance ()
 {
 	// dosn't work??
 	//  EXEC SQL DISCONNECT;
 	Rts2Device::forkedInstance ();
 }
 
-
-void
-Rts2DeviceDb::signaledHUP ()
+void Rts2DeviceDb::signaledHUP ()
 {
 	reloadConfig();
 }

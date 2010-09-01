@@ -32,10 +32,11 @@
  */
 class Rts2DeviceDb:public Rts2Device
 {
-	private:
-		char *connectString;
-		char *configFile;
+	public:
+		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
+		virtual ~ Rts2DeviceDb (void);
 
+		virtual void postEvent (Rts2Event *event);
 	protected:
 		virtual int willConnect (Rts2Address * in_addr);
 		virtual int processOption (int in_opt);
@@ -51,8 +52,8 @@ class Rts2DeviceDb:public Rts2Device
 		virtual void forkedInstance ();
 
 		virtual void signaledHUP ();
-	public:
-		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
-		virtual ~ Rts2DeviceDb (void);
+	private:
+		char *connectString;
+		char *configFile;
 };
 #endif							 /* !__RTS2_DEVICEDB__ */
