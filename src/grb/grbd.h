@@ -47,6 +47,29 @@ class ConnGrb;
  */
 class Grbd:public Rts2DeviceDb
 {
+	public:
+		Grbd (int argc, char **argv);
+		virtual ~ Grbd ();
+
+		virtual int ready ()
+		{
+			return 0;
+		}
+		virtual int info ();
+		virtual void postEvent (Rts2Event * event);
+
+		int newGcnGrb (int tar_id);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+		void updateSwift (double lastTime, double ra, double dec);
+		void updateIntegral (double lastTime, double ra, double dec);
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+
+		virtual int init ();
+		virtual void help ();
 	private:
 		ConnGrb * gcncnn;
 		char *gcn_host;
@@ -67,27 +90,11 @@ class Grbd:public Rts2DeviceDb
 		Rts2ValueRaDec *last_target_radec;
 		Rts2ValueBool *execConnection;
 
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int reloadConfig ();
+		Rts2ValueTime *lastSwift;
+		Rts2ValueRaDec *lastSwiftRaDec;
 
-		virtual int init ();
-		virtual void help ();
-
-	public:
-		Grbd (int argc, char **argv);
-		virtual ~ Grbd ();
-
-		virtual int ready ()
-		{
-			return 0;
-		}
-		virtual int info ();
-		virtual void postEvent (Rts2Event * event);
-
-		int newGcnGrb (int tar_id);
-
-		virtual int commandAuthorized (Rts2Conn * conn);
+		Rts2ValueTime *lastIntegral;
+		Rts2ValueRaDec *lastIntegralRaDec;
 };
 
 }
