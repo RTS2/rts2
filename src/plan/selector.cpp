@@ -206,7 +206,14 @@ void SelectorDev::postEvent (Rts2Event * event)
 
 int SelectorDev::selectNext ()
 {
-	return sel->selectNext (getMasterState ());
+	try
+	{
+		return sel->selectNext (getMasterState ());
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << "while selecting next target:" << er << sendLog;
+	}
 }
 
 int SelectorDev::updateNext ()

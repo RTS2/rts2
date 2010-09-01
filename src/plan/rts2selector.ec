@@ -20,6 +20,7 @@
 #include "rts2selector.h"
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
+#include "../utilsdb/sqlerror.h"
 
 #include <libnova/libnova.h>
 
@@ -206,18 +207,11 @@ void Selector::findNewTargets ()
 			(tar_enabled = true)
 		AND (tar_priority + tar_bonus > 0)
 		AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
-	if (sqlca.sqlcode)
-	{
-		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		return;
-	}
 
 	EXEC SQL OPEN findnewtargets;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		return;
+		throw rts2db::SqlError ("cannot find new targets");
 	}
 	while (1)
 	{
@@ -237,9 +231,7 @@ void Selector::findNewTargets ()
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		// some DB error..strange, let's get out
-		logStream (MESSAGE_DEBUG) << "findNewTargets DB error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		exit (1);
+		throw rts2db::SqlError ("cannot find any new targets");
 	}
 	EXEC SQL CLOSE findnewtargets;
 };
