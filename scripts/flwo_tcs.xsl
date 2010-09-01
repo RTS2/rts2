@@ -13,7 +13,11 @@ if ( -e $rts2abort ) source $RTS2/bin/.rts2-runabort
 
 <xsl:template match="disable">
 $RTS2/bin/rts2-target -d $tar_id
-</xls:template>
+</xsl:template>
+
+<xsl:template match="tempdisable">
+$RTS2/bin/rts2-target -n <xsl:value-of select='./'/> $tar_id
+</xsl:template>
 
 <xsl:template match="tempdisable">
 
