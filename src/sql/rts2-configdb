@@ -49,9 +49,7 @@ PSQL=psql
 
 PSQLDB="$PSQL $DBNAME"
 
-LOGFILE="build_$DBNAME.log"
-
-rm -f $LOGFILE
+LOGFILE="/tmp/config_$DBNAME.log"
 
 echo "Logs generated in $LOGFILE"
 
