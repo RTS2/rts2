@@ -125,6 +125,11 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void sendValueAll (Rts2Value * value);
 
+		/**
+		 * Send progress parameters.
+		 */
+		void sendProgressAll (double start, double end);
+
 		int checkLockFile (const char *_lock_fname);
 		void setNotDaemonize ()
 		{
@@ -399,7 +404,7 @@ class Rts2Daemon:public Rts2Block
 		/**
 		 * Called when state is changed.
 		 */
-		void maskState (int state_mask, int new_state, const char *description = NULL);
+		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"));
 
 		/**
 		 * Return daemon state without ERROR information.

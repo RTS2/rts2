@@ -75,6 +75,9 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
+	statusStart = rts2_nan ("f");
+	statusExpectedEnd = rts2_nan ("f");
+
 	connectionTimeout = 300;	 // 5 minutes timeout
 
 	commandInProgress = false;
@@ -116,6 +119,9 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	otherType = -1;
 
 	connectionTimeout = 300;	 // 5 minutes timeout (150 + 150)
+
+	statusStart = rts2_nan ("f");
+	statusExpectedEnd = rts2_nan ("f");
 
 	commandInProgress = false;
 	info_time = NULL;
@@ -1116,6 +1122,13 @@ int Rts2Conn::command ()
 			return -2;
 		return master->statusInfo (this);
 	}
+	else if (isCommand (PROTO_PROGRESS))
+	{
+		if (paramNextDouble (&statusStart)
+		  	|| paramNextDouble (&statusExpectedEnd)
+			|| !paramEnd ())
+			return -2;
+	}
 	// don't respond to values with error - otherDevice does respond to
 	// values, if there is no other device, we have to take resposibility
 	// as it can fails (V without value), not with else
@@ -1123,10 +1136,7 @@ int Rts2Conn::command ()
 		return -1;
 	std::ostringstream ss;
 	ss << "unknow command " << getCommand ();
-	logStream (MESSAGE_DEBUG) <<
-		"Rts2Conn::command unknow command: getCommand " << getCommand () <<
-		" state: " << conn_state << " type: " << getType () << " name: " <<
-		getName () << sendLog;
+	logStream (MESSAGE_DEBUG) << "Rts2Conn::command unknow command: getCommand " << getCommand () << " state: " << conn_state << " type: " << getType () << " name: " << getName () << sendLog;
 	sendCommandEnd (-4, ss.str ().c_str ());
 	return -4;
 }
@@ -1542,6 +1552,13 @@ int Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << *value;
+	return sendMsg (_os);
+}
+
+int Rts2Conn::sendProgress (double start, double end)
+{
+	std::ostringstream _os;
+	_os << PROTO_PROGRESS << " " << start << " " << end;
 	return sendMsg (_os);
 }
 

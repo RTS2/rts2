@@ -104,7 +104,7 @@ void ValueChangeRecord::recordValueBoolean (int recval_id, bool val, double vali
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = recval_id;
-	double db_value = val;
+	bool db_value = val;
 	double db_rectime = validTime;
 	EXEC SQL END DECLARE SECTION;
 
