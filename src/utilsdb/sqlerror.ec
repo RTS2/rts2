@@ -30,7 +30,7 @@ SqlError::SqlError ()
 	std::ostringstream _os;
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
-	if (sqlca.sqlcode == ECPG_NO_CONN)
+	if (sqlca.sqlcode == ECPG_PGSQL)
 		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
@@ -40,7 +40,7 @@ SqlError::SqlError (const char *msg)
 	std::ostringstream _os;
 	_os << msg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
-	if (sqlca.sqlcode == ECPG_NO_CONN)
+	if (sqlca.sqlcode == ECPG_PGSQL)
 		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
