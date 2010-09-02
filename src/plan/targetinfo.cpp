@@ -37,7 +37,7 @@ class TargetInfo:public PrintTarget
 		virtual int doProcessing ();
 
 	private:
-		std::list < int >targets;
+		std::vector < const char * >targets;
 		bool printSelectable;
 		bool printAuger;
 		char *targetType;
@@ -84,15 +84,7 @@ int TargetInfo::processOption (int in_opt)
 int TargetInfo::processArgs (const char *arg)
 {
 	// try to create that target..
-	int tar_id;
-	char *test;
-	tar_id = strtol (arg, &test, 10);
-	if (*test)
-	{
-		std::cerr << "Invalid target id: " << arg << std::endl;
-		return -1;
-	}
-	targets.push_back (tar_id);
+	targets.push_back (arg);
 	return 0;
 }
 
@@ -123,16 +115,17 @@ int TargetInfo::doProcessing ()
 	rts2db::TargetSet tar_set = rts2db::TargetSet ();
 	if (printAuger)
 	{
-		for (std::list <int>::iterator iter = targets.begin (); iter != targets.end (); iter++)
+		for (std::vector <const char*>::iterator iter = targets.begin (); iter != targets.end (); iter++)
 		{
 			TargetAuger *ta = new TargetAuger (-1, obs, 10);
-			if (ta->load (*iter))
+			int tid = atoi (*iter);
+			if (ta->load (tid))
 			{
 				delete ta;
 			}
 			else
 			{
-				tar_set[*iter] = ta;
+				tar_set[tid] = ta;
 			}
 		}
 	}

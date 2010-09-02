@@ -105,6 +105,36 @@ void TargetSet::load (std::list<int> &target_ids)
 	}
 }
 
+void TargetSet::load (const char *name)
+{
+	std::ostringstream os;
+	// replace spaces with %..
+	std::string n(name);
+	for (int l = 0; l < n.length (); l++)
+	{
+		if (n[l] == ' ')
+			n[l] = '%';
+	}
+	os << "tar_name LIKE '" << n << "'";
+	where = os.str ();
+	order_by = "tar_id asc";
+
+	load ();
+}
+
+void TargetSet::load (std::vector <const char *> &names)
+{
+	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
+	{
+		TargetSet ts (obs);
+		ts.load (*iter);
+		if (ts.size () != 1)
+			throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
+		(*this)[ts.begin ()->first] = ts.begin ()->second;
+		ts.clear ();
+	}
+}
+
 TargetSet::TargetSet (struct ln_lnlat_posn * in_obs): std::map <int, Target *> ()
 {
 	obs = in_obs;

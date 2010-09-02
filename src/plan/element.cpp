@@ -114,14 +114,16 @@ ElementExpose::ElementExpose (Script * _script, float in_expTime):Element (_scri
 int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	getDevice (new_device);
-	if (callProgress == first && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
+	if (callProgress == first)
 	{
 		callProgress = SHUTTER;
-		*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0);
-		(*new_command)->setBopMask (BOP_TEL_MOVE);
-		return NEXT_COMMAND_KEEP;
+		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
+		{
+			*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0);
+			(*new_command)->setBopMask (BOP_TEL_MOVE);
+			return NEXT_COMMAND_KEEP;
+		}
 	}
-	callProgress = SHUTTER;
 	// change values of the exposure
 	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
@@ -130,7 +132,7 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 	return 0;
 }
 
@@ -143,14 +145,16 @@ ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	getDevice (new_device);
-	if (callProgress == first && camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 1)
+	if (callProgress == first)
 	{
 		callProgress = SHUTTER;
-		*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1);
-		(*new_command)->setBopMask (BOP_TEL_MOVE);
-		return NEXT_COMMAND_KEEP;
+		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 1)
+		{
+			*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1);
+			(*new_command)->setBopMask (BOP_TEL_MOVE);
+			return NEXT_COMMAND_KEEP;
+		}
 	}
-	callProgress = SHUTTER;
 	// change values of the exposure
 	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
