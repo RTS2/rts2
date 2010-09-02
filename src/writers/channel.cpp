@@ -29,7 +29,6 @@ Channel::Channel ()
 	data = NULL;
 	naxis = 0;
 	sizes = NULL;
-	allocated = false;
 }
 
 Channel::Channel (char *_data, int _naxis, long *_sizes)
@@ -40,8 +39,6 @@ Channel::Channel (char *_data, int _naxis, long *_sizes)
 
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
-
-	allocated = false;
 }
 
 
@@ -54,14 +51,11 @@ Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes)
 
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
-
-	allocated = true;
 }
 
 Channel::~Channel ()
 {
-	if (allocated)
-		delete[] data;
+	delete[] data;
 	delete[] sizes;
 }
 
@@ -73,4 +67,10 @@ Channels::~Channels ()
 {
 	for (Channels::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
+}
+
+void Channels::deallocate ()
+{
+	for (Channels::iterator iter = begin (); iter != end (); iter++)
+	  	(*iter)->deallocate ();
 }

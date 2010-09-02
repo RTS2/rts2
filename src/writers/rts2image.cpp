@@ -133,6 +133,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	exposureLength = in_image->exposureLength;
 	channels = in_image->channels;
 	imageType = in_image->imageType;
+	in_image->channels.deallocate ();
 	in_image->channels.clear ();
 	focPos = in_image->focPos;
 	signalNoise = in_image->signalNoise;
