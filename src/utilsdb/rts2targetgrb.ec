@@ -25,8 +25,7 @@
 #include "../utils/infoval.h"
 #include "../writers/rts2image.h"
 
-TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout) :
-ConstTarget (in_tar_id, in_obs)
+TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout):ConstTarget (in_tar_id, in_obs)
 {
 	shouldUpdate = 1;
 	grb_is_grb = true;
@@ -40,9 +39,7 @@ ConstTarget (in_tar_id, in_obs)
 	errorbox = nan("f");
 }
 
-
-int
-TargetGRB::load ()
+int TargetGRB::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double  db_grb_date;
@@ -143,9 +140,7 @@ TargetGRB::load ()
 	return ConstTarget::load ();
 }
 
-
-void
-TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	time_t now;
 	ln_get_timet_from_julian (JD, &now);
@@ -164,9 +159,7 @@ TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
 	ConstTarget::getPosition (pos, JD);
 }
 
-
-int
-TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
+int TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
 {
 	// when it's SWIFT GRB and we are currently observing Swift burst, don't interrupt us
 	// that's good only for WF instruments which observe Swift FOV
@@ -177,24 +170,20 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
 	return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }
 
-
-double
-TargetGRB::getPostSec ()
+double TargetGRB::getPostSec ()
 {
 	time_t now;
 	time (&now);
 	return now - (time_t) getGrbDate ();
 }
 
-
-void
-TargetGRB::checkValidity ()
+void TargetGRB::checkValidity ()
 {
 	if (isGrb () == false && Rts2Config::instance()->grbdFollowTransients () == false)
 	{
 		if (getTargetEnabled () == true)
 		{
- 			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB." << sendLog;
+ 			logStream (MESSAGE_INFO) << "disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB." << sendLog;
 			setTargetEnabled (false);
 		}
 	}
@@ -202,7 +191,7 @@ TargetGRB::checkValidity ()
 	{
 		if (getTargetEnabled () == true)
 		{
-			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is too late after GRB." << sendLog;
+			logStream (MESSAGE_INFO) << "disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is too late after GRB." << sendLog;
 			setTargetEnabled (false);
 		}
 	}
@@ -301,9 +290,7 @@ bool TargetGRB::getScript (const char *deviceName, std::string &buf)
 	return false;
 }
 
-
-int
-TargetGRB::beforeMove ()
+int TargetGRB::beforeMove ()
 {
 	// update our position..
 	if (shouldUpdate)
@@ -312,9 +299,7 @@ TargetGRB::beforeMove ()
 	return 0;
 }
 
-
-float
-TargetGRB::getBonus (double JD)
+float TargetGRB::getBonus (double JD)
 {
 	// time from GRB
 	time_t now;
@@ -363,9 +348,7 @@ TargetGRB::getBonus (double JD)
 	return retBonus;
 }
 
-
-int
-TargetGRB::isContinues ()
+int TargetGRB::isContinues ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_tar_id = getTargetID ();
@@ -405,9 +388,7 @@ TargetGRB::isContinues ()
 	return 0;
 }
 
-
-double
-TargetGRB::getFirstPacket ()
+double TargetGRB::getFirstPacket ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_grb_id = gcnGrbId;
@@ -443,9 +424,7 @@ TargetGRB::getFirstPacket ()
 	return db_grb_update + (double) db_grb_update_usec / USEC_SEC;
 }
 
-
-const char *
-TargetGRB::getSatelite ()
+const char * TargetGRB::getSatelite ()
 {
 	// get satelite
 	if (gcnPacketMin == 40)
@@ -473,9 +452,7 @@ TargetGRB::getSatelite ()
 	return "Unknow type";
 }
 
-
-void
-TargetGRB::printExtra (Rts2InfoValStream &_os, double JD)
+void TargetGRB::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	double firstPacket = getFirstPacket ();
 	double firstObs = getFirstObs ();
@@ -507,18 +484,14 @@ TargetGRB::printExtra (Rts2InfoValStream &_os, double JD)
 	_os << std::endl;
 }
 
-
-void
-TargetGRB::printDS9Reg (std::ostream & _os, double JD)
+void TargetGRB::printDS9Reg (std::ostream & _os, double JD)
 {
 	struct ln_equ_posn pos;
 	getPosition (&pos, JD);
 	_os << "circle(" << pos.ra << "," << pos.dec << "," << errorbox << ")" << std::endl;
 }
 
-
-void
-TargetGRB::printGrbList (std::ostream & _os)
+void TargetGRB::printGrbList (std::ostream & _os)
 {
 	struct ln_equ_posn pos;
 	double firstObs = getFirstObs ();
@@ -534,9 +507,7 @@ TargetGRB::printGrbList (std::ostream & _os)
 		<< std::endl;
 }
 
-
-void
-TargetGRB::writeToImage (Rts2Image * image, double JD)
+void TargetGRB::writeToImage (Rts2Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("GRB_RA", grb.ra, "GRB RA know at time of exposure");
