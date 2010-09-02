@@ -211,6 +211,8 @@ class IntegerArray: public ValueArray
 
 		int operator[] (int i) { return value[i]; }
 
+		const std::vector <int> & getValueVector () { return value; }
+
 	protected:
 		std::string _os;
 		std::vector <int> value;
