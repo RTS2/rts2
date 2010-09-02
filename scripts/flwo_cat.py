@@ -40,10 +40,14 @@ for arg in sys.argv[1:]:
 		run_cmd(cmd)
 
 		# parse script
-		script = parse_script(a[4])
+		script = 'tempdisable 1800 ' + parse_script(a[6])
 
 		cmd = ["rts2-target", "-c", "KCAM", "-s", script, a[0]]
 		run_cmd(cmd)
 
-		cmd = ["rts2-target", "-e", "-p", str(int(a[7]) * 100), a[0]]
+		prior = int(a[9]) * 100
+		if (prior <= 0):
+		  	prior = 1
+
+		cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), a[0]]
 		run_cmd(cmd)
