@@ -2236,6 +2236,23 @@ void Rts2Image::writeConnArray (TableData *tableData)
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
+ColumnData *getColumnData (const char *name, Rts2Value * val)
+{
+	switch  (val->getValueBaseType ())
+	{
+		case RTS2_VALUE_DOUBLE:
+			return new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ());
+			break;
+		case RTS2_VALUE_INTEGER:
+			return new ColumnData (name, ((rts2core::IntegerArray *) val)->getValueVector (), false);
+			break;
+		case RTS2_VALUE_BOOL:
+			return new ColumnData (name, ((rts2core::IntegerArray *) val)->getValueVector (), true);
+			break;
+	}
+	throw rts2core::Error ("unknow array datatype");
+}
+
 void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
@@ -2269,13 +2286,13 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 				if (infoTime)
 				{
 					TableData *td = new TableData (name, infoTime->getValueDouble ());
-					td->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+					td->push_back (getColumnData (name, val));
 					arrayGroups[val->getWriteGroup ()] = td;
 				}
 			}
 			else
 			{
-				ai->second->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+				ai->second->push_back (getColumnData (name, val));
 			}
 
 			break;

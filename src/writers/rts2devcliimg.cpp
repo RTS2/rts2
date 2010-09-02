@@ -172,6 +172,7 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		ci->image->moveHDU (1);
 
 		cameraImageReady (ci->image);
+
 		if (ci->canDelete ())
 		{
 			processCameraImage (iter);
@@ -179,6 +180,8 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		else
 		{
 			logStream (MESSAGE_ERROR) << "getData, but not all metainfo - size of images:" << images.size () << sendLog;
+			// do not use channel in next computation - delete them
+			ci->image->deallocate ();
 		}
 	}
 	else
@@ -221,6 +224,9 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 	{
 		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
+
+	// do not use channel in next computation - delete them
+	ci->image->deallocate ();
 
 	if (lastImage == ci->image)
 		lastImage = NULL;

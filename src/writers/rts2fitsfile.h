@@ -43,10 +43,13 @@ class ColumnData
 {
 	public:
 		ColumnData (std::string _name, std::vector <double> _data);
+		ColumnData (std::string _name, std::vector <int> _data, bool isBoolean);
 		~ColumnData () { if (data) free (data); }
 
 		std::string name;
 		size_t len;
+		const char *type;
+		int ftype;
 		void *data;
 };
 
