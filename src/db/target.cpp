@@ -66,6 +66,8 @@ class Rts2TargetApp:public Rts2AppDb
 		Rts2TargetApp (int argc, char **argv);
 		virtual ~ Rts2TargetApp (void);
 	protected:
+		virtual void usage ();
+
 		virtual int processOption (int in_opt);
 
 		virtual int processArgs (const char *arg);
@@ -88,8 +90,7 @@ class Rts2TargetApp:public Rts2AppDb
 		int runInteractive ();
 };
 
-Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target_set = NULL;
 	op = OP_NONE;
@@ -117,6 +118,11 @@ Rts2AppDb (in_argc, in_argv)
 Rts2TargetApp::~Rts2TargetApp ()
 {
 	delete target_set;
+}
+
+void Rts2TargetApp::usage ()
+{
+	std::cout << "  " << getAppName () << " -n +3600 192     .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl;
 }
 
 int Rts2TargetApp::processOption (int in_opt)
