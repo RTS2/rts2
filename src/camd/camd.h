@@ -738,11 +738,7 @@ class Camera:public Rts2ScriptDevice
 		/**
 		 * Set exposure time.
 		 */
-		void setExposure (float in_exp)
-		{
-			exposure->setValueFloat (in_exp);
-			sendValueAll (exposure);
-		}
+		void setExposure (float in_exp) { exposure->setValueFloat (in_exp); }
 
 		/**
 		 * Returns exposure type.
