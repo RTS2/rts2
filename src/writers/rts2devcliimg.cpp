@@ -215,6 +215,12 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		{
 			setImage (ci->image, NULL);
 		}
+		else if (ci->image)
+		{
+			// do not use channel in next computation - delete them
+				ci->image->deallocate ();
+		}
+
 		// remove us
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
@@ -224,9 +230,6 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 	{
 		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
-
-	// do not use channel in next computation - delete them
-	ci->image->deallocate ();
 
 	if (lastImage == ci->image)
 		lastImage = NULL;
