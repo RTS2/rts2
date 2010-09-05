@@ -538,7 +538,7 @@ class Camera:public Rts2ScriptDevice
 			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
 		}
 
-		void setHeight (int in_height)
+		void setUsedHeight (int in_height)
 		{
 			chipUsedReadout->setHeight (in_height);
 		}

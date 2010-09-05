@@ -729,7 +729,7 @@ int EdtSao::writePattern ()
 	writeCommand (true, addr++, ZERO);
 	
 	writeSkip (true, getUsedY (), addr);
-	chipUsedReadout->setHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
+	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
 	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
 
 	writeCommand (true, addr++, VEND);
