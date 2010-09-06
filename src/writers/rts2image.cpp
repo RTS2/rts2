@@ -1173,7 +1173,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 	}
 	else
 	{
-		ch = new Channel (pixelData, 2, sizes);
+		ch = new Channel (pixelData, 2, sizes, false);
 	}
 
 	channels.push_back (ch);
@@ -1752,7 +1752,7 @@ void Rts2Image::loadChannels ()
 		}
 		fitsStatusGetValue ("image loadChannels", true);
 
-		channels.push_back (new Channel (imageData, naxis, sizes));
+		channels.push_back (new Channel (imageData, naxis, sizes, true));
 
 		tothdu--;
 		if (tothdu <= 0)

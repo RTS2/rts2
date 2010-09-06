@@ -33,10 +33,10 @@ Channel::Channel ()
 	sizes = NULL;
 }
 
-Channel::Channel (char *_data, int _naxis, long *_sizes)
+Channel::Channel (char *_data, int _naxis, long *_sizes, bool dealloc)
 {
 	data = _data;
-	allocated = false;
+	allocated = dealloc;
 
 	naxis = _naxis;
 

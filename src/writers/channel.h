@@ -34,7 +34,7 @@ class Channel
 {
 	public:
 		Channel ();
-		Channel (char *_data, int _naxis, long *_sizes);
+		Channel (char *_data, int _naxis, long *_sizes, bool dealloc);
 		Channel (char *_data, long dataSize, int _naxis, long *_sizes);
 		~Channel ();
 

@@ -408,7 +408,7 @@ class Rts2Image:public Rts2FitsFile
 		void closeData () { channels.clear (); }
 
 		// remove pointer to camera dataa
-		void deallocate () { channels.deallocate (); channels.clear (); }
+		void deallocate () { channels.clear (); }
 
 		/**
 		 * @throw rts2core::Error
