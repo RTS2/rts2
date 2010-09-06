@@ -88,8 +88,7 @@ class Rts2TargetApp:public Rts2AppDb
 		int runInteractive ();
 };
 
-Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target_set = NULL;
 	op = OP_NONE;
@@ -98,15 +97,15 @@ Rts2AppDb (in_argc, in_argv)
 
 	camera = NULL;
 
-	addOption ('e', NULL, 0, "enable given targets");
-	addOption ('d', NULL, 0, "disable given targets (they will not be picked up by selector");
-	addOption ('p', NULL, 1, "set target (fixed) priority");
-	addOption ('b', NULL, 1, "set target bonus to this value");
-	addOption ('t', NULL, 1, "set target bonus time to this value");
-	addOption ('n', NULL, 1, "set next observable time this value");
-	addOption ('o', NULL, 0, "clear next observable time");
-	addOption ('c', NULL, 1, "next script will be set for given camera");
-	addOption ('s', NULL, 1, "set script for target and camera");
+	addOption ('e', NULL, 0, "enable given target(s)");
+	addOption ('d', NULL, 0, "disable given target(s) (they will not be picked up by selector)");
+	addOption ('p', NULL, 1, "set target(s) (fixed) priority");
+	addOption ('b', NULL, 1, "set target(s) bonus to this value");
+	addOption ('t', NULL, 1, "set target(s) bonus time to this value");
+	addOption ('n', NULL, 1, "set target(s) next observable time this value");
+	addOption ('o', NULL, 0, "clear target(s) next observable time");
+	addOption ('c', NULL, 1, "next script will be set for the given camera");
+	addOption ('s', NULL, 1, "set script for target(s) and camera, specified with -c");
 	addOption ('N', NULL, 0, "do not pretty print");
 
 	addOption (OPT_OBSERVE_SLEW, "slew", 0, "mark telescope slewing to observation. Return observation ID");

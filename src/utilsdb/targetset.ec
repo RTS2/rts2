@@ -122,7 +122,7 @@ void TargetSet::load (const char *name)
 	load ();
 }
 
-void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator& (*multiple_resolver) (TargetSet *ts))
+void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts))
 {
 	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
 	{
@@ -144,8 +144,19 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator& (*
 			{
 				if (multiple_resolver == NULL)
 					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
+				TargetSet::iterator res = multiple_resolver (&ts);
+				if (res != ts.end ())
+				{
+					(*this)[res->first] = res->second;
+					ts.erase (res);
+				}
+				else
+				{
+					insert (ts.begin (), ts.end ());
+					ts.clear ();
+				}
 			}
-			else
+			else if (ts.size () == 1)
 			{
 				(*this)[ts.begin ()->first] = ts.begin ()->second;
 				ts.clear ();

@@ -24,6 +24,7 @@
 #define OPT_NAME                  OPT_LOCAL + 201
 #define OPT_PARSE_SCRIPT          OPT_LOCAL + 202
 #define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 203
+#define OPT_AIRMASS               OPT_LOCAL + 204
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -82,7 +83,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
 	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
 	addOption ('m', NULL, 0, "do not plot moon");
-	addOption ('a', NULL, 1, "specify airmass distance for calibration targets selection (and print calibration targets)");
+	addOption (OPT_AIRMASS, "airmass", 1, "specify airmass distance for calibration targets selection (and print calibration targets)");
 	addOption ('c', NULL, 0, "print recommended calibration targets");
 	addOption ('o', NULL, 2, "print observations (in given time range)");
 	addOption ('i', NULL, 2, "print images (in given time range)");
@@ -138,7 +139,7 @@ int PrintTarget::processOption (int in_opt)
 		case 'm':
 			addMoon = false;
 			break;
-		case 'a':
+		case OPT_AIRMASS:
 			airmd = atof (optarg);
 		case 'c':
 			printCalTargets = true;
