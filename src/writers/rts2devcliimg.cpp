@@ -180,8 +180,6 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		else
 		{
 			logStream (MESSAGE_ERROR) << "getData, but not all metainfo - size of images:" << images.size () << sendLog;
-			// do not use channel in next computation - delete them
-			ci->image->deallocate ();
 		}
 	}
 	else
@@ -214,11 +212,6 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		if (res == IMAGE_KEEP_COPY)
 		{
 			setImage (ci->image, NULL);
-		}
-		else if (ci->image)
-		{
-			// do not use channel in next computation - delete them
-				ci->image->deallocate ();
 		}
 
 		// remove us

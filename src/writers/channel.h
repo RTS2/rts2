@@ -38,17 +38,18 @@ class Channel
 		Channel (char *_data, long dataSize, int _naxis, long *_sizes);
 		~Channel ();
 
-		void deallocate () { data = NULL; }
-
 		const long getWidth () { return naxis > 0 ? sizes[0] : 0; }
 		const long getHeight () { return naxis > 1 ? sizes[1] : 0; }
 		const long getNPixels () { return getWidth () * getHeight (); }
 
 		const char *getData () { return data; }
+
+		void deallocate () { data = NULL; }
 	private:
 		char *data;
 		int naxis;
 		long *sizes;
+		bool allocated;
 };
 
 class Channels:public std::vector<Channel *>
