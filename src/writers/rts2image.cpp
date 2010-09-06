@@ -1022,8 +1022,6 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 		if (required)
 			throw (er);
 	}
-	if (defVal)
-		strncpy (value, defVal, valLen);
 }
 
 void Rts2Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
