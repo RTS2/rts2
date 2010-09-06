@@ -47,14 +47,14 @@ class Flat:
 		self.binning = binning
 		self.ngood = ngood
 		self.window = window
-		self.log = []
+		self.attempts = []
 
 	def attempt(self, exptime, average, ratio, res):
-		self.log.append(FlatAttempt(exptime, average, ratio, res))
+		self.attempts.append(FlatAttempt(exptime, average, ratio, res))
 	
-	def logString(self):
+	def attemptString(self):
 		ret = ""
-		for a in self.log:
+		for a in self.attempts:
 			ret += a.toString () + '\n'
 		return ret
 
@@ -228,6 +228,7 @@ class FlatScript (rts2comm.Rts2Comm):
 			brightness = 'bright'
 
 		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %s" % (ratio,avrg,len(self.flatImages[self.flatNum]),self.flat.filter,self.exptime,brightness))
+		self.flat.attempt(self.exptime,ratio,avrg,brightness)
 		return ret
 
 	def setConfiguration(self):
@@ -350,7 +351,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		if (self.email != None):
 			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
 			for flat in self.usedFlats:
-				msg += "\n\n" + flat.signature() + ':\n' + flat.logString()
+				msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
 
 			mimsg = MIMEText(msg)
 			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
