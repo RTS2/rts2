@@ -110,7 +110,7 @@ void TargetSet::load (const char *name)
 	std::ostringstream os;
 	// replace spaces with %..
 	std::string n(name);
-	for (int l = 0; l < n.length (); l++)
+	for (size_t l = 0; l < n.length (); l++)
 	{
 		if (n[l] == ' ')
 			n[l] = '%';
@@ -122,16 +122,35 @@ void TargetSet::load (const char *name)
 	load ();
 }
 
-void TargetSet::load (std::vector <const char *> &names)
+void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator& (*multiple_resolver) (TargetSet *ts))
 {
 	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
 	{
-		TargetSet ts (obs);
-		ts.load (*iter);
-		if (ts.size () != 1)
-			throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
-		(*this)[ts.begin ()->first] = ts.begin ()->second;
-		ts.clear ();
+		char *endp;
+		int tid = strtol (*iter, &endp, 10);
+		if (*endp == '\0')
+		{
+			// numeric target
+			Target *tar = createTarget (tid, obs);
+			if (tar == NULL)
+				throw SqlError ((std::string ("cannot find target with numeric ID ") + (*iter)).c_str ());
+			(*this)[tid] = tar;
+		}
+		else
+		{
+			TargetSet ts (obs);
+			ts.load (*iter);
+			if (ts.size () > 1)
+			{
+				if (multiple_resolver == NULL)
+					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
+			}
+			else
+			{
+				(*this)[ts.begin ()->first] = ts.begin ()->second;
+				ts.clear ();
+			}
+		}
 	}
 }
 

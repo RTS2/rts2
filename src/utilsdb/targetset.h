@@ -131,7 +131,7 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void load (const char *name);
 
-		void load (std::vector <const char *> &names);
+		void load (std::vector <const char *> &names, TargetSet::iterator& (*multiple_resolver) (TargetSet *ts) = NULL);
 
 		/**
 		 * Add to target set targets from the other set.
