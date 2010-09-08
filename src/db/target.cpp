@@ -95,6 +95,8 @@ class Rts2TargetApp:public Rts2AppDb
 		int tempdis;
 
 		void setTempdisable ();
+
+		bool matchAll;
 };
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -108,6 +110,9 @@ Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, i
 
 	tempdis = 0;
 
+	matchAll = false;
+
+	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('e', NULL, 0, "enable given target(s)");
 	addOption ('d', NULL, 0, "disable given target(s) (they will not be picked up by selector)");
 	addOption ('p', NULL, 1, "set target(s) (fixed) priority");
@@ -141,6 +146,9 @@ int Rts2TargetApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'a':
+			matchAll = true;
+			break;
 		case 'e':
 			if (op & OP_DISABLE)
 				return -1;
@@ -342,7 +350,7 @@ int Rts2TargetApp::doProcessing ()
 		return -1;
 	}
 	target_set = new rts2db::TargetSet ();
-	target_set->load (tar_names);
+	target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver);
 	if ((op & OP_MASK_EN) == OP_ENABLE)
 	{
 		target_set->setTargetEnabled (true, true);
