@@ -172,6 +172,7 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		ci->image->moveHDU (1);
 
 		cameraImageReady (ci->image);
+
 		if (ci->canDelete ())
 		{
 			processCameraImage (iter);
@@ -212,6 +213,7 @@ void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		{
 			setImage (ci->image, NULL);
 		}
+
 		// remove us
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;

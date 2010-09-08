@@ -78,6 +78,8 @@ class MICCD:public Camera
 
 		virtual int doReadout ();
 
+		virtual int scriptEnds ();
+
 	private:
 		void addFilters (char *opt);
 		int clearCCD (int nclears);
@@ -294,11 +296,11 @@ int MICCD::startExposure ()
 	}
 	else if (shift->getValueInteger () < 0)
 	{
-		setHeight (getHeight ());
+		setUsedHeight (getHeight ());
 	}
 	else
 	{
-		setHeight (shift->getValueInteger ());
+		setUsedHeight (shift->getValueInteger ());
 	}
 	if (getExpType () != 1)
 	{
@@ -344,6 +346,16 @@ int MICCD::doReadout ()
 	if (getWriteBinaryDataSize () == 0)
 		return -2;
 	return 0;
+}
+
+int MICCD::scriptEnds ()
+{
+	if (shift->getValueInteger () != 0)
+	{
+		setUsedHeight (getHeight ());
+		shift->setValueInteger (0);
+	}
+	return Camera::scriptEnds ();
 }
 
 void MICCD::addFilters (char *opt)

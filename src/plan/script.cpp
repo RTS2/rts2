@@ -137,13 +137,13 @@ Script::~Script (void)
 {
 	// all operations with elements list should be ignored
 	executedCount = -1;
-	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+	for (el_iter = begin (); el_iter != end (); el_iter++)
 	{
 		Element *el;
 		el = *el_iter;
 		delete el;
 	}
-	elements.clear ();
+	clear ();
 	delete[] cmdBuf;
 }
 
@@ -183,7 +183,7 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 			break;
 		element->setLen (cmdBufTop - commandStart);
 		lineOffset += cmdBufTop - commandStart;
-		elements.push_back (element);
+		push_back (element);
 	}
 
 	// add comment if there was one
@@ -202,7 +202,7 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 
 		element->setLen (2);
 		lineOffset += 3;
-		elements.push_back (element);
+		push_back (element);
 	}
 }
 
@@ -229,7 +229,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 		catch (rts2core::Error &er)
 		{
 			logStream (MESSAGE_ERROR) << "cannot load script for device " << cam_name << " and target " << target->getTargetName () << "(# " << target->getTargetID () << sendLog;
-			el_iter = elements.begin ();
+			el_iter = begin ();
 			return -1;
 		}
 
@@ -241,11 +241,11 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 
 	executedCount = 0;
 	currElement = NULL;
-	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+	for (el_iter = begin (); el_iter != end (); el_iter++)
 	{
 		(*el_iter)->beforeExecuting ();
 	}
-	el_iter = elements.begin ();
+	el_iter = begin ();
 	return 0;
 }
 
@@ -257,7 +257,7 @@ void Script::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_SIGNAL:
-			for (el_iter_sig = el_iter; el_iter_sig != elements.end ();
+			for (el_iter_sig = el_iter; el_iter_sig != end ();
 				el_iter_sig++)
 			{
 				el = *el_iter_sig;
@@ -272,7 +272,7 @@ void Script::postEvent (Rts2Event * event)
 			break;
 		case EVENT_ACQUIRE_QUERY:
 		case EVENT_SIGNAL_QUERY:
-			for (el_iter_sig = el_iter; el_iter_sig != elements.end ();
+			for (el_iter_sig = el_iter; el_iter_sig != end ();
 				el_iter_sig++)
 			{
 				el = *el_iter_sig;
@@ -280,7 +280,7 @@ void Script::postEvent (Rts2Event * event)
 			}
 			break;
 		default:
-			if (el_iter != elements.end ())
+			if (el_iter != end ())
 				(*el_iter)->postEvent (new Rts2Event (event));
 			break;
 	}
@@ -402,7 +402,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			return NULL;
 		// target is already acquired
 		if (target->isAcquired ())
-			return new Element (this);
+			return new ElementNone (this);
 		return new ElementAcquire (this, precision, expTime, target_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_HAM))
@@ -786,21 +786,21 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 
 void Script::exposureEnd ()
 {
-	if (executedCount < 0 || el_iter == elements.end ())
+	if (executedCount < 0 || el_iter == end ())
 		return;
 	return (*el_iter)->exposureEnd ();
 }
 
 int Script::processImage (Rts2Image * image)
 {
-	if (executedCount < 0 || el_iter == elements.end ())
+	if (executedCount < 0 || el_iter == end ())
 		return -1;
 	return (*el_iter)->processImage (image);
 }
 
 int Script::idle ()
 {
-	if (el_iter != elements.end ())
+	if (el_iter != end ())
 		return (*el_iter)->idleCall ();
 	return NEXT_COMMAND_KEEP;
 }
@@ -810,7 +810,7 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 	switch (pt)
 	{
 		case PRINT_TEXT:
-			for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+			for (el_iter = begin (); el_iter != end (); el_iter++)
 			{
 				(*el_iter)->prettyPrint (os);
 				os << std::endl;
@@ -818,13 +818,33 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 			break;
 		case PRINT_XML:
 			os << "<script device='" << defaultDevice << "'>" << std::endl;
-			for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+			for (el_iter = begin (); el_iter != end (); el_iter++)
 			{
 				(*el_iter)->printXml (os);
 				os << std::endl;
 			}
 			os << "</script>" << std::endl;
 			break;
-
+		case PRINT_SCRIPT:
+			for (el_iter = begin (); el_iter != end (); el_iter++)
+			{
+				(*el_iter)->printScript (os);
+				if (el_iter != end ())
+					os << " ";
+			}
+			break;
 	}
+}
+
+std::list <Element *>::iterator Script::findElement (const char *name, std::list <Element *>::iterator start)
+{
+	std::list <Element *>::iterator iter;
+	for (iter = start; iter != end (); iter++)
+	{
+		std::ostringstream os;
+		(*iter)->printScript (os);
+		if (os.str ().find (name) == 0)
+			return iter;
+	}
+	return iter;
 }

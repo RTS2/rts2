@@ -27,19 +27,14 @@ class ConstTarget;
 class TargetGRB:public ConstTarget
 {
 	public:
-		TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs,
-			int in_maxBonusTimeout, int in_dayBonusTimeout,
-			int in_fiveBonusTimeout);
+		TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout);
 		virtual int load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual int beforeMove ();
 		virtual float getBonus (double JD);
-		virtual double getMinObsAlt ()
-		{
-			return 0;
-		}
+		virtual double getMinObsAlt () { return 0; }
 		// some logic needed to distinguish states when GRB position change
 		// from last observation. there was update etc..
 		virtual int isContinues ();
@@ -49,10 +44,7 @@ class TargetGRB:public ConstTarget
 		 *
 		 * @return True when target is real GRB.
 		 */
-		bool isGrb ()
-		{
-			return grb_is_grb;
-		}
+		bool isGrb () { return grb_is_grb; }
 
 		/**
 		 * Returns how many seconds elapsed from grbDate.

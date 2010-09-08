@@ -15,15 +15,15 @@ class ElementAcquire:public Element
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int processImage (Rts2Image * image);
 		virtual void cancelCommands ();
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_ACQUIRE << " " << reqPrecision << " " << expTime; }
 	protected:
 		double reqPrecision;
 		double lastPrecision;
 		float expTime;
-		enum
-		{
-			NEED_IMAGE, WAITING_IMAGE, WAITING_ASTROMETRY, WAITING_MOVE, PRECISION_OK,
-			PRECISION_BAD, FAILED
-		} processingState;
+
+		enum { NEED_IMAGE, WAITING_IMAGE, WAITING_ASTROMETRY, WAITING_MOVE, PRECISION_OK, PRECISION_BAD, FAILED} processingState;
+
 		std::string defaultImgProccess;
 		int obsId;
 		int imgId;
@@ -44,6 +44,8 @@ class ElementAcquireStar:public ElementAcquire
 		virtual ~ ElementAcquireStar (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual int processImage (Rts2Image * image);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_STAR_SEARCH << " " << maxRetries << " " << minFlux; }
 	protected:
 		/**
 		 * Decide, if image contains source of interest...
@@ -71,6 +73,8 @@ class ElementAcquireHam:public ElementAcquireStar
 	public:
 		ElementAcquireHam (Script * in_script, int in_maxRetries, float in_expTime, struct ln_equ_posn *in_center_pos);
 		virtual ~ ElementAcquireHam (void);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_HAM << " " << maxRetries; }
 	protected:
 		virtual int getSource (Rts2Image * image, double &ra_off, double &dec_off);
 	private:

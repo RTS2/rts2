@@ -133,6 +133,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	exposureLength = in_image->exposureLength;
 	channels = in_image->channels;
 	imageType = in_image->imageType;
+	in_image->channels.deallocate ();
 	in_image->channels.clear ();
 	focPos = in_image->focPos;
 	signalNoise = in_image->signalNoise;
@@ -1021,8 +1022,6 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 		if (required)
 			throw (er);
 	}
-	if (defVal)
-		strncpy (value, defVal, valLen);
 }
 
 void Rts2Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
@@ -1172,7 +1171,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 	}
 	else
 	{
-		ch = new Channel (pixelData, 2, sizes);
+		ch = new Channel (pixelData, 2, sizes, false);
 	}
 
 	channels.push_back (ch);
@@ -1751,7 +1750,7 @@ void Rts2Image::loadChannels ()
 		}
 		fitsStatusGetValue ("image loadChannels", true);
 
-		channels.push_back (new Channel (imageData, naxis, sizes));
+		channels.push_back (new Channel (imageData, naxis, sizes, true));
 
 		tothdu--;
 		if (tothdu <= 0)
@@ -2235,6 +2234,23 @@ void Rts2Image::writeConnArray (TableData *tableData)
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
+ColumnData *getColumnData (const char *name, Rts2Value * val)
+{
+	switch  (val->getValueBaseType ())
+	{
+		case RTS2_VALUE_DOUBLE:
+			return new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ());
+			break;
+		case RTS2_VALUE_INTEGER:
+			return new ColumnData (name, ((rts2core::IntegerArray *) val)->getValueVector (), false);
+			break;
+		case RTS2_VALUE_BOOL:
+			return new ColumnData (name, ((rts2core::IntegerArray *) val)->getValueVector (), true);
+			break;
+	}
+	throw rts2core::Error ("unknow array datatype");
+}
+
 void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
@@ -2268,13 +2284,13 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 				if (infoTime)
 				{
 					TableData *td = new TableData (name, infoTime->getValueDouble ());
-					td->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+					td->push_back (getColumnData (name, val));
 					arrayGroups[val->getWriteGroup ()] = td;
 				}
 			}
 			else
 			{
-				ai->second->push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
+				ai->second->push_back (getColumnData (name, val));
 			}
 
 			break;

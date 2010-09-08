@@ -248,6 +248,18 @@ void ElementBlock::printXml (std::ostream &os)
 	}
 }
 
+void ElementBlock::printScript (std::ostream &os)
+{
+	os << " { ";
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+	{
+		os << "   ";
+		(*iter)->printScript (os);
+		os << std::endl;
+	}
+	os << " }";
+}
+
 ElementSignalEnd::ElementSignalEnd (Script * in_script, int end_sig_num):ElementBlock (in_script)
 {
 	sig_num = end_sig_num;
@@ -407,6 +419,17 @@ void ElementAcquired::addElseElement (Element * element)
 	elseBlock->addElement (element);
 }
 
+void ElementAcquired::printScript (std::ostream &os)
+{
+	os << COMMAND_BLOCK_ACQ;
+	ElementBlock::printScript (os);
+	if (elseBlock)
+	{
+		os << " " COMMAND_BLOCK_ELSE " ";
+		elseBlock->printScript (os);
+	}
+}
+
 bool ElementElse::endLoop ()
 {
 	return (getLoopCount () != 0);
@@ -423,6 +446,12 @@ void ElementFor::printXml (std::ostream &os)
 	os << "<for count='" << max << "'>" << std::endl;
 	ElementBlock::printXml (os);
 	os << "</for>";
+}
+
+void ElementFor::printScript (std::ostream &os)
+{
+	os << COMMAND_BLOCK_FOR << " " << max;
+	ElementBlock::printScript (os);
 }
 
 int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
@@ -461,9 +490,27 @@ int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** n
 	return blockScriptRet (ret);
 }
 
+void ElementWhileSod::printScript (std::ostream &os)
+{
+	os << COMMAND_WAIT_SOD " " << endSod;
+	ElementBlock::printScript (os);
+}
+
+void ElementWhile::printScript (std::ostream &os)
+{
+	os << COMMAND_BLOCK_WHILE " " << max_cycles;
+	ElementBlock::printScript (os);
+}
+
 bool ElementWhile::endLoop ()
 {
 	return getLoopCount () >= max_cycles || condition->getDouble () == 0;
+}
+
+void ElementDo::printScript (std::ostream &os)
+{
+	os << COMMAND_BLOCK_DO << " " << max_cycles << (*condition);
+	ElementBlock::printScript (os);
 }
 
 bool ElementDo::endLoop ()

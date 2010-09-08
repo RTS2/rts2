@@ -94,6 +94,10 @@
   <refsect1 id="basic_operation">
     <title>BASIC OPERATION</title>
     <para>
+      To leave <command>rts2-mon</command>, use F10 or ctrl+c combination.
+    </para>
+
+    <para>
       Probably the most basic operation is to switch system states. Please
       press F2, F3, or F4 keys to switch states. To switch system to on, you
       will press F4. When system is in on, it is observing.
@@ -110,6 +114,14 @@
       After you press key to change state, small confirmation window will
       appear. Use left and right keys and enter key to confirm your selection.
       You most probably would like to press enter key to confirm selected yes.
+    </para>
+
+    <para>
+      You can also change various values. Use keys (up and down), tabulator key
+      to select a value. Writable values are marked with W in front of the value
+      name. You can only change writable values. Once you highlight value, hit
+      enter key to change it. Confirm the change with enter, or cancel it with
+      ESC key.
     </para>
 
   </refsect1>

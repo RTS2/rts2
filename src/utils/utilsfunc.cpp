@@ -70,6 +70,18 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 	int ret2;
 	out_time->hours = out_time->minutes = 0;
 	out_time->seconds = 0;
+	while (*in_date && isblank (*in_date))
+		in_date++;
+
+	if (in_date[0] == '+' || in_date[0] == '-')
+	{
+		time_t now;
+		time (&now);
+		now += atoi (in_date);
+		ln_get_date_from_timet (&now, out_time);
+		return 0;
+	}
+
 	ret = sscanf (in_date, "%d-%d-%d%n", &out_time->years, &out_time->months, &out_time->days, &ret2);
 	if (ret == 3)
 	{

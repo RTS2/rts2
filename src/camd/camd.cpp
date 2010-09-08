@@ -988,9 +988,9 @@ int Camera::camStartExposureWithoutCheck ()
 
 	double now = getNow ();
 
+	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
 	infoAll ();
 
-	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
 	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble ());
 
 	logStream (MESSAGE_INFO) << "exposing for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;

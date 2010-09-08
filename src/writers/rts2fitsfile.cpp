@@ -32,6 +32,8 @@ ColumnData::ColumnData (std::string _name, std::vector <double> _data)
 {
 	name = _name;
 	len = _data.size ();
+	type = "D";
+	ftype = TDOUBLE;
 	if (len == 0)
 	{
 		data = NULL;
@@ -40,6 +42,31 @@ ColumnData::ColumnData (std::string _name, std::vector <double> _data)
 	data = malloc (sizeof (double) * len);
 	double *tp = (double *) data;
 	for (std::vector <double>::iterator iter = _data.begin (); iter != _data.end (); tp++, iter++)
+		*tp = *iter;
+}
+
+ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoolean)
+{
+	name = _name;
+	len = _data.size ();
+	if (isBoolean)
+	{
+		type = "L";
+		ftype = TLOGICAL;
+	}
+	else
+	{
+		type = "J";
+		ftype = TINT;
+	}
+	if (len == 0)
+	{
+		data = NULL;
+		return;
+	}
+	data = malloc (sizeof (int) * len);
+	int *tp = (int *) data;
+	for (std::vector <int>::iterator iter = _data.begin (); iter != _data.end (); tp++, iter++)
 		*tp = *iter;
 }
 
@@ -297,7 +324,7 @@ int Rts2FitsFile::writeArray (const char *extname, TableData *values)
 		for (char *c = cols[i]; *c; c++)
 			if (*c == '.')
 				*c = '_';
-		types[i] = "D20.10";
+		types[i] = (*iter)->type;
 		units[i] = "A";
 		if ((*iter)->len > maxsize)
 			maxsize = (*iter)->len;
@@ -316,7 +343,7 @@ int Rts2FitsFile::writeArray (const char *extname, TableData *values)
 	for (iter = values->begin (); iter != values->end (); iter++, i++)
 	{
 		if ((*iter)->data)
-			fits_write_col (ffile, TDOUBLE, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
+			fits_write_col (ffile, (*iter)->ftype, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
 	}
 
 	for (i = 0; i < (int) (values->size ()); i++)

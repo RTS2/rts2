@@ -448,6 +448,7 @@ int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 		throw rts2db::SqlError ("cannot insert swift trigger");
 	}
 	EXEC SQL COMMIT;
+	master->updateSwift (swiftLastPoint, swiftLastRa, swiftLastDec);
 	return 0;
 }
 
@@ -481,6 +482,7 @@ int ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 		throw rts2db::SqlError ("cannot insert INTEGRAL pointing");
 	}
 	EXEC SQL COMMIT;
+	master->updateIntegral (d_integral_time, ra, dec);
 	return 0;
 }
 

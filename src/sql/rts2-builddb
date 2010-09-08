@@ -82,7 +82,7 @@ if [ "x$DBNAME" == "x" ]; then
   exit 1
 fi
 
-LOGFILE="build_$DBNAME.log"
+LOGFILE="/tmp/build_$DBNAME.log"
 
 rm -f $LOGFILE
 

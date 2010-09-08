@@ -27,21 +27,21 @@ using namespace rts2image;
 Channel::Channel ()
 {
 	data = NULL;
+	allocated = false;
+
 	naxis = 0;
 	sizes = NULL;
-	allocated = false;
 }
 
-Channel::Channel (char *_data, int _naxis, long *_sizes)
+Channel::Channel (char *_data, int _naxis, long *_sizes, bool dealloc)
 {
 	data = _data;
+	allocated = dealloc;
 
 	naxis = _naxis;
 
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
-
-	allocated = false;
 }
 
 
@@ -49,13 +49,12 @@ Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes)
 {
 	data = new char [dataSize];
 	memcpy (data, _data, dataSize);
+	allocated = true;
 
 	naxis = _naxis;
 
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
-
-	allocated = true;
 }
 
 Channel::~Channel ()
@@ -73,4 +72,10 @@ Channels::~Channels ()
 {
 	for (Channels::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
+}
+
+void Channels::deallocate ()
+{
+	for (Channels::iterator iter = begin (); iter != end (); iter++)
+		(*iter)->deallocate ();
 }

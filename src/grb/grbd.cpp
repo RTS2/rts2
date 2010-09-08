@@ -52,6 +52,12 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	createValue (last_target_time, "last_target_time", "time of last target", false);
 	createValue (last_target_radec, "last_target_radec", "coordinates (J2000) of last GRB", false);
 
+	createValue (lastSwift, "last_swift", "time of last Swift position", false);
+	createValue (lastSwiftRaDec, "last_swift_position", "Swift current position", false);
+
+	createValue (lastIntegral, "last_integral", "time of last INTEGRAL position", false);
+	createValue (lastIntegralRaDec, "last_integral_position", "INTEGRAL current position", false);
+
 	createValue (execConnection, "exec", "exec connection", false);
 
 	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
@@ -266,6 +272,22 @@ int Grbd::commandAuthorized (Rts2Conn * conn)
 		return newGcnGrb (tar_id);
 	}
 	return Rts2DeviceDb::commandAuthorized (conn);
+}
+
+void Grbd::updateSwift (double lastTime, double ra, double dec)
+{
+	lastSwift->setValueDouble (lastTime);
+	sendValueAll (lastSwift);
+	lastSwiftRaDec->setValueRaDec (ra, dec);
+	sendValueAll (lastSwiftRaDec);
+}
+
+void Grbd::updateIntegral (double lastTime, double ra, double dec)
+{
+	lastIntegral->setValueDouble (lastTime);
+	sendValueAll (lastIntegral);
+	lastIntegralRaDec->setValueRaDec (ra, dec);
+	sendValueAll (lastIntegralRaDec);
 }
 
 int main (int argc, char **argv)

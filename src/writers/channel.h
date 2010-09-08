@@ -34,7 +34,7 @@ class Channel
 {
 	public:
 		Channel ();
-		Channel (char *_data, int _naxis, long *_sizes);
+		Channel (char *_data, int _naxis, long *_sizes, bool dealloc);
 		Channel (char *_data, long dataSize, int _naxis, long *_sizes);
 		~Channel ();
 
@@ -43,6 +43,8 @@ class Channel
 		const long getNPixels () { return getWidth () * getHeight (); }
 
 		const char *getData () { return data; }
+
+		void deallocate () { data = NULL; }
 	private:
 		char *data;
 		int naxis;
@@ -55,6 +57,8 @@ class Channels:public std::vector<Channel *>
 	public:
 		Channels ();
 		~Channels ();
+
+		void deallocate ();
 };
 
 }
