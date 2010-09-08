@@ -58,6 +58,11 @@
 #define TARGET_INTEGRAL_FOV  11
 #define TARGET_SHOWER        12
 
+#define CONSTRAINTS_NONE     0x0000
+#define CONSTRAINTS_SYSTEM   0x0001
+#define CONSTRAINTS_GROUP    0x0002
+#define CONSTRAINTS_TARGET   0x0004
+
 namespace rts2db {
 
 class Constraints;
@@ -555,6 +560,9 @@ class Target:public Rts2Target
 		time_t tar_next_observable;
 
 		void writeAirmass (std::ostream & _os, double jd);
+
+		// which constraints were sucessfully loaded
+		int constraintsLoaded;
 
 		char *constraintFile;
 		char *groupConstraintFile;
