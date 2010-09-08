@@ -50,6 +50,8 @@ class ElementGuiding:public Element
 		virtual int processImage (Rts2Image * image);
 		virtual int waitForSignal (int in_sig);
 		virtual void cancelCommands ();
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_GUIDING << " " << expTime << " " << endSignal; }
 	private:
 		float expTime;
 		int endSignal;

@@ -88,6 +88,7 @@ class Execute:public Element
 
 		void deleteExecConn () { connExecute = NULL; }
 
+		virtual void printScript (std::ostream &os) { os << COMMAND_EXE << " " << exec; }
 	private:
 		ConnExecute *connExecute;
 

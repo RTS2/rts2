@@ -25,6 +25,7 @@
 #include "../writers/rts2image.h"
 #include "../utils/rts2object.h"
 #include "../utils/rts2block.h"
+#include "../utilsdb/scriptcommands.h"
 
 #include "status.h"
 
@@ -144,6 +145,7 @@ class Element:public Rts2Object
 
 		virtual void prettyPrint (std::ostream &os) { os << "unknow element"; }
 		virtual void printXml (std::ostream &os) {}
+		virtual void printScript (std::ostream &os) = 0;
 
 	protected:
 		Script * script;
@@ -155,6 +157,14 @@ class Element:public Rts2Object
 		struct timeval idleTimeout;
 };
 
+class ElementNone:public Element
+{
+	public:
+		ElementNone (Script * _script):Element (_script) {}
+
+		virtual void printScript (std::ostream &os) {};
+};
+
 class ElementExpose:public Element
 {
 	public:
@@ -163,6 +173,7 @@ class ElementExpose:public Element
 
 		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;
@@ -175,6 +186,8 @@ class ElementDark:public Element
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
+		virtual void printXml (std::ostream &os) { os << "  <dark length='" << expTime << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;
@@ -187,6 +200,7 @@ class ElementBox:public Element
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "box " << x << " " << y << " " << w << " " << h; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_BOX " " << y << " " << y << " " << w << " " << h; }
 	private:
 		int x, y, w, h;
 };
@@ -198,6 +212,7 @@ class ElementCenter:public Element
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "camera center "; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_CENTER; }
 	private:
 		int w, h;
 };
@@ -215,6 +230,7 @@ class ElementChange:public Element
 		}
 
 		virtual void prettyPrint (std::ostream &os) { os << "offset " << ra << " " << dec; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_CHANGE " " << ra << " " << dec; }
 	private:
 		char *deviceName;
 		double ra;
@@ -228,6 +244,7 @@ class ElementWait:public Element
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "wait "; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_WAIT; }
 };
 
 class ElementWaitAcquire:public Element
@@ -235,6 +252,8 @@ class ElementWaitAcquire:public Element
 	public:
 		ElementWaitAcquire (Script * _script, int in_tar_id);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_WAIT_ACQUIRE; }
 	private:
 		// for which target shall we wait
 		int tar_id;
@@ -246,6 +265,8 @@ class ElementPhotometer:public Element
 	public:
 		ElementPhotometer (Script * _script, int in_filter, float in_exposure, int in_count);
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_PHOTOMETER << " " << filter << " " << exposure << " " << count; }
 	private:
 		int filter;
 		float exposure;
@@ -260,6 +281,8 @@ class ElementSendSignal:public Element
 		virtual ~ ElementSendSignal (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_SEND_SIGNAL << " " << sig; }
 	private:
 		int sig;
 		bool askedFor;
@@ -272,6 +295,8 @@ class ElementWaitSignal:public Element
 		ElementWaitSignal (Script * _script, int in_sig);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int waitForSignal (int in_sig);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_WAIT_SIGNAL " " << sig; }
 	private:
 		int sig;
 };
@@ -288,6 +313,7 @@ class ElementChangeValue:public Element
 
 		virtual void prettyPrint (std::ostream &os) { os << "set on " << deviceName << " value " << valName << " " << op << " " << operands; }
 		virtual void printXml (std::ostream &os) { os << "  <set device='" << deviceName << "' value='" << valName << "' op='" << op << "' operands='" << operands << "'/>"; }
+		virtual void printScript (std::ostream &os) { os << deviceName << "." << valName << op << operands; }
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:
@@ -307,6 +333,8 @@ class ElementComment:public Element
 		ElementComment (Script * _script, const char *in_comment, int in_cnum);
 		virtual ~ ElementComment (void);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command,	char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os) { os << "# " << comment; }
 	private:
 		char *comment;
 		// comment number

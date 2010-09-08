@@ -62,6 +62,8 @@ class ElementBlock:public Element
 		virtual void prettyPrint (std::ostream &os);
 		virtual void printXml (std::ostream &os);
 
+		virtual void printScript (std::ostream &os);
+
 	protected:
 		std::list < Element * > blockElements;
 		std::list < Element * >::iterator curr_element;
@@ -97,6 +99,8 @@ class ElementSignalEnd:public ElementBlock
 		virtual ~ ElementSignalEnd (void);
 
 		virtual int waitForSignal (int _sig);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_BLOCK_WAITSIG " " << sig_num; ElementBlock::printScript (os); }
 	protected:
 		virtual bool endLoop ()
 		{
@@ -130,6 +134,9 @@ class ElementAcquired:public ElementBlock
 		virtual void cancelCommands ();
 
 		virtual void addElseElement (Element * element);
+
+		virtual void printScript (std::ostream &os);
+
 	protected:
 		virtual bool endLoop ();
 	private:
@@ -163,6 +170,8 @@ class ElementFor:public ElementBlock
 		ElementFor (Script * _script, int _max):ElementBlock (_script) { max = _max; }
 		virtual void prettyPrint (std::ostream &os);
 		virtual void printXml (std::ostream &os);
+		virtual void printScript (std::ostream &os);
+
 	protected:
 		virtual bool endLoop () { return getLoopCount () >= max; }
 	private:
@@ -182,6 +191,8 @@ class ElementWhileSod:public ElementBlock
 		virtual ~ElementWhileSod (void) {}
 
 		virtual int nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os);
 	protected:
 		virtual bool endLoop ()
 		{
@@ -206,6 +217,8 @@ class ElementWhile:public ElementBlock
 	public:
 		ElementWhile (Script * _script, rts2operands::Operand *_condition, int _max_cycles):ElementBlock (_script) { condition = _condition; max_cycles = _max_cycles; }
 		virtual ~ElementWhile () { delete condition; }
+
+		virtual void printScript (std::ostream &os);
 	protected:
 		virtual bool endLoop ();
 	private:
@@ -224,6 +237,8 @@ class ElementDo:public ElementBlock
 		ElementDo (Script *_script, int _max_cycles):ElementBlock (_script) { max_cycles = _max_cycles; condition = NULL; }
 		virtual ~ElementDo () { delete condition; }
 		void setCondition (rts2operands::Operand *_condition) { condition = _condition; }
+
+		virtual void printScript (std::ostream &os);
 	protected:
 		virtual bool endLoop ();
 	private:

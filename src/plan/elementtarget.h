@@ -31,8 +31,7 @@ namespace rts2script
 class ElementTarget:public Element
 {
 	public:
-		ElementTarget (Script * in_script, Rts2Target * in_target):Element (in_script)
-			{ target = in_target; }
+		ElementTarget (Script * in_script, Rts2Target * in_target):Element (in_script) { target = in_target; }
 	protected:
 		Rts2Target * getTarget () { return target; }
 	private:
@@ -47,6 +46,7 @@ class ElementDisable:public ElementTarget
 
 		virtual void prettyPrint (std::ostream &os) { os << "disable target"; }
 		virtual void printXml (std::ostream &os) { os << "  <disable>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_TARGET_DISABLE; }
 };
 
 class ElementTempDisable:public ElementTarget
@@ -58,6 +58,9 @@ class ElementTempDisable:public ElementTarget
 
 		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << seconds << " seconds"; }
 		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << seconds << "</tempdisable>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_TAR_TEMP_DISAB << " " << seconds; }
+
+		void setTempDisable (int sec) { seconds = sec; }
 
 	private:
 		int seconds;
@@ -72,6 +75,8 @@ class ElementTarBoost:public ElementTarget
 			bonus = in_bonus;
 		}
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+
+		virtual void printScript (std::ostream &os) { os << COMMAND_TARGET_BOOST << " " << seconds << " " << bonus; }
 	private:
 		int seconds;
 		int bonus;

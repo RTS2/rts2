@@ -18,6 +18,7 @@
  */
 
 #include "../plan/script.h"
+#include "../plan/elementtarget.h"
 #include "../utilsdb/observation.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
@@ -42,10 +43,12 @@
 #define OP_OBS_START        0x0100
 #define OP_OBS_SLEW         0x0200
 #define OP_OBS_END          0x0400
+#define OP_TEMPDISABLE      0x0800
 
 #define OPT_OBSERVE_START   OPT_LOCAL + 831
 #define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
 #define OPT_OBSERVE_END     OPT_LOCAL + 833
+#define OPT_TEMPDISABLE     OPT_LOCAL + 834
 
 class CamScript
 {
@@ -88,6 +91,10 @@ class Rts2TargetApp:public Rts2AppDb
 		std::list < CamScript > new_scripts;
 
 		int runInteractive ();
+
+		int tempdis;
+
+		void setTempdisable ();
 };
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -99,6 +106,9 @@ Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, i
 
 	camera = NULL;
 
+	tempdis = 0;
+
+	addOption ('e', NULL, 0, "enable given targets");
 	addOption ('e', NULL, 0, "enable given targets");
 	addOption ('d', NULL, 0, "disable given targets (they will not be picked up by selector");
 	addOption ('p', NULL, 1, "set target (fixed) priority");
@@ -113,6 +123,8 @@ Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, i
 	addOption (OPT_OBSERVE_SLEW, "slew", 0, "mark telescope slewing to observation. Return observation ID");
 	addOption (OPT_OBSERVE_START, "observe", 0, "mark start of observation (after telescope slew in). Requires observation ID");
 	addOption (OPT_OBSERVE_END, "end", 0, "mark end of observation. Requires observation ID");
+
+	addOption (OPT_TEMPDISABLE, "tempdisable", 1, "change number of seconds for which target will be disabled after script execution");
 }
 
 Rts2TargetApp::~Rts2TargetApp ()
@@ -122,7 +134,8 @@ Rts2TargetApp::~Rts2TargetApp ()
 
 void Rts2TargetApp::usage ()
 {
-	std::cout << "  " << getAppName () << " -n +3600 192     .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl;
+	std::cout << "  " << getAppName () << " -n +3600 192         .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
+		<< "  " << getAppName () << " --tempdisable 3600 192 .. disable target for 1 hour after it is executed" << std::endl;
 }
 
 int Rts2TargetApp::processOption (int in_opt)
@@ -183,6 +196,10 @@ int Rts2TargetApp::processOption (int in_opt)
 			break;
 		case OPT_OBSERVE_END:
 			op |= OP_OBS_END;
+			break;
+		case OPT_TEMPDISABLE:
+			tempdis = atoi (optarg);
+			op |= OP_TEMPDISABLE;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -256,6 +273,54 @@ int Rts2TargetApp::runInteractive ()
 	}
 }
 
+void Rts2TargetApp::setTempdisable ()
+{
+	if (camera == NULL)
+	{
+		std::cerr << "Missing camera name" << std::endl;
+		return;
+	}
+	for (rts2db::TargetSet::iterator iter = target_set->begin (); iter != target_set->end (); iter++)
+	{
+		std::string cs;
+		Rts2Target *tar = iter->second;
+		tar->getScript (camera, cs);
+		rts2script::Script script = rts2script::Script (cs.c_str ());
+		struct ln_equ_posn target_pos;
+		tar->getPosition (&target_pos);
+		script.parseScript (tar, &target_pos);
+		int failedCount = script.getFaultLocation ();
+		if (failedCount != -1)
+		{
+			std::cerr << "PARSING of script '" << cs << "' FAILED!!! AT " << failedCount << std::endl
+				<< cs.substr (0, failedCount + 1) << std::endl;
+			for (; failedCount > 0; failedCount--)
+				std::cerr << ' ';
+			std::cerr << "^ here" << std::endl;
+		}
+		try
+		{
+			rts2script::Script::iterator se = script.findElement (COMMAND_TAR_TEMP_DISAB, script.begin ());
+			if (se == script.end ())
+			{
+				script.push_front (new rts2script::ElementTempDisable (&script, tar, tempdis));
+			}
+			else
+			{
+				((rts2script::ElementTempDisable *) *se)->setTempDisable (tempdis);
+			}
+			
+			std::ostringstream os;
+			script.prettyPrint (os, rts2script::PRINT_SCRIPT);
+			target_set->setTargetScript (camera, os.str ().c_str ());
+		}
+		catch (rts2db::CameraMissingExcetion &ex)
+		{
+			std::cerr << "Missing camera " << camera << ". Is it filled in \"cameras\" database table?" << std::endl;
+		}
+	}
+}
+
 int Rts2TargetApp::doProcessing ()
 {
 	if ((op & OP_OBS_START) || (op & OP_OBS_END))
@@ -290,6 +355,10 @@ int Rts2TargetApp::doProcessing ()
 	if (op & OP_PRIORITY)
 	{
 		target_set->setTargetPriority (new_priority);
+	}
+	if (tempdis != 0)
+	{
+		setTempdisable ();
 	}
 	if (op & OP_BONUS)
 	{

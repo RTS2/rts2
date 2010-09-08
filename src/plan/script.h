@@ -78,7 +78,7 @@ class ParsingError:public rts2core::Error
 /**
  * Types of script output.
  */
-typedef enum { PRINT_TEXT, PRINT_XML } printType;
+typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT } printType;
 
 /**
  * Holds script to execute on given device.
@@ -91,7 +91,7 @@ typedef enum { PRINT_TEXT, PRINT_XML } printType;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Script:public Rts2Object
+class Script:public Rts2Object, public std::list <Element *>
 {
 	public:
 		Script (Rts2Block * _master = NULL);
@@ -122,7 +122,7 @@ class Script:public Rts2Object
 				return -1;
 			return (cmdBufTop - cmdBuf);
 		}
-		int isLastCommand (void) { return (el_iter == elements.end ()); }
+		int isLastCommand (void) { return (el_iter == end ()); }
 
 		void getDefaultDevice (char new_device[DEVICE_NAME_SIZE]) { strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE); }
 
@@ -149,6 +149,8 @@ class Script:public Rts2Object
 		int idle ();
 
 		void prettyPrint (std::ostream &os, printType pt);
+
+		std::list <Element *>::iterator findElement (const char *name, std::list <Element *>::iterator start);
 
 	private:
 		char *cmdBuf;
@@ -184,7 +186,6 @@ class Script:public Rts2Object
 		 */
 		rts2operands::Operand *parseOperand (Rts2Target * target, struct ln_equ_posn *target_pos, rts2operands::Operand *op = NULL);
 
-		std::list < Element * >elements;
 		std::list < Element * >::iterator el_iter;
 		Rts2Block *master;
 
@@ -210,7 +211,7 @@ template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_
 
 	while (1)
 	{
-		if (el_iter == elements.end ())
+		if (el_iter == end ())
 			// command not found, end of script,..
 			return NEXT_COMMAND_END_SCRIPT;
 		currElement = *el_iter;
