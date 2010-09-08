@@ -231,6 +231,8 @@ class Rts2Conn:public Rts2Object
 		int sendValue (char *val_name, int val1, int val2, double val3, double val4, double val5, double val6);
 		int sendValueTime (std::string val_name, time_t * value);
 
+		int sendProgress (double start, double end);
+
 		/**
 		 * Send end of command on the connection.
 		 *
@@ -686,6 +688,10 @@ class Rts2Conn:public Rts2Object
 		time_t lastGoodSend;
 		time_t lastData;
 		time_t lastSendReady;
+
+		// status times
+		double statusStart;
+		double statusExpectedEnd;
 
 		std::map <int, rts2core::DataChannels *> readChannels;
 		int activeReadData;

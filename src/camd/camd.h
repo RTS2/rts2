@@ -328,7 +328,7 @@ class Camera:public Rts2ScriptDevice
 		 * @param new_state New state for whole device.
 		 * @param description Text describing operation which is performed.
 		 */
-		void maskStateChip (int chip, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description);
+		void maskStateChip (int chip, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description, double start = rts2_nan ("f"), double end = rts2_nan ("f"));
 
 		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.

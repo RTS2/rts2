@@ -53,142 +53,6 @@
  */
 class Rts2App:public Rts2Object
 {
-	private:
-		/**
-		 * Holds options which might be passed to the program.
-		 */
-		std::vector < Rts2Option * >options;
-
-		/**
-		 * Call to process options and arguments.
-		 */
-		int initOptions ();
-
-		/**
-		 * Prints help message, describing all options
-		 */
-		void helpOptions ();
-		
-		/**
-		 * Copy of argc.
-		 */
-		int app_argc;
-
-		/**
-		 * Copy of argv.
-		 */
-		char **app_argv;
-
-		/**
-		 * Flag for loopEnd. True if application shall finish.
-		 */
-		bool end_loop;
-
-	protected:
-		/**
-		 * Called to process options of the programme.
-		 *
-		 * @param in_opt Option as extracted by getopt call, first parameter of the addOption call.
-		 * @return -1 on failure to parse option, 0 on success.
-		 */
-		virtual int processOption (int in_opt);
-		
-		/**
-		 * Process arguments passed to the programme.
-		 * This routine is called for each argument passed to the application which is
-		 * not an option.
-		 *
-		 * @param arg  Argument passed to the programme.
-		 * @return -1 on failure, 0 on success.
-		 */
-		virtual int processArgs (const char *arg);
-
-		/**
-		 * Add an option to the processed ones.
-		 *
-		 * @param in_short_option  Short option. This is passed to processOption.
-		 * @param in_long_option   Long option. Can be string.
-		 * @param in_has_arg       0 if this option do not has an optarg, 1 if it has, 2 if it can have.
-		 * @param in_help_msg      Help message printed to the user.
-		 * @return -1 on failure, 0 on success.
-		 */
-		int addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg);
-
-		/**
-		 * Ask user for integer.
-		 *
-		 * @param desc Description.
-		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @return -1 on error, 0 on success.
-		 */
-		int askForInt (const char *desc, int &val);
-
-		/**
-		 * Ask user for double number.
-		 *
-		 * @param desc Description.
-		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @return -1 on error, 0 on success.
-		 */
-		int askForDouble (const char *desc, double &val);
-
-		/**
-		 * Ask user for string.
-		 *
-		 * @param desc Description.
-		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @return -1 on error, 0 on success.
-		 */
-		int askForString (const char *desc, std::string & val);
-
-		/**
-		 * Ask user for password string.
-		 * Allow user to type password on console, without displaying character
-		 * he/she enters.
-		 *
-		 * @param desc Description.
-		 * @param val  Password value.
-		 * @return -1 on error, 0 on success.
-		 */
-		int askForPassword (const char *desc, std::string & val);
-
-		/**
-		 * Ask user for boolean value. Various entries (YyNn01) are allowed.
-		 *
-		 * @param desc     Description.
-		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @param visible  If false, application will display * instead of typed characters. Handy to handle password inputs.
-		 * @return -1 on error, 0 on success.
-		 */
-		bool askForBoolean (const char *desc, bool val);
-
-		/**
-		 * Return application name, taken from the command line.
-		 *
-		 * @return Application name (= argv[0]).
-		 */
-		const char *getAppName ()
-		{
-			return app_argv[0];
-		}
-
-		/**
-		 * Print ussage line. Called from help() routine to print recommended usage.
-		 */
-		virtual void usage ();
-		
-		/**
-		 * Prints help message.
-		 */
-		virtual void help ();
-
-		/**
-		 * Called from run() routine to initialize application.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		virtual int init ();
-
 	public:
 		/**
 		 * Constructor for Rts2App.
@@ -249,6 +113,56 @@ class Rts2App:public Rts2Object
 		int askForChr (const char *desc, char &out);
 
 		/**
+		 * Ask user for integer.
+		 *
+		 * @param desc Description.
+		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
+		 * @return -1 on error, 0 on success.
+		 */
+		int askForInt (const char *desc, int &val);
+
+		/**
+		 * Ask user for double number.
+		 *
+		 * @param desc Description.
+		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
+		 * @return -1 on error, 0 on success.
+		 */
+		int askForDouble (const char *desc, double &val);
+
+		/**
+		 * Ask user for string.
+		 *
+		 * @param desc Description.
+		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
+		 * @return -1 on error, 0 on success.
+		 */
+		int askForString (const char *desc, std::string & val);
+
+		/**
+		 * Ask user for password string.
+		 * Allow user to type password on console, without displaying character
+		 * he/she enters.
+		 *
+		 * @param desc Description.
+		 * @param val  Password value.
+		 * @return -1 on error, 0 on success.
+		 */
+		int askForPassword (const char *desc, std::string & val);
+
+		/**
+		 * Ask user for boolean value. Various entries (YyNn01) are allowed.
+		 *
+		 * @param desc     Description.
+		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
+		 * @param visible  If false, application will display * instead of typed characters. Handy to handle password inputs.
+		 * @return -1 on error, 0 on success.
+		 */
+		bool askForBoolean (const char *desc, bool val);
+
+
+
+		/**
 		 * Function used in messaging API to pass message to
 		 * application. Client applications then print the message to
 		 * stderr, daemons ussually pass it through TCP/IP connection
@@ -279,6 +193,94 @@ class Rts2App:public Rts2Object
 		 * method.
 		 */
 		virtual void sigHUP (int sig);
+
+	protected:
+		/**
+		 * Called to process options of the programme.
+		 *
+		 * @param in_opt Option as extracted by getopt call, first parameter of the addOption call.
+		 * @return -1 on failure to parse option, 0 on success.
+		 */
+		virtual int processOption (int in_opt);
+		
+		/**
+		 * Process arguments passed to the programme.
+		 * This routine is called for each argument passed to the application which is
+		 * not an option.
+		 *
+		 * @param arg  Argument passed to the programme.
+		 * @return -1 on failure, 0 on success.
+		 */
+		virtual int processArgs (const char *arg);
+
+		/**
+		 * Add an option to the processed ones.
+		 *
+		 * @param in_short_option  Short option. This is passed to processOption.
+		 * @param in_long_option   Long option. Can be string.
+		 * @param in_has_arg       0 if this option do not has an optarg, 1 if it has, 2 if it can have.
+		 * @param in_help_msg      Help message printed to the user.
+		 * @return -1 on failure, 0 on success.
+		 */
+		int addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg);
+
+		/**
+		 * Return application name, taken from the command line.
+		 *
+		 * @return Application name (= argv[0]).
+		 */
+		const char *getAppName ()
+		{
+			return app_argv[0];
+		}
+
+		/**
+		 * Print ussage line. Called from help() routine to print recommended usage.
+		 */
+		virtual void usage ();
+		
+		/**
+		 * Prints help message.
+		 */
+		virtual void help ();
+
+		/**
+		 * Called from run() routine to initialize application.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int init ();
+
+	private:
+		/**
+		 * Holds options which might be passed to the program.
+		 */
+		std::vector < Rts2Option * >options;
+
+		/**
+		 * Call to process options and arguments.
+		 */
+		int initOptions ();
+
+		/**
+		 * Prints help message, describing all options
+		 */
+		void helpOptions ();
+		
+		/**
+		 * Copy of argc.
+		 */
+		int app_argc;
+
+		/**
+		 * Copy of argv.
+		 */
+		char **app_argv;
+
+		/**
+		 * Flag for loopEnd. True if application shall finish.
+		 */
+		bool end_loop;
 };
 
 

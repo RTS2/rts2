@@ -860,12 +860,22 @@ class TargetPlan:public Target
 /**
  * Select target from database with given target ID.
  *
- * @param _tar_id  ID of target which will be loaded.
- * @param _obs     Observer position.
+ * @param tar_id  ID of target which will be loaded
+ * @param obs     observer position
  *
  * @return New target if it can be found. Otherwise will return NULL.
  */
-Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs);
+Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
+
+/**
+ * Create target by name.
+ *
+ * @param  tar_name  target name
+ * @param  obs       observer position
+ *
+ * @return New target if unique target can be found. For retriving set matching given name, please see TargetSet::findByName ().
+ */
+Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs);
 
 // print target information to stdout..
 std::ostream & operator << (std::ostream & _os, Target & target);

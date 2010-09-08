@@ -38,7 +38,8 @@ EXTRA_DIST = \
     rts2-sensor-aag.xml \
     rts2-autofocus.xml \
     rts2-talker.xml \
-    rts2.target.xml
+    rts2.target.xml \
+    rts2-newtarget.xml
 
 CLEANFILES = *.1 *.5 *.7
 
@@ -82,7 +83,8 @@ man_MANS = \
     rts2-sensor-aag.1 \
     rts2-autofocus.1 \
     rts2-talker.1 \
-    rts2.target.5
+    rts2.target.5 \
+    rts2-newtarget.1
 
 XP=xsltproc --nonet
 

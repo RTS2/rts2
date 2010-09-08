@@ -54,6 +54,8 @@
 #define PROTO_AUTH             "A"
 /** The command set device status. @ingroup RTS2Protocol */
 #define PROTO_STATUS           "S"
+/** Command reporting state progress. */
+#define PROTO_PROGRESS         "P"
 /** The command set device BOP state. @ingroup RTS2Protocol */
 #define PROTO_BOP_STATE        "B"
 /** The command is technical command, used to check device responsiveness. @ingroup RTS2Protocol */

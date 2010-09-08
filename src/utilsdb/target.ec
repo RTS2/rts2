@@ -1593,6 +1593,19 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	return retTarget;
 }
 
+Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs)
+{
+	TargetSet ts (obs);
+	ts.load (tar_name);
+	if (ts.size () == 1)
+	{
+		Target *ret = ts.begin ()->second;
+		ts.clear ();
+		return ret;
+	}
+	return NULL;
+}
+
 void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 {
 	struct ln_hrz_posn hrz;

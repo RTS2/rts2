@@ -41,18 +41,15 @@ namespace rts2db
  */
 class NotDisjunct
 {
-	private:
-		int targetId;
 	public:
 		/**
 		 * Construct not disjunct exception.
 		 *
 		 * @param _targetId ID of target which is not disjunt in the set.
 		 */
-		NotDisjunct (int _targetId)
-		{
-			targetId = _targetId;
-		}
+		NotDisjunct (int _targetId) { targetId = _targetId; }
+	private:
+		int targetId;
 };
 
 /**
@@ -62,18 +59,15 @@ class NotDisjunct
  */
 class TargetNotFound
 {
-	private:
-		int id;
 	public:
 		/**
 		 * Construct the TargetNotFound execption.
 		 *
 		 * @param _id Id of target which was not found in the set.
 		 */
-		TargetNotFound (int _id)
-		{
-			id = _id;
-		}
+		TargetNotFound (int _id) { id = _id; }
+	private:
+		int id;
 };
 
 /**
@@ -127,6 +121,17 @@ class TargetSet:public std::map <int, Target * >
 		 * @throw SqlError when some target cannot be created.
 		 */
 		void load (std::list < int >&target_ids);
+
+		/**
+		 * Load targets with name matching pattern.
+		 *
+		 * @param name  target name. Spaces in names are ignored
+		 *
+		 * @throw SqlError if no target is found.
+		 */
+		void load (const char *name);
+
+		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL);
 
 		/**
 		 * Add to target set targets from the other set.
@@ -229,9 +234,7 @@ class  TargetSetGrb:public std::vector <TargetGRB *>
 class TargetSetSingleton
 {
 	public:
-		TargetSetSingleton ()
-		{
-		}
+		TargetSetSingleton () {}
 
 		static TargetSet *instance ()
 		{

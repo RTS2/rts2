@@ -986,13 +986,14 @@ int Camera::camStartExposureWithoutCheck ()
 	if (ret)
 		return ret;
 
+	double now = getNow ();
+
 	infoAll ();
-	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure chip started");
+
+	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
+	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble ());
 
 	logStream (MESSAGE_INFO) << "exposing for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
-
-	exposureEnd->setValueDouble (getNow () + exposure->getValueDouble ());
-	sendValueAll (exposureEnd);
 
 	lastFilterNum = getFilterNum ();
 	// call us to check for exposures..
@@ -1196,10 +1197,9 @@ int Camera::getStateChip (int chip)
 	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
 }
 
-void Camera::maskStateChip (int chip_num, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description)
+void Camera::maskStateChip (int chip_num, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description, double start, double end)
 {
-	maskState (state_mask | (chip_state_mask << (4 * chip_num)),
-		new_state | (chip_new_state << (4 * chip_num)), description);
+	maskState (state_mask | (chip_state_mask << (4 * chip_num)), new_state | (chip_new_state << (4 * chip_num)), description, start, end);
 }
 
 int Camera::getFilterNum ()

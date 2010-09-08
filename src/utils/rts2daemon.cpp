@@ -790,6 +790,15 @@ void Rts2Daemon::sendValueAll (Rts2Value * value)
 	}
 }
 
+void Rts2Daemon::sendProgressAll (double start, double end)
+{
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		(*iter)->sendProgress (start, end);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+	  	(*iter)->sendProgress (start, end);
+}
+
 int Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
 	int ret;
@@ -869,13 +878,15 @@ void Rts2Daemon::stateChanged (int new_state, int old_state, const char *descrip
 	state = new_state;
 }
 
-void Rts2Daemon::maskState (int state_mask, int new_state, const char *description)
+void Rts2Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
 		<< "Rts2Device::maskState state: state_mask: " << std::hex << state_mask
 		<< " new_state: " << std::hex << new_state
 		<< " desc: " << description
+		<< " start: " << start
+		<< " end: " << end
 		<< sendLog;
 	#endif
 	int masked_state = state;
@@ -883,6 +894,9 @@ void Rts2Daemon::maskState (int state_mask, int new_state, const char *descripti
 	masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
 	masked_state |= new_state;
 	setState (masked_state, description);
+
+	if (!(isnan (start) && isnan(end)))
+		sendProgressAll (start, end);
 }
 
 void Rts2Daemon::signaledHUP ()

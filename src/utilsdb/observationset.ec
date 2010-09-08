@@ -488,7 +488,8 @@ void ObservationSet::printUntil (double time, std::ostream &os)
 void ObservationSetDate::load (int year, int month, int day, int hour, int minutes)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-	int d_value;
+	int d_value1;
+	int d_value2;
 	int d_c;
 	int d_i;
 	char *stmp_c;
@@ -499,7 +500,6 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	double lng = Rts2Config::instance ()->getObserver ()->lng;
 
-	std::ostringstream _os;
 	if (year == -1)
 	{
 		group_by = "year";
@@ -542,16 +542,19 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 		}
 	}
 
-	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (observations.*) as c, count (images.*) as i FROM observations, images WHERE observations.obs_id = images.obs_id";
+	std::ostringstream _os;
+	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (observations.*) as c FROM observations";
 	
 	if (_where.str ().length () > 0)
-		_os << " and " << _where.str ();
+		_os << " WHERE " << _where.str ();
 
-	_os << " GROUP BY value;";
+	_os << " GROUP BY value ORDER BY value;";
 
 	stmp_c = new char[_os.str ().length () + 1];
 	memcpy (stmp_c, _os.str().c_str(), _os.str ().length () + 1);
 	EXEC SQL PREPARE obsdate_stmp FROM :stmp_c;
+
+	std::cout << _os.str() << std::endl;
 
 	delete[] stmp_c;
 
@@ -559,24 +562,68 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	EXEC SQL OPEN obsdate_cur;
 
+	std::ostringstream _osi;
+	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (images.*) as i FROM observations, images WHERE observations.obs_id = images.obs_id";
+	
+	if (_where.str ().length () > 0)
+		_osi << " and " << _where.str ();
+
+	_osi << " GROUP BY value ORDER BY value;";
+
+	std::cout << _osi.str() << std::endl;
+
+	stmp_c = new char[_osi.str ().length () + 1];
+	memcpy (stmp_c, _osi.str().c_str(), _osi.str ().length () + 1);
+	EXEC SQL PREPARE obsdateimg_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
+
+	EXEC SQL DECLARE obsdateimg_cur CURSOR FOR obsdateimg_stmp;
+
+	EXEC SQL OPEN obsdateimg_cur;
+
+	d_value2 = -1;
+
 	while (1)
 	{
 		EXEC SQL FETCH next FROM obsdate_cur INTO
-			:d_value,
-			:d_c,
-			:d_i;
+			:d_value1,
+			:d_c;
 		if (sqlca.sqlcode)
 			break;
-		(*this)[d_value] = std::pair <int,int> (d_c, d_i);
+		if (d_value2 < 0)
+		{
+			EXEC SQL FETCH next FROM obsdateimg_cur INTO
+				:d_value2,
+				:d_i;
+			if (sqlca.sqlcode)
+			{
+				if (sqlca.sqlcode == ECPG_NOT_FOUND)
+					(*this)[d_value1] = std::pair <int,int> (d_c, 0);
+				else
+				  	break;
+			}
+		}
+		if (d_value1 == d_value2)
+		{
+			(*this)[d_value1] = std::pair <int,int> (d_c, d_i);
+			d_value2 = -1;
+		}
+		else
+		{
+			(*this)[d_value1] = std::pair <int,int> (d_c, 0);
+		}
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		EXEC SQL CLOSE obsdate_cur;
+		EXEC SQL CLOSE obsdateimg_cur;
 		EXEC SQL ROLLBACK;
 
 		throw SqlError ();
 	}
 
 	EXEC SQL CLOSE obsdate_cur;
+	EXEC SQL CLOSE obsdateimg_cur;
 	EXEC SQL ROLLBACK;
 }

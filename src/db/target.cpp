@@ -79,7 +79,7 @@ class Rts2TargetApp:public Rts2AppDb
 		virtual int doProcessing ();
 	private:
 		int op;
-		std::list < int >tar_ids;
+		std::vector < const char * >tar_names;
 		rts2db::TargetSet *target_set;
 
 		float new_priority;
@@ -108,16 +108,15 @@ Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, i
 
 	tempdis = 0;
 
-	addOption ('e', NULL, 0, "enable given targets");
-	addOption ('e', NULL, 0, "enable given targets");
-	addOption ('d', NULL, 0, "disable given targets (they will not be picked up by selector");
-	addOption ('p', NULL, 1, "set target (fixed) priority");
-	addOption ('b', NULL, 1, "set target bonus to this value");
-	addOption ('t', NULL, 1, "set target bonus time to this value");
-	addOption ('n', NULL, 1, "set next observable time this value");
-	addOption ('o', NULL, 0, "clear next observable time");
-	addOption ('c', NULL, 1, "next script will be set for given camera");
-	addOption ('s', NULL, 1, "set script for target and camera");
+	addOption ('e', NULL, 0, "enable given target(s)");
+	addOption ('d', NULL, 0, "disable given target(s) (they will not be picked up by selector)");
+	addOption ('p', NULL, 1, "set target(s) (fixed) priority");
+	addOption ('b', NULL, 1, "set target(s) bonus to this value");
+	addOption ('t', NULL, 1, "set target(s) bonus time to this value");
+	addOption ('n', NULL, 1, "set target(s) next observable time this value");
+	addOption ('o', NULL, 0, "clear target(s) next observable time");
+	addOption ('c', NULL, 1, "next script will be set for the given camera");
+	addOption ('s', NULL, 1, "set script for target(s) and camera, specified with -c");
 	addOption ('N', NULL, 0, "do not pretty print");
 
 	addOption (OPT_OBSERVE_SLEW, "slew", 0, "mark telescope slewing to observation. Return observation ID");
@@ -209,14 +208,7 @@ int Rts2TargetApp::processOption (int in_opt)
 
 int Rts2TargetApp::processArgs (const char *arg)
 {
-	int new_tar_id;
-	char *endptr;
-
-	new_tar_id = strtol (arg, &endptr, 10);
-	if (*endptr != '\0')
-		return -1;
-
-	tar_ids.push_back (new_tar_id);
+	tar_names.push_back (arg);
 	return 0;
 }
 
@@ -325,25 +317,32 @@ int Rts2TargetApp::doProcessing ()
 {
 	if ((op & OP_OBS_START) || (op & OP_OBS_END))
 	{
-		if (tar_ids.size () != 1)
+		if (tar_names.size () != 1)
 		{
 			std::cerr << "You must specify only a single observation ID." << std::endl;
 			return -1;
 		}
-		rts2db::Observation obs (*(tar_ids.begin ()));
+		char *endp;
+		long obs_id = strtol (tar_names[0], &endp, 10);
+		if (*endp != '\0')
+		{
+			std::cerr << "You must specify observation ID - this must be number." << std::endl;
+			return -1;
+		}
+		rts2db::Observation obs (obs_id);
 		if (op & OP_OBS_START)
 			obs.startObservation ();
 		if (op & OP_OBS_END)
 		  	obs.endObservation (OBS_BIT_MOVED | OBS_BIT_STARTED | OBS_BIT_PROCESSED);
 		return 0;
 	}
-	if (tar_ids.size () == 0)
+	if (tar_names.size () == 0)
 	{
 		std::cerr << "No target specified, exiting." << std::endl;
 		return -1;
 	}
 	target_set = new rts2db::TargetSet ();
-	target_set->load (tar_ids);
+	target_set->load (tar_names);
 	if ((op & OP_MASK_EN) == OP_ENABLE)
 	{
 		target_set->setTargetEnabled (true, true);

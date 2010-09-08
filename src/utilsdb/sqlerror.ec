@@ -44,3 +44,4 @@ SqlError::SqlError (const char *msg)
 		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
+

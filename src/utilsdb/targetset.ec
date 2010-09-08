@@ -105,6 +105,66 @@ void TargetSet::load (std::list<int> &target_ids)
 	}
 }
 
+void TargetSet::load (const char *name)
+{
+	std::ostringstream os;
+	// replace spaces with %..
+	std::string n(name);
+	for (size_t l = 0; l < n.length (); l++)
+	{
+		if (n[l] == ' ')
+			n[l] = '%';
+	}
+	os << "tar_name LIKE '" << n << "'";
+	where = os.str ();
+	order_by = "tar_id asc";
+
+	load ();
+}
+
+void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts))
+{
+	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
+	{
+		char *endp;
+		int tid = strtol (*iter, &endp, 10);
+		if (*endp == '\0')
+		{
+			// numeric target
+			Target *tar = createTarget (tid, obs);
+			if (tar == NULL)
+				throw SqlError ((std::string ("cannot find target with numeric ID ") + (*iter)).c_str ());
+			(*this)[tid] = tar;
+		}
+		else
+		{
+			TargetSet ts (obs);
+			ts.load (*iter);
+			if (ts.size () > 1)
+			{
+				if (multiple_resolver == NULL)
+					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
+				TargetSet::iterator res = multiple_resolver (&ts);
+				if (res != ts.end ())
+				{
+					(*this)[res->first] = res->second;
+					ts.erase (res);
+				}
+				else
+				{
+					insert (ts.begin (), ts.end ());
+					ts.clear ();
+				}
+			}
+			else if (ts.size () == 1)
+			{
+				(*this)[ts.begin ()->first] = ts.begin ()->second;
+				ts.clear ();
+			}
+		}
+	}
+}
+
 TargetSet::TargetSet (struct ln_lnlat_posn * in_obs): std::map <int, Target *> ()
 {
 	obs = in_obs;
