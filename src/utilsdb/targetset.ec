@@ -1,6 +1,6 @@
 /* 
  * Set of targets.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,25 +27,6 @@
 #include <sstream>
 
 using namespace rts2db;
-
-void TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
-{
-	if (target_type == NULL || *target_type == '\0')
-	{
-		_os << "true";
-		return;
-	}
-	const char *top = target_type;
-	_os << "( ";
-	while (*top)
-	{
-		if (top != target_type)
-			_os << " or ";
-		_os << "type_id = '" << *top << "'";
-		top++;
-	}
-	_os << ")";
-}
 
 void TargetSet::load ()
 {
@@ -426,8 +407,65 @@ void TargetSetGrb::printGrbList (std::ostream & _os)
 	}
 }
 
+void TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
+{
+	if (target_type == NULL || *target_type == '\0')
+	{
+		_os << "true";
+		return;
+	}
+	const char *top = target_type;
+	_os << "( ";
+	while (*top)
+	{
+		if (top != target_type)
+			_os << " or ";
+		_os << "type_id = '" << *top << "'";
+		top++;
+	}
+	_os << ")";
+}
+
 std::ostream & operator << (std::ostream &_os, TargetSet &tar_set)
 {
 	tar_set.print (_os, ln_get_julian_from_sys ());
 	return _os;
+}
+
+TargetSet::iterator const rts2db::resolveAll (TargetSet *ts)
+{
+	return ts->end ();
+}
+
+TargetSet::iterator const rts2db::consoleResolver (TargetSet *ts)
+{
+	std::cout << "Please make a selection (or ctrl+c for end):" << std::endl
+		<< "  0) all" << std::endl;
+	size_t i = 1;
+	TargetSet::iterator iter = ts->begin ();
+	for (; iter != ts->end (); i++, iter++)
+	{
+		std::cout << std::setw (3) << i << ")" << SEP;
+		iter->second->printShortInfo (std::cout);
+		std::cout << std::endl;
+	}
+	std::ostringstream os;
+	os << "Your selection (0.." << (i - 1 ) << ")";
+	int ret;
+	while (true)
+	{
+		ret = -1;
+		getMasterApp ()->askForInt (os.str ().c_str (), ret);
+		if (ret >= 0 && ret <= (int) ts->size ())
+			break;
+	}
+	if (ret == 0)
+		return ts->end ();
+	iter = ts->begin ();
+	while (ret > 1)
+	{
+		iter++;
+		ret--;
+	}
+	return iter;
 }

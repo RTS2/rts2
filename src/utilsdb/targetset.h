@@ -1,6 +1,6 @@
 /* 
  * Set of targets.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -247,6 +247,22 @@ class TargetSetSingleton
 			return pInstance; 
 		}
 };
+
+/**
+ * Resolver for non-unique targetset names. Force targetset to contain all
+ * matching names.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+TargetSet::iterator const resolveAll (TargetSet *ts);
+
+/**
+ * Resolver for non-unique targetset names. Ask user on console (stdin/stdout)
+ * which names he/she would like to use.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+TargetSet::iterator const consoleResolver (TargetSet *ts);
 
 }
 

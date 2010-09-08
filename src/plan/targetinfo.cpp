@@ -18,6 +18,7 @@
  */
 
 #include "printtarget.h"
+#include "../utilsdb/targetset.h"
 #include "../utilsdb/target_auger.h"
 
 #define OPT_AUGER_ID   OPT_LOCAL + 501
@@ -94,44 +95,6 @@ int TargetInfo::processArgs (const char *arg)
 	return 0;
 }
 
-rts2db::TargetSet::iterator const resolveAll (rts2db::TargetSet *ts)
-{
-	return ts->end ();
-}
-
-rts2db::TargetSet::iterator const consoleResolver (rts2db::TargetSet *ts)
-{
-	std::cout << "Please make a selection (or ctrl+c for end):" << std::endl
-		<< "  0) all" << std::endl;
-	size_t i = 1;
-	rts2db::TargetSet::iterator iter = ts->begin ();
-	for (; iter != ts->end (); i++, iter++)
-	{
-		std::cout << std::setw (3) << i << ")" << SEP;
-		iter->second->printShortInfo (std::cout);
-		std::cout << std::endl;
-	}
-	std::ostringstream os;
-	os << "Your selection (0.." << (i - 1 ) << ")";
-	int ret;
-	while (true)
-	{
-		ret = -1;
-		getMasterApp ()->askForInt (os.str ().c_str (), ret);
-		if (ret >= 0 && ret <= (int) ts->size ())
-			break;
-	}
-	if (ret == 0)
-		return ts->end ();
-	iter = ts->begin ();
-	while (ret > 1)
-	{
-		iter++;
-		ret--;
-	}
-	return iter;
-}
-
 int TargetInfo::doProcessing ()
 {
 	if (printSelectable)
@@ -176,7 +139,7 @@ int TargetInfo::doProcessing ()
 	else
 	{
 		// normal target set load
-		tar_set.load (targets, (matchAll ? resolveAll : consoleResolver));
+		tar_set.load (targets, (matchAll ? rts2db::resolveAll : rts2db::consoleResolver));
 	}
 	return printTargets (tar_set);
 }
