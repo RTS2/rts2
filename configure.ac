@@ -561,6 +561,9 @@ AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
  
 if test "x$LIBARCHIVE_LIBS" != "x"; then
 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
+	libarchive="yes"
+else
+	libarchive="no"
 fi
 
 if test "x$COMEDI" != "xno"; then
@@ -755,7 +758,7 @@ echo "
   libxml2       ${XMLVERS}
   graphicsmagic ${GRAPHICSMAGICK_VERS}
   CERN ROOT     ${ROOT_VERS}
-  libarchive    ${LIBARCHIVE_LIBS}
+  libarchive    ${libarchive}
 
 
 CCD's:
