@@ -112,13 +112,13 @@ rts2db::TargetSet::iterator const consoleResolver (rts2db::TargetSet *ts)
 		std::cout << std::endl;
 	}
 	std::ostringstream os;
-	os << "Your selection (0.." << i << ")";
+	os << "Your selection (0.." << (i - 1 ) << ")";
 	int ret;
 	while (true)
 	{
 		ret = -1;
 		getMasterApp ()->askForInt (os.str ().c_str (), ret);
-		if (ret >= 0 && ret < (int) ts->size ())
+		if (ret >= 0 && ret <= (int) ts->size ())
 			break;
 	}
 	if (ret == 0)
