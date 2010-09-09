@@ -828,9 +828,9 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 		case PRINT_SCRIPT:
 			for (el_iter = begin (); el_iter != end (); el_iter++)
 			{
-				(*el_iter)->printScript (os);
-				if (el_iter != end ())
+				if (el_iter != begin ())
 					os << " ";
+				(*el_iter)->printScript (os);
 			}
 			break;
 	}
