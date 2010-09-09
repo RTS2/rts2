@@ -66,12 +66,13 @@
 #define MENU_ON              3
 #define MENU_EXIT            4
 #define MENU_ABOUT           5
+#define MENU_MANUAL          6
 
 #define MENU_DEBUG_BASIC    11
 #define MENU_DEBUG_LIMITED  12
 #define MENU_DEBUG_FULL     13
 
-enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
+enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON, NONE };
 
 using namespace rts2ncurses;
 
@@ -139,6 +140,12 @@ class NMonitor:public Rts2Client
 
 		bool colorsOff;
 
+		void showHelp ();
+
+		/**
+		 * Display message box with OK button.
+		 */
+		void messageBox (const char *text);
 		void messageBox (const char *query, messageAction action);
 		void messageBoxEnd ();
 		void menuPerform (int code);

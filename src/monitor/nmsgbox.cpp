@@ -22,14 +22,15 @@
 
 using namespace rts2ncurses;
 
-NMsgBox::NMsgBox (const char *in_query, const char *in_buttons[],int in_butnum):NWindow (COLS / 2 - 25, LINES / 2 - 15, 50, 5)
+NMsgBox::NMsgBox (const char *in_query, const char *in_buttons[],int in_butnum, int x, int y, int w, int h):NWindow (x, y, w, h)
 {
 	query = in_query;
 	buttons = in_buttons;
 	butnum = in_butnum;
 	exitState = 0;
-}
 
+	but_lo = 2;
+}
 
 NMsgBox::~NMsgBox (void)
 {
@@ -65,15 +66,45 @@ keyRet NMsgBox::injectKey (int key)
 void NMsgBox::draw ()
 {
 	NWindow::draw ();
-	mvwprintw (window, 1, 2, "%s", query);
+	printMessage ();
 	for (int i = 0; i < butnum; i++)
 	{
 		if (i == exitState)
 			wattron (window, A_REVERSE);
 		else
 			wattroff (window, A_REVERSE);
-		mvwprintw (window, 2, 2 + i * 30 / 2, buttons[i]);
+		mvwprintw (window, but_lo, 2 + i * 30 / 2, buttons[i]);
 	}
 	wattroff (window, A_REVERSE);
 	winrefresh ();
+}
+
+void NMsgBox::printMessage ()
+{
+	mvwprintw (window, 1, 2, "%s", query);
+}
+
+NMsgBoxWin::NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum):NMsgBox (in_query, in_buttons, in_butnum, COLS / 2 - 25, LINES / 2 - 15, 50, 20)
+{
+	but_lo = 17;
+
+	msgw = newwin (18, 48, LINES / 2 - 14, COLS / 2 - 24);
+	if (!msgw)
+		errorMove ("newwin msg", COLS / 2 - 24, LINES / 2 - 14, 48, 3);
+}
+
+NMsgBoxWin::~NMsgBoxWin ()
+{
+	delwin (msgw);
+}
+
+void NMsgBoxWin::winrefresh ()
+{
+	NMsgBox::winrefresh ();
+	wnoutrefresh (msgw);
+}
+
+void NMsgBoxWin::printMessage ()
+{
+	mvwprintw (msgw, 0, 1, "%s", query);
 }
