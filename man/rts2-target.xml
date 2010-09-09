@@ -97,6 +97,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>-N</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--tempdisable <replaceable>seconds</replaceable></option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -238,6 +241,19 @@
         <listitem>
           <para>
 	    Do not pretty print results, print them as number.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--tempdisable <replaceable class="parameter">seconds</replaceable></option></term>
+        <listitem>
+          <para>
+	    Manipulate temporary disabling of target. Camera name
+	    (<option>-c</option>) must be specified before
+	    <option>--tempdisable</option>. If seconds is greater than 0, will
+	    insert or edit tempdisable command in the camera script. If seconds
+	    is less than 0, the command will remove first tempdisable element
+	    from the script.
 	  </para>
         </listitem>
       </varlistentry>

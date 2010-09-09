@@ -301,13 +301,20 @@ void Rts2TargetApp::setTempdisable ()
 		try
 		{
 			rts2script::Script::iterator se = script.findElement (COMMAND_TAR_TEMP_DISAB, script.begin ());
-			if (se == script.end ())
+			if (tempdis > 0)
 			{
-				script.push_front (new rts2script::ElementTempDisable (&script, tar, tempdis));
+				if (se == script.end ())
+				{
+					script.push_front (new rts2script::ElementTempDisable (&script, tar, tempdis));
+				}
+				else
+				{
+					((rts2script::ElementTempDisable *) *se)->setTempDisable (tempdis);
+				}
 			}
-			else
+			else if (se != script.end ())
 			{
-				((rts2script::ElementTempDisable *) *se)->setTempDisable (tempdis);
+				script.erase (se);
 			}
 			
 			std::ostringstream os;
@@ -363,7 +370,7 @@ int Rts2TargetApp::doProcessing ()
 	{
 		target_set->setTargetPriority (new_priority);
 	}
-	if (tempdis != 0)
+	if (op & OP_TEMPDISABLE)
 	{
 		setTempdisable ();
 	}
