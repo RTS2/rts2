@@ -666,17 +666,36 @@ AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 DB2MAN=no
 DB2FOP=no
 
-# Ubuntu docbook localization
-AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl,[])
-AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl,[])
+AC_ARG_WITH(docbook,
+[  --with-docbook         path DocBook stylesheets (needed for manual page generation)],
+docbook="${withval}";
+DB2MAN=$docbook/manpages/docbook.xsl;
+DB2FOP=$docbook/fo/docbook.xsl,
+[docbook=detect])
 
-# Fedore docbook localization
-AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl,[])
-AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl,[])
+if test "x$docbook" == 'xdetect'; then
+	# Ubuntu docbook localization
+	AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl,[])
+	AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl,[])
 
-# SUSE docbook localization
-AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl],DB2MAN=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl,[])
-AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/fo/docbook.xsl],DB2FOP=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/fo/docbook.xsl,[])
+	# Fedore docbook localization
+	AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl,[])
+	AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl,[])
+
+	# SUSE docbook localization
+	AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl],DB2MAN=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl,[])
+	AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/fo/docbook.xsl],DB2FOP=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/fo/docbook.xsl,[])
+else
+	if test "x$docbook" != "xno"; then
+		if test x$DB2MAN != "xno"; then
+			AC_CHECK_FILE([$DB2MAN],[],exit)
+		fi
+
+		if test x$DB2FOP != "xno"; then
+			AC_CHECK_FILE([$DB2FOP],[],exit)
+		fi
+	fi
+fi
 
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)
