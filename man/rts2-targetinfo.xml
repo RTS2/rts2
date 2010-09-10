@@ -113,6 +113,9 @@
         <arg choice="plain"><option>-t</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-u</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -371,6 +374,15 @@
 	      </varlistentry>
 	    </variablelist>
 	    You can find all targets type in "types" table in the database.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-u</option></term>
+        <listitem>
+	  <para>Specified target names must exactly and unique match names in
+	    the database. If this parameter is not used, multiple matches can be listed.
+	    You must then select intearctively proper target ID.
 	  </para>
         </listitem>
       </varlistentry>

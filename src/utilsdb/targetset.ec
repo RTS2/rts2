@@ -86,24 +86,31 @@ void TargetSet::load (std::list<int> &target_ids)
 	}
 }
 
-void TargetSet::load (const char *name)
+void TargetSet::load (const char *name, bool approxName)
 {
 	std::ostringstream os;
 	// replace spaces with %..
 	std::string n(name);
-	for (size_t l = 0; l < n.length (); l++)
+	if (approxName)
 	{
-		if (n[l] == ' ')
-			n[l] = '%';
+		for (size_t l = 0; l < n.length (); l++)
+		{
+			if (n[l] == ' ')
+				n[l] = '%';
+		}
+		os << "tar_name LIKE '" << n << "'";
 	}
-	os << "tar_name LIKE '" << n << "'";
+	else
+	{
+		os << "tar_name = '" << n << "'";
+	}
 	where = os.str ();
 	order_by = "tar_id asc";
 
 	load ();
 }
 
-void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts))
+void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts), bool approxName)
 {
 	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
 	{
@@ -120,7 +127,11 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator con
 		else
 		{
 			TargetSet ts (obs);
-			ts.load (*iter);
+			ts.load (*iter, approxName);
+			if (ts.size () == 0)
+			{
+				throw SqlError ((std::string ("cannot find target with name ") + (*iter)).c_str ());
+			}
 			if (ts.size () > 1)
 			{
 				if (multiple_resolver == NULL)

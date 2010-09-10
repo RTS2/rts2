@@ -125,13 +125,14 @@ class TargetSet:public std::map <int, Target * >
 		/**
 		 * Load targets with name matching pattern.
 		 *
-		 * @param name  target name. Spaces in names are ignored
+		 * @param name         target name
+		 * @param approxName   if true, target is seached using approximation - spaces are replaced with %
 		 *
 		 * @throw SqlError if no target is found.
 		 */
-		void load (const char *name);
+		void load (const char *name, bool approxName = true);
 
-		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL);
+		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true);
 
 		/**
 		 * Add to target set targets from the other set.

@@ -42,6 +42,7 @@ class TargetInfo:public PrintTarget
 		bool printSelectable;
 		bool printAuger;
 		bool matchAll;
+		bool unique;
 		char *targetType;
 };
 
@@ -54,11 +55,13 @@ TargetInfo::TargetInfo (int argc, char **argv):PrintTarget (argc, argv)
 	printSelectable = false;
 	printAuger = false;
 	matchAll = false;
+	unique = false;
 	targetType = NULL;
 
 	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('s', NULL, 0, "print only selectable targets");
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
+	addOption ('u', NULL, 0, "require unique target - search for name");
 	addOption (OPT_AUGER_ID, "auger-id", 0, "specify trigger(s) number for Auger target(s)");
 }
 
@@ -79,6 +82,9 @@ int TargetInfo::processOption (int in_opt)
 		case 't':
 			targetType = optarg;
 			break;
+		case 'u':
+			unique = true;
+			break;
 		case OPT_AUGER_ID:
 			printAuger = true;
 			break;
@@ -93,6 +99,16 @@ int TargetInfo::processArgs (const char *arg)
 	// try to create that target..
 	targets.push_back (arg);
 	return 0;
+}
+
+rts2db::TargetSet::iterator const uniqueResolver (rts2db::TargetSet *ts)
+{
+	if (ts->size () != 1)
+	{
+		std::cerr << "no target found!";
+		exit (1);
+	}
+	return ts->begin ();
 }
 
 int TargetInfo::doProcessing ()
@@ -138,8 +154,28 @@ int TargetInfo::doProcessing ()
 	}
 	else
 	{
-		// normal target set load
-		tar_set.load (targets, (matchAll ? rts2db::resolveAll : rts2db::consoleResolver));
+		try
+		{
+			if (unique)
+			{
+				tar_set.load (targets, uniqueResolver, false);
+				if (tar_set.empty ())
+				{
+					std::cerr << "target not found" << std::endl;
+					exit (1);
+				}
+			}	
+			else
+			{
+				// normal target set load
+				tar_set.load (targets, (matchAll ? rts2db::resolveAll : rts2db::consoleResolver));
+			}
+		}
+		catch (rts2core::Error er)
+		{
+			std::cerr << er << std::endl;
+			exit (1);
+		}
 	}
 	return printTargets (tar_set);
 }
