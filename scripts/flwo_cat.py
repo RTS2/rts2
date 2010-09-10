@@ -2,52 +2,79 @@
 
 import sys
 import subprocess
+import re
 
-def run_cmd(cmd):
-	print cmd
-	proc = subprocess.Popen(cmd)
-	return proc.wait()
+class FLWOCAT:
+	def __init__(self):
+		self.tarid = None
 
-def parse_script(scr):
-	ret = ''
-	s = scr.split(',')
-	for se in s:
-	  	fil = se.split('-')
-		ret += 'filter=' + fil[0] + ' ';
-		if (fil[2] > 1):
-			ret += 'for ' + fil[2] + ' { E ' + fil[1] + ' }'
-		else:
-		  	ret += 'E ' + fil[1]
-		ret += ' '
-	return ret
+	def run_cmd(self,cmd,read_callback=None):
+		print cmd
+		proc = subprocess.Popen(cmd,stdout=subprocess.PIPE)
+		if read_callback:
+			while (True):
+				a=proc.stdout.readline()
+				if a:
+					read_callback(a)
+				else:
+					break
 
+		return proc.wait()
+	
+	def parse_script(self,scr):
+		ret = ''
+		s = scr.split(',')
+		for se in s:
+		  	fil = se.split('-')
+			ret += 'filter=' + fil[0] + ' ';
+			if (fil[2] > 1):
+				ret += 'for ' + fil[2] + ' { E ' + fil[1] + ' }'
+			else:
+			  	ret += 'E ' + fil[1]
+			ret += ' '
+		return ret
+	
+	def process_newtarget(self,line):
+		m = re.search ('#(\d+)',line)
+		if m:
+			self.tarid = m.group(1)
+			print 'Target ID is %s' % (self.tarid)
+	
 
-for arg in sys.argv[1:]:
-	sched = open(arg)
-	for l in sched.readlines():
-	  	l=l.rstrip()
-		if (len(l) == 0):
-		  	continue
-		a = l.split()
-		if a[0][0] == '#':
-		  	continue
-		if a[0][0] == '!':
-			continue
-		scripts = a[3].split(',')
-		if (a[2][0] != '-' and a[2][0] != '+'):
-		  	a[2] = '+' + a[2]
-		cmd = ["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]]
-		run_cmd(cmd)
+	def run(self):	
+		for arg in sys.argv[1:]:
+			sched = open(arg)
+			for l in sched.readlines():
+			  	l=l.rstrip()
+				if (len(l) == 0):
+				  	continue
+				a = l.split()
+				if a[0][0] == '#':
+				  	continue
+				if a[0][0] == '!':
+					continue
+				scripts = a[3].split(',')
+				if (a[2][0] != '-' and a[2][0] != '+'):
+				  	a[2] = '+' + a[2]
+				cmd = ["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]]
+				self.run_cmd(cmd,self.process_newtarget)
 
-		# parse script
-		script = 'tempdisable 1800 ' + parse_script(a[6])
+				if self.tarid is None:
+					print >> sys.stderr, 'rts2-newtarget does not produces target ID, exiting'
+					exit(0)
+				
+				# parse script
+				script = 'tempdisable 1800 ' + self.parse_script(a[6])
+		
+				cmd = ["rts2-target", "-c", "KCAM", "-s", script, self.tarid]
+				self.run_cmd(cmd)
+		
+				prior = int(a[9]) * 100
+				if (prior <= 0):
+				  	prior = 1
+		
+				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), self.tarid]
+				self.run_cmd(cmd)
 
-		cmd = ["rts2-target", "-c", "KCAM", "-s", script, a[0]]
-		run_cmd(cmd)
-
-		prior = int(a[9]) * 100
-		if (prior <= 0):
-		  	prior = 1
-
-		cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), a[0]]
-		run_cmd(cmd)
+a = FLWOCAT()
+a.run()
