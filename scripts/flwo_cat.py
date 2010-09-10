@@ -6,7 +6,7 @@ import subprocess
 def run_cmd(cmd):
 	print cmd
 	proc = subprocess.Popen(cmd)
-	proc.wait()
+	return proc.wait()
 
 def parse_script(scr):
 	ret = ''
@@ -36,7 +36,7 @@ for arg in sys.argv[1:]:
 		scripts = a[3].split(',')
 		if (a[2][0] != '-' and a[2][0] != '+'):
 		  	a[2] = '+' + a[2]
-		cmd = ["rts2-newtarget", a[0], "Object " + a[0], a[1] + ' ' + a[2]]
+		cmd = ["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]]
 		run_cmd(cmd)
 
 		# parse script

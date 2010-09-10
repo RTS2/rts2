@@ -72,7 +72,6 @@ int Rts2TargetApp::getObject (const char *obj_text)
 	delete target;
 	target = NULL;
 
-//#ifdef HAVE_PGSQL
 	// try to get target from SIMBAD
 	target = new rts2db::SimbadTarget (obj_text);
 	ret = target->load ();
@@ -83,9 +82,6 @@ int Rts2TargetApp::getObject (const char *obj_text)
 	}
 	delete target;
 	target = NULL;
-//#else
-//	logStream (MESSAGE_ERROR) << "You don't have postgresql library configured, so Simbad name resolving will not work" << sendLog;
-//#endif
 	return -1;
 }
 

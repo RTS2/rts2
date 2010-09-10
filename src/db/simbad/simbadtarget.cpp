@@ -111,6 +111,8 @@ int SimbadTarget::load ()
 	istringstream *iss = new istringstream ();
 	iss->str ((char *) xpathObj->nodesetval->nodeTab[0]->children->content);
 
+	//std::cout << (char *) xpathObj->nodesetval->nodeTab[0]->children->content << std::endl;
+
 	xmlXPathFreeObject (xpathObj);
 	xmlXPathFreeContext (xpathCtx);
 	xmlFreeDoc (xml);
@@ -180,6 +182,16 @@ int SimbadTarget::load ()
 			propMotions.ra /= 360000.0;
 			propMotions.dec /= 360000.0;
 			iss->getline (buf, LINEBUF);
+		}
+		else if (str_type == "#!")
+		{
+			iss->getline (buf, LINEBUF);
+			if (strcasestr (buf, "nothing found"))
+			{
+				// errrors;;
+				cerr << "Not found" << endl;
+				return -1;
+			}
 		}
 		else if (str_type.c_str ()[0] == '#')
 		{

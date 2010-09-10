@@ -71,6 +71,9 @@
         <arg choice="plain"><option>-a</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-m</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-r <replaceable class="parameter">radius</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
@@ -128,6 +131,16 @@
         <term><option>-a</option></term>
         <listitem>
           <para>Auto assign target ID. You then do not need to specify it. Please see -h for examples.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-m</option></term>
+        <listitem>
+	  <para>
+	    Will search for the object among target. If target with similar
+	    name or position already exists, return its ID. Search radius can
+            be modified with <option>-r</option>.
+          </para>
         </listitem>
       </varlistentry>
       <varlistentry>
