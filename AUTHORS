@@ -1,12 +1,32 @@
-Main author:
-pkubanek	<petr@kubanek.net>              Petr Kubánek       http://petr.kubanek.net for other contacts (phone, address,..)
+The work on this project was supported by numerous institutions and grants,
+paying developers bills and projects costs. We are gratefull for them, and list
+them here for the reference:
 
-Contributed code:
-markus_wildi	markus.wildi@one-arcsec.org                           Markus Wildi
+AI CR Ondrejov                   1999-
+Dresdner Bank AG/Goetzfried AG   2000-2003
+IAA Spain                        2002-
+Intax s.r.o./IBM CZ              2003-2004
+IP CR                            2004-
+Czech Prodex/ESA                 2005-2006
+UCD Ireland                      2005-
+FPI, IPL Spain                   2006-
+BNL/LSST                         2007-
+CfA/SAO                          2010-
 
-Bug reports, documentation, ...
+Main author
+===========
+pkubanek	<petr@kubanek.net>                Petr Kubánek       http://petr.kubanek.net for other contacts (phone, address,..)
 
-mates	<mates@asu.cas.cz>              Martin Jelínek
-standa	<standa@iaa.es>                 Stanislav Vítek
-john	<jfrench@bermuda.ucd.ie>        John French
-prouza	<prouza@fzu.cz>			Michal Prouza
+Contributed code
+================
+markus_wildi	<markus.wildi@one-arcsec.org>     Markus Wildi
+
+Bug reports, documentation, users, minor contributions
+======================================================
+
+mates	        <mates@asu.cas.cz>                Martin Jelínek (Ondrejov, IAA)
+standa	        <standa@iaa.es>                   Stanislav Vítek (IAA)
+john	        <jfrench@bermuda.ucd.ie>          John French (UCD)
+prouza	        <prouza@fzu.cz>                   Michal Prouza (IP CR)
+deugarte        <...>                             Antonio de Ugarte (IAA, ESO, INAF)
+falco           <...>                             Emilio Falco (CfA/SAO)
