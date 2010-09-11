@@ -572,7 +572,7 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Location of paths with per-target files. Default is
+	      Location of paths with per-target files. Default is PREFIX directory + 
 	      "/etc/rts2/targets". This path holds auxiliary target data -
 	      observing constraints, logs, and so on.
 	    </para>
