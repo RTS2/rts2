@@ -81,13 +81,14 @@ class Constraint
 		virtual void parseInterval (const char *interval);
 
 		void print (std::ostream &os);
+
+		virtual const char* getName () = 0;
 	protected:
 		void clearIntervals () { intervals.clear (); }
 		void add (const ConstraintDoubleInterval &inte) { intervals.push_back (inte); }
 		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
 		virtual bool isBetween (double JD);
 
-		virtual const char* getName () = 0;
 	private:
 		std::list <ConstraintDoubleInterval> intervals;
 };
@@ -103,7 +104,6 @@ class ConstraintTime:public Constraint
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_TIME; }
 };
 
@@ -112,7 +112,6 @@ class ConstraintAirmass:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
 };
 
@@ -121,7 +120,6 @@ class ConstraintHA:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_HA; }
 };
 
@@ -130,7 +128,6 @@ class ConstraintLunarDistance:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
 };
 
@@ -139,7 +136,6 @@ class ConstraintLunarPhase:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_LPHASE; }
 };
 
@@ -148,7 +144,6 @@ class ConstraintSolarDistance:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_SDISTANCE; }
 };
 
@@ -157,7 +152,6 @@ class ConstraintSunAltitude:public Constraint
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
-	protected:
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
@@ -202,6 +196,14 @@ class Constraints:public std::map <std::string, Constraint *>
 		 * @param filename   name of file holding constraints in XML
 		 */
 		void load (const char *filename);
+
+		/**
+		 * Parse constraint intervals.
+		 *
+		 * @param name        constraint name
+		 * @param interval    constraint interval
+		 */
+		void parseInterval (const char *name, const char *interval);
 
 		/**
 		 * Print constraints.

@@ -43,12 +43,12 @@ bool ConstraintDoubleInterval::satisfy (double val)
 
 void ConstraintDoubleInterval::print (std::ostream &os)
 {
-	os << "  <interval>";
+	os << "    <interval>";
 	if (!isnan (lower))
-		os << std::endl << "    <lower>" << lower << "</lower>";
+		os << std::endl << "      <lower>" << lower << "</lower>";
 	if (!isnan (upper))
-		os << std::endl << "    <upper>" << upper << "</upper>";
-	os << "  </interval>";
+		os << std::endl << "      <upper>" << upper << "</upper>";
+	os << std::endl << "    </interval>" << std::endl;
 }
 
 Constraint::Constraint (Constraint &cons)
@@ -127,12 +127,12 @@ void Constraint::parseInterval (const char *interval)
 
 void Constraint::print (std::ostream &os)
 {
-	os << "<" << getName () << ">" << std::endl;
+	os << "  <" << getName () << ">" << std::endl;
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
 	{
 		iter->print (os);
 	}
-	os << "</" << getName () << ">" << std::endl;
+	os << "  </" << getName () << ">" << std::endl;
 }
 
 bool Constraint::isBetween (double val)
@@ -279,7 +279,7 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		if (candidate == end ())
 		{
-			(*this)[std::string ((const char *) cons->name)] = con;
+			(*this)[std::string (con->getName ())] = con;
 		}
 	}
 }
@@ -302,12 +302,31 @@ void Constraints::load (const char *filename)
 	xmlCleanupParser ();
 }
 
+void Constraints::parseInterval (const char *name, const char *interval)
+{
+	Constraints::iterator iter = find(std::string (name));
+	if (iter != end ())
+	{
+		iter->second->parseInterval (interval);
+	}
+	else
+	{
+		Constraint *con = createConstraint (name);
+		if (con == NULL)
+			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
+		con->parseInterval (interval);
+		(*this)[std::string (con->getName ())] = con;
+	}
+}
+
 void Constraints::print (std::ostream &os)
 {
+	os << "<constraints>" << std::endl;
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		iter->second->print (os);
 	}
+	os << "</constraints>" << std::endl;
 }
 
 Constraint *Constraints::createConstraint (const char *name)
