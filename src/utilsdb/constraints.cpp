@@ -120,8 +120,6 @@ void Constraint::parseInterval (const char *interval)
 			throw rts2core::Error ((std::string ("cannot find : in interval ") + (cp + 1)).c_str ());
 	}
 
-	std::cout << "lower " << lower << " upper " << upper << std::endl;
-
 	addInterval (lower, upper);
 
 	delete[] sint;
@@ -314,19 +312,19 @@ void Constraints::print (std::ostream &os)
 
 Constraint *Constraints::createConstraint (const char *name)
 {
-	if (!strcmp (name, "time"))
+	if (!strcmp (name, CONSTRAINT_TIME))
 		return new ConstraintTime ();
-	else if (!strcmp (name, "airmass"))
+	else if (!strcmp (name, CONSTRAINT_AIRMASS))
 		return new ConstraintAirmass ();
-	else if (!strcmp (name, "HA"))
+	else if (!strcmp (name, CONSTRAINT_HA))
 		return new ConstraintHA ();
-	else if (!strcmp (name, "lunarDistance"))
+	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
 		return new ConstraintLunarDistance ();
-	else if (!strcmp (name, "lunarPhase"))
+	else if (!strcmp (name, CONSTRAINT_LPHASE))
 		return new ConstraintLunarPhase ();
-	else if (!strcmp (name, "solarDistance"))
+	else if (!strcmp (name, CONSTRAINT_SDISTANCE))
 		return new ConstraintSolarDistance ();
-	else if (!strcmp (name, "sunAltitude"))
+	else if (!strcmp (name, CONSTRAINT_SALTITUDE))
 		return new ConstraintSunAltitude ();
 	return NULL;
 }

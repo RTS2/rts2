@@ -24,6 +24,14 @@
 
 #include <xmlerror.h>
 
+#define CONSTRAINT_TIME         "time"
+#define CONSTRAINT_AIRMASS      "airmass"
+#define CONSTRAINT_HA           "HA"
+#define CONSTRAINT_LDISTANCE    "lunarDistance"
+#define CONSTRAINT_LPHASE       "lunarPhase"
+#define CONSTRAINT_SDISTANCE    "solarDistance"
+#define CONSTRAINT_SALTITUDE    "sunAltitude"
+
 namespace rts2db
 {
 
@@ -96,7 +104,7 @@ class ConstraintTime:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "time"; }
+		virtual const char* getName () { return CONSTRAINT_TIME; }
 };
 
 class ConstraintAirmass:public Constraint
@@ -105,7 +113,7 @@ class ConstraintAirmass:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "airmass"; }
+		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
 };
 
 class ConstraintHA:public Constraint
@@ -114,7 +122,7 @@ class ConstraintHA:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "HA"; }
+		virtual const char* getName () { return CONSTRAINT_HA; }
 };
 
 class ConstraintLunarDistance:public Constraint
@@ -123,7 +131,7 @@ class ConstraintLunarDistance:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "lunarDistance"; }
+		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
 };
 
 class ConstraintLunarPhase:public Constraint
@@ -132,7 +140,7 @@ class ConstraintLunarPhase:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "lunarPhase"; }
+		virtual const char* getName () { return CONSTRAINT_LPHASE; }
 };
 
 class ConstraintSolarDistance:public Constraint
@@ -141,7 +149,7 @@ class ConstraintSolarDistance:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "solarDistance"; }
+		virtual const char* getName () { return CONSTRAINT_SDISTANCE; }
 };
 
 class ConstraintSunAltitude:public Constraint
@@ -150,7 +158,7 @@ class ConstraintSunAltitude:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 	protected:
-		virtual const char* getName () { return "sunAltitude"; }
+		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
 class Constraints:public std::map <std::string, Constraint *>
