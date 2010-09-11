@@ -56,8 +56,7 @@ class FLWOCAT:
 				scripts = a[3].split(',')
 				if (a[2][0] != '-' and a[2][0] != '+'):
 				  	a[2] = '+' + a[2]
-				cmd = ["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]]
-				self.run_cmd(cmd,self.process_newtarget)
+				self.run_cmd(["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]],self.process_newtarget)
 
 				if self.tarid is None:
 					print >> sys.stderr, 'rts2-newtarget does not produces target ID, exiting'
@@ -65,15 +64,27 @@ class FLWOCAT:
 				
 				# parse script
 				script = 'tempdisable 1800 ' + self.parse_script(a[6])
-		
-				cmd = ["rts2-target", "-c", "KCAM", "-s", script, self.tarid]
-				self.run_cmd(cmd)
-		
+
 				prior = int(a[9]) * 100
 				if (prior <= 0):
 				  	prior = 1
 		
-				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), self.tarid]
+				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
+		
+				if float(a[11]) > 0:
+					cmd.append ("--airmass")
+					cmd.append (":" + a[11])
+
+				if float(a[12]) > 0:
+					if float(a[12]) > 90:
+						cmd.append ("--lunarAltitude")
+						cmd.append (":0")
+					else:
+						cmd.append ("--lunarDistance")
+						cmd.append (a[12] + ":")
+
+				cmd.append(self.tarid)
+
 				self.run_cmd(cmd)
 
 a = FLWOCAT()
