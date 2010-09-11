@@ -27,11 +27,21 @@
 namespace rts2db
 {
 
+/**
+ * Simple interval for constraints. Has lower and upper bounds.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */ 
 class ConstraintDoubleInterval
 {
 	public:
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
 		bool satisfy (double val);
+
+		/**
+		 * Print interval.
+		 */
+		void print (std::ostream &os);
 	private:
 		double lower;
 		double upper;
@@ -54,11 +64,22 @@ class Constraint
 
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD) = 0;
+
+		/**
+		 * Add interval from string. String containts colon (:) separating various intervals.
+		 *
+		 * @param interval   colon separated interval boundaries
+                 */
+		virtual void parseInterval (const char *interval);
+
+		void print (std::ostream &os);
 	protected:
 		void clearIntervals () { intervals.clear (); }
 		void add (const ConstraintDoubleInterval &inte) { intervals.push_back (inte); }
 		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
 		virtual bool isBetween (double JD);
+
+		virtual const char* getName () = 0;
 	private:
 		std::list <ConstraintDoubleInterval> intervals;
 };
@@ -73,42 +94,63 @@ class ConstraintTime:public Constraint
 	public:
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "time"; }
 };
 
 class ConstraintAirmass:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "airmass"; }
 };
 
 class ConstraintHA:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "HA"; }
 };
 
 class ConstraintLunarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "lunarDistance"; }
 };
 
 class ConstraintLunarPhase:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "lunarPhase"; }
 };
 
 class ConstraintSolarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "solarDistance"; }
 };
 
 class ConstraintSunAltitude:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+	protected:
+		virtual const char* getName () { return "sunAltitude"; }
 };
 
 class Constraints:public std::map <std::string, Constraint *>
@@ -153,6 +195,11 @@ class Constraints:public std::map <std::string, Constraint *>
 		 */
 		void load (const char *filename);
 
+		/**
+		 * Print constraints.
+		 */
+		void print (std::ostream &os);
+
 	private:
 		Constraint *createConstraint (const char *name);
 };
@@ -166,8 +213,6 @@ class MasterConstraints
 {
   	public:
 		static Constraints & getConstraint ();
-	private:
-		static Constraints *cons;
 };
 
 }

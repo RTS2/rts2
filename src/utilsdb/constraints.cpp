@@ -41,6 +41,16 @@ bool ConstraintDoubleInterval::satisfy (double val)
 	return between (val, lower, upper);
 }
 
+void ConstraintDoubleInterval::print (std::ostream &os)
+{
+	os << "  <interval>";
+	if (!isnan (lower))
+		os << std::endl << "    <lower>" << lower << "</lower>";
+	if (!isnan (upper))
+		os << std::endl << "    <upper>" << upper << "</upper>";
+	os << "  </interval>";
+}
+
 Constraint::Constraint (Constraint &cons)
 {
 	for (std::list <ConstraintDoubleInterval>::iterator iter = cons.intervals.begin (); iter != cons.intervals.end (); iter++)
@@ -79,6 +89,52 @@ void Constraint::load (xmlNodePtr cons)
 			throw XmlUnexpectedNode (inter);
 		}
 	}
+}
+
+void Constraint::parseInterval (const char *interval)
+{
+	double lower = rts2_nan ("f");
+	double upper = rts2_nan ("f");
+
+	char *sint = new char [strlen (interval) + 1];
+	strcpy (sint, interval);
+
+	char *cp = strchr (sint, ':');
+	if (cp == NULL)
+		throw rts2core::Error ((std::string ("cannot find : in interval ") + interval).c_str ());
+
+	char *endp;
+	*cp = '\0';
+
+	if (cp != sint)
+	{
+		lower = strtof (sint, &endp);
+		if (*endp != 0)
+			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + interval).c_str ());
+	}
+	
+	if (*(cp + 1) != '\0')
+	{
+		upper = strtof (cp + 1, &endp);
+		if (*endp != 0)
+			throw rts2core::Error ((std::string ("cannot find : in interval ") + (cp + 1)).c_str ());
+	}
+
+	std::cout << "lower " << lower << " upper " << upper << std::endl;
+
+	addInterval (lower, upper);
+
+	delete[] sint;
+}
+
+void Constraint::print (std::ostream &os)
+{
+	os << "<" << getName () << ">" << std::endl;
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		iter->print (os);
+	}
+	os << "</" << getName () << ">" << std::endl;
 }
 
 bool Constraint::isBetween (double val)
@@ -248,6 +304,14 @@ void Constraints::load (const char *filename)
 	xmlCleanupParser ();
 }
 
+void Constraints::print (std::ostream &os)
+{
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		iter->second->print (os);
+	}
+}
+
 Constraint *Constraints::createConstraint (const char *name)
 {
 	if (!strcmp (name, "time"))
@@ -267,13 +331,13 @@ Constraint *Constraints::createConstraint (const char *name)
 	return NULL;
 }
 
-Constraints *MasterConstraints::cons = NULL;
+static Constraints *masterCons = NULL;
 
 Constraints & MasterConstraints::getConstraint ()
 {
-	if (cons)
-		return *cons;
-	cons = new Constraints ();
-	cons->load (Rts2Config::instance ()->getMasterConstraintFile ());
-	return *cons;
+	if (masterCons)
+		return *masterCons;
+	masterCons = new Constraints ();
+	masterCons->load (Rts2Config::instance ()->getMasterConstraintFile ());
+	return *masterCons;
 }
