@@ -27,8 +27,8 @@
 
 namespace rts2db
 {
+
 class Observation;
-}
 
 /**
  * Plan target class.
@@ -37,8 +37,34 @@ class Observation;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Plan
+class Plan
 {
+	public:
+		Plan ();
+		Plan (int in_plan_id);
+		virtual ~ Plan (void);
+		int load ();
+		int save ();
+		int del ();
+
+		moveType startSlew (struct ln_equ_posn *position);
+
+		Target *getTarget ();
+		void clearTarget () { target = NULL; }
+
+		Observation *getObservation ();
+
+		int getPlanId () { return plan_id; }
+
+		time_t getPlanStart ()  { return plan_start; }
+
+		time_t getPlanEnd () { return plan_end; }
+
+		friend std::ostream & operator << (std::ostream & _os, Plan * plan) { plan->print (_os); return _os; }
+		friend Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Plan * plan) { plan->printInfoVal (_os); return _os; }
+
+		friend std::istream & operator >> (std::istream & _is, Plan & plan) { plan.read (_is); return _is; }
+
 	protected:
 		int plan_id;
 		int prop_id;
@@ -50,48 +76,14 @@ class Rts2Plan
 		int plan_status;
 
 		Target *target;
-		rts2db::Observation *observation;
-	public:
-		Rts2Plan ();
-		Rts2Plan (int in_plan_id);
-		virtual ~ Rts2Plan (void);
-		int load ();
-		int save ();
-		int del ();
+		Observation *observation;
 
-		moveType startSlew (struct ln_equ_posn *position);
+		void print (std::ostream & _os);
+		void printInfoVal (Rts2InfoValStream & _os);
 
-		Target *getTarget ();
-		void clearTarget ()
-		{
-			target = NULL;
-		}
-
-		rts2db::Observation *getObservation ();
-
-		int getPlanId ()
-		{
-			return plan_id;
-		}
-
-		time_t getPlanStart ()
-		{
-			return plan_start;
-		}
-
-		time_t getPlanEnd ()
-		{
-			return plan_end;
-		}
-
-		friend std::ostream & operator << (std::ostream & _os, Rts2Plan * plan);
-		friend Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Rts2Plan * plan);
-
-		friend std::istream & operator >> (std::istream & _is, Rts2Plan & plan);
+		void read (std::istream & _is);
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Plan * plan);
-Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Rts2Plan * plan);
+}
 
-std::istream & operator >> (std::istream & _is, Rts2Plan & plan);
 #endif							 /* !__RTS2_PLAN__ */

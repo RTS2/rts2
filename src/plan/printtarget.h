@@ -51,11 +51,11 @@ class PrintTarget:public Rts2AppDb
 		virtual int init ();
 	
 		int printTargets (rts2db::TargetSet & set);
-		void printScripts (Target *target, const char *pref);
-		void printTarget (Target *target);
-		void printTargetGNUplot (Target *target);
-		void printTargetGNUBonus (Target *target);
-		void printTargetDS9 (Target *target);
+		void printScripts (rts2db::Target *target, const char *pref);
+		void printTarget (rts2db::Target *target);
+		void printTargetGNUplot (rts2db::Target *target);
+		void printTargetGNUBonus (rts2db::Target *target);
+		void printTargetDS9 (rts2db::Target *target);
 
 		struct ln_lnlat_posn *obs;
 

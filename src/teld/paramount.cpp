@@ -236,8 +236,7 @@ class Paramount:public GEM
 
 using namespace rts2teld;
 
-int
-Paramount::checkRetAxis (const MKS3Id & axis, int reta)
+int Paramount::checkRetAxis (const MKS3Id & axis, int reta)
 {
 	const char *msg = NULL;
 	messageType_t msg_type = MESSAGE_ERROR;

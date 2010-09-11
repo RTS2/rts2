@@ -22,6 +22,9 @@
 
 #include "target.h"
 
+namespace rts2db
+{
+
 /**
  * Represent target of body moving on elliptical orbit.
  *
@@ -59,4 +62,6 @@ class EllTarget:public Target
 		double getEarthDistance (double JD);
 		double getSolarDistance (double JD);
 };
+
+}
 #endif							 /* !__RTS2_TARGETELL__ */

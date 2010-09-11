@@ -255,6 +255,9 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	startCalledNum = 0;
 
 	airmassScale = 750.0;
+
+	constraintsLoaded = CONSTRAINTS_NONE;
+	
 	constraintFile = NULL;
 	constraints = NULL;
 
@@ -283,6 +286,9 @@ Target::Target ()
 	startCalledNum = 0;
 
 	airmassScale = 750.0;
+
+	constraintsLoaded = CONSTRAINTS_NONE;
+
 	constraintFile = NULL;
 	constraints = NULL;
 
@@ -855,6 +861,29 @@ void Target::setScript (const char *device_name, const char *buf)
 		}
 	}
 	EXEC SQL COMMIT;
+}
+
+void Target::setConstraints (Constraints &cons)
+{
+	int ret = mkpath (getConstraintFile (), 0777);
+	if (ret)
+		throw rts2core::Error ((std::string ("cannot create directory for ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
+
+	std::ofstream ofs;
+	
+	ofs.exceptions ( std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit );
+	try
+	{
+		ofs.open (getConstraintFile ());
+
+		ofs << "<?xml version=\"1.0\"?>" << std::endl << std::endl;
+		cons.print (ofs);
+		ofs.close ();
+	}
+	catch (std::ofstream::failure f)
+	{
+		throw rts2core::Error ((std::string ("cannot write constraint file ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
+	}
 }
 
 void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
@@ -1732,8 +1761,11 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaDeg360> ("LUNAR PHASE", LibnovaDeg360 (ln_get_lunar_phase (JD)))
 		<< std::endl
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", Rts2Config::instance ()->getMasterConstraintFile ())
+		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_SYSTEM) ? "used" : "empy/not used")
 		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstaintFile ())
-		<< InfoVal<const char*> ("CONSTRAINT FILE", getConstraintFile ())
+		<< InfoVal<const char*> ("GROUP CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_GROUP) ? "used" : "empty/not used")
+		<< InfoVal<const char*> ("TARGET CONSTRAINTS", getConstraintFile ())
+		<< InfoVal<const char*> ("TARGET CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_TARGET) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("CONSTRAINTS", checkConstraints (JD) ? "satisfied" : "not met")
 		<< std::endl;
 }
@@ -1837,6 +1869,7 @@ bool Target::checkConstraints (double JD)
 	try
 	{
 		constraints = new Constraints (MasterConstraints::getConstraint ());
+		constraintsLoaded |= CONSTRAINTS_SYSTEM;
 	}
 	catch (XmlError er)
 	{
@@ -1847,6 +1880,7 @@ bool Target::checkConstraints (double JD)
 	try
 	{
 		constraints->load (getGroupConstaintFile ());
+		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
 	catch (XmlError er)
 	{
@@ -1856,6 +1890,7 @@ bool Target::checkConstraints (double JD)
 	try
 	{
 		constraints->load (getConstraintFile ());
+		constraintsLoaded |= CONSTRAINTS_TARGET;
 	}
 	catch (XmlError er)
 	{

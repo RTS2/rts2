@@ -38,7 +38,7 @@ class Rts2TargetApp:public Rts2AppDb
 		/**
 		 * Pointer to Target structure holding actual target.
 		 */
-		Target * target;
+		rts2db::Target * target;
 		struct ln_lnlat_posn *obs;
 
 		/**

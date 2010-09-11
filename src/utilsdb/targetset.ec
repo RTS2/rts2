@@ -274,6 +274,14 @@ void TargetSet::setTargetScript (const char *device_name, const char *script)
 	}
 }
 
+void TargetSet::setConstraints (Constraints &cons)
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		(*iter).second->setConstraints (cons);
+	}
+}
+
 int TargetSet::save (bool overwrite)
 {
 	int ret = 0;

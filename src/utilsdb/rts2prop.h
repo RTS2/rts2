@@ -2,20 +2,15 @@
 #define __RTS2_PROP__
 
 #include "target.h"
-#include "rts2planset.h"
+#include "planset.h"
 
 #include <iostream>
 
+namespace rts2db
+{
+
 class Rts2Prop
 {
-	private:
-		int prop_id;
-		int tar_id;
-		int user_id;
-
-		Target *target;
-		Rts2PlanSet *planSet;
-		void init ();
 	public:
 		Rts2Prop ();
 		Rts2Prop (int in_prop_id);
@@ -25,10 +20,20 @@ class Rts2Prop
 		int save ();
 
 		Target *getTarget ();
-		Rts2PlanSet *getPlanSet ();
+		PlanSet *getPlanSet ();
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2Prop prop);
+		friend std::ostream & operator << (std::ostream & _os, Rts2Prop prop) { return _os; }
+
+	private:
+		int prop_id;
+		int tar_id;
+		int user_id;
+
+		Target *target;
+		PlanSet *planSet;
+		void init ();
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Prop prop);
+}
+
 #endif							 /* !__RTS2_PROP__ */

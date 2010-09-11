@@ -30,9 +30,7 @@ Ticket::Ticket (int _schedTicketId)
 	target = NULL;
 }
 
-Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId,
-unsigned int _obs_num, double _sched_from, double _sched_to,
-double _sched_interval_min, double _sched_interval_max)
+Ticket::Ticket (int _schedTicketId, rts2db::Target *_target, int _accountId, unsigned int _obs_num, double _sched_from, double _sched_to, double _sched_interval_min, double _sched_interval_max)
 {
 	ticketId = _schedTicketId;
 	target = _target;

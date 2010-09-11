@@ -405,7 +405,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			clearWait ();
 			break;
 		case EVENT_SET_TARGET:
-			currentTarget = (Target *) event->getArg ();
+			currentTarget = (rts2db::Target *) event->getArg ();
 			break;
 		case EVENT_SLEW_TO_TARGET:
 		case EVENT_SLEW_TO_TARGET_NOW:

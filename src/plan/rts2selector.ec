@@ -111,7 +111,7 @@ struct findTargetById
 
 void Selector::considerTarget (int consider_tar_id, double JD)
 {
-	Target *newTar;
+	rts2db::Target *newTar;
 	int ret;
 
 	findTargetById ct = { consider_tar_id };
@@ -182,7 +182,7 @@ void Selector::findNewTargets ()
 	// drop targets which gets bellow horizon..
 	for (std::vector < TargetEntry * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
 	{
-		Target *tar = (*target_list)->target;
+		rts2db::Target *tar = (*target_list)->target;
 		ret = tar->considerForObserving (JD);
 		if (ret)
 		{
@@ -261,7 +261,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose)
 
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
-		Target *tar = (*target_list)->target;
+		rts2db::Target *tar = (*target_list)->target;
 		if (tar->checkConstraints (JD))
 		{
 			if (!verbose)

@@ -41,6 +41,16 @@ bool ConstraintDoubleInterval::satisfy (double val)
 	return between (val, lower, upper);
 }
 
+void ConstraintDoubleInterval::print (std::ostream &os)
+{
+	os << "    <interval>";
+	if (!isnan (lower))
+		os << std::endl << "      <lower>" << lower << "</lower>";
+	if (!isnan (upper))
+		os << std::endl << "      <upper>" << upper << "</upper>";
+	os << std::endl << "    </interval>" << std::endl;
+}
+
 Constraint::Constraint (Constraint &cons)
 {
 	for (std::list <ConstraintDoubleInterval>::iterator iter = cons.intervals.begin (); iter != cons.intervals.end (); iter++)
@@ -79,6 +89,50 @@ void Constraint::load (xmlNodePtr cons)
 			throw XmlUnexpectedNode (inter);
 		}
 	}
+}
+
+void Constraint::parseInterval (const char *interval)
+{
+	double lower = rts2_nan ("f");
+	double upper = rts2_nan ("f");
+
+	char *sint = new char [strlen (interval) + 1];
+	strcpy (sint, interval);
+
+	char *cp = strchr (sint, ':');
+	if (cp == NULL)
+		throw rts2core::Error ((std::string ("cannot find : in interval ") + interval).c_str ());
+
+	char *endp;
+	*cp = '\0';
+
+	if (cp != sint)
+	{
+		lower = strtof (sint, &endp);
+		if (*endp != 0)
+			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + interval).c_str ());
+	}
+	
+	if (*(cp + 1) != '\0')
+	{
+		upper = strtof (cp + 1, &endp);
+		if (*endp != 0)
+			throw rts2core::Error ((std::string ("cannot find : in interval ") + (cp + 1)).c_str ());
+	}
+
+	addInterval (lower, upper);
+
+	delete[] sint;
+}
+
+void Constraint::print (std::ostream &os)
+{
+	os << "  <" << getName () << ">" << std::endl;
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		iter->print (os);
+	}
+	os << "  </" << getName () << ">" << std::endl;
 }
 
 bool Constraint::isBetween (double val)
@@ -143,6 +197,15 @@ bool ConstraintHA::satisfy (Target *tar, double JD)
 bool ConstraintLunarDistance::satisfy (Target *tar, double JD)
 {
 	return isBetween (tar->getLunarDistance (JD));
+}
+
+bool ConstraintLunarAltitude::satisfy (Target *tar, double JD)
+{
+	struct ln_equ_posn eq_lun;
+	struct ln_hrz_posn hrz_lun;
+	ln_get_lunar_equ_coords (JD, &eq_lun);
+	ln_get_hrz_from_equ (&eq_lun, Rts2Config::instance ()->getObserver (), JD, &hrz_lun);
+	return isBetween (hrz_lun.alt);
 }
 
 bool ConstraintLunarPhase::satisfy (Target *tar, double JD)
@@ -225,7 +288,7 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		if (candidate == end ())
 		{
-			(*this)[std::string ((const char *) cons->name)] = con;
+			(*this)[std::string (con->getName ())] = con;
 		}
 	}
 }
@@ -248,32 +311,61 @@ void Constraints::load (const char *filename)
 	xmlCleanupParser ();
 }
 
+void Constraints::parseInterval (const char *name, const char *interval)
+{
+	Constraints::iterator iter = find(std::string (name));
+	if (iter != end ())
+	{
+		iter->second->parseInterval (interval);
+	}
+	else
+	{
+		Constraint *con = createConstraint (name);
+		if (con == NULL)
+			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
+		con->parseInterval (interval);
+		(*this)[std::string (con->getName ())] = con;
+	}
+}
+
+void Constraints::print (std::ostream &os)
+{
+	os << "<constraints>" << std::endl;
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		iter->second->print (os);
+	}
+	os << "</constraints>" << std::endl;
+}
+
 Constraint *Constraints::createConstraint (const char *name)
 {
-	if (!strcmp (name, "time"))
+	if (!strcmp (name, CONSTRAINT_TIME))
 		return new ConstraintTime ();
-	else if (!strcmp (name, "airmass"))
+	else if (!strcmp (name, CONSTRAINT_AIRMASS))
 		return new ConstraintAirmass ();
-	else if (!strcmp (name, "HA"))
+	else if (!strcmp (name, CONSTRAINT_HA))
 		return new ConstraintHA ();
-	else if (!strcmp (name, "lunarDistance"))
+	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
 		return new ConstraintLunarDistance ();
-	else if (!strcmp (name, "lunarPhase"))
+	else if (!strcmp (name, CONSTRAINT_LALTITUDE))
+		return new ConstraintLunarDistance ();
+	else if (!strcmp (name, CONSTRAINT_LPHASE))
 		return new ConstraintLunarPhase ();
-	else if (!strcmp (name, "solarDistance"))
+	else if (!strcmp (name, CONSTRAINT_SDISTANCE))
 		return new ConstraintSolarDistance ();
-	else if (!strcmp (name, "sunAltitude"))
+	else if (!strcmp (name, CONSTRAINT_SALTITUDE))
 		return new ConstraintSunAltitude ();
 	return NULL;
 }
 
-Constraints *MasterConstraints::cons = NULL;
+static Constraints *masterCons = NULL;
 
 Constraints & MasterConstraints::getConstraint ()
 {
-	if (cons)
-		return *cons;
-	cons = new Constraints ();
-	cons->load (Rts2Config::instance ()->getMasterConstraintFile ());
-	return *cons;
+	if (masterCons)
+		return *masterCons;
+	masterCons = new Constraints ();
+	masterCons->load (Rts2Config::instance ()->getMasterConstraintFile ());
+	return *masterCons;
 }

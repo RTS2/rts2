@@ -30,6 +30,11 @@
 	</address>
       </author>
       <author>
+        <firstname>Markus</firstname>
+	<surname>Wildi</surname>
+	<contrib>Provides astrometry.net based astrometry, focusing routines and some drivers.</contrib>
+      </author>
+      <author>
         <firstname>Martin</firstname>
 	<surname>Jelinek</surname>
 	<contrib>Contributed with ideas, bug-fixes, gnuplotting commands. And do most of the image analysis.</contrib>

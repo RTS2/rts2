@@ -188,6 +188,14 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term>lunarAltitude</term>
+	<listitem>
+	  <para>
+	    Altitude of the moon at observe location.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term>lunarPhase</term>
 	<listitem>
 	  <para>

@@ -62,17 +62,17 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 
 void Auger::printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length)
 {
-	TargetAuger ta = TargetAuger (-1, Rts2Config::instance ()->getObserver (), -1);
+	rts2db::TargetAuger ta (-1, Rts2Config::instance ()->getObserver (), -1);
 
 	ta.load (auger_id);
 
 	std::vector <struct ln_equ_posn> pos;
 	ta.getEquPositions (pos);
 
-	double JD = ta.getShowerJD ();
-
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+	double JD = ta.getShowerJD ();
+
 	AltAz aa = AltAz ();
 
 	aa.plotAltAzGrid ();

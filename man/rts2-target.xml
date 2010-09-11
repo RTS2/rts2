@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2007-2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -99,6 +99,15 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--tempdisable <replaceable>seconds</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--airmass <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--lunarDistance <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--lunarAltitude <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></arg>
       </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
@@ -254,6 +263,32 @@
 	    insert or edit tempdisable command in the camera script. If seconds
 	    is less than 0, the command will remove first tempdisable element
 	    from the script.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--airmass <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></term>
+        <listitem>
+          <para>
+	    Set interval for target airmasses. Colon separated lower and upper limits. Missing value indicate that the limit is not set in the missing direction.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--lunarDistance <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></term>
+        <listitem>
+          <para>
+	    Set interval for target lunar distance. Colon separated lower and upper limits. Missing value indicate that the limit is not set in the missing direction.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--lunarAltitude <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></term>
+        <listitem>
+          <para>
+	    Set interval for lunar altiude (height of moon above horizon).
+            Colon separated lower and upper limits. Missing value indicate that the limit
+            is not set in the missing direction.
 	  </para>
         </listitem>
       </varlistentry>

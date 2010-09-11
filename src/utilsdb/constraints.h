@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONSTRAINTS__
+#define __RTS2_CONSTRAINTS__
+
 #include "target.h"
 
 #include <libxml/parser.h>
@@ -24,14 +27,35 @@
 
 #include <xmlerror.h>
 
+#define CONSTRAINT_TIME         "time"
+#define CONSTRAINT_AIRMASS      "airmass"
+#define CONSTRAINT_HA           "HA"
+#define CONSTRAINT_LDISTANCE    "lunarDistance"
+#define CONSTRAINT_LALTITUDE    "lunarAltitude"
+#define CONSTRAINT_LPHASE       "lunarPhase"
+#define CONSTRAINT_SDISTANCE    "solarDistance"
+#define CONSTRAINT_SALTITUDE    "sunAltitude"
+
 namespace rts2db
 {
 
+class Target;
+
+/**
+ * Simple interval for constraints. Has lower and upper bounds.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */ 
 class ConstraintDoubleInterval
 {
 	public:
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
 		bool satisfy (double val);
+
+		/**
+		 * Print interval.
+		 */
+		void print (std::ostream &os);
 	private:
 		double lower;
 		double upper;
@@ -54,11 +78,23 @@ class Constraint
 
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD) = 0;
+
+		/**
+		 * Add interval from string. String containts colon (:) separating various intervals.
+		 *
+		 * @param interval   colon separated interval boundaries
+                 */
+		virtual void parseInterval (const char *interval);
+
+		void print (std::ostream &os);
+
+		virtual const char* getName () = 0;
 	protected:
 		void clearIntervals () { intervals.clear (); }
 		void add (const ConstraintDoubleInterval &inte) { intervals.push_back (inte); }
 		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
 		virtual bool isBetween (double JD);
+
 	private:
 		std::list <ConstraintDoubleInterval> intervals;
 };
@@ -73,42 +109,64 @@ class ConstraintTime:public Constraint
 	public:
 		virtual void load (xmlNodePtr cons);
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_TIME; }
 };
 
 class ConstraintAirmass:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
 };
 
 class ConstraintHA:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_HA; }
 };
 
 class ConstraintLunarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
+};
+
+class ConstraintLunarAltitude:public Constraint
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_LALTITUDE; }
 };
 
 class ConstraintLunarPhase:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_LPHASE; }
 };
 
 class ConstraintSolarDistance:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_SDISTANCE; }
 };
 
 class ConstraintSunAltitude:public Constraint
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
 class Constraints:public std::map <std::string, Constraint *>
@@ -153,6 +211,19 @@ class Constraints:public std::map <std::string, Constraint *>
 		 */
 		void load (const char *filename);
 
+		/**
+		 * Parse constraint intervals.
+		 *
+		 * @param name        constraint name
+		 * @param interval    constraint interval
+		 */
+		void parseInterval (const char *name, const char *interval);
+
+		/**
+		 * Print constraints.
+		 */
+		void print (std::ostream &os);
+
 	private:
 		Constraint *createConstraint (const char *name);
 };
@@ -166,8 +237,8 @@ class MasterConstraints
 {
   	public:
 		static Constraints & getConstraint ();
-	private:
-		static Constraints *cons;
 };
 
 }
+
+#endif /* ! __RTS2_CONSTRAINTS__ */

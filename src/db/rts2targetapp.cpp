@@ -26,6 +26,8 @@
 #include <sstream>
 #include <iostream>
 
+using namespace rts2db;
+
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target = NULL;

@@ -22,11 +22,13 @@
 #include "../utils/infoval.h"
 #include "../writers/rts2image.h"
 
+using namespace rts2db;
+
 /*****************************************************************/
 //Utility functions
 
 /* vector cross product */
-void crossProduct(struct rts2targetauger::vec * a, struct rts2targetauger::vec * b, struct rts2targetauger::vec * c)
+void crossProduct(struct vec * a, struct vec * b, struct vec * c)
 {
 	c->x = a->y * b->z - a->z * b->y;
 	c->y = a->z * b->x - a->x * b->z;
@@ -34,7 +36,7 @@ void crossProduct(struct rts2targetauger::vec * a, struct rts2targetauger::vec *
 }
 
 /* horizontal coordinates to vector transformation */
-void hrz_to_vec (struct ln_hrz_posn * dirh, struct rts2targetauger::vec * dirv)
+void hrz_to_vec (struct ln_hrz_posn * dirh, struct vec * dirv)
 {
 	dirv->x = cos (dirh->alt) * sin (dirh->az) * (-1);
 	dirv->y = cos (dirh->alt) * cos (dirh->az) * (-1);
@@ -42,7 +44,7 @@ void hrz_to_vec (struct ln_hrz_posn * dirh, struct rts2targetauger::vec * dirv)
 }
 
 /* vector to horizontal coordinates transformation */
-void vec_to_hrz (struct rts2targetauger::vec * dirv, struct ln_hrz_posn * dirh)
+void vec_to_hrz (struct vec * dirv, struct ln_hrz_posn * dirh)
 {
 	dirh->alt = asin (dirv->z);
 	if (dirv->y > 0.)
@@ -64,7 +66,7 @@ void vec_to_hrz (struct rts2targetauger::vec * dirv, struct ln_hrz_posn * dirh)
 }
 
 /* transformation to unit length vector */
-void vec_unit (struct rts2targetauger::vec * in, struct rts2targetauger::vec * unit)
+void vec_unit (struct vec * in, struct vec * unit)
 {
 	double length = sqrt (in->x*in->x + in->y*in->y + in->z*in->z);
 	unit->x = in->x / length;
@@ -73,10 +75,10 @@ void vec_unit (struct rts2targetauger::vec * in, struct rts2targetauger::vec * u
 }
 
 /* rotation of vector "b" around "axis" by "angle" */
-rts2targetauger::vec rotateVector(struct rts2targetauger::vec * axis, struct rts2targetauger::vec * b, double angle)
+vec rotateVector(struct vec * axis, struct vec * b, double angle)
 {
-	struct rts2targetauger::vec ret;
-	struct rts2targetauger::vec cross;
+	struct vec ret;
+	struct vec cross;
 	crossProduct(axis, b, &cross);
 	ret.x = b->x * cos(angle) + cross.x * sin(angle);
 	ret.y = b->y * cos(angle) + cross.y * sin(angle);
@@ -84,7 +86,7 @@ rts2targetauger::vec rotateVector(struct rts2targetauger::vec * axis, struct rts
 	return ret;
 }
 
-void dirToEqu (rts2targetauger::vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_equ_posn *pos)
+void dirToEqu (vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_equ_posn *pos)
 {
 	struct ln_hrz_posn hrz;
 	vec_to_hrz (dir, &hrz);
@@ -496,7 +498,7 @@ void TargetAuger::updateShowerFields ()
 	hrz.az = ln_deg_to_rad (hrz.az);
 	hrz.alt = ln_deg_to_rad (hrz.alt);
 
-	struct rts2targetauger::vec cortmp, dir, axis, unit;
+	struct vec cortmp, dir, axis, unit;
 
 	// shower direction vector
 	hrz_to_vec (&hrz, &dir);
@@ -517,7 +519,7 @@ void TargetAuger::updateShowerFields ()
 	equ.dec -= pos.dec;
 	addShowerOffset (equ);
 
-	rts2targetauger::vec prev_dir = dir;
+	vec prev_dir = dir;
 	prev_equ = equ;
 
 	double angle = 160 * M_PI / (180 * 60);

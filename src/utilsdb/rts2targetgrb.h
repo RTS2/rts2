@@ -22,6 +22,9 @@
 
 #include "target.h"
 
+namespace rts2db
+{
+
 class ConstTarget;
 
 class TargetGRB:public ConstTarget
@@ -92,4 +95,6 @@ class TargetGRB:public ConstTarget
 
 		const char *getSatelite ();
 };
+
+}
 #endif							 /* !__RTS2_TARGETGRB__ */

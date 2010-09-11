@@ -200,7 +200,7 @@ int PrintTarget::processOption (int in_opt)
 	return 0;
 }
 
-void PrintTarget::printScripts (Target *target, const char *pref)
+void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 {
 	Rts2CamList::iterator cam_names;
 	for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
@@ -233,7 +233,7 @@ void PrintTarget::printScripts (Target *target, const char *pref)
 	}
 }
 
-void PrintTarget::printTarget (Target *target)
+void PrintTarget::printTarget (rts2db::Target *target)
 {
 	if (printDS9)
 	{
@@ -353,7 +353,7 @@ void PrintTarget::printTarget (Target *target)
 	}
 }
 
-void PrintTarget::printTargetGNUplot (Target *target)
+void PrintTarget::printTargetGNUplot (rts2db::Target *target)
 {
 	for (double i = gbeg; i <= gend; i += step)
 	{
@@ -363,7 +363,7 @@ void PrintTarget::printTargetGNUplot (Target *target)
 	}
 }
 
-void PrintTarget::printTargetGNUBonus (Target *target)
+void PrintTarget::printTargetGNUBonus (rts2db::Target *target)
 {
 	for (double i = gbeg; i <= gend; i += step)
 	{
@@ -371,7 +371,7 @@ void PrintTarget::printTargetGNUBonus (Target *target)
 	}
 }
 
-void PrintTarget::printTargetDS9 (Target *target)
+void PrintTarget::printTargetDS9 (rts2db::Target *target)
 {
 	target->printDS9Reg (std::cout, JD);
 }
@@ -529,7 +529,7 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 				"     \"-\" u 1:2 smooth csplines lt 2 lw 3 t \"Horizon\"";
 		}
 
-		Target *target;
+		rts2db::Target *target;
 
 		// find and print calibration targets..
 		if (printCalTargets)
@@ -611,7 +611,7 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 
 	for (iter = set.begin (); iter != set.end (); iter++)
 	{
-		Target *target = (*iter).second;
+		rts2db::Target *target = (*iter).second;
 		printTarget (target);
 	}
 

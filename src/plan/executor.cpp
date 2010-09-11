@@ -62,8 +62,8 @@ class Executor:public Rts2DeviceDb
 		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 	private:
-		Target * currentTarget;
-		std::list <Target *> nextTargets;
+		rts2db::Target * currentTarget;
+		std::list <rts2db::Target *> nextTargets;
 
 		void clearNextTargets ();
 
@@ -82,7 +82,7 @@ class Executor:public Rts2DeviceDb
 								 // -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 		Rts2ValueInteger *scriptCount;
 		int waitState;
-		std::vector < Target * >targetsQue;
+		std::vector < rts2db::Target * >targetsQue;
 		struct ln_lnlat_posn *observer;
 
 		Rts2ValueDouble *grb_sep_limit;
@@ -93,9 +93,9 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueInteger *acqusitionOk;
 		Rts2ValueInteger *acqusitionFailed;
 
-		int setNow (Target * newTarget);
+		int setNow (rts2db::Target * newTarget);
 
-		void processTarget (Target * in_target);
+		void processTarget (rts2db::Target * in_target);
 		void updateScriptCount ();
 
 		Rts2ValueInteger *current_id;
@@ -424,7 +424,7 @@ int Executor::info ()
 	{
 		next_id->setValueInteger (nextTargets.front ()->getTargetID ());
 		next_name->setValueCharArr (nextTargets.front ()->getTargetName ());
-		for (std::list <Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
+		for (std::list <rts2db::Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
 		{
 			_id_arr.push_back ((*iter)->getTargetID ());
 			_name_arr.push_back ((*iter)->getTargetName ());
@@ -499,7 +499,7 @@ int Executor::setNext (int nextId)
 
 int Executor::queueTarget (int tarId)
 {
-	Target *nt = createTarget (tarId, observer);
+	rts2db::Target *nt = createTarget (tarId, observer);
 	if (!nt)
 	{
 		return -2;
@@ -535,7 +535,7 @@ int Executor::queueTarget (int tarId)
 
 int Executor::setNow (int nextId)
 {
-	Target *newTarget;
+	rts2db::Target *newTarget;
 
 	if (!currentTarget)
 		return setNext (nextId);
@@ -550,7 +550,7 @@ int Executor::setNow (int nextId)
 	return setNow (newTarget);
 }
 
-int Executor::setNow (Target * newTarget)
+int Executor::setNow (rts2db::Target * newTarget)
 {
 	if (currentTarget)
 	{
@@ -582,7 +582,7 @@ int Executor::setNow (Target * newTarget)
 
 int Executor::setGrb (int grbId)
 {
-	Target *grbTarget;
+	rts2db::Target *grbTarget;
 	struct ln_hrz_posn grbHrz;
 	int ret;
 
@@ -668,7 +668,7 @@ int Executor::stop ()
 
 void Executor::clearNextTargets ()
 {
-	for (std::list <Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
+	for (std::list <rts2db::Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
 	{
 		delete *iter;
 	}
@@ -818,7 +818,7 @@ void Executor::switchTarget ()
 	infoAll ();
 }
 
-void Executor::processTarget (Target * in_target)
+void Executor::processTarget (rts2db::Target * in_target)
 {
 	int ret;
 	// test for final acq..

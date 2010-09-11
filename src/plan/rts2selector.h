@@ -37,9 +37,9 @@ namespace rts2plan
 class TargetEntry
 {
 	public:
-		TargetEntry (Target *_target) { target = _target; bonus = rts2_nan ("f"); }
+		TargetEntry (rts2db::Target *_target) { target = _target; bonus = rts2_nan ("f"); }
 		~TargetEntry () { delete target; }
-		Target * target;
+		rts2db::Target * target;
 		double bonus;
 		void updateBonus () { bonus = target->getBonus (); }
 };

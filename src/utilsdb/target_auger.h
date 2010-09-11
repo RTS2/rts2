@@ -22,8 +22,9 @@
 
 #include "target.h"
 
-namespace rts2targetauger
+namespace rts2db
 {
+
 struct vec
 {
 	double x;
@@ -31,9 +32,7 @@ struct vec
 	double z;
 };	
 
-}
-
-class TargetAuger:public ConstTarget
+class TargetAuger:public rts2db::ConstTarget
 {
 	public:
 		TargetAuger () {}
@@ -162,7 +161,7 @@ class TargetAuger:public ConstTarget
 	private:
 		int augerPriorityTimeout;
 		// core coordinates
-		struct rts2targetauger::vec cor;
+		struct vec cor;
 
 		// valid positions
 		std::vector <struct ln_equ_posn> showerOffsets;
@@ -170,4 +169,6 @@ class TargetAuger:public ConstTarget
 		void updateShowerFields ();
 		void addShowerOffset (struct ln_equ_posn &pos);
 };
+
+}
 #endif							 /* !__RTS2_TARGET_AUGER__ */
