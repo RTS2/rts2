@@ -419,7 +419,15 @@ int TargetApp::doProcessing ()
 	}
 	if (op & OP_CONSTRAINTS)
 	{
-		target_set->setConstraints (constraints);
+		try
+		{
+			target_set->setConstraints (constraints);
+			std::cout << "Set constraints for:" << std::endl << *target_set << std::endl;
+		}
+		catch (rts2core::Error f)
+		{
+			std::cerr << "Cannot write target constraint file: " << f << std::endl;
+		}
 	}
 	if (op & OP_NEXT_OBSER)
 	{

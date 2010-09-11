@@ -161,6 +161,12 @@ class TargetSet:public std::map <int, Target * >
 		void setTargetBonusTime (time_t * new_time);
 		void setNextObservable (time_t * time_ch);
 		void setTargetScript (const char *device_name, const char *script);
+
+		/**
+		 * Set targets constraints.
+		 *
+		 * @throw  rts2core::Error if output file cannot be created.
+		 */
 		void setConstraints (Constraints &cons);
 
 		int save (bool overwrite = true);

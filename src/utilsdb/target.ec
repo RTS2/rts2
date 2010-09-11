@@ -865,10 +865,25 @@ void Target::setScript (const char *device_name, const char *buf)
 
 void Target::setConstraints (Constraints &cons)
 {
-	std::ofstream ofs (getConstraintFile ());
-	ofs << "<?xml version=\"1.0\"?>" << std::endl << std::endl;
-	cons.print (ofs);
-	ofs.close ();
+	int ret = mkpath (getConstraintFile (), 0777);
+	if (ret)
+		throw rts2core::Error ((std::string ("cannot create directory for ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
+
+	std::ofstream ofs;
+	
+	ofs.exceptions ( std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit );
+	try
+	{
+		ofs.open (getConstraintFile ());
+
+		ofs << "<?xml version=\"1.0\"?>" << std::endl << std::endl;
+		cons.print (ofs);
+		ofs.close ();
+	}
+	catch (std::ofstream::failure f)
+	{
+		throw rts2core::Error ((std::string ("cannot write constraint file ") + getConstraintFile () + " : " + strerror (errno)).c_str ());
+	}
 }
 
 void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)

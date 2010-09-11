@@ -149,6 +149,8 @@ class Target:public Rts2Target
 		 * Constraints structure.
 		 *
 		 * @param cons   set constraints to this structure
+		 *
+		 * @throw  rts2core::Error if output file cannot be created
 		 */
 		void setConstraints (Constraints &cons);
 
