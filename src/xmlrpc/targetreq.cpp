@@ -761,7 +761,7 @@ void Targets::printTargetObservations (rts2db::Target *tar, const char* &respons
 
 #ifdef HAVE_LIBJPEG
 
-void Targets::plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 
