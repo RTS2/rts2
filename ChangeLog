@@ -1,3 +1,6 @@
+2010-09-11
+ * moved Target to rts2db namespace, and some associated namespace changes
+
 2010-08-18
  * constraints support (.xsd and .xml for constraint files..)
 

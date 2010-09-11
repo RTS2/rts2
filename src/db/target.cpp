@@ -19,6 +19,7 @@
 
 #include "../plan/script.h"
 #include "../plan/elementtarget.h"
+#include "../utilsdb/constraints.h"
 #include "../utilsdb/observation.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
@@ -44,11 +45,13 @@
 #define OP_OBS_SLEW         0x0200
 #define OP_OBS_END          0x0400
 #define OP_TEMPDISABLE      0x0800
+#define OP_CONSTRAINTS      0x1000
 
 #define OPT_OBSERVE_START   OPT_LOCAL + 831
 #define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
 #define OPT_OBSERVE_END     OPT_LOCAL + 833
 #define OPT_TEMPDISABLE     OPT_LOCAL + 834
+#define OPT_AIRMASS         OPT_LOCAL + 835
 
 class CamScript
 {
@@ -63,11 +66,16 @@ class CamScript
 		}
 };
 
-class Rts2TargetApp:public Rts2AppDb
+/**
+ * Class for target application functions.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TargetApp:public Rts2AppDb
 {
 	public:
-		Rts2TargetApp (int argc, char **argv);
-		virtual ~ Rts2TargetApp (void);
+		TargetApp (int argc, char **argv);
+		virtual ~ TargetApp (void);
 	protected:
 		virtual void usage ();
 
@@ -95,9 +103,14 @@ class Rts2TargetApp:public Rts2AppDb
 		int tempdis;
 
 		void setTempdisable ();
+
+		void parseInterval (const char *name, const char *interval) { constraints.parseInterval (name, interval); }
+
+		// constraints
+		rts2db::Constraints constraints;
 };
 
-Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target_set = NULL;
 	op = OP_NONE;
@@ -124,20 +137,22 @@ Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, i
 	addOption (OPT_OBSERVE_END, "end", 0, "mark end of observation. Requires observation ID");
 
 	addOption (OPT_TEMPDISABLE, "tempdisable", 1, "change number of seconds for which target will be disabled after script execution");
+
+	addOption (OPT_AIRMASS, "airmass", 1, "set airmass constraint for the target");
 }
 
-Rts2TargetApp::~Rts2TargetApp ()
+TargetApp::~TargetApp ()
 {
 	delete target_set;
 }
 
-void Rts2TargetApp::usage ()
+void TargetApp::usage ()
 {
 	std::cout << "  " << getAppName () << " -n +3600 192         .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
 		<< "  " << getAppName () << " --tempdisable 3600 192 .. disable target for 1 hour after it is executed" << std::endl;
 }
 
-int Rts2TargetApp::processOption (int in_opt)
+int TargetApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -200,19 +215,23 @@ int Rts2TargetApp::processOption (int in_opt)
 			tempdis = atoi (optarg);
 			op |= OP_TEMPDISABLE;
 			break;
+		case OPT_AIRMASS:
+			parseInterval (CONSTRAINT_AIRMASS, optarg);
+			op |= OP_CONSTRAINTS;
+			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
 	}
 	return 0;
 }
 
-int Rts2TargetApp::processArgs (const char *arg)
+int TargetApp::processArgs (const char *arg)
 {
 	tar_names.push_back (arg);
 	return 0;
 }
 
-int Rts2TargetApp::init ()
+int TargetApp::init ()
 {
 	int ret;
 
@@ -226,7 +245,7 @@ int Rts2TargetApp::init ()
 	return 0;
 }
 
-int Rts2TargetApp::runInteractive ()
+int TargetApp::runInteractive ()
 {
 	Rts2AskChoice selection = Rts2AskChoice (this);
 	selection.addChoice ('e', "Enable target(s)");
@@ -265,7 +284,7 @@ int Rts2TargetApp::runInteractive ()
 	}
 }
 
-void Rts2TargetApp::setTempdisable ()
+void TargetApp::setTempdisable ()
 {
 	if (camera == NULL)
 	{
@@ -313,7 +332,7 @@ void Rts2TargetApp::setTempdisable ()
 	}
 }
 
-int Rts2TargetApp::doProcessing ()
+int TargetApp::doProcessing ()
 {
 	if ((op & OP_OBS_START) || (op & OP_OBS_END))
 	{
@@ -398,6 +417,10 @@ int Rts2TargetApp::doProcessing ()
 			}
 		}
 	}
+	if (op & OP_CONSTRAINTS)
+	{
+		target_set->setConstraints (constraints);
+	}
 	if (op & OP_NEXT_OBSER)
 	{
 		target_set->setNextObservable (NULL);
@@ -409,7 +432,7 @@ int Rts2TargetApp::doProcessing ()
 			std::cerr << "You must specify only single target which observation will be started." << std::endl;
 			return -1;
 		}
-		Target *tar = (target_set->begin ())->second;
+		rts2db::Target *tar = (target_set->begin ())->second;
 		struct ln_equ_posn pos;
 		tar->getPosition (&pos);
 		tar->startSlew (&pos);
@@ -427,6 +450,6 @@ int Rts2TargetApp::doProcessing ()
 
 int main (int argc, char **argv)
 {
-	Rts2TargetApp app = Rts2TargetApp (argc, argv);
+	TargetApp app (argc, argv);
 	return app.run ();
 }

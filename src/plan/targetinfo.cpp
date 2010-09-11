@@ -161,7 +161,7 @@ int TargetInfo::doProcessing ()
 	{
 		for (std::vector <const char*>::iterator iter = targets.begin (); iter != targets.end (); iter++)
 		{
-			TargetAuger *ta = new TargetAuger (-1, obs, 10);
+			rts2db::TargetAuger *ta = new rts2db::TargetAuger (-1, obs, 10);
 			int tid = atoi (*iter);
 			if (ta->load (tid))
 			{

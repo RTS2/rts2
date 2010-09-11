@@ -23,6 +23,8 @@
 
 #define PLANETS   10
 
+using namespace rts2db;
+
 planet_info_t planets[PLANETS] =
 {
 	{

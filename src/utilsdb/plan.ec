@@ -19,7 +19,7 @@
 
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
-#include "rts2plan.h"
+#include "plan.h"
 
 #include <ostream>
 #include <sstream>
@@ -27,7 +27,7 @@
 
 using namespace rts2db;
 
-Rts2Plan::Rts2Plan ()
+Plan::Plan ()
 {
 	plan_id = -1;
 	tar_id = -1;
@@ -38,8 +38,7 @@ Rts2Plan::Rts2Plan ()
 	plan_status = 0;
 }
 
-
-Rts2Plan::Rts2Plan (int in_plan_id)
+Plan::Plan (int in_plan_id)
 {
 	plan_id = in_plan_id;
 	tar_id = -1;
@@ -50,15 +49,12 @@ Rts2Plan::Rts2Plan (int in_plan_id)
 	plan_status = 0;
 }
 
-
-Rts2Plan::~Rts2Plan (void)
+Plan::~Plan (void)
 {
 	delete target;
 }
 
-
-int
-Rts2Plan::load ()
+int Plan::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_plan_id = plan_id;
@@ -115,9 +111,7 @@ Rts2Plan::load ()
 	return 0;
 }
 
-
-int
-Rts2Plan::save ()
+int Plan::save ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_plan_id = plan_id;
@@ -215,9 +209,7 @@ Rts2Plan::save ()
 	return 0;
 }
 
-
-int
-Rts2Plan::del ()
+int Plan::del ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_plan_id = plan_id;
@@ -239,9 +231,7 @@ Rts2Plan::del ()
 	return 0;
 }
 
-
-moveType
-Rts2Plan::startSlew (struct ln_equ_posn *position)
+moveType Plan::startSlew (struct ln_equ_posn *position)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_plan_id = plan_id;
@@ -265,7 +255,7 @@ Rts2Plan::startSlew (struct ln_equ_posn *position)
 			plan_id = :db_plan_id;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 		EXEC SQL ROLLBACK;
 	}
 	else
@@ -275,9 +265,7 @@ Rts2Plan::startSlew (struct ln_equ_posn *position)
 	return ret;
 }
 
-
-Target *
-Rts2Plan::getTarget ()
+Target * Plan::getTarget ()
 {
 	if (target)
 		return target;
@@ -285,7 +273,7 @@ Rts2Plan::getTarget ()
 	return target;
 }
 
-Observation * Rts2Plan::getObservation ()
+Observation * Plan::getObservation ()
 {
 	int ret;
 	if (observation)
@@ -302,21 +290,16 @@ Observation * Rts2Plan::getObservation ()
 	return observation;
 }
 
-
-std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
+void Plan::print (std::ostream & _os)
 {
 	struct ln_hrz_posn hrz;
-	time_t plan_start;
-	time_t plan_end;
 	const char *tar_name;
 	struct ln_lnlat_posn *obs;
 	int good;
 	double JD;
 	int ret;
-	plan_start = plan->getPlanStart ();
-	plan_end = plan->getPlanEnd ();
 	JD = ln_get_julian_from_timet (&plan_start);
-	ret = plan->load ();
+	ret = load ();
 	if (ret)
 	{
 		tar_name = "(not loaded!)";
@@ -324,37 +307,32 @@ std::ostream & operator << (std::ostream & _os, Rts2Plan * plan)
 	}
 	else
 	{
-		tar_name = plan->getTarget()->getTargetName();
-		good = plan->getTarget()->isGood (JD);
+		tar_name = getTarget()->getTargetName();
+		good = getTarget()->isGood (JD);
 	}
 	obs = Rts2Config::instance()->getObserver ();
-	plan->getTarget ()->getAltAz (&hrz, JD);
+	getTarget ()->getAltAz (&hrz, JD);
 	LibnovaHrz lHrz (&hrz);
-	_os << "  " << std::setw (8) << plan->plan_id << SEP
-		<< std::setw (8) << plan->prop_id << SEP
+	_os << "  " << std::setw (8) << plan_id << SEP
+		<< std::setw (8) << prop_id << SEP
 		<< std::left << std::setw (20) << tar_name << SEP
-		<< std::right << std::setw (8) << plan->tar_id << SEP
-		<< std::setw (8) << plan->obs_id << SEP
-		<< std::setw (9) << LibnovaDate (&(plan->plan_start)) << SEP
-		<< std::setw (9) << LibnovaDate (&(plan->plan_end)) << SEP
-		<< std::setw (8) << plan->plan_status << SEP
+		<< std::right << std::setw (8) << tar_id << SEP
+		<< std::setw (8) << obs_id << SEP
+		<< std::setw (9) << LibnovaDate (&(plan_start)) << SEP
+		<< std::setw (9) << LibnovaDate (&(plan_end)) << SEP
+		<< std::setw (8) << plan_status << SEP
 		<< lHrz << SEP
 		<< std::setw(1) << (good ? 'G' : 'B')
 		<< std::endl;
-
-	return _os;
 }
 
-
-Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Rts2Plan * plan)
+void Plan::printInfoVal (Rts2InfoValStream & _os)
 {
 	if (_os.getStream ())
-		*(_os.getStream ()) << plan;
-	return _os;
+		*(_os.getStream ()) << this;
 }
 
-
-std::istream & operator >> (std::istream & _is, Rts2Plan & plan)
+void Plan::read (std::istream & _is)
 {
 	char buf[201];
 	char *comt;
@@ -366,8 +344,6 @@ std::istream & operator >> (std::istream & _is, Rts2Plan & plan)
 
 	std::istringstream buf_s (buf);
 	LibnovaDate start_date;
-	buf_s >> plan.tar_id >> start_date;
-	start_date.getTimeT (& plan.plan_start);
-
-	return _is;
+	buf_s >> tar_id >> start_date;
+	start_date.getTimeT (& plan_start);
 }

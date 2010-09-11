@@ -77,7 +77,7 @@ int SelectorApp::doProcessing ()
 
 	rts2plan::Selector *sel;
 
-	Target *tar;
+	rts2db::Target *tar;
 
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();

@@ -93,7 +93,7 @@ class Rts2SchedObs
 		 *
 		 * @return Pointer to target object.
 		 */
-		Target *getTarget () { return ticket->getTarget (); }
+		rts2db::Target *getTarget () { return ticket->getTarget (); }
 
 		/**
 		 * Returns target ID of the observation target.

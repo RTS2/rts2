@@ -72,7 +72,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 		if (tar_id < 0)
 			throw rts2core::Error ("Target id < 0");
 
-		Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+		rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
 
@@ -289,7 +289,7 @@ void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 		<< "altplot/'>altitude plot</a></p>";
 }
 
-void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	if (!canExecute ())
 		throw XmlRpcException ("you do not have permission to change anything");
@@ -367,7 +367,7 @@ void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_ty
 }
 
 
-void Targets::callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	if (req == "obs")
@@ -409,7 +409,7 @@ void Targets::callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpPa
 	throw XmlRpcException ("invalid API call");
 }
 
-void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -634,7 +634,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetInfo (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	
@@ -658,7 +658,7 @@ void Targets::printTargetInfo (Target *tar, const char* &response_type, char* &r
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -733,7 +733,7 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTargetObservations (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -903,7 +903,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 			}
 		}
 		// check for simbad
-		Target *target = new rts2db::SimbadTarget (tar);
+		rts2db::Target *target = new rts2db::SimbadTarget (tar);
 		if (target->load () == 0)
 		{
 			target->getPosition (&pos);
@@ -933,7 +933,7 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 {
 	std::ostringstream _os;
 
-	ConstTarget *constTarget = new ConstTarget ();
+	rts2db::ConstTarget *constTarget = new rts2db::ConstTarget ();
 	constTarget->setPosition (ra, dec);
 	constTarget->setTargetName (name);
 	constTarget->setTargetType (TYPE_OPORTUNITY);
@@ -943,7 +943,7 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 	if (tarid != INT_MAX)
 		ret = constTarget->save (false, tarid);
 	else
-		ret = ((Target *) constTarget)->save (false);
+		ret = ((rts2db::Target *) constTarget)->save (false);
 	
 	if (ret)
 		throw XmlRpcException ("Target with given ID already exists");
@@ -966,7 +966,7 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 {
 	std::ostringstream _os;
 
-	Target *tar = createTarget (tarid, Rts2Config::instance ()->getObserver ());
+	rts2db::Target *tar = createTarget (tarid, Rts2Config::instance ()->getObserver ());
 
 	if (tar == NULL)
 		throw XmlRpcException ("Cannot find target with given ID!");

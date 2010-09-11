@@ -63,10 +63,12 @@
 #define CONSTRAINTS_GROUP    0x0002
 #define CONSTRAINTS_TARGET   0x0004
 
+class Rts2Image;
+
 namespace rts2db {
 
+class TargetSet;
 class Constraints;
-
 class Observation;
 
 /**
@@ -91,10 +93,6 @@ class CameraMissingExcetion:public rts2core::Error
 			setMsg (std::string ("camera ") + cameraName + " cannot be found in cameras table.");
 		}
 };
-
-}
-
-class Rts2Image;
 
 /**
  * Class for one observation target.
@@ -145,6 +143,15 @@ class Target:public Rts2Target
 		 */
 		virtual bool getScript (const char *device_name, std::string & buf);
 		void setScript (const char *device_name, const char *buf);
+
+		/**
+		 * Set target constraints. Overwrite present target constraints with constraints from the given
+		 * Constraints structure.
+		 *
+		 * @param cons   set constraints to this structure
+		 */
+		void setConstraints (Constraints &cons);
+
 		struct ln_lnlat_posn *getObserver () { return observer; }
 
 		// return target semi-diameter, in degrees
@@ -479,8 +486,8 @@ class Target:public Rts2Target
 
 		int printObservations (double radius, double JD, std::ostream & _os);
 
-		rts2db::TargetSet getTargets (double radius);
-		rts2db::TargetSet getTargets (double radius, double JD);
+		TargetSet getTargets (double radius);
+		TargetSet getTargets (double radius, double JD);
 
 		int printTargets (double radius, std::ostream & _os) { return printTargets (radius, ln_get_julian_from_sys (), _os); }
 
@@ -493,9 +500,9 @@ class Target:public Rts2Target
 		/**
 		 * Return calibration targets for given target
 		 */
-		rts2db::TargetSet *getCalTargets () { return getCalTargets (ln_get_julian_from_sys ()); }
+		TargetSet *getCalTargets () { return getCalTargets (ln_get_julian_from_sys ()); }
 
-		virtual rts2db::TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
+		virtual TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
 
 		/**
 		 * Write target metadata to image.
@@ -540,7 +547,7 @@ class Target:public Rts2Target
 
 	private:
 		// holds current target observation
-		rts2db::Observation * observation;
+		Observation * observation;
 
 		int type;				 // light, dark, flat, flat_dark
 		std::string tar_info;
@@ -566,7 +573,7 @@ class Target:public Rts2Target
 
 		char *constraintFile;
 		char *groupConstraintFile;
-		rts2db::Constraints *constraints;
+		Constraints *constraints;
 };
 
 class ConstTarget:public Target
@@ -830,7 +837,7 @@ class TargetTerestial:public ConstTarget
 		virtual moveType afterSlewProcessed ();
 };
 
-class Rts2Plan;
+class Plan;
 
 class TargetPlan:public Target
 {
@@ -855,8 +862,8 @@ class TargetPlan:public Target
 		virtual bool getScript (const char *camera_name, std::string & script);
 
 	private:
-		Rts2Plan * selectedPlan;
-		Rts2Plan *nextPlan;
+		Plan * selectedPlan;
+		Plan *nextPlan;
 
 		// how long to look back for previous plan
 		float hourLastSearch;
@@ -864,6 +871,12 @@ class TargetPlan:public Target
 		time_t nextTargetRefresh;
 		void refreshNext ();
 };
+
+}
+
+// print target information to stdout..
+std::ostream & operator << (std::ostream & _os, rts2db::Target & target);
+Rts2InfoValStream & operator << (Rts2InfoValStream & _os, rts2db::Target & target);
 
 /**
  * Select target from database with given target ID.
@@ -873,7 +886,7 @@ class TargetPlan:public Target
  *
  * @return New target if it can be found. Otherwise will return NULL.
  */
-Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
+rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
 
 /**
  * Create target by name.
@@ -883,9 +896,6 @@ Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
  *
  * @return New target if unique target can be found. For retriving set matching given name, please see TargetSet::findByName ().
  */
-Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs);
+rts2db::Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs);
 
-// print target information to stdout..
-std::ostream & operator << (std::ostream & _os, Target & target);
-Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Target & target);
 #endif							 /*! __RTS_TARGETDB__ */

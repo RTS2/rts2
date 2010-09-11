@@ -55,17 +55,17 @@ class Targets: public GetRequestAuthorized
 		void processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void processAPI (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetHeader (int tar_id, std::ostringstream &_os);
-		void callAPI (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetInfo (Target *tar, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length);
+		void callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void printTarget (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
+		void printTargetInfo (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
+		void printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void printTargetObservations (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
 
 		Rts2CamList cameras;
 
 #ifdef HAVE_LIBJPEG
-		void plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 #endif /* HAVE_LIBJPEG */
 };
 

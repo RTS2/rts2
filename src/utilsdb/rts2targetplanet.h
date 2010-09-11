@@ -22,6 +22,9 @@
 
 #include "target.h"
 
+namespace rts2db
+{
+
 typedef void (*get_equ_t) (double, struct ln_equ_posn *);
 typedef double (*get_double_val_t) (double);
 
@@ -60,4 +63,6 @@ class TargetPlanet:public Target
 		double getPhase (double JD);
 		double getDisk (double JD);
 };
+
+}
 #endif							 /*! __RTS2_TARGETPLANET__ */

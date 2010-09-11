@@ -19,7 +19,7 @@
 
 #include <libnova/libnova.h>
 #include "target.h"
-#include "rts2plan.h"
+#include "plan.h"
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
@@ -29,6 +29,8 @@
 #include <sstream>
 
 EXEC SQL include sqlca;
+
+using namespace rts2db;
 
 // ConstTarget
 ConstTarget::ConstTarget () : Target ()
@@ -1591,7 +1593,7 @@ void TargetPlan::refreshNext ()
 	if (nextPlan && nextPlan->getPlanId() == db_next_plan_id && nextPlan->getPlanStart() == db_next_plan_start)
 		return;
 	delete nextPlan;
-	nextPlan = new Rts2Plan (db_next_plan_id);
+	nextPlan = new Plan (db_next_plan_id);
 	ret = nextPlan->load ();
 	if (ret)
 	{
@@ -1712,7 +1714,7 @@ int TargetPlan::load (double JD)
 	if (db_plan_id != -1)
 	{
 		delete selectedPlan;
-		selectedPlan = new Rts2Plan (db_plan_id);
+		selectedPlan = new Plan (db_plan_id);
 		ret = selectedPlan->load ();
 		if (ret
 			|| selectedPlan->getTarget ()->getTargetType () == TYPE_PLAN)
@@ -1731,7 +1733,7 @@ int TargetPlan::load (double JD)
 	if (db_next_plan_id != -1)
 	{
 		delete nextPlan;
-		nextPlan = new Rts2Plan (db_next_plan_id);
+		nextPlan = new Plan (db_next_plan_id);
 		ret = nextPlan->load ();
 		if (ret)
 		{

@@ -863,6 +863,14 @@ void Target::setScript (const char *device_name, const char *buf)
 	EXEC SQL COMMIT;
 }
 
+void Target::setConstraints (Constraints &cons)
+{
+	std::ofstream ofs (getConstraintFile ());
+	ofs << "<?xml version=\"1.0\"?>" << std::endl << std::endl;
+	cons.print (ofs);
+	ofs.close ();
+}
+
 void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
 	struct ln_equ_posn object;

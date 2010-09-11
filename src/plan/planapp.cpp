@@ -1,6 +1,6 @@
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2plan.h"
-#include "../utilsdb/rts2planset.h"
+#include "../utilsdb/plan.h"
+#include "../utilsdb/planset.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2config.h"
 
@@ -11,26 +11,23 @@
 
 class Rts2PlanApp:public Rts2AppDb
 {
-	private:
-		enum
-		{ NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY }
-		operation;
-		int dumpPlan ();
-		int loadPlan ();
-		int generatePlan ();
-		int copyPlan ();
-		double JD;
-	protected:
-		virtual int processOption (int in_opt);
 	public:
 		Rts2PlanApp (int in_argc, char **in_argv);
 		virtual ~ Rts2PlanApp (void);
 
 		virtual int doProcessing ();
+	protected:
+		virtual int processOption (int in_opt);
+	private:
+		enum { NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY } operation;
+		int dumpPlan ();
+		int loadPlan ();
+		int generatePlan ();
+		int copyPlan ();
+		double JD;
 };
 
-Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
@@ -43,35 +40,29 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('d', "dump_plan", 0, "dump plan to standart output");
 	addOption ('l', "load_plan", 0, "load plan from standart input");
 	addOption ('g', "generate", 0, "generate plan based on targets");
-	addOption ('c', "copy_plan", 1,
-		"copy plan to given night (from night given by -n)");
+	addOption ('c', "copy_plan", 1, "copy plan to given night (from night given by -n)");
 }
-
 
 Rts2PlanApp::~Rts2PlanApp (void)
 {
 }
 
-
-int
-Rts2PlanApp::dumpPlan ()
+int Rts2PlanApp::dumpPlan ()
 {
-	Rts2PlanSet *plan_set;
+	rts2db::PlanSet *plan_set;
 	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
-	plan_set = new Rts2PlanSet (night.getFrom (), night.getTo ());
+	plan_set = new rts2db::PlanSet (night.getFrom (), night.getTo ());
 	std::cout << "Night " << night << std::endl;
 	std::cout << (*plan_set) << std::endl;
 	delete plan_set;
 	return 0;
 }
 
-
-int
-Rts2PlanApp::loadPlan ()
+int Rts2PlanApp::loadPlan ()
 {
 	while (1)
 	{
-		Rts2Plan plan;
+		rts2db::Plan plan;
 		int ret;
 		std::cin >> plan;
 		if (std::cin.fail ())
@@ -83,23 +74,17 @@ Rts2PlanApp::loadPlan ()
 	return 0;
 }
 
-
-int
-Rts2PlanApp::generatePlan ()
+int Rts2PlanApp::generatePlan ()
 {
 	return -1;
 }
 
-
-int
-Rts2PlanApp::copyPlan ()
+int Rts2PlanApp::copyPlan ()
 {
 	return -1;
 }
 
-
-int
-Rts2PlanApp::processOption (int in_opt)
+int Rts2PlanApp::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
@@ -135,9 +120,7 @@ Rts2PlanApp::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2PlanApp::doProcessing ()
+int Rts2PlanApp::doProcessing ()
 {
 	switch (operation)
 	{
@@ -157,9 +140,7 @@ Rts2PlanApp::doProcessing ()
 	return -1;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2PlanApp app = Rts2PlanApp (argc, argv);
 	return app.run ();

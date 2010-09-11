@@ -1137,7 +1137,7 @@ class ListTargets: public SessionMethod
 
 			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
-				Target *tar = (*tar_iter).second;
+				rts2db::Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
 				retVar["type"] = tar->getTargetType ();
 				if (tar->getTargetName ())
@@ -1192,7 +1192,7 @@ class ListTargetsByType: public SessionMethod
 
 			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
-				Target *tar = (*tar_iter).second;
+				rts2db::Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
 				retVar["type"] = tar->getTargetType ();
 				if (tar->getTargetName ())
@@ -1251,7 +1251,7 @@ class TargetInfo: public SessionMethod
 			{
 				JD = ln_get_julian_from_sys ();
 
-				Target *tar = (*tar_iter).second;
+				rts2db::Target *tar = (*tar_iter).second;
 
 				XmlStream xs (&retVar);
 				xs << *tar;
@@ -1285,7 +1285,7 @@ class TargetAltitude: public SessionMethod
 				throw XmlRpcException ("Invalid number of parameters");
 			if (((int) params[0]) < 0)
 				throw XmlRpcException ("Target id < 0");
-			Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
+			rts2db::Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
 			if (tar == NULL)
 			{
 				throw XmlRpcException ("Cannot create target");

@@ -52,7 +52,7 @@ class Ticket
 		 * @param _sched_interval_min
 		 * @param _sched_interval_max
 		 */
-		Ticket (int _schedTicketId, Target *_target, int _accountId,
+		Ticket (int _schedTicketId, rts2db::Target *_target, int _accountId,
 			unsigned int _obs_num, double _sched_from, double _sched_to,
 			double _sched_interval_min, double _sched_interval_max);
 
@@ -75,7 +75,7 @@ class Ticket
 		 *
 		 * @return Target object associated with scheduling.
 		 */
-		Target *getTarget () { return target; }
+		rts2db::Target *getTarget () { return target; }
 
 		/**
 		 * Return ID of target associated with the scheduling ticket.
@@ -145,7 +145,7 @@ class Ticket
 		}
 	private:
 		int ticketId;
-		Target *target;
+		rts2db::Target *target;
 		int accountId;
 
 		unsigned int obs_num;

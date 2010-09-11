@@ -25,6 +25,8 @@
 #include "../utils/infoval.h"
 #include "../writers/rts2image.h"
 
+using namespace rts2db;
+
 TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBonusTimeout, int in_dayBonusTimeout, int in_fiveBonusTimeout):ConstTarget (in_tar_id, in_obs)
 {
 	shouldUpdate = 1;

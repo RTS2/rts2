@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONSTRAINTS__
+#define __RTS2_CONSTRAINTS__
+
 #include "target.h"
 
 #include <libxml/parser.h>
@@ -34,6 +37,8 @@
 
 namespace rts2db
 {
+
+class Target;
 
 /**
  * Simple interval for constraints. Has lower and upper bounds.
@@ -226,3 +231,5 @@ class MasterConstraints
 };
 
 }
+
+#endif /* ! __RTS2_CONSTRAINTS__ */
