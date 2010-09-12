@@ -518,7 +518,7 @@ class Target:public Rts2Target
 		/**
 		 * Return group constraint file.
 		 */
-		const char *getGroupConstaintFile ();
+		const char *getGroupConstraintFile ();
 
 		/**
 		 * Return location of constraint file.

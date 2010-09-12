@@ -20,6 +20,7 @@
 #ifndef __RTS2_CONSTRAINTS__
 #define __RTS2_CONSTRAINTS__
 
+#include "../utils/counted_ptr.h"
 #include "target.h"
 
 #include <libxml/parser.h>
@@ -169,7 +170,9 @@ class ConstraintSunAltitude:public Constraint
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
-class Constraints:public std::map <std::string, Constraint *>
+typedef counted_ptr <Constraint> ConstraintPtr;
+
+class Constraints:public std::map <std::string, ConstraintPtr >
 {
 	public:
 		Constraints () {}

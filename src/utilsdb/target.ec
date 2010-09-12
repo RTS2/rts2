@@ -1762,7 +1762,7 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< std::endl
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", Rts2Config::instance ()->getMasterConstraintFile ())
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_SYSTEM) ? "used" : "empy/not used")
-		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstaintFile ())
+		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstraintFile ())
 		<< InfoVal<const char*> ("GROUP CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_GROUP) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", getConstraintFile ())
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_TARGET) ? "used" : "empty/not used")
@@ -1849,7 +1849,7 @@ const char *Target::getConstraintFile ()
 	return constraintFile;
 }
 
-const char *Target::getGroupConstaintFile ()
+const char *Target::getGroupConstraintFile ()
 {
 	if (groupConstraintFile)
 		return groupConstraintFile;
@@ -1873,18 +1873,18 @@ bool Target::checkConstraints (double JD)
 	}
 	catch (XmlError er)
 	{
-		logStream (MESSAGE_ERROR) << "cannot load master constraint file:" << er << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot load master constraint file:" << er << sendLogNoEndl;
 		constraints = new Constraints ();
 	}
 	// check for group constraint
 	try
 	{
-		constraints->load (getGroupConstaintFile ());
+		constraints->load (getGroupConstraintFile ());
 		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
 	catch (XmlError er)
 	{
-		logStream (MESSAGE_ERROR) << "cannot load group constraint file " << getGroupConstaintFile () << ":" << er << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot load group constraint file " << getGroupConstraintFile () << ":" << er << sendLogNoEndl;
 	}
 	// load target constrainst
 	try
@@ -1894,6 +1894,7 @@ bool Target::checkConstraints (double JD)
 	}
 	catch (XmlError er)
 	{
+		logStream (MESSAGE_WARNING) << "cannot load target constraint file " << getConstraintFile () << ":" << er << sendLogNoEndl;
 	}
 	return constraints->satisfy (this, JD);
 }

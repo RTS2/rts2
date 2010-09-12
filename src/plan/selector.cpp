@@ -214,6 +214,7 @@ int SelectorDev::selectNext ()
 	{
 		logStream (MESSAGE_ERROR) << "while selecting next target:" << er << sendLog;
 	}
+	return -1;
 }
 
 int SelectorDev::updateNext ()

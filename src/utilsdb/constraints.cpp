@@ -227,14 +227,14 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	return isBetween (hrz_sun.alt);
 }
 
-Constraints::Constraints (Constraints &cs): std::map <std::string, Constraint *> (cs)
+Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr > (cs)
 {
 }
 
 Constraints::~Constraints ()
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
-		delete iter->second;
+		iter->second.null ();
 	clear ();
 }
 
@@ -265,7 +265,7 @@ void Constraints::load (xmlNodePtr _node)
 	{
 		if (cons->type == XML_COMMENT_NODE)
 			continue;
-	  	Constraint *con;
+	  	ConstraintPtr con;
 		Constraints::iterator candidate = find (std::string ((const char *) cons->name));
 		if (candidate != end ())
 		{
@@ -273,9 +273,10 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		else 
 		{
-			con = createConstraint ((const char *) cons->name);
-			if (con == NULL)
+			Constraint *cp = createConstraint ((const char *) cons->name);
+			if (cp == NULL)
 				throw XmlUnexpectedNode (cons);
+			con = ConstraintPtr (cp);
 		}
 		try
 		{
@@ -283,7 +284,7 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		catch (XmlError er)
 		{
-			delete con;
+			con.null ();
 			throw er;
 		}
 		if (candidate == end ())
@@ -298,7 +299,7 @@ void Constraints::load (const char *filename)
 	LIBXML_TEST_VERSION
 
 	xmlLineNumbersDefault (1);
-	xmlDoc *doc = xmlReadFile (filename, NULL, XML_PARSE_NOBLANKS);
+	xmlDoc *doc = xmlReadFile (filename, NULL, XML_PARSE_NOBLANKS | XML_PARSE_NOWARNING);
 	if (doc == NULL)
 		throw XmlError ("cannot parse constraint file " + std::string (filename));
 
@@ -324,7 +325,7 @@ void Constraints::parseInterval (const char *name, const char *interval)
 		if (con == NULL)
 			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
 		con->parseInterval (interval);
-		(*this)[std::string (con->getName ())] = con;
+		(*this)[std::string (con->getName ())] = ConstraintPtr (con);
 	}
 }
 

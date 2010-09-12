@@ -22,8 +22,7 @@
 
 #include <iomanip>
 
-void
-Rts2LogStream::logArr (const char *arr, int len)
+void Rts2LogStream::logArr (const char *arr, int len)
 {
 	bool lastIsHex = false;
 	for (int i = 0; i < len; i++)
@@ -44,9 +43,7 @@ Rts2LogStream::logArr (const char *arr, int len)
 	}
 }
 
-
-void
-Rts2LogStream::logArrAsHex (const char *arr, int len)
+void Rts2LogStream::logArrAsHex (const char *arr, int len)
 {
 	for (int i = 0; i < len; i++)
 	{
@@ -55,16 +52,24 @@ Rts2LogStream::logArrAsHex (const char *arr, int len)
 	}
 }
 
-
-void
-Rts2LogStream::sendLog ()
+void Rts2LogStream::sendLog ()
 {
 	masterApp->sendMessage (messageType, ls.str ().c_str ());
 }
 
+void Rts2LogStream::sendLogNoEndl ()
+{
+	masterApp->sendMessageNoEndl (messageType, ls.str ().c_str ());
+}
 
 Rts2LogStream & sendLog (Rts2LogStream & _ls)
 {
 	_ls.sendLog ();
+	return _ls;
+}
+
+Rts2LogStream & sendLogNoEndl (Rts2LogStream & _ls)
+{
+	_ls.sendLogNoEndl ();
 	return _ls;
 }

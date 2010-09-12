@@ -34,7 +34,7 @@ class SqlError: public rts2core::Error
 {
 	public:
 		SqlError ();
-		SqlError (const char *msg);
+		SqlError (const char *sqlmsg);
 };
 
 }
