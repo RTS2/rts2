@@ -1128,6 +1128,7 @@ int Rts2Conn::command ()
 		  	|| paramNextDouble (&statusExpectedEnd)
 			|| !paramEnd ())
 			return -2;
+		return master->progress (this, statusStart, statusExpectedEnd);
 	}
 	// don't respond to values with error - otherDevice does respond to
 	// values, if there is no other device, we have to take resposibility
