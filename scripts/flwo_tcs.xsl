@@ -10,6 +10,7 @@
 <xsl:variable name='abort'>
 if ( -e $rts2abort ) then
 	source $RTS2/bin/.rts2-runabort
+	rm -f $lasttarget
 	exit
 endif	
 </xsl:variable>

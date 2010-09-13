@@ -4,7 +4,18 @@
 
 setenv tar_id $1
 
-setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
+if ( -r $lasttarget ) then
+	setenv last_tar_id `cut -f1 -d' ' $lasttarget`
+	setenv obs_id `cut -f2 -d' ' $lasttarget`
+else
+	setenv last_tar_id -1
+fi
+
+if ( $last_tar_id == $tar_id ) then
+	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
+	echo $tar_id $obs_id > $lasttarget
+endif
+
 setenv name `rts2-targetinfo --name $tar_id`
 
 set ra=$3
@@ -17,19 +28,21 @@ if ( $notmove == 1 ) then
 
 	sleep 3
 else
-	echo -n "sending coordinates $3 $4 2000.0 .. "
-	tele coords $ra $dec 2000.0
+	if ( $last_tar_id != $tar_id ) then
+		echo -n "sending coordinates $3 $4 2000.0 .. "
+		tele coords $ra $dec 2000.0
 
-	sleep 3
+		sleep 3
 
-	tele enable
+		tele enable
 
-	echo "on coordinates"
+		echo "on coordinates"
+
+		# mark end of slew
+		$RTS2/bin/rts2-target --observe $obs_id
+	endif
 endif
 	
-# mark end of slew
-$RTS2/bin/rts2-target --observe $obs_id
-
 object "$name"
 setcom kepccd Object "$name"
 
