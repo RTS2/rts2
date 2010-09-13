@@ -1,0 +1,49 @@
+# expected to receive output of rts2-seltest command
+# assumes rts2-f-env script was called, so important variables
+# are set up
+
+setenv tar_id $1
+
+setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
+setenv name `rts2-targetinfo --name $tar_id`
+
+set ra=$3
+set dec=$4
+
+echo "received obs_id $obs_id, name $name"
+
+if ( $notmove == 1 ) then
+  	echo "move to coordinates ignored"
+
+	sleep 3
+else
+	echo -n "sending coordinates $3 $4 2000.0 .. "
+	tele coords $ra $dec 2000.0
+
+	sleep 3
+
+	tele enable
+
+	echo "on coordinates"
+endif
+	
+# mark end of slew
+$RTS2/bin/rts2-target --observe $obs_id
+
+object "$name"
+setcom kepccd Object "$name"
+
+# translate observation to observation file..
+
+rm -f /tmp/$obs_id
+
+$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc /home/petr/rts2/scripts/flwo_tcs.xsl - > /tmp/$obs_id
+
+source /tmp/$obs_id
+
+# end it
+$RTS2/bin/rts2-target --end $obs_id
+
+rm -f /tmp/$obs_id
+
+echo "observation $obs_id of object $name ($ra $dec) ends"
