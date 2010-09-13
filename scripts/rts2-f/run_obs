@@ -11,7 +11,7 @@ else
 	setenv last_tar_id -1
 endif
 
-if ( $last_tar_id == $tar_id ) then
+if ( $last_tar_id != $tar_id ) then
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
 	echo $tar_id $obs_id > $lasttarget
 endif
