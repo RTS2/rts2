@@ -9,7 +9,7 @@ if ( -r $lasttarget ) then
 	setenv obs_id `cut -f2 -d' ' $lasttarget`
 else
 	setenv last_tar_id -1
-fi
+endif
 
 if ( $last_tar_id == $tar_id ) then
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
