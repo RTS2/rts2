@@ -38,8 +38,8 @@ logger= logging.getLogger('rts2_af_logger') ;
 
 class AFScript:
     """Class for any AF script"""
-    def __init__(self, scriptName):
-        self.scriptName= scriptName
+    def __init__(self):
+        self.debug = False
 
     def arguments( self): 
 
@@ -90,11 +90,21 @@ class AFScript:
             print 'wrote default configuration to ' +  runTimeConfig.configurationFileName()
             sys.exit(0)
 
+        self.debug = self.args.logLevel[0]== 'debug'
+
         return  self.args
 
-    def configureLogger(self):
+    def configureLoggerStdout(self):
+        """Send logging output to stdout."""
+        ch = logging.StreamHandler()
+        if self.debug:
+            ch.setLevel(logging.DEBUG)
+        else:
+            ch.setLevel(logging.WARN)
+        logger.addHandler(ch)           
 
-        if( self.args.logLevel[0]== 'debug'): 
+    def configureLogger(self):
+        if self.debug:
             logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
         else:
             logging.basicConfig(filename=LOG_FILENAME,level=logging.WARN)
@@ -162,7 +172,7 @@ class Configuration:
         
         self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
         
-        self.cp[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
+        self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
         self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/autofocus/sex-autofocus.cfg'
         self.cp[('SExtractor', 'SEXPARAM')]= '/etc/rts2/autofocus/sex-autofocus.param'
         self.cp[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/autofocus/sex-autofocus-reference.param'
@@ -234,7 +244,7 @@ class Configuration:
 
             self.config.set(section, identifier, value)
 
-        with open( self.configFileName, 'wb') as configfile:
+        with open(self.configFileName, 'wb') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
             configfile.write('# default configuration for rts2-autofocus.py\n')
             configfile.write('# generated with rts2-autofous.py -p\n')
@@ -243,29 +253,33 @@ class Configuration:
             configfile.write('#\n')
             self.config.write(configfile)
 
-    def readConfiguration( self, configFileName):
+
+    def readDefaults(self):
+        # read the defaults
+        for (section, identifier), value in self.configIdentifiers():
+             self.values[identifier]= value
+
+    def readConfiguration(self, configFileName):
 
         config = ConfigParser.ConfigParser()
         try:
             config.readfp(open(configFileName))
         except:
-            logger.error('Configuration.readConfiguration: config file ' + configFileName + ' not found, exiting')
+            logger.error('Configuration.readConfiguration: config file %s not found, exiting' % configFileName)
             sys.exit(1)
 
-# read the defaults
-        for (section, identifier), value in self.configIdentifiers():
-             self.values[identifier]= value
+        self.readDefaults()
 
-# over write the defaults
+        # over write the defaults
         for (section, identifier), value in self.configIdentifiers():
 
             try:
                 value = config.get( section, identifier)
             except:
                 logger.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
-# first bool, then int !
+            # first bool, then int !
             if(isinstance(self.values[identifier], bool)):
-#ToDO, looking for a direct way
+            #ToDO, looking for a direct way
                 if( value == 'True'):
                     self.values[identifier]= True
                 else:
@@ -748,7 +762,7 @@ class ReferenceCatalogue(Catalogue):
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'ReferenceCatalogue.runSExtractor: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'ReferenceCatalogue.runSExtractor {0}: I/O error({1}): {2}'.format(prg, errno, strerror))
             sys.exit(1)
 
         except:
@@ -921,17 +935,19 @@ class AcceptanceRegion():
     """Class holding the properties of the acceptance circle"""
     def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
         self.fitsHDU= fitsHDU
-# 1x1 
-#        self.binning= float(fitsHDU.headerElements['BINNING'])
 
-        self.binning= 2.
-        print "binning set to 2"
-        logger.error("binning set to 2") 
-        try:
-            self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
-            self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
-        except:
-            logger.error("AcceptanceRegion.__init__: something went wrong here")
+        binning = fitsHDU.headerElements['BINNING']
+        if binning == '1x1':
+            self.binning = 1
+        elif binning == '2x2':
+            self.binning = 2
+        elif binning == '4x4':
+            self.binning = 4
+        else:
+            raise Exception('Invalid binning: %s' % (binning))
+
+        self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
+        self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
 
         if( centerOffsetX==None):
             self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))
@@ -1092,7 +1108,7 @@ import sys
 import pyfits
 
 class FitsHDU():
-    """Class holding fits file name and ist properties"""
+    """Class holding fits file name and its properties"""
     def __init__(self, fitsFileName=None, referenceFitsHDU=None):
         if(referenceFitsHDU==None):
             self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName)
@@ -1106,14 +1122,13 @@ class FitsHDU():
 
 
     def headerProperties(self):
-
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
             fitsHDU = pyfits.fitsopen(self.fitsFileName)
         except:
             if( self.fitsFileName):
-                logger.error('FitsHDU: file not found : ' + self.fitsFileName)
+                logger.error('FitsHDU: file not found: %s' % self.fitsFileName)
             else:
                 logger.error('FitsHDU: file name not given (None)')
             return False

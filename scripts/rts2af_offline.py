@@ -45,8 +45,8 @@ import rts2af
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
+    def __init__(self):
+        super.__init__()
 
     def main(self):
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()

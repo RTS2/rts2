@@ -35,18 +35,41 @@ import sys
 import time
 from operator import itemgetter, attrgetter
 
-
 import numpy
 import pyfits
 import rts2comm 
 import rts2af 
 
-class main(rts2af.AFScript):
+class FWHM(rts2af.AFScript):
     """extract the catalgue of an images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
+    def __init__(self):
+        rts2af.AFScript.__init__(self)
 
-    def main(self):
+    def runSex(self,filename):
+        """Run sextractor, return catalogue of found sources"""
+        self.configureLoggerStdout()
+        rts2af.runTimeConfig = rts2af.Configuration()
+        rts2af.runTimeConfig.readDefaults()
+        rts2af.serviceFileOp = rts2af.ServiceFileOperations()
+
+        # rts2af.runTimeConfig.readConfiguration(rts2af.runTimeConfig.configurationFileName())
+
+        sex = rts2af.SExtractorParams()
+        sex.readSExtractorParams()
+
+        hdu = rts2af.FitsHDU(filename)
+        hdu.headerProperties()
+
+        paramsSexctractor = rts2af.SExtractorParams()
+        paramsSexctractor.readSExtractorParams()
+
+        self.cat = rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
+        self.cat.runSExtractor()
+        self.cat.createCatalogue()
+
+        return self.cat
+
+    def run(self):
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         args      = self.arguments()
         logger    = self.configureLogger()
@@ -92,7 +115,7 @@ class main(rts2af.AFScript):
         cat.average('FWHM_IMAGE')
 
 if __name__ == '__main__':
-    main(sys.argv[0]).main()
+    FWHM(sys.argv[0]).run()
 
 
 
