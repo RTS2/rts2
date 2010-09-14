@@ -419,8 +419,8 @@ void Rts2Image::getHeaders ()
 
 	try
 	{
-		getValue ("CTIME", tv.tv_sec, false);
-		getValue ("USEC", tv.tv_usec, false);
+		getValue ("CTIME", tv.tv_sec, true);
+		getValue ("USEC", tv.tv_usec, true);
 	}
 	catch (rts2core::Error )
 	{
