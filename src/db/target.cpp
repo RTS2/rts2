@@ -112,6 +112,10 @@ class TargetApp:public Rts2AppDb
 
 		// constraints
 		rts2db::Constraints constraints;
+
+		char *defaultCamera;
+
+		Rts2Config *config;
 };
 
 TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -126,6 +130,9 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	tempdis = 0;
 
 	matchAll = false;
+
+	defaultCamera = NULL;
+	config = NULL;
 
 	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('e', NULL, 0, "enable given target(s)");
@@ -153,6 +160,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 TargetApp::~TargetApp ()
 {
 	delete target_set;
+	delete[] defaultCamera;
 }
 
 void TargetApp::usage ()
@@ -201,7 +209,7 @@ int TargetApp::processOption (int in_opt)
 			camera = optarg;
 			break;
 		case 's':
-			if (!camera)
+			if (!camera && !(camera = defaultCamera))
 			{
 				std::cerr << "Please provide camera name (with -c parameter) before specifing script!" << std::endl;
 				return -1;
@@ -259,8 +267,14 @@ int TargetApp::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
 	config = Rts2Config::instance ();
+
+	std::string cam;
+	if (config->getString ("observatory", "default_camera", cam) == 0)
+	{
+		defaultCamera = new char[cam.length () + 1];
+		strcpy (defaultCamera, cam.c_str ());
+	}
 
 	return 0;
 }
@@ -306,7 +320,7 @@ int TargetApp::runInteractive ()
 
 void TargetApp::setTempdisable ()
 {
-	if (camera == NULL)
+	if (camera == NULL && !(camera = defaultCamera))
 	{
 		std::cerr << "Missing camera name" << std::endl;
 		return;
