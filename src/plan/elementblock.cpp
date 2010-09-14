@@ -253,9 +253,9 @@ void ElementBlock::printScript (std::ostream &os)
 	os << " { ";
 	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
 	{
-		os << "   ";
+	  	if (iter != blockElements.begin ())
+			os << " ";
 		(*iter)->printScript (os);
-		os << std::endl;
 	}
 	os << " }";
 }
