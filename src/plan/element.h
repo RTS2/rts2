@@ -313,7 +313,12 @@ class ElementChangeValue:public Element
 
 		virtual void prettyPrint (std::ostream &os) { os << "set on " << deviceName << " value " << valName << " " << op << " " << operands; }
 		virtual void printXml (std::ostream &os) { os << "  <set device='" << deviceName << "' value='" << valName << "' op='" << op << "' operands='" << operands << "'/>"; }
-		virtual void printScript (std::ostream &os) { os << deviceName << "." << valName << op << operands; }
+		virtual void printScript (std::ostream &os)
+		{
+			if (deviceName[0])
+				os << deviceName << ".";
+			os << valName << op << operands;
+		}
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:

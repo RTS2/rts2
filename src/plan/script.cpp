@@ -114,6 +114,7 @@ int Script::getNextParamInteger (int *val)
 
 Script::Script (Rts2Block * _master):Rts2Object ()
 {
+	defaultDevice[0] = '\0';
 	master = _master;
 	executedCount = 0;
 	lineOffset = 0;
@@ -124,6 +125,7 @@ Script::Script (Rts2Block * _master):Rts2Object ()
 
 Script::Script (const char *script):Rts2Object ()
 {
+	defaultDevice[0] = '\0';
 	master = NULL;
 	executedCount = 0;
 	lineOffset = 0;
