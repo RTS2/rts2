@@ -38,8 +38,8 @@ ElementGuiding::ElementGuiding (Script * in_script, float init_exposure, int in_
 	ra_mult = 1;
 	dec_mult = 1;
 
-	last_ra = nan ("f");
-	last_dec = nan ("f");
+	last_ra = rts2_nan ("f");
+	last_dec = rts2_nan ("f");
 
 	min_change = 0.001;
 	Rts2Config::instance ()->getDouble ("guiding", "minchange", min_change);

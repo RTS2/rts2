@@ -732,7 +732,7 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 			strncpy (num, start, cmdBufTop - start);
 			num[cmdBufTop - start] = '\0';
 			// units..
-			double multi = nan("f");
+			double multi = rts2_nan("f");
 			if (*cmdBufTop == 'm')
 				multi = 1/60.0;
 			else if (*cmdBufTop == 's')
