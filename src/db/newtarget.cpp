@@ -61,7 +61,7 @@ Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_arg
 	n_tar_name = NULL;
 	n_tar_ra_dec = NULL;
 
-	radius = nan ("f");
+	radius = rts2_nan ("f");
 
 	addOption ('a', NULL, 0, "autogenerate target IDs");
 	addOption ('m', NULL, 0, "try to match target name and RA DEC");
