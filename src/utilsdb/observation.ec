@@ -106,14 +106,14 @@ int Observation::load ()
 	if (tar_id > 0)
 		return 0;
 
-	obs_ra = nan ("f");
-	obs_dec = nan ("f");
-	obs_alt = nan ("f");
-	obs_az = nan ("f");
-	obs_slew = nan ("f");
-	obs_start = nan ("f");
+	obs_ra = rts2_nan ("f");
+	obs_dec = rts2_nan ("f");
+	obs_alt = rts2_nan ("f");
+	obs_az = rts2_nan ("f");
+	obs_slew = rts2_nan ("f");
+	obs_start = rts2_nan ("f");
 	obs_state = 0;
-	obs_end = nan ("f");
+	obs_end = rts2_nan ("f");
 
 	EXEC SQL
 		SELECT
@@ -531,7 +531,7 @@ Observation::getPrevSeparation ()
 	int ret;
 	ret = getPrevPosition (prevEqu, prevHrz);
 	if (ret)
-		return nan("f");
+		return rts2_nan ("f");
 
 	getEqu (currEqu);
 
@@ -547,7 +547,7 @@ Observation::getSlewSpeed ()
 		|| isnan(obs_slew)
 		|| isnan (obs_start)
 		|| (obs_start - obs_slew) <= 0)
-		return nan("f");
+		return rts2_nan ("f");
 	return prevSep / (obs_start - obs_slew);
 }
 
@@ -556,7 +556,7 @@ double
 Observation::getSlewTime ()
 {
 	if (isnan (obs_slew) || isnan (obs_start))
-		return nan ("f");
+		return rts2_nan ("f");
 	return obs_start - obs_slew;
 }
 
@@ -565,7 +565,7 @@ double
 Observation::getObsTime ()
 {
 	if (isnan (obs_start) || isnan (obs_end))
-		return nan ("f");
+		return rts2_nan ("f");
 	return obs_end - obs_slew;
 }
 

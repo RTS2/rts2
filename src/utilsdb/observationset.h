@@ -82,7 +82,7 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		double getJDStart ()
 		{
 			if (size () == 0)
-				return nan("f");
+				return rts2_nan("f");
 			return (*(end () - 1)).getObsJDStart ();
 		}
 
@@ -94,7 +94,7 @@ class ObservationSet:public std::vector <Observation>, public TimeLog
 		double getJDEnd ()
 		{
 			if (size () == 0)
-				return nan("f");
+				return rts2_nan("f");
 			return (*(begin ())).getObsJDEnd ();
 		}
 

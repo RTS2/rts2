@@ -100,9 +100,9 @@ void dirToEqu (vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_eq
 TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs)
 {
 	augerPriorityTimeout = in_augerPriorityTimeout;
-	cor.x = nan ("f");
-	cor.y = nan ("f");
-	cor.z = nan ("f");
+	cor.x = rts2_nan ("f");
+	cor.y = rts2_nan ("f");
+	cor.z = rts2_nan ("f");
 }
 
 TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)

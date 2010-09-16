@@ -1013,15 +1013,15 @@ int TargetSwiftFOV::load ()
 	if (swiftId < 0)
 	{
 		setTargetName ("Cannot find any Swift FOV");
-		swiftFovCenter.ra = nan ("f");
-		swiftFovCenter.dec = nan ("f");
+		swiftFovCenter.ra = rts2_nan ("f");
+		swiftFovCenter.dec = rts2_nan ("f");
 		swiftTimeStart = 0;
 		swiftTimeEnd = 0;
-		swiftRoll = nan ("f");
+		swiftRoll = rts2_nan ("f");
 		return 0;
 	}
 	if (d_swift_roll_null)
-		swiftRoll = nan ("f");
+		swiftRoll = rts2_nan ("f");
 	else
 		swiftRoll = d_swift_roll;
 	delete[] swiftName;
@@ -1286,8 +1286,8 @@ int TargetIntegralFOV::load ()
 	if (integralId < 0)
 	{
 		setTargetName ("Cannot find any INTEGRAL FOV");
-		integralFovCenter.ra = nan ("f");
-		integralFovCenter.dec = nan ("f");
+		integralFovCenter.ra = rts2_nan ("f");
+		integralFovCenter.dec = rts2_nan ("f");
 		integralTimeStart = 0;
 		return 0;
 	}

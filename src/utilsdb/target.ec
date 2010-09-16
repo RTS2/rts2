@@ -297,7 +297,7 @@ Target::Target ()
 	observationStart = -1;
 
 	tar_priority = 0;
-	tar_bonus = nan ("f");
+	tar_bonus = rts2_nan ("f");
 	tar_bonus_time = 0;
 	tar_next_observable = 0;
 	bool n_tar_enabled = false;
@@ -1365,7 +1365,7 @@ double Target::getFirstObs ()
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return nan("f");
+		return rts2_nan("f");
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
@@ -1389,7 +1389,7 @@ double Target::getLastObs ()
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return nan("f");
+		return rts2_nan("f");
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
