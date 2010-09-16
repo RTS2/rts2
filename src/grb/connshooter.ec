@@ -635,7 +635,7 @@ int ConnShooter::receive (fd_set * set)
 		nbuf[nbuf_end] = '\0';
 		// find '\n', mark it, copy buffer, mark next one,..
 		char *it = nbuf;
-		last_auger_date = nan ("f");
+		last_auger_date = rts2_nan ("f");
 		while (*it)
 		{
 			if (*it == '\n')
