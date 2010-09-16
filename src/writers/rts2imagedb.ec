@@ -491,8 +491,8 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, cha
 	img_err = in_img_err;
 
 	// TODO fill that..
-	pos_astr.ra = nan ("f");
-	pos_astr.dec = nan ("f");
+	pos_astr.ra = rts2_nan ("f");
+	pos_astr.dec = rts2_nan ("f");
 	processBitfiedl = in_process_bitfield;
 
 	setFilter (in_img_filter);
