@@ -122,8 +122,8 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target_set = NULL;
 	op = OP_NONE;
-	new_priority = nan ("f");
-	new_bonus = nan ("f");
+	new_priority = rts2_nan ("f");
+	new_bonus = rts2_nan ("f");
 
 	camera = NULL;
 

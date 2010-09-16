@@ -66,9 +66,9 @@ TPM::TPM (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
 	selFlip = -1;
-	ra_step = nan ("f");
+	ra_step = rts2_nan ("f");
 	ra_offset = 0;
-	dec_step = nan ("f");
+	dec_step = rts2_nan ("f");
 	dec_offset = 0;
 	addOption ('t', NULL, 1, "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
 	addOption ('f', NULL, 1, "select images with given flip (0 or 1)");
