@@ -67,7 +67,7 @@ double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
 
 void Rts2Image::initData ()
 {
-	exposureLength = nan ("f");
+	exposureLength = rts2_nan ("f");
 
 	loadHeader = false;
 	verbose = true;
@@ -97,22 +97,22 @@ void Rts2Image::initData ()
 	getFailed = 0;
 	expNum = 1;
 
-	pos_astr.ra = nan ("f");
-	pos_astr.dec = nan ("f");
-	ra_err = nan ("f");
-	dec_err = nan ("f");
-	img_err = nan ("f");
+	pos_astr.ra = rts2_nan ("f");
+	pos_astr.dec = rts2_nan ("f");
+	ra_err = rts2_nan ("f");
+	dec_err = rts2_nan ("f");
+	img_err = rts2_nan ("f");
 
 	isAcquiring = 0;
 
-	total_rotang = nan ("f");
+	total_rotang = rts2_nan ("f");
 
 	shutter = SHUT_UNKNOW;
 
 	flags = 0;
 
-	xoa = nan ("f");
-	yoa = nan ("f");
+	xoa = rts2_nan ("f");
+	yoa = rts2_nan ("f");
 
 	mnt_flip = 0;
 }

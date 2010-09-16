@@ -32,8 +32,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 
 	xoa = 0;
 	yoa = 0;
-	ter_xoa = nan ("f");
-	ter_yoa = nan ("f");
+	ter_xoa = rts2_nan ("f");
+	ter_yoa = rts2_nan ("f");
 
 	config->getDouble (connection->getName (), "xoa", xoa);
 	config->getDouble (connection->getName (), "yoa", yoa);
