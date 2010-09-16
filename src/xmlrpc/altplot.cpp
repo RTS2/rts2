@@ -48,7 +48,7 @@ Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::TargetSet *ta
 	return image;
 }
 
-Magick::Image* AltPlot::getPlot (double _from, double _to, Target *target, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
+Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::Target *target, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
 {
 	preparePlot (_from, _to, _image, _plotType);
 	if (shadow)
@@ -126,7 +126,7 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 
 }
 
-void AltPlot::plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow)
+void AltPlot::plotTarget (rts2db::Target *tar, Magick::Color col, int linewidth, int shadow)
 {
 	// reset stroke pattern
 	image->strokePattern (Magick::Image (Magick::Geometry (1,1), col));

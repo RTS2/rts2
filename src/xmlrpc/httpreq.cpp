@@ -221,7 +221,7 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 	conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
 	if (conn)
 	{
-		Target *tar;
+		rts2db::Target *tar;
 		val = conn->getValue ("current");
 		if (val && val->getValueInteger () >= 0)
 		{
