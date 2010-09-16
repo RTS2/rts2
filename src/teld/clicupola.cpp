@@ -60,7 +60,7 @@ void ClientCupola::postEvent (Rts2Event * event)
 		case EVENT_CUP_START_SYNC:
 			dome_position = (struct ln_equ_posn *) event->getArg ();
 			connection->queCommand (new rts2core::Rts2CommandCupolaMove (this, dome_position->ra, dome_position->dec));
-			dome_position->ra = nan ("f");
+			dome_position->ra = rts2_nan ("f");
 			break;
 		case EVENT_CUP_NOT_MOVE:
 			connection->queCommand (new rts2core::Rts2CommandCupolaNotMove (this));
