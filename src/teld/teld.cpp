@@ -134,9 +134,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
 
-	targetDistance->setValueDouble (nan("f"));
-	targetStarted->setValueDouble (nan("f"));
-	targetReached->setValueDouble (nan("f"));
+	targetDistance->setValueDouble (rts2_nan("f"));
+	targetStarted->setValueDouble (rts2_nan("f"));
+	targetReached->setValueDouble (rts2_nan("f"));
 
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
