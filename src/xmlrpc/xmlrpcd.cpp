@@ -1410,7 +1410,7 @@ class ListImages: public SessionMethod
 			for (rts2db::ImageSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
 				double eRa, eDec, eRad;
-				eRa = eDec = eRad = nan ("f");
+				eRa = eDec = eRad = rts2_nan ("f");
 				Rts2Image *image = *img_iter;
 				retVar["filename"] = image->getFileName ();
 				retVar["start"] = image->getExposureStart ();
