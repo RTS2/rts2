@@ -328,7 +328,7 @@ void TargetApp::setTempdisable ()
 	for (rts2db::TargetSet::iterator iter = target_set->begin (); iter != target_set->end (); iter++)
 	{
 		std::string cs;
-		Rts2Target *tar = iter->second;
+		rts2db::Target *tar = iter->second;
 		tar->getScript (camera, cs);
 		rts2script::Script script = rts2script::Script (cs.c_str ());
 		struct ln_equ_posn target_pos;
@@ -364,7 +364,7 @@ void TargetApp::setTempdisable ()
 			
 			std::ostringstream os;
 			script.prettyPrint (os, rts2script::PRINT_SCRIPT);
-			target_set->setTargetScript (camera, os.str ().c_str ());
+			tar->setScript (camera, os.str ().c_str ());
 		}
 		catch (rts2db::CameraMissingExcetion &ex)
 		{
