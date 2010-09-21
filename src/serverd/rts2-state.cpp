@@ -28,6 +28,9 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2centralstate.h"
 
+#define OPT_LAT      OPT_LOCAL + 230
+#define OPT_LONG     OPT_LOCAL + 231
+
 namespace rts2centrald
 {
 
@@ -170,14 +173,14 @@ int StateApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'a':
+		case OPT_LAT:
 			lat = atof (optarg);
+			break;
+		case OPT_LONG:
+			lng = atof (optarg);
 			break;
 		case 'c':
 			verbose = -1;
-			break;
-		case 'l':
-			lng = atof (optarg);
 			break;
 		case 't':
 			currTime = atoi (optarg);
@@ -186,6 +189,9 @@ int StateApp::processOption (int in_opt)
 				std::cerr << "Invalid time: " << optarg << std::endl;
 				return -1;
 			}
+			break;
+		case 'd':
+			parseDate (optarg, &currTime);
 			break;
 		case 'v':
 			verbose++;
@@ -210,10 +216,11 @@ StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 	time (&currTime);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
-	addOption ('a', "latitude", 1, "set latitude (overwrites config file)");
-	addOption ('l', "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
-	addOption ('c', "clear", 0,  "just print current state (one number) and exists");
-	addOption ('t', "time", 1, "set time (int unix time)");
+	addOption (OPT_LAT, "latitude", 1, "set latitude (overwrites config file)");
+	addOption (OPT_LONG, "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
+	addOption ('c', NULL, 0,  "just print current state (one number) and exists");
+	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
+	addOption ('t', NULL, 1, "print for given time (int unix time)");
 	addOption ('v', "verbose", 0, "be verbose");
 }
 
@@ -269,10 +276,9 @@ int StateApp::run ()
 	obs = Rts2Config::instance ()->getObserver ();
 
 	if (verbose > 0)
-		std::cout << "Position: " << LibnovaPos (obs)
-			<< " Time: " << LibnovaDate (&currTime) << std::endl;
+		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << LibnovaDate (&currTime) << std::endl;
 
-	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
+	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose > 0))
 	{
 		std::cerr << "Error getting next type" << std::endl;
 		return -1;
