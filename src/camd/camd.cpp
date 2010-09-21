@@ -752,7 +752,6 @@ void Camera::checkExposures ()
 		else
 		{
 			int expNum;
-			logStream (MESSAGE_DEBUG) << "camWaitExpose return " << ret << " quedExpNumber " << quedExpNumber->getValueInteger () << sendLog;
 			switch (ret)
 			{
 				case -3:
