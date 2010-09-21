@@ -11,11 +11,12 @@ To get SVN version, run:
 user@host:~$ svn co https://rts-2.svn.sf.net/svnroot/rts-2/apogee
 
 Apogee drivers are a bit hairy. But do not worry, you need only apogee_USB.so
-file. For this build, you will need libusb-dev package (apt-get install
-libusb-dev). After installing libusb-dev, run following commands:
+and apogee_NET.so libraries. For this build, you will need libusb-dev package
+(apt-get install libusb-dev). After installing libusb-dev, run following
+commands:
 
 user@host:~$ cd apogee
-user@host:~/apogee$ make apogee_USB.so
+user@host:~/apogee$ make apogee_USB.so apogee_NET.so
 
 Then you will need to run ./configure from rts2 with --with-alta option:
 
