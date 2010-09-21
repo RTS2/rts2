@@ -26,7 +26,9 @@
 #include <libnova/solar.h>
 #include <math.h>
 #include <stdio.h>
+#include <iostream>
 
+#include "libnova_cpp.h"
 #include "riseset.h"
 #include "status.h"
 
@@ -68,7 +70,7 @@ int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rs
 	return 0;
 }
 
-int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_type, int *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time)
+int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_type, int *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time, bool verbose)
 {
 	double jd_time = ln_get_julian_from_timet (start_time);
 	struct ln_rst_time rst, rst_naut;
@@ -76,6 +78,13 @@ int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_t
 	int sun_rs;
 
 	next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs, night_horizon, day_horizon);
+
+	if (verbose)
+	{
+		std::cout << "rise " << LibnovaDate (rst.rise) << " transit " << LibnovaDate (rst.transit) << " set " << LibnovaDate (rst.set) << std::endl
+			<< "nautical rise " << LibnovaDate (rst_naut.rise) << " transit " << LibnovaDate (rst_naut.transit) << " set " << LibnovaDate (rst_naut.set) << std::endl;
+
+	}
 
 	// jd_time < rst_naut.rise && jd_time < rst_naut.transit && jd_time < rst_naut.set
 	if (rst_naut.rise <= rst_naut.set)

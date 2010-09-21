@@ -113,8 +113,7 @@ void StateApp::printAltTable (std::ostream & _os, double jd_start, double h_star
 	for (i = h_start; i <= h_end; i += h_step, jd += h_step / 24.0)
 	{
 		ln_get_solar_equ_coords (jd, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd,
-			&hrz);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
 		_os << " " << std::setw (3) << hrz.alt;
 		_os3 << " " << std::setw (3) << hrz.az;
 	}
@@ -129,9 +128,7 @@ void StateApp::printAltTable (std::ostream & _os)
 {
 	double jd_start = ((int) JD) - 0.5;
 
-	_os
-		<< std::endl
-		<< "** SUN POSITION table from "
+	_os << std::endl << "** SUN POSITION table from "
 		<< LibnovaDate (jd_start) << " **" << std::endl << std::endl;
 
 	printAltTable (_os, jd_start, -1, 11);
@@ -148,24 +145,16 @@ void StateApp::printDayStates (std::ostream & _os)
 
 	while (curr_time < (currTime + 87000.0))
 	{
-		if (next_event
-			(Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
-			&next_type, &ev_time, night_horizon, day_horizon, eve_time,
-			mor_time))
+		if (next_event (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
 		{
 			std::cerr << "Error getting next type" << std::endl;
 			return;
 		}
 		if (curr_time == currTime)
 		{
-			_os
-				<< LibnovaDate (&currTime)
-				<< " " << Rts2CentralState (curr_type)
-				<< " (current)" << std::endl;
+			_os << LibnovaDate (&currTime) << " " << Rts2CentralState (curr_type) << " (current)" << std::endl;
 		}
-		_os
-			<< LibnovaDate (&ev_time)
-			<< " " << Rts2CentralState (next_type) << std::endl;
+		_os << LibnovaDate (&ev_time) << " " << Rts2CentralState (next_type) << std::endl;
 
 		curr_time = ev_time + 1;
 	}
@@ -280,14 +269,10 @@ int StateApp::run ()
 	obs = Rts2Config::instance ()->getObserver ();
 
 	if (verbose > 0)
-		std::cout
-			<< "Position: "
-			<< LibnovaPos (obs)
+		std::cout << "Position: " << LibnovaPos (obs)
 			<< " Time: " << LibnovaDate (&currTime) << std::endl;
 
-	if (next_event
-		(obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon,
-		day_horizon, eve_time, mor_time))
+	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
 	{
 		std::cerr << "Error getting next type" << std::endl;
 		return -1;
