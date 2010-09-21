@@ -115,7 +115,7 @@ class FWHM(rts2af.AFScript):
         cat.average('FWHM_IMAGE')
 
 if __name__ == '__main__':
-    FWHM(sys.argv[0]).run()
+    FWHM().run()
 
 
 

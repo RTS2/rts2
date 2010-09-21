@@ -122,75 +122,74 @@ class Configuration:
         self.filters=[]
         self.filtersInUse=[]
 
-        self.cp={}
+        self.cp={
+            ('basic', 'CONFIGURATION_FILE')                          : '/etc/rts2/autofocus/rts2-autofocus.cfg',
+            ('basic', 'BASE_DIRECTORY')                              : '/tmp',
+            ('basic', 'TEMP_DIRECTORY')                              : '/tmp',
+            ('basic', 'FILE_GLOB')                                   : '*fits',
+            ('basic', 'FITS_IN_BASE_DIRECTORY')                      : False,
+            ('basic', 'CCD_CAMERA')                                  : 'CD',
+            ('basic', 'CHECK_RTS2_CONFIGURATION')                    : False,
+    
+            ('filter properties', 'U')                               : '[0, U, 5074, -1500, 1500, 100, 40]',
+            ('filter properties', 'B')                               : '[1, B, 4712, -1500, 1500, 100, 30]',
+            ('filter properties', 'V')                               : '[2, V, 4678, -1500, 1500, 100, 20]',
+            ('filter properties', 'R')                               : '[4, R, 4700, -1500, 1500, 100, 20]',
+            ('filter properties', 'I')                               : '[4, I, 4700, -1500, 1500, 100, 20]',
+            ('filter properties', 'X')                               : '[5, X, 3270, -1500, 1500, 100, 10]',
+            ('filter properties', 'Y')                               : '[6, Y, 3446, -1500, 1500, 100, 10]',
+            ('filter properties', 'NOFILTER')                        : '[6, NOFILTER, 3446, -1500, 1500, 109, 19]',
+            
+            ('focuser properties', 'FOCUSER_RESOLUTION')             : 20,
+            ('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')   : 1501,
+            ('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')   : 6002,
+    
+            ('acceptance circle', 'CENTER_OFFSET_X')                 : 0.,
+            ('acceptance circle', 'CENTER_OFFSET_Y')                 : 0.,
+            ('acceptance circle', 'RADIUS')                          : 2000.,
+            
+            ('filters', 'filters')                                   : 'U:B:V:R:I:X:Y',
+            
+            ('DS9', 'DS9_REFERENCE')                                 : True,
+            ('DS9', 'DS9_MATCHED')                                   : True,
+            ('DS9', 'DS9_ALL')                                       : True,
+            ('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')                   : True,
+            ('DS9', 'DS9_REGION_FILE')                               : 'ds9-autofocus.reg',
+            
+            ('analysis', 'ANALYSIS_UPPER_LIMIT')                     : 1.e12,
+            ('analysis', 'ANALYSIS_LOWER_LIMIT')                     : 0.,
+            ('analysis', 'MINIMUM_OBJECTS')                          : 20,
+            ('analysis', 'MINIMUM_FOCUSER_POSITIONS')                : 5,
+            ('analysis', 'INCLUDE_AUTO_FOCUS_RUN')                   : False,
+            ('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')              : True,
+            ('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')               : True,
+            ('analysis', 'FIT_RESULT_FILE')                          : 'fit-autofocus.dat',
+            ('analysis', 'MATCHED_RATIO')                            : 0.1,
+            
+            ('fitting', 'FOCROOT')                                   : 'rts2-fit-focus',
+            
+            ('SExtractor', 'SEXPRG')                                 : 'sextractor 2>/dev/null',
+            ('SExtractor', 'SEXCFG')                                 : '/etc/rts2/autofocus/sex-autofocus.cfg',
+            ('SExtractor', 'SEXPARAM')                               : '/etc/rts2/autofocus/sex-autofocus.param',
+            ('SExtractor', 'SEXREFERENCE_PARAM')                     : '/etc/rts2/autofocus/sex-autofocus-reference.param',
+            ('SExtractor', 'OBJECT_SEPARATION')                      : 10.,
+            ('SExtractor', 'ELLIPTICITY')                            : .1,
+            ('SExtractor', 'ELLIPTICITY_REFERENCE')                  : .3,
+            ('SExtractor', 'SEXSKY_LIST')                            : 'sex-autofocus-assoc-sky.list',
+            ('SExtractor', 'SEXCATALOGUE')                           : 'sex-autofocus.cat',
+            ('SExtractor', 'SEX_TMP_CATALOGUE')                      : 'sex-autofocus-tmp.cat',
+            ('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')            : True,
+            
+            ('mode', 'TAKE_DATA')                                    : False,
+            ('mode', 'SET_FOCUS')                                    : True,
+            ('mode', 'CCD_BINNING')                                  : 0,
+            ('mode', 'AUTO_FOCUS')                                   : False,
+            ('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')                  : 10,
+            
+            ('rts2', 'RTS2_DEVICES')                                 : '/etc/rts2/devices'
+	}
 
         self.config = ConfigParser.RawConfigParser()
-        
-        self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/autofocus/rts2-autofocus.cfg'
-        
-        self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
-        self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
-        self.cp[('basic', 'FILE_GLOB')]= '*fits'
-        self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
-        self.cp[('basic', 'CCD_CAMERA')]= 'CD'
-        self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
-
-        self.cp[('filter properties', 'U')]= '[0, U, 5074, -1500, 1500, 100, 40]'
-        self.cp[('filter properties', 'B')]= '[1, B, 4712, -1500, 1500, 100, 30]'
-        self.cp[('filter properties', 'V')]= '[2, V, 4678, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'R')]= '[4, R, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'I')]= '[4, I, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'X')]= '[5, X, 3270, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'Y')]= '[6, Y, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'NOFILTER')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
-        
-        self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
-        self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
-        self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
-
-        self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
-        self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
-        self.cp[('acceptance circle', 'RADIUS')]= 2000.
-        
-        self.cp[('filters', 'filters')]= 'U:B:V:R:I:X:Y'
-        
-        self.cp[('DS9', 'DS9_REFERENCE')]= True
-        self.cp[('DS9', 'DS9_MATCHED')]= True
-        self.cp[('DS9', 'DS9_ALL')]= True
-        self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
-        self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-autofocus.reg'
-        
-        self.cp[('analysis', 'ANALYSIS_UPPER_LIMIT')]= 1.e12
-        self.cp[('analysis', 'ANALYSIS_LOWER_LIMIT')]= 0.
-        self.cp[('analysis', 'MINIMUM_OBJECTS')]= 20
-        self.cp[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
-        self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
-        self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
-        self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
-        self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
-        self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
-        
-        self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
-        
-        self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
-        self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/autofocus/sex-autofocus.cfg'
-        self.cp[('SExtractor', 'SEXPARAM')]= '/etc/rts2/autofocus/sex-autofocus.param'
-        self.cp[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/autofocus/sex-autofocus-reference.param'
-        self.cp[('SExtractor', 'OBJECT_SEPARATION')]= 10.
-        self.cp[('SExtractor', 'ELLIPTICITY')]= .1
-        self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
-        self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-autofocus-assoc-sky.list'
-        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex-autofocus.cat'
-        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
-        self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
-        
-        self.cp[('mode', 'TAKE_DATA')]= False
-        self.cp[('mode', 'SET_FOCUS')]= True
-        self.cp[('mode', 'CCD_BINNING')]= 0
-        self.cp[('mode', 'AUTO_FOCUS')]= False
-        self.cp[('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')]= 10
-        
-        self.cp[('rts2', 'RTS2_DEVICES')]= '/etc/rts2/devices'
         
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -437,12 +436,8 @@ class SXObject():
         print "=== %f %f" %  (self.x, self.y)
     
     def isValid(self):
-        if( self.objectNumber != None):
-            if( self.x != None):
-                if( self.y != None):
-                    if( self.fwhm != None):
-                        if( self.flux != None):
-                            return True
+        if (self.objectNumber != None and self.x != None and self.y != None and self.fwhm != None and self.flux != None):
+            return True
         return False
 
 
@@ -561,7 +556,7 @@ class Catalogue():
                         self.SExtractorParams.assoc.index(element.group(2))
                     except:
                         logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
-                        break
+			return False
             elif( data):
                 items= line.split()
                 sxObjectNumber= items[0] # NUMBER
@@ -579,11 +574,10 @@ class Catalogue():
             else:
                 logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
                 logger.error( 'Catalogue.readCatalogue: ' + line)
-                break
+		return False
 
-        else: # exhausted 
-            logger.error( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
-            self.isValid= True
+        logger.info('Catalogue.readCatalogue: catalogue for {0} read from {1}'.format(self.fitsHDU.fitsFileName, self.catalogueFileName))
+        self.isValid= True
 
         return self.isValid
 
@@ -780,8 +774,8 @@ class ReferenceCatalogue(Catalogue):
         #else:
         try:
             SXcat= open( self.skyList, 'r')
-        except:
-            logger.error("could not open file " + self.skyList + ", exiting")
+        except Exception (ex):
+            logger.error("could not open file {0}: {1}".format(self.skyList, ex))
             sys.exit(1) 
 
         self.lines= SXcat.readlines()
@@ -818,13 +812,12 @@ class ReferenceCatalogue(Catalogue):
 
                 self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX])) # position, bool is used for clean up (default True, True)
             else:
-                logger.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
-                logger.error( 'ReferenceCatalogue.readCatalogue: ' + line)
+                logger.error('ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
+                logger.error('ReferenceCatalogue.readCatalogue: ' + line)
                 break
 
-        else: # exhausted 
-            logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
-            self.isValid= True
+        logger.error('ReferenceCatalogue.readCatalogue: catalogue for file {0} created in {1}'.format(self.fitsHDU.fitsFileName, self.catalogueFileName))
+        self.isValid= True
 
         return self.isValid
 
