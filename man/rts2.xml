@@ -425,15 +425,29 @@
     </refsect2>
   </refsect1>  
   <refsect1>
-    <title>FITS FILES</title>
+    <title>GENERAL MANUAL PAGES</title>
     <para>
       <citerefentry>
         <refentrytitle>rts2.fitskeys</refentrytitle>
 	<manvolnum>5</manvolnum>
       </citerefentry>
     </para>
-    <title>DEVICES</title>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2.script</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+   <para>
+      <citerefentry>
+        <refentrytitle>rts2.target</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+  </refsect1>
 
+  <refsect1>
+    <title>DEVICES</title>
     <para>
       teld-*, camd-*, filterd-*, dome-*, focusd-*, mirrord-*
       <refsect2>
