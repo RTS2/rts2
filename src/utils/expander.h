@@ -1,6 +1,6 @@
 /* 
  * Expanding mechanism.
- * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -115,6 +115,11 @@ class Expander
 		int getNightMonth () { return nightDate.tm_mon + 1; }
 
 		int getNightDay () { return nightDate.tm_mday; }
+
+		/**
+		 * Retrieves formating parameters.
+		 */
+		void getFormating (const std::string &expression, std::string::iterator &iter, std::ostringstream &ret);
 };
 
 };
