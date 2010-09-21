@@ -43,9 +43,9 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdarg.h>
-#if USE_SYSLOG
+//#if USE_SYSLOG
 #include <syslog.h>
-#endif
+//#endif
 #include <math.h>
 
 #include "serial_vermes.h"
@@ -1037,9 +1037,17 @@ int start_bcr_comm()
 
   init_pos_detect_state(&pos_detect_state);
 
-  // create communication thread which talks to barcode readers
-  pthread_create(&bcr_sending_th_id, NULL, &bcr_sending_thread, NULL);
 
+
+  openlog ("rts2 threads", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+     
+  syslog (LOG_NOTICE, "Program started by User %d", getuid ());
+
+
+  // create communication thread which talks to barcode readers
+  int ret= pthread_create(&bcr_sending_th_id, NULL, &bcr_sending_thread, NULL);
+
+  syslog (LOG_NOTICE, "State was  %d", ret);
   return res;
 }
 

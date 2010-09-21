@@ -1541,7 +1541,7 @@ APGTO::startResync ()
   
   lastMoveRa = fmod( getTelTargetRa () + 360., 360.);
   lastMoveDec = fmod( getTelTargetDec (), 90.);
-  
+
   ret = tel_slew_to (lastMoveRa, lastMoveDec);
   if (ret)
     return -1;
@@ -1567,6 +1567,7 @@ void APGTO::startCupolaSync ()
     t_equ.dec= target_equ.dec + 180. ;
     postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
   }
+  logStream (MESSAGE_INFO) << "APGTO::startCupolaSync sync cupola" << sendLog;
 }
 
 void APGTO::notMoveCupola ()
@@ -2105,7 +2106,7 @@ APGTO::info ()
 	  if( flitime) {
 	    if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
 	      if(( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) < 0.) {
-		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out"<< sendLog;
+		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out, flitime: " <<flitime->getValueDouble() << sendLog;
 		if( (abortAnyMotion () !=0)) {
 		  logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
 		  return -1;

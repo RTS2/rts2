@@ -917,8 +917,14 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
+
 	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
 	pos.dec = oriRaDec->getDec () + offsRaDec->getDec ();
+
+	logStream (MESSAGE_INFO) << "wildi                  wcorrRaDec->getRa " << wcorrRaDec->getRa () << " dec " << wcorrRaDec->getRa () << sendLog ;
+	logStream (MESSAGE_INFO) << "wildi                   corrRaDec->getRa " << corrRaDec->getRa () << " dec " << corrRaDec->getRa () << sendLog ;
+	logStream (MESSAGE_INFO) << "wildi first apply offset oriRaDec->getRa " << oriRaDec->getRa () << " dec " << offsRaDec->getRa () << sendLog ;
+	logStream (MESSAGE_INFO) << "wildi result                             " << pos.ra << " dec " << pos.dec << sendLog ;
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
@@ -933,12 +939,19 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
+	logStream (MESSAGE_INFO) << "wildi set target pos " << tarRaDec->getRa () << " dec " <<tarRaDec->getRa () << sendLog ;
+	logStream (MESSAGE_INFO) << "wildi result                             " << pos.ra << " dec " << pos.dec << sendLog ;
+
 
 	// calculate target after corrections
 	pos.ra = ln_range_degrees (pos.ra - corrRaDec->getRa ());
 	pos.dec = pos.dec - corrRaDec->getDec ();
+	logStream (MESSAGE_INFO) << "wildi calculate target after corrections pos.ra " << pos.ra << " dec " << pos.dec << sendLog ;
+	
+
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
+
 
 	moveInfoCount = 0;
 
@@ -1012,6 +1025,9 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
 		LibnovaDegDist c_dec (corrRaDec->getDec ());
+
+		
+		logStream (MESSAGE_INFO) << "wildi corrRaDec->getRa "<< corrRaDec->getRa () << " corrRaDec->getDec " << corrRaDec->getDec () << sendLog ;
 
 		logStream (MESSAGE_INFO) << "correcting to " << syncTo
 			<< " from " << syncFrom
@@ -1220,8 +1236,14 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			wCorrImgId->setValueInteger (img_id);
 			sendValueAll (wCorrImgId);
 
-			if (pos_err < smallCorrection->getValueDouble ())
-				return startResyncMove (conn, true);
+			if (pos_err < smallCorrection->getValueDouble ()) {
+
+			  logStream (MESSAGE_ERROR) << "NOT correcting pos_err" << pos_err<< sendLog;
+			  conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction debugging phase");
+
+			  return -1;
+			  //	return startResyncMove (conn, true);
+			}
 			sendValueAll (wcorrRaDec);
 			// else set BOP_EXPOSURE, and wait for result of statusUpdate call
 			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for correction");
