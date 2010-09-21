@@ -1,6 +1,6 @@
 /* 
  * Extends libnova by calculating next riseset event, not the one occuring today.
- * Copyright (C) 2003 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,10 +30,7 @@
 #include "riseset.h"
 #include "status.h"
 
-int
-next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-struct ln_rst_time *rst_naut, int *sun_rs, double night_horizon,
-double day_horizon)
+int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst, struct ln_rst_time *rst_naut, int *sun_rs, double night_horizon, double day_horizon)
 {
 	double t_jd = jd - 1;
 	int sun_naut;
@@ -45,8 +42,7 @@ double day_horizon)
 	do
 	{
 		struct ln_rst_time t_rst;
-		sun_naut =
-			ln_get_solar_rst_horizon (t_jd, observer, night_horizon, &t_rst);
+		sun_naut = ln_get_solar_rst_horizon (t_jd, observer, night_horizon, &t_rst);
 		if (!rst_naut->rise && jd < t_rst.rise)
 			rst_naut->rise = t_rst.rise;
 		if (!rst_naut->transit && jd < t_rst.transit)
@@ -72,19 +68,14 @@ double day_horizon)
 	return 0;
 }
 
-
-int
-next_event (struct ln_lnlat_posn *observer, time_t * start_time,
-int *curr_type, int *type, time_t * ev_time, double night_horizon,
-double day_horizon, int in_eve_time, int in_mor_time)
+int next_event (struct ln_lnlat_posn *observer, time_t * start_time, int *curr_type, int *type, time_t * ev_time, double night_horizon, double day_horizon, int in_eve_time, int in_mor_time)
 {
 	double jd_time = ln_get_julian_from_timet (start_time);
 	struct ln_rst_time rst, rst_naut;
 
 	int sun_rs;
 
-	next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs, night_horizon,
-		day_horizon);
+	next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs, night_horizon, day_horizon);
 
 	// jd_time < rst_naut.rise && jd_time < rst_naut.transit && jd_time < rst_naut.set
 	if (rst_naut.rise <= rst_naut.set)
@@ -111,8 +102,7 @@ double day_horizon, int in_eve_time, int in_mor_time)
 				{
 					*curr_type = SERVERD_MORNING;
 					*type = SERVERD_DAY;
-					ln_get_timet_from_julian (rst.rise + mor_time - 1.0,
-						ev_time);
+					ln_get_timet_from_julian (rst.rise + mor_time - 1.0, ev_time);
 				}
 				else
 				{
