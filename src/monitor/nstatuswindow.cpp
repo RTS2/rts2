@@ -19,6 +19,7 @@
 
 #include "nmonitor.h"
 #include "nstatuswindow.h"
+#include "../utils/rts2config.h"
 
 using namespace rts2ncurses;
 
@@ -51,7 +52,15 @@ void NStatusWindow::draw ()
 		mvwprintw (window, 0, x + 1, "| F9 menu F10 exit |");
 
 	strftime (dateBuf, 20, "%Y-%m-%d %H:%M:%S", gmtime (&now));
-	mvwprintw (window, 0, COLS - 19, "%19s", dateBuf);
+	mvwprintw (window, 0, COLS - 20, "|%19s", dateBuf);
+	if (COLS > 40)
+	{
+		double JD = ln_get_julian_from_sys ();
+		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + Rts2Config::instance ()->getObserver ()->lng;
+		struct ln_hms hms;
+		ln_deg_to_hms (lst, &hms);
+		mvwprintw (window, 0, COLS - 33, "|LST %02i:%02i:%02i", hms.hours, hms.minutes, (int) hms.seconds);
+	}
 	wcolor_set (window, CLR_DEFAULT, NULL);
 
 	winrefresh ();
