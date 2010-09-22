@@ -74,8 +74,8 @@ TPS534::TPS534SkyTemperatureCorrection( double sky, double ambient, double *cor)
 int
 TPS534::TPS534GetSkyIRTemperature ()
 {
-	int ret;
-	int value ;
+  //	int ret;
+	int value=0 ;
  
 	tempSky->setValueDouble ((double) value/100.);
 
@@ -84,10 +84,9 @@ TPS534::TPS534GetSkyIRTemperature ()
 int
 TPS534::TPS534GetIRSensorTemperature ()
 {
-	int ret;
-	char buf[51];
+  //	int ret;
+  //	char buf[51];
 	int value ;
-        int x ;
  
 	tempIRSensor->setValueDouble ((double) value/100.);
 
@@ -127,8 +126,8 @@ TPS534::info ()
 {
 // These values should be made available for setting if required
 
-    double cor[]= {COR_0, COR_1, COR_2, COR_3, COR_4} ;
-    double polling_time= TPS534_POLLING_TIME;
+//    double cor[]= {COR_0, COR_1, COR_2, COR_3, COR_4} ;
+//    double polling_time= TPS534_POLLING_TIME;
     int ret;
 
     ret = TPS534GetSkyIRTemperature ();
