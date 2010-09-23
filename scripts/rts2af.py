@@ -595,9 +595,9 @@ class Catalogue():
         for itentifier in self.SExtractorParams.identifiersAssoc:
             if(((sxObjectNumber, itentifier)) in self.catalogue):
                 if(verbose):
-                    print "printObject: object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
+                    print "printObject: object number {0} identifier {1} value {2} ".format(sxObjectNumber,itentifier,self.catalogue[(sxObjectNumber, itentifier)])
             else:
-                logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error("Catalogue.printObject: object number {0} for >{1}< not found, breaking".format(sxObjectNumber, itentifier))
                 break
         else:
 #                logger.error( "Catalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
@@ -607,7 +607,7 @@ class Catalogue():
 
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
+            logger.error("Catalogue.removeSXObject: reference Object number {0} for >{1}< not found in sxObjects".format(sxObjectNumber,itentifier))
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
