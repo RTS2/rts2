@@ -298,6 +298,14 @@ void TargetSet::setTargetProgramName (const char *program)
 	}
 }
 
+void TargetSet::deleteTargets ()
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		(*iter).second->deleteTarget ();
+	}
+}
+
 void TargetSet::setConstraints (Constraints &cons)
 {
 	for (iterator iter = begin (); iter != end (); iter++)

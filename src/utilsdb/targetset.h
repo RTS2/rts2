@@ -165,6 +165,11 @@ class TargetSet:public std::map <int, Target * >
 		void setTargetProgramName (const char *program);
 
 		/**
+		 * Delete targets from database.
+		 */
+		void deleteTargets ();
+
+		/**
 		 * Set targets constraints.
 		 *
 		 * @throw  rts2core::Error if output file cannot be created.

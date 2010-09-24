@@ -101,6 +101,9 @@
         <arg choice="plain"><option>--program <replaceable>program name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>--delete-targets</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-N</option></arg>
       </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
@@ -252,6 +255,14 @@
         <listitem>
           <para>
 	    Set target(s) program name.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--delete-targets</option></term>
+        <listitem>
+          <para>
+	    Delete target(s) from database.
 	  </para>
 	</listitem>
       </varlistentry>

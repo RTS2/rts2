@@ -131,6 +131,11 @@ class Target:public Rts2Target
 		virtual int save (bool overwrite);
 		virtual int save (bool overwrite, int tar_id);
 
+		/**
+		 * Delete target and all associated entries from database.
+		 */
+		void deleteTarget ();
+
 		/** 
 		 * Return script for target action.
 		 *

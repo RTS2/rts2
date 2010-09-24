@@ -435,6 +435,21 @@ int Target::save (bool overwrite)
 	return save (overwrite, db_new_id);
 }
 
+void Target::deleteTarget ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_tar_id = getTargetID ();
+	int d_ret;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT delete_target(:d_tar_id) INTO :d_ret;
+	if (sqlca.sqlcode)
+	{
+		throw SqlError ();
+	}
+	EXEC SQL COMMIT;
+}
+
 int Target::save (bool overwrite, int tar_id)
 {
 	// first, try an update..

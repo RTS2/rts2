@@ -49,6 +49,7 @@
 
 #define OP_PI_NAME          0x2000
 #define OP_PROGRAM_NAME     0x4000
+#define OP_DELETE           0x8000
 
 #define OPT_OBSERVE_START   OPT_LOCAL + 831
 #define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
@@ -57,6 +58,7 @@
 #define OPT_AIRMASS         OPT_LOCAL + 835
 #define OPT_PI_NAME         OPT_LOCAL + 838
 #define OPT_PROGRAM_NAME    OPT_LOCAL + 839
+#define OPT_DELETE          OPT_LOCAL + 840
 
 class CamScript
 {
@@ -151,6 +153,8 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	addOption (OPT_TEMPDISABLE, "tempdisable", 1, "change number of seconds for which target will be disabled after script execution");
 
 	addOption (OPT_AIRMASS, "airmass", 1, "set airmass constraint for the target");
+
+	addOption (OPT_DELETE, "delete-targets", 0, "delete targets and associated entries (observations, images) from the database");
 }
 
 TargetApp::~TargetApp ()
@@ -238,6 +242,9 @@ int TargetApp::processOption (int in_opt)
 		case OPT_PROGRAM_NAME:
 			program = optarg;
 			op |= OP_PROGRAM_NAME;
+			break;
+		case OPT_DELETE:
+			op |= OP_DELETE;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -382,6 +389,11 @@ int TargetApp::doProcessing ()
 	}
 	target_set = new rts2db::TargetSet ();
 	target_set->load (tar_names);
+	if (op & OP_DELETE)
+	{
+		target_set->deleteTargets ();
+		return 0;
+	}
 	if ((op & OP_MASK_EN) == OP_ENABLE)
 	{
 		target_set->setTargetEnabled (true, true);
