@@ -921,11 +921,6 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
 	pos.dec = oriRaDec->getDec () + offsRaDec->getDec ();
 
-	logStream (MESSAGE_INFO) << "wildi                  wcorrRaDec->getRa " << wcorrRaDec->getRa () << " dec " << wcorrRaDec->getRa () << sendLog ;
-	logStream (MESSAGE_INFO) << "wildi                   corrRaDec->getRa " << corrRaDec->getRa () << " dec " << corrRaDec->getRa () << sendLog ;
-	logStream (MESSAGE_INFO) << "wildi first apply offset oriRaDec->getRa " << oriRaDec->getRa () << " dec " << offsRaDec->getRa () << sendLog ;
-	logStream (MESSAGE_INFO) << "wildi result                             " << pos.ra << " dec " << pos.dec << sendLog ;
-
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
 
@@ -939,15 +934,9 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
-	logStream (MESSAGE_INFO) << "wildi set target pos " << tarRaDec->getRa () << " dec " <<tarRaDec->getRa () << sendLog ;
-	logStream (MESSAGE_INFO) << "wildi result                             " << pos.ra << " dec " << pos.dec << sendLog ;
-
-
 	// calculate target after corrections
 	pos.ra = ln_range_degrees (pos.ra - corrRaDec->getRa ());
 	pos.dec = pos.dec - corrRaDec->getDec ();
-	logStream (MESSAGE_INFO) << "wildi calculate target after corrections pos.ra " << pos.ra << " dec " << pos.dec << sendLog ;
-	
 
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
@@ -1025,9 +1014,6 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
 		LibnovaDegDist c_dec (corrRaDec->getDec ());
-
-		
-		logStream (MESSAGE_INFO) << "wildi corrRaDec->getRa "<< corrRaDec->getRa () << " corrRaDec->getDec " << corrRaDec->getDec () << sendLog ;
 
 		logStream (MESSAGE_INFO) << "correcting to " << syncTo
 			<< " from " << syncFrom
