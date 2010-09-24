@@ -256,8 +256,6 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 
 	airmassScale = 750.0;
 
-	tar_pi_id = tar_program_id = -1;
-
 	constraintsLoaded = CONSTRAINTS_NONE;
 	
 	constraintFile = NULL;
@@ -288,8 +286,6 @@ Target::Target ()
 	startCalledNum = 0;
 
 	airmassScale = 750.0;
-
-	tar_pi_id = tar_program_id = -1;
 
 	constraintsLoaded = CONSTRAINTS_NONE;
 
@@ -869,102 +865,30 @@ void Target::setScript (const char *device_name, const char *buf)
 
 std::string Target::getPIName ()
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-	int d_tar_id = getTargetID ();
-	int d_pi_id;
-	VARCHAR d_pi_name[251];
-	int di_pi_id;
-	int di_pi_name;
-	EXEC SQL END DECLARE SECTION;
-
-	if (tar_pi_id >= 0)
-		return pi_name;
-	EXEC SQL SELECT pi_id INTO :d_pi_id :di_pi_id FROM targets WHERE tar_id = :d_tar_id;
-	if (sqlca.sqlcode)
-		throw SqlError ();
-	if (di_pi_id)
-	{
-		tar_pi_id = 0;
-		pi_name = std::string ("");
-		return pi_name;
-	}
-	tar_pi_id = d_pi_id;
-	EXEC SQL SELECT pi_name INTO :d_pi_name :di_pi_name FROM pi WHERE pi_id = :d_pi_id;
-	if (sqlca.sqlcode)
-		throw SqlError ();
-	d_pi_name.arr[d_pi_name.len] = '\0';
-	pi_name = std::string (d_pi_name.arr);
-	return pi_name;
+	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PI);
+	if (l.size () != 1)
+		return std::string ("not set");
+	return *(l.begin ());
 }
 
-void Target::setPIID (int pi_id)
+void Target::setPIName (const char *name)
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-	int d_tar_id = getTargetID ();
-	int d_pi_id = pi_id;
-	EXEC SQL END DECLARE SECTION;
-
-	EXEC SQL UPDATE
-		targets
-	SET
-		pi_id = :d_pi_id
-	WHERE
-		tar_id = :d_tar_id;
-	EXEC SQL COMMIT;
-	if (sqlca.sqlcode)
-	{
-		throw SqlError ();
-	}
+	labels.deleteTargetLabels (getTargetID (), LABEL_PI);
+ 	labels.addLabel (getTargetID (), name, LABEL_PI, true);
 }
 
 std::string Target::getProgramName ()
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-	int d_tar_id = getTargetID ();
-	int d_program_id;
-	VARCHAR d_program_name[251];
-	int di_program_id;
-	int di_program_name;
-	EXEC SQL END DECLARE SECTION;
-
-	if (tar_program_id >= 0)
-		return program_name;
-	EXEC SQL SELECT program_id INTO :d_program_id :di_program_id FROM targets WHERE tar_id = :d_tar_id;
-	if (sqlca.sqlcode)
-		throw SqlError ();
-	if (di_program_id)
-	{
-		tar_program_id = 0;
-		program_name = std::string ("");
-		return program_name;
-	}
-	tar_program_id = d_program_id;
-	EXEC SQL SELECT program_name INTO :d_program_name :di_program_name FROM programs WHERE program_id = :d_program_id;
-	if (sqlca.sqlcode)
-		throw SqlError ();
-	d_program_name.arr[d_program_name.len] = '\0';
-	program_name = std::string (d_program_name.arr);
-	return program_name;
+	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PROGRAM);
+	if (l.size () != 1)
+		return std::string ("not set");
+	return *(l.begin ());
 }
 
-void Target::setProgramID (int program_id)
+void Target::setProgramName (const char *program)
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-	int d_tar_id = getTargetID ();
-	int d_program_id = program_id;
-	EXEC SQL END DECLARE SECTION;
-
-	EXEC SQL UPDATE
-		targets
-	SET
-		program_id = :d_program_id
-	WHERE
-		tar_id = :d_tar_id;
-	EXEC SQL COMMIT;
-	if (sqlca.sqlcode)
-	{
-		throw SqlError ();
-	}
+	labels.deleteTargetLabels (getTargetID (), LABEL_PROGRAM);
+ 	labels.addLabel (getTargetID (), program, LABEL_PROGRAM, true);
 }
 
 void Target::setConstraints (Constraints &cons)
@@ -1897,8 +1821,6 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<const char *> ("TYPE", tar_type)
 		<< InfoVal<std::string> ("PI", getPIName ())
 		<< InfoVal<std::string> ("PROGRAM", getProgramName ())
-		<< InfoVal<int> ("PI ID", tar_pi_id)
-		<< InfoVal<int> ("PROGRAM ID", tar_program_id)
 		<< InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
 		<< InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
 		<< std::endl;

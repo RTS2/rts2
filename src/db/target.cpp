@@ -47,11 +47,16 @@
 #define OP_TEMPDISABLE      0x0800
 #define OP_CONSTRAINTS      0x1000
 
+#define OP_PI_NAME          0x2000
+#define OP_PROGRAM_NAME     0x4000
+
 #define OPT_OBSERVE_START   OPT_LOCAL + 831
 #define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
 #define OPT_OBSERVE_END     OPT_LOCAL + 833
 #define OPT_TEMPDISABLE     OPT_LOCAL + 834
 #define OPT_AIRMASS         OPT_LOCAL + 835
+#define OPT_PI_NAME         OPT_LOCAL + 838
+#define OPT_PROGRAM_NAME    OPT_LOCAL + 839
 
 class CamScript
 {
@@ -108,6 +113,9 @@ class TargetApp:public Rts2AppDb
 
 		// constraints
 		rts2db::Constraints constraints;
+
+		const char *pi;
+		const char *program;
 };
 
 TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -130,6 +138,10 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	addOption ('o', NULL, 0, "clear target(s) next observable time");
 	addOption ('c', NULL, 1, "next script will be set for the given camera");
 	addOption ('s', NULL, 1, "set script for target(s) and camera, specified with -c");
+
+	addOption (OPT_PI_NAME, "pi", 1, "set PI name");
+	addOption (OPT_PROGRAM_NAME, "program", 1, "set program name");
+
 	addOption ('N', NULL, 0, "do not pretty print");
 
 	addOption (OPT_OBSERVE_SLEW, "slew", 0, "mark telescope slewing to observation. Return observation ID");
@@ -218,6 +230,14 @@ int TargetApp::processOption (int in_opt)
 		case OPT_AIRMASS:
 			parseInterval (CONSTRAINT_AIRMASS, optarg);
 			op |= OP_CONSTRAINTS;
+			break;
+		case OPT_PI_NAME:
+			pi = optarg;
+			op |= OP_PI_NAME;
+			break;
+		case OPT_PROGRAM_NAME:
+			program = optarg;
+			op |= OP_PROGRAM_NAME;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -447,6 +467,14 @@ int TargetApp::doProcessing ()
 		std::cout << tar->getObsId () << std::endl;
 		tar->setObsId (-1);
 		return 0;
+	}
+	if (op & OP_PI_NAME)
+	{
+		target_set->setTargetPIName (pi);
+	}
+	if (op & OP_PROGRAM_NAME)
+	{
+		target_set->setTargetProgramName (program);
 	}
 	if (op == OP_NONE)
 	{

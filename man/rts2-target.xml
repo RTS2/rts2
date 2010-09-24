@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.2</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -93,6 +93,12 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-s <replaceable>script</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--pi <replaceable>PI name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--program <replaceable>program name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-N</option></arg>
@@ -234,6 +240,22 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--pi <replaceable class="parameter">PI name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set target(s) PI name.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--program <replaceable class="parameter">program name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set target(s) program name.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-N</option></term>
         <listitem>
           <para>
@@ -258,8 +280,18 @@
     </screen>
 
     <para>
-      This example will disable target for selection and change target script for camera C5.
+      The above example will disable target for selection until 2013-03-13 and change target script for camera C5.
     </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>--pi</option> <replaceable>'Joe the User'</replaceable> <option>--program</option> <replaceable>'Testing the impossible'</replaceable> <replaceable>NGC1234</replaceable>
+    </screen>
+
+    <para>
+      The above example will set target with name NGC1234 PI name to 'Joe the User'
+      and its program name to 'Testing the impossible'.
+    </para>
+
 
     <screen>
       <command>&dhpackage;</command> <option>-d</option> <option>-c</option> <replaceable>C5</replaceable> <option>-s</option> <replaceable>'F 3 for 10 { E 200 }'</replaceable> <replaceable>1000</replaceable>

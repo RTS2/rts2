@@ -282,6 +282,22 @@ void TargetSet::setTargetScript (const char *device_name, const char *script)
 	}
 }
 
+void TargetSet::setTargetPIName (const char *pi)
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		(*iter).second->setPIName (pi);
+	}
+}
+
+void TargetSet::setTargetProgramName (const char *program)
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		(*iter).second->setProgramName (program);
+	}
+}
+
 void TargetSet::setConstraints (Constraints &cons)
 {
 	for (iterator iter = begin (); iter != end (); iter++)

@@ -35,6 +35,7 @@
 #include "../utils/rts2target.h"
 
 #include "targetset.h"
+#include "labels.h"
 
 #include "scriptcommands.h"
 
@@ -152,7 +153,7 @@ class Target:public Rts2Target
 		/**
 		 * Set PI id.
 		 */
-		void setPIID (int pi_id);
+		void setPIName (const char *name);
 
 		/**
 		 * Get target program name.
@@ -162,7 +163,7 @@ class Target:public Rts2Target
 		/**
 		 * Set program ID.
 		 */
-		void setProgramID (int program_id);
+		void setProgramName (const char *program);
 
 		/**
 		 * Set target constraints. Overwrite present target constraints with constraints from the given
@@ -590,11 +591,7 @@ class Target:public Rts2Target
 
 		void writeAirmass (std::ostream & _os, double jd);
 
-		std::string pi_name;
-		std::string program_name;
-
-		int tar_pi_id;
-		int tar_program_id;
+		Labels labels;
 
 		// which constraints were sucessfully loaded
 		int constraintsLoaded;

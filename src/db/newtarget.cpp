@@ -31,6 +31,9 @@
 #include <stdlib.h>
 #include <sstream>
 
+#define OPT_PI_NAME         OPT_LOCAL + 320
+#define OPT_PROGRAM_NAME    OPT_LOCAL + 321
+
 class Rts2NewTarget:public Rts2TargetApp
 {
 	public:
@@ -49,6 +52,9 @@ class Rts2NewTarget:public Rts2TargetApp
 		const char *n_tar_ra_dec;
 		double radius;
 
+		const char *n_pi;
+		const char *n_program;
+
 		int saveTarget ();
 };
 
@@ -58,10 +64,16 @@ Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_arg
 	n_tar_name = NULL;
 	n_tar_ra_dec = NULL;
 
+	n_pi = NULL;
+	n_program = NULL;
+
 	radius = nan ("f");
 
 	addOption ('a', NULL, 0, "autogenerate target IDs");
 	addOption ('r', NULL, 2, "radius for target checks");
+
+	addOption (OPT_PI_NAME, "pi", 1, "set PI name");
+	addOption (OPT_PROGRAM_NAME, "program", 1, "set program name");
 }
 
 Rts2NewTarget::~Rts2NewTarget (void)
@@ -95,6 +107,12 @@ int Rts2NewTarget::processOption (int in_opt)
 			break;
 		case 'a':
 			n_tar_id = INT_MIN;
+			break;
+		case OPT_PI_NAME:
+			n_pi = optarg;
+			break;
+		case OPT_PROGRAM_NAME:
+			n_program = optarg;
 			break;
 		default:
 			return Rts2TargetApp::processOption (in_opt);
@@ -154,14 +172,12 @@ int Rts2NewTarget::saveTarget ()
 		tarset.load ();
 		if (tarset.size () == 0)
 		{
-			std::
-				cout << "No targets were found within " << LibnovaDegDist (radius)
+			std::cout << "No targets were found within " << LibnovaDegDist (radius)
 				<< " from entered target." << std::cout;
 		}
 		else
 		{
-			std::
-				cout << "Following targets were found within " <<
+			std::cout << "Following targets were found within " <<
 				LibnovaDegDist (radius) << " from entered target:" << std::
 				endl << tarset << std::endl;
 			if (askForBoolean ("Would you like to enter target anyway?", false)
@@ -199,6 +215,11 @@ int Rts2NewTarget::saveTarget ()
 
 	struct ln_hrz_posn hrz;
 	target->getAltAz (&hrz);
+
+	if (n_pi)
+		target->setPIName (n_pi);
+	if (n_program)
+	  	target->setProgramName (n_program);
 
 	std::cout << "Created target #" << target->getTargetID ()
 		<< " named " << target->getTargetName ()

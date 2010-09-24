@@ -595,6 +595,17 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>nightdir</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Location of night logs; if -, then night logs will not be
+	      created. Default to PREFIX "/etc/rts2/nights/%N".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>model_step_type</option>
 	  </term>
 	  <listitem>
