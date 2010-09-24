@@ -138,8 +138,7 @@ int Rts2DevPhot::endIntegrate ()
 
 int Rts2DevPhot::stopIntegrate ()
 {
-	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-		"Integration interrupted");
+	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "Integration interrupted");
 	startIntegrate ();
 	return 0;
 }
@@ -246,7 +245,10 @@ void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 	sendValueAll (is_ov);
 	sendValueAll (count);
 	if (req_count->getValueInteger () > 0)
+	{
 		req_count->dec();
+		sendValueAll (req_count);
+	}
 	if (req_count->getValueInteger () == 0)
 		endIntegrate ();
 }
