@@ -35,10 +35,10 @@ SqlError::SqlError ()
 	EXEC SQL ROLLBACK;
 }
 
-SqlError::SqlError (const char *msg)
+SqlError::SqlError (const char *_msg)
 {
 	std::ostringstream _os;
-	_os << msg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
+	_os << _msg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
 	if (sqlca.sqlcode == ECPG_PGSQL)
 		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));

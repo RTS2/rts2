@@ -1,6 +1,6 @@
 /* 
  * Target classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -143,6 +143,26 @@ class Target:public Rts2Target
 		 */
 		virtual bool getScript (const char *device_name, std::string & buf);
 		void setScript (const char *device_name, const char *buf);
+
+		/**
+		 * Get target project investigator name.
+		 */
+		std::string getPIName ();
+
+		/**
+		 * Set PI id.
+		 */
+		void setPIID (int pi_id);
+
+		/**
+		 * Get target program name.
+		 */
+		std::string getProgramName ();
+
+		/**
+		 * Set program ID.
+		 */
+		void setProgramID (int program_id);
 
 		/**
 		 * Set target constraints. Overwrite present target constraints with constraints from the given
@@ -569,6 +589,12 @@ class Target:public Rts2Target
 		time_t tar_next_observable;
 
 		void writeAirmass (std::ostream & _os, double jd);
+
+		std::string pi_name;
+		std::string program_name;
+
+		int tar_pi_id;
+		int tar_program_id;
 
 		// which constraints were sucessfully loaded
 		int constraintsLoaded;
