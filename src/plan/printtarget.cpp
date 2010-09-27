@@ -22,9 +22,11 @@
 
 #define OPT_FULL_DAY              OPT_LOCAL + 200
 #define OPT_NAME                  OPT_LOCAL + 201
-#define OPT_PARSE_SCRIPT          OPT_LOCAL + 202
-#define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 203
-#define OPT_AIRMASS               OPT_LOCAL + 204
+#define OPT_PI                    OPT_LOCAL + 202
+#define OPT_PROGRAM               OPT_LOCAL + 203
+#define OPT_PARSE_SCRIPT          OPT_LOCAL + 204
+#define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 205
+#define OPT_AIRMASS               OPT_LOCAL + 206
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -79,6 +81,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	constraintFile = NULL;
 
 	addOption ('e', NULL, 0, "print extended informations (visibility prediction,..)");
+	addOption ('E', NULL, 0, "print constraints");
 	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
 	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
@@ -96,6 +99,8 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
+	addOption (OPT_PI, "pi", 0, "print target(s) PI name(s)");
+	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 }
@@ -185,10 +190,16 @@ int PrintTarget::processOption (int in_opt)
 			std::cout << pureNumbers;
 			break;
 		case OPT_NAME:
-			printExtended = -1;
+			printExtended = -2;
+			break;
+		case OPT_PI:
+			printExtended = -3;
+			break;
+		case OPT_PROGRAM:
+			printExtended = -4;
 			break;
 		case OPT_PARSE_SCRIPT:
-			printExtended = -2;
+			printExtended = -1;
 			scriptCameras.push_back (std::string (optarg));
 			break;
 		case OPT_CHECK_CONSTRAINTS:
@@ -258,45 +269,49 @@ void PrintTarget::printTarget (rts2db::Target *target)
 	  	// default print of the target
 		if (!(printImages & DISPLAY_FILENAME))
 		{
-			if (printExtended == -2)
+			switch (printExtended)
 			{
-				for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
-				{
-					std::string script_buf;
-					// parse and pretty print script
-					rts2script::Script script = rts2script::Script ();
-					script.setTarget ((*iter).c_str (), target);
-					script.prettyPrint (std::cout, rts2script::PRINT_XML);
-				}
-			}
-			else if (printExtended == -1)
-			{
-				std::cout << target->getTargetName () << std::endl;
-
-			}
-			else if (printExtended == 0)
-			{
-				target->printShortInfo (std::cout, JD);
-				std::cout << std::endl;
-				printScripts (target, "       ");
-			}
-			else
-			{
-				Rts2InfoValOStream ivos (&std::cout);
-				target->sendInfo (ivos, JD);
-				// print scripts..
-				if (printExtended > 1)
-				{
-					for (int i = 0; i < 10; i++)
+				case -1:
+					for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
 					{
-						JD += 10;
-	
-						std::cout << "==================================" << std::
-							endl << "Date: " << LibnovaDate (JD) << std::endl;
-						target->sendPositionInfo (ivos, JD);
+						std::string script_buf;
+						// parse and pretty print script
+						rts2script::Script script = rts2script::Script ();
+						script.setTarget ((*iter).c_str (), target);
+						script.prettyPrint (std::cout, rts2script::PRINT_XML);
 					}
-				}
-				printScripts (target, "script for camera ");
+					break;
+				case -2:
+					std::cout << target->getTargetName () << std::endl;
+					break;
+				case -3:
+					std::cout << target->getPIName () << std::endl;
+					break;
+				case -4:
+					std::cout << target->getProgramName () << std::endl;
+					break;
+				case 0:
+					target->printShortInfo (std::cout, JD);
+					std::cout << std::endl;
+					printScripts (target, "       ");
+					break;
+				default:
+					Rts2InfoValOStream ivos (&std::cout);
+					target->sendInfo (ivos, JD);
+					// print scripts..
+					if (printExtended > 1)
+					{
+						for (int i = 0; i < 10; i++)
+						{
+							JD += 10;
+	
+							std::cout << "==================================" << std::
+								endl << "Date: " << LibnovaDate (JD) << std::endl;
+							target->sendPositionInfo (ivos, JD);
+						}
+					}
+					printScripts (target, "script for camera ");
+					break;
 			}
 		}
 		// test and print constraints

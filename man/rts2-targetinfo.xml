@@ -134,6 +134,12 @@
         <arg choice="plain"><option>--name</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>--pi</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--program</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>--parse <replaceable class="parameter">camera name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -423,6 +429,22 @@
         <listitem>
           <para>
 	    Print target(s) name(s).
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--pi</option></term>
+        <listitem>
+          <para>
+	    Print target(s) PI(s) name(s).
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--program</option></term>
+        <listitem>
+          <para>
+	    Print target(s) program(s) name(s).
 	  </para>
         </listitem>
       </varlistentry>
