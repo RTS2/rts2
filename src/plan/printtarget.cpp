@@ -298,8 +298,13 @@ void PrintTarget::printTarget (rts2db::Target *target)
 				default:
 					Rts2InfoValOStream ivos (&std::cout);
 					target->sendInfo (ivos, JD);
-					// print scripts..
+					// print constraints..
 					if (printExtended > 1)
+					{
+						target->sendConstraints (ivos, JD);
+					}
+					// print scripts..
+					if (printExtended > 2)
 					{
 						for (int i = 0; i < 10; i++)
 						{

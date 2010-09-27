@@ -1860,6 +1860,13 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	printExtra (_os, JD);
 }
 
+void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
+{
+	_os << "Constraints" << std::endl;
+	constraints->print (*(_os.getStream ()));
+	_os << std::endl;
+}
+
 TargetSet * Target::getCalTargets (double JD, double minaird)
 {
 	TargetSetCalibration *ret = new TargetSetCalibration (this, JD, minaird);

@@ -505,6 +505,8 @@ class Target:public Rts2Target
 		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys ()); }
 		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
 
+		virtual void sendConstraints (Rts2InfoValStream & _os, double JD);
+
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
 		/**
