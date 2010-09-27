@@ -17,6 +17,8 @@ if ( $last_tar_id != $tar_id ) then
 endif
 
 setenv name `rts2-targetinfo --name $tar_id`
+setenv pi `rts2-targetinfo --pi $tar_id`
+setenv program `rts2-targetinfo --program $tar_id`
 
 set ra=$3
 set dec=$4
@@ -45,6 +47,8 @@ endif
 	
 object "$name"
 setcom kepccd Object "$name"
+tele pi "$pi"
+tele program "$program"
 
 # translate observation to observation file..
 
