@@ -7,6 +7,8 @@ import re
 class FLWOCAT:
 	def __init__(self):
 		self.tarid = None
+		self.pi = None
+		self.program = None
 
 	def run_cmd(self,cmd,read_callback=None):
 		print cmd
@@ -27,7 +29,7 @@ class FLWOCAT:
 		for se in s:
 		  	fil = se.split('-')
 			ret += 'filter=' + fil[0] + ' ';
-			if (fil[2] > 1):
+			if (int(fil[2]) > 1):
 				ret += 'for ' + fil[2] + ' { E ' + fil[1] + ' }'
 			else:
 			  	ret += 'E ' + fil[1]
@@ -40,6 +42,15 @@ class FLWOCAT:
 			self.tarid = m.group(1)
 			print 'Target ID is %s' % (self.tarid)
 	
+	def parsePiProg(self,line):
+		pi = re.match(r'^\!P.I.:\s*(\w.*)$', line)
+		if pi:
+			self.pi = pi.group(1)
+			return
+		program = re.match(r'!Program:\s*(\w.*)$', line)
+		if program:
+		  	self.program = program.group(1)
+			return
 
 	def run(self):	
 		for arg in sys.argv[1:]:
@@ -48,11 +59,12 @@ class FLWOCAT:
 			  	l=l.rstrip()
 				if (len(l) == 0):
 				  	continue
+				if l[0] == '!':
+				  	self.parsePiProg(l)
+					continue
 				a = l.split()
 				if a[0][0] == '#':
 				  	continue
-				if a[0][0] == '!':
-					continue
 				scripts = a[3].split(',')
 				if (a[2][0] != '-' and a[2][0] != '+'):
 				  	a[2] = '+' + a[2]
@@ -82,6 +94,14 @@ class FLWOCAT:
 					else:
 						cmd.append ("--lunarDistance")
 						cmd.append (a[12] + ":")
+
+				if self.pi is not None:
+					cmd.append ('--pi')
+					cmd.append (self.pi)
+
+				if self.program is not None:
+				  	cmd.append ('--program')
+					cmd.append (self.program)
 
 				cmd.append(self.tarid)
 
