@@ -1,6 +1,6 @@
 /* 
  * Target classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,6 +35,7 @@
 #include "../utils/rts2target.h"
 
 #include "targetset.h"
+#include "labels.h"
 
 #include "scriptcommands.h"
 
@@ -130,6 +131,11 @@ class Target:public Rts2Target
 		virtual int save (bool overwrite);
 		virtual int save (bool overwrite, int tar_id);
 
+		/**
+		 * Delete target and all associated entries from database.
+		 */
+		void deleteTarget ();
+
 		/** 
 		 * Return script for target action.
 		 *
@@ -143,6 +149,26 @@ class Target:public Rts2Target
 		 */
 		virtual bool getScript (const char *device_name, std::string & buf);
 		void setScript (const char *device_name, const char *buf);
+
+		/**
+		 * Get target project investigator name.
+		 */
+		std::string getPIName ();
+
+		/**
+		 * Set PI id.
+		 */
+		void setPIName (const char *name);
+
+		/**
+		 * Get target program name.
+		 */
+		std::string getProgramName ();
+
+		/**
+		 * Set program ID.
+		 */
+		void setProgramName (const char *program);
 
 		/**
 		 * Set target constraints. Overwrite present target constraints with constraints from the given
@@ -569,6 +595,8 @@ class Target:public Rts2Target
 		time_t tar_next_observable;
 
 		void writeAirmass (std::ostream & _os, double jd);
+
+		Labels labels;
 
 		// which constraints were sucessfully loaded
 		int constraintsLoaded;

@@ -52,6 +52,14 @@ class ConstraintDoubleInterval
 	public:
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
 		bool satisfy (double val);
+		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
+		{
+			if (!isnan (cons.lower))
+				os << cons.lower << " < ";
+			if (!isnan (cons.upper))
+			  	os << " < " << cons.upper;
+			return os;
+		}
 
 		/**
 		 * Print interval.

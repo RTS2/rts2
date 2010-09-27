@@ -72,6 +72,8 @@ class Rts2InfoValStream
 
 		virtual void printInfoVal (const char *desc, const char* val) = 0;
 
+		virtual void printInfoVal (const char *desc, const std::string& val) = 0;
+
 		virtual void printInfoVal (const char *desc, int val) = 0;
 
 		virtual void printInfoVal (const char *desc, unsigned int val) = 0;
@@ -124,6 +126,12 @@ class Rts2InfoValOStream: public Rts2InfoValStream
 		}
 
 		virtual void printInfoVal (const char *desc, const char* val)
+		{
+			*_os << std::left << std::setw (20) << desc
+				<< std::right << val << std::endl;
+		}
+
+		virtual void printInfoVal (const char *desc, const std::string &val)
 		{
 			*_os << std::left << std::setw (20) << desc
 				<< std::right << val << std::endl;

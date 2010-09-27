@@ -1,3 +1,12 @@
+2010-09-25
+ * added capability to delete targets
+
+2010-09-24
+ * add PI and program name (as labels)
+
+2010-09-21
+ * allow users to specify minimal length for expression format
+
 2010-09-11
  * moved Target to rts2db namespace, and some associated namespace changes
 

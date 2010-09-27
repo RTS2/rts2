@@ -196,7 +196,7 @@ int Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 
 Fork::Fork (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
-	haZero = decZero = haCpd = decCpd = nan("f");
+	haZero = decZero = haCpd = decCpd = rts2_nan("f");
 	ra_ticks = dec_ticks = 0;
 }
 

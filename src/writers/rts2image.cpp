@@ -1524,8 +1524,7 @@ std::string Rts2Image::getTargetSelString ()
 std::string Rts2Image::getExposureNumberString ()
 {
 	std::ostringstream _os;
-	_os.fill ('0');
-	_os << std::setw (6) << expNum;
+	_os << expNum;
 	return _os.str ();
 }
 

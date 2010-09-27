@@ -1,6 +1,6 @@
 /* 
  * Expanding mechanism.
- * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,13 +32,11 @@ Expander::Expander ()
 	setExpandDate ();
 }
 
-
 Expander::Expander (const struct timeval *tv)
 {
 	epochId = -1;
 	setExpandDate (tv);
 }
-
 
 Expander::Expander (Expander * in_expander)
 {
@@ -46,11 +44,9 @@ Expander::Expander (Expander * in_expander)
 	setExpandDate (in_expander->getExpandDate ());
 }
 
-
 Expander::~Expander (void)
 {
 }
-
 
 std::string Expander::getEpochString ()
 {
@@ -59,7 +55,6 @@ std::string Expander::getEpochString ()
 	_os << std::setw (3) << epochId;
 	return _os.str ();
 }
-
 
 std::string Expander::getYearString (int year)
 {
@@ -229,49 +224,66 @@ std::string Expander::expandVariable (std::string expression)
 	return ret;
 }
 
+void Expander::getFormating (const std::string &expression, std::string::iterator &iter, std::ostringstream &ret)
+{
+	int length = 0;
+	if (*iter == '0')
+		ret.fill ('0');
+	else
+	  	ret.fill (' ');
+	// pass numbers and decimal points..
+	while (iter != expression.end () && isdigit (*iter))
+	{
+		length = length * 10 + (*iter - '0');
+		iter++;
+	}
+	if (length > 0)
+		ret << std::setw (length);
+}
 
 std::string Expander::expand (std::string expression)
 {
-	std::string ret = "";
+	std::ostringstream ret;
+	int length;
 	std::string exp;
 	for (std::string::iterator iter = expression.begin (); iter != expression.end (); iter++)
 	{
+		length = 0;
 		switch (*iter)
 		{
 			case '%':
 				iter++;
+				getFormating (expression, iter, ret);
 				if (iter != expression.end ())
 				{
-					ret += expandVariable (*iter);
+					ret << expandVariable (*iter);
 				}
 				break;
 				// that one enables to copy values from image header to expr
 			case '@':
+				iter++;
 				exp = "";
-				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.'); iter++)
+				getFormating (expression, iter, ret);
+				for (; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.'); iter++)
 					exp += *iter;
 				iter--;
-				ret += expandVariable (exp);
+				ret << expandVariable (exp);
 				break;
 			default:
-				ret += *iter;
+				ret << *iter;
 		}
 	}
-	return ret;
+	return ret.str ();
 }
 
-
-void
-Expander::setExpandDate ()
+void Expander::setExpandDate ()
 {
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
 	setExpandDate (&tv);
 }
 
-
-void
-Expander::setExpandDate (const struct timeval *tv)
+void Expander::setExpandDate (const struct timeval *tv)
 {
 	expandTv.tv_sec = tv->tv_sec;
 	expandTv.tv_usec = tv->tv_usec;
@@ -285,16 +297,12 @@ Expander::setExpandDate (const struct timeval *tv)
 	expandDate = &utDate;
 }
 
-
-double
-Expander::getExpandDateCtime ()
+double Expander::getExpandDateCtime ()
 {
 	return expandTv.tv_sec + ((double) expandTv.tv_usec / USEC_SEC);
 }
 
-
-const struct timeval *
-Expander::getExpandDate ()
+const struct timeval * Expander::getExpandDate ()
 {
 	return &expandTv;
 }

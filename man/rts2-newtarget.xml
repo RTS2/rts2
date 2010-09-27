@@ -76,6 +76,12 @@
       <arg choice="opt">
         <arg choice="plain"><option>-r <replaceable class="parameter">radius</replaceable></option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--pi <replaceable class="parameter">PI name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--program <replaceable class="parameter">program name</replaceable></option></arg>
+      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -154,6 +160,22 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>--pi <replaceable class="parameter">PI name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set newly created target PI name.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--program <replaceable class="parameter">program name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set newly created target program name.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
@@ -161,6 +183,7 @@
 
     <screen>
       <command>&dhpackage;</command> <option>-a</option> <replaceable>NGC1673</replaceable>
+      <command>&dhpackage;</command> <option>--pi</option> <replaceable>'Joe The User'</replaceable> <option>--program</option> <replaceable>'Search for high Z'</replaceable> <option>-a</option> <replaceable>NGC1673</replaceable>
     </screen>
 
   </refsect1>

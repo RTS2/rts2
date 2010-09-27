@@ -829,7 +829,31 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 	int ret;
 	if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
 		return -2;
-	Rts2CondValue *old_value_cond = getCondValue (v_name);
+
+	Rts2CondValue *old_value_cond;
+
+	const char *ai = NULL;
+
+	// search for [ - array index
+	const char *ca = strchr (v_name, '[');
+	if (ca != NULL)
+	{
+		char avn[ca - v_name + 2];
+		strncpy (avn, v_name, ca - v_name);
+		avn[ca - v_name + 1] = '\0';
+		ai = ca + 1;
+		if (v_name[strlen(v_name) - 1] != ']')
+		{
+			conn->sendCommandEnd (DEVDEM_E_SYSTEM, "missing ] for end of array index");
+			return -1;
+		}
+		old_value_cond = getCondValue (avn);
+	}
+	else
+	{
+		old_value_cond = getCondValue (v_name);
+	}
+
 	if (!old_value_cond)
 		return -2;
 	Rts2Value *old_value = old_value_cond->getValue ();
@@ -840,14 +864,26 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 	  	conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot set read-only value");
 		return -1;
 	}
-	Rts2Value *newValue;
 
-	newValue = duplicateValue (old_value);
+	if (ai && (!(old_value->getFlags () & RTS2_VALUE_ARRAY)))
+	{
+		conn->sendCommandEnd (DEVDEM_E_SYSTEM, "trying to index non-array value");
+		return -1;
+	}
+
+	Rts2Value *newValue = duplicateValue (old_value);
 
 	if (newValue == NULL)
 		return -2;
 
-	ret = newValue->setValue (conn);
+	if (ai)
+	{
+		ret = ((rts2core::ValueArray *)newValue)->setValueByIndex (ai, conn);
+	}
+	else
+	{
+		ret = newValue->setValue (conn);
+	}
 	if (ret)
 		goto err;
 

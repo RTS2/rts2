@@ -1,6 +1,6 @@
 /* 
  * Target class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -435,6 +435,21 @@ int Target::save (bool overwrite)
 	return save (overwrite, db_new_id);
 }
 
+void Target::deleteTarget ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_tar_id = getTargetID ();
+	int d_ret;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT delete_target(:d_tar_id) INTO :d_ret;
+	if (sqlca.sqlcode)
+	{
+		throw SqlError ();
+	}
+	EXEC SQL COMMIT;
+}
+
 int Target::save (bool overwrite, int tar_id)
 {
 	// first, try an update..
@@ -777,12 +792,12 @@ void Target::getDBScript (const char *camera_name, std::string &script)
 			tar_id = :tar_id
 		AND camera_name = :d_camera_name;
 	if (sqlca.sqlcode == ECPG_NOT_FOUND)
-		throw rts2db::SqlError ();
+		throw SqlError ();
 
 	if (sqlca.sqlcode || sc_indicator < 0)
 	{
 		logStream (MESSAGE_ERROR) << "while loading script for device " << camera_name << " and target " << tar_id << " : " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		throw rts2db::SqlError ();
+		throw SqlError ();
 	}
 
 	sc_script.arr[sc_script.len] = '\0';
@@ -807,7 +822,7 @@ bool Target::getScript (const char *device_name, std::string &buf)
 	ret = config->getString (device_name, "script", buf);
 	if (!ret)
 		return false;
-	throw rts2db::DeviceMissingExcetion (device_name);
+	throw DeviceMissingExcetion (device_name);
 }
 
 void Target::setScript (const char *device_name, const char *buf)
@@ -855,12 +870,40 @@ void Target::setScript (const char *device_name, const char *buf)
 		if (sqlca.sqlcode)
 		{
 			if (sqlca.sqlcode == ECPG_NOT_FOUND)
-				throw rts2db::CameraMissingExcetion (device_name);
+				throw CameraMissingExcetion (device_name);
 			EXEC SQL ROLLBACK;
-			throw rts2db::SqlError ();
+			throw SqlError ();
 		}
 	}
 	EXEC SQL COMMIT;
+}
+
+std::string Target::getPIName ()
+{
+	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PI);
+	if (l.size () != 1)
+		return std::string ("not set");
+	return *(l.begin ());
+}
+
+void Target::setPIName (const char *name)
+{
+	labels.deleteTargetLabels (getTargetID (), LABEL_PI);
+ 	labels.addLabel (getTargetID (), name, LABEL_PI, true);
+}
+
+std::string Target::getProgramName ()
+{
+	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PROGRAM);
+	if (l.size () != 1)
+		return std::string ("not set");
+	return *(l.begin ());
+}
+
+void Target::setProgramName (const char *program)
+{
+	labels.deleteTargetLabels (getTargetID (), LABEL_PROGRAM);
+ 	labels.addLabel (getTargetID (), program, LABEL_PROGRAM, true);
 }
 
 void Target::setConstraints (Constraints &cons)
@@ -1485,24 +1528,24 @@ int Target::printObservations (double radius, double JD, std::ostream &_os)
 	return obsset.size ();
 }
 
-rts2db::TargetSet Target::getTargets (double radius)
+TargetSet Target::getTargets (double radius)
 {
 	return getTargets (radius, ln_get_julian_from_sys ());
 }
 
-rts2db::TargetSet Target::getTargets (double radius, double JD)
+TargetSet Target::getTargets (double radius, double JD)
 {
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	rts2db::TargetSet tarset = rts2db::TargetSet (&tar_pos, radius);
+	TargetSet tarset = TargetSet (&tar_pos, radius);
 	tarset.load ();
 	return tarset;
 }
 
 int Target::printTargets (double radius, double JD, std::ostream &_os)
 {
-	rts2db::TargetSet tarset = getTargets (radius, JD);
+	TargetSet tarset = getTargets (radius, JD);
 	_os << tarset;
 
 	return tarset.size ();
@@ -1791,6 +1834,8 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<int> ("SEL_ID", getObsTargetID ())
 		<< InfoVal<const char *> ("NAME", (name ? name : "null name"))
 		<< InfoVal<const char *> ("TYPE", tar_type)
+		<< InfoVal<std::string> ("PI", getPIName ())
+		<< InfoVal<std::string> ("PROGRAM", getProgramName ())
 		<< InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
 		<< InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
 		<< std::endl;
@@ -1815,9 +1860,9 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	printExtra (_os, JD);
 }
 
-rts2db::TargetSet * Target::getCalTargets (double JD, double minaird)
+TargetSet * Target::getCalTargets (double JD, double minaird)
 {
-	rts2db::TargetSetCalibration *ret = new rts2db::TargetSetCalibration (this, JD, minaird);
+	TargetSetCalibration *ret = new TargetSetCalibration (this, JD, minaird);
 	ret->load ();
 	return ret;
 }

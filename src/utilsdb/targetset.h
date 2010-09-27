@@ -162,6 +162,13 @@ class TargetSet:public std::map <int, Target * >
 		void setTargetBonusTime (time_t * new_time);
 		void setNextObservable (time_t * time_ch);
 		void setTargetScript (const char *device_name, const char *script);
+		void setTargetPIName (const char *pi);
+		void setTargetProgramName (const char *program);
+
+		/**
+		 * Delete targets from database.
+		 */
+		void deleteTargets ();
 
 		/**
 		 * Set targets constraints.
