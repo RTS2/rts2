@@ -73,6 +73,27 @@ class Constraints;
 class Observation;
 
 /**
+ * Execption raised when target name cannot be resolved.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class UnresolvedTarget:public rts2core::Error
+{
+	public:
+		UnresolvedTarget (const char *n)
+		{
+			name = std::string (n);
+			setMsg (std::string ("cannot find target with name ") + name);
+		}
+		virtual ~UnresolvedTarget () throw () {}
+
+		const char* getTargetName () { return name.c_str (); }
+	
+	private:
+		std::string name;
+};
+
+/**
  * Exception raised when default device script cannot be found in configuration file.
  *
  * @author Petr Kubánek <petr@kubanek.net>

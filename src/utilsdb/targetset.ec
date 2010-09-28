@@ -121,7 +121,7 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator con
 			// numeric target
 			Target *tar = createTarget (tid, obs);
 			if (tar == NULL)
-				throw SqlError ((std::string ("cannot find target with numeric ID ") + (*iter)).c_str ());
+				throw UnresolvedTarget (*iter);
 			(*this)[tid] = tar;
 		}
 		else
@@ -130,7 +130,7 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator con
 			ts.load (*iter, approxName);
 			if (ts.size () == 0)
 			{
-				throw SqlError ((std::string ("cannot find target with name ") + (*iter)).c_str ());
+				throw UnresolvedTarget (*iter);
 			}
 			if (ts.size () > 1)
 			{

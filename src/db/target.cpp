@@ -22,6 +22,7 @@
 #include "../utilsdb/constraints.h"
 #include "../utilsdb/observation.h"
 #include "../utilsdb/rts2appdb.h"
+#include "../utilsdb/sqlerror.h"
 #include "../utilsdb/target.h"
 #include "../utilsdb/targetset.h"
 #include "../utils/rts2askchoice.h"
@@ -429,112 +430,125 @@ int TargetApp::doProcessing ()
 		return -1;
 	}
 	target_set = new rts2db::TargetSet ();
-	target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver);
-	if (op & OP_DELETE)
+
+	try
 	{
-		target_set->deleteTargets ();
-		return 0;
-	}
-	if ((op & OP_MASK_EN) == OP_ENABLE)
-	{
-		target_set->setTargetEnabled (true, true);
-	}
-	if ((op & OP_MASK_EN) == OP_DISABLE)
-	{
-		target_set->setTargetEnabled (false, true);
-	}
-	if (op & OP_PRIORITY)
-	{
-		target_set->setTargetPriority (new_priority);
-	}
-	if (op & OP_TEMPDISABLE)
-	{
-		setTempdisable ();
-	}
-	if (op & OP_BONUS)
-	{
-		target_set->setTargetBonus (new_bonus);
-	}
-	if (op & OP_BONUS_TIME)
-	{
-		target_set->setTargetBonusTime (&new_bonus_time);
-	}
-	if (op & OP_NEXT_TIME)
-	{
-		target_set->setNextObservable (&new_next_time);
-	}
-	if (op & OP_SCRIPT)
-	{
-		for (std::list < CamScript >::iterator iter = new_scripts.begin (); iter != new_scripts.end (); iter++)
+		target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver);
+		if (op & OP_DELETE)
 		{
-			rts2script::Script script = rts2script::Script (iter->script);
-			struct ln_equ_posn target_pos;
-			target_set->begin ()->second->getPosition (&target_pos);
-			script.parseScript (((Rts2Target *) target_set->begin ()->second), &target_pos);
-			int failedCount = script.getFaultLocation ();
-			if (failedCount != -1)
+			target_set->deleteTargets ();
+			return 0;
+		}
+		if ((op & OP_MASK_EN) == OP_ENABLE)
+		{
+			target_set->setTargetEnabled (true, true);
+		}
+		if ((op & OP_MASK_EN) == OP_DISABLE)
+		{
+			target_set->setTargetEnabled (false, true);
+		}
+		if (op & OP_PRIORITY)
+		{
+			target_set->setTargetPriority (new_priority);
+		}
+		if (op & OP_TEMPDISABLE)
+		{
+			setTempdisable ();
+		}
+		if (op & OP_BONUS)
+		{
+			target_set->setTargetBonus (new_bonus);
+		}
+		if (op & OP_BONUS_TIME)
+		{
+			target_set->setTargetBonusTime (&new_bonus_time);
+		}
+		if (op & OP_NEXT_TIME)
+		{
+			target_set->setNextObservable (&new_next_time);
+		}
+		if (op & OP_SCRIPT)
+		{
+			for (std::list < CamScript >::iterator iter = new_scripts.begin (); iter != new_scripts.end (); iter++)
 			{
-				std::cerr << "PARSING of script '" << iter->script << "' FAILED!!! AT " << failedCount << std::endl
-					<< std::string (iter->script).substr (0, failedCount + 1) << std::endl;
-				for (; failedCount > 0; failedCount--)
-					std::cerr << ' ';
-				std::cerr << "^ here" << std::endl;
+				rts2script::Script script = rts2script::Script (iter->script);
+				struct ln_equ_posn target_pos;
+				target_set->begin ()->second->getPosition (&target_pos);
+				script.parseScript (((Rts2Target *) target_set->begin ()->second), &target_pos);
+				int failedCount = script.getFaultLocation ();
+				if (failedCount != -1)
+				{
+					std::cerr << "PARSING of script '" << iter->script << "' FAILED!!! AT " << failedCount << std::endl
+						<< std::string (iter->script).substr (0, failedCount + 1) << std::endl;
+					for (; failedCount > 0; failedCount--)
+						std::cerr << ' ';
+					std::cerr << "^ here" << std::endl;
+				}
+				try
+				{
+					target_set->setTargetScript (iter->cameraName, iter->script);
+				}
+				catch (rts2db::CameraMissingExcetion &ex)
+				{
+					std::cerr << "Missing camera " << iter->cameraName << ". Is it filled in \"cameras\" database table?" << std::endl;
+				}
 			}
+		}
+		if (op & OP_CONSTRAINTS)
+		{
 			try
 			{
-				target_set->setTargetScript (iter->cameraName, iter->script);
+				target_set->setConstraints (constraints);
+				std::cout << "Set constraints for:" << std::endl << *target_set << std::endl;
 			}
-			catch (rts2db::CameraMissingExcetion &ex)
+			catch (rts2core::Error f)
 			{
-				std::cerr << "Missing camera " << iter->cameraName << ". Is it filled in \"cameras\" database table?" << std::endl;
+				std::cerr << "Cannot write target constraint file: " << f << std::endl;
 			}
 		}
-	}
-	if (op & OP_CONSTRAINTS)
-	{
-		try
+		if (op & OP_NEXT_OBSER)
 		{
-			target_set->setConstraints (constraints);
-			std::cout << "Set constraints for:" << std::endl << *target_set << std::endl;
+			target_set->setNextObservable (NULL);
 		}
-		catch (rts2core::Error f)
+		if (op & OP_OBS_SLEW)
 		{
-			std::cerr << "Cannot write target constraint file: " << f << std::endl;
+			if (target_set->size () != 1)
+			{
+				std::cerr << "You must specify only single target which observation will be started." << std::endl;
+				return -1;
+			}
+			rts2db::Target *tar = (target_set->begin ())->second;
+			struct ln_equ_posn pos;
+			tar->getPosition (&pos);
+			tar->startSlew (&pos);
+			std::cout << tar->getObsId () << std::endl;
+			tar->setObsId (-1);
+			return 0;
 		}
-	}
-	if (op & OP_NEXT_OBSER)
-	{
-		target_set->setNextObservable (NULL);
-	}
-	if (op & OP_OBS_SLEW)
-	{
-		if (target_set->size () != 1)
+		if (op & OP_PI_NAME)
 		{
-			std::cerr << "You must specify only single target which observation will be started." << std::endl;
-			return -1;
+			target_set->setTargetPIName (pi);
 		}
-		rts2db::Target *tar = (target_set->begin ())->second;
-		struct ln_equ_posn pos;
-		tar->getPosition (&pos);
-		tar->startSlew (&pos);
-		std::cout << tar->getObsId () << std::endl;
-		tar->setObsId (-1);
-		return 0;
-	}
-	if (op & OP_PI_NAME)
-	{
-		target_set->setTargetPIName (pi);
-	}
-	if (op & OP_PROGRAM_NAME)
-	{
-		target_set->setTargetProgramName (program);
-	}
-	if (op == OP_NONE)
-	{
-		return runInteractive ();
-	}
+		if (op & OP_PROGRAM_NAME)
+		{
+			target_set->setTargetProgramName (program);
+		}
+		if (op == OP_NONE)
+		{
+			return runInteractive ();
+		}
 
-	return target_set->save (true);
+		return target_set->save (true);
+	}
+	catch (rts2db::UnresolvedTarget ut)
+	{
+		std::cerr << "cannot resolve target name/ID " << ut.getTargetName () << std::endl;
+	}
+	catch (rts2db::SqlError e)
+	{
+		std::cerr << e << std::endl;
+	}
+	return -1;
 }
 
 int main (int argc, char **argv)
