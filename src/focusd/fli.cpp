@@ -47,6 +47,7 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (int num);
+		Rts2ValueLong *focExtent;
 
 	public:
 		Fli (int argc, char **argv);
@@ -63,6 +64,7 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 {
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
+	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
 	addOption ('D', "domain", 1,
 		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1,
@@ -149,6 +151,21 @@ int Fli::init ()
 	if (ret)
 		return -1;
 
+	long extent;
+	ret = FLIGetFocuserExtent (dev, &extent);
+	if (ret)
+		return -1;
+	focExtent->setValueInteger (extent);
+
+	// calibrate by moving to home position, then move to default position
+	ret = FLIHomeFocuser (dev);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+		return -1;
+	}
+	setPosition (defaultPosition->getValueInteger ());
+
 	return 0;
 }
 
@@ -189,6 +206,12 @@ int Fli::setTo (int num)
 	ret = info ();
 	if (ret)
 		return ret;
+
+	if (num < 0 || num > focExtent->getValueInteger())
+	{
+		logStream (MESSAGE_ERROR) << "Desired position not in focuser's extent: " << num << sendLog;
+		return -1;
+	}
 
 	num -= position->getValueInteger ();
 
