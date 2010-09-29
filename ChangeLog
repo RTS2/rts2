@@ -1,3 +1,6 @@
+2010-09-29
+ * added id-only and name-only to rts2-targetinfo and rts2-target
+
 2010-09-25
  * added capability to delete targets
 

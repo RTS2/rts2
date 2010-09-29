@@ -21,7 +21,10 @@
 #include "../utilsdb/targetset.h"
 #include "../utilsdb/target_auger.h"
 
-#define OPT_AUGER_ID   OPT_LOCAL + 501
+#define OPT_AUGER_ID              OPT_LOCAL + 501
+#define OPT_ID_ONLY               OPT_LOCAL + 502
+#define OPT_NAME_ONLY             OPT_LOCAL + 503
+
 
 namespace rts2plan
 {
@@ -44,6 +47,8 @@ class TargetInfo:public PrintTarget
 		bool matchAll;
 		bool unique;
 		char *targetType;
+
+		rts2db::resolverType resType;
 };
 
 }
@@ -57,12 +62,15 @@ TargetInfo::TargetInfo (int argc, char **argv):PrintTarget (argc, argv)
 	matchAll = false;
 	unique = false;
 	targetType = NULL;
+	resType = rts2db::NAME_ID;
 
 	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('s', NULL, 0, "print only selectable targets");
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
 	addOption ('u', NULL, 0, "require unique target - search for name");
 	addOption (OPT_AUGER_ID, "auger-id", 0, "specify trigger(s) number for Auger target(s)");
+	addOption (OPT_ID_ONLY, "id-only", 0, "expect numeric target(s) names (IDs only)");
+	addOption (OPT_NAME_ONLY, "name-only", 0, "resolver target(s) as names (even pure numbers)");
 }
 
 TargetInfo::~TargetInfo ()
@@ -87,6 +95,12 @@ int TargetInfo::processOption (int in_opt)
 			break;
 		case OPT_AUGER_ID:
 			printAuger = true;
+			break;
+		case OPT_ID_ONLY:
+			resType = rts2db::ID_ONLY;
+			break;
+		case OPT_NAME_ONLY:
+			resType = rts2db::NAME_ONLY;
 			break;
 		default:
 			return PrintTarget::processOption (in_opt);
@@ -158,7 +172,7 @@ int TargetInfo::doProcessing ()
 		{
 			if (unique)
 			{
-				tar_set.load (targets, uniqueResolver, false);
+				tar_set.load (targets, uniqueResolver, false, resType);
 				if (tar_set.empty ())
 				{
 					std::cerr << "target not found" << std::endl;
@@ -168,7 +182,7 @@ int TargetInfo::doProcessing ()
 			else
 			{
 				// normal target set load
-				tar_set.load (targets, (matchAll ? rts2db::resolveAll : rts2db::consoleResolver));
+				tar_set.load (targets, (matchAll ? rts2db::resolveAll : rts2db::consoleResolver), true, resType);
 			}
 		}
 		catch (rts2core::Error er)

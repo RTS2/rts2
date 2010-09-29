@@ -63,6 +63,9 @@
 #define OPT_PROGRAM_NAME    OPT_LOCAL + 839
 #define OPT_DELETE          OPT_LOCAL + 840
 
+#define OPT_ID_ONLY         OPT_LOCAL + 841
+#define OPT_NAME_ONLY       OPT_LOCAL + 842
+
 class CamScript
 {
 	public:
@@ -127,6 +130,8 @@ class TargetApp:public Rts2AppDb
 
 		const char *pi;
 		const char *program;
+
+		rts2db::resolverType resType;
 };
 
 TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -144,6 +149,8 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 
 	defaultCamera = NULL;
 	config = NULL;
+
+	resType = rts2db::NAME_ID;
 
 	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('e', NULL, 0, "enable given target(s)");
@@ -172,6 +179,9 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	addOption (OPT_LUNAR_ALTITUDE, "lunarAltitude", 1, "set lunar altitude (height above horizon) constraint for the target");
 
 	addOption (OPT_DELETE, "delete-targets", 0, "delete targets and associated entries (observations, images) from the database");
+
+	addOption (OPT_ID_ONLY, "id-only", 0, "expect numeric target(s) names (IDs only)");
+	addOption (OPT_NAME_ONLY, "name-only", 0, "resolver target(s) as names (even pure numbers)");
 }
 
 TargetApp::~TargetApp ()
@@ -274,6 +284,12 @@ int TargetApp::processOption (int in_opt)
 			break;
 		case OPT_DELETE:
 			op |= OP_DELETE;
+			break;
+		case OPT_ID_ONLY:
+			resType = rts2db::ID_ONLY;
+			break;
+		case OPT_NAME_ONLY:
+			resType = rts2db::NAME_ONLY;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -433,7 +449,7 @@ int TargetApp::doProcessing ()
 
 	try
 	{
-		target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver);
+		target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver, true, resType);
 		if (op & OP_DELETE)
 		{
 			target_set->deleteTargets ();

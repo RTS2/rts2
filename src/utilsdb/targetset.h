@@ -36,6 +36,8 @@ class TargetGRB;
 
 class Constraints;
 
+typedef enum { NAME_ID, NAME_ONLY, ID_ONLY } resolverType;
+
 /**
  * Error class for addSet operation.
  *
@@ -134,7 +136,7 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void load (const char *name, bool approxName = true);
 
-		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true);
+		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
 
 		/**
 		 * Add to target set targets from the other set.
