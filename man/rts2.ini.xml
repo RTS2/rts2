@@ -522,6 +522,31 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>evening_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Evening time - time to cool cameras in seconds. State 1 (evening)
+	      starts evening_time seconds before sunset - start of state 2
+	      (dusk). Default to 7200 seconds (2 hours).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>morning_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Morning time - time to cool off cameras and do calibrations in
+	      seconds. State 0 (day) starts morning_time seconds after sunrise,
+	      which marks transition from 4 (dawn) to 5 (morning). Default to
+	      7200 seconds (2 hours).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>que_path</option>
 	  </term>
 	  <listitem>
