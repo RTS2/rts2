@@ -43,14 +43,16 @@ class FLWOCAT:
 			print 'Target ID is %s' % (self.tarid)
 	
 	def parsePiProg(self,line):
-		pi = re.match(r'^\!P.I.:\s*(\w.*)$', line)
+		pi = re.match(r'^#\!P.I.:\s*(\S.*)$', line)
 		if pi:
 			self.pi = pi.group(1)
 			return
-		program = re.match(r'!Program:\s*(\w.*)$', line)
+		program = re.match(r'^#\!Program:\s*(\S.*)$', line)
 		if program:
 		  	self.program = program.group(1)
 			return
+		print >> sys.stderr, 'Unknow #! line: {0}'.format (line)
+		exit (1)
 
 	def run(self):	
 		for arg in sys.argv[1:]:
@@ -59,7 +61,7 @@ class FLWOCAT:
 			  	l=l.rstrip()
 				if (len(l) == 0):
 				  	continue
-				if l[0] == '!':
+				if l[0] == '#' and l[1] == '!':
 				  	self.parsePiProg(l)
 					continue
 				a = l.split()
