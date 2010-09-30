@@ -1273,7 +1273,6 @@ int OpenTPL::stopMove ()
 int OpenTPL::startPark ()
 {
 	int status = TPL_OK;
-	status = TPL_OK;
 
 	struct ln_hrz_posn hrzPark;
 	struct ln_equ_posn equPark;
