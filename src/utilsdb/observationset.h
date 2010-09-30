@@ -170,12 +170,28 @@ class ObservationStatistics
 		int numObs;
 };
 
+class DateStatistics
+{
+	public:
+		DateStatistics () { c = i = gi = 0; }
+		DateStatistics (int obscount, int images = 0, int good_images = 0)
+		{
+			c = obscount;
+			i = images;
+			gi = good_images;
+		}
+
+		int c;
+		int i;
+		int gi;
+};
+
 /**
  * Load data from night observation table, grouped by various depth of date (month, year,..).
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ObservationSetDate:public std::map <int, std::pair <int, int> >
+class ObservationSetDate:public std::map <int, DateStatistics>
 {
 	public:
 		ObservationSetDate () {}

@@ -490,8 +490,10 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_value1;
 	int d_value2;
+	int d_value2g;
 	int d_c;
 	int d_i;
+	int d_gi;
 	char *stmp_c;
 	EXEC SQL END DECLARE SECTION;
 
@@ -563,10 +565,14 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	EXEC SQL OPEN obsdate_cur;
 
 	std::ostringstream _osi;
-	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (images.*) as i FROM observations, images WHERE observations.obs_id = images.obs_id";
+	std::ostringstream _osig;
+	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (im_all.*) as i FROM observations, images im_all WHERE observations.obs_id = im_all.obs_id";
 	
 	if (_where.str ().length () > 0)
 		_osi << " and " << _where.str ();
+
+	_osig << _osi.str ();
+	_osig << " AND im_all.process_bitfield & 8 = 8 GROUP BY value ORDER BY value;";
 
 	_osi << " GROUP BY value ORDER BY value;";
 
@@ -582,7 +588,18 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	EXEC SQL OPEN obsdateimg_cur;
 
+	stmp_c = new char[_osig.str ().length () + 1];
+	memcpy (stmp_c, _osig.str().c_str(), _osig.str ().length () + 1);
+	EXEC SQL PREPARE obsdateimggood_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
+
+	EXEC SQL DECLARE obsdateimggood_cur CURSOR FOR obsdateimggood_stmp;
+
+	EXEC SQL OPEN obsdateimggood_cur;
+
 	d_value2 = -1;
+	d_value2g = -1;
 
 	while (1)
 	{
@@ -599,25 +616,55 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 			if (sqlca.sqlcode)
 			{
 				if (sqlca.sqlcode == ECPG_NOT_FOUND)
-					(*this)[d_value1] = std::pair <int,int> (d_c, 0);
+				{
+					(*this)[d_value1] = DateStatistics (d_c);
+				}
 				else
+				{
 				  	break;
+				}
 			}
-		}
-		if (d_value1 == d_value2)
-		{
-			(*this)[d_value1] = std::pair <int,int> (d_c, d_i);
-			d_value2 = -1;
 		}
 		else
 		{
-			(*this)[d_value1] = std::pair <int,int> (d_c, 0);
+			d_i = 0;
+		}
+
+		if (d_value2g < 0)
+		{
+			EXEC SQL FETCH next FROM obsdateimggood_cur INTO
+				:d_value2g,
+				:d_gi;
+			if (sqlca.sqlcode)
+			{
+				if (sqlca.sqlcode == ECPG_NOT_FOUND)
+					d_gi = 0;
+				else
+					break;
+			}
+		}
+		else
+		{
+			d_gi = 0;
+		}
+
+		if (d_value1 == d_value2)
+		{
+			(*this)[d_value1] = DateStatistics (d_c, d_i, d_gi);
+			d_value2 = -1;
+			if (d_value2 == d_value2g)
+				d_value2g = -1;
+		}
+		else
+		{
+			(*this)[d_value1] = DateStatistics (d_c);
 		}
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		EXEC SQL CLOSE obsdate_cur;
 		EXEC SQL CLOSE obsdateimg_cur;
+		EXEC SQL CLOSE obsdateimggood_cur;
 		EXEC SQL ROLLBACK;
 
 		throw SqlError ();
@@ -625,5 +672,6 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	EXEC SQL CLOSE obsdate_cur;
 	EXEC SQL CLOSE obsdateimg_cur;
+	EXEC SQL CLOSE obsdateimggood_cur;
 	EXEC SQL ROLLBACK;
 }

@@ -318,9 +318,7 @@ void Observation::printObsHeader (std::ostream & _os)
 	_os.precision (old_precision);
 }
 
-
-void
-Observation::printCountsShort (std::ostream &_os)
+void Observation::printCountsShort (std::ostream &_os)
 {
 	std::vector <Rts2Count>::iterator count_iter;
 	if (counts.empty ())
@@ -336,9 +334,7 @@ Observation::printCountsShort (std::ostream &_os)
 	}
 }
 
-
-void
-Observation::printCounts (std::ostream &_os)
+void Observation::printCounts (std::ostream &_os)
 {
 	std::vector <Rts2Count>::iterator count_iter;
 	if (counts.empty ())
@@ -352,16 +348,12 @@ Observation::printCounts (std::ostream &_os)
 	}
 }
 
-
-void
-Observation::printCountsSummary (std::ostream &_os)
+void Observation::printCountsSummary (std::ostream &_os)
 {
 	_os << "       Number of counts:" << counts.size () << std::endl;
 }
 
-
-double
-Observation::altitudeMerit (double _start, double _end)
+double Observation::altitudeMerit (double _start, double _end)
 {
 	double minA, maxA;
 	struct ln_hrz_posn hrz;
@@ -399,9 +391,7 @@ Observation::altitudeMerit (double _start, double _end)
 	return (hrz.alt - minA) / (maxA - minA);
 }
 
-
-int
-Observation::getUnprocessedCount ()
+int Observation::getUnprocessedCount ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = getObsId ();
@@ -423,9 +413,7 @@ Observation::getUnprocessedCount ()
 	return db_count;
 }
 
-
-int
-Observation::checkUnprocessedImages (Rts2Block *master)
+int Observation::checkUnprocessedImages (Rts2Block *master)
 {
 	int ret;
 	load ();
@@ -452,9 +440,7 @@ Observation::checkUnprocessedImages (Rts2Block *master)
 	return ret;
 }
 
-
-int
-Observation::getNumberOfImages ()
+int Observation::getNumberOfImages ()
 {
 	loadImages ();
 	if (imgset)
@@ -462,9 +448,7 @@ Observation::getNumberOfImages ()
 	return 0;
 }
 
-
-int
-Observation::getNumberOfGoodImages ()
+int Observation::getNumberOfGoodImages ()
 {
 	loadImages ();
 	if (!imgset)
@@ -479,9 +463,7 @@ Observation::getNumberOfGoodImages ()
 	return ret;
 }
 
-
-int
-Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
+int Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
 {
 	loadImages ();
 	if (!imgset)
@@ -498,9 +480,7 @@ Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
 	return -1;
 }
 
-
-int
-Observation::getAverageErrors (double &eRa, double &eDec, double &eRad)
+int Observation::getAverageErrors (double &eRa, double &eDec, double &eRad)
 {
 	loadImages ();
 	if (!imgset)
@@ -508,9 +488,7 @@ Observation::getAverageErrors (double &eRa, double &eDec, double &eRad)
 	return imgset->getAverageErrors (eRa, eDec, eRad);
 }
 
-
-int
-Observation::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
+int Observation::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
 {
 	int ret;
 	Observation prevObs = Observation (getObsId () - 1);
@@ -522,9 +500,7 @@ Observation::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &p
 	return 0;
 }
 
-
-double
-Observation::getPrevSeparation ()
+double Observation::getPrevSeparation ()
 {
 	struct ln_equ_posn prevEqu, currEqu;
 	struct ln_hrz_posn prevHrz;
@@ -538,9 +514,7 @@ Observation::getPrevSeparation ()
 	return ln_get_angular_separation (&prevEqu, &currEqu);
 }
 
-
-double
-Observation::getSlewSpeed ()
+double Observation::getSlewSpeed ()
 {
 	double prevSep = getPrevSeparation ();
 	if (isnan (prevSep)
@@ -551,27 +525,21 @@ Observation::getSlewSpeed ()
 	return prevSep / (obs_start - obs_slew);
 }
 
-
-double
-Observation::getSlewTime ()
+double Observation::getSlewTime ()
 {
 	if (isnan (obs_slew) || isnan (obs_start))
 		return nan ("f");
 	return obs_start - obs_slew;
 }
 
-
-double
-Observation::getObsTime ()
+double Observation::getObsTime ()
 {
 	if (isnan (obs_start) || isnan (obs_end))
 		return nan ("f");
 	return obs_end - obs_slew;
 }
 
-
-void
-Observation::maskState (int newBits)
+void Observation::maskState (int newBits)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
