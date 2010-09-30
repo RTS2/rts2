@@ -35,7 +35,6 @@ from operator import itemgetter
 LOG_FILENAME = '/var/log/rts2-autofocus'
 logger= logging.getLogger('rts2_af_logger') ;
 
-
 class AFScript:
     """Class for any AF script"""
     def __init__(self):
@@ -342,13 +341,6 @@ class SExtractorParams():
         self.reference= []
         self.assoc= []
 
-    def elementIndex(self, element):
-        for ele in  self.assoc:
-            if( element== ele) : 
-                return self.assoc.index(ele)
-        else:
-            return False
-
     def readSExtractorParams(self):
         params=open( self.paramsFileName, 'r')
         lines= params.readlines()
@@ -464,12 +456,12 @@ class SXReferenceObject(SXObject):
 
     def append(self, sxObject):
         self.matchedsxObjects.append(sxObject)
-        
 
 import shlex
 import subprocess
 import re
 from math import sqrt
+
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
     def __init__(self, fitsHDU=None, SExtractorParams=None, referenceCatalogue=None):
