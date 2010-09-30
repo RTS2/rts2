@@ -552,9 +552,7 @@ class DeviceCount: public SessionMethod
 class ListDevices: public SessionMethod
 {
 	public:
-		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s)
-		{
-		}
+		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -569,9 +567,40 @@ class ListDevices: public SessionMethod
 
 		std::string help ()
 		{
-			return std::string ("Returns name of devices conencted to the system");
+			return std::string ("Returns names of devices conencted to the system");
 		}
 } listDevices (&xmlrpc_server);
+
+
+class DeviceByType: public SessionMethod
+{
+	public:
+		DeviceByType (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_GET_BY_TYPE, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			connections_t::iterator iter = serv->getConnections ()->begin ();
+			int i = 0;
+			int type = params[0];
+			while (true)
+			{
+				serv->getOpenConnectionType (type, iter);
+				if (iter == serv->getConnections ()->end ())
+					break;
+				result[i] = (*iter)->getName ();
+				iter++;
+				i++;
+			}
+
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns names of device of the given type, connected to the system");
+		}
+		
+} deviceByType (&xmlrpc_server);
 
 
 /**
