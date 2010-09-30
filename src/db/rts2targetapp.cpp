@@ -21,7 +21,7 @@
 #include "simbad/simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
-#include "../utilsdb/rts2targetell.h"
+#include "../utilsdb/targetell.h"
 
 #include <sstream>
 #include <iostream>

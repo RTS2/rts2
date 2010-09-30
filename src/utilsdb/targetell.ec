@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2targetell.h"
+#include "targetell.h"
 
 #include "../utils/infoval.h"
 #include "../utils/libnova_cpp.h"
@@ -36,15 +36,15 @@ int EllTarget::load ()
 	if (ret)
 		return ret;
 	// try to parse MPC string..
-	return LibnovaEllFromMPC (&orbit, designation, getTargetInfo ());
+	return LibnovaEllFromMPC (&orbit, designation, getTargetInfo ()) && LibnovaEllFromMPCComet (&orbit, designation, getTargetInfo ());
 }
 
 int EllTarget::orbitFromMPC (const char *mpc)
 {
 	int ret;
-	ret = LibnovaEllFromMPC (&orbit, designation, mpc);
-	if (ret)
+	if ((ret = LibnovaEllFromMPC (&orbit, designation, mpc)) && (ret = LibnovaEllFromMPCComet (&orbit, designation, mpc)))
 		return ret;
+
 	setTargetName (designation.c_str ());
 	setTargetInfo (mpc);
 	setTargetType (TYPE_ELLIPTICAL);

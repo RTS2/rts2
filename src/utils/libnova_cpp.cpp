@@ -847,6 +847,38 @@ int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, con
 	return 0;
 }
 
+int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description, const char *mpc)
+{
+	std::string cnum;
+	std::string cal;
+
+	struct ln_date epoch;
+	float d;
+	float mag;
+	float slope;
+
+	std::istringstream is (mpc);
+
+	epoch.days = epoch.hours = epoch.minutes = epoch.seconds;
+
+	is >> cnum >> epoch.years >> epoch.months >> d >> orbit->a >> orbit->e >>
+		orbit->w >> orbit->omega >> orbit->i >> cal >> mag >> slope >> description;
+
+	if (is.fail ())
+		return -1;
+
+	double true_a = orbit->a / (1 - orbit->e);
+	orbit->n = ln_get_ell_mean_motion (true_a);
+
+	// convert to elipsis..
+	if (orbit->e < 1)
+		orbit->a = true_a; 
+
+	orbit->JD = ln_get_julian_day (&epoch) + d;
+
+	return 0;
+}
+
 double LibnovaEarthDistanceFromMpec (struct ln_ell_orbit *orbit, double JD)
 {
 	if (orbit->e == 1.0)
