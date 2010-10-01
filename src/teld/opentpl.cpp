@@ -716,8 +716,11 @@ void OpenTPL::checkPower ()
 		cabinetPowerState->setValueInteger (power_state);
 		sendValueAll (cabinetPowerState);
 		opentplConn->setDebug (debugConn->getValueBool ());
+		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power down");
 		return;
 	}
+
+	maskState (DEVICE_ERROR_HW, 0, "preinitialization completed");
 	// sometime we can reach 1..
 	if (power_state == 0)
 	{
@@ -744,6 +747,7 @@ void OpenTPL::checkPower ()
 			cabinetPowerState->setValueInteger (power_state);
 			sendValueAll (cabinetPowerState);
 			opentplConn->setDebug (debugConn->getValueBool ());
+			maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power up");
 			return;
 		}
 	}
@@ -778,6 +782,7 @@ void OpenTPL::checkPower ()
 	if (cycle == WAIT_POWER_UP)
 	{
 		logStream (CRITICAL_TELESCOPE_FAILURE | MESSAGE_ERROR) << "cannot reference device" << sendLog;
+		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power up");
 		return;
 	}
 	if (cover)
