@@ -55,6 +55,7 @@
 #define ZS_COMP_RUN      0x0020
 // does not have rain signal
 #define ZS_WITHOUT_RAIN  0x0040
+#define ZS_BOOTES3       0x0080
 #define ZS_HUMIDITY      0x0100
 #define ZS_FRAM          0x0200
 #define ZS_SIMPLE        0x0400
@@ -618,10 +619,10 @@ int Zelio::init ()
 	}
 
 	// O4XT1
-	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM);
+	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM | ZS_BOOTES3);
 	switch (model)
 	{
-		case 0:
+		case ZS_BOOTES3:
 			zelioModel = ZELIO_BOOTES3;
 			zelioModelString->setValueString ("ZELIO_BOOTES3");
 			break;
@@ -760,7 +761,7 @@ void Zelio::createZelioValues ()
 		createValue (humidity, "humidity", "Humidity sensor raw output", false);
 	}
 
-	if (zelioModel == ZELIO_FRAM)
+	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
 	{
 		createValue (Q8, "Q8", "Q8 switch", false, RTS2_VALUE_WRITABLE);
 		createValue (QA, "QA", "QA switch", false, RTS2_VALUE_WRITABLE);
@@ -789,7 +790,7 @@ int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == emergencyReset)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-	if (zelioModel == ZELIO_FRAM)
+	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
 	{
 		if (oldValue == Q8)
 		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
