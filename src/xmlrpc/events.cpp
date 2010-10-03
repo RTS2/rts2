@@ -146,6 +146,11 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 	}
 }
 
+void Events::parseMessage (xmlNodePtr event, std::string deviceName)
+{
+
+}
+
 void Events::parseHttp (xmlNodePtr ev)
 {
 	for (; ev; ev = ev->next)
@@ -219,11 +224,15 @@ void Events::parseEvents (xmlNodePtr ev)
 				}
 				else if (xmlStrEqual (event->name, (xmlChar *) "state"))
 				{
-						parseState (event, deviceName);
+					parseState (event, deviceName);
 				}
 				else if (xmlStrEqual (event->name, (xmlChar *) "value"))
 				{
-						parseValue (event, deviceName);
+					parseValue (event, deviceName);
+				}
+				else if (xmlStrEqual (event->name, (xmlChar *) "message"))
+				{
+					parseMessage (event, deviceName);	
 				}
 				else
 				{

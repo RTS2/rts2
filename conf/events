@@ -34,6 +34,13 @@
       <value name="sw_open_left|sw_close_left|sw_open_right|sw_close_right">
         <record/>
       </value>
+      <message type="CRITICAL">
+        <email>
+          <to>example@example.com</to>
+	  <subject>Critical error on dome occured.</subject>
+	  <body>There is critical error on Bootes dome. Please act immediatelly.</body>
+	</email>
+      </message>
     </device>
     <device name="PRESS">
       <value name="pressure" cadency="60">

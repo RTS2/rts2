@@ -88,6 +88,26 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <xs:simpleType name="messageType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CRITICAL"/>
+      <xs:enumeration value="ERROR"/>
+      <xs:enumeration value="INFO"/>
+      <xs:enumeration value="WARNING"/>
+      <xs:enumeration value="DEBUG"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- messages arriving from device -->
+  <xs:complexType name="message">
+    <xs:annotation><xs:documentation>Actions bound to messages.</xs:documentation></xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="action">
+        <xs:attribute name="type" type="messageType" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <xs:complexType name="http">
     <xs:sequence>
       <xs:element name="public" minOccurs="0" maxOccurs="unbounded" type="xs:string">
@@ -113,6 +133,7 @@
 	  <xs:sequence>
 	    <xs:element name="state" type="state" minOccurs="0" maxOccurs="unbounded"/>
 	    <xs:element name="value" type="value" minOccurs="0" maxOccurs="unbounded"/>
+	    <xs:element name="message" type="message" minOccurs="0" maxOccurs="unbounded"/>
 	  </xs:sequence>
           <xs:attribute name="name" type="xs:string"/>
 	</xs:complexType>

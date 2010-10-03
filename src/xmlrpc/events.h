@@ -20,6 +20,7 @@
 #ifndef __RTS2_EVENTS__
 #define __RTS2_EVENTS__
 
+#include "messageevents.h"
 #include "stateevents.h"
 #include "valueevents.h"
 #include "bbserver.h"
@@ -62,6 +63,7 @@ class Events
 	public:
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
+		MessageCommands messageCommands;
 		BBServers bbServers;
 
 		std::vector <std::string> publicPaths;
@@ -95,6 +97,7 @@ class Events
 
 		void parseState (xmlNodePtr event, std::string deviceName);
 		void parseValue (xmlNodePtr event, std::string deviceName);
+		void parseMessage (xmlNodePtr event, std::string deviceName);
 };
 
 }

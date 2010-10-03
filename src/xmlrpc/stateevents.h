@@ -133,7 +133,7 @@ class StateChangeEmail: public StateChange, public EmailAction
 
 		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
 		{
-			EmailAction::run (_master, _conn, validTime);
+			EmailAction::run (_master);
 		}
 };
 
