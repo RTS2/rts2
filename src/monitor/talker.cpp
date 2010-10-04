@@ -70,7 +70,7 @@ int Talker::processOption (int opt)
 			messageMask = MESSAGE_MASK_ALL;
 			break;
 		case 'e':
-			messageMask = MESSAGE_ERROR;
+			messageMask = MESSAGE_ERROR | MESSAGE_CRITICAL;
 			break;
 		default:
 			return Rts2Client::processOption (opt);

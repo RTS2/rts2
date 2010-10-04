@@ -215,10 +215,10 @@ void NMonitor::menuPerform (int code)
 			showHelp ();
 			break;
 		case MENU_DEBUG_BASIC:
-			msgwindow->setMsgMask (0x03);
+			msgwindow->setMsgMask (MESSAGE_CRITICAL | MESSAGE_ERROR | MESSAGE_WARNING);
 			break;
 		case MENU_DEBUG_LIMITED:
-			msgwindow->setMsgMask (0x07);
+			msgwindow->setMsgMask (MESSAGE_CRITICAL | MESSAGE_ERROR | MESSAGE_WARNING | MESSAGE_INFO);
 			break;
 		case MENU_DEBUG_FULL:
 			msgwindow->setMsgMask (MESSAGE_MASK_ALL);

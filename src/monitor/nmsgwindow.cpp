@@ -24,7 +24,7 @@ using namespace rts2ncurses;
 
 NMsgWindow::NMsgWindow ():NSelWindow (0, LINES - 19, COLS, 18, 1, 300, 500)
 {
-	msgMask = 0x07;
+	msgMask = MESSAGE_CRITICAL | MESSAGE_ERROR | MESSAGE_WARNING | MESSAGE_INFO;
 	setLineOffset (0);
 	setSelRow (-1);
 }
