@@ -101,7 +101,7 @@ class TargetApp:public Rts2AppDb
 	private:
 		int op;
 		std::vector < const char * >tar_names;
-		rts2db::TargetSet *target_set;
+		rts2db::TargetSet target_set;
 
 		float new_priority;
 		float new_bonus;
@@ -136,7 +136,6 @@ class TargetApp:public Rts2AppDb
 
 TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
-	target_set = NULL;
 	op = OP_NONE;
 	new_priority = rts2_nan ("f");
 	new_bonus = rts2_nan ("f");
@@ -186,7 +185,6 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 
 TargetApp::~TargetApp ()
 {
-	delete target_set;
 	delete[] defaultCamera;
 }
 
@@ -357,7 +355,7 @@ int TargetApp::runInteractive ()
 			case 'q':
 				return 0;
 			case 's':
-				return target_set->save (true);
+				return target_set.save (true);
 		}
 	}
 }
@@ -369,7 +367,7 @@ void TargetApp::setTempdisable ()
 		std::cerr << "Missing camera name" << std::endl;
 		return;
 	}
-	for (rts2db::TargetSet::iterator iter = target_set->begin (); iter != target_set->end (); iter++)
+	for (rts2db::TargetSet::iterator iter = target_set.begin (); iter != target_set.end (); iter++)
 	{
 		std::string cs;
 		rts2db::Target *tar = iter->second;
@@ -445,27 +443,31 @@ int TargetApp::doProcessing ()
 		std::cerr << "No target specified, exiting." << std::endl;
 		return -1;
 	}
-	target_set = new rts2db::TargetSet ();
 
 	try
 	{
-		target_set->load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver, true, resType);
+		target_set.load (tar_names, matchAll ? rts2db::resolveAll : rts2db::consoleResolver, true, resType);
 		if (op & OP_DELETE)
 		{
-			target_set->deleteTargets ();
+			for (rts2db::TargetSet::iterator iter = target_set.begin (); iter != target_set.end (); iter++)
+			{
+				std::cout << "Deleting " << iter->second->getTargetName ();
+				iter->second->deleteTarget ();
+				std::cout << "." << std::endl;
+			}
 			return 0;
 		}
 		if ((op & OP_MASK_EN) == OP_ENABLE)
 		{
-			target_set->setTargetEnabled (true, true);
+			target_set.setTargetEnabled (true, true);
 		}
 		if ((op & OP_MASK_EN) == OP_DISABLE)
 		{
-			target_set->setTargetEnabled (false, true);
+			target_set.setTargetEnabled (false, true);
 		}
 		if (op & OP_PRIORITY)
 		{
-			target_set->setTargetPriority (new_priority);
+			target_set.setTargetPriority (new_priority);
 		}
 		if (op & OP_TEMPDISABLE)
 		{
@@ -473,15 +475,15 @@ int TargetApp::doProcessing ()
 		}
 		if (op & OP_BONUS)
 		{
-			target_set->setTargetBonus (new_bonus);
+			target_set.setTargetBonus (new_bonus);
 		}
 		if (op & OP_BONUS_TIME)
 		{
-			target_set->setTargetBonusTime (&new_bonus_time);
+			target_set.setTargetBonusTime (&new_bonus_time);
 		}
 		if (op & OP_NEXT_TIME)
 		{
-			target_set->setNextObservable (&new_next_time);
+			target_set.setNextObservable (&new_next_time);
 		}
 		if (op & OP_SCRIPT)
 		{
@@ -489,8 +491,8 @@ int TargetApp::doProcessing ()
 			{
 				rts2script::Script script = rts2script::Script (iter->script);
 				struct ln_equ_posn target_pos;
-				target_set->begin ()->second->getPosition (&target_pos);
-				script.parseScript (((Rts2Target *) target_set->begin ()->second), &target_pos);
+				target_set.begin ()->second->getPosition (&target_pos);
+				script.parseScript (((Rts2Target *) target_set.begin ()->second), &target_pos);
 				int failedCount = script.getFaultLocation ();
 				if (failedCount != -1)
 				{
@@ -502,7 +504,7 @@ int TargetApp::doProcessing ()
 				}
 				try
 				{
-					target_set->setTargetScript (iter->cameraName, iter->script);
+					target_set.setTargetScript (iter->cameraName, iter->script);
 				}
 				catch (rts2db::CameraMissingExcetion &ex)
 				{
@@ -514,8 +516,8 @@ int TargetApp::doProcessing ()
 		{
 			try
 			{
-				target_set->setConstraints (constraints);
-				std::cout << "Set constraints for:" << std::endl << *target_set << std::endl;
+				target_set.setConstraints (constraints);
+				std::cout << "Set constraints for:" << std::endl << target_set << std::endl;
 			}
 			catch (rts2core::Error f)
 			{
@@ -524,16 +526,16 @@ int TargetApp::doProcessing ()
 		}
 		if (op & OP_NEXT_OBSER)
 		{
-			target_set->setNextObservable (NULL);
+			target_set.setNextObservable (NULL);
 		}
 		if (op & OP_OBS_SLEW)
 		{
-			if (target_set->size () != 1)
+			if (target_set.size () != 1)
 			{
 				std::cerr << "You must specify only single target which observation will be started." << std::endl;
 				return -1;
 			}
-			rts2db::Target *tar = (target_set->begin ())->second;
+			rts2db::Target *tar = (target_set.begin ())->second;
 			struct ln_equ_posn pos;
 			tar->getPosition (&pos);
 			tar->startSlew (&pos);
@@ -543,18 +545,18 @@ int TargetApp::doProcessing ()
 		}
 		if (op & OP_PI_NAME)
 		{
-			target_set->setTargetPIName (pi);
+			target_set.setTargetPIName (pi);
 		}
 		if (op & OP_PROGRAM_NAME)
 		{
-			target_set->setTargetProgramName (program);
+			target_set.setTargetProgramName (program);
 		}
 		if (op == OP_NONE)
 		{
 			return runInteractive ();
 		}
 
-		return target_set->save (true);
+		return target_set.save (true);
 	}
 	catch (rts2db::UnresolvedTarget ut)
 	{
