@@ -75,7 +75,7 @@ const char * tilde_expand(const char * name);
     \param format Format string like those used with printf() and friends.
     \param ...
  *****************************************************************************/
-void indi_log(int prio, char * format, ...);
+void sys_log(int prio, char * format, ...);
 
 /** \brief Creates syslog entries for debugging (if preprocessor define
            USE_SYSLOG)* and prints the message to stderr depending on the
@@ -84,7 +84,7 @@ void indi_log(int prio, char * format, ...);
     \param format Format string like those used with printf() and friends.
     \param ...
  *****************************************************************************/
-void indi_debug_log(int level, char * format, ...);
+void sys_debug_log(int level, char * format, ...);
 
 
 char * ctrl2hex(char *str);

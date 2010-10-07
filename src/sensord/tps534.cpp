@@ -18,12 +18,12 @@
  */
 
 #include "sensord.h"
-#include "aag.h"
+#include "tps534-oak.h"
 #define  OPT_TPS534_DEVICE      OPT_LOCAL + 133
 #define  OPT_TPS534_SKY_TRIGGER OPT_LOCAL  + 134
-#define TPS534_POLLING_TIME    1.      /* seconds */
-#define TPS534_WEATHER_TIMEOUT 60.      /* seconds */
-#define TPS534_WEATHER_TIMEOUT_BAD 300. /* seconds */
+
+
+tps534_state tps534State ;
 
 namespace rts2sensord
 {
@@ -35,23 +35,17 @@ namespace rts2sensord
 class TPS534: public SensorWeather
 {
 	private:
-		char *device_file;
-		Rts2ValueDouble *tempSky;
-		Rts2ValueDouble *tempIRSensor;
+		char default_device_file[64] ;
+		char *device_file ;
+		Rts2ValueDouble *temperatureSky;
+		Rts2ValueDouble *ambientTemperatureBeta;
+		Rts2ValueDouble *ambientTemperatureLUT;
+		Rts2ValueDouble *rTheta;
 		Rts2ValueDouble *triggerSky;
-		Rts2ValueDouble *tempSkyCorrected;
-		/*
-		 * Read sensor values and caculate.
-		 */
-		int TPS534GetSkyIRTemperature ();
-		int TPS534GetIRSensorTemperature ();
-                int TPS534SkyTemperatureCorrection(double sky, double ambient, double *cor) ;
      	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int info ();
-		virtual int idle ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		TPS534 (int in_argc, char **in_argv);
@@ -61,37 +55,6 @@ class TPS534: public SensorWeather
 };
 
 using namespace rts2sensord;
-int
-TPS534::TPS534SkyTemperatureCorrection( double sky, double ambient, double *cor)
-{
-    double td ;
-
-    td= cor[0]/100. * (ambient - cor[1]/10.) + pow(( cor[2]/100.) * exp(cor[3]/1000. * ambient), (cor[4]/100.)) ;
-
-    tempSkyCorrected->setValueDouble( sky - td) ;
-    return 0;
-}
-int
-TPS534::TPS534GetSkyIRTemperature ()
-{
-  //	int ret;
-	int value=0 ;
- 
-	tempSky->setValueDouble ((double) value/100.);
-
-	return 0;
-}
-int
-TPS534::TPS534GetIRSensorTemperature ()
-{
-  //	int ret;
-  //	char buf[51];
-	int value ;
- 
-	tempIRSensor->setValueDouble ((double) value/100.);
-
-	return 0;
-}
 int
 TPS534::processOption (int in_opt)
 {
@@ -116,6 +79,8 @@ TPS534::init ()
 	if (ret)
 		return ret;
 
+	connectDevice(device_file, 1);
+
 	if (!isnan (triggerSky->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
 
@@ -124,59 +89,37 @@ TPS534::init ()
 int
 TPS534::info ()
 {
-// These values should be made available for setting if required
+  rTheta->setValueDouble (tps534State.calcIn[0]) ;
+  ambientTemperatureBeta->setValueDouble (tps534State.calcIn[1]) ;
+  ambientTemperatureLUT->setValueDouble (tps534State.calcIn[2]) ;
+  temperatureSky->setValueDouble (tps534State.calcIn[3]) ;
 
-//    double cor[]= {COR_0, COR_1, COR_2, COR_3, COR_4} ;
-//    double polling_time= TPS534_POLLING_TIME;
-    int ret;
-
-    ret = TPS534GetSkyIRTemperature ();
-    if (ret)
+    // check the state of the cloud sensor
+    if (temperatureSky->getValueDouble() > triggerSky->getValueDouble ())
     {
-	if (getLastInfoTime () > TPS534_WEATHER_TIMEOUT)
-	    setWeatherTimeout (TPS534_WEATHER_TIMEOUT, "cannot read from device");
-	return -1 ;
-    }
-    ret = TPS534GetIRSensorTemperature ();
-    if (ret)
-    {
-	if (getLastInfoTime () > TPS534_WEATHER_TIMEOUT)
-	    setWeatherTimeout (TPS534_WEATHER_TIMEOUT, "cannot read from device");
-	return -1 ;
-    }
-    // check the state of the rain sensor
-    if ((tempSky->getValueDouble() > triggerSky->getValueDouble ()) && (tempSkyCorrected->getValueDouble() > triggerSky->getValueDouble ()))
-    {
-	if (getWeatherState () == true) 
+      if (getWeatherState () == true) 
 	{
-	    logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << tempSky->getValueDouble ()
-				      << " trigger: " << triggerSky->getValueDouble ()
-				      << sendLog;
+	  logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << temperatureSky->getValueDouble ()
+				    << " trigger: " << triggerSky->getValueDouble ()
+				    << sendLog;
 	}
-	setWeatherTimeout (TPS534_WEATHER_TIMEOUT_BAD, "sky temperature");
+      setWeatherTimeout (TPS534_WEATHER_TIMEOUT_BAD, "sky temperature");
     }
     return SensorWeather::info ();
 }
-int
-TPS534::idle ()
-{
-	return SensorWeather::idle ();
-}
-int
-TPS534::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	return SensorWeather::setValue (old_value, new_value);
-}
 TPS534::TPS534 (int argc, char **argv):SensorWeather (argc, argv)
 {
-	createValue (tempSky,          "TEMP_SKY",     "temperature sky", true); // go to FITS
-	createValue (tempSkyCorrected, "TEMP_SKY_CORR","temperature sky corrected", false);
-	createValue (tempIRSensor,     "TEMP_IRS",     "temperature ir sensor", false);
-	createValue (triggerSky,       "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
-	triggerSky->setValueDouble (THRESHOLD_CLOUDY);
-
-	addOption (OPT_TPS534_DEVICE, "device", 1, "serial port TPS534 cloud sensor");
+        strcpy( default_device_file, "/dev/usb/hiddev0");
+	device_file= default_device_file ;
+	addOption (OPT_TPS534_DEVICE, "device", 1, "HID dev TPS534 cloud sensor");
 	addOption (OPT_TPS534_SKY_TRIGGER, "cloud", 1, "cloud trigger point [deg C]");
+
+	createValue (temperatureSky,         "TEMP_SKY",     "temperature sky", true); // go to FITS
+	createValue (ambientTemperatureBeta, "AMB_TEMP_BETA","ambient temperature", false);
+	createValue (ambientTemperatureLUT,  "AMB_TEMP_LUT", "ambient temperature", false);
+	createValue (rTheta,                 "R_THETA",      "Theta", false);
+	createValue (triggerSky,             "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
+	triggerSky->setValueDouble (TPS534_THRESHOLD_CLOUDY);
 
 	setIdleInfoInterval (TPS534_POLLING_TIME); // best choice for TPS534
 }

@@ -26,10 +26,10 @@
 
 #include <stdio.h>
 #include <string.h>
-//#include <malloc.h>
+#include <malloc.h>
 #include <sys/time.h>
-//#include <math.h>
 #endif
+
 #include <errno.h>
 #include <pthread.h>
 #include <time.h>
@@ -107,7 +107,7 @@ connectOakDiginDevice(int connecting)
       CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOn, false));
 
       // wildi ToDo int* values = xmalloc(devInfo.numberOfChannels * sizeof(int));
-      int* values = xmalloc( 64 * sizeof(int));
+      int* values = malloc( 64 * sizeof(int));
       int rd_stat;
 
       oak_digin_thread_heart_beat= 0 ;
@@ -250,7 +250,7 @@ oak_digin_thread(void * args)
 {
   int ret ;
   // wildi ToDo int *values = xmalloc(devInfo.numberOfChannels * sizeof(int));
-  int *values = xmalloc(200 * sizeof(int));
+  int *values = malloc(200 * sizeof(int));
   int rd_stat;
   int bits = 0xff;
   int print_bits = 0xff;

@@ -80,24 +80,12 @@ int stop ;
 } ;
 static struct ssd650v_motor_run_state motor_run_state ;
 
-// MotorCoastSP.sp[0].s "MOTOR_COAST_SET" "Motor Coast"
-// MotorCoastSP.sp[1].s "MOTOR_COAST_RESET" "Reset Motor Coast"
 struct ssd650v_coast_state {
 int set ;
 int reset ;
 } ;
 static struct ssd650v_coast_state coast_state ;
 
-//SSD_MotorSeqLP.lp[0].s "SEQ_READY" "Inverter ready"
-//SSD_MotorSeqLP.lp[1].s "SEQ_ON" "Inverter on
-//SSD_MotorSeqLP.lp[2].s "SEQ_RUNNING" "Motor running"
-//SSD_MotorSeqLP.lp[3].s "SEQ_TRIPPED" "Motor tripped"
-//SSD_MotorSeqLP.lp[4].s "SEQ_COAST" "Motor coasting"
-//SSD_MotorSeqLP.lp[5].s "SEQ_FAST_STOP" "Motor fast stoping"
-//SSD_MotorSeqLP.lp[6].s "SEQ_ON_DISABLE" "Inverter on inhibited"
-//SSD_MotorSeqLP.lp[7].s "SEQ_REMOTE" "Inverter remotely controlled"
-//SSD_MotorSeqLP.lp[8].s "SEQ_SP_REACHED" "Motor setpoint reached" 
-//SSD_MotorSeqLP.lp[9].s "SEQ_INTERN_LIMIT" "Motor current limit"
 struct ssd650v_seq_state {
 int ssd_motor_seq ; // SSD650V_IS_IDLE, SSD650V_IS_OK
 int ready;
@@ -334,20 +322,20 @@ set_setpoint(float setpoint)
   char data[8];
   
   if (isnan(setpoint)) {
-    indi_log(ILOG_WARNING, "Don't set setpoint to NaN!");
+    sys_log(ILOG_WARNING, "Don't set setpoint to NaN!");
     fprintf( stderr, "Don't set setpoint to NaN!\n");
     return BISYNC_ERR;
   }
   
   if ( fabs( setpoint) > 100.) {
-    indi_log(ILOG_WARNING, "Don't set setpoint to larger than 100.%");
+    sys_log(ILOG_WARNING, "Don't set setpoint to larger than 100.%");
     fprintf( stderr, "Don't set setpoint to larger than 100.\n");
     return BISYNC_ERR;
   }
   // wildi ToDo: fails at the beginning
   /*   float ssd_setp = SSD_qry_real(ser_dev, 247);; */
   /*   if (isnan(ssd_setp)) { */
-  /*     indi_log(ILOG_WARNING, "Failure querying setpoint"); */
+  /*     sys_log(ILOG_WARNING, "Failure querying setpoint"); */
   /*     fprintf( stderr, "Failure querying setpoint\n"); */
   /*     return BISYNC_ERR; */
   /*   } */
@@ -401,16 +389,6 @@ qry_mot_status()
     /*     IUSaveText(&SSD_device_infoTP.tp[2], id_str); */
     free(id_str);
     if (cmd_stat != inverter_seq_status) {
-      /*       SSD_MotorSeqLP.lp[0].s = cmd_stat & 0x0001 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[1].s = cmd_stat & 0x0002 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[2].s = cmd_stat & 0x0004 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[3].s = cmd_stat & 0x0008 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[4].s = cmd_stat & 0x0010 ? IPS_IDLE : IPS_OK; */
-      /*       SSD_MotorSeqLP.lp[5].s = cmd_stat & 0x0020 ? IPS_IDLE : IPS_OK; */
-      /*       SSD_MotorSeqLP.lp[6].s = cmd_stat & 0x0040 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[7].s = cmd_stat & 0x0200 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[8].s = cmd_stat & 0x0400 ? IPS_OK : IPS_IDLE; */
-      /*       SSD_MotorSeqLP.lp[9].s = cmd_stat & 0x0800 ? IPS_OK : IPS_IDLE; */
       seq_state.ssd_motor_seq= SSD650V_IS_OK ;
       seq_state.ready       = cmd_stat & 0x0001 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
       seq_state.on          = cmd_stat & 0x0002 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
@@ -463,7 +441,7 @@ motor_faststop_switch_state()
   mot_stat = qry_mot_cmd();
   if (mot_stat < 0) {
     msg = "failure getting motor commanding status.";
-    indi_log(ILOG_ERR, msg); 
+    sys_log(ILOG_ERR, msg); 
     
   } else {
     // wildi ToDo:   if( MotorFastStopSP.sp[0].s == ISS_ON) {
@@ -482,7 +460,7 @@ motor_faststop_switch_state()
 
     } else {
       msg = "??? none of the 1-of-many switches is on!";
-      indi_log(ILOG_WARNING, msg);
+      sys_log(ILOG_WARNING, msg);
     }
   }
   qry_mot_cmd();
@@ -507,7 +485,7 @@ motor_coast_switch_state()
   if (mot_stat < 0) {
     /*     MotorCoastSP.s = IPS_ALERT; */
     msg = "failure getting motor commanding status.";
-    indi_log(ILOG_ERR, msg);
+    sys_log(ILOG_ERR, msg);
 
   } else {
     // wildi ToDo if (MotorCoastSP.sp[0].s == ISS_ON) {
@@ -540,7 +518,7 @@ motor_coast_switch_state()
     } else {
       /*       MotorCoastSP.s = IPS_ALERT; */
       msg = "??? none of the 1-of-many switches is on!";
-      indi_log(ILOG_WARNING, msg);
+      sys_log(ILOG_WARNING, msg);
     }
   }
   
@@ -563,7 +541,7 @@ int motor_run_switch_state( int cmd)
 /*   if (!isnan(setpoint)) { */
 /*     // OK */
 /*   } else { */
-/*     indi_log(ILOG_WARNING, "Failure querying setpoint - aborting motor command"); */
+/*     sys_log(ILOG_WARNING, "Failure querying setpoint - aborting motor command"); */
 /*     fprintf( stderr, "motor_run_switch_state: SSD650V_MS_GETTING_SET_POINT_FAILED\n") ; */
 /*     return SSD650V_MS_GETTING_SET_POINT_FAILED; */
 /*   } */
@@ -573,7 +551,7 @@ int motor_run_switch_state( int cmd)
     /* fprintf( stderr, "%s\n", msg) ; */
 // wildi ToDo no set point to set here    res = set_setpoint(setpoint);
 /*     if (res != BISYNC_OK) { */
-/*       indi_log(ILOG_WARNING, "Failure setting setpoint (%d) - motor not started", res); */
+/*       sys_log(ILOG_WARNING, "Failure setting setpoint (%d) - motor not started", res); */
 /*       fprintf( stderr, "motor_run_switch_state: SSD650V_MS_SETTING_SET_POINT_FAILED %3.1f, error %d\n", setpoint, res) ; */
       
 /*       return SSD650V_MS_SETTING_SET_POINT_FAILED; */
@@ -740,7 +718,7 @@ int connectSSD650vDevice( int power_state)
       if (!isnan(setpoint)) {
 	/*           IDSetNumber(&motorOperationNP, "setpoint currently is %3.1f", abs_setpoint); */
       } else {
-	indi_log(ILOG_WARNING, "Failure querying setpoint");
+	sys_log(ILOG_WARNING, "Failure querying setpoint");
 	fprintf( stderr, "connectSSD650vDevice: SSD650V_MS_GETTING_SET_POINT_FAILED\n") ;
 	return SSD650V_MS_GETTING_SET_POINT_FAILED ;
       }
@@ -749,7 +727,7 @@ int connectSSD650vDevice( int power_state)
       if (!isnan(accel_tm)) {
 	//fprintf( stderr, "connectSSD650vDevice: accel time currently is %3.1f-----------------------------\n", accel_tm);
       } else {
-	indi_log(ILOG_WARNING, "Failure querying accel_tm");
+	sys_log(ILOG_WARNING, "Failure querying accel_tm");
 	fprintf( stderr, "Failure querying accel_tm-----------------------------\n");
 	return SSD650V_MS_GETTING_ACCELERATION_TIME_FAILED ;
       }
@@ -762,7 +740,7 @@ int connectSSD650vDevice( int power_state)
       if (!isnan(decel_tm)) {
 	  //fprintf( stderr, "connectSSD650vDevice: decel time currently is %3.1f-----------------------------\n", decel_tm);
       } else {
-	indi_log(ILOG_WARNING, "Failure querying decel_tm");
+	sys_log(ILOG_WARNING, "Failure querying decel_tm");
 	fprintf( stderr, "Failure querying decel_tm-----------------------------\n");
 	return SSD650V_MS_GETTING_DECELERATION_TIME_FAILED ;
       }
@@ -873,7 +851,7 @@ ssd_start_comm(char * ser_dev_name)
   if ((sd = serial_init(ser_dev_name, bitrate, databits,
                         parity, stopbits)) < 0)
   {
-    indi_log(ILOG_ERR, "open of %s failed.", ser_dev_name);
+    sys_log(ILOG_ERR, "open of %s failed.", ser_dev_name);
     return -1;
   }
   ser_open = 1;
@@ -891,7 +869,7 @@ ssd_stop_comm()
   int res = 0;
   if (ser_open) {
     res = serial_shutdown(ser_dev);
-    indi_debug_log(1, "restored terminal settings on serial port.");
+    sys_debug_log(1, "restored terminal settings on serial port.");
   }
   return res;
 }
@@ -979,7 +957,7 @@ SSD_chkresp_real(int sd, char *response_frame)
   if (((response_frame[3] < '0') || (response_frame[3] > '9'))
       && (response_frame[3] != '.') && (response_frame[3] != '-'))
   {
-    indi_log(ILOG_ERR, "SSD_qry_real(): reply has wrong data type: %s.",
+    sys_log(ILOG_ERR, "SSD_qry_real(): reply has wrong data type: %s.",
                        &response_frame[3]);
     free(response_frame);
     return sqrt(-1);  /* return NaN */
@@ -987,7 +965,7 @@ SSD_chkresp_real(int sd, char *response_frame)
 
   int cnt = sscanf(&response_frame[3], "%f", &st_real);
   if (cnt != 1) {
-    indi_log(ILOG_ERR, "Expected a real type reply but was: %s.",
+    sys_log(ILOG_ERR, "Expected a real type reply but was: %s.",
                        &response_frame[3]);
     free(response_frame);
     return sqrt(-1);  /* return NaN */
@@ -1014,7 +992,7 @@ SSD_qry_real(int sd, int tag)
   SSD_tag2mnemonic(tag, mn);
   err = bisync_enquiry(sd, 0, 0, mn, &response_frame, ENQUIRY_SINGLE);
   if (err) {
-    indi_log(ILOG_ERR, "SSD_qry_real() for mnemo \"%s\" failed (%d: %s).",
+    sys_log(ILOG_ERR, "SSD_qry_real() for mnemo \"%s\" failed (%d: %s).",
                        mn, err, bisync_errstr(err));
     return sqrt(-1);  /* return NaN */
   }
@@ -1035,7 +1013,7 @@ SSD_chkresp_integer(int sd, char *response_frame)
   unsigned int st_int;
 
   if ((response_frame[3] < '0') || (response_frame[3] > '9')){
-    indi_log(ILOG_ERR, "SSD_qry_integer(): reply has wrong data type: %s.",
+    sys_log(ILOG_ERR, "SSD_qry_integer(): reply has wrong data type: %s.",
                        &response_frame[3]);
     free(response_frame);
     return -1;
@@ -1043,7 +1021,7 @@ SSD_chkresp_integer(int sd, char *response_frame)
 
   int cnt = sscanf(&response_frame[3], "%d.", &st_int);
   if (cnt != 1) {
-    indi_log(ILOG_ERR, "Expected an integer reply but was: %s.",
+    sys_log(ILOG_ERR, "Expected an integer reply but was: %s.",
                        &response_frame[3]);
     free(response_frame);
     return -1;
@@ -1091,7 +1069,7 @@ SSD_chkresp_hexword(int sd, char *response_frame)
   unsigned int st_word;
 
   if (response_frame[3] != '>') {
-    indi_log(ILOG_ERR, "SSD__hexword(): reply has wrong data type: %s.",
+    sys_log(ILOG_ERR, "SSD__hexword(): reply has wrong data type: %s.",
                        &response_frame[3]);
     free(response_frame);
     return -1;
@@ -1099,7 +1077,7 @@ SSD_chkresp_hexword(int sd, char *response_frame)
 
   int cnt = strlen(&response_frame[4]);
   if (cnt != 4) {
-    indi_log(ILOG_ERR, "SSD__hexword(): hex word reply has wrong "
+    sys_log(ILOG_ERR, "SSD__hexword(): hex word reply has wrong "
                        "data length: %s.", &response_frame[4]);
     free(response_frame);
     return -1;
@@ -1107,7 +1085,7 @@ SSD_chkresp_hexword(int sd, char *response_frame)
 
   cnt = sscanf(&response_frame[4], "%X", &st_word);
   if (cnt != 1) {
-    indi_log(ILOG_ERR, "Expected a hex word but reply was: %s.",
+    sys_log(ILOG_ERR, "Expected a hex word but reply was: %s.",
                        &response_frame[3]);
     free(response_frame);
     return -1;
@@ -1134,7 +1112,7 @@ SSD_qry_hexword(int sd, int tag)
   SSD_tag2mnemonic(tag, mn);
   err = bisync_enquiry(sd, 0, 0, mn, &response_frame, ENQUIRY_SINGLE);
   if (err) {
-    indi_log(ILOG_ERR, "SSD_qry_hexword() for tag %d failed (%d: %s)",
+    sys_log(ILOG_ERR, "SSD_qry_hexword() for tag %d failed (%d: %s)",
                     tag, err, bisync_errstr(err));
     return -1;
   }
@@ -1358,7 +1336,7 @@ SSD_set_tag(int sd, int tag, char * data)
   }
 
   SSD_tag2mnemonic(tag, mn);
-  //indi_debug_log(1, "going to set parameter tag %s to %s.", mn, data);
+  //sys_debug_log(1, "going to set parameter tag %s to %s.", mn, data);
   err = bisync_setparam(sd, 0, 0, mn, data, SETPARAM_SINGLE);
   if (err) {
     fprintf(stderr, "set param tag %d to \"%s\" failed (%d: %s)\n",
@@ -1382,7 +1360,7 @@ SSD_set_mnemo(int sd, char * mn, char * data)
     return BISYNC_ERR;
   }
 
-  //indi_debug_log(1, "going to set parameter tag %s to %s.", mn, data);
+  //sys_debug_log(1, "going to set parameter tag %s to %s.", mn, data);
   err = bisync_setparam(sd, 0, 0, mn, data, SETPARAM_SINGLE);
   if (err) {
     fprintf(stderr, "set param mnemo \"%s\" to \"%s\" failed (%d: %s)\n",
@@ -1416,7 +1394,7 @@ SSD_query(int sd, tagdata_t *param)
 
     err = bisync_enquiry(sd, 0, 0, mn, &response_frame, ENQUIRY_SINGLE);
     if (err) {
-      indi_log(ILOG_ERR, "SSD_query() for mnemo \"%s\" failed (%d: %s)\n",
+      sys_log(ILOG_ERR, "SSD_query() for mnemo \"%s\" failed (%d: %s)\n",
                           mn, err, bisync_errstr(err));
     }
   }

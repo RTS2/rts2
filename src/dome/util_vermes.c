@@ -64,32 +64,12 @@
 int syslog_opened = 0;
 #endif
 
-int indi_log_mask = 0;
+int sys_log_mask = 0;
 char * log_string = NULL;
 
 extern char * me;
 extern int debug;
 
-/*****************************************************************************
- * xrealloc(void *ptr, size_t size)
- * Allocates or resizes storage space. New space is allocated when ptr == NULL.
- *****************************************************************************/
-void *
-xrealloc(void *ptr, size_t size)
-{
-  register void *value;
-
-  if (ptr == NULL) {
-    value = malloc(size);
-  } else {
-    value = realloc(ptr, size);
-  }
-  if (value == NULL) {
-      fprintf(stderr, "virtual memory exhausted: %d============================================================================\n", (int) size);
-    exit(EXIT_FAILURE);
-  }
-  return value;
-}
 
 /*****************************************************************************
  * concat(const char *str, ...)
@@ -103,7 +83,7 @@ concat(const char *str, ...) {
   va_list ap;
   size_t allocated = 100;
   const char *s;
-  char *result = (char *) xrealloc(NULL, allocated);
+  char *result = (char *) realloc(NULL, allocated);
 
   if (result != NULL) {
     char *newp;
@@ -118,7 +98,7 @@ concat(const char *str, ...) {
       /* Resize the allocated memory if necessary.  */
       if (wp + len + 1 > result + allocated) {
         allocated = (allocated + len) * 2;
-        newp = (char *) xrealloc(result, allocated);
+        newp = (char *) realloc(result, allocated);
         if (newp == NULL) {
           free(result);
           return NULL;
@@ -134,7 +114,7 @@ concat(const char *str, ...) {
     *wp++ = '\0';
 
     /* Resize memory to the optimal size.  */
-    newp = xrealloc(result, wp - result);
+    newp = realloc(result, wp - result);
     if (newp != NULL) result = newp;
 
     va_end(ap);
@@ -216,7 +196,7 @@ tilde_expand(const char * name)
       while (!IS_DIR_SEP(name[c]) && name[c] != 0) /* find user name */
         c++;
       
-      user = (char *)xmalloc(c);
+      user = (char *)malloc(c);
       strncpy(user, name + 1, c - 1);
       user[c - 1] = 0;
       
@@ -258,7 +238,7 @@ ctrl2hex(char *str)
 {
   int str_l = strlen(str);
   int hex_l = str_l;
-  char *hex_str = (char *)xrealloc(NULL, str_l + 1);
+  char *hex_str = (char *)realloc(NULL, str_l + 1);
   int i;
   int pos = 0;
   for (i = 0; i < str_l; i++) {
@@ -270,7 +250,7 @@ ctrl2hex(char *str)
         return hex_str;
       }
       hex_l += 6;
-      hex_str = (char *)xrealloc(hex_str, hex_l);
+      hex_str = (char *)realloc(hex_str, hex_l);
       sprintf(&hex_str[pos], "(0x%02x)", str[i]);
       pos += 6;
     }
@@ -302,14 +282,14 @@ sprintfv(char* str, char* format, va_list ap)
     fprintf(stderr, "str: %p, cur len: %ld, new len: %ld.\n", str, (long int)s_len, (long int)new_len);
   }
   if (new_len < 0) {
-    indi_debug_log(0, "sprintfv(): could not determine formatted length.");
+    sys_debug_log(0, "sprintfv(): could not determine formatted length.");
     return NULL;
   }
 
   if (new_len >= s_len) {
     /* Reallocate buffer now that we know how much space is needed. */
     new_len++;
-    str = xrealloc(str, new_len);
+    str = realloc(str, new_len);
 
     if (str != NULL) {
       /* print again. */
@@ -318,7 +298,7 @@ sprintfv(char* str, char* format, va_list ap)
         fprintf(stderr, "str: %p (\"%s\"), new len: %ld.\n", str, str, (long int)new_len);
       }
     } else {
-      indi_log(ILOG_ERR, "sprintfv(): realloc failed.");
+      sys_log(ILOG_ERR, "sprintfv(): realloc failed.");
     }
   }
 
@@ -353,7 +333,7 @@ catfv(char* str, char* format, va_list ap)
 
   /* Reallocate buffer now that we know how much space is needed. */
   new_size = len + add_len;
-  str = xrealloc(str, new_size);
+  str = realloc(str, new_size);
   if (debug > 4) {
     fprintf(stderr, "str: %p, addlen: %d, new_size: %ld\n",
                      str, add_len, (long int)new_size);
@@ -362,7 +342,7 @@ catfv(char* str, char* format, va_list ap)
     /* print again. */
     vsnprintf(str + len, add_len + 1, format, ap2);
   } else {
-    indi_log(ILOG_ERR, "catfv(): realloc failed.");
+    sys_log(ILOG_ERR, "catfv(): realloc failed.");
   }
 
   return str;
@@ -385,12 +365,12 @@ catf(char * str, char * format, ...)
 }
 
 /******************************************************************************
- * indi_log(...)
+ * sys_log(...)
  * Creates syslog entries (if preprocessor define USE_SYSLOG) with the given
  * priority and prints the message to stderr.
  *****************************************************************************/
 void
-indi_log(int prio, char * format, ...)
+sys_log(int prio, char * format, ...)
 {
   va_list ap;
   char * s;
@@ -433,7 +413,7 @@ indi_log(int prio, char * format, ...)
         break;
     }
     syslog(lvl, s);
-    if (prio & indi_log_mask) {
+    if (prio & sys_log_mask) {
       fprintf(stderr, "%s\n", s);
     }
   } else {
@@ -445,7 +425,7 @@ indi_log(int prio, char * format, ...)
   va_end(ap);
 
   if (s) {
-    if (prio & indi_log_mask) {
+    if (prio & sys_log_mask) {
       fprintf(stderr, "%s\n", s);
     }
   } else {
@@ -455,12 +435,12 @@ indi_log(int prio, char * format, ...)
 }
 
 /******************************************************************************
- * indi_debug_log(...)
+ * sys_debug_log(...)
  * Creates syslog entries for debugging (if preprocessor define USE_SYSLOG)
  * and prints the message to stderr depending on the global debug variable.
  *****************************************************************************/
 void
-indi_debug_log(int level, char * format, ...)
+sys_debug_log(int level, char * format, ...)
 {
   va_list ap;
   char * s;

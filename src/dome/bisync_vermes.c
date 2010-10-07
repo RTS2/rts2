@@ -197,7 +197,7 @@ bisync_read_frame(int sd, char ** frame)
   int read_rpt_cnt;
   char * c2h_buf;
 
-  buf = (byte *)xrealloc(NULL, FRAME_BUF_SIZE + 1);
+  buf = (byte *)realloc(NULL, FRAME_BUF_SIZE + 1);
   *frame = NULL;
   for (read_rpt_cnt = 0; ; read_rpt_cnt++) {
     bytes_read = read(sd, &buf[bytes_tot], FRAME_BUF_SIZE - bytes_tot);
@@ -533,7 +533,7 @@ bisync_setparam(int sd, byte group_id, byte unit_id, char * cmd, char * data,
   tcflush(sd, TCIOFLUSH); /* clear all buffers */
   r = serial_write(sd, send_buf, i + 2);
   if (r != TTY_OK) {
-    indi_debug_log(2, "Error in serial_write(): %d", r);
+    sys_debug_log(2, "Error in serial_write(): %d", r);
     return BISYNC_ERR_WRITE;
   }
 
