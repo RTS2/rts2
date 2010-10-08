@@ -146,9 +146,7 @@ class ValueChangeEmail: public ValueChange, public EmailAction
 class ValueCommands:public std::list <ValueChange *>
 {
 	public:
-		ValueCommands ()
-		{
-		}
+		ValueCommands () {}
 
 		~ValueCommands ()
 		{

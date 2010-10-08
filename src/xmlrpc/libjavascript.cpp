@@ -53,6 +53,11 @@ static const char *equScript =
 
 "function ln_rad_to_deg(rad) { return rad * 5.7295779513082320877e1; }\n"
 
+/* display only degrees */
+"function ln_deg_to_d (degrees,d) {\n"
+  "d = round(degrees);\n"
+"}\n"
+
 /* convert degrees to dms */
 "function ln_deg_to_dms (degrees,dms) {\n"
   "var dtemp;\n"

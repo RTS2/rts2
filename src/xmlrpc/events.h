@@ -64,6 +64,7 @@ class Events
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
 		MessageCommands messageCommands;
+
 		BBServers bbServers;
 
 		std::vector <std::string> publicPaths;

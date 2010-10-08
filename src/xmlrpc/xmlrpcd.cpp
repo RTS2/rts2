@@ -379,6 +379,23 @@ void XmlRpcd::message (Rts2Message & msg)
 		msgDB.insertDB ();
 	}
 #endif
+	// look if there is some state change command entry, which match us..
+	for (MessageCommands::iterator iter = events.messageCommands.begin (); iter != events.messageCommands.end (); iter++)
+	{
+		MessageEvent *me = (*iter);
+		if (me->isForMessage (&msg))
+		{
+			try
+			{
+				me->run (&msg);
+			}
+			catch (rts2core::Error err)
+			{
+				logStream (MESSAGE_ERROR) << err << sendLog;
+			}
+		}
+	}
+	
 	while (messages.size () > 42) // messagesBufferSize ())
 	{
 		messages.pop_front ();

@@ -149,12 +149,12 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"var altaz = radec.altaz();\n"
 				"t[4] = altaz.alt;\n"
 				"t[5] = altaz.az;\n"
-				"ln_deg_to_dms(altaz.alt,hAlt);\n"
-				"ln_deg_to_dms(altaz.az,hAz);\n"
+				"ln_deg_to_d(altaz.alt,hAlt);\n"
+				"ln_deg_to_d(altaz.az,hAz);\n"
 				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
 				"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
 			"}\n"
-			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',2000);\n"
+			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',20000);\n"
 		"}\n"
 
 		"</script>\n";
@@ -673,7 +673,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();

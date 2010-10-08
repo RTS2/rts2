@@ -27,6 +27,7 @@ namespace rts2xmlrpc
 {
 /**
  * Class for message event handling.
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class MessageEvent
@@ -50,6 +51,24 @@ class MessageEvent
 };
 
 /**
+ * Run command when message arrives.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class MessageCommand: public MessageEvent
+{
+	public:
+		MessageCommand (XmlRpcd *_master, std::string _deviceName, int _type, std::string _commandName):MessageEvent (_master, _deviceName, _type)
+		{
+			commandName = _commandName;
+		}
+
+		virtual void run (Rts2Message *msg);
+	private:
+		std::string commandName;
+};
+
+/**
  * Send email when message arrives.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -69,7 +88,14 @@ class MessageEmail: public MessageEvent, public EmailAction
  */
 class MessageCommands:public std::list <MessageEvent *>
 {
+	public:
+		MessageCommands () {}
 
+		~MessageCommands ()
+		{
+			for (MessageCommands::iterator iter = begin (); iter != end (); iter++)
+				delete (*iter);
+		}
 };
 
 }

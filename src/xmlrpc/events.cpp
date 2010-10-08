@@ -148,7 +148,52 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 
 void Events::parseMessage (xmlNodePtr event, std::string deviceName)
 {
+	int nType;
 
+	xmlAttrPtr type = xmlHasProp (event, (xmlChar *) "type");
+	if (type == NULL)
+		throw XmlMissingAttribute (event, "type");
+
+	if (xmlStrEqual (type->children->content, (xmlChar *) "CRITICAL"))
+		nType = MESSAGE_CRITICAL;
+	else if (xmlStrEqual (type->children->content, (xmlChar *) "ERROR"))
+		nType = MESSAGE_ERROR;
+	else if (xmlStrEqual (type->children->content, (xmlChar *) "INFO"))
+		nType = MESSAGE_INFO;
+	else if (xmlStrEqual (type->children->content, (xmlChar *) "WARNING"))
+		nType = MESSAGE_WARNING;
+	else if (xmlStrEqual (type->children->content, (xmlChar *) "DEBUG"))
+		nType = MESSAGE_DEBUG;
+	else
+	  	throw XmlUnexpectedAttribute (event, "type");
+
+	xmlNodePtr action = event->children;
+	for (; action != NULL; action = action->next)
+	{
+		if (action->type == XML_COMMENT_NODE)
+		{
+			continue;
+		}
+/*		else if (xmlStrEqual (action->name, (xmlChar *) "record"))
+		{
+			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency, test));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
+		{
+			valueCommands.push_back (new ValueChangeCommand (master, deviceName, std::string ((char *) valueName->children->content), cadency, test, std::string ((char *) action->children->content)));
+		} */
+		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
+		{
+			MessageEmail *email = new MessageEmail (master, deviceName, nType);
+			email->parse (action, deviceName.c_str ());
+			// add to, subject, body,..
+			messageCommands.push_back (email);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (action);
+		}
+	}
 }
 
 void Events::parseHttp (xmlNodePtr ev)

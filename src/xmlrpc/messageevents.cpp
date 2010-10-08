@@ -17,7 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "xmlrpcd.h"
+
 #include "messageevents.h"
+#include "../utils/connfork.h"
 
 using namespace rts2xmlrpc;
 
@@ -27,6 +30,21 @@ MessageEvent::MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type
 	deviceName = ci_string (_deviceName.c_str ());
 
 	type = _type;
+}
+
+void MessageCommand::run (Rts2Message *message)
+{
+	int ret;
+	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
+	cf->addArg (message->getType ());
+	ret = cf->init ();
+	if (ret)
+	{
+		delete cf;
+		return;
+	}
+
+	master->addConnection (cf);
 }
 
 void MessageEmail::run (Rts2Message *message)

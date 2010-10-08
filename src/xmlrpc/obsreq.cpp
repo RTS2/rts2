@@ -66,7 +66,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();

@@ -138,6 +138,11 @@ class XmlRpcd:public Rts2Device
 		 */
 		bool isPublic (const std::string &path) { return events.isPublic (path); }
 
+		/**
+		 * Return default image label.
+		 */
+		const char *getDefaultImageLabel () { return "%Y-%m-%d %H:%M:%S @OBJECT"; }
+
 	protected:
 #ifndef HAVE_PGSQL
 		virtual int willConnect (Rts2Address * _addr);
