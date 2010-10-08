@@ -80,6 +80,9 @@
 #define ZI_IGNORE_RAIN   0x8000
 
 #define OPT_BATTERY      OPT_LOCAL + 501
+#define OPT_Q8_NAME      OPT_LOCAL + 502
+#define OPT_Q9_NAME      OPT_LOCAL + 503
+#define OPT_QA_NAME      OPT_LOCAL + 504
 
 namespace rts2dome
 {
@@ -165,10 +168,14 @@ class Zelio:public Dome
 		Rts2ValueBool *blockCloseRight;
 
 		Rts2ValueBool *emergencyReset;
-		Rts2ValueBool *Q9;
 
 		Rts2ValueBool *Q8;
+		Rts2ValueBool *Q9;
 		Rts2ValueBool *QA;
+
+		const char *Q8_name;
+		const char *Q9_name;
+		const char *QA_name;
 
 		Rts2ValueFloat *battery;
 		Rts2ValueFloat *batteryMin;
@@ -437,6 +444,15 @@ int Zelio::processOption (int in_opt)
 		case OPT_BATTERY:
 			batteryMin->setValueCharArr (optarg);
 			break;
+		case OPT_Q8_NAME:
+			Q8_name = optarg;
+			break;
+		case OPT_Q9_NAME:
+			Q9_name = optarg;
+			break;
+		case OPT_QA_NAME:
+			QA_name = optarg;
+			break;
 		default:
 			return Dome::processOption (in_opt);
 	}
@@ -486,9 +502,6 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false, RTS2_VALUE_WRITABLE);
 	emergencyReset->setValueBool (false);
 
-	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false, RTS2_VALUE_WRITABLE);
-	Q9->setValueBool (false);
-
 	host = NULL;
 	deadManNum = 0;
 
@@ -498,10 +511,19 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	humidity = NULL;
 
 	Q8 = NULL;
+	Q9 = NULL;
 	QA = NULL;
+
+	Q8_name = "Q8_switch";
+	Q9_name = "Q9_switch";
+	QA_name = "QA_switch";
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
 	addOption (OPT_BATTERY, "min-battery", 1, "minimal battery level [V])");
+
+	addOption (OPT_Q8_NAME, "Q8-name", 1, "name of the Q8 switch");
+	addOption (OPT_Q9_NAME, "Q9-name", 1, "name of the Q9 switch");
+	addOption (OPT_QA_NAME, "QA-name", 1, "name of the QA switch");
 }
 
 Zelio::~Zelio (void)
@@ -763,8 +785,13 @@ void Zelio::createZelioValues ()
 
 	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
 	{
-		createValue (Q8, "Q8", "Q8 switch", false, RTS2_VALUE_WRITABLE);
-		createValue (QA, "QA", "QA switch", false, RTS2_VALUE_WRITABLE);
+		createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
+		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
+		createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
+	}
+	else 
+	{
+		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
 	}
 
 	// create rain values only if rain sensor is present
