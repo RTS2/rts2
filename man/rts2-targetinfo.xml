@@ -74,10 +74,10 @@
         <arg choice="plain"><option>-e</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-b</option></arg>
+        <arg choice="plain"><option>-b<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-B</option></arg>
+        <arg choice="plain"><option>-B<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
@@ -144,6 +144,12 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--constraints <replaceable class="parameter">constraint file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--id-only</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--name-only</option></arg>
       </arg>
       <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
@@ -464,6 +470,24 @@
 	  </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>--id-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are target IDs. Exit
+	    if some of the arguments is not a number.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--name-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are targets names. Do
+	    not try to resolve them as numeric.
+	  </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
@@ -539,7 +563,11 @@
     <title>EXAMPLES</title>
 
     <screen>
-      <command>&dhpackage;</command> <option>-b</option> <option>-g<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
+      <command>&dhpackage;</command> <option>-g</option> <replaceable>1000</replaceable> | <command>gnuplot</command>
+    </screen>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-b<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
     </screen>
 
     <screen>

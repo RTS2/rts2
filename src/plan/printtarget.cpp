@@ -83,8 +83,8 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('e', NULL, 0, "print extended informations (visibility prediction,..)");
 	addOption ('E', NULL, 0, "print constraints");
 	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
-	addOption ('b', NULL, 0, "gnuplot bonus of the target");
-	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
+	addOption ('b', NULL, 2, "gnuplot bonus of the target, optionaly followed by output type (x11 | ps | png)");
+	addOption ('B', NULL, 2, "gnuplot bonus and altitude of the target, optionaly followed by output type (x11 | ps | png)");
 	addOption ('m', NULL, 0, "do not plot moon");
 	addOption (OPT_AIRMASS, "airmass", 1, "specify airmass distance for calibration targets selection (and print calibration targets)");
 	addOption ('c', NULL, 0, "print recommended calibration targets");
@@ -110,6 +110,20 @@ PrintTarget::~PrintTarget ()
 	cameras.clear ();
 }
 
+void PrintTarget::setGnuplotType (const char *type)
+{
+	if (!strcmp (type, "ps"))
+		printGNUplot |= GNUPLOT_TYPE_PS;
+	else if (!strcmp (type, "png"))
+		printGNUplot |= GNUPLOT_TYPE_PNG;
+	else if (!strcmp (type, "eps"))
+		printGNUplot |= GNUPLOT_TYPE_EPS;
+	else if (!strcmp (type, "x11"))
+		printGNUplot |= GNUPLOT_TYPE_X11;
+	else
+		throw rts2core::Error (std::string ("unknow type for GNUPlot ") + type);
+}
+
 int PrintTarget::processOption (int in_opt)
 {
 	int ret;
@@ -121,14 +135,7 @@ int PrintTarget::processOption (int in_opt)
 		case 'g':
 			if (optarg)
 			{
-				if (!strcmp (optarg, "ps"))
-					printGNUplot |= GNUPLOT_TYPE_PS;
-				if (!strcmp (optarg, "png"))
-					printGNUplot |= GNUPLOT_TYPE_PNG;
-				if (!strcmp (optarg, "eps"))
-					printGNUplot |= GNUPLOT_TYPE_EPS;
-				if (!strcmp (optarg, "x11"))
-					printGNUplot |= GNUPLOT_TYPE_X11;
+				setGnuplotType (optarg);
 			}
 			else
 			{
@@ -136,9 +143,17 @@ int PrintTarget::processOption (int in_opt)
 			}
 			break;
 		case 'b':
+			if (optarg)
+			{
+				setGnuplotType (optarg);
+			}
 			printGNUplot |= GNUPLOT_BONUS_ONLY;
 			break;
 		case 'B':
+			if (optarg)
+			{
+				setGnuplotType (optarg);
+			}
 			printGNUplot |= GNUPLOT_BONUS;
 			break;
 		case 'm':
