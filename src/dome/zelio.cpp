@@ -123,7 +123,7 @@ class Zelio:public Dome
 		HostString *host;
 		int16_t deadManNum;
 
-		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
 		// if model have hardware rain signal
 		bool haveRainSignal;
@@ -357,6 +357,7 @@ long Zelio::isOpened ()
 			break;
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
@@ -419,6 +420,7 @@ long Zelio::isClosed ()
 			break;
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
@@ -564,6 +566,7 @@ int Zelio::info ()
 		case ZELIO_BOOTES3:
 			onPower->setValueBool (regs[7] & ZS_POWER);
 		case ZELIO_FRAM:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
 			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
@@ -661,6 +664,10 @@ int Zelio::init ()
 			zelioModelString->setValueString ("ZELIO_FRAM");
 			break;
 		case ZS_COMPRESSOR:
+			zelioModel = ZELIO_COMPRESSOR_WOUTPLUGS;
+			zelioModelString->setValueString ("ZELIO_COMPRESSOR_WOUTPLUGS");
+			break;
+		case ZS_COMPRESSOR | ZS_3RELAYS:
 			zelioModel = ZELIO_COMPRESSOR;
 			zelioModelString->setValueString ("ZELIO_COMPRESSOR");
 			break;
@@ -688,6 +695,7 @@ int Zelio::init ()
 	{
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
@@ -754,6 +762,7 @@ void Zelio::createZelioValues ()
 		case ZELIO_BOOTES3:
 			createValue (onPower, "on_power", "true if power is connected", false);
 		case ZELIO_FRAM:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
 			createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
