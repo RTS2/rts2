@@ -118,6 +118,12 @@
       <arg choice="opt">
         <arg choice="plain"><option>--lunarAltitude <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--id-only</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--name-only</option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -322,6 +328,24 @@
 	    Set interval for lunar altiude (height of moon above horizon).
             Colon separated lower and upper limits. Missing value indicate that the limit
             is not set in the missing direction.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--id-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are target IDs. Exit
+	    if some of the arguments is not a number.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--name-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are targets names. Do
+	    not try to resolve them as numeric.
 	  </para>
         </listitem>
       </varlistentry>
