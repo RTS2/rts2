@@ -123,7 +123,7 @@ class Zelio:public Dome
 		HostString *host;
 		int16_t deadManNum;
 
-		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
 		// if model have hardware rain signal
 		bool haveRainSignal;
@@ -249,7 +249,7 @@ int Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
 			return -1;
 		}
-		if (zelioModel == ZELIO_BOOTES3 && !(reg & ZS_POWER))
+		if ((zelioModel == ZELIO_BOOTES3_WOUTPLUGS || zelioModel == ZELIO_BOOTES3) && !(reg & ZS_POWER))
 		{
 			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
 			return -1;
@@ -355,6 +355,7 @@ long Zelio::isOpened ()
 			if ((regs[0] & ZO_EP_OPEN))
 				return -2;
 			break;
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
@@ -416,6 +417,7 @@ long Zelio::isClosed ()
 			if ((regs[0] & ZO_EP_CLOSE))
 				return -2;
 			break;
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
@@ -558,6 +560,7 @@ int Zelio::info ()
 
 	switch (zelioModel)
 	{
+	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			onPower->setValueBool (regs[7] & ZS_POWER);
 		case ZELIO_FRAM:
@@ -644,6 +647,10 @@ int Zelio::init ()
 	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM | ZS_3RELAYS);
 	switch (model)
 	{
+		case 0:
+			zelioModel = ZELIO_BOOTES3_WOUTPLUGS;
+			zelioModelString->setValueString ("ZELIO_BOOTES3_WITHOUT_PLUGS");
+			break;
 		case ZS_3RELAYS:
 			zelioModel = ZELIO_BOOTES3;
 			zelioModelString->setValueString ("ZELIO_BOOTES3");
@@ -679,6 +686,7 @@ int Zelio::init ()
 	// switch on dome state
 	switch (zelioModel)
 	{
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
@@ -741,7 +749,8 @@ void Zelio::createZelioValues ()
 			createValue (blockOpenLeft, "block_open", "open block", false);
 			createValue (blockCloseLeft, "block_close", "close block", false);
 			break;
-		
+	
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			createValue (onPower, "on_power", "true if power is connected", false);
 		case ZELIO_FRAM:
