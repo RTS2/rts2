@@ -242,23 +242,24 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-b</option></term>
+        <term><option>-b<replaceable class="parameter">gnuplot-option</replaceable></option></term>
 	<listitem>
 	  <para>
 	    Prints target(s) bonus. This option does not print target
 	    altitude and airmass. This option activate gnuplot mode - see
-	    <option>-g</option> option for details how to use its output. 
+	    <option>-g</option> option for list of possible gnuplot-options
+	    and how to use its output. 
 	  </para>
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-B</option></term>
+        <term><option>-B<replaceable class="parameter">gnuplot-option</replaceable></option></term>
 	<listitem>
 	  <para>
 	    Prints target(s) bonus. This option print target altitude and
 	    airmass, so the output is a bit messy. This option activate gnuplot
-	    mode - see <option>-g</option> option for details how to use its
-	    output. 
+	    mode - see <option>-g</option> option for list of possible
+	    gnuplot-options and ahow to use its output. 
 	  </para>
 	</listitem>
       </varlistentry>
