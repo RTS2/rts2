@@ -592,7 +592,7 @@ int Rts2Image::renameImage (const char *new_filename)
 	int ret = 0;
 	if (strcmp (new_filename, getFileName ()))
 	{
-	  logStream (MESSAGE_DEBUG) << "WILDI---move " << getFileName () << " to " << new_filename << "----"<< sendLog;
+		logStream (MESSAGE_DEBUG) << "move " << getFileName () << " to " << new_filename << sendLog;
 		saveImage ();
 		ret = mkpath (new_filename, 0777);
 		if (ret)
