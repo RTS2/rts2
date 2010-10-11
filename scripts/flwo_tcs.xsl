@@ -44,10 +44,11 @@ source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
 </xsl:template>
 
 <xsl:template match="for">
-@ count = 0
+<xsl:variable name='count' select='generate-id(.)'/>
+@ count_<xsl:value-of select='$count'/> = 0
 <xsl:copy-of select='$abort'/>
-while ($count &lt; <xsl:value-of select='@count'/>)<xsl:for-each select='*'><xsl:apply-templates select='current()'/></xsl:for-each>
-@ count ++
+while ($count_<xsl:value-of select='$count'/> &lt; <xsl:value-of select='@count'/>)<xsl:for-each select='*'><xsl:apply-templates select='current()'/></xsl:for-each>
+@ count_<xsl:value-of select='$count'/> ++
 
 end
 </xsl:template>
