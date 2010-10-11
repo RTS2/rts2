@@ -685,16 +685,17 @@ Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_descript
 
 int Rts2ValueRaDec::setValue (Rts2Conn * connection)
 {
-	if (connection->paramNextDouble (&ra))
+	double r, d;
+	if (connection->paramNextDouble (&r))
 		return -2;
 	if (connection->paramEnd ())
 	{
-	  	decl = ra;
+		setValueRaDec (r, r);
 		return 0;
 	}
-	if (connection->paramNextDouble (&decl) || !connection->paramEnd ())
+	if (connection->paramNextDouble (&d) || !connection->paramEnd ())
 		return -2;
-
+	setValueRaDec (r, d);
 	return 0;
 }
 
@@ -715,12 +716,10 @@ int Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
 			switch (op)
 			{
 				case '+':
-					ra += ((Rts2ValueRaDec *)old_value)->getRa ();
-					decl += ((Rts2ValueRaDec *)old_value)->getDec ();
+					setValueRaDec (ra + ((Rts2ValueRaDec *)old_value)->getRa (), decl + ((Rts2ValueRaDec *)old_value)->getDec ());
 					return 0;
 				case '-':
-					ra -= ((Rts2ValueRaDec *)old_value)->getRa ();
-					decl -= ((Rts2ValueRaDec *)old_value)->getDec ();
+					setValueRaDec (ra - ((Rts2ValueRaDec *)old_value)->getRa (), decl - ((Rts2ValueRaDec *)old_value)->getDec ());
 					return 0;
 				default:
 					return Rts2Value::doOpValue (op, old_value);
@@ -732,12 +731,10 @@ int Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
 			switch (op)
 			{
 				case '+':
-					ra += old_value->getValueDouble ();
-					decl += old_value->getValueDouble ();
+					setValueRaDec (ra + old_value->getValueDouble (), decl + old_value->getValueDouble ());
 					return 0;
 				case '-':
-					ra -= old_value->getValueDouble ();
-					decl -= old_value->getValueDouble ();
+					setValueRaDec (ra - old_value->getValueDouble (), decl - old_value->getValueDouble ());
 					return 0;
 				default:
 					return Rts2Value::doOpValue (op, old_value);
@@ -829,12 +826,10 @@ int Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
 			switch (op)
 			{
 				case '+':
-					alt += ((Rts2ValueAltAz *)old_value)->getAlt ();
-					az += ((Rts2ValueAltAz *)old_value)->getAz ();
+					setValueAltAz (alt + ((Rts2ValueAltAz *)old_value)->getAlt (), az + ((Rts2ValueAltAz *)old_value)->getAz ());
 					return 0;
 				case '-':
-					alt -= ((Rts2ValueAltAz *)old_value)->getAlt ();
-					az -= ((Rts2ValueAltAz *)old_value)->getAz ();
+					setValueAltAz (alt - ((Rts2ValueAltAz *)old_value)->getAlt (), az - ((Rts2ValueAltAz *)old_value)->getAz ());
 					return 0;
 				default:
 					return Rts2Value::doOpValue (op, old_value);
@@ -846,12 +841,10 @@ int Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
 			switch (op)
 			{
 				case '+':
-					alt += old_value->getValueDouble ();
-					az += old_value->getValueDouble ();
+					setValueAltAz (alt + old_value->getValueDouble (), az + old_value->getValueDouble ());
 					return 0;
 				case '-':
-					alt -= old_value->getValueDouble ();
-					az -= old_value->getValueDouble ();
+					setValueAltAz (alt - old_value->getValueDouble (), az - old_value->getValueDouble ());
 					return 0;
 				default:
 					return Rts2Value::doOpValue (op, old_value);
