@@ -338,17 +338,17 @@ void PrintTarget::printTarget (rts2db::Target *target)
 		if (constraintFile && constraints)
 		{
 			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl;
-			std::list <std::string> vn;
-			constraints->violated (target, JD, vn);
-			std::cout << "number of violations " << vn.size ();
-			if (vn.size () > 0)
+			std::list <rts2db::ConstraintPtr> vp;
+			constraints->getViolated (target, JD, vp);
+			std::cout << "number of violations " << vp.size ();
+			if (vp.size () > 0)
 			{
 				std::cout << " - violated in ";
-				for (std::list <std::string>::iterator iter = vn.begin (); iter != vn.end (); iter++)
+				for (std::list <rts2db::ConstraintPtr>::iterator iter = vp.begin (); iter != vp.end (); iter++)
 				{
-					if (iter != vn.begin ())
+					if (iter != vp.begin ())
 						std::cout << ", ";
-					std::cout << *iter;
+					std::cout << (*iter)->getName ();
 				}
 			}
 			std::cout << std::endl;

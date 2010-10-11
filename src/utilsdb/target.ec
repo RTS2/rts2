@@ -1791,6 +1791,29 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 	if (_os.getStream ())
 		printAltTable (*(_os.getStream ()), JD);
 
+	std::list <ConstraintPtr> violated;
+	getViolatedConstraints (JD, violated);
+
+	std::ostringstream violatedNames;
+	for (std::list <ConstraintPtr>::iterator iter = violated.begin (); iter != violated.end (); iter++)
+	{
+		if (iter != violated.begin ())
+			violatedNames << " ";
+		violatedNames << (*iter)->getName ();
+	}
+
+	std::list <ConstraintPtr> satisfied;
+	getSatisfiedConstraints (JD, satisfied);
+
+	std::ostringstream satisfiedNames;
+	for (std::list <ConstraintPtr>::iterator iter = satisfied.begin (); iter != satisfied.end (); iter++)
+	{
+		if (iter != satisfied.begin ())
+			satisfiedNames << " ";
+		satisfiedNames << (*iter)->getName ();
+	}
+
+
 	getGalLng (&gal, JD);
 	_os
 		<< std::endl
@@ -1810,6 +1833,8 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", getConstraintFile ())
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_TARGET) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("CONSTRAINTS", checkConstraints (JD) ? "satisfied" : "not met")
+		<< InfoVal<std::string> ("VIOLATED", violatedNames.str ())
+		<< InfoVal<std::string> ("SATISFIED", satisfiedNames.str ())
 		<< std::endl;
 }
 
@@ -1867,6 +1892,16 @@ void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
 	_os << std::endl;
 }
 
+size_t Target::getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated)
+{
+	return getConstraints ()->getViolated (this, JD, violated);
+}
+
+size_t Target::getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated)
+{
+	return getConstraints ()->getSatisfied (this, JD, violated);
+}
+
 TargetSet * Target::getCalTargets (double JD, double minaird)
 {
 	TargetSetCalibration *ret = new TargetSetCalibration (this, JD, minaird);
@@ -1913,10 +1948,10 @@ const char *Target::getGroupConstraintFile ()
 	return groupConstraintFile;
 }
 
-bool Target::checkConstraints (double JD)
+Constraints * Target::getConstraints ()
 {
 	if (constraints)
-		return constraints->satisfy (this, JD);
+		return constraints;
 	// check for system level constraints
 	try
 	{
@@ -1948,7 +1983,12 @@ bool Target::checkConstraints (double JD)
 	{
 		logStream (MESSAGE_WARNING) << "cannot load target constraint file " << getConstraintFile () << ":" << er << sendLogNoEndl;
 	}
-	return constraints->satisfy (this, JD);
+	return constraints;
+}
+
+bool Target::checkConstraints (double JD)
+{
+	return getConstraints ()->satisfy (this, JD);
 }
 
 std::ostream & operator << (std::ostream &_os, Target &target)

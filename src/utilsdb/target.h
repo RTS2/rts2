@@ -29,6 +29,7 @@
 
 #include "status.h"
 
+#include "../utils/counted_ptr.h"
 #include "../utils/infoval.h"
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
@@ -71,6 +72,9 @@ namespace rts2db {
 class TargetSet;
 class Constraints;
 class Observation;
+
+class Constraint;
+typedef counted_ptr <Constraint> ConstraintPtr;
 
 /**
  * Execption raised when target name cannot be resolved.
@@ -526,7 +530,23 @@ class Target:public Rts2Target
 		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys ()); }
 		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
 
+		/**
+		 * Print constraints.
+		 *
+		 * @param _os  stream where constrainst will be printed
+		 * @param JD   date for constrints check
+		 */
 		virtual void sendConstraints (Rts2InfoValStream & _os, double JD);
+
+		/**
+		 * Return list and number of violated constraints.
+		 */
+		size_t getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated);
+
+		/**
+		 * Return list and number of satisfied constraints.
+		 */
+		size_t getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated);
 
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
@@ -573,6 +593,12 @@ class Target:public Rts2Target
 		 * Return location of constraint file.
 		 */
 		const char *getConstraintFile ();
+
+		
+		/**
+		 * Load constraints and returns reference to their list.
+		 */
+		Constraints * getConstraints ();
 
 		/**
 		 * Check constraints for given date.

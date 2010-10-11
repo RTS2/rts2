@@ -248,15 +248,24 @@ bool Constraints::satisfy (Target *tar, double JD)
 	return true;
 }
 
-size_t Constraints::violated (Target *tar, double JD, std::list <std::string> &names)
+size_t Constraints::getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated)
 {
-	names.clear ();
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (!(iter->second->satisfy (tar, JD)))
-			names.push_back (iter->first);
+			violated.push_back (iter->second);
 	}
-	return names.size ();
+	return violated.size ();
+}
+
+size_t Constraints::getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied)
+{
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->second->satisfy (tar, JD))
+			satisfied.push_back (iter->second);
+	}
+	return satisfied.size ();
 }
 
 void Constraints::load (xmlNodePtr _node)

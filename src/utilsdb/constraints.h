@@ -20,7 +20,6 @@
 #ifndef __RTS2_CONSTRAINTS__
 #define __RTS2_CONSTRAINTS__
 
-#include "../utils/counted_ptr.h"
 #include "target.h"
 
 #include <libxml/parser.h>
@@ -178,8 +177,6 @@ class ConstraintSunAltitude:public Constraint
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
-typedef counted_ptr <Constraint> ConstraintPtr;
-
 class Constraints:public std::map <std::string, ConstraintPtr >
 {
 	public:
@@ -200,13 +197,22 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		bool satisfy (Target *tar, double JD);
 
 		/**
-		 * Return number and name of violated constainst.
+		 * Return number of violated constainst.
 		 *
-		 * @param tar   target for which violated constrains will be calculated
-		 * @param JD    Julian date of constraints check
-		 * @param names return names of violated constraints
+		 * @param tar       target for which violated constrains will be calculated
+		 * @param JD        Julian date of constraints check
+		 * @param violated  list of the violated constraints
 		 */
-		size_t violated (Target *tar, double JD, std::list <std::string> &names);
+		size_t getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated);
+
+		/**
+		 * Return number of satisfied constainst.
+		 *
+		 * @param tar       target for which violated constrains will be calculated
+		 * @param JD        Julian date of constraints check
+		 * @param satisfied list of the satisifed constraints
+		 */
+		size_t getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied);
 
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.
