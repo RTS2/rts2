@@ -87,7 +87,7 @@ class UnresolvedTarget:public rts2core::Error
 		UnresolvedTarget (const char *n)
 		{
 			name = std::string (n);
-			setMsg (std::string ("cannot find target with name ") + name);
+			setMsg (std::string ("cannot resolve target name/ID ") + name);
 		}
 		virtual ~UnresolvedTarget () throw () {}
 

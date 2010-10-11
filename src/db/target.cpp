@@ -560,7 +560,7 @@ int TargetApp::doProcessing ()
 	}
 	catch (rts2db::UnresolvedTarget ut)
 	{
-		std::cerr << "cannot resolve target name/ID " << ut.getTargetName () << std::endl;
+		std::cerr << "error: " << ut << std::endl;
 	}
 	catch (rts2db::SqlError e)
 	{
