@@ -258,6 +258,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 	_os << "{\"h\":["
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
 		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":1},"
+		"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
 		"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
 		"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
 		"{\"n\":\"Enabled\",\"t\":\"b\",\"c\":8},"
@@ -265,19 +266,22 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 		"{\"n\":\"Alt\",\"t\":\"Alt\",\"c\":4,\"sc\":[2,3]},"
 		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]},"
-		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9,},"
-		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10,}],"
+		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9},"
+		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10}],"
 		"\"d\" : [";
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
-		iter->second->getPosition (&pos, JD);
-		iter->second->getAltAz (&hrz, JD);
+
+		rts2db::Target *tar = iter->second;
+
+		tar->getPosition (&pos, JD);
+		tar->getAltAz (&hrz, JD);
 		if (iter != ts.begin ())
 			_os << ",";
-		_os << "[" << iter->second->getTargetID () << ",\"" << iter->second->getTargetName () << "\",";
+		_os << "[" << tar->getTargetID () << ",\"" << tar->getTargetName () << "\",";
 		if (isnan (pos.ra) || isnan (pos.dec) || isnan (hrz.alt) || isnan (hrz.az))
 			_os << "0,0,0,0";
 		else
@@ -289,9 +293,9 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		std::list <rts2db::ConstraintPtr> satisfied;
 		iter->second->getSatisfiedConstraints (JD, satisfied);
 
-		_os << "," << iter->second->getTargetPriority ()
-			<< "," << iter->second->getBonus ()
-			<< "," << iter->second->getTargetEnabled ()
+		_os << "," << tar->getTargetPriority ()
+			<< "," << tar->getBonus ()
+			<< "," << tar->getTargetEnabled ()
 			<< ",\"";
 
 		std::list <rts2db::ConstraintPtr>::iterator citer;
@@ -312,7 +316,10 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << (*citer)->getName ();
 		}
 
-		_os << "\"]";
+		_os << "\"," << tar->getTotalNumberOfObservations ()
+		//	<< "," << tar->getFirstObs ()
+		//	<< "," << tar->getLastObsTime ()
+			<< "]";
 	}
 
 	_os << "] }";
