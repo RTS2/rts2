@@ -1355,6 +1355,31 @@ int Target::getNumObs (time_t *start_time, time_t *end_time)
 			);
 	// runnign observations counts as well - hence obs_end is null
 
+	EXEC SQL COMMIT;
+
+	return d_count;
+}
+
+int Target::getTotalNumberOfObservations ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_count;
+	int d_tar_id = getTargetID ();
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL
+	SELECT
+		count (*)
+	INTO
+		:d_count
+	FROM
+		observations
+	WHERE
+		tar_id = :d_tar_id;
+	// runnign observations counts as well - hence obs_end is null
+
+	EXEC SQL COMMIT;
+
 	return d_count;
 }
 
@@ -1382,11 +1407,14 @@ double Target::getLastObsTime ()
 		if (sqlca.sqlcode == ECPG_NOT_FOUND)
 		{
 			// 1 year was the last observation..
-			return 356 * 86400.0;
+			return rts2_nan ("f");
 		}
 		else
 			logMsgDb ("Target::getLastObsTime", MESSAGE_ERROR);
 	}
+	
+	EXEC SQL COMMIT;
+
 	return d_time_diff;
 }
 
@@ -1417,18 +1445,18 @@ double Target::getFirstObs ()
 double Target::getLastObs ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = getTargetID ();
-		double ret;
+	int db_tar_id = getTargetID ();
+	double ret;
 	EXEC SQL END DECLARE SECTION;
 	EXEC SQL
-		SELECT
+	SELECT
 		MAX (EXTRACT (EPOCH FROM obs_start))
-		INTO
-			:ret
-		FROM
-			observations
-		WHERE
-			tar_id = :db_tar_id;
+	INTO
+		:ret
+	FROM
+		observations
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
