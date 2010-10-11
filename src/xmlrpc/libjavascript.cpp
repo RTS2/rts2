@@ -53,11 +53,6 @@ static const char *equScript =
 
 "function ln_rad_to_deg(rad) { return rad * 5.7295779513082320877e1; }\n"
 
-/* display only degrees */
-"function ln_deg_to_d (degrees,d) {\n"
-  "d = round(degrees);\n"
-"}\n"
-
 /* convert degrees to dms */
 "function ln_deg_to_dms (degrees,dms) {\n"
   "var dtemp;\n"
@@ -94,6 +89,8 @@ static const char *equScript =
   "ln_deg_to_dms(deg,this);\n"
   "this.toStringSigned = function (dispPlus) { return (this.neg ? '-' : (dispPlus ? '+' : '')) + this.degrees.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 100)/100).format(2) + '\"'; }\n"
   "this.toString = function () { return this.toStringSigned(true); }\n"
+  "this.toStringSignedDeg = function (dispPlus) { return (this.neg ? '-' : (dispPlus ? '+' : '')) + this.degrees.format(2,0) + '&deg;'; }\n"
+  "this.toStringDeg = function () { return this.toStringSignedDeg(true); }\n"
 "}\n"
 
 /* convert degrees to hms */

@@ -141,7 +141,7 @@ class XmlRpcd:public Rts2Device
 		/**
 		 * Return default image label.
 		 */
-		const char *getDefaultImageLabel () { return "%Y-%m-%d %H:%M:%S @OBJECT"; }
+		const char *getDefaultImageLabel ();
 
 	protected:
 #ifndef HAVE_PGSQL
@@ -157,6 +157,7 @@ class XmlRpcd:public Rts2Device
 	private:
 		int rpcPort;
 		const char *stateChangeFile;
+		const char *defLabel;
 		std::map <std::string, Session*> sessions;
 
 		std::deque <Rts2Message> messages;

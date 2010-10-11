@@ -41,6 +41,7 @@ using namespace rts2xmlrpc;
 
 Targets::Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s)
 {
+	displaySeconds = false;
 }
 
 void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -135,6 +136,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	includeJavaScriptWithPrefix (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"
+		"displaySeconds=" << displaySeconds << ";\n"
                 "table = new Table('api/','targets','table');\n"
 
 		"table.updateTable = function(settimer) {\n"
@@ -149,12 +151,22 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"var altaz = radec.altaz();\n"
 				"t[4] = altaz.alt;\n"
 				"t[5] = altaz.az;\n"
-				"ln_deg_to_d(altaz.alt,hAlt);\n"
-				"ln_deg_to_d(altaz.az,hAz);\n"
-				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
-				"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
-			"}\n"
-			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',20000);\n"
+				"ln_deg_to_dms(altaz.alt,hAlt);\n"
+				"ln_deg_to_dms(altaz.az,hAz);\n"
+				"if (displaySeconds) {\n"
+					"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
+					"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
+				"} else {\n"
+					"document.getElementById('alt_' + i).innerHTML = hAlt.toStringDeg ();\n"
+					"document.getElementById('az_' + i).innerHTML = hAz.toStringSignedDeg (false);\n"
+				"}\n"
+	 		"}\n"
+			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',";
+	if (displaySeconds)
+		_os << "20000";
+	else
+		_os << "200000";
+	_os << ");\n"
 		"}\n"
 
 		"</script>\n";

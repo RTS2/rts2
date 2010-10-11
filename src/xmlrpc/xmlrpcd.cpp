@@ -293,6 +293,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XM
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
+	defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
@@ -435,6 +436,11 @@ void XmlRpcd::postEvent (Rts2Event *event)
 #else
 	Rts2Device::postEvent (event);
 #endif
+}
+
+const char *XmlRpcd::getDefaultImageLabel ()
+{
+	return defLabel;
 }
 
 void XmlRpcd::sendBB ()
