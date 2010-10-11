@@ -81,8 +81,7 @@ void TargetSet::load (std::list<int> &target_ids)
 	for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
 	{
 		Target *tar = createTarget (*iter, obs);
-		if (tar != NULL)
-			(*this)[*iter] = tar;
+		(*this)[*iter] = tar;
 	}
 }
 
@@ -121,16 +120,16 @@ void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator con
 			if (*endp == '\0')
 			{
 				// numeric target
-				Target *tar = createTarget (tid, obs);
-				if (tar == NULL)
+				try
+				{
+					Target *tar = createTarget (tid, obs);
+					(*this)[tid] = tar;
+					continue;
+				}
+				catch (SqlError err)
 				{
 					if (resType == ID_ONLY)
 						throw UnresolvedTarget (*iter);
-				}
-				else
-				{
-					(*this)[tid] = tar;
-					continue;
 				}
 			}
 			else

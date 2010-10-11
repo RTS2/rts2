@@ -20,6 +20,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "plan.h"
+#include "sqlerror.h"
 
 #include <ostream>
 #include <sstream>
@@ -269,7 +270,15 @@ Target * Plan::getTarget ()
 {
 	if (target)
 		return target;
-	target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+	try
+	{
+		target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+	}
+	catch (SqlError err)
+	{
+	  	logStream (MESSAGE_ERROR) << "error while retrieving target for plan: " << err << sendLog;
+		return NULL;
+	}
 	return target;
 }
 

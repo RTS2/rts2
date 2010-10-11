@@ -1599,27 +1599,28 @@ int Target::printImages (double JD, std::ostream &_os, int flags)
 Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = _tar_id;
-		char db_type_id;
+	int db_tar_id = _tar_id;
+	char db_type_id;
 	EXEC SQL END DECLARE SECTION;
 
 	Target *retTarget;
 	int ret;
 
 	EXEC SQL
-		SELECT
-			type_id
-		INTO
-			:db_type_id
-		FROM
-			targets
-		WHERE
-			tar_id = :db_tar_id;
+	SELECT
+		type_id
+	INTO
+		:db_type_id
+	FROM
+		targets
+	WHERE
+		tar_id = :db_tar_id;
 
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "createTarget cannot get entry from targets table for target with ID " << db_tar_id << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		return NULL;
+	  	std::ostringstream err;
+		err << "target with ID " << db_tar_id << " does not exists";
+	  	throw SqlError (err.str ().c_str ());
 	}
 
 	// get more informations about target..
