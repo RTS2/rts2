@@ -30,6 +30,7 @@
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/imageset.h"
 #include "../utilsdb/targetset.h"
+#include "../utilsdb/constraints.h"
 #endif /* HAVE_PGSQL */
 
 #include "../utils/radecparser.h"
@@ -263,7 +264,9 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 		"{\"n\":\"Alt\",\"t\":\"Alt\",\"c\":4,\"sc\":[2,3]},"
-		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]}],"
+		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]},"
+		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9,},"
+		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10,}],"
 		"\"d\" : [";
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
@@ -279,9 +282,37 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << "0,0,0,0";
 		else
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az;
+
+		std::list <rts2db::ConstraintPtr> violated;
+		iter->second->getViolatedConstraints (JD, violated);
+
+		std::list <rts2db::ConstraintPtr> satisfied;
+		iter->second->getSatisfiedConstraints (JD, satisfied);
+
 		_os << "," << iter->second->getTargetPriority ()
 			<< "," << iter->second->getBonus ()
-			<< "," << iter->second->getTargetEnabled () << "]";
+			<< "," << iter->second->getTargetEnabled ()
+			<< ",\"";
+
+		std::list <rts2db::ConstraintPtr>::iterator citer;
+		
+		for (citer = violated.begin (); citer != violated.end (); citer++)
+		{
+			if (citer != violated.begin ())
+				_os << " ";
+			_os << (*citer)->getName ();
+		}
+
+		_os << "\",\"";
+
+		for (citer = satisfied.begin (); citer != satisfied.end (); citer++)
+		{
+			if (citer != violated.begin ())
+				_os << " ";
+			_os << (*citer)->getName ();
+		}
+
+		_os << "\"]";
 	}
 
 	_os << "] }";
