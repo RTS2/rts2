@@ -220,7 +220,7 @@ int XmlRpcd::init ()
 	{
 		try
 		{
-			events.load (stateChangeFile);
+		  	reloadEventsFile ();
 		}
 		catch (XmlError ex)
 		{
@@ -278,11 +278,7 @@ void XmlRpcd::signaledHUP ()
 #else
 	Rts2Device::selectSuccess ();
 #endif
-	// try states..
-	if (stateChangeFile != NULL)
-	{
-		events.load (stateChangeFile);
-	}
+	reloadEventsFile ();
 }
 
 #ifdef HAVE_PGSQL
@@ -458,6 +454,17 @@ void XmlRpcd::sendBB ()
 	}
 
 	events.bbServers.sendUpdate (&data);
+}
+
+void XmlRpcd::reloadEventsFile ()
+{
+	if (stateChangeFile != NULL)
+	{
+		events.load (stateChangeFile);
+	  	defLabel = events.getDefaultImageLabel ();
+		if (defLabel == NULL)
+			defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
+	}
 }
 
 /**

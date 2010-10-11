@@ -7,6 +7,7 @@
   <http>
     <public>/graph/SD/*</public>
     <dir path="/images/luthien" to="/luthien"/>
+    <defaultImageLabel>%D/%M @OBJECT</defaultImageLabel>
   </http>
   <events>
     <device name="C0">

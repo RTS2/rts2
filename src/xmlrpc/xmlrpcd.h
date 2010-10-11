@@ -177,6 +177,8 @@ class XmlRpcd:public Rts2Device
 		void sendBB ();
 
 		Rts2ValueInteger *bbCadency;
+
+		void reloadEventsFile ();
 };
 
 };

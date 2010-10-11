@@ -231,6 +231,15 @@ void Events::parseHttp (xmlNodePtr ev)
 				throw XmlMissingElement (ev, "content of allsky path");
 			allskyPaths.push_back (std::string ((char *) ev->children->content));
 		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "defaultImageLabel"))
+		{
+			if (ev->children == NULL || ev->children->content == NULL)
+				throw XmlMissingElement (ev, "content of defaultImageLabel");
+			delete[] defImageLabel;
+			int l = strlen ((char*) ev->children->content);
+			defImageLabel = new char[l + 1];
+			memcpy (defImageLabel, ev->children->content, l + 1);
+		}
 		else
 		{
 			throw XmlUnexpectedNode (ev);
@@ -329,6 +338,8 @@ void Events::load (const char *file)
 	valueCommands.clear ();
 	publicPaths.clear ();
 	allskyPaths.clear ();
+
+	defImageLabel = NULL;
 
 	xmlDoc *doc = NULL;
 	xmlNodePtr root_element = NULL;

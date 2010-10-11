@@ -123,6 +123,9 @@
       <xs:element name="allsky" minOccurs="0" maxOccurs="unbounded" type="xs:string">
         <xs:annotation><xs:documentation>Path to all sky images. The images are overplotted with BSC.</xs:documentation></xs:annotation>
       </xs:element>
+      <xs:element name="defaultImageLabel" minOccurs="0" maxOccurs="1" type="xs:string">
+        <xs:annotation><xs:documentation>Default image label.</xs:documentation></xs:annotation>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 
