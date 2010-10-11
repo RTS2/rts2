@@ -3,7 +3,7 @@
 <xsl:output method='text' indent='no'/>
 
 <xsl:template match='/'>
-@ imgid = 0
+@ imgid = 1
 <xsl:apply-templates select='*'/>
 </xsl:template>
 
@@ -24,7 +24,7 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 </xsl:template>
 
 <xsl:template match="exposure">
-echo `date` 'starting exposure <xsl:value-of select='@length'/>'
+echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 <xsl:copy-of select='$abort'/>
 ccd gowait <xsl:value-of select='@length'/>
 <xsl:copy-of select='$abort'/>
