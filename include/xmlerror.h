@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_XMLERROR__
+#define __RTS2_XMLERROR__
+
 /**
  * Error in Xml - either we cannot load it, or something is wrong in its
  * structure.
@@ -122,4 +125,4 @@ class XmlEmptyNode: public XmlError
 		}
 };
 
-
+#endif /* !__RTS2_XMLERROR__ */
