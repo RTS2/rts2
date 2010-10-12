@@ -76,26 +76,33 @@ class FLWOCAT:
 					print >> sys.stderr, 'rts2-newtarget does not produces target ID, exiting'
 					exit(0)
 				
-				# parse script
-				script = 'tempdisable 1800 ' + self.parse_script(a[6])
-
-				prior = int(a[9]) * 100
-				if (prior <= 0):
+				prior = int(a[11]) * 100
+				if prior <= 0:
 				  	prior = 1
+
+				repnum = int(a[7])
+				if repnum > 1:
+					script = 'for {0} {{ {1} }}'.format(repnum,script)
+				tempdis = a[8]
+				if tempdis != '-1':
+				  	if tempdis == '0':
+				  		script = 'tempdisable 1800 {1}'.format(tempdis,script)
+					else:
+				  		script = 'tempdisable {0} {1}'.format(tempdis,script)
 		
 				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
 		
-				if float(a[11]) > 0:
+				if float(a[13]) > 0:
 					cmd.append ("--airmass")
-					cmd.append (":" + a[11])
+					cmd.append (":" + a[13])
 
-				if float(a[12]) > 0:
-					if float(a[12]) > 90:
+				if float(a[14]) > 0:
+					if float(a[14]) > 90:
 						cmd.append ("--lunarAltitude")
 						cmd.append (":0")
 					else:
 						cmd.append ("--lunarDistance")
-						cmd.append (a[12] + ":")
+						cmd.append (a[14] + ":")
 
 				if self.pi is not None:
 					cmd.append ('--pi')
