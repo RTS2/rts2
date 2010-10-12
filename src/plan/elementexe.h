@@ -89,6 +89,9 @@ class Execute:public Element
 		void deleteExecConn () { connExecute = NULL; }
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXE << " " << exec; }
+
+		virtual void printXml (std::ostream &os) { os << "  <exe path='" << exec << "'/>"; }
+
 	private:
 		ConnExecute *connExecute;
 

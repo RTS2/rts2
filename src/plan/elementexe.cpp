@@ -290,7 +290,7 @@ int ConnExecute::processImage (Rts2Image *image)
 
 void ConnExecute::processErrorLine (char *errbuf)
 {
-	logStream (MESSAGE_ERROR) << "From script received " << getExePath () << " " << errbuf << sendLog;
+	logStream (MESSAGE_ERROR) << "rom script " << getExePath () << " received " << errbuf << sendLog;
 }
 
 std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)

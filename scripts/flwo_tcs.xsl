@@ -36,10 +36,21 @@ echo `date` 'exposure done'
 <xsl:copy-of select='$abort'/>
 </xsl:template>
 
+<xsl:template match='exe'>
+echo `date` 'executing script <xsl:value-of select='@path'/>'
+source <xsl:value-of select='@path'/>
+</xsl:template>
+
 <xsl:template match="set">
 <xsl:if test='@value = "filter"'>
 echo -n `date` 'moving filter wheel to <xsl:value-of select='@operands'/>'
 source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
+</xsl:if>
+<xsl:if test='@value = "ampcen"'>
+tele ampcen <xsl:value-of select='@operands'/>
+</xsl:if>
+<xsl:if test='@value = "autoguide"'>
+tele autog <xsl:value-of select='@operands'/>
 </xsl:if>
 </xsl:template>
 
