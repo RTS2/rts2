@@ -147,6 +147,13 @@ class Element:public Rts2Object
 		virtual void printXml (std::ostream &os) {}
 		virtual void printScript (std::ostream &os) = 0;
 
+		/**
+		 * Check tahat element parameters are correct.
+		 *
+		 * @throw rts2core::Error if some of the parameters is incorrect
+		 */
+		virtual void checkParameters () {};
+
 	protected:
 		Script * script;
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);

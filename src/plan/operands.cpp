@@ -35,7 +35,7 @@ double SystemValue::getDouble ()
 	return conn->getValueDouble (value.c_str ());
 }
 
-Operand *OperandsSet::parseOperand (std::string str)
+Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 {
 	// let' see what we have as an operand..
 	std::string::iterator iter = str.begin ();
@@ -95,20 +95,29 @@ Operand *OperandsSet::parseOperand (std::string str)
 			// get the number
 			if (it == str.end ())
 			  	mul = 1;
-			else if (*it == 'm')
-			  	mul = 1/60.0;
-			else if (*it == 's')
-				mul = 1/3600.0;
-			else if (*it == 'h')
-				mul = 15;
-			else if (*it == 'D')
-			  	mul = 86400;
-			else if (*it == 'H')
-			  	mul = 3600;
-			else if (*it == 'W')
-			  	mul = 7 * 86400;
-			else
-			  	throw rts2script::UnknowOperantMultiplier (*it);
+			else switch (mulType)
+			{
+				case MUL_ANGLE:
+					if (*it == 'm')
+			  			mul = 1/60.0;
+					else if (*it == 's')
+						mul = 1/3600.0;
+					else if (*it == 'h')
+						mul = 15;
+					else
+			  			throw rts2script::UnknowOperantMultiplier (*it);
+					break;
+				case MUL_TIME:
+					if (*it == 'd')
+			  			mul = 86400;
+					else if (*it == 'h')
+			  			mul = 3600;
+					else if (*it == 'w')
+			  			mul = 7 * 86400;
+					else
+			  			throw rts2script::UnknowOperantMultiplier (*it);
+					break;
+			}
 			// eats units specifications
 			op += sign * cn * mul;
 			it++;
@@ -196,7 +205,7 @@ void OperandsSet::parse (std::string str)
 			  	((*iter == ',' && simple_braces == 1) || (simple_braces == 0 && bracked)))
 			{
 				std::string ops = str.substr (start, iter - str.begin () - start);
-				push_back (parseOperand (ops));
+				push_back (parseOperand (ops, MUL_ANGLE));
 				start = iter - str.begin () + 1;
 			}
 		}
@@ -204,7 +213,7 @@ void OperandsSet::parse (std::string str)
 	if (bracked == false)
 	{
 		// push back single operator
-		push_back (parseOperand (str));
+		push_back (parseOperand (str, MUL_ANGLE));
 	}
 }
 

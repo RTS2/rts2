@@ -45,7 +45,7 @@ double ElementTempDisable::getDistTimeSec ()
 {
 	rts2operands::OperandsSet os;
 
-	rts2operands::Operand *op = os.parseOperand (distime);
+	rts2operands::Operand *op = os.parseOperand (distime, rts2operands::MUL_TIME);
 	double ret = op->getDouble ();
 	delete op;
 

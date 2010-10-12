@@ -30,6 +30,8 @@
 namespace rts2operands
 {
 
+typedef enum { MUL_ANGLE, MUL_TIME } mulType_t;
+
 /**
  * Abstract class for an operand.
  *
@@ -137,7 +139,7 @@ class OperandsSet:public std::vector <Operand*>
 		OperandsSet () {};
 		~OperandsSet () { for (OperandsSet::iterator iter = begin (); iter != end (); iter ++) delete (*iter); }
 
-		Operand *parseOperand (std::string str);
+		Operand *parseOperand (std::string str, mulType_t mulType);
 
 		/**
 		 * Parse given string, fill operands with Operand childs.

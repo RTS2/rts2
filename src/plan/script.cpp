@@ -185,6 +185,7 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 			break;
 		element->setLen (cmdBufTop - commandStart);
 		lineOffset += cmdBufTop - commandStart;
+		element->checkParameters ();
 		push_back (element);
 	}
 
@@ -726,27 +727,14 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 		// find out what character represents..
 		else if (isdigit (*cmdBufTop) || (*cmdBufTop == '.' && isdigit (cmdBufTop[1])))
 		{
-			while (isdigit (*cmdBufTop) || *cmdBufTop == '.')
+			while (*cmdBufTop != '\0' && !isspace (*cmdBufTop))
 				cmdBufTop++;
 			char *num = new char[cmdBufTop - start + 1];
 			strncpy (num, start, cmdBufTop - start);
 			num[cmdBufTop - start] = '\0';
-			// units..
-			double multi = rts2_nan("f");
-			if (*cmdBufTop == 'm')
-				multi = 1/60.0;
-			else if (*cmdBufTop == 's')
-				multi = 1/3600.0;
-			else if (*cmdBufTop == 'h')
-				multi = 15;
-			else if (*cmdBufTop == 'd')
-				multi = 1;
-	
-			if (!isnan (multi))
-				*cmdBufTop++;
-			else
-				multi = 1;
-			op = new rts2operands::Number (atof (num) * multi);
+
+			rts2operands::OperandsSet os;
+			op = os.parseOperand (std::string (num), rts2operands::MUL_ANGLE);
 			delete[] num;
 		}
 		else if (isalpha (*cmdBufTop) || *cmdBufTop == '.')

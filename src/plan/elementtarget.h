@@ -62,6 +62,8 @@ class ElementTempDisable:public ElementTarget
 
 		void setTempDisable (const char *dist) { distime = std::string (dist); }
 
+		virtual void checkParameters () { getDistTimeSec (); }
+
 	private:
 		double getDistTimeSec ();
 		std::string distime;
