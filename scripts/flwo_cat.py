@@ -67,7 +67,6 @@ class FLWOCAT:
 				a = l.split()
 				if a[0][0] == '#':
 				  	continue
-				scripts = a[3].split(',')
 				if (a[2][0] != '-' and a[2][0] != '+'):
 				  	a[2] = '+' + a[2]
 				self.run_cmd(["rts2-newtarget", '-m', a[0], a[1] + ' ' + a[2]],self.process_newtarget)
@@ -75,6 +74,8 @@ class FLWOCAT:
 				if self.tarid is None:
 					print >> sys.stderr, 'rts2-newtarget does not produces target ID, exiting'
 					exit(0)
+				# parse script
+				script = self.parse_script(a[6])
 				
 				prior = int(a[11]) * 100
 				if prior <= 0:
@@ -86,15 +87,23 @@ class FLWOCAT:
 				tempdis = a[8]
 				if tempdis != '-1':
 				  	if tempdis == '0':
-				  		script = 'tempdisable 1800 {1}'.format(tempdis,script)
+				  		script = 'tempdisable 1800 {0}'.format(script)
 					else:
 				  		script = 'tempdisable {0} {1}'.format(tempdis,script)
+
+				ampcen = a[9]
+				autoguide = 'OFF'
+				if a[10] == '1':
+				  	autoguide = 'ON'
+
+				script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
 		
 				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
 		
 				if float(a[13]) > 0:
 					cmd.append ("--airmass")
 					cmd.append (":" + a[13])
+
 
 				if float(a[14]) > 0:
 					if float(a[14]) > 90:
