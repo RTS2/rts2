@@ -517,14 +517,16 @@
 
       <varlistentry>
         <term>
-	  <option>tempdisable {seconds}</option>
+	  <option>tempdisable {delay}</option>
 	</term>
 	<listitem>
 	  <para>
-	    Temporaly disable target for {seconds}. If next selector
-	    run hapened earlier then {seconds} time from now, target
-	    will not be considered. Target temporary disable is
-	    stored in NEXT_OBSERVABLE target parameter, which can be
+	    Temporaly disable target for delay seconds. Delay can be specified
+	    using delay string - e.g. h for hours, w for weeks. So to temporary
+	    delay target for 1 week, 2 days and 3 hours, the delay will be
+	    1w2d3h. If next selector run hapened earlier then delay time from
+	    now, target will not be considered for observing. Target temporary
+	    disable is stored in NEXT_OBSERVABLE target parameter, which can be
 	    reseted by rts2-target (1) command executed with -o option.
 	  </para>
 	</listitem>
