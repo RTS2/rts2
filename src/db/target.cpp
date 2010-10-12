@@ -113,7 +113,7 @@ class TargetApp:public Rts2AppDb
 
 		int runInteractive ();
 
-		int tempdis;
+		const char *tempdis;
 
 		void setTempdisable ();
 
@@ -142,7 +142,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 
 	camera = NULL;
 
-	tempdis = 0;
+	tempdis = NULL;
 
 	matchAll = false;
 
@@ -171,7 +171,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	addOption (OPT_OBSERVE_START, "observe", 0, "mark start of observation (after telescope slew in). Requires observation ID");
 	addOption (OPT_OBSERVE_END, "end", 0, "mark end of observation. Requires observation ID");
 
-	addOption (OPT_TEMPDISABLE, "tempdisable", 1, "change number of seconds for which target will be disabled after script execution");
+	addOption (OPT_TEMPDISABLE, "tempdisable", 1, "change time for which target will be disabled after script execution");
 
 	addOption (OPT_AIRMASS, "airmass", 1, "set airmass constraint for the target");
 	addOption (OPT_LUNAR_DISTANCE, "lunarDistance", 1, "set lunar distance constraint for the target");
@@ -191,7 +191,8 @@ TargetApp::~TargetApp ()
 void TargetApp::usage ()
 {
 	std::cout << "  " << getAppName () << " -n +3600 192         .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
-		<< "  " << getAppName () << " --tempdisable 3600 192 .. disable target for 1 hour after it is executed" << std::endl;
+		<< "  " << getAppName () << " --tempdisable 3600 192 .. disable target for 1 hour after it is executed" << std::endl
+		<< "  " << getAppName () << " --tempdisable 2d3h 196 .. disable target for 2 days and 3 hours after it is executed" << std::endl;
 }
 
 int TargetApp::processOption (int in_opt)
@@ -257,7 +258,7 @@ int TargetApp::processOption (int in_opt)
 			op |= OP_OBS_END;
 			break;
 		case OPT_TEMPDISABLE:
-			tempdis = atoi (optarg);
+			tempdis = optarg;
 			op |= OP_TEMPDISABLE;
 			break;
 		case OPT_AIRMASS:
@@ -388,7 +389,7 @@ void TargetApp::setTempdisable ()
 		try
 		{
 			rts2script::Script::iterator se = script.findElement (COMMAND_TAR_TEMP_DISAB, script.begin ());
-			if (tempdis > 0)
+			if (tempdis != NULL)
 			{
 				if (se == script.end ())
 				{
