@@ -64,6 +64,8 @@ class ElementBlock:public Element
 
 		virtual void printScript (std::ostream &os);
 
+		virtual double getExpectedDuration ();
+
 	protected:
 		std::list < Element * > blockElements;
 		std::list < Element * >::iterator curr_element;
@@ -171,6 +173,8 @@ class ElementFor:public ElementBlock
 		virtual void prettyPrint (std::ostream &os);
 		virtual void printXml (std::ostream &os);
 		virtual void printScript (std::ostream &os);
+
+		virtual double getExpectedDuration ();
 
 	protected:
 		virtual bool endLoop () { return getLoopCount () >= max; }

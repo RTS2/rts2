@@ -158,6 +158,11 @@ class Script:public Rts2Object, public std::list <Element *>
 
 		std::list <Element *>::iterator findElement (const char *name, std::list <Element *>::iterator start);
 
+		/**
+		 * Return expected script duration in seconds.
+		 */
+		double getExpectedDuration ();
+
 	private:
 		char *cmdBuf;
 		std::string wholeScript;

@@ -154,6 +154,11 @@ class Element:public Rts2Object
 		 */
 		virtual void checkParameters () {};
 
+		/**
+		 * Return expected element duration in seconds.
+		 */
+		virtual double getExpectedDuration () { return 0; }
+
 	protected:
 		Script * script;
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
@@ -181,6 +186,8 @@ class ElementExpose:public Element
 		virtual void prettyPrint (std::ostream &os) { os << "exposure " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <exposure length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
+
+		virtual double getExpectedDuration () { return expTime; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;
@@ -195,6 +202,8 @@ class ElementDark:public Element
 		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <dark length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
+
+		virtual double getExpectedDuration () { return expTime; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;

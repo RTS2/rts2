@@ -260,6 +260,14 @@ void ElementBlock::printScript (std::ostream &os)
 	os << " }";
 }
 
+double ElementBlock::getExpectedDuration ()
+{
+	double ret = 0;
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+		ret += (*iter)->getExpectedDuration ();
+	return ret;
+}
+
 ElementSignalEnd::ElementSignalEnd (Script * in_script, int end_sig_num):ElementBlock (in_script)
 {
 	sig_num = end_sig_num;
@@ -452,6 +460,11 @@ void ElementFor::printScript (std::ostream &os)
 {
 	os << COMMAND_BLOCK_FOR << " " << max;
 	ElementBlock::printScript (os);
+}
+
+double ElementFor::getExpectedDuration ()
+{
+	return max * ElementBlock::getExpectedDuration ();
 }
 
 int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])

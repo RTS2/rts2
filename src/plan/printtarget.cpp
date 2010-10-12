@@ -250,11 +250,15 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 		failedCount = script.getFaultLocation ();
 		if (failedCount != -1)
 		{
-			std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
+			std::cout << "parsing of script '" << script_buf << "' failed! At " << failedCount << std::endl
 				<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
 			for (; failedCount > 0; failedCount--)
 				std::cout << " ";
 			std::cout << "^ here" << std::endl;
+		}
+		else
+		{
+			std::cout << pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << std::endl;
 		}
 	}
 }

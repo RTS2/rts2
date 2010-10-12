@@ -846,3 +846,11 @@ std::list <Element *>::iterator Script::findElement (const char *name, std::list
 	}
 	return iter;
 }
+
+double Script::getExpectedDuration ()
+{
+	double ret = 0;
+	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+		ret += (*iter)->getExpectedDuration ();
+	return ret;
+}
