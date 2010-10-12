@@ -62,6 +62,7 @@
 #define OPT_IMGID     OPT_LOCAL + 8
 #define OPT_CAMNAME   OPT_LOCAL + 9
 #define OPT_MOUNTNAME OPT_LOCAL + 10
+#define OPT_LABEL     OPT_LOCAL + 11
 
 namespace rts2image
 {
@@ -113,7 +114,10 @@ class AppImage:public Rts2AppImage
 		const char* distance_expr;
 		const char* link_expr;
 		const char* move_expr;
+#ifdef HAVE_LIBJPEG
 		const char* jpeg_expr;
+		const char* label;
+#endif
 
 		int obsid;
 		int imgid;
@@ -383,6 +387,9 @@ int AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_JPEG;
 			jpeg_expr = optarg;
 			break;
+		case OPT_LABEL:
+			label = optarg;
+			break;
 		#endif /* HAVE_LIBJPEG */
 		default:
 
@@ -462,7 +469,7 @@ int AppImage::processImage (Rts2Image * image)
 		createWCS (image);
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
-	  	image->writeAsJPEG (jpeg_expr, 0);
+	  	image->writeAsJPEG (jpeg_expr, label);
 #endif /* HAVE_LIBJPEG */
 	return 0;
 }
@@ -493,7 +500,10 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	distance_expr = NULL;
 	link_expr = NULL;
 	move_expr = NULL;
+#ifdef HAVE_LIBJPEG
 	jpeg_expr = NULL;
+	label = NULL;
+#endif
 
 	obsid = -1;
 	imgid = -1;
@@ -523,6 +533,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
+	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
 #endif /* HAVE_LIBJPEG */
 }
 

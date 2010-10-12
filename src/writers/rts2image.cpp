@@ -347,6 +347,7 @@ std::string Rts2Image::expandVariable (std::string expression)
 	}
 	catch (rts2core::Error &er)
 	{
+		std::cerr << "cannot expand variable " << expression << std::endl;
 		return rts2core::Expander::expandVariable (expression);
 	}
 	return std::string (valB);
@@ -1410,6 +1411,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		if (label)
 			writeLabel (image, 2, image.size ().height () - 2, 20, label);
+
 		delete[] buf;
 		return image;
 	}
@@ -1663,12 +1665,13 @@ void Rts2Image::loadChannels ()
 		return;
 	}
 
-	// first HDU is already opened
+	// first HDU is already opened..
 	tothdu--;
 
 	// open all channels
-	for (moveHDU (1, &hdutype); fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
+	for (moveHDU (1, &hdutype); tothdu > 0 && fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
 	{
+		tothdu--;
 		// first check that it is image
 		if (hdutype != IMAGE_HDU)
 			continue;
@@ -1751,10 +1754,6 @@ void Rts2Image::loadChannels ()
 		fitsStatusGetValue ("image loadChannels", true);
 
 		channels.push_back (new Channel (imageData, naxis, sizes, true));
-
-		tothdu--;
-		if (tothdu <= 0)
-		  	break;
 	}
 	moveHDU (1);
 }
