@@ -87,10 +87,13 @@ int NMonitor::processArgs (const char *arg)
 {
 #ifdef HAVE_PGSQL
 	tarArg = new rts2db::SimbadTarget (arg);
-	int ret = tarArg->load ();
-	if (ret)
+	try
 	{
-		std::cerr << "Cannot resolve target " << arg << std::endl;
+		tarArg->load ();
+	}
+	catch (rts2core::Error err)
+	{
+		std::cerr << "cannot resolve target " << arg << ":" << err << std::endl;
 		return -1;
 	}
 

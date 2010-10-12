@@ -39,7 +39,7 @@ Rts2TargetApp::~Rts2TargetApp (void)
 	delete target;
 }
 
-int Rts2TargetApp::getObject (const char *obj_text)
+void Rts2TargetApp::getObject (const char *obj_text)
 {
 	LibnovaRaDec raDec;
 
@@ -61,14 +61,14 @@ int Rts2TargetApp::getObject (const char *obj_text)
 		constTarget->setTargetName (os.str ().c_str ());
 		constTarget->setTargetType (TYPE_OPORTUNITY);
 		target = constTarget;
-		return 0;
+		return;
 	}
 	// if it's MPC ephemeris..
 	target = new EllTarget ();
 	ret = ((EllTarget *) target)->orbitFromMPC (obj_text);
 	if (ret == 0)
 	{
-		return 0;
+		return;
 	}
 
 	delete target;
@@ -76,15 +76,9 @@ int Rts2TargetApp::getObject (const char *obj_text)
 
 	// try to get target from SIMBAD
 	target = new rts2db::SimbadTarget (obj_text);
-	ret = target->load ();
-	if (ret == 0)
-	{
-		target->setTargetType (TYPE_OPORTUNITY);
-		return 0;
-	}
-	delete target;
-	target = NULL;
-	return -1;
+	target->load ();
+	target->setTargetType (TYPE_OPORTUNITY);
+	return;
 }
 
 int Rts2TargetApp::askForDegrees (const char *desc, double &val)
@@ -115,7 +109,16 @@ int Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 			return ret;
 	}
 
-	return getObject (obj_text.c_str ());
+	try
+	{
+		getObject (obj_text.c_str ());
+		return 0;
+	}
+	catch (rts2core::Error err)
+	{
+		std::cerr << err;
+		return -1;
+	}
 }
 
 int Rts2TargetApp::init ()

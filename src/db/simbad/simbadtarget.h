@@ -39,7 +39,7 @@ class SimbadTarget:public ConstTarget
 		SimbadTarget (const char *in_name);
 		virtual ~SimbadTarget (void);
 
-		virtual int load ();
+		virtual void load ();
 
 		void getPosition (struct ln_equ_posn *pos) { Target::getPosition (pos); }
 

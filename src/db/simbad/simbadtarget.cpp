@@ -45,7 +45,7 @@ SimbadTarget::~SimbadTarget (void)
 	xmlCleanupParser ();
 }
 
-int SimbadTarget::load ()
+void SimbadTarget::load ()
 {
 	#define LINEBUF  200
 	char buf[LINEBUF];
@@ -66,11 +66,13 @@ int SimbadTarget::load ()
 
 	XmlRpcClient httpClient (url, &_uri);
 
+	std::ostringstream err;
+
 	int ret = httpClient.executeGet (_uri, reply, reply_length);
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "Error requesting " << url << sendLog;
-		return -1;
+	  	err << "error requesting " << url;
+		throw rts2core::Error (err.str ());
 	}
 
 	xmlDocPtr xml = xmlReadMemory (reply, reply_length, NULL, NULL, XML_PARSE_NOBLANKS);
@@ -78,34 +80,30 @@ int SimbadTarget::load ()
 
 	if (xml == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse reply from Simbad server" << sendLog;
-		return -1;
-
+	  	throw rts2core::Error ("cannot parse reply from Simbad server");
 	}
 
 	xmlXPathContextPtr xpathCtx = xmlXPathNewContext (xml);
 	if (xpathCtx == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot create XPath context for Simbad reply" << sendLog;
 		xmlFreeDoc (xml);
-		return -1;
+		throw rts2core::Error ("cannot create XPath context for Simbad reply");
 	}
 
 	xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression (BAD_CAST "//return", xpathCtx);
 	if (xpathObj == NULL || xpathObj->nodesetval->nodeNr < 1)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot find return value" << sendLog;
 		xmlXPathFreeContext (xpathCtx);
 		xmlFreeDoc (xml);
-		return -1;
+		throw rts2core::Error ("Cannot find return value");
 	}
 
 	if (!(xpathObj->nodesetval->nodeTab[0]->children))
 	{
-		logStream (MESSAGE_ERROR) << "Simbad server not reposponding. Is it down? Failed URL is: " << os.str () << sendLog;
 		xmlXPathFreeContext (xpathCtx);
 		xmlFreeDoc (xml);
-		return -1;
+		err << "Simbad server not reposponding. Is it down? Failed URL is: " << os.str ();
+		throw rts2core::Error (err.str ());
 	}
 
 	istringstream *iss = new istringstream ();
@@ -132,10 +130,7 @@ int SimbadTarget::load ()
 			int nobj;
 			*iss >> nobj;
 			if (nobj != 1)
-			{
-				cerr << "More then 1 object found!" << endl;
-				return -1;
-			}
+			  	throw rts2core::Error ("More then 1 object found!");
 		}
 		else if (str_type == "%C")
 		{
@@ -154,8 +149,8 @@ int SimbadTarget::load ()
 		}
 		else if (str_type.substr (0, 3) == "#!E")
 		{
-			cerr << "Not found" << endl;
-			return -1;
+			err << "object with name " << getTargetName () << " was not resolved by Simbad";
+			throw rts2core::Error (err.str ());
 		}
 		else if (str_type == "%J.E")
 		{
@@ -189,8 +184,8 @@ int SimbadTarget::load ()
 			if (strcasestr (buf, "nothing found"))
 			{
 				// errrors;;
-				cerr << "Not found" << endl;
-				return -1;
+				err << "object with name " << getTargetName () << " was not resolved by Simbad";
+				throw rts2core::Error (err.str ());
 			}
 		}
 		else if (str_type.c_str ()[0] == '#')
@@ -205,7 +200,6 @@ int SimbadTarget::load ()
 		}
 	}
 	#undef LINEBUF
-	return 0;
 }
 
 void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)

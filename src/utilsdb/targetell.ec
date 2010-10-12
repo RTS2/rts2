@@ -30,13 +30,13 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
 {
 }
 
-int EllTarget::load ()
+void EllTarget::load ()
 {
-	int ret = Target::load ();
-	if (ret)
-		return ret;
+	Target::load ();
 	// try to parse MPC string..
-	return LibnovaEllFromMPC (&orbit, designation, getTargetInfo ()) && LibnovaEllFromMPCComet (&orbit, designation, getTargetInfo ());
+	int ret = LibnovaEllFromMPC (&orbit, designation, getTargetInfo ()) && LibnovaEllFromMPCComet (&orbit, designation, getTargetInfo ());
+	if (ret)
+	  	throw rts2core::Error (std::string ("cannot parse MPEC string ") + getTargetInfo ());
 }
 
 int EllTarget::orbitFromMPC (const char *mpc)

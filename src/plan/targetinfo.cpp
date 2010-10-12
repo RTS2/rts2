@@ -18,6 +18,7 @@
  */
 
 #include "printtarget.h"
+#include "../utilsdb/sqlerror.h"
 #include "../utilsdb/targetset.h"
 #include "../utilsdb/target_auger.h"
 
@@ -156,13 +157,15 @@ int TargetInfo::doProcessing ()
 		{
 			rts2db::TargetAuger *ta = new rts2db::TargetAuger (-1, obs, 10);
 			int tid = atoi (*iter);
-			if (ta->load (tid))
+			try
+			{
+				ta->load (tid);
+				tar_set[tid] = ta;
+			}
+			catch (rts2db::SqlError err)
 			{
 				delete ta;
-			}
-			else
-			{
-				tar_set[tid] = ta;
+				throw err;
 			}
 		}
 	}

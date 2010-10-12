@@ -149,10 +149,15 @@ class Target:public Rts2Target
 		void logMsgDb (const char *message, messageType_t msgType);
 		void getTargetSubject (std::string & subj);
 
-		// that method is GUARANTIE to be called after target creating to load data from DB
-		virtual int load ();
+		/**
+		 * Load target from the database.
+		 *
+		 * @throw rts2core::Error and descendants on error
+		 */
+		virtual void load ();
 		// load target data from give target id
-		int loadTarget (int in_tar_id);
+		void loadTarget (int in_tar_id);
+
 		virtual int save (bool overwrite);
 		virtual int save (bool overwrite, int tar_id);
 
@@ -660,13 +665,18 @@ class Target:public Rts2Target
 		Constraints *constraints;
 };
 
+/**
+ * Class representing target with constant coordinates.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ConstTarget:public Target
 {
 	public:
 		ConstTarget ();
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos);
-		virtual int load ();
+		virtual void load ();
 		virtual int save (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
@@ -704,7 +714,7 @@ class FlatTarget:public ConstTarget
 	public:
 		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual bool getScript (const char *deviceName, std::string & buf);
-		virtual int load ();
+		virtual void load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
 		virtual int isContinues () { return 1; }
@@ -754,7 +764,7 @@ class CalibrationTarget:public ConstTarget
 {
 	public:
 		CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		virtual int load ();
+		virtual void load ();
 		virtual int beforeMove ();
 		virtual int endObservation (int in_next_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -804,7 +814,7 @@ class ModelTarget:public ConstTarget
 	public:
 		ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ ModelTarget (void);
-		virtual int load ();
+		virtual void load ();
 		virtual int beforeMove ();
 		virtual moveType afterSlewProcessed ();
 		virtual int endObservation (int in_next_id);
@@ -860,7 +870,7 @@ class TargetSwiftFOV:public Target
 		TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetSwiftFOV (void);
 
-		virtual int load ();	 // find Swift pointing for observation
+		virtual void load ();	 // find Swift pointing for observation
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
@@ -885,7 +895,7 @@ class TargetIntegralFOV:public Target
 		TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetIntegralFOV (void);
 
-		virtual int load ();	 // find Swift pointing for observation
+		virtual void load ();	 // find Swift pointing for observation
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
@@ -929,8 +939,8 @@ class TargetPlan:public Target
 		TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetPlan (void);
 
-		virtual int load ();
-		virtual int load (double JD);
+		virtual void load ();
+		virtual void load (double JD);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual int getObsTargetID ();

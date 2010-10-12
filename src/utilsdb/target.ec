@@ -317,55 +317,56 @@ Target::~Target (void)
 	delete[] constraintFile;
 }
 
-int Target::load ()
+void Target::load ()
 {
-	return loadTarget (getObsTargetID ());
+	loadTarget (getObsTargetID ());
 }
 
-int Target::loadTarget (int in_tar_id)
+void Target::loadTarget (int in_tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
-		VARCHAR d_tar_name[150];
-		VARCHAR d_tar_info[2000];
-		int d_tar_info_ind;
-		float d_tar_priority;
-		int d_tar_priority_ind;
-		float d_tar_bonus;
-		int d_tar_bonus_ind;
-		long d_tar_bonus_time;
-		int d_tar_bonus_time_ind;
-		long d_tar_next_observable;
-		int d_tar_next_observable_ind;
-		bool d_tar_enabled;
-		int db_tar_id = in_tar_id;
+	// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
+	VARCHAR d_tar_name[150];
+	VARCHAR d_tar_info[2000];
+	int d_tar_info_ind;
+	float d_tar_priority;
+	int d_tar_priority_ind;
+	float d_tar_bonus;
+	int d_tar_bonus_ind;
+	long d_tar_bonus_time;
+	int d_tar_bonus_time_ind;
+	long d_tar_next_observable;
+	int d_tar_next_observable_ind;
+	bool d_tar_enabled;
+	int db_tar_id = in_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
-		SELECT
-			tar_name,
-			tar_info,
-			tar_priority,
-			tar_bonus,
-			EXTRACT (EPOCH FROM tar_bonus_time),
-			EXTRACT (EPOCH FROM tar_next_observable),
-			tar_enabled
-		INTO
-			:d_tar_name,
-			:d_tar_info :d_tar_info_ind,
-			:d_tar_priority :d_tar_priority_ind,
-			:d_tar_bonus :d_tar_bonus_ind,
-			:d_tar_bonus_time :d_tar_bonus_time_ind,
-			:d_tar_next_observable :d_tar_next_observable_ind,
-			:d_tar_enabled
-		FROM
-			targets
-		WHERE
-			tar_id = :db_tar_id;
+	SELECT
+		tar_name,
+		tar_info,
+		tar_priority,
+		tar_bonus,
+		EXTRACT (EPOCH FROM tar_bonus_time),
+		EXTRACT (EPOCH FROM tar_next_observable),
+		tar_enabled
+	INTO
+		:d_tar_name,
+		:d_tar_info :d_tar_info_ind,
+		:d_tar_priority :d_tar_priority_ind,
+		:d_tar_bonus :d_tar_bonus_ind,
+		:d_tar_bonus_time :d_tar_bonus_time_ind,
+		:d_tar_next_observable :d_tar_next_observable_ind,
+		:d_tar_enabled
+	FROM
+		targets
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("Target::load", MESSAGE_ERROR);
-		return -1;
+	  	std::ostringstream err;
+		err << "cannot load target with ID " << in_tar_id;
+	  	throw SqlError (err.str ().c_str ());
 	}
 
 	delete[] target_name;
@@ -407,14 +408,12 @@ int Target::loadTarget (int in_tar_id)
 		tar_next_observable = 0;
 
 	setTargetEnabled (d_tar_enabled, false);
-
-	return 0;
 }
 
 int Target::save (bool overwrite)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_new_id = getTargetID ();
+	int db_new_id = getTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
 	// generate new id, if we don't have any
@@ -1604,7 +1603,6 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	EXEC SQL END DECLARE SECTION;
 
 	Target *retTarget;
-	int ret;
 
 	EXEC SQL
 	SELECT
@@ -1681,15 +1679,7 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	}
 
 	retTarget->setTargetType (db_type_id);
-	ret = retTarget->load ();
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot create target: " << db_tar_id << " error code " <<
-			sqlca.sqlcode << " message " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		delete retTarget;
-		return NULL;
-	}
+	retTarget->load ();
 	EXEC SQL COMMIT;
 	return retTarget;
 }

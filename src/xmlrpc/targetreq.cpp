@@ -277,6 +277,8 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 
 		rts2db::Target *tar = iter->second;
 
+		std::cerr << "tar " << iter->first << " target " << iter->second << std::endl;
+
 		tar->getPosition (&pos, JD);
 		tar->getAltAz (&hrz, JD);
 		if (iter != ts.begin ())
@@ -954,10 +956,8 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 		}
 		// check for simbad
 		rts2db::Target *target = new rts2db::SimbadTarget (tar);
-		if (target->load () == 0)
-		{
-			target->getPosition (&pos);
-		}
+		target->load ();
+		target->getPosition (&pos);
 		delete target;
 
 		// print new target

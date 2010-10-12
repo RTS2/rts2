@@ -110,25 +110,24 @@ SimbadInfo::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-SimbadInfo::processArgs (const char *arg)
+int SimbadInfo::processArgs (const char *arg)
 {
 	names.push_back (arg);
 	return 0;
 }
 
-
-int
-SimbadInfo::doProcessing ()
+int SimbadInfo::doProcessing ()
 {
 	int ret;
 	for (std::list <const char *>::iterator iter = names.begin (); iter != names.end (); iter++)
 	{
-		ret = getObject (*iter);
-		if (ret)
+	  	try
 		{
-			std::cerr << "Cannot resolve " << *iter << std::endl;
+			getObject (*iter);
+		}
+		catch (rts2core::Error err)
+		{
+			std::cerr << "Cannot resolve " << *iter << ":" << err << std::endl;
 			continue;
 		}
 		struct ln_equ_posn pos;

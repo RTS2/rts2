@@ -49,7 +49,7 @@ class TargetPlanet:public Target
 		TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetPlanet (void);
 
-		virtual int load ();
+		virtual void load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 

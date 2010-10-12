@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "sqlerror.h"
 #include "target_auger.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
@@ -118,7 +119,7 @@ TargetAuger::~TargetAuger (void)
 {
 }
 
-int TargetAuger::load ()
+void TargetAuger::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id;
@@ -160,17 +161,17 @@ int TargetAuger::load ()
 		{
 			EXEC SQL CLOSE cur_auger;
 			EXEC SQL COMMIT;
-			return load (d_auger_t3id);
+			load (d_auger_t3id);
+			return;
 		}
 	}
-	logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL ROLLBACK;
 	auger_date = 0;
-	return -1;
+	throw SqlError ("cannot load Auger target");
 }
 
-int TargetAuger::load (int auger_id)
+void TargetAuger::load (int auger_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id = auger_id;
@@ -403,7 +404,9 @@ int TargetAuger::load (int auger_id)
 		EXEC SQL CLOSE cur_auger;
 		EXEC SQL ROLLBACK;
 		auger_date = 0;
-		return -1;
+		std::ostringstream err;
+		err << "cannot load auger event for event " << d_auger_t3id;
+		throw SqlError (err.str ().c_str ());
 	}
 
 	t3id = d_auger_t3id;
@@ -477,7 +480,7 @@ int TargetAuger::load (int auger_id)
 
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL COMMIT;
-	return Target::load ();
+	Target::load ();
 }
 
 void TargetAuger::updateShowerFields ()

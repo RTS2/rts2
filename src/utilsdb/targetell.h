@@ -41,7 +41,7 @@ class EllTarget:public Target
 		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		EllTarget (std::string _tar_info):Target () { setTargetInfo (_tar_info); }
 		EllTarget ():Target () { }
-		virtual int load ();
+		virtual void load ();
 
 		/**
 		 * Get orbit structure from target info.

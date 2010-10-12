@@ -20,6 +20,7 @@
 #include <libnova/libnova.h>
 #include "target.h"
 #include "plan.h"
+#include "sqlerror.h"
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
@@ -47,34 +48,35 @@ ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln
 	position.dec = pos->dec;
 }
 
-int ConstTarget::load ()
+void ConstTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		double d_ra;
-		double d_dec;
-		int db_tar_id = getObsTargetID ();
+	double d_ra;
+	double d_dec;
+	int db_tar_id = getObsTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
-		SELECT
-			tar_ra,
-			tar_dec
-		INTO
-			:d_ra,
-			:d_dec
-		FROM
-			targets
-		WHERE
-			tar_id = :db_tar_id;
+	SELECT
+		tar_ra,
+		tar_dec
+	INTO
+		:d_ra,
+		:d_dec
+	FROM
+		targets
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("ConstTarget::load", MESSAGE_ERROR);
-		return -1;
+	  	std::ostringstream err;
+		err << "cannot load constant target with ID " << db_tar_id;
+		throw SqlError (err.str ().c_str ());
 	}
 	position.ra = d_ra;
 	position.dec = d_dec;
 
-	return Target::load ();
+	Target::load ();
 }
 
 int ConstTarget::save (bool overwrite, int tar_id)
@@ -246,7 +248,7 @@ bool FlatTarget::getScript (const char *deviceName, std::string &buf)
 // we will try to find target, that is among empty fields, and is at oposite location from sun
 // that target will then become our target_id, so entries in observation log
 // will refer to that id, not to generic flat target_id
-int FlatTarget::load ()
+void FlatTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_tar_ra;
@@ -256,7 +258,10 @@ int FlatTarget::load ()
 	EXEC SQL END DECLARE SECTION;
 
 	if (getTargetID () != TARGET_FLAT)
-		return ConstTarget::load ();
+	{
+		ConstTarget::load ();
+		return;
+	}
 
 	double minAntiDist = 1000;
 	double curDist;
@@ -316,10 +321,10 @@ int FlatTarget::load ()
 		logMsgDb ("FlatTarget::load", MESSAGE_ERROR);
 		EXEC SQL CLOSE flat_targets;
 		//in that case, we will simply use generic flat target..
-		return 0;
+		return;
 	}
 	EXEC SQL CLOSE flat_targets;
-	return ConstTarget::load ();
+	ConstTarget::load ();
 }
 
 void FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -361,19 +366,19 @@ CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_ob
 // the idea is to cover uniformly whole sky.
 // in airmass_cal_images table we have recorded previous observations
 // for frames with astrometry which contains targeted airmass
-int CalibrationTarget::load ()
+void CalibrationTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		double d_airmass_start;
-		double d_airmass_end;
-		long d_airmass_last_image;
+	double d_airmass_start;
+	double d_airmass_end;
+	long d_airmass_last_image;
 
-		double db_tar_ra;
-		double db_tar_dec;
-		int db_tar_id;
-		char db_type_id;
-		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
-		VARCHAR db_tar_name[150];
+	double db_tar_ra;
+	double db_tar_dec;
+	int db_tar_id;
+	char db_type_id;
+	// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+	VARCHAR db_tar_name[150];
 	EXEC SQL END DECLARE SECTION;
 
 	double JD = ln_get_julian_from_sys ();
@@ -389,40 +394,43 @@ int CalibrationTarget::load ()
 	std::list <PosCalibration *> bad_list;
 	std::list <PosCalibration *>::iterator cal_iter, cal_iter2;
 	if (getTargetID () != TARGET_CALIBRATION)
-		return ConstTarget::load ();
+	{
+		ConstTarget::load ();
+		return;
+	}
 
 	// create airmass & target_id pool (I dislike idea of creating
 	// target object, as that will cost me a lot of resources
 	EXEC SQL DECLARE pos_calibration CURSOR FOR
-		SELECT
-			tar_ra,
-			tar_dec,
-			tar_id,
-			type_id,
-			tar_name
-		FROM
-			targets
-		WHERE
-			tar_enabled = true
+	SELECT
+		tar_ra,
+		tar_dec,
+		tar_id,
+		type_id,
+		tar_name
+	FROM
+		targets
+	WHERE
+		tar_enabled = true
 		AND (tar_bonus_time is NULL OR tar_bonus > 0)
 		AND ((tar_next_observable is null) OR (tar_next_observable < now()))
 		AND tar_id != 6
 		AND (
 			type_id = 'c'
-		OR type_id = 'M'
-			)
-		ORDER BY
-			tar_priority + tar_bonus desc;
+			OR type_id = 'M'
+		)
+	ORDER BY
+		tar_priority + tar_bonus desc;
 	EXEC SQL OPEN pos_calibration;
 	while (1)
 	{
 		EXEC SQL FETCH next FROM pos_calibration
-			INTO
-				:db_tar_ra,
-				:db_tar_dec,
-				:db_tar_id,
-				:db_type_id,
-				:db_tar_name;
+		INTO
+			:db_tar_ra,
+			:db_tar_dec,
+			:db_tar_id,
+			:db_type_id,
+			:db_tar_name;
 		if (sqlca.sqlcode)
 			break;
 		struct ln_equ_posn pos;
@@ -437,7 +445,7 @@ int CalibrationTarget::load ()
 			cal_list.push_back (newCal);
 		}
 	}
-	if (sqlca.sqlcode != ECPG_NOT_FOUND || cal_list.size () == 0)
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		// free cal_list..
 		for (cal_iter = cal_list.begin (); cal_iter != cal_list.end ();)
@@ -447,10 +455,13 @@ int CalibrationTarget::load ()
 			delete *cal_iter2;
 		}
 		cal_list.clear ();
-		logMsgDb ("CalibrationTarget::load cannot load any possible target", MESSAGE_ERROR);
 		EXEC SQL CLOSE pos_calibration;
 		EXEC SQL ROLLBACK;
-		return -1;
+		throw SqlError ("cannot find any possible callibration target");
+	}
+	if (cal_list.size () == 0)
+	{
+		throw rts2core::Error ("there aren't any calibtation targets; either create them or delete target with ID 6");
 	}
 	EXEC SQL CLOSE pos_calibration;
 	EXEC SQL COMMIT;
@@ -458,15 +469,15 @@ int CalibrationTarget::load ()
 	// center airmass is 1.5 - when we don't have any images in airmass_cal_images,
 	// order us by distance from such center distance
 	EXEC SQL DECLARE cur_airmass_cal_images CURSOR FOR
-		SELECT
-			air_airmass_start,
-			air_airmass_end,
-			EXTRACT (EPOCH FROM air_last_image)
-		FROM
-			airmass_cal_images
-		ORDER BY
-			air_last_image asc,
-			abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
+	SELECT
+		air_airmass_start,
+		air_airmass_end,
+		EXTRACT (EPOCH FROM air_last_image)
+	FROM
+		airmass_cal_images
+	ORDER BY
+		air_last_image asc,
+		abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
 	EXEC SQL OPEN cur_airmass_cal_images;
 	obs_target_id = -1;
 	time (&now);
@@ -474,10 +485,10 @@ int CalibrationTarget::load ()
 	while (1)
 	{
 		EXEC SQL FETCH next FROM cur_airmass_cal_images
-			INTO
-				:d_airmass_start,
-				:d_airmass_end,
-				:d_airmass_last_image;
+		INTO
+			:d_airmass_start,
+			:d_airmass_end,
+			:d_airmass_last_image;
 		if (sqlca.sqlcode)
 			break;
 		// find any target which lies within requested airmass range
@@ -556,9 +567,10 @@ int CalibrationTarget::load ()
 	if (obs_target_id != -1)
 	{
 		needUpdate = 0;
-		return ConstTarget::load ();
+		ConstTarget::load ();
+		return;
 	}
-	return -1;
+	throw SqlError ("cannot locate any calibration target");
 }
 
 int CalibrationTarget::beforeMove ()
@@ -627,48 +639,48 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarg
 	Rts2Config::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
 }
 
-int ModelTarget::load ()
+void ModelTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_tar_id = getTargetID ();
-		float d_alt_start;
-		float d_alt_stop;
-		float d_alt_step;
-		float d_az_start;
-		float d_az_stop;
-		float d_az_step;
-		float d_noise;
-		int d_step;
+	int d_tar_id = getTargetID ();
+	float d_alt_start;
+	float d_alt_stop;
+	float d_alt_step;
+	float d_az_start;
+	float d_az_stop;
+	float d_az_step;
+	float d_noise;
+	int d_step;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
-		SELECT
-			alt_start,
-			alt_stop,
-			alt_step,
-			az_start,
-			az_stop,
-			az_step,
-			noise,
-			step
-		INTO
-			:d_alt_start,
-			:d_alt_stop,
-			:d_alt_step,
-			:d_az_start,
-			:d_az_stop,
-			:d_az_step,
-			:d_noise,
-			:d_step
-		FROM
-			target_model
-		WHERE
-			tar_id = :d_tar_id
-			;
+	SELECT
+		alt_start,
+		alt_stop,
+		alt_step,
+		az_start,
+		az_stop,
+		az_step,
+		noise,
+		step
+	INTO
+		:d_alt_start,
+		:d_alt_stop,
+		:d_alt_step,
+		:d_az_start,
+		:d_az_stop,
+		:d_az_step,
+		:d_noise,
+		:d_step
+	FROM
+		target_model
+	WHERE
+		tar_id = :d_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("ModelTarget::ModelTarget", MESSAGE_ERROR);
-		return -1;
+	  	std::ostringstream err;
+		err << "cannot load model target for ID " << d_tar_id;
+		throw SqlError (err.str ().c_str ());
 	}
 	if (d_alt_start < d_alt_stop)
 	{
@@ -700,7 +712,7 @@ int ModelTarget::load ()
 
 	srandom (time (NULL));
 	calPosition ();
-	return ConstTarget::load ();
+	ConstTarget::load ();
 }
 
 ModelTarget::~ModelTarget (void)
@@ -920,60 +932,57 @@ TargetSwiftFOV::~TargetSwiftFOV (void)
 	delete[] swiftLastTarName;
 }
 
-int TargetSwiftFOV::load ()
+void TargetSwiftFOV::load ()
 {
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
 	double JD = ln_get_julian_from_sys ();
-	int ret;
 
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_swift_id = -1;
-		double d_swift_ra;
-		double d_swift_dec;
-		double d_swift_roll;
-		int d_swift_roll_null;
-		int d_swift_time;
-		float d_swift_obstime;
-		VARCHAR d_swift_name[70];
+	int d_swift_id = -1;
+	double d_swift_ra;
+	double d_swift_dec;
+	double d_swift_roll;
+	int d_swift_roll_null;
+	int d_swift_time;
+	float d_swift_obstime;
+	VARCHAR d_swift_name[70];
 	EXEC SQL END DECLARE SECTION;
 
 	swiftId = -1;
 
-	ret = Target::load();
-	if (ret)
-		return ret;
+	Target::load();
 
 	delete[] swiftLastTarName;
 	swiftLastTarName = NULL;
 
 	EXEC SQL DECLARE find_swift_poiniting CURSOR FOR
-		SELECT
-			swift_id,
-			swift_ra,
-			swift_dec,
-			swift_roll,
-			EXTRACT (EPOCH FROM swift_time),
-			swift_obstime,
-			swift_name
-		FROM
-			swift
-		WHERE
-			swift_time is not NULL
+	SELECT
+		swift_id,
+		swift_ra,
+		swift_dec,
+		swift_roll,
+		EXTRACT (EPOCH FROM swift_time),
+		swift_obstime,
+		swift_name
+	FROM
+		swift
+	WHERE
+		swift_time is not NULL
 		AND swift_obstime is not NULL
-			ORDER BY
-			swift_id desc;
+	ORDER BY
+		swift_id desc;
 	EXEC SQL OPEN find_swift_poiniting;
 	while (1)
 	{
 		EXEC SQL FETCH next FROM find_swift_poiniting INTO
-				:d_swift_id,
-				:d_swift_ra,
-				:d_swift_dec,
-				:d_swift_roll :d_swift_roll_null,
-				:d_swift_time,
-				:d_swift_obstime,
-				:d_swift_name;
+			:d_swift_id,
+			:d_swift_ra,
+			:d_swift_dec,
+			:d_swift_roll :d_swift_roll_null,
+			:d_swift_time,
+			:d_swift_obstime,
+			:d_swift_name;
 		if (sqlca.sqlcode)
 			break;
 		// fill last values
@@ -1018,7 +1027,7 @@ int TargetSwiftFOV::load ()
 		swiftTimeStart = 0;
 		swiftTimeEnd = 0;
 		swiftRoll = rts2_nan ("f");
-		return 0;
+		return;
 	}
 	if (d_swift_roll_null)
 		swiftRoll = rts2_nan ("f");
@@ -1035,7 +1044,6 @@ int TargetSwiftFOV::load ()
 		<< " ( " << Timestamp(swiftTimeStart)
 		<< " - " << Timestamp(swiftTimeEnd) << " )";
 	setTargetName (name.str().c_str());
-	return 0;
 }
 
 void TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1218,47 +1226,43 @@ TargetIntegralFOV::~TargetIntegralFOV (void)
 {
 }
 
-int TargetIntegralFOV::load ()
+void TargetIntegralFOV::load ()
 {
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
 	double JD = ln_get_julian_from_sys ();
 
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_integral_id = -1;
-		double d_integral_ra;
-		double d_integral_dec;
-		long d_integral_time;
+	int d_integral_id = -1;
+	double d_integral_ra;
+	double d_integral_dec;
+	long d_integral_time;
 	EXEC SQL END DECLARE SECTION;
-
-	int ret;
 
 	integralId = -1;
 
-	ret = Target::load();
-	if (ret)
-		return ret;
+	Target::load();
 
 	EXEC SQL DECLARE find_integral_poiniting CURSOR FOR
-		SELECT
-			integral_id,
-			integral_ra,
-			integral_dec,
-			EXTRACT (EPOCH FROM integral_time)
-		FROM
-			integral
-		WHERE
-			integral_time is not NULL
-			ORDER BY
-			integral_id desc;
+	SELECT
+		integral_id,
+		integral_ra,
+		integral_dec,
+		EXTRACT (EPOCH FROM integral_time)
+	FROM
+		integral
+	WHERE
+		integral_time is not NULL
+	ORDER BY
+		integral_id desc;
 	EXEC SQL OPEN find_integral_poiniting;
 	while (1)
 	{
 		EXEC SQL FETCH next FROM find_integral_poiniting INTO
-				:d_integral_id,
-				:d_integral_ra,
-				:d_integral_dec,
-				:d_integral_time;
+			:d_integral_id,
+			:d_integral_ra,
+			:d_integral_dec,
+			:d_integral_time;
 		if (sqlca.sqlcode)
 			break;
 		// check for our altitude..
@@ -1289,14 +1293,13 @@ int TargetIntegralFOV::load ()
 		integralFovCenter.ra = rts2_nan ("f");
 		integralFovCenter.dec = rts2_nan ("f");
 		integralTimeStart = 0;
-		return 0;
+		return;
 	}
 
 	std::ostringstream name;
 	name << "IntegralFOV #" << integralId
 		<< " ( " << Timestamp(integralTimeStart) << " )";
 	setTargetName (name.str().c_str());
-	return 0;
 }
 
 void TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
@@ -1605,20 +1608,20 @@ void TargetPlan::refreshNext ()
 	return;
 }
 
-int TargetPlan::load ()
+void TargetPlan::load ()
 {
-	return load (ln_get_julian_from_sys ());
+	load (ln_get_julian_from_sys ());
 }
 
-int TargetPlan::load (double JD)
+void TargetPlan::load (double JD)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_cur_plan_id;
-		double db_cur_plan_start;
-		int db_obs_id;
-		int db_obs_id_ind;
+	int db_cur_plan_id;
+	double db_cur_plan_start;
+	int db_obs_id;
+	int db_obs_id_ind;
 
-		long last;
+	long last;
 	EXEC SQL END DECLARE SECTION;
 
 	int db_plan_id = -1;
@@ -1627,14 +1630,10 @@ int TargetPlan::load (double JD)
 	time_t now;
 	time_t considerPlans;
 
-	int ret;
-
 	ln_get_timet_from_julian (JD, &now);
 
 	// always load plan target!
-	ret = Target::loadTarget (getTargetID ());
-	if (ret)
-		return ret;
+	Target::loadTarget (getTargetID ());
 
 	// get plan entries from last 12 hours..
 	last = (time_t) (now - (hourLastSearch * 3600));
@@ -1645,25 +1644,25 @@ int TargetPlan::load (double JD)
 	nextTargetRefresh = now + 60;
 
 	EXEC SQL DECLARE cur_plan CURSOR FOR
-		SELECT
-			plan_id,
-			obs_id,
-			EXTRACT (EPOCH FROM plan_start)
-		FROM
-			plan
-		WHERE
-			EXTRACT (EPOCH FROM plan_start) >= :last
-		AND tar_id <> 7
-			ORDER BY
-			plan_start ASC;
+	SELECT
+		plan_id,
+		obs_id,
+		EXTRACT (EPOCH FROM plan_start)
+	FROM
+		plan
+	WHERE
+		EXTRACT (EPOCH FROM plan_start) >= :last
+	AND tar_id <> 7
+	ORDER BY
+		plan_start ASC;
 
 	EXEC SQL OPEN cur_plan;
 	while (1)
 	{
 		EXEC SQL FETCH next FROM cur_plan INTO
-				:db_cur_plan_id,
-				:db_obs_id :db_obs_id_ind,
-				:db_cur_plan_start;
+			:db_cur_plan_id,
+			:db_obs_id :db_obs_id_ind,
+			:db_cur_plan_start;
 		if (sqlca.sqlcode)
 			break;
 		if (db_cur_plan_start > now)
@@ -1700,7 +1699,7 @@ int TargetPlan::load (double JD)
 			if (sqlca.sqlcode != ECPG_NOT_FOUND)
 				logMsgDb ("TargetPlan::load cannot find any plan", MESSAGE_ERROR);
 			EXEC SQL CLOSE cur_plan;
-			return 0;
+			return;
 		}
 		// we don't find next, but we have current
 		if (db_plan_id == -1)
@@ -1715,14 +1714,12 @@ int TargetPlan::load (double JD)
 	{
 		delete selectedPlan;
 		selectedPlan = new Plan (db_plan_id);
-		ret = selectedPlan->load ();
-		if (ret
-			|| selectedPlan->getTarget ()->getTargetType () == TYPE_PLAN)
+		selectedPlan->load ();
+		if (selectedPlan->getTarget ()->getTargetType () == TYPE_PLAN)
 		{
 			delete selectedPlan;
 			selectedPlan = NULL;
-			setTargetName ("Cannot load target from schedule");
-			return -1;
+			throw SqlError ("target scheduled from plan is also planning target, that is not allowed");
 		}
 		setTargetName (selectedPlan->getTarget()->getTargetName ());
 	}
@@ -1734,15 +1731,8 @@ int TargetPlan::load (double JD)
 	{
 		delete nextPlan;
 		nextPlan = new Plan (db_next_plan_id);
-		ret = nextPlan->load ();
-		if (ret)
-		{
-			delete nextPlan;
-			nextPlan = NULL;
-			return -1;
-		}
+		nextPlan->load ();
 	}
-	return 0;
 }
 
 bool TargetPlan::getScript (const char *camera_name, std::string &script)
@@ -1783,10 +1773,7 @@ int TargetPlan::getObsTargetID ()
 
 int TargetPlan::considerForObserving (double JD)
 {
-	int ret;
-	ret = load (JD);
-	if (ret)
-		return ret;
+	load (JD);
 	return Target::considerForObserving (JD);
 }
 
