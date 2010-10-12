@@ -1290,9 +1290,9 @@ int Target::changePriority (int pri_change, double validJD)
 int Target::setNextObservable (time_t *time_ch)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = getObsTargetID ();
-		int db_next_observable;
-		int db_next_observable_ind;
+	int db_tar_id = getObsTargetID ();
+	int db_next_observable;
+	int db_next_observable_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	if (time_ch)
@@ -1309,11 +1309,11 @@ int Target::setNextObservable (time_t *time_ch)
 	}
 
 	EXEC SQL UPDATE
-			targets
-		SET
-			tar_next_observable = to_timestamp(:db_next_observable :db_next_observable_ind)
-		WHERE
-			tar_id = :db_tar_id;
+		targets
+	SET
+		tar_next_observable = to_timestamp(:db_next_observable :db_next_observable_ind)
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
 		logMsgDb ("Target::setNextObservable", MESSAGE_ERROR);
