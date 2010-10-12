@@ -72,7 +72,13 @@ class Element;
 class ParsingError:public rts2core::Error
 {
 	public:
-		ParsingError (std::string _msg):rts2core::Error (_msg) {};
+		ParsingError (std::string _msg):rts2core::Error (_msg) {}
+};
+
+class UnknowOperantMultiplier:public ParsingError
+{
+	public:
+		UnknowOperantMultiplier (char multiplier):ParsingError (std::string ("unknow multiplier '") + multiplier + "'") {} 
 };
 
 /**

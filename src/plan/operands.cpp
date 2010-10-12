@@ -44,30 +44,76 @@ Operand *OperandsSet::parseOperand (std::string str)
 	if (iter == str.end ())
 	  	throw rts2script::ParsingError ("Empty string");
 	// start as number..
-	if ((*iter >= '0' && *iter <= '9') || *iter == '-' || *iter == '+' || *iter == '.')
+	if (isdigit(*iter) || *iter == '-' || *iter == '+' || *iter == '.')
 	{
 		// parse as string..
-		double op, mul = nan ("f");
-		// look what is the last string..
-		std::string::iterator it_end = --str.end ();
-		while (isspace (*it_end))
-			it_end--;
-		if (*it_end == 'm')
-		  	mul = 1/60.0;
-		else if (*it_end == 's')
-			mul = 1/3600.0;
-		else if (*it_end == 'h')
-			mul = 15;
-		// eats units specifications
-		if (isnan (mul))
-			mul = 1;
-		else
-			str = str.substr (0, it_end - str.begin ());
-		std::istringstream _is (str);
-		_is >> op;
-		if (_is.fail () || !_is.eof())
-			return new String(str);
-		return new Number (op * mul);
+		double op = 0;
+		std::string::iterator it = str.begin ();
+		while (it != str.end ())
+		{
+		  	// current number
+			double mul = 1;
+
+		  	double cn = 0;
+			bool dec_seen = false;
+			int sign = 1;
+
+			if (*it == '-')
+			{
+			  	sign = -1;
+				it++;
+			}
+			else if (*it == '+')
+			{
+			  	it++;
+			}
+
+			while (it != str.end () && (isdigit(*it) || *it == '.'))
+			{
+				if (*it == '.')
+				{
+				  	if (dec_seen == true)
+					  	throw rts2script::ParsingError ("multiple decimal points");
+				  	dec_seen = true;
+					mul = 1;
+				}
+				else
+				{
+				  	cn += (*it - '0') * mul;
+					if (dec_seen)
+					{
+					  	mul /= 10;
+					}
+					else
+					{
+					  	mul *= 10;
+					}
+				}
+				it++;
+			}
+		  	
+			// get the number
+			if (it == str.end ())
+			  	mul = 1;
+			else if (*it == 'm')
+			  	mul = 1/60.0;
+			else if (*it == 's')
+				mul = 1/3600.0;
+			else if (*it == 'h')
+				mul = 15;
+			else if (*it == 'D')
+			  	mul = 86400;
+			else if (*it == 'H')
+			  	mul = 3600;
+			else if (*it == 'W')
+			  	mul = 7 * 86400;
+			else
+			  	throw rts2script::UnknowOperantMultiplier (*it);
+			// eats units specifications
+			op += sign * cn * mul;
+			it++;
+		}
+		return new Number (op);
 	}
 	else
 	{

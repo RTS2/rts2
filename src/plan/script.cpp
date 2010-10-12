@@ -577,10 +577,10 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
-		int seconds;
-		if (getNextParamInteger (&seconds))
+		char *distime;
+		if (getNextParamString (&distime))
 			return NULL;
-		return new ElementTempDisable (this, target, seconds);
+		return new ElementTempDisable (this, target, distime);
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
