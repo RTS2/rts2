@@ -49,7 +49,7 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 		// parse as string..
 		double op = 0;
 		std::string::iterator it = str.begin ();
-		while (it != str.end ())
+		while (true)
 		{
 		  	// current number
 			double mul = 1;
@@ -75,18 +75,17 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 				  	if (dec_seen == true)
 					  	throw rts2script::ParsingError ("multiple decimal points");
 				  	dec_seen = true;
-					mul = 1;
+					mul = 0.1;
 				}
 				else
 				{
-				  	cn += (*it - '0') * mul;
 					if (dec_seen)
 					{
-					  	mul /= 10;
+						cn += (*it - '0') * mul;
 					}
 					else
 					{
-					  	mul *= 10;
+				  		cn = cn * 10 + (*it - '0');
 					}
 				}
 				it++;
@@ -120,6 +119,8 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 			}
 			// eats units specifications
 			op += sign * cn * mul;
+			if (it == str.end ())
+				break;
 			it++;
 		}
 		return new Number (op);

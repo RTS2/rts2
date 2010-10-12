@@ -185,7 +185,15 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 			break;
 		element->setLen (cmdBufTop - commandStart);
 		lineOffset += cmdBufTop - commandStart;
-		element->checkParameters ();
+		try
+		{
+			element->checkParameters ();
+		}
+		catch (ParsingError err)
+		{
+			delete element;
+			throw err;
+		}
 		push_back (element);
 	}
 
