@@ -461,7 +461,8 @@ void CalibrationTarget::load ()
 	}
 	if (cal_list.size () == 0)
 	{
-		throw rts2core::Error ("there aren't any calibtation targets; either create them or delete target with ID 6");
+		logStream (MESSAGE_WARNING) << "there aren't any calibtation targets; either create them or delete target with ID 6" << sendLog;
+		return;
 	}
 	EXEC SQL CLOSE pos_calibration;
 	EXEC SQL COMMIT;
