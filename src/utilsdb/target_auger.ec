@@ -165,9 +165,15 @@ void TargetAuger::load ()
 			return;
 		}
 	}
+	auger_date = 0;
+	if (sqlca.sqlcode == ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE cur_auger;
+		EXEC SQL ROLLBACK;
+		return;
+	}
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL ROLLBACK;
-	auger_date = 0;
 	throw SqlError ("cannot load Auger target");
 }
 
