@@ -28,8 +28,9 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2centralstate.h"
 
-#define OPT_LAT      OPT_LOCAL + 230
-#define OPT_LONG     OPT_LOCAL + 231
+#define OPT_LAT              OPT_LOCAL + 230
+#define OPT_LONG             OPT_LOCAL + 231
+#define OPT_SUN_ALTITUDE     OPT_LOCAL + 232
 
 namespace rts2centrald
 {
@@ -74,6 +75,8 @@ class StateApp:public Rts2App
 		void printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step = 1.0);
 		void printAltTable (std::ostream & _os);
 		void printDayStates (std::ostream & _os);
+
+		bool sunAltitude;
 };
 
 }
@@ -179,6 +182,9 @@ int StateApp::processOption (int in_opt)
 		case OPT_LONG:
 			lng = atof (optarg);
 			break;
+		case OPT_SUN_ALTITUDE:
+			sunAltitude = true;
+			break;
 		case 'c':
 			verbose = -1;
 			break;
@@ -213,6 +219,8 @@ StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 
 	conff = NULL;
 
+	sunAltitude = false;
+
 	time (&currTime);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
@@ -221,6 +229,7 @@ StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 	addOption ('c', NULL, 0,  "just print current state (one number) and exists");
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
 	addOption ('t', NULL, 1, "print for given time (int unix time)");
+	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
 	addOption ('v', "verbose", 0, "be verbose");
 }
 
@@ -277,6 +286,17 @@ int StateApp::run ()
 
 	if (verbose > 0)
 		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << LibnovaDate (&currTime) << std::endl;
+
+	if (sunAltitude)
+	{
+		struct ln_equ_posn pos;
+		struct ln_hrz_posn hrz;
+		double jd = ln_get_julian_from_sys ();
+		ln_get_solar_equ_coords (jd, &pos);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
+		std::cout << hrz.alt << std::endl;
+		return 0;
+	}
 
 	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose > 0))
 	{
