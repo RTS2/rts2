@@ -158,6 +158,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	smallCorrection->setValueDouble (0);
 
+	createValue (correctionLimit, "correction_limit", "corrections above this limit will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	correctionLimit->setValueDouble (5.0);
+
 	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	modelLimit->setValueDouble (5.0);
 
@@ -271,8 +274,10 @@ void Telescope::calculateCorrAltAz ()
 	equ_target.ra = tarRaDec->getRa ();
 	equ_target.dec = tarRaDec->getDec ();
 
-	equ_corr.ra = equ_target.ra - corrRaDec->getRa ();
-	equ_corr.dec = equ_target.dec - corrRaDec->getDec ();
+	equ_corr.ra = equ_target.ra;
+	equ_corr.dec = equ_target.dec;
+
+	applyCorrRaDec (&equ_corr);
 
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -483,6 +488,20 @@ void Telescope::recalculateMpecDIffs ()
 	}
 }
 
+void Telescope::applyCorrRaDec (struct ln_equ_posn *pos)
+{
+  	struct ln_equ_posn pos2;
+	pos2.ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
+	pos2.dec = pos->dec + corrRaDec->getDec ();
+	if (ln_get_angular_separation (&pos2, pos) > correctionLimit->getValueDouble ())
+	{
+		logStream (MESSAGE_WARNING) << "correction " << LibnovaDegDist (corrRaDec->getRa ()) << " " << LibnovaDegDist (corrRaDec->getDec ()) << " is above limit, ignoring it" << sendLog;
+		return;
+	}
+	pos->ra = pos2.ra;
+	pos->dec = pos2.dec;
+}
+
 void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
 {
 	struct ln_equ_posn hadec;
@@ -493,8 +512,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->ra = -1 * corrRaDec->getRa();
 		model_change->dec = -1 * corrRaDec->getDec();
 
-		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
-		pos->dec = pos->dec + corrRaDec->getDec ();
+		applyCorrRaDec (pos);
 		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
@@ -556,8 +574,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->ra = 0;
 		model_change->dec = 0;
 		modelRaDec->setValueRaDec (0, 0);
-		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
-		pos->dec = pos->dec + corrRaDec->getDec ();
+		applyCorrRaDec (pos);
 		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
@@ -572,9 +589,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	model_change->ra -= corrRaDec->getRa();
 	model_change->dec -= corrRaDec->getDec();
 
-	pos->ra = ln_range_degrees (ra + corrRaDec->getRa ());
-	pos->dec = hadec.dec + corrRaDec->getDec ();
-
+	applyCorrRaDec (pos);
 	telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 
@@ -935,8 +950,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 	// calculate target after corrections
-	pos.ra = ln_range_degrees (pos.ra - corrRaDec->getRa ());
-	pos.dec = pos.dec - corrRaDec->getDec ();
+	applyCorrRaDec (&pos);
 
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);

@@ -263,6 +263,8 @@ class Telescope:public Rts2Device
 		 */
 		void setParkTimeNow () { mountParkTime->setNow (); }
 
+		void applyCorrRaDec (struct ln_equ_posn *pos);
+
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 
 		/**
@@ -625,6 +627,11 @@ class Telescope:public Rts2Device
 		 * If correction is bellow that value, it is considered as small correction.
 		 */
 		Rts2ValueDouble *smallCorrection;
+
+		/**
+		 * Limit for corrections.
+		 */
+		Rts2ValueDouble *correctionLimit; 
 
 		/**
 		 * If move is above this limit, correction is rejected.
