@@ -25,6 +25,7 @@
 
 #include "../utils/expander.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2config.h"
 
 using namespace rts2xmlrpc;
 
@@ -193,7 +194,44 @@ void Plot::plotYBoolean ()
 	plotYGrid (size.height () + min * scaleY - scaleY);
 }
 
-void Plot::plotXDate ()
+void Plot::plotXSunAlt ()
+{
+	double p_scale = 1 / scaleX;
+
+	time_t f = (time_t) from;
+
+	double JD = ln_get_julian_from_timet (&f);
+
+	for (unsigned int x = 0; x < size.width (); x++)
+	{
+		double j = JD + (x * p_scale) / 86400;
+		struct ln_equ_posn pos;
+		struct ln_hrz_posn hrz;
+		ln_get_solar_equ_coords (j, &pos);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), j, &hrz);
+		double nh;
+		double dh;
+		Rts2Config::instance ()->getDouble ("observatory", "night_horizon", nh, -10);
+		Rts2Config::instance ()->getDouble ("observatory", "day_horizon", dh, 0);
+
+		if (hrz.alt < dh)
+		{
+			if (hrz.alt < nh)
+			{
+				image->strokeColor ("black");
+			}
+			else
+			{
+				double p = (hrz.alt - nh) / (dh - nh);
+				std::cout << hrz.alt << " " << p << std::endl;
+				image->strokeColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p, 0));
+			}
+			image->draw (Magick::DrawableLine (x, 0, x, size.height () - 22));
+		}
+	}
+}
+
+void Plot::plotXDate (bool shadowSun)
 {
 	// scale per pixel..
 	double p_scale = 1 / fabs (scaleX);

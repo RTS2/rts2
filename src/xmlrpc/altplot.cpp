@@ -111,6 +111,9 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 	image->font("helvetica");
 	image->strokeAntiAlias (true);
 
+	// draw night
+	plotXSunAlt ();
+
 	// draw 0 line
 	image->fontPointsize (15);
 	image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));

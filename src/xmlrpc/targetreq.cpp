@@ -831,7 +831,7 @@ void Targets::plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const
 	}
 	else if (from == 0 && to == 0)
 	{
-		// default - one hour
+		// default - one day
 		to = time (NULL);
 		from = to - 86400;
 	}

@@ -64,7 +64,12 @@ class Plot
 		void plotYDouble ();
 		void plotYBoolean ();
 
-		void plotXDate ();
+		/**
+		 * Plot shadow for Sun areas.
+		 */
+		void plotXSunAlt ();
+
+		void plotXDate (bool shadowSun = true);
 };
 
 }
