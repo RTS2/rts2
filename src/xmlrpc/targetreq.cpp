@@ -270,6 +270,8 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10}],"
 		"\"d\" : [";
 
+	_os << std::fixed;
+
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
 		struct ln_equ_posn pos;
@@ -277,13 +279,12 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 
 		rts2db::Target *tar = iter->second;
 
-		std::cerr << "tar " << iter->first << " target " << iter->second << std::endl;
-
 		tar->getPosition (&pos, JD);
 		tar->getAltAz (&hrz, JD);
 		if (iter != ts.begin ())
 			_os << ",";
-		_os << "[" << tar->getTargetID () << ",\"" << tar->getTargetName () << "\",";
+		const char *tar_name = tar->getTargetName ();
+		_os << "[" << tar->getTargetID () << ",\"" << (tar_name == NULL ? "(null)" : tar_name) << "\",";
 		if (isnan (pos.ra) || isnan (pos.dec) || isnan (hrz.alt) || isnan (hrz.az))
 			_os << "0,0,0,0";
 		else
@@ -296,8 +297,13 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		iter->second->getSatisfiedConstraints (JD, satisfied);
 
 		_os << "," << tar->getTargetPriority ()
-			<< "," << tar->getBonus ()
-			<< "," << tar->getTargetEnabled ()
+			<< ",";
+		double b = tar->getBonus (JD);
+		if (isnan (b))
+			_os << -1;
+		else
+			_os << tar->getBonus ();
+		_os << "," << tar->getTargetEnabled ()
 			<< ",\"";
 
 		std::list <rts2db::ConstraintPtr>::iterator citer;

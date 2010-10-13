@@ -40,6 +40,12 @@ void Observation::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 		case 1:
 			printObs (atoi (vals[0].c_str ()), params, response_type, response, response_length);
 			return;
+		case 2:
+			if (vals[1] == "api")
+			{
+				obsApi (atoi (vals[0].c_str ()), params, response_type, response, response_length);
+				return;
+			}
 	}
 	throw rts2core::Error ("Invalid path");
 }
@@ -111,6 +117,29 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+	rts2db::Observation obs (obs_id);
+	rts2db::ImageSetObs images (&obs);
+	images.load ();
+	_os << "[";
+	
+	for (rts2db::ImageSetObs::iterator iter = images.begin (); iter != images.end (); iter++)
+	{
+		if (iter != images.begin ())
+			_os << ",";
+		_os << "[\"" << (*iter)->getAbsoluteFileName () << "\","
+			<< (*iter)->getExposureLength () << ","
+			<< LibnovaDateDouble ((*iter)->getExposureStart ())
+			<< "]";
+	}
+
+	_os << "]";
+	
+	returnJSON (_os, response_type, response, response_length);
 }
 
 #endif /* HAVE_PGSQL */

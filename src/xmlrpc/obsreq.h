@@ -40,6 +40,7 @@ class Observation: public GetRequestAuthorized
 	private:
 		void printQuery (const char* &response_type, char* &response, size_t &response_length);
 		void printObs (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }

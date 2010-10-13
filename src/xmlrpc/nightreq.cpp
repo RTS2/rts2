@@ -261,8 +261,6 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 {
 	std::ostringstream _os;
 
-	std::cout << "callAPI " << year << " " << month << " " << day << std::endl;
-
 	if (year <= 0 || month <= 0 || day <= 0)
 	{
 		_os << "{\"h\":["
