@@ -21,6 +21,7 @@
 
 #include "rts2devcliimg.h"
 #include "../utils/rts2config.h"
+#include "../utils/rts2valuerectangle.h"
 #include "../utils/timestamp.h"
 
 Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rts2core::Rts2DevClientCamera (in_connection)
@@ -30,8 +31,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 
 	Rts2Config *config = Rts2Config::instance ();
 
-	xoa = 0;
-	yoa = 0;
+	xoa = rts2_nan ("f");
+	yoa = rts2_nan ("f");
 	ter_xoa = rts2_nan ("f");
 	ter_yoa = rts2_nan ("f");
 
@@ -163,6 +164,21 @@ void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataCh
 		}
 		else
 		{
+			if (isnan (xoa) || isnan (yoa))
+			{
+				Rts2Value *v = getConnection ()->getValue ("SIZE");
+				if (v && v->getValueExtType () == RTS2_VALUE_RECTANGLE)
+				{
+					if (isnan (xoa))
+						xoa = ((Rts2ValueRectangle *) v)->getWidthInt () / 2;
+					if (isnan (yoa))
+						yoa = ((Rts2ValueRectangle *) v)->getHeightInt () / 2;
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "xoa or yoa not specified, and camera does not have SIZE?" << sendLog;
+				}	 
+			}
 			ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()), xoa, yoa);
 		}
 
