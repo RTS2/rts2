@@ -31,6 +31,9 @@ ccd gowait <xsl:value-of select='@length'/>
 dstore
 set lastimage=/rdata/`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`/`grep "addlog" /tmp/iraf_logger.cl |cut -f2 -d" "|sed s/\"//g`
 $RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
+xpaset ds9 fits mosaicimage iraf &lt; $lastimage
+xpaset -p ds9 zoom to fit
+xpaset -p ds9 scale scope global
 @ imgid ++
 echo `date` 'exposure done'
 <xsl:copy-of select='$abort'/>
