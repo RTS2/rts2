@@ -168,6 +168,7 @@ void TargetAuger::load ()
 	auger_date = 0;
 	if (sqlca.sqlcode == ECPG_NOT_FOUND)
 	{
+		pos.ra = pos.dec = 0;
 		EXEC SQL CLOSE cur_auger;
 		EXEC SQL ROLLBACK;
 		return;

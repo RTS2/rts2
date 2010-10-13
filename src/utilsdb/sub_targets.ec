@@ -40,6 +40,7 @@ ConstTarget::ConstTarget () : Target ()
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
+	position.ra = position.dec = 0;
 }
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):Target (in_tar_id, in_obs)
