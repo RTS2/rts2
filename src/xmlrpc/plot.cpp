@@ -223,7 +223,6 @@ void Plot::plotXSunAlt ()
 			else
 			{
 				double p = (hrz.alt - nh) / (dh - nh);
-				std::cout << hrz.alt << " " << p << std::endl;
 				image->strokeColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p, 0));
 			}
 			image->draw (Magick::DrawableLine (x, 0, x, size.height () - 22));
