@@ -18,6 +18,7 @@
  */
 
 #include "rts2selector.h"
+#include "script.h"
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 #include "../utilsdb/sqlerror.h"
@@ -124,13 +125,36 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 	if (!newTar)
 		return;
 	ret = newTar->considerForObserving (JD);
-	#ifdef DEBUG_EXTRA
+#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "considerForObserving tar_id: " << newTar->getTargetID () << " ret: " << ret << sendLog;
-	#endif
+#endif
 	if (ret)
 	{
 		delete newTar;
 		return;
+	}
+	// check if all script filters are present
+	for (std::map <std::string, std::vector < std::string > >::iterator iter = availableFilters.begin (); iter != availableFilters.end (); iter++)
+	{
+		std::string scripttext;
+		newTar->getScript (iter->first.c_str (), scripttext);
+		rts2script::Script script (scripttext.c_str ());
+		script.parseScript (NULL, NULL);
+		for (rts2script::Script::iterator se = script.begin (); se != script.end (); se++)
+		{
+		  	std::ostringstream os;
+			(*se)->printScript (os);
+			if (os.str ().find ("filter=") == 0)
+			{
+				std::string ops = ((rts2script::ElementChangeValue *) (*se))->getOperands ();
+				if (std::find (iter->second.begin (), iter->second.end (), ops) == iter->second.end ())
+				{
+					logStream (MESSAGE_WARNING) << "target " << newTar->getTargetName () << " (" << newTar->getTargetID () << ") rejected, as filter " << ops << " is not present among available filters" << sendLog;
+					delete newTar;
+					return;
+				}
+			}
+		}
 	}
 	// add to possible targets..
 	possibleTargets.push_back (new TargetEntry (newTar));

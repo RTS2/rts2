@@ -91,6 +91,9 @@ class Selector
 		 * @return -1 if list is incorrect, otherwise 0.
 		 */
 		int setNightDisabledTypes (const char *types);
+
+		// add filters avaikabke for device
+		void addFilters (const char *cam, std::vector <std::string> filters) { availableFilters[std::string(cam)] = filters; }
 	private:
 		std::vector < TargetEntry* > possibleTargets;
 		void considerTarget (int consider_tar_id, double JD);
@@ -103,6 +106,9 @@ class Selector
 		struct ln_lnlat_posn *observer;
 		double flat_sun_min;
 		double flat_sun_max;
+
+		// available filters for filter command on cameras
+		std::map <std::string, std::vector < std::string > > availableFilters;
 
 		/**
 		 * Checks if type is among types disabled for night selection.

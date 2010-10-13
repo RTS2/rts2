@@ -20,6 +20,8 @@
 #include "printtarget.h"
 #include "rts2selector.h"
 
+#define OPT_FILTERS      OPT_LOCAL + 630
+
 namespace rts2plan
 {
 
@@ -39,6 +41,8 @@ class SelectorApp:public PrintTarget
 		virtual int doProcessing ();
 	private:
 		int verbosity;
+
+		std::map <std::string, std::vector < std::string > > availableFilters;
 };
 
 }
@@ -49,6 +53,8 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 {
 	verbosity = 0;
 	addOption ('v', NULL, 0, "increase verbosity");
+
+	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 }
 
 SelectorApp::~SelectorApp (void)
@@ -57,10 +63,21 @@ SelectorApp::~SelectorApp (void)
 
 int SelectorApp::processOption (int opt)
 {
+	std::vector <std::string> cam_filters;
+	std::vector <std::string> filters;
 	switch (opt)
 	{
 		case 'v':
 			verbosity++;
+			break;
+		case OPT_FILTERS:
+			cam_filters = SplitStr (std::string (optarg), std::string (" "));
+			if (cam_filters.size () != 2)
+			{
+			  	std::cerr << "camera must be separated by space from filter names" << std::endl;
+				return -1;
+			}
+			availableFilters[cam_filters[0]] = SplitStr (cam_filters[1], std::string (":"));
 			break;
 		default:
 			return PrintTarget::processOption (opt);
@@ -83,6 +100,11 @@ int SelectorApp::doProcessing ()
 	observer = config->getObserver ();
 
 	sel = new rts2plan::Selector (observer);
+
+	for (std::map < std::string, std::vector < std::string > >::iterator iter = availableFilters.begin (); iter != availableFilters.end (); iter++)
+	{
+		sel->addFilters (iter->first.c_str (), iter->second);
+	}
 
 	next_tar = sel->selectNextNight (0, verbosity);
 

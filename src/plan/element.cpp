@@ -389,6 +389,13 @@ int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	return 0;
 }
 
+std::string ElementChangeValue::getOperands ()
+{
+	std::ostringstream os;
+	os << operands;
+	return os.str ();
+}
+
 ElementComment::ElementComment (Script * _script, const char *in_comment, int in_cnum):Element (_script)
 {
 	comment = new char[strlen (in_comment) + 1];

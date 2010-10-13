@@ -335,6 +335,9 @@ class ElementChangeValue:public Element
 				os << deviceName << ".";
 			os << valName << op << operands;
 		}
+
+		std::string getOperands ();
+
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	private:
