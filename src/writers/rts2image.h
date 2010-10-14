@@ -264,8 +264,9 @@ class Rts2Image:public Rts2FitsFile
 		 * @param buf        buffer (will be allocated by image routine). You must delete it.
 		 * @param black      black value.
 		 * @param quantiles  quantiles in 0-1 range for image scaling.
+		 * @param offset     offset after each line
 		 */
-		template <typename bt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles=0.005);
+		template <typename bt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles=0.005, size_t offset = 0);
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		/**
@@ -275,7 +276,7 @@ class Rts2Image:public Rts2FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = 0);
+		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005, int chan = -1);
 
 		/**
 		 * Write lable to given position. Label text will be expanded.

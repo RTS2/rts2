@@ -1322,7 +1322,7 @@ void Rts2Image::getChannelHistogram (int chan, long *histogram, long nbins)
 }
 
 
-template <typename bt> void Rts2Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles)
+template <typename bt> void Rts2Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles, size_t offset)
 {
 	long hist[65535];
 	getChannelHistogram (chan, hist, 65535);
@@ -1368,13 +1368,14 @@ template <typename bt> void Rts2Image::getChannelGrayscaleBuffer (int chan, bt *
 		}
 	}
 
-	buf = new bt[s];
+	if (buf == NULL)
+		buf = new bt[s];
 
-	long k = 0;
-
-	std::cout << "low " << low << " high " << high << std::endl;
+	long k = offset;
 
 	const void *imageData = getChannelData (chan);
+
+	int j = getChannelWidth (chan);
 
 	for (i = 0; i < s; i++)
 	{
@@ -1394,6 +1395,15 @@ template <typename bt> void Rts2Image::getChannelGrayscaleBuffer (int chan, bt *
 			n = black - black * ((double (pix - low)) / (high - low));
 		}
 		buf[k++] = n;
+		if (offset != 0)
+		{
+			j--;
+			if (j == 0)
+			{
+			  	k += offset;
+				j = getChannelWidth (chan);
+			}
+		}
 	}
 }
 
@@ -1404,13 +1414,89 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 	unsigned char *buf = NULL;
 	try
 	{
-		getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255);
-		Image image (getChannelWidth (chan), getChannelHeight (chan), "K", CharPixel, buf);
+		int tw = 0;
+		int th = 0;
+
+	  	if (chan >= 0)
+		{
+		  	// single channel
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, quantiles);
+			tw = getChannelWidth (chan);
+			th = getChannelHeight (chan);
+		}
+		else
+		{
+		  	if (channels.size () == 0)
+			  	loadChannels ();
+			// all channels
+			int w = floor (sqrt (channels.size ()));
+			int lw = 0;
+			int lh = 0;
+			int n = 0;
+
+			// retrieve total image size
+			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n++)
+			{
+			  	if (n % w == 0)
+				{
+				  	if (lw > tw)
+					  	tw = lw;
+					th += lh;
+				  	lw = 0;
+					lh = 0;
+				}
+				lw += (*iter)->getWidth ();
+				if ((*iter)->getHeight () > lh)
+				  	lh = (*iter)->getHeight ();
+			}
+			if (n % w == 0)
+			{
+				if (lw > tw)
+				  	lw = tw;
+				th += lh;	
+			}
+
+			// copy grayscales
+			buf = new unsigned char[tw * th];
+
+			lw = 0;
+			lh = 0;
+			n = 0;
+
+			int loff = 0;
+
+			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n++)
+			{
+			  	if (n % w)
+				{
+				  	lh += lw;
+					lw = 0;
+					loff = 0;
+				}
+
+				size_t offset = tw - (*iter)->getWidth ();
+
+				unsigned char *bstart = buf + lh * th + loff;
+
+			  	getChannelGrayscaleBuffer (n, bstart, (unsigned char) 255, quantiles, offset);
+
+				if ((*iter)->getHeight () > lw)
+				  	lw = (*iter)->getHeight ();
+				loff += (*iter)->getWidth ();	
+			}
+
+		}
+
+		Image image (tw, th, "K", CharPixel, buf);
+
 		image.font("helvetica");
 		image.strokeColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
+
 		if (label)
+		{
 			writeLabel (image, 2, image.size ().height () - 2, 20, label);
+		}
 
 		delete[] buf;
 		return image;
@@ -1664,6 +1750,7 @@ void Rts2Image::loadChannels ()
 	  	logStream (MESSAGE_ERROR) << "cannot retrieve total number of HDUs: " << getFitsErrors () << sendLog;
 		return;
 	}
+	tothdu++;
 	tothdu *= -1;
 
 	// open all channels
