@@ -34,6 +34,7 @@
 #include "rts2block.h"
 #include "rts2command.h"
 #include "rts2client.h"
+#include "rts2centralstate.h"
 
 #include "imghdr.h"
 
@@ -491,6 +492,11 @@ int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 	return 0;
 }
 
+std::string Rts2Block::getMasterStateString ()
+{
+	return Rts2CentralState (getMasterStateFull ()).getString ();
+}
+
 void Rts2Block::childReturned (pid_t child_pid)
 {
 	#ifdef DEBUG_EXTRA
@@ -803,6 +809,12 @@ int Rts2Block::queAll (Rts2Command * command)
 int Rts2Block::queAll (const char *text)
 {
 	return queAll (new Rts2Command (this, text));
+}
+
+void Rts2Block::queAllCentralds (const char *command)
+{
+	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+		(*iter)->queCommand (new Rts2Command (this, command));
 }
 
 Rts2Conn * Rts2Block::getMinConn (const char *valueName)

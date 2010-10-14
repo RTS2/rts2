@@ -125,11 +125,11 @@ class Rts2CommandLogin:public Rts2Command
  */
 class Rts2Client:public Rts2Block
 {
-	private:
-		const char *central_host;
-		const char *central_port;
-		const char *login;
-		const char *password;
+	public:
+		Rts2Client (int in_argc, char **in_argv);
+		virtual ~ Rts2Client (void);
+
+		virtual int run ();
 
 	protected:
 		virtual Rts2ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
@@ -157,12 +157,11 @@ class Rts2Client:public Rts2Block
 		{
 			return central_port;
 		}
-	public:
-		Rts2Client (int in_argc, char **in_argv);
-		virtual ~ Rts2Client (void);
 
-		virtual int run ();
-
-		std::string getMasterStateString ();
+	private:
+		const char *central_host;
+		const char *central_port;
+		const char *login;
+		const char *password;
 };
 #endif							 /* ! __RTS2_CLIENT__ */

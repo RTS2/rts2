@@ -346,6 +346,8 @@ class Rts2Block: public Rts2App
 			return masterState;
 		}
 
+		std::string getMasterStateString ();
+
 		/**
 		 * Returns true if all masters thinks it is safe weather to
 		 * operate observatory.  Masters can have multiple weather
@@ -496,6 +498,8 @@ class Rts2Block: public Rts2App
 
 		int queAll (rts2core::Rts2Command * cmd);
 		int queAll (const char *text);
+
+		void queAllCentralds (const char *command);
 
 		/**
 		 * Return connection with minimum (integer) value.

@@ -29,7 +29,6 @@
 #include <fstream>
 
 #include "rts2block.h"
-#include "rts2centralstate.h"
 #include "rts2client.h"
 #include "rts2devclient.h"
 #include "rts2logstream.h"
@@ -213,11 +212,6 @@ int Rts2Client::run ()
 		oneRunLoop ();
 	}
 	return 0;
-}
-
-std::string Rts2Client::getMasterStateString ()
-{
-	return Rts2CentralState (getMasterStateFull ()).getString ();
 }
 
 Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):Rts2Conn (in_master)
