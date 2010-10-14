@@ -163,6 +163,9 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	rts2db::ImageSetDate is = rts2db::ImageSetDate (from, end);
 	is.load ();
 
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+
 	for (rts2db::ImageSetDate::iterator iter = is.begin (); iter != is.end (); iter++)
 	{
 		in++;
@@ -170,15 +173,15 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	_os << "</p></body></html>";
 
 	response_length = _os.str ().length ();

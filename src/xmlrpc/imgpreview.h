@@ -21,6 +21,9 @@
 #include "httpreq.h"
 #include "xmlrpcd.h"
 
+#define DEFAULT_QUANTILES    0.005
+#define DEFAULT_CHAN         0
+
 namespace rts2xmlrpc
 {
 
@@ -55,9 +58,9 @@ class Previewer
 		 * @param fpath path to preview image
 		 * @param prevsize size of preview in pixels
 		 */
-		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label);
+		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label, float quantiles, int chan);
 
-		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected);
+		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected, float quantiles, int chan);
 };
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1

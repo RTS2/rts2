@@ -98,17 +98,17 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const ch
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
-void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label)
+void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan)
 {
-	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "&lb=" << label << "'/>" << std::endl;
+	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
 }
 
-void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected)
+void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan)
 {
 	if (selected)
 		_os << "  <b>" << i << "</b>" << std::endl;
 	else
-		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "&lb=" << label << "'>" << i << "</a>" << std::endl;
+		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'>" << i << "</a>" << std::endl;
 }
 
 #ifdef HAVE_LIBJPEG
@@ -125,7 +125,10 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 
 	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 
-	Magick::Image mimage = image.getMagickImage (label);
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+
+	Magick::Image mimage = image.getMagickImage (label, quantiles, chan);
 
 	cacheMaxAge (CACHE_MAX_STATIC);
 
@@ -142,11 +145,14 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	// image type
 	// const char *t = params->getString ("t", "p");
 
-	const char *label = params->getString ("lb", "%Y-%m-%d %H:%M:%S");
+	const char *label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 	
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
+
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
@@ -159,7 +165,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		Rts2Image image;
 		image.openImage (absPath, false, true);
 		Blob blob;
-		Magick::Image mimage = image.getMagickImage ();
+
+		Magick::Image mimage = image.getMagickImage (NULL, quantiles, chan);
 		mimage.zoom (Magick::Geometry (prevsize, prevsize));
 
 		image.writeLabel (mimage, 1, prevsize - 2, 10, label);
@@ -235,7 +242,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "'>" << fname << "</a> ";
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "&lb=" << label_encoded << "&chan=" << chan << "&q=" << quantiles << "'>" << fname << "</a> ";
 		}
 	}
 
@@ -255,7 +262,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		if (in <= is || in > ie)
 			continue;
 		std::string fpath = absPathStr + '/' + fname;
-		preview.imageHref (_os, i, fpath.c_str (), prevsize, label_encoded);
+		preview.imageHref (_os, i, fpath.c_str (), prevsize, label_encoded, quantiles, chan);
 	}
 
 	for (i = 0; i < n; i++)
@@ -268,9 +275,9 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	// print pages..
 	_os << "</p><p>Page ";
 	for (i = 1; i <= in / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	_os << "</p>";
 	
 	printFooter (_os);

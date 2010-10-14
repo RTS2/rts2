@@ -77,6 +77,9 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+
 	std::ostringstream _os;
 	std::ostringstream _title;
 	_title << "Images for observation " << obs.getObsId () << " of " << obs.getTargetName ();
@@ -100,15 +103,15 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) obs.getImageSet ()->size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	_os << "</p>";
 	
 	printFooter (_os);

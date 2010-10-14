@@ -736,6 +736,9 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+
 	Previewer preview = Previewer ();
 
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
@@ -764,7 +767,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 				continue;
 			if (in > ie)
 				break;
-			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
+			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded, quantiles, chan);
 		}
 
 		_os << "</p>";
@@ -778,9 +781,9 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	int i;
 	
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno, quantiles, chan);
 	_os << "</p>";
 	
 	printFooter (_os);
