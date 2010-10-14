@@ -187,9 +187,7 @@ void NMonitor::messageBoxEnd ()
 		}
 		if (cmd)
 		{
-			connections_t::iterator iter;
-			for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-				(*iter)->queCommand (new rts2core::Rts2Command (this, cmd));
+		  	queAllCentralds (cmd);
 		}
 	}
 	delete msgBox;
