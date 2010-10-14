@@ -1664,14 +1664,28 @@ void Rts2Image::loadChannels ()
 	  	logStream (MESSAGE_ERROR) << "cannot retrieve total number of HDUs: " << getFitsErrors () << sendLog;
 		return;
 	}
-
-	// first HDU is already opened..
-	tothdu--;
+	tothdu *= -1;
 
 	// open all channels
-	for (moveHDU (1, &hdutype); tothdu > 0 && fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
+	while (fits_status == 0)
 	{
-		tothdu--;
+	  	if (tothdu < 0)
+		{
+			// first HDU is already opened..
+			moveHDU (1, &hdutype);
+			tothdu *= -1;
+			tothdu--;
+		}
+		else if (tothdu > 1)
+		{
+
+			fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status);
+			tothdu--;
+		}
+		else
+		{
+		  	break;
+		}
 		// first check that it is image
 		if (hdutype != IMAGE_HDU)
 			continue;
