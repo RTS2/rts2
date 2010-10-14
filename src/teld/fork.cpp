@@ -136,12 +136,6 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	if (flip)
 		dc += (int32_t) ((90 - dec) * 2 * decCpd);
 
-	// put dc to correct numbers
-	while (dc < dcMin)
-		dc += dec_ticks;
-	while (dc > dcMax)
-		dc -= dec_ticks;
-
 	ac -= homeOff;
 
 	return 0;
