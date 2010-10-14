@@ -488,7 +488,7 @@ void Telescope::recalculateMpecDIffs ()
 	}
 }
 
-void Telescope::applyCorrRaDec (struct ln_equ_posn *pos)
+int Telescope::applyCorrRaDec (struct ln_equ_posn *pos)
 {
   	struct ln_equ_posn pos2;
 	pos2.ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
@@ -496,10 +496,11 @@ void Telescope::applyCorrRaDec (struct ln_equ_posn *pos)
 	if (ln_get_angular_separation (&pos2, pos) > correctionLimit->getValueDouble ())
 	{
 		logStream (MESSAGE_WARNING) << "correction " << LibnovaDegDist (corrRaDec->getRa ()) << " " << LibnovaDegDist (corrRaDec->getDec ()) << " is above limit, ignoring it" << sendLog;
-		return;
+		return -1; 
 	}
 	pos->ra = pos2.ra;
 	pos->dec = pos2.dec;
+	return 0;
 }
 
 void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
@@ -507,12 +508,15 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	struct ln_equ_posn hadec;
 	double ra;
 	double ls;
+	// normalize correction to prevent runaway
 	if (!model || calModel->getValueBool () == false)
 	{
-		model_change->ra = -1 * corrRaDec->getRa();
-		model_change->dec = -1 * corrRaDec->getDec();
+		if (applyCorrRaDec (pos) == 0)
+		{
+			model_change->ra = -1 * corrRaDec->getRa();
+			model_change->dec = -1 * corrRaDec->getDec();
+		}
 
-		applyCorrRaDec (pos);
 		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
@@ -586,10 +590,12 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 
 	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
 
-	model_change->ra -= corrRaDec->getRa();
-	model_change->dec -= corrRaDec->getDec();
+	if (applyCorrRaDec (pos) == 0)
+	{
+		model_change->ra -= corrRaDec->getRa();
+		model_change->dec -= corrRaDec->getDec();
+	}
 
-	applyCorrRaDec (pos);
 	telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 

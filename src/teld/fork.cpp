@@ -78,6 +78,28 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	ac = (int32_t) ((ra + haZero) * haCpd);
 	dc = (int32_t) (dec * decCpd);
 
+	// apply model
+	applyModel (pos, &model_change, flip, JD);
+
+	// when fliped, change sign
+	if ((flip && telLatitude->getValueDouble () < 0)
+		|| (!flip && telLatitude->getValueDouble () > 0))
+		model_change.dec *= -1;
+
+	#ifdef DEBUG_EXTRA
+	LibnovaRaDec lchange (&model_change);
+
+	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
+		sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
+	ac += (int32_t) (model_change.ra * haCpd);
+	dc += (int32_t) (model_change.dec * decCpd);
+
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
 	// gets the limits
 	ret = updateLimits ();
 	if (ret)
@@ -114,27 +136,11 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 	if (flip)
 		dc += (int32_t) ((90 - dec) * 2 * decCpd);
 
-	// apply model
-	applyModel (pos, &model_change, flip, JD);
-
-	// when fliped, change sign
-	if ((flip && telLatitude->getValueDouble () < 0)
-		|| (!flip && telLatitude->getValueDouble () > 0))
-		model_change.dec *= -1;
-
-	#ifdef DEBUG_EXTRA
-	LibnovaRaDec lchange (&model_change);
-
-	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
-		sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ac += (int32_t) (model_change.ra * haCpd);
-	dc += (int32_t) (model_change.dec * decCpd);
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+	// put dc to correct numbers
+	while (dc < dcMin)
+		dc += dec_ticks;
+	while (dc > dcMax)
+		dc -= dec_ticks;
 
 	ac -= homeOff;
 
