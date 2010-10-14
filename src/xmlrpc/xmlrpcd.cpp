@@ -56,6 +56,7 @@ using namespace Magick;
 #include "devicesreq.h"
 #include "planreq.h"
 #include "graphreq.h"
+#include "switchstatereq.h"
 #include "libjavascript.h"
 #include "libcss.h"
 #include "api.h"
@@ -1640,6 +1641,8 @@ Targets targets ("/targets", &xmlrpc_server);
 AddTarget addTarget ("/addtarget", &xmlrpc_server);
 
 Plan plan ("/plan", &xmlrpc_server);
+
+SwitchState switchState ("/switchstate", &xmlrpc_server);
 
 class UserLogin: public XmlRpcServerMethod
 {
