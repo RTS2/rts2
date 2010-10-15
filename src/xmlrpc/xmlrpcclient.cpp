@@ -560,6 +560,10 @@ void Client::usage ()
 		<< "  " << getAppName () << " -i <device name>.<variable name> <value>" << std::endl
 		<< " So to increase value T0.OFFS by 0.1 in RA and DEC, run: " << std::endl
 		<< "  " << getAppName () << " -i T0.OFFS \"0.1 0.1\"" << std::endl
+		<< " To get master state as number: " << std::endl
+		<< "  " << getAppName () << " --master-state" << std::endl
+		<< " To check if state is on (other posible arguments are standby or off):" << std::endl
+		<< "  " << getAppName () << " --master-state on" << std::endl
 		<< " Default action, e.g. running " << getAppName () << " without any parameters, will result in printout if the XML-RPC server is accessible" << std::endl;
 }
 
@@ -768,7 +772,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
         addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('S', NULL, 0, "get state of device(s) specified as argument");
-	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value)");
+	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value) or ask if the system is in on/standby/off (if single argument is specified)");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption ('t', NULL, 0, "get device(s) type");
