@@ -38,6 +38,8 @@ class SelectorApp:public PrintTarget
 
 	protected:
 		virtual int processOption (int opt);
+		virtual void usage ();
+
 		virtual int doProcessing ();
 	private:
 		int verbosity;
@@ -83,6 +85,15 @@ int SelectorApp::processOption (int opt)
 			return PrintTarget::processOption (opt);
 	}
 	return 0;
+}
+
+void SelectorApp::usage ()
+{
+	std::cout
+		<< " To simply see what's available:" << std::endl
+		<< "  " << getAppName () << std::endl
+		<< " To specify that C0 is equipped with C and R filters (and so ignore all observations requiring other filters):" << std::endl
+		<< "  " << getAppName () << " --available-filters 'C0 C:R'" << std::endl;
 }
 
 int SelectorApp::doProcessing ()
