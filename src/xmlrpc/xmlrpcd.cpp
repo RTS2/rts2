@@ -682,7 +682,7 @@ class DeviceCommand: public SessionMethod
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 			if (conn == NULL)
-				throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
+				throw XmlRpcException ("Device named " + (std::string)params[0] + " does not exists");
 			conn->queCommand (new rts2core::Rts2Command (serv, ((std::string)params[1]).c_str()));
 		}
 
