@@ -670,8 +670,7 @@ void Rts2Conn::processLine ()
 		char *m_name;
 		if (paramNextString (&m_name))
 		{
-			logStream (MESSAGE_DEBUG)
-				<< "Cannot get parameter for SET_VALUE on connection " << getCentraldId () << sendLog;
+			logStream (MESSAGE_DEBUG) << "Cannot get parameter for SET_VALUE on connection " << getCentraldId () << sendLog;
 			ret = -1;
 		}
 		else
@@ -1128,6 +1127,7 @@ int Rts2Conn::command ()
 		  	|| paramNextDouble (&statusExpectedEnd)
 			|| !paramEnd ())
 			return -2;
+		return master->progress (this, statusStart, statusExpectedEnd);
 	}
 	// don't respond to values with error - otherDevice does respond to
 	// values, if there is no other device, we have to take resposibility
@@ -1894,13 +1894,11 @@ int Rts2Conn::commandValue (const char *v_name)
 		ret = value->setValue (this);
 		// notice other type..
 		if (getOtherDevClient ())
-		{
 			getOtherDevClient ()->valueChanged (value);
-		}
 		return ret;
 	}
 	logStream (MESSAGE_ERROR)
-		<< "Unknow value from connection '" << getName () << "' "
+		<< "unknow value from connection '" << getName () << "' "
 		<< v_name
 		<< " connection state " << getConnState ()
 		<< " value size " << values.size ()

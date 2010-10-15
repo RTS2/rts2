@@ -18,6 +18,7 @@
  */
 
 #include "elementtarget.h"
+#include "operands.h"
 
 using namespace rts2script;
 
@@ -30,12 +31,25 @@ int ElementDisable::defnextCommand (Rts2DevClient * client, Rts2Command ** new_c
 
 int ElementTempDisable::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	time_t now;
+  	time_t now;
 	time (&now);
-	now += seconds;
+	now += getDistTimeSec ();
+
 	getTarget ()->setNextObservable (&now);
 	getTarget ()->save (true);
+
 	return NEXT_COMMAND_NEXT;
+}
+
+double ElementTempDisable::getDistTimeSec ()
+{
+	rts2operands::OperandsSet os;
+
+	rts2operands::Operand *op = os.parseOperand (distime, rts2operands::MUL_TIME);
+	double ret = op->getDouble ();
+	delete op;
+
+	return ret;
 }
 
 int ElementTarBoost::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])

@@ -1,6 +1,6 @@
 /* 
  * Application sceleton.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -415,6 +415,12 @@ void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageS
 {
 	Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
 	std::cerr << msg.toString () << std::endl;
+}
+
+void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString)
+{
+	Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
+	std::cerr << msg.toString ();
 }
 
 void Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)

@@ -20,9 +20,9 @@
 #include "constraints.h"
 #include "target.h"
 #include "target_auger.h"
+#include "targetell.h"
 #include "rts2targetplanet.h"
 #include "rts2targetgrb.h"
-#include "rts2targetell.h"
 #include "observation.h"
 #include "observationset.h"
 #include "targetset.h"
@@ -297,7 +297,7 @@ Target::Target ()
 	observationStart = -1;
 
 	tar_priority = 0;
-	tar_bonus = nan ("f");
+	tar_bonus = rts2_nan ("f");
 	tar_bonus_time = 0;
 	tar_next_observable = 0;
 	bool n_tar_enabled = false;
@@ -317,55 +317,56 @@ Target::~Target (void)
 	delete[] constraintFile;
 }
 
-int Target::load ()
+void Target::load ()
 {
-	return loadTarget (getObsTargetID ());
+	loadTarget (getObsTargetID ());
 }
 
-int Target::loadTarget (int in_tar_id)
+void Target::loadTarget (int in_tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
-		VARCHAR d_tar_name[150];
-		VARCHAR d_tar_info[2000];
-		int d_tar_info_ind;
-		float d_tar_priority;
-		int d_tar_priority_ind;
-		float d_tar_bonus;
-		int d_tar_bonus_ind;
-		long d_tar_bonus_time;
-		int d_tar_bonus_time_ind;
-		long d_tar_next_observable;
-		int d_tar_next_observable_ind;
-		bool d_tar_enabled;
-		int db_tar_id = in_tar_id;
+	// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
+	VARCHAR d_tar_name[150];
+	VARCHAR d_tar_info[2000];
+	int d_tar_info_ind;
+	float d_tar_priority;
+	int d_tar_priority_ind;
+	float d_tar_bonus;
+	int d_tar_bonus_ind;
+	long d_tar_bonus_time;
+	int d_tar_bonus_time_ind;
+	long d_tar_next_observable;
+	int d_tar_next_observable_ind;
+	bool d_tar_enabled;
+	int db_tar_id = in_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
-		SELECT
-			tar_name,
-			tar_info,
-			tar_priority,
-			tar_bonus,
-			EXTRACT (EPOCH FROM tar_bonus_time),
-			EXTRACT (EPOCH FROM tar_next_observable),
-			tar_enabled
-		INTO
-			:d_tar_name,
-			:d_tar_info :d_tar_info_ind,
-			:d_tar_priority :d_tar_priority_ind,
-			:d_tar_bonus :d_tar_bonus_ind,
-			:d_tar_bonus_time :d_tar_bonus_time_ind,
-			:d_tar_next_observable :d_tar_next_observable_ind,
-			:d_tar_enabled
-		FROM
-			targets
-		WHERE
-			tar_id = :db_tar_id;
+	SELECT
+		tar_name,
+		tar_info,
+		tar_priority,
+		tar_bonus,
+		EXTRACT (EPOCH FROM tar_bonus_time),
+		EXTRACT (EPOCH FROM tar_next_observable),
+		tar_enabled
+	INTO
+		:d_tar_name,
+		:d_tar_info :d_tar_info_ind,
+		:d_tar_priority :d_tar_priority_ind,
+		:d_tar_bonus :d_tar_bonus_ind,
+		:d_tar_bonus_time :d_tar_bonus_time_ind,
+		:d_tar_next_observable :d_tar_next_observable_ind,
+		:d_tar_enabled
+	FROM
+		targets
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("Target::load", MESSAGE_ERROR);
-		return -1;
+	  	std::ostringstream err;
+		err << "cannot load target with ID " << in_tar_id;
+	  	throw SqlError (err.str ().c_str ());
 	}
 
 	delete[] target_name;
@@ -407,14 +408,12 @@ int Target::loadTarget (int in_tar_id)
 		tar_next_observable = 0;
 
 	setTargetEnabled (d_tar_enabled, false);
-
-	return 0;
 }
 
 int Target::save (bool overwrite)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_new_id = getTargetID ();
+	int db_new_id = getTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
 	// generate new id, if we don't have any
@@ -1290,9 +1289,9 @@ int Target::changePriority (int pri_change, double validJD)
 int Target::setNextObservable (time_t *time_ch)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = getObsTargetID ();
-		int db_next_observable;
-		int db_next_observable_ind;
+	int db_tar_id = getObsTargetID ();
+	int db_next_observable;
+	int db_next_observable_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	if (time_ch)
@@ -1309,11 +1308,11 @@ int Target::setNextObservable (time_t *time_ch)
 	}
 
 	EXEC SQL UPDATE
-			targets
-		SET
-			tar_next_observable = to_timestamp(:db_next_observable :db_next_observable_ind)
-		WHERE
-			tar_id = :db_tar_id;
+		targets
+	SET
+		tar_next_observable = to_timestamp(:db_next_observable :db_next_observable_ind)
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
 		logMsgDb ("Target::setNextObservable", MESSAGE_ERROR);
@@ -1355,6 +1354,31 @@ int Target::getNumObs (time_t *start_time, time_t *end_time)
 			);
 	// runnign observations counts as well - hence obs_end is null
 
+	EXEC SQL COMMIT;
+
+	return d_count;
+}
+
+int Target::getTotalNumberOfObservations ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_count;
+	int d_tar_id = getTargetID ();
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL
+	SELECT
+		count (*)
+	INTO
+		:d_count
+	FROM
+		observations
+	WHERE
+		tar_id = :d_tar_id;
+	// runnign observations counts as well - hence obs_end is null
+
+	EXEC SQL COMMIT;
+
 	return d_count;
 }
 
@@ -1382,11 +1406,14 @@ double Target::getLastObsTime ()
 		if (sqlca.sqlcode == ECPG_NOT_FOUND)
 		{
 			// 1 year was the last observation..
-			return 356 * 86400.0;
+			return rts2_nan ("f");
 		}
 		else
 			logMsgDb ("Target::getLastObsTime", MESSAGE_ERROR);
 	}
+	
+	EXEC SQL COMMIT;
+
 	return d_time_diff;
 }
 
@@ -1408,7 +1435,7 @@ double Target::getFirstObs ()
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return nan("f");
+		return rts2_nan("f");
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
@@ -1417,22 +1444,22 @@ double Target::getFirstObs ()
 double Target::getLastObs ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = getTargetID ();
-		double ret;
+	int db_tar_id = getTargetID ();
+	double ret;
 	EXEC SQL END DECLARE SECTION;
 	EXEC SQL
-		SELECT
+	SELECT
 		MAX (EXTRACT (EPOCH FROM obs_start))
-		INTO
-			:ret
-		FROM
-			observations
-		WHERE
-			tar_id = :db_tar_id;
+	INTO
+		:ret
+	FROM
+		observations
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return nan("f");
+		return rts2_nan("f");
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
@@ -1571,27 +1598,27 @@ int Target::printImages (double JD, std::ostream &_os, int flags)
 Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = _tar_id;
-		char db_type_id;
+	int db_tar_id = _tar_id;
+	char db_type_id;
 	EXEC SQL END DECLARE SECTION;
 
 	Target *retTarget;
-	int ret;
 
 	EXEC SQL
-		SELECT
-			type_id
-		INTO
-			:db_type_id
-		FROM
-			targets
-		WHERE
-			tar_id = :db_tar_id;
+	SELECT
+		type_id
+	INTO
+		:db_type_id
+	FROM
+		targets
+	WHERE
+		tar_id = :db_tar_id;
 
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "createTarget cannot get entry from targets table for target with ID " << db_tar_id << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		return NULL;
+	  	std::ostringstream err;
+		err << "target with ID " << db_tar_id << " does not exists";
+	  	throw SqlError (err.str ().c_str ());
 	}
 
 	// get more informations about target..
@@ -1652,15 +1679,7 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	}
 
 	retTarget->setTargetType (db_type_id);
-	ret = retTarget->load ();
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot create target: " << db_tar_id << " error code " <<
-			sqlca.sqlcode << " message " << sqlca.sqlerrm.sqlerrmc << sendLog;
-		EXEC SQL ROLLBACK;
-		delete retTarget;
-		return NULL;
-	}
+	retTarget->load ();
 	EXEC SQL COMMIT;
 	return retTarget;
 }
@@ -1791,6 +1810,29 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 	if (_os.getStream ())
 		printAltTable (*(_os.getStream ()), JD);
 
+	std::list <ConstraintPtr> violated;
+	getViolatedConstraints (JD, violated);
+
+	std::ostringstream violatedNames;
+	for (std::list <ConstraintPtr>::iterator iter = violated.begin (); iter != violated.end (); iter++)
+	{
+		if (iter != violated.begin ())
+			violatedNames << " ";
+		violatedNames << (*iter)->getName ();
+	}
+
+	std::list <ConstraintPtr> satisfied;
+	getSatisfiedConstraints (JD, satisfied);
+
+	std::ostringstream satisfiedNames;
+	for (std::list <ConstraintPtr>::iterator iter = satisfied.begin (); iter != satisfied.end (); iter++)
+	{
+		if (iter != satisfied.begin ())
+			satisfiedNames << " ";
+		satisfiedNames << (*iter)->getName ();
+	}
+
+
 	getGalLng (&gal, JD);
 	_os
 		<< std::endl
@@ -1805,11 +1847,13 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< std::endl
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", Rts2Config::instance ()->getMasterConstraintFile ())
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_SYSTEM) ? "used" : "empy/not used")
-		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstaintFile ())
+		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstraintFile ())
 		<< InfoVal<const char*> ("GROUP CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_GROUP) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", getConstraintFile ())
 		<< InfoVal<const char*> ("TARGET CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_TARGET) ? "used" : "empty/not used")
 		<< InfoVal<const char*> ("CONSTRAINTS", checkConstraints (JD) ? "satisfied" : "not met")
+		<< InfoVal<std::string> ("VIOLATED", violatedNames.str ())
+		<< InfoVal<std::string> ("SATISFIED", satisfiedNames.str ())
 		<< std::endl;
 }
 
@@ -1860,6 +1904,23 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	printExtra (_os, JD);
 }
 
+void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
+{
+	_os << "Constraints" << std::endl;
+	constraints->print (*(_os.getStream ()));
+	_os << std::endl;
+}
+
+size_t Target::getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated)
+{
+	return getConstraints ()->getViolated (this, JD, violated);
+}
+
+size_t Target::getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated)
+{
+	return getConstraints ()->getSatisfied (this, JD, violated);
+}
+
 TargetSet * Target::getCalTargets (double JD, double minaird)
 {
 	TargetSetCalibration *ret = new TargetSetCalibration (this, JD, minaird);
@@ -1894,7 +1955,7 @@ const char *Target::getConstraintFile ()
 	return constraintFile;
 }
 
-const char *Target::getGroupConstaintFile ()
+const char *Target::getGroupConstraintFile ()
 {
 	if (groupConstraintFile)
 		return groupConstraintFile;
@@ -1906,10 +1967,10 @@ const char *Target::getGroupConstaintFile ()
 	return groupConstraintFile;
 }
 
-bool Target::checkConstraints (double JD)
+Constraints * Target::getConstraints ()
 {
 	if (constraints)
-		return constraints->satisfy (this, JD);
+		return constraints;
 	// check for system level constraints
 	try
 	{
@@ -1918,18 +1979,19 @@ bool Target::checkConstraints (double JD)
 	}
 	catch (XmlError er)
 	{
-		logStream (MESSAGE_ERROR) << "cannot load master constraint file:" << er << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot load master constraint file:" << er << sendLogNoEndl;
 		constraints = new Constraints ();
 	}
 	// check for group constraint
 	try
 	{
-		constraints->load (getGroupConstaintFile ());
+		constraints->load (getGroupConstraintFile ());
+		constraintsLoaded |= CONSTRAINTS_GROUP;
 		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
 	catch (XmlError er)
 	{
-		logStream (MESSAGE_ERROR) << "cannot load group constraint file " << getGroupConstaintFile () << ":" << er << sendLog;
+		logStream (MESSAGE_WARNING) << "cannot load group constraint file " << getGroupConstraintFile () << ":" << er << sendLogNoEndl;
 	}
 	// load target constrainst
 	try
@@ -1939,8 +2001,14 @@ bool Target::checkConstraints (double JD)
 	}
 	catch (XmlError er)
 	{
+		logStream (MESSAGE_WARNING) << "cannot load target constraint file " << getConstraintFile () << ":" << er << sendLogNoEndl;
 	}
-	return constraints->satisfy (this, JD);
+	return constraints;
+}
+
+bool Target::checkConstraints (double JD)
+{
+	return getConstraints ()->satisfy (this, JD);
 }
 
 std::ostream & operator << (std::ostream &_os, Target &target)

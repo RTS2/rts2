@@ -87,10 +87,13 @@ int NMonitor::processArgs (const char *arg)
 {
 #ifdef HAVE_PGSQL
 	tarArg = new rts2db::SimbadTarget (arg);
-	int ret = tarArg->load ();
-	if (ret)
+	try
 	{
-		std::cerr << "Cannot resolve target " << arg << std::endl;
+		tarArg->load ();
+	}
+	catch (rts2core::Error err)
+	{
+		std::cerr << "cannot resolve target " << arg << ":" << err << std::endl;
 		return -1;
 	}
 
@@ -130,6 +133,28 @@ void NMonitor::selectSuccess ()
 	}
 }
 
+void NMonitor::showHelp ()
+{
+	messageBox ("Keys:\n"
+"F1         .. this help\n"
+"F9         .. menu\n"
+"F10,ctrl+c .. exit\n"
+"arrow keys .. move between items\n"
+"tab        .. move between windows\n"
+"enter,F6   .. edit value");
+}
+
+void NMonitor::messageBox (const char *text)
+{
+	const static char *buts[] = { "OK" };
+	if (msgBox)
+		return;
+	msgAction = NONE;
+	msgBox = new NMsgBoxWin (text, buts, 1);
+	msgBox->draw ();
+	windowStack.push_back (msgBox);
+}
+
 void NMonitor::messageBox (const char *query, messageAction action)
 {
 	const static char *buts[] = { "Yes", "No" };
@@ -157,11 +182,14 @@ void NMonitor::messageBoxEnd ()
 			case SWITCH_ON:
 				cmd = "on";
 				break;
+			default:
+				cmd = NULL;
 		}
-		connections_t::iterator iter;
-		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		if (cmd)
 		{
-			(*iter)->queCommand (new rts2core::Rts2Command (this, cmd));
+			connections_t::iterator iter;
+			for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+				(*iter)->queCommand (new rts2core::Rts2Command (this, cmd));
 		}
 	}
 	delete msgBox;
@@ -183,14 +211,17 @@ void NMonitor::menuPerform (int code)
 			messageBox ("Are you sure to switch to on?", SWITCH_ON);
 			break;
 		case MENU_ABOUT:
-
+			messageBox ("   rts2-mon " PACKAGE_VERSION "\n"
+"  (C) Petr Kubánek <petr@kubanek.net>");
 			break;
-
+		case MENU_MANUAL:
+			showHelp ();
+			break;
 		case MENU_DEBUG_BASIC:
-			msgwindow->setMsgMask (0x03);
+			msgwindow->setMsgMask (MESSAGE_CRITICAL | MESSAGE_ERROR | MESSAGE_WARNING);
 			break;
 		case MENU_DEBUG_LIMITED:
-			msgwindow->setMsgMask (0x07);
+			msgwindow->setMsgMask (MESSAGE_CRITICAL | MESSAGE_ERROR | MESSAGE_WARNING | MESSAGE_INFO);
 			break;
 		case MENU_DEBUG_FULL:
 			msgwindow->setMsgMask (MESSAGE_MASK_ALL);
@@ -363,6 +394,7 @@ int NMonitor::init ()
 	menu->addSubmenu (sub);
 
 	sub = new NSubmenu ("Help");
+	sub->createAction ("Manual", MENU_MANUAL);
 	sub->createAction ("About", MENU_ABOUT);
 	menu->addSubmenu (sub);
 
@@ -515,6 +547,9 @@ void NMonitor::processKey (int key)
 				changeActive (daemonWindow);
 				activeWindow = NULL;
 			}
+			break;
+		case KEY_F (1):
+			showHelp ();
 			break;
 		case KEY_F (2):
 			messageBox ("Are you sure to switch off?", SWITCH_OFF);

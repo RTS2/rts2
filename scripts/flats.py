@@ -182,7 +182,7 @@ class FlatScript (rts2comm.Rts2Comm):
 				expMulti = self.morningMultiply
 
 		if (ratio <= 0): # special case, ratio is bellow bias
-			self.log('W','average is bellow bias: average %f bias %f. Please adjust BiasLevel in flats script.' % avrg, self.BiasLevel)
+			self.log('W','average is bellow bias: average %f bias %f. Please adjust BiasLevel in flats script.' % (avrg, self.BiasLevel))
 			self.unusableImage(img)
 			ratio = 0.000000001
 			ret = -1

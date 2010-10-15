@@ -32,9 +32,16 @@
 /**
  * Return array with name of devices presented in the system.
  *
- * @return Arry with names of devices presented in the system.
+ * @return Array with names of devices presented in the system.
  */
 #define R2X_DEVICES_LIST              "rts2.devices.list"
+
+/**
+ * Return array with name(s) of device(s) with given type.
+ *
+ * @return Array with name(s) fo devices mathing the type.
+ */
+#define R2X_DEVICE_GET_BY_TYPE        "rts2.device.get_by_type"
 
 /**
  * Return type of the device.

@@ -199,6 +199,15 @@ bool ConstraintLunarDistance::satisfy (Target *tar, double JD)
 	return isBetween (tar->getLunarDistance (JD));
 }
 
+bool ConstraintLunarAltitude::satisfy (Target *tar, double JD)
+{
+	struct ln_equ_posn eq_lun;
+	struct ln_hrz_posn hrz_lun;
+	ln_get_lunar_equ_coords (JD, &eq_lun);
+	ln_get_hrz_from_equ (&eq_lun, Rts2Config::instance ()->getObserver (), JD, &hrz_lun);
+	return isBetween (hrz_lun.alt);
+}
+
 bool ConstraintLunarPhase::satisfy (Target *tar, double JD)
 {
 	return isBetween (ln_get_lunar_phase (JD));
@@ -218,14 +227,14 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	return isBetween (hrz_sun.alt);
 }
 
-Constraints::Constraints (Constraints &cs): std::map <std::string, Constraint *> (cs)
+Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr > (cs)
 {
 }
 
 Constraints::~Constraints ()
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
-		delete iter->second;
+		iter->second.null ();
 	clear ();
 }
 
@@ -239,15 +248,24 @@ bool Constraints::satisfy (Target *tar, double JD)
 	return true;
 }
 
-size_t Constraints::violated (Target *tar, double JD, std::list <std::string> &names)
+size_t Constraints::getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated)
 {
-	names.clear ();
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		if (!(iter->second->satisfy (tar, JD)))
-			names.push_back (iter->first);
+			violated.push_back (iter->second);
 	}
-	return names.size ();
+	return violated.size ();
+}
+
+size_t Constraints::getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied)
+{
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->second->satisfy (tar, JD))
+			satisfied.push_back (iter->second);
+	}
+	return satisfied.size ();
 }
 
 void Constraints::load (xmlNodePtr _node)
@@ -256,7 +274,7 @@ void Constraints::load (xmlNodePtr _node)
 	{
 		if (cons->type == XML_COMMENT_NODE)
 			continue;
-	  	Constraint *con;
+	  	ConstraintPtr con;
 		Constraints::iterator candidate = find (std::string ((const char *) cons->name));
 		if (candidate != end ())
 		{
@@ -264,9 +282,10 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		else 
 		{
-			con = createConstraint ((const char *) cons->name);
-			if (con == NULL)
+			Constraint *cp = createConstraint ((const char *) cons->name);
+			if (cp == NULL)
 				throw XmlUnexpectedNode (cons);
+			con = ConstraintPtr (cp);
 		}
 		try
 		{
@@ -274,7 +293,7 @@ void Constraints::load (xmlNodePtr _node)
 		}
 		catch (XmlError er)
 		{
-			delete con;
+			con.null ();
 			throw er;
 		}
 		if (candidate == end ())
@@ -289,7 +308,7 @@ void Constraints::load (const char *filename)
 	LIBXML_TEST_VERSION
 
 	xmlLineNumbersDefault (1);
-	xmlDoc *doc = xmlReadFile (filename, NULL, XML_PARSE_NOBLANKS);
+	xmlDoc *doc = xmlReadFile (filename, NULL, XML_PARSE_NOBLANKS | XML_PARSE_NOWARNING);
 	if (doc == NULL)
 		throw XmlError ("cannot parse constraint file " + std::string (filename));
 
@@ -315,7 +334,7 @@ void Constraints::parseInterval (const char *name, const char *interval)
 		if (con == NULL)
 			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
 		con->parseInterval (interval);
-		(*this)[std::string (con->getName ())] = con;
+		(*this)[std::string (con->getName ())] = ConstraintPtr (con);
 	}
 }
 
@@ -338,6 +357,8 @@ Constraint *Constraints::createConstraint (const char *name)
 	else if (!strcmp (name, CONSTRAINT_HA))
 		return new ConstraintHA ();
 	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
+		return new ConstraintLunarDistance ();
+	else if (!strcmp (name, CONSTRAINT_LALTITUDE))
 		return new ConstraintLunarDistance ();
 	else if (!strcmp (name, CONSTRAINT_LPHASE))
 		return new ConstraintLunarPhase ();

@@ -42,6 +42,8 @@ class ValueArray: public Rts2Value
 		 * Return size of an array.
 		 */
 		virtual size_t size () = 0;
+
+		virtual int setValueByIndex (const char *index, Rts2Conn * conn) = 0;
 };
 
 /**
@@ -60,6 +62,7 @@ class StringArray: public ValueArray
 		virtual ~StringArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
+		virtual int setValueByIndex (const char *index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (Rts2Value * newValue);
@@ -125,6 +128,7 @@ class DoubleArray: public ValueArray
 		virtual ~DoubleArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
+		virtual int setValueByIndex (const char *index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (Rts2Value *newValue);
@@ -179,6 +183,7 @@ class IntegerArray: public ValueArray
 		virtual ~IntegerArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
+		virtual int setValueByIndex (const char *index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (Rts2Value *newValue);

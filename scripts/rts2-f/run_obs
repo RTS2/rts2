@@ -1,0 +1,66 @@
+# expected to receive output of rts2-seltest command
+# assumes rts2-f-env script was called, so important variables
+# are set up
+
+setenv tar_id $1
+
+if ( -r $lasttarget ) then
+	setenv last_tar_id `cut -f1 -d' ' $lasttarget`
+	setenv obs_id `cut -f2 -d' ' $lasttarget`
+else
+	setenv last_tar_id -1
+endif
+
+if ( $last_tar_id != $tar_id ) then
+	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
+	echo $tar_id $obs_id > $lasttarget
+endif
+
+setenv name `rts2-targetinfo --name $tar_id`
+setenv pi `rts2-targetinfo --pi $tar_id`
+setenv program `rts2-targetinfo --program $tar_id`
+
+set ra=$3
+set dec=$4
+
+echo "received obs_id $obs_id, name $name"
+
+if ( $notmove == 1 ) then
+  	echo "move to coordinates ignored"
+
+	sleep 3
+else
+	if ( $last_tar_id != $tar_id ) then
+		echo -n "sending coordinates $3 $4 2000.0 .. "
+		tele coords $ra $dec 2000.0
+
+		sleep 3
+
+		tele enable
+
+		echo "on coordinates"
+
+		# mark end of slew
+		$RTS2/bin/rts2-target --observe $obs_id
+	endif
+endif
+	
+object "$name"
+setcom kepccd Object "$name"
+tele pi "$pi"
+tele program "$program"
+
+# translate observation to observation file..
+
+rm -f /tmp/$obs_id
+
+$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc /home/petr/rts2/scripts/flwo_tcs.xsl - > /tmp/$obs_id
+
+source /tmp/$obs_id
+
+# end it
+$RTS2/bin/rts2-target --end $obs_id
+
+rm -f /tmp/$obs_id
+
+echo "observation $obs_id of object $name ($ra $dec) ends"

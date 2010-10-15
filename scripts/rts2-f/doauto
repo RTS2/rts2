@@ -1,0 +1,62 @@
+# start automatic observing. Uses rts2-seltest to select next target, find and
+# execute its script, and waits until it finished before picking up a new target
+
+alias run_obs 'source /home/petr/rts2-sys/bin/run_obs'
+
+source /home/petr/rts2-sys/bin/rts2-f-env
+
+$RTS2/bin/rts2-unabort
+
+set ignoreday=0
+setenv notmove 2
+
+while ( "x$1" != "x" )
+	switch ($1)
+	  	case "-i":
+			set ignoreday=1
+			breaksw
+		case "-T":
+			setenv notmove 1
+			breaksw
+		default:
+			echo "Unknow option $1 - please use -i -T"
+			exit 0
+	endsw
+	shift
+end
+
+while (1 != 0)
+  	if ( -e $rts2abort ) exit
+	set state=`rts2-state -c`
+	if ( $ignoreday == 1) set state=3
+
+	switch ($state)
+		case 0:
+			echo "day - waiting until observation can start"
+			sleep 30
+			breaksw
+		case 1:
+			echo "taking darks"
+			sleep 30
+			breaksw
+		case 2:
+			echo "taking skyflats"
+			sleep 30
+			breaksw
+		case 3:
+			echo "doing night observations"
+			run_obs `$RTS2/bin/rts2-seltest`
+			breaksw
+		case 4:
+			echo "taking skyflats"
+			sleep 30
+			breaksw
+		case 5:
+			echo "taking darks"
+			sleep 30
+			breaksw
+		default:
+			echo "unknow state $state"
+			exit
+	endsw
+end

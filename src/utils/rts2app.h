@@ -1,6 +1,6 @@
 /* 
  * Application sceleton.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -172,6 +172,14 @@ class Rts2App:public Rts2Object
 		 * @param in_messageString Message.
 		 */
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
+
+
+		/**
+		 * Sends message without sending ending endl.
+		 *
+		 * @see sendMessage()
+		 */
+		virtual void sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString);
 
 		/**
 		 * Sends message.

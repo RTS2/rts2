@@ -75,7 +75,7 @@ int ElementSleep::defnextCommand (Rts2DevClient * client, Rts2Command ** new_com
 
 int ElementSleep::idle ()
 {
-	sec = nan ("f");
+	sec = rts2_nan ("f");
 	return NEXT_COMMAND_NEXT;
 }
 

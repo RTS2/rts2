@@ -41,8 +41,7 @@ class Rts2TestApp:public Rts2App
 		virtual int run ();
 };
 
-int
-Rts2TestApp::run ()
+int Rts2TestApp::run ()
 {
 	double value;
 	int i_value;
@@ -67,30 +66,22 @@ Rts2TestApp::run ()
 	std::cout << " val " << value << std::endl;
 	std::cout << "C1 name ret: " << conf->getString ("C1", "name", buf);
 	std::cout << " val " << buf << std::endl;
-	std::cout << "centrald day_horizont ret: " << conf->getDouble ("centrald",
-		"day_horizont",
-		value);
+	std::cout << "centrald day_horizont ret: " << conf->getDouble ("centrald", "day_horizont", value);
 	std::cout << " val " << value << std::endl;
 	std::cout << "sbig blocked by C0: " << conf->blockDevice ("sbig", "C0") << std::endl;
 	std::cout << "sbig blocked by FSBIG: " << conf->blockDevice ("sbig", "FSBIG") << std::endl;
 	std::cout << "C1 blocked by FSBIG: " << conf->blockDevice ("C1", "FSBIG") << std::endl;
 	std::cout << "PHOT blocked by FSBIG: " << conf->blockDevice ("PHOT", "FSBIG") << std::endl;
-	std::cout << "centrald night_horizont ret: " << conf->getDouble ("centrald",
-		"night_horizont",
-		value);
+	std::cout << "centrald night_horizont ret: " << conf->getDouble ("centrald", "night_horizont", value);
 	std::cout << " val " << value << std::endl;
-	std::cout << "hete dark_frequency ret: " << conf->getInteger ("hete",
-		"dark_frequency",
-		i_value);
+	std::cout << "hete dark_frequency ret: " << conf->getInteger ("hete", "dark_frequency", i_value);
 	std::cout << " val " << i_value << std::endl;
 
 	std::cout << "CNF1 script ret: " << conf->getString ("CNF1", "script", buf);
 	std::cout << " val " << buf << std::endl;
-	std::cout << "horizon ret: " << conf->getString ("observatory", "horizont",
-		buf) << std::endl;
+	std::cout << "horizon ret: " << conf->getString ("observatory", "horizont", buf) << std::endl;
 
-	std::cout << std::
-		endl <<
+	std::cout << std::endl <<
 		"************************ CONFIG FILE test.ini DUMP **********************"
 		<< std::endl;
 
@@ -107,8 +98,7 @@ Rts2TestApp::run ()
 
 	// now do test expansions..
 	rts2core::Expander *exp = new rts2core::Expander ();
-	std::cout << "%Z%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->
-		expand ("%Z%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
+	std::cout << "%Z%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->expand ("%Z%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
 	delete exp;
 
 	delete conf;
@@ -116,9 +106,7 @@ Rts2TestApp::run ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2TestApp app (argc, argv);
 	return app.run ();

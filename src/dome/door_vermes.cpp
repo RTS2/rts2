@@ -437,6 +437,13 @@ DoorVermes::init ()
   if (ret)
     return ret;
 
+  // make sure it forks before creating threads                                                                                    
+  ret = doDaemonize ();
+  if (ret) {
+      logStream (MESSAGE_ERROR) << "Doorvermes::initValues could not daemonize"<< sendLog ;
+      return ret;
+  }
+
   if( simulate_door->getValueBool()){
     oak_thread_state= THREAD_STATE_RUNNING ;
   } else {

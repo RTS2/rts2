@@ -25,15 +25,15 @@
 namespace rts2ncurses
 {
 
+/**
+ * Message box. Display standard buttons.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class NMsgBox:public NWindow
 {
-	private:
-		const char *query;
-		const char **buttons;
-		int butnum;
 	public:
-		NMsgBox (const char *in_query,
-			const char *in_buttons[], int in_butnum);
+		NMsgBox (const char *in_query, const char *in_buttons[], int in_butnum, int x = COLS / 2 - 25, int y = LINES / 2 - 15, int w = 50, int h = 5);
 		virtual ~ NMsgBox (void);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -42,6 +42,36 @@ class NMsgBox:public NWindow
 		 *  index of selected button
 		 */
 		int exitState;
+
+	protected:
+		virtual void printMessage ();
+
+		const char *query;
+		const char **buttons;
+		int butnum;
+
+		// button line offset
+		int but_lo;
+};
+
+
+/**
+ * Message box class with window which is suitable to display longer texts.
+ *
+ * @author Petr KUbanek <petr@kubanek.net>
+ */
+class NMsgBoxWin:public NMsgBox
+{
+	public:
+		NMsgBoxWin (const char *in_query, const char *in_buttons[], int in_butnum);
+		virtual ~ NMsgBoxWin ();
+
+		virtual void winrefresh ();
+
+	protected:
+		virtual void printMessage ();
+	private:
+		WINDOW *msgw;
 };
 
 }

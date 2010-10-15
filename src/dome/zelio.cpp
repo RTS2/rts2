@@ -55,7 +55,7 @@
 #define ZS_COMP_RUN      0x0020
 // does not have rain signal
 #define ZS_WITHOUT_RAIN  0x0040
-#define ZS_BOOTES3       0x0080
+#define ZS_3RELAYS       0x0080
 #define ZS_HUMIDITY      0x0100
 #define ZS_FRAM          0x0200
 #define ZS_SIMPLE        0x0400
@@ -80,6 +80,9 @@
 #define ZI_IGNORE_RAIN   0x8000
 
 #define OPT_BATTERY      OPT_LOCAL + 501
+#define OPT_Q8_NAME      OPT_LOCAL + 502
+#define OPT_Q9_NAME      OPT_LOCAL + 503
+#define OPT_QA_NAME      OPT_LOCAL + 504
 
 namespace rts2dome
 {
@@ -120,7 +123,7 @@ class Zelio:public Dome
 		HostString *host;
 		int16_t deadManNum;
 
-		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3_WOUTPLUGS, ZELIO_BOOTES3, ZELIO_COMPRESSOR_WOUTPLUGS, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
 		// if model have hardware rain signal
 		bool haveRainSignal;
@@ -165,10 +168,14 @@ class Zelio:public Dome
 		Rts2ValueBool *blockCloseRight;
 
 		Rts2ValueBool *emergencyReset;
-		Rts2ValueBool *Q9;
 
 		Rts2ValueBool *Q8;
+		Rts2ValueBool *Q9;
 		Rts2ValueBool *QA;
+
+		const char *Q8_name;
+		const char *Q9_name;
+		const char *QA_name;
 
 		Rts2ValueFloat *battery;
 		Rts2ValueFloat *batteryMin;
@@ -242,7 +249,7 @@ int Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
 			return -1;
 		}
-		if (zelioModel == ZELIO_BOOTES3 && !(reg & ZS_POWER))
+		if ((zelioModel == ZELIO_BOOTES3_WOUTPLUGS || zelioModel == ZELIO_BOOTES3) && !(reg & ZS_POWER))
 		{
 			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
 			return -1;
@@ -348,7 +355,9 @@ long Zelio::isOpened ()
 			if ((regs[0] & ZO_EP_OPEN))
 				return -2;
 			break;
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
@@ -409,7 +418,9 @@ long Zelio::isClosed ()
 			if ((regs[0] & ZO_EP_CLOSE))
 				return -2;
 			break;
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
@@ -436,6 +447,15 @@ int Zelio::processOption (int in_opt)
 			break;
 		case OPT_BATTERY:
 			batteryMin->setValueCharArr (optarg);
+			break;
+		case OPT_Q8_NAME:
+			Q8_name = optarg;
+			break;
+		case OPT_Q9_NAME:
+			Q9_name = optarg;
+			break;
+		case OPT_QA_NAME:
+			QA_name = optarg;
 			break;
 		default:
 			return Dome::processOption (in_opt);
@@ -486,9 +506,6 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false, RTS2_VALUE_WRITABLE);
 	emergencyReset->setValueBool (false);
 
-	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false, RTS2_VALUE_WRITABLE);
-	Q9->setValueBool (false);
-
 	host = NULL;
 	deadManNum = 0;
 
@@ -498,10 +515,19 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	humidity = NULL;
 
 	Q8 = NULL;
+	Q9 = NULL;
 	QA = NULL;
+
+	Q8_name = "Q8_switch";
+	Q9_name = "Q9_switch";
+	QA_name = "QA_switch";
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
 	addOption (OPT_BATTERY, "min-battery", 1, "minimal battery level [V])");
+
+	addOption (OPT_Q8_NAME, "Q8-name", 1, "name of the Q8 switch");
+	addOption (OPT_Q9_NAME, "Q9-name", 1, "name of the Q9 switch");
+	addOption (OPT_QA_NAME, "QA-name", 1, "name of the QA switch");
 }
 
 Zelio::~Zelio (void)
@@ -536,9 +562,11 @@ int Zelio::info ()
 
 	switch (zelioModel)
 	{
+	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			onPower->setValueBool (regs[7] & ZS_POWER);
 		case ZELIO_FRAM:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
 			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
@@ -619,10 +647,14 @@ int Zelio::init ()
 	}
 
 	// O4XT1
-	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM | ZS_BOOTES3);
+	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM | ZS_3RELAYS);
 	switch (model)
 	{
-		case ZS_BOOTES3:
+		case 0:
+			zelioModel = ZELIO_BOOTES3_WOUTPLUGS;
+			zelioModelString->setValueString ("ZELIO_BOOTES3_WITHOUT_PLUGS");
+			break;
+		case ZS_3RELAYS:
 			zelioModel = ZELIO_BOOTES3;
 			zelioModelString->setValueString ("ZELIO_BOOTES3");
 			break;
@@ -632,6 +664,10 @@ int Zelio::init ()
 			zelioModelString->setValueString ("ZELIO_FRAM");
 			break;
 		case ZS_COMPRESSOR:
+			zelioModel = ZELIO_COMPRESSOR_WOUTPLUGS;
+			zelioModelString->setValueString ("ZELIO_COMPRESSOR_WOUTPLUGS");
+			break;
+		case ZS_COMPRESSOR | ZS_3RELAYS:
 			zelioModel = ZELIO_COMPRESSOR;
 			zelioModelString->setValueString ("ZELIO_COMPRESSOR");
 			break;
@@ -657,7 +693,9 @@ int Zelio::init ()
 	// switch on dome state
 	switch (zelioModel)
 	{
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 		case ZELIO_FRAM:
 			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
@@ -719,10 +757,12 @@ void Zelio::createZelioValues ()
 			createValue (blockOpenLeft, "block_open", "open block", false);
 			createValue (blockCloseLeft, "block_close", "close block", false);
 			break;
-		
+	
+		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			createValue (onPower, "on_power", "true if power is connected", false);
 		case ZELIO_FRAM:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
 			createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
@@ -763,8 +803,13 @@ void Zelio::createZelioValues ()
 
 	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
 	{
-		createValue (Q8, "Q8", "Q8 switch", false, RTS2_VALUE_WRITABLE);
-		createValue (QA, "QA", "QA switch", false, RTS2_VALUE_WRITABLE);
+		createValue (Q8, Q8_name, "Q8 switch", false, RTS2_VALUE_WRITABLE);
+		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
+		createValue (QA, QA_name, "QA switch", false, RTS2_VALUE_WRITABLE);
+	}
+	else 
+	{
+		createValue (Q9, Q9_name, "Q9 switch", false, RTS2_VALUE_WRITABLE);
 	}
 
 	// create rain values only if rain sensor is present

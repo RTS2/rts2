@@ -36,52 +36,54 @@ TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBon
 	dayBonusTimeout = in_dayBonusTimeout;
 	fiveBonusTimeout = in_fiveBonusTimeout;
 
-	grb.ra = nan("f");
-	grb.dec = nan("f");
-	errorbox = nan("f");
+	grb.ra = rts2_nan("f");
+	grb.dec = rts2_nan("f");
+	errorbox = rts2_nan("f");
 }
 
-int TargetGRB::load ()
+void TargetGRB::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		double  db_grb_date;
-		double  db_grb_last_update;
-		int db_grb_type;
-		int db_grb_id;
-		bool db_grb_is_grb;
-		int db_tar_id = getTargetID ();
-		double db_grb_ra;
-		double db_grb_dec;
-		double db_grb_errorbox;
-		int db_grb_errorbox_ind;
+	double  db_grb_date;
+	double  db_grb_last_update;
+	int db_grb_type;
+	int db_grb_id;
+	bool db_grb_is_grb;
+	int db_tar_id = getTargetID ();
+	double db_grb_ra;
+	double db_grb_dec;
+	double db_grb_errorbox;
+	int db_grb_errorbox_ind;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL SELECT
-			EXTRACT (EPOCH FROM grb_date),
-			EXTRACT (EPOCH FROM grb_last_update),
-			grb_type,
-			grb_id,
-			grb_is_grb,
-			grb_ra,
-			grb_dec,
-			grb_errorbox
-		INTO
-			:db_grb_date,
-			:db_grb_last_update,
-			:db_grb_type,
-			:db_grb_id,
-			:db_grb_is_grb,
-			:db_grb_ra,
-			:db_grb_dec,
-			:db_grb_errorbox :db_grb_errorbox_ind
-		FROM
-			grb
-		WHERE
-			tar_id = :db_tar_id;
+	EXEC SQL
+	SELECT
+		EXTRACT (EPOCH FROM grb_date),
+		EXTRACT (EPOCH FROM grb_last_update),
+		grb_type,
+		grb_id,
+		grb_is_grb,
+		grb_ra,
+		grb_dec,
+		grb_errorbox
+	INTO
+		:db_grb_date,
+		:db_grb_last_update,
+		:db_grb_type,
+		:db_grb_id,
+		:db_grb_is_grb,
+		:db_grb_ra,
+		:db_grb_dec,
+		:db_grb_errorbox :db_grb_errorbox_ind
+	FROM
+		grb
+	WHERE
+		tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("TargetGRB::load", MESSAGE_ERROR);
-		return -1;
+	  	std::ostringstream err;
+		err << "cannot load GRB data for target ID " << db_tar_id;
+	  	throw SqlError (err.str ().c_str ());
 	}
 	grbDate = db_grb_date;
 	// we don't expect grbDate to change much during observation,
@@ -131,7 +133,7 @@ int TargetGRB::load ()
 	grb.ra = db_grb_ra;
 	grb.dec = db_grb_dec;
 	if (db_grb_errorbox_ind)
-		errorbox = nan("f");
+		errorbox = rts2_nan ("f");
 	else
 		errorbox = db_grb_errorbox;
 	shouldUpdate = 0;
@@ -139,7 +141,7 @@ int TargetGRB::load ()
 	// check if we are still valid target
 	checkValidity ();
 
-	return ConstTarget::load ();
+	ConstTarget::load ();
 }
 
 void TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
@@ -419,7 +421,7 @@ double TargetGRB::getFirstPacket ()
 	{
 		EXEC SQL CLOSE cur_grb_first_packet;
 		EXEC SQL ROLLBACK;
-		return nan("f");
+		return rts2_nan ("f");
 	}
 	EXEC SQL CLOSE cur_grb_first_packet;
 	EXEC SQL ROLLBACK;

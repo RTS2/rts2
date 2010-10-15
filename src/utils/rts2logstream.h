@@ -1,6 +1,6 @@
 /* 
  * Log steam, used for logging output.
- * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,10 +111,18 @@ class Rts2LogStream
 		void logArrAsHex (const char *arr, int len);
 
 		inline void sendLog ();
+
+		inline void sendLogNoEndl ();
 };
 
 /**
- * Send log. That is used as manipulator for stream to send it through the system.
+ * Send log. Use it as manipulator for stream to send it through the system.
  */
 Rts2LogStream & sendLog (Rts2LogStream & _ls);
+
+/**
+ * Send log. Use it as manipulator for stream to send it through the system without adding line feed at the end.
+ */
+Rts2LogStream & sendLogNoEndl (Rts2LogStream & _ls);
+
 #endif							 /* ! __RTS2_LOGSTREAM__ */

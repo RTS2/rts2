@@ -114,6 +114,7 @@ int Script::getNextParamInteger (int *val)
 
 Script::Script (Rts2Block * _master):Rts2Object ()
 {
+	defaultDevice[0] = '\0';
 	master = _master;
 	executedCount = 0;
 	lineOffset = 0;
@@ -124,6 +125,7 @@ Script::Script (Rts2Block * _master):Rts2Object ()
 
 Script::Script (const char *script):Rts2Object ()
 {
+	defaultDevice[0] = '\0';
 	master = NULL;
 	executedCount = 0;
 	lineOffset = 0;
@@ -183,6 +185,15 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 			break;
 		element->setLen (cmdBufTop - commandStart);
 		lineOffset += cmdBufTop - commandStart;
+		try
+		{
+			element->checkParameters ();
+		}
+		catch (ParsingError err)
+		{
+			delete element;
+			throw err;
+		}
 		push_back (element);
 	}
 
@@ -575,10 +586,10 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
-		int seconds;
-		if (getNextParamInteger (&seconds))
+		char *distime;
+		if (getNextParamString (&distime))
 			return NULL;
-		return new ElementTempDisable (this, target, seconds);
+		return new ElementTempDisable (this, target, distime);
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
@@ -724,27 +735,14 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 		// find out what character represents..
 		else if (isdigit (*cmdBufTop) || (*cmdBufTop == '.' && isdigit (cmdBufTop[1])))
 		{
-			while (isdigit (*cmdBufTop) || *cmdBufTop == '.')
+			while (*cmdBufTop != '\0' && !isspace (*cmdBufTop))
 				cmdBufTop++;
 			char *num = new char[cmdBufTop - start + 1];
 			strncpy (num, start, cmdBufTop - start);
 			num[cmdBufTop - start] = '\0';
-			// units..
-			double multi = nan("f");
-			if (*cmdBufTop == 'm')
-				multi = 1/60.0;
-			else if (*cmdBufTop == 's')
-				multi = 1/3600.0;
-			else if (*cmdBufTop == 'h')
-				multi = 15;
-			else if (*cmdBufTop == 'd')
-				multi = 1;
-	
-			if (!isnan (multi))
-				*cmdBufTop++;
-			else
-				multi = 1;
-			op = new rts2operands::Number (atof (num) * multi);
+
+			rts2operands::OperandsSet os;
+			op = os.parseOperand (std::string (num), rts2operands::MUL_ANGLE);
 			delete[] num;
 		}
 		else if (isalpha (*cmdBufTop) || *cmdBufTop == '.')
@@ -828,9 +826,9 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 		case PRINT_SCRIPT:
 			for (el_iter = begin (); el_iter != end (); el_iter++)
 			{
-				(*el_iter)->printScript (os);
-				if (el_iter != end ())
+				if (el_iter != begin ())
 					os << " ";
+				(*el_iter)->printScript (os);
 			}
 			break;
 	}
@@ -847,4 +845,12 @@ std::list <Element *>::iterator Script::findElement (const char *name, std::list
 			return iter;
 	}
 	return iter;
+}
+
+double Script::getExpectedDuration ()
+{
+	double ret = 0;
+	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+		ret += (*iter)->getExpectedDuration ();
+	return ret;
 }

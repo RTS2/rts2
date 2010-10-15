@@ -22,9 +22,11 @@
 
 #define OPT_FULL_DAY              OPT_LOCAL + 200
 #define OPT_NAME                  OPT_LOCAL + 201
-#define OPT_PARSE_SCRIPT          OPT_LOCAL + 202
-#define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 203
-#define OPT_AIRMASS               OPT_LOCAL + 204
+#define OPT_PI                    OPT_LOCAL + 202
+#define OPT_PROGRAM               OPT_LOCAL + 203
+#define OPT_PARSE_SCRIPT          OPT_LOCAL + 204
+#define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 205
+#define OPT_AIRMASS               OPT_LOCAL + 206
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -79,9 +81,10 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	constraintFile = NULL;
 
 	addOption ('e', NULL, 0, "print extended informations (visibility prediction,..)");
+	addOption ('E', NULL, 0, "print constraints");
 	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
-	addOption ('b', NULL, 0, "gnuplot bonus of the target");
-	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
+	addOption ('b', NULL, 2, "gnuplot bonus of the target, optionaly followed by output type (x11 | ps | png)");
+	addOption ('B', NULL, 2, "gnuplot bonus and altitude of the target, optionaly followed by output type (x11 | ps | png)");
 	addOption ('m', NULL, 0, "do not plot moon");
 	addOption (OPT_AIRMASS, "airmass", 1, "specify airmass distance for calibration targets selection (and print calibration targets)");
 	addOption ('c', NULL, 0, "print recommended calibration targets");
@@ -96,6 +99,8 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
+	addOption (OPT_PI, "pi", 0, "print target(s) PI name(s)");
+	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 }
@@ -103,6 +108,20 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 PrintTarget::~PrintTarget ()
 {
 	cameras.clear ();
+}
+
+void PrintTarget::setGnuplotType (const char *type)
+{
+	if (!strcmp (type, "ps"))
+		printGNUplot |= GNUPLOT_TYPE_PS;
+	else if (!strcmp (type, "png"))
+		printGNUplot |= GNUPLOT_TYPE_PNG;
+	else if (!strcmp (type, "eps"))
+		printGNUplot |= GNUPLOT_TYPE_EPS;
+	else if (!strcmp (type, "x11"))
+		printGNUplot |= GNUPLOT_TYPE_X11;
+	else
+		throw rts2core::Error (std::string ("unknow type for GNUPlot ") + type);
 }
 
 int PrintTarget::processOption (int in_opt)
@@ -116,14 +135,7 @@ int PrintTarget::processOption (int in_opt)
 		case 'g':
 			if (optarg)
 			{
-				if (!strcmp (optarg, "ps"))
-					printGNUplot |= GNUPLOT_TYPE_PS;
-				if (!strcmp (optarg, "png"))
-					printGNUplot |= GNUPLOT_TYPE_PNG;
-				if (!strcmp (optarg, "eps"))
-					printGNUplot |= GNUPLOT_TYPE_EPS;
-				if (!strcmp (optarg, "x11"))
-					printGNUplot |= GNUPLOT_TYPE_X11;
+				setGnuplotType (optarg);
 			}
 			else
 			{
@@ -131,9 +143,17 @@ int PrintTarget::processOption (int in_opt)
 			}
 			break;
 		case 'b':
+			if (optarg)
+			{
+				setGnuplotType (optarg);
+			}
 			printGNUplot |= GNUPLOT_BONUS_ONLY;
 			break;
 		case 'B':
+			if (optarg)
+			{
+				setGnuplotType (optarg);
+			}
 			printGNUplot |= GNUPLOT_BONUS;
 			break;
 		case 'm':
@@ -185,10 +205,16 @@ int PrintTarget::processOption (int in_opt)
 			std::cout << pureNumbers;
 			break;
 		case OPT_NAME:
-			printExtended = -1;
+			printExtended = -2;
+			break;
+		case OPT_PI:
+			printExtended = -3;
+			break;
+		case OPT_PROGRAM:
+			printExtended = -4;
 			break;
 		case OPT_PARSE_SCRIPT:
-			printExtended = -2;
+			printExtended = -1;
 			scriptCameras.push_back (std::string (optarg));
 			break;
 		case OPT_CHECK_CONSTRAINTS:
@@ -224,11 +250,15 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 		failedCount = script.getFaultLocation ();
 		if (failedCount != -1)
 		{
-			std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
+			std::cout << "parsing of script '" << script_buf << "' failed! At " << failedCount << std::endl
 				<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
 			for (; failedCount > 0; failedCount--)
 				std::cout << " ";
 			std::cout << "^ here" << std::endl;
+		}
+		else
+		{
+			std::cout << pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << std::endl;
 		}
 	}
 }
@@ -258,62 +288,71 @@ void PrintTarget::printTarget (rts2db::Target *target)
 	  	// default print of the target
 		if (!(printImages & DISPLAY_FILENAME))
 		{
-			if (printExtended == -2)
+			switch (printExtended)
 			{
-				for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
-				{
-					std::string script_buf;
-					// parse and pretty print script
-					rts2script::Script script = rts2script::Script ();
-					script.setTarget ((*iter).c_str (), target);
-					script.prettyPrint (std::cout, rts2script::PRINT_XML);
-				}
-			}
-			else if (printExtended == -1)
-			{
-				std::cout << target->getTargetName () << std::endl;
-
-			}
-			else if (printExtended == 0)
-			{
-				target->printShortInfo (std::cout, JD);
-				std::cout << std::endl;
-				printScripts (target, "       ");
-			}
-			else
-			{
-				Rts2InfoValOStream ivos (&std::cout);
-				target->sendInfo (ivos, JD);
-				// print scripts..
-				if (printExtended > 1)
-				{
-					for (int i = 0; i < 10; i++)
+				case -1:
+					for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
 					{
-						JD += 10;
-	
-						std::cout << "==================================" << std::
-							endl << "Date: " << LibnovaDate (JD) << std::endl;
-						target->sendPositionInfo (ivos, JD);
+						std::string script_buf;
+						// parse and pretty print script
+						rts2script::Script script = rts2script::Script ();
+						script.setTarget ((*iter).c_str (), target);
+						script.prettyPrint (std::cout, rts2script::PRINT_XML);
 					}
-				}
-				printScripts (target, "script for camera ");
+					break;
+				case -2:
+					std::cout << target->getTargetName () << std::endl;
+					break;
+				case -3:
+					std::cout << target->getPIName () << std::endl;
+					break;
+				case -4:
+					std::cout << target->getProgramName () << std::endl;
+					break;
+				case 0:
+					target->printShortInfo (std::cout, JD);
+					std::cout << std::endl;
+					printScripts (target, "       ");
+					break;
+				default:
+					Rts2InfoValOStream ivos (&std::cout);
+					target->sendInfo (ivos, JD);
+					// print constraints..
+					if (printExtended > 1)
+					{
+						target->sendConstraints (ivos, JD);
+					}
+					// print scripts..
+					if (printExtended > 2)
+					{
+						for (int i = 0; i < 10; i++)
+						{
+							JD += 10;
+	
+							std::cout << "==================================" << std::
+								endl << "Date: " << LibnovaDate (JD) << std::endl;
+							target->sendPositionInfo (ivos, JD);
+						}
+					}
+					printScripts (target, "script for camera ");
+					break;
 			}
 		}
 		// test and print constraints
 		if (constraintFile && constraints)
 		{
 			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl;
-			std::list <std::string> vn;
-			constraints->violated (target, JD, vn);
-			std::cout << "number of violations " << vn.size ();
-			if (vn.size () > 0)
+			std::list <rts2db::ConstraintPtr> vp;
+			constraints->getViolated (target, JD, vp);
+			std::cout << "number of violations " << vp.size ();
+			if (vp.size () > 0)
 			{
 				std::cout << " - violated in ";
-				for (std::list <std::string>::iterator iter = vn.begin (); iter != vn.end (); iter++)
+				for (std::list <rts2db::ConstraintPtr>::iterator iter = vp.begin (); iter != vp.end (); iter++)
 				{
-					if (iter != vn.begin ())
+					if (iter != vp.begin ())
 						std::cout << ", ";
-					std::cout << *iter;
+					std::cout << (*iter)->getName ();
 				}
 			}
 			std::cout << std::endl;

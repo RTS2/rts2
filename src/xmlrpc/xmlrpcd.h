@@ -138,6 +138,11 @@ class XmlRpcd:public Rts2Device
 		 */
 		bool isPublic (const std::string &path) { return events.isPublic (path); }
 
+		/**
+		 * Return default image label.
+		 */
+		const char *getDefaultImageLabel ();
+
 	protected:
 #ifndef HAVE_PGSQL
 		virtual int willConnect (Rts2Address * _addr);
@@ -152,6 +157,7 @@ class XmlRpcd:public Rts2Device
 	private:
 		int rpcPort;
 		const char *stateChangeFile;
+		const char *defLabel;
 		std::map <std::string, Session*> sessions;
 
 		std::deque <Rts2Message> messages;
@@ -171,6 +177,8 @@ class XmlRpcd:public Rts2Device
 		void sendBB ();
 
 		Rts2ValueInteger *bbCadency;
+
+		void reloadEventsFile ();
 };
 
 };

@@ -28,11 +28,13 @@
 namespace rts2ncurses
 {
 
+/**
+ * Message window class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class NMsgWindow:public NSelWindow
 {
-	private:
-		std::list < Rts2Message > messages;
-		int msgMask;
 	public:
 		NMsgWindow ();
 		virtual ~ NMsgWindow (void);
@@ -44,10 +46,10 @@ class NMsgWindow:public NSelWindow
 		}
 
 		void add (Rts2Message & msg);
-		void setMsgMask (int new_msgMask)
-		{
-			msgMask = new_msgMask;
-		}
+		void setMsgMask (int new_msgMask) { msgMask = new_msgMask; }
+	private:
+		std::list < Rts2Message > messages;
+		int msgMask;
 };
 
 }

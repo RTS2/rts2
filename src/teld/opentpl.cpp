@@ -695,7 +695,10 @@ void OpenTPL::checkPower ()
 		return;
 	}
 
- 	while (!(power_state == 0 || power_state == 1))
+	int cycle = 0;
+#define WAIT_POWER_SETTLE   24
+#define WAIT_POWER_UP       36
+ 	while (cycle < WAIT_POWER_SETTLE && !(power_state == 0 || power_state == 1))
 	{
 		sleep (5);
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
@@ -705,12 +708,25 @@ void OpenTPL::checkPower ()
 			opentplConn->setDebug (debugConn->getValueBool ());
 			return;
 		}
+		cycle++;
 	}
+	if (cycle == WAIT_POWER_SETTLE)
+	{
+		logStream (CRITICAL_TELESCOPE_FAILURE | MESSAGE_ERROR) << "cannot settle down to power_state 0 or 1 - this is significant problem!" << sendLog;
+		cabinetPowerState->setValueInteger (power_state);
+		sendValueAll (cabinetPowerState);
+		opentplConn->setDebug (debugConn->getValueBool ());
+		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power down");
+		return;
+	}
+
+	maskState (DEVICE_ERROR_HW, 0, "preinitialization completed");
 	// sometime we can reach 1..
 	if (power_state == 0)
 	{
 		status = opentplConn->set ("CABINET.POWER", 1, &status);
 		sleep (5);
+		cycle = 0;
 		do
 		{
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
@@ -722,11 +738,23 @@ void OpenTPL::checkPower ()
 				opentplConn->setDebug (debugConn->getValueBool ());
 				return;
 			}
+			cycle++;
 		}
-		while (power_state < 1);
+		while (power_state < 1 && cycle < WAIT_POWER_UP);
+		if (cycle == WAIT_POWER_UP)
+		{
+			logStream (CRITICAL_TELESCOPE_FAILURE | MESSAGE_ERROR) << "cannot finish power up - this is significant problem!" << sendLog;
+			cabinetPowerState->setValueInteger (power_state);
+			sendValueAll (cabinetPowerState);
+			opentplConn->setDebug (debugConn->getValueBool ());
+			maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power up");
+			return;
+		}
 	}
 
-	while (true)
+	cycle = 0;
+
+	while (cycle < WAIT_POWER_UP)
 	{
 		status = opentplConn->get ("CABINET.REFERENCED", referenced, &status);
 		if (status)
@@ -748,8 +776,15 @@ void OpenTPL::checkPower ()
 				return;
 			}
 		} */
+		cycle++;
 	}
 	opentplConn->setDebug (debugConn->getValueBool ());
+	if (cycle == WAIT_POWER_UP)
+	{
+		logStream (CRITICAL_TELESCOPE_FAILURE | MESSAGE_ERROR) << "cannot reference device" << sendLog;
+		maskState (DEVICE_ERROR_MASK, DEVICE_ERROR_HW, "cannot power up");
+		return;
+	}
 	if (cover)
 	{
 		// force close of cover..
@@ -1273,7 +1308,6 @@ int OpenTPL::stopMove ()
 int OpenTPL::startPark ()
 {
 	int status = TPL_OK;
-	status = TPL_OK;
 
 	struct ln_hrz_posn hrzPark;
 	struct ln_equ_posn equPark;

@@ -1,6 +1,6 @@
 /* 
  * Set of targets.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,25 +27,6 @@
 #include <sstream>
 
 using namespace rts2db;
-
-void TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
-{
-	if (target_type == NULL || *target_type == '\0')
-	{
-		_os << "true";
-		return;
-	}
-	const char *top = target_type;
-	_os << "( ";
-	while (*top)
-	{
-		if (top != target_type)
-			_os << " or ";
-		_os << "type_id = '" << *top << "'";
-		top++;
-	}
-	_os << ")";
-}
 
 void TargetSet::load ()
 {
@@ -100,67 +81,90 @@ void TargetSet::load (std::list<int> &target_ids)
 	for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
 	{
 		Target *tar = createTarget (*iter, obs);
-		if (tar != NULL)
-			(*this)[*iter] = tar;
+		(*this)[*iter] = tar;
 	}
 }
 
-void TargetSet::load (const char *name)
+void TargetSet::load (const char *name, bool approxName)
 {
 	std::ostringstream os;
 	// replace spaces with %..
 	std::string n(name);
-	for (size_t l = 0; l < n.length (); l++)
+	if (approxName)
 	{
-		if (n[l] == ' ')
-			n[l] = '%';
+		for (size_t l = 0; l < n.length (); l++)
+		{
+			if (n[l] == ' ')
+				n[l] = '%';
+		}
+		os << "tar_name LIKE '" << n << "'";
 	}
-	os << "tar_name LIKE '" << n << "'";
+	else
+	{
+		os << "tar_name = '" << n << "'";
+	}
 	where = os.str ();
 	order_by = "tar_id asc";
 
 	load ();
 }
 
-void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts))
+void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts), bool approxName, resolverType resType)
 {
 	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
 	{
-		char *endp;
-		int tid = strtol (*iter, &endp, 10);
-		if (*endp == '\0')
+		if (resType == NAME_ID || resType == ID_ONLY)
 		{
-			// numeric target
-			Target *tar = createTarget (tid, obs);
-			if (tar == NULL)
-				throw SqlError ((std::string ("cannot find target with numeric ID ") + (*iter)).c_str ());
-			(*this)[tid] = tar;
-		}
-		else
-		{
-			TargetSet ts (obs);
-			ts.load (*iter);
-			if (ts.size () > 1)
+			char *endp;
+			int tid = strtol (*iter, &endp, 10);
+			if (*endp == '\0')
 			{
-				if (multiple_resolver == NULL)
-					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
-				TargetSet::iterator res = multiple_resolver (&ts);
-				if (res != ts.end ())
+				// numeric target
+				try
 				{
-					(*this)[res->first] = res->second;
-					ts.erase (res);
+					Target *tar = createTarget (tid, obs);
+					(*this)[tid] = tar;
+					continue;
 				}
-				else
+				catch (SqlError err)
 				{
-					insert (ts.begin (), ts.end ());
-					ts.clear ();
+					if (resType == ID_ONLY)
+						throw UnresolvedTarget (*iter);
 				}
 			}
-			else if (ts.size () == 1)
+			else
 			{
-				(*this)[ts.begin ()->first] = ts.begin ()->second;
+				// ID_ONLY with non-numeric ID
+				if (resType == ID_ONLY)
+					throw UnresolvedTarget (*iter);
+			}
+		}
+		TargetSet ts (obs);
+		ts.load (*iter, approxName);
+		if (ts.size () == 0)
+		{
+			throw UnresolvedTarget (*iter);
+		}
+		if (ts.size () > 1)
+		{
+			if (multiple_resolver == NULL)
+					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
+			TargetSet::iterator res = multiple_resolver (&ts);
+			if (res != ts.end ())
+			{
+				(*this)[res->first] = res->second;
+				ts.erase (res);
+			}
+			else
+			{
+				insert (ts.begin (), ts.end ());
 				ts.clear ();
 			}
+		}
+		else if (ts.size () == 1)
+		{
+			(*this)[ts.begin ()->first] = ts.begin ()->second;
+			ts.clear ();
 		}
 	}
 }
@@ -458,8 +462,65 @@ void TargetSetGrb::printGrbList (std::ostream & _os)
 	}
 }
 
+void TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
+{
+	if (target_type == NULL || *target_type == '\0')
+	{
+		_os << "true";
+		return;
+	}
+	const char *top = target_type;
+	_os << "( ";
+	while (*top)
+	{
+		if (top != target_type)
+			_os << " or ";
+		_os << "type_id = '" << *top << "'";
+		top++;
+	}
+	_os << ")";
+}
+
 std::ostream & operator << (std::ostream &_os, TargetSet &tar_set)
 {
 	tar_set.print (_os, ln_get_julian_from_sys ());
 	return _os;
+}
+
+TargetSet::iterator const rts2db::resolveAll (TargetSet *ts)
+{
+	return ts->end ();
+}
+
+TargetSet::iterator const rts2db::consoleResolver (TargetSet *ts)
+{
+	std::cout << "Please make a selection (or ctrl+c for end):" << std::endl
+		<< "  0) all" << std::endl;
+	size_t i = 1;
+	TargetSet::iterator iter = ts->begin ();
+	for (; iter != ts->end (); i++, iter++)
+	{
+		std::cout << std::setw (3) << i << ")" << SEP;
+		iter->second->printShortInfo (std::cout);
+		std::cout << std::endl;
+	}
+	std::ostringstream os;
+	os << "Your selection (0.." << (i - 1 ) << ")";
+	int ret;
+	while (true)
+	{
+		ret = -1;
+		getMasterApp ()->askForInt (os.str ().c_str (), ret);
+		if (ret >= 0 && ret <= (int) ts->size ())
+			break;
+	}
+	if (ret == 0)
+		return ts->end ();
+	iter = ts->begin ();
+	while (ret > 1)
+	{
+		iter++;
+		ret--;
+	}
+	return iter;
 }

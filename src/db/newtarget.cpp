@@ -19,6 +19,7 @@
 
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
+#include "../utilsdb/targetset.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2askchoice.h"
@@ -48,6 +49,7 @@ class Rts2NewTarget:public Rts2TargetApp
 		virtual int processArgs (const char *arg);
 	private:
 		int n_tar_id;
+		bool tryMatch;
 		const char *n_tar_name;
 		const char *n_tar_ra_dec;
 		double radius;
@@ -61,15 +63,17 @@ class Rts2NewTarget:public Rts2TargetApp
 Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_argc, in_argv)
 {
 	n_tar_id = -1;
+	tryMatch = false;
 	n_tar_name = NULL;
 	n_tar_ra_dec = NULL;
 
 	n_pi = NULL;
 	n_program = NULL;
 
-	radius = nan ("f");
+	radius = rts2_nan ("f");
 
 	addOption ('a', NULL, 0, "autogenerate target IDs");
+	addOption ('m', NULL, 0, "try to match target name and RA DEC");
 	addOption ('r', NULL, 2, "radius for target checks");
 
 	addOption (OPT_PI_NAME, "pi", 1, "set PI name");
@@ -99,14 +103,18 @@ int Rts2NewTarget::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'a':
+			n_tar_id = INT_MIN;
+			break;
+		case 'm':
+			n_tar_id = INT_MIN;
+			tryMatch = true;
+			break;
 		case 'r':
 			if (optarg)
 				radius = atof (optarg);
 			else
 				radius = 1.0 / 60.0;
-			break;
-		case 'a':
-			n_tar_id = INT_MIN;
 			break;
 		case OPT_PI_NAME:
 			n_pi = optarg;
@@ -259,7 +267,19 @@ int Rts2NewTarget::doProcessing ()
 	if (ret)
 		return ret;
 
-	if (n_tar_id != INT_MIN)
+	if (tryMatch)
+	{
+		rts2db::TargetSet ts;
+		ts.load (n_tar_name, true);
+		if (ts.size () == 1)
+		{
+			std::cout << "Target #" << ts.begin ()->second->getTargetID () << " matched name " << n_tar_name << std::endl;
+			return 0;
+		}
+		std::cerr << "cannot find target " << n_tar_name << ", inserting new target" << std::endl;
+	}
+
+	if (n_tar_id == INT_MIN)
 		return saveTarget ();
 
 	Rts2AskChoice selection = Rts2AskChoice (this);

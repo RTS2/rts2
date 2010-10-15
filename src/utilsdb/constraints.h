@@ -31,6 +31,7 @@
 #define CONSTRAINT_AIRMASS      "airmass"
 #define CONSTRAINT_HA           "HA"
 #define CONSTRAINT_LDISTANCE    "lunarDistance"
+#define CONSTRAINT_LALTITUDE    "lunarAltitude"
 #define CONSTRAINT_LPHASE       "lunarPhase"
 #define CONSTRAINT_SDISTANCE    "solarDistance"
 #define CONSTRAINT_SALTITUDE    "sunAltitude"
@@ -50,6 +51,14 @@ class ConstraintDoubleInterval
 	public:
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
 		bool satisfy (double val);
+		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
+		{
+			if (!isnan (cons.lower))
+				os << cons.lower << " < ";
+			if (!isnan (cons.upper))
+			  	os << " < " << cons.upper;
+			return os;
+		}
 
 		/**
 		 * Print interval.
@@ -136,6 +145,14 @@ class ConstraintLunarDistance:public Constraint
 		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
 };
 
+class ConstraintLunarAltitude:public Constraint
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD);
+
+		virtual const char* getName () { return CONSTRAINT_LALTITUDE; }
+};
+
 class ConstraintLunarPhase:public Constraint
 {
 	public:
@@ -160,7 +177,7 @@ class ConstraintSunAltitude:public Constraint
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
 };
 
-class Constraints:public std::map <std::string, Constraint *>
+class Constraints:public std::map <std::string, ConstraintPtr >
 {
 	public:
 		Constraints () {}
@@ -180,13 +197,22 @@ class Constraints:public std::map <std::string, Constraint *>
 		bool satisfy (Target *tar, double JD);
 
 		/**
-		 * Return number and name of violated constainst.
+		 * Return number of violated constainst.
 		 *
-		 * @param tar   target for which violated constrains will be calculated
-		 * @param JD    Julian date of constraints check
-		 * @param names return names of violated constraints
+		 * @param tar       target for which violated constrains will be calculated
+		 * @param JD        Julian date of constraints check
+		 * @param violated  list of the violated constraints
 		 */
-		size_t violated (Target *tar, double JD, std::list <std::string> &names);
+		size_t getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated);
+
+		/**
+		 * Return number of satisfied constainst.
+		 *
+		 * @param tar       target for which violated constrains will be calculated
+		 * @param JD        Julian date of constraints check
+		 * @param satisfied list of the satisifed constraints
+		 */
+		size_t getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied);
 
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.

@@ -1,6 +1,6 @@
 /* 
  * Set of targets.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,6 +35,8 @@ class Target;
 class TargetGRB;
 
 class Constraints;
+
+typedef enum { NAME_ID, NAME_ONLY, ID_ONLY } resolverType;
 
 /**
  * Error class for addSet operation.
@@ -127,13 +129,14 @@ class TargetSet:public std::map <int, Target * >
 		/**
 		 * Load targets with name matching pattern.
 		 *
-		 * @param name  target name. Spaces in names are ignored
+		 * @param name         target name
+		 * @param approxName   if true, target is seached using approximation - spaces are replaced with %
 		 *
 		 * @throw SqlError if no target is found.
 		 */
-		void load (const char *name);
+		void load (const char *name, bool approxName = true);
 
-		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL);
+		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
 
 		/**
 		 * Add to target set targets from the other set.
@@ -263,6 +266,22 @@ class TargetSetSingleton
 			return pInstance; 
 		}
 };
+
+/**
+ * Resolver for non-unique targetset names. Force targetset to contain all
+ * matching names.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+TargetSet::iterator const resolveAll (TargetSet *ts);
+
+/**
+ * Resolver for non-unique targetset names. Ask user on console (stdin/stdout)
+ * which names he/she would like to use.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+TargetSet::iterator const consoleResolver (TargetSet *ts);
 
 }
 

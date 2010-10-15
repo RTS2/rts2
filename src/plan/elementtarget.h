@@ -52,18 +52,21 @@ class ElementDisable:public ElementTarget
 class ElementTempDisable:public ElementTarget
 {
 	public:
-		ElementTempDisable (Script * in_script, Rts2Target * in_target, int in_seconds):ElementTarget (in_script, in_target)
-			{ seconds = in_seconds; }
+		ElementTempDisable (Script * in_script, Rts2Target * in_target, const char *in_distime):ElementTarget (in_script, in_target) 
+			{ distime = std::string(in_distime); }
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << seconds << " seconds"; }
-		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << seconds << "</tempdisable>"; }
-		virtual void printScript (std::ostream &os) { os << COMMAND_TAR_TEMP_DISAB << " " << seconds; }
+		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << distime << " (" << getDistTimeSec () << " seconds)"; }
+		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << getDistTimeSec () << "</tempdisable>"; }
+		virtual void printScript (std::ostream &os) { os << COMMAND_TAR_TEMP_DISAB << " " << distime; }
 
-		void setTempDisable (int sec) { seconds = sec; }
+		void setTempDisable (const char *dist) { distime = std::string (dist); }
+
+		virtual void checkParameters () { getDistTimeSec (); }
 
 	private:
-		int seconds;
+		double getDistTimeSec ();
+		std::string distime;
 };
 
 class ElementTarBoost:public ElementTarget

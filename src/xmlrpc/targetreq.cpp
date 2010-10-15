@@ -30,6 +30,7 @@
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/imageset.h"
 #include "../utilsdb/targetset.h"
+#include "../utilsdb/constraints.h"
 #endif /* HAVE_PGSQL */
 
 #include "../utils/radecparser.h"
@@ -41,6 +42,7 @@ using namespace rts2xmlrpc;
 
 Targets::Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s)
 {
+	displaySeconds = false;
 }
 
 void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -135,6 +137,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	includeJavaScriptWithPrefix (_os, "table.js");
 
 	_os << "<script type='text/javascript'>\n"
+		"displaySeconds=" << displaySeconds << ";\n"
                 "table = new Table('api/','targets','table');\n"
 
 		"table.updateTable = function(settimer) {\n"
@@ -151,10 +154,20 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"t[5] = altaz.az;\n"
 				"ln_deg_to_dms(altaz.alt,hAlt);\n"
 				"ln_deg_to_dms(altaz.az,hAz);\n"
-				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
-				"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
-			"}\n"
-			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',2000);\n"
+				"if (displaySeconds) {\n"
+					"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
+					"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
+				"} else {\n"
+					"document.getElementById('alt_' + i).innerHTML = hAlt.toStringDeg ();\n"
+					"document.getElementById('az_' + i).innerHTML = hAz.toStringSignedDeg (false);\n"
+				"}\n"
+	 		"}\n"
+			"if (settimer) setTimeout(this.objectName + '.updateTable(true)',";
+	if (displaySeconds)
+		_os << "20000";
+	else
+		_os << "200000";
+	_os << ");\n"
 		"}\n"
 
 		"</script>\n";
@@ -245,31 +258,70 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 	_os << "{\"h\":["
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
 		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":1},"
+		"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
 		"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
 		"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
 		"{\"n\":\"Enabled\",\"t\":\"b\",\"c\":8},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 		"{\"n\":\"Alt\",\"t\":\"Alt\",\"c\":4,\"sc\":[2,3]},"
-		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]}],"
+		"{\"n\":\"Az\",\"t\":\"Az\",\"c\":5,\"sc\":[2,3]},"
+		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":9},"
+		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":10}],"
 		"\"d\" : [";
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
-		iter->second->getPosition (&pos, JD);
-		iter->second->getAltAz (&hrz, JD);
+
+		rts2db::Target *tar = iter->second;
+
+		std::cerr << "tar " << iter->first << " target " << iter->second << std::endl;
+
+		tar->getPosition (&pos, JD);
+		tar->getAltAz (&hrz, JD);
 		if (iter != ts.begin ())
 			_os << ",";
-		_os << "[" << iter->second->getTargetID () << ",\"" << iter->second->getTargetName () << "\",";
+		_os << "[" << tar->getTargetID () << ",\"" << tar->getTargetName () << "\",";
 		if (isnan (pos.ra) || isnan (pos.dec) || isnan (hrz.alt) || isnan (hrz.az))
 			_os << "0,0,0,0";
 		else
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az;
-		_os << "," << iter->second->getTargetPriority ()
-			<< "," << iter->second->getBonus ()
-			<< "," << iter->second->getTargetEnabled () << "]";
+
+		std::list <rts2db::ConstraintPtr> violated;
+		iter->second->getViolatedConstraints (JD, violated);
+
+		std::list <rts2db::ConstraintPtr> satisfied;
+		iter->second->getSatisfiedConstraints (JD, satisfied);
+
+		_os << "," << tar->getTargetPriority ()
+			<< "," << tar->getBonus ()
+			<< "," << tar->getTargetEnabled ()
+			<< ",\"";
+
+		std::list <rts2db::ConstraintPtr>::iterator citer;
+		
+		for (citer = violated.begin (); citer != violated.end (); citer++)
+		{
+			if (citer != violated.begin ())
+				_os << " ";
+			_os << (*citer)->getName ();
+		}
+
+		_os << "\",\"";
+
+		for (citer = satisfied.begin (); citer != satisfied.end (); citer++)
+		{
+			if (citer != violated.begin ())
+				_os << " ";
+			_os << (*citer)->getName ();
+		}
+
+		_os << "\"," << tar->getTotalNumberOfObservations ()
+		//	<< "," << tar->getFirstObs ()
+		//	<< "," << tar->getLastObsTime ()
+			<< "]";
 	}
 
 	_os << "] }";
@@ -673,7 +725,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
-	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 	std::string lb (label);
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
@@ -904,10 +956,8 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 		}
 		// check for simbad
 		rts2db::Target *target = new rts2db::SimbadTarget (tar);
-		if (target->load () == 0)
-		{
-			target->getPosition (&pos);
-		}
+		target->load ();
+		target->getPosition (&pos);
 		delete target;
 
 		// print new target

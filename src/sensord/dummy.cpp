@@ -57,6 +57,9 @@ class Dummy:public Sensor
 			timerEnabled->setValueBool (true);
 			createValue (timerCount, "timer_count", "timer count - increased every 5 seconds if timer_enabled is true", false, RTS2_VALUE_WRITABLE);
 			timerCount->setValueInteger (0);
+
+			createValue (generateCriticalMessages, "generate_critical", "generate critical messages with timer", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+			generateCriticalMessages->setValueBool (false);
 		}
 
 		/**
@@ -77,6 +80,8 @@ class Dummy:public Sensor
 						addTimer (5, event);
 						if (timerCount->getValueLong () % 12 == 0)
 							logStream (MESSAGE_INFO) << "60 seconds timer: " << timerCount->getValueLong () << sendLog;
+						if (generateCriticalMessages->getValueBool ())
+							sendCriticalMessage ();
 						return;
 					}
 					break;
@@ -117,6 +122,14 @@ class Dummy:public Sensor
 				{
 					deleteTimers (EVENT_TIMER_TEST);
 					addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+				}
+				return 0;
+			}
+			if (old_value == generateCriticalMessages)
+			{
+				if (((Rts2ValueBool *) newValue)->getValueBool () == true)
+				{
+					sendCriticalMessage ();
 				}
 				return 0;
 			}
@@ -169,6 +182,13 @@ class Dummy:public Sensor
 
 		Rts2ValueBool *timerEnabled;
 		Rts2ValueLong *timerCount;
+		
+		Rts2ValueBool *generateCriticalMessages;
+
+		void sendCriticalMessage ()
+		{
+			logStream (MESSAGE_CRITICAL) << "critical message generated from timer with count " << timerCount->getValueInteger () << sendLog;
+		}
 };
 
 }

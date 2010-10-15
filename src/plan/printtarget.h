@@ -85,6 +85,8 @@ class PrintTarget:public Rts2AppDb
 
 		const char *constraintFile;
 		rts2db::Constraints *constraints;
+
+		void setGnuplotType (const char *type);
 };
 
 }

@@ -74,7 +74,7 @@ EOakStatus closeDevice(int deviceHandle)
 EOakStatus getDeviceName(int deviceHandle, char** outName)
 {
   const int kBufferSize = 256;
-  char* buffer = (char*) xmalloc(sizeof(char) * kBufferSize);
+  char* buffer = (char*) malloc(sizeof(char) * kBufferSize);
   if (ioctl(deviceHandle, HIDIOCGNAME(kBufferSize), buffer) < 0) {
     return eOakStatusInternalError;
   }
@@ -99,7 +99,7 @@ EOakStatus getStringDescriptor(int deviceHandle, int index_pos, char** outStr)
    if (ioctl(deviceHandle, HIDIOCGSTRING, &desc) < 0) {
      return eOakStatusInvalidStringDescriptorIndex;
    }
-   *outStr = xmalloc(sizeof(char) * HID_STRING_SIZE);
+   *outStr = malloc(sizeof(char) * HID_STRING_SIZE);
    memcpy(*outStr, desc.value, HID_STRING_SIZE);
    return eOakStatusOK;
 }
@@ -166,7 +166,7 @@ EOakStatus putStringInReport(OakFeatureReport report, const char* theString)
 EOakStatus getStringFromReport(OakFeatureReport report, char** outString)
 {
    report[21] = 0; // buffer overflow safety
-   *outString = (char*) xmalloc(sizeof(char) * 21);
+   *outString = (char*) malloc(sizeof(char) * 21);
    memcpy(*outString, (char*) &report[1], 21);
    return eOakStatusOK;
 }

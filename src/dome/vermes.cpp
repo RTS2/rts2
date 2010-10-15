@@ -29,7 +29,7 @@
 #include "barcodereader_vermes.h"
 #include "ssd650v_comm_vermes.h"
 // wildi ev. ToDo: pthread_mutex_t mutex1
-extern int is_synced ; // ==SYNCED if target_az reched
+extern int is_synced ; // ==SYNCED if target_az reached
 extern int motorState ;
 extern int barcodereader_state ;
 extern double barcodereader_az ;
@@ -124,10 +124,10 @@ int Vermes::moveStop ()
 long Vermes::isMoving ()
 {
   if ( is_synced== SYNCED) {
-    //  logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
+    logStream (MESSAGE_INFO) << "Vermes::isMoving SYNCED"<< sendLog ;
     return -2;
   } else {
-    //  logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
+    //logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
   }
   return USEC_SEC;
 }
@@ -152,7 +152,7 @@ int Vermes::moveStart ()
   }
 
   movementState= SYNCHRONIZATION_ENABLED ; 
-  logStream (MESSAGE_DEBUG) << "Vermes::moveStart tracking enabled"<< sendLog ;
+  logStream (MESSAGE_INFO) << "Vermes::moveStart synchronization of the telescope enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
 
@@ -164,7 +164,7 @@ double Vermes::getSplitWidth (double alt)
 void Vermes::parkCupola ()
 {
   movementState= SYNCHRONIZATION_DISABLED ; 
-  logStream (MESSAGE_DEBUG) << "Vermes::parkCupola tracking disabled"<< sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::parkCupola synchronization disabled"<< sendLog ;
 }
 
 int Vermes::standby ()
@@ -216,11 +216,11 @@ void Vermes::valueChanged (Rts2Value * changed_value)
   } else   if (changed_value == synchronizeTelescope) {
     if( synchronizeTelescope->getValueBool()) {
       movementState= SYNCHRONIZATION_ENABLED ; 
-      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts tracking the telescope"<< sendLog ;
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts, synchronization of the telescope enabled"<< sendLog ;
     } else {
       // motor is turned off in thread
       movementState= SYNCHRONIZATION_DISABLED ;
-      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola tracking stoped"<< sendLog ;
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola synchronization disabled"<< sendLog ;
     }
     return ;
   } else if (changed_value == ssd650v_min_setpoint) {
@@ -275,8 +275,16 @@ int Vermes::initValues ()
   config = Rts2Config::instance ();
 
   ret = config->loadFile ();
-  if (ret)
+  if (ret) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues could not read configuration, exiting"<< sendLog ;
     return -1;
+  }
+  // make sure it forks before creating threads
+  ret = doDaemonize ();
+  if (ret) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues could not daemonize"<< sendLog ;
+    return ret;
+  }
 
   struct ln_lnlat_posn   *obs_loc_tmp= Cupola::getObserver() ;
   obs_location.lat= obs_loc_tmp->lat;
@@ -304,6 +312,12 @@ int Vermes::initValues ()
   tel_equ.dec= 0. ;
   // thread to compare (target - current) azimuth and rotate the dome
   ret = pthread_create( &move_to_target_azimuth_id, NULL, move_to_target_azimuth, NULL) ;
+
+  if( ret) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues could not create thread, exiting"<< sendLog ;
+    exit(1) ;
+  }
+
   return Cupola::initValues ();
 }
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 

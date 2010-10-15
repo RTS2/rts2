@@ -35,7 +35,7 @@ double SystemValue::getDouble ()
 	return conn->getValueDouble (value.c_str ());
 }
 
-Operand *OperandsSet::parseOperand (std::string str)
+Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 {
 	// let' see what we have as an operand..
 	std::string::iterator iter = str.begin ();
@@ -44,30 +44,86 @@ Operand *OperandsSet::parseOperand (std::string str)
 	if (iter == str.end ())
 	  	throw rts2script::ParsingError ("Empty string");
 	// start as number..
-	if ((*iter >= '0' && *iter <= '9') || *iter == '-' || *iter == '+' || *iter == '.')
+	if (isdigit(*iter) || *iter == '-' || *iter == '+' || *iter == '.')
 	{
 		// parse as string..
-		double op, mul = nan ("f");
-		// look what is the last string..
-		std::string::iterator it_end = --str.end ();
-		while (isspace (*it_end))
-			it_end--;
-		if (*it_end == 'm')
-		  	mul = 1/60.0;
-		else if (*it_end == 's')
-			mul = 1/3600.0;
-		else if (*it_end == 'h')
-			mul = 15;
-		// eats units specifications
-		if (isnan (mul))
-			mul = 1;
-		else
-			str = str.substr (0, it_end - str.begin ());
-		std::istringstream _is (str);
-		_is >> op;
-		if (_is.fail () || !_is.eof())
-			return new String(str);
-		return new Number (op * mul);
+		double op = 0;
+		std::string::iterator it = str.begin ();
+		while (true)
+		{
+		  	// current number
+			double mul = 1;
+
+		  	double cn = 0;
+			bool dec_seen = false;
+			int sign = 1;
+
+			if (*it == '-')
+			{
+			  	sign = -1;
+				it++;
+			}
+			else if (*it == '+')
+			{
+			  	it++;
+			}
+
+			while (it != str.end () && (isdigit(*it) || *it == '.'))
+			{
+				if (*it == '.')
+				{
+				  	if (dec_seen == true)
+					  	throw rts2script::ParsingError ("multiple decimal points");
+				  	dec_seen = true;
+					mul = 0.1;
+				}
+				else
+				{
+					if (dec_seen)
+					{
+						cn += (*it - '0') * mul;
+					}
+					else
+					{
+				  		cn = cn * 10 + (*it - '0');
+					}
+				}
+				it++;
+			}
+		  	
+			// get the number
+			if (it == str.end ())
+			  	mul = 1;
+			else switch (mulType)
+			{
+				case MUL_ANGLE:
+					if (*it == 'm')
+			  			mul = 1/60.0;
+					else if (*it == 's')
+						mul = 1/3600.0;
+					else if (*it == 'h')
+						mul = 15;
+					else
+			  			throw rts2script::UnknowOperantMultiplier (*it);
+					break;
+				case MUL_TIME:
+					if (*it == 'd')
+			  			mul = 86400;
+					else if (*it == 'h')
+			  			mul = 3600;
+					else if (*it == 'w')
+			  			mul = 7 * 86400;
+					else
+			  			throw rts2script::UnknowOperantMultiplier (*it);
+					break;
+			}
+			// eats units specifications
+			op += sign * cn * mul;
+			if (it == str.end ())
+				break;
+			it++;
+		}
+		return new Number (op);
 	}
 	else
 	{
@@ -150,7 +206,7 @@ void OperandsSet::parse (std::string str)
 			  	((*iter == ',' && simple_braces == 1) || (simple_braces == 0 && bracked)))
 			{
 				std::string ops = str.substr (start, iter - str.begin () - start);
-				push_back (parseOperand (ops));
+				push_back (parseOperand (ops, MUL_ANGLE));
 				start = iter - str.begin () + 1;
 			}
 		}
@@ -158,7 +214,7 @@ void OperandsSet::parse (std::string str)
 	if (bracked == false)
 	{
 		// push back single operator
-		push_back (parseOperand (str));
+		push_back (parseOperand (str, MUL_ANGLE));
 	}
 }
 

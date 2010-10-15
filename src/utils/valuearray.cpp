@@ -50,6 +50,11 @@ int StringArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
+int StringArray::setValueByIndex (const char *index, Rts2Conn *conn)
+{
+
+}
+
 int StringArray::setValueCharArr (const char *_value)
 {
 	value = SplitStr (std::string (_value), std::string (" "));
@@ -106,6 +111,11 @@ int DoubleArray::setValue (Rts2Conn * connection)
 	}
 	changed ();
 	return 0;
+}
+
+int DoubleArray::setValueByIndex (const char *index, Rts2Conn *conn)
+{
+
 }
 
 int DoubleArray::setValueCharArr (const char *_value)
@@ -196,6 +206,11 @@ int IntegerArray::setValue (Rts2Conn * connection)
 	}
 	changed ();
 	return 0;
+}
+
+int IntegerArray::setValueByIndex (const char *index, Rts2Conn *conn)
+{
+
 }
 
 int IntegerArray::setValueCharArr (const char *_value)

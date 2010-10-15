@@ -72,7 +72,13 @@ class Element;
 class ParsingError:public rts2core::Error
 {
 	public:
-		ParsingError (std::string _msg):rts2core::Error (_msg) {};
+		ParsingError (std::string _msg):rts2core::Error (_msg) {}
+};
+
+class UnknowOperantMultiplier:public ParsingError
+{
+	public:
+		UnknowOperantMultiplier (char multiplier):ParsingError (std::string ("unknow multiplier '") + multiplier + "'") {} 
 };
 
 /**
@@ -151,6 +157,11 @@ class Script:public Rts2Object, public std::list <Element *>
 		void prettyPrint (std::ostream &os, printType pt);
 
 		std::list <Element *>::iterator findElement (const char *name, std::list <Element *>::iterator start);
+
+		/**
+		 * Return expected script duration in seconds.
+		 */
+		double getExpectedDuration ();
 
 	private:
 		char *cmdBuf;

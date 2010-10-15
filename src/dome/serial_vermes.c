@@ -215,7 +215,7 @@ serial_init(char *device_name, int bit_rate, int word_size,
   }
 
   /* save current tty settings */
-  tser_dev *ser_d = xrealloc(NULL, sizeof(tser_dev));
+  tser_dev *ser_d = realloc(NULL, sizeof(tser_dev));
   serial_devices[serial_devices_cnt] = ser_d;
   serial_devices[serial_devices_cnt]->file_descriptor = fd;
   serial_devices_cnt++;

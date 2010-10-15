@@ -83,5 +83,5 @@ void ValueChangeCommand::run (Rts2Value *val, double validTime)
 
 void ValueChangeEmail::run (Rts2Value *val, double validTime)
 {
-	EmailAction::run (master, NULL, validTime);
+	EmailAction::run (master);
 }

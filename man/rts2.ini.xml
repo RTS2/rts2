@@ -522,6 +522,31 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>evening_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Evening time - time to cool cameras in seconds. State 1 (evening)
+	      starts evening_time seconds before sunset - start of state 2
+	      (dusk). Default to 7200 seconds (2 hours).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>morning_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Morning time - time to cool off cameras and do calibrations in
+	      seconds. State 0 (day) starts morning_time seconds after sunrise,
+	      which marks transition from 4 (dawn) to 5 (morning). Default to
+	      7200 seconds (2 hours).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>que_path</option>
 	  </term>
 	  <listitem>
@@ -587,7 +612,7 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Location of paths with per-target files. Default is
+	      Location of paths with per-target files. Default is PREFIX directory + 
 	      "/etc/rts2/targets". This path holds auxiliary target data -
 	      observing constraints, logs, and so on.
 	    </para>
@@ -636,6 +661,17 @@
 	    <para>
 	      Flats will be taken when Sun altitude is above this number (e.g.
 	      put -5 there if you want to have flats in -7; -5 interval).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>default_camera</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Deafult camera name. It is used by <citerefentry><refentrytitle>rts2-target</refentrytitle><manvolnum>1</manvolnum></citerefentry> 
+	      if camera name is not supplied.
 	    </para>
 	  </listitem>
 	</varlistentry>

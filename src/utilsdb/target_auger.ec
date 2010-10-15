@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "sqlerror.h"
 #include "target_auger.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
@@ -100,9 +101,9 @@ void dirToEqu (vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_eq
 TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs)
 {
 	augerPriorityTimeout = in_augerPriorityTimeout;
-	cor.x = nan ("f");
-	cor.y = nan ("f");
-	cor.z = nan ("f");
+	cor.x = rts2_nan ("f");
+	cor.y = rts2_nan ("f");
+	cor.z = rts2_nan ("f");
 }
 
 TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)
@@ -118,7 +119,7 @@ TargetAuger::~TargetAuger (void)
 {
 }
 
-int TargetAuger::load ()
+void TargetAuger::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id;
@@ -160,17 +161,17 @@ int TargetAuger::load ()
 		{
 			EXEC SQL CLOSE cur_auger;
 			EXEC SQL COMMIT;
-			return load (d_auger_t3id);
+			load (d_auger_t3id);
+			return;
 		}
 	}
-	logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL ROLLBACK;
 	auger_date = 0;
-	return -1;
+	throw SqlError ("cannot load Auger target");
 }
 
-int TargetAuger::load (int auger_id)
+void TargetAuger::load (int auger_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id = auger_id;
@@ -403,7 +404,9 @@ int TargetAuger::load (int auger_id)
 		EXEC SQL CLOSE cur_auger;
 		EXEC SQL ROLLBACK;
 		auger_date = 0;
-		return -1;
+		std::ostringstream err;
+		err << "cannot load auger event for event " << d_auger_t3id;
+		throw SqlError (err.str ().c_str ());
 	}
 
 	t3id = d_auger_t3id;
@@ -477,7 +480,7 @@ int TargetAuger::load (int auger_id)
 
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL COMMIT;
-	return Target::load ();
+	Target::load ();
 }
 
 void TargetAuger::updateShowerFields ()

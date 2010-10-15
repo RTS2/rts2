@@ -3,9 +3,9 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
-	rts2-sensor-hygrowin rts2-sensor-fram
+	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-tps534
 
-noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h
+noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
 EXTRA_DIST = 
 
@@ -24,7 +24,7 @@ EXTRA_DIST += sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
 endif
 
 
-LDADD = librts2sensord.a ../utils/librts2block.a @LIB_NOVA@
+LDADD = librts2sensord.a ../utils/librts2block.a ../dome/librts2oak.a @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
@@ -70,6 +70,9 @@ rts2_sensor_pwc_SOURCES = pwc.cpp
 rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
 
 rts2_sensor_fram_SOURCES = fram.cpp
+
+rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c ../dome/util_vermes.c
+rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD}
 
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe

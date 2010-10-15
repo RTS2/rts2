@@ -157,6 +157,10 @@ class Rts2Daemon:public Rts2Block
 
 		virtual int checkNotNulls ();
 
+		/**
+		 * Call fork to start true daemon. This method must be called
+		 * before any threads are created.
+		 */
 		int doDaemonize ();
 
 		/**

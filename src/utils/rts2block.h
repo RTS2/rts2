@@ -540,6 +540,8 @@ class Rts2Block: public Rts2App
 
 		virtual int statusInfo (Rts2Conn * conn);
 
+		virtual int progress (Rts2Conn *conn, double start, double end) { return -1; }
+
 		/**
 		 * Check if command was not replied.
 		 *

@@ -29,6 +29,7 @@
 
 #include "status.h"
 
+#include "../utils/counted_ptr.h"
 #include "../utils/infoval.h"
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
@@ -71,6 +72,30 @@ namespace rts2db {
 class TargetSet;
 class Constraints;
 class Observation;
+
+class Constraint;
+typedef counted_ptr <Constraint> ConstraintPtr;
+
+/**
+ * Execption raised when target name cannot be resolved.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class UnresolvedTarget:public rts2core::Error
+{
+	public:
+		UnresolvedTarget (const char *n)
+		{
+			name = std::string (n);
+			setMsg (std::string ("cannot resolve target name/ID ") + name);
+		}
+		virtual ~UnresolvedTarget () throw () {}
+
+		const char* getTargetName () { return name.c_str (); }
+	
+	private:
+		std::string name;
+};
 
 /**
  * Exception raised when default device script cannot be found in configuration file.
@@ -124,10 +149,15 @@ class Target:public Rts2Target
 		void logMsgDb (const char *message, messageType_t msgType);
 		void getTargetSubject (std::string & subj);
 
-		// that method is GUARANTIE to be called after target creating to load data from DB
-		virtual int load ();
+		/**
+		 * Load target from the database.
+		 *
+		 * @throw rts2core::Error and descendants on error
+		 */
+		virtual void load ();
 		// load target data from give target id
-		int loadTarget (int in_tar_id);
+		void loadTarget (int in_tar_id);
+
 		virtual int save (bool overwrite);
 		virtual int save (bool overwrite, int tar_id);
 
@@ -426,6 +456,11 @@ class Target:public Rts2Target
 		int setNextObservable (double validJD);
 
 		int getNumObs (time_t * start_time, time_t * end_time);
+		/**
+		 * Return total number of observations.
+		 */
+		int getTotalNumberOfObservations ();
+
 		double getLastObsTime ();// return time in seconds to last observation of same target
 
 		int getCalledNum () { return startCalledNum; }
@@ -505,6 +540,24 @@ class Target:public Rts2Target
 		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys ()); }
 		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
 
+		/**
+		 * Print constraints.
+		 *
+		 * @param _os  stream where constrainst will be printed
+		 * @param JD   date for constrints check
+		 */
+		virtual void sendConstraints (Rts2InfoValStream & _os, double JD);
+
+		/**
+		 * Return list and number of violated constraints.
+		 */
+		size_t getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated);
+
+		/**
+		 * Return list and number of satisfied constraints.
+		 */
+		size_t getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated);
+
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
 		/**
@@ -544,12 +597,18 @@ class Target:public Rts2Target
 		/**
 		 * Return group constraint file.
 		 */
-		const char *getGroupConstaintFile ();
+		const char *getGroupConstraintFile ();
 
 		/**
 		 * Return location of constraint file.
 		 */
 		const char *getConstraintFile ();
+
+		
+		/**
+		 * Load constraints and returns reference to their list.
+		 */
+		Constraints * getConstraints ();
 
 		/**
 		 * Check constraints for given date.
@@ -606,13 +665,18 @@ class Target:public Rts2Target
 		Constraints *constraints;
 };
 
+/**
+ * Class representing target with constant coordinates.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ConstTarget:public Target
 {
 	public:
 		ConstTarget ();
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos);
-		virtual int load ();
+		virtual void load ();
 		virtual int save (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
@@ -650,7 +714,7 @@ class FlatTarget:public ConstTarget
 	public:
 		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual bool getScript (const char *deviceName, std::string & buf);
-		virtual int load ();
+		virtual void load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
 		virtual int isContinues () { return 1; }
@@ -700,7 +764,7 @@ class CalibrationTarget:public ConstTarget
 {
 	public:
 		CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		virtual int load ();
+		virtual void load ();
 		virtual int beforeMove ();
 		virtual int endObservation (int in_next_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -750,7 +814,7 @@ class ModelTarget:public ConstTarget
 	public:
 		ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ ModelTarget (void);
-		virtual int load ();
+		virtual void load ();
 		virtual int beforeMove ();
 		virtual moveType afterSlewProcessed ();
 		virtual int endObservation (int in_next_id);
@@ -806,7 +870,7 @@ class TargetSwiftFOV:public Target
 		TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetSwiftFOV (void);
 
-		virtual int load ();	 // find Swift pointing for observation
+		virtual void load ();	 // find Swift pointing for observation
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
@@ -831,7 +895,7 @@ class TargetIntegralFOV:public Target
 		TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetIntegralFOV (void);
 
-		virtual int load ();	 // find Swift pointing for observation
+		virtual void load ();	 // find Swift pointing for observation
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
@@ -875,8 +939,8 @@ class TargetPlan:public Target
 		TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetPlan (void);
 
-		virtual int load ();
-		virtual int load (double JD);
+		virtual void load ();
+		virtual void load (double JD);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual int getObsTargetID ();

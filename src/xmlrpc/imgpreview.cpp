@@ -123,7 +123,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	image.openImage (path.c_str (), false, true);
 	Blob blob;
 
-	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 
 	Magick::Image mimage = image.getMagickImage (label);
 

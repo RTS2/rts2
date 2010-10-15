@@ -134,19 +134,13 @@ TargetPlanet::TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs):Target (ta
 	planet_info = NULL;
 }
 
-
 TargetPlanet::~TargetPlanet (void)
 {
 }
 
-
-int
-TargetPlanet::load ()
+void TargetPlanet::load ()
 {
-	int ret;
-	ret = Target::load ();
-	if (ret)
-		return ret;
+	Target::load ();
 
 	planet_info = NULL;
 
@@ -155,15 +149,15 @@ TargetPlanet::load ()
 		if (!strcmp (getTargetName (), planets[i].name))
 		{
 			planet_info = &planets[i];
-			return 0;
+			return;
 		}
 	}
-	return -1;
+	std::ostringstream err;
+	err << "cannot find planet target with name " << getTargetName ();
+	throw rts2core::Error (err.str ().c_str ());
 }
 
-
-void
-TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
+void TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
 	planet_info->rst_func (JD, pos);
 
@@ -173,33 +167,25 @@ TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_pos
 	pos->dec += parallax->dec;
 }
 
-
-void
-TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_equ_posn parallax;
 
 	getPosition (pos, JD, &parallax);
 }
 
-
-int
-TargetPlanet::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int TargetPlanet::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	ln_get_body_rst_horizon (JD, observer, planet_info->rst_func, horizon, rst);
 	return 0;
 }
 
-
-int
-TargetPlanet::isContinues ()
+int TargetPlanet::isContinues ()
 {
 	return 0;
 }
 
-
-void
-TargetPlanet::printExtra (Rts2InfoValStream & _os, double JD)
+void TargetPlanet::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	struct ln_equ_posn pos, parallax;
 	getPosition (&pos, JD, &parallax);
@@ -217,9 +203,7 @@ TargetPlanet::printExtra (Rts2InfoValStream & _os, double JD)
 	Target::printExtra (_os, JD);
 }
 
-
-double
-TargetPlanet::getEarthDistance (double JD)
+double TargetPlanet::getEarthDistance (double JD)
 {
 	double ret;
 	ret = planet_info->earth_func (JD);
@@ -229,48 +213,38 @@ TargetPlanet::getEarthDistance (double JD)
 	return ret;
 }
 
-
-double
-TargetPlanet::getSolarDistance (double JD)
+double TargetPlanet::getSolarDistance (double JD)
 {
 	if (planet_info->sun_func)
 		return planet_info->sun_func (JD);
 	return 0;
 }
 
-
-double
-TargetPlanet::getMagnitude (double JD)
+double TargetPlanet::getMagnitude (double JD)
 {
 	if (planet_info->mag_func)
 		return planet_info->mag_func (JD);
-	return nan("f");
+	return rts2_nan("f");
 }
 
-
-double
-TargetPlanet::getSDiam (double JD)
+double TargetPlanet::getSDiam (double JD)
 {
 	if (planet_info->sdiam_func)
 		// return value is in arcsec..
 		return planet_info->sdiam_func (JD) / 3600.0;
-	return nan("f");
+	return rts2_nan("f");
 }
 
-
-double
-TargetPlanet::getPhase (double JD)
+double TargetPlanet::getPhase (double JD)
 {
 	if (planet_info->phase_func)
 		return planet_info->phase_func (JD);
-	return nan("f");
+	return rts2_nan("f");
 }
 
-
-double
-TargetPlanet::getDisk (double JD)
+double TargetPlanet::getDisk (double JD)
 {
 	if (planet_info->disk_func)
 		return planet_info->disk_func (JD);
-	return nan("f");
+	return rts2_nan("f");
 }

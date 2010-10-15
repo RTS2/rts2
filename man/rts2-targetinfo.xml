@@ -74,10 +74,10 @@
         <arg choice="plain"><option>-e</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-b</option></arg>
+        <arg choice="plain"><option>-b<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-B</option></arg>
+        <arg choice="plain"><option>-B<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
@@ -113,6 +113,9 @@
         <arg choice="plain"><option>-t</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-u</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -131,10 +134,22 @@
         <arg choice="plain"><option>--name</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>--pi</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--program</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>--parse <replaceable class="parameter">camera name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--constraints <replaceable class="parameter">constraint file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--id-only</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--name-only</option></arg>
       </arg>
       <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
@@ -227,23 +242,24 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-b</option></term>
+        <term><option>-b<replaceable class="parameter">gnuplot-option</replaceable></option></term>
 	<listitem>
 	  <para>
 	    Prints target(s) bonus. This option does not print target
 	    altitude and airmass. This option activate gnuplot mode - see
-	    <option>-g</option> option for details how to use its output. 
+	    <option>-g</option> option for list of possible gnuplot-options
+	    and how to use its output. 
 	  </para>
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-B</option></term>
+        <term><option>-B<replaceable class="parameter">gnuplot-option</replaceable></option></term>
 	<listitem>
 	  <para>
 	    Prints target(s) bonus. This option print target altitude and
 	    airmass, so the output is a bit messy. This option activate gnuplot
-	    mode - see <option>-g</option> option for details how to use its
-	    output. 
+	    mode - see <option>-g</option> option for list of possible
+	    gnuplot-options and ahow to use its output. 
 	  </para>
 	</listitem>
       </varlistentry>
@@ -375,6 +391,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-u</option></term>
+        <listitem>
+	  <para>Specified target names must exactly and unique match names in
+	    the database. If this parameter is not used, multiple matches can be listed.
+	    You must then select intearctively proper target ID.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
         <listitem>
           <para>Print information for given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
@@ -415,6 +440,22 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--pi</option></term>
+        <listitem>
+          <para>
+	    Print target(s) PI(s) name(s).
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--program</option></term>
+        <listitem>
+          <para>
+	    Print target(s) program(s) name(s).
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>--parse <replaceable class="parameter">camera name</replaceable></option></term>
         <listitem>
           <para>
@@ -427,6 +468,24 @@
         <listitem>
           <para>
 	    Check if target(s) met constraints specified in constraint file. Please see conf/constraints.xsd for model of the constraints which can be used.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--id-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are target IDs. Exit
+	    if some of the arguments is not a number.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--name-only</option></term>
+        <listitem>
+          <para>
+	    Assumes that target(s) provided as arguments are targets names. Do
+	    not try to resolve them as numeric.
 	  </para>
         </listitem>
       </varlistentry>
@@ -505,7 +564,11 @@
     <title>EXAMPLES</title>
 
     <screen>
-      <command>&dhpackage;</command> <option>-b</option> <option>-g<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
+      <command>&dhpackage;</command> <option>-g</option> <replaceable>1000</replaceable> | <command>gnuplot</command>
+    </screen>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-b<replaceable>ps</replaceable></option> <replaceable>1000</replaceable> | <command>gnuplot</command>
     </screen>
 
     <screen>

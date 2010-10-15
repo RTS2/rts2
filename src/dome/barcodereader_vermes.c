@@ -43,9 +43,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdarg.h>
-#if USE_SYSLOG
 #include <syslog.h>
-#endif
 #include <math.h>
 
 #include "serial_vermes.h"
@@ -104,51 +102,18 @@ POS_CHG_CBF *callback_function ; // wildi 1= NULL;
 pthread_mutex_t pos_data_mutex;
 
 char * log_string;
-#if USE_SYSLOG
 int syslog_opened ; //wildi = 0;
-#endif
-
-int indi_log_mask ; // wildi 1= 0;
+int sys_log_mask ; // wildi 1= 0;
 
 /******************************************************************************
- * xmalloc(...)
- * malloc() with check for success.
- *****************************************************************************/
-void *
-xmalloc(size_t size)
-{
-  register void *value = malloc(size);
-  if (value == NULL) {
-    fprintf(stderr, "virtual memory exhausted=============================================================\n");
-    exit(EXIT_FAILURE);
-  }
-  return value;
-}
-
-/******************************************************************************
- * xrealloc(...)
- * realloc() with check for success.
- *****************************************************************************/
-/* void * */
-/* xrealloc(void *ptr, size_t size) */
-/* { */
-/*   register void *value = realloc(ptr, size); */
-/*   if (value == 0) { */
-/*     fprintf(stderr, "virtual memory exhausted"); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-/*   return value; */
-/* } */
-
-/******************************************************************************
- * indi_setlogmask(...)
+ * sys_setlogmask(...)
  * Sets the mask used by syslog() to decide whether a certain priority is
  * going to be logged (if preprocessor define USE_SYSLOG).
  *****************************************************************************/
 void
-indi_setlogmask(int mask)
+sys_setlogmask(int mask)
 {
-  indi_log_mask = mask;
+  sys_log_mask = mask;
 #if USE_SYSLOG
   int msk = (mask & ILOG_DEBUG)   ? LOG_MASK(LOG_DEBUG)   : 0 |
             (mask & ILOG_INFO)    ? LOG_MASK(LOG_INFO)    : 0 |
@@ -186,7 +151,7 @@ sprintf_log(char * str, char * format, va_list ap)
   if (new_len >= s_len) {
     /* Reallocate buffer, now that we know how much space is needed. */
     new_len += 1;
-    str = (char *) xrealloc(str, new_len);
+    str = (char *) realloc(str, new_len);
 
     if (str != NULL) {
       /* print again. */
@@ -197,123 +162,6 @@ sprintf_log(char * str, char * format, va_list ap)
   return str;
 }
 
-/******************************************************************************
- * indi_debug_log(...)
- * Creates syslog entries for debugging (if preprocessor define USE_SYSLOG)
- * and prints the message to stderr depending on the global debug variable.
- *****************************************************************************/
-/* void */
-/* indi_debug_log(int level, char * format, ...) */
-/* { */
-/*   va_list ap; */
-/*   char * s; */
-
-/*   if (level < debug) { */
-/* #if USE_SYSLOG */
-/*     if (!syslog_opened) { */
-/*       openlog(program_invocation_short_name, */
-/*               LOG_PERROR | LOG_CONS | LOG_PID, LOG_LOCAL0); */
-/*       syslog_opened = 1; */
-/*     } */
-/*     va_start(ap, format); */
-/*     s = sprintf_log(log_string, format, ap); */
-/*     va_end(ap); */
-
-/*     if (s) { */
-/*       syslog(LOG_DEBUG, s); */
-/*       //INDI stuff      fprintf(stderr, "%s %s\n", timestamp(), s); */
-/*       fprintf(stderr, "%s\n", s); */
-/*     } else { */
-/*       fprintf(stderr, "%s failed creating log string\n", timestamp()); */
-/*     } */
-/* #else */
-/*     va_start(ap, format); */
-/*     s = sprintf_log(log_string, format, ap); */
-/*     va_end(ap); */
-/*     if (s) { */
-/*       //INDI stuff      fprintf(stderr, "%s %s\n", timestamp(), s); */
-/*       fprintf(stderr, "%s\n", s); */
-/*     } else { */
-/*       //INDI stuff fprintf(stderr, "%s failed creating log string\n", timestamp()); */
-/*       fprintf(stderr, "failed creating log string\n"); */
-/*     } */
-/* #endif */
-/*   } */
-/* } */
-
-/******************************************************************************
- * indi_log(...)
- * Creates syslog entries (if preprocessor define USE_SYSLOG) with the given
- * priority and prints the message to stderr.
- *****************************************************************************/
-/* void */
-/* indi_log(int prio, char * format, ...) */
-/* { */
-/*   va_list ap; */
-/*   char * s; */
-
-/* #if USE_SYSLOG */
-/*   if (!syslog_opened) { */
-/*     openlog(program_invocation_short_name, */
-/*             LOG_PERROR | LOG_CONS | LOG_PID, LOG_LOCAL0); */
-/*     syslog_opened = 1; */
-/*   } */
-/*   va_start(ap, format); */
-/*   s = sprintf_log(log_string, format, ap); */
-/*   va_end(ap); */
-
-/*   if (s) { */
-/*     int lvl = LOG_DEBUG; */
-/*     switch (prio) { */
-/*       case ILOG_DEBUG: */
-/*         lvl = LOG_DEBUG; */
-/*         break; */
-/*       case ILOG_INFO: */
-/*         lvl = LOG_INFO; */
-/*         break; */
-/*       case ILOG_NOTICE: */
-/*         lvl = LOG_NOTICE; */
-/*         break; */
-/*       case ILOG_WARNING: */
-/*         lvl = LOG_WARNING; */
-/*         break; */
-/*       case ILOG_ERR: */
-/*         lvl = LOG_ERR; */
-/*         break; */
-/*       case ILOG_CRIT: */
-/*         lvl = LOG_CRIT; */
-/*         break; */
-/*       case ILOG_ALERT: */
-/*         lvl = LOG_ALERT; */
-/*         break; */
-/*       case ILOG_EMERG: */
-/*         lvl = LOG_EMERG; */
-/*         break; */
-/*     } */
-/*     syslog(lvl, s); */
-/*     if (prio & indi_log_mask) { */
-/*       //INDI stuff      fprintf(stderr, "%s %s\n", timestamp(), s); */
-/*       fprintf(stderr, "%s\n", s); */
-/*     } */
-/*   } else { */
-/*     fprintf(stderr, "%s failed creating log string\n", timestamp()); */
-/*   } */
-/* #else */
-/*   va_start(ap, format); */
-/*   s = sprintf_log(log_string, format, ap); */
-/*   va_end(ap); */
-
-/*   if (s) { */
-/*     if (prio & indi_log_mask) { */
-/*       //INDI stuff      fprintf(stderr, "%s %s\n", timestamp(), s); */
-/*       fprintf(stderr, "%s\n", s); */
-/*     } */
-/*   } else { */
-/*     //INDI stuff fprintf(stderr, "%s failed creating log string\n", timestamp()); */
-/*     fprintf(stderr, "failed creating log string\n"); */
-/*   } */
-/* #endif */
-/* } */
 
 /******************************************************************************
  * cleanup(...)
@@ -324,59 +172,15 @@ cleanup(void)
   if (sport1_stat.fd) {
     // wildi was shutdown_serial(sport1_stat.fd);
     serial_shutdown(sport1_stat.fd);
-    indi_debug_log(3, "%s closed", sport1_stat.dev_name);
+    sys_debug_log(3, "%s closed", sport1_stat.dev_name);
   }
 
   if (sport2_stat.fd) {
     // wildi was shutdown_serial(sport2_stat.fd);
     serial_shutdown(sport2_stat.fd);
-    indi_debug_log(3, "%s closed", sport2_stat.dev_name);
+    sys_debug_log(3, "%s closed", sport2_stat.dev_name);
   }
 }
-
-/******************************************************************************
- * ctrl2hex(...)
- * Takes the given string and replaces all non-printing characters by a hexa-
- * decimal representation. The created string gets dynamically allocated and
- * returned. The allocated memory must be explicitly freed when the returned
- * string is not needed anymore.
- *****************************************************************************/
-/* char * */
-/* ctrl2hex(char *str) */
-/* { */
-/*   int str_l = strlen(str); */
-/*   int hex_l = str_l; */
-/*   char *hex_str = (char*)xmalloc(str_l + 1); */
-/*   int i; */
-/*   int pos = 0; */
-/*   for (i = 0; i < str_l; i++) { */
-/*     if (str[i] >= ' ') { */
-/*       hex_str[pos++] = str[i]; */
-/*     } else { */
-/*       hex_l += 6; */
-/*       hex_str = (char*)xrealloc(hex_str, hex_l); */
-/*       sprintf(&hex_str[pos], "(0x%.2x)", str[i]); */
-/*       pos += 6; */
-/*     } */
-/*   } */
-/*   hex_str[pos] = '\0'; */
-/*   return hex_str; */
-/* } */
-
-/******************************************************************************
- * millisleep(...)
- * Sleeps for given number of milliseconds by using nanosleep(). Maximum
- * sleep time is 1000 ms.
- *****************************************************************************/
-/* void */
-/* millisleep(int ms ) */
-/* { */
-/*   struct timespec req_ts, remain_ts; */
-/*   if (ms < 0 || ms > 1000) ms = 1000; */
-/*   req_ts.tv_sec = 0; */
-/*   req_ts.tv_nsec = 1000000 * ms; */
-/*   nanosleep(&req_ts, &remain_ts); */
-/* } */
 
 /******************************************************************************
  * init_sport(...)
@@ -423,7 +227,7 @@ sendCmd(PORT_STAT *pstat, const char *data)
     if (retval != len && retval > 0) {
       //device output buffer full
       //wait some ms then try to send the remaining bytes
-      indi_debug_log(3, "tx congestion on serial port %s.",
+      sys_debug_log(3, "tx congestion on serial port %s.",
                         pstat->dev_name);
       millisleep(SAMPLE_MS);
       len -= retval;
@@ -433,7 +237,7 @@ sendCmd(PORT_STAT *pstat, const char *data)
   } while ((retval != len && retval > 0) && (retry_cnt < MAX_TX_RETRY));
 
   if  (retry_cnt > MAX_TX_RETRY) {
-    indi_log(ILOG_ERR, "tx congestion on serial port %s after %i retries.",
+    sys_log(ILOG_ERR, "tx congestion on serial port %s after %i retries.",
                        pstat->dev_name, MAX_TX_RETRY);
     pstat->protocol_stat = PSTAT_TX_CMD_SEND_FAIL;
     return -1;
@@ -455,8 +259,8 @@ sendMenuCmd(PORT_STAT *pstat, const char *tag, const char *subtag,
                               const char *data, int storage)
 {
   size_t totlen = 5 + strlen(tag) + strlen(subtag) + strlen(data);
-  indi_debug_log(4, "sendMenuCmd(): allocated %ld chars.", totlen);
-  char *tx_str = xmalloc(totlen);
+  sys_debug_log(4, "sendMenuCmd(): allocated %ld chars.", totlen);
+  char *tx_str = malloc(totlen);
   tx_str[0] = '\0';
   strcat(tx_str, MENU_CMD_PREFIX);
   strcat(tx_str, tag);
@@ -469,12 +273,12 @@ sendMenuCmd(PORT_STAT *pstat, const char *tag, const char *subtag,
   }
   //tx_str[totlen - 1] = '\0';
   if (strlen(tx_str) != totlen - 1) {
-    indi_log(ILOG_ERR, "sendMenuCmd(): tx_str has length %ld instead of %ld.",
+    sys_log(ILOG_ERR, "sendMenuCmd(): tx_str has length %ld instead of %ld.",
                        strlen(tx_str), totlen - 1);
   }
   if (debug > 4) {
     char *hx_str = ctrl2hex(tx_str);
-    indi_debug_log(4, "sendMenuCmd(%s): sending \"%s\".",
+    sys_debug_log(4, "sendMenuCmd(%s): sending \"%s\".",
                       pstat->dev_name, hx_str);
     free(hx_str);
   }
@@ -545,7 +349,7 @@ check_rxed(PORT_STAT *pstat)
       default:
         s = "";
     }
-    indi_debug_log(3, "check_rxed(%s): %s<%s>",
+    sys_debug_log(3, "check_rxed(%s): %s<%s>",
                       pstat->dev_name, pstat->rxstr, s);
   }
 
@@ -576,7 +380,7 @@ init_barcodereader(PORT_STAT *sport_stat)
   if (sendMenuCmd(sport_stat, CMD_ALL_SYMBOLOGIES, "",
                               "0", BC_STOR_VOLATILE))
   {
-    indi_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
+    sys_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
                        CMD_ALL_SYMBOLOGIES, sport_stat->dev_name);
     return -1;
   }
@@ -586,12 +390,12 @@ init_barcodereader(PORT_STAT *sport_stat)
     if (!rx_stat) break;
   }
   if (rx_stat) {
-    indi_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
+    sys_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
                        sport_stat->dev_name, rx_stat);
   }
 
   if (sendMenuCmd(sport_stat, CMD_SYMB_128, "", "1", BC_STOR_VOLATILE)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
+    sys_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
                        CMD_SYMB_128, sport_stat->dev_name);
     return -1;
   }
@@ -601,12 +405,12 @@ init_barcodereader(PORT_STAT *sport_stat)
     if (!rx_stat) break;
   }
   if (rx_stat) {
-    indi_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
+    sys_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
                        sport_stat->dev_name, rx_stat);
   }
 
   if (sendMenuCmd(sport_stat, CMD_BEEPER_VOL, "", "0", BC_STOR_VOLATILE)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
+    sys_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
                        CMD_BEEPER_VOL, sport_stat->dev_name);
     return -1;
   }
@@ -616,11 +420,11 @@ init_barcodereader(PORT_STAT *sport_stat)
     if (!rx_stat) break;
   }
   if (rx_stat) {
-    indi_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
+    sys_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
                        sport_stat->dev_name, rx_stat);
   }
   if (sendMenuCmd(sport_stat, CMD_BEEPER, "", "1", BC_STOR_VOLATILE)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
+    sys_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
                        CMD_BEEPER, sport_stat->dev_name);
     return -1;
   }
@@ -630,12 +434,12 @@ init_barcodereader(PORT_STAT *sport_stat)
     if (!rx_stat) break;
   }
   if (rx_stat) {
-    indi_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
+    sys_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
                        sport_stat->dev_name, rx_stat);
   }
 
   if (sendMenuCmd(sport_stat, CMD_TRIGGER_MODE, "", "0", BC_STOR_VOLATILE)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
+    sys_log(ILOG_ERR, "sendCmd(%s) to %s failed.",
                        CMD_TRIGGER_MODE, sport_stat->dev_name);
     return -1;
   }
@@ -645,11 +449,11 @@ init_barcodereader(PORT_STAT *sport_stat)
     if (!rx_stat) break;
   }
   if (rx_stat) {
-    indi_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
+    sys_log(ILOG_ERR, "no good reply from check_rxed(%s): %d",
                        sport_stat->dev_name, rx_stat);
   }
 
-  indi_debug_log(3, "barcode reader on %s initialized.",
+  sys_debug_log(3, "barcode reader on %s initialized.",
                     sport_stat->dev_name);
 
   return 0;
@@ -687,7 +491,7 @@ handle_rx(PORT_STAT *pstat, char *data, size_t count)
     data[count] = '\0';
     char *hx_data = ctrl2hex(data);
 
-    indi_debug_log(4, "handle_rx(%s): %d char in ringbuf: \"%s\".",
+    sys_debug_log(4, "handle_rx(%s): %d char in ringbuf: \"%s\".",
                       pstat->dev_name, pstat->rx_cnt, hx_data);
     free(hx_data);
   }
@@ -759,29 +563,29 @@ void * bcr_receive_thread(void* args)
     ready_fd = select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
     if (ready_fd < 0) {
       /* select returns an error */
-      indi_log(ILOG_ERR, "select(): %s", strerror(errno));
+      sys_log(ILOG_ERR, "select(): %s", strerror(errno));
     } else if (ready_fd == 0) {
       /* select timed out */
-      indi_log(ILOG_WARNING, "timeout in select()");
+      sys_log(ILOG_WARNING, "timeout in select()");
     } else {
 
       if (FD_ISSET(sport1_stat.fd, &rfds)) {
         if ((read_stat = read(sport1_stat.fd, &rxbuf, 100)) < 0) {
           /* there was an error while reading */
-          indi_log(ILOG_ERR, "error while reading %s: %s"
+          sys_log(ILOG_ERR, "error while reading %s: %s"
                             ,sport1_stat.dev_name, strerror(errno));
         } else if (read_stat == 0) {
           /* no character to read, empty buffer */
         } else {
           /* character successfully read */
           rxbuf[read_stat] = '\0';
-          indi_debug_log(4, "RXed %d chars on %s: %s",
+          sys_debug_log(4, "RXed %d chars on %s: %s",
                             read_stat, sport1_stat.dev_name, rxbuf);
           if ((res = handle_rx(&sport1_stat, rxbuf, read_stat))) {
-            indi_log(ILOG_ERR, "rx buffer overflow on port %s",
+            sys_log(ILOG_ERR, "rx buffer overflow on port %s",
                                sport1_stat.dev_name);
           } else {
-            indi_debug_log(4, "handle_rx(%s) returned %d",
+            sys_debug_log(4, "handle_rx(%s) returned %d",
                               sport1_stat.dev_name, res);
           }
         }
@@ -790,7 +594,7 @@ void * bcr_receive_thread(void* args)
       if (FD_ISSET(sport2_stat.fd, &rfds)) {
         if ((read_stat = read(sport2_stat.fd, &rxbuf, 100)) < 0) {
           /* there was an error while reading */
-          indi_log(ILOG_ERR, "error while reading %s: %s",
+          sys_log(ILOG_ERR, "error while reading %s: %s",
                              sport2_stat.dev_name, strerror(errno));
         } else if (read_stat == 0) {
           /* no character read, empty buffer */
@@ -798,14 +602,14 @@ void * bcr_receive_thread(void* args)
           /* character successfully read */
           rxbuf[read_stat] = '\0';
           if (debug > 4) {
-            indi_debug_log(4, "RXed %d chars on %s: %s",
+            sys_debug_log(4, "RXed %d chars on %s: %s",
                               read_stat, sport2_stat.dev_name, rxbuf);
           }
           if ((res = handle_rx(&sport2_stat, rxbuf, read_stat))) {
-            indi_log(ILOG_ERR, "rx buffer overflow on port %s",
+            sys_log(ILOG_ERR, "rx buffer overflow on port %s",
                                sport2_stat.dev_name);
           } else {
-            indi_debug_log(4, "handle_rx(%s) returned %d",
+            sys_debug_log(4, "handle_rx(%s) returned %d",
                               sport2_stat.dev_name, res);
           }
         }
@@ -813,7 +617,7 @@ void * bcr_receive_thread(void* args)
     }
   } /* while (1) */
 
-  indi_debug_log(3, "exiting receive_thread()");
+  sys_debug_log(3, "exiting receive_thread()");
 
   return NULL;
 }
@@ -878,10 +682,10 @@ void * bcr_sending_thread(void* args)
   while (1) {
     // sending trigger command to both readers
     if (sendCmd(&sport1_stat, CMD_TRIGGER)) {
-      indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_TRIGGER);
+      sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_TRIGGER);
     }
     if (sendCmd(&sport2_stat, CMD_TRIGGER)) {
-      indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_TRIGGER);
+      sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_TRIGGER);
     }
 
     // give time for response
@@ -892,11 +696,11 @@ void * bcr_sending_thread(void* args)
     rx1_stat = check_rxed(&sport1_stat);
     if (rx1_stat != 0) {
       if (sendCmd(&sport1_stat, CMD_UNTRIGGER)) {
-        indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
+        sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
       }
       rdr1_pos = -1;
     } else {
-      indi_debug_log(4, "%s: %s",
+      sys_debug_log(4, "%s: %s",
                         sport1_stat.dev_name, sport1_stat.rxstr);
       sscanf(sport1_stat.rxstr, "%d", &rdr1_pos);
     }
@@ -906,11 +710,11 @@ void * bcr_sending_thread(void* args)
     rx2_stat = check_rxed(&sport2_stat);
     if (rx2_stat != 0) {
       if (sendCmd(&sport2_stat, CMD_UNTRIGGER)) {
-        indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
+        sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
       }
       rdr2_pos = -1;
     } else {
-      indi_debug_log(4, "%s: %s", sport2_stat.dev_name, sport2_stat.rxstr);
+      sys_debug_log(4, "%s: %s", sport2_stat.dev_name, sport2_stat.rxstr);
       sscanf(sport2_stat.rxstr, "%d", &rdr2_pos);
     }
 
@@ -920,7 +724,7 @@ void * bcr_sending_thread(void* args)
     pos_detect_state.azimut_propstate_changed = 0;
     bc_pos = readerCodesToPosition(rdr1_pos, rdr2_pos);
     if (bc_pos >= 0) {
-      indi_debug_log(3, "barcode combined reading: %d", bc_pos);
+      sys_debug_log(3, "barcode combined reading: %d", bc_pos);
     }
     pthread_mutex_lock(&pos_data_mutex);
     if (bc_pos >= 0) {
@@ -939,7 +743,7 @@ void * bcr_sending_thread(void* args)
 
     } else { // if (bc_pos >= 0)
       // NO valid position code reading
-      indi_debug_log(3,
+      sys_debug_log(3,
                "bcr_sending_thread(): no valid reading (%d), previous %s",
                bc_pos, pos_detect_state.pos_invalid ? "also" : "was valid");
       if (!pos_detect_state.pos_invalid) {
@@ -960,18 +764,18 @@ void * bcr_sending_thread(void* args)
 
     if (bc_pos < 0) {
       if (bc_pos == -1) {
-        indi_log(ILOG_WARNING, "no barcode decoded");
+        sys_log(ILOG_WARNING, "no barcode decoded");
       } else if (bc_pos == -2) {
-        indi_log(ILOG_WARNING, "wrong barcode sequence");
+        sys_log(ILOG_WARNING, "wrong barcode sequence");
       } else {
-        indi_log(ILOG_ERR,
+        sys_log(ILOG_ERR,
                  "barcode detection failed, unexpected return: %d", bc_pos);
       }
     }
 
     if (callback_function && do_call_callback) {
       get_pos_detect_state(&pos_detect_state_buffered);
-      indi_debug_log(3, "buffered current_pos = %d",
+      sys_debug_log(3, "buffered current_pos = %d",
                         pos_detect_state_buffered.current_pos);
       (*callback_function)(&pos_detect_state_buffered);
     }
@@ -1002,14 +806,14 @@ int start_bcr_comm()
 
   int res = 0;
 
-  indi_debug_log(1, "Barcode reader 1 on %s, barcode reader 2 on %s",
+  sys_debug_log(1, "Barcode reader 1 on %s, barcode reader 2 on %s",
                     SerialDev1, SerialDev2);
 
   // open serial ports
   // wildi if ((sd1 = init_serial(SerialDev1, bitrate, databits, parity, stopbits)) < 0)
   if ((sd1 = serial_init(SerialDev1, bitrate, databits, parity, stopbits)) < 0)
   {
-    indi_log(ILOG_ERR, "open of %s failed.", SerialDev1);
+    sys_log(ILOG_ERR, "open of %s failed.", SerialDev1);
     return -1;
   }
   init_sport(&sport1_stat, sd1, SerialDev1);
@@ -1017,7 +821,7 @@ int start_bcr_comm()
   //wildi if ((sd2 = init_serial(SerialDev2, bitrate, databits, parity, stopbits)) < 0)
   if ((sd2 = serial_init(SerialDev2, bitrate, databits, parity, stopbits)) < 0)
   {
-    indi_log(ILOG_ERR, "open of %s failed.", SerialDev2);
+    sys_log(ILOG_ERR, "open of %s failed.", SerialDev2);
     // wildi was shutdown_serial(sd1);
     serial_shutdown(sd1);
     return -2;
@@ -1037,9 +841,17 @@ int start_bcr_comm()
 
   init_pos_detect_state(&pos_detect_state);
 
-  // create communication thread which talks to barcode readers
-  pthread_create(&bcr_sending_th_id, NULL, &bcr_sending_thread, NULL);
 
+
+  openlog ("rts2 threads", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+     
+  syslog (LOG_NOTICE, "Program started by User %d", getuid ());
+
+
+  // create communication thread which talks to barcode readers
+  int ret= pthread_create(&bcr_sending_th_id, NULL, &bcr_sending_thread, NULL);
+
+  syslog (LOG_NOTICE, "State was  %d", ret);
   return res;
 }
 
@@ -1056,10 +868,10 @@ stop_bcr_comm()
   pthread_cancel(bcr_receive_th_id);
 
   if (sendCmd(&sport1_stat, CMD_UNTRIGGER)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
+    sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
   }
   if (sendCmd(&sport2_stat, CMD_UNTRIGGER)) {
-    indi_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
+    sys_log(ILOG_ERR, "sendCmd(%s) failed.", CMD_UNTRIGGER);
   }
   cleanup();
 
@@ -1085,7 +897,7 @@ position_update_callback(POS_DETECT_STATE * pos_detct_state)
 {
 
   int pos = pos_detct_state->current_pos;
-  indi_debug_log(4, "position_update_callback() called.");
+  sys_debug_log(4, "position_update_callback() called.");
 
   if (pos_detct_state->pos_changed) {
 
@@ -1095,9 +907,9 @@ position_update_callback(POS_DETECT_STATE * pos_detct_state)
     if( barcodereader_az < 0. ) barcodereader_az += 360. ;
 
     barcodereader_az= fmod( barcodereader_az, 360.0) ;
-    indi_debug_log(1, "position_update_callback(): value changed to %3.1f", barcodereader_az);
+    sys_debug_log(1, "position_update_callback(): value changed to %3.1f", barcodereader_az);
   } else if (pos_detct_state->azimut_propstate_changed) {
     barcodereader_state = pos_detct_state->pos_invalid ;
-    indi_log(1, "position_update_callback(): state changed to %s", barcodereader_state  ? "ALERT" : "OK");
+    sys_log(1, "position_update_callback(): state changed to %s", barcodereader_state  ? "ALERT" : "OK");
   }
 }

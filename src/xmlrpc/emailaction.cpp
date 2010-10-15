@@ -158,7 +158,7 @@ std::string joinStrings (std::list <std::string> l, char jc = ',')
 	return ret;
 }
 
-void EmailAction::run (XmlRpcd *_master, Rts2Conn *_conn, int validTime)
+void EmailAction::run (XmlRpcd *_master)
 {
 	if (_master->sendEmails ())
 	{

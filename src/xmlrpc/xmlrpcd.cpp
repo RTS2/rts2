@@ -220,7 +220,7 @@ int XmlRpcd::init ()
 	{
 		try
 		{
-			events.load (stateChangeFile);
+		  	reloadEventsFile ();
 		}
 		catch (XmlError ex)
 		{
@@ -278,11 +278,7 @@ void XmlRpcd::signaledHUP ()
 #else
 	Rts2Device::selectSuccess ();
 #endif
-	// try states..
-	if (stateChangeFile != NULL)
-	{
-		events.load (stateChangeFile);
-	}
+	reloadEventsFile ();
 }
 
 #ifdef HAVE_PGSQL
@@ -293,6 +289,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XM
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
+	defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
@@ -379,6 +376,23 @@ void XmlRpcd::message (Rts2Message & msg)
 		msgDB.insertDB ();
 	}
 #endif
+	// look if there is some state change command entry, which match us..
+	for (MessageCommands::iterator iter = events.messageCommands.begin (); iter != events.messageCommands.end (); iter++)
+	{
+		MessageEvent *me = (*iter);
+		if (me->isForMessage (&msg))
+		{
+			try
+			{
+				me->run (&msg);
+			}
+			catch (rts2core::Error err)
+			{
+				logStream (MESSAGE_ERROR) << err << sendLog;
+			}
+		}
+	}
+	
 	while (messages.size () > 42) // messagesBufferSize ())
 	{
 		messages.pop_front ();
@@ -420,6 +434,11 @@ void XmlRpcd::postEvent (Rts2Event *event)
 #endif
 }
 
+const char *XmlRpcd::getDefaultImageLabel ()
+{
+	return defLabel;
+}
+
 void XmlRpcd::sendBB ()
 {
 	// construct data..
@@ -435,6 +454,17 @@ void XmlRpcd::sendBB ()
 	}
 
 	events.bbServers.sendUpdate (&data);
+}
+
+void XmlRpcd::reloadEventsFile ()
+{
+	if (stateChangeFile != NULL)
+	{
+		events.load (stateChangeFile);
+	  	defLabel = events.getDefaultImageLabel ();
+		if (defLabel == NULL)
+			defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
+	}
 }
 
 /**
@@ -552,9 +582,7 @@ class DeviceCount: public SessionMethod
 class ListDevices: public SessionMethod
 {
 	public:
-		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s)
-		{
-		}
+		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -569,9 +597,40 @@ class ListDevices: public SessionMethod
 
 		std::string help ()
 		{
-			return std::string ("Returns name of devices conencted to the system");
+			return std::string ("Returns names of devices conencted to the system");
 		}
 } listDevices (&xmlrpc_server);
+
+
+class DeviceByType: public SessionMethod
+{
+	public:
+		DeviceByType (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_GET_BY_TYPE, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			connections_t::iterator iter = serv->getConnections ()->begin ();
+			int i = 0;
+			int type = params[0];
+			while (true)
+			{
+				serv->getOpenConnectionType (type, iter);
+				if (iter == serv->getConnections ()->end ())
+					break;
+				result[i] = (*iter)->getName ();
+				iter++;
+				i++;
+			}
+
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns names of device of the given type, connected to the system");
+		}
+		
+} deviceByType (&xmlrpc_server);
 
 
 /**
@@ -1410,7 +1469,7 @@ class ListImages: public SessionMethod
 			for (rts2db::ImageSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
 				double eRa, eDec, eRad;
-				eRa = eDec = eRad = nan ("f");
+				eRa = eDec = eRad = rts2_nan ("f");
 				Rts2Image *image = *img_iter;
 				retVar["filename"] = image->getFileName ();
 				retVar["start"] = image->getExposureStart ();

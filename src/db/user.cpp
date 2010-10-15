@@ -1,6 +1,6 @@
 /* 
  * User managment application.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +32,13 @@ using namespace rts2db;
  */
 class Rts2UserApp:public Rts2AppDb
 {
+	public:
+		Rts2UserApp (int argc, char **argv);
+		virtual ~Rts2UserApp (void);
+	protected:
+		virtual void usage ();
+		virtual int processOption (int in_opt);
+		virtual int doProcessing ();
 	private:
 		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
 		op;
@@ -51,14 +58,37 @@ class Rts2UserApp:public Rts2AppDb
 		int addNewType ();
 		int removeType ();
 		int editType ();
-	protected:
-		virtual void usage ();
-		virtual int processOption (int in_opt);
-		virtual int doProcessing ();
-	public:
-		Rts2UserApp (int argc, char **argv);
-		virtual ~Rts2UserApp (void);
 };
+
+Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
+{
+	op = NOT_SET;
+	user = NULL;
+
+	r2user = User ();
+
+	// construct menu for flags solution
+	flagsChoice = new Rts2AskChoice (this);
+	flagsChoice->addChoice ('1', "send at start of observation");
+	flagsChoice->addChoice ('2', "send when first image receives astrometry");
+	flagsChoice->addChoice ('3', "send when observation finishes");
+	flagsChoice->addChoice ('4', "send when observation is processed");
+	flagsChoice->addChoice ('5', "send at the end of night");
+
+	flagsChoice->addChoice ('s', "save");
+	flagsChoice->addChoice ('q', "quit");
+
+	addOption ('l', NULL, 0, "list user stored in the database");
+	addOption ('a', NULL, 1, "add new user");
+	addOption ('p', NULL, 1, "set user password");
+	addOption ('e', NULL, 1, "set user email");
+	addOption ('m', NULL, 1, "edit user mailing preferences");
+}
+
+Rts2UserApp::~Rts2UserApp (void)
+{
+	delete flagsChoice;
+}
 
 void Rts2UserApp::usage ()
 {
@@ -110,18 +140,14 @@ int Rts2UserApp::processOption (int in_opt)
 	return Rts2AppDb::processOption (in_opt);
 }
 
-
-int
-Rts2UserApp::listUser ()
+int Rts2UserApp::listUser ()
 {
 	UserSet userSet = UserSet ();
 	std::cout << userSet;
 	return 0;
 }
 
-
-int
-Rts2UserApp::newUser ()
+int Rts2UserApp::newUser ()
 {
 	std::string passwd;
 	std::string email;
@@ -136,9 +162,7 @@ Rts2UserApp::newUser ()
 	return createUser (std::string (user), passwd, email);
 }
 
-
-int
-Rts2UserApp::userPassword ()
+int Rts2UserApp::userPassword ()
 {
 	std::string passwd;
 
@@ -154,9 +178,7 @@ Rts2UserApp::userPassword ()
 	return r2user.setPassword (passwd);
 }
 
-
-int
-Rts2UserApp::userEmail ()
+int Rts2UserApp::userEmail ()
 {
 	std::string email;
 
@@ -173,9 +195,7 @@ Rts2UserApp::userEmail ()
 	return r2user.setEmail (email);
 }
 
-
-int
-Rts2UserApp::typesEmail ()
+int Rts2UserApp::typesEmail ()
 {
 	Rts2AskChoice typeChoice = Rts2AskChoice (this);
 	typeChoice.addChoice ('a', "Add triggers for new type");
@@ -213,9 +233,7 @@ Rts2UserApp::typesEmail ()
 	return -1;
 }
 
-
-int
-Rts2UserApp::addNewType ()
+int Rts2UserApp::addNewType ()
 {
 	char type;
 	if (askForChr ("Please enter a type", type))
@@ -256,9 +274,7 @@ Rts2UserApp::addNewType ()
 	return -1;
 }
 
-
-int
-Rts2UserApp::removeType ()
+int Rts2UserApp::removeType ()
 {
 	int ret;
 
@@ -276,9 +292,7 @@ Rts2UserApp::removeType ()
 	return r2user.removeType (type);
 }
 
-
-int
-Rts2UserApp::editType ()
+int Rts2UserApp::editType ()
 {
 	int ret;
 
@@ -339,9 +353,7 @@ Rts2UserApp::editType ()
 	return -1;
 }
 
-
-int
-Rts2UserApp::doProcessing ()
+int Rts2UserApp::doProcessing ()
 {
 	switch (op)
 	{
@@ -362,41 +374,7 @@ Rts2UserApp::doProcessing ()
 	return -1;
 }
 
-
-Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
-{
-	op = NOT_SET;
-	user = NULL;
-
-	r2user = User ();
-
-	// construct menu for flags solution
-	flagsChoice = new Rts2AskChoice (this);
-	flagsChoice->addChoice ('1', "send at start of observation");
-	flagsChoice->addChoice ('2', "send when first image receives astrometry");
-	flagsChoice->addChoice ('3', "send when observation finishes");
-	flagsChoice->addChoice ('4', "send when observation is processed");
-	flagsChoice->addChoice ('5', "send at the end of night");
-
-	flagsChoice->addChoice ('s', "save");
-	flagsChoice->addChoice ('q', "quit");
-
-	addOption ('l', NULL, 0, "list user stored in the database");
-	addOption ('a', NULL, 1, "add new user");
-	addOption ('p', NULL, 1, "set user password");
-	addOption ('e', NULL, 1, "set user email");
-	addOption ('m', NULL, 1, "edit user mailing preferences");
-}
-
-
-Rts2UserApp::~Rts2UserApp (void)
-{
-	delete flagsChoice;
-}
-
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2UserApp app = Rts2UserApp (argc, argv);
 	return app.run ();

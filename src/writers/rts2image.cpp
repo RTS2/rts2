@@ -67,7 +67,7 @@ double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
 
 void Rts2Image::initData ()
 {
-	exposureLength = nan ("f");
+	exposureLength = rts2_nan ("f");
 
 	loadHeader = false;
 	verbose = true;
@@ -97,22 +97,22 @@ void Rts2Image::initData ()
 	getFailed = 0;
 	expNum = 1;
 
-	pos_astr.ra = nan ("f");
-	pos_astr.dec = nan ("f");
-	ra_err = nan ("f");
-	dec_err = nan ("f");
-	img_err = nan ("f");
+	pos_astr.ra = rts2_nan ("f");
+	pos_astr.dec = rts2_nan ("f");
+	ra_err = rts2_nan ("f");
+	dec_err = rts2_nan ("f");
+	img_err = rts2_nan ("f");
 
 	isAcquiring = 0;
 
-	total_rotang = nan ("f");
+	total_rotang = rts2_nan ("f");
 
 	shutter = SHUT_UNKNOW;
 
 	flags = 0;
 
-	xoa = nan ("f");
-	yoa = nan ("f");
+	xoa = rts2_nan ("f");
+	yoa = rts2_nan ("f");
 
 	mnt_flip = 0;
 }
@@ -347,6 +347,7 @@ std::string Rts2Image::expandVariable (std::string expression)
 	}
 	catch (rts2core::Error &er)
 	{
+		std::cerr << "cannot expand variable " << expression << std::endl;
 		return rts2core::Expander::expandVariable (expression);
 	}
 	return std::string (valB);
@@ -419,8 +420,8 @@ void Rts2Image::getHeaders ()
 
 	try
 	{
-		getValue ("CTIME", tv.tv_sec, false);
-		getValue ("USEC", tv.tv_usec, false);
+		getValue ("CTIME", tv.tv_sec, true);
+		getValue ("USEC", tv.tv_usec, true);
 	}
 	catch (rts2core::Error )
 	{
@@ -592,6 +593,7 @@ int Rts2Image::renameImage (const char *new_filename)
 	int ret = 0;
 	if (strcmp (new_filename, getFileName ()))
 	{
+		logStream (MESSAGE_DEBUG) << "move " << getFileName () << " to " << new_filename << sendLog;
 		saveImage ();
 		ret = mkpath (new_filename, 0777);
 		if (ret)
@@ -1409,6 +1411,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		if (label)
 			writeLabel (image, 2, image.size ().height () - 2, 20, label);
+
 		delete[] buf;
 		return image;
 	}
@@ -1662,12 +1665,13 @@ void Rts2Image::loadChannels ()
 		return;
 	}
 
-	// first HDU is already opened
+	// first HDU is already opened..
 	tothdu--;
 
 	// open all channels
-	for (moveHDU (1, &hdutype); fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
+	for (moveHDU (1, &hdutype); tothdu > 0 && fits_status == 0; fits_movrel_hdu (getFitsFile (), 1, &hdutype, &fits_status))
 	{
+		tothdu--;
 		// first check that it is image
 		if (hdutype != IMAGE_HDU)
 			continue;
@@ -1750,10 +1754,6 @@ void Rts2Image::loadChannels ()
 		fitsStatusGetValue ("image loadChannels", true);
 
 		channels.push_back (new Channel (imageData, naxis, sizes, true));
-
-		tothdu--;
-		if (tothdu <= 0)
-		  	break;
 	}
 	moveHDU (1);
 }

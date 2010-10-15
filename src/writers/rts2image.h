@@ -436,7 +436,7 @@ class Rts2Image:public Rts2FitsFile
 
 		double getPrecision ()
 		{
-			double val = nan("f");
+			double val = rts2_nan("f");
 			getValue ("POS_ERR", val, false);
 			return val;
 		}

@@ -641,6 +641,13 @@ class LibnovaPos
  */
 int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &description, const char *mpc);
 
+/**
+ * Fill ln_ell_orbit structure from MPC string, for comets.
+ *
+ * @see LibnovaEllFromMPC
+ */
+int LibnovaEllFromMPCComet (struct ln_ell_orbit *orbit, std::string &description, const char *mpc);
+
 
 double LibnovaEarthDistanceFromMpec (struct ln_ell_orbit *orbit, double JD);
 

@@ -86,7 +86,7 @@ class EmailAction
 
 		void parse (xmlNodePtr emailNode, const char *defaultDeviceName);
 
-		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, int validTime);
+		virtual void run (XmlRpcd *_master);
 
 	private:
 		std::list <std::string> to;

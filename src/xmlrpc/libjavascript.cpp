@@ -89,6 +89,8 @@ static const char *equScript =
   "ln_deg_to_dms(deg,this);\n"
   "this.toStringSigned = function (dispPlus) { return (this.neg ? '-' : (dispPlus ? '+' : '')) + this.degrees.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 100)/100).format(2) + '\"'; }\n"
   "this.toString = function () { return this.toStringSigned(true); }\n"
+  "this.toStringSignedDeg = function (dispPlus) { return (this.neg ? '-' : (dispPlus ? '+' : '')) + this.degrees.format(2,0) + '&deg;'; }\n"
+  "this.toStringDeg = function () { return this.toStringSignedDeg(true); }\n"
 "}\n"
 
 /* convert degrees to hms */
