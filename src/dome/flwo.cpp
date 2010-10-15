@@ -127,6 +127,8 @@ int FLWO::startClose ()
 {
 	if (domeExe)
 	{
+		if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
+			return 0;
 		shouldClose = true;
 		return -1;
 	}
