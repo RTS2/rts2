@@ -1,7 +1,7 @@
 # start automatic observing. Uses rts2-seltest to select next target, find and
 # execute its script, and waits until it finished before picking a new target
 #
-# Copyright (C) Emilio Falco (FLWO) & Petr Kubanek 
+# Copyright (C) Emilio Falco (FLWO) & Petr Kubanek (Institute of Physics, Czech Republic)
 
 alias run_obs 'source /home/petr/rts2-sys/bin/run_obs'
 
@@ -50,6 +50,13 @@ while ( "x$1" != "x" )
 end
 
 while (1 != 0)
+	set ms=`$RTS2/bin/rts2-xmlrpcclient $XMLRPCCON --master-state on`
+	if ( $? == 0 && $ms == 0 ) then
+	  	echo "system is not in on state"
+		sleep 30
+		continue
+	endif
+
   	if ( -e $rts2abort ) exit
 	set state=`rts2-state -c`
 	if ( $ignoreday == 1) set state=3

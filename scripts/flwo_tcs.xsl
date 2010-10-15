@@ -4,6 +4,7 @@
 
 <xsl:template match='/'>
 @ imgid = 1
+set continue=1
 <xsl:apply-templates select='*'/>
 </xsl:template>
 
@@ -12,7 +13,12 @@ if ( -e $rts2abort ) then
 	source $RTS2/bin/.rts2-runabort
 	rm -f $lasttarget
 	exit
-endif	
+endif
+set ms=`$RTS2/bin/rts2-xmlrpcclient $XMLRPCCON --master-state on`
+if ( $? != 0 || $ms == 0 ) then
+	rm -f $lasttarget
+	set continue=0
+endif
 </xsl:variable>
 
 <xsl:template match="disable">
@@ -61,7 +67,7 @@ tele autog <xsl:value-of select='@operands'/>
 <xsl:variable name='count' select='generate-id(.)'/>
 @ count_<xsl:value-of select='$count'/> = 0
 <xsl:copy-of select='$abort'/>
-while ($count_<xsl:value-of select='$count'/> &lt; <xsl:value-of select='@count'/>)<xsl:for-each select='*'><xsl:apply-templates select='current()'/></xsl:for-each>
+while ($count_<xsl:value-of select='$count'/> &lt; <xsl:value-of select='@count'/> &amp;&amp; $continue == 1) <xsl:for-each select='*'><xsl:apply-templates select='current()'/></xsl:for-each>
 @ count_<xsl:value-of select='$count'/> ++
 
 end
