@@ -1,5 +1,7 @@
 # start automatic observing. Uses rts2-seltest to select next target, find and
-# execute its script, and waits until it finished before picking up a new target
+# execute its script, and waits until it finished before picking a new target
+#
+# Copyright (C) Emilio Falco (FLWO) & Petr Kubanek 
 
 alias run_obs 'source /home/petr/rts2-sys/bin/run_obs'
 
@@ -9,6 +11,19 @@ $RTS2/bin/rts2-unabort
 
 set ignoreday=0
 setenv notmove 2
+umask 022
+
+# set dosky to 0 until we can start skyflats at dusk:
+set dosky=0
+# setenv TTsky to 0 until time to sky
+setenv TTsky 0
+# set slit to 0 until slit is open
+set slit=0
+# set domes to 0 until dome flats done
+set domes=0
+# we haven't yet run focusing..
+setenv rts2_focusing_succ 0
+
 
 while ( "x$1" != "x" )
 	switch ($1)
@@ -18,8 +33,17 @@ while ( "x$1" != "x" )
 		case "-T":
 			setenv notmove 1
 			breaksw
+		case "-s":
+			set slit=1
+			breaksw
+		case "-F":
+			setenv rts2_focusing_succ 1
+			breaksw
+		case "-D":
+			set domes=1
+			breaksw
 		default:
-			echo "Unknow option $1 - please use -i -T"
+			echo "Unknown option $1 - available options are -i -T -s -F -D"
 			exit 0
 	endsw
 	shift
@@ -32,31 +56,74 @@ while (1 != 0)
 
 	switch ($state)
 		case 0:
-			echo "day - waiting until observation can start"
-			sleep 30
+			if ($domes == 0) then
+			   source /home/observer/RTS2-F/rts2.domeflats
+			   set domes=1
+			else
+			   echo "Now wait until we can open..."
+			   sleep 60
+			endif
 			breaksw
 		case 1:
-			echo "taking darks"
-			sleep 30
+		        if ($slit == 0) then
+			   echo "twilight - open up\!"
+			   echo -n "HIT return when ready to open slit: "
+			   set hitcr=$<
+			   tele slitopen
+			   set slit = 1
+			else
+			   echo "twilight - slit is open\!"
+			   sleep 60
+			endif
 			breaksw
 		case 2:
-			echo "taking skyflats"
-			sleep 30
+#	check time until skyflat time
+	      	   	if ($dosky == 0) then
+			   source /home/observer/RTS2-F/rts2.skyflattime
+			endif
+		        if ($TTsky) then
+			   source /home/observer/RTS2-F/rts2.uskyflats
+			   set dosky=1
+			   setenv TTsky 0
+			else
+			   echo "wait for skyflats"
+			   sleep 30
+			endif
+			if ($dosky == 1) then
+			   echo "wait until dark..."
+# reference the tel here?
+#			   tele ref
+			   sleep 60
+			endif
 			breaksw
 		case 3:
-			echo "doing night observations"
+			echo "acquiring night observations..."
+			# run focusing script
+			if ($rts2_focusing_succ == 0) then
+			  	echo "running focusing script. Abort with rts2-abort"
+				tele ampcen 2
+	 			source /home/observer/RTS2-F/rts2.findfwhm
+			else
+			  	echo "focusing on temperature"
+			  	source /home/observer/RTS2-F/rts2.tempfocus
+			endif	
 			run_obs `$RTS2/bin/rts2-seltest`
 			breaksw
 		case 4:
-			echo "taking skyflats"
-			sleep 30
-			breaksw
+# here we could do morning u skyflats if desired, just stop for now.
+			echo "Dawn, stow telescope..."
+			tele stow
+			echo "...telescope should be stowed,"
+			tele coversdn
+			echo "...mirror covers closed, closing slit,"
+			tele slitclose
+			echo "...please fill dewar\!"
+			exit
 		case 5:
-			echo "taking darks"
-			sleep 30
-			breaksw
+		        echo "Should not be here, quit."
+			exit
 		default:
-			echo "unknow state $state"
+			echo "unknown state $state"
 			exit
 	endsw
 end

@@ -1,0 +1,97 @@
+
+set targetlevel=12000
+set accepted_low=8000
+set accepted_high=20000
+
+set filter=u
+
+set logfile=/tmp/flats-`date +%Y%M%d`
+
+set flat=`rts2-targetinfo -N 2 | head -1`
+
+set skyflat_ra=`echo $flat | awk '{ printf "%f",$3}'`
+set skyflat_dec=`echo $flat | awk '{ printf "%f",$4}'`
+
+# wait for good level..
+
+set rts2_state=`rts2-state -c`
+
+set flat_type=1
+set exp=5
+
+if ( $rts2_state > 3 ) then
+ 	set flat_type=2 
+	set exp=20
+	echo "starting morning skyflat sequence"
+	set logfile="${logfile}-morning"
+else
+  	echo "staring evening skyflat sequence"
+	set logfile="${logfile}-evening"
+endif
+
+echo $skyflat_ra
+echo $skyflat_dec
+
+rts2_tele_filter $filter
+
+tele coords $skyflat_ra $skyflat_dec 2000.0
+
+set continue=1
+
+# main loop
+while ( $continue == 1 )
+  	echo `date` "starting $exp sec exposure for skyflats"
+	ccd gowait $exp
+	dstore
+	set lastimage=/rdata/`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`/`grep "addlog" /tmp/iraf_logger.cl |cut -f2 -d" "|sed s/\"//g`
+	# load last image to ds9
+	xpaset ds9 fits mosaicimage iraf < $lastimage
+	xpaset -p ds9 zoom to fit
+	xpaset -p ds9 scale scope global
+
+	set average=`rts2-image -s $lastimage | cut -f2 -d' '`
+	set ratio=`echo "scale=3\n$average / $targetlevel" | bc`
+
+	echo -n "$exp $average $filter $ratio " >> $logfile
+
+	echo "last image $lastimage average $average ratio $ratio "
+	# check if that's good flat..
+	set average_r=`echo "scale=0\n $average / 1" | bc`
+	if ( $average_r > $accepted_low && $average_r < $accepted_high ) then
+		echo -n "ok " >> $logfile
+	else
+	  	echo -n "failed " >> $logfile
+	endif
+	
+	# calculate next exposure
+	set exp=`echo "scale=0\n $exp / $ratio" | bc`
+
+	echo "next exposure $exp"
+	echo $exp >> $logfile
+
+	# make sure we can still expose..
+	if ( $exp > 40 && $flat_type == 1 ) then
+		echo 'too dim, exiting from evening flats'
+		set continue=0
+	endif
+	
+	if ( $exp < 2 && $flat_type == 2 ) then
+		echo 'too bright, exiting from morning flats'
+		set continue=0
+	endif	  
+end
+
+echo 'flats script end'
+
+if ( $flat_type == 2 ) then
+	echo "Dawn, stow telescope..."
+	tele stow
+	echo "...telescope should be stowed,"
+	tele coversdn
+	echo "...mirror covers closed, closing slit,"
+	tele slitclose
+	echo "...please fill dewar\!"
+endif
+
+tele stow
+tele cover
