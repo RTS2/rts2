@@ -173,8 +173,6 @@ void TargetAuger::load ()
 		EXEC SQL ROLLBACK;
 		return;
 	}
-	EXEC SQL CLOSE cur_auger;
-	EXEC SQL ROLLBACK;
 	throw SqlError ("cannot load Auger target");
 }
 
