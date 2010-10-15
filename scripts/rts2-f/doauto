@@ -89,7 +89,7 @@ while (1 != 0)
 			   source /home/observer/RTS2-F/rts2.skyflattime
 			endif
 		        if ($TTsky) then
-			   source /home/observer/RTS2-F/rts2.uskyflats
+			   source /home/observer/RTS2-F/rts2.skyflats_pk
 			   set dosky=1
 			   setenv TTsky 0
 			else
@@ -118,6 +118,7 @@ while (1 != 0)
 			breaksw
 		case 4:
 # here we could do morning u skyflats if desired, just stop for now.
+			source /home/observer/RTS2-F/rts2.skyflats_pk
 			echo "Dawn, stow telescope..."
 			tele stow
 			echo "...telescope should be stowed,"
