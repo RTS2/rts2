@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio\
 	rts2-dome-opentpl \
-	rts2-cupola-vermes rts2-dome-door-vermes
+	rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-flwo
 
 SUBDIRS = zelio
 
@@ -52,6 +52,8 @@ rts2_cupola_vermes_LDADD =  librts2vermes.a  librts2oak.a librts2dome-target-az.
 
 rts2_dome_door_vermes_SOURCES = door_vermes.cpp
 rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2oak.a librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
+
+rts2_dome_flwo_SOURCES = flwo.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec
