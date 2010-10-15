@@ -30,10 +30,11 @@
 
 using namespace XmlRpc;
 
-#define OPT_HOST             OPT_LOCAL + 1
-#define OPT_USERNAME         OPT_LOCAL + 2
-#define OPT_SCHED_TICKET     OPT_LOCAL + 3
-#define OPT_TEST             OPT_LOCAL + 4
+#define OPT_HOST                     OPT_LOCAL + 1
+#define OPT_USERNAME                 OPT_LOCAL + 2
+#define OPT_SCHED_TICKET             OPT_LOCAL + 3
+#define OPT_TEST                     OPT_LOCAL + 4
+#define OPT_MASTER_STATE             OPT_LOCAL + 5
 
 namespace rts2xmlrpc
 {
@@ -45,6 +46,19 @@ namespace rts2xmlrpc
  */
 class Client: public Rts2CliApp
 {
+	public:
+		Client (int argc, char **argv);
+		virtual ~Client (void);
+
+	protected:
+		virtual void usage ();
+
+		virtual int processOption (int opt);
+		virtual int processArgs (const char *arg);
+		virtual int init ();
+
+		virtual int doProcessing ();
+
 	private:
 		int xmlPort;
 		const char *xmlHost;
@@ -54,7 +68,9 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, GET_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
+
+		const char *masterStateQuery;
 
                 bool getVariablesPrintNames;
 
@@ -118,6 +134,8 @@ class Client: public Rts2CliApp
 		 */
 		int getState (const char *devName);
 
+		int getMasterState ();
+
 		/**
 		 * Increase XML-RPC variable.
 		 *
@@ -148,22 +166,9 @@ class Client: public Rts2CliApp
 		 * Retrieve messages from message buffer.
 		 */
 		int getMessages ();
-
-	protected:
-		virtual void usage ();
-
-		virtual int processOption (int opt);
-		virtual int processArgs (const char *arg);
-		virtual int init ();
-
-		virtual int doProcessing ();
-
-	public:
-		Client (int argc, char **argv);
-		virtual ~Client (void);
 };
 
-};
+}
 
 using namespace rts2xmlrpc;
 
@@ -394,10 +399,30 @@ int Client::getState (const char *devName)
 	XmlRpcValue oneArg, result;
 	oneArg[0] = devName;
 
-	int ret = runXmlMethod (R2X_DEVICE_STATE, oneArg, result);
+	int ret = runXmlMethod (R2X_DEVICE_STATE, oneArg, result, false);
 	if (ret)
 		return ret;
 	std::cout << devName << " " << result[1] << " " << result[0] << std::endl;
+	return ret;
+}
+
+int Client::getMasterState ()
+{
+	XmlRpcValue oneArg, result;
+	int ret;
+
+	if (masterStateQuery)
+	{
+		oneArg[0] = masterStateQuery;
+		ret = runXmlMethod (R2X_MASTER_STATE_IS, oneArg, result, false);
+	}
+	else
+	{
+		ret = runXmlMethod (R2X_MASTER_STATE, oneArg, result, false);
+	}
+	if (ret)
+		return ret;
+	std::cout << result << std::endl;
 	return ret;
 }
 
@@ -589,6 +614,9 @@ int Client::processOption (int opt)
 		case OPT_TEST:
 			xmlOp = TEST;
 			break;
+		case OPT_MASTER_STATE:
+			xmlOp = GET_MASTER_STATE;
+			break;
 		case 'm':
 			xmlOp = GET_MESSAGES;
 			break;
@@ -608,6 +636,11 @@ int Client::processOption (int opt)
 
 int Client::processArgs (const char *arg)
 {
+	if (xmlOp == GET_MASTER_STATE && masterStateQuery == NULL)
+	{
+		masterStateQuery = arg;
+		return 0;
+	}
 	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET))
 		return -1;
 	args.push_back (arg);
@@ -645,6 +678,8 @@ int Client::doProcessing ()
 			for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 				getState (*iter);
 			return 0;
+		case GET_MASTER_STATE:
+			return getMasterState ();
 		case SCHED_TICKET:
 			return schedTicketInfo (schedTicket);
 		case GET_VARIABLES:
@@ -721,6 +756,8 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 	xmlClient = NULL;
 
+	masterStateQuery = NULL;
+
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
@@ -731,6 +768,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
         addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('S', NULL, 0, "get state of device(s) specified as argument");
+	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value)");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption ('t', NULL, 0, "get device(s) type");

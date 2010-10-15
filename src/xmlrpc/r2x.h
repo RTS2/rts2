@@ -1,6 +1,7 @@
 /* 
  * List of RTS2 XML-RPC methods.
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2010 Petr Kubanek <kubanek@fzu.cz> Institute of Physics, Czech Republic
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,6 +29,13 @@
  * @return SessionID
  */
 #define R2X_LOGIN	              "rts2.login"
+
+/**
+ * Return master state.
+ */
+#define R2X_MASTER_STATE              "rts2.master.state"
+
+#define R2X_MASTER_STATE_IS           "rts2.master.is_state"
 
 /**
  * Return array with name of devices presented in the system.

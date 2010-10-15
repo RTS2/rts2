@@ -688,6 +688,59 @@ class DeviceCommand: public SessionMethod
 
 } deviceCommand (&xmlrpc_server);
 
+class MasterState: public SessionMethod
+{
+	public:
+		MasterState (XmlRpcServer* s): SessionMethod (R2X_MASTER_STATE, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			result = ((XmlRpcd *) getMasterApp ())->getMasterStateFull ();
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns master state");
+		}
+} masterStatus (&xmlrpc_server);
+
+class MasterStateIs: public SessionMethod
+{
+	public:
+		MasterStateIs (XmlRpcServer* s): SessionMethod (R2X_MASTER_STATE_IS, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			int ms = ((XmlRpcd *) getMasterApp ())->getMasterStateFull ();
+			if (params.size () == 1)
+			{
+				if (params[0] == "on")
+				{
+					result = (ms & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
+						&& (ms & SERVERD_STANDBY_MASK) != SERVERD_SOFT_OFF
+						&& !(ms & SERVERD_STANDBY_MASK);
+				}
+				else if (params[0] == "standby")
+				{
+					result = (bool) (ms & SERVERD_STANDBY_MASK);
+				}
+				else if (params[0] == "off")
+				{
+					result = (ms & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
+						|| (ms & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF;
+				}
+				else
+				{
+					throw XmlRpcException ("Invalid status name parameter");
+				}
+			}
+			else
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+		}
+} masterStateIs (&xmlrpc_server);
+
 /**
  * List device status.
  *
@@ -698,9 +751,7 @@ class DeviceCommand: public SessionMethod
 class DeviceState: public SessionMethod
 {
 	public:
-		DeviceState (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_STATE, s)
-		{
-		}
+		DeviceState (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_STATE, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
