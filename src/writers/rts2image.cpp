@@ -1467,7 +1467,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 
 			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n++)
 			{
-			  	if (n % w)
+			  	if (n % w == 0)
 				{
 				  	lh += lw;
 					lw = 0;
@@ -1476,7 +1476,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 
 				size_t offset = tw - (*iter)->getWidth ();
 
-				unsigned char *bstart = buf + lh * th + loff;
+				unsigned char *bstart = buf + lh * tw + loff;
 
 			  	getChannelGrayscaleBuffer (n, bstart, (unsigned char) 255, quantiles, offset);
 
