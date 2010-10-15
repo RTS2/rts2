@@ -61,7 +61,7 @@ int ConnImgProcess::init ()
 	try
 	{
 		Rts2Image image;
-		image.openImage (imgPath.c_str ());
+		image.openImage (imgPath.c_str (), false, true);
 		if (image.getShutter () == SHUT_CLOSED)
 		{
 			astrometryStat = DARK;
