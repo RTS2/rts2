@@ -119,7 +119,7 @@ void MessageSet::load (double from, double to, int type_mask)
 			:d_message_string;
 		if (sqlca.sqlcode)
 			break;
-		push_back (MessageDB (d_message_time, d_message_oname.arr, d_message_time, d_message_string.arr));
+		push_back (MessageDB (d_message_time, d_message_oname.arr, d_message_type, d_message_string.arr));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
