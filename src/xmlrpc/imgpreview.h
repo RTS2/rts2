@@ -46,7 +46,7 @@ class Previewer
 		 * Add script entry for image manipulation. This should be
 		 * included in head section.
 		 */
-		void script (std::ostringstream& _os, const char *label_encoded);
+		void script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan);
 
 		void form (std::ostringstream& _os, int page, int ps, int s, const char *label);
 

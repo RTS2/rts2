@@ -39,7 +39,7 @@ const char *Previewer::style ()
 	return ".normal { border: 5px solid white; } .hig { border: 5px solid navy; }";
 }
 
-void Previewer::script (std::ostringstream& _os, const char *label_encoded)
+void Previewer::script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan)
 {
 	_os << "<script language='javascript'>\n"
 "function high_off(files,name) {"
@@ -70,7 +70,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded)
     "}\n"
   "}\n"
   "else\n"
-  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + name + '?lb=" << label_encoded << "', 'Preview');\n"
+  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + name + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
     "w2.focus ();"
   "}\n"
 "}\n"
@@ -192,7 +192,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
 
-	preview.script (_os, label_encoded);
+	preview.script (_os, label_encoded, quantiles, chan);
 
 	_os << "<p>";
 

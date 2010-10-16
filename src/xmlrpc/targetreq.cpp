@@ -745,7 +745,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 
 	printTargetHeader (tar->getTargetID (), _os);
 	
-	preview.script (_os, label_encoded);
+	preview.script (_os, label_encoded, quantiles, chan);
 		
 	_os << "<p>";
 

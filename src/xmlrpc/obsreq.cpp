@@ -88,7 +88,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 
 	printHeader (_os, _title.str ().c_str (), preview.style ());
 
-	preview.script (_os, label_encoded);
+	preview.script (_os, label_encoded, quantiles, chan);
 
 	_os << "<p>";
 

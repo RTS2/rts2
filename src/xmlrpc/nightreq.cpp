@@ -142,6 +142,9 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
+	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
+	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+
 	time_t from;
 	int64_t duration;
 
@@ -152,7 +155,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	_os << "</title>";
 	
 	Previewer preview = Previewer ();
-	preview.script (_os, label_encoded);
+	preview.script (_os, label_encoded, quantiles, chan);
 
 	_os << "</head><body><p>";
 
@@ -162,9 +165,6 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 
 	rts2db::ImageSetDate is = rts2db::ImageSetDate (from, end);
 	is.load ();
-
-	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", DEFAULT_CHAN);
 
 	for (rts2db::ImageSetDate::iterator iter = is.begin (); iter != is.end (); iter++)
 	{
