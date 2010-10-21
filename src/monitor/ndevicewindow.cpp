@@ -332,8 +332,7 @@ void NDeviceCentralWindow::drawValuesList ()
 
 		// get next night, or get beginnign of current night
 
-		Rts2Value *valNightHorizon =
-			getConnection ()->getValue ("night_horizon");
+		Rts2Value *valNightHorizon = getConnection ()->getValue ("night_horizon");
 		Rts2Value *valDayHorizon = getConnection ()->getValue ("day_horizon");
 
 		Rts2Value *valEveningTime = getConnection ()->getValue ("evening_time");
@@ -361,15 +360,6 @@ void NDeviceCentralWindow::drawValuesList ()
 					valDayHorizon->getValueDouble (),
 					valEveningTime->getValueInteger (),
 					valMorningTime->getValueInteger ());
-				/**
-				if (curr_type == SERVERD_DUSK)
-				{
-					nightStart->setValueTime (ev_time);
-				}
-				if (curr_type == SERVERD_NIGHT)
-				{
-					nightStop->setValueTime (ev_time);
-				} **/
 				stateChanges.push_back (FutureStateChange (curr_type, t_start));
 			}
 		}
