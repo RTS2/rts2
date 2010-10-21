@@ -264,9 +264,9 @@ class Telescope:public Rts2Device
 		void setParkTimeNow () { mountParkTime->setNow (); }
 
 		/**
-		 * Aplly corrRaDec. Return -1if correction is above correctionLimit and was not applied.
+		 * Apply corrRaDec. Return -1if correction is above correctionLimit and was not applied.
 		 */
-		int applyCorrRaDec (struct ln_equ_posn *pos);
+		int applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa = false, bool invertDec = false);
 
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 

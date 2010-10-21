@@ -277,7 +277,7 @@ void Telescope::calculateCorrAltAz ()
 	equ_corr.ra = equ_target.ra;
 	equ_corr.dec = equ_target.dec;
 
-	applyCorrRaDec (&equ_corr);
+	applyCorrRaDec (&equ_corr, true, true);
 
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -488,11 +488,18 @@ void Telescope::recalculateMpecDIffs ()
 	}
 }
 
-int Telescope::applyCorrRaDec (struct ln_equ_posn *pos)
+int Telescope::applyCorrRaDec (struct ln_equ_posn *pos, bool invertRa, bool invertDec)
 {
   	struct ln_equ_posn pos2;
-	pos2.ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
-	pos2.dec = pos->dec + corrRaDec->getDec ();
+	if (invertRa)
+		pos2.ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
+	else
+		pos2.ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
+
+	if (invertDec)
+		pos2.dec = pos->dec - corrRaDec->getDec ();
+	else
+		pos2.dec = pos->dec + corrRaDec->getDec ();
 	if (ln_get_angular_separation (&pos2, pos) > correctionLimit->getValueDouble ())
 	{
 		logStream (MESSAGE_WARNING) << "correction " << LibnovaDegDist (corrRaDec->getRa ()) << " " << LibnovaDegDist (corrRaDec->getDec ()) << " is above limit, ignoring it" << sendLog;
@@ -956,7 +963,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 	// calculate target after corrections
-	applyCorrRaDec (&pos);
+	applyCorrRaDec (&pos, true, true);
 
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
