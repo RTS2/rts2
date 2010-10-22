@@ -47,6 +47,7 @@ class FlwoWeather:public SensorWeather
 		Rts2ValueFloat *windDir;
 		Rts2ValueFloat *pressure;
 		Rts2ValueFloat *humidity;
+		Rts2ValueFloat *humidity_limit;
 		Rts2ValueFloat *rain;
 		Rts2ValueFloat *dewpoint;
 		Rts2ValueBool *hatRain;
@@ -60,6 +61,8 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (windDir, "wind_direction", "[deg] wind direction", false);
 	createValue (pressure, "pressure", "[mB] atmospheric pressure", false);
 	createValue (humidity, "humidity", "[%] outside humidity", false);
+	createValue (humidity_limit, "humidity_limit", "[%] humidity limit for bad weather", false, RTS2_VALUE_WRITABLE);
+	humidity_limit->setValueFloat (90);
 	createValue (rain, "rain", "[inch] total accumulated rain", false);
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
 	createValue (hatRain, "HAT_rain", "hat rain status", false);
@@ -161,8 +164,6 @@ int FlwoWeather::info ()
 			else if (strstr (name, "outside_humidity") == name)
 			{
 			  	humidity->setValueCharArr (ch);
-				if (humidity->getValueFloat () > 93)
-				  	setWeatherTimeout (600, "humidity is above 93%");
 				processed |= 1 << 5;
 			}
 			else if (strstr (name, "total_rain") == name)
@@ -212,6 +213,11 @@ bool FlwoWeather::isGoodWeather ()
 	if (getLastInfoTime () > 60)
   	{
 	  	setWeatherTimeout (30, "weather data not recived");
+		return false;
+	}
+	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
+	{
+	  	setWeatherTimeout (600, "humidity is above 93%");
 		return false;
 	}
 	return SensorWeather::isGoodWeather ();
