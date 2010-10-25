@@ -42,11 +42,18 @@ void SwitchState::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 
 	_os << "<p>Current state is: " << ((XmlRpcd *) getMasterApp ())->getMasterStateString () << "<p>";
 
-	_os << "<p>Switch to:"
-		<< "<form action='off' method='get'><input type='submit' value='OFF'></form>"
-		<< "<form action='standby' method='get'><input type='submit' value='STANDBY'></form>"
-		<< "<form action='on' method='get'><input type='submit' value='ON'></form>"
-		<< "</p>";
+	_os << "<p>Set state to:"
+		"<p>"
+		  "<form action='off' method='get'><input type='submit' value='OFF'></form>\n"
+		  "System is off, telescope parked (and not powered, if system allows that)."
+	        "</p><p>"
+	          "<form action='standby' method='get'><input type='submit' value='STANDBY'></form>\n"
+		  "System is prepared to take observations, but dome is closed. This state is used to end observations in case of bad weather."
+                "</p><p>"
+		  "<form action='on' method='get'><input type='submit' value='ON'></form>"
+		  "System is up and running, taking images during night."
+		"</p>"
+	      "</p>";
 
 	printFooter (_os);
 
