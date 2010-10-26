@@ -89,7 +89,7 @@ int ThorLaser::init ()
 		return ret;
 	
 	laserConn->flushPortIO ();
-	laserConn->setDebug (true);
+	laserConn->setDebug (false);
 
 	return 0;
 }
@@ -132,9 +132,9 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 		char buf[50];
 		sprintf (buf, "channel_%i", i + 1);
 		createValue (enable[i], buf, "channel on/off", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-		sprintf (buf, "temp_%i", i);
+		sprintf (buf, "temp_%i", i + 1);
 		createValue (temp[i], buf, "temperature of the channel", true, RTS2_VALUE_WRITABLE);
-		sprintf (buf, "current_%i", i);
+		sprintf (buf, "current_%i", i + 1);
 		createValue (current[i], buf, "current of the channel", true, RTS2_VALUE_WRITABLE);
 	}
 
