@@ -63,6 +63,12 @@ class Rts2Comm:
 		print "rename",imagename,pattern
 		sys.stdout.flush()
 		return sys.stdin.readline()
+
+	def move(self,imagename,pattern):
+		"""Move image to new path, delete it from the database."""
+		print "move",imagename, pattern
+		sys.stdout.flush()
+		return sys.stdin.readline()
 	
 	def toFlat(self,imagename):
 		return self.__imageAction("flat",imagename)
@@ -71,9 +77,11 @@ class Rts2Comm:
 		return self.__imageAction("dark",imagename)
 
 	def toArchive(self,imagename):
+		"""Moves image at path to archive. Return new image path."""
 		return self.__imageAction("archive",imagename)
 
 	def toTrash(self,imagename):
+		"""Move image at path to trash. Return new image path."""
 		return self.__imageAction("trash",imagename)
 	
 	def delete(self,imagename):

@@ -146,6 +146,20 @@ void ConnExecute::processLine ()
 			images.erase (iter);
 		}
 	}
+	else if (!strcmp (cmd, "move"))
+	{
+		if (paramNextString (&imagename) || paramNextString (&expandPath))
+			return;
+		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		if (iter != images.end ())
+		{
+			(*iter)->renameImageExpand (expandPath);
+			writeToProcess ((*iter)->getAbsoluteFileName ());
+			(*iter)->deleteFromDB ();
+			delete *iter;
+			images.erase (iter);
+		}
+	}
 	else if (!strcmp (cmd, "copy"))
 	{
 		if (paramNextString (&imagename) || paramNextString (&expandPath))

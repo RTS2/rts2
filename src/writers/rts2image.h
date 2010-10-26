@@ -310,6 +310,8 @@ class Rts2Image:public Rts2FitsFile
 		double getAstrometryErr ();
 
 		virtual int saveImage ();
+
+		virtual int deleteFromDB () { return 0; }
 		virtual int deleteImage ();
 
 

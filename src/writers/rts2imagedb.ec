@@ -544,7 +544,7 @@ int Rts2ImageSkyDb::saveImage ()
 	return 0;
 }
 
-int Rts2ImageSkyDb::deleteImage ()
+int Rts2ImageSkyDb::deleteFormDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_img_id = getImgId ();
@@ -564,11 +564,15 @@ int Rts2ImageSkyDb::deleteImage ()
 	{
 		reportSqlError ("Rts2ImageSkyDb::deleteImage");
 		EXEC SQL ROLLBACK;
+		return -1;
 	}
-	else
-	{
-		EXEC SQL COMMIT;
-	}
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+int Rts2ImageSkyDb::deleteImage ()
+{
+	deleteFromDB ();
 	return Rts2Image::deleteImage ();
 }
 

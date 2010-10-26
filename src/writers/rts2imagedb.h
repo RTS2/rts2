@@ -101,6 +101,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		virtual int toTrash ();
 
 		virtual int saveImage ();
+		virtual int deleteFormDB ();
 		virtual int deleteImage ();
 
 		virtual bool haveOKAstrometry () { return (processBitfiedl & ASTROMETRY_OK); }

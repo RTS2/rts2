@@ -1,3 +1,6 @@
+2010-10-26
+ * added "move" function to stdin/stdout scripting
+
 2010-10-11
  * compute expected script duration
  * allow specifiing tempdisable in days, hours or weeks
