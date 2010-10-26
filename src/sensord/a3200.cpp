@@ -60,6 +60,8 @@ class A3200:public Sensor
 		Rts2ValueBool *out2;
 		Rts2ValueBool *out3;
 
+		Rts2ValueBool *lightOff;
+
 		Rts2ValueInteger *moveCount;
 
 		LPCTSTR initFile;
@@ -159,7 +161,7 @@ int A3200::moveAxis (AXISINDEX ax, LONG tar)
 			return ret;
 	}
 	moveCount->inc ();
-	if (setIO (ax, true))
+	if (lightOff->getValueBool () == false && setIO (ax, true))
 	{
 		clearExposure ();
 		return -1;
@@ -179,7 +181,7 @@ int A3200::moveAxis (AXISINDEX ax, LONG tar)
 		return -1;
 	}
 	clearExposure ();
-	if (setIO (ax, false))
+	if (lightOff->getValueBool () == false && setIO (ax, false))
 		return -1;
 	return 0;
 }
@@ -247,6 +249,10 @@ A3200::A3200 (int in_argc, char **in_argv)
 	out1->setValueBool (false);
 	out2->setValueBool (false);
 	out3->setValueBool (false);
+
+	createValue (lightOff, "lightOff", "turns lights completely off, even during movement. Will reset to false after the move is completed", true, RTS2_VALUE_WRITABLE);
+	lightOff->setValueBool (false);
+
 
 	createValue (moveCount, "moveCount", "number of axis movements", false);
 	moveCount->setValueInteger (0);
