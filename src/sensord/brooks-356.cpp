@@ -32,14 +32,13 @@ namespace rts2sensord
 class Brooks356: public Sensor
 {
 	public:
-		
 		Brooks356 (int argc, char **argv);
-
-		virtual int info ();
 
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
+
+		virtual int info ();
 
 	private:
 		char *device_file;
@@ -139,6 +138,6 @@ Brooks356::Brooks356 (int argc, char **argv): Sensor (argc, argv)
 
 int main (int argc, char **argv)
 {
-	Brooks356 device = Brooks356 (argc, argv);
+	Brooks356 device (argc, argv);
 	return device.run ();
 }
