@@ -21,6 +21,8 @@
 
 #include "../utils/connserial.h"
 
+#define CHAN_NUM   4
+
 namespace rts2sensord
 {
 
@@ -39,8 +41,16 @@ class ThorLaser:public Sensor
 		char *device_file;
 		rts2core::ConnSerial *laserConn;
 
-		Rts2ValueBool *enable1;
-		Rts2ValueFloat *temp1;
+		int currentChannel;
+
+		Rts2ValueBool *enable[CHAN_NUM];
+		Rts2ValueFloat *temp[CHAN_NUM];
+		Rts2ValueFloat *current[CHAN_NUM];
+
+		void checkChannel (int chan);
+
+		int getValue (int chan, const char *name, Rts2Value *value);
+		int setValue (int chan, const char *name, Rts2Value *value);
 };
 
 }
@@ -86,55 +96,26 @@ int ThorLaser::init ()
 
 int ThorLaser::info ()
 {
-	int ret;
-	char buf[50];
-	ret = laserConn->writeRead ("channel=1\r", 10, buf, 50, '\r');
-
-	ret = laserConn->writeRead ("temp?\r", 6, buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-	if (!strcmp (buf, "< temp?"))
+	for (int i = 0; i < CHAN_NUM; i++)
 	{
-		logStream (MESSAGE_ERROR) << "invalid reply to temperature command: " << buf << sendLog;
-		return -1;
+		getValue (i, "enable", enable[i]);
+		getValue (i, "temp", temp[i]);
+		getValue (i, "current", current[i]);
 	}
-	ret = laserConn->readPort (buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-
-	std::istringstream is (buf);
-	float f;
-	is >> f;
-
-	if (is.fail ())
-	{
-		logStream (MESSAGE_ERROR) << "failed to parse buffer " << buf << sendLog;
-		return -1;
-	}
-	temp1->setValueFloat (f);
-
-	ret = laserConn->writeRead ("enable?\r", 8, buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-
-	ret = laserConn->readPort (buf, 50, '\r');
-	if (ret < 0)
-		return ret;
-	enable1->setValueInteger (buf[0] == '1');
 
 	return Sensor::info ();
 }
 
 int ThorLaser::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
-	if (old_value == enable1)
+	for (int i = 0; i < CHAN_NUM; i++)
 	{
-		char buf[50];
-		sprintf (buf, "enable=%i\r", ((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0);
-		int ret = laserConn->writeRead (buf, strlen (buf), buf, 50, '\r');
-		if (ret < 0)
-			return ret;
-		return 0;
+		if (old_value == enable[i])
+			return setValue (i, "enable", new_value) ? -2 : 0;
+		else if (old_value == temp[i])
+			return setValue (i, "temp", new_value) ? -2 : 0;
+		else if  (old_value == current[i])
+			return setValue (i, "current", new_value) ? -2 : 0;
 	}
 	return Sensor::setValue (old_value, new_value);
 }
@@ -144,12 +125,72 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 	device_file = NULL;
 	laserConn = NULL;
 
-	createValue (enable1, "channel_1", "channel 1 on/off", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-	enable1->setValueBool (false);
+	currentChannel = -1;
 
-	createValue (temp1, "temp_1", "temperature of the 1st channel", true);
+	for (int i = 0; i < CHAN_NUM; i++)
+	{
+		char buf[50];
+		sprintf (buf, "channel_%i", i + 1);
+		createValue (enable[i], buf, "channel on/off", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+		sprintf (buf, "temp_%i", i);
+		createValue (temp[i], buf, "temperature of the channel", true, RTS2_VALUE_WRITABLE);
+		sprintf (buf, "current_%i", i);
+		createValue (current[i], buf, "current of the channel", true, RTS2_VALUE_WRITABLE);
+	}
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
+}
+
+void ThorLaser::checkChannel (int chan)
+{
+	if (chan == currentChannel)
+		return;
+	char buf[50];
+	if (chan < 0 || chan > 3)
+		throw rts2core::Error ("invalid channel specified");
+	sprintf (buf, "channel=%i\r", chan + 1);
+	int ret = laserConn->writeRead (buf, strlen (buf), buf, 50, '\r');
+	if (ret < 0)
+		throw rts2core::Error ("cannot read reply to set channel from the device");
+	currentChannel = chan;
+}
+
+int ThorLaser::getValue (int chan, const char *name, Rts2Value *value)
+{
+	checkChannel (chan);
+
+	char buf[50];
+	int ret = sprintf (buf, "%s?\r", name);
+
+	ret = laserConn->writeRead (buf, ret, buf, 50, '\r');
+	if (ret < 0)
+		return ret;
+	if (buf[0] != '<' || strncmp (buf + 2, name, strlen (name)))
+	{
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "invalid reply while quering for value " << name << " : " << buf << sendLog;
+		return -1;
+	}
+	ret = laserConn->readPort (buf, 50, '\r');
+	if (ret < 0)
+		return ret;
+	if (value->getValueBaseType () == RTS2_VALUE_BOOL)
+		((Rts2ValueBool *) value)->setValueBool (buf[0] == '1');
+	else	
+		value->setValueCharArr (buf);
+	return 0;
+}
+
+int ThorLaser::setValue (int chan, const char *name, Rts2Value *value)
+{
+	checkChannel (chan);
+
+	char buf[50];
+	int ret = sprintf (buf, "%s=%s\r", name, value->getValue ());
+	ret = laserConn->writeRead (buf, strlen (buf), buf, 50, '\r');
+	if (ret < 0)
+		return ret;
+	return 0;
 }
 
 int main (int argc, char **argv)
