@@ -1,5 +1,6 @@
 2010-10-26
  * added "move" function to stdin/stdout scripting
+ * added ThorLaser driver
 
 2010-10-11
  * compute expected script duration
