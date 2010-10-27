@@ -733,11 +733,11 @@ int Rts2Centrald::idle ()
 
 		time_t nt = curr_time;
 
-		while (next_event_time < (curr_time + 86400))
+		while (nt < (curr_time + 86400))
 		{
 			time_t t_start_t = nt + 1;
 			next_event (observer, &t_start_t, &call_state, &next_event_type,
-				&next_event_time, nightHorizon->getValueDouble (),
+				&nt, nightHorizon->getValueDouble (),
 				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 				morningTime->getValueInteger ());
 			if (call_state == SERVERD_DUSK)
