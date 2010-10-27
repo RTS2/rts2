@@ -229,7 +229,7 @@
     </para>
 
     <screen>
-      while true; do <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 1000 { E 1 }'</replaceable> | while read x; do xpaset ds9 fits &lt; $x; done ; done
+      while true; do <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-S</option> <replaceable>'for 1000 { E 1 }'</replaceable> | while read x; do xpaset ds9 fits &lt; $x; done ; done
     </screen>
 
   </refsect1>    
