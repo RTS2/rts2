@@ -731,19 +731,19 @@ int Rts2Centrald::idle ()
 			}
 		}
 
-		next_event_time = curr_time;
+		time_t nt = curr_time;
 
 		while (next_event_time < (curr_time + 86400))
 		{
-			time_t t_start_t = next_event_time + 1;
+			time_t t_start_t = nt + 1;
 			next_event (observer, &t_start_t, &call_state, &next_event_type,
 				&next_event_time, nightHorizon->getValueDouble (),
 				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 				morningTime->getValueInteger ());
 			if (call_state == SERVERD_DUSK)
-				nightStart->setValueTime (next_event_time);
+				nightStart->setValueTime (nt);
 			if (call_state == SERVERD_NIGHT)
-				nightStop->setValueTime (next_event_time);
+				nightStop->setValueTime (nt);
 		}
 
 		// send update about next state transits..
