@@ -172,8 +172,9 @@ double NWindowEditDigits::getValueDouble ()
 	return tval;
 }
 
-NWindowEditBool::NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+NWindowEditBool::NWindowEditBool (int _type, int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
+	dt = _type;
 }
 
 bool NWindowEditBool::passKey (int key)
@@ -181,9 +182,20 @@ bool NWindowEditBool::passKey (int key)
 	return false;
 }
 
+void NWindowEditBool::setValueBool (bool _val)
+{
+	if (dt & RTS2_DT_ONOFF)
+		wprintw (getWriteWindow (), (_val ? "on " : "off"));
+	else
+		wprintw (getWriteWindow (), (_val ? "true " : "false"));
+}
+
 bool NWindowEditBool::getValueBool ()
 {
 	char buf[200];
 	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
-	return strncasecmp (buf, "true", 4) ? false : true;
+	if (dt & RTS2_DT_ONOFF)
+		return strncasecmp (buf, "on", 2) ? false : true;
+	else
+		return strncasecmp (buf, "true", 4) ? false : true;
 }

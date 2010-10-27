@@ -51,6 +51,11 @@ class NSelWindow:public NWindow
 		}
 		void setSelRow (int new_sel) { selrow = new_sel; }
 
+		/**
+		 * Decrease/increase selection row by a given change value.
+		 */
+		void changeSelRow (int change);
+
 		virtual void winerase () { werase (scrolpad); }
 
 		virtual WINDOW *getWriteWindow () { return scrolpad; }

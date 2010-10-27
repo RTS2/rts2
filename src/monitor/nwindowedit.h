@@ -120,14 +120,14 @@ class NWindowEditDigits:public NWindowEdit
 class NWindowEditBool:public NWindowEdit
 {
 	public:
-		NWindowEditBool (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
+		NWindowEditBool (int _type, int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
 
 		virtual void draw () { NWindowEdit::draw (); setValueBool (getValueBool ()); }
 
 		/**
 		 * Sets edit window value.
 		 */
-		void setValueBool (bool _val) { wprintw (getWriteWindow (), (_val ? "true " : "false")); }
+		void setValueBool (bool _val);
 
 		/**
 		 * Returns boolean value of the field.
@@ -135,6 +135,8 @@ class NWindowEditBool:public NWindowEdit
 		bool getValueBool ();
 	protected:
 		virtual bool passKey (int key);
+	private:
+		int dt;
 };
 
 }

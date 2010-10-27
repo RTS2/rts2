@@ -50,20 +50,10 @@ keyRet NSelWindow::injectKey (int key)
 			selrow = -1;
 			break;
 		case KEY_DOWN:
-			if (selrow == -1)
-				selrow = 0;
-			else if (selrow < (maxrow - 1))
-				selrow++;
-			else
-				selrow = 0;
+			changeSelRow (+1);
 			break;
 		case KEY_UP:
-			if (selrow == -1)
-				selrow = (maxrow - 2);
-			else if (selrow > 0)
-				selrow--;
-			else
-				selrow = (maxrow - 1);
+			changeSelRow (-1);
 			break;
 		case KEY_LEFT:
 			if (padoff_x > 0)
@@ -128,6 +118,20 @@ void NSelWindow::winrefresh ()
 		pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2, x + w - 2);
 	else
 		pnoutrefresh (scrolpad, padoff_y, padoff_x, y, x, y + h - 1, x + w - 1);
+}
+
+void NSelWindow::changeSelRow (int change)
+{
+	if (selrow < 0)
+	{
+		if (change < 0)
+			selrow = (maxrow - 2);
+		else
+			selrow = 0;
+		return;
+	}
+	selrow += change;
+	selrow %= maxrow;
 }
 
 NDevListWindow::NDevListWindow (Rts2Block * in_block):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)

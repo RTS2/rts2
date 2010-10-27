@@ -51,6 +51,9 @@ keyRet ValueBoxBool::injectKey (int key)
 		case KEY_EXIT:
 		case K_ESC:
 			return RKEY_ESC;
+		case ' ':
+			changeSelRow (+1);
+			return RKEY_HANDLED;
 	}
 	return NSelWindow::injectKey (key);
 }
@@ -447,8 +450,8 @@ ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x
 				break;
 			case RTS2_VALUE_BOOL:
 				{
-					int cw = ((i + 1) == _val->size () ) ? 5 : 6;
-					NWindowEditBool *winbool = new NWindowEditBool (top->getX () + _x + 1 + w, top->getY () + _y + 1, cw, 1, 0, 0, 300, 1, false);
+					int cw = ((i + 1) == _val->size () ) ? (_val->getValueDisplayType () & RTS2_DT_ONOFF ? 3 : 5) : 6;
+					NWindowEditBool *winbool = new NWindowEditBool (_val->getValueDisplayType (), top->getX () + _x + 1 + w, top->getY () + _y + 1, cw, 1, 0, 0, 300, 1, false);
 					winbool->setValueBool ((*((rts2core::BoolArray *) _val))[i]);
 					edt.push_back (winbool);
 					w += 6;
