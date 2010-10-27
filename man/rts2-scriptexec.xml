@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007-2009</year>
+      <year>2007-2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -69,6 +69,9 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-s</option> <replaceable>script</replaceable></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-S</option> <replaceable>script</replaceable></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-e</option> <replaceable>expand string</replaceable></arg>
@@ -148,6 +151,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-S <replaceable class="parameter">script</replaceable></option></term>
+        <listitem>
+          <para>
+	    Similar to -s, but does not call script_ends before executing the
+	    script - does not reset device to default configuration.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-e <replaceable class="parameter">expand string</replaceable></option></term>
         <listitem>
           <para>
@@ -212,6 +224,13 @@
       <command>&dhpackage;</command> <option>-e</option> <replaceable>'%c_%L%f'</replaceable> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 10 { E 5 E 10 }'</replaceable>
     </screen>
 
+    <para>
+      And the following will (in bash/sh) ship images to ds9 via xpa, as soon as they are acquired:
+    </para>
+
+    <screen>
+      while true; do <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 1000 { E 1 }'</replaceable> | while read x; do xpaset ds9 fits &lt; $x; done ; done
+    </screen>
 
   </refsect1>    
   <refsect1>
