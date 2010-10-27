@@ -736,7 +736,8 @@ int Rts2Centrald::idle ()
 		while (nt < (curr_time + 86400))
 		{
 			time_t t_start_t = nt + 1;
-			next_event (observer, &t_start_t, &call_state, &next_event_type,
+			int net;
+			next_event (observer, &t_start_t, &call_state, &net,
 				&nt, nightHorizon->getValueDouble (),
 				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 				morningTime->getValueInteger ());
@@ -747,6 +748,7 @@ int Rts2Centrald::idle ()
 		}
 
 		// send update about next state transits..
+		infoAll ();
 	}
 	return Rts2Daemon::idle ();
 }
