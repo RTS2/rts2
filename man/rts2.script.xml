@@ -662,6 +662,32 @@ echo V C1 WINDOW = 0 0 10 10 # set C1 WINDOW (readout area). C1 will read only u
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>VT {device_type} {value name} {operator} {operand1 [operand2..]}</option></term>
+	<listitem><para>
+	  Change value of variable of devices of given type. Operand can be any of =, +=
+	  or -=. If value have multiple components (e.g. telescope RA DEC
+	  offsets, or camera readout area), you must separated components with
+	  space. Following strings are allowed for device_type:
+	  <variablelist>
+	    <varlistentry><term>TELESCOPE</term></varlistentry>
+	    <varlistentry><term>CCD</term></varlistentry>
+	    <varlistentry><term>DOME</term></varlistentry>
+	    <varlistentry><term>WEATHER</term></varlistentry>
+	    <varlistentry><term>PHOT</term></varlistentry>
+	    <varlistentry><term>PLAN</term></varlistentry>
+	    <varlistentry><term>FOCUS</term></varlistentry>
+	    <varlistentry><term>CUPOLA</term></varlistentry>
+	    <varlistentry><term>FW</term></varlistentry>
+	    <varlistentry><term>SENSOR</term></varlistentry>
+	  </variablelist>
+	  Examples:
+	  </para><literallayout>
+echo VT FW filter += 1 # increases filter of all filter wheels by one
+echo VT TELESCOPE WOFFS = 0.01 0.01 # set WOFFS of all telescopes to 0.01 in RA and DEC
+echo VT CCD WINDOW = 0 0 10 10 # set all CCDs WINDOW (readout area).
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>value {value name} {operator} {operand1 [operand2..]}</option></term>
 	<listitem><para>
 	  Change value of variable of script device. This is shortcut to easily

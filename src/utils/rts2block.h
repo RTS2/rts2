@@ -415,6 +415,24 @@ class Rts2Block: public Rts2App
 		void getOpenConnectionType (int deviceType, connections_t::iterator &current);
 
 		/**
+		 * Queue command for all connections with a given type.
+		 *
+		 * @see Rts2Command
+		 *
+		 * @param deviceType numeric device type
+		 * @param command    command (subclass of Rts2Command)
+		 */
+		template <typename T> void queueCommandForType (int deviceType, T &command)
+		{
+			connections_t::iterator iter = connections.begin ();
+			for (getOpenConnectionType (deviceType, iter); iter != connections.end (); getOpenConnectionType (deviceType, iter))
+			{
+				(*iter)->queCommand (new T (command));
+				iter++;
+			}
+		}
+
+		/**
 		 * Return connection with given type. Return first connection with given type, if no connection can be found,
 		 * return NULL.
 		 *

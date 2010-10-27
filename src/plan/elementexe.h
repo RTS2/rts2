@@ -62,6 +62,9 @@ class ConnExecute:public rts2core::ConnFork
 
 		bool isCentraldName (const char *_name) { return !strcmp (_name, ".") || !strcmp (_name, "centrald"); }
 		Rts2Conn *getConnectionForScript (const char *name);
+		int getDeviceType (const char *name);
+
+		void processCommand (char *cmd);
 };
 
 

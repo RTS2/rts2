@@ -57,9 +57,8 @@ void ConnExecute::connectionError (int last_data_size)
 	masterElement = NULL;
 }
 
-void ConnExecute::processLine ()
+void ConnExecute::processCommand (char *cmd)
 {
-	char *cmd;
 	char *imagename;
 	char *expandPath;
 
@@ -68,10 +67,6 @@ void ConnExecute::processLine ()
 	char *operat;
 	char *operand;
 	char *comm;
-
-
-	if (paramNextString (&cmd))
-		return;
 
 	if (!strcmp (cmd, "exposure"))
 	{
@@ -221,6 +216,14 @@ void ConnExecute::processLine ()
 			conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
 		}
 	}
+	else if (!strcmp (cmd, "VT"))
+	{
+		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
+			return;
+		int deviceTypeNum = getDeviceType (device);
+		Rts2CommandChangeValue cmdch (masterElement->getClient (), std::string (value), *operat, std::string (operand), true);
+		getMaster ()->queueCommandForType (deviceTypeNum, cmdch);
+	}
 	else if (!strcmp (cmd, "value"))
 	{
 		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
@@ -287,6 +290,27 @@ void ConnExecute::processLine ()
 		}
 		logStream (logLevel) << value << sendLog;
 	}
+	else
+	{
+		throw rts2core::Error (std::string ("unknow command ") + cmd);
+	}
+}
+
+void ConnExecute::processLine ()
+{
+	char *cmd;
+
+	if (paramNextString (&cmd))
+		return;
+
+	try
+	{
+		processCommand (cmd);
+		return;
+	} catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "while processing " << cmd << " : " << er << sendLog;
+	}
 }
 
 void ConnExecute::exposureEnd ()
@@ -323,6 +347,31 @@ Rts2Conn *ConnExecute::getConnectionForScript (const char *_name)
 	if (isCentraldName (_name))
 		return getMaster ()->getSingleCentralConn ();
 	return getMaster ()->getOpenConnection (_name);
+}
+
+int ConnExecute::getDeviceType (const char *_name)
+{
+	if (!strcasecmp (_name, "TELESCOPE"))
+		return DEVICE_TYPE_MOUNT;
+	else if (!strcasecmp (_name, "CCD"))
+	  	return DEVICE_TYPE_CCD;
+	else if (!strcasecmp (_name, "DOME"))
+	  	return DEVICE_TYPE_DOME;
+	else if (!strcasecmp (_name, "WEATHER"))
+	  	return DEVICE_TYPE_WEATHER;
+	else if (!strcasecmp (_name, "PHOT"))
+	  	return DEVICE_TYPE_PHOT;
+	else if (!strcasecmp (_name, "PLAN"))
+	  	return DEVICE_TYPE_PLAN;
+	else if (!strcasecmp (_name, "FOCUS"))
+	  	return DEVICE_TYPE_FOCUS;
+	else if (!strcasecmp (_name, "CUPOLA"))
+	  	return DEVICE_TYPE_CUPOLA;
+	else if (!strcasecmp (_name, "FW"))
+	  	return DEVICE_TYPE_FW;
+	else if (!strcasecmp (_name, "SENSOR"))
+	  	return DEVICE_TYPE_SENSOR;
+	throw rts2core::Error (std::string ("unknow device type ") + _name);
 }
 
 Execute::Execute (Script * _script, Rts2Block * _master, const char *_exec): Element (_script)

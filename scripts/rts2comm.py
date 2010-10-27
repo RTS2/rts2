@@ -6,6 +6,18 @@
 import sys
 import time
 
+# constants for device types
+DEVICE_TELESCOPE   = "TELESCOPE"
+DEVICE_CCD         = "CCD"
+DEVICE_DOME        = "DOME"
+DEVICE_WEATHER     = "WEATHER"
+DEVICE_PHOT        = "PHOT"
+DEVICE_PLAN        = "PLAN"
+DEVICE_FOCUS       = "FOCUS"
+DEVICE_CUPOLA      = "CUPOLA"
+DEVICE_FW          = "FW"
+DEVICE_SENSOR      = "SENSOR"
+
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
@@ -33,12 +45,21 @@ class Rts2Comm:
 		else:
 			print "V",device,name,'+=',new_value
 		sys.stdout.flush()
+	
+	def incrementValueType(self,device,new_value):
+		print "VT",device,name,'+=',new_value
+		sys.stdout.flush()
 
 	def setValue(self,name,new_value,device = None):
 		if (device is None):
 			print "value",name,'=',new_value
 		else:
 			print "V",device,name,'=',new_value
+		sys.stdout.flush()
+
+	def setValueByType(self,device,name,new_value):
+		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
+		print "VT",name,'-',new_value
 		sys.stdout.flush()
 	
 	def exposure(self, before_readout_callback = None):

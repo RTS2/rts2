@@ -84,7 +84,7 @@ class GuideScript (rts2comm.Rts2Comm):
 			ch_dec = float(change[1]) * self.dec_aggresivity
 
 			self.log('I','guiding * center %f %f change %.1f %.1f (%f %f)' % (x,y,ch_ra*3600,ch_dec*3600,ch_ra,ch_dec))
-			self.incrementValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
+			self.incrementValueType(rts2comm.TELESCOPE,'OFFS','%f %f' % (ch_ra, ch_dec))
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
 
@@ -100,7 +100,7 @@ class GuideScript (rts2comm.Rts2Comm):
 				
 		self.setValue('exposure',self.exptime)
 
-		self.setValue('OFFS','0 0', 'T0')
+		self.setValueType(rts2comm.TELESCOPE,'OFFS','0 0')
 
 		image = self.exposure()
 

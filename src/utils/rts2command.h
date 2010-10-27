@@ -71,6 +71,7 @@ class Rts2Command
 		Rts2Command (Rts2Block * _owner);
 		Rts2Command (Rts2Block * _owner, const char *_text);
 		Rts2Command (Rts2Command * _command);
+		Rts2Command (Rts2Command & _command);
 		virtual ~ Rts2Command (void);
 
 		/**

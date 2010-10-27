@@ -33,7 +33,6 @@ Rts2Command::Rts2Command (Rts2Block * _owner)
 	originator = NULL;
 }
 
-
 Rts2Command::Rts2Command (Rts2Block * _owner, const char *_text)
 {
 	owner = _owner;
@@ -41,7 +40,6 @@ Rts2Command::Rts2Command (Rts2Block * _owner, const char *_text)
 	bopMask = 0;
 	originator = NULL;
 }
-
 
 Rts2Command::Rts2Command (Rts2Command * _command)
 {
@@ -52,35 +50,37 @@ Rts2Command::Rts2Command (Rts2Command * _command)
 	originator = NULL;
 }
 
-void
-Rts2Command::setCommand (std::ostringstream &_os)
+Rts2Command::Rts2Command (Rts2Command & _command)
+{
+	owner = _command.owner;
+	connection = _command.connection;
+	setCommand (_command.getText ());
+	bopMask = _command.getBopMask ();
+	originator = NULL;
+}
+
+void Rts2Command::setCommand (std::ostringstream &_os)
 {
 	setCommand (_os.str().c_str());
 }
 
-void
-Rts2Command::setCommand (const char *_text)
+void Rts2Command::setCommand (const char *_text)
 {
 	text = new char[strlen (_text) + 1];
 	strcpy (text, _text);
 }
-
 
 Rts2Command::~Rts2Command (void)
 {
 	delete[]text;
 }
 
-
-int
-Rts2Command::send ()
+int Rts2Command::send ()
 {
 	return connection->sendMsg (text);
 }
 
-
-int
-Rts2Command::commandReturn (int status, Rts2Conn * conn)
+int Rts2Command::commandReturn (int status, Rts2Conn * conn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream(MESSAGE_DEBUG) << "commandReturn status: " << status << " connection: " << conn->getName () << " command: " << text << sendLog;
@@ -96,27 +96,21 @@ Rts2Command::commandReturn (int status, Rts2Conn * conn)
 	}
 }
 
-
-int
-Rts2Command::commandReturnOK (Rts2Conn * conn)
+int Rts2Command::commandReturnOK (Rts2Conn * conn)
 {
 	if (originator)
 		originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
 	return -1;
 }
 
-
-int
-Rts2Command::commandReturnQued (Rts2Conn * conn)
+int Rts2Command::commandReturnQued (Rts2Conn * conn)
 {
 	if (originator)
 		originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
 	return commandReturnOK (conn);
 }
 
-
-int
-Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (originator)
 		originator->
@@ -124,26 +118,20 @@ Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
 	return -1;
 }
 
-
-void
-Rts2Command::deleteConnection (Rts2Conn * conn)
+void Rts2Command::deleteConnection (Rts2Conn * conn)
 {
 	if (conn == originator)
 		originator = NULL;
 }
 
-
-Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * _master, int _centrald_id, int _centrald_num, int _key)
-:Rts2Command (_master)
+Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * _master, int _centrald_id, int _centrald_num, int _key):Rts2Command (_master)
 {
 	centrald_id = _centrald_id;
 	centrald_num = _centrald_num;
 	key = _key;
 }
 
-
-int
-Rts2CommandSendKey::send ()
+int Rts2CommandSendKey::send ()
 {
 	std::ostringstream _os;
 	_os << "auth " << centrald_id
@@ -153,66 +141,50 @@ Rts2CommandSendKey::send ()
 	return Rts2Command::send ();
 }
 
-
-Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * _master, int centralId, int key)
-:Rts2Command (_master)
+Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * _master, int centralId, int key):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "authorize " << centralId << " " << key;
 	setCommand (_os);
 }
 
-
-Rts2CommandKey::Rts2CommandKey (Rts2Block * _master, const char *device_name)
-:Rts2Command (_master)
+Rts2CommandKey::Rts2CommandKey (Rts2Block * _master, const char *device_name):Rts2Command (_master)
 {
  	std::ostringstream _os;
 	_os << "key " << device_name;
 	setCommand (_os);
 }
 
-
-Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * _camera)
-:Rts2Command (_camera->getMaster ())
+Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * _camera):Rts2Command (_camera->getMaster ())
 {
 }
 
-
-Rts2CommandExposure::Rts2CommandExposure (Rts2Block * _master, Rts2DevClientCamera * _camera, int _bopMask)
-:Rts2Command (_master)
+Rts2CommandExposure::Rts2CommandExposure (Rts2Block * _master, Rts2DevClientCamera * _camera, int _bopMask):Rts2Command (_master)
 {
 	setCommand ("expose");
 	camera = _camera;
 	setBopMask (_bopMask);
 }
 
-
-int
-Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	camera->exposureFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandReadout::Rts2CommandReadout (Rts2Block * _master):
-Rts2Command (_master)
+Rts2CommandReadout::Rts2CommandReadout (Rts2Block * _master):Rts2Command (_master)
 {
 	setCommand ("readout");
 }
 
-
-void
-Rts2CommandFilter::setCommandFilter (int filter)
+void Rts2CommandFilter::setCommandFilter (int filter)
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " filter = " << filter;
 	setCommand (_os);
 }
 
-
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * _camera, int filter)
-:Rts2Command (_camera->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * _camera, int filter):Rts2Command (_camera->getMaster ())
 {
 	camera = _camera;
 	phot = NULL;
@@ -220,9 +192,7 @@ Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * _camera, int filter)
 	setCommandFilter (filter);
 }
 
-
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * _phot, int filter)
-:Rts2Command (_phot->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * _phot, int filter):Rts2Command (_phot->getMaster ())
 {
 	camera = NULL;
 	phot = _phot;
@@ -230,9 +200,7 @@ Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * _phot, int filter)
 	setCommandFilter (filter);
 }
 
-
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * _filter, int filter)
-:Rts2Command (_filter->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * _filter, int filter):Rts2Command (_filter->getMaster ())
 {
 	camera = NULL;
 	phot = NULL;
@@ -240,9 +208,7 @@ Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * _filter, int filter)
 	setCommandFilter (filter);
 }
 
-
-int
-Rts2CommandFilter::commandReturnOK (Rts2Conn * conn)
+int Rts2CommandFilter::commandReturnOK (Rts2Conn * conn)
 {
 	if (camera)
 		camera->filterOK ();
@@ -253,9 +219,7 @@ Rts2CommandFilter::commandReturnOK (Rts2Conn * conn)
 	return Rts2Command::commandReturnOK (conn);
 }
 
-
-int
-Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (camera)
 		camera->filterFailed (status);
@@ -266,63 +230,49 @@ Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * _camera, int x, int y, int w, int h):
-Rts2CommandCameraSettings (_camera)
+Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * _camera, int x, int y, int w, int h):Rts2CommandCameraSettings (_camera)
 {
 	std::ostringstream _os;
 	_os << "box " << x << " " << y << " " << w << " " << h;
 	setCommand (_os);
 }
 
-
-Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * _camera, int width = -1, int height = -1)
-:Rts2CommandCameraSettings (_camera)
+Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * _camera, int width = -1, int height = -1):Rts2CommandCameraSettings (_camera)
 {
 	std::ostringstream _os;
 	_os << "center " << width << " " << height;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int _operand)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int _operand):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " <<  _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long _operand)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long _operand):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op
@@ -330,9 +280,7 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::st
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, bool _operand)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, bool _operand):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " 
@@ -340,9 +288,7 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::str
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, int x, int y, int w, int h)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, int x, int y, int w, int h):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	_os << PROTO_SET_VALUE " " << _valName << " " << op
@@ -350,9 +296,7 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::str
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, std::string _operand, bool raw)
-:Rts2Command (_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, std::string _operand, bool raw):Rts2Command (_client->getMaster ())
 {
 	std::ostringstream _os;
 	if (raw)
@@ -368,16 +312,12 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::st
 	setCommand (_os);
 }
 
-
-Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel)
-:Rts2Command (_master)
+Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel):Rts2Command (_master)
 {
 	tel = _tel;
 }
 
-
-Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
-:Rts2Command (_master)
+Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "move " << ra << " " << dec;
@@ -385,27 +325,20 @@ Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * 
 	tel = _tel;
 }
 
-
-int
-Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	tel->moveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
-:Rts2CommandMove (_master, _tel)
+Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << "move_not_model " << ra << " " << dec;
 	setCommand (_os);
 }
 
-
-Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel,
-double ra, double dec)
-:Rts2Command (_master)
+Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "fixed " << ra << " " << dec;
@@ -413,17 +346,13 @@ double ra, double dec)
 	tel = _tel;
 }
 
-
-int
-Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	tel->moveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
-:Rts2Command (_master)
+Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "resync " << ra << " " << dec;
@@ -431,17 +360,13 @@ Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClient
 	tel = _tel;
 }
 
-
-int
-Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	tel->moveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec)
-:Rts2Command (_master)
+Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "change " << ra << " " << dec;
@@ -450,9 +375,7 @@ Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec
 }
 
 
-Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * _tel,
-double ra, double dec)
-:Rts2Command (_tel->getMaster ())
+Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_tel->getMaster ())
 {
 	std::ostringstream _os;
 	_os << "change " << ra << " " << dec;
@@ -460,25 +383,19 @@ double ra, double dec)
 	tel = _tel;
 }
 
-
-Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * _command, Rts2DevClientTelescope * _tel)
-:Rts2Command (_command)
+Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * _command, Rts2DevClientTelescope * _tel):Rts2Command (_command)
 {
 	tel = _tel;
 }
 
-
-int
-Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (tel)
 		tel->moveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err)
-:Rts2Command (_master)
+Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):Rts2Command (_master)
 {
  	std::ostringstream _os;
 	_os << "correct " << corr_mark << " " << corr_img
@@ -487,27 +404,21 @@ Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int 
 	setCommand (_os);
 }
 
-
-Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * _master, char dir, double dir_dist)
-:Rts2Command (_master)
+Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * _master, char dir, double dir_dist):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "start_guide " << dir << " " << dir_dist;
 	setCommand (_os);
 }
 
-
-Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * _master, char dir)
-:Rts2Command (_master)
+Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * _master, char dir):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "stop_guide " << dir;
 	setCommand (_os);
 }
 
-
-Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, double ra, double dec)
-:Rts2Command (_copula->getMaster ())
+Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, double ra, double dec):Rts2Command (_copula->getMaster ())
 {
 	std::ostringstream _os;
 	copula = _copula;
@@ -515,17 +426,14 @@ Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, dou
 	setCommand (_os);
 }
 
-
-int
-Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (copula)
 		copula->syncFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandCupolaNotMove::Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copula)
-:Rts2Command (_copula->getMaster ())
+Rts2CommandCupolaNotMove::Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copula):Rts2Command (_copula->getMaster ())
 {
 	std::ostringstream _os;
 	copula = _copula;
@@ -533,44 +441,35 @@ Rts2CommandCupolaNotMove::Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copul
 	setCommand (_os);
 }
 
-int
-Rts2CommandCupolaNotMove::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandCupolaNotMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (copula)
 		copula->notMoveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-void
-Rts2CommandChangeFocus::change (int _steps)
+void Rts2CommandChangeFocus::change (int _steps)
 {
 	std::ostringstream _os;
 	_os << "X FOC_TOFFS += " << _steps;
 	setCommand (_os);
 }
 
-
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus * _focuser, int _steps)
-:Rts2Command (_focuser->getMaster ())
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus * _focuser, int _steps):Rts2Command (_focuser->getMaster ())
 {
 	focuser = _focuser;
 	camera = NULL;
 	change (_steps);
 }
 
-
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientCamera * _camera, int _steps)
-:Rts2Command (_camera->getMaster ())
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientCamera * _camera, int _steps):Rts2Command (_camera->getMaster ())
 {
 	focuser = NULL;
 	camera = _camera;
 	change (_steps);
 }
 
-
-int
-Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (focuser)
 		focuser->focusingFailed (status);
@@ -579,36 +478,28 @@ Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-void
-Rts2CommandSetFocus::set (int _steps)
+void Rts2CommandSetFocus::set (int _steps)
 {
 	std::ostringstream _os;
 	_os << "set " << _steps;
 	setCommand (_os);
 }
 
-
-Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientFocus * _focuser, int _steps)
-:Rts2Command (_focuser->getMaster ())
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientFocus * _focuser, int _steps):Rts2Command (_focuser->getMaster ())
 {
 	focuser = _focuser;
 	camera = NULL;
 	set (_steps);
 }
 
-
-Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientCamera * _camera, int _steps)
-:Rts2Command (_camera->getMaster ())
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientCamera * _camera, int _steps):Rts2Command (_camera->getMaster ())
 {
 	focuser = NULL;
 	camera = _camera;
 	set (_steps);
 }
 
-
-int
-Rts2CommandSetFocus::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandSetFocus::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (focuser)
 		focuser->focusingFailed (status);
@@ -617,9 +508,7 @@ Rts2CommandSetFocus::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos)
-:Rts2Command (_mirror->getMaster ())
+Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos):Rts2Command (_mirror->getMaster ())
 {
 	mirror = _mirror;
 	std::ostringstream _os;
@@ -627,18 +516,14 @@ Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos)
 	setCommand (_os);
 }
 
-
-int
-Rts2CommandMirror::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandMirror::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (mirror)
 		mirror->moveFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filter, float _exp, int _count)
-:Rts2Command (_phot->getMaster ())
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filter, float _exp, int _count):Rts2Command (_phot->getMaster ())
 {
 	phot = _phot;
 	std::ostringstream _os;
@@ -646,9 +531,7 @@ Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filt
 	setCommand (_os);
 }
 
-
-Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _exp, int _count)
-:Rts2Command (_phot->getMaster ())
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _exp, int _count):Rts2Command (_phot->getMaster ())
 {
 	phot = _phot;
 	std::ostringstream _os;
@@ -656,135 +539,103 @@ Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _ex
 	setCommand (_os);
 }
 
-
-int
-Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (phot)
 		phot->integrationFailed (status);
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * _master, int next_id)
-:Rts2Command (_master)
+Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * _master, int next_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "next " << next_id;
 	setCommand (_os);
 }
 
-
-Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * _master, int now_id)
-:Rts2Command (_master)
+Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * _master, int now_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "now " << now_id;
 	setCommand (_os);
 }
 
-
-Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * _master, int grb_id)
-:Rts2Command (_master)
+Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * _master, int grb_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "grb " << grb_id;
 	setCommand (_os);
 }
 
-
-Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * _master)
-:Rts2Command (_master)
+Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * _master):Rts2Command (_master)
 {
 	setCommand ("shower");
 }
 
-
-Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block *_master)
-:Rts2Command (_master)
+Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block *_master):Rts2Command (_master)
 {
 	setCommand ("killall");
 }
 
-
-Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block *_master)
-:Rts2Command (_master)
+Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block *_master):Rts2Command (_master)
 {
 	setCommand ("script_ends");
 }
 
-
-Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * _master, int _mask)
-:Rts2Command (_master)
+Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * _master, int _mask):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "message_mask " << _mask;
 	setCommand (_os);
 }
 
-
-Rts2CommandInfo::Rts2CommandInfo (Rts2Block * _master)
-:Rts2Command (_master)
+Rts2CommandInfo::Rts2CommandInfo (Rts2Block * _master):Rts2Command (_master)
 {
 	setCommand ("info");
 }
 
-
-int
-Rts2CommandInfo::commandReturnOK (Rts2Conn * conn)
+int Rts2CommandInfo::commandReturnOK (Rts2Conn * conn)
 {
 	if (connection && connection->getOtherDevClient ())
 		connection->getOtherDevClient ()->infoOK ();
 	return Rts2Command::commandReturnOK (conn);
 }
 
-
-int
-Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
+int Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (connection && connection->getOtherDevClient ())
 		connection->getOtherDevClient ()->infoFailed ();
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-
-Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * _control_conn)
-:Rts2Command(master)
+Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * _control_conn):Rts2Command(master)
 {
 	control_conn = _control_conn;
 	setCommand ("status_info");
 }
 
-
-int
-Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
+int Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);
 	return Rts2Command::commandReturnOK (conn);
 }
 
-
-int
-Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
+int Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
 {
 	if (control_conn)
 		control_conn->updateStatusWait (conn);
 	return Rts2Command::commandReturnOK (conn);
 }
 
-
-void
-Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
+void Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
 {
 	if (control_conn == conn)
 		control_conn = NULL;
 	Rts2Command::deleteConnection (conn);
 }
 
-
-Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * _control_conn)
-:Rts2CommandStatusInfo (master, _control_conn)
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * _control_conn):Rts2CommandStatusInfo (master, _control_conn)
 {
 	setCommand ("device_status");
 }
