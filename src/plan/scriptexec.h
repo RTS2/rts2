@@ -36,28 +36,6 @@ namespace rts2plan
  */
 class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 {
-	private:
-		Rts2ValueString *expandPath;
-		std::vector < Rts2ScriptForDevice* > scripts;
-		char *deviceName;
-		const char *defaultScript;
-
-		int waitState;
-
-		Rts2TargetScr *currentTarget;
-
-		time_t nextRunningQ;
-
-		bool isScriptRunning ();
-
-		char *configFile;
-	protected:
-		virtual int processOption (int in_opt);
-		virtual void usage ();
-
-		virtual int init ();
-		virtual int doProcessing ();
-
 	public:
 		ScriptExec (int in_argc, char **in_argv);
 		virtual ~ ScriptExec (void);
@@ -74,6 +52,29 @@ class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		virtual void deviceIdle (Rts2Conn * conn);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
+	protected:
+		virtual int processOption (int in_opt);
+		virtual void usage ();
+
+		virtual int init ();
+		virtual int doProcessing ();
+	private:
+		Rts2ValueString *expandPath;
+		std::vector < Rts2ScriptForDevice* > scripts;
+		char *deviceName;
+		const char *defaultScript;
+
+		int waitState;
+
+		Rts2TargetScr *currentTarget;
+
+		time_t nextRunningQ;
+
+		bool isScriptRunning ();
+
+		char *configFile;
+
+		bool callScriptEnd;
 };
 
 }

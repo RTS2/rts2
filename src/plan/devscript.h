@@ -65,9 +65,12 @@ class DevScript
 			WAIT_SEARCH
 		} waitScript;
 
-		//  enum
-		//  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
-		virtual void startTarget ();
+		/**
+		 * Start new target.
+		 *
+		 * @param callScriptEnds  if true, script_ends command will be called before the script starts
+		 */
+		virtual void startTarget (bool callScriptEnds = true);
 
 		virtual int getNextCommand () = 0;
 		int nextPreparedCommand ();

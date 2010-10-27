@@ -25,6 +25,7 @@
 #define EVENT_WRITE_TO_IMAGE        2
 #define EVENT_WRITE_TO_IMAGE_ENDS  13
 #define EVENT_SET_TARGET            3
+#define EVENT_SET_TARGET_NOT_CLEAR 23
 #define EVENT_OBSERVE               4
 #define EVENT_IMAGE_OK              5
 
@@ -62,7 +63,7 @@
 #define EVENT_TRIGGERED            22
 
 /** Lost connection to the database. */
-#define EVENT_DB_LOST_CONN         23
+#define EVENT_DB_LOST_CONN         24
 
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000

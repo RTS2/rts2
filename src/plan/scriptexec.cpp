@@ -96,6 +96,8 @@ int ScriptExec::processOption (int in_opt)
 		case 'd':
 			deviceName = optarg;
 			break;
+		case 'S':
+			callScriptEnd = false;
 		case 's':
 			if (!deviceName)
 			{
@@ -145,10 +147,13 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_arg
 
 	defaultScript = NULL;
 
+	callScriptEnd = true;
+
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
 	addOption ('d', NULL, 1, "name of next script device");
 	addOption ('s', NULL, 1, "device script (for device specified with d)");
+	addOption ('S', NULL, 1, "device script called without explicit script_ends (without device reset)");
 	addOption ('f', NULL, 1, "script filename");
 
 	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");
@@ -273,7 +278,7 @@ void ScriptExec::postEvent (Rts2Event * event)
 
 void ScriptExec::deviceReady (Rts2Conn * conn)
 {
-	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	conn->postEvent (new Rts2Event (callScriptEnd ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) currentTarget));
 	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 

@@ -40,7 +40,7 @@ DevScript::~DevScript (void)
 	// cannot call deleteScript there, as unsetWait is pure virtual
 }
 
-void DevScript::startTarget ()
+void DevScript::startTarget (bool callScriptEnds)
 {
 	// currentTarget should be nulled when script ends in
 	// deleteScript
@@ -72,7 +72,9 @@ void DevScript::startTarget ()
 	setScript (sc);
 
 	clearFailedCount ();
-	queCommandFromScript (new Rts2CommandScriptEnds (script_connection->getMaster ()));
+
+	if (callScriptEnds)
+		queCommandFromScript (new Rts2CommandScriptEnds (script_connection->getMaster ()));
 
 	scriptBegin ();
 
@@ -114,6 +116,7 @@ void DevScript::postEvent (Rts2Event * event)
 			deleteScript ();
 			break;
 		case EVENT_SET_TARGET:
+		case EVENT_SET_TARGET_NOT_CLEAR:
 			setNextTarget ((Rts2Target *) event->getArg ());
 			if (currentTarget)
 				break;
@@ -123,7 +126,7 @@ void DevScript::postEvent (Rts2Event * event)
 				<< sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			// we don't have target..so let's observe us
-			startTarget ();
+			startTarget (event->getType () != EVENT_SET_TARGET_NOT_CLEAR);
 			nextCommand ();
 			break;
 			// when we finish move, we can observe
