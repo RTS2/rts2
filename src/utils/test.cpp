@@ -109,6 +109,26 @@ int Rts2TestApp::run ()
 		std::cout << " " << (*iter);
 	std::cout << std::endl;
 
+	pa = parseRange ("4,7,11:", 16, endp);
+	for (std::vector <int>::iterator iter = pa.begin (); iter != pa.end (); iter++)
+		std::cout << " " << (*iter);
+	std::cout << std::endl;
+
+	pa = parseRange ("4", 16, endp);
+	for (std::vector <int>::iterator iter = pa.begin (); iter != pa.end (); iter++)
+		std::cout << " " << (*iter);
+	std::cout << std::endl;
+
+	pa = parseRange ("", 16, endp);
+	for (std::vector <int>::iterator iter = pa.begin (); iter != pa.end (); iter++)
+		std::cout << " " << (*iter);
+	std::cout << std::endl;
+
+	pa = parseRange (":", 16, endp);
+	for (std::vector <int>::iterator iter = pa.begin (); iter != pa.end (); iter++)
+		std::cout << " " << (*iter);
+	std::cout << std::endl;
+
 	return 0;
 }
 

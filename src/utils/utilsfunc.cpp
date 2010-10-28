@@ -213,7 +213,12 @@ std::vector <int> parseRange (const char *range_str, int array_size, const char 
 			if (from > 0)
 				from--;
 			if (to == 0 || to > array_size)
-				to = array_size;
+			{
+				if (state == TO)
+					to = array_size;
+				else
+					to = to > array_size ? from : from + 1;
+			}
 			for ( ; from < to; from++)
 				ret.push_back (from);
 			from = to = 0;
@@ -225,12 +230,22 @@ std::vector <int> parseRange (const char *range_str, int array_size, const char 
 		}
 		endp++;
 	}
-	if (state == TO)
+	if (endp == range_str)
+	{
+		for ( ; from < array_size; from++)
+			ret.push_back (from);
+	}
+	else if (state == TO || from == 0 || (state == FROM && from > 0))
 	{
 		if (from > 0)
 			from--;
 		if (to == 0 || to > array_size)
-			to = array_size;
+		{
+			if (state == TO)
+				to = array_size;
+			else
+				to = to > array_size ? from : from + 1;
+		}
 		for ( ; from < to; from++)
 			ret.push_back (from);
 	}

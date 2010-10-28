@@ -830,7 +830,7 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 	if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
 		return -2;
 
-	Rts2CondValue *old_value_cond;
+	Rts2CondValue *old_value_cond = NULL;
 
 	const char *ai = NULL;
 
@@ -848,7 +848,25 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 		}
 		v_name[l - 1] = '\0';
 	}
-	old_value_cond = getCondValue (v_name);
+	// try to search for _ - compatibility with old versiona
+	else
+	{
+		ca = strrchr (v_name, '_');
+		if (ca != NULL)
+		{
+			// see if we can get value
+			*ca = '\0';
+			old_value_cond = getCondValue (v_name);
+			// value not found, assume it is not an array index
+			if (old_value_cond == NULL)
+				*ca = '_';
+			else
+				ai = ca + 1;
+		}
+	}
+
+	if (old_value_cond == NULL)
+		old_value_cond = getCondValue (v_name);
 
 	if (!old_value_cond)
 		return -2;
