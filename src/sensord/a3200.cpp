@@ -56,6 +56,10 @@ class A3200:public Sensor
 		Rts2ValueDoubleMinMax *ax2;
 		Rts2ValueDoubleMinMax *ax3;
 
+		Rts2ValueLong *speed1;
+		Rts2ValueLong *speed2;
+		Rts2ValueLong *speed3;
+
 		Rts2ValueBool *out1;
 		Rts2ValueBool *out2;
 		Rts2ValueBool *out3;
@@ -70,7 +74,7 @@ class A3200:public Sensor
 
 		int moveEnable ();
 		int home ();
-		int moveAxis (AXISINDEX ax, LONG tar);
+		int moveAxis (AXISINDEX ax, LONG tar, DWORD speed);
 		int setIO (AXISINDEX ax, bool state);
 
 };
@@ -149,7 +153,7 @@ int A3200::home ()
 }
 
 
-int A3200::moveAxis (AXISINDEX ax, LONG tar)
+int A3200::moveAxis (AXISINDEX ax, LONG tar, DWORD speed)
 {
 	AERERR_CODE eRc;
 	blockExposure ();
@@ -166,7 +170,7 @@ int A3200::moveAxis (AXISINDEX ax, LONG tar)
 		clearExposure ();
 		return -1;
 	}
-	eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
+	eRc = AerMoveAbsolute (hAerCtrl, ax, tar, speed);
 	if (eRc != AERERR_NOERR)
 	{
 		logErr ("moveAxis MoveAbsolute", eRc);
@@ -205,15 +209,15 @@ int A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == ax1)
 	{
-		return moveAxis (AXISINDEX_1, (long) (new_value->getValueDouble () * AX_SCALE1));
+		return moveAxis (AXISINDEX_1, (long) (new_value->getValueDouble () * AX_SCALE1), speed1->getValueLong ());
 	}
 	if (old_value == ax2)
 	{
-		return moveAxis (AXISINDEX_2, (long) (new_value->getValueDouble () * AX_SCALE2));
+		return moveAxis (AXISINDEX_2, (long) (new_value->getValueDouble () * AX_SCALE2), speed2->getValueLong ());
 	}
 	if (old_value == ax3)
 	{
-		return moveAxis (AXISINDEX_3, (long) (new_value->getValueDouble () * AX_SCALE3));
+		return moveAxis (AXISINDEX_3, (long) (new_value->getValueDouble () * AX_SCALE3), speed3->getValueLong ());
 	}
 	if (old_value == out1)
 	{
@@ -239,8 +243,15 @@ A3200::A3200 (int in_argc, char **in_argv)
 	mAxis = AXISMASK_1 | AXISMASK_2 | AXISMASK_3;
 
 	createValue (ax1, "AX1", "first axis", true, RTS2_VALUE_WRITABLE);
+	createValue (speed1, "SPEED_1", "speed of the first axis", true, RTS2_VALUE_WRITABLE);
 	createValue (ax2, "AX2", "second axis", true, RTS2_VALUE_WRITABLE);
+	createValue (speed2, "SPEED_2", "speed of the second axis", true, RTS2_VALUE_WRITABLE);
 	createValue (ax3, "AX3", "third axis", true, RTS2_VALUE_WRITABLE);
+	createValue (speed3, "SPEED_3", "speed of the third axis", true, RTS2_VALUE_WRITABLE);
+
+	speed1->setValueLong (1000000);
+	speed2->setValueLong (1000000);
+	speed3->setValueLong (1000000);
 
 	createValue (out1, "IO1", "output state of the first axis IO", false, RTS2_VALUE_WRITABLE);
 	createValue (out2, "IO2", "output state of the second axis IO", false, RTS2_VALUE_WRITABLE);
