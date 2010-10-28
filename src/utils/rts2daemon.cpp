@@ -835,24 +835,20 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 	const char *ai = NULL;
 
 	// search for [ - array index
-	const char *ca = strchr (v_name, '[');
+	char *ca = strchr (v_name, '[');
 	if (ca != NULL)
 	{
-		char avn[ca - v_name + 2];
-		strncpy (avn, v_name, ca - v_name);
-		avn[ca - v_name + 1] = '\0';
+		int l = strlen (v_name);
+		*ca = '\0';
 		ai = ca + 1;
-		if (v_name[strlen(v_name) - 1] != ']')
+		if (v_name[l - 1] != ']')
 		{
 			conn->sendCommandEnd (DEVDEM_E_SYSTEM, "missing ] for end of array index");
 			return -1;
 		}
-		old_value_cond = getCondValue (avn);
+		v_name[l - 1] = '\0';
 	}
-	else
-	{
-		old_value_cond = getCondValue (v_name);
-	}
+	old_value_cond = getCondValue (v_name);
 
 	if (!old_value_cond)
 		return -2;
@@ -871,14 +867,22 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 		return -1;
 	}
 
-	Rts2Value *newValue = duplicateValue (old_value);
+	// array needs to be allocated with values, as it will then only modify some indices in a new array
+	Rts2Value *newValue = duplicateValue (old_value, (old_value->getFlags () & RTS2_VALUE_ARRAY));
 
 	if (newValue == NULL)
 		return -2;
 
 	if (ai)
 	{
-		ret = ((rts2core::ValueArray *)newValue)->setValueByIndex (ai, conn);
+		const char *endp;
+		std::vector <int> indices = parseRange (ai, ((rts2core::ValueArray *)old_value)->size (), endp);
+		if (*endp)
+		{
+			conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, endp);
+			return -1;
+		}
+		ret = ((rts2core::ValueArray *)newValue)->setValues (indices, conn);
 	}
 	else
 	{

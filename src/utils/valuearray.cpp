@@ -50,9 +50,16 @@ int StringArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int StringArray::setValueByIndex (const char *index, Rts2Conn *conn)
+int StringArray::setValues (std::vector <int> &index, Rts2Conn *conn)
 {
-
+	char *val;
+	int ret = conn->paramNextString (&val);
+	if (ret || !conn->paramEnd ())
+		return -2;
+	for (std::vector <int>::iterator iter = index.begin (); iter != index.end (); iter++)
+		value[(*iter)] = val;
+	changed ();
+	return 0;
 }
 
 int StringArray::setValueCharArr (const char *_value)
@@ -113,9 +120,16 @@ int DoubleArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int DoubleArray::setValueByIndex (const char *index, Rts2Conn *conn)
+int DoubleArray::setValues (std::vector <int> &index, Rts2Conn *conn)
 {
-
+	double val;
+	int ret = conn->paramNextDouble (&val);
+	if (ret || !conn->paramEnd ())
+		return -2;
+	for (std::vector <int>::iterator iter = index.begin (); iter != index.end (); iter++)
+		value[(*iter)] = val;
+	changed ();
+	return 0;
 }
 
 int DoubleArray::setValueCharArr (const char *_value)
@@ -208,9 +222,16 @@ int IntegerArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int IntegerArray::setValueByIndex (const char *index, Rts2Conn *conn)
+int IntegerArray::setValues (std::vector <int> &index, Rts2Conn *conn)
 {
-
+	int val;
+	int ret = conn->paramNextInteger (&val);
+	if (ret || !conn->paramEnd ())
+		return -2;
+	for (std::vector <int>::iterator iter = index.begin (); iter != index.end (); iter++)
+		value[(*iter)] = val;
+	changed ();
+	return 0;
 }
 
 int IntegerArray::setValueCharArr (const char *_value)
