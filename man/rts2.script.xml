@@ -779,6 +779,15 @@ G W0 filter
       </varlistentry>
     </variablelist>
   </refsect1>
+    <refsect2>
+      <title>Array indexing</title>
+      <para>
+	Arrays values can be indexed simirarly to Python. Numbers, : and , are
+	allowed for array indexing. Array index must stars with [ and ends with
+	]. Array indexes starts from 1 - e.g. first member has index 1, last
+        has index equal to array size. Please see example section for some exampls.
+      </para>
+    </refsect2>
   <refsect1>
     <title>EXAMPLES</title>
 
@@ -841,6 +850,12 @@ done
     <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
 
     <para>for 10 { E 10 T0.OFFS+=(0,0.01) }</para>
+
+    <para>
+      Set full boolean array to false.
+    </para>
+
+    <para>for 10 { E 10 S1.bools[1:2,2:]=0 }</para>
 
     <para>
       This is a simple example of the flat fielding script. It changes camera
