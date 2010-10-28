@@ -252,6 +252,19 @@ std::vector <int> parseRange (const char *range_str, int array_size, const char 
 	return ret;
 }
 
+int charToBool (const char *in_value, bool &ret)
+{
+	if (!strcasecmp (in_value, "ON") || !strcasecmp (in_value, "TRUE")
+		|| !strcasecmp (in_value, "YES") || !strcmp (in_value, "1"))
+		ret = true;
+	else if (!strcasecmp (in_value, "OFF") || !strcasecmp (in_value, "FALSE")
+		|| !strcasecmp (in_value, "NO") || !strcmp (in_value, "0"))
+		ret = false;
+	else
+		return -1;
+	return 0;
+}
+
 #ifndef HAVE_ISINF
 int isinf(double x)
 {

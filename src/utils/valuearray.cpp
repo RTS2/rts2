@@ -330,6 +330,57 @@ const char * BoolArray::getDisplayValue ()
 	return _os.c_str ();
 }
 
+int BoolArray::setValue (Rts2Conn * connection)
+{
+	value.clear ();
+
+	while (!(connection->paramEnd ()))
+	{
+		char *nextVal;
+		int ret = connection->paramNextString (&nextVal);
+		if (ret)
+			return -2;
+		bool b;
+		ret = charToBool (nextVal, b);
+		if (ret)
+			return -2;
+		value.push_back (b);
+	}
+	changed ();
+	return 0;
+}
+
+int BoolArray::setValues (std::vector <int> &index, Rts2Conn *conn)
+{
+	char *val;
+	int ret = conn->paramNextString (&val);
+	if (ret || !conn->paramEnd ())
+		return -2;
+	bool b;
+	ret = charToBool (val, b);
+	if (ret)
+		return -2;
+	for (std::vector <int>::iterator iter = index.begin (); iter != index.end (); iter++)
+		value[(*iter)] = b;
+	changed ();
+	return 0;
+}
+
+int BoolArray::setValueCharArr (const char *_value)
+{
+	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
+	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
+	{
+		bool b;
+		int ret = charToBool (_value, b);
+		if (ret)
+			return ret;
+		value.push_back (b);
+	}
+	changed ();
+	return 0;
+}
+
 void BoolArray::setFromValue (Rts2Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_BOOL))

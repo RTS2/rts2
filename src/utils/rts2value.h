@@ -632,8 +632,7 @@ class Rts2ValueBool:public Rts2ValueInteger
 	// value - 2 means unknow, 0 is false, 1 is true
 	public:
 		Rts2ValueBool (std::string in_val_name);
-		Rts2ValueBool (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 

@@ -464,14 +464,11 @@ int Rts2ValueBool::setValue (Rts2Conn * connection)
 
 int Rts2ValueBool::setValueCharArr (const char *in_value)
 {
-	if (!strcasecmp (in_value, "ON") || !strcasecmp (in_value, "TRUE")
-		|| !strcasecmp (in_value, "YES") || !strcmp (in_value, "1"))
-		setValueBool (true);
-	else if (!strcasecmp (in_value, "OFF") || !strcasecmp (in_value, "FALSE")
-		|| !strcasecmp (in_value, "NO") || !strcmp (in_value, "0"))
-		setValueBool (false);
-	else
-		return -1;
+	bool b;
+	int ret = charToBool (in_value, b);
+	if (ret)
+		return ret;
+	setValueBool (b);
 	return 0;
 }
 

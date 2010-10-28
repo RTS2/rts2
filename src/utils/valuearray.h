@@ -243,6 +243,9 @@ class BoolArray: public IntegerArray
 			value.push_back (val);
 			changed ();
 		}
+		virtual int setValue (Rts2Conn * connection);
+		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
+		virtual int setValueCharArr (const char *_value);
 
 		virtual void setFromValue (Rts2Value *newValue);
 		virtual bool isEqual (Rts2Value *other_val);

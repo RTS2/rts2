@@ -112,6 +112,8 @@ std::vector<char> Str2CharVector (std::string text);
  */
 std::vector <int> parseRange (const char *range_str, int array_size, const char *& endp);
 
+int charToBool (const char *in_value, bool &ret);
+
 /**
  * Fill value to const char**.
  *
