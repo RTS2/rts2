@@ -196,7 +196,7 @@ int ThorLaser::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("reset"))
 	{
-		//resetValues ();
+		resetValues ();
 		return 0;
 	}
 	return Sensor::commandAuthorized (conn);
