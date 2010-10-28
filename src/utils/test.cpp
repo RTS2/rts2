@@ -17,10 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/*! @file Test file
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
 #include <iostream>
 #include <assert.h>
 #include <errno.h>
@@ -32,12 +28,15 @@
 #include "rts2config.h"
 #include "expander.h"
 
+/**
+ * Test application.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2TestApp:public Rts2App
 {
 	public:
-		Rts2TestApp (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)
-		{
-		}
+		Rts2TestApp (int in_argc, char **in_argv):Rts2App (in_argc, in_argv) {}
 		virtual int run ();
 };
 
@@ -102,6 +101,13 @@ int Rts2TestApp::run ()
 	delete exp;
 
 	delete conf;
+
+	// test array counting
+	const char *endp;
+	std::vector <int> pa = parseRange (":4,7:9,11:", 16, endp);
+	for (std::vector <int>::iterator iter = pa.begin (); iter != pa.end (); iter++)
+		std::cout << " " << (*iter);
+	std::cout << std::endl;
 
 	return 0;
 }

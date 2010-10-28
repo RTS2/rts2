@@ -95,6 +95,22 @@ std::vector<std::string> SplitStr (const std::string& text, const std::string& d
  */
 std::vector<char> Str2CharVector (std::string text);
 
+/**
+ * Parse range range string which uses : and , to specify range. Syntax is similar
+ * to Python slices. Example of valid ranges:
+ *
+ *   - 1:10
+ *   - 1:
+ *   - 1:2,4:16
+ *
+ * Index of first member is assumed to be 1. The function returns C-style
+ * indexes, where index of the first member is 0.
+ *
+ * @param range_str   string to parse
+ * @param array_size  size of resulting array
+ * @return vector of integer values with array indices
+ */
+std::vector <int> parseRange (const char *range_str, int array_size, const char *& endp);
 
 /**
  * Fill value to const char**.

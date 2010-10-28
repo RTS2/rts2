@@ -173,6 +173,70 @@ std::vector<char> Str2CharVector (std::string text)
 	return res;
 }
 
+std::vector <int> parseRange (const char *range_str, int array_size, const char *& endp)
+{
+	int from = 0;
+	int to = 0;
+	enum {FROM, TO, ARRAY_LEFT} state = FROM;
+	std::vector <int> ret;
+	endp = range_str;
+	while (*endp)
+	{
+		if (isdigit (*endp))
+		{
+			switch (state)
+			{
+				case ARRAY_LEFT:
+					state = FROM;
+				case FROM:
+					from = from * 10 + (*endp) - '0';
+					break;
+				case TO:
+					to = to * 10 + (*endp) - '0';
+					break;
+			}
+		}
+		else if (*endp == ':')
+		{
+			switch (state)
+			{
+				case FROM:
+				case ARRAY_LEFT:
+					state = TO;
+					break;
+				case TO:
+					return ret;
+			}
+		}
+		else if (*endp == ',')
+		{
+			if (from > 0)
+				from--;
+			if (to == 0 || to > array_size)
+				to = array_size;
+			for ( ; from < to; from++)
+				ret.push_back (from);
+			from = to = 0;
+			state = ARRAY_LEFT;
+		}
+		else
+		{
+			return ret;
+		}
+		endp++;
+	}
+	if (state == TO)
+	{
+		if (from > 0)
+			from--;
+		if (to == 0 || to > array_size)
+			to = array_size;
+		for ( ; from < to; from++)
+			ret.push_back (from);
+	}
+	return ret;
+}
+
 #ifndef HAVE_ISINF
 int isinf(double x)
 {
