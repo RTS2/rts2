@@ -430,23 +430,26 @@ bool ValueBoxRectangle::setCursor ()
 
 ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 3, 1, 1, 300, 1)
 {
-	switch (_val->getValueBaseType ())
-	{
-		case RTS2_VALUE_BOOL:
-			break;
-	}
 	int w = 0;
 	for (size_t i = 0; i < _val->size (); i++)
 	{
 		switch (_val->getValueBaseType ())
 		{
 			case RTS2_VALUE_DOUBLE:
-				edt.push_back (new NWindowEditDigits (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
-				w += 10;
+				{
+					NWindowEditDigits *digit = new NWindowEditDigits (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+					digit->setValueDouble ((*((rts2core::DoubleArray *) _val))[i]);
+					edt.push_back (digit);
+					w += 10;
+				}
 				break;
 			case RTS2_VALUE_INTEGER:
-				edt.push_back (new NWindowEditIntegers (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false));
-				w += 10;
+				{
+					NWindowEditIntegers *inte = new NWindowEditIntegers (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
+					inte->setValueInteger ((*((rts2core::IntegerArray *) _val))[i]);
+					edt.push_back (inte);
+					w += 10;
+				}
 				break;
 			case RTS2_VALUE_BOOL:
 				{
@@ -511,7 +514,8 @@ void ValueBoxArray::draw ()
 	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 
-	edt[edtSelected]->setReverse ();
+	if (edt.size () > (size_t) edtSelected)
+		edt[edtSelected]->setReverse ();
 
 	// draws entry boxes..
 	for (size_t i = 0; i < edt.size (); i++)
