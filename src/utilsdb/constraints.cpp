@@ -101,7 +101,7 @@ void Constraint::parseInterval (const char *interval)
 
 	char *cp = strchr (sint, ':');
 	if (cp == NULL)
-		throw rts2core::Error ((std::string ("cannot find : in interval ") + interval).c_str ());
+		throw rts2core::Error ((std::string ("the interval must contain a single : - cannot find : in interval ") + interval).c_str ());
 
 	char *endp;
 	*cp = '\0';

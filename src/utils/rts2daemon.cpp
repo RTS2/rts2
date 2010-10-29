@@ -211,12 +211,19 @@ int Rts2Daemon::lockFile ()
 int Rts2Daemon::init ()
 {
 	int ret;
-	ret = Rts2Block::init ();
-	if (ret)
+	try
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Daemon::init Rts2block returns " <<
-			ret << sendLog;
-		return ret;
+		ret = Rts2Block::init ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Rts2Daemon::init Rts2block returns " << ret << sendLog;
+			return ret;
+		}
+	}
+	catch (rts2core::Error &er)
+	{
+		std::cerr << er << std::endl;
+		return -1;
 	}
 
 	listen_sock = socket (PF_INET, SOCK_STREAM, 0);

@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "error.h"
 #include "rts2app.h"
 
 #include "config.h"
@@ -170,7 +171,15 @@ int Rts2App::init ()
 	signal (SIGINT, killSignal);
 	signal (SIGTERM, killSignal);
 
-	return initOptions ();
+	try
+	{
+		return initOptions ();
+	}
+	catch (rts2core::Error &er)
+	{
+		std::cerr << er << std::endl;
+		return -1;
+	}
 }
 
 void Rts2App::helpOptions ()
