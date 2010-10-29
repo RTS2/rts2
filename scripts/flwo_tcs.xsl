@@ -14,7 +14,7 @@ if ( -e $rts2abort ) then
 	rm -f $lasttarget
 	exit
 endif
-set ms=`$RTS2/bin/rts2-xmlrpcclient $XMLRPCCON --master-state on`
+set ms=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --master-state on`
 if ( $? != 0 || $ms == 0 ) then
 	rm -f $lasttarget
 	set continue=0
