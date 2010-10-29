@@ -742,11 +742,11 @@ int EdtSao::writePattern ()
 	// write paraller commands
 	writeCommand (true, addr++, ZERO);
 
-	writeSkip (true, getUsedY (), addr);
-
 	for (int i = 0; i < jiggleLines->getValueInteger (); i++)
 		writeCommand (true, addr++, JIGGLE);
-	
+
+	writeSkip (true, getUsedY (), addr);
+
 	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
 	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
 
