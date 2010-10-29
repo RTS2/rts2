@@ -440,7 +440,7 @@ ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x
 					NWindowEditDigits *digit = new NWindowEditDigits (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 					digit->setValueDouble ((*((rts2core::DoubleArray *) _val))[i]);
 					edt.push_back (digit);
-					w += 10;
+					w += 11;
 				}
 				break;
 			case RTS2_VALUE_INTEGER:
@@ -448,7 +448,7 @@ ValueBoxArray::ValueBoxArray (NWindow * top, rts2core::ValueArray * _val, int _x
 					NWindowEditIntegers *inte = new NWindowEditIntegers (top->getX () + _x + 1 + w, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 					inte->setValueInteger ((*((rts2core::IntegerArray *) _val))[i]);
 					edt.push_back (inte);
-					w += 10;
+					w += 11;
 				}
 				break;
 			case RTS2_VALUE_BOOL:
@@ -536,10 +536,10 @@ void ValueBoxArray::sendValue (Rts2Conn * connection)
 		switch (getValue ()->getValueBaseType ())
 		{
 			case RTS2_VALUE_DOUBLE:
-				os << ((NWindowEditIntegers *)edt[i])->getValueInteger ();
+				os << ((NWindowEditDigits *)edt[i])->getValueDouble ();
 				break;
 			case RTS2_VALUE_INTEGER:
-				os << ((NWindowEditDigits *)edt[i])->getValueDouble ();
+				os << ((NWindowEditIntegers *)edt[i])->getValueInteger ();
 				break;
 			case RTS2_VALUE_BOOL:
 				os << ((NWindowEditBool *)edt[i])->getValueBool ();
