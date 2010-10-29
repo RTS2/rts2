@@ -190,9 +190,14 @@ TargetApp::~TargetApp ()
 
 void TargetApp::usage ()
 {
-	std::cout << "  " << getAppName () << " -n +3600 192         .. set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
-		<< "  " << getAppName () << " --tempdisable 3600 192 .. disable target for 1 hour after it is executed" << std::endl
-		<< "  " << getAppName () << " --tempdisable 2d3h 196 .. disable target for 2 days and 3 hours after it is executed" << std::endl;
+	std::cout << "Set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
+		<< "  " << getAppName () << " -n +3600 192         .. " << std::endl
+		<< "Disable target for 1 hour after it is executed:" << std::endl
+		<< "  " << getAppName () << " --tempdisable 3600 192 .. " << std::endl
+		<< "Disable target for 2 days and 3 hours after it is executed:" << std::endl
+		<< "  " << getAppName () << " --tempdisable 2d3h 196" << std::endl
+		<< "Set M31 airmass limit to < 1.5 and lunarDistance to > 40:" << std::endl
+		<< "  " << getAppName () << " --lunarDistance 40: --airmass :1.5 M31" << std::endl; 
 }
 
 int TargetApp::processOption (int in_opt)

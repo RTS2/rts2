@@ -178,6 +178,8 @@ int Rts2App::init ()
 	catch (rts2core::Error &er)
 	{
 		std::cerr << er << std::endl;
+		std::cerr << std::endl << "Usage:" << std::endl;
+		usage ();
 		return -1;
 	}
 }
