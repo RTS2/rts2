@@ -21,6 +21,7 @@
 #include "edtsao/interface.h"
 
 #include "../utils/connfork.h"
+#include "../utils/valuearray.h"
 
 #define OPT_NOTIMEOUT  OPT_LOCAL + 3
 
@@ -219,6 +220,9 @@ class EdtSao:public Camera
 		Rts2ValueInteger *parallelClockSpeed;
 		// number of lines to skip in serial mode
 		Rts2ValueInteger *skipLines;
+		
+		// number of jigle lines
+		Rts2ValueInteger *jiggleLines;
 
 		Rts2ValueBool *dofcl;
 		Rts2ValueInteger *fclrNum;
@@ -251,7 +255,7 @@ class EdtSao:public Camera
 		 */
 		int writeSignalFile (const char *filename);
 
-		Rts2ValueBool **channels;
+		rts2core::BoolArray *channels;
 		int totalChannels;
 
 		// perform camera-specific functions
@@ -329,7 +333,7 @@ class EdtSao:public Camera
 
 		ValueEdt *dd;
 
-		Rts2ValueInteger **ADoffsets;
+		rts2core::IntegerArray *ADoffsets;
 
 		int setEdtValue (ValueEdt * old_value, float new_value);
 		int setEdtValue (ValueEdt * old_value, Rts2Value * new_value);
@@ -364,6 +368,7 @@ class EdtSao:public Camera
 		Rts2ValueBool *grayScale;
 
 		int lastSkipLines;
+		int lastJiggleLines;
 		int lastX;
 		int lastY;
 		int lastW;
@@ -487,7 +492,7 @@ int EdtSao::setADOffset (int ch, int offset)
 
 	logStream (MESSAGE_INFO) << "setting A/D offset on channel " << ch << " to " << offset << ": " << std::hex << o << sendLog;
 
-	ADoffsets[ch]->setValueInteger (offset);
+	//ADoffsets->setValueInteger (ch, offset);
 
 	return 0;
 }
@@ -602,7 +607,7 @@ void EdtSao::beforeRun ()
 
 	for (int i = 0; i < totalChannels; i++)
 	{
-		setADOffset (i, ADoffsets[i]->getValueInteger ());
+		setADOffset (i, (*ADoffsets)[i]);
 	}
 
 	int ret;
@@ -711,6 +716,7 @@ int EdtSao::writePattern ()
 	// write parallel commands
 	int addr = 0;
 	if (skipLines->getValueInteger () == lastSkipLines
+		&& jiggleLines->getValueInteger () == lastJiggleLines
 	  	&& chipUsedReadout->getXInt () == lastX
 		&& chipUsedReadout->getYInt () == lastY
 		&& chipUsedReadout->getWidthInt () == lastW
@@ -720,15 +726,27 @@ int EdtSao::writePattern ()
 	}
 
 	lastSkipLines = skipLines->getValueInteger ();
+	lastJiggleLines = jiggleLines->getValueInteger ();
 	lastX = chipUsedReadout->getXInt ();
 	lastY = chipUsedReadout->getYInt ();
 	lastW = chipUsedReadout->getWidthInt ();
 	lastH = chipUsedReadout->getHeightInt ();
 
-	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
+	logStream (MESSAGE_DEBUG) << "starting to write pattern with hskip=" << skipLines->getValueInteger ()
+		<< " jiggle=" << jiggleLines->getValueInteger ()
+		<< " getUsedX=" << getUsedX () 
+		<< " getUsedY=" << getUsedY ()
+		<< " getUsedHeight=" << getUsedHeight ()
+		<< " getUsedWidth=" << getUsedWidth ()
+		<< sendLog;
+	// write paraller commands
 	writeCommand (true, addr++, ZERO);
-	
+
 	writeSkip (true, getUsedY (), addr);
+
+	for (int i = 0; i < jiggleLines->getValueInteger (); i++)
+		writeCommand (true, addr++, JIGGLE);
+	
 	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
 	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
 
@@ -801,8 +819,8 @@ int EdtSao::startExposure ()
 	// write channels and their order..
 	for (int i = 0; i < totalChannels; i++)
 	{
-		setChannel (i, channels[i]->getValueBool (), i + 1 == totalChannels);
-		if (channels[i]->getValueBool ())
+		setChannel (i, (*channels)[i], i + 1 == totalChannels);
+		if ((*channels)[i])
 			dataChannels->inc ();
 	}
 
@@ -934,7 +952,7 @@ int EdtSao::readoutStart ()
 	 * make about 1.5 * readout time + 2 sec
 	 */
 	if (!set_timeout)
-		timeout_val = (chipUsedReadout->getWidthInt ()) * height / 1000 * timeout_val * 5 / 2000 + 2000;
+		timeout_val = (chipUsedReadout->getWidthInt ()) * height / 1000 * timeout_val * 5 / 2000 + 2000 + jiggleLines->getValueInteger () / 10;
 	pdv_set_timeout (pd, timeout_val);
 	logStream (MESSAGE_DEBUG) << "timeout_val: " << timeout_val << " millisecs" << sendLog;
 
@@ -1032,7 +1050,7 @@ int EdtSao::doReadout ()
 
 	for (i = 0, j = 0; i < totalChannels; i++)
 	{
-		if (channels[i]->getValueBool ())
+		if ((*channels)[i])
 		{
 			ret = sendChannel (i, bufs[0], j, dataChannels->getValueInteger ());
 			if (ret < 0)
@@ -1106,6 +1124,9 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true, RTS2_VALUE_WRITABLE);
 	skipLines->setValueInteger (0);
 
+	createValue (jiggleLines, "jiggle", "number of jiggle lines", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	jiggleLines->setValueInteger (0);
+
 	createValue (dofcl, "DOFCLR", "[bool] if fast clear was done", true, RTS2_VALUE_WRITABLE);
 	createValue (fclrNum, "FCLR_NUM", "number of fast clears done before exposure", true, RTS2_VALUE_WRITABLE);
 	fclrNum->setValueInteger (5);
@@ -1167,7 +1188,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
-	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = lastPartialReadout = -1;
+	lastSkipLines = lastJiggleLines = lastX = lastY = lastW = lastH = lastSplitMode = lastPartialReadout = -1;
 }
 
 EdtSao::~EdtSao (void)
@@ -1287,10 +1308,18 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return writeSignalFile (new_value->getValue ()) == 0 ? 0 : -2;
 	}
 
-	for (int i = 0; i < totalChannels; i++)
+	if (old_value == ADoffsets)
 	{
-		if (old_value == ADoffsets[i])
-			return (setADOffset (i, new_value->getValueInteger ())) == 0 ? 0 : -2;
+		for (int i = 0; i < totalChannels; i++)
+		{
+			if ((*ADoffsets)[i] != (*((rts2core::IntegerArray *) new_value))[i])
+			{
+				int ret = setADOffset (i, (*((rts2core::IntegerArray *) new_value))[i]);
+				if (ret)
+					return -2;
+			}
+		}
+		return 0;
 	}
 	return Camera::setValue (old_value, new_value);
 }
@@ -1325,27 +1354,16 @@ int EdtSao::init ()
 			break;
 	} */
 
-	channels = new Rts2ValueBool*[totalChannels];
-	ADoffsets = new Rts2ValueInteger*[totalChannels];
+	createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
-	char *chname = new char[8];
-	char *daoname = new char[7];
+	dataChannels->setValueInteger (totalChannels);
 
 	for (int i = 0; i < totalChannels; i++)
 	{
-		sprintf (chname, "CHAN_%02d", i + 1);
-		createValue (channels[i], chname, "channel on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
-		channels[i]->setValueBool (true);
-
-		sprintf (daoname, "ADO_%02d", i + 1);
-		createValue (ADoffsets[i], daoname, "[ADU] A/D offset", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-		ADoffsets[i]->setValueInteger (0x100);
+		channels->addValue (true);
+		ADoffsets->addValue (0);
 	}
-
-	delete[] daoname;
-	delete[] chname;
-
-	dataChannels->setValueInteger (totalChannels);
 
 	return 0;
 }
@@ -1365,10 +1383,13 @@ int EdtSao::scriptEnds ()
 	setEDTGain (0);
 	sendValueAll (edtGain);
 
+	jiggleLines->setValueInteger (0);
+	sendValueAll (jiggleLines);
+
 	for (int i = 0; i < totalChannels; i++)
 	{
-		channels[i]->setValueBool (true);
-		sendValueAll (channels[i]);
+		channels->setValueBool (i, true);
+		sendValueAll (channels);
 	}
 
 	parallelClockSpeed->setValueInteger (6);
