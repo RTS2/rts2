@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-05-17</date>">
+  <!ENTITY dhdate      "<date>2010-10-28</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.1</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -55,6 +55,11 @@
 	<contrib>Changes to camd logic to support Andor CCDs, and to support fast-readout cameras.</contrib>
       </author>
       <author>
+        <firstname>Michal</firstname>
+	<surname>Prouza</surname>
+	<contrib>Help with manual pages, and a lot from LSST development.</contrib>
+      </author>
+      <author>
         <surname>and many othersa</surname>
 	<contrib>ideas, bug-fixing, small changes.</contrib>
       </author>
@@ -62,6 +67,9 @@
     <copyright>
       <year>2006</year>
       <year>2007</year>
+      <year>2008</year>
+      <year>2009</year>
+      <year>2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -327,6 +335,311 @@
 
   </refsect1>
   <refsect1>
+    <title>IMAGE PATH EXPRESSION</title>
+    <para>
+      Image path expression is processed before it is used. This sectio0n
+      describes rules how image name can be formed. 
+    </para>
+
+    <para>
+      The path are formed from C printf-like expression. The important
+      characters are % and @, which allows substitution of path values.
+    </para>
+
+    <para>
+      You can try various substitution patterns using
+      <citerefentry><refentrytitle>rts2-image</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      tool.
+    </para>
+
+    <refsect2>
+      <title>Example of the image path expression</title>
+      <para>
+	The next example works with the FITS file taken (based on RTS2 CTIME and
+	USEC) on 2006-10-17 at 18:22:03.447s, with R filter (RTS2 FILTER
+	keyword). Here we list few path expresions together with expected
+	values.
+      </para>
+      <variablelist>
+        <varlistentry>
+	  <term>
+	    <option>@DATE-OBS/%F/%04i/%f</option>
+	  </term>
+  	  <listitem>
+	    <para>
+	      2006-10-17T18:22:03.447/R/0001/20061017182203-0447.fits, if DATE-OBS keyword is filled and image ID is 1.
+	    </para>
+	    <para>
+	      @DATE-OBS/R/0001/20061017182203-0447.fits, if DATE-OBS keyword cannot be found.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>%N%2F</option>
+	  </term>
+  	  <listitem>
+	    <para>
+	      20061017 R
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <para>
+      Substrings begining with @ are escaped to keyword value with name equal
+      to value characters and number only string which follows. If this value
+      is not found in header, string @[name] will be put to path, where [name]
+      is string after @.
+    </para>
+    <para>
+      For example, string @DATE-OBS will be expanded to keyword value of
+      DATE-OBS keyword. If DATE-OBS keyword cannot be found, it will be copied,
+      e.g. remain @DATE-OBS.
+    </para>
+    <para> 
+      Substrings begining with % are expanded to various image-related values.
+      They list is provided bellow.
+    </para>
+    <refsect2>
+      <title>Formatting specifiers</title>
+      <para>
+	Users can specify minimum length of the expanded string. If length is
+	prefixed with 0, the expand string will be right padded with 0 to
+	specified length.
+      </para>
+    </refsect2>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>a</option>
+        </term>
+        <listitem>
+          <para>Exposure start day in the year</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>b</option>
+        </term>
+        <listitem>
+          <para>Image base path, ussually /images/[epoch].</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>c</option>
+        </term>
+        <listitem>
+          <para>Camera name.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>D</option>
+        </term>
+        <listitem>
+          <para>Exposure start night day of the month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>d</option>
+        </term>
+        <listitem>
+          <para>Exposure start day of the month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>E</option>
+        </term>
+        <listitem>
+          <para>CCD exposure in seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>e</option>
+        </term>
+        <listitem>
+          <para>Epoch of CCD observation.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>F</option>
+        </term>
+        <listitem>
+          <para>Filter which was used for exposure name.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>f</option>
+        </term>
+        <listitem>
+          <para>Standard filename (same as %y%m%d%H%M%S-%s-%p.fits).</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>i</option>
+        </term>
+        <listitem>
+          <para>Image ID. Each image have number, which increase from 1 during observation.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>L</option>
+        </term>
+        <listitem>
+          <para>Switch to print next dates in local time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>M</option>
+        </term>
+        <listitem>
+          <para>Exposure start Minute - either local or UT time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>m</option>
+        </term>
+        <listitem>
+          <para>Exposure start month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>N</option>
+	</term>
+	<listitem>
+	  <para>Night date -format as YYYYMMDD, e.g. when it is 2009-01-05 01:30 UT, %N is expanded to 20090430.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>n</option>
+        </term>
+        <listitem>
+          <para>Exposure number.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>O</option>
+        </term>
+        <listitem>
+          <para>Exposure start night month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>o</option>
+        </term>
+        <listitem>
+          <para>Observation ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>p</option>
+        </term>
+        <listitem>
+          <para>
+	    Processing state of image. See list of procesing state strings in
+	    rts2 (1), in "IMAGE PROCESSING STATES" section.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>S</option>
+        </term>
+        <listitem>
+          <para>Exposure start seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>s</option>
+        </term>
+        <listitem>
+          <para>Exposure start miliseconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>T</option>
+        </term>
+        <listitem>
+          <para>Executor (selected) target ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>t</option>
+        </term>
+        <listitem>
+          <para>Target ID.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>U</option>
+        </term>
+        <listitem>
+          <para>Switch all next printed dates to UT time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>Y</option>
+        </term>
+        <listitem>
+          <para>Four digits night year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>y</option>
+        </term>
+        <listitem>
+          <para>Four digits year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>X</option>
+        </term>
+        <listitem>
+          <para>Two digits night year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>x</option>
+        </term>
+        <listitem>
+          <para>Two digits year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>Z</option>
+        </term>
+        <listitem>
+          <para>Exposure time zone.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>TARGET SCHEDULING</title>
     <para>
       RTS2 enables two basic modes of operation - dispatch scheduling and
@@ -459,6 +772,15 @@
           </citerefentry>
           <citerefentry>
             <refentrytitle>rts2-camd-andor</refentrytitle>
+	    <manvolnum>7</manvolnum>
+          </citerefentry>
+	</para>
+      </refsect2>
+      <refsect2>
+        <title>Domes</title>
+	<para>
+  	  <citerefentry>
+            <refentrytitle>rts2-dome</refentrytitle>
 	    <manvolnum>7</manvolnum>
           </citerefentry>
 	</para>
