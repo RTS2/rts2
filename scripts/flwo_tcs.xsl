@@ -5,6 +5,7 @@
 <xsl:template match='/'>
 @ imgid = 1
 set continue=1
+unset imgdir
 <xsl:apply-templates select='*'/>
 </xsl:template>
 
