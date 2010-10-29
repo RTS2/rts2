@@ -186,8 +186,6 @@ class EdtSao:public Camera
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual int scriptEnds ();
-
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -952,7 +950,7 @@ int EdtSao::readoutStart ()
 	 * make about 1.5 * readout time + 2 sec
 	 */
 	if (!set_timeout)
-		timeout_val = (chipUsedReadout->getWidthInt ()) * height / 1000 * timeout_val * 5 / 2000 + 2000 + jiggleLines->getValueInteger () / 10;
+		timeout_val = (chipUsedReadout->getWidthInt ()) * height / 1000 * timeout_val * 5 / 2000 + 2000 + jiggleLines->getValueInteger () * 10;
 	pdv_set_timeout (pd, timeout_val);
 	logStream (MESSAGE_DEBUG) << "timeout_val: " << timeout_val << " millisecs" << sendLog;
 
@@ -1375,34 +1373,6 @@ int EdtSao::initValues ()
 	addConstValue ("DEVNT", "device no timeout", notimeout);
 	addConstValue ("SDELAY", "device serial delay", sdelay);
 	return Camera::initValues ();
-}
-
-int EdtSao::scriptEnds ()
-{
-	edtGain->setValueInteger (0);
-	setEDTGain (0);
-	sendValueAll (edtGain);
-
-	jiggleLines->setValueInteger (0);
-	sendValueAll (jiggleLines);
-
-	for (int i = 0; i < totalChannels; i++)
-	{
-		channels->setValueBool (i, true);
-		sendValueAll (channels);
-	}
-
-	parallelClockSpeed->setValueInteger (6);
-	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
-	sendValueAll (parallelClockSpeed);
-
-	dofcl->setValueBool (true);
-	sendValueAll (dofcl);
-
-	fclrNum->setValueInteger (5);
-	sendValueAll (fclrNum);
-
-	return Camera::scriptEnds ();
 }
 
 int main (int argc, char **argv)
