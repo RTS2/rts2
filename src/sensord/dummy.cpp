@@ -42,8 +42,9 @@ class Dummy:public Sensor
 			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
 			createValue (statTest, "test_stat", "test stat value", true);
 
-			createValue (statContent1, "test_content1", "test content 1", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
+			createValue (statContent1, "test_content1", "test content 1", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0) | RTS2_VALUE_WRITABLE);
 			createValue (statContent2, "test_content2", "test content 2", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
+			createValue (statContent3, "test_content3", "test content 3", true, RTS2_VALUE_WRITABLE);
 			createValue (boolArray, "bools", "tests of boolean array", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 			boolArray->addValue (false);
 			boolArray->addValue (true);
@@ -148,6 +149,7 @@ class Dummy:public Sensor
 
 				statContent1->addValue (aval);
 				statContent2->addValue (aval / 2.0);
+				statContent3->addValue ((int) aval * 2);
 
 				statTest5->addValue (aval, 5);
 				statTest5->calculate ();
@@ -175,6 +177,7 @@ class Dummy:public Sensor
 		Rts2ValueDoubleStat *statTest;
 		rts2core::DoubleArray *statContent1;
 		rts2core::DoubleArray *statContent2;
+		rts2core::IntegerArray *statContent3;
 		rts2core::BoolArray *boolArray;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
