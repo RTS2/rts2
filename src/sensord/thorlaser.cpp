@@ -113,7 +113,7 @@ int ThorLaser::init ()
 		return ret;
 	
 	laserConn->flushPortIO ();
-	laserConn->setDebug (true);
+	laserConn->setDebug (false);
 
 	return 0;
 }
