@@ -372,7 +372,7 @@ int BoolArray::setValueCharArr (const char *_value)
 	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
 	{
 		bool b;
-		int ret = charToBool (_value, b);
+		int ret = charToBool ((*iter).c_str (), b);
 		if (ret)
 			return ret;
 		value.push_back (b);
