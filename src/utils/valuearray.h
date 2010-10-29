@@ -161,6 +161,8 @@ class DoubleArray: public ValueArray
 
 		const std::vector <double> & getValueVector () { return value; }
 
+		double operator[] (int i) { return value[i]; }
+
 	private:
 		std::vector <double> value;
 		std::string _os;
