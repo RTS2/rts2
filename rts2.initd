@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
+# (C) 2010 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+
 ### BEGIN INIT INFO
 # Provides:        rts2
 # Required-Start:  edt $network $remote_fs $syslog
@@ -11,7 +14,46 @@
 
 ulimit -c unlimited
 
-. /lib/lsb/init-functions
+#
+# Determine which kind of configuration we're using
+#
+system=unknown
+if [ -f /etc/debian_version ]; then
+	system=debian
+# add redhat support when it will be needed
+#elif [ -f /etc/redhat-release ]; then
+#	system=redhat
+elif [ -f /etc/slackware-version ]; then
+	system=slackware
+else
+	echo "$0: Unknown system, please port and contact kubanek@fzu.cz" 1>&2
+	exit 1
+fi
+
+# initialize based on system detecttion
+case $system in
+	debian)
+		. /lib/lsb/init-functions
+		;;
+	redhat)
+		. $initdir/functions
+		;;
+	slackware)
+		function log_daemon_msg
+		{
+			echo -n $*
+		}
+
+		function log_end_msg
+		{
+			if [ $1 == 0 ]; then
+				echo "ok"
+			else
+				echo "failed"
+			fi
+		}
+		;;
+esac
 
 CENTRALD_FILE=/etc/rts2/centrald
 DEVICE_CONFIG=/etc/rts2/devices
@@ -25,40 +67,100 @@ function rts2-start
 		if [ "x${centrald_port}" == "x" ]; then
 			centrald_port=617
 		fi
-		log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port" "rts2-centrald"
-		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options
-		log_end_msg $?
+		case $system in
+			debian)
+				log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port" "rts2-centrald"
+				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options
+				log_end_msg $?
+				;;
+			slackware)
+				log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port"
+				$RTS2_BIN_PREFIX/rts2-centrald --local-port $centrald_port $centrald_options
+				until [ -s ${RTS2_PID_PREFIX}centrald_${centrald_port} ]l; do
+					echo -n "."
+				done
+				log_end_msg $?
+				;;
+		esac
 	done
 	CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
-		log_daemon_msg "Starting $device_name" "rts2-$device-$type"
-		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name
-		log_end_msg $?
+		case $system in
+			debian)
+				log_daemon_msg "Starting $device_name" "rts2-$device-$type"
+				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name
+				log_end_msg $?
+				;;
+			slackware)
+				log_daemon_msg "Starting $device_name rts2-$device-$type"
+				$RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name
+				until [ -s ${RTS2_PID_PREFIX}${device_name} ]; do
+					echo -n "."
+				done
+				log_end_msg $?
+				;;
+		esac
 	done
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
-		log_daemon_msg "Starting $service_name" "rts2-$service"
-		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name
-		log_end_msg $?
+		case $system in
+			debian)
+				log_daemon_msg "Starting $service_name" "rts2-$service"
+				start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name
+				log_end_msg $?
+				;;
+			slackware)
+				log_daemon_msg "Starting $service_name rts2-$service"
+				$RTS2_BIN_PREFIX/rts2-$service $options $CENTRALD_OPTIONS -d $service_name
+				until [ -s ${RTS2_PID_PREFIX}${service_name} ]; do
+					echo -n "."
+				done
+				log_end_msg $?
+				;;
+		esac
 	done
 }
 
 function rts2-stop-devices
 {
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
-		log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
-		if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
-			start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name}
-		fi
-		log_end_msg $?
+		case $system in
+			debian)
+				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
+					log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
+					start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name}
+					log_end_msg $?
+				fi
+				;;
+			slackware)
+				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
+					log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
+					killall `head -n 1 ${RTS2_PID_PREFIX}${device_name}`
+					log_end_msg $?
+				fi
+				;;
+		esac
 	done
 }
 
 function rts2-stop-services
 {
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
-		log_daemon_msg "Stopping $service_name" "$service_name"
-		start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${service_name}
-		log_end_msg $?
+		case $system in
+			debian)
+				if [ -e ${RTS2_PID_PREFIX}$service_name ]; then
+					log_daemon_msg "Stopping $service_name" "$service_name"
+					start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${service_name}
+					log_end_msg $?
+				fi
+				;;
+			slackware)
+				if [ -s ${RTS2_PID_PREFIX}$service_name ]; then
+					log_daemon_msg "Stopping $service_name" "$service_name"
+					killall `head -n 1 ${RTS2_PID_PREFIX}$service_name`
+					log_end_msg $?
+				fi
+				;;
+		esac
 	done
 }
 
@@ -68,9 +170,18 @@ function rts2-stop
 	rts2-stop-devices
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
-			log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
-			start-stop-daemon --stop --pidfile $cf
-			log_end_msg $?
+		  	case $system in
+				debian)
+					log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
+					start-stop-daemon --stop --pidfile $cf
+					log_end_msg $?
+					;;
+				slackware)
+					log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
+					killall `head -n 1 $cf`
+					log_end_msg $?
+					;;
+			esac
 		done
 	fi
 }
@@ -80,23 +191,35 @@ function rts2-reload
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
 			pid=`cat $cf`
-			log_daemon_msg "Reloading centrald daemon (PID $cf)" "rts2-centrald"
-		  	kill -1 `cat $cf`
-			log_end_msg $?
+			case $system in
+				debian|slackware)
+					log_daemon_msg "Reloading centrald daemon (PID $cf)" "rts2-centrald"
+				  	kill -1 `cat $cf`
+					log_end_msg $?
+					;;
+			esac
 		done
 	fi
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${device_name} ]; then
-			log_daemon_msg "Reloading $device_name" "rts2-$device-$type"
-			kill -1 `cat ${RTS2_PID_PREFIX}${device_name}`
-			log_end_msg $?
+		  	case $system in
+				debian|slackware)
+					log_daemon_msg "Reloading $device_name" "rts2-$device-$type"
+					kill -1 `cat ${RTS2_PID_PREFIX}${device_name}`
+					log_end_msg $?
+					;;
+			esac
 		fi
 	done
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${service_name} ]; then
-			log_daemon_msg "Reloading $service_name" "rts2-$service"
-			kill -1 `cat ${RTS2_PID_PREFIX}${service_name}`
-			log_end_msg $?
+		  	case $system in
+				debian|slackware)
+					log_daemon_msg "Reloading $service_name" "rts2-$service"
+					kill -1 `cat ${RTS2_PID_PREFIX}${service_name}`
+					log_end_msg $?
+					;;
+			esac
 		fi
 	done
 }
