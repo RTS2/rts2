@@ -270,7 +270,6 @@ bool XmlRpcServerConnection::readRequest()
 
 	// Otherwise, parse and dispatch the request
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %d bytes.", _request_length);
-	//XmlRpcUtil::log(5, "XmlRpcServerConnection::readRequest:\n%s\n", _request.c_str());
 
 	_connectionState = WRITE_RESPONSE;
 
