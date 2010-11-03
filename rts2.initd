@@ -75,6 +75,7 @@ function rts2-start
 				;;
 			slackware)
 				log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port"
+				echo -n "  ."
 				$RTS2_BIN_PREFIX/rts2-centrald --local-port $centrald_port $centrald_options
 				until [ -s ${RTS2_PID_PREFIX}centrald_${centrald_port} ]; do
 					echo -n "."
@@ -94,6 +95,7 @@ function rts2-start
 				;;
 			slackware)
 				log_daemon_msg "Starting $device_name rts2-$device-$type"
+				echo -n "  ."
 				$RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name
 				until [ -s ${RTS2_PID_PREFIX}${device_name} ]; do
 					echo -n "."
@@ -112,6 +114,7 @@ function rts2-start
 				;;
 			slackware)
 				log_daemon_msg "Starting $service_name rts2-$service"
+				echo -n "  ."
 				$RTS2_BIN_PREFIX/rts2-$service $options $CENTRALD_OPTIONS -d $service_name
 				until [ -s ${RTS2_PID_PREFIX}${service_name} ]; do
 					echo -n "."
