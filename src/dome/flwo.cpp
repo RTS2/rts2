@@ -106,7 +106,8 @@ int FLWO::info ()
 {
 	try
 	{
-		getSlitStatus ();
+	  	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED || (getState () & DOME_DOME_MASK) == DOME_OPENED)
+			getSlitStatus ();
 	}
 	catch (rts2core::Error &er)
 	{
@@ -190,13 +191,18 @@ void FLWO::getSlitStatus ()
 	if (slitfile == NULL)
 		throw rts2core::Error ("slitfile not specified");
 	std::ifstream sf (slitfile);
+	if (sf.fail ())
+	{
+		throw rts2core::Error (std::string ("cannot open slitfile") + strerror (errno));
+	}
 	std::string slst;
 	sf >> slst;
 	if (sf.fail ())
 	{
-		throw rts2core::Error (std::string ("cannot read from slitfile") + strerror (errno));
+	  	// assume file is empty = closed
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome detected closed");
 	}
-	if (slst == "Open")
+	else if (slst == "Open")
 		maskState (DOME_DOME_MASK, DOME_OPENED, "dome detected opened");
 	else if (slst == "Close")
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome detected closed");
