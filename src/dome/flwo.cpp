@@ -94,11 +94,17 @@ int FLWO::init ()
 	int ret = Dome::init ();
 	if (ret)
 		return ret;
-	if (opendome == NULL || closedome == NULL)
+	if (closedome == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "binaries to open / close dome not specified, exiting" << sendLog;
+		logStream (MESSAGE_ERROR) << "missing required --bin-close option, please specify it" << sendLog;
+	}
+	if (opendome == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "missing required --bin-open option, please specify it" << sendLog;
 		return -1;
 	}
+	getSlitStatus ();
+	setIdleInfoInterval (20);
 	return 0;
 }
 
