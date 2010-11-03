@@ -1,8 +1,17 @@
 #!/bin/bash
-#
-# Start/stops rts2 deamons (rts2-centrald, rts2-teld-xxx etc..)
-#
-#
+
+### BEGIN INIT INFO
+# Provides:        rts2
+# Required-Start:  edt $network $remote_fs $syslog
+# Required-Stop:   edt $network $remote_fs $syslog
+# Default-Start:   2 3 4 5
+# Default-Stop:    1
+# Short-Description: Start RTS2 daemons (rts2-centrald, rts2-teld-xxx etc..)
+### END INIT INFO
+
+ulimit -c unlimited
+
+. /lib/lsb/init-functions
 
 CENTRALD_FILE=/etc/rts2/centrald
 DEVICE_CONFIG=/etc/rts2/devices
@@ -16,43 +25,41 @@ function rts2-start
 		if [ "x${centrald_port}" == "x" ]; then
 			centrald_port=617
 		fi
-		echo -n "Starting RTS2 centrald daemon on port $centrald_port:"
+		log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port" "rts2-centrald"
 		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options
-		echo "rts2-centrald (${centrald_port})."
+		log_end_msg $?
 	done
 	CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
-	echo -n "Starting RTS2 devices:"
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
-		echo -n " rts2-$device-$type($device_name)"
+		log_daemon_msg "Starting $device_name" "rts2-$device-$type"
 		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${device_name} --exec $RTS2_BIN_PREFIX/rts2-$device-$type -- $options $CENTRALD_OPTIONS -d $device_name
+		log_end_msg $?
 	done
-	echo "."
-	echo -n "Starting RTS2 services:"
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
-		echo -n " rts2-$service($service_name)"
+		log_daemon_msg "Starting $service_name" "rts2-$service"
 		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}${service_name} --exec $RTS2_BIN_PREFIX/rts2-$service -- $options $CENTRALD_OPTIONS -d $service_name
+		log_end_msg $?
 	done
-	echo "."
 }
 
 function rts2-stop-devices
 {
-	echo -n "Stopping RTS2 devices:"
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
-		echo -n " rts2-$device-$type($device_name)"
-		start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name}
+		log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
+		if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
+			start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${device_name}
+		fi
+		log_end_msg $?
 	done
-	echo "."
 }
 
 function rts2-stop-services
 {
-	echo -n "Stopping RTS2 services:"
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
-		echo -n " rts2-$service($service_name)"
+		log_daemon_msg "Stopping $service_name" "$service_name"
 		start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}${service_name}
+		log_end_msg $?
 	done
-	echo "."
 }
 
 function rts2-stop
@@ -60,10 +67,10 @@ function rts2-stop
         rts2-stop-services
 	rts2-stop-devices
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
-        	echo -n "Stopping RTS2 centrald daemon:"
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
+			log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
 			start-stop-daemon --stop --pidfile $cf
-			echo "rts2-centrald"
+			log_end_msg $?
 		done
 	fi
 }
@@ -71,28 +78,27 @@ function rts2-stop
 function rts2-reload
 {
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
-		echo -n "Sending SIGHUP to centrald daemon:"
 		for cf in ${RTS2_PID_PREFIX}centrald_*; do
+			pid=`cat $cf`
+			log_daemon_msg "Reloading centrald daemon (PID $cf)" "rts2-centrald"
 		  	kill -1 `cat $cf`
-			echo "rts2-centrald "
+			log_end_msg $?
 		done
 	fi
-	echo -n "Sending SIGHUP to RTS2 daemons:"
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${device_name} ]; then
-			echo -n " rts2-$device-$type($device_name)"
+			log_daemon_msg "Reloading $device_name" "rts2-$device-$type"
 			kill -1 `cat ${RTS2_PID_PREFIX}${device_name}`
+			log_end_msg $?
 		fi
 	done
-	echo "."
-	echo -n "Sending SIGHUP to RTS2 services:"
 	cat $SERVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read service service_name options; do
 		if [ -f ${RTS2_PID_PREFIX}${service_name} ]; then
-			echo -n " rts2-$service($service_name)"
+			log_daemon_msg "Reloading $service_name" "rts2-$service"
 			kill -1 `cat ${RTS2_PID_PREFIX}${service_name}`
+			log_end_msg $?
 		fi
 	done
-	echo "."
 }
 
 case "$1" in
