@@ -65,7 +65,7 @@ function rts2-start
 {
 	grep '^centrald' $CENTRALD_FILE | while read centrald centrald_port centrald_options; do
 		if [ "x${centrald_port}" == "x" ]; then
-			centrald_port=617
+			centrald_port=2200
 		fi
 		case $system in
 			debian)
@@ -76,8 +76,9 @@ function rts2-start
 			slackware)
 				log_daemon_msg "Starting RTS2 centrald daemon on port $centrald_port"
 				$RTS2_BIN_PREFIX/rts2-centrald --local-port $centrald_port $centrald_options
-				until [ -s ${RTS2_PID_PREFIX}centrald_${centrald_port} ]l; do
+				until [ -s ${RTS2_PID_PREFIX}centrald_${centrald_port} ]; do
 					echo -n "."
+					sleep 1
 				done
 				log_end_msg $?
 				;;
@@ -96,6 +97,7 @@ function rts2-start
 				$RTS2_BIN_PREFIX/rts2-$device-$type $options $CENTRALD_OPTIONS -d $device_name
 				until [ -s ${RTS2_PID_PREFIX}${device_name} ]; do
 					echo -n "."
+					sleep 1
 				done
 				log_end_msg $?
 				;;
@@ -113,6 +115,7 @@ function rts2-start
 				$RTS2_BIN_PREFIX/rts2-$service $options $CENTRALD_OPTIONS -d $service_name
 				until [ -s ${RTS2_PID_PREFIX}${service_name} ]; do
 					echo -n "."
+					sleep 1
 				done
 				log_end_msg $?
 				;;
@@ -134,8 +137,9 @@ function rts2-stop-devices
 			slackware)
 				if [ -e ${RTS2_PID_PREFIX}${device_name} ]; then
 					log_daemon_msg "Stopping $device_name" "rts2-$device-$type"
-					killall `head -n 1 ${RTS2_PID_PREFIX}${device_name}`
+					kill `head -n 1 ${RTS2_PID_PREFIX}${device_name}`
 					log_end_msg $?
+					rm -f ${RTS2_PID_PREFIX}${device_name}
 				fi
 				;;
 		esac
@@ -156,8 +160,9 @@ function rts2-stop-services
 			slackware)
 				if [ -s ${RTS2_PID_PREFIX}$service_name ]; then
 					log_daemon_msg "Stopping $service_name" "$service_name"
-					killall `head -n 1 ${RTS2_PID_PREFIX}$service_name`
+					kill `head -n 1 ${RTS2_PID_PREFIX}$service_name`
 					log_end_msg $?
+					rm -f ${RTS2_PID_PREFIX}$service_name
 				fi
 				;;
 		esac
@@ -177,9 +182,12 @@ function rts2-stop
 					log_end_msg $?
 					;;
 				slackware)
-					log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
-					killall `head -n 1 $cf`
-					log_end_msg $?
+					if [ -s $cf ]; then
+						log_daemon_msg "Stopping centrald daemon" "rts2-centrald"
+						kill `head -n 1 $cf`
+						log_end_msg $?
+						rm -f $cf
+					fi
 					;;
 			esac
 		done
