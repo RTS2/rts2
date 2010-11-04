@@ -90,7 +90,7 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 
 	createTemperature ();
 
-	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
+	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
 
 }
 
