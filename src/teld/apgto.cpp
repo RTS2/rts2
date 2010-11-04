@@ -1,9 +1,6 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 /* 
  * Astro-Physics GTO mount daemon 
- * Copyright (C) 2009, Markus Wildi, Petr Kubanek <petr@kubanek.net> and INDI
+ * Copyright (C) 2009-2010, Markus Wildi, Petr Kubanek <petr@kubanek.net> and INDI
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,12 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
-
-/*!
- * @file Driver for Astro-Physics GTO protocol based mount. Some functions are borrowed from INDI to make the transition smoother
- * 
- * @author john,petr, Markus Wildi
  */
 
 #include <sys/types.h>
@@ -56,6 +47,7 @@
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_CCD_DEVICE     OPT_LOCAL + 57
+#define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
 
 #define SLEW_RATE_1200 '2'
 #define SLEW_RATE_0900 '1'
@@ -95,127 +87,146 @@
 #define TIMEOUT_CCD_NOTTAKING_IMAGE 300. // [second]
 #define TIMEOUT_SLEW_START 300. // [second]
 
-
 namespace rts2teld
 {
-  class APGTO:public Telescope {
-  private:
-    const char *device_file;
-    char *ccdDevice;
-    int apgto_fd;
-    int force_start ;
-    double on_set_HA ;
-    double on_zero_HA ;
-    double lastMoveRa, lastMoveDec;  
-    enum { NOTMOVE, MOVE_REAL } move_state;
-    time_t move_timeout;
-    time_t slew_start_time;
+/**
+ * Driver for Astro-Physics GTO protocol based mount. Some functions are
+ * borrowed from INDI to make the transition smoother.
+ * 
+ * @author Markus Wildi
+ * @author Petr Kubanek
+ * @author Francisco Foster Buron
+ */
+class APGTO:public Telescope {
+	public:
+		APGTO (int argc, char **argv);
+		virtual ~APGTO (void);
+		virtual int processOption (int in_opt);
+		virtual int init ();
+		virtual int initValues ();
+		virtual int info ();
+		virtual int idle ();
+		virtual int willConnect (Rts2Address * in_addr);
 
-    int f_scansexa (const char *str0, double *dp);
-    void getSexComponents(double value, int *d, int *m, int *s) ;
+		virtual int setTo (double set_ra, double set_dec);
+		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
-    // low-level functions (RTS2)
-    int tel_read (char *buf, int count);
-    int tel_read_hash (char *buf, int count);
-    int tel_write (const char *buf, int count);
-    int tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount);
-    int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
-    int tel_read_hms (double *hmsptr, const char *command);
-
-    // Astro-Physics LX200 protocol specific functions
-    int getAPVersionNumber() ;
-    int getAPUTCOffset() ;
-    int setAPObjectAZ( double az) ;
-    int setAPObjectAlt( double alt) ;
-    int setAPUTCOffset( double hours) ;
-    int APSyncCMR( char *matchedObject) ;
-    int selectAPMoveToRate( int moveToRate) ;
-    int selectAPTrackingMode( int trackMode) ;
-    int tel_read_declination_axis() ;
-    int tel_check_declination_axis() ;
-    int setAPSiteLongitude( double Long) ;
-    int setAPSiteLatitude( double Lat) ;
-    int setAPLocalTime(int x, int y, int z) ;
-    int setAPBackLashCompensation( int x, int y, int z) ;
-    int setCalenderDate( int dd, int mm, int yy) ;
-    int tel_set_slew_rate (char new_rate);
-    int tel_set_move_rate (char new_rate);
-    int setAPMotionStop() ;
-
-    // helper
-    double siderealTime() ;
-    int checkSiderealTime( double limit) ;
-    int setBasicData();
-    void ParkDisconnect() ;
-    // regular LX200 protocol (RTS2)
-    int tel_read_local_time ();
-    int tel_read_sidereal_time ();
-    int tel_read_ra ();
-    int tel_read_dec ();
-    int tel_read_altitude ();
-    int tel_read_azimuth ();
-    int tel_read_latitude ();
-    int tel_read_longitude ();
-    int tel_rep_write (char *command);
-    // helper 
-    int tel_write_ra (double ra);
-    int tel_write_dec (double dec);
-    int tel_start_move (char direction);
-    int tel_stop_move (char direction);
-    int tel_slew_to (double ra, double dec);
-    void set_move_timeout (time_t plus_time);
-    int tel_check_coords (double ra, double dec);
-    // further discussion with Petr required
-    //int changeMasterState (int new_state);
-    // Astro-Physics properties
-    Rts2ValueAltAz   *APAltAz ;
-    Rts2ValueInteger *APslew_rate;
-    Rts2ValueInteger *APmove_rate;
-    Rts2ValueDouble  *APlocal_sidereal_time;
-    Rts2ValueDouble  *APlocal_time;
-    Rts2ValueDouble  *APutc_offset;
-    Rts2ValueDouble  *APlongitude;
-    Rts2ValueDouble  *APlatitude;
-    Rts2ValueString  *APfirmware ;
-    Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
-    Rts2ValueBool    *mount_tracking ;
-    Rts2ValueBool    *transition_while_tracking ; 
-    Rts2ValueBool    *block_sync_move;
-    Rts2ValueBool    *assume_parked;
-    Rts2ValueBool    *slew_state; // (move_state)
-    Rts2ValueBool    *collision_detection; 
-
-  protected:
-    virtual void startCupolaSync ();
-    virtual void notMoveCupola ();
-
-  public:
-    APGTO (int argc, char **argv);
-    virtual ~APGTO (void);
-    virtual int processOption (int in_opt);
-    virtual int init ();
-    virtual int initValues ();
-    virtual int info ();
-    virtual int idle ();
-    virtual int willConnect (Rts2Address * in_addr);
-
-    virtual int setTo (double set_ra, double set_dec);
-    virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
-
-    virtual int startResync ();
-    virtual int isMoving ();
-    virtual int stopMove ();
+		virtual int startResync ();
+		virtual int isMoving ();
+		virtual int stopMove ();
   
-    virtual int startPark ();
-    virtual int isParking ();
-    virtual int endPark ();
+		virtual int startPark ();
+		virtual int isParking ();
+		virtual int endPark ();
   
-    virtual int startDir (char *dir);
-    virtual int stopDir (char *dir);
-    virtual int abortAnyMotion () ;
-    virtual bool shutterClosed() ;
-    virtual int commandAuthorized (Rts2Conn * conn);
-    virtual void valueChanged (Rts2Value * changed_value) ;
+		virtual int startDir (char *dir);
+		virtual int stopDir (char *dir);
+		virtual int abortAnyMotion () ;
+		virtual bool shutterClosed() ;
+		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual void valueChanged (Rts2Value * changed_value);
+	protected:
+		virtual void startCupolaSync ();
+		virtual void notMoveCupola ();
+
+	private:
+		const char *device_file;
+		char *ccdDevice;
+		int apgto_fd;
+		int force_start ;
+		double on_set_HA ;
+		double on_zero_HA ;
+		double lastMoveRa, lastMoveDec;  
+		enum { NOTMOVE, MOVE_REAL } move_state;
+		time_t move_timeout;
+		time_t slew_start_time;
+
+		int f_scansexa (const char *str0, double *dp);
+		void getSexComponents(double value, int *d, int *m, int *s) ;
+
+		// low-level functions (RTS2)
+		int tel_read (char *buf, int count);
+		int tel_read_hash (char *buf, int count);
+		int tel_write (const char *buf, int count);
+		int tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount);
+		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
+		int tel_read_hms (double *hmsptr, const char *command);
+
+		// Astro-Physics LX200 protocol specific functions
+		int getAPVersionNumber() ;
+		int getAPUTCOffset() ;
+		int setAPObjectAZ( double az) ;
+		int setAPObjectAlt( double alt) ;
+		int setAPUTCOffset( double hours) ;
+		int APSyncCMR( char *matchedObject) ;
+		int selectAPMoveToRate( int moveToRate) ;
+		int selectAPTrackingMode( int trackMode) ;
+		int tel_read_declination_axis() ;
+		int tel_check_declination_axis() ;
+		int setAPSiteLongitude( double Long) ;
+		int setAPSiteLatitude( double Lat) ;
+		int setAPLocalTime(int x, int y, int z) ;
+		int setAPBackLashCompensation( int x, int y, int z) ;
+		int setCalenderDate( int dd, int mm, int yy) ;
+		int tel_set_slew_rate (char new_rate);
+		int tel_set_move_rate (char new_rate);
+		int setAPMotionStop() ;
+
+		// helper
+		double siderealTime() ;
+		int checkSiderealTime( double limit) ;
+		int setBasicData();
+		void ParkDisconnect() ;
+		// regular LX200 protocol (RTS2)
+		int tel_read_local_time ();
+		int tel_read_sidereal_time ();
+		int tel_read_ra ();
+		int tel_read_dec ();
+		int tel_read_altitude ();
+		int tel_read_azimuth ();
+		int tel_read_latitude ();
+		int tel_read_longitude ();
+		int tel_rep_write (char *command);
+		// helper 
+		int tel_write_ra (double ra);
+		int tel_write_dec (double dec);
+		int tel_write_altitude(double alt); 
+		int tel_write_azimuth(double az); 
+		int tel_start_move (char direction);
+		int tel_stop_move (char direction);
+		int tel_slew_to (double ra, double dec);
+		int tel_slew_to_altaz(double alt, double az);
+		void set_move_timeout (time_t plus_time);
+		/**
+		 * Perform movement, do not move tube bellow horizon.
+		 * @author Francisco Foster Buron
+		 */
+		int moveAvoidingHorizon (double ra, double dec);
+		double HAp(double DECp, double DECpref, double HApref);
+    		bool moveandconfirm(double interHAp, double interDECp); // FF: move and confirm that the position is reached
+		int isInPosition(double coord1, double coord2, double err1, double err2, char coord); // Alonso: coord e {'a', 'c'} a = coordenadas en altaz y c lo otro
+
+		int tel_check_coords (double ra, double dec);
+		// further discussion with Petr required
+		//int changeMasterState (int new_state);
+		// Astro-Physics properties
+		Rts2ValueAltAz   *APAltAz ;
+		Rts2ValueInteger *APslew_rate;
+		Rts2ValueInteger *APmove_rate;
+		Rts2ValueDouble  *APlocal_sidereal_time;
+		Rts2ValueDouble  *APlocal_time;
+		Rts2ValueDouble  *APutc_offset;
+		Rts2ValueDouble  *APlongitude;
+		Rts2ValueDouble  *APlatitude;
+		Rts2ValueString  *APfirmware ;
+		Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
+		Rts2ValueBool    *mount_tracking ;
+		Rts2ValueBool    *transition_while_tracking ; 
+		Rts2ValueBool    *block_sync_move;
+		Rts2ValueBool    *assume_parked;
+		Rts2ValueBool    *slew_state; // (move_state)
+		Rts2ValueBool    *collision_detection; 
+		Rts2ValueBool    *avoidBellowHorizon;
   };
 
 };
@@ -760,8 +771,7 @@ APGTO::APSyncCMR(char *matchedObject)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::selectAPTrackingMode(int trackMode)
+int APGTO::selectAPTrackingMode(int trackMode)
 {
   int error_type;
   double RA ;
@@ -1259,6 +1269,44 @@ APGTO::tel_write_dec (double dec)
   //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_dec >" << command << "<END" << sendLog;
   return tel_rep_write (command);
 }
+
+int APGTO::tel_write_altitude (double alt)
+{
+	int ret = -1 ;
+	char command[32];
+	int d, m, s;
+	if(alt < 0. || alt > 90.0)
+	{
+		logStream(MESSAGE_ERROR)<< "APGTO::tel_write_altitude error: altitude is "<< alt<< sendLog;		
+		return -1;
+	}
+	dtoints(alt, &d, &m, &s);
+	ret = snprintf(command, sizeof(command), "#:Sa %+02d*%02d:%02d#", d, m, s);
+	if(ret < 0)
+		return -1;
+	logStream(MESSAGE_DEBUG)<< "---------------------APGTO::tel_write_altitude >"<< command << "<END" << sendLog;
+	return tel_rep_write(command);
+}
+
+int APGTO::tel_write_azimuth (double az)
+{
+	int ret= -1 ;
+	char command[32];
+	int d, m, s;
+	if(az < 0. || az > 180.0)
+	{
+		logStream(MESSAGE_ERROR) <<"APGTO::tel_write_azimuth error: azimuth is"<< az<< sendLog;
+		return -1;
+	}
+	dtoints(az, &d, &m, &s);
+	ret = snprintf(command, sizeof(command), "#:Sz %03d*%02d:%02d#", d, m, s);
+	if( ret < 0)
+		return -1;
+	logStream (MESSAGE_DEBUG) << "---------------------APGTO::tel_write_azimuth >"<< command << "<END" << sendLog;
+	return tel_rep_write (command);
+}
+
+
 /*!
  * Set slew rate.
  *
@@ -1266,8 +1314,7 @@ APGTO::tel_write_dec (double dec)
  *
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
-int
-APGTO::tel_set_slew_rate (char new_rate)
+int APGTO::tel_set_slew_rate (char new_rate)
 {
   char command[6];
   sprintf (command, "#:RS%c#", new_rate); // slew
@@ -1526,29 +1573,365 @@ APGTO::tel_check_coords (double ra, double dec)
   
   return 1;
 }
-void
-APGTO::set_move_timeout (time_t plus_time)
+
+/*
+ * Solo mueve el telescopio  a las coordenadas indicadas, no guarda ningu  valor en la instancia
+ */
+int
+APGTO::tel_slew_to_altaz(double alt, double az)
+{
+	char retstr;
+	
+	if(tel_write_altitude(alt) < 0)
+	{
+		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_altitude("<< alt<< ") failed"<< sendLog;
+                return -1;
+	}
+	if(tel_write_azimuth(az) < 0)
+	{
+		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_azimuth("<< az<< ") failed"<< sendLog;
+                return -1;
+	}
+	if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+        {
+                logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_read #:MS# failed"<< sendLog;
+                return -1;
+        }
+
+	logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to_altaz #:MS# on alt " << alt << ", az " << az << sendLog ;
+	if(retstr == '0')
+	{
+		return 0;
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to_altaz error:" << "retstring:"<< retstr << "should be '0'" << sendLog;
+		return -1;
+	}
+}
+
+void APGTO::set_move_timeout (time_t plus_time)
 {
 	time_t now;
 	time (&now);
 
 	move_timeout = now + plus_time;
 }
-int
-APGTO::startResync ()
-{
-  int ret;
-  
-  lastMoveRa = fmod( getTelTargetRa () + 360., 360.);
-  lastMoveDec = fmod( getTelTargetDec (), 90.);
 
-  ret = tel_slew_to (lastMoveRa, lastMoveDec);
-  if (ret)
-    return -1;
-  move_state = MOVE_REAL;
-  slew_state->setValueBool(true) ;
-  set_move_timeout (100);
-  return 0 ; 
+int APGTO::moveAvoidingHorizon (double ra, double dec)
+{
+	double _lst;
+	double currentRa, newRA, currentHA, newHA, currentDEC, newDEC;
+	double DECp1, HAp1;  // initial point
+	double DECp2, HAp2;  // final point
+	double DECpS = 53.39095314569674; // critical declination and hour angle in telescope internal coordinates
+	double HApS = 115.58068825790751; // S: superior, I: inferior
+	double DECpI = -53.39095314569674;
+	double HApI = 180. - 115.58068825790751;
+
+	if(tel_read_sidereal_time() < 0)
+		return -1;
+	_lst = APlocal_sidereal_time->getValueDouble();
+	
+	if(tel_read_ra())
+		return -1;
+	
+	currentRa = getTelRa();
+	newRA = ra;
+	
+	currentHA = fmod(360.+_lst-currentRa, 360.);
+	newHA = fmod(360.+_lst-ra, 360.);
+	
+	currentDEC = getTelDec();
+	newDEC = dec;
+
+	// find telescope internal coordinates
+	if (currentHA <= 180)
+	{
+		DECp1 = fabs(currentDEC + 90.);
+		HAp1 = currentHA;
+	}
+	else
+	{
+		DECp1 = -fabs(currentDEC + 90.);
+		HAp1 = currentHA - 180.;
+	}
+
+	if (newHA <= 180)
+	{
+		DECp2 = fabs(newDEC + 90.);
+		HAp2 = currentHA;
+	}
+	else
+	{
+		DECp2 = -fabs(newDEC + 90.);
+		HAp2 = newHA - 180.;
+	}
+	  
+	// first point is below superior critical line and above inferior critical line
+	if (HAp(DECp1,DECpS,HApS) >= HAp1 && HAp(DECp1,DECpI,HApI) <= HAp1)
+	{
+		logStream (MESSAGE_DEBUG) << "APGTO::moveTo Initial Target in safe zone" << sendLog;
+
+		// move to final target
+		if(tel_slew_to(newRA, newDEC) < 0)
+			return -1;
+		set_move_timeout(100);
+		return 0;
+	}
+	else
+	{  // first point is either above superior critical line or below inferior critical line
+		if (HAp(DECp1,DECpS,HApS) < HAp1) {  // initial point is above superior critical line:
+			// final point is inside point's safe cone or above point's critical line and in the same excluded region
+			if ((HAp2 <= HAp1 && DECp2 <= DECp1) || (HAp(DECp2,DECp1,HAp1) <= HAp2 && (DECp2 - DECpS) * (DECp1 - DECpS) >= 0))
+			{
+				// move to final target
+				if(tel_slew_to(newRA, newDEC) < 0)
+					return -1;
+				set_move_timeout(100);
+				return 0;
+			}
+			else
+			{  // initial point is above superior critical line, but final point is not in safe cone
+				// final point is below superior critical line or above superior critical line and in different excluded region
+				if (HAp(DECp2,DECpS,HApS) > HAp2 || (HAp(DECp2,DECpS,HApS) <= HAp2 && (DECp2 - DECpS) * (DECp1 - DECpS) <= 0))
+				{
+					// go to superior critical line:
+					if (DECp2 > DECp1) {  // with constant DECp...
+						if (!moveandconfirm(HAp(DECp1,DECpS,HApS), DECp1))
+							return -1; 
+	  				} else { // or with constant HAp.
+						if (!moveandconfirm(HAp1, DECp1 - (HAp1 - HAp(DECp1,DECpS,HApS))))
+							return -1;
+	  				}
+	  
+					// move to final target
+					if(tel_slew_to(newRA, newDEC) < 0)
+						return -1;
+					set_move_timeout(100);
+					return 0;
+				}
+				else
+				{ // the final point is above the superior critical line, outside the safe cone and in the same region
+
+					if (DECp2 >= DECp1)
+					{ // move with constant DECp
+						if (!moveandconfirm(HAp(DECp1,DECp2,HAp2), DECp1))
+							return -1;
+	 				}
+					else
+					{ // move with constant HAp
+						if (!moveandconfirm(HAp1, DECp1 - (HAp1 - HAp(DECp1,DECp2,HAp2))))
+							return -1;
+					}
+					// move to final target
+					if(tel_slew_to(newRA, newDEC) < 0)
+						return -1;
+					set_move_timeout(100);
+					return 0;
+				}
+			}
+		}
+		else
+		{  // initial point is below inferior critical line
+			// final point inside point's safe cone or below point's critical line and in the same excluded region
+			if ((HAp2 >= HAp1 && DECp2 >= DECp1) || (HAp(DECp2,DECp1,HAp1) >= HAp2 && (DECp2 - DECpI) * (DECp1 - DECpI) >= 0))
+			{
+				// move to final target
+				if(tel_slew_to(newRA, newDEC) < 0)
+					return -1;
+				set_move_timeout(100);
+				return 0;
+			}
+			else
+			{ 
+				// final point above inferior critical line or below inferior critical line and in different excluded region
+				if (HAp(DECp2,DECpI,HApI) <  HAp2 || (HAp(DECp2,DECpI,HApI) >= HAp2 && (DECp2 - DECpI) * (DECp1 - DECpI) <= 0))
+				{
+					// go to inferior critical line
+					if (DECp2 > DECp1)
+					{ // with constant DECp
+						if (!moveandconfirm(HAp(DECp1,DECpI,HApI), DECp1))
+							return -1;
+					}
+					else
+					{ // with constant HAp
+						if (!moveandconfirm(HAp1, DECp1 + (HAp(DECp1,DECpI,HApI) - HAp1)))
+							return -1;
+					}
+					// move to final target
+					if(tel_slew_to(newRA, newDEC) < 0)
+						return -1;
+					set_move_timeout(100);
+					return 0;
+				}
+				else
+				{ // final point below the inferior critical line, outside the safe cone and in the same region
+					// go to inferior critical line
+					if (DECp2 >= DECp1)
+					{ // with constant DECp
+						if (!moveandconfirm(HAp(DECp1,DECp2,HAp2), DECp1))
+							return -1;
+					}
+					else
+					{ // with constant HAp
+						if (!moveandconfirm(HAp1, DECp1 + (HAp(DECp1,DECp2,HAp2) - HAp1)))
+							return -1;
+					}
+					// move to final target
+					if (tel_slew_to(newRA, newDEC) < 0)
+						return -1;
+					set_move_timeout(100);
+					return 0;
+				}
+			}
+		}
+	}
+	
+	return 0;
+}
+
+// critical line given a reference point and an arbitrary DECp value
+double APGTO::HAp(double DECp, double DECpref, double HApref)
+{
+  return HApref - (DECp - DECpref);
+}
+
+bool APGTO::moveandconfirm(double interHAp, double interDECp)
+{
+	double _lst;
+
+	// given internal telescope coordinates, move and wait until telescope arrival
+
+	logStream (MESSAGE_DEBUG) << "APGTO::moveTo moving to intermediate point"<< sendLog;
+
+	// obtain DEC and RA from telescope internal coordinates DECp and HAp
+	if (interDECp >= 0)
+	{
+		interDECp = interDECp - 90.;
+		interHAp = interHAp;
+	}
+	else
+	{
+		interDECp = -(90. + interDECp);
+		interHAp = interHAp + 180.;
+	}    
+	_lst = APlocal_sidereal_time->getValueDouble();
+	interHAp = fmod(360. + (_lst - interHAp), 360.);
+
+	// move to new auxiliar position
+	if (tel_slew_to(interHAp, interDECp) < 0)
+		return false;
+	while (isInPosition(interHAp, interDECp, .1, .1, 'c') != 0)
+	{
+		logStream (MESSAGE_DEBUG) << "APGTO::moveTo waiting to arrive to intermediate point"<< sendLog;
+		usleep(100000);
+	}
+	setAPMotionStop();
+	return true;
+}
+
+// check whether the telescope is in a given position
+// coord is 'a' = ALTAZ (altitude, azimuth), 'c' = RADEC (right ascension, declination) or 'h' = HADEC (hour angle, declination)
+// Units are degrees
+
+int APGTO::isInPosition(double coord1, double coord2, double err1, double err2, char coord)
+{
+	double _lst, currentHa;
+  
+	switch (coord)
+	{
+		case 'a': // ALTAZ
+			if (tel_read_altitude() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_altitude error" << sendLog;
+				return -1;
+			}
+			if (tel_read_azimuth() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_altitude error" << sendLog;
+				return -1;
+			}
+			logStream (MESSAGE_DEBUG) << "APGTO::isInPosition distances : alt "<< fabs(APAltAz->getAlt()-coord1)<<
+				"tolerance "<< err1<< " az "<< fabs(APAltAz->getAz() - coord2)<< " tolerance "<< err2<< sendLog;
+
+			if(fabs(APAltAz->getAlt()-coord1) < err1 && fabs(APAltAz->getAz()-coord2) < err2)
+				return 0;
+			return  -1;
+		case 'c': // RADEC
+			if (tel_read_ra() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_ra error" << sendLog;
+				return -1;
+			}
+			if (tel_read_dec() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_dec error" << sendLog;
+				return -1;
+			}
+			logStream (MESSAGE_DEBUG) << "APGTO::isInPosition distances : current ra "<< getTelRa()<< " obj ra "<<coord1 <<
+				" dist "<< fabs(getTelRa()-coord1)<< " tolerance "<< err1<<
+				" current dec "<< getTelDec()<< " obj dec "<< coord2<< 
+				" dist "<< fabs(getTelDec() - coord2)<< " tolerance "<< err2<< sendLog;
+
+			if (fabs(getTelRa()-coord1) < err1 && fabs(getTelDec()-coord2) < err2)
+				return 0;
+			return -1;
+		case 'h': // HADEC
+			if (tel_read_sidereal_time() < 0)
+				return -1;
+
+			_lst = APlocal_sidereal_time->getValueDouble();
+			if (tel_read_ra() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_ra error" << sendLog;
+				return -1;
+			}
+			if (tel_read_dec() < 0)
+			{
+				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_dec error" << sendLog;
+				return -1;
+			}
+
+			currentHa = fmod(360.+_lst-getTelRa(), 360.);
+			logStream (MESSAGE_DEBUG) << "APGTO::isInPosition distances : current ha "<< currentHa<< " next ha "<<coord1<<
+				" dist "<< fabs(currentHa-coord1)<< " tolerance "<< err1<<
+				" current dec "<< getTelDec()<< " obj dec "<< coord2<<
+				" dist "<< fabs(getTelDec() - coord2)<< " tolerance "<< err2<< sendLog;
+
+			if (fabs(currentHa-coord1) < err1 && fabs(getTelDec()-coord2) < err2)
+				return 0;
+      
+		default:
+			return  -1;
+
+	}
+}
+
+int APGTO::startResync ()
+{
+	int ret;
+
+	if (avoidBellowHorizon->getValueBool ())
+	{
+		lastMoveRa = getTelTargetRa ();
+		lastMoveDec = getTelTargetDec ();
+		if (moveAvoidingHorizon (lastMoveRa, lastMoveDec) < 0)
+			return -1;
+	}
+	else
+	{
+		lastMoveRa = fmod( getTelTargetRa () + 360., 360.);
+		lastMoveDec = fmod( getTelTargetDec (), 90.);
+
+		ret = tel_slew_to (lastMoveRa, lastMoveDec);
+		if (ret)
+			return -1;
+		move_state = MOVE_REAL;
+		slew_state->setValueBool(true) ;
+		set_move_timeout (100);
+	}
+	return 0;
 }
 
 void APGTO::startCupolaSync ()
@@ -2723,37 +3106,37 @@ APGTO::~APGTO (void)
 {
   close (apgto_fd);
 }
-int
-APGTO::processOption (int in_opt)
+
+int APGTO::processOption (int in_opt)
 {
-  switch (in_opt) {
-  case OPT_APGTO_DEVICE:
-    device_file = optarg;
-    break;
-  case OPT_APGTO_ASSUME_PARKED:
-    assume_parked->setValueBool(true);
-    break;
-  case OPT_APGTO_FORCE_START:
-    force_start= true;
-    break;
-  case OPT_APGTO_CCD_DEVICE:
-    ccdDevice = optarg;
-    break;
-  default:
-    return Telescope::processOption (in_opt);
-  }
-  return 0;
+	switch (in_opt)
+	{
+		case OPT_APGTO_DEVICE:
+			device_file = optarg;
+			break;
+		case OPT_APGTO_ASSUME_PARKED:
+			assume_parked->setValueBool(true);
+			break;
+		case OPT_APGTO_FORCE_START:
+			force_start= true;
+			break;
+		case OPT_APGTO_CCD_DEVICE:
+			ccdDevice = optarg;
+			break;
+		case OPT_APGTO_KEEP_HORIZON:
+			avoidBellowHorizon->setValueBool (true);
+			break;
+		default:
+			return Telescope::processOption (in_opt);
+	}
+	return 0;
 }
+
 APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 {
   apgto_fd = -1;
   device_file = "/dev/apmount";
 	
-  addOption (OPT_APGTO_DEVICE,        "device_file", 1, "device file");
-  addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
-  addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
-  addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
-
   createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
   createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
   createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
@@ -2770,6 +3153,8 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
   createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
   createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
+  createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
+  avoidBellowHorizon->setValueBool (false);
 
   collision_detection->setValueBool(true) ;
   slew_state->setValueBool(false) ;
@@ -2779,11 +3164,16 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 
   ccdDevice = NULL;
 
+  addOption (OPT_APGTO_DEVICE,        "device_file", 1, "device file");
+  addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
+  addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
+  addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
+  addOption (OPT_APGTO_KEEP_HORIZON,  "avoid-horizon", 1, "avoid movements bellow horizon");
 }
-int
-main (int argc, char **argv)
+
+int main (int argc, char **argv)
 {
-  APGTO device = APGTO (argc, argv);
-  return device.run ();
+	APGTO device = APGTO (argc, argv);
+	return device.run ();
 }
 
