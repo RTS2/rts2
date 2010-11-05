@@ -45,60 +45,61 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 
-struct pier {
-  double radius ;
-  double wedge ;
-  double floor ;
-  double danger_zone_below ;
-  double danger_zone_above ;
-}  pr;
+struct pier
+{
+	double radius;
+	double wedge;
+	double floor;
+	double danger_zone_below;
+	double danger_zone_above;
+} pr;
 
-struct mount {
-  double xd ;
-  double zd ;
-  double rdec ;
-  
-} mt ;
+struct mount
+{
+	double xd ;
+	double zd ;
+	double rdec ;
+} mt;
 
-struct telescope {
-  double radius ;
-  double rear_length ;
-
-} tel ;
+struct telescope
+{
+	double radius ;
+	double rear_length ;
+} tel;
 /* the main entry function */
 /* struct ln_equ_posn tel_eq telescope target coordinates */
 /* WEST: DEC axis points to HA +M_PI/2, IS_EAST: DEC axis points to HA - M_PI/2*/
 /* DEC axis is the vector which points from the intersection of the HA axis with DEC axis tp the intersection*/
 /* of the DEC axis with the optical axis, the optical axis points to HA, DEC) */
 /* longitude positive to the East*/
-int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
+int  pier_collision (struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 {
-  struct ln_equ_posn tmp_equ ;
+	struct ln_equ_posn tmp_equ ;
 
-  pr.radius= 0.135;
-  pr.wedge= -0.6684;
-  pr.floor= -1.9534;
-  pr.danger_zone_below= -2.9534;
-  pr.danger_zone_above= -0.1;
+	pr.radius= 0.135;
+	pr.wedge= -0.6684;
+	pr.floor= -1.9534;
+	pr.danger_zone_below= -2.9534;
+	pr.danger_zone_above= -0.1;
   
-  mt.xd= -0.0684;
-  mt.zd= -0.1934;
-  mt.rdec= 0.338;
+	mt.xd = -0.0684;
+	mt.zd = -0.1934;
+	mt.rdec = 0.338;
 
-  tel.radius= 0.123;
-  tel.rear_length= 1.1; // 0.8 + 0.3 for FLI equipment 
+	tel.radius= 0.123;
+	tel.rear_length = 1.1; // 0.8 + 0.3 for FLI equipment 
 
-  if(( tel_equ->dec > 90.) && (  tel_equ->dec <= 270.)) // EAST: DECaxis==HA - M_PI/2
-    {
-      tmp_equ.ra =  tel_equ->ra - 180. ;
-      tmp_equ.dec= -tel_equ->dec  ; 
-    }
-  else // WEST: DECaxis==HA + M_PI/2
-    {
-      tmp_equ.ra =  tel_equ->ra ;
-      tmp_equ.dec=  tel_equ->dec  ; 
-    }
-  return LDCollision( tmp_equ.ra/180. * M_PI, tmp_equ.dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius) ;
+	if ((tel_equ->dec > 90.) && ( tel_equ->dec <= 270.)) // EAST: DECaxis==HA - M_PI/2
+	{
+		tmp_equ.ra = tel_equ->ra - 180.;
+		tmp_equ.dec = -tel_equ->dec; 
+	}
+	else // WEST: DECaxis==HA + M_PI/2
+	{
+		tmp_equ.ra =  tel_equ->ra;
+		tmp_equ.dec=  tel_equ->dec; 
+	}
+	return LDCollision (tmp_equ.ra/180. * M_PI, tmp_equ.dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius);
 }
 
 /* The equation 5.6.1-1 os = ted . (pqe + k  qse ) + opd */
@@ -112,18 +113,18 @@ int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 /* axis.       */
 /* I copied the whole expressions from the Mathematica notebook. */
 
-double LDRAtoHA( double RA, double longitude)
+double LDRAtoHA (double RA, double longitude)
 {
-    double HA ;
-    double JD ;
-    double theta_0= 0. ;
+	double HA;
+	double JD;
+	double theta_0 = 0.;
     
-    JD=  ln_get_julian_from_sys() ;
+	JD = ln_get_julian_from_sys ();
 
-    theta_0= 15./180. * M_PI * ln_get_mean_sidereal_time( JD) ; 
-/* negative to the West, Kstars neg., XEpehem pos */
-    HA =  fmod(theta_0 + longitude - RA + 2. * M_PI,  2. * M_PI) ;
-    return HA ;
+	theta_0 = 15. / 180. * M_PI * ln_get_mean_sidereal_time (JD); 
+	/* negative to the West, Kstars neg., XEpehem pos */
+	HA =  fmod(theta_0 + longitude - RA + 2. * M_PI,  2. * M_PI) ;
+	return HA ;
 } 
 
 int LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)

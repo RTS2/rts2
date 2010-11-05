@@ -36,7 +36,9 @@
 extern "C"
 {
 #endif
+
 int pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs) ;
+
 #ifdef __cplusplus
 }
 #endif

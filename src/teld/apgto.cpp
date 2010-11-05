@@ -2261,12 +2261,15 @@ int APGTO::info ()
   // move_ha_sg 00:00:00  0:
   // move_ha_sg 24:00:00  0:
   // with the Astro-Physics mount
-  if(( HA < on_set_HA) &&( mount_tracking->getValueBool()) &&( move_state== NOTMOVE)){
-    transition_while_tracking->setValueBool(true) ;
-    logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
-  } else {
-    transition_while_tracking->setValueBool(false) ;
-  }
+	if ((HA < on_set_HA) && (mount_tracking->getValueBool()) && (move_state== NOTMOVE))
+	{
+		transition_while_tracking->setValueBool(true);
+		logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
+	}
+	else
+	{
+		transition_while_tracking->setValueBool(false) ;
+	}
   // wildi ToDo: This is the real stuff
 //   if ((getState () & TEL_MASK_MOVING) == TEL_MOVING) {
 //     logStream (MESSAGE_INFO) << "APGTO::info  moving" << sendLog ;
@@ -2275,102 +2278,126 @@ int APGTO::info ()
 //   } else {
 //     logStream (MESSAGE_INFO) << "APGTO::info  not ( moving || parking)" << sendLog ;
 //   }
-  if( move_state== NOTMOVE) {
-    
-    int stop= 0 ;
-    if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-      ret= pier_collision( &object, &observer) ;
-      
-      if(ret != NO_COLLISION) {
-	stop= 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog ;
-      } else {
-	if( ( HA >= 15. ) && ( HA < 180.)) { // 15. degrees are a matter of taste
-	  if( mount_tracking->getValueBool()) {
-	    stop= 1 ;
-	    logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
-	  }
+	if (move_state == NOTMOVE)
+	{
+		int stop= 0 ;
+		if (!(strcmp("West", DECaxis_HAcoordinate->getValue())))
+		{
+			ret= pier_collision( &object, &observer) ;
+			if (ret != NO_COLLISION)
+			{
+				stop= 1;
+				logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog ;
+			}
+			else
+			{
+				if ((HA >= 15.) && (HA < 180.))
+				{ // 15. degrees are a matter of taste
+					if (mount_tracking->getValueBool())
+					{
+						stop = 1;
+						logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
+					}
+				}
+			}
+		}
+		else if (!(strcmp("East", DECaxis_HAcoordinate->getValue())))
+		{
+			//really target_equ.dec += 180. ;
+			struct ln_equ_posn t_equ;
+			t_equ.ra = object.ra;
+			t_equ.dec= object.dec + 180.;
+			ret = pier_collision (&t_equ, &observer);
+			if (ret != NO_COLLISION)
+			{
+				stop = 1;
+				logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog;
+			}
+			else
+			{
+				if (APAltAz->getAlt() < 10.)
+				{
+					if (mount_tracking->getValueBool())
+					{
+						stop = 1;
+						notMoveCupola ();
+	    					logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
+					}
+				}
+			}
+		} 
+		if (stop !=0 )
+		{
+			// if a collision is detected it is necessary that the mount can be moved with rot e, w, n, s commands
+			// set collision_detection to true if that occurs
+			if (collision_detection->getValueBool())
+			{
+				if ((abortAnyMotion () !=0))
+				{
+					logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion" << sendLog;
+					return -1;
+				}
+			}
+			else
+			{
+				if (selectAPTrackingMode(TRACK_MODE_ZERO) < 0 )
+				{
+					logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
+					return -1;
+				}
+				logStream (MESSAGE_ERROR) << "APGTO::info stop tracking but not motion" << sendLog;
+			}
+		}
 	}
-      }
-    } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
-      //really target_equ.dec += 180. ;
-      struct ln_equ_posn t_equ;
-      t_equ.ra = object.ra ;
-      t_equ.dec= object.dec + 180. ;
-      ret= pier_collision( &t_equ, &observer) ;
-
-      if(ret != NO_COLLISION) {
-	stop= 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog ;
-      } else {
-	if( APAltAz->getAlt() < 10.) {
-	  if( mount_tracking->getValueBool()) {
-	    stop= 1 ;
-	    notMoveCupola() ;
-	    logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
-	  }
+	else
+	{
+		ret = isMoving ();
+		if (ret > 0)
+		{
+			// still moving, ignore that here
+		}
+		else
+		{
+			switch (ret)
+			{
+				case -2:
+					move_state = NOTMOVE;
+					slew_state->setValueBool (false);
+					break;
+				case -1: // read error 
+					logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
+					break ;
+				default: 
+					logStream (MESSAGE_ERROR) << "APGTO::info no valid case :" << ret << sendLog;
+					break ;
+			}
+		}
 	}
-      }
-    } 
-    if( stop !=0) {
-      // if a collision is detected it is necessary that the mount can be moved with rot e, w, n, s commands
-      // set collision_detection to true if that occurs
-      if( collision_detection->getValueBool()) {
-	if( (abortAnyMotion () !=0)) {
-	  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion" << sendLog;
-	  return -1;
+	// There is a bug in the revision D Astro-Physics controller
+	// find out, when the local sidereal time gets wrong, difference is 237 sec
+	// Check if the sidereal time read from the mount is correct 
+	JD = ln_get_julian_from_sys ();
+	double lng = telLongitude->getValueDouble ();
+	local_sidereal_time = fmod ((ln_get_mean_sidereal_time (JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
+	double diff_loc_time = local_sidereal_time - APlocal_sidereal_time->getValueDouble ();
+	if (diff_loc_time >= 180.)
+	{
+		diff_loc_time -=360. ;
 	}
-      } else {
-	if ( selectAPTrackingMode(TRACK_MODE_ZERO) < 0 ) {
-	  logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
-	  return -1;
+	else if ((diff_loc_time) <= -180.)
+	{
+		diff_loc_time += 360. ;
 	}
-	logStream (MESSAGE_ERROR) << "APGTO::info stop tracking but not motion" << sendLog;
-      }
-    }
-  } else {
-    ret= isMoving() ;
+	if (fabs( diff_loc_time) > (1./8.) )
+	{ // 30 time seconds
+		logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
+			<< local_sidereal_time << " mount: "
+			<< APlocal_sidereal_time->getValueDouble() 
+			<< " difference " << diff_loc_time <<sendLog;
 
-    if( ret > 0) {
-      // still moving, ignore that here
-    } else {
-      switch (ret) {
-      case -2 :
-	move_state= NOTMOVE ;
-	slew_state->setValueBool(false) ;
-	break ;
-      case -1: // read error 
-	logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
-	break ;
-      default: 
-	logStream (MESSAGE_ERROR) << "APGTO::info no valid case :" << ret << sendLog;
-	break ;
-      }
-    }
-  }
-  // There is a bug in the revision D Astro-Physics controller
-  // find out, when the local sidereal time gets wrong, difference is 237 sec
-  // Check if the sidereal time read from the mount is correct 
-  JD  = ln_get_julian_from_sys ();
-  double lng = telLongitude->getValueDouble ();
-  local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
-  
-  double diff_loc_time = local_sidereal_time- APlocal_sidereal_time->getValueDouble() ;
-  if( diff_loc_time >= 180.) {
-    diff_loc_time -=360. ;
-  } else if(( diff_loc_time) <= -180.) {
-    diff_loc_time += 360. ;
-  }
-  if( fabs( diff_loc_time) > (1./8.) ) { // 30 time seconds
-    logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
-			      << local_sidereal_time << " mount: "
-			      << APlocal_sidereal_time->getValueDouble() 
-			      << " difference " << diff_loc_time <<sendLog;
+		logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
 
-
-    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
-
-    char date_time[256] ;
+		char date_time[256];
     struct ln_date utm;
     struct ln_zonedate ltm;
     ln_get_date_from_sys( &utm) ;
