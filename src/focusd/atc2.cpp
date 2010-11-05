@@ -17,7 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define BAUDRATE B9600
 #define FOCUSER_PORT "/dev/ttyS1"
 
 #include "focusd.h"
@@ -99,6 +98,7 @@ class ATC2:public Focusd
 		Rts2ValueInteger *fanSpeed;
 		Rts2ValueFloat *primMirrorTemp;
 		Rts2ValueFloat *secMirrorTemp;
+		Rts2ValueBool *shutter;
 		Rts2ValueFloat *humidity;
 		Rts2ValueFloat *pressure;
 		Rts2ValueFloat *dewpoint;
@@ -119,6 +119,7 @@ ATC2::ATC2 (int argc, char **argv):Focusd (argc, argv)
 	createValue (fanSpeed, "fan_speed", "[rpm] fan speed", true, RTS2_VALUE_WRITABLE);
 	createValue (primMirrorTemp, "temp_primary", "[C] primary mirror temperature", true);
 	createValue (secMirrorTemp, "temp_secondary", "[C] secondary mirror temperature", true);
+	createValue (shutter, "shutter", "[on/off] shutter position", true, RTS2_VALUE_WRITABLE);
 	createValue (humidity, "humidity", "[%] relative humidity", true);
 	createValue (pressure, "pressure", "[hP] atmospheric pressure", true);
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", true);
@@ -128,6 +129,8 @@ ATC2::ATC2 (int argc, char **argv):Focusd (argc, argv)
 
 ATC2::~ATC2 ()
 {
+	char buf[14];
+	ATC2Conn->writeRead ("CLOSEREM  ", 10, buf, 14);
   	delete ATC2Conn;
 }
 
@@ -195,9 +198,16 @@ void ATC2::getValue (const char *name, Rts2Value *val)
 	  	throw rts2core::Error (std::string ("invalid reply ") + buf);
 	if (val == NULL)
 		return;
-	ret = val->setValueCharArr (buf + l);
-	if (ret)
-		throw rts2core::Error (std::string ("invalid value ") + buf);
+	if (val->getValueBaseType () == RTS2_VALUE_BOOL)
+	{
+		((Rts2ValueBool *) val)->setValueBool (atoi (buf + l));
+	}
+	else
+	{
+		ret = val->setValueCharArr (buf + l);
+		if (ret)
+			throw rts2core::Error (std::string ("invalid value ") + buf);
+	}
 }
 
 int ATC2::info ()
@@ -214,7 +224,7 @@ int ATC2::info ()
 		getValue ("PRITE", primMirrorTemp);
 		getValue ("SECTE", secMirrorTemp);
 		getValue ("BFL", position);
-		getValue ("SHUTTER", NULL);
+		getValue ("SHUTTER", shutter);
 		getValue ("AMBTE", temperature);
 		getValue ("HUMID", humidity);
 		getValue ("PRES", pressure);
@@ -239,14 +249,14 @@ int ATC2::setTo (int num)
 	size_t l = snprintf (command, 50, "BFL %06.2f", float (num) / 100.0);
 	if (ATC2Conn->writePort (command, l))
 		return -1;
-	if (ATC2Conn->readPort (command, 14))
+	if (ATC2Conn->readPort (command, 14) != 14)
 		return -1;
 	return 0;
 }
 
 int ATC2::isFocusing ()
 {
-	return 0;
+	return -2;
 }
 
 int ATC2::setValue (Rts2Value *oldValue, Rts2Value *newValue)
