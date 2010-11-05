@@ -90,6 +90,7 @@ class ATC2:public Focusd
 		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	private:
 		void getValue (const char *name, Rts2Value *val);
+		void openRem ();
 		
 		const char *device_file;
                 rts2core::ConnSerial *ATC2Conn; // communication port with ATC2
@@ -169,13 +170,7 @@ int ATC2::init ()
 
 	ATC2Conn->flushPortIO ();
 
-	char buf[50];
-
-	ret = ATC2Conn->writeRead ("OPENREM   ", 10, buf, 14);
-	if (ret != 14)
-		return -1;
-	if (strncmp (buf, "\r\nOPENREM   \r\n", 14))
-		throw rts2core::Error (std::string ("invalid reply from OPENREM command :") + buf);
+	openRem ();
 
 	return 0;
 }
@@ -233,16 +228,28 @@ int ATC2::info ()
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
+		// assume that reply was CLOSEREM..
+		openRem ();
 		return -1;
 	}
 
 	return Focusd::info ();
 }
 
+void ATC2::openRem ()
+{
+	char buf[50];
+
+	int ret = ATC2Conn->writeRead ("OPENREM   ", 10, buf, 14);
+	if (ret != 14)
+		throw rts2core::Error ("OPENREM command returns invalid number of characters");
+	if (strncmp (buf, "\r\nOPENREM   \r\n", 14))
+		throw rts2core::Error (std::string ("invalid reply from OPENREM command :") + buf);
+}
+
 // send focus to given position
 // Robofocus: FG000000 gets position, while FGXXXXXX sets position when XXXXXXis different from zero.
 // ATC-02: BFL_xxx.xx+(CR/LF) set the new back focus position
-
 int ATC2::setTo (int num)
 {
 	char command[50];
