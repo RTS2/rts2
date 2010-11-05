@@ -49,7 +49,7 @@
 //     WARMTOGGLE+(CR/LF)   toggle (invert) the status of heating. After PC connection status is OFF
 //                             WARMON    +(CR/LF)   heating is active
 //                             WAMROFF   +(CR/LF)   heating is inactive
-//     SETFAN    +(CR/LF)
+//     SETFAN xxx+(CR/LF)
 //                             SETFAN xxx+(CR/LF)
 //     SETSTABxxx+(CR/LF)
 //                             SETSTABxxx+(CR/LF)
@@ -94,7 +94,7 @@ class ATC2:public Focusd
 		const char *device_file;
                 rts2core::ConnSerial *ATC2Conn; // communication port with ATC2
 
-		Rts2ValueFloat *mirrorTarget;
+		Rts2ValueInteger *mirrorTarget;
 		Rts2ValueInteger *fanSpeed;
 		Rts2ValueFloat *primMirrorTemp;
 		Rts2ValueFloat *secMirrorTemp;
@@ -162,7 +162,6 @@ int ATC2::init ()
 		return ret;
 
 	ATC2Conn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 100);
-	ATC2Conn->setDebug (true);
 
 	ret = ATC2Conn->init ();
 	if (ret)
@@ -261,6 +260,30 @@ int ATC2::isFocusing ()
 
 int ATC2::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
+	char buf[14];
+	if (oldValue == fanSpeed)
+	{
+		if (newValue->getValueInteger () > 100 || newValue->getValueInteger () < 0)
+			return -2;
+		int l = snprintf (buf, 11, "SETFAN %03i", newValue->getValueInteger ());
+		l = ATC2Conn->writeRead (buf, 10, buf, 14);
+		if (l != 14)
+			return -2;
+		return 0;
+	}
+	if (oldValue == mirrorTarget)
+	{
+		if (newValue->getValueInteger () > temperature->getValueDouble () + 10)
+		{
+			logStream (MESSAGE_ERROR) << "too high target temperature - " << newValue->getValueInteger () << " " << temperature->getValueInteger () << sendLog;
+			return -2;
+		}
+		int l = snprintf (buf, 11, "SETSTAB%+03i", newValue->getValueInteger ());
+		l = ATC2Conn->writeRead (buf, 10, buf, 14);
+		if (l != 14)
+			return -2;
+		return 0;
+	}
 	return Focusd::setValue (oldValue, newValue);
 }
 
