@@ -648,28 +648,27 @@ int APGTO::setAPLocalTime(int x, int y, int z)
  */
 int APGTO::setCalenderDate(int dd, int mm, int yy)
 {
-  char cmd_string[32];
-  char temp_string[256];
-  int ret;
+	char cmd_string[32];
+	char temp_string[256];
 
-  //Command: :SC MM/DD/YY#
-  //Response: 32 spaces followed by “#”, followed by 32 spaces, followed by “#”
-  //Sets the current date. Note that year fields equal to or larger than 97 are assumed to be 20 century, 
-  //Year fields less than 97 are assumed to be 21st century.
+	//Command: :SC MM/DD/YY#
+	//Response: 32 spaces followed by “#”, followed by 32 spaces, followed by “#”
+	//Sets the current date. Note that year fields equal to or larger than 97 are assumed to be 20 century, 
+	//Year fields less than 97 are assumed to be 21st century.
 
-  yy = yy % 100;
-  snprintf(cmd_string, sizeof(cmd_string), "#:SC %02d/%02d/%02d#", mm, dd, yy);
+	yy = yy % 100;
+	snprintf(cmd_string, sizeof(cmd_string), "#:SC %02d/%02d/%02d#", mm, dd, yy);
 
-  if (( ret = serConn->writeRead (cmd_string, 14, temp_string, 33, '#')) < 1)
-	return -1;
-  if (( ret = serConn->readPort (temp_string, 33, '#')) < 1)
-	return -1 ;
-  // wildi ToDo: completely unclear:
-  // if this line is commented out, subsequent RS 232 reads fail!
-  logStream (MESSAGE_INFO) << sendLog;
-
-  return 0;
+	if (serConn->writeRead (cmd_string, 14, temp_string, 33, '#') < 1)
+		return -1;
+	if (serConn->readPort (temp_string, 33, '#') < 1)
+		return -1 ;
+	// wildi ToDo: completely unclear:
+	// if this line is commented out, subsequent RS 232 reads fail!
+	logStream (MESSAGE_INFO) << sendLog;
+	return 0;
 }
+
 /*!
  * Reads APGTO right ascenation.
  *
@@ -677,29 +676,31 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
  */
 int APGTO::tel_read_ra ()
 {
-  double new_ra;
-  if (tel_read_hms (&new_ra, "#:GR#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_ra failed" << sendLog;
-    return -1;
-  }
-  setTelRa ( fmod((new_ra * 15.0) + 360., 360.));
-  return 0;
+	double new_ra;
+	if (tel_read_hms (&new_ra, "#:GR#"))
+	{
+		logStream (MESSAGE_ERROR) <<"APGTO::tel_read_ra failed" << sendLog;
+		return -1;
+	}
+	setTelRa (fmod((new_ra * 15.0) + 360., 360.));
+	return 0;
 }
+
 /*!
  * Reads APGTO declination.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::tel_read_dec ()
+int APGTO::tel_read_dec ()
 {
-  double t_telDec;
-  if (tel_read_hms (&t_telDec, "#:GD#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_dec failed" << sendLog;
-    return -1;
-  }
-  setTelDec (fmod( t_telDec,  90.));
-  return 0;
+	double t_telDec;
+	if (tel_read_hms (&t_telDec, "#:GD#"))
+	{
+		logStream (MESSAGE_ERROR) <<"APGTO::tel_read_dec failed" << sendLog;
+		return -1;
+	}
+	setTelDec (fmod( t_telDec,  90.));
+	return 0;
 }
 /*!
  * Reads APGTO altitude.
@@ -2373,7 +2374,7 @@ int APGTO::info ()
     struct ln_date utm;
     struct ln_zonedate ltm;
     ln_get_date_from_sys( &utm) ;
-    ln_date_to_zonedate(&utm, &ltm, -1 * timezone); // Adds "only" offset to JD and converts back (see DST below)
+    ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
 
     if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
       logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
@@ -2446,14 +2447,14 @@ APGTO::willConnect (Rts2Address * in_addr)
   }
   return Telescope::willConnect (in_addr);
 }
-double
-APGTO::siderealTime() {
-  double JD  = ln_get_julian_from_sys ();
-  double lng = telLongitude->getValueDouble ();
-  return fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
- }
-int
-APGTO::checkSiderealTime( double limit) 
+double APGTO::siderealTime()
+{
+	double JD  = ln_get_julian_from_sys ();
+	double lng = telLongitude->getValueDouble ();
+	return fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
+}
+
+int APGTO::checkSiderealTime( double limit) 
 {
   int ret ;
   int error= -1 ;
@@ -2520,68 +2521,45 @@ int APGTO::setBasicData()
 		return -1;
 	}
 	ln_get_date_from_sys( &utm) ;
-	ln_date_to_zonedate(&utm, &ltm, -1 * timezone); // Adds "only" offset to JD and converts back (see DST below)
+	ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
 
-  if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
-    return -1;
-  }
-  if (( ret= setCalenderDate(ltm.days, ltm.months, ltm.years) < 0) ) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
-    return -1;
-  }
-  // RTS2 counts positive to the East, AP positive to the West
-  double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0) ;
-  if (( ret= setAPSiteLongitude( APlng) < 0) ) { // AP mount: positive and only to the to west 
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
-    return -1;
-  }
-  if (( ret= setAPSiteLatitude( telLatitude->getValueDouble()) < 0) ) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
-    return -1;
-  }
-  // ToDo: No DST (CEST) is given to the AP mount, so local time is off by 1 hour during DST
-  // CET                           22:56:06  -1:03:54, -1.065 (valid for Obs Vermes CET)
-  // This value has been determied in the following way
-  // longitude from google earth
-  // set it in the AP controller
-  // vary the value until the local sidereal time, obtained from the AP controller,
-  // matches the externally calculated local sidereal time.
-  // Understand what happens with AP controller sidereal time, azimut coordinates
-
-  // Astro-Physics says:
-  //You will be correct to enter your longitude as a positive value with the
-  //command:
-  //:Sg 352*30#
-  //The correct command for the GMT offset (assuming European time zone 1
-  //with daylight savings time in effect) would then be:
-  //:SG -02#
-  //You can easily test your initialization of the mount by polling the
-  //mount for the sidereal time and comparing it to the sidereal time
-  //calculated by a planetarium program for your location.   The two values
-  ///should be within several (<30) seconds of each other.  I have verified
-  //this with a control box containing a "D" chip compared to TheSky6.   You
-  //should not need to do the verification every time you use the mount, but
-  //it is a good idea after first writing your initialization sequence to
-  //test it once. 
-  //Mag. 7 skies!
-  //Howard Hedlund
-  //Astro-Physics, Inc.
-
-	if (setAPUTCOffset((int) (timezone / 3600)) < 0)
+	if (setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
+		return -1;
+	}
+	if (setCalenderDate(ltm.days, ltm.months, ltm.years) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
+		return -1;
+	}
+	// RTS2 counts positive to the East, AP positive to the West
+	double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0);
+	if (setAPSiteLongitude( APlng) < 0)
+	{ // AP mount: positive and only to the to west 
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
+		return -1;
+	}
+	if (setAPSiteLatitude( telLatitude->getValueDouble()) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
+		return -1;
+	}
+	if (setAPUTCOffset((int) (timezone / 3600) - daylight) < 0)
 	{
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
 		return -1;
 	}
 
-  logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
-  if(( ret= setAPUnPark()) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
-    return -1;
-  }
-  logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking (cold start) successful" << sendLog;
+	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
+	if (setAPUnPark() < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
+		return -1;
+	}
+	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking (cold start) successful" << sendLog;
   
-  return 0 ;
+	return 0 ;
 }
 // further discussion with Petr required:
 // int APGTO::changeMasterState (int new_state)
@@ -2627,13 +2605,15 @@ int APGTO::init ()
 		return status;
 
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5);
-	//serConn->setDebug (true);
+	serConn->setDebug (true);
 	status = serConn->init ();
 	if (status)
 		return -1;
 	serConn->flushPortIO ();
 
 	tzset ();
+
+	logStream (MESSAGE_DEBUG) << "timezone " << timezone << " daylight " << daylight << sendLog;
 
 	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete on port " << device_file << sendLog;
 	return 0;
@@ -2680,7 +2660,7 @@ int APGTO::initValues ()
   if( (ret= checkSiderealTime( 1./120.)) != 0 ) {
 
     logStream (MESSAGE_ERROR) << "initValues sidereal time larger than 1./120, exiting" << sendLog;
-    exit (1) ; // do not go beyond, at least for the moment
+    //exit (1) ; // do not go beyond, at least for the moment
   }
   logStream (MESSAGE_DEBUG) << "APGTO::initValues ra "
                             << getTelRa() << " dec " 
