@@ -22,9 +22,6 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
 #include <math.h>
@@ -34,16 +31,11 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
+#include "../utils/connserial.h"
 #include "../utils/rts2config.h" 
 #include "clicupola.h"
 #include "pier-collision.h"
 
-#include <termios.h>
-// uncomment following line, if you want all apgto_fd read logging (will
-// at about 10 30-bytes lines to syslog for every query).
-//#define DEBUG_ALL_PORT_COMM
-
-#define OPT_APGTO_DEVICE         OPT_LOCAL + 53
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_CCD_DEVICE     OPT_LOCAL + 57
@@ -66,11 +58,10 @@
 #define DIR_SOUTH 's'
 #define DIR_WEST  'w'
 
-#define setAPPark()         write(apgto_fd, "#:KA#", 5)
-#define setAPUnPark()       write(apgto_fd, "#:PO#", 5)// ok, no response
-#define setAPLongFormat()   write(apgto_fd, "#:U#", 4) // ok, no response
-#define setAPClearBuffer()  write(apgto_fd, "#", 1)    // clear buffer
-
+#define setAPPark()         serConn->writePort ("#:KA#", 5)
+#define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
+#define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
+#define setAPClearBuffer()  serConn->writePort ("#", 1)    // clear buffer
 
 #define PARK_POSITION_RA -270.
 #define PARK_POSITION_DEC 5.
@@ -131,8 +122,8 @@ class APGTO:public Telescope {
 
 	private:
 		const char *device_file;
+		rts2core::ConnSerial *serConn;
 		char *ccdDevice;
-		int apgto_fd;
 		int force_start ;
 		double on_set_HA ;
 		double on_zero_HA ;
@@ -144,19 +135,11 @@ class APGTO:public Telescope {
 		int f_scansexa (const char *str0, double *dp);
 		void getSexComponents(double value, int *d, int *m, int *s) ;
 
-		// low-level functions (RTS2)
-		int tel_read (char *buf, int count);
-		int tel_read_hash (char *buf, int count);
-		int tel_write (const char *buf, int count);
-		int tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount);
-		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
 		int tel_read_hms (double *hmsptr, const char *command);
 
 		// Astro-Physics LX200 protocol specific functions
 		int getAPVersionNumber() ;
 		int getAPUTCOffset() ;
-		int setAPObjectAZ( double az) ;
-		int setAPObjectAlt( double alt) ;
 		int setAPUTCOffset( double hours) ;
 		int APSyncCMR( char *matchedObject) ;
 		int selectAPMoveToRate( int moveToRate) ;
@@ -227,206 +210,45 @@ class APGTO:public Telescope {
 		Rts2ValueBool    *slew_state; // (move_state)
 		Rts2ValueBool    *collision_detection; 
 		Rts2ValueBool    *avoidBellowHorizon;
-  };
+};
 
 };
 
 using namespace rts2teld;
 
-void
-APGTO::getSexComponents(double value, int *d, int *m, int *s)
+void APGTO::getSexComponents(double value, int *d, int *m, int *s)
 {
+	*d = (int) fabs(value);
+	*m = (int) ((fabs(value) - *d) * 60.0);
+	*s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
 
-  *d = (int) fabs(value);
-  *m = (int) ((fabs(value) - *d) * 60.0);
-  *s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
-
-  if (value < 0)
-    *d *= -1;
+	if (value < 0)
+		*d *= -1;
 }
-int
-APGTO::f_scansexa ( const char *str0, double *dp) /* input string, cracked value, if return 0 */
+
+int APGTO::f_scansexa ( const char *str0, double *dp) /* input string, cracked value, if return 0 */
 {
-  double a = 0, b = 0, c = 0;
-  char str[128];
-  char *neg;
-  int r;
+	double a = 0, b = 0, c = 0;
+	char str[128];
+	char *neg;
+	int r;
 
-  /* copy str0 so we can play with it */
-  strncpy (str, str0, sizeof(str)-1);
-  str[sizeof(str)-1] = '\0';
+	/* copy str0 so we can play with it */
+	strncpy (str, str0, sizeof(str)-1);
+	str[sizeof(str)-1] = '\0';
 
-  neg = strchr(str, '-');
-  if (neg)
-    *neg = ' ';
-  r = sscanf (str, "%lf%*[^0-9]%lf%*[^0-9]%lf", &a, &b, &c);
-  if (r < 1)
-    return (-1);
-  *dp = a + b/60 + c/3600;
-  if (neg)
-    *dp *= -1;
-  return (0);
+	neg = strchr(str, '-');
+	if (neg)
+		*neg = ' ';
+	r = sscanf (str, "%lf%*[^0-9]%lf%*[^0-9]%lf", &a, &b, &c);
+	if (r < 1)
+		return (-1);
+	*dp = a + b/60 + c/3600;
+	if (neg)
+		*dp *= -1;
+	return (0);
 }
-/*!
- * Reads some data directly from apgto_fd.
- *
- * Log all flow as LOG_DEBUG to syslog
- *
- * @exception EIO when there aren't data from apgto_fd
- *
- * @param buf 		buffer to read in data
- * @param count 	how much data will be read
- *
- * @return -1 on failure, otherwise number of read data
- */
-int
-APGTO::tel_read (char *buf, int count)
-{
-  int n_read; // compiler complains if read is used as index
 
-  for (n_read = 0; n_read < count; n_read++) {
-    int ret = read (apgto_fd, &buf[n_read], 1);
-    if (ret == 0) {
-      ret = -1;
-    }
-    if (ret < 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read apgto_fd read error "
-				<< errno << sendLog;
-      return -1;
-    }
-#ifdef DEBUG_ALL_PORT_COMM
-    logStream (MESSAGE_DEBUG) << "APGTO::tel_read read >" << buf[n_read] << "<END" <<
-      sendLog;
-#endif
-  }
-  return n_read;
-}
-/*!
- * Will read from apgto_fd till it encoutered # character.
- *
- * Read ending #, but doesn't return it.
- *
- * @see tel_read() for description
- */
-int
-APGTO::tel_read_hash (char *buf, int count)
-{
-  int read;
-  buf[0] = 0;
-
-  for (read = 0; read < count; read++) {
-    if (tel_read (&buf[read], 1) < 0)
-      return -read;
-    if (buf[read] == '#')
-      break;
-  }
-  if (buf[read] == '#') {
-    buf[read] = 0;
-  } else {
-    buf[read] = 0;
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hash NO hash read>" << buf << "<END" << sendLog;
-  }
-  return read;
-}
-/*!
- * Will write on mount apgto_fd string.
- *
- * @exception EIO, .. common write exceptions
- *
- * @param buf 		buffer to write
- * @param count 	count to write
- *
- * @return -1 on failure, count otherwise
- */
-int
-APGTO::tel_write (const char *buf, int count)
-{
-  return write (apgto_fd, buf, count);
-}
-/*!
- * Combine write && read together.
- *
- *
- * @exception EINVAL and other exceptions
- *
- * @param wbuf		buffer to write on apgto_fd
- * @param wcount	write count
- * @param rbuf		buffer to read from apgto_fd
- * @param rcount	maximal number of characters to read
- *
- * @return -1 and set errno on failure, rcount otherwise
- */
-int
-APGTO::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
-{
-  int tmp_rcount;
-  char *buf;
-
-  if (tel_write (wbuf, wcount) < 0)
-    return -1;
-
-  tmp_rcount = tel_read (rbuf, rcount);
-  if (tmp_rcount > 0) {
-    buf = (char *) malloc (rcount + 1);
-    memcpy (buf, rbuf, rcount);
-    buf[rcount] = 0;
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read " <<
-    //      tmp_rcount << " byte(s),  buffer >" << buf << "<END" << sendLog;
-    free (buf);
-  } else {
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read returns " <<
-    //  tmp_rcount << sendLog;
-  }
-  return tmp_rcount;
-}
-/*!
- * Combine write && read_hash together.
- *
- * @see tel_write_read for definition
- */
-int
-APGTO::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
-{
-  int tmp_rcount;
-
-  if (tel_write (wbuf, wcount) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_write_read_hash tel_write failed" << sendLog;
-    return -1;
-  }
-  if((tmp_rcount = tel_read_hash (rbuf, rcount)) < 0) {
-
-    logStream (MESSAGE_ERROR) << "APGTO::tel_write_read_hash failed, read rbuf >>" << rbuf << "<<" << sendLog;
-    return -1;
-  }
-  return tmp_rcount;
-}
-/*!
- * Repeat APGTO write.
- *
- * Handy for setting ra and dec.
- * Meade tends to have problems with that, don't know about APGTO.
- *
- * @param command	command to write on apgto_fd
- */
-int
-APGTO::tel_rep_write (char *command)
-{
-  int count;
-  char retstr;
-  for (count = 0; count < 200; count++) {
-    if (tel_write_read (command, strlen (command), &retstr, 1) < 0)
-      return -1;
-    if (retstr == '1')
-      break;
-    sleep (1);
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_rep_write - for " << count << " time" << sendLog;
-  }
-  if (count == 200) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_rep_write unsucessful due to incorrect return." << sendLog;
-    return -1;
-  }
-  return 0;
-}
 /*!
  * Reads some value from APGTO in hms format.
  *
@@ -436,253 +258,154 @@ APGTO::tel_rep_write (char *command)
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::tel_read_hms (double *hmsptr, const char *command)
+int APGTO::tel_read_hms (double *hmsptr, const char *command)
 {
-  char wbuf[256];
-  if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
-    return -1;
-  }
-  *hmsptr = hmstod (wbuf);
-  // ToDo 
-  // Invalid argumentwbuf >-É84*24:58<
-  // Invalid argumentwbuf >-Ê00*06:11<
-  // Invalid argumentwbuf >-É99*59:48<
-  // Invalid argumentwbuf >-É89*09:27<
-  // Invalid argumentwbuf >-É89*02:54<
-  // Invalid argumentwbuf >Y19:55:49.4<
-  //                      >-Ê01*57:31<
-  // ...
-  if (errno) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
-    errno= 0 ;
-    block_sync_move->setValueBool(true) ;
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading HMS"<< sendLog;
-    while( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
-      sleep(1) ;
-    }
-    sleep(1) ;
-    // trying to recover
-    if(setAPClearBuffer() < 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms clearing the buffer failed" << sendLog;
-    } else {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms clearing the buffer successfully" << sendLog;
-    }
-    sleep(1) ;
-    if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
-      return -1;
-    }
-    *hmsptr = hmstod (wbuf);
-    if (errno) {
-       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
-       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing serial port" <<sendLog;
-       errno= 0 ;
-
-       sleep(1) ;
-       if (tcflush (apgto_fd, TCIOFLUSH) < 0) {
-         logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing failed, giving up " <<sendLog;
-	 return -1;
-       }
-       sleep(2) ;
-       if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
-	 return -1;
-       }
-       *hmsptr = hmstod (wbuf);
-       if(errno) {
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: giving up" <<sendLog;
-	 errno= 0 ;
-       }
-    } else {
-
-       block_sync_move->setValueBool(false) ;
-       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms unblocking telescope movement after second trial, received wbuf >>"<< wbuf << "<<"<< sendLog;
-       return 0 ;
-    }
-    return -1;
-  }
-  return 0;
+	char wbuf[256];
+	int len;
+	if ((len = serConn->writeRead (command, strlen (command), wbuf, 200, '#')) < 0)
+		return -1;
+	wbuf[len - 1] = '\0';
+	*hmsptr = hmstod (wbuf);
+	// ToDo 
+	// Invalid argumentwbuf >-É84*24:58<
+	// Invalid argumentwbuf >-Ê00*06:11<
+	// Invalid argumentwbuf >-É99*59:48<
+	// Invalid argumentwbuf >-É89*09:27<
+	// Invalid argumentwbuf >-É89*02:54<
+	// Invalid argumentwbuf >Y19:55:49.4<
+	//                      >-Ê01*57:31<
+	// ...
+	if (isnan (*hmsptr))
+	{
+		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
+		return -1;
+	}
+	return 0;
 }
-/*!
+
+/**
  * Reads from APGTO the version character of the firmware
  *
  * @param none
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::getAPVersionNumber()
+int APGTO::getAPVersionNumber()
 {
-  int ret= -1 ;
+	int ret= -1 ;
 
-  char version[32] ;
-  if (( ret= tel_write_read_hash ( "#:V#", 4, version, 2))<1) {
-    return -1 ;
-  }
-  APfirmware->setValueString (version);
-  return 0 ;
+	char version[32] ;
+	if (( ret = serConn->writeRead ( "#:V#", 4, version, 2, '#')) < 1 )
+		return -1 ;
+	APfirmware->setValueString (version);
+	return 0 ;
 }
-int 
-/*!
+
+/**
  * Reads from APGTO the UTC offset and corrects the output according to Astro-Physics documentation firmware revision D
- *
- *
  * @param none
  *
  * @return -1 and set errno on error, otherwise 0
  */
-APGTO::getAPUTCOffset()
+int APGTO::getAPUTCOffset()
 {
-  int ret= -1 ;
-  int nbytes_read=0;
-  double offset ;
+	int nbytes_read = 0;
+	double offset ;
 
-  char temp_string[16];
+	char temp_string[16];
 
-  if (( ret= tel_write_read_hash ( "#:GG#", 5, temp_string, 11))<1) { // HH:MM:SS.S# if long format
-    logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset error " << nbytes_read << " bytes read" << sendLog;
-    return -1 ;
-  }
-  // Negative offsets, see AP keypad manual p. 77
-  if((temp_string[0]== 'A') || ((temp_string[0]== '0')&&(temp_string[1]== '0')) ||(temp_string[0]== '@')) {
-    int i ;
-    for( i=nbytes_read; i > 0; i--) {
-      temp_string[i]= temp_string[i-1] ; 
-    }
-    temp_string[0] = '-' ;
-    temp_string[nbytes_read + 1] = '\0' ;
+	if ((nbytes_read = serConn->writeRead ("#:GG#", 5, temp_string, 11, '#')) < 1 )
+		return -1 ;
+	// Negative offsets, see AP keypad manual p. 77
+	if ((temp_string[0]== 'A') || ((temp_string[0]== '0') && (temp_string[1]== '0')) || (temp_string[0]== '@'))
+	{
+		int i;
+		for (i = nbytes_read; i > 0; i--)
+		{
+			temp_string[i]= temp_string[i-1];
+		}
+		temp_string[0] = '-';
+		temp_string[nbytes_read + 1] = '\0';
 
-    //logStream (MESSAGE_DEBUG) << "APGTO::getAPUTCOffset string >" << temp_string << "<END" << sendLog;
-
-    if( temp_string[1]== 'A')  {
-      temp_string[1]= '0' ;
-	    switch (temp_string[2]) {
-	    case '5':
-		    
-	      temp_string[2]= '1' ;
-	      break ;
-	    case '4':
-		    
-	      temp_string[2]= '2' ;
-	      break ;
-	    case '3':
-		    
-	      temp_string[2]= '3' ;
-	      break ;
-	    case '2':
-		    
-	      temp_string[2]= '4' ;
-	      break ;
-	    case '1':
-		    
-	      temp_string[2]= '5' ;
-	      break ;
-	    default:
-	      logStream (MESSAGE_ERROR) << "APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
-	      return -1 ;
-		  break ;
-	    }
-    } else if( temp_string[1]== '0') {
-      temp_string[1]= '0' ;
-      temp_string[2]= '6' ;
-    } else if( temp_string[1]== '@') {
-      temp_string[1]= '0' ;
-      switch (temp_string[2]) {
-      case '9':
-		    
-	temp_string[2]= '7' ;
-	break ;
-      case '8':
-		    
-	temp_string[2]= '8' ;
-	break ;
-      case '7':
-		    
-	temp_string[2]= '9' ;
-	break ;
-      case '6':
-		    
-	temp_string[2]= '0' ;
-	break ;
-      case '5':
-	temp_string[1]= '1' ;
-	temp_string[2]= '1' ;
-	break ;
-      case '4':
-		    
-	temp_string[1]= '1' ;
-	temp_string[2]= '2' ;
-	break ;
-      default:
-	logStream (MESSAGE_DEBUG) <<"APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
-	return -1 ;
-	break;
-      }    
-    } else {
-      logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" <<sendLog;
-    }
-  } else {
-    temp_string[nbytes_read - 1] = '\0' ;
-  }
-  if (f_scansexa(temp_string, &offset)) {
-    logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled  >" << temp_string << "<END" <<sendLog;
-    return -1;
-  }
-  APutc_offset->setValueDouble( offset * 15. ) ;
-  //logStream (MESSAGE_DEBUG) <<"APGTO::getAPUTCOffset received string >" << temp_string << "<END offset is " <<  APutc_offset->getValueDouble() <<sendLog;
-  return 0;
+		if (temp_string[1] == 'A')
+		{
+			temp_string[1]= '0';
+			switch (temp_string[2])
+			{
+				case '5':
+					temp_string[2]= '1';
+					break;
+				case '4':
+					temp_string[2]= '2';
+					break;
+				case '3':
+					temp_string[2]= '3';
+					break;
+				case '2':
+					temp_string[2]= '4';
+					break;
+				case '1':
+					temp_string[2]= '5';
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
+					return -1;
+			}
+		}
+		else if (temp_string[1]== '0')
+		{
+			temp_string[1]= '0';
+			temp_string[2]= '6';
+		}
+		else if( temp_string[1]== '@')
+		{
+			temp_string[1]= '0' ;
+			switch (temp_string[2])
+			{
+				case '9':
+					temp_string[2]= '7';
+					break;
+				case '8':
+					temp_string[2]= '8';
+					break;
+				case '7':
+					temp_string[2]= '9';
+					break;
+				case '6':
+					temp_string[2]= '0';
+					break;
+				case '5':
+					temp_string[1]= '1';
+					temp_string[2]= '1';
+					break;
+				case '4':
+					temp_string[1]= '1';
+					temp_string[2]= '2';
+					break;
+				default:
+					logStream (MESSAGE_DEBUG) <<"APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
+					return -1;
+			}    
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
+		}
+	}
+	else
+	{
+		temp_string[nbytes_read - 1] = '\0';
+	}
+	if (f_scansexa(temp_string, &offset))
+	{
+		logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled  >" << temp_string << "<END" <<sendLog;
+		return -1;
+	}
+	APutc_offset->setValueDouble( offset * 15. ) ;
+	//logStream (MESSAGE_DEBUG) <<"APGTO::getAPUTCOffset received string >" << temp_string << "<END offset is " <<  APutc_offset->getValueDouble() <<sendLog;
+	return 0;
 }
-/*!
- * Writes to APGTO Az
- *
- *
- * @param az
- *
- * @return -1 on failure, count otherwise
- */
-// wildi: not yet in in use
-int 
-APGTO::setAPObjectAZ(double az)
-{
-  int h, m, s;
-  char temp_string[16];
 
-  getSexComponents(az, &h, &m, &s);
-
-  snprintf(temp_string, sizeof( temp_string ), "#:Sz %03d*%02d:%02d#", h, m, s);
-  //logStream (MESSAGE_DEBUG) <<"APGTO::setAPObjectAZ set object AZ string >" << temp_string << "<END" << sendLog;
-
-  return (tel_write( temp_string, sizeof( temp_string )));
-}
-/*!
- * Writes to APGTO Alt
- *
- *
- * @param alt
- *
- * @return -1 on failure, count otherwise
- */
-// wildi: not yet in in use
-int 
-APGTO::setAPObjectAlt(double alt)
-{
-  int d, m, s;
-  char temp_string[16];
-    
-  getSexComponents(alt, &d, &m, &s);
-  /* case with negative zero */
-  if (!d && alt < 0) {
-    snprintf(temp_string, sizeof( temp_string ), "#:Sa -%02d*%02d:%02d#", d, m, s) ;
-  } else {
-    snprintf(temp_string, sizeof( temp_string ), "#:Sa %+02d*%02d:%02d#", d, m, s) ;
-  }	
-  //logStream (MESSAGE_DEBUG) <<"APGTO::setAPObjectAlt set object Alt string >" << temp_string << "<END" << sendLog;
-  return (tel_write( temp_string, sizeof( temp_string )));
-}
 /*!
  * Writes to APGTO UTC offset
  *
@@ -691,31 +414,24 @@ APGTO::setAPObjectAlt(double alt)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::setAPUTCOffset(double hours)
+int APGTO::setAPUTCOffset (double hours)
 {
-  int ret= -1 ;
-  int h, m, s ;
-  char temp_string[16];
-  char retstr[1] ;
-  // To avoid the peculiar output format of AP controller, see p. 77 key pad manual
-  if( hours < 0.) {
-    hours += 24. ;
-  }
-  getSexComponents(hours, &h, &m, &s);
+	int ret= -1;
+	int h, m, s ;
+	char temp_string[16];
+	char retstr[1] ;
+	// To avoid the peculiar output format of AP controller, see p. 77 key pad manual
+	if (hours < 0.)
+	{
+		hours += 24.;
+	}
+	getSexComponents(hours, &h, &m, &s);
     
-  snprintf(temp_string, sizeof( temp_string ), "#:SG %+03d:%02d:%02d#", h, m, s);
-  //logStream (MESSAGE_DEBUG) <<"APGTO::setAPUTCOffset >" << temp_string << "<END" << sendLog ;
+	snprintf (temp_string, sizeof(temp_string), "#:SG %+03d#", h);
 
-  if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset writing failed." << sendLog;
-    return -1 ;
-  }
-  if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset reading failed." << sendLog;
-    return -1 ;
-  }
-  return 0;
+	if ((ret = serConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0)
+		return -1;
+	return 0;
 }
 /*!
  * Writes to APGTO #:Q#
@@ -725,17 +441,16 @@ APGTO::setAPUTCOffset(double hours)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::setAPMotionStop()
+int APGTO::setAPMotionStop()
 {
-  int error_type;
+	int error_type;
     
-  if ( (error_type = tel_write( "#:Q#", 4)) < 0)
-    return error_type;
+	if ( (error_type = serConn->writePort ("#:Q#", 4)) < 0)
+		return error_type;
 
-  mount_tracking->setValueBool(false) ;
-  notMoveCupola ();
-  return 0 ;
+	mount_tracking->setValueBool (false);
+	notMoveCupola ();
+	return 0 ;
 }
 
 /*!
@@ -750,18 +465,11 @@ APGTO::setAPMotionStop()
 int 
 APGTO::APSyncCMR(char *matchedObject)
 {
-  int error_type;
-  int nbytes_read=0;
+	int error_type;
     
-  if ( (error_type = tel_write( "#:CMR#", 6)) < 0)
-    return error_type;
-
-  nbytes_read= tel_read_hash (matchedObject, 33) ; //response length is 32 character plus the “#”.
-  if (nbytes_read > 1) { //sloppy
-    return 0;
-  } else {
-    return -1;
-  }
+	if ( (error_type = serConn->writeRead ("#:CMR#", 6, matchedObject, 33, '#')) < 0)
+		return error_type;
+	return 0;
 }
 /*!
  * Writes to APGTO the tracking mode
@@ -782,7 +490,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
     /* Lunar */
   case TRACK_MODE_LUNAR:
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to lunar." << sendLog;
-    if ( (error_type = tel_write( "#:RT0#", 6)) < 0)
+    if ( (error_type = serConn->writePort ("#:RT0#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(true) ;
     break;
@@ -790,7 +498,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
     /* Solar */
   case TRACK_MODE_SOLAR:
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to solar." << sendLog;
-    if ( (error_type = tel_write( "#:RT1#", 6)) < 0)
+    if ( (error_type = serConn->writePort ("#:RT1#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(true) ;
     break;
@@ -798,7 +506,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
     /* Sidereal */
   case TRACK_MODE_SIDEREAL:
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to sidereal." << sendLog;
-    if ( (error_type = tel_write( "#:RT2#", 6)) < 0)
+    if ( (error_type = serConn->writePort ("#:RT2#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(true) ;
     break;
@@ -806,7 +514,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
     /* Zero, used normally */
   case TRACK_MODE_ZERO:
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to zero." << sendLog;
-    if ( (error_type = tel_write( "#:RT9#", 6)) < 0)
+    if ( (error_type = serConn->writePort ( "#:RT9#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(false) ;
     notMoveCupola() ;
@@ -824,7 +532,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
     /* Zero, used if necessary during ::info, ::idle */
   case TRACK_MODE_ZERO_NO_RESET:
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to zero, no reset of HA." << sendLog;
-    if ( (error_type = tel_write( "#:RT9#", 6)) < 0)
+    if ( (error_type = serConn->writePort ( "#:RT9#", 6)) < 0)
       return error_type;
     mount_tracking->setValueBool(false) ;
     notMoveCupola() ;
@@ -836,6 +544,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
   }
   return 0;
 }
+
 /*!
  * Writes to APGTO the observatory longitude
  *
@@ -844,26 +553,24 @@ int APGTO::selectAPTrackingMode(int trackMode)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::setAPSiteLongitude(double Long)
+int APGTO::setAPSiteLongitude(double Long)
 {
-  int ret= -1 ;
-  int d, m, s;
-  char temp_string[32];
-  char retstr[1];
+	int ret = -1;
+	int d, m, s;
+	char temp_string[32];
+	char retstr[1];
 
-  getSexComponents(Long, &d, &m, &s);
-  snprintf(temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
-  if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLongitude writing failed." << sendLog;
-    return -1 ;
-  }
-  if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLongitude reading failed." << sendLog;
-    return -1 ;
-  }
-  return 0;
+	// fix east longitudes..
+	if (Long < 0)
+		Long += 360;
+
+	getSexComponents (Long, &d, &m, &s);
+	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
+  	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0)
+		return -1;
+	return 0;
 }
+
 /*!
  * Writes to APGTO the observatory latitude
  *
@@ -872,26 +579,20 @@ APGTO::setAPSiteLongitude(double Long)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::setAPSiteLatitude(double Lat)
+int APGTO::setAPSiteLatitude(double Lat)
 {
-  int ret= -1 ;
-  int d, m, s;
-  char temp_string[32];
-  char retstr[1];
+	int ret = -1;
+	int d, m, s;
+	char temp_string[32];
+	char retstr[1];
 
-  getSexComponents(Lat, &d, &m, &s);
-  snprintf(temp_string, sizeof( temp_string ), "#:St %+02d*%02d:%02d#", d, m, s);
-  if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLatitude writing failed." << sendLog;
-    return -1 ;
-  }
-  if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLatitude reading failed." << sendLog;
-    return -1 ;
-  }
-  return 0;
+	getSexComponents(Lat, &d, &m, &s);
+	snprintf (temp_string, sizeof( temp_string ), "#:St %+02d*%02d:%02d#", d, m, s);
+	if (( ret = serConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
+		return -1 ;
+	return 0;
 }
+
 /*!
  * Writes to APGTO the gear back lash compensation
  *
@@ -902,24 +603,17 @@ APGTO::setAPSiteLatitude(double Lat)
  *
  * @return -1 on failure, 0 otherwise
  */
-int
-APGTO::setAPBackLashCompensation( int x, int y, int z)
+int APGTO::setAPBackLashCompensation( int x, int y, int z)
 {
-  int ret= -1 ;
-  char temp_string[16];
-  char retstr[1];
+	int ret = -1;
+	char temp_string[16];
+	char retstr[1];
   
-  snprintf(temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:Br", x, y, z);
+	snprintf(temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:Br", x, y, z);
   
-  if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPBackLashCompensation writing failed." << sendLog;
-    return -1 ;
-  }
-  if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPBackLashCompensation reading failed." << sendLog;
-    return -1 ;
-  }
-  return 0;
+	if ((ret = serConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
+		return -1 ;
+	return 0;
 }
 /*!
  * Writes to APGTO the local timezone time
@@ -931,24 +625,16 @@ APGTO::setAPBackLashCompensation( int x, int y, int z)
  *
  * @return -1 on failure, 0 otherwise
  */
-
-int 
-APGTO::setAPLocalTime(int x, int y, int z)
+int APGTO::setAPLocalTime(int x, int y, int z)
 {
-  int ret= -1 ;
-  char temp_string[16];
-  char retstr[1];
+	int ret = -1;
+	char temp_string[16];
+	char retstr[1];
   
-  snprintf(temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:SL" , x, y, z);
-  if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPLocalTime writing failed." << sendLog;
-    return -1 ;
-  }
-  if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPLocalTime reading failed." << sendLog;
-    return -1 ;
-  }
-  return 0;
+	snprintf (temp_string, sizeof( temp_string ), "%s %02d:%02d:%02d#", "#:SL" , x, y, z);
+	if ((ret = serConn->writeRead (temp_string, sizeof(temp_string), retstr, 1)) < 0)
+		return -1;
+	return 0;
 }
 /*!
  * Writes to APGTO the local timezone date
@@ -960,8 +646,7 @@ APGTO::setAPLocalTime(int x, int y, int z)
  *
  * @return -1 on failure, 0 otherwise
  */
-int 
-APGTO::setCalenderDate(int dd, int mm, int yy)
+int APGTO::setCalenderDate(int dd, int mm, int yy)
 {
   char cmd_string[32];
   char temp_string[256];
@@ -975,14 +660,10 @@ APGTO::setCalenderDate(int dd, int mm, int yy)
   yy = yy % 100;
   snprintf(cmd_string, sizeof(cmd_string), "#:SC %02d/%02d/%02d#", mm, dd, yy);
 
-  if (( ret= tel_write_read_hash ( cmd_string, 14, temp_string, 33))<1) { // HH:MM:SS.S# if long format
-    logStream (MESSAGE_ERROR) <<"APGTO::setCalenderDate inadequate answer from mount, command" << cmd_string<< sendLog;
-    return -1 ;
-  }
-  if (( ret= tel_read_hash ( temp_string, 33))<1) {
-    logStream (MESSAGE_ERROR) <<"APGTO::setCalenderDate inadequate answer from mount (2nd line), command " << cmd_string<< sendLog;
-    return -1 ;
-  }
+  if (( ret = serConn->writeRead (cmd_string, 14, temp_string, 33, '#')) < 1)
+	return -1;
+  if (( ret = serConn->readPort (temp_string, 33, '#')) < 1)
+	return -1 ;
   // wildi ToDo: completely unclear:
   // if this line is commented out, subsequent RS 232 reads fail!
   logStream (MESSAGE_INFO) << sendLog;
@@ -994,8 +675,7 @@ APGTO::setCalenderDate(int dd, int mm, int yy)
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::tel_read_ra ()
+int APGTO::tel_read_ra ()
 {
   double new_ra;
   if (tel_read_hms (&new_ra, "#:GR#")) {
@@ -1026,32 +706,26 @@ APGTO::tel_read_dec ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::tel_read_altitude ()
+int APGTO::tel_read_altitude ()
 {
-  double new_altitude;
-  if (tel_read_hms (&new_altitude, "#:GA#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_altitude failed" << sendLog;
-    return -1;
-  }
-  APAltAz->setAlt(new_altitude);
-  return 0;
+	double new_altitude;
+	if (tel_read_hms (&new_altitude, "#:GA#"))
+		return -1;
+	APAltAz->setAlt(new_altitude);
+	return 0;
 }
 /*!
  * Reads APGTO azimuth.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::tel_read_azimuth ()
+int APGTO::tel_read_azimuth ()
 {
-  double new_azimuth;
-  if (tel_read_hms (&new_azimuth, "#:GZ#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_azimuth failed" << sendLog;
-    return -1;
-  }
-  APAltAz->setAz(new_azimuth);
-  return 0;
+	double new_azimuth;
+	if (tel_read_hms (&new_azimuth, "#:GZ#"))
+		return -1;
+	APAltAz->setAz(new_azimuth);
+	return 0;
 }
 /*!
  * Reads APGTO local time.
@@ -1091,16 +765,13 @@ APGTO::tel_read_sidereal_time ()
  * @return -1 on error, otherwise 0
  *
  */
-int
-APGTO::tel_read_latitude ()
+int APGTO::tel_read_latitude ()
 {
-  double new_latitude;
-  if (tel_read_hms (&new_latitude, "#:Gt#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_latitude failed" << sendLog;
-    return -1;
-  }
-  APlatitude->setValueDouble(new_latitude) ;
-  return 0;
+	double new_latitude;
+	if (tel_read_hms (&new_latitude, "#:Gt#"))
+		return -1;
+	APlatitude->setValueDouble(new_latitude) ;
+	return 0;
 }
 /*!
  * Reads APGTO longitude.
@@ -1120,25 +791,52 @@ APGTO::tel_read_longitude ()
   logStream (MESSAGE_DEBUG) << "APGTO::tel_read_longitude " << new_longitude << "" << strlen("#:Gg#") <<sendLog;
   return 0;
 }
+
+/*!
+ * Repeat APGTO write.
+ *
+ * Handy for setting ra and dec.
+ * Meade tends to have problems with that, don't know about APGTO.
+ *
+ * @param command	command to write on apgto_fd
+ */
+int APGTO::tel_rep_write (char *command)
+{
+	int count;
+	char retstr;
+	for (count = 0; count < 200; count++)
+	{
+		if (serConn->writeRead (command, strlen (command), &retstr, 1) < 0)
+			return -1;
+		if (retstr == '1')
+			return 0;
+		sleep (1);
+		//logStream (MESSAGE_DEBUG) << "APGTO::tel_rep_write - for " << count << " time" << sendLog;
+	}
+	logStream (MESSAGE_ERROR) << "APGTO::tel_rep_write unsucessful due to incorrect return." << sendLog;
+	return -1;
+}
+
 /*!
  * Reads APGTO relative position of the declination axis to the observed hour angle.
  *
  * @return -1 on error, otherwise 0
  *
  */
-int
-APGTO::tel_read_declination_axis ()
+int APGTO::tel_read_declination_axis ()
 {
-  int ret ;
-  char new_declination_axis[32] ;
+	int ret ;
+	char new_declination_axis[32] ;
 
-  if (( ret= tel_write_read_hash ( "#:pS#", 5, new_declination_axis, 5))< 0) { // result is East#, West#
-    logStream (MESSAGE_DEBUG) << "APGTO::tel_read_declination_axis failed" << sendLog;
-    return -1;
-  }
-  DECaxis_HAcoordinate->setValueString(new_declination_axis) ;
-  return 0;
+	ret = serConn->writeRead ("#:pS#", 5, new_declination_axis, 5, '#');
+	if (ret < 0)
+		return -1;
+	new_declination_axis[ret - 1] = '\0';
+	
+	DECaxis_HAcoordinate->setValueString(new_declination_axis) ;
+	return 0;
 }
+
 /*!
  * Reads and checks APGTO relative position of the declination axis to the observed hour angle.
  *
@@ -1224,21 +922,18 @@ APGTO::tel_check_declination_axis ()
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-APGTO::tel_write_ra (double ra)
+int APGTO::tel_write_ra (double ra)
 {
-  char command[32];
-  int h, m, s;
-  if (ra < 0 || ra > 360.0) {
-    return -1;
-  }
-  ra = ra / 15;
-  dtoints (ra, &h, &m, &s);
-  // Astro-Physics format
-  if( snprintf(command, sizeof( command), "#:Sr %02d:%02d:%02d#", h, m, s)<0)
-    return -1;
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_ra >" << command << "<END" << sendLog;
-  return tel_rep_write (command); // done in method
+	char command[32];
+	int h, m, s;
+	if (ra < 0 || ra > 360.0)
+		return -1;
+	ra = ra / 15;
+	dtoints (ra, &h, &m, &s);
+	// Astro-Physics format
+	if (snprintf (command, sizeof( command), "#:Sr %02d:%02d:%02d#", h, m, s) < 0)
+		return -1;
+	return tel_rep_write (command);
 }
 /*!
  * Set APGTO declination.
@@ -1247,27 +942,23 @@ APGTO::tel_write_ra (double ra)
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-APGTO::tel_write_dec (double dec)
+int APGTO::tel_write_dec (double dec)
 {
-  int ret= -1 ;
-  char command[32];
-  int d, m, s;
-  if (dec < -90.0 || dec > 90.0) {
-    return -1;
-  }
-  dtoints (dec, &d, &m, &s);
+	int ret = -1;
+	char command[32];
+	int d, m, s;
+	if (dec < -90.0 || dec > 90.0)
+		return -1;
+	dtoints (dec, &d, &m, &s);
 
-  // Astro-Phiscs formt 
-  if (!d && dec < 0) {
-    ret= snprintf( command, sizeof( command), "#:Sd -%02d*%02d:%02d#", d, m, s);
-  } else {
-    ret= snprintf( command, sizeof( command), "#:Sd %+03d*%02d:%02d#", d, m, s);
-  }
-  if( ret < 0) 
-    return -1;
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_dec >" << command << "<END" << sendLog;
-  return tel_rep_write (command);
+	// Astro-Physcs formt 
+	if (!d && dec < 0)
+		ret = snprintf (command, sizeof( command), "#:Sd -%02d*%02d:%02d#", d, m, s);
+	else
+		ret = snprintf (command, sizeof( command), "#:Sd %+03d*%02d:%02d#", d, m, s);
+	if (ret < 0) 
+		return -1;
+	return tel_rep_write (command);
 }
 
 int APGTO::tel_write_altitude (double alt)
@@ -1320,7 +1011,7 @@ int APGTO::tel_set_slew_rate (char new_rate)
   sprintf (command, "#:RS%c#", new_rate); // slew
   //logStream (MESSAGE_DEBUG) << "APGTO::tel_set_slew_rate >" << command << "<END" << sendLog;
 
-  return tel_write (command, 5);
+  return serConn->writePort (command, 6);
 }
 /*!
  * Set move rate.
@@ -1373,25 +1064,21 @@ APGTO::tel_set_move_rate (char moveToRate)
     return -1;
     break;
   }
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_set_move_rate >" << command << "<END" << sendLog;
-  return tel_write (command, 5);
+  return serConn->writePort (command, 6);
 }
 
-int
-APGTO::tel_start_move (char direction)
+int APGTO::tel_start_move (char direction)
 {
-  char command[6];
-  sprintf (command, "#:M%c#", direction);
-  return tel_write (command, 5) == 1 ? -1 : 0;
+	char command[6];
+	sprintf (command, "#:M%c#", direction);
+	return serConn->writePort (command, 5) == 0 ? 0 : -1;
 }
 
-int
-APGTO::tel_stop_move (char direction)
+int APGTO::tel_stop_move (char direction)
 {
-
-  char command[6];
-  sprintf (command, "#:Q%c#", direction);
-  return tel_write (command, 5) < 0 ? -1 : 0;
+	char command[6];
+	sprintf (command, "#:Q%c#", direction);
+	return serConn->writePort (command, 5) == 0 ? 0 : -1;
 }
 /*!
  * Slew (=set) APGTO to new coordinates.
@@ -1497,11 +1184,10 @@ APGTO::tel_slew_to (double ra, double dec)
       logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
     }
   }
-  // slew now
-  if (( ret=tel_write_read ("#:MS#", 5, &retstr, 1)) < 0) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to, not slewing, tel_write_read #:MS# failed" << sendLog;
-    return -1;
-  }
+	// slew now
+	if ((ret = serConn->writeRead ("#:MS#", 5, &retstr, 1)) < 0)
+		return -1;
+
   //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
   if (retstr == '0') {
     if(( ret= tel_read_declination_axis()) != 0)
@@ -1592,7 +1278,7 @@ APGTO::tel_slew_to_altaz(double alt, double az)
 		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_azimuth("<< az<< ") failed"<< sendLog;
                 return -1;
 	}
-	if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+	if (serConn->writeRead ("#:MS#", 5, &retstr, 1) < 0)
         {
                 logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_read #:MS# failed"<< sendLog;
                 return -1;
@@ -2011,45 +1697,43 @@ APGTO::stopMove ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-APGTO::setTo (double ra, double dec)
+int APGTO::setTo (double ra, double dec)
 {
-  char readback[101];
+	char readback[101];
 
-  if( block_sync_move->getValueBool()) {
+	if (block_sync_move->getValueBool())
+	{
+		logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
+		return -1;
+	}
+	if (slew_state->getValueBool())
+	{
+		logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
+		return -1 ;
+	}
+	if ( !( collision_detection->getValueBool()))
+	{
+		logStream (MESSAGE_INFO) << "APGTO::setTo collision detection is disabled, enable it" << sendLog;
+		return -1;
+	}
 
-    logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
-    return -1 ;
-  }
-  if( slew_state->getValueBool()) {
-    logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
-      return -1 ;
-  }
-  if( !( collision_detection->getValueBool())) {
+	ra = fmod (ra + 360., 360.);
+	dec = fmod (dec, 90.);
+	if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
+		return -1;
 
-    logStream (MESSAGE_INFO) << "APGTO::setTo collision detection is disabled, enable it" << sendLog;
-    return -1 ;
-  }
+	//AP manual:
+	//Position
+	//Command:  :CM#
+	//Response: “Coordinates matched.     #”
+	//          (there are 5 spaces between “Coordinates” and “matched”, and 8 trailing spaces before the “#”, 
+	//          the total response length is 32 character plus the “#”.	  
 
-  ra = fmod( ra + 360., 360.) ;
-  dec= fmod( dec, 90.) ;
-  if ((tel_write_ra (ra) < 0) || (tel_write_dec (dec) < 0))
-    return -1;
+	//logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SYNC" << sendLog;
 
-  //AP manual:
-  //Position
-  //Command:  :CM#
-  //Response: “Coordinates matched.     #”
-  //          (there are 5 spaces between “Coordinates” and “matched”, and 8 trailing spaces before the “#”, 
-  //          the total response length is 32 character plus the “#”.	  
-
-  //logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SYNC" << sendLog;
-
-  if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0) {
-    logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# failed" << sendLog;
-    return -1;
-  }
-  return 0 ;
+	if (serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0)
+		return -1;
+	return 0 ;
 }
 /*!
  * Correct mount coordinates.
@@ -2457,8 +2141,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
   return Telescope::commandAuthorized (conn);
 }
 #define ERROR_IN_INFO 1
-int
-APGTO::info ()
+int APGTO::info ()
 {
   int ret ;
   int flip= -1 ;
@@ -2548,12 +2231,12 @@ APGTO::info ()
   if( error== ERROR_IN_INFO) {
     return -1 ;
   }
-  // while the telecope is tracking Astro-Phycis controller does not
+  // while the telecope is tracking Astro-Physics controller does not
   // carry out any checks, meaning that it turns for ever
   // 
   // 0 <= HA <=180.: check if the mount approaches horizon
   // 180 < HA < 360: check if the mount crosses the meridian
-  // Astro-Phycis controller has the ability to delay the meridian flip.
+  // Astro-Physics controller has the ability to delay the meridian flip.
   // Here I assume that the flip takes place on HA=0 on slew.
   // If the telescope does not collide, it may track as long as:
   // West:   HA < 15.
@@ -2690,7 +2373,7 @@ APGTO::info ()
     struct ln_date utm;
     struct ln_zonedate ltm;
     ln_get_date_from_sys( &utm) ;
-    ln_date_to_zonedate(&utm, &ltm, 3600); // Adds "only" offset to JD and converts back (see DST below)
+    ln_date_to_zonedate(&utm, &ltm, timezone); // Adds "only" offset to JD and converts back (see DST below)
 
     if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
       logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
@@ -2792,47 +2475,52 @@ APGTO::checkSiderealTime( double limit)
   } 
   return 0 ;
 }
-int 
-APGTO::setBasicData()
+
+int APGTO::setBasicData()
 {
-  int ret ;
-  struct ln_date utm;
-  struct ln_zonedate ltm;
+	int ret ;
+	struct ln_date utm;
+	struct ln_zonedate ltm;
+	if ((ret = tel_set_slew_rate(SLEW_RATE_0600)) < 0)
+	{
+		/* slew rate 2 = 600x, this the slowest */
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting slew rate failed." << sendLog;
+		return -1;
+	}
+	APslew_rate->setValueInteger(600);
 
+	if ((ret = tel_set_move_rate(MOVE_RATE_000100)) < 0)
+	{ /* move rate MOVE_RATE_000100 = 1x */
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
+		return -1;
+	}
+	APmove_rate->setValueInteger(1);
+	//if the sidereal time read from the mount is correct then consider it as a warm start 
+	if (checkSiderealTime( 1./60.) == 0)
+	{
+		logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
+		return 0 ;
+	}
 
-  if(( ret= tel_set_slew_rate(SLEW_RATE_0600)) < 0 ) { /* slew rate 2 = 600x, this the slowest */
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting slew rate failed." << sendLog;
-    return -1;
-  }
-  APslew_rate->setValueInteger(600);
+	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
 
-  if(( ret= tel_set_move_rate(MOVE_RATE_000100)) < 0 ) { /* move rate MOVE_RATE_000100 = 1x */
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
-    return -1;
-  }
-  APmove_rate->setValueInteger(1);
-  //if the sidereal time read from the mount is correct then consider it as a warm start 
-  if( (ret= checkSiderealTime( 1./60.)) == 0 ) {
-    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
-    return 0 ;
-  } else {
-    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
-  }
-
-  if(setAPClearBuffer() < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
-    return -1;
-  }
-  if(setAPLongFormat() < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting long format failed" << sendLog;
-    return -1;
-  }
-  if(setAPBackLashCompensation(0,0,0) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
-    return -1;
-  }
-  ln_get_date_from_sys( &utm) ;
-  ln_date_to_zonedate(&utm, &ltm, 3600); // Adds "only" offset to JD and converts back (see DST below)
+	if (setAPClearBuffer() < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
+		return -1;
+	}
+	if (setAPLongFormat() < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting long format failed" << sendLog;
+		return -1;
+	}
+	if (setAPBackLashCompensation(0,0,0) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
+		return -1;
+	}
+	ln_get_date_from_sys( &utm) ;
+	ln_date_to_zonedate(&utm, &ltm, timezone); // Adds "only" offset to JD and converts back (see DST below)
 
   if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
@@ -2880,10 +2568,11 @@ APGTO::setBasicData()
   //Howard Hedlund
   //Astro-Physics, Inc.
 
-  if(( ret = setAPUTCOffset( -1.065)) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
-    return -1;
-  }
+	if (setAPUTCOffset( -1.065) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
+		return -1;
+	}
 
   logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
   if(( ret= setAPUnPark()) < 0) {
@@ -2925,60 +2614,35 @@ APGTO::setBasicData()
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int
-APGTO::init ()
+int APGTO::init ()
 {
-
-  struct termios tel_termios;
-
-  int status;
-  on_set_HA= 0. ;
-  force_start= false ;
-  slew_state->setValueBool(false) ;
-  time(&slew_start_time) ;
-  status = Telescope::init ();
+	int status;
+	on_set_HA= 0.;
+	force_start= false ;
+	slew_state->setValueBool(false) ;
+	time(&slew_start_time) ;
+	status = Telescope::init ();
   
-  if (status)
-    return status;
+	if (status)
+		return status;
 
-  apgto_fd = open (device_file, O_RDWR);
+	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5);
+	//serConn->setDebug (true);
+	status = serConn->init ();
+	if (status)
+		return -1;
+	serConn->flushPortIO ();
 
-  if (apgto_fd < 0)
-    return -1;
-  
-  if (tcgetattr (apgto_fd, &tel_termios) < 0)
-    return -1;
+	tzset ();
 
-  if (cfsetospeed (&tel_termios, B9600) < 0 ||
-      cfsetispeed (&tel_termios, B9600) < 0)
-    return -1;
-
-  tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-  tel_termios.c_oflag = 0;
-  tel_termios.c_cflag =	((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-  tel_termios.c_lflag = 0;
-  tel_termios.c_cc[VMIN] = 0;
-  tel_termios.c_cc[VTIME] = 5;
-
-  if (tcsetattr (apgto_fd, TCSANOW, &tel_termios) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO init tcsetattr" << sendLog;
-    return -1;
-  }
-  // get current state of control signals
-  ioctl (apgto_fd, TIOCMGET, &status);
-
-  // Drop DTR
-  status &= ~TIOCM_DTR;
-  ioctl (apgto_fd, TIOCMSET, &status);
-
-  logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete on port " << device_file << sendLog;
-  return 0;
+	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete on port " << device_file << sendLog;
+	return 0;
 }
+
 /*!
  * Reads information from controller
  */
-int
-APGTO::initValues ()
+int APGTO::initValues ()
 {
   int ret = -1 ;
   int flip= -1 ;
@@ -3001,11 +2665,11 @@ APGTO::initValues ()
     return -1;
   if (tel_read_azimuth () || tel_read_altitude ())
     return -1;
-  if( getAPVersionNumber() != 0 )
+  if (getAPVersionNumber() != 0 )
     return -1 ; ;
-  if(( ret= getAPUTCOffset()) != 0)
+  if (getAPUTCOffset() != 0)
     return -1 ;
-  if(( ret= tel_read_local_time()) != 0)
+  if (tel_read_local_time() != 0)
     return -1 ;
   if(( ret= tel_read_sidereal_time()) != 0)
     return -1 ;
@@ -3102,16 +2766,17 @@ APGTO::initValues ()
   slew_state->setValueBool(false) ;
   return Telescope::initValues ();
 }
+
 APGTO::~APGTO (void)
 {
-  close (apgto_fd);
+	delete serConn;
 }
 
 int APGTO::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case OPT_APGTO_DEVICE:
+		case 'f':
 			device_file = optarg;
 			break;
 		case OPT_APGTO_ASSUME_PARKED:
@@ -3134,41 +2799,40 @@ int APGTO::processOption (int in_opt)
 
 APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 {
-  apgto_fd = -1;
-  device_file = "/dev/apmount";
+	device_file = "/dev/apmount";
 	
-  createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
-  createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
-  createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
-  createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
-  createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",false);
-  createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
-  createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
-  createValue (APlocal_sidereal_time,    "APLOCSIDTIME","AP mount local sidereal time",     true,  RTS2_DT_RA);
-  createValue (APlocal_time,             "APLOCTIME",   "AP mount local time",              true,  RTS2_DT_RA);
-  createValue (APAltAz,                  "APALTAZ",     "AP mount Alt/Az[deg]",             true,  RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
-  createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
-  createValue (APfirmware,               "APVERSION",   "AP mount firmware revision",       true);
-  createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",               true,  RTS2_DT_DEGREES);
-  createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
-  createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
-  createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
-  createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
-  avoidBellowHorizon->setValueBool (false);
+	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
+	createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
+	createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
+	createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
+	createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",false);
+	createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
+	createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
+	createValue (APlocal_sidereal_time,    "APLOCSIDTIME","AP mount local sidereal time",     true,  RTS2_DT_RA);
+	createValue (APlocal_time,             "APLOCTIME",   "AP mount local time",              true,  RTS2_DT_RA);
+	createValue (APAltAz,                  "APALTAZ",     "AP mount Alt/Az[deg]",             true,  RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
+	createValue (APfirmware,               "APVERSION",   "AP mount firmware revision",       true);
+	createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",               true,  RTS2_DT_DEGREES);
+	createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
+	createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
+	createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
+	createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
+	avoidBellowHorizon->setValueBool (false);
 
-  collision_detection->setValueBool(true) ;
-  slew_state->setValueBool(false) ;
-  block_sync_move->setValueBool(false) ;
-  transition_while_tracking->setValueBool(false) ;
-  assume_parked->setValueBool(false);
+	collision_detection->setValueBool(true) ;
+	slew_state->setValueBool(false) ;
+	block_sync_move->setValueBool(false) ;
+	transition_while_tracking->setValueBool(false) ;
+	assume_parked->setValueBool(false);
 
-  ccdDevice = NULL;
+	ccdDevice = NULL;
 
-  addOption (OPT_APGTO_DEVICE,        "device_file", 1, "device file");
-  addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
-  addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
-  addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
-  addOption (OPT_APGTO_KEEP_HORIZON,  "avoid-horizon", 1, "avoid movements bellow horizon");
+	addOption ('f',                     NULL,          1, "device file");
+	addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
+	addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
+	addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
+	addOption (OPT_APGTO_KEEP_HORIZON,  "avoid-horizon", 0, "avoid movements bellow horizon");
 }
 
 int main (int argc, char **argv)
