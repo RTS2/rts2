@@ -172,6 +172,8 @@ int ATC2::init ()
 
 	openRem ();
 
+	setIdleInfoInterval (40);
+
 	return 0;
 }
 
