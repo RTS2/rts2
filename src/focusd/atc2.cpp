@@ -158,7 +158,7 @@ int ATC2::init ()
 	if (ret)
 		return ret;
 
-	ATC2Conn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
+	ATC2Conn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 100);
 	ATC2Conn->setDebug (true);
 
 	ret = ATC2Conn->init ();
@@ -169,10 +169,10 @@ int ATC2::init ()
 
 	char buf[50];
 
-	ret = ATC2Conn->writeRead ("OPENREM\r\n", 9, buf, 50, '\n');
-	if (ret)
+	ret = ATC2Conn->writeRead ("OPENREM   ", 10, buf, 14);
+	if (ret != 14)
 		return -1;
-	if (strcmp (buf, "OPENREM\r"))
+	if (strncmp (buf, "\r\nOPENREM   \r\n", 14))
 		throw rts2core::Error (std::string ("invalid reply from OPENREM command :") + buf);
 
 	return 0;
@@ -187,12 +187,14 @@ int ATC2::initValues ()
 void ATC2::getValue (const char *name, Rts2Value *val)
 {
  	char buf[50];
-	int ret = ATC2Conn->readPort (buf, 50, '\r');
-	if (ret)
+	int ret = ATC2Conn->readPort (buf, 12, '\n');
+	if (ret != 12)
 		throw rts2core::Error ("cannot read reply from serial port");
 	size_t l = strlen (name);
 	if (strncmp (buf, name, l))
 	  	throw rts2core::Error (std::string ("invalid reply ") + buf);
+	if (val == NULL)
+		return;
 	ret = val->setValueCharArr (buf + l);
 	if (ret)
 		throw rts2core::Error (std::string ("invalid value ") + buf);
@@ -201,8 +203,9 @@ void ATC2::getValue (const char *name, Rts2Value *val)
 int ATC2::info ()
 {
 	int ret;
-	ret = ATC2Conn->writePort ("UPDATEPC\r\n", 10);
-	if (ret)
+	char buf[3];
+	ret = ATC2Conn->writeRead ("UPDATEPC  ", 10, buf, 2);
+	if (ret != 2)
 		return ret;
 	try
 	{
@@ -233,10 +236,10 @@ int ATC2::info ()
 int ATC2::setTo (int num)
 {
 	char command[50];
-	size_t l = snprintf (command, 50, "BFL %06.2f\r\n", float (num) / 100.0);
+	size_t l = snprintf (command, 50, "BFL %06.2f", float (num) / 100.0);
 	if (ATC2Conn->writePort (command, l))
 		return -1;
-	if (ATC2Conn->readPort (command, 50, '\n'))
+	if (ATC2Conn->readPort (command, 14))
 		return -1;
 	return 0;
 }
