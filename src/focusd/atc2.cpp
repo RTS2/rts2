@@ -223,6 +223,7 @@ int ATC2::info ()
 		getValue ("PRITE", primMirrorTemp);
 		getValue ("SECTE", secMirrorTemp);
 		getValue ("BFL", position);
+		position->setValueInteger (position->getValueInteger () * 100);
 		getValue ("SHUTTER", shutter);
 		getValue ("AMBTE", temperature);
 		getValue ("HUMID", humidity);
