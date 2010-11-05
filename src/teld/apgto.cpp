@@ -140,7 +140,7 @@ class APGTO:public Telescope {
 		// Astro-Physics LX200 protocol specific functions
 		int getAPVersionNumber() ;
 		int getAPUTCOffset() ;
-		int setAPUTCOffset( double hours) ;
+		int setAPUTCOffset( int hours) ;
 		int APSyncCMR( char *matchedObject) ;
 		int selectAPMoveToRate( int moveToRate) ;
 		int selectAPTrackingMode( int trackMode) ;
@@ -414,7 +414,7 @@ int APGTO::getAPUTCOffset()
  *
  * @return -1 on failure, 0 otherwise
  */
-int APGTO::setAPUTCOffset (double hours)
+int APGTO::setAPUTCOffset (int hours)
 {
 	int ret= -1;
 	int h, m, s ;
@@ -553,7 +553,7 @@ int APGTO::selectAPTrackingMode(int trackMode)
  *
  * @return -1 on failure, 0 otherwise
  */
-int APGTO::setAPSiteLongitude(double Long)
+int APGTO::setAPSiteLongitude (double Long)
 {
 	int ret = -1;
 	int d, m, s;
@@ -2373,7 +2373,7 @@ int APGTO::info ()
     struct ln_date utm;
     struct ln_zonedate ltm;
     ln_get_date_from_sys( &utm) ;
-    ln_date_to_zonedate(&utm, &ltm, timezone); // Adds "only" offset to JD and converts back (see DST below)
+    ln_date_to_zonedate(&utm, &ltm, -1 * timezone); // Adds "only" offset to JD and converts back (see DST below)
 
     if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
       logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
@@ -2520,7 +2520,7 @@ int APGTO::setBasicData()
 		return -1;
 	}
 	ln_get_date_from_sys( &utm) ;
-	ln_date_to_zonedate(&utm, &ltm, timezone); // Adds "only" offset to JD and converts back (see DST below)
+	ln_date_to_zonedate(&utm, &ltm, -1 * timezone); // Adds "only" offset to JD and converts back (see DST below)
 
   if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
@@ -2531,7 +2531,7 @@ int APGTO::setBasicData()
     return -1;
   }
   // RTS2 counts positive to the East, AP positive to the West
-  double APlng= 360. - telLongitude->getValueDouble() ;
+  double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0) ;
   if (( ret= setAPSiteLongitude( APlng) < 0) ) { // AP mount: positive and only to the to west 
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
     return -1;
@@ -2568,7 +2568,7 @@ int APGTO::setBasicData()
   //Howard Hedlund
   //Astro-Physics, Inc.
 
-	if (setAPUTCOffset( -1.065) < 0)
+	if (setAPUTCOffset((int) (timezone / 3600)) < 0)
 	{
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
 		return -1;
