@@ -17,22 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
-#include <math.h>
-#include <libnova/libnova.h>
-#include <sys/ioctl.h>
+#include "../utils/libnova_cpp.h"
+#include "../utils/rts2config.h"
 
-#include "teld.h"
-#include "hms.h"
-#include "status.h"
-#include "../utils/connserial.h"
-#include "../utils/rts2config.h" 
+#include "tellx200.h"
 #include "clicupola.h"
 #include "pier-collision.h"
 
@@ -88,7 +76,7 @@ namespace rts2teld
  * @author Petr Kubanek
  * @author Francisco Foster Buron
  */
-class APGTO:public Telescope {
+class APGTO:public TelLX200 {
 	public:
 		APGTO (int argc, char **argv);
 		virtual ~APGTO (void);
@@ -117,12 +105,13 @@ class APGTO:public Telescope {
 		virtual int commandAuthorized (Rts2Conn * conn);
 		virtual void valueChanged (Rts2Value * changed_value);
 	protected:
+		virtual int applyCorrectionsFixed (double ra, double dec);
+		virtual void applyOffsets (struct ln_equ_posn *pos);
+
 		virtual void startCupolaSync ();
 		virtual void notMoveCupola ();
 
 	private:
-		const char *device_file;
-		rts2core::ConnSerial *serConn;
 		char *ccdDevice;
 		int force_start ;
 		double on_set_HA ;
@@ -135,50 +124,32 @@ class APGTO:public Telescope {
 		int f_scansexa (const char *str0, double *dp);
 		void getSexComponents(double value, int *d, int *m, int *s) ;
 
-		int tel_read_hms (double *hmsptr, const char *command);
-
 		// Astro-Physics LX200 protocol specific functions
-		int getAPVersionNumber() ;
-		int getAPUTCOffset() ;
-		int setAPUTCOffset( int hours) ;
-		int APSyncCMR( char *matchedObject) ;
-		int selectAPMoveToRate( int moveToRate) ;
-		int selectAPTrackingMode( int trackMode) ;
-		int tel_read_declination_axis() ;
-		int tel_check_declination_axis() ;
+		int getAPVersionNumber ();
+		int getAPUTCOffset ();
+		int setAPUTCOffset (int hours);
+		int APSyncCMR (char *matchedObject);
+		int selectAPMoveToRate (int moveToRate);
+		int selectAPTrackingMode (int trackMode);
+		int tel_read_declination_axis ();
+		int tel_check_declination_axis ();
+
+		int tel_set_move_rate (char moveToRate);
 		int setAPSiteLongitude( double Long) ;
 		int setAPSiteLatitude( double Lat) ;
 		int setAPLocalTime(int x, int y, int z) ;
 		int setAPBackLashCompensation( int x, int y, int z) ;
 		int setCalenderDate( int dd, int mm, int yy) ;
-		int tel_set_slew_rate (char new_rate);
-		int tel_set_move_rate (char new_rate);
 		int setAPMotionStop() ;
 
 		// helper
-		double siderealTime() ;
-		int checkSiderealTime( double limit) ;
-		int setBasicData();
-		void ParkDisconnect() ;
-		// regular LX200 protocol (RTS2)
-		int tel_read_local_time ();
-		int tel_read_sidereal_time ();
-		int tel_read_ra ();
-		int tel_read_dec ();
-		int tel_read_altitude ();
-		int tel_read_azimuth ();
-		int tel_read_latitude ();
-		int tel_read_longitude ();
-		int tel_rep_write (char *command);
-		// helper 
-		int tel_write_ra (double ra);
-		int tel_write_dec (double dec);
-		int tel_write_altitude(double alt); 
-		int tel_write_azimuth(double az); 
-		int tel_start_move (char direction);
-		int tel_stop_move (char direction);
+		double siderealTime ();
+		int checkSiderealTime (double limit) ;
+		int setBasicData ();
+		void ParkDisconnect ();
+
 		int tel_slew_to (double ra, double dec);
-		int tel_slew_to_altaz(double alt, double az);
+		int tel_slew_to_altaz (double alt, double az);
 		void set_move_timeout (time_t plus_time);
 		/**
 		 * Perform movement, do not move tube bellow horizon.
@@ -190,10 +161,13 @@ class APGTO:public Telescope {
 		int isInPosition(double coord1, double coord2, double err1, double err2, char coord); // Alonso: coord e {'a', 'c'} a = coordenadas en altaz y c lo otro
 
 		int tel_check_coords (double ra, double dec);
+
+		// fixed offsets
+		Rts2ValueRaDec   *fixedOffsets;
 		// further discussion with Petr required
 		//int changeMasterState (int new_state);
 		// Astro-Physics properties
-		Rts2ValueAltAz   *APAltAz ;
+		Rts2ValueAltAz   *APAltAz;
 		Rts2ValueInteger *APslew_rate;
 		Rts2ValueInteger *APmove_rate;
 		Rts2ValueDouble  *APlocal_sidereal_time;
@@ -247,40 +221,6 @@ int APGTO::f_scansexa ( const char *str0, double *dp) /* input string, cracked v
 	if (neg)
 		*dp *= -1;
 	return (0);
-}
-
-/*!
- * Reads some value from APGTO in hms format.
- *
- * Utility function for all those read_ra and other.
- *
- * @param hmsptr	where hms will be stored
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int APGTO::tel_read_hms (double *hmsptr, const char *command)
-{
-	char wbuf[256];
-	int len;
-	if ((len = serConn->writeRead (command, strlen (command), wbuf, 200, '#')) < 0)
-		return -1;
-	wbuf[len - 1] = '\0';
-	*hmsptr = hmstod (wbuf);
-	// ToDo 
-	// Invalid argumentwbuf >-É84*24:58<
-	// Invalid argumentwbuf >-Ê00*06:11<
-	// Invalid argumentwbuf >-É99*59:48<
-	// Invalid argumentwbuf >-É89*09:27<
-	// Invalid argumentwbuf >-É89*02:54<
-	// Invalid argumentwbuf >Y19:55:49.4<
-	//                      >-Ê01*57:31<
-	// ...
-	if (isnan (*hmsptr))
-	{
-		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
-		return -1;
-	}
-	return 0;
 }
 
 /**
@@ -672,155 +612,6 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
 }
 
 /*!
- * Reads APGTO right ascenation.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int APGTO::tel_read_ra ()
-{
-	double new_ra;
-	if (tel_read_hms (&new_ra, "#:GR#"))
-	{
-		logStream (MESSAGE_ERROR) <<"APGTO::tel_read_ra failed" << sendLog;
-		return -1;
-	}
-	setTelRa (fmod((new_ra * 15.0) + 360., 360.));
-	return 0;
-}
-
-/*!
- * Reads APGTO declination.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int APGTO::tel_read_dec ()
-{
-	double t_telDec;
-	if (tel_read_hms (&t_telDec, "#:GD#"))
-	{
-		logStream (MESSAGE_ERROR) <<"APGTO::tel_read_dec failed" << sendLog;
-		return -1;
-	}
-	setTelDec (fmod( t_telDec,  90.));
-	return 0;
-}
-/*!
- * Reads APGTO altitude.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int APGTO::tel_read_altitude ()
-{
-	double new_altitude;
-	if (tel_read_hms (&new_altitude, "#:GA#"))
-		return -1;
-	APAltAz->setAlt(new_altitude);
-	return 0;
-}
-/*!
- * Reads APGTO azimuth.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int APGTO::tel_read_azimuth ()
-{
-	double new_azimuth;
-	if (tel_read_hms (&new_azimuth, "#:GZ#"))
-		return -1;
-	APAltAz->setAz(new_azimuth);
-	return 0;
-}
-/*!
- * Reads APGTO local time.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int
-APGTO::tel_read_local_time ()
-{
-  double new_local_time ;
-  if (tel_read_hms (&new_local_time, "#:GL#")) {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_local_time failed" << sendLog;
-      return -1;
-  }
-  APlocal_time->setValueDouble(new_local_time * 15.) ;
-  return 0;
-}
-/*!
- * Reads APGTO local sidereal time.
- *
- * @return -1 and set errno on error, otherwise 0
- */
-int
-APGTO::tel_read_sidereal_time ()
-{
-  double new_sidereal_time;
-  if (tel_read_hms (&new_sidereal_time, "#:GS#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_sidereal_time failed" << sendLog;
-    return -1;
-  }
-  APlocal_sidereal_time->setValueDouble(new_sidereal_time *15.) ;
-  return 0;
-}
-/*!
- * Reads APGTO latitude.
- *
- * @return -1 on error, otherwise 0
- *
- */
-int APGTO::tel_read_latitude ()
-{
-	double new_latitude;
-	if (tel_read_hms (&new_latitude, "#:Gt#"))
-		return -1;
-	APlatitude->setValueDouble(new_latitude) ;
-	return 0;
-}
-/*!
- * Reads APGTO longitude.
- *
- * @return -1 on error, otherwise 0
- *
- */
-int
-APGTO::tel_read_longitude ()
-{
-  double new_longitude;
-  if((tel_read_hms (&new_longitude, "#:Gg#"))< 0 ) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_longitude tel_read_hms failed" <<sendLog;
-      return -1;
-  }
-  APlongitude->setValueDouble(new_longitude) ;
-  logStream (MESSAGE_DEBUG) << "APGTO::tel_read_longitude " << new_longitude << "" << strlen("#:Gg#") <<sendLog;
-  return 0;
-}
-
-/*!
- * Repeat APGTO write.
- *
- * Handy for setting ra and dec.
- * Meade tends to have problems with that, don't know about APGTO.
- *
- * @param command	command to write on apgto_fd
- */
-int APGTO::tel_rep_write (char *command)
-{
-	int count;
-	char retstr;
-	for (count = 0; count < 200; count++)
-	{
-		if (serConn->writeRead (command, strlen (command), &retstr, 1) < 0)
-			return -1;
-		if (retstr == '1')
-			return 0;
-		sleep (1);
-		//logStream (MESSAGE_DEBUG) << "APGTO::tel_rep_write - for " << count << " time" << sendLog;
-	}
-	logStream (MESSAGE_ERROR) << "APGTO::tel_rep_write unsucessful due to incorrect return." << sendLog;
-	return -1;
-}
-
-/*!
  * Reads APGTO relative position of the declination axis to the observed hour angle.
  *
  * @return -1 on error, otherwise 0
@@ -919,104 +710,6 @@ APGTO::tel_check_declination_axis ()
 }
 
 /*!
- * Set APGTO right ascenation.
- *
- * @param ra		right ascenation to set in decimal degrees
- *
- * @return -1 and errno on error, otherwise 0
- */
-int APGTO::tel_write_ra (double ra)
-{
-	char command[32];
-	int h, m, s;
-	if (ra < 0 || ra > 360.0)
-		return -1;
-	ra = ra / 15;
-	dtoints (ra, &h, &m, &s);
-	// Astro-Physics format
-	if (snprintf (command, sizeof( command), "#:Sr %02d:%02d:%02d#", h, m, s) < 0)
-		return -1;
-	return tel_rep_write (command);
-}
-/*!
- * Set APGTO declination.
- *
- * @param dec		declination to set in decimal degrees
- *
- * @return -1 and errno on error, otherwise 0
- */
-int APGTO::tel_write_dec (double dec)
-{
-	int ret = -1;
-	char command[32];
-	int d, m, s;
-	if (dec < -90.0 || dec > 90.0)
-		return -1;
-	dtoints (dec, &d, &m, &s);
-
-	// Astro-Physcs formt 
-	if (!d && dec < 0)
-		ret = snprintf (command, sizeof( command), "#:Sd -%02d*%02d:%02d#", d, m, s);
-	else
-		ret = snprintf (command, sizeof( command), "#:Sd %+03d*%02d:%02d#", d, m, s);
-	if (ret < 0) 
-		return -1;
-	return tel_rep_write (command);
-}
-
-int APGTO::tel_write_altitude (double alt)
-{
-	int ret = -1 ;
-	char command[32];
-	int d, m, s;
-	if(alt < 0. || alt > 90.0)
-	{
-		logStream(MESSAGE_ERROR)<< "APGTO::tel_write_altitude error: altitude is "<< alt<< sendLog;		
-		return -1;
-	}
-	dtoints(alt, &d, &m, &s);
-	ret = snprintf(command, sizeof(command), "#:Sa %+02d*%02d:%02d#", d, m, s);
-	if(ret < 0)
-		return -1;
-	logStream(MESSAGE_DEBUG)<< "---------------------APGTO::tel_write_altitude >"<< command << "<END" << sendLog;
-	return tel_rep_write(command);
-}
-
-int APGTO::tel_write_azimuth (double az)
-{
-	int ret= -1 ;
-	char command[32];
-	int d, m, s;
-	if(az < 0. || az > 180.0)
-	{
-		logStream(MESSAGE_ERROR) <<"APGTO::tel_write_azimuth error: azimuth is"<< az<< sendLog;
-		return -1;
-	}
-	dtoints(az, &d, &m, &s);
-	ret = snprintf(command, sizeof(command), "#:Sz %03d*%02d:%02d#", d, m, s);
-	if( ret < 0)
-		return -1;
-	logStream (MESSAGE_DEBUG) << "---------------------APGTO::tel_write_azimuth >"<< command << "<END" << sendLog;
-	return tel_rep_write (command);
-}
-
-
-/*!
- * Set slew rate.
- *
- * @param new_rate	new slew speed to set.
- *
- * @return -1 on failure & set errno, 5 (>=0) otherwise
- */
-int APGTO::tel_set_slew_rate (char new_rate)
-{
-  char command[6];
-  sprintf (command, "#:RS%c#", new_rate); // slew
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_set_slew_rate >" << command << "<END" << sendLog;
-
-  return serConn->writePort (command, 6);
-}
-/*!
  * Set move rate.
  *
  * @param new_rate	new move speed to set.
@@ -1070,19 +763,6 @@ APGTO::tel_set_move_rate (char moveToRate)
   return serConn->writePort (command, 6);
 }
 
-int APGTO::tel_start_move (char direction)
-{
-	char command[6];
-	sprintf (command, "#:M%c#", direction);
-	return serConn->writePort (command, 5) == 0 ? 0 : -1;
-}
-
-int APGTO::tel_stop_move (char direction)
-{
-	char command[6];
-	sprintf (command, "#:Q%c#", direction);
-	return serConn->writePort (command, 5) == 0 ? 0 : -1;
-}
 /*!
  * Slew (=set) APGTO to new coordinates.
  *
@@ -1623,6 +1303,24 @@ int APGTO::startResync ()
 	return 0;
 }
 
+int APGTO::applyCorrectionsFixed (double ra, double dec)
+{
+	if (fixedOffsets->getRa () == 0 && fixedOffsets->getDec () == 0)
+	{
+		fixedOffsets->setValueRaDec (ra, dec);
+		logStream (MESSAGE_INFO) << "applying offsets as fixed offsets (" << LibnovaDegDist (ra) << " " << LibnovaDegDist (dec) << sendLog;
+		return 0;
+	}
+	return TelLX200::applyCorrectionsFixed (ra, dec);
+}
+
+void APGTO::applyOffsets (struct ln_equ_posn *pos)
+{
+	TelLX200::applyOffsets (pos);
+	pos->ra += fixedOffsets->getRa ();
+	pos->dec += fixedOffsets->getDec ();
+}
+
 void APGTO::startCupolaSync ()
 {
   struct ln_equ_posn target_equ;
@@ -1943,7 +1641,7 @@ APGTO::valueChanged (Rts2Value * changed_value)
     }
     return ;
   }
-  Telescope::valueChanged (changed_value);
+  TelLX200::valueChanged (changed_value);
 }
 
 int 
@@ -2139,7 +1837,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     //logStream (MESSAGE_DEBUG) << "APGTO::commandAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
     return 0 ;
   }
-  return Telescope::commandAuthorized (conn);
+  return TelLX200::commandAuthorized (conn);
 }
 #define ERROR_IN_INFO 1
 int APGTO::info ()
@@ -2456,7 +2154,7 @@ int APGTO::info ()
       }
     }
   }
-  return Telescope::info ();
+  return TelLX200::info ();
 }
 int
 APGTO::idle ()
@@ -2464,17 +2162,19 @@ APGTO::idle ()
   // make sure that the checks in ::info are done
   info() ;
 
-  return Telescope::idle() ;
+  return TelLX200::idle() ;
 }
-int 
-APGTO::willConnect (Rts2Address * in_addr)
+
+int APGTO::willConnect (Rts2Address * in_addr)
 {
-  if (ccdDevice && in_addr->getType () == DEVICE_TYPE_CCD) {
-    logStream (MESSAGE_INFO) << "APGTO::willConnect to DEVICE_TYPE_CCD: "<< ccdDevice << sendLog;
-    return 1;
-  }
-  return Telescope::willConnect (in_addr);
+	if (ccdDevice && in_addr->getType () == DEVICE_TYPE_CCD)
+	{
+		logStream (MESSAGE_INFO) << "APGTO::willConnect to DEVICE_TYPE_CCD: "<< ccdDevice << sendLog;
+		return 1;
+	}
+	return TelLX200::willConnect (in_addr);
 }
+
 double APGTO::siderealTime()
 {
 	double JD  = ln_get_julian_from_sys ();
@@ -2627,23 +2327,16 @@ int APGTO::init ()
 	force_start= false ;
 	slew_state->setValueBool(false) ;
 	time(&slew_start_time) ;
-	status = Telescope::init ();
+	status = TelLX200::init ();
   
 	if (status)
 		return status;
-
-	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5);
-	//serConn->setDebug (true);
-	status = serConn->init ();
-	if (status)
-		return -1;
-	serConn->flushPortIO ();
 
 	tzset ();
 
 	logStream (MESSAGE_DEBUG) << "timezone " << timezone << " daylight " << daylight << sendLog;
 
-	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete on port " << device_file << sendLog;
+	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete" << sendLog;
 	return 0;
 }
 
@@ -2773,7 +2466,7 @@ int APGTO::initValues ()
   }
   move_state = NOTMOVE;
   slew_state->setValueBool(false) ;
-  return Telescope::initValues ();
+  return TelLX200::initValues ();
 }
 
 APGTO::~APGTO (void)
@@ -2785,9 +2478,6 @@ int APGTO::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'f':
-			device_file = optarg;
-			break;
 		case OPT_APGTO_ASSUME_PARKED:
 			assume_parked->setValueBool(true);
 			break;
@@ -2801,14 +2491,15 @@ int APGTO::processOption (int in_opt)
 			avoidBellowHorizon->setValueBool (true);
 			break;
 		default:
-			return Telescope::processOption (in_opt);
+			return TelLX200::processOption (in_opt);
 	}
 	return 0;
 }
 
-APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
+APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
-	device_file = "/dev/apmount";
+	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	fixedOffsets->setValueRaDec (0, 0);
 	
 	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
 	createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
@@ -2837,7 +2528,6 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 
 	ccdDevice = NULL;
 
-	addOption ('f',                     NULL,          1, "device file");
 	addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
 	addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
 	addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
