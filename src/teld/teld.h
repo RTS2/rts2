@@ -109,6 +109,26 @@ class Telescope:public Rts2Device
 		int startPark (Rts2Conn * conn);
 
 		virtual int getFlip ();
+
+		/**
+		 * Apply any fixed offsets. Override this method for any custom offsets.
+		 * You most probably would like to call parent method in overrided method
+		 * to get coordinates to start with.
+		 *
+		 * void MyClass::applyOffsets (struct ln_equ_posn *pos)
+		 * {
+		 *      Telescope::applyOffsets (pos);
+		 *      pos->ra = ln_range_degrees (pos->ra + myoffs.ra);
+		 *      pos->dec += myoffs.dec;
+		 * }
+		 *
+		 * @param pos   resulting target coordinates (default to ORI + OFFS).
+		 */
+		virtual void applyOffsets (struct ln_equ_posn *pos)
+		{
+			pos->ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
+			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
+		}
 	
 		/**
 		 * Apply corrections to position.

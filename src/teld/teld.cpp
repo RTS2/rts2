@@ -945,9 +945,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
-
-	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
-	pos.dec = oriRaDec->getDec () + offsRaDec->getDec ();
+	applyOffsets (&pos);
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
