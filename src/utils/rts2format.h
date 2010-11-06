@@ -48,4 +48,11 @@ std::ostream & pureNumbers (std::ostream & _os);
  */
 bool formatPureNumbers (std::ostream & _os);
 
+std::ostream & localTime (std::ostream & _os);
+
+/**
+ * If print times in local time.
+ */
+bool formatLocalTime (std::ostream & _os);
+
 #endif /* !__RTS2_OSTREAM_FORMAT__ */

@@ -174,6 +174,8 @@ class ConnSerial: public Rts2ConnNoSend
 		 */
 		int readPort (char *rbuf, int b_len, char endChar);
 
+		void dropDTR ();
+
 		/**
 		 * Flush serial port (make sure all data were sended and received).
 		 */

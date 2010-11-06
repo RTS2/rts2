@@ -20,7 +20,8 @@
 #ifndef __TIMESTAMP_CPP__
 #define __TIMESTAMP_CPP__
 
-#include "../utils/rts2block.h"
+#include "rts2block.h"
+#include "rts2format.h"
 
 #include <ostream>
 #include <sys/time.h>

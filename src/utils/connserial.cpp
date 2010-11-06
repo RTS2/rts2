@@ -18,6 +18,7 @@
  */
 
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #include "connserial.h"
 #include "rts2block.h"
@@ -365,6 +366,17 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 	logBuffer (ls, rbuf, rlen);
 	ls << "'" << sendLog;
 	return -1;
+}
+
+void ConnSerial::dropDTR ()
+{
+	int ret;
+	// get current state of control signals
+	ioctl (sock, TIOCMGET, &ret);
+
+	// Drop DTR
+	ret &= ~TIOCM_DTR;
+	ioctl (sock, TIOCMSET, &ret);
 }
 
 int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)

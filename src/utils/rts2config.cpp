@@ -138,22 +138,8 @@ time_t Rts2Config::getNight (int year, int month, int day)
 	_tm.tm_isdst = 0;
 	_tm.tm_zone = "\0";
 #endif
-
-	std::string old_tz;
-	if (getenv("TZ"))
-		old_tz = std::string (getenv ("TZ"));
-
-	putenv ((char*) "TZ=UTC");
-
 	time_t n = mktime (&_tm);
-
-	strcpy (p_tz, "TZ=");
-
-	if (old_tz.length () > 0)
-	{
-		strncat (p_tz, old_tz.c_str (), 96);
-	}
-	putenv (p_tz);
+	n -= timezone;
 
 	return n;
 }

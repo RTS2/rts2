@@ -49,3 +49,18 @@ bool formatPureNumbers (std::ostream & _os)
 	return flagPureNumbers != -1 && _os.iword (flagPureNumbers) == 1;
 }
 
+int flagLocalTime = -1;
+
+std::ostream & localTime (std::ostream & _os)
+{
+	if (flagLocalTime == -1)
+		flagLocalTime = _os.xalloc ();
+	_os.iword (flagLocalTime) = 1;
+	tzset ();
+	return _os;
+}
+
+bool formatLocalTime (std::ostream & _os)
+{
+	return flagLocalTime != -1 && _os.iword (flagLocalTime) == 1;
+}
