@@ -65,9 +65,9 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	domeExe = NULL;
 	shouldClose = false;
 
-	opendome = NULL;
-	closedome = NULL;
-	slitfile = NULL;
+	opendome = "/usr/local/bin/openslit";
+	closedome = "/usr/local/bin/closeslit";
+	slitfile = "/Realtime/lib/slit_status";
 
 	createValue (openInOn, "open_when_on", "open dome if state is on", RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
@@ -81,7 +81,7 @@ int FLWO::changeMasterState (int new_state)
 {
 	// do not open dome if open
 	// close dome if not switching to night
-	if (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
+	if (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
 		return Rts2Device::changeMasterState (new_state);
 	return Dome::changeMasterState (new_state);
 }
