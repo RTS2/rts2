@@ -31,6 +31,8 @@ class FLWO:public Dome
 	public:
 		FLWO (int argc, char **argv);
 
+		virtual int changeMasterState (int new_state);
+
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -46,6 +48,8 @@ class FLWO:public Dome
 		virtual int deleteConnection (Rts2Conn * conn);
 	private:
 		rts2core::ConnFork *domeExe;
+
+		Rts2ValueBool *openInOn;
 
 		bool shouldClose;
 
@@ -65,9 +69,21 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	closedome = NULL;
 	slitfile = NULL;
 
+	createValue (openInOn, "open_when_on", "open dome if state is on", RTS2_VALUE_WRITABLE);
+	openInOn->setValueBool (false);
+
 	addOption (OPT_OPEN, "bin-open", 1, "path to program for opening the dome");
 	addOption (OPT_CLOSE, "bin-close", 1, "path to program to close the dome");
 	addOption (OPT_SLITST, "slit-file", 1, "path to slit file (/Rea...)");
+}
+
+int FLWO::changeMasterState (int new_state)
+{
+	// do not open dome if open
+	// close dome if not switching to night
+	if (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT && (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
+		return Rts2Device::changeMasterState (new_state);
+	return Dome::changeMasterState (new_state);
 }
 
 int FLWO::processOption (int opt)
