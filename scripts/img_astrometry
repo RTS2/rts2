@@ -214,7 +214,7 @@ if( $missing== TRUE_VAL)
     `logger $scriptname  $fits_file successful astrometric calibration`;
     if($scriptname ne "img_astrometry_sync") {
 
-	printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, $crval1- $orira,$crval2-$oridec);
+	printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, ($crval1- $orira) * 60.0, ($crval2-$oridec) * 60.0);
     } else {
 	printf( "%d %f %f (%f,%f)\n",$img_id, $crval1, $crval2, 0.,0.);
 
