@@ -69,7 +69,7 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	closedome = NULL;
 	slitfile = NULL;
 
-	createValue (openInOn, "open_when_on", "open dome if state is on", RTS2_VALUE_WRITABLE);
+	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
 
 	addOption (OPT_OPEN, "bin-open", 1, "path to program for opening the dome");
