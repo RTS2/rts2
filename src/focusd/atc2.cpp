@@ -254,6 +254,8 @@ void ATC2::openRem ()
 // ATC-02: BFL_xxx.xx+(CR/LF) set the new back focus position
 int ATC2::setTo (int num)
 {
+	if (num == position->getValueInteger ())
+		return 0;
 	char command[50];
 	size_t l = snprintf (command, 50, "BFL %06.2f", float (num) / 100.0);
 	if (ATC2Conn->writePort (command, l))
