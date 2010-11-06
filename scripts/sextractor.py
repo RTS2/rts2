@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import sys
 import subprocess
 import os
 
@@ -30,6 +31,8 @@ class Sextractor:
 	 	x=of.readline()
 		if x == '':
 			break
+		if x[0] == '#':
+			continue
 		self.objects.append(x.split())
 	
 	# unlink tmp files
@@ -37,7 +40,8 @@ class Sextractor:
 	os.unlink(output)
 
 if __name__ == "__main__":
-	c = Sextractor('/tmp/20101106075535-050-RA.fits')
-	c.runSExtractor()
+  	for fn in sys.argv[1:]:
+		c = Sextractor(fn)
+		c.runSExtractor()
 
-	print c.objects
+		print fn, c.objects
