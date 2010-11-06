@@ -1,17 +1,22 @@
 The work on this project was supported by numerous institutions and grants,
-paying developers bills and projects costs. We are gratefull for them, and list
-them here for the reference:
+paying developers bills, instruments used during development and projects
+costs. We are gratefull for them, and list them here for the reference.
+
+PLEASE NOTE THAT THE INCLUSION OF AN INSTITUTION ON THIS LIST DOES NOT MEAN THE
+INSTITUTION IS ENDORSING THE PROJECT, and shall not be used in connection of
+the project unless previously agreed.
 
 AI CR Ondrejov                   1999-
 Dresdner Bank AG/Goetzfried AG   2000-2003
-IAA Spain                        2002-
+IAA CSIC Spain                   2002-
 Intax s.r.o./IBM CZ              2003-2004
-IP CR                            2004-
+IP AS CR                         2004-
 Czech Prodex/ESA                 2005-2006
 UCD Ireland                      2005-
-FPI, IPL Spain                   2006-
+FPI, IPL UV Spain                2006-
 BNL/LSST                         2007-
 CfA/SAO                          2010-
+Universitat de Chile             2010-
 
 Main author
 ===========
@@ -28,5 +33,7 @@ mates	        <mates@asu.cas.cz>                Martin Jelínek (Ondrejov, IAA)
 standa	        <standa@iaa.es>                   Stanislav Vítek (IAA)
 john	        <jfrench@bermuda.ucd.ie>          John French (UCD)
 prouza	        <prouza@fzu.cz>                   Michal Prouza (IP CR)
+zimmerman	<...>				  Lukas Zimmermann 
 deugarte        <...>                             Antonio de Ugarte (IAA, ESO, INAF)
+ffburon         <...>                             Francisco Foster Buron (Universitat de Chile)
 falco           <...>                             Emilio Falco (CfA/SAO)
