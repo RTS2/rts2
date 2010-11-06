@@ -65,9 +65,9 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	domeExe = NULL;
 	shouldClose = false;
 
-	opendome = "/usr/local/bin/openslit";
-	closedome = "/usr/local/bin/closeslit";
-	slitfile = "/Realtime/lib/slit_status";
+	opendome = NULL;
+	closedome = NULL;
+	slitfile = NULL;
 
 	createValue (openInOn, "open_when_on", "open dome if state is on", RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
