@@ -110,6 +110,41 @@ class Rts2Daemon:public Rts2Block
 		 */
 		int getState () { return state; }
 
+		/**
+		 * Retrieve value with given name.
+		 *
+		 * @return NULL if value with specifed name does not exists
+		 */
+		Rts2Value *getOwnValue (const char *v_name);
+
+		/**
+		 * Create new value, and return pointer to it.
+		 * It also saves value pointer to the internal values list.
+		 *
+		 * @param value          Rts2Value which will be created.
+		 * @param in_val_name    Value name.
+		 * @param in_description Value description.
+		 * @param writeToFits    When true, value will be writen to FITS.
+		 * @param valueFlags     Value display type, one of the RTS2_DT_xxx constant.
+		 * @param queCondition   Conditions in which the change will be put to que.
+		 */
+		template < typename T > void createValue (
+			T * &val,
+			const char *in_val_name,
+			std::string in_description,
+			bool writeToFits = true,
+			int32_t valueFlags = 0,
+			int queCondition = 0)
+		{
+			val = new T (in_val_name, in_description, writeToFits, valueFlags);
+			addValue (val, queCondition);
+		}
+
+		/**
+		 * Send new value over the wire to all connections.
+		 */
+		void sendValueAll (Rts2Value * value);
+
 	protected:
 		/**
 		 * Delete all saved reference of given value.
@@ -119,11 +154,6 @@ class Rts2Daemon:public Rts2Block
 		 * @param val Value which references will be deleted.
 		 */
 		void deleteSaveValue (Rts2CondValue * val);
-
-		/**
-		 * Send new value over the wire to all connections.
-		 */
-		void sendValueAll (Rts2Value * value);
 
 		/**
 		 * Send progress parameters.
@@ -192,8 +222,6 @@ class Rts2Daemon:public Rts2Block
 
 		Rts2ValueQueVector queValues;
 
-		Rts2Value *getOwnValue (const char *v_name);
-
 		/**
 		 * Return conditional value entry for given value name.
 		 *
@@ -222,28 +250,6 @@ class Rts2Daemon:public Rts2Block
 		 */
 		Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
 
-		/**
-		 * Create new value, and return pointer to it.
-		 * It also saves value pointer to the internal values list.
-		 *
-		 * @param value          Rts2Value which will be created.
-		 * @param in_val_name    Value name.
-		 * @param in_description Value description.
-		 * @param writeToFits    When true, value will be writen to FITS.
-		 * @param valueFlags     Value display type, one of the RTS2_DT_xxx constant.
-		 * @param queCondition   Conditions in which the change will be put to que.
-		 */
-		template < typename T > void createValue (
-			T * &val,
-			const char *in_val_name,
-			std::string in_description,
-			bool writeToFits = true,
-			int32_t valueFlags = 0,
-			int queCondition = 0)
-		{
-			val = new T (in_val_name, in_description, writeToFits, valueFlags);
-			addValue (val, queCondition);
-		}
 		/**
 		 * Create new constant value, and return pointer to it.
 		 *

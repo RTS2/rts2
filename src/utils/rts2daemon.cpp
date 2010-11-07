@@ -858,17 +858,22 @@ int Rts2Daemon::setValue (Rts2Conn * conn)
 	// try to search for _ - compatibility with old versiona
 	else
 	{
-		ca = strrchr (v_name, '_');
-		if (ca != NULL)
+		old_value_cond = getCondValue (v_name);
+		// if indexed value does not exists..
+		if (old_value_cond == NULL)
 		{
-			// see if we can get value
-			*ca = '\0';
-			old_value_cond = getCondValue (v_name);
-			// value not found, assume it is not an array index
-			if (old_value_cond == NULL)
-				*ca = '_';
-			else
-				ai = ca + 1;
+			ca = strrchr (v_name, '_');
+			if (ca != NULL)
+			{
+				// see if we can get value
+				*ca = '\0';
+				old_value_cond = getCondValue (v_name);
+				// value not found, assume it is not an array index
+				if (old_value_cond == NULL)
+					*ca = '_';
+				else
+					ai = ca + 1;
+			}
 		}
 	}
 

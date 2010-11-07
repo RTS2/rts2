@@ -596,6 +596,13 @@ class Rts2Block: public Rts2App
 		 */
 		void deleteTimers (int event_type);
 
+		/**
+		 * Updates metainformation about given value.
+		 *
+		 * @param value Value whose metainformation will be send out.
+		 */
+		void updateMetaInformations (Rts2Value *value);
+
 	protected:
 
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
@@ -689,13 +696,6 @@ class Rts2Block: public Rts2App
 		 * Called when BOP state is changed.
 		 */
 		void bopStateChanged ();
-
-		/**
-		 * Updates metainformation about given value.
-		 *
-		 * @param value Value whose metainformation will be send out.
-		 */
-		void updateMetaInformations (Rts2Value *value);
 
 		/**
 		 * Set good state master connection.
