@@ -74,5 +74,6 @@ if __name__ == "__main__":
 				i += 1
 				if i > 9:
 					break 
-		print 'with {0} stars, average fwhm={1} a={2} b={3}'.format(i,fwhm/i,a/i,b/i)
+		if i > 0:
+			print 'with {0} stars, average fwhm={1} a={2} b={3}'.format(i,fwhm/i,a/i,b/i)
 
