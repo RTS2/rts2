@@ -326,9 +326,7 @@ void Rts2Block::selectSuccess ()
 		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
 		{
 			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) <<
-				"Will delete connection " << " name: " << conn->
-				getName () << sendLog;
+			logStream (MESSAGE_DEBUG) << "Will delete connection " << " name: " << conn->getName () << sendLog;
 			#endif
 			ret = deleteConnection (conn);
 			// delete connection only when it really requested to be deleted..

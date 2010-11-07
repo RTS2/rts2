@@ -538,7 +538,9 @@ class Rts2Block: public Rts2App
 		}
 
 		/**
-		 * Search for value from device.
+		 * Search for value from connection to a given device. This
+		 * method is overwritten in Rts2Device, so the object can
+		 * return own values.
 		 *
 		 * @param device_name Name of the device.
 		 * @param value_name  Name of the value.

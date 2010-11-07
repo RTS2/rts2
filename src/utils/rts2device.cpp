@@ -939,7 +939,7 @@ void Rts2Device::setFullBopState (int new_state)
 
 Rts2Value * Rts2Device::getValue (const char *_device_name, const char *value_name)
 {
-	if (!strcmp (_device_name, getDeviceName ()))
+	if (!strcmp (_device_name, getDeviceName ()) || !strcmp (_device_name, "."))
 		return getOwnValue (value_name);
 	return Rts2Daemon::getValue (_device_name, value_name);
 }
