@@ -155,7 +155,7 @@ int TelLX200::tel_read_longitude ()
 	double new_longitude;
 	if (tel_read_hms (&new_longitude, "#:Gg#") < 0 )
 		return -1;
-  	telLongitude->setValueDouble (new_longitude);
+  	telLongitude->setValueDouble (-1 * new_longitude);
 	return 0;
 }
 
