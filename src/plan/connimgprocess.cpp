@@ -93,9 +93,60 @@ void ConnImgProcess::processLine ()
 
 	if (ret == 5)
 	{
+	 	ra_err /= 60.0;
+		dec_err /= 60.0;
 		astrometryStat = GET;
 		// inform others..
 	}
+	else
+	{
+		// check for commands
+		char *cmd;
+		paramNextString (&cmd);
+		if (!strcasecmp (cmd, "correct"))
+		{
+			if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
+				|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || !paramEnd ())
+			{
+				logStream (MESSAGE_WARNING) << "invalid correct string" << sendLog;
+			}
+			else
+			{
+				astrometryStat = GET;
+			}
+		}
+		if (!strcasecmp (cmd, "double"))
+		{
+			char *vname, *desc;
+			double val;
+			if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || !paramEnd ())
+			{
+				logStream (MESSAGE_WARNING) << "invalid double string" << sendLog;
+			}
+			else
+			{
+				Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
+				// either variable with given name exists..
+				if (v)
+				{
+					if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
+					{
+						((Rts2ValueDouble *) v)->setValueDouble (val);
+						((Rts2Daemon *) master)->sendValueAll (v);
+					}
+				}
+				// or create it and distribute it..
+				else
+				{
+					Rts2ValueDouble *vd;
+					((Rts2Daemon *) master)->createValue (vd, vname, desc, false);
+					vd->setValueDouble (val);
+					master->updateMetaInformations (vd);
+				}
+			}
+		}
+	}
+
 	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: "
 		<< ret << sendLog;
 	return;
@@ -158,7 +209,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 					image->writeAsJPEG (last_good_jpeg, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 
-				image->setAstroResults (ra, dec, ra_err / 60.0, dec_err / 60.0);
+				image->setAstroResults (ra, dec, ra_err, dec_err);
 				if (end_event <= 0)
 					image->toArchive ();
 				// send correction to telescope..
@@ -178,13 +229,13 @@ void ConnImgProcess::connectionError (int last_data_size)
 							pos1.ra = ra;
 							pos1.dec = dec;
 
-							pos2.ra = ra - ra_err / 60.0;
-							pos2.dec = dec - dec_err / 60.0;
+							pos2.ra = ra - ra_err;
+							pos2.dec = dec - dec_err;
 
 							double posErr = ln_get_angular_separation (&pos1, &pos2);
 
 							telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,	
-								corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
+								corr_img, image->getImgId (), ra_err, dec_err, posErr)
 							);
 						}
 					}
