@@ -3,6 +3,7 @@
 import sys
 import subprocess
 import os
+from ds9 import *
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
@@ -21,7 +22,7 @@ class Sextractor:
 		pf.write(f + '\n')
 	pf.close()
 
-        cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-FILTER', 'N', '-CATALOG_NAME', output]
+        cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', '3', '-FILTER', 'N', '-CATALOG_NAME', output]
        	proc = subprocess.Popen(cmd)
 	proc.wait()
 
@@ -39,9 +40,24 @@ class Sextractor:
 	os.unlink(pfn)
 	os.unlink(output)
 
+    def sortObjects(self,col):
+        """Sort objects by given collumn."""
+    	self.objects.sort(cmp=lambda x,y: x[col] < y[col])
+
+    def reverseObjects(self,col):
+	"""Reverse sort objects by given collumn."""
+	self.objects.reverse(cmp=lambda x,y: x[col] < y[col])
+
 if __name__ == "__main__":
+  	d = ds9()
   	for fn in sys.argv[1:]:
-		c = Sextractor(fn)
+		c = Sextractor(fn,['X_IMAGE','Y_IMAGE'])
 		c.runSExtractor()
 
 		print fn, c.objects
+
+		# display in ds9
+		d.set('file {0}'.format(fn))
+		for x in c.objects:
+			d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
+
