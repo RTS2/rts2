@@ -3,7 +3,6 @@
 import sys
 import subprocess
 import os
-from ds9 import *
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
@@ -78,6 +77,7 @@ def getFWHM(fn,starsn):
 
 if __name__ == "__main__":
   	# test method
+	from ds9 import *
   	d = ds9()
   	for fn in sys.argv[1:]:
 		c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
