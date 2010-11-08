@@ -217,7 +217,6 @@ Telescope::~Telescope (void)
 	delete model;
 }
 
-
 double Telescope::getLocSidTime (double JD)
 {
 	double ret;
@@ -946,6 +945,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	// first apply offset
 	applyOffsets (&pos);
+	pos.ra = ln_range_degrees (pos.ra);
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
@@ -1229,6 +1229,8 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			|| conn->paramNextDouble (&pos_err)
 			|| !conn->paramEnd ())
 			return -2;
+		if (applyCorrectionsFixed (total_cor_ra, total_cor_dec) == 0)
+			return 0;
 		if (cor_mark == moveNum->getValueInteger ()
 			&& corr_img == corrImgId->getValueInteger ()
 			&& img_id > wCorrImgId->getValueInteger ())
