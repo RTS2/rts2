@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+#
 # You will need: scipy matplotlib sextractor
 # This should work on Debian/ubuntu:
 # sudo apt-get install python-matplotlib python-scipy python-pyfits sextractor
@@ -13,7 +13,21 @@
 # (C) 2002-2008 Stanislav Vitek
 # (C) 2002-2010 Martin Jelinek
 # (C) 2009-2010 Markus Wildi
-# (C) 2010      Petr Kubanek, Institute of Physics
+# (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import rts2comm
 import sextractor

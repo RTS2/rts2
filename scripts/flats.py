@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 # Script for obtaining twilight skyflats.
-# (C) 2009,2010 Antonio de Ugarte & Petr Kubanek
 #
 # rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
 # same location as this script, or include it in PYTHONPATH.
@@ -12,6 +11,22 @@
 # As with all scripts intended to be called by RTS2 exe script command, you can
 # test this script by calling it and verifiing that it prints something what
 # does not look like error message on standard output.
+#
+# (C) 2009,2010 Antonio de Ugarte & Petr Kubanek <petr@kubanek.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import sys
 import string
