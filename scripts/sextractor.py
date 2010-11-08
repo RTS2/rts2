@@ -1,5 +1,17 @@
 #!/usr/bin/python
 
+# You will need: scipy matplotlib sextractor
+# This should work on Debian/ubuntu:
+# sudo apt-get install python-matplotlib python-scipy python-pyfits sextractor
+#
+# If you would like to see sextractor results, get DS9 and pyds9:
+#
+# http://hea-www.harvard.edu/saord/ds9/
+#
+# Sextractor-Python wrapper.
+#
+# (C) 2010  Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+
 import sys
 import subprocess
 import os

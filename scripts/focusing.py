@@ -1,10 +1,14 @@
 #!/usr/bin/python
 
-# You will need: scipy and matplotlib
+# You will need: scipy matplotlib sextractor
 # This should work on Debian/ubuntu:
-# sudo apt-get install python-matplotlib python-scipy
+# sudo apt-get install python-matplotlib python-scipy python-pyfits sextractor
 #
-# Autofocosing
+# If you would like to see sextractor results, get DS9 and pyds9:
+#
+# http://hea-www.harvard.edu/saord/ds9/
+#
+# Autofocosing routines.
 #
 # (C) 2002-2008 Stanislav Vitek
 # (C) 2002-2010 Martin Jelinek
