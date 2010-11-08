@@ -111,26 +111,6 @@ class Telescope:public Rts2Device
 		virtual int getFlip ();
 
 		/**
-		 * Apply any fixed offsets. Override this method for any custom offsets.
-		 * You most probably would like to call parent method in overrided method
-		 * to get coordinates to start with.
-		 *
-		 * void MyClass::applyOffsets (struct ln_equ_posn *pos)
-		 * {
-		 *      Telescope::applyOffsets (pos);
-		 *      pos->ra = ln_range_degrees (pos->ra + myoffs.ra);
-		 *      pos->dec += myoffs.dec;
-		 * }
-		 *
-		 * @param pos   resulting target coordinates (default to ORI + OFFS).
-		 */
-		virtual void applyOffsets (struct ln_equ_posn *pos)
-		{
-			pos->ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
-			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
-		}
-	
-		/**
 		 * Apply corrections to position.
 		 */
 		void applyCorrections (struct ln_equ_posn *pos, double JD);
@@ -178,6 +158,35 @@ class Telescope:public Rts2Device
 		virtual void setFullBopState (int new_state);
 
 	protected:
+		/**
+		 * Apply any fixed offsets. Override this method for any custom offsets.
+		 * You most probably would like to call parent method in overrided method
+		 * to get coordinates to start with.
+		 *
+		 * void MyClass::applyOffsets (struct ln_equ_posn *pos)
+		 * {
+		 *      Telescope::applyOffsets (pos);
+		 *      pos->ra += myoffs.ra);
+		 *      pos->dec += myoffs.dec;
+		 * }
+		 *
+		 * @param pos   resulting target coordinates (default to ORI + OFFS).
+		 */
+		virtual void applyOffsets (struct ln_equ_posn *pos)
+		{
+			pos->ra = oriRaDec->getRa () + offsRaDec->getRa ();
+			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
+		}
+
+		/**
+		 * Called before corrections are processed. If returns 0, then corrections
+		 * will skip the standard correcting mechanism.
+		 *
+		 * @param ra  RA correction
+		 * @param dec DEC correction
+		 */
+		virtual int applyCorrectionsFixed (double ra, double dec) { return -1; }
+	
 		/**
 		 * Returns telescope target RA.
 		 */
@@ -395,6 +404,14 @@ class Telescope:public Rts2Device
 		}
 
 		/**
+		 * Sets ALT-AZ target. The program should call moveAltAz() to
+		 * start alt-az movement.
+		 *
+		 * @see moveAltAz()
+		 */
+		void setTargetAltAz (double alt, double az) { telAltAz->setValueAltAz (alt, az); }
+
+		/**
 		 * Return target position. This is equal to ORI[RA|DEC] +
 		 * OFFS[RA|DEC] + any transformations required for mount
 		 * operation.
@@ -405,6 +422,12 @@ class Telescope:public Rts2Device
 		{
 			out_tar->ra = tarRaDec->getRa ();
 			out_tar->dec = tarRaDec->getDec ();
+		}
+
+		void getTargetAltAz (struct ln_hrz_posn *hrz)
+		{
+			hrz->alt = telAltAz->getAlt ();
+			hrz->az = telAltAz->getAz ();
 		}
 
 		/**
@@ -533,6 +556,11 @@ class Telescope:public Rts2Device
 		virtual int startResync () = 0;
 
 		/**
+		 * Move telescope to target ALTAZ coordinates.
+		 */
+		virtual int moveAltAz ();
+
+		/**
 		 * Issue cupola synchronization event.
 		 * Should use getTarget to obtain telescope target coordinates. Please note that
 		 * if you modify telescope coordinates in startResync, and do not update telTarget (
@@ -629,6 +657,10 @@ class Telescope:public Rts2Device
 		 */
 		virtual void setDiffTrack (double dra, double ddec) {}
 
+		/**
+		 * Local sidereal time.
+		 */
+		Rts2ValueDouble *lst;
 	private:
 		Rts2Conn * move_connection;
 		int moveInfoCount;
@@ -758,11 +790,6 @@ class Telescope:public Rts2Device
 		 * Hour angle.
 		 */
 		Rts2ValueDouble *hourAngle;
-
-		/**
-		 * Local sidereal time.
-		 */
-		Rts2ValueDouble *lst;
 
 		/**
 		 * Distance to target in degrees.

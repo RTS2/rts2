@@ -90,7 +90,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
-	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
+	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true, RTS2_VALUE_WRITABLE);
 
 	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0);
 	pointingModel->addSelVal ("EQU");
@@ -384,10 +384,13 @@ void Telescope::valueChanged (Rts2Value * changed_value)
 		recalculateMpecDIffs ();
 		startResyncMove (NULL, false);
 	}
-	if (changed_value == offsRaDec
-		|| changed_value == corrRaDec)
+	if (changed_value == offsRaDec || changed_value == corrRaDec)
 	{
 		startResyncMove (NULL, false);
+	}
+	if (changed_value == telAltAz)
+	{
+		moveAltAz ();
 	}
 	Rts2Device::valueChanged (changed_value);
 }
@@ -966,7 +969,6 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
 	modelRaDec->setValueRaDec (0, 0);
 
-
 	moveInfoCount = 0;
 
 	if (hardHorizon)
@@ -1000,7 +1002,6 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 			return ret;
 		}
 	}
-
 
 	ret = startResync ();
 	if (ret)
@@ -1148,6 +1149,21 @@ void Telescope::signaledHUP ()
 		}
 	}
 	Rts2Device::signaledHUP ();
+}
+
+int Telescope::moveAltAz ()
+{
+	struct ln_hrz_posn hrz;
+	telAltAz->getAltAz (&hrz);
+	struct ln_lnlat_posn observer;
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
+	struct ln_equ_posn target;
+
+	ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &target);
+
+	oriRaDec->setValueRaDec (target.ra, target.dec);
+	return startResyncMove (NULL, false);
 }
 
 int Telescope::commandAuthorized (Rts2Conn * conn)
