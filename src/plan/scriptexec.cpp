@@ -136,7 +136,9 @@ void ScriptExec::usage ()
 	  << "To change scriptexec to produce files in C0 directory, with local time, execute:" << std::endl
 	  << "  " << getAppName () << " -d C0 -s 'for 10 { E 2 }' -e '%c/%L%f'" << std::endl
 	  << "Coordinate with xpaset to ship new images into ds9, as soon as they are acquired -works in bash:" << std::endl
-	  << "  " << "while true; do " << getAppName () << " -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; done ; done" << std::endl;
+	  << "  " << "while true; do " << getAppName () << " -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; done ; done" << std::endl
+	  << "Same as above, but delete (temporary) file after displaying it in ds9:" << std::endl
+	  << "  " << "while true; do " << getAppName () << " -e /tmp/%n.fits -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; rm $x; done ; done" << std::endl;
 }
 
 ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()

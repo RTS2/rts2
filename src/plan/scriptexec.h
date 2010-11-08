@@ -22,6 +22,7 @@
 
 #include "rts2targetscr.h"
 #include "rts2scriptinterface.h"
+#include "../utils/connfork.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2target.h"
 
@@ -75,6 +76,8 @@ class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		char *configFile;
 
 		bool callScriptEnd;
+
+		rts2core::ConnFork *afterImage;
 };
 
 }

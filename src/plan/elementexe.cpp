@@ -23,7 +23,7 @@
 
 using namespace rts2script;
 
-ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const char *_exec):rts2core::ConnFork (_master, _exec, true, true)
+ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const char *_exec):ConnExe (_master, _exec, true)
 {
 	masterElement = _masterElement;
 }
@@ -42,19 +42,6 @@ ConnExecute::~ConnExecute ()
 		(*iter)->deleteImage ();
 		delete *iter;
 	}
-}
-
-void ConnExecute::connectionError (int last_data_size)
-{
-	rts2core::ConnFork::connectionError (last_data_size);
-	// inform master to delete us..
-	if (masterElement != NULL)
-	{
-		if (masterElement->getClient () != NULL)
-			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
-		masterElement->deleteExecConn ();
-	}
-	masterElement = NULL;
 }
 
 void ConnExecute::processCommand (char *cmd)
@@ -190,31 +177,23 @@ void ConnExecute::processCommand (char *cmd)
 			images.erase (iter);
 		}
 	}
-	else if (!strcmp (cmd, "C"))
+	else if (!strcmp (cmd, "?"))
 	{
-		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
+		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
-		Rts2Conn *conn = getConnectionForScript (device);
-		if (conn)
+		Rts2Value *val = masterElement->getConnection()->getValue (value);
+		if (val)
 		{
-			conn->queCommand (new Rts2Command (getMaster (), comm));
+			writeToProcess (val->getValue ());
+			return;
 		}
+		writeToProcess ("ERR");
 	}
 	else if (!strcmp (cmd, "command"))
 	{
 		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2Command (getMaster (), comm));
-	}
-	else if (!strcmp (cmd, "V"))
-	{
-		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
-			return;
-		Rts2Conn *conn = getConnectionForScript (device);
-		if (conn)
-		{
-			conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
-		}
 	}
 	else if (!strcmp (cmd, "VT"))
 	{
@@ -230,87 +209,23 @@ void ConnExecute::processCommand (char *cmd)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
-	else if (!strcmp (cmd, "?"))
-	{
-		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection () == NULL)
-			return;
-		Rts2Value *val = masterElement->getConnection()->getValue (value);
-		if (val)
-		{
-			writeToProcess (val->getValue ());
-			return;
-		}
-		writeToProcess ("ERR");
-	}
-	else if (!strcmp (cmd, "G"))
-	{
-		if (paramNextString (&device) || paramNextString (&value) || master == NULL)
-			return;
-
-		Rts2Value *val = NULL;
-
-		if (isCentraldName (device))
-			val = master->getSingleCentralConn ()->getValue (value);
-		else
-			val = master->getValue (device, value);
-
-		if (val)
-		{
-			writeToProcess (val->getValue ());
-			return;
-		}
-		else
-		{
-			writeToProcess ("ERR");
-		}
-	}
-	else if (!strcmp (cmd, "log"))
-	{
-		if (paramNextString (&device) || (value = paramNextWholeString ()) == NULL)
-			return;
-		messageType_t logLevel;
-		switch (toupper (*device))
-		{
-			case 'E':
-				logLevel = MESSAGE_ERROR;
-				break;
-			case 'W':
-				logLevel = MESSAGE_WARNING;
-				break;
-			case 'I':
-				logLevel = MESSAGE_INFO;
-				break;
-			case 'D':
-				logLevel = MESSAGE_DEBUG;
-				break;
-			default:
-				logStream (MESSAGE_ERROR) << "Unknow log level: " << *device << sendLog;
-				logLevel = MESSAGE_ERROR;
-				break;
-		}
-		logStream (logLevel) << value << sendLog;
-	}
 	else
 	{
-		throw rts2core::Error (std::string ("unknow command ") + cmd);
+		ConnExecute::processCommand (cmd);
 	}
 }
 
-void ConnExecute::processLine ()
+void ConnExecute::connectionError (int last_data_size)
 {
-	char *cmd;
-
-	if (paramNextString (&cmd))
-		return;
-
-	try
+	rts2core::ConnFork::connectionError (last_data_size);
+	// inform master to delete us..
+	if (masterElement != NULL)
 	{
-		processCommand (cmd);
-		return;
-	} catch (rts2core::Error &er)
-	{
-		logStream (MESSAGE_ERROR) << "while processing " << cmd << " : " << er << sendLog;
+		if (masterElement->getClient () != NULL)
+			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+		masterElement->deleteExecConn ();
 	}
+	masterElement = NULL;
 }
 
 void ConnExecute::exposureEnd ()
@@ -326,11 +241,6 @@ int ConnExecute::processImage (Rts2Image *image)
 	return 1;
 }
 
-void ConnExecute::processErrorLine (char *errbuf)
-{
-	logStream (MESSAGE_ERROR) << "rom script " << getExePath () << " received " << errbuf << sendLog;
-}
-
 std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
 {
 	std::list <Rts2Image *>::iterator iter;
@@ -340,38 +250,6 @@ std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
 			return iter;
 	}
 	return iter;
-}
-
-Rts2Conn *ConnExecute::getConnectionForScript (const char *_name)
-{
-	if (isCentraldName (_name))
-		return getMaster ()->getSingleCentralConn ();
-	return getMaster ()->getOpenConnection (_name);
-}
-
-int ConnExecute::getDeviceType (const char *_name)
-{
-	if (!strcasecmp (_name, "TELESCOPE"))
-		return DEVICE_TYPE_MOUNT;
-	else if (!strcasecmp (_name, "CCD"))
-	  	return DEVICE_TYPE_CCD;
-	else if (!strcasecmp (_name, "DOME"))
-	  	return DEVICE_TYPE_DOME;
-	else if (!strcasecmp (_name, "WEATHER"))
-	  	return DEVICE_TYPE_WEATHER;
-	else if (!strcasecmp (_name, "PHOT"))
-	  	return DEVICE_TYPE_PHOT;
-	else if (!strcasecmp (_name, "PLAN"))
-	  	return DEVICE_TYPE_PLAN;
-	else if (!strcasecmp (_name, "FOCUS"))
-	  	return DEVICE_TYPE_FOCUS;
-	else if (!strcasecmp (_name, "CUPOLA"))
-	  	return DEVICE_TYPE_CUPOLA;
-	else if (!strcasecmp (_name, "FW"))
-	  	return DEVICE_TYPE_FW;
-	else if (!strcasecmp (_name, "SENSOR"))
-	  	return DEVICE_TYPE_SENSOR;
-	throw rts2core::Error (std::string ("unknow device type ") + _name);
 }
 
 Execute::Execute (Script * _script, Rts2Block * _master, const char *_exec): Element (_script)

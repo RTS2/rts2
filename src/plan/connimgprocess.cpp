@@ -35,7 +35,7 @@
 
 using namespace rts2plan;
 
-ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):rts2core::ConnFork (in_master, in_exe, false, false, in_timeout)
+ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
 {
 	astrometryStat = NOT_ASTROMETRY;
 
@@ -83,7 +83,27 @@ int ConnImgProcess::newProcess ()
 	if (astrometryStat == DARK)
 		return 0;
 	
-	return ConnFork::newProcess ();
+	return rts2script::ConnExe::newProcess ();
+}
+
+void ConnImgProcess::processCommand (char *cmd)
+{
+	if (!strcasecmp (cmd, "correct"))
+	{
+		if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
+			|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || !paramEnd ())
+		{
+			logStream (MESSAGE_WARNING) << "invalid correct string" << sendLog;
+		}
+		else
+		{
+			astrometryStat = GET;
+		}
+	}
+	else
+	{
+		rts2script::ConnExe::processCommand (cmd);
+	}
 }
 
 void ConnImgProcess::processLine ()
@@ -100,51 +120,7 @@ void ConnImgProcess::processLine ()
 	}
 	else
 	{
-		// check for commands
-		char *cmd;
-		paramNextString (&cmd);
-		if (!strcasecmp (cmd, "correct"))
-		{
-			if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
-				|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || !paramEnd ())
-			{
-				logStream (MESSAGE_WARNING) << "invalid correct string" << sendLog;
-			}
-			else
-			{
-				astrometryStat = GET;
-			}
-		}
-		if (!strcasecmp (cmd, "double"))
-		{
-			char *vname, *desc;
-			double val;
-			if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || !paramEnd ())
-			{
-				logStream (MESSAGE_WARNING) << "invalid double string" << sendLog;
-			}
-			else
-			{
-				Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
-				// either variable with given name exists..
-				if (v)
-				{
-					if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
-					{
-						((Rts2ValueDouble *) v)->setValueDouble (val);
-						((Rts2Daemon *) master)->sendValueAll (v);
-					}
-				}
-				// or create it and distribute it..
-				else
-				{
-					Rts2ValueDouble *vd;
-					((Rts2Daemon *) master)->createValue (vd, vname, desc, false);
-					vd->setValueDouble (val);
-					master->updateMetaInformations (vd);
-				}
-			}
-		}
+		ConnExe::processLine ();
 	}
 
 	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: "
@@ -187,7 +163,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			else
 			  	astrometryStat = DARK;
 			delete image;
-			rts2core::ConnFork::connectionError (last_data_size);
+			rts2script::ConnExe::connectionError (last_data_size);
 			return;
 		}
 
@@ -301,11 +277,11 @@ void ConnImgProcess::connectionError (int last_data_size)
 			}
 		}
 		astrometryStat = BAD;
-		rts2core::ConnFork::connectionError (last_data_size);
+		rts2script::ConnExe::connectionError (last_data_size);
 		return;
 	}
 
-	rts2core::ConnFork::connectionError (last_data_size);
+	rts2script::ConnExe::connectionError (last_data_size);
 }
 
 ConnObsProcess::ConnObsProcess (Rts2Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)

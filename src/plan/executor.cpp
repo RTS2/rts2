@@ -30,6 +30,11 @@
 namespace rts2plan
 {
 
+/**
+ * Executor class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Executor:public Rts2DeviceDb
 {
 	public:
@@ -104,6 +109,9 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueString *current_type;
 		Rts2ValueInteger *current_obsid;
 
+		Rts2ValueString *pi;
+		Rts2ValueString *program;
+
 		Rts2ValueBool *autoLoop;
 
 		Rts2ValueInteger *next_id;
@@ -144,6 +152,9 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (current_name, "current_name", "name of current target", false);
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
+
+	createValue (pi, "PI", "project investigator of the target", true, RTS2_VALUE_WRITABLE);
+	createValue (program, "PROGRAM", "target program name", true, RTS2_VALUE_WRITABLE);
 
 	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false, RTS2_VALUE_WRITABLE);
 	autoLoop->setValueBool (true);

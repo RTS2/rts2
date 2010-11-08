@@ -1,6 +1,7 @@
 /*
  * Connections for image processing forked instances.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2010 Petr Kubanek, Institute of Physics
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,7 +21,7 @@
 #ifndef __RTS2CONNIMGPROCESS__
 #define __RTS2CONNIMGPROCESS__
 
-#include "../utils/connfork.h"
+#include "connexe.h"
 #include "../writers/rts2imagedb.h"
 #include "../utilsdb/observation.h"
 
@@ -29,7 +30,7 @@ namespace rts2plan
 
 typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
 
-class ConnProcess:public rts2core::ConnFork
+class ConnProcess:public rts2script::ConnExe
 {
 	public:
 		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
@@ -82,6 +83,8 @@ class ConnImgProcess:public ConnProcess
 		virtual void processLine ();
 
 	protected:
+		virtual void processCommand (char *cmd);
+	
 		virtual void connectionError (int last_data_size);
 
 	private:

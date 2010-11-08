@@ -20,6 +20,7 @@
 #ifndef __RTS2_ELEMENTEXE__
 #define __RTS2_ELEMENTEXE__
 
+#include "connexe.h"
 #include "element.h"
 #include "../utils/connfork.h"
 
@@ -33,13 +34,11 @@ class Execute;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnExecute:public rts2core::ConnFork
+class ConnExecute:public ConnExe
 {
 	public:
 		ConnExecute (Execute *_masterElement, Rts2Block * _master, const char *_exec);
 		virtual ~ConnExecute ();
-
-		virtual void processLine ();
 
 		void nullMasterElement () { masterElement = NULL; }
 
@@ -48,7 +47,7 @@ class ConnExecute:public rts2core::ConnFork
 		virtual int processImage (Rts2Image *image);
 
 	protected:
-		virtual void processErrorLine (char *errbuf);
+		virtual void processCommand (char *cmd);
 
 		virtual void connectionError (int last_data_size);
 
@@ -59,14 +58,7 @@ class ConnExecute:public rts2core::ConnFork
 		std::list <Rts2Image *> images;
 
 		std::list <Rts2Image *>::iterator findImage (const char *path);
-
-		bool isCentraldName (const char *_name) { return !strcmp (_name, ".") || !strcmp (_name, "centrald"); }
-		Rts2Conn *getConnectionForScript (const char *name);
-		int getDeviceType (const char *name);
-
-		void processCommand (char *cmd);
 };
-
 
 /**
  * Element for command execution. Command can communicta with RTS2 through
