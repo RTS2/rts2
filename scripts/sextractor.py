@@ -50,7 +50,34 @@ class Sextractor:
 	self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
 	self.objects.reverse()
 
+def getFWHM(fn,starsn):
+	"""Returns average FWHM of first starsn stars from the image"""
+	c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
+	c.runSExtractor()
+
+	# sort by magnitude
+	c.sortObjects(2)
+
+	# display in ds9
+	i = 0
+	fwhm = 0
+	a = 0
+	b = 0
+	for x in c.objects:
+	  	if (x[3] == 0 and x[4] != 0):
+			fwhm += x[5]
+			a += x[6]
+			b += x[7]
+			i += 1
+			if i > starsn:
+				break 
+	if i > 0:
+		return float(fwhm) / i
+
+	raise Exception('cannot find any stars on the image')
+
 if __name__ == "__main__":
+  	# test method
   	d = ds9()
   	for fn in sys.argv[1:]:
 		c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
@@ -61,19 +88,5 @@ if __name__ == "__main__":
 
 		# display in ds9
 		d.set('file {0}'.format(fn))
-		i = 0
-		fwhm = 0
-		a = 0
-		b = 0
 		for x in c.objects:
-		  	if (x[3] == 0 and x[4] != 0):
-				d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
-				fwhm += x[5]
-				a += x[6]
-				b += x[7]
-				i += 1
-				if i > 9:
-					break 
-		if i > 0:
-			print 'with {0} stars, average fwhm={1} a={2} b={3}'.format(i,fwhm/i,a/i,b/i)
-
+			d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
