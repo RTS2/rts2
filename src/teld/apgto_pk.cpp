@@ -167,14 +167,9 @@ class APGTO:public TelLX200 {
 		// further discussion with Petr required
 		//int changeMasterState (int new_state);
 		// Astro-Physics properties
-		Rts2ValueAltAz   *APAltAz;
 		Rts2ValueInteger *APslew_rate;
 		Rts2ValueInteger *APmove_rate;
-		Rts2ValueDouble  *APlocal_sidereal_time;
-		Rts2ValueDouble  *APlocal_time;
 		Rts2ValueDouble  *APutc_offset;
-		Rts2ValueDouble  *APlongitude;
-		Rts2ValueDouble  *APlatitude;
 		Rts2ValueString  *APfirmware ;
 		Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
 		Rts2ValueBool    *mount_tracking ;
@@ -605,9 +600,6 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
 		return -1;
 	if (serConn->readPort (temp_string, 33, '#') < 1)
 		return -1 ;
-	// wildi ToDo: completely unclear:
-	// if this line is commented out, subsequent RS 232 reads fail!
-	logStream (MESSAGE_INFO) << sendLog;
 	return 0;
 }
 
@@ -1000,7 +992,7 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 
 	if(tel_read_sidereal_time() < 0)
 		return -1;
-	_lst = APlocal_sidereal_time->getValueDouble();
+	_lst = lst->getValueDouble();
 	
 	if(tel_read_ra())
 		return -1;
@@ -1185,7 +1177,7 @@ bool APGTO::moveandconfirm(double interHAp, double interDECp)
 		interDECp = -(90. + interDECp);
 		interHAp = interHAp + 180.;
 	}    
-	_lst = APlocal_sidereal_time->getValueDouble();
+	_lst = lst->getValueDouble();
 	interHAp = fmod(360. + (_lst - interHAp), 360.);
 
 	// move to new auxiliar position
@@ -1221,10 +1213,10 @@ int APGTO::isInPosition(double coord1, double coord2, double err1, double err2, 
 				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_altitude error" << sendLog;
 				return -1;
 			}
-			logStream (MESSAGE_DEBUG) << "APGTO::isInPosition distances : alt "<< fabs(APAltAz->getAlt()-coord1)<<
-				"tolerance "<< err1<< " az "<< fabs(APAltAz->getAz() - coord2)<< " tolerance "<< err2<< sendLog;
+			logStream (MESSAGE_DEBUG) << "APGTO::isInPosition distances : alt "<< fabs(telAltAz->getAlt()-coord1)<<
+				"tolerance "<< err1<< " az "<< fabs(telAltAz->getAz() - coord2)<< " tolerance "<< err2<< sendLog;
 
-			if(fabs(APAltAz->getAlt()-coord1) < err1 && fabs(APAltAz->getAz()-coord2) < err2)
+			if(fabs(telAltAz->getAlt()-coord1) < err1 && fabs(telAltAz->getAz()-coord2) < err2)
 				return 0;
 			return  -1;
 		case 'c': // RADEC
@@ -1250,7 +1242,7 @@ int APGTO::isInPosition(double coord1, double coord2, double err1, double err2, 
 			if (tel_read_sidereal_time() < 0)
 				return -1;
 
-			_lst = APlocal_sidereal_time->getValueDouble();
+			_lst = lst->getValueDouble();
 			if (tel_read_ra() < 0)
 			{
 				logStream (MESSAGE_ERROR) << "APGTO::isInPosition tel_read_ra error" << sendLog;
@@ -2009,12 +2001,12 @@ int APGTO::info ()
 			ret = pier_collision (&t_equ, &observer);
 			if (ret != NO_COLLISION)
 			{
-				stop = 1;
+				//stop = 1;
 				logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog;
 			}
 			else
 			{
-				if (APAltAz->getAlt() < 10.)
+				if (telAltAz->getAlt() < 10.)
 				{
 					if (mount_tracking->getValueBool())
 					{
@@ -2078,7 +2070,7 @@ int APGTO::info ()
 	JD = ln_get_julian_from_sys ();
 	double lng = telLongitude->getValueDouble ();
 	local_sidereal_time = fmod ((ln_get_mean_sidereal_time (JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
-	double diff_loc_time = local_sidereal_time - APlocal_sidereal_time->getValueDouble ();
+	double diff_loc_time = local_sidereal_time - lst->getValueDouble ();
 	if (diff_loc_time >= 180.)
 	{
 		diff_loc_time -=360. ;
@@ -2091,10 +2083,10 @@ int APGTO::info ()
 	{ // 30 time seconds
 		logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
 			<< local_sidereal_time << " mount: "
-			<< APlocal_sidereal_time->getValueDouble() 
+			<< lst->getValueDouble() 
 			<< " difference " << diff_loc_time <<sendLog;
 
-		logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
+		logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
 
 		char date_time[256];
     struct ln_date utm;
@@ -2122,13 +2114,13 @@ int APGTO::info ()
       return -1 ;
     if(( ret= tel_read_sidereal_time()) != 0)
       return -1 ;
-    diff_loc_time = local_sidereal_time- APlocal_sidereal_time->getValueDouble() ;
+    diff_loc_time = local_sidereal_time- lst->getValueDouble() ;
 
-    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
+    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   telAltAz->getAlt() << " az " << telAltAz->getAz()  <<sendLog;
 
     logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
 			      << local_sidereal_time << " mount: "
-			      << APlocal_sidereal_time->getValueDouble() 
+			      << lst->getValueDouble() 
 			      << " difference " << diff_loc_time <<sendLog;
   } 
   // The mount unexpectedly starts to track, stop that
@@ -2195,11 +2187,11 @@ int APGTO::checkSiderealTime( double limit)
   }
   logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
-			    << APlocal_sidereal_time->getValueDouble() 
-			    << " difference " << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
+			    << lst->getValueDouble() 
+			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
 	
-  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > limit ) { // usually 30 time seconds
-    logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << sendLog;
+  if( fabs(local_sidereal_time- lst->getValueDouble()) > limit ) { // usually 30 time seconds
+    logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
     return -1 ;
   } 
   return 0 ;
@@ -2498,7 +2490,7 @@ int APGTO::processOption (int in_opt)
 
 APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
-	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	fixedOffsets->setValueRaDec (0, 0);
 	
 	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
@@ -2508,13 +2500,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",false);
 	createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
 	createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
-	createValue (APlocal_sidereal_time,    "APLOCSIDTIME","AP mount local sidereal time",     true,  RTS2_DT_RA);
-	createValue (APlocal_time,             "APLOCTIME",   "AP mount local time",              true,  RTS2_DT_RA);
-	createValue (APAltAz,                  "APALTAZ",     "AP mount Alt/Az[deg]",             true,  RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 	createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
 	createValue (APfirmware,               "APVERSION",   "AP mount firmware revision",       true);
-	createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",               true,  RTS2_DT_DEGREES);
-	createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
 	createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
 	createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
 	createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
