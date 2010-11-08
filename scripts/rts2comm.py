@@ -108,6 +108,11 @@ class Rts2Comm:
 	def delete(self,imagename):
 		print "delete",imagename
 		sys.stdout.flush()
+
+	def doubleValue(self,name,desc,value):
+		"""Add to device double value."""
+		print "double",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
 	
 	def log(self,level,text):
 		print "log",level,text
