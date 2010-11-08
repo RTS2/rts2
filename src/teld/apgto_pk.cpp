@@ -1,6 +1,6 @@
 /* 
  * Astro-Physics GTO mount daemon 
- * Copyright (C) 2009-2010, Markus Wildi, Petr Kubanek <petr@kubanek.net> and INDI
+ * Copyright (C) 2009-2010, Markus Wildi, Petr Kubanek and INDI
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,7 +26,6 @@
 
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
-#define OPT_APGTO_CCD_DEVICE     OPT_LOCAL + 57
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
 
 #define SLEW_RATE_1200 '2'
@@ -49,12 +48,6 @@
 #define setAPPark()         serConn->writePort ("#:KA#", 5)
 #define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
 #define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
-#define setAPClearBuffer()  serConn->writePort ("#", 1)    // clear buffer
-
-#define PARK_POSITION_RA -270.
-#define PARK_POSITION_DEC 5.
-#define PARK_POSITION_ANGLE "West"
-#define PARK_POSITION_DIFFERENCE_MAX 2.
 
 #define TRACK_MODE_LUNAR         0 
 #define TRACK_MODE_SOLAR         1 
@@ -62,9 +55,6 @@
 #define TRACK_MODE_ZERO          3 
 #define TRACK_MODE_ZERO_NO_RESET 4 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
-
-#define TIMEOUT_CCD_NOTTAKING_IMAGE 300. // [second]
-#define TIMEOUT_SLEW_START 300. // [second]
 
 namespace rts2teld
 {
@@ -85,10 +75,8 @@ class APGTO:public TelLX200 {
 		virtual int initValues ();
 		virtual int info ();
 		virtual int idle ();
-		virtual int willConnect (Rts2Address * in_addr);
 
 		virtual int setTo (double set_ra, double set_dec);
-		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
 		virtual int startResync ();
 		virtual int isMoving ();
@@ -98,10 +86,7 @@ class APGTO:public TelLX200 {
 		virtual int isParking ();
 		virtual int endPark ();
   
-		virtual int startDir (char *dir);
-		virtual int stopDir (char *dir);
 		virtual int abortAnyMotion () ;
-		virtual bool shutterClosed() ;
 		virtual int commandAuthorized (Rts2Conn * conn);
 		virtual void valueChanged (Rts2Value * changed_value);
 	protected:
@@ -112,12 +97,10 @@ class APGTO:public TelLX200 {
 		virtual void notMoveCupola ();
 
 	private:
-		char *ccdDevice;
 		int force_start ;
 		double on_set_HA ;
 		double on_zero_HA ;
 		double lastMoveRa, lastMoveDec;  
-		enum { NOTMOVE, MOVE_REAL } move_state;
 		time_t move_timeout;
 		time_t slew_start_time;
 
@@ -771,8 +754,6 @@ APGTO::tel_slew_to (double ra, double dec)
   char target_DECaxis_HAcoordinate[32] ;
   struct ln_lnlat_posn observer;
   struct ln_equ_posn target_equ;
-  struct ln_hrz_posn hrz;
-  double JD;
 
   if( block_sync_move->getValueBool()) {
     logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
@@ -790,21 +771,12 @@ APGTO::tel_slew_to (double ra, double dec)
 
   target_equ.ra = fmod( ra + 360., 360.) ;
   target_equ.dec= fmod( dec, 90.);
-  observer.lng = telLongitude->getValueDouble ();
-  observer.lat = telLatitude->getValueDouble ();
 
-  JD = ln_get_julian_from_sys ();
-  ln_get_hrz_from_equ (&target_equ, &observer, JD, &hrz);
-
-  if( hrz.alt < 0.) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to target_equ ra " << target_equ.ra << " dec " <<  target_equ.dec << " is below horizon" << sendLog;
-    return -1 ;
-  }
   if( tel_check_declination_axis()) {
     logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to check of the declination axis failed." << sendLog;
     return -1;
   }
-  double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + observer.lng + 360.), 360.);  // longitude positive to the East
+  double local_sidereal_time= getLocSidTime ();
   double target_HA= fmod( local_sidereal_time- target_equ.ra+ 360., 360.) ;
 
   if(( target_HA > 180.) && ( target_HA <= 360.)) {
@@ -833,7 +805,7 @@ APGTO::tel_slew_to (double ra, double dec)
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " target_equ.dec " << target_equ.dec << " invalid condition, exiting"  << sendLog;
       exit(1) ;
     }
-    return -1;
+//    return -1;
   }
   logStream (MESSAGE_INFO) << "APGTO::tel_slew_to cleared geometry  slewing ra " << target_equ.ra << " target_equ.dec " << dec  << sendLog;
 
@@ -1288,7 +1260,6 @@ int APGTO::startResync ()
 		ret = tel_slew_to (lastMoveRa, lastMoveDec);
 		if (ret)
 			return -1;
-		move_state = MOVE_REAL;
 		slew_state->setValueBool(true) ;
 		set_move_timeout (100);
 	}
@@ -1337,39 +1308,23 @@ void APGTO::notMoveCupola ()
   postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
 }
 
-int
-APGTO::isMoving ()
+int APGTO::isMoving ()
 {
-  int ret;
-  int loc_state= move_state ; // wildi ToDo:, ask Petr, to avoid compile time error
-  switch (move_state) {
-  case MOVE_REAL:
-    ret = tel_check_coords (lastMoveRa, lastMoveDec);
-    switch (ret) {
-    case -1:
-      return -1;
-    case 0:
-      return USEC_SEC / 10;
-    case 1:
-    case 2:
-      move_state = NOTMOVE;
-      slew_state->setValueBool(false) ;
-      return -2;
-    }
-    break;
-  case NOTMOVE:
-    slew_state->setValueBool(false) ;
-    return -2;
-    break ;
-  default:
-    logStream (MESSAGE_ERROR) << "APGTO::isMoving NO case " << loc_state  << sendLog;
-    break;
-  }
-  return -1;
+	int ret = tel_check_coords (lastMoveRa, lastMoveDec);
+	switch (ret)
+	{
+		case -1:
+			return -1;
+		case 1:
+		case 2:
+			slew_state->setValueBool(false) ;
+			return -2;
+		default:
+			return USEC_SEC / 10;
+	}
 }
 
-int
-APGTO::stopMove ()
+int APGTO::stopMove ()
 {
   char dirs[] = { 'e', 'w', 'n', 's' };
   int i;
@@ -1428,42 +1383,18 @@ int APGTO::setTo (double ra, double dec)
 		return -1;
 	return 0 ;
 }
-/*!
- * Correct mount coordinates.
- * Used for closed loop coordinates correction based on astronometry
- * of obtained images.
- * @param ra		ra correction
- * @param dec		dec correction
- * @return -1 and set errno on error, 0 otherwise.
- */
-int APGTO::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
-{
-	if (setTo (real_ra, real_dec)) //  means sync
-		return -1;
-	return 0;
-}
-/*!
+
+/**
  * Park mount to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-APGTO::startPark ()
+int APGTO::startPark ()
 {
-  notMoveCupola() ;
-  struct ln_lnlat_posn observer;
-  observer.lng = telLongitude->getValueDouble ();
-  observer.lat = telLatitude->getValueDouble ();
-
-  double JD= ln_get_julian_from_sys ();
-  double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + observer.lng + 360.), 360.);  // longitude positive to the East
-  double park_ra= fmod( (PARK_POSITION_RA + local_sidereal_time) + 360., 360.);
-
-  setTarget ( park_ra, PARK_POSITION_DEC);
-  startCupolaSync() ;
-  logStream (MESSAGE_DEBUG) << "APGTO::startParking " << getTelTargetRa () << " dec " <<getTelTargetDec ()  << sendLog;
-  return startResync ();
+	setTargetAltAz (0, 355);
+	return moveAltAz ();
 }
+
 int
 APGTO::isParking ()
 {
@@ -1517,30 +1448,7 @@ APGTO::ParkDisconnect()
   logStream (MESSAGE_INFO) << "APGTO::ParkDisconnect motion stopped, the mount is parked but still connected (no #:KA#)." << sendLog; 
   return;
 }
-int
-APGTO::startDir (char *dir)
-{
-  switch (*dir) {
-  case DIR_EAST:
-  case DIR_WEST:
-  case DIR_NORTH:
-  case DIR_SOUTH:
-    return tel_start_move (*dir);
-  }
-  return -2;
-}
-int
-APGTO::stopDir (char *dir)
-{
-  switch (*dir) {
-  case DIR_EAST:
-  case DIR_WEST:
-  case DIR_NORTH:
-  case DIR_SOUTH:
-    return tel_stop_move (*dir);
-  }
-  return -2;
-}
+
 int
 APGTO::abortAnyMotion ()
 {
@@ -1563,24 +1471,7 @@ APGTO::abortAnyMotion ()
       return -1 ;
     }
 }
-bool
-APGTO::shutterClosed() {
 
-  Rts2Conn * conn_shutter = getOpenConnection (ccdDevice);
-  if( conn_shutter) {
-    Rts2Value * flishutter =  conn_shutter->getValue ("SHUTTER");
-    if( flishutter) {
-      if(flishutter->getValueType()== RTS2_VALUE_SELECTION) {
-	if( flishutter->getValueInteger() !=0)  { //0=LIGHT, 1=DARK
-	  return true ;
-	}
-      }
-    } else {
-      logStream (MESSAGE_DEBUG) << "APGTO::shutterClosed flishutter=NULL : "<< sendLog;
-    }
-  }
-  return false ;
-}
 void 
 APGTO::valueChanged (Rts2Value * changed_value)
 {
@@ -1650,17 +1541,6 @@ APGTO::commandAuthorized (Rts2Conn *conn)
   } else if (conn->isCommand ("track")) {
     if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized set track mode sidereal failed." << sendLog;
-      return -1;
-    }
-    return 0 ;
-  } else if (conn->isCommand ("rot")) { // move is used for a slew to a specific position
-    char *direction ;
-    if (conn->paramNextStringNull (&direction) || !conn->paramEnd ()) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot failed" << sendLog;
-      return -2;
-    }
-    if( startDir( direction)){
-      logStream (MESSAGE_ERROR) <<"APGTO::commandAuthorized startDir( direction) failed" << sendLog;
       return -1;
     }
     return 0 ;
@@ -1838,55 +1718,6 @@ int APGTO::info ()
   int flip= -1 ;
   int error= -1 ;
 
-  
-  // if there are more than one CCD running use an iterator
-  // and find the appropriate camera
-  // if no images have been taken with TIMEOUT_CCD_NOTTACKING_IMAGE secons
-  // stop tracking.
-  // tracking is reenabled in case a new target has been acquired
-  // this section is relying on that for each image a slew is performed
-  time_t now;
-  if (ccdDevice) {
-    if((( slew_start_time - time(&now) + TIMEOUT_SLEW_START) < 0.) || (transition_while_tracking->getValueBool())) {
-      if(mount_tracking->getValueBool()) {
-	if( shutterClosed()) {
-	  if( (abortAnyMotion () !=0)) {
-	    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
-	    return -1;
-	  } else {
-	    logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to shutter closed" << sendLog;
-	  }
-	}
-	Rts2Conn * conn_time = getOpenConnection (ccdDevice);
-	if( conn_time) {
-	  Rts2Value * flitime = conn_time->getValue ("exposure_end"); // it is time when shutter closes!
-	  if( flitime) {
-	    if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
-	      if(( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) < 0.) {
-		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out, flitime: " <<flitime->getValueDouble() << sendLog;
-		if( (abortAnyMotion () !=0)) {
-		  logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
-		  return -1;
-		}  else {
-		  logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to ccd data tacking timed out" << sendLog;
-		}
-	      } else {
-		//logStream (MESSAGE_DEBUG) << "APGTO::info fli time " << ( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) << " > 0." << sendLog;
-	      }
-	    } else {
-	      logStream (MESSAGE_DEBUG) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
-	    }
-	  }	
-	}
-      }
-    } else {
-      //      logStream (MESSAGE_DEBUG) << "APGTO::info slew time " << ( slew_start_time - time(&now) + TIMEOUT_SLEW_START)  << " < 0. slew_start " << slew_start_time << sendLog;
-    }
-  }
-  //  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
-  //    logStream (MESSAGE_INFO) << "APGTO::info state TEL_MOVING" << sendLog;
-  //  }
-
   if (tel_read_ra () || tel_read_dec ()) {
     error = ERROR_IN_INFO ;
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve ra, dec  " << sendLog;
@@ -1951,7 +1782,7 @@ int APGTO::info ()
   // move_ha_sg 00:00:00  0:
   // move_ha_sg 24:00:00  0:
   // with the Astro-Physics mount
-	if ((HA < on_set_HA) && (mount_tracking->getValueBool()) && (move_state== NOTMOVE))
+	if ((HA < on_set_HA) && (mount_tracking->getValueBool()))
 	{
 		transition_while_tracking->setValueBool(true);
 		logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
@@ -1968,7 +1799,7 @@ int APGTO::info ()
 //   } else {
 //     logStream (MESSAGE_INFO) << "APGTO::info  not ( moving || parking)" << sendLog ;
 //   }
-	if (move_state == NOTMOVE)
+	if ((getState () & TEL_MOVING) || (getState () & TEL_PARKING))
 	{
 		int stop= 0 ;
 		if (!(strcmp("West", DECaxis_HAcoordinate->getValue())))
@@ -2052,7 +1883,6 @@ int APGTO::info ()
 			switch (ret)
 			{
 				case -2:
-					move_state = NOTMOVE;
 					slew_state->setValueBool (false);
 					break;
 				case -1: // read error 
@@ -2157,16 +1987,6 @@ APGTO::idle ()
   return TelLX200::idle() ;
 }
 
-int APGTO::willConnect (Rts2Address * in_addr)
-{
-	if (ccdDevice && in_addr->getType () == DEVICE_TYPE_CCD)
-	{
-		logStream (MESSAGE_INFO) << "APGTO::willConnect to DEVICE_TYPE_CCD: "<< ccdDevice << sendLog;
-		return 1;
-	}
-	return TelLX200::willConnect (in_addr);
-}
-
 double APGTO::siderealTime()
 {
 	double JD  = ln_get_julian_from_sys ();
@@ -2225,11 +2045,6 @@ int APGTO::setBasicData()
 
 	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
 
-	if (setAPClearBuffer() < 0)
-	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
-		return -1;
-	}
 	if (setAPLongFormat() < 0)
 	{
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting long format failed" << sendLog;
@@ -2339,8 +2154,6 @@ int APGTO::initValues ()
 {
   int ret = -1 ;
   int flip= -1 ;
-  if (ccdDevice)
-	addConstValue ("CCD", ccdDevice, "ccd camera device name to monitor for data tacking timeouts");
 
   strcpy (telType, "APGTO");
 
@@ -2415,8 +2228,8 @@ int APGTO::initValues ()
     object.ra = fmod((getTelRa() + 360.), 360.);
     object.dec= fmod(getTelDec(), 90.) ;
 
-    park_position.ra = fmod(( PARK_POSITION_RA + siderealTime()) + 360., 360.);
-    park_position.dec= PARK_POSITION_DEC  ;
+ //   park_position.ra = fmod(( PARK_POSITION_RA + siderealTime()) + 360., 360.);
+ //   park_position.dec= PARK_POSITION_DEC  ;
 
     double diff_ra = fabs(fmod(( park_position.ra - object.ra) + 360., 360.));
     
@@ -2428,15 +2241,15 @@ int APGTO::initValues ()
 
     double diff_dec= fabs(( park_position.dec- object.dec));
     int block= 0 ;
-    if(( diff_ra < PARK_POSITION_DIFFERENCE_MAX) && ( diff_dec < PARK_POSITION_DIFFERENCE_MAX)) {
-      if( !( strcmp( PARK_POSITION_ANGLE, DECaxis_HAcoordinate->getValue()))) {
+//    if(( diff_ra < PARK_POSITION_DIFFERENCE_MAX) && ( diff_dec < PARK_POSITION_DIFFERENCE_MAX)) {
+//      if( !( strcmp( PARK_POSITION_ANGLE, DECaxis_HAcoordinate->getValue()))) {
 	// ok
-      } else {
-	block= 1 ;
-      }
-    } else {
-      block= 1 ;
-    }
+//      } else {
+//	block= 1 ;
+//      }
+//    } else {
+//      block= 1 ;
+//    }
     if( block) {
       tracking_mode= TRACK_MODE_ZERO ; 
       block_sync_move->setValueBool(true) ;
@@ -2456,7 +2269,6 @@ int APGTO::initValues ()
     logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"<< tracking_mode << " failed." << sendLog;
     return -1;
   }
-  move_state = NOTMOVE;
   slew_state->setValueBool(false) ;
   return TelLX200::initValues ();
 }
@@ -2475,9 +2287,6 @@ int APGTO::processOption (int in_opt)
 			break;
 		case OPT_APGTO_FORCE_START:
 			force_start= true;
-			break;
-		case OPT_APGTO_CCD_DEVICE:
-			ccdDevice = optarg;
 			break;
 		case OPT_APGTO_KEEP_HORIZON:
 			avoidBellowHorizon->setValueBool (true);
@@ -2513,11 +2322,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	transition_while_tracking->setValueBool(false) ;
 	assume_parked->setValueBool(false);
 
-	ccdDevice = NULL;
-
 	addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
 	addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
-	addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
 	addOption (OPT_APGTO_KEEP_HORIZON,  "avoid-horizon", 0, "avoid movements bellow horizon");
 }
 
