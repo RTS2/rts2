@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# You will need: scipy and matplotlib
+# This should work on Debian/ubuntu:
+# sudo apt-get install python-matplotlib python-scipy
+#
 # Autofocosing
 #
 # (C) 2002-2008 Stanislav Vitek
