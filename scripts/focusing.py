@@ -45,7 +45,7 @@ class Focusing (rts2comm.Rts2Comm):
 	"""Take and process focussing data."""
 	def __init__(self):
 		self.exptime = 10
-		self.step= 1
+		self.step = 0.2
 		self.attempts = 20
 		self.focuser = 'F0'
 
@@ -63,6 +63,8 @@ class Focusing (rts2comm.Rts2Comm):
 			if (fwhm_min is None or fwhm < fwhm_min):
 				fwhm_MinimumX = k
 				fwhm_min = fwhm
+			self.rename(tries[k],'%b/focusing/%o/%f')
+
 		self.focpos = array(self.focpos)
 		self.fwhm = array(self.fwhm)
 
@@ -85,16 +87,16 @@ class Focusing (rts2comm.Rts2Comm):
 
 	def beforeReadout(self):
 		if (self.num == self.attempts):
-			self.setValue('FOC_FOFF',0,self.focuser)
+			self.setValue('FOC_TOFF',0,self.focuser)
 		else:
-			self.setValue('FOC_FOFF',self.off)
+			self.setValue('FOC_TOFF',self.off,self.focuser)
 
 	
 	def run(self):
 		self.setValue('exposure',self.exptime)
 		self.setValue('SHUTTER','LIGHT')
 		self.off = -1 * self.step * (self.attempts / 2)
-		self.setValue('FOC_FOFF',self.off,self.focuser)
+		self.setValue('FOC_TOFF',self.off,self.focuser)
 		tries = {}
 
 		for self.num in range(1,self.attempts+1):
