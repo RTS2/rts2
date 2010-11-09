@@ -211,7 +211,7 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else
 	{
-		ConnExecute::processCommand (cmd);
+		ConnExe::processCommand (cmd);
 	}
 }
 
