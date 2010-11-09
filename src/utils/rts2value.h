@@ -1036,6 +1036,8 @@ class Rts2ValueAltAz: public Rts2Value
 		 */
 		double getAz () { return az; }
 
+		void getAltAz (struct ln_hrz_posn *hrz) { hrz->alt = getAlt (); hrz->az = getAz (); }
+
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
 
