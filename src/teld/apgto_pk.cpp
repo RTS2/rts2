@@ -123,7 +123,6 @@ class APGTO:public TelLX200 {
 		int setAPLocalTime(int x, int y, int z) ;
 		int setAPBackLashCompensation( int x, int y, int z) ;
 		int setCalenderDate( int dd, int mm, int yy) ;
-		int setAPMotionStop() ;
 
 		// helper
 		double siderealTime ();
@@ -159,7 +158,6 @@ class APGTO:public TelLX200 {
 		Rts2ValueBool    *transition_while_tracking ; 
 		Rts2ValueBool    *block_sync_move;
 		Rts2ValueBool    *assume_parked;
-		Rts2ValueBool    *slew_state; // (move_state)
 		Rts2ValueBool    *collision_detection; 
 		Rts2ValueBool    *avoidBellowHorizon;
 };
@@ -352,25 +350,6 @@ int APGTO::setAPUTCOffset (int hours)
 	if ((ret = serConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0)
 		return -1;
 	return 0;
-}
-/*!
- * Writes to APGTO #:Q#
- *
- *
- * @param 
- *
- * @return -1 on failure, 0 otherwise
- */
-int APGTO::setAPMotionStop()
-{
-	int error_type;
-    
-	if ( (error_type = serConn->writePort ("#:Q#", 4)) < 0)
-		return error_type;
-
-	mount_tracking->setValueBool (false);
-	notMoveCupola ();
-	return 0 ;
 }
 
 /*!
@@ -757,10 +736,6 @@ APGTO::tel_slew_to (double ra, double dec)
 
   if( block_sync_move->getValueBool()) {
     logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
-    return -1 ;
-  }
-  if( slew_state->getValueBool()) {
-    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to mount is slewing, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
     return -1 ;
   }
   if( !( collision_detection->getValueBool())) {
@@ -1160,7 +1135,7 @@ bool APGTO::moveandconfirm(double interHAp, double interDECp)
 		logStream (MESSAGE_DEBUG) << "APGTO::moveTo waiting to arrive to intermediate point"<< sendLog;
 		usleep(100000);
 	}
-	setAPMotionStop();
+	stopMove ();
 	return true;
 }
 
@@ -1260,7 +1235,6 @@ int APGTO::startResync ()
 		ret = tel_slew_to (lastMoveRa, lastMoveDec);
 		if (ret)
 			return -1;
-		slew_state->setValueBool(true) ;
 		set_move_timeout (100);
 	}
 	return 0;
@@ -1270,6 +1244,8 @@ int APGTO::applyCorrectionsFixed (double ra, double dec)
 {
 	if (fixedOffsets->getRa () == 0 && fixedOffsets->getDec () == 0)
 	{
+		if (telFlip->getValueInteger () != 0)
+			dec *= -1;
 		fixedOffsets->setValueRaDec (ra, dec);
 		logStream (MESSAGE_INFO) << "applying offsets as fixed offsets (" << LibnovaDegDist (ra) << " " << LibnovaDegDist (dec) << sendLog;
 		return 0;
@@ -1280,8 +1256,11 @@ int APGTO::applyCorrectionsFixed (double ra, double dec)
 void APGTO::applyOffsets (struct ln_equ_posn *pos)
 {
 	TelLX200::applyOffsets (pos);
-	pos->ra += fixedOffsets->getRa ();
-	pos->dec += fixedOffsets->getDec ();
+	pos->ra -= fixedOffsets->getRa ();
+	if (telFlip->getValueInteger () == 0)
+		pos->dec -= fixedOffsets->getDec ();
+	else
+		pos->dec += fixedOffsets->getDec ();
 }
 
 void APGTO::startCupolaSync ()
@@ -1317,7 +1296,6 @@ int APGTO::isMoving ()
 			return -1;
 		case 1:
 		case 2:
-			slew_state->setValueBool(false) ;
 			return -2;
 		default:
 			return USEC_SEC / 10;
@@ -1326,15 +1304,16 @@ int APGTO::isMoving ()
 
 int APGTO::stopMove ()
 {
-  char dirs[] = { 'e', 'w', 'n', 's' };
-  int i;
-  for (i = 0; i < 4; i++) {
-    if (tel_stop_move (dirs[i]) < 0)
-      
-      return -1;
-  }
-  return 0;
+	int error_type;
+    
+	if ((error_type = serConn->writePort ("#:Q#", 4)) < 0)
+		return error_type;
+
+	mount_tracking->setValueBool (false);
+	notMoveCupola ();
+	return 0;
 }
+
 /*!
  * Set mount to match given coordinates (sync)
  *
@@ -1354,7 +1333,7 @@ int APGTO::setTo (double ra, double dec)
 		logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
 		return -1;
 	}
-	if (slew_state->getValueBool())
+	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 	{
 		logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
 		return -1 ;
@@ -1428,7 +1407,7 @@ void
 APGTO::ParkDisconnect()
 {
   // The AP mount will not surely stop with #:KA alone
-  if (setAPMotionStop() < 0) {
+  if (stopMove () < 0) {
     logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect motion stop failed #:Q#" << sendLog;
     return;
   }
@@ -1455,7 +1434,7 @@ APGTO::abortAnyMotion ()
   int ret = 0 ;
   int failed= 0 ;
 
-    if((ret = setAPMotionStop()) < 0) {
+    if((ret = stopMove()) < 0) {
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion stop motion #:Q# failed, SWITCH the mount OFF" << sendLog;
       failed = 1 ;
     }
@@ -1694,10 +1673,6 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     // do not sync while slewing
     // this can occur if a script tries to sync after e.g. an astrometric calibration
     //
-    while( slew_state->getValueBool()) {
-      logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometryOffsetRaDec, sleeping while slewing" << sendLog;
-      sleep( 1) ;
-    }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
       return -1 ;
@@ -1883,7 +1858,6 @@ int APGTO::info ()
 			switch (ret)
 			{
 				case -2:
-					slew_state->setValueBool (false);
 					break;
 				case -1: // read error 
 					logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
@@ -2132,7 +2106,6 @@ int APGTO::init ()
 	int status;
 	on_set_HA= 0.;
 	force_start= false ;
-	slew_state->setValueBool(false) ;
 	time(&slew_start_time) ;
 	status = TelLX200::init ();
   
@@ -2269,7 +2242,6 @@ int APGTO::initValues ()
     logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"<< tracking_mode << " failed." << sendLog;
     return -1;
   }
-  slew_state->setValueBool(false) ;
   return TelLX200::initValues ();
 }
 
@@ -2303,10 +2275,9 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	fixedOffsets->setValueRaDec (0, 0);
 	
 	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
-	createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
 	createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
 	createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
-	createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",false);
+	createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",true);
 	createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
 	createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
 	createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
@@ -2317,7 +2288,6 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	avoidBellowHorizon->setValueBool (false);
 
 	collision_detection->setValueBool(true) ;
-	slew_state->setValueBool(false) ;
 	block_sync_move->setValueBool(false) ;
 	transition_while_tracking->setValueBool(false) ;
 	assume_parked->setValueBool(false);
