@@ -51,10 +51,12 @@ hmstod (const char *hptr)
 
 	while (*endptr)
 	{
+		errno = 0;
 		// convert test
 		ret += strtod (locptr, &endptr) * mul;
+		
 		if (errno == ERANGE)
-			return nan ("f");
+			return NAN;
 		// we get sucessfuly to end
 		if (!*endptr)
 		{
