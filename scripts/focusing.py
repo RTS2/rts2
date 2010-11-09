@@ -49,21 +49,29 @@ class Focusing (rts2comm.Rts2Comm):
 		self.attempts = 20
 		self.focuser = 'F0'
 
-	def findBestFWHM(self,tries):
+	def findBestFWHM(self,tries,rename_images=False):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
 		fwhm_min = None
 		fwhm_MinimumX = None
-		for k in tries.keys():
+		keys = tries.keys()
+		keys.sort()
+		for k in keys:
 			self.focpos.append(k)
-			fwhm = sextractor.getFWHM(tries[k],10)
-			self.log('I','offset {0} fwhm {1}'.format(k,fwhm))
+			imgname = tries[k]
+			if rename_images:
+				imgname = self.rename(imgname,'%b/focusing/%o/%f')
+			try:
+				fwhm,nstars = sextractor.getFWHM(imgname,15)
+			except Exception, ex:
+				self.log('W',ex)
+				continue
+			self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,fwhm,nstars))
 			self.fwhm.append(fwhm)
 			if (fwhm_min is None or fwhm < fwhm_min):
 				fwhm_MinimumX = k
 				fwhm_min = fwhm
-			self.rename(tries[k],'%b/focusing/%o/%f')
 
 		self.focpos = array(self.focpos)
 		self.fwhm = array(self.fwhm)
@@ -72,13 +80,16 @@ class Focusing (rts2comm.Rts2Comm):
 		# this function is for flux.. 
 		#fitfunc = lambda p, x: p[0] * p[4] / (p[4] + p[3] * (abs(x - p[1])) ** (p[2]))
 
-		fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2) + p[3] * (x ** 3) + p[4] * (x ** 4)
+		#fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2) + p[3] * (x ** 3) + p[4] * (x ** 4)
+		fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)
 		errfunc = lambda p, x, y: fitfunc(p, x) - y # Distance to the target function
 
-		p0 = [1, 1, 1, 1, 1]
+		#p0 = [1, 1, 1, 1, 1]
+		p0 = [1, 1, 1]
 		self.fwhm_poly, success = optimize.leastsq(errfunc, p0[:], args=(self.focpos, self.fwhm))
 
-		fitfunc_r = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 3) + p4 * (x ** 4)
+		#fitfunc_r = lambda x, p0, p1, p2, p3, p4: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 3) + p4 * (x ** 4)
+		fitfunc_r = lambda x, p0, p1, p2 : p0 + p1 * x + p2 * (x ** 2)
 
 		b = optimize.fmin(fitfunc_r,fwhm_MinimumX,args=(self.fwhm_poly), disp=0)[0]
 		self.log('I', 'found FHWM minimum at offset {0}'.format(b))
@@ -107,7 +118,7 @@ class Focusing (rts2comm.Rts2Comm):
 
 		self.log('I','all focusing exposures finished, processing data')
 
-		self.findBestFWHM(tries)
+		self.findBestFWHM(tries,rename_images=True)
 
 if __name__ == "__main__":
 	a = Focusing()

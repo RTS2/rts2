@@ -102,7 +102,7 @@ def getFWHM(fn,starsn):
 			if i > starsn:
 				break 
 	if i > 0:
-		return float(fwhm) / i
+		return float(fwhm) / i, i
 
 	raise Exception('cannot find any stars on the image')
 
