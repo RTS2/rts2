@@ -462,9 +462,9 @@ void CalibrationTarget::load ()
 	}
 	if (cal_list.size () == 0)
 	{
-		logStream (MESSAGE_WARNING) << "there aren't any calibration targets; either create them or delete target with ID 6" << sendLog;
+		logStream (MESSAGE_ERROR) << "there aren't any calibtation targets; either create them or delete target with ID 6" << sendLog;
 		EXEC SQL CLOSE pos_calibration;
-		EXEC SQL COMMIT;
+		EXEC SQL ROLLBACK;
 		return;
 	}
 	EXEC SQL CLOSE pos_calibration;
