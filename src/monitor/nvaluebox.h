@@ -224,15 +224,15 @@ class ValueBoxArray:public ValueBox, NWindowEdit
 };
 
 /**
- * Edit box for editting RA Dec.
+ * Edit box for editting RA DEC or ALT AZ pairs.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueBoxRaDec:public ValueBox, NWindowEdit
+class ValueBoxPair:public ValueBox, NWindowEdit
 {
 	public:
-		ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y);
-		virtual ~ValueBoxRaDec ();
+		ValueBoxPair (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2);
+		virtual ~ValueBoxPair ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -240,6 +240,9 @@ class ValueBoxRaDec:public ValueBox, NWindowEdit
 	private:
 		NWindowEditDigits * edt[2];
 		int edtSelected;
+
+		const char *p1name;
+		const char *p2name;
 };
 
 }

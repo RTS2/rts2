@@ -200,7 +200,10 @@ void NDeviceWindow::createValueBox ()
 			valueBox = new ValueBoxTimeDiff (this, (Rts2ValueTime *) val, 21, s);
 			break;
 		case RTS2_VALUE_RADEC:
-			valueBox = new ValueBoxRaDec (this, (Rts2ValueRaDec *) val, 21, s);
+			valueBox = new ValueBoxPair (this, (Rts2ValueRaDec *) val, 21, s, "RA", "DEC");
+			break;
+		case RTS2_VALUE_ALTAZ:
+			valueBox = new ValueBoxPair (this, (Rts2ValueRaDec *) val, 21, s, "ALT", "AZ");
 			break;
 		default:
 			switch (val->getValueExtType ())

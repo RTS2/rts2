@@ -555,7 +555,7 @@ bool ValueBoxArray::setCursor ()
 	return edt[edtSelected]->setCursor ();
 }
 
-ValueBoxRaDec::ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
+ValueBoxPair::ValueBoxPair (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
 {
 	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
 	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1, 10, 1, 0, 0, 300, 1, false);
@@ -563,17 +563,20 @@ ValueBoxRaDec::ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int 
 	edt[0]->setValueDouble (_val->getRa ());
 	edt[1]->setValueDouble (_val->getDec ());
 
+	p1name = p1;
+	p2name = p2;
+
 	edtSelected = 0;
 }
 
-ValueBoxRaDec::~ValueBoxRaDec ()
+ValueBoxPair::~ValueBoxPair ()
 {
 	edtSelected = -1;
 	for (int i = 0; i < 2; i++)
 		delete edt[i];
 }
 
-keyRet ValueBoxRaDec::injectKey (int key)
+keyRet ValueBoxPair::injectKey (int key)
 {
 	switch (key)
 	{
@@ -596,7 +599,7 @@ keyRet ValueBoxRaDec::injectKey (int key)
 	return edt[edtSelected]->injectKey (key);	
 }
 
-void ValueBoxRaDec::draw ()
+void ValueBoxPair::draw ()
 {
 	// draw border..
 	NWindowEdit::draw ();
@@ -608,22 +611,22 @@ void ValueBoxRaDec::draw ()
 	edt[edtSelected]->setUnderline ();
 
 	// draws labels..
-	mvwprintw (getWriteWindow (), 0, 0, " RA:");
-	mvwprintw (getWriteWindow (), 0, 15, "DEC:");
+	mvwprintw (getWriteWindow (), 0, 0, "%-3s:", p1name);
+	mvwprintw (getWriteWindow (), 0, 15, "%-3s:", p2name);
 
 	winrefresh ();
 	for (int i = 0; i < 2; i++)
 		edt[i]->winrefresh ();
 }
 
-void ValueBoxRaDec::sendValue (Rts2Conn * connection)
+void ValueBoxPair::sendValue (Rts2Conn * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
 	connection->queCommand (new rts2core::Rts2CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', edt[0]->getValueDouble (), edt[1]->getValueDouble ()));
 }
 
-bool ValueBoxRaDec::setCursor ()
+bool ValueBoxPair::setCursor ()
 {
 	return edt[edtSelected]->setCursor ();
 }
