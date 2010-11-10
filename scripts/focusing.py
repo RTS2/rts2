@@ -166,7 +166,8 @@ class Focusing (rts2comm.Rts2Comm):
 		if fit == LINEAR:
 			self.setValue('FOC_DEF',b,self.focuser)
 			b,fit = self.takeImages()
-		self.setValue('FOC_DEF',b)
+
+		self.setValue('FOC_DEF',b,self.focuser)
 
 if __name__ == "__main__":
 	a = Focusing()
