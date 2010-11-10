@@ -101,9 +101,10 @@ def getFWHM(fn,starsn):
 			i += 1
 			if i > starsn:
 				break 
-	if i > 0:
+	if i > starsn:
 		return float(fwhm) / i, i
-
+	if i > 0:
+		raise Exception('too few stars - {0}, expected {1}'.format(i,starsn))
 	raise Exception('cannot find any stars on the image')
 
 if __name__ == "__main__":
