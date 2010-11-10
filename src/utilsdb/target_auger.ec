@@ -173,7 +173,9 @@ void TargetAuger::load ()
 		EXEC SQL ROLLBACK;
 		return;
 	}
-	throw SqlError ("cannot load Auger target");
+	logStream (MESSAGE_ERROR) << "cannot load Auger target: " << sqlca.sqlerrm.sqlerrmc << sendLog;
+	EXEC SQL CLOSE cur_target;
+	EXEC SQL ROLLBACK;
 }
 
 void TargetAuger::load (int auger_id)
