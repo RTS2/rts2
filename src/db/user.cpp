@@ -176,7 +176,7 @@ int Rts2UserApp::deleteUser ()
 	std::ostringstream os;
 	os << "Delete user " << user;
 	ret = askForBoolean (os.str ().c_str (), ch);
-	if (ret)
+	if (ret < 0)
 		return ret;
 	if (ch == true)
 	{
