@@ -31,6 +31,7 @@
 #define OPT_LAT              OPT_LOCAL + 230
 #define OPT_LONG             OPT_LOCAL + 231
 #define OPT_SUN_ALTITUDE     OPT_LOCAL + 232
+#define OPT_SUN_AZIMUTH      OPT_LOCAL + 233
 
 namespace rts2centrald
 {
@@ -76,7 +77,7 @@ class StateApp:public Rts2App
 		void printAltTable (std::ostream & _os);
 		void printDayStates (std::ostream & _os);
 
-		bool sunAltitude;
+		enum {NONE, SUN_ALT, SUN_AZ } calculateSun;
 };
 
 }
@@ -183,8 +184,10 @@ int StateApp::processOption (int in_opt)
 			lng = atof (optarg);
 			break;
 		case OPT_SUN_ALTITUDE:
-			sunAltitude = true;
+			calculateSun = SUN_ALT;
 			break;
+		case OPT_SUN_AZIMUTH:
+			calculateSun = SUN_AZ;
 		case 'c':
 			verbose = -1;
 			break;
@@ -219,8 +222,7 @@ StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 
 	conff = NULL;
 
-	sunAltitude = false;
-
+	calculateSun = NONE;
 	time (&currTime);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
@@ -230,6 +232,7 @@ StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
 	addOption ('t', NULL, 1, "print for given time (int unix time)");
 	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
+	addOption (OPT_SUN_AZIMUTH, "sun-azimuth", 0, "return current sun azimuth (in degrees)");
 	addOption ('v', "verbose", 0, "be verbose");
 }
 
@@ -287,14 +290,17 @@ int StateApp::run ()
 	if (verbose > 0)
 		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << LibnovaDate (&currTime) << std::endl;
 
-	if (sunAltitude)
+	if (calculateSun != NONE)
 	{
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
 		double jd = ln_get_julian_from_sys ();
 		ln_get_solar_equ_coords (jd, &pos);
 		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
-		std::cout << hrz.alt << std::endl;
+		if (calculateSun == SUN_ALT)
+			std::cout << hrz.alt << std::endl;
+		else if (calculateSun == SUN_AZ)
+		  	std::cout << hrz.az << std::endl;	
 		return 0;
 	}
 
