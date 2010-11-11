@@ -75,17 +75,17 @@ class Focusing (rts2comm.Rts2Comm):
 		# prepare fit based on its type..
 		if fit == LINEAR:
 			fitfunc = lambda p, x: p[0] + p[1] * x
-			errfunc = lambda p, x, y: fitfunc(p, x) - y # Distance to the target function
+			errfunc = lambda p, x, y: fitfunc(p, x) - y # LINEAR - distance to the target function
 			p0 = [1, 1]
 			fitfunc_r = lambda x, p0, p1: p0 + p1 * x
 		elif fit == P2:
 			fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)
-			errfunc = lambda p, x, y: fitfunc(p, x) - y # Distance to the target function
+			errfunc = lambda p, x, y: fitfunc(p, x) - y # P2 - distance to the target function
 			p0 = [1, 1, 1]
 			fitfunc_r = lambda x, p0, p1, p2 : p0 + p1 * x + p2 * (x ** 2)
 		elif fit == P4:
 			fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2) + p[3] * (x ** 3) + p[4] * (x ** 4)
-			errfunc = lambda p, x, y: fitfunc(p, x) - y # Distance to the target function
+			errfunc = lambda p, x, y: fitfunc(p, x) - y # P4 - distance to the target function
 			p0 = [1, 1, 1, 1, 1]
 			fitfunc_r = lambda x, p0, p1: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 3) + p4 * (x ** 4)
 		else:
@@ -102,7 +102,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.log('I', 'found FHWM minimum at offset {0}'.format(b))
 		return b
 
-	def findBestFWHM(self,tries,rename_images=False,default_fit=P2,min_stars=5):
+	def findBestFWHM(self,tries,rename_images=False,default_fit=P2,min_stars=15):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -111,7 +111,6 @@ class Focusing (rts2comm.Rts2Comm):
 		keys = tries.keys()
 		keys.sort()
 		for k in keys:
-			self.focpos.append(k)
 			if rename_images:
 				tries[k] = self.rename(tries[k],'%b/focusing/%o/%f')
 			try:
@@ -120,6 +119,7 @@ class Focusing (rts2comm.Rts2Comm):
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
 			self.log('I','offset {0} fwhm {1} with {2} stars'.format(k,fwhm,nstars))
+			self.focpos.append(k)
 			self.fwhm.append(fwhm)
 			if (fwhm_min is None or fwhm < fwhm_min):
 				self.fwhm_MinimumX = k
