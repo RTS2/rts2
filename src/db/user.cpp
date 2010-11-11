@@ -178,7 +178,7 @@ int Rts2UserApp::deleteUser ()
 	ret = askForBoolean (os.str ().c_str (), ch);
 	if (ret)
 		return ret;
-	if (ch == 'Y' || ch == 'y')
+	if (ch == true)
 	{
 		ret = removeUser (std::string (user));
 		if (ret == 0)
