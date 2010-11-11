@@ -883,13 +883,17 @@ float OportunityTarget::getBonus (double JD)
 	getAltAz (&hrz, JD);
 	lunarDist = getLunarDistance (JD);
 	ha = getHourAngle ();
+	// time target was last observed
 	lastObs = getLastObsTime ();
 	ln_get_timet_from_julian (JD, &now);
 	start_t = now - 86400;
+	// do not observe if already observed between 1h and 3h from now
 	if (lastObs > 3600 && lastObs < (3 * 3600))
 		retBonus -= log (lastObs / 3600) * 50;
+	// do not observe if observed during last 24 h 
 	else if (lastObs < 86400)
 		retBonus -= log (3) * 50;
+	// do not observe if too close to moon
 	if (lunarDist < 60.0)
 		retBonus -= log (61 - lunarDist) * 10;
 	// bonus for south
@@ -897,8 +901,11 @@ float OportunityTarget::getBonus (double JD)
 		retBonus += log ((180 - ha) / 15.0);
 	if (ha > 195)
 		retBonus += log ((ha - 180) / 15.0);
+	// bonus for altitute
 	retBonus += hrz.alt * 2;
+	// try to follow some period, based on how well we do in the past
 	retBonus -= sin (getNumObs (&start_t, &now) * M_PI_4) * 5;
+	// getBonus returns target priority + target bonus (from database)
 	return ConstTarget::getBonus (JD) + retBonus;
 }
 
