@@ -736,6 +736,22 @@ G W0 filter
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>double {variable name} {variabledescription} {value}</option></term>
+	<listitem><para>
+	  Creates or update device double value. If variable with given name
+	  and double type is not in the device, it is created, populated with
+	  description and value. If the variable is found and is of double
+	  type, its value is updated.
+	</para><para>
+	  This way, the script can permanently inform users about values it
+	  found. Assuming there is a <emphasis>FWHM</emphasis> measuring sctipt, echoing
+	  <literallayout>
+double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
+          </literallayout>
+	  will create <emphasis>fwhm</emphasis>, with given description and value equals to 6.32.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>log {level} {message}</option></term>
 	<listitem><para>
 	  Log something through RTS2 logging system. First letter of loglevel
@@ -793,7 +809,9 @@ G W0 filter
 
     <para>
       This script will call external script, which will hadle all communication. It will start exposure
-      on camera, change filter and telescope offsets, and move image to given expand path.
+      on camera, change filter and telescope offsets, and move image to given
+      expand path. Then it asks for infotime variable, current sun azimuth and
+      creates (or updates) test_double variable.
     </para>
 
     <para>exe /home/user/bin/test.sh</para>
@@ -819,6 +837,7 @@ for x in 1 2; do
 	read x
 	echo "G centrald sun_az"
 	read y
+	echo 'double test_double "[AU] double test value" 6.721'
 	sleep 5
 done
     </literallayout>
@@ -850,6 +869,13 @@ done
     <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
 
     <para>for 10 { E 10 T0.OFFS+=(0,0.01) }</para>
+
+    <para>
+      Script bellow takes sequence of 10 and 20 seconds exposures in 10
+      filters, starting form filter named C.
+    </para>
+
+    <para>filter=C for 10 { E 10 E 20 filter+=1 }</para>
 
     <para>
       Set full boolean array to false.
