@@ -40,13 +40,14 @@ class Rts2UserApp:public Rts2AppDb
 		virtual int processOption (int in_opt);
 		virtual int doProcessing ();
 	private:
-		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
+		enum {NOT_SET, LIST_USER, NEW_USER, DELETE_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
 		op;
 		const char *user;
 		User r2user;
 
 		int listUser ();
 		int newUser ();
+		int deleteUser ();
 		int userPassword ();
 		int userEmail ();
 		int typesEmail ();
@@ -80,6 +81,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 
 	addOption ('l', NULL, 0, "list user stored in the database");
 	addOption ('a', NULL, 1, "add new user");
+	addOption ('d', NULL, 1, "delete user");
 	addOption ('p', NULL, 1, "set user password");
 	addOption ('e', NULL, 1, "set user email");
 	addOption ('m', NULL, 1, "edit user mailing preferences");
@@ -105,6 +107,7 @@ int Rts2UserApp::processOption (int in_opt)
 	{
 		case 'l':
 		case 'a':
+		case 'd':
 		case 'p':
 		case 'e':
 		case 'm':
@@ -121,6 +124,10 @@ int Rts2UserApp::processOption (int in_opt)
 				case 'a':
 					user = optarg;
 					op = NEW_USER;
+					break;
+				case 'd':
+					user = optarg;
+					op = DELETE_USER;
 					break;
 				case 'p':
 					user = optarg;
@@ -160,6 +167,28 @@ int Rts2UserApp::newUser ()
 	if (ret)
 		return ret;
 	return createUser (std::string (user), passwd, email);
+}
+
+int Rts2UserApp::deleteUser ()
+{
+	int ret;
+	bool ch;
+	std::ostringstream os;
+	os << "Delete user " << user;
+	ret = askForBoolean (os.str ().c_str (), ch);
+	if (ret)
+		return ret;
+	if (ch == 'Y' || ch == 'y')
+	{
+		ret = removeUser (std::string (user));
+		if (ret == 0)
+			std::cout << "Deleted user " << user << "." << std::endl;
+	}
+	else
+	{
+		ret = 0;
+	}
+	return ret;
 }
 
 int Rts2UserApp::userPassword ()
@@ -364,6 +393,8 @@ int Rts2UserApp::doProcessing ()
 			return listUser ();
 		case NEW_USER:
 			return newUser ();
+		case DELETE_USER:
+			return deleteUser ();
 		case USER_PASSWORD:
 			return userPassword ();
 		case USER_EMAIL:

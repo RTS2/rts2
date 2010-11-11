@@ -74,6 +74,9 @@
         <arg choice="plain"><option>-a <replaceable class="parameter">user name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-d <replaceable class="parameter">user name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-p <replaceable class="parameter">user name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -143,6 +146,14 @@
         <listitem>
           <para>
 	    Add user to database. You will be asked to enter user email and user password.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-d <replaceable class="parameter">user_login</replaceable></option></term>
+        <listitem>
+          <para>
+	    Delete user from database. You will be asked for confirmation.
 	  </para>
         </listitem>
       </varlistentry>

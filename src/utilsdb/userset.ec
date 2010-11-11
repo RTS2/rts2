@@ -19,6 +19,7 @@
 
 #include "userset.h"
 #include "../utils/rts2app.h"
+#include "sqlerror.h"
 
 using namespace rts2db;
 
@@ -139,6 +140,31 @@ int createUser (std::string login, std::string password, std::string email)
 		return -1;
 	}
 
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+int removeUser (std::string login)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR db_login[25];
+	EXEC SQL END DECLARE SECTION;
+
+	if (login.length () > 25)
+	{
+		logStream (MESSAGE_ERROR) << "login is too long" << sendLog;
+		return -1;
+	}
+
+	strncpy (db_login.arr, login.c_str (), 25);
+	db_login.len = login.length ();
+
+	EXEC SQL DELETE FROM users WHERE usr_login = :db_login;
+
+	if (sqlca.sqlcode)
+	{
+		throw rts2db::SqlError ("cannot delete user");
+	}
 	EXEC SQL COMMIT;
 	return 0;
 }

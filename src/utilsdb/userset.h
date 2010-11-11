@@ -67,5 +67,11 @@ class UserSet: public std::list <User>
  */
 int createUser (std::string login, std::string password, std::string email);
 
+/**
+ * Delete user from database.
+ *
+ * @param login     username of user to be deleted
+ */
+int removeUser (std::string login);
 
 #endif							 /* !__RTS2_USERSET__ */
