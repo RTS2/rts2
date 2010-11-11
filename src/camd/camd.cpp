@@ -992,7 +992,7 @@ int Camera::camStartExposureWithoutCheck ()
 
 	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble ());
 
-	logStream (MESSAGE_INFO) << "exposing for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+	logStream (MESSAGE_INFO) << "starting " << exposure->getValueFloat () << "s exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
 	lastFilterNum = getFilterNum ();
 	// call us to check for exposures..
