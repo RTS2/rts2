@@ -136,8 +136,15 @@ void NMonitor::selectSuccess ()
 
 void NMonitor::showHelp ()
 {
-	messageBox ("Keys:\n"
+	messageBox (
+"WARNING:\n"
+"If you would like to keep dome closed, please switch state to OFF.\n"
+"==================================================================\n"
+"Keys:\n"
 "F1         .. this help\n"
+"F2         .. switch to OFF (will not observe)\n"
+"F3         .. switch to STANDBY (might observe if weather is good)\n"
+"F4         .. switch to ON (will observe if weather is good)\n"
 "F9         .. menu\n"
 "F10,ctrl+c .. exit\n"
 "arrow keys .. move between items\n"
@@ -382,10 +389,13 @@ int NMonitor::init ()
 	// create & init menu
 	menu = new NMenu ();
 	NSubmenu *sub = new NSubmenu ("System");
+	sub->createAction ("Exit", MENU_EXIT);
+	menu->addSubmenu (sub);
+
+	sub = new NSubmenu ("States");
 	sub->createAction ("Off", MENU_OFF);
 	sub->createAction ("Standby", MENU_STANDBY);
 	sub->createAction ("On", MENU_ON);
-	sub->createAction ("Exit", MENU_EXIT);
 	menu->addSubmenu (sub);
 
 	sub = new NSubmenu ("Debug");
