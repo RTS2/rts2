@@ -536,12 +536,9 @@ int Rts2ImageSkyDb::toTrash ()
 // write changes of image to DB..
 int Rts2ImageSkyDb::saveImage ()
 {
-	int ret = Rts2ImageDb::saveImage ();
-	if (ret)
-		return ret;
 	updateCalibrationDb ();
 	setValue ("PROC", processBitfiedl, "procesing status; info in DB");
-	return 0;
+	return Rts2ImageDb::saveImage ();
 }
 
 int Rts2ImageSkyDb::deleteFormDB ()
