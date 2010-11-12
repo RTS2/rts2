@@ -1431,10 +1431,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 			// all channels
 			int w = floor (sqrt (channels.size ()));
 			if (w <= 0)
-			{
 				w = 1;
-				tw = (*channels.begin ())->getWidth ();
-			}
 			int lw = 0;
 			int lh = 0;
 			int n = 0;
@@ -1457,7 +1454,7 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 			if (n % w == 0)
 			{
 				if (lw > tw)
-				  	lw = tw;
+				  	tw = lw;
 				th += lh;	
 			}
 
