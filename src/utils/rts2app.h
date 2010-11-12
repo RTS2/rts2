@@ -289,6 +289,9 @@ class Rts2App:public Rts2Object
 		 * Flag for loopEnd. True if application shall finish.
 		 */
 		bool end_loop;
+
+		// debug level
+		int debug;
 };
 
 

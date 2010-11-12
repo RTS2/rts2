@@ -37,6 +37,7 @@
 static Rts2App *masterApp = NULL;
 
 #define OPT_VERSION 999
+#define OPT_DEBUG   998
 
 Rts2App *getMasterApp ()
 {
@@ -56,9 +57,12 @@ Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 
 	end_loop = false;
 
+	debug = 0;
+
 	tzset ();
 
 	addOption ('h', "help", 0, "write this help");
+	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
 	addOption (OPT_VERSION, "version", 0, "show program version and license");
 
 	masterApp = this;
@@ -214,6 +218,9 @@ int Rts2App::processOption (int in_opt)
 		case 0:
 			help ();
 			exit (EXIT_SUCCESS);
+		case OPT_DEBUG:
+			debug++;
+			break;
 		case OPT_VERSION:
 			std::cout << "Part of RTS2 version: " << VERSION << std::endl
 				<< std::endl
@@ -424,13 +431,17 @@ int Rts2App::askForChr (const char *desc, char &out)
 
 void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
-	Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
+  	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
+	  	return;
+	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
 	std::cerr << msg.toString () << std::endl;
 }
 
 void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString)
 {
-	Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
+  	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
+	  	return;
+	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
 	std::cerr << msg.toString ();
 }
 
