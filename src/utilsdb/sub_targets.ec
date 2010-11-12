@@ -319,7 +319,7 @@ void FlatTarget::load ()
 	if ((sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
 		|| obs_target_id <= 0)
 	{
-		logMsgDb ("FlatTarget::load", MESSAGE_ERROR);
+		logMsgDb ("FlatTarget::load", MESSAGE_DEBUG);
 		EXEC SQL CLOSE flat_targets;
 		//in that case, we will simply use generic flat target..
 		return;
