@@ -6,6 +6,9 @@
 @ imgid = 1
 set continue=1
 unset imgdir
+set xpa=0
+xpaget ds9 >&amp; /dev/null
+if ( $? == 0 ) set xpa=1
 <xsl:apply-templates select='*'/>
 </xsl:template>
 
@@ -39,9 +42,11 @@ dstore
 if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 $RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
-xpaset ds9 fits mosaicimage iraf &lt; $lastimage
-xpaset -p ds9 zoom to fit
-xpaset -p ds9 scale scope global
+if ( $xpa == 1 ) then
+	xpaset ds9 fits mosaicimage iraf &lt; $lastimage
+	xpaset -p ds9 zoom to fit
+	xpaset -p ds9 scale scope global
+endif	
 @ imgid ++
 echo `date` 'exposure done'
 <xsl:copy-of select='$abort'/>
