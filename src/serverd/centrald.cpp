@@ -781,7 +781,7 @@ void Rts2Centrald::processMessage (Rts2Message & msg)
 	}
 	else
 	{
-		std::cerr << msg.toString () << std::endl;
+		std::cerr << msg << std::endl;
 	}
 
 	// and send it to all
