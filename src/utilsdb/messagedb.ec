@@ -142,7 +142,7 @@ void MessageSet::printUntil (double time, std::ostream &os)
 {
 	while (timeLogIter != end () && timeLogIter->getMessageTime () <= time)
 	{
-		os << (*timeLogIter);
+		os << (*timeLogIter) << std::endl;
 		timeLogIter++;
 	}
 }
