@@ -82,6 +82,7 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 					if (dec_seen)
 					{
 						cn += (*it - '0') * mul;
+						mul /= 10;
 					}
 					else
 					{
