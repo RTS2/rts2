@@ -101,7 +101,6 @@ class APGTO:public TelLX200 {
 		int force_start ;
 		double on_set_HA ;
 		double on_zero_HA ;
-		double lastMoveRa, lastMoveDec;  
 		time_t move_timeout;
 		time_t slew_start_time;
 
@@ -842,14 +841,10 @@ int
 APGTO::tel_check_coords (double ra, double dec)
 {
   // ADDED BY JF
-  double JD;
-
   double sep;
   time_t now;
 
   struct ln_equ_posn object, target;
-  struct ln_lnlat_posn observer;
-  struct ln_hrz_posn hrz;
 
   time (&now);
   if (now > move_timeout)
@@ -858,19 +853,8 @@ APGTO::tel_check_coords (double ra, double dec)
   if ((tel_read_ra () < 0) || (tel_read_dec () < 0))
     return -1;
 
-  // ADDED BY JF
-  // CALCULATE & PRINT ALT/AZ & HOUR ANGLE TO LOG
   object.ra = fmod(getTelRa () + 360., 360.);
   object.dec= fmod( getTelDec (), 90.);
-
-  observer.lng = telLongitude->getValueDouble ();
-  observer.lat = telLatitude->getValueDouble ();
-
-  JD = ln_get_julian_from_sys ();
-
-  ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
-  
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_check_coords MOUNT ALT " << hrz.alt << " AZ " << hrz.az << sendLog;
 
   target.ra = fmod( ra+ 360., 360.);
   target.dec= fmod( dec , 90.) ;
@@ -1223,17 +1207,12 @@ int APGTO::startResync ()
 
 	if (avoidBellowHorizon->getValueBool ())
 	{
-		lastMoveRa = getTelTargetRa ();
-		lastMoveDec = getTelTargetDec ();
-		if (moveAvoidingHorizon (lastMoveRa, lastMoveDec) < 0)
+		if (moveAvoidingHorizon (getTelTargetRa (), getTelTargetDec ()) < 0)
 			return -1;
 	}
 	else
 	{
-		lastMoveRa = fmod (getTelTargetRa () + 360., 360.);
-		lastMoveDec = fmod (getTelTargetDec (), 90.);
-
-		ret = tel_slew_to (lastMoveRa, lastMoveDec);
+		ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 		if (ret)
 			return -1;
 		set_move_timeout (100);
@@ -1290,7 +1269,7 @@ void APGTO::notMoveCupola ()
 
 int APGTO::isMoving ()
 {
-	int ret = tel_check_coords (lastMoveRa, lastMoveDec);
+	int ret = tel_check_coords (getTelTargetRa (), getTelTargetDec ());
 	switch (ret)
 	{
 		case -1:
@@ -1318,6 +1297,8 @@ int APGTO::stopMove ()
 
 	mount_tracking->setValueBool (false);
 	notMoveCupola ();
+	sleep (1);
+	maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move stopped");
 	return 0;
 }
 
