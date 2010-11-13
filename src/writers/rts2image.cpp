@@ -1419,6 +1419,10 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 
 	  	if (chan >= 0)
 		{
+			if (channels.size () == 0)
+				loadChannels ();
+			if ((size_t) chan >= channels.size ())
+				throw rts2core::Error ("invalid channel specified");
 		  	// single channel
 			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, quantiles);
 			tw = getChannelWidth (chan);
