@@ -60,6 +60,6 @@ class Error:public std::exception
 		std::string msg;
 };
 
-};
+}
 
 #endif /* __RTS2_ERROR__ */

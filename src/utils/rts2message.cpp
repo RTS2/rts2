@@ -18,7 +18,7 @@
  */
 
 #include "rts2message.h"
-#include "timestamp.h"
+#include "rts2block.h"
 
 #include <sys/time.h>
 #include <time.h>
@@ -77,19 +77,4 @@ std::string Rts2Message::toConn ()
 		<< " " << messageTime.tv_usec
 		<< " " << messageOName << " " << messageType << " " << msg;
 	return os.str ();
-}
-
-std::string Rts2Message::toString ()
-{
-	std::ostringstream os;
-	os <<
-		Timestamp (&messageTime)
-		<< " " << messageOName << " " << messageType << " " << messageString;
-	return os.str ();
-}
-
-std::ostream & operator << (std::ostream & _of, Rts2Message & msg)
-{
-	_of << msg.toString () << std::endl;
-	return _of;
 }

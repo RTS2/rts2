@@ -27,6 +27,8 @@
 #include <string>
 #include <fstream>
 
+#include "timestamp.h"
+
 /**
  * Holds message, which can be passed through the system. Message contains
  * timestamp when it was generated, flags describing its severity, and message
@@ -97,12 +99,16 @@ class Rts2Message
 
 		int getMessageTimeUSec () { return messageTime.tv_usec; }
 
+		friend std::ostream & operator << (std::ostream & _of, Rts2Message & msg)
+		{
+			_of << Timestamp (&msg.messageTime) << " " << msg.messageOName << " " << msg.messageType << " " << msg.messageString;
+			return _of;
+		}
+
 	protected:
 		struct timeval messageTime;
 		std::string messageOName;
 		messageType_t messageType;
 		std::string messageString;
 };
-
-std::ostream & operator << (std::ostream & _of, Rts2Message & msg);
 #endif							 /* ! __RTS2_MESSAGE__ */

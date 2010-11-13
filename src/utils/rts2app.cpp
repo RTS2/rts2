@@ -434,7 +434,7 @@ void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageS
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
 	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
-	std::cerr << msg.toString () << std::endl;
+	std::cerr << msg << std::endl;
 }
 
 void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString)
@@ -442,7 +442,7 @@ void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_me
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
 	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
-	std::cerr << msg.toString ();
+	std::cerr << msg;
 }
 
 void Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)

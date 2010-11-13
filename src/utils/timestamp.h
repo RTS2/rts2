@@ -20,13 +20,15 @@
 #ifndef __TIMESTAMP_CPP__
 #define __TIMESTAMP_CPP__
 
-#include "rts2block.h"
 #include "rts2format.h"
+#include "utilsfunc.h"
+#include <status.h>
 
 #include <ostream>
 #include <sys/time.h>
 #include <libnova/libnova.h>
 #include <time.h>
+#include <math.h>
 
 /**
  * Provides support timestamps obtained from DB.

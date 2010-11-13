@@ -50,6 +50,8 @@ int Rts2Config::getSpecialValues ()
 	getString ("observatory", "target_path", targetDir, RTS2_PREFIX "/etc/rts2/targets");
 	masterConsFile = targetDir + "/constraints.xml";
 
+	getString ("observatory", "nightlogs", nightDir, RTS2_PREFIX "/etc/rts2/nights/%N.fits");
+
 	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 
 	checker = new ObjectCheck (horizon_file.c_str ());
