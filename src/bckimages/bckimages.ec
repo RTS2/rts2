@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <glob.h>
 #include <libgen.h>
+#include <iostream>
 
 /**
  * Application class to move images from one media to the other.
@@ -167,9 +168,7 @@ Rts2BckImageApp::init ()
 	return 0;
 }
 
-
-void
-Rts2BckImageApp::usage ()
+void Rts2BckImageApp::usage ()
 {
 	std::cout << "Move images from one medias location to other." << std::endl
 		<< "   Invocation:" << std::endl
@@ -177,9 +176,7 @@ Rts2BckImageApp::usage ()
 		<< "  Size is given in bytes as n, MB as nM or GB as nG." << std::endl;
 }
 
-
-int
-Rts2BckImageApp::doProcessing ()
+int Rts2BckImageApp::doProcessing ()
 {
 	double size_count = 0;
 	int img_move_count = 0;
