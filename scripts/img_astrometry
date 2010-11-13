@@ -184,7 +184,7 @@ my $crval2 ;
 my $orira ;
 my $oridec ;
 # ori open(RTS2IMAGE, "rts2-image -p \'\@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC\' $fits_file_new 2>/dev/null|") or die "get_fits_files: can't start rts2-image: $!";
-open(RTS2IMAGE, "rts2-image -p \'\@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC\' $fits_file_new |") or die "get_fits_files: can't start rts2-image: $!";
+open(RTS2IMAGE, "rts2-image -p \'\@CRVAL1 \@CRVAL2 \@OBJRA \@OBJDEC\' $fits_file_new |") or die "get_fits_files: can't start rts2-image: $!";
 
 $missing= FALSE_VAL ;
 while(my $line= <RTS2IMAGE>){
@@ -204,7 +204,7 @@ while(my $line= <RTS2IMAGE>){
 }
 if( $missing== TRUE_VAL)
 {
-    print "$scriptname: $fits_file, $fits_file_new, missing fits header key words \@CRVAL1 \@CRVAL2 \@ORIRA \@ORIDEC" ;
+    print "$scriptname: $fits_file, $fits_file_new, missing fits header key words \@CRVAL1 \@CRVAL2 \@OBJRA \@OBJDEC" ;
     `logger $scriptname  $fits_file no astrometric calibration`;
 
 } else {
