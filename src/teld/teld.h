@@ -158,21 +158,7 @@ class Telescope:public Rts2Device
 		virtual void setFullBopState (int new_state);
 
 	protected:
-		/**
-		 * Apply any fixed offsets. Override this method for any custom offsets.
-		 * You most probably would like to call parent method in overrided method
-		 * to get coordinates to start with.
-		 *
-		 * void MyClass::applyOffsets (struct ln_equ_posn *pos)
-		 * {
-		 *      Telescope::applyOffsets (pos);
-		 *      pos->ra += myoffs.ra);
-		 *      pos->dec += myoffs.dec;
-		 * }
-		 *
-		 * @param pos   resulting target coordinates (default to ORI + OFFS).
-		 */
-		virtual void applyOffsets (struct ln_equ_posn *pos)
+		void applyOffsets (struct ln_equ_posn *pos)
 		{
 			pos->ra = oriRaDec->getRa () + offsRaDec->getRa ();
 			pos->dec = oriRaDec->getDec () + offsRaDec->getDec ();
@@ -302,11 +288,21 @@ class Telescope:public Rts2Device
 		/**
 		 * Apply corrections (at system time).
 		 * Will apply corrections (precession, refraction,..) at system time.
-		 * 
-		 * @param tar_ra  Target RA, returns its value.
-		 * @param tar_dec Target DEC, returns its value.
+		 * Override this method for any custom corrections. You most
+		 * probably would like to call parent method in overrided
+		 * method to get coordinates to start with.
+		 *
+		 * void MyClass::applyCorrections (double &tar_ra, double &tar_dec)
+		 * {
+		 *      Telescope::applyCorrections (tar_ra, tar_dec);
+		 *      tar_ra += myoffs.ra);
+		 *      tar_dec += myoffs.dec;
+		 * }
+		 *
+		 * @param tar_ra  target RA, returns its value.
+		 * @param tar_dec target DEC, returns its value.
 		 */
-		void applyCorrections (double &tar_ra, double &tar_dec);
+		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
 		virtual int willConnect (Rts2Address * in_addr);
 		char telType[64];

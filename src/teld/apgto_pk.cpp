@@ -80,6 +80,7 @@ class APGTO:public TelLX200 {
 
 		virtual int startResync ();
 		virtual int isMoving ();
+		virtual int endMove ();
 		virtual int stopMove ();
   
 		virtual int startPark ();
@@ -91,7 +92,7 @@ class APGTO:public TelLX200 {
 		virtual void valueChanged (Rts2Value * changed_value);
 	protected:
 		virtual int applyCorrectionsFixed (double ra, double dec);
-		virtual void applyOffsets (struct ln_equ_posn *pos);
+		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
 		virtual void startCupolaSync ();
 		virtual void notMoveCupola ();
@@ -1253,14 +1254,14 @@ int APGTO::applyCorrectionsFixed (double ra, double dec)
 	return TelLX200::applyCorrectionsFixed (ra, dec);
 }
 
-void APGTO::applyOffsets (struct ln_equ_posn *pos)
+void APGTO::applyCorrections (double &tar_ra, double &tar_dec)
 {
-	TelLX200::applyOffsets (pos);
-	pos->ra -= fixedOffsets->getRa ();
+	TelLX200::applyCorrections (tar_ra, tar_dec);
+	tar_ra -= fixedOffsets->getRa ();
 	if (telFlip->getValueInteger () == 0)
-		pos->dec -= fixedOffsets->getDec ();
+		tar_dec -= fixedOffsets->getDec ();
 	else
-		pos->dec += fixedOffsets->getDec ();
+		tar_dec += fixedOffsets->getDec ();
 }
 
 void APGTO::startCupolaSync ()
@@ -1300,6 +1301,12 @@ int APGTO::isMoving ()
 		default:
 			return USEC_SEC / 10;
 	}
+}
+
+int APGTO::endMove ()
+{
+	sleep (5);
+	return Telescope::endMove ();
 }
 
 int APGTO::stopMove ()
@@ -1792,7 +1799,7 @@ int APGTO::info ()
 				{ // 15. degrees are a matter of taste
 					if (mount_tracking->getValueBool())
 					{
-						stop = 1;
+						//stop = 1;
 						logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
 					}
 				}
@@ -2271,7 +2278,7 @@ int APGTO::processOption (int in_opt)
 
 APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
-	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	fixedOffsets->setValueRaDec (0, 0);
 	
 	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
