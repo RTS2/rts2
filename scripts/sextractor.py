@@ -89,21 +89,22 @@ def getFWHM(fn,starsn):
 	c.sortObjects(2)
 
 	# display in ds9
-	i = 0
-	fwhm = 0
+	fwhmlist = []
+
 	a = 0
 	b = 0
 	for x in c.objects:
-	  	if (x[3] == 0 and x[4] != 0):
-			fwhm += x[5]
+		if (x[3] == 0 and x[4] != 0):
+			fwhmlist.append(x[5])
 			a += x[6]
 			b += x[7]
-			i += 1
-			if i > starsn:
+			if len(fwhmlist) > starsn:
 				break 
-	if i > starsn:
-		return float(fwhm) / i, i
-	if i > 0:
+	if len(fwhmlist) > starsn:
+		import numpy
+#		return numpy.median(fwhmlist)
+		return numpy.average(fwhmlist), len(fwhmlist)
+	if len(fwhmlist) > 0:
 		raise Exception('too few stars - {0}, expected {1}'.format(i,starsn))
 	raise Exception('cannot find any stars on the image')
 

@@ -29,6 +29,12 @@ elif ftype == focusing.P2:
 	fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)
 elif ftype == focusing.P4:
 	fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2) + p[3] * (x ** 3) + p[4] * (x ** 4)
+elif ftype == focusing.H3:
+	fitfunc = lambda p, x: sqrt(p[0] + p[1] * (x - p[2]) ** 2)
+elif ftype == focusing.H3b:
+	fitfunc = lambda p, x: sqrt(p[0] ** 2 + p[1] * (x - p[2]) ** 2)
+elif ftype == focusing.H2:
+	fitfunc = lambda p, x: sqrt(p[0] + 3.46407715307 ** 2 * (x - p[1]) ** 2) # 3.46 based on HYPERBOLA fits
 else:
 	raise Exception('Unknow fit type {0}'.format(ftype))
 
