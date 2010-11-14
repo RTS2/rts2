@@ -34,6 +34,7 @@
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118
+#define OPT_CORRECTION        OPT_LOCAL + 119
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 
@@ -204,6 +205,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 
 	addOption ('r', NULL, 1, "telescope rotang");
 	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
+	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in arcsec)");
 
 	// send telescope position every 60 seconds
 	setIdleInfoInterval (60);
@@ -254,6 +256,9 @@ int Telescope::processOption (int in_opt)
 			break;
 		case OPT_HORIZON:
 			horizonFile = optarg;
+			break;
+		case OPT_CORRECTION:
+			correctionLimit->setValueCharArr (optarg);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -987,7 +992,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (blockMove->getValueBool () == true)
 	{
-		logStream (MESSAGE_ERROR) << "Telescope move blocked" << sendLog;
+		logStream (MESSAGE_ERROR) << "telescope move blocked" << sendLog;
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
 		return -1;
@@ -1091,26 +1096,28 @@ int Telescope::startPark (Rts2Conn * conn)
 		}
 	}
 	ret = startPark ();
-	if (ret)
+	if (ret < 0)
 	{
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
 	}
 	else
 	{
-		tarRaDec->setValueRaDec (rts2_nan("f"), rts2_nan("f"));
-		tarRaDec->resetValueChanged ();
-		telTargetRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
-		telTargetRaDec->resetValueChanged ();
-		oriRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
-		oriRaDec->resetValueChanged ();
-		offsRaDec->resetValueChanged ();
-		corrRaDec->resetValueChanged ();
+		if (ret == 0)
+		{
+			tarRaDec->setValueRaDec (rts2_nan("f"), rts2_nan("f"));
+			tarRaDec->resetValueChanged ();
+			telTargetRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
+			telTargetRaDec->resetValueChanged ();
+			oriRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
+			oriRaDec->resetValueChanged ();
+			offsRaDec->resetValueChanged ();
+			corrRaDec->resetValueChanged ();
+		}
 
 		incMoveNum ();
 		setParkTimeNow ();
-		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
-			"parking started");
+		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING, "parking started");
 	}
 
 	setIdleInfoInterval (0.5);
@@ -1228,6 +1235,17 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		modelOn ();
 		return setTo (conn, obj_ra, obj_dec);
+	}
+	else if (conn->isCommand ("synccorr"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		ret = setTo (conn, objRaDec->getRa (), objRaDec->getDec ());
+		if (ret)
+			return -2;
+		corrRaDec->setValueRaDec (0, 0);
+		wcorrRaDec->setValueRaDec (0, 0);
+		return ret;
 	}
 	else if (conn->isCommand ("correct"))
 	{

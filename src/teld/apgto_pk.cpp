@@ -40,11 +40,6 @@
 #define MOVE_RATE_000050 '5'
 #define MOVE_RATE_000025 '6'
 
-#define DIR_NORTH 'n'
-#define DIR_EAST  'e'
-#define DIR_SOUTH 's'
-#define DIR_WEST  'w'
-
 #define setAPPark()         serConn->writePort ("#:KA#", 5)
 #define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
 #define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
@@ -72,6 +67,10 @@ class APGTO:public TelLX200 {
 		virtual ~APGTO (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
+
+		/**
+		 * Reads mount initial values.
+		 */
 		virtual int initValues ();
 		virtual int info ();
 		virtual int idle ();
@@ -88,7 +87,6 @@ class APGTO:public TelLX200 {
 		virtual int endPark ();
   
 		virtual int abortAnyMotion () ;
-		virtual int commandAuthorized (Rts2Conn * conn);
 		virtual void valueChanged (Rts2Value * changed_value);
 	protected:
 		virtual int applyCorrectionsFixed (double ra, double dec);
@@ -115,7 +113,6 @@ class APGTO:public TelLX200 {
 		int selectAPMoveToRate (int moveToRate);
 		int selectAPTrackingMode (int trackMode);
 		int tel_read_declination_axis ();
-		int tel_check_declination_axis ();
 
 		int tel_set_move_rate (char moveToRate);
 		int setAPSiteLongitude( double Long) ;
@@ -155,8 +152,6 @@ class APGTO:public TelLX200 {
 		Rts2ValueString  *APfirmware ;
 		Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
 		Rts2ValueBool    *mount_tracking ;
-		Rts2ValueBool    *transition_while_tracking ; 
-		Rts2ValueBool    *block_sync_move;
 		Rts2ValueBool    *assume_parked;
 		Rts2ValueBool    *collision_detection; 
 		Rts2ValueBool    *avoidBellowHorizon;
@@ -586,84 +581,6 @@ int APGTO::tel_read_declination_axis ()
 }
 
 /*!
- * Reads and checks APGTO relative position of the declination axis to the observed hour angle.
- *
- * @return -1 on error, otherwise 0, or exit(1) in case of a serious failure
- *
- */
-int
-APGTO::tel_check_declination_axis ()
-{
-  int stop= 0 ;
-// make sure that the (declination - optical axis) have the correct sign
-// if not you'll buy a new tube.
-  if (tel_read_ra () || tel_read_dec ()) {
-    stop= 1 ;
-  }  
-  double HA, HA_h ;
-  double RA, RA_h ;
-  char RA_str[32] ;
-  char HA_str[32] ;
-  int h, m, s ;
-
-  double JD  = ln_get_julian_from_sys ();
-  double lng = telLongitude->getValueDouble ();
-  double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
-
-  RA  = getTelRa() ;
-  RA_h= RA/15. ;
-
-  getSexComponents( RA_h, &h, &m, &s) ;
-  snprintf(RA_str, 9, "%02d:%02d:%02d", h, m, s);
-
-  HA  = fmod( local_sidereal_time- RA+ 360., 360.) ;
-  HA_h= HA / 15. ;
-
-  getSexComponents( HA_h, &h, &m, &s) ;
-  snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
-	
-  if( tel_read_declination_axis()) {
-    block_sync_move->setValueBool(true) ;
-    stop = 1 ;
-    logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
-  }
-  if (!strcmp("West", DECaxis_HAcoordinate->getValue())) {
-    if(( HA > 180.) && ( HA <= 360.)) {
-    } else {
-      if( transition_while_tracking->getValueBool()) {
-	// the mount is allowed to transit the meridian while tracking
-      } else {
-	// block_sync_move->setValueBool(true) ;
-	// stop = 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", West), severe error, blocking any sync and moves" << sendLog;
-	// can not exit here because if HA>0, West the telecope must be manually "rot e" to the East
-      }
-    }
-  } else if (!strcmp("East", DECaxis_HAcoordinate->getValue())) {
-    if(( HA >= 0.0) && ( HA <= 180.)) {
-    } else {
-      if( force_start != true) {
-	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error." << sendLog;
-	stop = 1 ;
-      } else {
-	block_sync_move->setValueBool(true) ;
-	stop = 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, sync manually, blocking any sync and moves" << sendLog;
-      }
-    }
-  }
-  if( stop != 0) {
-    if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis failed to stop any tracking and motion" << sendLog;
-    }
-
-    return -1 ;
-  } else {
-    return 0 ;
-  }
-}
-
-/*!
  * Set move rate.
  *
  * @param new_rate	new move speed to set.
@@ -734,23 +651,15 @@ APGTO::tel_slew_to (double ra, double dec)
   struct ln_lnlat_posn observer;
   struct ln_equ_posn target_equ;
 
-  if( block_sync_move->getValueBool()) {
-    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
-    return -1 ;
-  }
-  if( !( collision_detection->getValueBool())) {
-
-    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to collision detection is disabled" << sendLog;
-    return -1 ;
-  }
+	if (collision_detection->getValueBool() == false)
+	{
+		logStream (MESSAGE_INFO) << "APGTO::tel_slew_to collision detection is disabled" << sendLog;
+		return -1 ;
+	}
 
   target_equ.ra = fmod( ra + 360., 360.) ;
   target_equ.dec= fmod( dec, 90.);
 
-  if( tel_check_declination_axis()) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to check of the declination axis failed." << sendLog;
-    return -1;
-  }
   double local_sidereal_time= getLocSidTime ();
   double target_HA= fmod( local_sidereal_time- target_equ.ra+ 360., 360.) ;
 
@@ -1316,11 +1225,6 @@ int APGTO::setTo (double ra, double dec)
 {
 	char readback[101];
 
-	if (block_sync_move->getValueBool())
-	{
-		logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
-		return -1;
-	}
 	if ((getState () & TEL_MASK_MOVING) != TEL_OBSERVING)
 	{
 		logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
@@ -1359,11 +1263,10 @@ int APGTO::setTo (double ra, double dec)
 int APGTO::startPark ()
 {
 	setTargetAltAz (0, 355);
-	return moveAltAz ();
+	return moveAltAz () ? -1 : 1;
 }
 
-int
-APGTO::isParking ()
+int APGTO::isParking ()
 {
   int ret= isMoving() ;
 
@@ -1416,8 +1319,7 @@ APGTO::ParkDisconnect()
   return;
 }
 
-int
-APGTO::abortAnyMotion ()
+int APGTO::abortAnyMotion ()
 {
   int ret = 0 ;
   int failed= 0 ;
@@ -1494,186 +1396,6 @@ APGTO::valueChanged (Rts2Value * changed_value)
   TelLX200::valueChanged (changed_value);
 }
 
-int 
-APGTO::commandAuthorized (Rts2Conn *conn)
-{
-  int ret = -1 ;
-
-  if (conn->isCommand ("abort")) {
-    if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized failed to stop any tracking and motion" << sendLog;
-      return -1 ;
-    }
-    return 0;
-  } else if (conn->isCommand ("track")) {
-    if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized set track mode sidereal failed." << sendLog;
-      return -1;
-    }
-    return 0 ;
-  } else if ((conn->isCommand ("move_sg"))||(conn->isCommand ("move_ha"))||(conn->isCommand ("move_ha_sg"))) {
-    double move_ra, move_dec ;
-    double move_ha ;
-
-    if (conn->isCommand ("move_sg")) {
-      char *move_ra_str;
-      char *move_dec_str;
-      if (conn->paramNextStringNull (&move_ra_str) || conn->paramNextStringNull (&move_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_sg paramNextString ra or dec failed" << sendLog;
-	return -2;
-      }
-      if(( ret= f_scansexa ( move_ra_str, &move_ra))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_sg parsing ra failed" << sendLog;
-	return -1;
-      }
-      move_ra *= 15. ;
-      if(( ret= f_scansexa ( move_dec_str, &move_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
-	return -1;
-      }
-    } else if(conn->isCommand ("move_ha")){
-      if (conn->paramNextDouble (&move_ha) || conn->paramNextDouble (&move_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
-	return -2;
-      }
-      double JD= ln_get_julian_from_sys ();
-      move_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - move_ha; // RA is a right, HA left system
-
-    } else if (conn->isCommand ("move_ha_sg")) {
-      char *move_ha_str;
-      char *move_dec_str;
-      if (conn->paramNextStringNull (&move_ha_str) || conn->paramNextStringNull (&move_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg paramNextString ra or dec failed" << sendLog;
-	return -2;
-      }
-      if(( ret= f_scansexa ( move_ha_str, &move_ha))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg parsing ra failed" << sendLog;
-	return -1;
-      }
-      move_ha *= 15. ;
-      if(( ret= f_scansexa ( move_dec_str, &move_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg parsing dec failed" << sendLog;
-	return -1;
-      }
-      double JD= ln_get_julian_from_sys ();
-      move_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - move_ha; // RA is a right, HA left system
-    }
-    setTarget ( move_ra, move_dec);
-    startCupolaSync() ;
-    return startResync ();
-
-  } else if ((conn->isCommand("sync"))||(conn->isCommand("sync_sg"))||(conn->isCommand("sync_ha"))||(conn->isCommand("sync_ha_sg")||(conn->isCommand("sync_delta")))) {
-    double sync_ra, sync_dec ;
-    double sync_delta_ra, sync_delta_dec ; // defined for calrity
-    double sync_ha ;
-    if(conn->isCommand ("sync")){
-      if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
-	return -2;
-      }
-    } else if(conn->isCommand ("sync_ha")){
-      if (conn->paramNextDouble (&sync_ha) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
-	return -2;
-      }
-      double JD= ln_get_julian_from_sys ();
-      sync_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - sync_ha; // RA is a right, HA left system
-
-    } else if (conn->isCommand ("sync_sg")) {
-      char *sync_ra_str;
-      char *sync_dec_str;
-      if (conn->paramNextStringNull (&sync_ra_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg paramNextString ra or dec failed" << sendLog;
-	return -2;
-      }
-      if(( ret= f_scansexa ( sync_ra_str, &sync_ra))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing ra failed" << sendLog;
-	return -1;
-      }
-      sync_ra *= 15. ;
-      if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
-	return -1;
-      }
-    } else if (conn->isCommand ("sync_ha_sg")) {
-      char *sync_ha_str;
-      char *sync_dec_str;
-      if (conn->paramNextStringNull (&sync_ha_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg paramNextString ra or dec failed" << sendLog;
-	return -2;
-      }
-      if(( ret= f_scansexa ( sync_ha_str, &sync_ha))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing ra failed" << sendLog;
-	return -1;
-      }
-      sync_ha *= 15. ;
-      if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing dec failed" << sendLog;
-	return -1;
-      }
-      double JD= ln_get_julian_from_sys ();
-      sync_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - sync_ha; // RA is a right, HA left system
-    } else if (conn->isCommand ("sync_delta")) {
-      // This command is intended for use only in conjunction with an astrometric calibration script.
-      // In order that the mount syncs to the correct location independent of the actual location
-      // the offset is added to the mount's current location
-      // This can happen even the mount is tracking or exposing
-      // Note:
-      // If this feature is used the script doing the astrometric calibration must return
-      // $crval1-$oira= $crval2-$oirdec= 0. :
-      //
-      //   $img_id, $crval1, $crval2, $crval1-$oira, $crval2-$oirdec
-      //   as e.g.
-      //   1 131.254623 18.904446 (0.,0.)
-      //
-      // in order to bypass rts2's offset (OFFS) mechanism.
-      // This feature is doomed to disappear again in future.
-
-      if (conn->paramNextDouble (&sync_delta_ra) || conn->paramNextDouble (&sync_delta_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_delta paramNextDouble ra or dec failed" << sendLog;
-	return -2;
-      }
-      if (tel_read_ra () || tel_read_dec ()) {
-	logStream (MESSAGE_ERROR) << "APGTO::valueChanged could not retrieve ra, dec  " << sendLog;
-	return -1;
-      }
-      double tdec= 91. ;
-      if((tdec= getTelDec () + sync_delta_dec) >= 90.) {
-	logStream (MESSAGE_ERROR) << "APGTO::valueChanged do not sync dec .ge. 90 deg: " << tdec << sendLog;
-	return -1;
-      }
-      struct ln_equ_posn tel, sync;
-      getTelRaDec (&tel);
-
-      sync_ra = fmod( getTelRa ()  + sync_delta_ra + 360., 360.);
-      sync_dec= fmod( getTelDec () + sync_delta_dec, 90.);
-
-      sync.ra= sync_ra ;
-      sync.dec= sync_dec ;
-
-      double sdist= ln_get_angular_separation (&tel, &sync) ;
-      if( sdist > 5.) { // ToDo ad hoc limit
-	logStream (MESSAGE_INFO) << "APGTO::valueChanged astrometric calibrated sync " << sdist << " is larger than ad hoc limit of 5. degrees " << sendLog;
-	return -1;
-      }
-      logStream (MESSAGE_INFO) << "APGTO::valueChanged syncing astrometrically calibrated to ra " << sync_ra << ", dec " << sync_dec << sendLog;
-    }
-    // do not sync while slewing
-    // this can occur if a script tries to sync after e.g. an astrometric calibration
-    //
-    if(( ret= setTo(sync_ra, sync_dec)) !=0) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
-      return -1 ;
-    }
-    if( tel_check_declination_axis()) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed." << sendLog;
-      return -1;
-    }
-    //logStream (MESSAGE_DEBUG) << "APGTO::commandAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
-    return 0 ;
-  }
-  return TelLX200::commandAuthorized (conn);
-}
 #define ERROR_IN_INFO 1
 int APGTO::info ()
 {
@@ -1745,15 +1467,6 @@ int APGTO::info ()
   // move_ha_sg 00:00:00  0:
   // move_ha_sg 24:00:00  0:
   // with the Astro-Physics mount
-	if ((HA < on_set_HA) && (mount_tracking->getValueBool()))
-	{
-		transition_while_tracking->setValueBool(true);
-		logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
-	}
-	else
-	{
-		transition_while_tracking->setValueBool(false) ;
-	}
   // wildi ToDo: This is the real stuff
 //   if ((getState () & TEL_MASK_MOVING) == TEL_MOVING) {
 //     logStream (MESSAGE_INFO) << "APGTO::info  moving" << sendLog ;
@@ -1767,23 +1480,12 @@ int APGTO::info ()
 		int stop= 0 ;
 		if (!(strcmp("West", DECaxis_HAcoordinate->getValue())))
 		{
-			ret= pier_collision( &object, &observer) ;
+			ret = pier_collision( &object, &observer) ;
 			if (ret != NO_COLLISION)
 			{
 				// stop= 1;
 				logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog;
 				ret = NO_COLLISION;
-			}
-			else
-			{
-				if ((HA >= 15.) && (HA < 180.))
-				{ // 15. degrees are a matter of taste
-					if (mount_tracking->getValueBool())
-					{
-						//stop = 1;
-						logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
-					}
-				}
 			}
 		}
 		else if (!(strcmp("East", DECaxis_HAcoordinate->getValue())))
@@ -1797,18 +1499,6 @@ int APGTO::info ()
 			{
 				//stop = 1;
 				logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog;
-			}
-			else
-			{
-				if (telAltAz->getAlt() < 10.)
-				{
-					if (mount_tracking->getValueBool())
-					{
-						// stop = 1;
-						// notMoveCupola ();
-	    					logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
-					}
-				}
 			}
 		} 
 		if (stop !=0 )
@@ -2108,134 +1798,42 @@ int APGTO::init ()
 	return 0;
 }
 
-/*!
- * Reads information from controller
- */
 int APGTO::initValues ()
 {
-  int ret = -1 ;
-  int flip= -1 ;
+	int ret = -1;
 
-  strcpy (telType, "APGTO");
+	strcpy (telType, "APGTO");
 
-  Rts2Config *config = Rts2Config::instance ();
-  ret = config->loadFile ();
-  if (ret)
-    return -1;
+	Rts2Config *config = Rts2Config::instance ();
+	ret = config->loadFile ();
+	if (ret)
+		return -1;
 
-  telLongitude->setValueDouble (config->getObserver ()->lng);
-  telLatitude->setValueDouble (config->getObserver ()->lat);
-  telAltitude->setValueDouble (config->getObservatoryAltitude ());
+	telLongitude->setValueDouble (config->getObserver ()->lng);
+	telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 
-  if(( ret= setBasicData()) != 0)
-    return -1 ;
-  if (tel_read_longitude () || tel_read_latitude ())
-    return -1;
-  if (tel_read_azimuth () || tel_read_altitude ())
-    return -1;
-  if (getAPVersionNumber() != 0 )
-    return -1 ; ;
-  if (getAPUTCOffset() != 0)
-    return -1 ;
-  if (tel_read_local_time() != 0)
-    return -1 ;
-  if(( ret= tel_read_sidereal_time()) != 0)
-    return -1 ;
-  if (tel_read_ra () || tel_read_dec ())
-    return -1;
+	if(( ret= setBasicData()) != 0)
+		return -1 ;
+	if (getAPVersionNumber() != 0)
+		return -1;
+	if (getAPUTCOffset() != 0)
+		return -1 ;
+	if (tel_read_sidereal_time() != 0)
+		return -1 ;
 
-  // Check if the sidereal time read from the mount is correct 
-  if( (ret= checkSiderealTime( 1./120.)) != 0 ) {
+	// Check if the sidereal time read from the mount is correct 
+	if (checkSiderealTime (1./120.) != 0)
+	{
+		logStream (MESSAGE_ERROR) << "initValues sidereal time larger than 1./120, exiting" << sendLog;
+		//exit (1) ; // do not go beyond, at least for the moment
+	}
 
-    logStream (MESSAGE_ERROR) << "initValues sidereal time larger than 1./120, exiting" << sendLog;
-    //exit (1) ; // do not go beyond, at least for the moment
-  }
-  logStream (MESSAGE_DEBUG) << "APGTO::initValues ra "
-                            << getTelRa() << " dec " 
-                            << getTelDec ()
-                            << sendLog;
-
-
-  if(( ret= tel_read_declination_axis()) != 0)
-    return -1 ;
-
-  // West: HA + Pi/2 = direction where the declination axis points
-  // East: HA - Pi/2
-  if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-    flip = 1 ;
-  } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
-    flip= 0 ;
-  } else {
-    logStream (MESSAGE_ERROR) << "APGTO::initValues could not retrieve angle (declination axis, hour axis), exiting" << sendLog;
-    exit(1) ;
-  }
-  telFlip->setValueInteger (flip);
-
-  if (tel_read_ra () || tel_read_dec ())
-    return -1;
-
-  // check if the assumption "mount correctly parked" holds true
-  // if not true block any sync and slew operations.
-  //
-  // This is only a formal test based on the idea that the
-  // mount has a park position and was parked by RTS2. If the
-  // mount is not at this position assume that position is
-  // undefined or incorrect. A visual check is required.
-  int tracking_mode= TRACK_MODE_SIDEREAL ;  
-  if( assume_parked->getValueBool()) {
-
-    struct ln_equ_posn object;
-    struct ln_equ_posn park_position;
-    object.ra = fmod((getTelRa() + 360.), 360.);
-    object.dec= fmod(getTelDec(), 90.) ;
-
- //   park_position.ra = fmod(( PARK_POSITION_RA + siderealTime()) + 360., 360.);
- //   park_position.dec= PARK_POSITION_DEC  ;
-
-    double diff_ra = fabs(fmod(( park_position.ra - object.ra) + 360., 360.));
-    
-    if( diff_ra >= 180.) {
-      diff_ra -=360. ;
-    } else if( diff_ra <= -180.) {
-      diff_ra += 360. ;
-    }
-
-    double diff_dec= fabs(( park_position.dec- object.dec));
-    int block= 0 ;
-//    if(( diff_ra < PARK_POSITION_DIFFERENCE_MAX) && ( diff_dec < PARK_POSITION_DIFFERENCE_MAX)) {
-//      if( !( strcmp( PARK_POSITION_ANGLE, DECaxis_HAcoordinate->getValue()))) {
-	// ok
-//      } else {
-//	block= 1 ;
-//      }
-//    } else {
-//      block= 1 ;
-//    }
-    if( block) {
-      tracking_mode= TRACK_MODE_ZERO ; 
-      block_sync_move->setValueBool(true) ;
-      logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
-    } 
-  }
-  // force_start knocks out APGTO::tel_check_declination_axis ()
-  // this is necessary in case the mount shows a wrong
-  // angle of HA relative to DEC axis. Before any operation occurs 
-  // the mount must be synced **manually**.
-  if( force_start== true ) {
-    tracking_mode= TRACK_MODE_ZERO ; 
-    block_sync_move->setValueBool(true) ; // don't get me twice!
-    logStream (MESSAGE_ERROR) << "APGTO::initValues set  BLOCK_SYNC_MOVE to false due to force_start== true, sync manually" << sendLog;
-  }
-  if(( ret= selectAPTrackingMode(tracking_mode)) < 0 ) { 
-    logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"<< tracking_mode << " failed." << sendLog;
-    return -1;
-  }
-  return TelLX200::initValues ();
+	return TelLX200::initValues ();
 }
 
 APGTO::~APGTO (void)
 {
-	delete serConn;
 }
 
 int APGTO::processOption (int in_opt)
@@ -2259,30 +1857,26 @@ int APGTO::processOption (int in_opt)
 
 APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
-	createValue (fixedOffsets,             "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	createValue (fixedOffsets, "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	fixedOffsets->setValueRaDec (0, 0);
 	
-	createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
-	createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
-	createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
-	createValue (DECaxis_HAcoordinate,     "DECXHA",      "DEC axis HA coordinate, West/East",true);
-	createValue (APslew_rate,              "APSLEWRATE",  "AP slew rate (1200, 900, 600)",    false, RTS2_VALUE_WRITABLE);
-	createValue (APmove_rate,              "APMOVERATE",  "AP move rate (600, 64, 12, 1)",    false, RTS2_VALUE_WRITABLE);
-	createValue (APutc_offset,             "APUTCOFFSET", "AP mount UTC offset",              true,  RTS2_DT_RA);
-	createValue (APfirmware,               "APVERSION",   "AP mount firmware revision",       true);
-	createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
-	createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
+	createValue (mount_tracking, "TRACKING", "true: mount is tracking", false);
+	createValue (DECaxis_HAcoordinate, "DECXHA", "DEC axis HA coordinate, West/East",true);
+	createValue (APslew_rate, "APSLEWRATE", "AP slew rate (1200, 900, 600)", false, RTS2_VALUE_WRITABLE);
+	createValue (APmove_rate, "APMOVERATE", "AP move rate (600, 64, 12, 1)", false, RTS2_VALUE_WRITABLE);
+	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
+	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);
+	createValue (assume_parked, "ASSUME_PARKED", "true check initial position",    false);
+	createValue (collision_detection, "COLLILSION_DETECTION", "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
 	createValue (avoidBellowHorizon, "AVOID_HORIZON", "avoid movements bellow horizon", true, RTS2_VALUE_WRITABLE);
 	avoidBellowHorizon->setValueBool (false);
 
-	collision_detection->setValueBool(true) ;
-	block_sync_move->setValueBool(false) ;
-	transition_while_tracking->setValueBool(false) ;
-	assume_parked->setValueBool(false);
+	collision_detection->setValueBool (true) ;
+	assume_parked->setValueBool (false);
 
-	addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
-	addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
-	addOption (OPT_APGTO_KEEP_HORIZON,  "avoid-horizon", 0, "avoid movements bellow horizon");
+	addOption (OPT_APGTO_ASSUME_PARKED, "parked", 0, "assume a regularly parked mount");
+	addOption (OPT_APGTO_FORCE_START, "force_start", 0, "start with wrong declination axis orientation");
+	addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
 }
 
 int main (int argc, char **argv)

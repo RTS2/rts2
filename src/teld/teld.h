@@ -597,9 +597,12 @@ class Telescope:public Rts2Device
 		virtual int setTo (double set_ra, double set_dec) { return -1; }
 
 		/**
-		 * Called when park command is issued. Moves telescope to park position.
+		 * Called when park command is issued. Moves telescope to park position. Target
+		 * positions are set to NAN after startPark returns 0. If driver needs to retain
+		 * set target position (e.g. it is using moveAltAz to move to predefined AltAz pozition),
+		 * startPark must reuturn 1.
 		 *
-		 * @return 0 on success, -1 on failure
+		 * @return 0 on success, 1 on success if target value reset is not needed, -1 on failure
 		 */
 		virtual int startPark () = 0;
 
