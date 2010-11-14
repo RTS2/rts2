@@ -61,6 +61,8 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (raLimit, "RA_LIMIT", "RA limit switch", false, RTS2_DT_ONOFF);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection");
+
+	setIdleInfoInterval (1);
 }
 
 int Arduino::processOption (int opt)
@@ -104,6 +106,14 @@ int Arduino::info ()
 {
 	char buf[20];
 	int ret = arduinoConn->writeRead ("?", 1, buf, 20, '\n');
+	if (ret < 0)
+		return -1;
+
+	int i = atoi (buf);
+
+	raLimit->setValueBool (i & 0x01);
+	raHome->setValueBool (i & 0x02);
+	decHome->setValueBool (i & 0x04);
 
 	return Sensor::info ();
 }
