@@ -50,8 +50,6 @@ P4 = 2
 """Fit using 4 power polynomial"""
 H3 = 3
 """Fit using general Hyperbola (three free parameters)"""
-H3b = 3
-"""Fit using general Hyperbola in 2nd form (three free parameters)"""
 H2 = 4
 """Fit using Hyperbola with fixed slope at infinity (two free parameters)"""
 
@@ -59,7 +57,7 @@ class Focusing (rts2comm.Rts2Comm):
 	"""Take and process focussing data."""
 
 	def __init__(self):
-		self.exptime = 60 # 60 # 10
+		self.exptime = 20 # 60 # 10
 		self.step = 0.2 # 0.2
 		self.attempts = 20 #30 # 20
 		self.focuser = 'F0'
@@ -95,20 +93,15 @@ class Focusing (rts2comm.Rts2Comm):
 			p0 = [1, 1, 1, 1, 1]
 			fitfunc_r = lambda x, p0, p1: p0 + p1 * x + p2 * (x ** 2) + p3 * (x ** 3) + p4 * (x ** 4)
 		elif fit == H3:
-			fitfunc = lambda p, x: sqrt(p[0] + p[1] * (x - p[2])**2)
+			fitfunc = lambda p, x: sqrt(p[0] ** 2 + p[1] ** 2 * (x - p[2])**2)
 			errfunc = lambda p, x, y: fitfunc(p, x) - y # H3 - distance to the target function
-			p0 = [4 ** 2., 3.46407715307 ** 2, self.fwhm_MinimumX]  # initial guess based on real data
-			fitfunc_r = lambda x, p0, p1, p2 : sqrt(p0 + p1 * (x - p2) ** 2)
-		elif fit == H3b:
-			fitfunc = lambda p, x: sqrt(p[0] ** 2 + p[1] * (x - p[2])**2)
-			errfunc = lambda p, x, y: fitfunc(p, x) - y # H3 - distance to the target function
-			p0 = [4., 3.46407715307 ** 2, self.fwhm_MinimumX]  # initial guess based on real data
-			fitfunc_r = lambda x, p0, p1, p2 : sqrt(p0 ** 2 + p1 * (x - p2) ** 2)
+			p0 = [4., 3.46407715307, self.fwhm_MinimumX]  # initial guess based on real data
+			fitfunc_r = lambda x, p0, p1, p2 : sqrt(p0 ** 2 + p1 ** 2 * (x - p2) ** 2)
 		elif fit == H2:
-			fitfunc = lambda p, x: sqrt(p[0] + 3.46407715307 ** 2 * (x - p[1])**2) # 3.46 based on H3 fits
+			fitfunc = lambda p, x: sqrt(p[0] ** 2 + 3.46407715307 ** 2 * (x - p[1])**2) # 3.46 based on H3 fits
 			errfunc = lambda p, x, y: fitfunc(p, x) - y # H2 - distance to the target function
-			p0 = [4. ** 2, self.fwhm_MinimumX]  # initial guess based on real data
-			fitfunc_r = lambda x, p0, p1 : sqrt(p0 + 3.46407715307 ** 2 * (x - p1) ** 2)
+			p0 = [4., self.fwhm_MinimumX]  # initial guess based on real data
+			fitfunc_r = lambda x, p0, p1 : sqrt(p0 ** 2 + 3.46407715307 ** 2 * (x - p1) ** 2)
 		else:
 			raise Exception('Unknow fit type {0}'.format(fit))
 
@@ -120,15 +113,11 @@ class Focusing (rts2comm.Rts2Comm):
 			b = (self.linear_fit_fwhm - self.fwhm_poly[0]) / self.fwhm_poly[1]
 	        elif fit == H3:
 		        b = self.fwhm_poly[2]
-			self.log('I', 'found minimum FWHM: {0}'.format(sqrt(self.fwhm_poly[0])))
-			self.log('I', 'found slope at infinity: {0}'.format(sqrt(self.fwhm_poly[1])))
-	        elif fit == H3b:
-		        b = self.fwhm_poly[2]
 			self.log('I', 'found minimum FWHM: {0}'.format(abs(self.fwhm_poly[0])))
-			self.log('I', 'found slope at infinity: {0}'.format(sqrt(self.fwhm_poly[1])))
+			self.log('I', 'found slope at infinity: {0}'.format(abs(self.fwhm_poly[1])))
 	        elif fit == H2:
 		        b = self.fwhm_poly[1]
-			self.log('I', 'found minimum FWHM: {0}'.format(sqrt(self.fwhm_poly[0])))
+			self.log('I', 'found minimum FWHM: {0}'.format(abs(self.fwhm_poly[0])))
 		else:
 			b = optimize.fmin(fitfunc_r,self.fwhm_MinimumX,args=(self.fwhm_poly), disp=0)[0]
 		self.log('I', 'found FHWM minimum at offset {0}'.format(b))

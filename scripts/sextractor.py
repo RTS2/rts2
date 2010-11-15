@@ -37,13 +37,15 @@ import os
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, filename, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexconfig='/usr/share/sextractor/default.sex', threshold=2.7):
+    def __init__(self, filename, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexconfig='/usr/share/sextractor/default.sex', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
         self.filename = filename
 	self.sexconfig = sexconfig
 
 	self.fields = fields
-        self.objects = []
+	self.objects = []
 	self.threshold = threshold
+	self.deblendmin = deblendmin
+	self.saturlevel = saturlevel
 
     def runSExtractor(self):
     	pfn = '/tmp/pysex_{0}'.format(os.getpid())
@@ -53,7 +55,7 @@ class Sextractor:
 		pf.write(f + '\n')
 	pf.close()
 
-        cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-FILTER', 'N', '-STARNNW_NAME', '/usr/share/sextractor/default.nnw', '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+        cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', '/usr/share/sextractor/default.nnw', '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
        	proc = subprocess.Popen(cmd)
 	proc.wait()
 
@@ -98,14 +100,14 @@ def getFWHM(fn,starsn):
 			fwhmlist.append(x[5])
 			a += x[6]
 			b += x[7]
-			if len(fwhmlist) > starsn:
+			if len(fwhmlist) >= starsn:
 				break 
-	if len(fwhmlist) > starsn:
+	if len(fwhmlist) >= starsn:
 		import numpy
-#		return numpy.median(fwhmlist)
-		return numpy.average(fwhmlist), len(fwhmlist)
+		return numpy.median(fwhmlist), len(fwhmlist)
+#		return numpy.average(fwhmlist), len(fwhmlist)
 	if len(fwhmlist) > 0:
-		raise Exception('too few stars - {0}, expected {1}'.format(i,starsn))
+		raise Exception('too few stars - {0}, expected {1}'.format(len(fwhmlist),starsn))
 	raise Exception('cannot find any stars on the image')
 
 if __name__ == "__main__":
