@@ -78,6 +78,12 @@ TPS534::init ()
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
+	// make sure it forks before creating threads                                                                                                                                                                                                                     
+	ret = doDaemonize ();
+	if (ret) {
+	  logStream (MESSAGE_ERROR) << "Doorvermes::initValues could not daemonize"<< sendLog ;
+	  return ret;
+	}
 
 	connectDevice(device_file, 1);
 
@@ -109,7 +115,7 @@ TPS534::info ()
 }
 TPS534::TPS534 (int argc, char **argv):SensorWeather (argc, argv)
 {
-        strcpy( default_device_file, "/dev/usb/hiddev0");
+        strcpy( default_device_file, "/dev/usb/hiddev5");
 	device_file= default_device_file ;
 	addOption (OPT_TPS534_DEVICE, "device", 1, "HID dev TPS534 cloud sensor");
 	addOption (OPT_TPS534_SKY_TRIGGER, "cloud", 1, "cloud trigger point [deg C]");
