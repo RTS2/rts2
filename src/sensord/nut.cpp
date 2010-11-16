@@ -332,7 +332,7 @@ int NUT::info ()
 	}
 
 	// we are online - increase onbatterytimeout
-	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("ALARM OL CHRG") || upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("ALARM OL"))
+	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("ALARM OL CHRG") || upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("ALARM OL") || upsstatus->getValue () == std::string ("OL BOOST"))
 	{
 		onbatterytimeout->setValueInteger ((int) getNow () + maxonbattery->getValueInteger ());
 	}
