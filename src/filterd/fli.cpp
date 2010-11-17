@@ -25,6 +25,20 @@ namespace rts2filterd
 
 class Fli:public Filterd
 {
+	public:
+		Fli (int in_argc, char **in_argv);
+		virtual ~ Fli (void);
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init (void);
+
+		virtual int changeMasterState (int new_state);
+
+		virtual int getFilterNum (void);
+		virtual int setFilterNum (int new_filter);
+
+		virtual int homeFilter ();
+
 	private:
 		flidev_t dev;
 		flidomain_t deviceDomain;
@@ -32,21 +46,9 @@ class Fli:public Filterd
 		long filter_count;
 
 		int fliDebug;
-
-	protected:
-		virtual int getFilterNum (void);
-		virtual int setFilterNum (int new_filter);
-
-	public:
-		Fli (int in_argc, char **in_argv);
-		virtual ~ Fli (void);
-		virtual int processOption (int in_opt);
-		virtual int init (void);
-
-		virtual int homeFilter ();
 };
 
-};
+}
 
 using namespace rts2filterd;
 
@@ -54,21 +56,16 @@ Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 {
 	deviceDomain = FLIDEVICE_FILTERWHEEL | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
-	addOption ('D', "domain", 1,
-		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-	addOption ('b', "fli_debug", 1,
-		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
-
 
 Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
-
-int
-Fli::processOption (int in_opt)
+int Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -107,9 +104,7 @@ Fli::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Fli::init (void)
+int Fli::init (void)
 {
 	LIBFLIAPI ret;
 	char **names;
@@ -149,9 +144,13 @@ Fli::init (void)
 	return 0;
 }
 
+int Fli::changeMasterState (int new_state)
+{
+	homeFilter ();
+	return Filterd::changeMasterState (new_state);
+}
 
-int
-Fli::getFilterNum (void)
+int Fli::getFilterNum (void)
 {
 	long ret_f;
 	LIBFLIAPI ret;
@@ -161,9 +160,7 @@ Fli::getFilterNum (void)
 	return (int) ret_f;
 }
 
-
-int
-Fli::setFilterNum (int new_filter)
+int Fli::setFilterNum (int new_filter)
 {
 	LIBFLIAPI ret;
 	if (new_filter < -1 || new_filter >= filter_count)
@@ -175,16 +172,12 @@ Fli::setFilterNum (int new_filter)
 	return 0;
 }
 
-
-int
-Fli::homeFilter ()
+int Fli::homeFilter ()
 {
 	return setFilterNum (FLI_FILTERPOSITION_HOME);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Fli device = Fli (argc, argv);
 	return device.run ();

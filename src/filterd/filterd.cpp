@@ -28,7 +28,6 @@ Filterd::Filterd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEV
 	addOption ('F', NULL, 1, "filter names, separated by space(s)");
 }
 
-
 Filterd::~Filterd (void)
 {
 }
