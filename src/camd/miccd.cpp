@@ -235,18 +235,21 @@ int MICCD::info ()
 	if (ret)
 		return -1;
 	tempCCD->setValueFloat (val);
-	ret = miccd_environment_temperature (&camera, &val);
-	if (ret)
-		return -1;
-	tempAir->setValueFloat (val);
+	if (camera.model != G10800)
+	{
+		ret = miccd_environment_temperature (&camera, &val);
+		if (ret)
+			return -1;
+		tempAir->setValueFloat (val);
+		ret = miccd_gain (&camera, &ival);
+		if (ret)
+			return -1;
+		gain->setValueInteger (ival);
+	}
 	ret = miccd_power_voltage (&camera, &ival);
 	if (ret)
 		return -1;
 	power->setValueInteger (ival);
-	ret = miccd_gain (&camera, &ival);
-	if (ret)
-		return -1;
-	gain->setValueInteger (ival);
 	return Camera::info ();
 }
 
@@ -302,11 +305,23 @@ int MICCD::startExposure ()
 	{
 		setUsedHeight (shift->getValueInteger ());
 	}
-	if (getExpType () != 1)
+	
+	switch (camera.model)
 	{
-		ret = miccd_open_shutter (&camera);
-		if (ret)
-			return -1;
+		case G10800:
+			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
+			if (ret)
+				return -1;
+			break;
+		case G2:
+		case G3:	
+			if (getExpType () != 1)
+			{
+				ret = miccd_open_shutter (&camera);
+				if (ret)
+					return -1;
+			}
+			break;
 	}
 	return 0;
 }
@@ -316,9 +331,17 @@ int MICCD::endExposure ()
 	int ret;
 	if (getExpType () != 1)
 	{
-		ret = miccd_close_shutter (&camera);
-		if (ret)
-			return ret;
+		switch (camera.model)
+		{
+			case G10800:
+				break;
+			case G2:
+			case G3:
+				ret = miccd_close_shutter (&camera);
+				if (ret)
+					return ret;
+				break;
+		}
 	}
 	return Camera::endExposure ();
 }
@@ -326,9 +349,17 @@ int MICCD::endExposure ()
 int MICCD::stopExposure ()
 {
  	int ret;
-	ret = miccd_close_shutter (&camera);
-	if (ret)
-		return -1;
+	switch (camera.model)
+	{
+		case G10800:
+			break;
+		case G2:
+		case G3:
+			ret = miccd_close_shutter (&camera);
+			if (ret)
+				return -1;
+			break;
+	}
 	return 0;
 }
 
@@ -336,7 +367,17 @@ int MICCD::doReadout ()
 {
 	int ret;
 
-	ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
+	switch (camera.model)
+	{
+		case G10800:
+			ret = miccd_read_data (&camera, 2 * getUsedWidth () * getUsedHeight (), dataBuffer);
+			break;
+		case G2:
+		case G3:
+			ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
+			break;
+	}
+
 	if (ret < 0)
 		return -1;
 
