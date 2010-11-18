@@ -777,7 +777,7 @@ void Rts2Centrald::processMessage (Rts2Message & msg)
 	// log it
 	if (fileLog)
 	{
-		(*fileLog) << msg;
+		(*fileLog) << msg << std::endl;
 	}
 	else
 	{
