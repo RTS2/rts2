@@ -194,6 +194,9 @@ class Paramount:public GEM
 		Rts2ValueLong *creepRa;
 		Rts2ValueLong *creepDec;
 
+		Rts2ValueLong *relRa;
+		Rts2ValueLong *relDec;
+
 		Rts2ValueBool *tracking;
 
 		CWORD32 park_axis[2];
@@ -488,6 +491,12 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 
 	createValue (creepDec, "CREEP_DEC", "[???] DEC creep value", false, RTS2_VALUE_WRITABLE);
 	creepDec->setValueLong (0);
+
+	createValue (relRa, "REL_RA", "[???] RA relative position", false, RTS2_VALUE_WRITABLE);
+	relRa->setValueLong (0);
+
+	createValue (relDec, "REL_DEC", "[???] DEC relative position", false, RTS2_VALUE_WRITABLE);
+	relDec->setValueLong (0);
 
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -1157,7 +1166,11 @@ int Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	if (oldValue == creepRa)
 		return setParamountValue32 (CMD_VAL32_CREEP_VEL, newValue, creepDec) ? -2 : 0;
 	if (oldValue == creepDec)
-		return setParamountValue32 (CMD_VAL32_CREEP_VEL, creepDec, newValue) ? -2 : 0;
+		return setParamountValue32 (CMD_VAL32_CREEP_VEL, creepRa, newValue) ? -2 : 0;
+	if (oldValue == relRa)
+		return setParamountValue32 (CMD_VAL32_RELPOS, newValue, relDec) ? -2 : 0;
+	if (oldValue == relDec)
+		return setParamountValue32 (CMD_VAL32_RELPOS, relRa, newValue) ? -2 : 0;
 
 	return Telescope::setValue (oldValue, newValue);
 }
