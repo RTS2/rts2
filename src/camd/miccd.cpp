@@ -86,6 +86,7 @@ class MICCD:public Camera
 
 		Rts2ValueLong *id;
 		Rts2ValueSelection *mode;
+		Rts2ValueBool *fan;
 		Rts2ValueFloat *tempRamp;
 		Rts2ValueFloat *tempTarget;
 		Rts2ValueInteger *power;
@@ -119,13 +120,6 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
-
-	createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	mode->addSelVal ("NORMAL");
-	mode->addSelVal ("LOW NOISE");
-	mode->addSelVal ("ULTRA LOW NOISE");
-
-	mode->setValueInteger (1);
 
 	createValue (shift, "SHIFT", "shift (for partial, not cleared readout)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	shift->setValueInteger (0);
@@ -195,10 +189,30 @@ int MICCD::init ()
 		return -1;
 	}
 
-	if (miccd_mode (&camera, mode->getValueInteger ()))
+	switch (camera.model)
 	{
-		logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
-		return -1;
+		case G10800:
+			mode = NULL;
+			createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+			miccd_fan (&camera, 1);
+			fan->setValueBool (true);
+			break;
+		case G2:
+		case G3:
+			fan = NULL;
+			createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+			mode->addSelVal ("NORMAL");
+			mode->addSelVal ("LOW NOISE");
+			mode->addSelVal ("ULTRA LOW NOISE");
+
+			mode->setValueInteger (1);
+
+			if (miccd_mode (&camera, mode->getValueInteger ()))
+			{
+				logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
+				return -1;
+			}
+			break;
 	}
 
 	return 0;
@@ -257,6 +271,8 @@ int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == mode)
 		return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	if (oldValue == fan)
+		return miccd_fan (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	return Camera::setValue (oldValue, newValue);
 }
 
