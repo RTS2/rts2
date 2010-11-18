@@ -191,6 +191,9 @@ class Paramount:public GEM
 		Rts2ValueLong *baseRa;
 		Rts2ValueLong *baseDec;
 
+		Rts2ValueLong *creepRa;
+		Rts2ValueLong *creepDec;
+
 		Rts2ValueBool *tracking;
 
 		CWORD32 park_axis[2];
@@ -479,6 +482,12 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	baseRa->setValueLong (hourRa->getValueLong ());
 	createValue (baseDec, "BR_DEC", "[???] DEC axis base rate", true, RTS2_VALUE_WRITABLE);
 	baseDec->setValueLong (0);
+
+	createValue (creepRa, "CREEP_RA", "[???] RA creep value", false, RTS2_VALUE_WRITABLE);
+	creepRa->setValueLong (0);
+
+	createValue (creepDec, "CREEP_DEC", "[???] DEC creep value", false, RTS2_VALUE_WRITABLE);
+	creepDec->setValueLong (0);
 
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -854,6 +863,11 @@ int Paramount::info ()
   	ret = getParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 	if (ret)
 		return ret;
+
+	ret = getParamountValue32 (CMD_VAL32_CREEP_VEL, creepRa, creepDec);
+	if (ret)
+		return ret;
+
 	return GEM::info ();
 }
 
@@ -1137,13 +1151,14 @@ int Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 
 	}
 	if (oldValue == baseRa)
-	{
 		return setParamountValue32 (CMD_VAL32_BASERATE, newValue, baseDec) ? -2 : 0;
-	}
 	if (oldValue == baseDec)
-	{
 		return setParamountValue32 (CMD_VAL32_BASERATE, baseRa, newValue) ? -2 : 0;
-	}
+	if (oldValue == creepRa)
+		return setParamountValue32 (CMD_VAL32_CREEP_VEL, newValue, creepDec) ? -2 : 0;
+	if (oldValue == creepDec)
+		return setParamountValue32 (CMD_VAL32_CREEP_VEL, creepDec, newValue) ? -2 : 0;
+
 	return Telescope::setValue (oldValue, newValue);
 }
 
