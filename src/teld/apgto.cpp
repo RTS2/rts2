@@ -183,6 +183,7 @@ namespace rts2teld
     Rts2ValueBool    *block_sync_move;
     Rts2ValueBool    *assume_parked;
     Rts2ValueBool    *slew_state; // (move_state)
+    Rts2ValueBool    *exposure_detection; 
     Rts2ValueBool    *collision_detection; 
 
   protected:
@@ -2080,8 +2081,9 @@ APGTO::info ()
   int ret ;
   int flip= -1 ;
   int error= -1 ;
-
-  
+  if( !( exposure_detection->getValueBool())) {
+    logStream (MESSAGE_ERROR) << "APGTO::info  ccd exposure detection is disabled" << sendLog;
+  } else {
   // if there are more than one CCD running use an iterator
   // and find the appropriate camera
   // if no images have been taken with TIMEOUT_CCD_NOTTACKING_IMAGE secons
@@ -2095,10 +2097,10 @@ APGTO::info ()
 	if( shutterClosed()) {
 	  if( (abortAnyMotion () !=0)) {
 	    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
-	    return -1;
-	  } else {
-	    logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to shutter closed" << sendLog;
-	  }
+	      return -1;
+	    } else {
+	      logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to shutter closed" << sendLog;
+	    }
 	}
 	Rts2Conn * conn_time = getOpenConnection (ccdDevice);
 	if( conn_time) {
@@ -2106,15 +2108,15 @@ APGTO::info ()
 	  if( flitime) {
 	    if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
 	      if(( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) < 0.) {
-		logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out, flitime: " <<flitime->getValueDouble() << sendLog;
-		if( (abortAnyMotion () !=0)) {
-		  logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
-		  return -1;
-		}  else {
-		  logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to ccd data tacking timed out" << sendLog;
-		}
+	         logStream (MESSAGE_INFO) << "APGTO::info ccd data tacking timed out, flitime: " <<flitime->getValueDouble() << sendLog;
+		 if( (abortAnyMotion () !=0)) {
+		    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+		    return -1;
+		 } else {
+		    logStream (MESSAGE_ERROR) << "APGTO::info NOT stopped tracking due to ccd data tacking timed out" << sendLog;
+		 }
 	      } else {
-		//logStream (MESSAGE_DEBUG) << "APGTO::info fli time " << ( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) << " > 0." << sendLog;
+	         logStream (MESSAGE_DEBUG) << "APGTO::info fli time " << ( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) << " > 0." << sendLog;
 	      }
 	    } else {
 	      logStream (MESSAGE_DEBUG) << "APGTO::info time not RTS2_VALUE_TIME "<< sendLog;
@@ -2125,6 +2127,7 @@ APGTO::info ()
     } else {
       //      logStream (MESSAGE_DEBUG) << "APGTO::info slew time " << ( slew_start_time - time(&now) + TIMEOUT_SLEW_START)  << " < 0. slew_start " << slew_start_time << sendLog;
     }
+  }
   }
   //  if ((getState () & TEL_MASK_MOVING) == TEL_MOVING){
   //    logStream (MESSAGE_INFO) << "APGTO::info state TEL_MOVING" << sendLog;
@@ -2769,8 +2772,10 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   createValue (APlongitude,              "APLONGITUDE", "AP mount longitude",               true,  RTS2_DT_DEGREES);
   createValue (APlatitude,               "APLATITUDE",  "AP mount latitude",                true,  RTS2_DT_DEGREES);
   createValue (assume_parked,            "ASSUME_PARKED", "true check initial position",    false);
-  createValue (collision_detection,      "COLLILSION_DETECTION",   "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
+  createValue (exposure_detection,       "EXPOSURE_DETECTION",   "true: mount stop if no exposure takes place", true, RTS2_VALUE_WRITABLE);
+  createValue (collision_detection,      "COLLILSION_DETECTION", "true: mount stop if it collides", true, RTS2_VALUE_WRITABLE);
 
+  exposure_detection->setValueBool(true) ;
   collision_detection->setValueBool(true) ;
   slew_state->setValueBool(false) ;
   block_sync_move->setValueBool(false) ;
