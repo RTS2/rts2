@@ -157,7 +157,10 @@ int Camera::endExposure ()
 		return camReadout (exposureConn);
 	}
 	if (getStateChip (0) & CAM_EXPOSING)
+	{
+		stopExposure ();
 		logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+	}
 
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
