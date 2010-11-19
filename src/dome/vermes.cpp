@@ -112,11 +112,11 @@ int Vermes::moveStop ()
   int ret ;
 
   while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
-    fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+    logStream (MESSAGE_ERROR) << "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED" << sendLog ;
     errno= 0;
     ret= nanosleep( &rep_slv, &rep_rsl) ;
     if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
-      fprintf( stderr, "move_to_target_az: signal, or error in nanosleep %d\n", ret) ;
+      logStream (MESSAGE_ERROR) << "move_to_target_az: signal, or error in nanosleep: " <<ret<< sendLog ;
     }
   }
   return Cupola::moveStop ();
@@ -190,7 +190,7 @@ void Vermes::valueChanged (Rts2Value * changed_value)
       lastMovementState= movementState ;
       movementState= SYNCHRONIZATION_DISABLED ;
       if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-	logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor off " << sendLog ;
+	logStream (MESSAGE_ERROR) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
 	ssd650v_state->setValueString("motor undefined") ;
       } else {
 	logStream (MESSAGE_INFO) << "Vermes::valueChanged switched synchronization off" << sendLog ;
@@ -205,12 +205,17 @@ void Vermes::valueChanged (Rts2Value * changed_value)
     if(isnan( getpoint= set_setpoint( setpoint)))  {
       logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< getpoint << sendLog ;
     } else {
-      if( setpoint != 0.) {
+      if( setpoint == 0.) {
+	if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
+	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
+	  ssd650v_state->setValueString("motor undefined") ;
+	} 
+      } else {
 	if(( ret=motor_on()) != SSD650V_MS_RUNNING ) {
 	  ssd650v_state->setValueString("motor undefined") ;
 	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor on :" << setpoint << sendLog ;
 	} 
-      }
+      } 
     }
     return ; // ask Petr what to do in general if something fails within ::valueChanged
   } else   if (changed_value == synchronizeTelescope) {
@@ -302,7 +307,7 @@ int Vermes::initValues ()
     logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
   }
   if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-    fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
+    logStream (MESSAGE_ERROR) << "Vermes::initValues motor_off != SSD650V_MS_STOPPED" << sendLog ;
     ssd650v_state->setValueString("motor undefined") ;
   } 
 

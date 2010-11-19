@@ -48,7 +48,7 @@ rts2_dome_zelio_SOURCES = zelio.cpp
 rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
-rts2_cupola_vermes_LDADD =  librts2vermes.a  librts2oak.a librts2dome-target-az.a @LIB_PTHREAD@  ${LDADD} 
+rts2_cupola_vermes_LDADD =  librts2vermes.a  librts2dome-target-az.a @LIB_PTHREAD@  ${LDADD} 
 
 rts2_dome_door_vermes_SOURCES = door_vermes.cpp
 rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2oak.a librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
