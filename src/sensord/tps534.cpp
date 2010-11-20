@@ -17,13 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <string.h>
 #include "sensord.h"
 #include "tps534-oak.h"
 #define  OPT_TPS534_DEVICE      OPT_LOCAL + 133
-#define  OPT_TPS534_SKY_TRIGGER OPT_LOCAL  + 134
+#define  OPT_TPS534_SKY_TRIGGER OPT_LOCAL + 134
+#define  OPT_TPS534_DOOR_DEVICE OPT_LOCAL + 135
 
 
 tps534_state tps534State ;
+tps534_state tps534LastState ;
 
 namespace rts2sensord
 {
@@ -42,6 +45,8 @@ class TPS534: public SensorWeather
 		Rts2ValueDouble *ambientTemperatureLUT;
 		Rts2ValueDouble *rTheta;
 		Rts2ValueDouble *triggerSky;
+                char *doorDevice;
+
      	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -50,6 +55,7 @@ class TPS534: public SensorWeather
 	public:
 		TPS534 (int in_argc, char **in_argv);
 		virtual ~TPS534 (void);
+                virtual int willConnect (Rts2Address * in_addr);
 };
 
 };
@@ -66,10 +72,24 @@ TPS534::processOption (int in_opt)
 		case OPT_TPS534_SKY_TRIGGER:
 			triggerSky->setValueCharArr (optarg);
 			break;
+	        case OPT_TPS534_DOOR_DEVICE:
+                        doorDevice = optarg;
+                        break;
+
 		default:
 			return SensorWeather::processOption (in_opt);
 	}
 	return 0;
+}
+int 
+TPS534::willConnect (Rts2Address * in_addr)
+{
+    if (doorDevice && in_addr->getType () == DEVICE_TYPE_DOME) {
+      logStream (MESSAGE_INFO) << "TPS534::willConnect to DEVICE_TYPE_DOME: "<< doorDevice << sendLog;
+      fprintf( stderr, "========TPS534::willConnect to DEVICE_TYPE_DOME: %s\n", doorDevice );
+      return 1;
+    }
+    return Sensor::willConnect (in_addr);
 }
 int
 TPS534::init ()
@@ -78,40 +98,101 @@ TPS534::init ()
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
-	// make sure it forks before creating threads                                                                                                                                                                                                                     
+	// make sure it forks before creating threads
 	ret = doDaemonize ();
+
 	if (ret) {
 	  logStream (MESSAGE_ERROR) << "Doorvermes::initValues could not daemonize"<< sendLog ;
 	  return ret;
 	}
 
+	addConstValue ("DOOR", doorDevice, "door device name to monitor its state (open/closed)");
 	connectDevice(device_file, 1);
 
 	if (!isnan (triggerSky->getValueDouble ()))
 		setWeatherState (false, "cloud trigger unspecified");
 
+	
+	for( int i = 0; i < 5; i++) {
+	  tps534LastState.analogIn[i]= 0. ;
+	}
 	return 0;
 }
 int
 TPS534::info ()
 {
+  static int counter= 0;
   rTheta->setValueDouble (tps534State.calcIn[0]) ;
   ambientTemperatureBeta->setValueDouble (tps534State.calcIn[1]) ;
   ambientTemperatureLUT->setValueDouble (tps534State.calcIn[2]) ;
   temperatureSky->setValueDouble (tps534State.calcIn[3]) ;
+  // the thread dies from time to time for unknown reason
+  // restart it here if all analog input state values are equal to the last state
+  // this is a temprorary fix
 
-    // check the state of the cloud sensor
-    if (temperatureSky->getValueDouble() > triggerSky->getValueDouble ())
-    {
-      if (getWeatherState () == true) 
-	{
-	  logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << temperatureSky->getValueDouble ()
-				    << " trigger: " << triggerSky->getValueDouble ()
-				    << sendLog;
-	}
+  int number_of_identical_values= 0 ;
+  for( int i = 0; i < 5; i++) {
+    
+    if( tps534State.analogIn[i] == 0.) { // right after startup
+      number_of_identical_values++;
+    } else if( tps534State.analogIn[i] == tps534LastState.analogIn[i]) {
+      number_of_identical_values++;
+    }
+  }
+ 
+  if( number_of_identical_values > 4) {
+    counter++ ;
+    if( counter > 10) {
+      counter= 0 ;
+    int ret= -1;
+    logStream (MESSAGE_ERROR) << "TPS534::info restarting oak thread" <<  sendLog;
+    if(( ret= connectDevice(device_file, 0))) {
+      logStream (MESSAGE_ERROR) << "TPS534::info stopping oak thread failed, error: "<< ret <<  sendLog;
+    } else {
+      if(( ret= connectDevice(device_file, 1))) {
+	logStream (MESSAGE_ERROR) << "TPS534::info start oak thread failed" <<  sendLog;
+      } else {
+	logStream (MESSAGE_DEBUG) << "TPS534::info restarted oak thread successfully" <<  sendLog;
+      }
+    }
+    }
+  } else {
+    for( int i = 0; i < 5; i++) {
+      tps534LastState.analogIn[i]= tps534State.analogIn[i] ;
+    }
+  }
+
+  //  Measurment make only sense in case the door is open
+  //  otherwise the temperature of the door is read
+  bool doorOpen= false ;
+  Rts2Conn * conn_door = getOpenConnection (doorDevice);
+  if( conn_door) {
+    Rts2Value * doorState =  conn_door->getValue ("DOORSTATE");
+    if( doorState) {
+      if( doorState->getValueType()== RTS2_VALUE_STRING) {
+	if( ! strcmp(doorState->getDisplayValue(), "stopped, open"))  {                                                                                                                                                   
+	  doorOpen= true ;
+        } else {
+	  doorOpen= false ;
+      	}
+      }  
+    } else {
+      logStream (MESSAGE_DEBUG) << "TPS534::info doorState=NULL : "<< sendLog;
+    }
+  }  
+
+  if( doorOpen) {
+  // check the state of the cloud sensor
+    if (temperatureSky->getValueDouble() > triggerSky->getValueDouble ()) {
+      if (getWeatherState () == true)  {
+	logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << temperatureSky->getValueDouble ()
+				  << " trigger: " << triggerSky->getValueDouble ()
+				  << sendLog;
+      }
       setWeatherTimeout (TPS534_WEATHER_TIMEOUT_BAD, "sky temperature");
     }
-    return SensorWeather::info ();
+  }
+  return SensorWeather::info ();
 }
 TPS534::TPS534 (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -119,6 +200,7 @@ TPS534::TPS534 (int argc, char **argv):SensorWeather (argc, argv)
 	device_file= default_device_file ;
 	addOption (OPT_TPS534_DEVICE, "device", 1, "HID dev TPS534 cloud sensor");
 	addOption (OPT_TPS534_SKY_TRIGGER, "cloud", 1, "cloud trigger point [deg C]");
+	addOption (OPT_TPS534_DOOR_DEVICE, "door_device",  1, "door device name to monitor its state (open/closed)");
 
 	createValue (temperatureSky,         "TEMP_SKY",     "temperature sky", true); // go to FITS
 	createValue (ambientTemperatureBeta, "AMB_TEMP_BETA","ambient temperature", false);
@@ -128,6 +210,7 @@ TPS534::TPS534 (int argc, char **argv):SensorWeather (argc, argv)
 	triggerSky->setValueDouble (TPS534_THRESHOLD_CLOUDY);
 
 	setIdleInfoInterval (TPS534_POLLING_TIME); // best choice for TPS534
+	doorDevice = NULL;
 }
 TPS534::~TPS534 (void)
 {

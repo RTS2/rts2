@@ -110,7 +110,7 @@ res_table r_thermistor[] = {
   { 907200.0, -40.0 },
 };
 
-int debug = 4;           /* a debug value > 0 will print debugging information
+int debug = 0;           /* a debug value > 0 will print debugging information
                             to stderr. the higher the value the more output. 
                             (will be overwritten by the value of
                             debugVerbosityNP.np[0] in ISInit().) */
@@ -396,6 +396,11 @@ connectDevice(char *oakAdDevice, int connecting)
     if (oakAdHandle > 0) {
       closeDevice(oakAdHandle);
       oakAdHandle = -1;
+      thread_stat = pthread_cancel(tps534_oak_digin_th_id); // 0 = success                                                                                                                                                  
+      if( thread_stat != 0 ) {
+        fprintf( stderr,  "connectDevice: Oak thread NOT stopped\n");
+        return thread_stat ;
+      }
     }
     /* Disconnect: prepare for reconnect. */
     fprintf( stderr, "disconnected from Oak AD %s", oakAdDevice);
@@ -467,8 +472,10 @@ tps534_oak_digin_thread(void * args)
     tps534State.calcIn[2] = resistance2temp(f);
     tps534State.calcIn[3]= sky(tps534State.analogIn[1], tps534State.calcIn[1]);
 
-    fprintf( stderr, "Analog: %f %f %f %f %f\n", tps534State.analogIn[0], tps534State.analogIn[1], tps534State.analogIn[2], tps534State.analogIn[3], tps534State.analogIn[4]) ;
-    fprintf( stderr, "Calc  : %f %f %f %f\n", tps534State.calcIn[0], tps534State.calcIn[1], tps534State.calcIn[2], tps534State.calcIn[3]) ;
+    if (debug >= 1) {
+      fprintf( stderr, "Analog: %f %f %f %f %f\n", tps534State.analogIn[0], tps534State.analogIn[1], tps534State.analogIn[2], tps534State.analogIn[3], tps534State.analogIn[4]) ;
+      fprintf( stderr, "Calc  : %f %f %f %f\n", tps534State.calcIn[0], tps534State.calcIn[1], tps534State.calcIn[2], tps534State.calcIn[3]) ;
+    }
     // toggle LED of Oak as a visible heart beat.
     read_oak_cnt++;
     /* if (read_oak_cnt == 1) { */
