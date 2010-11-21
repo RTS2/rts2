@@ -382,7 +382,7 @@ int MICCD::stopExposure ()
 				return -1;
 			break;
 	}
-	return 0;
+	return Camera::stopExposure ();
 }
 
 int MICCD::doReadout ()

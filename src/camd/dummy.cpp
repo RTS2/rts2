@@ -163,11 +163,6 @@ class Dummy:public Camera
 			addDataType (RTS2_DATA_ULONG);
 		}
 
-		virtual int stopExposure ()
-		{
-			return 0;
-		}
-
 	private:
 		bool supportFrameT;
 		int infoSleep;

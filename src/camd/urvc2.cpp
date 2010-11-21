@@ -409,7 +409,7 @@ int Urvc2::stopExposure ()
 	if (MicroCommand (MC_END_EXPOSURE, cameraID, &eep, NULL))
 		return -1;
 
-	return 0;
+	return Camera::stopExposure ();
 }
 
 int Urvc2::setCoolTemp (float coolpoint)

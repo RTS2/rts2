@@ -179,7 +179,7 @@ int Andor::stopExposure ()
 	nullExposureConn ();
 	AbortAcquisition ();
 	FreeInternalMemory ();
-	return 0;
+	return Camera::stopExposure ();
 }
 
 long Andor::isExposing ()

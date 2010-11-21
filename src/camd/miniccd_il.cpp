@@ -540,9 +540,7 @@ MiniccdIl::doReadout ()
 	return -2;
 }
 
-
-void
-MiniccdIl::stopChipExposure (int chip_id)
+void MiniccdIl::stopChipExposure (int chip_id)
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_ABORT_LEN / CCD_ELEM_SIZE];
 	/*
@@ -555,12 +553,11 @@ MiniccdIl::stopChipExposure (int chip_id)
 	write (fd_chip[chip_id], (char *) msg, CCD_MSG_ABORT_LEN);
 }
 
-int
-MiniccdIl::stopExposure ()
+int MiniccdIl::stopExposure ()
 {
 	stopChipExposure (0);
 	stopChipExposure (1);
-	return 0;
+	return Camera::stopExposure ();
 }
 
 MiniccdIl::MiniccdIl (int in_argc, char **in_argv):Camera (in_argc, in_argv)

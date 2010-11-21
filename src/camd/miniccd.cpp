@@ -231,7 +231,7 @@ int Miniccd::stopExposure ()
 	msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
 	msg[CCD_MSG_INDEX] = CCD_MSG_ABORT;
 	write (fd_chip, (char *) msg, CCD_MSG_ABORT_LEN);
-	return 0;
+	return Camera::stopExposure ();
 }
 
 Miniccd::Miniccd (int in_argc, char **in_argv):Camera (in_argc, in_argv)

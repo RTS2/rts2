@@ -176,7 +176,7 @@ int Apogee::stopExposure ()
 {
 	camera->Reset ();
 	camera->Flush ();
-	return 0;
+	return Camera::stopExposure ();
 }
 
 int Apogee::doReadout ()
