@@ -25,7 +25,7 @@ if i > 9:
 	import pyfits
 	import math
 	ff = pyfits.fitsopen(fn)
-	fwhm /= a
+	fwhm /= i
 	suffix = ff[0].header['CCD_NAME']
 	print 'double fwhm{0} "calculated FWHM" {1}'.format(suffix,fwhm)
 	zd = 90 - ff[0].header['TEL_ALT']
