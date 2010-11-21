@@ -57,6 +57,27 @@ namespace rts2camd
  */
 class Apogee:public Camera
 {
+	public:
+		Apogee (int argc, char **argv);
+		virtual ~ Apogee (void);
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
+
+	protected:
+		virtual int initChips ();
+		virtual int setBinning (int in_vert, int in_hori);
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int endExposure ();
+		virtual int stopExposure ();
+		virtual int doReadout ();
+		virtual int endReadout ();
+
 	private:
 		CCameraIO *camera;
 		int device_id;
@@ -69,35 +90,13 @@ class Apogee:public Camera
 
 		Rts2ValueSelection *coolerStatus;
 		Rts2ValueSelection *coolerMode;
-
-	protected:
-		virtual int initChips ();
-		virtual int setBinning (int in_vert, int in_hori);
-		virtual int startExposure ();
-		virtual long isExposing ();
-		virtual int endExposure ();
-		virtual int stopExposure ();
-		virtual int doReadout ();
-		virtual int endReadout ();
-
-	public:
-		Apogee (int argc, char **argv);
-		virtual ~ Apogee (void);
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int setCoolTemp (float new_temp);
-		virtual void afterNight ();
 };
 
 };
 
 using namespace rts2camd;
 
-int
-Apogee::initChips ()
+int Apogee::initChips ()
 {
 	setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
 	setBinning (1, 1);
@@ -107,18 +106,14 @@ Apogee::initChips ()
 	return Camera::initChips ();
 }
 
-
-int
-Apogee::setBinning (int in_vert, int in_hori)
+int Apogee::setBinning (int in_vert, int in_hori)
 {
 	camera->m_ExposureBinX = in_hori;
 	camera->m_ExposureBinY = in_vert;
 	return Camera::setBinning (in_vert, in_hori);
 }
 
-
-int
-Apogee::startExposure ()
+int Apogee::startExposure ()
 {
 	bool ret;
 	ret = camera->Expose (getExposure (), getExpType () ? 0 : 1);
@@ -133,9 +128,7 @@ Apogee::startExposure ()
 	return 0;
 }
 
-
-long
-Apogee::isExposing ()
+long Apogee::isExposing ()
 {
 	long ret;
 	time_t now;
@@ -173,26 +166,20 @@ Apogee::isExposing ()
 	return -2;
 }
 
-
-int
-Apogee::endExposure ()
+int Apogee::endExposure ()
 {
 	camera->m_WaitingforTrigger = false;
 	return Camera::endExposure ();
 }
 
-
-int
-Apogee::stopExposure ()
+int Apogee::stopExposure ()
 {
 	camera->Reset ();
 	camera->Flush ();
-	return Camera::stopExposure ();
+	return 0;
 }
 
-
-int
-Apogee::doReadout ()
+int Apogee::doReadout ()
 {
 	bool status;
 	short int width, height;
@@ -214,15 +201,12 @@ Apogee::doReadout ()
 	return -2;
 }
 
-
-int
-Apogee::endReadout ()
+int Apogee::endReadout ()
 {
 	camera->Reset ();
 	camera->Flush ();
 	return Camera::endReadout ();
 }
-
 
 //-------------------------------------------------------------
 // CfgGet
@@ -230,8 +214,7 @@ Apogee::endReadout ()
 // Retrieve a parameter from an INI file. Returns a status code
 // and the paramter string in retbuff.
 //-------------------------------------------------------------
-bool
-Apogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff, short bufflen, short *parmlen)
+bool Apogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff, short bufflen, short *parmlen)
 {
 	short gotsect;
 	char tbuf[256];
@@ -325,8 +308,7 @@ Apogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *re
 // or RegOffset parameters are specified (not equal to -1) then one or both of these
 // values are used for the m_BaseAddress and m_RegisterOffset properties overriding those
 // settings in the INI file.
-int
-Apogee::config_load (short BaseAddress, short RegOffset)
+int Apogee::config_load (short BaseAddress, short RegOffset)
 {
 	short plen;
 	char retbuf[256];
@@ -777,9 +759,7 @@ Apogee::config_load (short BaseAddress, short RegOffset)
 	return CCD_OPEN_NOERR;
 }
 
-
-Apogee::Apogee (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Apogee::Apogee (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
@@ -809,15 +789,12 @@ Camera (in_argc, in_argv)
 	camera = NULL;
 }
 
-
 Apogee::~Apogee (void)
 {
 	delete camera;
 }
 
-
-int
-Apogee::processOption (int in_opt)
+int Apogee::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -833,9 +810,7 @@ Apogee::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Apogee::init ()
+int Apogee::init ()
 {
 	int ret;
 	ret = Camera::init ();
@@ -862,9 +837,7 @@ Apogee::init ()
 	return initChips ();
 }
 
-
-int
-Apogee::info ()
+int Apogee::info ()
 {
 	coolerStatus->setValueInteger (camera->read_CoolerStatus ());
 	coolerMode->setValueInteger (camera->read_CoolerMode ());

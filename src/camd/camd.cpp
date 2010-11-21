@@ -168,11 +168,6 @@ int Camera::endExposure ()
 	return 0;
 }
 
-int Camera::stopExposure ()
-{
-	return endExposure ();
-}
-
 int Camera::processData (char *data, size_t size)
 {
 	return size;

@@ -329,7 +329,7 @@ int MICCD::startExposure ()
 			if (getExposure () > 2)
 				setExposure (2);
 			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
-			if (ret)
+			if (ret < 0)
 				return -1;
 			break;
 		case G2:
@@ -371,9 +371,7 @@ int MICCD::stopExposure ()
 	switch (camera.model)
 	{
 		case G10800:
-			std::cerr << "aborting exposure" << std::endl;
 			ret = miccd_abort_exposure (&camera);
-			std::cerr << "aborted " << ret << std::endl;
 			if (ret)
 				return -1;
 			break;

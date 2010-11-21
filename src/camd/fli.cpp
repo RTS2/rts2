@@ -185,7 +185,7 @@ int Fli::stopExposure ()
 		if (ret)
 			return ret;
 	}
-	return Camera::stopExposure ();
+	return 0;
 }
 
 int Fli::doReadout ()

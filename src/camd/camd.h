@@ -653,7 +653,7 @@ class Camera:public Rts2ScriptDevice
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int stopExposure ();
+		virtual int stopExposure () = 0;
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 

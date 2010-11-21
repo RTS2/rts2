@@ -560,12 +560,10 @@ MiniccdIl::stopExposure ()
 {
 	stopChipExposure (0);
 	stopChipExposure (1);
-	return Camera::stopExposure ();
+	return 0;
 }
 
-
-MiniccdIl::MiniccdIl (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+MiniccdIl::MiniccdIl (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	fd_ccd = -1;
 	device_file = NULL;

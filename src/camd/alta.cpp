@@ -166,7 +166,7 @@ int Alta::stopExposure ()
 {
 	// we need to digitize image:(
 	alta->StopExposure (true);
-	return Camera::stopExposure ();
+	return 0;
 }
 
 int Alta::doReadout ()
