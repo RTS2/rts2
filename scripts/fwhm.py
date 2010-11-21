@@ -25,12 +25,13 @@ if i > 9:
 	import pyfits
 	import math
 	ff = pyfits.fitsopen(fn)
-	fwhm /= i
-	print 'double fwhm "calculated FWHM" {0}'.format(fwhm)
+	fwhm /= a
+	suffix = ff[0].header['CCD_NAME']
+	print 'double fwhm{0} "calculated FWHM" {1}'.format(suffix,fwhm)
 	zd = 90 - ff[0].header['TEL_ALT']
-	print 'double fwhm_zenith "estimated zenith FWHM" {0}'.format(fwhm * (math.cos(math.radians(zd)) ** 0.6))
-	print 'double fwhm_foc "focuser positon" {0}'.format(ff[0].header['FOC_POS'])
-	print 'double fwhm_nstars "number of stars for FWHM calculation" {0}'.format(i)
-	print 'double fwhm_zd "[deg] zenith distance of the FWHM measurement" {0}'.format(zd)
-	print 'double fwhm_az "[deg] azimuth of the FWHM measurement" {0}'.format(ff[0].header['TEL_AZ'])
-	print 'double fwhm_airmass "airmass of the FWHM measurement" {0}'.format(ff[0].header['AIRMASS'])
+	print 'double fwhm_zenith{0} "estimated zenith FWHM" {1}'.format(suffix,fwhm * (math.cos(math.radians(zd)) ** 0.6))
+	print 'double fwhm_foc{0} "focuser positon" {1}'.format(suffix,ff[0].header['FOC_POS'])
+	print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,i)
+	print 'double fwhm_zd{0} "[deg] zenith distance of the FWHM measurement" {1}'.format(suffix,zd)
+	print 'double fwhm_az{0} "[deg] azimuth of the FWHM measurement" {1}'.format(suffix,ff[0].header['TEL_AZ'])
+	print 'double fwhm_airmass{0} "airmass of the FWHM measurement" {1}'.format(suffix,ff[0].header['AIRMASS'])
