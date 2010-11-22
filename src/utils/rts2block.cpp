@@ -529,6 +529,23 @@ bool Rts2Block::isGoodWeather ()
 	return true;
 }
 
+bool Rts2Block::canMove ()
+{
+	if (getCentraldConns ()->size () <= 0)
+		return false;
+	// check if all masters are up and running and think it is good idea to open
+	// the roof
+	connections_t::iterator iter;
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+	{
+		if (!((*iter)->isConnState (CONN_CONNECTED) || (*iter)->isConnState (CONN_AUTH_OK)))
+			return false;
+		if ((*iter)->canMove () == false)
+			return false;
+	}
+	return true;
+}
+
 bool Rts2Block::allCentraldRunning ()
 {
 	if (getCentraldConns ()->size () <= 0)
