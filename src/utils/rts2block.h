@@ -365,6 +365,15 @@ class Rts2Block: public Rts2App
 		virtual bool isGoodWeather ();
 
 		/**
+		 * Returns true if system can physicali move devices connected to the system.
+		 *
+		 * Similarly to weather state, the system has move state. If
+		 * moves are inhibited at the software, system shall stop any move\
+		 * and ingnore any further move commands.
+		 */
+		virtual bool canMove ();
+
+		/**
 		 * Returns true if all connections to central servers are up and running.
 		 *
 		 * @return True if all connections to central servers are up and running.

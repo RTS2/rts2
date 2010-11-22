@@ -37,8 +37,11 @@ class Dummy:public Sensor
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
+			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
 			createValue (testOnOff, "test_on_off", "test true/false displayed as on/off", false, RTS2_VALUE_WRITABLE | RTS2_VWHEN_TRIGGERED | RTS2_DT_ONOFF);
+
 			goodWeather->setValueBool (false);
+			stopMove->setValueBool (false);
 			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
 			createValue (statTest, "test_stat", "test stat value", true);
 
@@ -117,6 +120,10 @@ class Dummy:public Sensor
 			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
 				return 0;
 			}
+			if (old_value == stopMove)
+			{
+				setStopState (((Rts2ValueBool *)newValue)->getValueBool (), "move state set from stop_move value");
+			}
 			if (old_value == timerEnabled)
 			{
 				if (((Rts2ValueBool *) newValue)->getValueBool () == true)
@@ -173,6 +180,7 @@ class Dummy:public Sensor
 	private:
 		Rts2ValueInteger *testInt;
 		Rts2ValueBool *goodWeather;
+		Rts2ValueBool *stopMove;
 		Rts2ValueBool *testOnOff;
 		Rts2ValueDoubleStat *statTest;
 		rts2core::DoubleArray *statContent1;

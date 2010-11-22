@@ -28,13 +28,11 @@ void Rts2ConnCentrald::setState (int in_value, char *msg)
 	Rts2Conn::setState (in_value, msg);
 	// distribute weather updates..
 	if (serverState->maskValueChanged (WEATHER_MASK))
-	{
 		master->weatherChanged (getName (), msg);
-	}
+	if (serverState->maskValueChanged (STOP_MASK))
+	  	master->stopChanged (getName (), msg);
 	if (serverState->maskValueChanged (BOP_MASK))
-	{
 		master->bopMaskChanged ();
-	}
 }
 
 Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master, int in_centrald_id):Rts2Conn (in_sock, in_master)
@@ -588,6 +586,7 @@ void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
 	// update weather
 	weatherChanged (conn->getName (), "connection removed");
+	stopChanged (conn->getName (), "connection removed");
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
 	connections_t::iterator iter;
@@ -758,6 +757,7 @@ void Rts2Centrald::deviceReady (Rts2Conn * conn)
 	Rts2Daemon::deviceReady (conn);
 	// check again for weather state..
 	weatherChanged (conn->getName (), "device ready");
+	stopChanged (conn->getName (), "device ready");
 }
 
 void Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
@@ -849,6 +849,46 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 		badWeatherReason->setValueCharArr ("");
 	}
 	sendValueAll (badWeatherReason);
+}
+
+void Rts2Centrald::stopChanged (const char * device, const char * msg)
+{
+	// state of the required devices
+	std::vector <std::string> failedArr;
+	std::vector <std::string>::iterator namIter;
+	for (namIter = requiredDevices->valueBegin (); namIter != requiredDevices->valueEnd (); namIter++)
+		failedArr.push_back (*namIter);
+
+	connections_t::iterator iter;
+	// check if some connection block weather
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter ++)
+	{
+		// if connection is required..
+		namIter = std::find (failedArr.begin (), failedArr.end (), std::string ((*iter)->getName ()));
+		if (namIter != failedArr.end ())
+		{
+			if ((*iter)->canMove () == true && (*iter)->isConnState (CONN_CONNECTED))
+				failedArr.erase (namIter);
+			// otherwise, connection name will not be erased from
+			// failedArr, so failedArr size will be larger then 0,
+			// so newWeather will be set to false in size check - few lines
+			// bellow.
+		}
+		else  if ((*iter)->canMove () == false)
+		{
+			failedArr.push_back ((*iter)->getName ());
+		}
+	}
+
+	setStopState (failedArr.size () > 0 ? true : false, "stop state update from stopChanged");
+	if (failedArr.size () > 0)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "failed devices:";
+		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
+			ls << " " << (*namIter);
+		ls << sendLog;
+	}
 }
 
 void Rts2Centrald::bopMaskChanged ()

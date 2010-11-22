@@ -418,6 +418,10 @@ std::string Rts2Conn::getStateString ()
 	if (getState () & BAD_WEATHER)
 	  	_os << " | BAD WEATHER";
 
+	// stop everything..
+	if (getState () & STOP_EVERYTHING)
+		_os << " | STOP";
+
 	// block states and full BOP states
 	if (getState () & BOP_EXPOSURE)
 		_os << " | BLOCK EXPOSURE";

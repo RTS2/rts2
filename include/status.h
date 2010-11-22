@@ -48,7 +48,7 @@
  *
  * @ingroup RTS2Block
  */
-#define BOP_MASK            0x7f000000
+#define BOP_MASK            0x3f000000
 
 /**
  * Block exposures.
@@ -84,6 +84,25 @@
  * @ingroup RTS2Block
  */
 #define BOP_TRIG_EXPOSE     0x10000000
+
+/**
+ * Stop any move - emergency state.
+ *
+ * @ingroup RTS2Block
+ */
+#define STOP_MASK           0x40000000
+
+/**
+ * System can physicaly move devices.
+ */
+#define CAN_MOVE            0x00000000
+
+/**
+ * Stop any move.
+ *
+ * @ingroup RTS2Block
+ */
+#define STOP_EVERYTHING     0x40000000
 
 /**
  * Mask for device weather voting.

@@ -155,6 +155,13 @@ class Rts2Conn:public Rts2Object
 		 */
 		bool isGoodWeather () { return (getState () & WEATHER_MASK) == GOOD_WEATHER; }
 
+		/**
+		 * Retrieved move allowed state.
+		 *
+		 * @return True if connection is reporting that moves are allowed.
+		 */
+		bool canMove () { return (getState () & STOP_MASK) == CAN_MOVE; }
+
 		int getErrorState () { return getState () & DEVICE_ERROR_MASK; }
 		int getBopState () { return getState () & BOP_MASK; }
 

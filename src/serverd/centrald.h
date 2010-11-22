@@ -150,6 +150,13 @@ class Rts2Centrald:public Rts2Daemon
 		void weatherChanged (const char * device, const char * msg);
 
 		/**
+		 * Called when some device signal stop state.
+		 *
+		 * @callgraph
+		 */
+		void stopChanged (const char *device, const char * msg);
+
+		/**
 		 * Called when block of operation device mask changed. It checks
 		 * blocking state of all devices and updates accordingly master
 		 * blocking state.

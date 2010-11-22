@@ -438,6 +438,14 @@ class Rts2Daemon:public Rts2Block
 		void execTrigger (const char *reason);
 
 		/**
+		 * Stop any movement - emergency situation.
+		 */
+		bool getStopEverything ()
+		{
+			return (getState () & STOP_MASK) == STOP_EVERYTHING;
+		}
+
+		/**
 		 * Get daemon local weather state. Please use isGoodWeather()
 		 * to test for system weather state.
 		 *
@@ -456,10 +464,17 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void setWeatherState (bool good_weather, const char *msg)
 		{
-			if (good_weather)
-				maskState (WEATHER_MASK, GOOD_WEATHER, msg);
-			else
-				maskState (WEATHER_MASK, BAD_WEATHER, msg);
+			maskState (WEATHER_MASK, good_weather ? GOOD_WEATHER : BAD_WEATHER, msg);
+		}
+
+		bool getStopState ()
+		{
+			return (getState () & STOP_MASK) == STOP_EVERYTHING;
+		}
+
+		void setStopState (bool stop_state, const char *msg)
+		{
+			maskState (STOP_MASK, stop_state ? STOP_EVERYTHING : CAN_MOVE, msg);
 		}
 
 		virtual void sigHUP (int sig);
