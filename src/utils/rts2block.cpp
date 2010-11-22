@@ -361,7 +361,7 @@ void Rts2Block::oneRunLoop ()
 	struct timeval read_tout;
 	double t_diff;
 
-	if (timers.begin () != timers.end () && (t_diff = timers.begin ()->first - getNow ()) < idle_timeout)
+	if (timers.begin () != timers.end () && (USEC_SEC * (t_diff = timers.begin ()->first - getNow ())) < idle_timeout)
 	{
 		read_tout.tv_sec = t_diff;
 		read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
