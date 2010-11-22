@@ -326,11 +326,10 @@ int MICCD::startExposure ()
 	{
 		case G10800:
 			// G10800 does not allow > 2 sec exposures?
-			if (getExposure () > 2)
-				setExposure (2);
 			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 			if (ret < 0)
 				return -1;
+			setExposure (((float) ret) / 8000.0);
 			break;
 		case G2:
 		case G3:	
