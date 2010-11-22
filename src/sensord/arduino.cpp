@@ -34,10 +34,12 @@ class Arduino:public Sensor
 	public:
 		Arduino (int argc, char **argv);
 
+		virtual int commandAuthorized (Rts2Conn *conn);
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
 		virtual int info ();
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *arduinoConn;
@@ -63,6 +65,16 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection");
 
 	setIdleInfoInterval (1);
+}
+
+int Arduino::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		setStopState (false, "reseted");
+		return 0;
+	}
+	return Sensor::commandAuthorized (conn);
 }
 
 int Arduino::processOption (int opt)
@@ -114,6 +126,9 @@ int Arduino::info ()
 	raLimit->setValueBool (i & 0x01);
 	raHome->setValueBool (i & 0x02);
 	decHome->setValueBool (i & 0x04);
+
+	if (raLimit->getValueBool ())
+		setStopState (true, "RA axis beyond limits");
 
 	return Sensor::info ();
 }
