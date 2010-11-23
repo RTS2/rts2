@@ -28,10 +28,6 @@
 #define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
 
-#define SLEW_RATE_1200 '2'
-#define SLEW_RATE_0900 '1'
-#define SLEW_RATE_0600 '0'
-
 #define MOVE_RATE_120000 '0'
 #define MOVE_RATE_060000 '1'
 #define MOVE_RATE_006400 '2'
@@ -40,15 +36,9 @@
 #define MOVE_RATE_000050 '5'
 #define MOVE_RATE_000025 '6'
 
-#define setAPPark()         serConn->writePort ("#:KA#", 5)
 #define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
 #define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
 
-#define TRACK_MODE_LUNAR         0 
-#define TRACK_MODE_SOLAR         1 
-#define TRACK_MODE_SIDEREAL      2 
-#define TRACK_MODE_ZERO          3 
-#define TRACK_MODE_ZERO_NO_RESET 4 
 #define DIFFERENCE_MAX_WHILE_NOT_TRACKING 1.  // [deg]
 
 namespace rts2teld
@@ -87,8 +77,9 @@ class APGTO:public TelLX200 {
 		virtual int endPark ();
   
 		virtual int abortAnyMotion () ;
-		virtual void valueChanged (Rts2Value * changed_value);
 	protected:
+		virtual int setValue (Rts2Value * oldValue, Rts2Value *newValue);
+
 		virtual int applyCorrectionsFixed (double ra, double dec);
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
@@ -111,10 +102,9 @@ class APGTO:public TelLX200 {
 		int setAPUTCOffset (int hours);
 		int APSyncCMR (char *matchedObject);
 		int selectAPMoveToRate (int moveToRate);
-		int selectAPTrackingMode (int trackMode);
+		int selectAPTrackingMode ();
 		int tel_read_declination_axis ();
 
-		int tel_set_move_rate (char moveToRate);
 		int setAPSiteLongitude( double Long) ;
 		int setAPSiteLatitude( double Lat) ;
 		int setAPLocalTime(int x, int y, int z) ;
@@ -125,7 +115,6 @@ class APGTO:public TelLX200 {
 		double siderealTime ();
 		int checkSiderealTime (double limit) ;
 		int setBasicData ();
-		void ParkDisconnect ();
 
 		int tel_slew_to (double ra, double dec);
 		int tel_slew_to_altaz (double alt, double az);
@@ -142,22 +131,25 @@ class APGTO:public TelLX200 {
 		int tel_check_coords (double ra, double dec);
 
 		// fixed offsets
-		Rts2ValueRaDec   *fixedOffsets;
-		// further discussion with Petr required
-		//int changeMasterState (int new_state);
-		// Astro-Physics properties
-		Rts2ValueInteger *APslew_rate;
-		Rts2ValueInteger *APmove_rate;
-		Rts2ValueDouble  *APutc_offset;
-		Rts2ValueString  *APfirmware ;
-		Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
-		Rts2ValueBool    *mount_tracking ;
-		Rts2ValueBool    *assume_parked;
-		Rts2ValueBool    *collision_detection; 
-		Rts2ValueBool    *avoidBellowHorizon;
+		Rts2ValueRaDec *fixedOffsets;
+		
+		Rts2ValueSelection *trackingRate;
+		Rts2ValueSelection *APslew_rate;
+		Rts2ValueSelection *APcenter_rate;
+		Rts2ValueSelection *APguide_rate;
+
+		Rts2ValueSelection *raGuide;
+		Rts2ValueSelection *decGuide;
+
+		Rts2ValueDouble *APutc_offset;
+		Rts2ValueString *APfirmware ;
+		Rts2ValueString *DECaxis_HAcoordinate ; // see pier_collision.c 
+		Rts2ValueBool *assume_parked;
+		Rts2ValueBool *collision_detection; 
+		Rts2ValueBool *avoidBellowHorizon;
 };
 
-};
+}
 
 using namespace rts2teld;
 
@@ -209,8 +201,8 @@ int APGTO::getAPVersionNumber()
 	APfirmware->setValueString ("none");
 	if (( ret = serConn->writeRead ( "#:V#", 4, version, 32, '#')) < 1 )
 		return -1 ;
-	version[ret] = '\0';
-	APfirmware->setValueString ("test"); //version);
+	version[ret - 1] = '\0';
+	APfirmware->setValueString (version); //version);
 	return 0 ;
 }
 
@@ -365,78 +357,22 @@ APGTO::APSyncCMR(char *matchedObject)
 		return error_type;
 	return 0;
 }
+
 /*!
  * Writes to APGTO the tracking mode
  *
- *
- * @param trackMode
- *
  * @return -1 on failure, 0 otherwise
  */
-int APGTO::selectAPTrackingMode(int trackMode)
+int APGTO::selectAPTrackingMode ()
 {
-  int error_type;
-  double RA ;
-  double JD ;
-  double lng ;
-  double local_sidereal_time ;
-  switch (trackMode) {
-    /* Lunar */
-  case TRACK_MODE_LUNAR:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to lunar." << sendLog;
-    if ( (error_type = serConn->writePort ("#:RT0#", 6)) < 0)
-      return error_type;
-    mount_tracking->setValueBool(true) ;
-    break;
-    
-    /* Solar */
-  case TRACK_MODE_SOLAR:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to solar." << sendLog;
-    if ( (error_type = serConn->writePort ("#:RT1#", 6)) < 0)
-      return error_type;
-    mount_tracking->setValueBool(true) ;
-    break;
+	int ret;
 
-    /* Sidereal */
-  case TRACK_MODE_SIDEREAL:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to sidereal." << sendLog;
-    if ( (error_type = serConn->writePort ("#:RT2#", 6)) < 0)
-      return error_type;
-    mount_tracking->setValueBool(true) ;
-    break;
+	char *v = (char *) trackingRate->getData ();
 
-    /* Zero, used normally */
-  case TRACK_MODE_ZERO:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to zero." << sendLog;
-    if ( (error_type = serConn->writePort ( "#:RT9#", 6)) < 0)
-      return error_type;
-    mount_tracking->setValueBool(false) ;
-    notMoveCupola() ;
-
-    if( tel_read_ra ()) {
-      logStream (MESSAGE_ERROR) <<"APGTO::selectAPTrackingMode can not read RA." << sendLog;
-      return -1 ;
-    }
-    RA  = getTelRa() ;
-    JD  = ln_get_julian_from_sys ();
-    lng = telLongitude->getValueDouble ();
-    local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
-    on_zero_HA= fmod( local_sidereal_time- RA+ 360., 360.) ;
-    break;
-    /* Zero, used if necessary during ::info, ::idle */
-  case TRACK_MODE_ZERO_NO_RESET:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to zero, no reset of HA." << sendLog;
-    if ( (error_type = serConn->writePort ( "#:RT9#", 6)) < 0)
-      return error_type;
-    mount_tracking->setValueBool(false) ;
-    notMoveCupola() ;
-
-    break;
-  default:
-    return -1;
-    break;
-  }
-  return 0;
+	ret = serConn->writePort (v, strlen (v));
+	if (ret != 0)
+		return -1;
+	return 0;
 }
 
 /*!
@@ -581,60 +517,6 @@ int APGTO::tel_read_declination_axis ()
 }
 
 /*!
- * Set move rate.
- *
- * @param new_rate	new move speed to set.
- *
- * @return -1 on failure & set errno, 5 (>=0) otherwise
- */
-int
-APGTO::tel_set_move_rate (char moveToRate)
-{
-  char command[6];
-  switch (moveToRate) {
-    /* 0.25x*/
-  case MOVE_RATE_000025:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 0.25x." << sendLog;
-    strcpy( command, "#:RG0#"); 
-    /* 0.5x*/
-    break;
-  case MOVE_RATE_000050:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 0.5x." << sendLog;
-    strcpy( command, "#:RG1#"); 
-    break;
-    /* 1x*/
-  case MOVE_RATE_000100:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 1x." << sendLog;
-    strcpy( command, "#:RG2#"); 
-    break;
-    /* 12x*/
-  case MOVE_RATE_001200:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 12x." << sendLog;
-    strcpy( command, "#:RC0#"); 
-    break;
-    /* 64x */
-  case MOVE_RATE_006400:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 64x." << sendLog;
-    strcpy( command, "#:RC1#"); 
-    break;
-    /* 600x */
-  case MOVE_RATE_060000: 
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 600x." << sendLog;
-    strcpy( command, "#:RC2#"); 
-    break;
-    /* 1200x */
-  case MOVE_RATE_120000:
-    //logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 1200x." << sendLog;
-    strcpy( command, "#:RC3#"); 
-    break;
-  default:
-    return -1;
-    break;
-  }
-  return serConn->writePort (command, 6);
-}
-
-/*!
  * Slew (=set) APGTO to new coordinates.
  *
  * @param ra 		new right ascenation
@@ -706,7 +588,7 @@ APGTO::tel_slew_to (double ra, double dec)
   // but:
   // if target position is ok, mount can track again
   // renable tracking before slew
-  if( ! mount_tracking->getValueBool()) {
+  /*if( ! mount_tracking->getValueBool()) {
     if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
       notMoveCupola() ;
@@ -714,7 +596,7 @@ APGTO::tel_slew_to (double ra, double dec)
     } else {
       logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
     }
-  }
+  }*/
 	// slew now
 	if ((ret = serConn->writeRead ("#:MS#", 5, &retstr, 1)) < 0)
 		return -1;
@@ -784,12 +666,12 @@ APGTO::tel_slew_to_altaz(double alt, double az)
 {
 	char retstr;
 	
-	if(tel_write_altitude(alt) < 0)
+	if (tel_write_altitude(alt) < 0)
 	{
 		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_altitude("<< alt<< ") failed"<< sendLog;
                 return -1;
 	}
-	if(tel_write_azimuth(az) < 0)
+	if (tel_write_azimuth(az) < 0)
 	{
 		logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to_altaz tel_write_azimuth("<< az<< ") failed"<< sendLog;
                 return -1;
@@ -801,7 +683,7 @@ APGTO::tel_slew_to_altaz(double alt, double az)
         }
 
 	logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to_altaz #:MS# on alt " << alt << ", az " << az << sendLog ;
-	if(retstr == '0')
+	if (retstr == '0')
 	{
 		return 0;
 	}
@@ -1204,7 +1086,6 @@ int APGTO::stopMove ()
 	if ((error_type = serConn->writePort ("#:Q#", 4)) < 0)
 		return error_type;
 
-	mount_tracking->setValueBool (false);
 	notMoveCupola ();
 	sleep (1);
 	maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move stopped");
@@ -1268,55 +1149,25 @@ int APGTO::startPark ()
 
 int APGTO::isParking ()
 {
-  int ret= isMoving() ;
+	return isMoving ();
+}
 
-  if( ret > 0) {
-    return USEC_SEC; // still moving
-  }
-  switch (ret) {
-  case -2 :
-    return -2 ; // target reached
-    break ;
-  case -1: // read error 
-    logStream (MESSAGE_ERROR) << "APGTO::isParking coordinates read error" << sendLog;
-    return -1 ;
-    break ;
-  default: 
-    logStream (MESSAGE_ERROR) << "APGTO::isParking no valid case :" <<ret << sendLog;
-    break ;
-  }
-  return -1 ;
-}
-int
-APGTO::endPark ()
+int APGTO::endPark ()
 {
-  logStream (MESSAGE_DEBUG) << "APGTO::endPark" << sendLog;
-  ParkDisconnect() ;
-  return 0;
-}
-void 
-APGTO::ParkDisconnect()
-{
-  // The AP mount will not surely stop with #:KA alone
-  if (stopMove () < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect motion stop failed #:Q#" << sendLog;
-    return;
-  }
-  if ( selectAPTrackingMode(TRACK_MODE_ZERO) < 0 ) { 
-    logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect setting tracking mode ZERO failed." << sendLog;
-    return;
-  }
-  // wildi ToDo: not yet decided
-  // issuing #:KA# means a power cycle of the mount (not always)
-  // From experience I know that the Astro-Physics controller saves the last position
-  // without #:KA#, but not always!
-  // so no #:KA# is sent and I leave the file handle open
-  //  if (setAPPark() < 0) {
-  //  logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect parking failed #:KA#" << sendLog;
-  //  return;
-  //}
-  logStream (MESSAGE_INFO) << "APGTO::ParkDisconnect motion stopped, the mount is parked but still connected (no #:KA#)." << sendLog; 
-  return;
+	// The AP mount will not surely stop with #:KA alone
+	if (stopMove () < 0)
+	{
+		logStream (MESSAGE_ERROR) << "APGTO::endPark motion stop failed #:Q#" << sendLog;
+		return -1;
+	}
+	trackingRate->setValueInteger (0);
+	int ret = selectAPTrackingMode ();
+	if (ret)
+		return -1;
+
+	serConn->writePort (":KA#", 4);
+
+	return 0;
 }
 
 int APGTO::abortAnyMotion ()
@@ -1328,7 +1179,8 @@ int APGTO::abortAnyMotion ()
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion stop motion #:Q# failed, SWITCH the mount OFF" << sendLog;
       failed = 1 ;
     }
-    if (( ret= selectAPTrackingMode(TRACK_MODE_ZERO)) < 0 ) {
+	trackingRate->setValueInteger (0);
+    if (( ret= selectAPTrackingMode()) < 0 ) {
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion setting tracking mode ZERO failed." << sendLog;
       failed = 1 ;
     }
@@ -1341,59 +1193,34 @@ int APGTO::abortAnyMotion ()
     }
 }
 
-void 
-APGTO::valueChanged (Rts2Value * changed_value)
+int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
 {
-  int ret= -1 ;
-  int slew_rate= -1 ;
-  int move_rate= -1 ;
-  char command ;
+	if (oldValue == trackingRate)
+	{
+		trackingRate->setValueInteger (newValue->getValueInteger ());
+		return selectAPTrackingMode () ? -2 : 0;
+	}
+	if (oldValue == APslew_rate || oldValue == APcenter_rate || oldValue == APguide_rate)
+	{
+		char cmd[] = ":RGx#";
+		if (oldValue == APslew_rate)
+			cmd[2] = 'S';
+		else if (oldValue == APcenter_rate)
+			cmd[2] = 'C';
+		// else oldValue == APguide_rate
 
-  if (changed_value ==APslew_rate){
-    if(( slew_rate= APslew_rate->getValueInteger())== 1200) {
-      command= SLEW_RATE_1200 ;
-    } else if( APslew_rate->getValueInteger()== 900) {
-      command= SLEW_RATE_0900 ;
-    } else if( APslew_rate->getValueInteger()== 600) {
-      command= SLEW_RATE_0600 ;
-    } else {
-      APslew_rate->setValueInteger(-1);  
-      logStream (MESSAGE_ERROR) << "APGTO::valueChanged wrong slew rate " << APslew_rate->getValue() << ", valid: 1200, 900, 600" << sendLog;
-      return ;
-    }
-
-    if(( ret= tel_set_slew_rate (command)) !=5) {
-      // wildi ToDo: thinking about what to do in this case
-      APslew_rate->setValueInteger(-1); 
-      logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_slew_rate failed" << sendLog;
-      // return -1 ;
-    }
-    return ;
-  } else if (changed_value ==APmove_rate) {
-
-    if(( move_rate= APmove_rate->getValueInteger())== 600) {
-      command= MOVE_RATE_060000 ;
-    } else if( APmove_rate->getValueInteger()== 64) {
-      	  command= MOVE_RATE_006400 ;
-    } else if( APmove_rate->getValueInteger()== 12) {
-      command= MOVE_RATE_001200 ;
-    } else if( APmove_rate->getValueInteger()== 1) {
-      command= MOVE_RATE_000100 ;
-    } else {
-      APmove_rate->setValueInteger(-1);  
-      logStream (MESSAGE_ERROR) << "APGTO::valueChanged wrong move rate " << APmove_rate->getValue() << ", valid: 600, 64, 12, 1" << sendLog;
-      return ;
-    }
-
-    if(( ret= tel_set_move_rate (command)) !=5) {
-      // wildi ToDo: thinking about what to do in this case
-      APmove_rate->setValueInteger(-1); 
-      logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_move_rate failed" << sendLog;
-      // return -1 ;
-    }
-    return ;
-  }
-  TelLX200::valueChanged (changed_value);
+		cmd[3] = newValue->getValueInteger ();
+		return serConn->writePort (cmd, 4) ? -2 : 0;
+	}
+	if (oldValue == raGuide || oldValue == decGuide)
+	{
+		const char *cmd[] = {":Qe#:Qw#", ":Me#", "Mw#"};
+		if (oldValue == decGuide)
+			cmd = {":Qs#:Qn#", ":Ms#", ":Mn#"};
+		const char *c = cmd[newValue->getValueInteger ()];
+		return serConn->writePort (c, strlen (c)) ? -2 : 0;
+	}
+	return TelLX200::setValue (oldValue, newValue);
 }
 
 #define ERROR_IN_INFO 1
@@ -1458,7 +1285,6 @@ int APGTO::info ()
 
   double JD= ln_get_julian_from_sys ();
   double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + observer.lng + 360.), 360.);  // longitude positive to the East
-  double HA= fmod( local_sidereal_time- object.ra+ 360., 360.) ;
   // HA= [0.,360.], HA monoton increasing, but not strictly
   // man fmod: On success, these functions return the value x - n*y
   // e.g. if set on_set_HA=360.: 360. - 1 * 360.= 0.
@@ -1515,7 +1341,8 @@ int APGTO::info ()
 			}
 			else
 			{
-				if (selectAPTrackingMode(TRACK_MODE_ZERO) < 0 )
+				trackingRate->setValueInteger (0);
+				if (selectAPTrackingMode() < 0 )
 				{
 					logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
 					return -1;
@@ -1606,7 +1433,7 @@ int APGTO::info ()
 			      << " difference " << diff_loc_time <<sendLog;
   } 
   // The mount unexpectedly starts to track, stop that
-  if( ! mount_tracking->getValueBool()) {
+/*  if( ! mount_tracking->getValueBool()) {
     double RA= getTelRa() ;
     JD= ln_get_julian_from_sys ();
     local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
@@ -1627,7 +1454,7 @@ int APGTO::info ()
 	return -1;
       }
     }
-  }
+  } */
   return TelLX200::info ();
 }
 int
@@ -1671,23 +1498,11 @@ int APGTO::checkSiderealTime( double limit)
 
 int APGTO::setBasicData()
 {
-	int ret ;
-	struct ln_date utm;
-	struct ln_zonedate ltm;
-	if ((ret = tel_set_slew_rate(SLEW_RATE_0600)) < 0)
-	{
-		/* slew rate 2 = 600x, this the slowest */
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting slew rate failed." << sendLog;
+	// 600 slew speed, 0.25x guide, 12x centering
+	int ret = serConn->writePort (":RS0#:RG0#:RC0#", 12);
+	if (ret < 0)
 		return -1;
-	}
-	APslew_rate->setValueInteger(600);
-
-	if ((ret = tel_set_move_rate(MOVE_RATE_000100)) < 0)
-	{ /* move rate MOVE_RATE_000100 = 1x */
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
-		return -1;
-	}
-	APmove_rate->setValueInteger(1);
+	
 	//if the sidereal time read from the mount is correct then consider it as a warm start 
 	if (checkSiderealTime( 1./60.) == 0)
 	{
@@ -1707,8 +1522,12 @@ int APGTO::setBasicData()
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
 		return -1;
 	}
+
+	struct ln_date utm;
+	struct ln_zonedate ltm;
+
 	ln_get_date_from_sys( &utm) ;
-	ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
+	ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
 
 	if (setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)
 	{
@@ -1748,31 +1567,7 @@ int APGTO::setBasicData()
   
 	return 0 ;
 }
-// further discussion with Petr required:
-// int APGTO::changeMasterState (int new_state)
-// {
-// 	// do NOT park us during day..
-// 	if (
-// 		   ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
-// 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-// 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
-// 	{
-// 		if ((getState () & TEL_MASK_MOVING) == 0)
-// 		  startPark ();
-// 	}
 
-// 	if (blockOnStandby->getValueBool () == true)
-// 	{
-// 		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
-// 		  || (new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
-// 		  || (new_state & SERVERD_STANDBY_MASK))
-// 			blockMove->setValueBool (true);
-// 		else
-// 			blockMove->setValueBool (false);
-// 	}
-// 	// do not call Telescope::changeMasterState()
-// 	return Rts2Device::changeMasterState (new_state);
-// }
 /*!
  * Init mount, connect on given apgto_fd.
  *
@@ -1860,10 +1655,40 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	createValue (fixedOffsets, "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	fixedOffsets->setValueRaDec (0, 0);
 	
-	createValue (mount_tracking, "TRACKING", "true: mount is tracking", false);
 	createValue (DECaxis_HAcoordinate, "DECXHA", "DEC axis HA coordinate, West/East",true);
-	createValue (APslew_rate, "APSLEWRATE", "AP slew rate (1200, 900, 600)", false, RTS2_VALUE_WRITABLE);
-	createValue (APmove_rate, "APMOVERATE", "AP move rate (600, 64, 12, 1)", false, RTS2_VALUE_WRITABLE);
+
+	createValue (trackingRate, "TRACK", "tracking rate", true, RTS2_VALUE_WRITABLE);
+	trackingRate->addSelVal ("NONE", (Rts2SelData *) ":RT9#");
+	trackingRate->addSelVal ("SIDEREAL", (Rts2SelData *) ":RT2#");
+	trackingRate->addSelVal ("LUNAR", (Rts2SelData *) ":RT0#");
+	trackingRate->addSelVal ("SOLAR", (Rts2SelData *) ":RT1#");
+
+	createValue (APslew_rate, "slew_rate", "AP slew rate (1200, 900, 600)", false, RTS2_VALUE_WRITABLE);
+	APslew_rate->addSelVal ("600");
+	APslew_rate->addSelVal ("900");
+	APslew_rate->addSelVal ("1200");
+
+	createValue (APcenter_rate, "center_rate", "AP move rate (600, 64, 12, 1)", false, RTS2_VALUE_WRITABLE);
+	APcenter_rate->addSelVal ("12");
+	APcenter_rate->addSelVal ("64");
+	APcenter_rate->addSelVal ("600");
+	APcenter_rate->addSelVal ("1200");
+
+	createValue (APguide_rate, "guide_rate", "AP guide rate (0.25, 0.5, 1x sidereal", false, RTS2_VALUE_WRITABLE);
+	APguide_rate->addSelVal ("0.25");
+	APguide_rate->addSelVal ("0.5");
+	APguide_rate->addSelVal ("1.0");
+
+	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
+	raGuide->addSelVal ("NONE");
+	raGuide->addSelVal ("MINUS");
+	raGuide->addSelVal ("PLUS");
+
+	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
+	decGuide->addSelVal ("NONE");
+	decGuide->addSelVal ("MINUS");
+	decGuide->addSelVal ("PLUS");
+	
 	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
 	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);
 	createValue (assume_parked, "ASSUME_PARKED", "true check initial position",    false);
