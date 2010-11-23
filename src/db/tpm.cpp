@@ -34,6 +34,20 @@
 
 class TPM:public Rts2CliApp
 {
+	public:
+		TPM (int argc, char **argv);
+		virtual ~ TPM (void);
+
+		virtual int doProcessing ();
+
+		virtual void help ();
+		virtual void usage ();
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
+		virtual int init ();
+
 	private:
 		std::vector < std::string > filenames;
 		int headline (Rts2Image * image, std::ostream & _os);
@@ -49,17 +63,6 @@ class TPM:public Rts2CliApp
 		double dec_offset;
 
 		enum { TARGET, BEST, MOUNT } tarCorType;
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int processArgs (const char *arg);
-		virtual int init ();
-	public:
-		TPM (int argc, char **argv);
-		virtual ~ TPM (void);
-
-		virtual int doProcessing ();
-
-		virtual void help ();
 };
 
 TPM::TPM (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
@@ -176,13 +179,16 @@ int TPM::doProcessing ()
 
 void TPM::help ()
 {
-	std::cout << "Process list of images with astrometry, and creates file which you can feed to TPoint"
-		<< std::endl
-		<< "Without any switch, prouduce file with J2000 mean coordinates."
-		<< std::endl
-		<< "Option proudced should be sufficient to run it throught TPOINT and get model"
+	std::cout << "Process list of images with astrometry, and creates file which you can feed to TPoint. "
+		"Without any option, prouduce file with J2000 mean coordinates. "
+		"The output produced should be sufficient to use it in TPOINT to get the pointing model."
 		<< std::endl;
 	Rts2CliApp::help ();
+}
+
+void TPM::usage ()
+{
+	std::cout << "\t" << getAppName () << " *.fits > model.in" << std::endl;
 }
 
 int TPM::headline (Rts2Image * image, std::ostream & _os)
@@ -263,8 +269,7 @@ int TPM::printImage (Rts2Image * image, std::ostream & _os)
 	ct = (time_t) (ct + expo / 2);
 
 	JD = ln_get_julian_from_timet (&ct);
-	mean_sidereal =
-		ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
+	mean_sidereal = ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
 	if (!isnan (ra_step))
 	{

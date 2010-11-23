@@ -127,8 +127,8 @@ Rts2NightReport::~Rts2NightReport (void)
 
 void Rts2NightReport::usage ()
 {
-	std::cout << "\t" << getAppName () << "-n 2007-12-31" << std::endl
-		<< "\t" << getAppName () << "-f 2007-12-15 -t 2007-12-18" << std::endl;
+	std::cout << "\t" << getAppName () << " -n 2007-12-31" << std::endl
+		<< "\t" << getAppName () << " -f 2007-12-15 -t 2007-12-18" << std::endl;
 }
 
 int Rts2NightReport::processOption (int in_opt)
