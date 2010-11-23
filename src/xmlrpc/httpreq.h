@@ -157,12 +157,13 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 class Directory: public GetRequestAuthorized
 {
 	public:
-		Directory (const char* prefix, const char *_dirPath, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _dirPath, s) { dirPath = _dirPath; }
+		Directory (const char* prefix, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
-		const char *dirPath;
+		std::string dirPath;
+		std::string defaultFile;
 };
 
 #ifdef HAVE_LIBJPEG

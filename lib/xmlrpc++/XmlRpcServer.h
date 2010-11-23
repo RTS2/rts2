@@ -3,6 +3,7 @@
 #define _XMLRPCSERVER_H_
 //
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
+//          Copyright (c) 2010 Petr Kubanek, Institute of Physics
 //
 #if defined(_MSC_VER)
 # pragma warning(disable:4786)	 // identifier was truncated in debug info
@@ -57,6 +58,9 @@ namespace XmlRpc
 
 			//! Look up a method by name
 			XmlRpcServerMethod* findMethod(const std::string& name) const;
+
+			//! Specify default GET request handler
+			void setDefaultGetRequest(XmlRpcServerGetRequest *defaultGetRequest);
 
 			//! Add a GET request to the HTTP server
 			void addGetRequest(XmlRpcServerGetRequest* getRequest);
@@ -126,7 +130,8 @@ namespace XmlRpc
 			// system methods
 			XmlRpcServerMethod* _listMethods;
 			XmlRpcServerMethod* _methodHelp;
-
+		private:
+			XmlRpcServerGetRequest* _defaultGetRequest;
 	};
 }								 // namespace XmlRpc
 #endif							 //_XMLRPCSERVER_H_

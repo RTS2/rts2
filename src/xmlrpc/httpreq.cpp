@@ -107,9 +107,41 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 	includeJavaScript (os, name);
 }
 
+Directory::Directory (const char* prefix, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _dirPath, s)
+{
+	dirPath = std::string (_dirPath);
+	defaultFile = std::string (_defaultFile);
+}
+
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
+
+	// check if file exists..
+	std::string fn = dirPath + '/' + path;
+	if (path.length () > 0 && path[path.length () - 1] == '/')
+		fn += defaultFile;
+	
+	// check if file exists..
+	int f = open (fn.c_str (), O_RDONLY);
+	if (f != -1)
+	{
+		struct stat st;
+		if (fstat (f, &st) == -1)
+			throw XmlRpcException ("Cannot get file properties");
+
+		response_length = st.st_size;
+		response = new char[response_length];
+		ssize_t ret = read (f, response, response_length);
+		if (ret != (ssize_t) response_length)
+		{
+			delete[] response;
+			throw XmlRpcException ("Cannot read file");
+		}
+		close (f);
+		response_type = "text/html";
+		return;
+	}
 
 	printHeader (_os, path.c_str ());
 
@@ -134,7 +166,6 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 			n = scandir ((dirPath + path).c_str (), &namelist, 0, cdatesort);
 			break;
 		case SORT_FILENAME:
-		default:
 		  	n = scandir ((dirPath + path).c_str (), &namelist, 0, alphasort);
 			break;
 	}

@@ -12,8 +12,9 @@ using namespace XmlRpc;
 XmlRpcServer::XmlRpcServer()
 {
 	_introspectionEnabled = false;
-	_listMethods = 0;
-	_methodHelp = 0;
+	_listMethods = NULL;
+	_methodHelp = NULL;
+	_defaultGetRequest = NULL;
 }
 
 
@@ -24,6 +25,7 @@ XmlRpcServer::~XmlRpcServer()
 	_requests.clear();
 	delete _listMethods;
 	delete _methodHelp;
+	delete _defaultGetRequest;
 }
 
 // Add a command to the RPC server
@@ -57,6 +59,11 @@ XmlRpcServerMethod* XmlRpcServer::findMethod(const std::string& name) const
 	return i->second;
 }
 
+void XmlRpcServer::setDefaultGetRequest(XmlRpcServerGetRequest *defaultGetRequest)
+{
+	_defaultGetRequest = defaultGetRequest;
+}
+
 // Add a GET request to the HTTP server
 void XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* getRequest)
 {
@@ -79,7 +86,7 @@ XmlRpcServerGetRequest*XmlRpcServer::findGetRequest(const std::string& prefix) c
 		if (prefix.find(i->first) == 0)
 			return i->second;
 	}
-	return 0;
+	return _defaultGetRequest;
 }
 
 // Create a socket, bind to the specified port, and

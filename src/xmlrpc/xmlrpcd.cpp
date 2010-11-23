@@ -231,7 +231,10 @@ int XmlRpcd::init ()
 	}
 
 	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
-		directories.push_back (new Directory (iter->getTo (), iter->getPath (), &xmlrpc_server));
+		directories.push_back (new Directory (iter->getTo (), iter->getPath (), "", &xmlrpc_server));
+	
+	if (events.docroot.length () > 0)
+		xmlrpc_server.setDefaultGetRequest (new Directory (NULL, events.docroot.c_str (), "index.html", NULL));
 
 	setMessageMask (MESSAGE_MASK_ALL);
 

@@ -70,10 +70,13 @@ class Events
 		std::vector <std::string> publicPaths;
 		std::vector <std::string> allskyPaths;
 
+		// directory which can override default files
+		std::string docroot;
+
 		// directories mapping
 		std::vector <DirectoryMapping> dirs;
 
-		Events (XmlRpcd *_master) { master = _master; defImageLabel = NULL; }
+		Events (XmlRpcd *_master);
 
 		/**
 		 * Load a list of StateChangeCommand from file.

@@ -30,6 +30,13 @@
 
 using namespace rts2xmlrpc;
 
+Events::Events (XmlRpcd *_master)
+{
+	master = _master;
+	defImageLabel = NULL;
+	docroot = std::string ();
+}
+
 void Events::parseState (xmlNodePtr event, std::string deviceName)
 {
 	xmlAttrPtr properties = event->properties;
@@ -224,6 +231,14 @@ void Events::parseHttp (xmlNodePtr ev)
 				throw XmlMissingAttribute (ev, "to");
 
 			dirs.push_back (DirectoryMapping ((const char *) path->children->content, (const char *) to->children->content));
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "docroot"))
+		{
+			if (ev->children == NULL)
+			  	throw XmlEmptyNode (ev);
+			if (docroot.length () != 0)
+				throw XmlError ("docroot specified multiple times");
+			docroot = std::string ((const char *) ev->children->content);
 		}
 		else if (xmlStrEqual (ev->name, (xmlChar *) "allsky"))
 		{

@@ -73,7 +73,7 @@ namespace XmlRpc
 	{
 		public:
 			//! Constructor
-			XmlRpcServerGetRequest(std::string const& prefix, const char *description = NULL, XmlRpcServer* server = 0);
+			XmlRpcServerGetRequest(const char *prefix, const char *description = NULL, XmlRpcServer* server = 0);
 			//! Destructor
 			virtual ~XmlRpcServerGetRequest();
 

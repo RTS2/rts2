@@ -95,12 +95,16 @@ namespace XmlRpc
 			parseParam (ps.substr (pi));
 	}
 
-	XmlRpcServerGetRequest::XmlRpcServerGetRequest(std::string const& in_prefix, const char *description, XmlRpcServer* server)
+	XmlRpcServerGetRequest::XmlRpcServerGetRequest(const char *in_prefix, const char *description, XmlRpcServer* server)
 	{
-		_prefix = in_prefix;
 		_description = description;
 		_server = server;
-		if (_server) _server->addGetRequest(this);
+		if (in_prefix)
+		{
+			_prefix = std::string (in_prefix);
+			if (_server)
+				_server->addGetRequest(this);
+		}
 	}
 
 	XmlRpcServerGetRequest::~XmlRpcServerGetRequest()

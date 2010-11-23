@@ -110,6 +110,9 @@
 
   <xs:complexType name="http">
     <xs:sequence>
+      <xs:element name="docroot" minOccurs="0" maxOccurs="1" type="xs:string">
+        <xs:annotation><xs:documentation>Document root. Documents in this path overwrite standard documents.</xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="public" minOccurs="0" maxOccurs="unbounded" type="xs:string">
         <xs:annotation><xs:documentation>Public HTTP paths. * in string will match any string character in URL.</xs:documentation></xs:annotation>
       </xs:element>
