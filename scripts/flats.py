@@ -53,7 +53,7 @@ class FlatAttempt:
 		self.res = res
 
 	def toString(self):
-		return "%s %f: %f ratio %f result %s" % (self.date, self.exptime, self.average, self.ratio, self.res)
+		return "%s %.2f: %f ratio %f result %s" % (self.date, self.exptime, self.average, self.ratio, self.res)
 
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
@@ -80,25 +80,31 @@ class Flat:
 		return '%s_%s_%s' % (self.filter,self.binning,self.window)
 
 class FlatScript (rts2comm.Rts2Comm):
-	"""Class for taking and processing skyflats."""
-	def __init__(self):
+	"""Class for taking and processing skyflats.
+
+	:param eveningFlats: flats for evening. An array of Flat classes.
+	:param morningFlats: flats for morning. An arra of Flat class. If it is None, reveresed :param:`eveningFlats`
+	    is used
+	:param doDarks: whenever dark images should be taken
+	:param expTimes: exposure times for flats attempts"""
+
+	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,doDarks=True,expTimes=range(1,20)):
 		# Configuration (filters, binning, ..) for evening, we will use
 		# reverse for morning. You fill array with Flat objects, which
 		# describes configuration. If you do not have filters, use None
 		# for filter name.  self.eveningFlats = [Flat(None)] #
 		# configuration for camera without filters
-		self.eveningFlats = [Flat('Y'),Flat('B'),Flat('b'),Flat('g'),Flat('r'),Flat('i'),Flat('z')]
+		self.eveningFlats = eveningFlats
+	
+		if morningFlats is None:
+			# Filters for morning - reverse of evening filters - deep copy them first.
+			self.morningFlats = self.eveningFlats[:]
+			self.morningFlats.reverse ()
+		else:
+		  	self.morningFlats = None
 		
-		# Filters for morning - reverse of evening filters - deep copy them first.
-		self.morningFlats = self.eveningFlats[:]
-		
-		# If you would like to take different filters/setting during
-		# morning, replace this reverse with definition similar to what
-		# was set for self.eveningFlats.
-		self.morningFlats.reverse ()
-
 		# If dark exposures for acquired filters should be taken.
-		self.doDarks = True
+		self.doDarks = doDarks
 
 		# rename images which are useless for skyflats to this path.
 		# Fill in something (preferably with %f at the end - see man
@@ -107,35 +113,14 @@ class FlatScript (rts2comm.Rts2Comm):
 		# debugging.
 		self.unusableExpression = None 
 
-		# report flat production to this email
-		self.email = None
-
-		self.observatoryName = '<please fill here observatory name>'
-
 		self.flat = None
 
-		self.SaturationLevel = 65536 # should be 16bit for the nonEM and 14bit for EM)
-		self.OptimalFlat = self.SaturationLevel / 3
-		self.optimalRange = 0.3 # range of allowed divertion from OptimalFlat. 0.3 means 30%
-		self.allowedOptimalDeviation = 0.1 # deviation allowed from optimalRange to start real flats
-		self.BiasLevel = 390 # although this could be set to 0 and should not make much difference
-		self.defaultNumberFlats = 10 # Number of flats that we want to obtain
-		self.sleepTime = 1 # number of seconds to wait for optimal flat conditions
+		# fill in default flat and other levels
+		self.flatLevels()
 
-		self.maxDarkCycles = None
-
-		self.expTimes = range(1,20) # allowed exposure times
-		self.expTimes = map(lambda x: x/2.0, self.expTimes)
-
+		self.expTimes = expTimes
 		self.startExpTime = self.expTimes[0] # starting exposure time. Must be within expTimes[0] .. expTimes[-1]
-
-		self.eveningMultiply = 1 # evening multiplying - good for cameras with long readout times
-		self.morningMultiply = 1 # morning multiplying
-
-		self.shiftRa = 10.0 / 3600  # shift after every flat in RA [degrees]
-		self.shiftDec = 10.0 / 3600 # shift after every flat in DEC [degrees]
-
-		# self.waitingSubWindow = '100 100 200 200' # x y w h of subwindow while waiting for good flat level
+		
 		self.waitingSubWindow = None # do not use subwindow to wait for flats
 		self.isSubWindow = False
 
@@ -143,6 +128,42 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.flatImages = []
 		self.usedExpTimes = []
 
+	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,maxDarkCycles=None,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600,shiftDec=10/3600):
+		"""Set flat levels. Adjust diferent parameters of the algorithm.
+
+		:param optimalFlat:  optimal (target) flat value. You would like to see something like 20k for ussual 16bit CCDs.
+		:param optimalRange: set optimal range. Images within this range will be taken as good. If you set optimalFlat to 20k, and optimalRange to 0.5, then images within 20k-0.5*20k:20k+0.5*20k (=10k:30k) range will be taken as good flats
+		:param allowedOptimalDeviation: allowed deviation from optimal range to think that the next image will be good one.
+		:param biasLevel: image bias level. It is substracted from the image. Default to 0.
+		:param defaultNumberFlats: number of target flat images. Default to 9. After :param:`defaultNumberFlats` flat images are acquired in given filter, next flat target is used.
+		:param sleepTime: time in seconds to sleep between attempt exposures. The algorithm does not sleep if good flats are acquired.
+		:param maxDarkCycles: maximal numer of darks acquired after flats for flat processing
+		:param eveningMultiply: multiplication factor for evening exposure times
+		:param morningMultiply: multiplication factor for morning exposure times
+		:param shiftRa: shift in RA after exposure, to prevent stars occuring at the same spot
+		:param shiftDec: shift in DEC after exposure, to prevent stars occuring at the same spot
+		"""
+		self.optimalFlat = optimalFlat
+		self.optimalRange = optimalRange
+		self.allowedOptimalDeviation = allowedOptimalDeviation
+		self.biasLevel = biasLevel
+		self.defaultNumberFlats = defaultNumberFlats
+		self.sleepTime = sleepTime
+
+		self.maxDarkCycles = maxDarkCycles
+
+		self.eveningMultiply = eveningMultiply
+		self.morningMultiply = morningMultiply
+
+		self.shiftRa = shiftRa
+		self.shiftDec = shiftDec
+	
+	def setSubwindow(self,waitingSubWindow):
+		"""Set flat subwindow. Subwindow is used to wait for correct exposure time.
+
+		:param waitingSubWindow: the subwindow, specified as string 'x y w h' - e.g. '100 100 200 200' is the correct parameter value."""
+		self.waitingSubWindow = waitingSubWindow
+	
 	def optimalExpTime(self,ratio,expMulti):
 		exptime = expMulti * self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
 		if (exptime < self.expTimes[0]):
@@ -186,7 +207,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.setValue('exposure',self.exptime)
 		img = self.exposure(self.beforeReadout)
 		avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
-		ratio = (avrg - self.BiasLevel) / self.OptimalFlat
+		ratio = (avrg - self.biasLevel) / self.optimalFlat
 		ret = None
 		expMulti = 1
 
@@ -197,7 +218,7 @@ class FlatScript (rts2comm.Rts2Comm):
 				expMulti = self.morningMultiply
 
 		if (ratio <= 0): # special case, ratio is bellow bias
-			self.log('W','average is bellow bias: average %f bias %f. Please adjust BiasLevel in flats script.' % (avrg, self.BiasLevel))
+			self.log('W','average is bellow bias: average %f bias %f. Please adjust biasLevel in flats script.' % (avrg, self.biasLevel))
 			self.unusableImage(img)
 			ratio = 0.000000001
 			ret = -1
@@ -352,38 +373,40 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
-		goodFlats = []
-		badFlats = []
+		self.goodFlats = []
+		self.badFlats = []
 		for i in range(0,len(self.flatImages)):
 		  	sig = self.usedFlats[i].signature()
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (sig))
 				self.createMasterFits('/tmp/master_%s.fits' % (sig), self.flatImages[i])
-				goodFlats.append(self.usedFlats[i])
+				self.goodFlats.append(self.usedFlats[i])
 			else:
-			  	badFlats.append(self.usedFlats[i])
+			  	self.badFlats.append(self.usedFlats[i])
 
-		if (self.email != None):
-			msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
-			for flat in self.usedFlats:
-				msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
+	def sendEmail(self,email,observatoryName):
+		msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
+		for flat in self.usedFlats:
+			msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
 
-			mimsg = MIMEText(msg)
-			mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
-			mimsg['To'] = self.email
+		mimsg = MIMEText(msg)
+		mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
+		mimsg['To'] = self.email
 
-			s = smtplib.SMTP('localhost')
-			s.sendmail('robtel@example.com',self.email.split(','),mimsg.as_string())
-			s.quit()
+		s = smtplib.SMTP('localhost')
+		s.sendmail('robtel@example.com',self.email.split(','),mimsg.as_string())
+		s.quit()
 
+	def finish(self):
 		self.log('I','flat scripts finished, waiting for change of next target')
+		self.setValue('SHUTTER','LIGHT')
 		while (True):
 			sun_alt = self.getValueFloat('sun_alt','centrald')
 			next_t = self.getValueInteger('next','EXEC')
 			if (sun_alt >= 0.5 or not (next_t == 2 or next_t == -1)):
-				self.setValue('SHUTTER','LIGHT')
 				return
 			time.sleep(10)
 
-a = FlatScript()
-a.run()
+if __name__ == "__main__":
+	a = FlatScript()
+	a.run()
