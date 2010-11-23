@@ -172,10 +172,10 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 
 		"</script>\n";
 
-	_os << "<form action='form' method='post'><div id='targets'>Loading...</div>\n";
+	_os << "<form action='form' method='GET'><div id='targets'>Loading...</div>\n";
 
 #ifdef HAVE_LIBJPEG
-	_os << "<input type='submit' value='Plot' name='plot'/>";
+	_os << "<input type='submit' value='Plot target altitude' name='plot'/> (please select at least one target to plot something interesting)";
 #endif // HAVE_LIBJPEG
 	_os << "</form>";
 	
@@ -190,7 +190,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 #ifdef HAVE_LIBJPEG
-	if (!strcmp (params->getString ("plot", "xxx"), "Plot"))
+	if (!strcmp (params->getString ("plot", "xxx"), "Plot target altitude"))
 	{
 		response_type = "image/jpeg";
 
@@ -218,7 +218,7 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 
 		for (XmlRpc::HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 		{
-			if (!strcmp (iter->getName (), "tarid"))
+			if (!strcmp (iter->getName (), "tid"))
 				ti.push_back (atoi (iter->getValue ()));
 		}
 
@@ -256,6 +256,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 	ts.load ();
 
 	_os << "{\"h\":["
+		"{\"n\":\"Select\",\"t\":\"sel\",\"c\":0,\"spn\":\"tid\"},"
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
 		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":1},"
 		"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
