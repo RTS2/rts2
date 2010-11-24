@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "radecparser.h"
+
 #include "rts2conn.h"
 #include "rts2block.h"
 #include "rts2centralstate.h"
@@ -1501,6 +1503,8 @@ int Rts2Conn::sendValue (std::string val_name, int value)
 int Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 {
 	std::ostringstream _os;
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	_os.precision (20);
 	_os << PROTO_VALUE " " << val_name << " " << val1
 		<< " " << val2;
 	return sendMsg (_os);
@@ -1531,6 +1535,8 @@ int Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 int Rts2Conn::sendValue (std::string val_name, double value)
 {
 	std::ostringstream _os;
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	_os.precision (20);
 	_os << PROTO_VALUE " " << val_name << " " << value;
 	return sendMsg (_os);
 }
@@ -1545,6 +1551,8 @@ int Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 int Rts2Conn::sendValue (char *val_name, int val1, int val2, double val3, double val4, double val5, double val6)
 {
 	std::ostringstream _os;
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	_os.precision (20);
 	_os << PROTO_VALUE " " << val_name << " "
 		<< val1 << " " << val2 << " "
 		<< val3 << " " << val4 << " "
@@ -1723,6 +1731,33 @@ int Rts2Conn::paramNextFloat (float *num)
 		return -1;
 	ret = sscanf (str_num, "%f", num);
 	if (ret != 1)
+		return -1;
+	return 0;
+}
+
+int Rts2Conn::paramNextHMS (double *num)
+{
+	char *str_num;
+	if (paramNextString (&str_num))
+		return -1;
+	double mul;
+	*num = parseDMS (str_num, &mul);
+	if (errno != 0)
+		return -1;
+	// convert to degrees..
+	if (fabs (mul) != 1)
+		*num *= 15.0;
+	return 0;
+}
+
+int Rts2Conn::paramNextDMS (double *num)
+{
+	char *str_num;
+	if (paramNextString (&str_num))
+		return -1;
+	double mul;
+	*num = parseDMS (str_num, &mul);
+	if (errno != 0)
 		return -1;
 	return 0;
 }

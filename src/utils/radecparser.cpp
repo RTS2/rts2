@@ -19,10 +19,67 @@
 
 #include <sstream>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <math.h>
+#include <string.h>
+
 #include "radecparser.h"
 
-int
-parseRaDec (const char *radec, double &ra, double &dec)
+double parseDMS (const char *hptr, double *mul)
+{
+	char *locptr;
+	char *endptr;
+	double ret;					 //to store return value
+
+	if (!(locptr = strdup (hptr)))
+		return nan ("f");
+
+	if (*locptr == '-')
+	{
+		locptr++;
+		*mul = -1;
+	}
+	else
+	{
+		*mul = 1;
+	}
+
+	endptr = locptr;
+	ret = 0;
+
+	while (*endptr)
+	{
+		errno = 0;
+		// convert test
+		ret += strtod (locptr, &endptr) * *mul;
+		
+		if (errno == ERANGE)
+			return NAN;
+		// we get sucessfuly to end
+		if (!*endptr)
+		{
+			errno = 0;
+			return ret;
+		}
+
+		// if we have error in translating first string..
+		if (locptr == endptr)
+		{
+			errno = EINVAL;
+			return NAN;
+		}
+
+		*mul /= 60;
+		locptr = endptr + 1;
+	}
+
+	errno = 0;
+	return ret;
+}
+
+int parseRaDec (const char *radec, double &ra, double &dec)
 {
 	std::istringstream is (radec);
 	// now try to parse it to ra dec..

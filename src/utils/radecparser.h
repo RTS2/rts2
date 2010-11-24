@@ -21,6 +21,20 @@
 #define __RTS2_RADECPARSER__
 
 /**
+ * Convert hms (hour:minutes:seconds) string to its double
+ * representation.
+ *
+ * @param hptr		pointer to string to convert
+ *
+ * @return float value of hms, if fails set errno to error and returns
+ * NAN
+ *
+ * @exception ERANGE	when some value is out of range for float number.
+ * @exception EINVAL	when format doesn't match.
+ */
+double parseDMS (const char *hptr, double *mul);
+
+/**
  * Get Ra and Dec from string.
  *
  * @param radec String with RA DEC. DEC is separated from RA by + or - string, seximal va

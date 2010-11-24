@@ -36,8 +36,9 @@
 
 static Rts2App *masterApp = NULL;
 
-#define OPT_VERSION 999
-#define OPT_DEBUG   998
+#define OPT_VERSION      999
+#define OPT_DEBUG        998
+#define OPT_UTTIME       997
 
 Rts2App *getMasterApp ()
 {
@@ -59,9 +60,12 @@ Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 
 	debug = 0;
 
+	useLocalTime = true;
+
 	tzset ();
 
 	addOption ('h', "help", 0, "write this help");
+	addOption (OPT_UTTIME, "UT", 0, "use UT (not local) time for time displays");
 	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
 	addOption (OPT_VERSION, "version", 0, "show program version and license");
 
@@ -146,6 +150,12 @@ int Rts2App::initOptions ()
 		optind++;
 	}
 
+	if (useLocalTime)
+	{
+		std::cout << localTime;
+		std::cerr << localTime;
+	}
+
 	return 0;
 }
 
@@ -220,6 +230,9 @@ int Rts2App::processOption (int in_opt)
 			exit (EXIT_SUCCESS);
 		case OPT_DEBUG:
 			debug++;
+			break;
+		case OPT_UTTIME:
+			useLocalTime = false;
 			break;
 		case OPT_VERSION:
 			std::cout << "Part of RTS2 version: " << VERSION << std::endl

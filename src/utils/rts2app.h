@@ -292,6 +292,9 @@ class Rts2App:public Rts2Object
 
 		// debug level
 		int debug;
+
+		// use local time
+		bool useLocalTime;
 };
 
 

@@ -747,6 +747,8 @@ int Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
 const char * Rts2ValueRaDec::getValue ()
 {
 	std::ostringstream _os;
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	_os.precision (20);
 	_os << getRa () << " " << getDec ();
 
 	strcpy (buf, _os.str ().c_str ());

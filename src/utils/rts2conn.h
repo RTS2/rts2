@@ -444,7 +444,16 @@ class Rts2Conn:public Rts2Object
 		int paramNextLong (long int *num);
 		int paramNextSizeT (size_t * num);
 		int paramNextDouble (double *num);
+
 		int paramNextFloat (float *num);
+
+		/**
+		 * Retrieve next parameter as (possibly) HMS value.
+		 */
+		int paramNextHMS (double *num);
+
+		int paramNextDMS (double *num);
+
 		int paramNextTimeval (struct timeval *tv);
 
 		Rts2Block *getMaster () { return master; }

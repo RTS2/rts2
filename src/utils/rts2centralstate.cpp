@@ -44,15 +44,17 @@ Rts2CentralState::getStringShort (int _state)
 	return "unknow";
 }
 
-
-std::string
-Rts2CentralState::getString (int _state)
+std::string Rts2CentralState::getString (int _state)
 {
 	std::ostringstream os;
 	// check for weather
 	if ((_state & WEATHER_MASK) == BAD_WEATHER)
 	{
 		os << "bad weather | ";
+	}
+	if ((_state & STOP_MASK) == STOP_EVERYTHING)
+	{
+		os << "stop | ";
 	}
 	if ((_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 	{
