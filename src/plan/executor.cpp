@@ -268,6 +268,11 @@ void Executor::postEvent (Rts2Event * event)
 		case EVENT_SLEW_TO_TARGET_NOW:
 			maskState (EXEC_STATE_MASK, EXEC_MOVE);
 			break;
+		case EVENT_NEW_TARGET:
+			currentTarget->endObservation (-1);
+		case EVENT_CHANGE_TARGET:
+			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg ());
+			break;
 		case EVENT_OBSERVE:
 			// we can get EVENT_OBSERVE in case of continues observation
 		case EVENT_SCRIPT_STARTED:
@@ -587,7 +592,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 	currentTarget->getPosition (&pos);
 
 	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << " at RA DEC "
-		<< LibnovaRaDec (&pos) << "." << sendLog;
+		<< LibnovaRaDec (&pos) << sendLog;
 	return 0;
 }
 

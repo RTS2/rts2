@@ -112,33 +112,57 @@ void ConnExe::processCommand (char *cmd)
 		char *vname, *desc;
 		double val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || !paramEnd ())
-		{
 			throw rts2core::Error ("invalid double string");
-		}
-		else
+		Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
+		// either variable with given name exists..
+		if (v)
 		{
-			Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
-			// either variable with given name exists..
-			if (v)
+			if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
 			{
-				if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
-				{
-					((Rts2ValueDouble *) v)->setValueDouble (val);
-					((Rts2Daemon *) master)->sendValueAll (v);
-				}
-				else
-				{
-					throw rts2core::Error (std::string ("value is not double ") + vname);
-				}
+				((Rts2ValueDouble *) v)->setValueDouble (val);
+				((Rts2Daemon *) master)->sendValueAll (v);
 			}
-			// or create it and distribute it..
 			else
 			{
-				Rts2ValueDouble *vd;
-				((Rts2Daemon *) master)->createValue (vd, vname, desc, false);
-				vd->setValueDouble (val);
-				master->updateMetaInformations (vd);
+				throw rts2core::Error (std::string ("value is not double ") + vname);
 			}
+		}
+		// or create it and distribute it..
+		else
+		{
+			Rts2ValueDouble *vd;
+			((Rts2Daemon *) master)->createValue (vd, vname, desc, false);
+			vd->setValueDouble (val);
+			master->updateMetaInformations (vd);
+		}
+	}
+	else if (!strcasecmp (cmd, "integer"))
+	{
+		char *vname, *desc;
+		int val;
+		if (paramNextString (&vname) || paramNextString (&desc) || paramNextInteger (&val) || !paramEnd ())
+			throw rts2core::Error ("invalid integer string");
+		Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
+		// either variable with given name exists..
+		if (v)
+		{
+			if (v->getValueBaseType () == RTS2_VALUE_INTEGER)
+			{
+				((Rts2ValueInteger *) v)->setValueInteger (val);
+				((Rts2Daemon *) master)->sendValueAll (v);
+			}
+			else
+			{
+				throw rts2core::Error (std::string ("value is not double ") + vname);
+			}
+		}
+		// or create it and distribute it..
+		else
+		{
+			Rts2ValueInteger *vi;
+			((Rts2Daemon *) master)->createValue (vi, vname, desc, false);
+			vi->setValueInteger (val);
+			master->updateMetaInformations (vi);
 		}
 	}
 	else

@@ -407,6 +407,13 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 		case EVENT_SET_TARGET:
 			currentTarget = (rts2db::Target *) event->getArg ();
 			break;
+		case EVENT_NEW_TARGET:
+		case EVENT_CHANGE_TARGET:
+			{
+				struct ln_equ_posn *pos = (struct ln_equ_posn *) event->getArg ();
+				queCommand (new Rts2CommandMove (getMaster (), this, pos->ra, pos->dec), BOP_TEL_MOVE);
+			}
+			break;
 		case EVENT_SLEW_TO_TARGET:
 		case EVENT_SLEW_TO_TARGET_NOW:
 			if (currentTarget)
@@ -482,6 +489,7 @@ int Rts2DevClientTelescopeExec::syncTarget (bool now)
 	if (!currentTarget)
 		return -1;
 	getEqu (&coord);
+	// startSlew fills coordinates, if needed..
 	ret = currentTarget->startSlew (&coord);
 	int bopTel = now ? 0 : BOP_TEL_MOVE;
 	switch (ret)

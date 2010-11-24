@@ -580,7 +580,7 @@
       <varlistentry>
         <term><option>rename {image name} {expression}</option></term>
 	<listitem><para>
-	  Renames image to given by an expression. Please see
+	  Renames image to given by an expression. Updates image record in database. Please see
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	  for details of the expression. Bellow is an example, which start
 	  exposure, waits for image and rename image to given location.
@@ -736,7 +736,7 @@ G W0 filter
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>double {variable name} {variabledescription} {value}</option></term>
+        <term><option>double {variable name} {variable description} {value}</option></term>
 	<listitem><para>
 	  Creates or update device double value. If variable with given name
 	  and double type is not in the device, it is created, populated with
@@ -749,6 +749,25 @@ G W0 filter
 double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
           </literallayout>
 	  will create <emphasis>fwhm</emphasis>, with given description and value equals to 6.32.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>integer {variable name} {variable description} {value}</option></term>
+	<listitem><para>
+	  Creates or update device integer value. Similar to
+	  <emphasis>double</emphasis> command, described above.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>radec {ra} {dec}</option></term>
+	<listitem><para>
+	  Moves telescope to given equatorial (RA DEC) coordinates.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>altaz {alt} {az}</option></term>
+	<listitem><para>
+	  Moves telescope to given horizontal (altitude and azimuth) coordinates.
 	</para></listitem>
       </varlistentry>
       <varlistentry>

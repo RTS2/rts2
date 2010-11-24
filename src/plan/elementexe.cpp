@@ -54,12 +54,30 @@ void ConnExecute::processCommand (char *cmd)
 	char *operat;
 	char *operand;
 	char *comm;
-
+	
 	if (!strcmp (cmd, "exposure"))
 	{
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
+	}
+	else if (!strcasecmp (cmd, "radec"))
+	{
+		struct ln_equ_posn radec;
+		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
+			return;
+		master->postEvent (new Rts2Event (EVENT_CHANGE_TARGET, (void *) &radec));
+	}
+	else if (!strcasecmp (cmd, "newobs"))
+	{
+		struct ln_equ_posn radec;
+		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
+			return;
+		master->postEvent (new Rts2Event (EVENT_NEW_TARGET, (void *) &radec));
+	}
+	else if (!strcasecmp (cmd, "altaz"))
+	{
+		
 	}
 	else if (!strcmp (cmd, "dark"))
 	{

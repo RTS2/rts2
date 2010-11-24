@@ -56,6 +56,12 @@ using namespace rts2core;
 // ask for acquire state..
 #define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 261
 
+// change target to new RA DEC, passed as paramentr (struct ln_equ_posn *)
+#define EVENT_CHANGE_TARGET       RTS2_LOCAL_EVENT + 262
+
+// change target, start new observation
+#define EVENT_NEW_TARGET          RTS2_LOCAL_EVENT + 263
+
 namespace rts2script
 {
 

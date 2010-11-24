@@ -362,8 +362,7 @@ int DevScript::nextPreparedCommand ()
 			setWaitMove ();
 			break;
 		case NEXT_COMMAND_RESYNC:
-			script_connection->getMaster ()->
-				postEvent (new Rts2Event (EVENT_TEL_SCRIPT_RESYNC));
+			script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SCRIPT_RESYNC));
 			setWaitMove ();
 			break;
 		case NEXT_COMMAND_PRECISION_OK:
@@ -375,8 +374,7 @@ int DevScript::nextPreparedCommand ()
 				<< "DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END "
 				<< script_connection->getName () << " " << ret << sendLog;
 		#endif
-			script_connection->getMaster ()->
-				postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
+			script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
 			if (ret == NEXT_COMMAND_PRECISION_OK)
 			{
 				// there wouldn't be a recursion, as Element->nextCommand
