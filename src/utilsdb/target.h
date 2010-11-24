@@ -412,6 +412,12 @@ class Target:public Rts2Target
 		// otherwise (when interruption is necessary) returns 0
 		virtual int compareWithTarget (Target * in_target, double in_sep_limit);
 		virtual moveType startSlew (struct ln_equ_posn *position);
+
+		/**
+		 * Update slew position - record in Observation class.
+		 */
+		int updateSlew (struct ln_equ_posn *position);
+
 		virtual moveType afterSlewProcessed ();
 		// return 1 if observation is already in progress, 0 if observation started, -1 on error
 		// 2 if we don't need to move
@@ -683,11 +689,8 @@ class ConstTarget:public Target
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
-		void setPosition (double ra, double dec)
-		{
-			position.ra = ra;
-			position.dec = dec;
-		}
+		void setPosition (double ra, double dec) { position.ra = ra; position.dec = dec; }
+
 	protected:
 		// get called when target was selected to update bonuses, target position etc..
 		virtual int selectedAsGood ();
@@ -949,7 +952,7 @@ class TargetPlan:public Target
 		virtual int isContinues ();
 		virtual int beforeMove ();
 		virtual moveType startSlew (struct ln_equ_posn *position);
-
+	
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 	protected:

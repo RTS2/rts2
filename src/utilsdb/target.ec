@@ -607,6 +607,7 @@ moveType Target::startSlew (struct ln_equ_posn *position)
 	double d_obs_dec;
 	float d_obs_alt;
 	float d_obs_az;
+	int d_pos_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_hrz_posn hrz;
@@ -616,11 +617,20 @@ moveType Target::startSlew (struct ln_equ_posn *position)
 	if (getObsId () > 0)		 // we already observe that target
 		return OBS_ALREADY_STARTED;
 
-	d_obs_ra = position->ra;
-	d_obs_dec = position->dec;
-	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
-	d_obs_alt = hrz.alt;
-	d_obs_az = hrz.az;
+	if (isnan (position->ra) || isnan (position->dec))
+	{
+		d_obs_ra = d_obs_dec = d_obs_alt = d_obs_az = rts2_nan ("f");
+		d_pos_ind = -1;
+	}
+	else
+	{
+		d_obs_ra = position->ra;
+		d_obs_dec = position->dec;
+		ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
+		d_obs_alt = hrz.alt;
+		d_obs_az = hrz.az;
+		d_pos_ind = 0;
+	}
 
 	EXEC SQL
 		SELECT
@@ -644,10 +654,10 @@ moveType Target::startSlew (struct ln_equ_posn *position)
 			:d_tar_id,
 			:d_obs_id,
 			now (),
-			:d_obs_ra,
-			:d_obs_dec,
-			:d_obs_alt,
-			:d_obs_az
+			:d_obs_ra :d_pos_ind,
+			:d_obs_dec :d_pos_ind,
+			:d_obs_alt :d_pos_ind,
+			:d_obs_az :d_pos_ind
 			);
 	if (sqlca.sqlcode != 0)
 	{
@@ -659,6 +669,25 @@ moveType Target::startSlew (struct ln_equ_posn *position)
 	setObsId (d_obs_id);
 	observation = new Observation (d_obs_id);
 	return afterSlewProcessed ();
+}
+
+int Target::updateSlew (struct ln_equ_posn *position)
+{
+	if (observation == NULL)
+		return startSlew (position) == OBS_MOVE_FAILED ? -1 : 0;
+
+	struct ln_hrz_posn hrz;
+	ln_get_hrz_from_equ (position, observer, ln_get_julian_from_sys (), &hrz);
+	try
+	{
+		observation->startSlew (position, &hrz);
+	}
+	catch (SqlError &er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 moveType Target::afterSlewProcessed ()
@@ -1986,6 +2015,7 @@ Constraints * Target::getConstraints ()
 	try
 	{
 		constraints->load (getGroupConstraintFile ());
+		constraintsLoaded |= CONSTRAINTS_GROUP;
 		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
 	catch (XmlError er)

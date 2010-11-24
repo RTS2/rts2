@@ -66,6 +66,7 @@ class Observation
 		int loadImages ();
 		int loadCounts ();
 
+		void startSlew (struct ln_equ_posn * coords, struct ln_hrz_posn * hrz);
 		void startObservation ();
 		void endObservation (int _obs_state);
 
