@@ -80,6 +80,7 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command)
 	if (isnan (*hmsptr))
 	{
 		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
+		serConn->flushPortIO ();
 		return -1;
 	}
 	return 0;

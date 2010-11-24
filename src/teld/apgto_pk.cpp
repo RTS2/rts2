@@ -90,7 +90,6 @@ class APGTO:public TelLX200 {
 		int force_start ;
 		double on_set_HA ;
 		double on_zero_HA ;
-		time_t move_timeout;
 		time_t slew_start_time;
 
 		int f_scansexa (const char *str0, double *dp);
@@ -118,7 +117,6 @@ class APGTO:public TelLX200 {
 
 		int tel_slew_to (double ra, double dec);
 		int tel_slew_to_altaz (double alt, double az);
-		void set_move_timeout (time_t plus_time);
 		/**
 		 * Perform movement, do not move tube bellow horizon.
 		 * @author Francisco Foster Buron
@@ -628,18 +626,12 @@ APGTO::tel_slew_to (double ra, double dec)
  *
  * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
-int
-APGTO::tel_check_coords (double ra, double dec)
+int APGTO::tel_check_coords (double ra, double dec)
 {
   // ADDED BY JF
   double sep;
-  time_t now;
 
   struct ln_equ_posn object, target;
-
-  time (&now);
-  if (now > move_timeout)
-    return 2;
 
   if ((tel_read_ra () < 0) || (tel_read_dec () < 0))
     return -1;
@@ -692,14 +684,6 @@ APGTO::tel_slew_to_altaz(double alt, double az)
 		logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to_altaz error:" << "retstring:"<< retstr << "should be '0'" << sendLog;
 		return -1;
 	}
-}
-
-void APGTO::set_move_timeout (time_t plus_time)
-{
-	time_t now;
-	time (&now);
-
-	move_timeout = now + plus_time;
 }
 
 int APGTO::moveAvoidingHorizon (double ra, double dec)
@@ -760,7 +744,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 		// move to final target
 		if(tel_slew_to(newRA, newDEC) < 0)
 			return -1;
-		set_move_timeout(100);
 		return 0;
 	}
 	else
@@ -772,7 +755,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 				// move to final target
 				if(tel_slew_to(newRA, newDEC) < 0)
 					return -1;
-				set_move_timeout(100);
 				return 0;
 			}
 			else
@@ -792,7 +774,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 					// move to final target
 					if(tel_slew_to(newRA, newDEC) < 0)
 						return -1;
-					set_move_timeout(100);
 					return 0;
 				}
 				else
@@ -811,7 +792,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 					// move to final target
 					if(tel_slew_to(newRA, newDEC) < 0)
 						return -1;
-					set_move_timeout(100);
 					return 0;
 				}
 			}
@@ -824,7 +804,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 				// move to final target
 				if(tel_slew_to(newRA, newDEC) < 0)
 					return -1;
-				set_move_timeout(100);
 				return 0;
 			}
 			else
@@ -846,7 +825,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 					// move to final target
 					if(tel_slew_to(newRA, newDEC) < 0)
 						return -1;
-					set_move_timeout(100);
 					return 0;
 				}
 				else
@@ -865,7 +843,6 @@ int APGTO::moveAvoidingHorizon (double ra, double dec)
 					// move to final target
 					if (tel_slew_to(newRA, newDEC) < 0)
 						return -1;
-					set_move_timeout(100);
 					return 0;
 				}
 			}
@@ -1006,7 +983,6 @@ int APGTO::startResync ()
 		ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 		if (ret)
 			return -1;
-		set_move_timeout (100);
 	}
 	return 0;
 }
@@ -1066,7 +1042,6 @@ int APGTO::isMoving ()
 		case -1:
 			return -1;
 		case 1:
-		case 2:
 			return -2;
 		default:
 			return USEC_SEC / 10;
