@@ -182,7 +182,7 @@ int TelLX200::tel_write_ra (double ra)
 	int h, m, s;
 	if (ra < 0 || ra > 360.0)
 		return -1;
-	ra = ra / 15;
+	ra = ra / 15.;
 	dtoints (ra, &h, &m, &s);
 	// Astro-Physics format
 	if (snprintf (command, sizeof( command), ":Sr %02d:%02d:%02d#", h, m, s) < 0)

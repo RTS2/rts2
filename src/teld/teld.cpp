@@ -353,7 +353,7 @@ double Telescope::getTargetHa (double jd)
 
 double Telescope::getLstDeg (double JD)
 {
-	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
+	return ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) +
 		telLongitude->getValueDouble ());
 }
 
@@ -1186,7 +1186,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 
 	if (conn->isCommand ("move"))
 	{
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
 		modelOn ();

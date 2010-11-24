@@ -785,7 +785,7 @@ int Gemini::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
-	ra = ra / 15;
+	ra = ra / 15.0;
 	dtoints (ra, &h, &m, &s);
 	if (snprintf (command, 14, ":Sr%02d:%02d:%02d#", h, m, s) < 0)
 		return -1;

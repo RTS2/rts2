@@ -481,7 +481,7 @@ MM2::tel_write_ra (double ra)
 	{
 		return -1;
 	}
-	ra = ra / 15;
+	ra = ra / 15.;
 	dtoints (ra, &h, &m, &s);
 	if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
 		return -1;
