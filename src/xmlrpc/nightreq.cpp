@@ -269,7 +269,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		_os << "{\"h\":["
 			"{\"n\":\"Date part\",\"t\":\"a\",\"c\":0,\"prefix\":\"\",\"href\":0},"
 			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1},"
-			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":2}"
+			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":2},"
+			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":3}"
 			"],\"d\":[";
 
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
@@ -279,7 +280,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		{
 			if (iter != as.begin ())
 				_os << ",";
-			_os << "[" << iter->first << "," << iter->second.first << "," << iter->second.second << "]\n";
+			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "]\n";
 		}
 		_os << "]}";
 	}
@@ -290,7 +291,9 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":3},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":4}"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":4},"
+			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5}"
+			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
 			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
@@ -312,7 +315,10 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 				<< iter->getTargetId () << ","
 				<< "\"" << iter->getTargetName () << "\",\""
 				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getObsEnd ()) << "\"]\n";
+				<< LibnovaDateDouble (iter->getObsEnd ())  << "\","
+				<< iter->getNumberOfImages () << ","
+				<< iter->getNumberOfGoodImages ()
+				<< "]\n";
 		}
 
 		_os << "]}";

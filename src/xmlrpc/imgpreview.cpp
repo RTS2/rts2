@@ -300,14 +300,13 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	}
 	struct stat st;
 	if (fstat (f, &st) == -1)
-	{
 		throw XmlRpcException ("Cannot get file properties");
-	}
+	
 	response_length = st.st_size;
 	response = new char[response_length];
-	int ret;
+	ssize_t ret;
 	ret = read (f, response, response_length);
-	if (ret != int (response_length))
+	if (ret != (ssize_t) response_length)
 	{
 		delete[] response;
 		throw XmlRpcException ("Cannot read data");
