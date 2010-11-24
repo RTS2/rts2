@@ -394,11 +394,11 @@ class FlatScript (rts2comm.Rts2Comm):
 			msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
 
 		mimsg = MIMEText(msg)
-		mimsg['Subject'] = 'Flats report from %s' % (self.observatoryName)
-		mimsg['To'] = self.email
+		mimsg['Subject'] = 'Flats report from %s' % (observatoryName)
+		mimsg['To'] = email
 
 		s = smtplib.SMTP('localhost')
-		s.sendmail('robtel@example.com',self.email.split(','),mimsg.as_string())
+		s.sendmail('robtel@example.com',email.split(','),mimsg.as_string())
 		s.quit()
 
 	def finish(self):
