@@ -53,7 +53,13 @@ double parseDMS (const char *hptr, double *mul)
 	{
 		errno = 0;
 		// convert test
-		ret += strtod (locptr, &endptr) * *mul;
+		double n = strtod (locptr, &endptr);
+		if (isnan (n) || isinf (n))
+		{
+			errno = ERANGE;
+			return NAN;
+		}
+		ret += n * *mul;
 		
 		if (errno == ERANGE)
 			return NAN;
