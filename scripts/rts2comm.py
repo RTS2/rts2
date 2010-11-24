@@ -75,7 +75,7 @@ class Rts2Comm:
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
 		print "VT",name,'-',new_value
 		sys.stdout.flush()
-	
+
 	def exposure(self, before_readout_callback = None):
 		print "exposure"
 		sys.stdout.flush()
@@ -88,11 +88,18 @@ class Rts2Comm:
 		image,fn = a.split()
 		return fn
 
+	def radec(self,ra,dec):
+		print "radec",ra,dec
+		sys.stdout.flush()
+	
+	def newObs(self,ra,dec):
+		print "newobs",ra,dec
+		sys.stdout.flush()
+
 	def __imageAction(self,action,imagename):
 		print action,imagename
 		sys.stdout.flush()
 		return sys.stdin.readline()
-
 
 	def rename(self,imagename,pattern):
 		print "rename",imagename,pattern
@@ -112,7 +119,7 @@ class Rts2Comm:
 		return self.__imageAction("dark",imagename)
 
 	def toArchive(self,imagename):
-		"""Moves image at path to archive. Return new image path."""
+		"""Move image at path to archive. Return new image path."""
 		return self.__imageAction("archive",imagename)
 
 	def toTrash(self,imagename):
@@ -133,6 +140,6 @@ class Rts2Comm:
 		sys.stdout.flush()
 	
 	def isEvening(self):
-		"""Returns true if is evening - sun is on west"""
+		"""Returns true if is evening - sun is on West"""
 		sun_az = self.getValueFloat('sun_az','centrald')
 		return sun_az < 180.0
