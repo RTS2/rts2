@@ -491,6 +491,8 @@ int Rts2DevClientTelescopeExec::syncTarget (bool now)
 	getEqu (&coord);
 	// startSlew fills coordinates, if needed..
 	ret = currentTarget->startSlew (&coord);
+	if (isnan (coord.ra) || isnan (coord.dec))
+		return 0;
 	int bopTel = now ? 0 : BOP_TEL_MOVE;
 	switch (ret)
 	{
