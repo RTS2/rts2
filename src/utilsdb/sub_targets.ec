@@ -54,6 +54,8 @@ void ConstTarget::load ()
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_ra;
 	double d_dec;
+	int d_ra_ind;
+	int d_dec_ind;
 	int db_tar_id = getObsTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
@@ -62,8 +64,8 @@ void ConstTarget::load ()
 		tar_ra,
 		tar_dec
 	INTO
-		:d_ra,
-		:d_dec
+		:d_ra :d_ra_ind,
+		:d_dec :d_dec_ind
 	FROM
 		targets
 	WHERE
@@ -74,6 +76,12 @@ void ConstTarget::load ()
 		err << "cannot load constant target with ID " << db_tar_id;
 		throw SqlError (err.str ().c_str ());
 	}
+
+	if (d_ra_ind)
+		d_ra = rts2_nan ("f");
+	if (d_dec_ind)
+	  	d_dec = rts2_nan ("f");
+
 	position.ra = d_ra;
 	position.dec = d_dec;
 
