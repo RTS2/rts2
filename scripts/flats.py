@@ -132,7 +132,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.flatImages = []
 		self.usedExpTimes = []
 
-	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,maxDarkCycles=None,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600,shiftDec=10/3600):
+	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,maxDarkCycles=None,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
 
 		:param optimalFlat:  optimal (target) flat value. You would like to see something like 20k for ussual 16bit CCDs.
