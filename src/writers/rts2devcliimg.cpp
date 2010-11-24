@@ -395,18 +395,6 @@ void Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 	tel->dec = vradec->getDec ();
 }
 
-void Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
-{
-	tel->ra = getConnection ()->getValueDouble ("MNT_RA");
-	tel->dec = getConnection ()->getValueDouble ("MNT_DEC");
-}
-
-void Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
-{
-	tar->ra = getConnection ()->getValueDouble ("RASC");
-	tar->dec = getConnection ()->getValueDouble ("DECL");
-}
-
 int Rts2DevClientTelescopeImage::getMountFlip ()
 {
 	return getConnection ()->getValueInteger ("MNT_FLIP");

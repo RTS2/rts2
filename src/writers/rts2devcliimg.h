@@ -134,9 +134,10 @@ class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
 	public:
 		Rts2DevClientTelescopeImage (Rts2Conn * in_connection);
 		virtual void postEvent (Rts2Event * event);
+		/**
+		 * Get target coordinates.
+		 */
 		void getEqu (struct ln_equ_posn *tel);
-		void getEquTel (struct ln_equ_posn *tel);
-		void getEquTar (struct ln_equ_posn *tar);
 		int getMountFlip ();
 		void getObs (struct ln_lnlat_posn *obs);
 		double getDistance (struct ln_equ_posn *in_pos);
