@@ -132,6 +132,9 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.flatImages = []
 		self.usedExpTimes = []
 
+		# dark filter
+		self.df = None
+
 	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,maxDarkCycles=None,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
 
@@ -161,6 +164,9 @@ class FlatScript (rts2comm.Rts2Comm):
 
 		self.shiftRa = shiftRa
 		self.shiftDec = shiftDec
+
+	def darkFilter(self,df):
+		self.df = df
 	
 	def setSubwindow(self,waitingSubWindow):
 		"""Set flat subwindow. Subwindow is used to wait for correct exposure time.
@@ -318,6 +324,8 @@ class FlatScript (rts2comm.Rts2Comm):
 	def takeDarks(self):
 		"""Take flats dark images in spare time."""
 		self.setValue('SHUTTER','DARK')
+		if not (self.df is None):
+			self.setValue('filter',self.df)
 		i = 0
 		if (len(self.usedExpTimes) == 0):
 			self.usedExpTimes = [self.expTimes[0],self.expTimes[-1]]
