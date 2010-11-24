@@ -5,6 +5,10 @@
 # rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
 # same location as this script, or include it in PYTHONPATH.
 #
+# If you would like to customize this file for your setup, please use something
+# similar to flat.py. This file is sometimes updated and changes made to
+# configuration might get lost.
+#
 # If you would like to process images, you need to have numpy and pyfits
 # installaed. Please see median.py in RTS2/scripts for more details.
 #
@@ -14,19 +18,19 @@
 #
 # (C) 2009,2010 Antonio de Ugarte & Petr Kubanek <petr@kubanek.net>
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import sys
 import string
@@ -385,7 +389,7 @@ class FlatScript (rts2comm.Rts2Comm):
 			  	self.badFlats.append(self.usedFlats[i])
 
 	def sendEmail(self,email,observatoryName):
-		msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,goodFlats),';'),string.join(map(Flat.signature,badFlats),';'))
+		msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
 		for flat in self.usedFlats:
 			msg += "\n\n" + flat.signature() + ':\n' + flat.attemptString()
 
