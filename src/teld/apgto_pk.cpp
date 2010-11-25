@@ -81,6 +81,8 @@ class APGTO:public TelLX200 {
 	protected:
 		virtual int setValue (Rts2Value * oldValue, Rts2Value *newValue);
 
+		virtual int willConnect (Rts2Address * in_addr);
+
 		virtual int applyCorrectionsFixed (double ra, double dec);
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
@@ -146,6 +148,9 @@ class APGTO:public TelLX200 {
 		Rts2ValueBool *assume_parked;
 		Rts2ValueBool *collision_detection; 
 		Rts2ValueBool *avoidBellowHorizon;
+
+		// limit switch bussiness
+		char *limitSwitchName;
 };
 
 }
@@ -1065,6 +1070,22 @@ int APGTO::stopMove ()
 	notMoveCupola ();
 	sleep (1);
 	maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "move stopped");
+	// check for limit switch states..
+	if (limitSwitchName)
+	{
+		Rts2Conn *conn = getOpenConnection (limitSwitchName);
+		if (conn != NULL)
+		{
+			Rts2Value *vral = conn->getValue ("RA_LIMIT");
+			Rts2Value *vrah = conn->getValue ("RA_HOME");
+			Rts2Value *vdech = conn->getValue ("DEC_HOME");
+			if (vral != NULL && vrah != NULL && vdech != NULL)
+			{
+				logStream (MESSAGE_INFO) << " values in limit - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
+				// try to recover..
+			}
+		}
+	}
 	return 0;
 }
 
@@ -1197,6 +1218,13 @@ int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
 		return serConn->writePort (c, strlen (c)) ? -2 : 0;
 	}
 	return TelLX200::setValue (oldValue, newValue);
+}
+
+int APGTO::willConnect (Rts2Address * in_addr)
+{
+	if (in_addr->isAddress (limitSwitchName))
+		return 1;
+	return TelLX200::willConnect (in_addr);
 }
 
 #define ERROR_IN_INFO 1
@@ -1620,6 +1648,9 @@ int APGTO::processOption (int in_opt)
 		case OPT_APGTO_KEEP_HORIZON:
 			avoidBellowHorizon->setValueBool (true);
 			break;
+		case OPT_APGTO_LIMIT_SWITCH:
+			limitSwitchName = optarg;
+			break;
 		default:
 			return TelLX200::processOption (in_opt);
 	}
@@ -1628,6 +1659,8 @@ int APGTO::processOption (int in_opt)
 
 APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 {
+	limitSwitchName = NULL;
+
 	createValue (fixedOffsets, "FIXED_OFFSETS", "fixed (not reseted) offsets, set after first sync", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 	fixedOffsets->setValueRaDec (0, 0);
 	
@@ -1678,6 +1711,7 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	addOption (OPT_APGTO_ASSUME_PARKED, "parked", 0, "assume a regularly parked mount");
 	addOption (OPT_APGTO_FORCE_START, "force_start", 0, "start with wrong declination axis orientation");
 	addOption (OPT_APGTO_KEEP_HORIZON, "avoid-horizon", 0, "avoid movements bellow horizon");
+	addOption (OPT_APGTO_LIMIT_SWITCH, "limit-switch", 1, "use limit switch with given name");
 }
 
 int main (int argc, char **argv)
