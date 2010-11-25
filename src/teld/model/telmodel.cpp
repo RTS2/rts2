@@ -92,8 +92,8 @@ Model::reverse (struct ln_equ_posn *pos)
 
 		(*iter)->apply (pos, cond);
 
-		pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
-		pos->dec = 2 * pos2.dec - pos->dec;
+		pos->ra = ln_range_degrees (2. * pos2.ra - pos->ra);
+		pos->dec = 2. * pos2.dec - pos->dec;
 	}
 	return 0;
 }
@@ -121,8 +121,8 @@ Model::reverseVerbose (struct ln_equ_posn *pos)
 			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) << " "
 			<< (pos->dec - old_pos.dec) << ")" << sendLog;
 
-		pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
-		pos->dec = 2 * pos2.dec - pos->dec;
+		pos->ra = ln_range_degrees (2. * pos2.ra - pos->ra);
+		pos->dec = 2. * pos2.dec - pos->dec;
 
 		logStream (MESSAGE_DEBUG) << "After2: " << pos->ra << " " << pos->dec
 			<< "(" << (pos->ra - old_pos.ra) << " "

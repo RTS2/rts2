@@ -266,10 +266,10 @@ int TPM::printImage (Rts2Image * image, std::ostream & _os)
 	aux1 = -2;
 	image->getValue ("MNT_AX1", aux1, false);
 
-	ct = (time_t) (ct + expo / 2);
+	ct = (time_t) (ct + expo / 2.);
 
 	JD = ln_get_julian_from_timet (&ct);
-	mean_sidereal = ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
+	mean_sidereal = ln_range_degrees (15. * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
 	if (!isnan (ra_step))
 	{
