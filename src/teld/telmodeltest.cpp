@@ -305,7 +305,7 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 					double rms_e = rms - model->getRMS ();
 					os << "RMS: " << (rms * 3600.0) << " (" << LibnovaDegDist (rms)
 						<< ") n: " << rms_n << " RMS error: " << (rms_e * 3600.0)
-						<< " (" << ((fabs (rms_e) / model->getRMS ()) * 100) << "%)" << std::endl;
+						<< " (" << ((fabs (rms) / model->getRMS ()) * 100) << "%)" << std::endl;
 				}
 				os << "END" << std::endl;
 				return;
