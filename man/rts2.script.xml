@@ -761,7 +761,18 @@ double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
       <varlistentry>
         <term><option>radec {ra} {dec}</option></term>
 	<listitem><para>
-	  Moves telescope to given equatorial (RA DEC) coordinates.
+	  Moves telescope to given equatorial (RA DEC) coordinates. Coordinates
+	  can be specified in HMS and DMS - see example bellow.
+	</para><literallayout>
+echo move 15 1  # moves to 1h RA, 1deg DEC
+echo move 1:2:3.4 -1:30 # moves to RA 1h 2m 3.4sec and DEC -1.5 deg
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>newobs {ra} {dec}</option></term>
+	<listitem><para>
+	  Same as <emphasis>radec</emphasis>, but force system to log start of
+	  the new observation.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
