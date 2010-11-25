@@ -1185,8 +1185,8 @@ int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
 			cmd[2] = 'C';
 		// else oldValue == APguide_rate
 
-		cmd[3] = newValue->getValueInteger ();
-		return serConn->writePort (cmd, 4) ? -2 : 0;
+		cmd[3] = '0' + newValue->getValueInteger ();
+		return serConn->writePort (cmd, 9) ? -2 : 0;
 	}
 	if (oldValue == raGuide || oldValue == decGuide)
 	{
