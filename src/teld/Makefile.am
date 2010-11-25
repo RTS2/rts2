@@ -1,8 +1,8 @@
 SUBDIRS = model
 
-noinst_HEADERS = pier-collision.h teld.h clicupola.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = pier-collision.h teld.h clicupola.h hms.h gem.h fork.h tgdrive.h tellx200.h
 
-noinst_LIBRARIES = librts2teld.a librts2pier-collision.a
+noinst_LIBRARIES = librts2teld.a librts2pier-collision.a librts2tellx200.a
 
 EXTRA_DIST = 
 
@@ -13,6 +13,9 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
+
+librts2tellx200_a_SOURCES = tellx200.cpp hms.c
+librts2tellx200_a_CXXFLAGS = @NOVA_CFLAGS@
 
 librts2pier_collision_a_SOURCES = pier-collision.cpp
 librts2pier_collision_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -32,8 +35,13 @@ rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 rts2_teld_lx200test_SOURCES = lx200test.cpp hms.c
 rts2_teld_lx200test_LDADD = librts2pier-collision.a ${LDADD}
 
+# comment this and uncomment next for alternative APT-GOTO driver
+
 rts2_teld_apgto_SOURCES = apgto.cpp hms.c
 rts2_teld_apgto_LDADD = librts2pier-collision.a ${LDADD}
+
+# rts2_teld_apgto_SOURCES = apgto_pk.cpp
+# rts2_teld_apgto_LDADD = librts2tellx200.a librts2pier-collision.a ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 
