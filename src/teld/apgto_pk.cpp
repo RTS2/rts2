@@ -1475,7 +1475,7 @@ int APGTO::checkSiderealTime( double limit)
 int APGTO::setBasicData()
 {
 	// 600 slew speed, 0.25x guide, 12x centering
-	int ret = serConn->writePort (":RS0#:RG0#:RC0#", 12);
+	int ret = serConn->writePort (":RS0#:RG0#:RC0#", 15);
 	if (ret < 0)
 		return -1;
 	
