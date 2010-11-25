@@ -63,10 +63,8 @@ class ModelTest:public Telescope
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
 			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
 
-			telLongitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
-				lng);
-			telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
-				lat);
+			telLongitude->setValueDouble (Rts2Config::instance ()->getObserver ()->lng);
+			telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->lat);
 		}
 
 		void setObserverLat (double in_lat)
@@ -111,9 +109,7 @@ class TelModelTest:public Rts2CliApp
 
 using namespace rts2teld;
 
-
-TelModelTest::TelModelTest (int in_argc, char **in_argv):
-Rts2CliApp (in_argc, in_argv)
+TelModelTest::TelModelTest (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
@@ -132,24 +128,21 @@ Rts2CliApp (in_argc, in_argv)
 	addOption ('r', NULL, 0, "Print random RA DEC, handy for telescope pointing tests");
 }
 
-
 TelModelTest::~TelModelTest (void)
 {
 	delete telescope;
 	runFiles.clear ();
 }
 
-
-void
-TelModelTest::usage ()
+void TelModelTest::usage ()
 {
-	std::cout << "\t" << getAppName () << "-m /etc/rts2/model -e -v model_test" << std::endl
-		<< "\t" << getAppName () << "-r" << std::endl;
+	std::cout << "To run on TPOINT input named model_test.dat, with model file in /etc/rts2/model:" << std::endl 
+		<< "\t" << getAppName () << " -m /etc/rts2/model -e -v model_test.dat" << std::endl
+	<< "To generate random pointings" << std::endl
+		<< "\t" << getAppName () << " -r" << std::endl;
 } 
 
-
-int
-TelModelTest::processOption (int in_opt)
+int TelModelTest::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -177,17 +170,13 @@ TelModelTest::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-TelModelTest::processArgs (const char *in_arg)
+int TelModelTest::processArgs (const char *in_arg)
 {
 	runFiles.push_back (in_arg);
 	return 0;
 }
 
-
-int
-TelModelTest::init ()
+int TelModelTest::init ()
 {
 	int ret;
 	ret = Rts2App::init ();
@@ -212,21 +201,16 @@ TelModelTest::init ()
 	return ret;
 }
 
-
-void
-TelModelTest::test (double ra, double dec)
+void TelModelTest::test (double ra, double dec)
 {
 	struct ln_equ_posn pos;
 	pos.ra = ra;
 	pos.dec = dec;
 	model->apply (&pos);
-	std::cout << "RA: " << ra << " DEC: " << dec << " -> " << pos.
-		ra << " " << pos.dec << std::endl;
+	std::cout << "RA: " << ra << " DEC: " << dec << " -> " << pos.ra << " " << pos.dec << std::endl;
 }
 
-
-void
-TelModelTest::runOnFile (std::string filename, std::ostream & os)
+void TelModelTest::runOnFile (std::string filename, std::ostream & os)
 {
 	if (image)
 		runOnFitsFile (filename, os);
@@ -234,9 +218,7 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 		runOnDatFile (filename, os);
 }
 
-
-void
-TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
+void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 {
 	// load image data, open them read-only
 	Rts2ImageDb img;
@@ -281,9 +263,7 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 		<< " " << tarImgRa << " " << tarImgDec << std::endl;
 }
 
-
-void
-TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
+void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 {
 	char caption[81];
 	double temp;
@@ -323,12 +303,9 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				{
 					rms = sqrt (rms / (double) rms_n);
 					double rms_e = rms - model->getRMS ();
-					os << "RMS: " << (rms *
-						3600.0) << " (" << LibnovaDegDist (rms) <<
-						") n: " << rms_n << " RMS error: " << (rms_e *
-						3600.0) << " (" <<
-						((fabs (rms_e) / model->getRMS ()) *
-						100) << "%)" << std::endl;
+					os << "RMS: " << (rms * 3600.0) << " (" << LibnovaDegDist (rms)
+						<< ") n: " << rms_n << " RMS error: " << (rms_e * 3600.0)
+						<< " (" << ((fabs (rms_e) / model->getRMS ()) * 100) << "%)" << std::endl;
 				}
 				os << "END" << std::endl;
 				return;
@@ -406,8 +383,7 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			is.ignore (2000, is.widen ('\n'));
 			if (is.fail ())
 			{
-				logStream (MESSAGE_ERROR) << "Failed during file read" <<
-					sendLog;
+				logStream (MESSAGE_ERROR) << "Failed during file read" << sendLog;
 				return;
 			}
 			// calculate model position, output it,..
@@ -430,6 +406,13 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				_in.getPos (&pos_in);
 				_out_in.getPos (&pos_out);
 
+				// normalize dec..
+				if (fabs (pos_out.dec) > 90)
+				{
+					pos_out.ra = ln_range_degrees (pos_out.ra + 180.0);
+					pos_out.dec = (pos_out.dec > 0 ? 180 : -180) - pos_out.dec;
+				}
+
 				if (!isnan (JD))
 					telescope->applyCorrections (&pos_in, JD);
 
@@ -444,25 +427,14 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				if (errors > 1)
 				{
 					double rd, dd;
-					if (fabs (pos_out.dec) < 90)
-					{
-						rd = pos_in.ra - pos_out.ra;
-						dd = pos_in.dec - pos_out.dec;
-					}
-					else
-					{
-						rd = pos_in.ra - ln_range_degrees (pos_out.ra + 180.0);
-						dd = pos_in.dec - 180.0 + pos_out.dec;
-					}
+					rd = pos_in.ra - pos_out.ra;
+					dd = pos_in.dec - pos_out.dec;
 
-					std::cout << LibnovaDegArcMin (rd) << " " <<
-						LibnovaDegArcMin (dd);
+					std::cout << LibnovaDegArcMin (rd) << " " << LibnovaDegArcMin (dd);
 				}
 			}
 
-			std::cout << "  " << _in << " "
-				<< m << " "
-				<< d << " " << epoch << "   " << _out_in << "   " << lst << " ";
+			std::cout << "  " << _in << " " << m << " " << d << " " << epoch << "   " << _out_in << "   " << lst << " ";
 			std::cout.precision (6);
 			std::cout << aux1 << " " << aux2 << std::endl;
 		}
@@ -486,9 +458,8 @@ TelModelTest::doProcessing ()
 	}
 	if (!runFiles.empty ())
 	{
-		for (std::vector < std::string >::iterator iter = runFiles.begin ();
-			iter != runFiles.end (); iter++)
-		runOnFile ((*iter), std::cout);
+		for (std::vector < std::string >::iterator iter = runFiles.begin (); iter != runFiles.end (); iter++)
+			runOnFile ((*iter), std::cout);
 	}
 	else
 	{
@@ -499,9 +470,7 @@ TelModelTest::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	TelModelTest app (argc, argv);
 	return app.run ();
