@@ -19,6 +19,9 @@
 
 void setup()
 {
+  // must switch to external reference
+  analogReference(EXTERNAL);
+  
   Serial.begin(9600);
   for (int i = 8; i < 11; i++)
     pinMode(i, INPUT);
@@ -32,7 +35,15 @@ void sendSensor()
     sensorValue = sensorValue << 1;
     sensorValue |= digitalRead(i);
   }
-  Serial.println(sensorValue, DEC);
+  Serial.print(sensorValue, DEC);
+  Serial.print(" ");
+  
+  for (int i = 0; i < 6; i++)
+  {
+    Serial.print(analogRead(i),DEC);
+    Serial.print(" ");
+  }
+  Serial.println(" ");
 }
 
 void loop()

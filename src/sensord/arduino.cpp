@@ -47,6 +47,14 @@ class Arduino:public Sensor
 		Rts2ValueBool *decHome;
 		Rts2ValueBool *raHome;
 		Rts2ValueBool *raLimit;
+
+		Rts2ValueFloat *a1_x;
+		Rts2ValueFloat *a1_y;
+		Rts2ValueFloat *a1_z;
+
+		Rts2ValueFloat *a2_x;
+		Rts2ValueFloat *a2_y;
+		Rts2ValueFloat *a2_z;
 };
 
 }
@@ -61,6 +69,14 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (decHome, "DEC_HOME", "DEC axis home sensor", false, RTS2_DT_ONOFF);
 	createValue (raHome, "RA_HOME", "RA axis home sensor", false, RTS2_DT_ONOFF);
 	createValue (raLimit, "RA_LIMIT", "RA limit switch", false, RTS2_DT_ONOFF);
+
+	createValue (a1_x, "RA_X", "RA accelometer X", false);
+	createValue (a1_y, "RA_Y", "RA accelometer Y", false);
+	createValue (a1_z, "RA_Z", "RA accelometer Z", false);
+
+	createValue (a2_x, "DEC_X", "DEC accelometer X", false);
+	createValue (a2_y, "DEC_Y", "DEC accelometer Y", false);
+	createValue (a2_z, "DEC_Z", "DEC accelometer Z", false);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection");
 
@@ -116,16 +132,32 @@ int Arduino::init ()
 
 int Arduino::info ()
 {
-	char buf[20];
-	int ret = arduinoConn->writeRead ("?", 1, buf, 20, '\n');
+	char buf[100];
+	int ret = arduinoConn->writeRead ("?", 1, buf, 99, '\n');
 	if (ret < 0)
 		return -1;
 
-	int i = atoi (buf);
+	int i;
+	int a0,a1,a2,a3,a4,a5;
+
+	if (sscanf (buf, "%d %d %d %d %d %d %d", &i, &a0, &a1, &a2, &a3, &a4, &a5) != 7)
+	{
+		buf[ret] = '\0';
+		logStream (MESSAGE_ERROR) << "invalid reply from arudiono: " << buf << sendLog;
+		return -1;
+	}
 
 	raLimit->setValueBool (i & 0x01);
 	raHome->setValueBool (i & 0x02);
 	decHome->setValueBool (i & 0x04);
+
+	a1_x->setValueFloat (a0 / 450.0);
+	a1_y->setValueFloat (a1 / 450.0);
+	a1_z->setValueFloat (a2 / 450.0);
+
+	a2_x->setValueFloat (a3 / 450.0);
+	a2_y->setValueFloat (a4 / 450.0);
+	a2_z->setValueFloat (a5 / 450.0);
 
 	if (raLimit->getValueBool ())
 		setStopState (true, "RA axis beyond limits");
