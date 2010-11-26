@@ -193,7 +193,7 @@ int TelModelTest::init ()
 		return 0;
 
 	telescope = new ModelTest ();
-	telescope->setCorrections (true, true, true);
+	telescope->setCorrections (false, false, false);
 
 	model = new Model (telescope, modelFile);
 	ret = model->load ();
@@ -340,12 +340,16 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			else
 			{
 				JD = ln_get_julian_day (&date);
-				telescope->setCorrections (true, true, true);
 				iss >> temp >> press;
 				if (iss.fail ())
 				{
 					temp = nan ("f");
 					press = nan ("f");
+					telescope->setCorrections (true, true, true);
+				}
+				else
+				{
+					telescope->setCorrections (true, true, false);
 				}
 			}
 			if (firstChar == '-')
