@@ -292,7 +292,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":4},"
-			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5}"
+			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5},"
 			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
 			"],\"d\":[";
 
