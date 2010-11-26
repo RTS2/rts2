@@ -689,6 +689,10 @@ void Executor::clearNextTargets ()
 		delete *iter;
 	}
 	nextTargets.clear ();
+	sendValueAll (next_id);
+	sendValueAll (next_name);
+	sendValueAll (next_ids);
+	sendValueAll (next_names);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
 }
 

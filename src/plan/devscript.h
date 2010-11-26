@@ -40,6 +40,7 @@ class DevScript
 		ScriptPtr script;
 		Rts2Target *nextTarget;
 		int dont_execute_for;
+		int dont_execute_for_obsid;
 		int scriptLoopCount;
 		int scriptCount;
 		int lastTargetObsID;

@@ -29,6 +29,7 @@ DevScript::DevScript (Rts2Conn * in_script_connection) : script ()
 	nextTarget = NULL;
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;
+	dont_execute_for_obsid = -1;
 	scriptLoopCount = 0;
 	scriptCount = 0;
 	lastTargetObsID = -1;
@@ -111,6 +112,7 @@ void DevScript::postEvent (Rts2Event * event)
 			nextComd = NULL;
 			// null dont_execute_for
 			dont_execute_for = -1;
+			dont_execute_for_obsid = -1;
 			break;
 		case EVENT_STOP_OBSERVATION:
 			deleteScript ();
@@ -313,8 +315,8 @@ void DevScript::deleteScript ()
 			if (script->getExecutedCount () == 0)
 			{
 				dont_execute_for = currentTarget->getTargetID ();
-				if (nextTarget
-					&& nextTarget->getTargetID () == dont_execute_for)
+				dont_execute_for_obsid = currentTarget->getObsId ();
+				if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
 				{
 					nextTarget = NULL;
 				}
@@ -324,6 +326,7 @@ void DevScript::deleteScript ()
 		{
 			// don't execute us for current target..
 			dont_execute_for = currentTarget->getTargetID ();
+			dont_execute_for_obsid = currentTarget->getObsId ();
 		}
 		script.null ();
 		currentTarget = NULL;
@@ -336,10 +339,17 @@ void DevScript::deleteScript ()
 
 void DevScript::setNextTarget (Rts2Target * in_target)
 {
-	nextTarget = in_target;
-	if (nextTarget->getTargetID () == dont_execute_for)
+	if (nextTarget->getTargetID () == dont_execute_for && nextTarget->getObsId () == dont_execute_for_obsid)
 	{
+	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target, as it should not be execute" << sendLog;
 		nextTarget = NULL;
+	}
+	else
+	{
+	  	// assume the script will be fixed..
+		nextTarget = in_target;
+		dont_execute_for = -1;
+		dont_execute_for_obsid = -1;
 	}
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "setNextTarget " << nextTarget << sendLog;
