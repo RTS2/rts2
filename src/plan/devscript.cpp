@@ -339,7 +339,7 @@ void DevScript::deleteScript ()
 
 void DevScript::setNextTarget (Rts2Target * in_target)
 {
-	if (nextTarget->getTargetID () == dont_execute_for && nextTarget->getObsId () == dont_execute_for_obsid)
+	if (in_target->getTargetID () == dont_execute_for && in_target->getObsId () == dont_execute_for_obsid)
 	{
 	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target, as it should not be execute" << sendLog;
 		nextTarget = NULL;
