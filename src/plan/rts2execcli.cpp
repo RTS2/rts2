@@ -416,7 +416,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 		case EVENT_CHANGE_TARGET_ALTAZ:
 			{
 				struct ln_hrz_posn *hrz = (struct ln_hrz_posn *) event->getArg ();
-				queCommand (new Rts2CommandMoveAltAz (getMaster (), this, hrz->az, hrz->alt), BOP_TEL_MOVE);
+				queCommand (new Rts2CommandMoveAltAz (getMaster (), this, hrz->alt, hrz->az), BOP_TEL_MOVE);
 			}
 			break;
 		case EVENT_SLEW_TO_TARGET:
