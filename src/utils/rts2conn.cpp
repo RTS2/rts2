@@ -812,10 +812,8 @@ void Rts2Conn::processLine ()
 		sendCommandEnd (DEVDEM_OK, "OK");
 	else if (ret == -2)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" <<
-		 getCentraldId () << "] command: " << getCommand () << " ret: " << ret << sendLog;
-		sendCommandEnd (DEVDEM_E_COMMAND,
-			"invalid parameters/invalid number of parameters");
+		logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" << getCentraldId () << "] command: " << getCommand () << " ret: " << ret << sendLog;
+		sendCommandEnd (DEVDEM_E_COMMAND, (std::string ("invalid parameters/invalid number of parameters - ") + getCommand ()).c_str ());
 	}
 }
 
