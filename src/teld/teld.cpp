@@ -1186,8 +1186,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 
 	if (conn->isCommand ("move"))
 	{
-		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec)
-			|| !conn->paramEnd ())
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
@@ -1196,8 +1195,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("move_not_model"))
 	{
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
-			|| !conn->paramEnd ())
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
@@ -1213,10 +1211,16 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		mpec->setValueString (str);
 		return startResyncMove (conn, false);
 	}
+	else if (conn->isCommand ("altaz"))
+	{
+		if (conn->paramNextDMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
+			return -2;
+		telAltAz->setValueAltAz (obj_ra, obj_dec);
+		return moveAltAz ();
+	}
 	else if (conn->isCommand ("resync"))
 	{
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
-			|| !conn->paramEnd ())
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
@@ -1225,8 +1229,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("fixed"))
 	{
 		// tar_ra hold HA (Hour Angle)
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
-			|| !conn->paramEnd ())
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		/*		modelOff ();
 				// currently don't know how to handle that */
@@ -1234,8 +1237,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("setto"))
 	{
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
-			|| !conn->paramEnd ())
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;
 		modelOn ();
 		return setTo (conn, obj_ra, obj_dec);
@@ -1321,7 +1323,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("change"))
 	{
-		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
 		offsRaDec->incValueRaDec (obj_ra, obj_dec);

@@ -190,6 +190,9 @@ class Rts2Target
 
 		int getNextImgId () { return ++img_id; }
 
+		// set imgId to 0
+		void nullImgId () { img_id = 0; }
+
 		bool getTargetEnabled () { return tar_enabled; }
 		void setTargetEnabled (bool new_en = true, bool logit = false)
 		{

@@ -338,32 +338,25 @@ Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2D
 	setCommand (_os);
 }
 
-Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
+Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master,_tel)
 {
 	std::ostringstream _os;
 	_os << "fixed " << ra << " " << dec;
 	setCommand (_os);
-	tel = _tel;
 }
 
-int Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
+Rts2CommandMoveAltAz::Rts2CommandMoveAltAz (Rts2Block * _master, Rts2DevClientTelescope * _tel, double alt, double az):Rts2CommandMove (_master, _tel)
 {
-	tel->moveFailed (status);
-	return Rts2Command::commandReturnFailed (status, conn);
+	std::ostringstream _os;
+	_os << "altaz " << alt << " " << az;
+	setCommand (_os);
 }
 
-Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
+Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << "resync " << ra << " " << dec;
 	setCommand (_os);
-	tel = _tel;
-}
-
-int Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
-{
-	tel->moveFailed (status);
-	return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec):Rts2Command (_master)
@@ -373,7 +366,6 @@ Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec
 	setCommand (_os);
 	tel = NULL;
 }
-
 
 Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_tel->getMaster ())
 {

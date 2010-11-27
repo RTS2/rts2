@@ -403,12 +403,13 @@ class Rts2CommandChangeValue:public Rts2Command
  */
 class Rts2CommandMove:public Rts2Command
 {
-	Rts2DevClientTelescope *tel;
-	protected:
-		Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel);
 	public:
 		Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+	protected:
+		Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel);
+	private:
+		Rts2DevClientTelescope *tel;
 };
 
 /**
@@ -419,8 +420,7 @@ class Rts2CommandMove:public Rts2Command
 class Rts2CommandMoveUnmodelled:public Rts2CommandMove
 {
 	public:
-		Rts2CommandMoveUnmodelled (Rts2Block * _master,
-			Rts2DevClientTelescope * _tel, double ra, double dec);
+		Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
 };
 
 /**
@@ -428,22 +428,27 @@ class Rts2CommandMoveUnmodelled:public Rts2CommandMove
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandMoveFixed:public Rts2Command
+class Rts2CommandMoveFixed:public Rts2CommandMove
 {
-	Rts2DevClientTelescope *tel;
 	public:
-		Rts2CommandMoveFixed (Rts2Block * _master,
-			Rts2DevClientTelescope * _tel, double ra, double dec);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
 };
 
-class Rts2CommandResyncMove:public Rts2Command
+/**
+ * Command for telescope movement in alt az.
+ *
+ * @ingroup RTS2Command
+ */
+class Rts2CommandMoveAltAz:public Rts2CommandMove
 {
-	Rts2DevClientTelescope *tel;
 	public:
-		Rts2CommandResyncMove (Rts2Block * _master,
-			Rts2DevClientTelescope * _tel, double ra, double dec);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		Rts2CommandMoveAltAz (Rts2Block * _master, Rts2DevClientTelescope * _tel, double alt, double az);
+};
+
+class Rts2CommandResyncMove:public Rts2CommandMove
+{
+	public:
+		Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
 };
 
 class Rts2CommandChange:public Rts2Command
@@ -451,18 +456,15 @@ class Rts2CommandChange:public Rts2Command
 	Rts2DevClientTelescope *tel;
 	public:
 		Rts2CommandChange (Rts2Block * _master, double ra, double dec);
-		Rts2CommandChange (Rts2DevClientTelescope * _tel, double ra,
-			double dec);
-		Rts2CommandChange (Rts2CommandChange * _command,
-			Rts2DevClientTelescope * _tel);
+		Rts2CommandChange (Rts2DevClientTelescope * _tel, double ra, double dec);
+		Rts2CommandChange (Rts2CommandChange * _command, Rts2DevClientTelescope * _tel);
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandCorrect:public Rts2Command
 {
 	public:
-		Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img,
-			int img_id, double ra_corr, double dec_corr, double pos_err);
+		Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err);
 };
 
 class Rts2CommandStartGuide:public Rts2Command
