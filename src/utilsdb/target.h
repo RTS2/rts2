@@ -411,7 +411,12 @@ class Target:public Rts2Target
 		// interruption of this target is not necessary
 		// otherwise (when interruption is necessary) returns 0
 		virtual int compareWithTarget (Target * in_target, double in_sep_limit);
-		virtual moveType startSlew (struct ln_equ_posn *position);
+		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
+
+		/**
+		 * Start new observation of the target.
+		 */
+		int newObsSlew (struct ln_equ_posn *position);
 
 		/**
 		 * Update slew position - record in Observation class.
@@ -708,7 +713,7 @@ class DarkTarget:public Target
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon) { return 1; }
-		virtual moveType startSlew (struct ln_equ_posn * position);
+		virtual moveType startSlew (struct ln_equ_posn * position, bool update_position = true);
 		virtual int isContinues () { return 1; }
 };
 
@@ -951,7 +956,7 @@ class TargetPlan:public Target
 		virtual float getBonus (double JD);
 		virtual int isContinues ();
 		virtual int beforeMove ();
-		virtual moveType startSlew (struct ln_equ_posn *position);
+		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
 	
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 

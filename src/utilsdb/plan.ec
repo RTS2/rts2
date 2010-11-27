@@ -232,14 +232,14 @@ int Plan::del ()
 	return 0;
 }
 
-moveType Plan::startSlew (struct ln_equ_posn *position)
+moveType Plan::startSlew (struct ln_equ_posn *position, bool update_position)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_plan_id = plan_id;
 		int db_obs_id;
 	EXEC SQL END DECLARE SECTION;
 	moveType ret;
-	ret = getTarget ()->startSlew (position);
+	ret = getTarget ()->startSlew (position, update_position);
 	if (obs_id > 0)
 		return ret;
 

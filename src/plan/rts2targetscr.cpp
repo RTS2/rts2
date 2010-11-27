@@ -64,7 +64,7 @@ int Rts2TargetScr::save (bool overwrite, int tar_id)
 	return 0;
 }
 
-moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position)
+moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position, bool update_position)
 {
 	position->ra = position->dec = 0;
 	return OBS_MOVE_FAILED;

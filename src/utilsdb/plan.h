@@ -47,7 +47,7 @@ class Plan
 		int save ();
 		int del ();
 
-		moveType startSlew (struct ln_equ_posn *position);
+		moveType startSlew (struct ln_equ_posn *position, bool update_position);
 
 		Target *getTarget ();
 		void clearTarget () { target = NULL; }
