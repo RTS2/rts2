@@ -41,6 +41,7 @@ typedef struct _tps534_stat {
 extern "C"
 {
 #endif
+  int restartThread();
   int connectDevice( char *device_file, int connecting);
 #ifdef __cplusplus
 }

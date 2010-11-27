@@ -42,10 +42,10 @@
 #include <linux/hiddev.h>
 #include <pthread.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "../dome/OakHidBase.h"
 #include "../dome/OakFeatureReports.h"
-#include "../dome/util_vermes.h"
 #include "tps534-oak.h"
 
 
@@ -111,9 +111,7 @@ res_table r_thermistor[] = {
 };
 
 int debug = 0;           /* a debug value > 0 will print debugging information
-                            to stderr. the higher the value the more output. 
-                            (will be overwritten by the value of
-                            debugVerbosityNP.np[0] in ISInit().) */
+                            to syslog. */
 
 int oakAdHandle = -1;
 DeviceInfo devInfo;      // structure holding oak digital input device informations
@@ -235,7 +233,7 @@ checkOakCall(EOakStatus status,
 {
   if (status != eOakStatusOK) {
     if (debug >= 1) {
-      fprintf(stderr, "Error: %s in function %s (file %s, line %d)\n",
+      syslog (LOG_ERR, "Error: %s in function %s (file %s, line %d)\n",
                       getStatusString(status), function, file, line);
     }
     return status;
@@ -287,19 +285,19 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
   if (oak_stat != eOakStatusOK) return oak_stat;
 
   if (debug >= 1) {
-    fprintf(stderr, "Device Name: %s\n", local_devInfo->deviceName);
-    fprintf(stderr, "Volatile User Device Name: %s\n",
+    syslog (LOG_DEBUG, "Device Name: %s\n", local_devInfo->deviceName);
+    syslog (LOG_DEBUG, "Volatile User Device Name: %s\n",
                     local_devInfo->volatileUserDeviceName);
-    fprintf(stderr, "Persistent User Device Name: %s\n",
+    syslog (LOG_DEBUG, "Persistent User Device Name: %s\n",
                     local_devInfo->persistentUserDeviceName);
-    fprintf(stderr, "Serial Number: %s\n", local_devInfo->serialNumber);
-    fprintf(stderr, "VendorID: 0x%x :: ProductID: 0x%x :: Version 0x%x\n",
+    syslog (LOG_DEBUG, "Serial Number: %s\n", local_devInfo->serialNumber);
+    syslog (LOG_DEBUG, "VendorID: 0x%x :: ProductID: 0x%x :: Version 0x%x\n",
                     local_devInfo->vendorID, local_devInfo->productID, local_devInfo->version);
-    fprintf(stderr, "Number of channels: %d\n", local_devInfo->numberOfChannels);
+    syslog (LOG_DEBUG, "Number of channels: %d\n", local_devInfo->numberOfChannels);
   }
 
   if (strcmp(local_devInfo->deviceName, TORADEX_DEVICE_NAME) != 0) {
-    fprintf( stderr, "%s is not the correct type: %s (should be %s)",
+    syslog (LOG_ERR, "%s is not the correct type: %s (should be %s)",
                      device,
                      local_devInfo->deviceName, TORADEX_DEVICE_NAME);
     return -20;
@@ -316,7 +314,7 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
      memset(chInf, 0, sizeof(ChannelInfo));
     CHECK_OAK_CALL(getChannelInfo(*deviceHandle, i, chInf));
     if (debug >= 1) {
-      fprintf(stderr, "Ch %d: %s, sign: %d, exp: %d, unit: %s\n",
+      syslog (LOG_DEBUG, "Ch %d: %s, sign: %d, exp: %d, unit: %s\n",
                       i,
                       chInf->channelName,
                       chInf->isSigned,
@@ -336,7 +334,7 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
   unsigned int inpMode;
   oak_stat = CHECK_OAK_CALL(getInputMode(*deviceHandle, &inpMode, false));
   if (inpMode != 0) {
-    fprintf(stderr, "failed setting input mode to 0.\n");
+    syslog (LOG_ERR, "failed setting input mode to 0.\n");
   }
  
   // Set the report Mode
@@ -346,7 +344,7 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
   oak_stat = CHECK_OAK_CALL(getReportMode(*deviceHandle, &reportMode, false));
   if (oak_stat != eOakStatusOK) return oak_stat;
   if (debug >= 1) {
-    fprintf(stderr, "Report mode: %u\n", reportMode);
+    syslog (LOG_DEBUG, "Report mode: %u\n", reportMode);
   }
 
   // Set the report rate
@@ -356,7 +354,7 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
   oak_stat = CHECK_OAK_CALL(getReportRate(*deviceHandle, &reportRate, false));
   if (oak_stat != eOakStatusOK) return oak_stat;
   if (debug >= 1) {
-    fprintf(stderr, "Report rate: %u\n", reportRate);
+    syslog (LOG_DEBUG, "Report rate: %u\n", reportRate);
   }
 
   // Set the sample rate
@@ -366,10 +364,32 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
   oak_stat = CHECK_OAK_CALL(getSampleRate(*deviceHandle, &sampleRate, false));
   if (oak_stat != eOakStatusOK) return oak_stat;
   if (debug >= 1) {
-    fprintf(stderr, "Sample rate: %u\n", sampleRate);
+    syslog (LOG_DEBUG, "Sample rate: %u\n", sampleRate);
   }
 
   return oak_stat;
+}
+/******************************************************************************
+ * restart thread
+ *****************************************************************************/
+int restartThread() {
+
+  int thread_stat= -1; 
+
+  thread_stat = pthread_cancel(tps534_oak_digin_th_id); // 0 = success
+  if( thread_stat != 0 ) {
+    syslog (LOG_ERR, "restartThread: Oak thread NOT stopped\n");
+    return thread_stat ;
+  }
+ 
+  thread_stat = pthread_create(&tps534_oak_digin_th_id, NULL, &tps534_oak_digin_thread, NULL); // 0 success
+  if( thread_stat != 0 ) {
+    syslog (LOG_ERR, "restartThread: Oak thread NOT started\n");
+    return thread_stat ;
+  }
+
+  return 0 ;
+
 }
 
 /******************************************************************************
@@ -378,17 +398,20 @@ oak_ad_setup(char *device, int* deviceHandle, DeviceInfo* local_devInfo,
 int
 connectDevice(char *oakAdDevice, int connecting)
 {
-  int thread_stat= -1; // if not set to 0 main program dies
+  int thread_stat= -1; 
   int oak_stat;
+
 
   if (connecting) {
     oak_stat = oak_ad_setup(oakAdDevice, &oakAdHandle, &devInfo, &channelInfos, oakAdDevice);
     if (oak_stat != eOakStatusOK) {
-      fprintf( stderr, "setting up Oak AD \"%s\" failed.", oakAdDevice);
+      syslog (LOG_ERR, "setting up Oak AD \"%s\" failed.", oakAdDevice);
       return OAK_CONNECTION_FAILED;
     }
-    fprintf( stderr, "connected to Oak AD %s\n", oakAdDevice);
+    syslog (LOG_DEBUG, "connected to Oak AD %s\n", oakAdDevice);
 
+    
+    openlog ("tps534", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
     // create receive communication thread
     thread_stat = pthread_create(&tps534_oak_digin_th_id, NULL, &tps534_oak_digin_thread, NULL); // 0 success
 
@@ -396,14 +419,16 @@ connectDevice(char *oakAdDevice, int connecting)
     if (oakAdHandle > 0) {
       closeDevice(oakAdHandle);
       oakAdHandle = -1;
-      thread_stat = pthread_cancel(tps534_oak_digin_th_id); // 0 = success                                                                                                                                                  
+      thread_stat = pthread_cancel(tps534_oak_digin_th_id); // 0 = success
+      free(channelInfos) ; 
+      closelog ();
       if( thread_stat != 0 ) {
-        fprintf( stderr,  "connectDevice: Oak thread NOT stopped\n");
+        syslog (LOG_ERR, "connectDevice: Oak thread NOT stopped\n");
         return thread_stat ;
       }
     }
     /* Disconnect: prepare for reconnect. */
-    fprintf( stderr, "disconnected from Oak AD %s", oakAdDevice);
+    syslog (LOG_DEBUG, "disconnected from Oak AD %s\n", oakAdDevice);
   }
   return 0 ;
 }
@@ -414,43 +439,45 @@ connectDevice(char *oakAdDevice, int connecting)
  * infinite loop, checks whether any of the inputs changed state and signals
  * the state transition
  *****************************************************************************/
-
+#include <stdlib.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 void *
 tps534_oak_digin_thread(void * args)
 {
-  static struct hiddev_event ev[256];
+  static struct hiddev_event ev[64];
   int rd ;
-  
-  fprintf( stderr,  "tps534_oak_digin_thread: thread started\n");
 
   while (1) {
+
+
   NEXT:   rd = read(oakAdHandle, ev, sizeof(ev));
-  //NEXT:   rd= readInterruptReport(oakAdHandle, ev);
+    //original libary call NEXT:   rd= readInterruptReport(oakAdHandle, ev);
 
     if (rd == -1) {
-      fprintf(stderr, "read error in tps534_oak_digin_thread(): %s\n", strerror(errno));
-      //    connectDevice(false);
+      syslog (LOG_ERR, "read error in tps534_oak_digin_thread(): %s", strerror(errno));
       goto NEXT;
     }
     if (debug >= 3) {
-      fprintf(stderr, "tps534_oak_digin_thread(): %d bytes read\n", rd);
+      syslog (LOG_DEBUG, "tps534_oak_digin_thread(): %d bytes read\n", rd);
     }
 
     if (rd < sizeof(ev[0])) {
-      fprintf( stderr, "incomplete read from Oak device (%d bytes)", rd);
+      syslog (LOG_ERR, "incomplete read from Oak device (%d bytes)\nsleeping\n", rd);
       goto NEXT;
     }
 
     size_t kCount = rd / sizeof(ev[0]);
     if (debug >= 3) {
-      fprintf(stderr, "tps534_oak_digin_thread(): %zd hiddev_event structs\n", kCount);
+      syslog (LOG_DEBUG, "tps534_oak_digin_thread(): %zd hiddev_event structs\n", kCount);
     }
 
     int i;
     double f;
     for (i = 0;(i < devInfo.numberOfChannels) && (i < 6) && (i < kCount);i++) {
       if (debug >= 3) {
-	fprintf(stderr, "tps534_oak_digin_thread(): ch %d, exp: %d, sign: %d\n", i, channelInfos[i].unitExponent, channelInfos[i].isSigned);
+	syslog (LOG_DEBUG, "tps534_oak_digin_thread(): ch %d, exp: %d, sign: %d\n", i, channelInfos[i].unitExponent, channelInfos[i].isSigned);
       }
       
       f = pow(10.0, channelInfos[i].unitExponent);
@@ -473,18 +500,11 @@ tps534_oak_digin_thread(void * args)
     tps534State.calcIn[3]= sky(tps534State.analogIn[1], tps534State.calcIn[1]);
 
     if (debug >= 1) {
-      fprintf( stderr, "Analog: %f %f %f %f %f\n", tps534State.analogIn[0], tps534State.analogIn[1], tps534State.analogIn[2], tps534State.analogIn[3], tps534State.analogIn[4]) ;
-      fprintf( stderr, "Calc  : %f %f %f %f\n", tps534State.calcIn[0], tps534State.calcIn[1], tps534State.calcIn[2], tps534State.calcIn[3]) ;
+      syslog (LOG_DEBUG, "Analog: %f %f %f %f %f\n", tps534State.analogIn[0], tps534State.analogIn[1], tps534State.analogIn[2], tps534State.analogIn[3], tps534State.analogIn[4]) ;
+      syslog (LOG_DEBUG, "Calc  : %f %f %f %f\n", tps534State.calcIn[0], tps534State.calcIn[1], tps534State.calcIn[2], tps534State.calcIn[3]) ;
     }
-    // toggle LED of Oak as a visible heart beat.
     read_oak_cnt++;
-    /* if (read_oak_cnt == 1) { */
-    /*   CHECK_OAK_CALL(setLedMode(oakAdHandle, eLedModeOn, false)); */
-    /* } else if (read_oak_cnt == 2) { */
-    /*   CHECK_OAK_CALL(setLedMode(oakAdHandle, eLedModeOff, false)); */
-    /* } else if (read_oak_cnt == 4) { */
-    /*   read_oak_cnt = 0; */
-    /* } */
+
   } /* while (1) */
   
   return NULL;

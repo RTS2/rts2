@@ -27,6 +27,7 @@
 
 tps534_state tps534State ;
 tps534_state tps534LastState ;
+extern int read_oak_cnt ;
 
 namespace rts2sensord
 {
@@ -113,7 +114,7 @@ TPS534::init ()
 		setWeatherState (false, "cloud trigger unspecified");
 
 	
-	for( int i = 0; i < 5; i++) {
+	for( int i = 0; i < 6; i++) {
 	  tps534LastState.analogIn[i]= 0. ;
 	}
 	return 0;
@@ -121,46 +122,11 @@ TPS534::init ()
 int
 TPS534::info ()
 {
-  static int counter= 0;
+  static int last_read_oak_cnt= 0;
   rTheta->setValueDouble (tps534State.calcIn[0]) ;
   ambientTemperatureBeta->setValueDouble (tps534State.calcIn[1]) ;
   ambientTemperatureLUT->setValueDouble (tps534State.calcIn[2]) ;
   temperatureSky->setValueDouble (tps534State.calcIn[3]) ;
-  // the thread dies from time to time for unknown reason
-  // restart it here if all analog input state values are equal to the last state
-  // this is a temprorary fix
-
-  int number_of_identical_values= 0 ;
-  for( int i = 0; i < 5; i++) {
-    
-    if( tps534State.analogIn[i] == 0.) { // right after startup
-      number_of_identical_values++;
-    } else if( tps534State.analogIn[i] == tps534LastState.analogIn[i]) {
-      number_of_identical_values++;
-    }
-  }
- 
-  if( number_of_identical_values > 4) {
-    counter++ ;
-    if( counter > 10) {
-      counter= 0 ;
-    int ret= -1;
-    logStream (MESSAGE_ERROR) << "TPS534::info restarting oak thread" <<  sendLog;
-    if(( ret= connectDevice(device_file, 0))) {
-      logStream (MESSAGE_ERROR) << "TPS534::info stopping oak thread failed, error: "<< ret <<  sendLog;
-    } else {
-      if(( ret= connectDevice(device_file, 1))) {
-	logStream (MESSAGE_ERROR) << "TPS534::info start oak thread failed" <<  sendLog;
-      } else {
-	logStream (MESSAGE_DEBUG) << "TPS534::info restarted oak thread successfully" <<  sendLog;
-      }
-    }
-    }
-  } else {
-    for( int i = 0; i < 5; i++) {
-      tps534LastState.analogIn[i]= tps534State.analogIn[i] ;
-    }
-  }
 
   //  Measurment make only sense in case the door is open
   //  otherwise the temperature of the door is read
@@ -170,7 +136,7 @@ TPS534::info ()
     Rts2Value * doorState =  conn_door->getValue ("DOORSTATE");
     if( doorState) {
       if( doorState->getValueType()== RTS2_VALUE_STRING) {
-	if( ! strcmp(doorState->getDisplayValue(), "stopped, open"))  {                                                                                                                                                   
+	if( ! strcmp(doorState->getDisplayValue(), "stopped, open")) {
 	  doorOpen= true ;
         } else {
 	  doorOpen= false ;
@@ -182,15 +148,21 @@ TPS534::info ()
   }  
 
   if( doorOpen) {
-  // check the state of the cloud sensor
-    if (temperatureSky->getValueDouble() > triggerSky->getValueDouble ()) {
-      if (getWeatherState () == true)  {
-	logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << temperatureSky->getValueDouble ()
-				  << " trigger: " << triggerSky->getValueDouble ()
-				  << sendLog;
+    // Check if thread died  
+    if( last_read_oak_cnt >= read_oak_cnt) {
+      logStream (MESSAGE_ERROR) << "TPS534::info oak thread died" << sendLog;
+    } else {
+      // set the weather state
+      if (temperatureSky->getValueDouble() > triggerSky->getValueDouble ()) {
+	if (getWeatherState () == true)  {
+	  logStream (MESSAGE_DEBUG) << "TPS534::info setting weather to bad, sky temperature: " << temperatureSky->getValueDouble ()
+				    << " trigger: " << triggerSky->getValueDouble ()
+				    << sendLog;
+	}
+	setWeatherTimeout (TPS534_WEATHER_TIMEOUT_BAD, "sky temperature");
       }
-      setWeatherTimeout (TPS534_WEATHER_TIMEOUT_BAD, "sky temperature");
     }
+    last_read_oak_cnt= read_oak_cnt ;
   }
   return SensorWeather::info ();
 }

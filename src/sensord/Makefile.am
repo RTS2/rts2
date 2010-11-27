@@ -72,7 +72,7 @@ rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
 
 rts2_sensor_fram_SOURCES = fram.cpp
 
-rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c ../dome/util_vermes.c
+rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c 
 rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD}
 
 rts2_sensor_flwo_weather_SOURCES = flwo-weather.cpp
