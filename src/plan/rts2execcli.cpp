@@ -132,9 +132,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 	int ret;
 	ret = haveNextCommand (this);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG)
-		<< "Rts2DevClientCameraExec::nextComd " << ret
-		<< sendLog;
+	logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraExec::nextComd " << ret << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	if (!ret)
 		return;
@@ -412,6 +410,13 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			{
 				struct ln_equ_posn *pos = (struct ln_equ_posn *) event->getArg ();
 				queCommand (new Rts2CommandMove (getMaster (), this, pos->ra, pos->dec), BOP_TEL_MOVE);
+			}
+			break;
+		case EVENT_NEW_TARGET_ALTAZ:
+		case EVENT_CHANGE_TARGET_ALTAZ:
+			{
+				struct ln_hrz_posn *hrz = (struct ln_hrz_posn *) event->getArg ();
+				queCommand (new Rts2CommandMoveAltAz (getMaster (), this, hrz->az, hrz->alt), BOP_TEL_MOVE);
 			}
 			break;
 		case EVENT_SLEW_TO_TARGET:

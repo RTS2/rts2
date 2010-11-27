@@ -269,9 +269,22 @@ void Executor::postEvent (Rts2Event * event)
 			maskState (EXEC_STATE_MASK, EXEC_MOVE);
 			break;
 		case EVENT_NEW_TARGET:
-			currentTarget->endObservation (-1);
+			currentTarget->newObsSlew ((struct ln_equ_posn *) event->getArg ());
+			break;
 		case EVENT_CHANGE_TARGET:
 			currentTarget->updateSlew ((struct ln_equ_posn *) event->getArg ());
+			break;
+		case EVENT_NEW_TARGET_ALTAZ:
+		case EVENT_CHANGE_TARGET_ALTAZ:
+			{
+				struct ln_hrz_posn *hrz = (struct ln_hrz_posn *) event->getArg ();
+				struct ln_equ_posn pos;
+				ln_get_equ_from_hrz (hrz, observer, ln_get_julian_from_sys (), &pos);
+				if (event->getType () == EVENT_NEW_TARGET_ALTAZ)
+					currentTarget->newObsSlew (&pos);
+				else
+					currentTarget->updateSlew (&pos);
+			}
 			break;
 		case EVENT_OBSERVE:
 			// we can get EVENT_OBSERVE in case of continues observation

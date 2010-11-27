@@ -77,7 +77,17 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "altaz"))
 	{
-		
+		struct ln_hrz_posn hrz;
+		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
+			return;
+		master->postEvent (new Rts2Event (EVENT_CHANGE_TARGET_ALTAZ, (void *) &hrz));
+	}
+	else if (!strcasecmp (cmd, "newaltaz"))
+	{
+		struct ln_hrz_posn hrz;
+		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
+			return;
+		master->postEvent (new Rts2Event (EVENT_NEW_TARGET_ALTAZ, (void *) &hrz));
 	}
 	else if (!strcmp (cmd, "dark"))
 	{

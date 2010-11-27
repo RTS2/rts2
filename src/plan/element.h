@@ -42,25 +42,28 @@ using namespace rts2core;
 
 // send some signal to other device..so they will
 // know that something is going on
-#define EVENT_SIGNAL              RTS2_LOCAL_EVENT + 256
+#define EVENT_SIGNAL                RTS2_LOCAL_EVENT + 256
 
-#define EVENT_SIGNAL_QUERY        RTS2_LOCAL_EVENT + 257
+#define EVENT_SIGNAL_QUERY          RTS2_LOCAL_EVENT + 257
 
 // send when data we received
-#define EVENT_STAR_DATA           RTS2_LOCAL_EVENT + 258
+#define EVENT_STAR_DATA             RTS2_LOCAL_EVENT + 258
 
-#define EVENT_ADD_FIXED_OFFSET    RTS2_LOCAL_EVENT + 259
+#define EVENT_ADD_FIXED_OFFSET      RTS2_LOCAL_EVENT + 259
 
 // guiding data available
-#define EVENT_GUIDING_DATA        RTS2_LOCAL_EVENT + 260
+#define EVENT_GUIDING_DATA          RTS2_LOCAL_EVENT + 260
 // ask for acquire state..
-#define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 261
+#define EVENT_GET_ACQUIRE_STATE     RTS2_LOCAL_EVENT + 261
 
 // change target to new RA DEC, passed as paramentr (struct ln_equ_posn *)
-#define EVENT_CHANGE_TARGET       RTS2_LOCAL_EVENT + 262
+#define EVENT_CHANGE_TARGET         RTS2_LOCAL_EVENT + 262
 
 // change target, start new observation
-#define EVENT_NEW_TARGET          RTS2_LOCAL_EVENT + 263
+#define EVENT_NEW_TARGET            RTS2_LOCAL_EVENT + 263
+
+#define EVENT_CHANGE_TARGET_ALTAZ   RTS2_LOCAL_EVENT + 264
+#define EVENT_NEW_TARGET_ALTAZ      RTS2_LOCAL_EVENT + 265
 
 namespace rts2script
 {
