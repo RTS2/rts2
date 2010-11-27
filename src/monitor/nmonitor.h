@@ -72,6 +72,9 @@
 #define MENU_DEBUG_LIMITED  12
 #define MENU_DEBUG_FULL     13
 
+#define MENU_SORT_ALPHA     21
+#define MENU_SORT_RTS2      22
+
 enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON, NONE };
 
 using namespace rts2ncurses;
@@ -165,6 +168,12 @@ class NMonitor:public Rts2Client
 #ifdef HAVE_PGSQL
 		rts2db::SimbadTarget *tarArg;
 #endif
+
+		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
+
+		connections_t orderedConn;
+
+		void refreshConnections ();
 		/**
 		 * Return connection at given number.
 		 *
@@ -172,15 +181,7 @@ class NMonitor:public Rts2Client
 		 *
 		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
 		 */
-		Rts2Conn *connectionAt (unsigned int i)
-		{
-			if (i < getCentraldConns ()->size ())
-				return (*getCentraldConns ())[i];
-			i -= getCentraldConns ()->size ();
-			if (i >= getConnections ()->size ())
-				return NULL;
-			return (*getConnections ())[i];
-		}
+		Rts2Conn *connectionAt (unsigned int i);
 };
 
 /**

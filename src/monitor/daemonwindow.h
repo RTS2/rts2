@@ -86,11 +86,13 @@ class NSelWindow:public NWindow
 class NDevListWindow:public NSelWindow
 {
 	public:
-		NDevListWindow (Rts2Block * in_block);
+		NDevListWindow (Rts2Block * in_block, connections_t *in_conns);
 		virtual ~ NDevListWindow (void);
 		virtual void draw ();
+
 	private:
 		Rts2Block * block;
+		connections_t *conns;
 };
 
 class NCentraldWindow:public NSelWindow

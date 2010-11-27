@@ -71,6 +71,41 @@ void NMonitor::sendCommand ()
 	}
 }
 
+class sortConnName
+{
+	public:
+		bool operator () (Rts2Conn *con1, Rts2Conn *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
+};
+
+void NMonitor::refreshConnections ()
+{
+	orderedConn.clear ();
+	orderedConn = *getConnections ();
+	// look in ordered list
+	switch (connOrder)
+	{
+		case ORDER_RTS2:
+			break;
+		case ORDER_ALPHA:
+			std::sort (orderedConn.begin (), orderedConn.end (), sortConnName());
+			break;
+	}
+	daemonWindow = NULL;
+}
+
+Rts2Conn *NMonitor::connectionAt (unsigned int i)
+{
+	if (i < getCentraldConns ()->size ())
+		return (*getCentraldConns ())[i];
+	i -= getCentraldConns ()->size ();
+	if (orderedConn.size () == 0)
+		refreshConnections ();
+	if (i >= orderedConn.size ())
+		return NULL;
+	return orderedConn[i];
+}
+
+
 int NMonitor::processOption (int in_opt)
 {
 	switch (in_opt)
@@ -235,6 +270,20 @@ void NMonitor::menuPerform (int code)
 		case MENU_EXIT:
 			endRunLoop ();
 			break;
+		case MENU_SORT_ALPHA:
+		case MENU_SORT_RTS2:
+			switch (code)
+			{
+				case MENU_SORT_ALPHA:
+					connOrder = ORDER_ALPHA;
+					break;
+				case MENU_SORT_RTS2:
+					connOrder = ORDER_RTS2;
+					break;
+			}
+			refreshConnections ();
+			repaint ();
+			break;
 	}
 }
 
@@ -265,12 +314,13 @@ void NMonitor::changeListConnection ()
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			if (conn == (*iter))
 				daemonWindow = new NDeviceCentralWindow (conn);
-
+		// otherwise it is normal device connection
 		if (daemonWindow == NULL)
 			daemonWindow = new NDeviceWindow (conn);
 	}
 	else
 	{
+	  	// and if the connetion does not exists, we should draw status overview
 		delete daemonWindow;
 		daemonWindow = new NCentraldWindow (this);
 	}
@@ -297,6 +347,8 @@ NMonitor::NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 
 	old_lines = 0;
 	old_cols = 0;
+
+	connOrder = ORDER_ALPHA; //RTS2;
 
 #ifdef HAVE_PGSQL
 	tarArg = NULL;
@@ -336,6 +388,8 @@ NMonitor::~NMonitor (void)
 int NMonitor::repaint ()
 {
 	curs_set (0);
+	if (getConnections ()->size () != orderedConn.size ())
+		refreshConnections ();
 	if (LINES != old_lines || COLS != old_cols)
 		resize ();
 	deviceList->draw ();
@@ -390,6 +444,8 @@ int NMonitor::init ()
 	menu = new NMenu ();
 	NSubmenu *sub = new NSubmenu ("System");
 	sub->createAction ("Exit", MENU_EXIT);
+	sub->createAction ("Alpha sort", MENU_SORT_ALPHA);
+	sub->createAction ("RTS2 sort", MENU_SORT_RTS2);
 	menu->addSubmenu (sub);
 
 	sub = new NSubmenu ("States");
@@ -428,7 +484,7 @@ int NMonitor::init ()
 	}
 
 	// init windows
-	deviceList = new NDevListWindow (this);
+	deviceList = new NDevListWindow (this, &orderedConn);
 	comWindow = new NComWin ();
 	msgwindow = new NMsgWindow ();
 	windowStack.push_back (deviceList);

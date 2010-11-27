@@ -134,9 +134,10 @@ void NSelWindow::changeSelRow (int change)
 	selrow %= maxrow;
 }
 
-NDevListWindow::NDevListWindow (Rts2Block * in_block):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
+NDevListWindow::NDevListWindow (Rts2Block * in_block, connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
 {
 	block = in_block;
+	conns = in_conns;
 }
 
 NDevListWindow::~NDevListWindow (void)
@@ -154,7 +155,7 @@ void NDevListWindow::draw ()
 		wprintw (scrolpad, "centrald\n");
 		maxrow++;
 	}
-	for (iter = block->getConnections ()->begin (); iter != block->getConnections ()->end (); iter++)
+	for (iter = conns->begin (); iter != conns->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
 		wprintw (scrolpad, "%s\n", conn->getName ());
