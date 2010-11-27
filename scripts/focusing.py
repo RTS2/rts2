@@ -19,6 +19,7 @@
 # (C) 2002-2010 Martin Jelinek
 # (C) 2009-2010 Markus Wildi
 # (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2010      Francisco Forster Buron, Universidad de Chile
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -65,6 +66,8 @@ class Focusing (rts2comm.Rts2Comm):
 		self.linear_fit = self.step * self.attempts
 		# target FWHM for linear fit
 		self.linear_fit_fwhm = 3.5
+		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
+		self.altaz (82,10)
 
 	def doFit(self,fit):
 		b = None
