@@ -28,6 +28,8 @@
 #define OPT_CHANGE_FILTER   OPT_LOCAL + 50
 #define OPT_SKIP_FILTER     OPT_LOCAL + 51
 #define OPT_PHOTOMETER_TIME OPT_LOCAL + 52
+#define OPT_NOSYNC          OPT_LOCAL + 53
+#define OPT_DARK            OPT_LOCAL + 54
 
 Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
@@ -36,6 +38,8 @@ Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient *
 	average = 0;
 
 	low = med = hig = 0;
+
+	bop = BOP_EXPOSURE;
 
 	autoSave = master->getAutoSave ();
 }
@@ -57,7 +61,7 @@ void Rts2GenFocCamera::exposureStarted ()
 {
 	if (exe == NULL)
 	{
-		queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+		queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
 	}
 	Rts2DevClientCameraFoc::exposureStarted ();
 }
@@ -179,7 +183,7 @@ void Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 		}
 	}
 	Rts2DevClientCameraFoc::focusChange (focus);
-	queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+	queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
 }
 
 void Rts2GenFocCamera::center (int centerWidth, int centerHeight)
@@ -213,11 +217,14 @@ Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_
 	photometerFilterChange = 0;
 	configFile = NULL;
 
+	bop = BOP_EXPOSURE;
+
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
 	addOption ('d', NULL, 1, "camera device name(s) (multiple for multiple cameras)");
 	addOption ('e', NULL, 1, "exposure (defaults to 10 sec)");
-	addOption ('a', "dark", 0, "create dark images");
+	addOption (OPT_NOSYNC, "nosync", 0, "do not synchronize camera with telescope (don't block)");
+	addOption (OPT_DARK, "dark", 0, "create dark images");
 	addOption ('c', NULL, 0, "takes only center images");
 	addOption ('b', NULL, 1, "default binning (ussually 1, depends on camera setting)");
 	addOption ('Q', NULL, 0, "query after image end to user input (changing focusing etc..");
@@ -252,7 +259,10 @@ int Rts2GenFocClient::processOption (int in_opt)
 		case 'e':
 			defExposure = atof (optarg);
 			break;
-		case 'a':
+		case OPT_NOSYNC:
+			bop = 0;
+			break;
+		case OPT_DARK:
 			darks = true;
 			break;
 		case 'b':
@@ -339,7 +349,7 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			printf ("Get conn: %s\n", cam->getName ());
-			cam->queCommand (new rts2core::Rts2CommandExposure (this, cam, BOP_EXPOSURE));
+			cam->queCommand (new rts2core::Rts2CommandExposure (this, cam, bop));
 		}
 	}
 	return cam;

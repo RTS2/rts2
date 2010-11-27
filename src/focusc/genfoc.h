@@ -34,6 +34,30 @@ class Rts2GenFocCamera;
 
 class Rts2GenFocClient:public Rts2Client
 {
+	public:
+		Rts2GenFocClient (int argc, char **argv);
+		virtual ~ Rts2GenFocClient (void);
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual int init ();
+
+		float defaultExpousure () { return defExposure; }
+		const char *getExePath () { return focExe; }
+		int getAutoSave () { return autoSave; }
+		int getFocusingQuery () { return query; }
+		int getAutoDark () { return autoDark; }
+
+	protected:
+		int autoSave;
+
+		virtual int processOption (int in_opt);
+		std::vector < char *>cameraNames;
+
+		char *focExe;
+
+		virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
+		Rts2GenFocCamera *initFocCamera (Rts2GenFocCamera * cam);
+
 	private:
 		float defExposure;
 		int defCenter;
@@ -60,44 +84,7 @@ class Rts2GenFocClient:public Rts2Client
 		std::vector < int >skipFilters;
 
 		char *configFile;
-
-	protected:
-		int autoSave;
-
-		virtual int processOption (int in_opt);
-		std::vector < char *>cameraNames;
-
-		char *focExe;
-
-		virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
-		Rts2GenFocCamera *initFocCamera (Rts2GenFocCamera * cam);
-	public:
-		Rts2GenFocClient (int argc, char **argv);
-		virtual ~ Rts2GenFocClient (void);
-
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-		virtual int init ();
-
-		float defaultExpousure ()
-		{
-			return defExposure;
-		}
-		const char *getExePath ()
-		{
-			return focExe;
-		}
-		int getAutoSave ()
-		{
-			return autoSave;
-		}
-		int getFocusingQuery ()
-		{
-			return query;
-		}
-		int getAutoDark ()
-		{
-			return autoDark;
-		}
+		int bop;
 };
 
 class fwhmData
@@ -116,17 +103,6 @@ class fwhmData
 
 class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 {
-	private:
-		Rts2GenFocClient * master;
-	protected:
-		unsigned short low, med, hig, max, min;
-		double average;
-		int autoSave;
-
-		std::list < fwhmData * >fwhmDatas;
-		virtual void printFWHMTable ();
-
-		virtual void exposureStarted ();
 	public:
 		Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master);
 		virtual ~ Rts2GenFocCamera (void);
@@ -136,5 +112,26 @@ class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 		virtual imageProceRes processImage (Rts2Image * image);
 		virtual void focusChange (Rts2Conn * focus);
 		void center (int centerWidth, int centerHeight);
+
+		/**
+		 * Set condition mask describing when command cannot be send.
+		 *
+		 * @param bop Something from BOP_EXPOSURE,.. values
+		 */
+		void setBop (int _bop) { bop = _bop; }
+
+	protected:
+		unsigned short low, med, hig, max, min;
+		double average;
+		int autoSave;
+
+		std::list < fwhmData * >fwhmDatas;
+		virtual void printFWHMTable ();
+
+		virtual void exposureStarted ();
+
+	private:
+		Rts2GenFocClient * master;
+		int bop;
 };
 #endif							 /* !__RTS2_GENFOC__ */

@@ -1,10 +1,20 @@
-/*!
- * Command-line fits writer.
- * $Id$
+/* 
+ * Command line focusing client.
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
- * Client to test camera deamon.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author petr
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include "genfoc.h"
@@ -12,6 +22,13 @@
 #include <vector>
 #include <iostream>
 
+/**
+ * Command-line fits writer.
+ *
+ * Client to test camera deamon.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
 class Rts2focusc:public Rts2GenFocClient
 {
 	protected:
@@ -21,15 +38,12 @@ class Rts2focusc:public Rts2GenFocClient
 		Rts2focusc (int argc, char **argv);
 };
 
-Rts2GenFocCamera *
-Rts2focusc::createFocCamera (Rts2Conn * conn)
+Rts2GenFocCamera * Rts2focusc::createFocCamera (Rts2Conn * conn)
 {
 	return new Rts2GenFocCamera (conn, this);
 }
 
-
-void
-Rts2focusc::help ()
+void Rts2focusc::help ()
 {
 	Rts2GenFocClient::help ();
 	std::cout << "Examples:" << std::endl
@@ -38,18 +52,12 @@ Rts2focusc::help ()
 		<< std::endl;
 }
 
-
-Rts2focusc::Rts2focusc (int in_argc, char **in_argv):
-Rts2GenFocClient (in_argc, in_argv)
+Rts2focusc::Rts2focusc (int in_argc, char **in_argv):Rts2GenFocClient (in_argc, in_argv)
 {
 	autoSave = 1;
-
-	addOption ('s', "secmod", 1, "exposure every UT sec");
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2focusc client = Rts2focusc (argc, argv);
 	return client.run ();

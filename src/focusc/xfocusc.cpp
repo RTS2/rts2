@@ -932,11 +932,11 @@ Rts2xfocus::~Rts2xfocus (void)
 
 void Rts2xfocus::usage ()
 {
-	std::cout <<
-		"\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1"
-		<< std::endl <<
-		"\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them"
-		<< std::endl;
+	std::cout
+		<< "\t" << getAppName () << " -d C2 --nosync -e 10    .. takes 10 sec exposures on device C2. Exposures are not synchronize (blocked by unresposible devices,..)" << std::endl
+		<< "\t" << getAppName () << " -d C0 -d C1 -e 20       .. takes 20 sec exposures on devices C0 and C1" << std::endl
+		<< "\t" << getAppName () << " -d C2 -a -e 10          .. takes 10 sec exposures on device C2. Takes darks and use them" << std::endl
+		<< "\t" << getAppName () << " -d C2 -a -e 10          .. takes 10 sec exposures on device C2. Takes darks and use them" << std::endl;
 }
 
 void Rts2xfocus::help ()
