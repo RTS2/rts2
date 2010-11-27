@@ -96,6 +96,14 @@ class Rts2Comm:
 		print "newobs",ra,dec
 		sys.stdout.flush()
 
+	def altaz(self,alt,az):
+		print "altaz",alt,az
+		sys.stdout.flush()
+
+	def newObsAltAz(self,alt,az):
+		print "newaltaz",alt,az
+		sys.stdout.flush()
+
 	def __imageAction(self,action,imagename):
 		print action,imagename
 		sys.stdout.flush()

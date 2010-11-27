@@ -11,17 +11,22 @@ class Test(rts2comm.Rts2Comm):
 		rts2comm.Rts2Comm.__init__(self)
 	
 	def run(self):
-		self.radec(10,20)
+		self.radec("20:30:40",20)
 		self.setValue('exposure',10)
 		self.exposure()
 		self.setValue('exposure',20)
 		self.exposure()
 		self.newObs(30,40)
+		self.altaz(10,20)
 		self.setValue('exposure',1)
 		self.exposure()
 		self.setValue('exposure',2)
-		self.newObs(40,50)
+		self.exposure()
+		self.altaz(40,50)
 		self.setValue('exposure',3)
+		self.altaz(60,70)
+		self.exposure()
+		self.newObsAltAz(60,60)
 		self.exposure()
 
 if __name__ == "__main__":

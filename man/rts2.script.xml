@@ -778,7 +778,16 @@ echo move 1:2:3.4 -1:30 # moves to RA 1h 2m 3.4sec and DEC -1.5 deg
       <varlistentry>
         <term><option>altaz {alt} {az}</option></term>
 	<listitem><para>
-	  Moves telescope to given horizontal (altitude and azimuth) coordinates.
+	  Moves telescope to given horizontal (altitude and azimuth) coordinates. Tracking is still enabled after move finished. This command should be used when observations at some horizontal position are required from the script.
+	</para><literallayout>
+echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>newaltaz {alt} {az}</option></term>
+	<listitem><para>
+	  Same as <emphasis>altaz</emphasis>, but similarly to
+	  <emphasis>newobs</emphasis> starts new observation.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
