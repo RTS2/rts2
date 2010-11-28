@@ -1,6 +1,7 @@
 /*
  * Executor body.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +30,33 @@
 
 namespace rts2plan
 {
+
+/**
+ * Executor queue. Used to freely create queue inside executor
+ * for queue execution. Allow users to define rules how the queue
+ * should be used, provides method to support basic queue operations.
+ * 
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class ExecutorQueue:public std::list <rts2db::Target *>
+{
+	public:
+		ExecutorQueue (Rts2DeviceDb *master, const char *name);
+		virtual ~ExecutorQueue ();
+
+		int addFront (rts2db::Target *nt);
+		int addTarget (rts2db::Target *nt);
+
+		void clearNext ();
+	private:
+		Rts2DeviceDb *master;
+
+		rts2core::IntegerArray *nextIds;
+		rts2core::StringArray *nextNames;
+
+		// update values from the target list
+		void updateVals ();
+};
 
 /**
  * Executor class.
@@ -68,7 +96,6 @@ class Executor:public Rts2DeviceDb
 
 	private:
 		rts2db::Target * currentTarget;
-		std::list <rts2db::Target *> nextTargets;
 
 		void clearNextTargets ();
 
@@ -78,17 +105,25 @@ class Executor:public Rts2DeviceDb
 		void doSwitch ();
 		void switchTarget ();
 
-		int setNext (int nextId);
+		int setNext (int nextId, const char *que = "next");
 		int queueTarget (int nextId);
 		int setNow (int nextId);
 		int setGrb (int grbId);
 		int setShower ();
 
-								 // -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
+		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 		Rts2ValueInteger *scriptCount;
 		int waitState;
-		std::vector < rts2db::Target * >targetsQue;
+		std::vector < rts2db::Target * > targetsQue;
 		struct ln_lnlat_posn *observer;
+
+		// Queue management
+		std::vector < ExecutorQueue > queues;
+		Rts2ValueSelection *activeQueue;
+
+		ExecutorQueue * getActiveQueue () { return (ExecutorQueue *) (activeQueue->getData ()); }
+
+		void createQueue (const char *name);
 
 		Rts2ValueDouble *grb_sep_limit;
 		Rts2ValueDouble *grb_min_sep;
@@ -120,15 +155,63 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueBool *doDarks;
 		Rts2ValueBool *ignoreDay;
 
-		rts2core::IntegerArray *next_ids;
-		rts2core::StringArray *next_names;
-
 		Rts2ValueInteger *img_id;
 };
 
 }
 
 using namespace rts2plan;
+
+ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name)
+{
+  	master = _master;
+	std::string sn (name);
+	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
+	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names");
+}
+
+ExecutorQueue::~ExecutorQueue ()
+{
+	clearNext ();
+	updateVals ();
+}
+
+void ExecutorQueue::updateVals ()
+{
+	std::vector <int> _id_arr;
+	std::vector <std::string> _name_arr;
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		_id_arr.push_back ((*iter)->getTargetID ());
+		_name_arr.push_back ((*iter)->getTargetName ());
+		std::cout << (*iter)->getTargetID () << std::endl;
+	}
+	nextIds->setValueArray (_id_arr);
+	nextNames->setValueArray (_name_arr);
+	master->sendValueAll (nextIds);
+	master->sendValueAll (nextNames);
+}
+
+int ExecutorQueue::addFront (rts2db::Target *nt)
+{
+	push_front (nt);
+	updateVals ();
+	return 0;
+}
+
+int ExecutorQueue::addTarget (rts2db::Target *nt)
+{
+	push_back (nt);
+	updateVals ();
+	return 0;
+}
+
+void ExecutorQueue::clearNext ()
+{
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+		delete *iter;
+	clear ();
+}
 
 Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
@@ -161,8 +244,9 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	createValue (next_id, "next", "ID of next target", false, RTS2_VALUE_WRITABLE);
 	createValue (next_name, "next_name", "name of next target", false);
-	createValue (next_ids, "next_ids", "IDs of next target(s)", false);
-	createValue (next_names, "next_names", "name of next target(s)", false);
+
+	createValue (activeQueue, "queue", "selected queueu", true, RTS2_VALUE_WRITABLE);
+	createQueue ("next");
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
@@ -336,7 +420,7 @@ void Executor::postEvent (Rts2Event * event)
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
 				"EVENT_SCRIPT_ENDED Executor currentTarget " << currentTarget <<
-				" nextTarget " << nextTargets.size () << sendLog;
+				" next que  " << getActiveQueue ()->size () << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			if (currentTarget)
 			{
@@ -348,7 +432,7 @@ void Executor::postEvent (Rts2Event * event)
 				}
 				// scriptCount is not 0, but we hit continues target..
 				else if (currentTarget->isContinues () == 1
-					&& (nextTargets.size () == 0 || nextTargets.front()->getTargetID () == currentTarget->getTargetID ())
+					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front()->getTargetID () == currentTarget->getTargetID ())
 					)
 				{
 					// wait, if we are in stop..don't queue it again..
@@ -447,26 +531,17 @@ int Executor::info ()
 		img_id->setValueInteger (-1);
 		current_obsid->setValueInteger (-1);
 	}
-	std::vector <int> _id_arr;
-	std::vector <std::string> _name_arr;
-	if (nextTargets.size () != 0)
-	{
-		next_id->setValueInteger (nextTargets.front ()->getTargetID ());
-		next_name->setValueCharArr (nextTargets.front ()->getTargetName ());
-		for (std::list <rts2db::Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
-		{
-			_id_arr.push_back ((*iter)->getTargetID ());
-			_name_arr.push_back ((*iter)->getTargetName ());
-		}
-		next_ids->setValueArray (_id_arr);
-		next_names->setValueArray (_name_arr);
-	}
-	else
+
+
+	if (getActiveQueue ()->empty ())
 	{
 		next_id->setValueInteger (-1);
 		next_name->setValueCharArr (NULL);
-		next_ids->setValueArray (_id_arr);
-		next_names->setValueArray (_name_arr);
+	}
+	else
+	{
+		next_id->setValueInteger (getActiveQueue ()->front ()->getTargetID ());
+		next_name->setValueCharArr (getActiveQueue ()->front ()->getTargetName ());
 	}
 
 	return Rts2DeviceDb::info ();
@@ -482,15 +557,15 @@ int Executor::changeMasterState (int new_state)
 		case SERVERD_NIGHT:
 		case SERVERD_MORNING:
 			// switch target if current is flats..
-			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nextTargets.size () != 0)
-				queueTarget (nextTargets.front ()->getTargetID ());
+			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT)
+				queueTarget (activeQueue->getValueInteger ());
 		case SERVERD_EVENING:
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
 			// unblock stop state
 			if ((getState () & EXEC_MASK_END) == EXEC_END)
 				maskState (EXEC_MASK_END, EXEC_NOT_END);
-			if (!currentTarget && nextTargets.size () != 0)
+			if (!currentTarget && getActiveQueue ()->size () != 0)
 				switchTarget ();
 			break;
 		case (SERVERD_DAWN | SERVERD_STANDBY):
@@ -500,7 +575,7 @@ int Executor::changeMasterState (int new_state)
 			// next will be dark..
 			if (doDarks->getValueBool () == true)
 			{
-				nextTargets.push_front (createTarget (1, observer));
+				getActiveQueue ()->addFront (createTarget (1, observer));
 				if (!currentTarget)
 					switchTarget ();
 			}
@@ -514,11 +589,11 @@ int Executor::changeMasterState (int new_state)
 	return Rts2DeviceDb::changeMasterState (new_state);
 }
 
-int Executor::setNext (int nextId)
+int Executor::setNext (int nextId, const char *queue)
 {
-	if (nextTargets.size() != 0)
+	if (getActiveQueue ()->size() != 0)
 	{
-		if (nextTargets.front ()->getTargetID () == nextId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+		if (getActiveQueue ()->front ()->getTargetID () == nextId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
 			// asked for same target
 			return 0;
 		clearNextTargets ();
@@ -554,12 +629,18 @@ int Executor::queueTarget (int tarId)
 	{
 		return setNow (nt);
 	}
-	nextTargets.push_back (nt);
+	getActiveQueue ()->addTarget (nt);
 	if (!currentTarget)
 		switchTarget ();
 	else
 		infoAll ();
 	return 0;
+}
+
+void Executor::createQueue (const char *name)
+{
+  	queues.push_back (ExecutorQueue (this, name));
+	activeQueue->addSelVal (name, (Rts2SelData *) &(queues[queues.size () - 1]));
 }
 
 int Executor::setNow (int nextId)
@@ -668,7 +749,7 @@ int Executor::setGrb (int grbId)
 	}
 	// otherwise set us as next target
 	clearNextTargets ();
-	nextTargets.push_back (grbTarget);
+	getActiveQueue ()->addTarget (grbTarget);
 	return 0;
 }
 
@@ -697,15 +778,9 @@ int Executor::stop ()
 
 void Executor::clearNextTargets ()
 {
-	for (std::list <rts2db::Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
-	{
-		delete *iter;
-	}
-	nextTargets.clear ();
+  	getActiveQueue ()->clearNext ();
 	sendValueAll (next_id);
 	sendValueAll (next_name);
-	sendValueAll (next_ids);
-	sendValueAll (next_names);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
 }
 
@@ -734,8 +809,8 @@ void Executor::beforeChange ()
 		currType = currentTarget->getTargetType ();
 	else
 		currType = TYPE_UNKNOW;
-	if (nextTargets.size () != 0)
-		nextType = nextTargets.front ()->getTargetType ();
+	if (getActiveQueue ()->size () != 0)
+		nextType = getActiveQueue ()->front ()->getTargetType ();
 	else
 		nextType = currType;
 	if (currType == TYPE_DARK && nextType != TYPE_DARK)
@@ -749,30 +824,30 @@ void Executor::doSwitch ()
 	int ret;
 	int nextId;
 	// we need to change current target - usefull for planner runs
-	if (currentTarget && currentTarget->isContinues () == 2 && (nextTargets.size () == 0 || nextTargets.front ()->getTargetID () == currentTarget->getTargetID ()))
+	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ()))
 	{
-		if (nextTargets.size () != 0)
-			nextTargets.pop_front ();
+		if (getActiveQueue ()->size () != 0)
+			getActiveQueue ()->pop_front ();
 		// create again our target..since conditions changed, we will get different target id
-		nextTargets.push_front (createTarget (currentTarget->getTargetID (), observer));
+		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
 	}
 	// check dark and flat processing
 	beforeChange ();
-	if (nextTargets.size () != 0)
+	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process
 		if (currentTarget)
 		{
 			// next target is defined - tested on line -5
-			nextId = (*nextTargets.begin ())->getTargetID ();
+			nextId = getActiveQueue ()->front ()->getTargetID ();
 			ret = currentTarget->endObservation (nextId);
 			if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
 				// don't queue only in case nextTarget and currentTarget are
 				// same and endObservation returns 1
 			{
 				processTarget (currentTarget);
-				currentTarget = nextTargets.front ();
-				nextTargets.pop_front ();
+				currentTarget = getActiveQueue ()->front ();
+				getActiveQueue ()->pop_front ();
 			}
 			// switch auto loop back to true
 			autoLoop->setValueBool (true);
@@ -780,8 +855,8 @@ void Executor::doSwitch ()
 		}
 		else
 		{
-			currentTarget = nextTargets.front ();
-			nextTargets.pop_front ();
+			currentTarget = getActiveQueue ()->front ();
+			getActiveQueue ()->pop_front ();
 		}
 	}
 	if (currentTarget)
@@ -803,7 +878,7 @@ void Executor::switchTarget ()
 	}
 
 	if (((getState () & EXEC_MASK_END) == EXEC_END)
-		|| (autoLoop->getValueBool () == false && nextTargets.size () == 0))
+		|| (autoLoop->getValueBool () == false && getActiveQueue ()->size () == 0))
 	{
 		maskState (EXEC_MASK_END, EXEC_NOT_END);
 		postEvent (new Rts2Event (EVENT_KILL_ALL));
@@ -832,7 +907,7 @@ void Executor::switchTarget ()
 				break;
 			case SERVERD_DUSK | SERVERD_STANDBY:
 			case SERVERD_DAWN | SERVERD_STANDBY:
-				if (!currentTarget && nextTargets.size () != 0 && nextTargets.front ()->getTargetID () == 1)
+				if (!currentTarget && getActiveQueue ()->size () != 0 && getActiveQueue ()->front ()->getTargetID () == 1)
 				{
 					// switch to dark..
 					doSwitch ();
@@ -864,7 +939,7 @@ void Executor::processTarget (rts2db::Target * in_target)
 			acqusitionFailed++;
 			break;
 	}
-	logStream (MESSAGE_INFO) << "observation # " << in_target->getObsId () << " of target " << in_target->getTargetName () << " ended." << sendLog;
+	logStream (MESSAGE_INFO) << "observation # " << current_obsid->getValueInteger () << " of target " << in_target->getTargetName () << " ended." << sendLog;
 	ret = in_target->postprocess ();
 	if (!ret)
 		targetsQue.push_back (in_target);
