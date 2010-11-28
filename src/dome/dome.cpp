@@ -38,7 +38,7 @@ int Dome::domeOpenStart ()
 	  	logStream (MESSAGE_ERROR) << "opening of the dome failed" << sendLog;
 		return -1;
 	}
-	maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENING | BOP_EXPOSURE, "opening dome");
 	logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "starting to open the dome" << sendLog;
 	return 0;
 }
@@ -181,7 +181,7 @@ int Dome::checkOpening ()
 		{
 			endOpen ();
 			infoAll ();
-			maskState (DOME_DOME_MASK, DOME_OPENED, "opening finished with error");
+			maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "opening finished with error");
 		}
 		if (ret == -2)
 		{
@@ -189,11 +189,11 @@ int Dome::checkOpening ()
 			infoAll ();
 			if (ret)
 			{
-				maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened with error");
+				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opened with error");
 			}
 			else
 			{
-				maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
+				maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_OPENED, "dome opened");
 			}
 		}
 	}
