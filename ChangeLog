@@ -1,3 +1,9 @@
+2010-11-28
+ * added ExecutorQueue for queues inside executor
+
+2010-11-27
+ * change default sorting of devices in rts2-mon
+
 2010-11-22
  * stop move state
 
