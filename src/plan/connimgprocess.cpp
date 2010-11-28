@@ -45,6 +45,13 @@ ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_time
 #endif
 }
 
+int ConnProcess::init ()
+{
+	if (exePath[0] == '\0')
+		return -1;
+	return ConnExe::init ();
+}
+
 ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnProcess (_master, _exe, _timeout)
 {
 	end_event = _end_event;

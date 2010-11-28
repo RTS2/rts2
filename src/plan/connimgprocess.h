@@ -35,8 +35,10 @@ class ConnProcess:public rts2script::ConnExe
 	public:
 		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
 
+		virtual int init ();
+
 		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
-		
+	
 		double getExposureEnd () { return expDate; };
 
 #ifdef HAVE_LIBJPEG
