@@ -355,7 +355,7 @@ std::ostream & TargetSet::printBonusList (std::ostream & _os, double JD)
 
 TargetSetSelectable::TargetSetSelectable (struct ln_lnlat_posn *in_obs) : TargetSet (in_obs)
 {
-	where = std::string ("tar_enabled = true AND tar_priority + tar_bonus > 0");
+	where = std::string ("tar_enabled = true");
 	order_by = std::string ("tar_priority + tar_bonus DESC");
 }
 
@@ -363,7 +363,7 @@ TargetSetSelectable::TargetSetSelectable (const char *target_type, struct ln_lnl
 {
 	std::ostringstream os;
 	printTypeWhere (os, target_type);
-	os << " AND tar_enabled = true AND tar_priority + tar_bonus > 0";
+	os << " AND tar_enabled = true";
 	where = os.str ();
 	order_by = std::string ("tar_id ASC");
 }
