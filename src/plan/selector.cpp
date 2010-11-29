@@ -219,14 +219,14 @@ int SelectorDev::selectNext ()
 
 int SelectorDev::updateNext ()
 {
-	Rts2Conn *exec;
 	next_id->setValueInteger (selectNext ());
 	if (next_id->getValueInteger () > 0)
 	{
-		exec = getOpenConnection ("EXEC");
-		if (exec && selEnabled->getValueBool ())
+		connections_t::iterator iexec = getConnections ()->begin ();  	
+		getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iexec);
+		if (iexec != getConnections ()->end () && selEnabled->getValueBool ())
 		{
-			exec->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
+			(*iexec)->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
 		}
 		return 0;
 	}
