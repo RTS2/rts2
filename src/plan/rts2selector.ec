@@ -229,7 +229,7 @@ void Selector::findNewTargets ()
 			targets
 		WHERE
 			(tar_enabled = true)
-		AND (tar_priority + tar_bonus > 0)
+		AND (tar_priority + tar_bonus >= 0)
 		AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
 
 	EXEC SQL OPEN findnewtargets;
