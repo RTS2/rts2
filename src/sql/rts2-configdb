@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration file read routines.
-# Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+# Copyright (C) 2010 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,30 +17,37 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-DBNAME=$1
-shift
-
 function print_help
 {
   cat << EOF
 Add telescope, camera or filters to the database.
 
 Usage:
-To fill in stars database:
-  rts2-builddb start
+To add camera C0 to stars database:
+  rts2-configdb stars -c C0
 
 Options:
-  -h .. this help
-  -t .. add telescope to the database
-  -c .. add camera to the database
-  -f .. add filters to the database
+  -h         .. this help
+  -t <name>  .. add telescope to the database
+  -c <name>  .. add camera to the database
+  -f <name>  .. add filter to the database
+  --testdb   .. fill database for tests
 
 Options must be folowed by name of an existing database, which has basic structure build with rts2-builddb.
 
 EOF
 }
 
+if [ "x$1" == "x-h" -o "x$1" == "x--help" ]; then
+  print_help
+  exit 0
+fi
+
+DBNAME=$1
+shift
+
 if [ "x$DBNAME" == "x" ]; then
+  print "You need to specify database name as the first argument."
   print_help
   exit 0
 fi
@@ -49,9 +56,13 @@ PSQL=psql
 
 PSQLDB="$PSQL $DBNAME"
 
-LOGFILE="/tmp/config_$DBNAME.log"
+# test database connection
 
-echo "Logs generated in $LOGFILE"
+$PSQLDB -c 'select * from cameras' 2>&1 >/dev/null
+if [ $? -ne 0 ]; then
+  echo "Cannot connect to dabase $DBNAME. Did you specify database as the first name? What does 'psql $DBNAME' do? Does it hits any bells? If not, please send full program output to <petr@kubanek.net>."
+  exit 0
+fi
 
 function test_empty
 {
@@ -61,12 +72,20 @@ function test_empty
   fi
 }
 
+LOGFILE="/tmp/config_$DBNAME.log"
+
+echo "Logs generated in $LOGFILE"
+
 function run_psql
 {
   echo -n $1 " ."
   echo "running $PSQLDB -c \"$2\"" >> $LOGFILE
   $PSQLDB --echo-all -c "$2" 2>> $LOGFILE|while read x; do echo -n "."; done
-  echo " OK"
+  if [ $? -eq 0 ]; then
+    echo " OK"
+  else
+    echo " failed"
+  fi
 }
 
 while [ "x$1" != "x" ]; do
@@ -92,6 +111,13 @@ while [ "x$1" != "x" ]; do
       fil=$1
       test_empty "x$fil"
       run_psql "Adding filter $fil" "insert into filters values ('$fil',NULL,NULL,'$fil','$fil inserted from rts2-configdb',NULL,NULL);"
+      ;;
+    --testdb)
+      run_psql "Adding telescope T0" "insert into mounts values ('T0',NULL,NULL,NULL,'T0 inserted from rts2-configdb');"
+      run_psql "Adding camera C0" "insert into cameras values ('C0','C0 inserted from rts2-configdb');"
+      for f in UNK AA B C D E V R I; do
+      	run_psql "Adding filter $f" "insert into filters values ('$f',NULL,NULL,'$f','$f inserted from rts2-configdb',NULL,NULL);"
+      done
       ;;
     *)
       echo "unknow argument $1"
