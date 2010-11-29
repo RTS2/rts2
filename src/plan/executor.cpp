@@ -100,7 +100,6 @@ class Executor:public Rts2DeviceDb
 		void clearNextTargets ();
 
 		void queDarks ();
-		void queFlats ();
 		void beforeChange ();
 		void doSwitch ();
 		void switchTarget ();
@@ -153,6 +152,7 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueString *next_name;
 
 		Rts2ValueBool *doDarks;
+		Rts2ValueBool *flatsDone;
 		Rts2ValueBool *ignoreDay;
 
 		Rts2ValueInteger *img_id;
@@ -252,6 +252,9 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false, RTS2_VALUE_WRITABLE);
 	doDarks->setValueBool (true);
+
+	createValue (flatsDone, "flats_done", "if current skyflat routine was finished", false, RTS2_VALUE_WRITABLE);
+	flatsDone->setValueBool (false);
 
 	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false, RTS2_VALUE_WRITABLE);
 	ignoreDay->setValueBool (false);
@@ -555,6 +558,8 @@ int Executor::changeMasterState (int new_state)
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_NIGHT:
+			flatsDone->setValueBool (false);
+			sendValueAll (flatsDone);
 		case SERVERD_MORNING:
 			// switch target if current is flats..
 			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT)
@@ -575,9 +580,18 @@ int Executor::changeMasterState (int new_state)
 			// next will be dark..
 			if (doDarks->getValueBool () == true)
 			{
-				getActiveQueue ()->addFront (createTarget (1, observer));
-				if (!currentTarget)
-					switchTarget ();
+			  	try
+				{
+					getActiveQueue ()->addFront (createTarget (1, observer));
+					if (!currentTarget)
+						switchTarget ();
+				}
+				catch (rts2core::Error &er)
+				{
+					logStream (MESSAGE_ERROR) << "cannot start dark target in standby : " << er << sendLog;
+					doDarks->setValueBool (false);
+					sendValueAll (doDarks);
+				}
 			}
 			break;
 		default:
@@ -603,37 +617,43 @@ int Executor::setNext (int nextId, const char *queue)
 
 int Executor::queueTarget (int tarId)
 {
-	rts2db::Target *nt = createTarget (tarId, observer);
-	if (!nt)
+	try
 	{
+		rts2db::Target *nt = createTarget (tarId, observer);
+		if (!nt)
+			return -2;
+		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
+		{
+			stop ();
+			delete nt;
+			return 0;
+		}
+		if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nt->getTargetType () != TYPE_FLAT
+			 && (getMasterState () == SERVERD_NIGHT || getMasterState () == SERVERD_MORNING))
+		{
+			return setNow (nt);
+		}
+		// switch immediately to flats..
+		if (nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+		{
+			return setNow (nt);
+		}
+		// overwrite darks with something usefull..
+		if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
+		{
+			return setNow (nt);
+		}
+		getActiveQueue ()->addTarget (nt);
+		if (!currentTarget)
+			switchTarget ();
+		else
+			infoAll ();
+	}
+	catch (rts2core::Error &ex)
+	{
+		logStream (MESSAGE_ERROR) << "cannot queue target with ID " << tarId << " :" << ex << sendLog;
 		return -2;
 	}
-	if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
-	{
-		stop ();
-		delete nt;
-		return 0;
-	}
-	if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nt->getTargetType () != currentTarget->getTargetType ()
-		 && (getMasterState () == SERVERD_NIGHT || getMasterState () == SERVERD_MORNING))
-	{
-		return setNow (nt);
-	}
-	// switch immediately to flats..
-	if (nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
-	{
-		return setNow (nt);
-	}
-	// overwrite darks with something usefull..
-	if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != currentTarget->getTargetType ())
-	{
-		return setNow (nt);
-	}
-	getActiveQueue ()->addTarget (nt);
-	if (!currentTarget)
-		switchTarget ();
-	else
-		infoAll ();
 	return 0;
 }
 
@@ -650,14 +670,19 @@ int Executor::setNow (int nextId)
 	if (!currentTarget)
 		return setNext (nextId);
 
-	newTarget = createTarget (nextId, observer);
-	if (!newTarget)
+	try
 	{
-		// error..
+		newTarget = createTarget (nextId, observer);
+		if (!newTarget)
+			// error..
+			return -2;
+		return setNow (newTarget);
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set now target with ID " << nextId << " : " << er << sendLog;
 		return -2;
 	}
-
-	return setNow (newTarget);
 }
 
 int Executor::setNow (rts2db::Target * newTarget)
@@ -685,8 +710,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 	struct ln_equ_posn pos;
 	currentTarget->getPosition (&pos);
 
-	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << " at RA DEC "
-		<< LibnovaRaDec (&pos) << sendLog;
+	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << " at RA DEC " << LibnovaRaDec (&pos) << sendLog;
 	return 0;
 }
 
@@ -697,60 +721,63 @@ int Executor::setGrb (int grbId)
 	int ret;
 
 	// is during night and ready?
-	if (!(getMasterState () == SERVERD_NIGHT
-		|| getMasterState () == SERVERD_DUSK
-		|| getMasterState () == SERVERD_DAWN))
+	if (!(getMasterState () == SERVERD_NIGHT || getMasterState () == SERVERD_DUSK || getMasterState () == SERVERD_DAWN))
 	{
 		logStream (MESSAGE_DEBUG) << "daylight / not on state GRB ignored" << sendLog;
 		return -2;
 	}
+	try
+	{
+		grbTarget = createTarget (grbId, observer);
 
-	grbTarget = createTarget (grbId, observer);
-
-	if (!grbTarget)
-	{
-		return -2;
-	}
-	grbTarget->getAltAz (&grbHrz);
-	if (grbHrz.alt < 0)
-	{
-		logStream (MESSAGE_DEBUG) << "GRB is bellow horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
-		delete grbTarget;
-		return -2;
-	}
-	// if we're already disabled, don't execute us
-	if (grbTarget->getTargetEnabled () == false)
-	{
-		logStream (MESSAGE_INFO)
-			<< "ignored execution request for GRB target " << grbTarget->getTargetName ()
-			<< " (# " << grbTarget->getObsTargetID () << ") because this target is disabled" << sendLog;
-		return -2;
-	}
-	if (!currentTarget)
-	{
-		return setNow (grbTarget);
-	}
-	// it's not same..
-	ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit->getValueDouble ());
-	if (ret == 0)
-	{
-		return setNow (grbTarget);
-	}
-	// if that's only few arcsec update, don't change
-	ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep->getValueDouble ());
-	if (ret == 1)
-	{
-		logStream (MESSAGE_INFO) << "GRB update for target " << grbTarget->getTargetName () << " (#"
-			<< grbTarget->getObsTargetID () << ") ignored, as its distance from current target "
-			<< currentTarget->getTargetName () << " (#" << currentTarget->getObsTargetID ()
-			<< ") is bellow separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
-			<< "." << sendLog;
+		if (!grbTarget)
+			return -2;
+		grbTarget->getAltAz (&grbHrz);
+		if (grbHrz.alt < 0)
+		{
+			logStream (MESSAGE_DEBUG) << "GRB is bellow horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
+			delete grbTarget;
+			return -2;
+		}
+		// if we're already disabled, don't execute us
+		if (grbTarget->getTargetEnabled () == false)
+		{
+			logStream (MESSAGE_INFO)
+				<< "ignored execution request for GRB target " << grbTarget->getTargetName ()
+				<< " (# " << grbTarget->getObsTargetID () << ") because this target is disabled" << sendLog;
+			return -2;
+		}
+		if (!currentTarget)
+		{
+			return setNow (grbTarget);
+		}
+		// it's not same..
+		ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit->getValueDouble ());
+		if (ret == 0)
+		{
+			return setNow (grbTarget);
+		}
+		// if that's only few arcsec update, don't change
+		ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep->getValueDouble ());
+		if (ret == 1)
+		{
+			logStream (MESSAGE_INFO) << "GRB update for target " << grbTarget->getTargetName () << " (#"
+				<< grbTarget->getObsTargetID () << ") ignored, as its distance from current target "
+				<< currentTarget->getTargetName () << " (#" << currentTarget->getObsTargetID ()
+				<< ") is bellow separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
+				<< "." << sendLog;
+			return 0;
+		}
+		// otherwise set us as next target
+		clearNextTargets ();
+		getActiveQueue ()->addTarget (grbTarget);
 		return 0;
 	}
-	// otherwise set us as next target
-	clearNextTargets ();
-	getActiveQueue ()->addTarget (grbTarget);
-	return 0;
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set grb target with ID " << grbId << " :" << er << sendLog;
+		return -2;
+	}
 }
 
 int Executor::setShower ()
@@ -767,6 +794,8 @@ int Executor::setShower ()
 
 int Executor::stop ()
 {
+	flatsDone->setValueBool (false);
+	sendValueAll (flatsDone);
 	clearNextTargets ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
@@ -792,14 +821,6 @@ void Executor::queDarks ()
 	minConn->queCommand (new Rts2Command (this, "que_darks"));
 }
 
-void Executor::queFlats ()
-{
-	Rts2Conn *minConn = getMinConn ("queue_size");
-	if (!minConn)
-		return;
-	minConn->queCommand (new Rts2Command (this, "que_flats"));
-}
-
 void Executor::beforeChange ()
 {
 	// both currentTarget and nextTarget are defined
@@ -815,8 +836,6 @@ void Executor::beforeChange ()
 		nextType = currType;
 	if (currType == TYPE_DARK && nextType != TYPE_DARK)
 		queDarks ();
-	if (currType == TYPE_FLAT && nextType != TYPE_FLAT)
-		queFlats ();
 }
 
 void Executor::doSwitch ()
@@ -933,13 +952,19 @@ void Executor::processTarget (rts2db::Target * in_target)
 	switch (in_target->getAcquired ())
 	{
 		case 1:
-			acqusitionOk++;
+			acqusitionOk->inc ();
 			break;
 		case -1:
-			acqusitionFailed++;
+			acqusitionFailed->inc ();
 			break;
 	}
 	logStream (MESSAGE_INFO) << "observation # " << current_obsid->getValueInteger () << " of target " << in_target->getTargetName () << " ended." << sendLog;
+	// if the target was flat..
+	if (in_target->getTargetType () == TYPE_FLAT)
+	{
+		flatsDone->setValueBool (true);
+		sendValueAll (flatsDone);
+	}
 	ret = in_target->postprocess ();
 	if (!ret)
 		targetsQue.push_back (in_target);
