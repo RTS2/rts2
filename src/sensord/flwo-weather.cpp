@@ -1,5 +1,5 @@
 /* 
- * Driver for Aerotech asix controller.
+ * Driver for FLWO weather station.
  * Copyright (C) 2010 Petr Kubanek <kubanek@fzu.cz> Institute of Physics, Czech Republic
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +43,9 @@ class FlwoWeather:public SensorWeather
 
 		Rts2ValueFloat *outsideTemp;
 		Rts2ValueFloat *windSpeed;
+		Rts2ValueFloat *windSpeed_limit;
 		Rts2ValueFloat *windGustSpeed;
+		Rts2ValueFloat *windGustSpeed_limit;
 		Rts2ValueFloat *windDir;
 		Rts2ValueFloat *pressure;
 		Rts2ValueFloat *humidity;
@@ -57,7 +59,13 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 {
 	createValue (outsideTemp, "outside_temp", "[C] outside temperature", false);
 	createValue (windSpeed, "wind_speed", "[mph] windspeed", false);
-	createValue (windGustSpeed, "wind_gust_speed", "[mph] wind gust speed", false);
+	createValue (windSpeed_limit, "wind_speed_limit", "[mph] windspeed limit", false, RTS2_VALUE_WRITABLE);
+	windSpeed_limit->setValueFloat (40);
+
+	createValue (windGustSpeed, "wind_gust", "[mph] wind gust speed", false);
+	createValue (windGustSpeed_limit, "wind_gust_limit", "[mph] wind gust speed limit", false, RTS2_VALUE_WRITABLE);
+	windGustSpeed_limit->setValueFloat (45);
+
 	createValue (windDir, "wind_direction", "[deg] wind direction", false);
 	createValue (pressure, "pressure", "[mB] atmospheric pressure", false);
 	createValue (humidity, "humidity", "[%] outside humidity", false);
@@ -217,8 +225,16 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
-	  	setWeatherTimeout (600, "humidity is above 93%");
+	  	setWeatherTimeout (600, "humidity is above limit");
 		return false;
+	}
+	if (windSpeed->getValueFloat () > windSpeed_limit->getValueFloat ())
+	{
+		setWeatherTimeout (600, "windspeed is above limit");
+	}
+	if (windGustSpeed->getValueFloat () > windGustSpeed_limit->getValueFloat ())
+	{
+		setWeatherTimeout (600, "wind gust speed is above limit");
 	}
 	return SensorWeather::isGoodWeather ();
 }
