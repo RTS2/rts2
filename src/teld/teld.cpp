@@ -785,7 +785,11 @@ int Telescope::changeMasterState (int new_state)
 {
 	// stop when STOP is triggered
 	if ((getState () & STOP_MASK) != STOP_EVERYTHING && (new_state & STOP_MASK) == STOP_EVERYTHING)
+	{
+		blockMove->setValueBool (true);
+		sendValueAll (blockMove);
 		stopMove ();
+	}
 
 	// park us during day..
 	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
