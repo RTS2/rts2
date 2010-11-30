@@ -37,7 +37,7 @@ class Rts2Comm:
 	def __init__(self):
 		return
 	
-	def sendCommand(self,comamnd,device = None):
+	def sendCommand(self,command,device = None):
 		"""Send command to device."""
 		if device is None:
 		  	print 'command',command
