@@ -36,13 +36,21 @@ class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
 		return
+	
+	def sendCommand(self,comamnd,device = None):
+		"""Send command to device."""
+		if device is None:
+		  	print 'command',command
+		else:
+		  	print 'C',device,command
+		sys.stdout.flush()
 
 	def getValue(self,value,device = None):
 		"""Returns given value."""
-		if (not (device is None)):
-			print 'G',device,value
-		else:
+		if device is None:
 			print '?',value
+		else:
+			print 'G',device,value
 		sys.stdout.flush()
 		return sys.stdin.readline()
 
