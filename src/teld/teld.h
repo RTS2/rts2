@@ -660,6 +660,9 @@ class Telescope:public Rts2Device
 		 * Local sidereal time.
 		 */
 		Rts2ValueDouble *lst;
+
+		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
+		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 	private:
 		Rts2Conn * move_connection;
 		int moveInfoCount;
@@ -826,7 +829,7 @@ class Telescope:public Rts2Device
 		char *modelFile;
 		rts2telmodel::Model *model;
 
-		Rts2ValueBool *standbyPark;
+		Rts2ValueSelection *standbyPark;
 		const char *horizonFile;
 
 		ObjectCheck *hardHorizon;

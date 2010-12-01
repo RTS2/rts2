@@ -189,7 +189,11 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 	model = NULL;
 
 	createValue (standbyPark, "standby_park", "Park telescope when switching to standby", false, RTS2_VALUE_WRITABLE);
-	standbyPark->setValueBool (false);
+	standbyPark->addSelVal ("no");
+	standbyPark->addSelVal ("daytime only");
+	standbyPark->addSelVal ("nightime");
+
+	standbyPark->setValueInteger (0);
 
 	horizonFile = NULL;
 	hardHorizon = NULL;
@@ -200,7 +204,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 
 	addOption ('c', NULL, 1, "minimal value for corrections. Corrections bellow that value will be rejected.");
 
-	addOption ('s', NULL, 0, "park when switched to standby");
+	addOption ('s', NULL, 1, "park when switched to standby - 1 only at day, 2 even at night");
 	addOption (OPT_BLOCK_ON_STANDBY, "block-on-standby", 0, "block telescope movement when switching to standby");
 
 	addOption ('r', NULL, 1, "telescope rotang");
@@ -248,7 +252,7 @@ int Telescope::processOption (int in_opt)
 			blockOnStandby->setValueBool (true);
 			break;
 		case 's':
-			standbyPark->setValueBool (true);
+			standbyPark->setValueCharArr (optarg);
 			break;
 		case 'r':
 			defaultRotang = atof (optarg);
@@ -795,10 +799,14 @@ int Telescope::changeMasterState (int new_state)
 	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark->getValueBool () == true))
+		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark->getValueInteger () != 0))
 	{
-	  	if ((getState () & TEL_MASK_MOVING) != TEL_PARKED && (getState () & TEL_MASK_MOVING) != TEL_PARKING)
-			startPark (NULL);
+		// ignore nighttime park request
+		if (standbyPark->getValueInteger () == 2 || ! ((new_state & SERVERD_NIGHT) || (new_state & SERVERD_DUSK) || (new_state & SERVERD_DAWN)))
+		{
+	  		if ((getState () & TEL_MASK_MOVING) != TEL_PARKED && (getState () & TEL_MASK_MOVING) != TEL_PARKING)
+				startPark (NULL);
+		}
 	}
 
 	if (blockOnStandby->getValueBool () == true)

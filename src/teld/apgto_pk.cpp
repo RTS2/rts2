@@ -21,6 +21,7 @@
 #include "../utils/rts2config.h"
 
 #include "tellx200.h"
+#include "hms.h"
 #include "clicupola.h"
 #include "pier-collision.h"
 
@@ -29,13 +30,7 @@
 #define OPT_APGTO_KEEP_HORIZON   OPT_LOCAL + 58
 #define OPT_APGTO_LIMIT_SWITCH   OPT_LOCAL + 59
 
-#define MOVE_RATE_120000 '0'
-#define MOVE_RATE_060000 '1'
-#define MOVE_RATE_006400 '2'
-#define MOVE_RATE_001200 '3'
-#define MOVE_RATE_000100 '4'
-#define MOVE_RATE_000050 '5'
-#define MOVE_RATE_000025 '6'
+#define EVENT_TELESCOPE_LIMITS   RTS2_LOCAL_EVENT + 201
 
 #define setAPUnPark()       serConn->writePort ("#:PO#", 5)// ok, no response
 #define setAPLongFormat()   serConn->writePort ("#:U#", 4) // ok, no response
@@ -56,6 +51,9 @@ class APGTO:public TelLX200 {
 	public:
 		APGTO (int argc, char **argv);
 		virtual ~APGTO (void);
+
+		virtual void postEvent (Rts2Event *event);
+
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
@@ -86,7 +84,6 @@ class APGTO:public TelLX200 {
 		virtual int applyCorrectionsFixed (double ra, double dec);
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
-		virtual void startCupolaSync ();
 		virtual void notMoveCupola ();
 
 	private:
@@ -94,9 +91,6 @@ class APGTO:public TelLX200 {
 		double on_set_HA ;
 		double on_zero_HA ;
 		time_t slew_start_time;
-
-		int f_scansexa (const char *str0, double *dp);
-		void getSexComponents(double value, int *d, int *m, int *s) ;
 
 		// Astro-Physics LX200 protocol specific functions
 		int getAPVersionNumber ();
@@ -107,18 +101,29 @@ class APGTO:public TelLX200 {
 		int selectAPTrackingMode ();
 		int tel_read_declination_axis ();
 
-		int setAPSiteLongitude( double Long) ;
-		int setAPSiteLatitude( double Lat) ;
-		int setAPLocalTime(int x, int y, int z) ;
-		int setAPBackLashCompensation( int x, int y, int z) ;
-		int setCalenderDate( int dd, int mm, int yy) ;
+		int setAPSiteLongitude (double Long);
+		int setAPSiteLatitude (double Lat);
+		int setAPLocalTime (int x, int y, int z);
+		int setAPBackLashCompensation( int x, int y, int z);
+		int setCalenderDate (int dd, int mm, int yy);
+
+		int recoverLimits (int ral, int rah, int dech);
 
 		// helper
 		double siderealTime ();
 		int checkSiderealTime (double limit) ;
 		int setBasicData ();
 
+		/**
+		 * Slew (=set) APGTO to new coordinates.
+		 *
+		 * @param ra 		new right ascenation
+		 * @param dec 		new declination
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
 		int tel_slew_to (double ra, double dec);
+
 		int tel_slew_to_altaz (double alt, double az);
 		/**
 		 * Perform movement, do not move tube bellow horizon.
@@ -156,39 +161,6 @@ class APGTO:public TelLX200 {
 }
 
 using namespace rts2teld;
-
-void APGTO::getSexComponents(double value, int *d, int *m, int *s)
-{
-	*d = (int) fabs(value);
-	*m = (int) ((fabs(value) - *d) * 60.0);
-	*s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
-
-	if (value < 0)
-		*d *= -1;
-}
-
-int APGTO::f_scansexa ( const char *str0, double *dp) /* input string, cracked value, if return 0 */
-{
-	double a = 0, b = 0, c = 0;
-	char str[128];
-	char *neg;
-	int r;
-
-	/* copy str0 so we can play with it */
-	strncpy (str, str0, sizeof(str)-1);
-	str[sizeof(str)-1] = '\0';
-
-	neg = strchr(str, '-');
-	if (neg)
-		*neg = ' ';
-	r = sscanf (str, "%lf%*[^0-9]%lf%*[^0-9]%lf", &a, &b, &c);
-	if (r < 1)
-		return (-1);
-	*dp = a + b/60 + c/3600;
-	if (neg)
-		*dp *= -1;
-	return (0);
-}
 
 /**
  * Reads from APGTO the version character of the firmware
@@ -305,7 +277,8 @@ int APGTO::getAPUTCOffset()
 	{
 		temp_string[nbytes_read - 1] = '\0';
 	}
-	if (f_scansexa(temp_string, &offset))
+	offset = hmstod (temp_string);
+	if (isnan (offset))
 	{
 		logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset string not handled  >" << temp_string << "<END" <<sendLog;
 		return -1;
@@ -334,7 +307,7 @@ int APGTO::setAPUTCOffset (int hours)
 	{
 		hours += 24.;
 	}
-	getSexComponents(hours, &h, &m, &s);
+	dtoints (hours, &h, &m, &s);
     
 	snprintf (temp_string, sizeof(temp_string), "#:SG %+03d#", h);
 
@@ -352,8 +325,7 @@ int APGTO::setAPUTCOffset (int hours)
  * @return -1 on failure, 0 otherwise
  */
 // wildi: not yet in in use
-int 
-APGTO::APSyncCMR(char *matchedObject)
+int APGTO::APSyncCMR(char *matchedObject)
 {
 	int error_type;
     
@@ -398,7 +370,7 @@ int APGTO::setAPSiteLongitude (double Long)
 	if (Long < 0)
 		Long += 360;
 
-	getSexComponents (Long, &d, &m, &s);
+	dtoints (Long, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
   	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0)
 		return -1;
@@ -420,7 +392,7 @@ int APGTO::setAPSiteLatitude(double Lat)
 	char temp_string[32];
 	char retstr[1];
 
-	getSexComponents(Lat, &d, &m, &s);
+	dtoints (Lat, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:St %+02d*%02d:%02d#", d, m, s);
 	if (( ret = serConn->writeRead ( temp_string, sizeof(temp_string), retstr, 1)) < 0)
 		return -1 ;
@@ -500,6 +472,22 @@ int APGTO::setCalenderDate(int dd, int mm, int yy)
 	return 0;
 }
 
+int APGTO::recoverLimits (int ral, int rah, int dech)
+{
+	if (ral && !rah && !(getState () & (TEL_MOVING | TEL_PARKING)))
+	{
+		// move in + direction 2 degrees
+		if (tel_read_ra () || tel_read_dec ())
+			return -1;
+		if (tel_slew_to (getTelRa () + 2, getTelDec ()))
+			return -1;
+		addTimer (10, new Rts2Event (EVENT_TELESCOPE_LIMITS));
+		setBlockMove ();
+		return 0;
+	}
+	return -1;
+}
+
 /*!
  * Reads APGTO relative position of the declination axis to the observed hour angle.
  *
@@ -528,14 +516,16 @@ int APGTO::tel_read_declination_axis ()
  *
  * @return -1 on error, otherwise 0
  */
-int
-APGTO::tel_slew_to (double ra, double dec)
+int APGTO::tel_slew_to (double ra, double dec)
 {
-  int ret ;
-  char retstr;
-  char target_DECaxis_HAcoordinate[32] ;
-  struct ln_lnlat_posn observer;
-  struct ln_equ_posn target_equ;
+	int ret ;
+	char retstr;
+	char target_DECaxis_HAcoordinate[32] ;
+	struct ln_lnlat_posn observer;
+	struct ln_equ_posn target_equ;
+
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
 
 	if (collision_detection->getValueBool() == false)
 	{
@@ -543,29 +533,38 @@ APGTO::tel_slew_to (double ra, double dec)
 		return -1 ;
 	}
 
-  target_equ.ra = fmod( ra + 360., 360.) ;
-  target_equ.dec= fmod( dec, 90.);
+	target_equ.ra = fmod (ra + 360., 360.);
+	target_equ.dec= fmod (dec, 90.);
 
-  double local_sidereal_time= getLocSidTime ();
-  double target_HA= fmod( local_sidereal_time- target_equ.ra+ 360., 360.) ;
+	double local_sidereal_time = getLocSidTime ();
+	double target_HA = fmod (local_sidereal_time - target_equ.ra + 360., 360.);
 
-  if(( target_HA > 180.) && ( target_HA <= 360.)) {
-    strcpy(target_DECaxis_HAcoordinate, "West");
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 180. < HA <= 360." << sendLog;
-  } else {
-    strcpy(target_DECaxis_HAcoordinate, "East");
-    //logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 0. < HA <= 180." << sendLog;
-  }
+	if ((target_HA > 180.) && (target_HA <= 360.))
+	{
+		strcpy (target_DECaxis_HAcoordinate, "West");
+		//logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 180. < HA <= 360." << sendLog;
+	}
+	else
+	{
+		strcpy (target_DECaxis_HAcoordinate, "East");
+		//logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to assumed target is 0. < HA <= 180." << sendLog;
+	}
 
-  if( !( strcmp( "West", target_DECaxis_HAcoordinate))) {
-    ret= pier_collision( &target_equ, &observer) ;
-  } else if( !( strcmp( "East", target_DECaxis_HAcoordinate))) {
-    //really target_equ.dec += 180. ;
-    struct ln_equ_posn t_equ;
-    t_equ.ra = target_equ.ra ;
-    t_equ.dec= target_equ.dec + 180. ;
-    ret= pier_collision( &t_equ, &observer) ;
-  }
+	if (!(strcmp ("West", target_DECaxis_HAcoordinate)))
+	{
+		ret = pier_collision (&target_equ, &observer);
+	}
+	else if (!(strcmp ("East", target_DECaxis_HAcoordinate)))
+	{
+		//really target_equ.dec += 180. ;
+		struct ln_equ_posn t_equ;
+		t_equ.ra = target_equ.ra;
+		if (observer.lat > 0)
+			t_equ.dec = 180 - target_equ.dec;
+		else
+			t_equ.dec = -180 - target_equ.dec;
+		ret = pier_collision (&t_equ, &observer);
+	}
   if(ret != NO_COLLISION) {
     if( ret== COLLIDING) {
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " dec " << target_equ.dec << " COLLIDING, NOT syncing cupola"  << sendLog;
@@ -1016,25 +1015,6 @@ void APGTO::applyCorrections (double &tar_ra, double &tar_dec)
 		tar_dec += fixedOffsets->getDec ();
 }
 
-void APGTO::startCupolaSync ()
-{
-  struct ln_equ_posn target_equ;
-  getTarget (&target_equ);
-
-  target_equ.ra = fmod( target_equ.ra + 360., 360.) ;
-  target_equ.dec= fmod( target_equ.dec, 90.) ; 
-  if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-    postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
-  } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
-    //tel_equ.dec += 180. ;
-    struct ln_equ_posn t_equ;
-    t_equ.ra = target_equ.ra ;
-    t_equ.dec= target_equ.dec + 180. ;
-    postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
-  }
-  logStream (MESSAGE_INFO) << "APGTO::startCupolaSync sync cupola" << sendLog;
-}
-
 void APGTO::notMoveCupola ()
 {
   postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
@@ -1082,7 +1062,12 @@ int APGTO::stopMove ()
 			if (vral != NULL && vrah != NULL && vdech != NULL)
 			{
 				logStream (MESSAGE_INFO) << " values in limit - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
-				// try to recover..
+				if (recoverLimits (vral->getValueInteger (), vrah->getValueInteger (), vdech->getValueInteger ()))
+				{
+				  	logStream (MESSAGE_CRITICAL) << "cannot recover from limits" << sendLog;
+					setBlockMove ();
+				}
+
 			}
 		}
 	}
@@ -1633,6 +1618,35 @@ int APGTO::initValues ()
 
 APGTO::~APGTO (void)
 {
+}
+
+void APGTO::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TELESCOPE_LIMITS:
+			{
+				Rts2Conn *conn = getOpenConnection (limitSwitchName);
+				if (conn != NULL)
+				{
+					Rts2Value *vral = conn->getValue ("RA_LIMIT");
+					Rts2Value *vrah = conn->getValue ("RA_HOME");
+					Rts2Value *vdech = conn->getValue ("DEC_HOME");
+					if (vral != NULL && vrah != NULL && vdech != NULL)
+					{
+						logStream (MESSAGE_INFO) << " limit values after recovery - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
+						if (vral->getValueInteger () == 0)
+						{
+						  	logStream (MESSAGE_INFO) << "recovered sucessfully from limits" << sendLog;
+							unBlockMove ();
+							startResync ();
+						}
+					}
+				}
+			}
+			break;
+	}
+	Telescope::postEvent (event);
 }
 
 int APGTO::processOption (int in_opt)
