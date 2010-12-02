@@ -1283,7 +1283,7 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == edtGain)
 	{
-		return (setEDTGain (new_value->getValueInteger () == 0) ? 0 : -2);
+		return (setEDTGain (new_value->getValueInteger () == 0) == 0 ? 0 : -2);
 	}
 	if (old_value == parallelClockSpeed)
 	{
