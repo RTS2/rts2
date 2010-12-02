@@ -138,9 +138,9 @@ int Arduino::info ()
 		return -1;
 
 	int i;
-	int a0,a1,a2,a3,a4,a5;
+	double a0,a1,a2,a3,a4,a5;
 
-	if (sscanf (buf, "%d %d %d %d %d %d %d", &i, &a0, &a1, &a2, &a3, &a4, &a5) != 7)
+	if (sscanf (buf, "%d %lf %lf %lf %lf %lf %lf", &i, &a0, &a1, &a2, &a3, &a4, &a5) != 7)
 	{
 		buf[ret] = '\0';
 		logStream (MESSAGE_ERROR) << "invalid reply from arudiono: " << buf << sendLog;
@@ -151,13 +151,15 @@ int Arduino::info ()
 	raHome->setValueBool (i & 0x02);
 	decHome->setValueBool (i & 0x04);
 
-	a1_x->setValueFloat (a0 / 450.0);
-	a1_y->setValueFloat (a1 / 450.0);
-	a1_z->setValueFloat (a2 / 450.0);
+#define V_TO_G   1
 
-	a2_x->setValueFloat (a3 / 450.0);
-	a2_y->setValueFloat (a4 / 450.0);
-	a2_z->setValueFloat (a5 / 450.0);
+	a1_x->setValueFloat (a0 * V_TO_G);
+	a1_y->setValueFloat (a1 * V_TO_G);
+	a1_z->setValueFloat (a2 * V_TO_G);
+
+	a2_x->setValueFloat (a3 * V_TO_G);
+	a2_y->setValueFloat (a4 * V_TO_G);
+	a2_z->setValueFloat (a5 * V_TO_G);
 
 	if (raLimit->getValueBool ())
 		setStopState (true, "RA axis beyond limits");
