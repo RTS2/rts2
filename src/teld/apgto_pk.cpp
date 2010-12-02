@@ -1059,7 +1059,7 @@ int APGTO::stopMove ()
 			Rts2Value *vral = conn->getValue ("RA_LIMIT");
 			Rts2Value *vrah = conn->getValue ("RA_HOME");
 			Rts2Value *vdech = conn->getValue ("DEC_HOME");
-			if (vral != NULL && vrah != NULL && vdech != NULL)
+			if (vral != NULL && vrah != NULL && vdech != NULL && (vral->getValueInteger () || vdech->getValueInteger ()))
 			{
 				logStream (MESSAGE_INFO) << " values in limit - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
 				if (recoverLimits (vral->getValueInteger (), vrah->getValueInteger (), vdech->getValueInteger ()))
@@ -1196,7 +1196,7 @@ int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
 	}
 	if (oldValue == raGuide || oldValue == decGuide)
 	{
-		const char *cmd[] = {":Qe#:Qw#", ":Me#", "Mw#"};
+		const char *cmd[] = {":Qe#:Qw#", ":Mw#", ":Me#"};
 		if (oldValue == decGuide)
 			cmd = {":Qs#:Qn#", ":Ms#", ":Mn#"};
 		const char *c = cmd[newValue->getValueInteger ()];
