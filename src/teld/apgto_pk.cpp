@@ -1639,6 +1639,8 @@ void APGTO::postEvent (Rts2Event *event)
 						{
 						  	logStream (MESSAGE_INFO) << "recovered sucessfully from limits" << sendLog;
 							unBlockMove ();
+							// reset limit switch
+							conn->queCommand (new rts2core::Rts2Command (this, "reset"));
 							startResync ();
 						}
 					}
