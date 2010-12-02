@@ -53,14 +53,6 @@ class Sensor:public Rts2Device
  */
 class SensorWeather:public Sensor
 {
-	private:
-		Rts2ValueTime *nextGoodWeather;
-
-	protected:
-		virtual int idle ();
-
-		virtual bool isGoodWeather ();
-	
 	public:
 		/**
 		 * Construct new SensorWeather instance.
@@ -76,6 +68,12 @@ class SensorWeather:public Sensor
 		}
 
 		void setWeatherTimeout (time_t wait_time, const char *msg);
+	protected:
+		virtual int idle ();
+
+		virtual bool isGoodWeather ();
+	private:
+		Rts2ValueTime *nextGoodWeather;
 };
 
 };
