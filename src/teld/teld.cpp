@@ -796,10 +796,10 @@ int Telescope::changeMasterState (int new_state)
 	}
 
 	// park us during day..
-	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+	if ((((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark->getValueInteger () != 0))
+		|| (new_state & SERVERD_STANDBY_MASK)) && standbyPark->getValueInteger () != 0)
 	{
 		// ignore nighttime park request
 		if (standbyPark->getValueInteger () == 2 || ! ((new_state & SERVERD_NIGHT) || (new_state & SERVERD_DUSK) || (new_state & SERVERD_DAWN)))
