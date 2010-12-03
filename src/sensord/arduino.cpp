@@ -132,8 +132,8 @@ int Arduino::init ()
 
 int Arduino::info ()
 {
-	char buf[100];
-	int ret = arduinoConn->writeRead ("?", 1, buf, 99, '\n');
+	char buf[200];
+	int ret = arduinoConn->writeRead ("?", 1, buf, 199, '\n');
 	if (ret < 0)
 		return -1;
 
@@ -147,9 +147,9 @@ int Arduino::info ()
 		return -1;
 	}
 
-	raLimit->setValueBool (i & 0x01);
+	raLimit->setValueBool (i & 0x04);
 	raHome->setValueBool (i & 0x02);
-	decHome->setValueBool (i & 0x04);
+	decHome->setValueBool (i & 0x01);
 
 #define V_TO_G   1
 
