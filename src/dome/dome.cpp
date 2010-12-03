@@ -67,7 +67,7 @@ int Dome::domeCloseStart ()
 	{
 		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
 	}
-	maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
+	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_CLOSING, "closing dome");
 	return 0;
 };
 
@@ -389,6 +389,11 @@ int Dome::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("close"))
 	{
 		return (domeCloseStart () == 0 ? 0 : -2);
+	}
+	else if (conn->isCommand ("reset_next"))
+	{
+		nextGoodWeather->setValueDouble (getNow () - 1);
+		return 0;
 	}
 	return Rts2Device::commandAuthorized (conn);
 }
