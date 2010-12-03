@@ -38,23 +38,36 @@ namespace rts2focusd
  */
 class Focusd:public Rts2Device
 {
-	private:
-		time_t focusTimeout;
+	public:
+		Focusd (int argc, char **argv);
+
+		void checkState ();
+		int setPosition (float num);
+		int autoFocus (Rts2Conn * conn);
+
+		float getPosition ()
+		{
+			return position->getValueFloat ();
+		}
+
+		virtual int scriptEnds ();
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 
 	protected:
 		std::string focType;
 
-		Rts2ValueInteger *position;
-		Rts2ValueInteger *target;
+		Rts2ValueFloat *position;
+		Rts2ValueFloat *target;
 		Rts2ValueFloat *temperature;
 
-		Rts2ValueInteger *defaultPosition;
-		Rts2ValueInteger *focusingOffset;
-		Rts2ValueInteger *tempOffset;
+		Rts2ValueFloat *defaultPosition;
+		Rts2ValueFloat *focusingOffset;
+		Rts2ValueFloat *tempOffset;
 
 		virtual int processOption (int in_opt);
 
-		virtual int setTo (int num) = 0;
+		virtual int setTo (float num) = 0;
 
 		virtual int isFocusing ();
 		virtual int endFocusing ();
@@ -81,23 +94,9 @@ class Focusd:public Rts2Device
 		// callback functions from focuser connection
 		virtual int initValues ();
 		virtual int idle ();
-
-	public:
-		Focusd (int argc, char **argv);
-
-		void checkState ();
-		int setPosition (int num);
-		int autoFocus (Rts2Conn * conn);
-
-		int getPosition ()
-		{
-			return position->getValueInteger ();
-		}
-
-		virtual int scriptEnds ();
-
-		virtual int commandAuthorized (Rts2Conn * conn);
+	private:
+		time_t focusTimeout;
 };
 
-};
+}
 #endif

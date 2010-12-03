@@ -34,8 +34,10 @@ Focusd::Focusd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVIC
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
 
-	addOption (OPT_START, "start-position", 1,
-		"focuser start position (focuser will be set to this one, if initial position is detected");
+	focusingOffset->setValueFloat (0);
+	tempOffset->setValueFloat (0);
+
+	addOption (OPT_START, "start-position", 1, "focuser start position (focuser will be set to this one, if initial position is detected");
 }
 
 int Focusd::processOption (int in_opt)
@@ -74,8 +76,8 @@ void Focusd::checkState ()
 			}
 			else
 			{
-				maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_SLEEPING, "focusing finished without errror");
-				logStream (MESSAGE_INFO) << "focuser moved to " << position->getValueInteger () << sendLog;
+				maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_SLEEPING, "focusing finished without error");
+				logStream (MESSAGE_INFO) << "focuser moved to " << position->getValueFloat () << sendLog;
 			}
 		}
 	}
@@ -87,11 +89,11 @@ int Focusd::initValues ()
 
 	if (isAtStartPosition () == false)
 	{
-		setPosition (defaultPosition->getValueInteger ());
+		setPosition (defaultPosition->getValueFloat ());
 	}
 	else
 	{
-		target->setValueInteger (getPosition ());
+		target->setValueFloat (getPosition ());
 	}
 
 	return Rts2Device::initValues ();
@@ -103,10 +105,10 @@ int Focusd::idle ()
 	return Rts2Device::idle ();
 }
 
-int Focusd::setPosition (int num)
+int Focusd::setPosition (float num)
 {
 	int ret;
-	target->setValueInteger (num);
+	target->setValueFloat (num);
 	sendValueAll (target);
 	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
 	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
@@ -155,27 +157,27 @@ int Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == position || old_value == target)
 	{
-		return setPosition (new_value->getValueInteger ())? -2 : 0;
+		return setPosition (new_value->getValueFloat ())? -2 : 0;
 	}
 	if (old_value == defaultPosition)
 	{
-		return setPosition (new_value->getValueInteger () + focusingOffset->getValueInteger () + tempOffset->getValueInteger ())? -2 : 0;
+		return setPosition (new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ())? -2 : 0;
 	}
 	if (old_value == focusingOffset)
 	{
-		return setPosition (defaultPosition->getValueInteger () + new_value->getValueInteger () + tempOffset->getValueInteger ())? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat ())? -2 : 0;
 	}  
 	if (old_value == tempOffset)
 	{
-		return setPosition (defaultPosition->getValueInteger () + focusingOffset->getValueInteger () + new_value->getValueInteger ())? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat ())? -2 : 0;
 	}
 	return Rts2Device::setValue (old_value, new_value);
 }
 
 int Focusd::scriptEnds ()
 {
-	tempOffset->setValueInteger (0);
-	setPosition (defaultPosition->getValueInteger () + focusingOffset->getValueInteger () + tempOffset->getValueInteger ());
+	tempOffset->setValueFloat (0);
+	setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ());
 	sendValueAll (tempOffset);
 	return Rts2Device::scriptEnds ();
 }

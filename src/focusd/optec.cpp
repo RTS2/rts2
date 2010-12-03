@@ -52,7 +52,7 @@ class Optec:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (int num);
+		virtual int setTo (float num);
 		virtual int isFocusing ();
 };
 
@@ -207,9 +207,7 @@ Optec::info ()
 	return Focusd::info ();
 }
 
-
-int
-Optec::setTo (int num)
+int Optec::setTo (float num)
 {
 	char command[7], rbuf[7];
 	char add = ' ';
@@ -235,7 +233,7 @@ Optec::setTo (int num)
 
 	// maximal time fore move is +- 40 sec
 
-	sprintf (command, "F%c%04d", add, num);
+	sprintf (command, "F%c%04d", add, (int)num);
 
 	optecConn->setVTime (400);
 

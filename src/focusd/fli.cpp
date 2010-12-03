@@ -46,7 +46,7 @@ class Fli:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (int num);
+		virtual int setTo (float num);
 		Rts2ValueLong *focExtent;
 
 	public:
@@ -200,7 +200,7 @@ int Fli::info ()
 	return Focusd::info ();
 }
 
-int Fli::setTo (int num)
+int Fli::setTo (float num)
 {
 	LIBFLIAPI ret;
 	ret = info ();

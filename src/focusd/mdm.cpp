@@ -44,7 +44,7 @@ class MDM:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (int num);
+		virtual int setTo (float num);
 
 	private:
 		int tcssock;
@@ -125,10 +125,10 @@ int MDM::info ()
 }
 
 
-int MDM::setTo (int num)
+int MDM::setTo (float num)
 {
 	char buf[255];
-	snprintf (buf, 255, "FOCUSABS %d", num);
+	snprintf (buf, 255, "FOCUSABS %d", (int) num);
 	int ret = tcss_reqnodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
 	if (ret < 0)
 	{

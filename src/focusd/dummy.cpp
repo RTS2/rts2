@@ -32,7 +32,7 @@ namespace rts2focusd
 class Dummy:public Focusd
 {
 	private:
-		Rts2ValueInteger *focSteps;
+		Rts2ValueFloat *focSteps;
 	protected:
 		virtual int processOption (int opt);
 		virtual int initValues ();
@@ -44,7 +44,7 @@ class Dummy:public Focusd
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
-		virtual int setTo (int num);
+		virtual int setTo (float num);
 		virtual int isFocusing ();
 };
 
@@ -58,7 +58,7 @@ Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 	createTemperature ();
 
 	createValue (focSteps, "focstep", "focuser steps (step size per second)", false, RTS2_VALUE_WRITABLE);
-	focSteps->setValueInteger (1);
+	focSteps->setValueFloat (1);
 
 	addOption (OPT_FOC_STEPS, "focstep", 1, "initial value of focuser steps");
 }
@@ -72,7 +72,7 @@ int Dummy::processOption (int opt)
 	switch (opt)
 	{
 		case OPT_FOC_STEPS:
-			focSteps->setValueInteger (atoi (optarg));
+			focSteps->setValueFloat (atof (optarg));
 			break;
 		default:
 			return Focusd::processOption (opt);
@@ -86,12 +86,12 @@ int Dummy::initValues ()
 	return Focusd::initValues ();
 }
 
-int Dummy::setTo (int num)
+int Dummy::setTo (float num)
 {
-	if (position->getValueInteger () > num)
-		focSteps->setValueInteger (-1 * fabs (focSteps->getValueInteger ()));
+	if (position->getValueFloat () > num)
+		focSteps->setValueFloat (-1 * fabs (focSteps->getValueFloat ()));
 	else	
-		focSteps->setValueInteger (fabs (focSteps->getValueInteger ()));
+		focSteps->setValueFloat (fabs (focSteps->getValueFloat ()));
 	sendValueAll (focSteps);
 	return 0;
 }

@@ -77,7 +77,9 @@ class ATC2:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (int num);
+		virtual int setTo (float num);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
@@ -91,7 +93,10 @@ class ATC2:public Focusd
 	private:
 		void getValue (const char *name, Rts2Value *val);
 		void openRem ();
+
+		int findOptima ();
 		
+		char buf[15];
 		const char *device_file;
                 rts2core::ConnSerial *ATC2Conn; // communication port with ATC2
 
@@ -130,7 +135,6 @@ ATC2::ATC2 (int argc, char **argv):Focusd (argc, argv)
 
 ATC2::~ATC2 ()
 {
-	char buf[14];
 	ATC2Conn->writeRead ("CLOSEREM  ", 10, buf, 14);
   	delete ATC2Conn;
 }
@@ -185,7 +189,6 @@ int ATC2::initValues ()
 
 void ATC2::getValue (const char *name, Rts2Value *val)
 {
- 	char buf[50];
 	int ret = ATC2Conn->readPort (buf, 12, '\n');
 	if (ret != 12)
 		throw rts2core::Error ("cannot read reply from serial port");
@@ -209,7 +212,6 @@ void ATC2::getValue (const char *name, Rts2Value *val)
 int ATC2::info ()
 {
 	int ret;
-	char buf[3];
 	ret = ATC2Conn->writeRead ("UPDATEPC  ", 10, buf, 2);
 	if (ret != 2)
 		return ret;
@@ -220,7 +222,6 @@ int ATC2::info ()
 		getValue ("PRITE", primMirrorTemp);
 		getValue ("SECTE", secMirrorTemp);
 		getValue ("BFL", position);
-		position->setValueInteger (position->getValueInteger () * 100);
 		getValue ("SHUTTER", shutter);
 		getValue ("AMBTE", temperature);
 		getValue ("HUMID", humidity);
@@ -238,10 +239,17 @@ int ATC2::info ()
 	return Focusd::info ();
 }
 
+int ATC2::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("home"))
+	{
+		return findOptima () ? -2 : 0;
+	}
+	return Focusd::commandAuthorized (conn);
+}
+
 void ATC2::openRem ()
 {
-	char buf[50];
-
 	int ret = ATC2Conn->writeRead ("OPENREM   ", 10, buf, 14);
 	if (ret != 14)
 		throw rts2core::Error ("OPENREM command returns invalid number of characters");
@@ -249,19 +257,41 @@ void ATC2::openRem ()
 		throw rts2core::Error (std::string ("invalid reply from OPENREM command :") + buf);
 }
 
+int ATC2::findOptima ()
+{
+	int ret = ATC2Conn->writeRead ("FINDOPTIMA", 10, buf, 14);
+	if (ret != 14)
+		return -1;
+	if (strncmp (buf, "\r\nFINDOPTIMA\r\n", 14))
+		return -1;
+	return 0;
+}
+
 // send focus to given position
 // Robofocus: FG000000 gets position, while FGXXXXXX sets position when XXXXXXis different from zero.
 // ATC-02: BFL_xxx.xx+(CR/LF) set the new back focus position
-int ATC2::setTo (int num)
+int ATC2::setTo (float num)
 {
-	if (num == position->getValueInteger ())
+	if (fabs (num - position->getValueFloat ()) < 0.015)
 		return 0;
+	char b1[10];
 	char command[50];
-	size_t l = snprintf (command, 50, "BFL %06.2f", float (num) / 100.0);
+
+	// compare as well strings we will send..
+	snprintf (b1, 9, "%06.2f", num);
+	snprintf (command, 9, "%06.2f", position->getValueFloat ());
+	if (strcmp (b1, command) == 0)
+		return 0;
+
+	logStream (MESSAGE_DEBUG) << "changing position from " << position->getValueFloat () << " (" << command << ") to " << num << " (" << b1 << ")" << sendLog;
+
+	size_t l = snprintf (command, 50, "BFL %06.2f", num);
 	if (ATC2Conn->writePort (command, l))
 		return -1;
+	ATC2Conn->setVTime (1000);
 	if (ATC2Conn->readPort (command, 14) != 14)
 		return -1;
+	ATC2Conn->setVTime (100);
 	return 0;
 }
 
@@ -272,7 +302,6 @@ int ATC2::isFocusing ()
 
 int ATC2::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
-	char buf[14];
 	if (oldValue == fanSpeed)
 	{
 		if (newValue->getValueInteger () > 100 || newValue->getValueInteger () < 0)

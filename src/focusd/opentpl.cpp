@@ -35,7 +35,7 @@ class OpenTpl:public Focusd
 
 		rts2core::OpenTpl *opentplConn;
 
-		Rts2ValueInteger *realPos;
+		Rts2ValueFloat *realPos;
 
 		int initOpenTplDevice ();
 
@@ -47,7 +47,7 @@ class OpenTpl:public Focusd
 		virtual int endFocusing ();
 		virtual bool isAtStartPosition ();
 
-		virtual int setTo (int num);
+		virtual int setTo (float num);
 		virtual int isFocusing ();
 	public:
 		OpenTpl (int argc, char **argv);
@@ -163,49 +163,41 @@ OpenTpl::info ()
 	if (status)
 		return -1;
 
-	realPos->setValueInteger ((int) (f_realPos * 1000.0));
+	realPos->setValueFloat (f_realPos);
 
 	return Focusd::info ();
 }
 
-
-int
-OpenTpl::setTo (int num)
+int OpenTpl::setTo (float num)
 {
 	int status = 0;
 
 	int power = 1;
 	int referenced = 0;
-	double offset;
+	double offset = focusingOffset->getValueFloat () + tempOffset->getValueFloat ();
 
 	status = opentplConn->get ("FOCUS.REFERENCED", referenced, &status);
 	if (referenced != 1)
 	{
-		logStream (MESSAGE_ERROR) << "setTo referenced is: " <<
-			referenced << sendLog;
+		logStream (MESSAGE_ERROR) << "setTo referenced is: " << referenced << sendLog;
 		return -1;
 	}
 	status = opentplConn->setww ("FOCUS.POWER", power, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "setTo cannot set POWER to 1"
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "setTo cannot set POWER to 1" << sendLog;
 	}
-	offset = (double) num / 1000.0;
 	status = opentplConn->setww ("FOCUS.TARGETPOS", offset, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "setTo cannot set offset!" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "setTo cannot set offset!" << sendLog;
 		return -1;
 	}
-	position->setValueInteger (num);
+	position->setValueFloat (num);
 	return 0;
 }
 
-
-int
-OpenTpl::isFocusing ()
+int OpenTpl::isFocusing ()
 {
 	double targetdistance;
 	int status = 0;
@@ -219,25 +211,20 @@ OpenTpl::isFocusing ()
 	return (fabs (targetdistance) < 0.001) ? -2 : USEC_SEC / 50;
 }
 
-
-int
-OpenTpl::endFocusing ()
+int OpenTpl::endFocusing ()
 {
 	int status = 0;
 	int power = 0;
 	status = opentplConn->setww ("FOCUS.POWER", power, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"focuser IR endFocusing cannot set POWER to 0" << sendLog;
+		logStream (MESSAGE_ERROR) << "focuser IR endFocusing cannot set POWER to 0" << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
-
-bool
-OpenTpl::isAtStartPosition ()
+bool OpenTpl::isAtStartPosition ()
 {
 	int ret;
 	ret = info ();
@@ -246,9 +233,7 @@ OpenTpl::isAtStartPosition ()
 	return (fabs ((float) getPosition () - 15200 ) < 100);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	OpenTpl device = OpenTpl (argc, argv);
 	return device.run ();
