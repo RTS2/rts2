@@ -4,13 +4,21 @@
 # (C) 2010 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 
 ### BEGIN INIT INFO
-# Provides:        rts2
-# Required-Start:  edt $network $remote_fs $syslog
-# Required-Stop:   edt $network $remote_fs $syslog
-# Default-Start:   2 3 4 5
-# Default-Stop:    1
-# Short-Description: Start RTS2 daemons (rts2-centrald, rts2-teld-xxx etc..)
+# Provides:          RTS2
+# Required-Start:    $remote_fs $syslog postgresql udev
+# Required-Stop:     $remote_fs $syslog
+# Should-Start:      udev NetworkManager
+# Should-Stop:       udev NetworkManager
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start RTS2 drivers and services
+# Description:       Startup scripts for the Remote Telescope
+#                    System, 2nd Version.
 ### END INIT INFO
+#
+# Start/stops rts2 deamons (rts2-centrald, rts2-teld-xxx etc..)
+#
+#
 
 ulimit -c unlimited
 
