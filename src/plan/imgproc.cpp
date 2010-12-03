@@ -547,16 +547,14 @@ int ImageProc::queFlat (const char *_path)
 int ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
-	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (),
-		obsId, Rts2Config::instance ()->getObsProcessTimeout ());
+	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, Rts2Config::instance ()->getObsProcessTimeout ());
 	return que (newObsConn);
 }
 
 int ImageProc::queDarks ()
 {
 	ConnDarkProcess *newDarkConn;
-	newDarkConn = new ConnDarkProcess (this, defaultDarkProcess.c_str (),
-		Rts2Config::instance ()->getDarkProcessTimeout ());
+	newDarkConn = new ConnDarkProcess (this, defaultDarkProcess.c_str (), Rts2Config::instance ()->getDarkProcessTimeout ());
 	return que (newDarkConn);
 }
 
