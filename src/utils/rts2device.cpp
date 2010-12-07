@@ -19,6 +19,7 @@
 
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/socket.h>
 
 #include <config.h>
 #include "status.h"

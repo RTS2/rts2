@@ -24,6 +24,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <sstream>
+#include <sys/socket.h>
 
 using namespace rts2core;
 

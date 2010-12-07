@@ -23,6 +23,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <strings.h>
+#include <sys/socket.h>
 
 using namespace rts2core;
 
