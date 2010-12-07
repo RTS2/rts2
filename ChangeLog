@@ -1,3 +1,7 @@
+2010-12-07
+ * fixed redhat and slackware init files
+ * fixed ARC support, confirms it is working
+
 2010-11-28
  * added ExecutorQueue for queues inside executor
 
