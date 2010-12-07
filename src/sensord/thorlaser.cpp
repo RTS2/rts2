@@ -27,7 +27,7 @@ namespace rts2sensord
 {
 
 /**
- * Main class for ThorLabs laser controller. Works with version 1.02.
+ * Main class for ThorLabs laser controller. Works at least with firmware version 1.02 and 1.06.
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
@@ -49,6 +49,9 @@ class ThorLaser:public Sensor
 		rts2core::ConnSerial *laserConn;
 
 		int currentChannel;
+
+		Rts2ValueString *id;
+		Rts2ValueFloat *version;
 
 		Rts2ValueBool *systemEnable;
 
@@ -115,6 +118,16 @@ int ThorLaser::init ()
 	laserConn->flushPortIO ();
 	laserConn->setDebug (false);
 
+	getValue (0, "id", id);
+	const char *vers;
+	vers = strstr (id->getValue (), "vers");
+	if (vers == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find version in ID reply: " << id->getValue () << sendLog;
+		return -1;
+	}
+	version->setValueCharArr (vers + 5);
+
 	return 0;
 }
 
@@ -156,6 +169,9 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 	laserConn = NULL;
 
 	currentChannel = -1;
+
+	createValue (id, "id", "system ID", false);
+	createValue (version, "version", "firmware version", false);
 
 	createValue (systemEnable, "system_enable", "system power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
@@ -235,6 +251,9 @@ int ThorLaser::getValue (int chan, const char *name, Rts2Value *value)
 	ret = laserConn->readPort (buf, 50, '\r');
 	if (ret < 0)
 		return ret;
+	if (ret == 0)
+		throw rts2core::Error ("empty reply");
+	buf[ret - 1] = '\0';
 	if (value->getValueBaseType () == RTS2_VALUE_BOOL)
 		((Rts2ValueBool *) value)->setValueBool (buf[0] == '1');
 	else	
@@ -262,7 +281,7 @@ void ThorLaser::getSpec (int chan)
 	int ret = laserConn->writeRead ("specs?\r", 7, buf, 50, '\r');
 	if (ret < 0)
 		throw rts2core::Error ("cannot write to port, while asking for specs");
-	getSpecVal (wavelength[chan], "WavelLength");
+	getSpecVal (wavelength[chan], (version->getValueFloat () > 1.05 ? "Wavelength" : "WavelLength"));
 	getSpecVal (pout[chan], "POut");
 	getSpecVal (iop[chan], "IOp");
 	getSpecVal (imon[chan], "IMon");
