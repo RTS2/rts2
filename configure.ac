@@ -247,7 +247,7 @@ AC_ARG_WITH(arc-1-7,
 [  --with-arc-1-7          path to Astronomical Research Cameras headers, version 1.7. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
 ARC_1_7="${withval}";
 LIB_ARC="-lastropciAPI";
-INC_ARC="-I${ARC_1_7}/src",
+INC_ARC="-DARC_API_1_7 -I${ARC_1_7}/src",
 [ARC_1_7=no])
 
 if test x$ARC_1_7 != xno; then
@@ -784,6 +784,7 @@ CCD's:
   alta          ${ALTA}
   andor         ${ANDOR}
   arc           ${ARC}
+  arc-1.7       ${ARC_1_7}
   edtsao        ${EDTPDV}
   fli           ${FLI}
   miccd         ${MICCD}

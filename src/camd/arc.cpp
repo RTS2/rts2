@@ -117,7 +117,11 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 
 	createValue (timFile, "dsp_timing", "DSP timing file", false);
 
+#ifdef ARC_API_1_7
+
+#else
 	addOption ('n', NULL, 1, "Device number (default 0)");
+#endif
 	addOption ('W', NULL, 1, "chip width - number of collumns");
 	addOption ('H', NULL, 1, "chip height - number of rows/lines");
 	addOption (OPT_DSP, "dsp-timing", 1, "DSP timing file");
