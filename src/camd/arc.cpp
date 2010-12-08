@@ -36,7 +36,11 @@
 #include "CController/CController.h"
 #endif
 
-#define OPT_DSP     OPT_LOCAL + 42
+#define OPT_TIM     OPT_LOCAL + 42
+#define OPT_UTIL    OPT_LOCAL + 43
+
+#define OPT_WIDTH   OPT_LOCAL + 44
+#define OPT_HEIGHT  OPT_LOCAL + 45
 
 namespace rts2camd
 {
@@ -70,6 +74,7 @@ class Arc:public Camera
 		Rts2ValueInteger *biasPosition;
 
 		Rts2ValueString *timFile;
+                Rts2ValueString *utilFile;
 
 #ifdef ARC_API_1_7
 		HANDLE pci_fd;
@@ -115,16 +120,18 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (biasPosition, "bias_position", "Position of bias", true, RTS2_VALUE_WRITABLE);
 	biasPosition->setValueInteger (0);
 
-	createValue (timFile, "dsp_timing", "DSP timing file", false);
+	createValue (timFile, "time-file", "DSP timing file", false);
+        createValue (utilFile, "util-file", "utility file", false);
 
 #ifdef ARC_API_1_7
 
 #else
 	addOption ('n', NULL, 1, "Device number (default 0)");
 #endif
-	addOption ('W', NULL, 1, "chip width - number of collumns");
-	addOption ('H', NULL, 1, "chip height - number of rows/lines");
-	addOption (OPT_DSP, "dsp-timing", 1, "DSP timing file");
+	addOption (OPT_WIDTH, "width", 1, "chip width - number of collumns");
+	addOption (OPT_HEIGHT, "height", 1, "chip height - number of rows/lines");
+	addOption (OPT_TIM, "time-file", 1, "timing file");
+        addOption (OPT_UTIL, "utility-file", 1, "utility file");
 
 	w = 1024;
 	h = 1024;
@@ -169,15 +176,18 @@ int Arc::processOption (int opt)
 			lDeviceNumber = atoi (optarg);
 			break;
 #endif
-	        case 'H':
-			h = atoi (optarg);
-			break;
-		case 'W':
+		case OPT_WIDTH:
 			w = atoi (optarg);
 			break;
-		case OPT_DSP:
+	        case OPT_HEIGHT:
+			h = atoi (optarg);
+			break;
+		case OPT_TIM:
 			timFile->setValueCharArr (optarg);
 			break;
+                case OPT_UTIL:
+                        utilFile->setValueCharArr (optarg);
+                        break;
 		default:
 			return Camera::processOption (opt);
 	}
@@ -234,9 +244,9 @@ int Arc::startExposure ()
 {
 #ifdef ARC_API_1_7
   	// set readout area..
-	if (chipUsedReadout->wasChanged ())
+	if (false) // chipUsedReadout->wasChanged ())
 	{
-		int biasOffset        = 0; //biasPosition - subImageCenterCol - subImageWidth/2;
+		int biasOffset = 0; //biasPosition->getValueInteger () - subImageCenterCol - subImageWidth/2;
 		int data = 1;
 		
 		for (int i = 0; i < 10; i++)
@@ -375,7 +385,7 @@ int Arc::do_controller_setup ()
 	logStream (MESSAGE_DEBUG) << "Doing " << num_util_tests <<  " utility hardware tests." << sendLog;
 	for (i = 0; i < num_util_tests; i++)
 	{
-		if ( doCommand1 (pci_fd, UTIL_ID, TDL, data, data) == _ERROR )
+		if (doCommand1 (pci_fd, UTIL_ID, TDL, data, data) == _ERROR)
 			logStream (MESSAGE_ERROR) << "ERROR doing utility hardware tests: 0x" << std::hex << getError() << sendLog;
 		data += HARDWARE_DATA_MAX / num_util_tests;
 	}
@@ -387,6 +397,13 @@ int Arc::do_controller_setup ()
 		return -1;
 	}
 
+	logStream (MESSAGE_DEBUG) << "Stopping camera idle" << sendLog;
+	if (doCommand (pci_fd, TIM_ID, STP, DON) == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "cannot stop idle mode" << sendLog;
+		return -1;
+    }
+
 	/* -----------------------------------
 	   LOAD TIMING FILE/APPLICATION
 	   ----------------------------------- */
@@ -394,10 +411,23 @@ int Arc::do_controller_setup ()
 	{
 		logStream (MESSAGE_DEBUG) << "Loading timing file " << timFile->getValue () << sendLog;
 		loadFile (pci_fd, (char *) (timFile->getValue ()), validate);
+		if (!validate)
+			throw rts2core::Error ("cannot load timing file");
+		logStream (MESSAGE_DEBUG) << "Timing file loaded" << sendLog;
 	}
 
+	if (strlen (utilFile->getValue ()))
+	{
+		logStream (MESSAGE_DEBUG) << "Loading utilitty file " << utilFile->getValue () << sendLog;
+		loadFile (pci_fd, (char *) (utilFile->getValue ()), validate);
+		if (!validate)
+			throw rts2core::Error ("cannot load utility file");
+		logStream (MESSAGE_DEBUG) << "Utility file loaded" << sendLog;
+	}
+
+
 	logStream (MESSAGE_DEBUG) << "Doing power on." << sendLog;
-	if (doCommand(pci_fd, TIM_ID, PON, DON) == _ERROR)
+	if (doCommand (pci_fd, TIM_ID, PON, DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "Power on failed -> 0x" << std::hex << getError() << sendLog;
 		return -1;
@@ -407,23 +437,30 @@ int Arc::do_controller_setup ()
 	   SET DIMENSIONS
 	   ----------------------------------- */
 	logStream (MESSAGE_DEBUG) << "Setting image columns " << getUsedWidth () << sendLog;
-	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 1), getUsedWidth (), DON) == _ERROR)
+	if (doCommand2 (pci_fd, TIM_ID, WRM, (Y | 1), getUsedWidth (), DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "Failed setting image collumns -> 0x" << std::hex << getError() << sendLog;
 		return -1;
 	}
 
 	logStream (MESSAGE_DEBUG) << "Setting image rows " << getUsedHeight () << sendLog;
-	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 2), getUsedHeight (), DON) == _ERROR)
+	if (doCommand2 (pci_fd, TIM_ID, WRM, (Y | 2), getUsedHeight (), DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "Failed setting image rows -> 0x" << std::hex << getError() << sendLog;
 		return -1;
 	}
 
+	logStream (MESSAGE_DEBUG) << "setting amplifiers" << sendLog;
+	if (doCommand1 (pci_fd, TIM_ID, SOS, R_AMP, DON) == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set right-only amplifier" << sendLog;
+		return -1;    
+	}
+
 	/* --------------------------------------
 	   READ THE CONTROLLER PARAMETERS INFO
 	   -------------------------------------- */
-	configWord = doCommand(pci_fd, TIM_ID, RCC, UNDEFINED);
+	configWord = doCommand (pci_fd, TIM_ID, RCC, UNDEFINED);
 
 	return 0;
 }
