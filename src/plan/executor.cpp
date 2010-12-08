@@ -167,7 +167,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name)
   	master = _master;
 	std::string sn (name);
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
-	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names");
+	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 }
 
 ExecutorQueue::~ExecutorQueue ()
