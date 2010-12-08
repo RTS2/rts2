@@ -244,9 +244,9 @@ int Arc::startExposure ()
 {
 #ifdef ARC_API_1_7
   	// set readout area..
-	if (false) // chipUsedReadout->wasChanged ())
+	if (chipUsedReadout->wasChanged ())
 	{
-		int biasOffset = 0; //biasPosition->getValueInteger () - subImageCenterCol - subImageWidth/2;
+		int biasOffset = getWidth () - (chipUsedReadout->getXInt () + chipUsedReadout->getWidthInt ()) ; //biasPosition->getValueInteger () - subImageCenterCol - subImageWidth/2;
 		int data = 1;
 		
 		for (int i = 0; i < 10; i++)
@@ -269,45 +269,52 @@ int Arc::startExposure ()
 		// Set the new image dimensions
 		logStream (MESSAGE_DEBUG) << "Updating image columns " << chipUsedReadout->getWidthInt () << ", rows " << chipUsedReadout->getHeightInt () << ", biasWidth " << biasWidth->getValueInteger () << sendLog;
 
-		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 1), chipUsedReadout->getWidthInt () + biasWidth->getValueInteger (), DON ) == _ERROR )
+		if (doCommand2 (pci_fd, TIM_ID, WRM, (Y | 1), chipUsedReadout->getWidthInt () + biasWidth->getValueInteger (), DON) == _ERROR)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to set image columns -> 0x" << std::hex << getError() << sendLog;
 			return -1;
 		}
 
-		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 2), chipUsedReadout->getHeightInt (), DON ) == _ERROR )
+		if (doCommand2 (pci_fd, TIM_ID, WRM, (Y | 2), chipUsedReadout->getHeightInt (), DON) == _ERROR)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to set image rows -> 0x" << std::hex << getError() << sendLog;
 			return -1;
 		}
 
-		if ( doCommand3( pci_fd, TIM_ID, SSS, biasWidth->getValueInteger (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), DON ) == _ERROR )
+		if (doCommand3 (pci_fd, TIM_ID, SSS, biasWidth->getValueInteger (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), DON) == _ERROR)
 		{
 			logStream (MESSAGE_ERROR) << "Failed to set image bias width etc.. -> 0x" << std::hex << getError() << sendLog;
 			return -1;
 		}
 
-		if ( doCommand3( pci_fd, TIM_ID, SSP, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), biasOffset, DON ) == _ERROR )
-		{
-			logStream (MESSAGE_ERROR) << "Failed to send sub-array POSITION info -> 0x" << std::hex << getError() << sendLog;
-			return -1;
-		}
+		//if (doCommand3 (pci_fd, TIM_ID, SSP, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), biasOffset, DON) == _ERROR)
+		//{
+		//	logStream (MESSAGE_ERROR) << "Failed to send sub-array POSITION info -> 0x" << std::hex << getError() << sendLog;
+		//	return -1;
+		//}
 	}
+
+	if (doCommand (pci_fd, TIM_ID, CLR, DON) == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "cannot perform fast clear before exposure: 0x" << std::hex << getError () << sendLog;
+		return -1;
+	}
+
 	if (shutter_position () == _ERROR)
 	{
-		logStream (MESSAGE_ERROR) << "ERROR: Setting shutter position failed: 0x" << std::hex << getError ();
+		logStream (MESSAGE_ERROR) << "ERROR: Setting shutter position failed: 0x" << std::hex << getError () << sendLog;
 		return -1;
 	}
 
 	if (doCommand1 (pci_fd, TIM_ID, SET, getExposure () * 1000.0, DON) == _ERROR)
 	{
-		logStream (MESSAGE_ERROR) << "ERROR: Setting exposure time failed: 0x" << std::hex << getError ();
+		logStream (MESSAGE_ERROR) << "ERROR: Setting exposure time failed: 0x" << std::hex << getError () << sendLog;
 		return -1;
 	}
 
 	if (doCommand (pci_fd, TIM_ID, SEX, DON) == _ERROR)
 	{
-		logStream (MESSAGE_ERROR) << "ERROR: Starting exposure failed -> 0x" << std::hex << getError ();
+		logStream (MESSAGE_ERROR) << "ERROR: Starting exposure failed -> 0x" << std::hex << getError () << sendLog;
 		return -1;
 	}
 
@@ -397,12 +404,12 @@ int Arc::do_controller_setup ()
 		return -1;
 	}
 
-	logStream (MESSAGE_DEBUG) << "Stopping camera idle" << sendLog;
+	/*logStream (MESSAGE_DEBUG) << "Stopping camera idle" << sendLog;
 	if (doCommand (pci_fd, TIM_ID, STP, DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "cannot stop idle mode" << sendLog;
 		return -1;
-    }
+	}*/
 
 	/* -----------------------------------
 	   LOAD TIMING FILE/APPLICATION
