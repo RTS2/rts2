@@ -426,7 +426,18 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
-
+	<varlistentry>
+	  <term>
+	    <option>logfile</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      System logfile. Centrald logs there all system messages. You need to rotate
+	      logs, and after rotating them, call killall -1 rts2-centrald. Please see
+	      rts2.logrotate for an example how to achieve this with logrotated.
+	    </para>
+	  </listitem>
+        </varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
