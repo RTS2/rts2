@@ -131,7 +131,7 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 	protected:
 		virtual void cameraImageReady (Rts2Image * image);
 
-		double classical_median(ushort *q, int n, double *sigma);
+		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 		virtual void printFWHMTable ();
 	private:
 		Rts2xfocus * master;
@@ -188,44 +188,87 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		int mouseTelChange_x, mouseTelChange_y;
 };
 
-int cmpdouble(const void *a, const void *b)
+int cmpbyte (const void *a, const void *b)
 {
-	if (*((double *)a) > *((double *)b))
-		return 1;
-	if (*((double *)a) < *((double *)b))
-		return -1;
-	return 0;
+#define A (*((uint8_t*) a))
+#define B (*((uint8_t*) b))
+	return A > B ? 1 : -1;
+#undef A
+#undef B
 }
 
-double Rts2xfocusCamera::classical_median(ushort *q, int n, double *sigma)
+int cmpuint16_t (const void *a, const void *b)
+{
+#define A (*((uint16_t*) a))
+#define B (*((uint16_t*) b))
+	return A > B ? 1 : -1;
+#undef A
+#undef B
+}
+
+double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, double *sigma, double sf)
 {
 	int i;
 	double M,S;
-	double *f = new double[n];
+	char *f;
 
-	for (i = 0; i < n; i++)
-		f[i] = q[i];
-
-	qsort (f, n, sizeof(double), cmpdouble);
-
-	if (n % 2)
-		M = f[n / 2];
-	else
-	  	M = (f[n / 2] + f[n / 2 + 1]) / 2;
+	switch (dataType)
+	{
+		case RTS2_DATA_BYTE:
+			f = new char[n];
+			qsort (f, n, sizeof (char), cmpbyte);
+#define F ((char *) f)
+			if (n % 2)
+				M = F[n / 2];
+			else
+		 	 	M = (F[n / 2] + F[n / 2 + 1]) / 2;
+#undef F
+			break;
+		case RTS2_DATA_USHORT:
+			f = (char *) new uint16_t[n];
+			qsort (f, n, sizeof (uint16_t), cmpuint16_t);
+#define F ((uint16_t *) f)
+			if (n % 2)
+				M = F[n / 2];
+			else
+		 	 	M = (F[n / 2] + F[n / 2 + 1]) / 2;
+#undef F
+			break;
+		default:
+			throw rts2core::Error ("unsuported data type");
+	}
 
 	if (sigma)
 	{
-		for (i = 0; i < n; i++)
-			f[i] = fabs(f[i] - M) * 0.6745;
+		switch (dataType)
+		{
+			case RTS2_DATA_BYTE:
+#define F ((uint8_t *) f)
+				for (i = 0; i < n; i++)
+					F[i] = (uint8_t) fabs(F[i] - M);
+				qsort (f, n, sizeof(uint8_t), cmpbyte);
+				if (n % 2)
+					S = F[n / 2];
+				else
+					S = (F[n / 2] + F[n / 2 + 1]) / 2;
 
-		qsort((void *)f, (size_t)n, sizeof(double), cmpdouble);
+#undef F
+				break;
 
-		if (n % 2)
-			S = f[n / 2];
-		else
-			S = (f[n / 2] + f[n / 2 + 1]) / 2;
+			case RTS2_DATA_USHORT:
+#define F ((uint16_t *) f)
+				for (i = 0; i < n; i++)
+					F[i] = (uint16_t) fabs(F[i] - M);
+				qsort (f, n, sizeof(uint16_t), cmpuint16_t);
+				if (n % 2)
+					S = F[n / 2];
+				else
+					S = (F[n / 2] + F[n / 2 + 1]) / 2;
 
-		*sigma=S;
+#undef F
+				break;
+		}
+		*sigma = S * sf;
 	}
 
 	delete[] f;
@@ -721,15 +764,13 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 		windowHeight = pixmapHeight;
 		rebuildWindow ();
 	}
-	std::cout << "Get data : [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "]" << std::endl;
+	std::cout << "Get data : [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "x" << image->getPixelByteSize () << "]" << std::endl;
 	// draw window with image..
 	if (!ximage)
 	{
 		std::cout << "Create ximage " << pixmapWidth << "x" << pixmapHeight << std::endl;
 		ximage = XCreateImage (master->getDisplay (), master->getVisual (), master->getDepth (), ZPixmap, 0, 0, pixmapWidth, pixmapHeight, 8, 0);
 		ximage->data = (char *) malloc (ximage->bytes_per_line * pixmapHeight);
-
-		std::cout << "Ximage created" << std::endl;
 	}
 
 	// default vertical and horizontal image origins - center image
@@ -744,12 +785,13 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 	// modified image size
 	int iW = (int) ceil (pixmapWidth / master->zoom);
 	int iH = (int) ceil (pixmapHeight / master->zoom);
-	ushort *iP = (ushort *) malloc (iW * iH * sizeof(ushort));
-	ushort *iTop = iP;
+	int iPixelByteSize = image->getPixelByteSize ();
+	char *iP = (char *) malloc (iW * iH * iPixelByteSize);
+	char *iTop = iP;
 	// pointer to top line of square image subset
-	ushort *iNineTop = image->getChannelDataUShortInt (0);
+	const char *iNineTop = (const char *) image->getChannelData (0);
 	// prepare the image data to be processed
-	ushort *im_ptr = image->getChannelDataUShortInt (0) + vorigin + horigin * image->getChannelWidth (0);
+	const char *im_ptr = (const char *) image->getChannelData (0) + iPixelByteSize * (vorigin + horigin * image->getChannelWidth (0));
 
 	// fill IP
 	// copy image center..
@@ -758,36 +800,36 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 		if (master->GoNine)
 		{
 		 	// square..
-			memcpy (iTop, iNineTop, sizeof(ushort) * (iW / 3));
-			iTop += iW / 3;
+			memcpy (iTop, iNineTop, iPixelByteSize * (iW / 3));
+			iTop += iPixelByteSize * (iW / 3);
 
 			// line..
 			// im_ptr is offseted in horizontal direction, so we only add iW/3 for already copied pixels..
-			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * (int) ceil ((double) iW / 3.0));
-			iTop += (int) ceil ((double) iW / 3.0);
+			memcpy (iTop, im_ptr + iPixelByteSize * (iW / 3), iPixelByteSize * (int) ceil ((double) iW / 3.0));
+			iTop += iPixelByteSize * ((int) ceil ((double) iW / 3.0));
 
-			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), sizeof(ushort) * (iW / 3));
-			iTop += iW / 3;
+			memcpy (iTop, iNineTop + iPixelByteSize * (image->getChannelWidth (0) - 2 * iW / 3), iPixelByteSize * (iW / 3));
+			iTop += iPixelByteSize * (iW / 3);
 
-			iNineTop += image->getChannelWidth (0);
+			iNineTop += iPixelByteSize * image->getChannelWidth (0);
 		}
 		else
 		{
-			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
-			iTop += iW;
+			memcpy (iTop, im_ptr, iPixelByteSize * iW);
+			iTop += iPixelByteSize * iW;
 		}
-		im_ptr += image->getChannelWidth (0);
+		im_ptr += iPixelByteSize * image->getChannelWidth (0);
 	}
 	// only center in all cases..
 	for (;i < 2 * iH / 3; i++)
 	{
-		memcpy (iTop, im_ptr, sizeof(ushort) * iW);
-		im_ptr += image->getChannelWidth (0);
-		iTop += iW;
+		memcpy (iTop, im_ptr, iPixelByteSize * iW);
+		im_ptr += iPixelByteSize * image->getChannelWidth (0);
+		iTop += iPixelByteSize * iW;
 	}
 
 	if (master->GoNine)
-		iNineTop += image->getChannelWidth (0) * (image->getChannelHeight (0) - (int) floor (2 * iH / 3.0));
+		iNineTop += iPixelByteSize * (image->getChannelWidth (0) * (image->getChannelHeight (0) - (int) floor (2 * iH / 3.0)));
 
 	// followed again by edge squares for end..
 	for (;i < iH; i++)
@@ -795,28 +837,28 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 		if (master->GoNine)
 		{
 		 	// square..
-			memcpy (iTop, iNineTop, sizeof (ushort) * (iW / 3));
-			iTop += iW / 3;
+			memcpy (iTop, iNineTop, iPixelByteSize * (iW / 3));
+			iTop += iPixelByteSize * (iW / 3);
 
 			// line..
-			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * ((int) ceil ((double) iW / 3.0)));
-			iTop += (int) ceil ((double) iW / 3.0);
+			memcpy (iTop, im_ptr + 2 * iW / 3, iPixelByteSize * ((int) ceil ((double) iW / 3.0)));
+			iTop += iPixelByteSize * ((int) ceil ((double) iW / 3.0));
 
-			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), sizeof(ushort) * (iW / 3));
-			iTop += iW / 3;
-			iNineTop += image->getChannelWidth (0);
+			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), iPixelByteSize * (iW / 3));
+			iTop += iPixelByteSize  * (iW / 3);
+			iNineTop += iPixelByteSize * image->getChannelWidth (0);
 		}
 		else
 		{
-			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
-			iTop += iW;
+			memcpy (iTop, im_ptr, iPixelByteSize * iW);
+			iTop += iPixelByteSize * iW;
 		}
-		im_ptr += image->getChannelWidth (0);
+		im_ptr += iPixelByteSize * image->getChannelWidth (0);
 	}
 
 	// get cuts
 	double sigma, median;
-	median = classical_median(iP, iW * iH, &sigma);
+	median = classical_median (iP, image->getDataType (), iW * iH, &sigma);
 	low = (short unsigned int) (median - 3 * sigma);
 	hig = (short unsigned int) (median + 5 * sigma);
 
