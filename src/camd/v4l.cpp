@@ -47,6 +47,7 @@ class V4L:public Camera
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
+		virtual void initDataTypes ();	
 		virtual int startExposure ();
 		virtual int stopExposure ();
 		virtual int doReadout ();
@@ -57,6 +58,8 @@ class V4L:public Camera
 		size_t bufsize;
 
 		struct v4l2_requestbuffers reqbuf;
+		// native CCD format
+		__u32 format;
 };
 
 }
@@ -141,35 +144,30 @@ int V4L::init ()
 		return -1;
 	}
 
-	char f[5];
-	memcpy (f, &fmt.fmt.pix.pixelformat, 4);
-	f[4] = '\0';
-
-	std::cout << fmt.fmt.pix.pixelformat << " " << f << std::endl;
-
-	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_Y16;
-
-	if (ioctl (fd, VIDIOC_S_FMT, &fmt) == -1)
+	// formats in order of preference..
+	__u32 formats[3] = {V4L2_PIX_FMT_Y16, V4L2_PIX_FMT_GREY, V4L2_PIX_FMT_YUYV};
+	int i;
+	for (i = 0; i < 3; i++)
 	{
-		// try YUV..
-		fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-		if (ioctl (fd, VIDIOC_S_FMT, &fmt) == -1)
+		fmt.fmt.pix.pixelformat = formats[i];
+		if (ioctl (fd, VIDIOC_S_FMT, &fmt) == 0)
 		{
-			logStream (MESSAGE_ERROR) << "cannot set grey format: " << strerror (errno) << sendLog;
-			return -1;
-		}
-		else
-		{
-			logStream (MESSAGE_DEBUG) << "use YUYV format" << sendLog;
+			char f[5];
+			memcpy (f, &fmt.fmt.pix.pixelformat, 4);
+			f[4] = '\0';
+			logStream (MESSAGE_INFO) << "camera support " << f << " format" << sendLog;
+			format = fmt.fmt.pix.pixelformat;
+			break;
 		}
 	}
-	else
+
+	if (i == 3)
 	{
-		logStream (MESSAGE_DEBUG) << "use Y16 format" << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot set grey format: " << strerror (errno) << sendLog;
+		return -1;
 	}
 
 	setSize (fmt.fmt.pix.width, fmt.fmt.pix.height, 0, 0);
-
 
 
 	if (ioctl (fd, VIDIOC_REQBUFS, &reqbuf) == -1)
@@ -204,6 +202,23 @@ int V4L::init ()
 	}
 
 	return 0;
+}
+
+void V4L::initDataTypes ()
+{
+	switch (format)
+	{
+		case V4L2_PIX_FMT_GREY:
+		case V4L2_PIX_FMT_YUYV:
+			addDataType (RTS2_DATA_BYTE);
+			break;
+		case V4L2_PIX_FMT_Y16:
+			addDataType (RTS2_DATA_USHORT);
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "data type " << format << " is not supported" << sendLog;
+			exit (EXIT_FAILURE);
+	}
 }
 
 int V4L::startExposure ()
