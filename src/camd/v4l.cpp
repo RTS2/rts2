@@ -48,6 +48,7 @@ class V4L:public Camera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int startExposure ();
+		virtual int stopExposure ();
 		virtual int doReadout ();
 	private:
 		const char *videodev;
@@ -55,6 +56,7 @@ class V4L:public Camera
 		bufinfo_t *buffers;
 		size_t bufsize;
 
+		struct v4l2_requestbuffers reqbuf;
 };
 
 }
@@ -72,6 +74,8 @@ V4L::V4L (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 V4L::~V4L ()
 {
+	ioctl (fd, VIDIOC_STREAMOFF, &(reqbuf.type));
+
 	while (bufsize > 0)
 	{
 		munmap (buffers[bufsize].start, buffers[bufsize].length);
@@ -120,11 +124,53 @@ int V4L::init ()
 		return -1;
 	}
 
-	struct v4l2_requestbuffers reqbuf;
 	memset (&reqbuf, 0, sizeof (reqbuf));
 	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	reqbuf.memory = V4L2_MEMORY_MMAP;
 	reqbuf.count = 5;
+
+	// get and set format..
+	struct v4l2_format fmt;
+	memset (&fmt, 0, sizeof (fmt));
+
+	fmt.type = reqbuf.type;
+
+	if (ioctl (fd, VIDIOC_G_FMT, &fmt) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot get current format: " << strerror (errno) << sendLog;
+		return -1;
+	}
+
+	char f[5];
+	memcpy (f, &fmt.fmt.pix.pixelformat, 4);
+	f[4] = '\0';
+
+	std::cout << fmt.fmt.pix.pixelformat << " " << f << std::endl;
+
+	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_Y16;
+
+	if (ioctl (fd, VIDIOC_S_FMT, &fmt) == -1)
+	{
+		// try YUV..
+		fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+		if (ioctl (fd, VIDIOC_S_FMT, &fmt) == -1)
+		{
+			logStream (MESSAGE_ERROR) << "cannot set grey format: " << strerror (errno) << sendLog;
+			return -1;
+		}
+		else
+		{
+			logStream (MESSAGE_DEBUG) << "use YUYV format" << sendLog;
+		}
+	}
+	else
+	{
+		logStream (MESSAGE_DEBUG) << "use Y16 format" << sendLog;
+	}
+
+	setSize (fmt.fmt.pix.width, fmt.fmt.pix.height, 0, 0);
+
+
 
 	if (ioctl (fd, VIDIOC_REQBUFS, &reqbuf) == -1)
 	{
@@ -157,19 +203,47 @@ int V4L::init ()
 		}
 	}
 
-	setSize (10, 5, 0, 0);
-
 	return 0;
 }
 
 int V4L::startExposure ()
 {
+	struct v4l2_buffer buffer;
+	buffer.type = reqbuf.type;
+	buffer.memory = V4L2_MEMORY_MMAP;
+	buffer.index = 0;
+
+	if (ioctl (fd, VIDIOC_QBUF, &buffer) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot enque buffer: " << strerror (errno) << sendLog;
+		return -1;
+	}
+	if (ioctl (fd, VIDIOC_STREAMON, &(reqbuf.type)) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot start stream: " << strerror (errno) << sendLog;
+		return -1;
+	}
 	return 0;
+}
+
+int V4L::stopExposure ()
+{
+	if (ioctl (fd, VIDIOC_STREAMOFF, &(reqbuf.type)) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot stop exposure: " << strerror (errno) << sendLog;
+		return -1;
+	}
+	return Camera::stopExposure ();
 }
 
 int V4L::doReadout ()
 {
-	sendReadoutData ((char *) buffers[0].start, 100);
+	sendReadoutData ((char *) buffers[0].start, chipByteSize ());
+	if (ioctl (fd, VIDIOC_STREAMOFF, &(reqbuf.type)) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot end stream" << sendLog;
+		return -1;
+	}
 	return -2;
 }
 
