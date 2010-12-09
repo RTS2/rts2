@@ -89,7 +89,7 @@ void Rts2Image::initData ()
 	stdev = 0;
 	bg_stdev = 0;
 	min = max = mean = 0;
-	imageType = RTS2_DATA_USHORT;
+	dataType = RTS2_DATA_USHORT;
 	sexResults = NULL;
 	sexResultNum = 0;
 	focPos = -1;
@@ -132,7 +132,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	in_image->filter = NULL;
 	exposureLength = in_image->exposureLength;
 	channels = in_image->channels;
-	imageType = in_image->imageType;
+	dataType = in_image->dataType;
 	in_image->channels.deallocate ();
 	in_image->channels.clear ();
 	focPos = in_image->focPos;
@@ -299,7 +299,7 @@ Rts2Image::~Rts2Image (void)
 	delete[]mountName;
 	delete[]focName;
 
-	imageType = RTS2_DATA_USHORT;
+	dataType = RTS2_DATA_USHORT;
 	delete[]filter;
 	if (sexResults)
 		free (sexResults);
@@ -1156,7 +1156,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 		return -1;
 	}
 	flags |= IMAGE_SAVE;
-	imageType = ntohs (im_h->data_type);
+	dataType = ntohs (im_h->data_type);
 
 	long sizes[2];
 	sizes[0] = ntohl (im_h->sizes[0]);
@@ -1193,35 +1193,35 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 
 	if (nchan == 1)
 	{
-		if (imageType == RTS2_DATA_SBYTE)
+		if (dataType == RTS2_DATA_SBYTE)
 		{
 			fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
 		}
 		else
 		{
-			fits_resize_img (getFitsFile (), imageType, 2, sizes, &fits_status);
+			fits_resize_img (getFitsFile (), dataType, 2, sizes, &fits_status);
 		}
 		if (fits_status)
 		{
 			logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
-				<< "imageType " << imageType << sendLog;
+				<< "dataType " << dataType << sendLog;
 			return -1;
 		}
 	}
 	else
 	{
-		if (imageType == RTS2_DATA_SBYTE)
+		if (dataType == RTS2_DATA_SBYTE)
 		{
 			fits_create_img (getFitsFile (), RTS2_DATA_BYTE, 2, sizes, &fits_status);
 		}
 		else
 		{
-			fits_create_img (getFitsFile (), imageType, 2, sizes, &fits_status);
+			fits_create_img (getFitsFile (), dataType, 2, sizes, &fits_status);
 		}
 		if (fits_status)
 		{
 			logStream (MESSAGE_ERROR) << "cannot create new image: " << getFitsErrors ()
-				<< "imageType " << imageType << sendLog;
+				<< "dataType " << dataType << sendLog;
 			return -1;
 		}
 	}
@@ -1229,7 +1229,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 	ret = writeImgHeader (im_h);
 
 	long pixelSize = dataSize / getPixelByteSize ();
-	switch (imageType)
+	switch (dataType)
 	{
 		case RTS2_DATA_BYTE:
 			fits_write_img_byt (getFitsFile (), 0, 1, pixelSize, (unsigned char *) pixelData, &fits_status);
@@ -1259,7 +1259,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 			fits_write_img_ulng (getFitsFile (), 0, 1, pixelSize, (unsigned long *) pixelData, &fits_status);
 			break;
 		default:
-			logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType << sendLog;
+			logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
 			return -1;
 	}
 	if (fits_status)
@@ -1283,7 +1283,7 @@ void Rts2Image::getHistogram (long *histogram, long nbins)
 	if (channels.size () == 0)
 		loadChannels ();
 
-	switch (imageType)
+	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
 			bins = 65535 / nbins;
@@ -1307,7 +1307,7 @@ void Rts2Image::getChannelHistogram (int chan, long *histogram, long nbins)
 	if (channels.size () == 0)
 		loadChannels ();
 
-	switch (imageType)
+	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
 			bins = 65535 / nbins;
@@ -1744,7 +1744,7 @@ void Rts2Image::loadChannels ()
 	if (!getFitsFile ())
 		openImage (NULL, true);
 
-	imageType = 0;
+	dataType = 0;
 	int hdutype;
 
 	// get number of channels
@@ -1797,11 +1797,11 @@ void Rts2Image::loadChannels ()
 			logStream (MESSAGE_ERROR) << "cannot retrieve image type: " << getFitsErrors () << sendLog;
 			return;
 		}
-		if (imageType == 0)
+		if (dataType == 0)
 		{
-			imageType = it;
+			dataType = it;
 		}
-		else if (imageType != it)
+		else if (dataType != it)
 		{
 			logStream (MESSAGE_ERROR) << getFileName () << " has extension with different image type, which is not supported" << sendLog;
 			return;
@@ -1816,7 +1816,7 @@ void Rts2Image::loadChannels ()
 			pixelSize *= sizes[i];
 
 		char *imageData = new char[pixelSize * getPixelByteSize ()];
-		switch (imageType)
+		switch (dataType)
 		{
 			case RTS2_DATA_BYTE:
 				fits_read_img_byt (getFitsFile (), 0, 1, pixelSize, 0, (unsigned char *) imageData, &anyNull, &fits_status);
@@ -1847,15 +1847,15 @@ void Rts2Image::loadChannels ()
 				fits_read_img_ulng (getFitsFile (), 0, 1, pixelSize, 0, (unsigned long *) imageData, &anyNull, &fits_status);
 				break;
 			default:
-				logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType << sendLog;
+				logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
 				delete[] imageData;
-				imageType = 0;
+				dataType = 0;
 				throw ErrorOpeningFitsFile (getFileName ());
 		}
 		if (fits_status)
 		{
 			delete[] imageData;
-			imageType = 0;
+			dataType = 0;
 			throw ErrorOpeningFitsFile (getFileName ());
 		}
 		fitsStatusGetValue ("image loadChannels", true);
@@ -1887,7 +1887,7 @@ unsigned short * Rts2Image::getChannelDataUShortInt (int chan)
 	if (getChannelData (0) == NULL)
 		return NULL;
 	// switch by format
-	if (imageType == RTS2_DATA_USHORT)
+	if (dataType == RTS2_DATA_USHORT)
 		return (unsigned short *) getChannelData (0);
 	// convert type to ushort int
 	return NULL;
@@ -1896,7 +1896,7 @@ unsigned short * Rts2Image::getChannelDataUShortInt (int chan)
 /*void Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
 	imageData = (char *) in_data;
-	imageType = RTS2_DATA_USHORT;
+	dataType = RTS2_DATA_USHORT;
 	naxis[0] = in_naxis[0];
 	naxis[1] = in_naxis[1];
 	flags |= IMAGE_DONT_DELETE_DATA;

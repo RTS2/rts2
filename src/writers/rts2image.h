@@ -423,10 +423,15 @@ class Rts2Image:public Rts2FitsFile
 
 		int getPixelByteSize ()
 		{
-			if (imageType == RTS2_DATA_ULONG)
+			if (dataType == RTS2_DATA_ULONG)
 				return 4;
-			return abs (imageType) / 8;
+			return abs (dataType) / 8;
 		}
+
+		/**
+		 * Return data type, as one of the RTS2_DATA_XXXX constants.
+		 */
+		int getDataType () { return dataType; }
 
 		//void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
 
@@ -724,7 +729,7 @@ class Rts2Image:public Rts2FitsFile
 		bool verbose;
 
 		rts2image::Channels channels;
-		int imageType;
+		int16_t dataType;
 		int focPos;
 		float signalNoise;
 		int getFailed;
