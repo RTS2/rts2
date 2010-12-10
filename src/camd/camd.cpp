@@ -590,7 +590,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		switch (getDataType ())
 		{
 			case RTS2_DATA_BYTE:
-				totPix = updateStatistics ((int8_t *) data, dataSize);
+				totPix = updateStatistics ((uint8_t *) data, dataSize);
 				break;
 			case RTS2_DATA_SHORT:
 				totPix = updateStatistics ((int16_t *) data, dataSize);
@@ -608,7 +608,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 				totPix = updateStatistics ((double *) data, dataSize);
 				break;
 			case RTS2_DATA_SBYTE:
-				totPix = updateStatistics ((uint8_t *) data, dataSize);
+				totPix = updateStatistics ((int8_t *) data, dataSize);
 				break;
 			case RTS2_DATA_USHORT:
 				totPix = updateStatistics ((uint16_t *) data, dataSize);
