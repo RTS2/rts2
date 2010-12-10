@@ -1686,21 +1686,35 @@ void Rts2Image::computeStatistics ()
 	if (channels.size () == 0)
 		loadChannels ();
 
-	const unsigned short *pixel;
-	const unsigned short *fullTop;
+	const char *pixel;
+	const char *fullTop;
 
 	long totalSize = 0;
 
 	// calculate average of all channels..
 	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
-		pixel = (const unsigned short *) (*iter)->getData ();
-		fullTop = pixel + (*iter)->getNPixels ();
-		totalSize += (*iter)->getNPixels ();
-		while (pixel < fullTop)
+		pixel = (*iter)->getData ();
+		switch (dataType)
 		{
-			average += *pixel;
-			pixel++;
+			case RTS2_DATA_BYTE:
+				fullTop = pixel + (*iter)->getNPixels ();
+				totalSize += (*iter)->getNPixels ();
+				while (pixel < fullTop)
+				{
+					average += * ((uint8_t *) pixel);
+					pixel++;
+				}
+				break;
+			case RTS2_DATA_USHORT:
+				fullTop = pixel + sizeof (uint16_t) * (*iter)->getNPixels ();
+				totalSize += (*iter)->getNPixels ();
+				while (pixel < fullTop)
+				{
+					average += * ((uint16_t *) pixel);
+					pixel++;
+				}
+				break;
 		}
 	}
 
@@ -1712,19 +1726,39 @@ void Rts2Image::computeStatistics ()
 		// calculate stdev
 		for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 		{
-			pixel = (const unsigned short *) (*iter)->getData ();
-			fullTop = pixel + (*iter)->getNPixels ();
-			while (pixel < fullTop)
+			pixel = (*iter)->getData ();
+			switch (dataType)
 			{
-				long double tmp_s = *pixel - average;
-				long double tmp_ss = tmp_s * tmp_s;
-				if (fabs (tmp_s) < average / 10)
-				{
-					bg_stdev += tmp_ss;
-					bg_size++;
-				}
-				stdev += tmp_ss;
-				pixel++;
+				case RTS2_DATA_BYTE:
+					fullTop = pixel + sizeof (uint8_t) * (*iter)->getNPixels ();
+					while (pixel < fullTop)
+					{
+						long double tmp_s = * ((uint8_t*) pixel) - average;
+						long double tmp_ss = tmp_s * tmp_s;
+						if (fabs (tmp_s) < average / 10)
+						{
+							bg_stdev += tmp_ss;
+							bg_size++;
+						}
+						stdev += tmp_ss;
+						pixel++;
+					}
+					break;
+				case RTS2_DATA_USHORT:
+					fullTop = pixel + sizeof (uint8_t) * (*iter)->getNPixels ();
+					while (pixel < fullTop)
+					{
+						long double tmp_s = * ((uint16_t *) pixel) - average;
+						long double tmp_ss = tmp_s * tmp_s;
+						if (fabs (tmp_s) < average / 10)
+						{
+							bg_stdev += tmp_ss;
+							bg_size++;
+						}
+						stdev += tmp_ss;
+						pixel++;
+					}
+					break;
 			}
 		}
 		stdev = sqrt (stdev / totalSize);
