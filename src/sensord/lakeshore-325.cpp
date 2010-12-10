@@ -280,13 +280,14 @@ void Lakeshore::changeTempValue (char chan, std::map <const char *, std::list <R
 {
 	std::ostringstream _os;
 	_os << it->first << " " << chan;
+	_os << std::fixed;
 	for (std::list <Rts2Value *>::iterator it_val = it->second.begin (); it_val != it->second.end (); it_val++)
 	{
 		_os << ",";
 		if (*it_val == oldValue)
-			_os << newValue->getValue ();
+			_os << newValue->getValueFloat ();
 		else
-			_os << (*it_val)->getValue ();
+			_os << (*it_val)->getValueFloat ();
 	}
 	std::cout << _os.str () << std::endl;
 	gpibWrite (_os.str ().c_str ());
