@@ -215,9 +215,9 @@ double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, dou
 	switch (dataType)
 	{
 		case RTS2_DATA_BYTE:
-			f = new char[n];
-			memcpy (f, q, n);
-			qsort (f, n, sizeof (char), cmpbyte);
+			f = (char *) new uint8_t[n];
+			memcpy (f, q, n * sizeof (uint8_t));
+			qsort (f, n, sizeof (uint8_t), cmpbyte);
 #define F ((char *) f)
 			if (n % 2)
 				M = F[n / 2];
