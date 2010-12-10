@@ -216,6 +216,7 @@ double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, dou
 	{
 		case RTS2_DATA_BYTE:
 			f = new char[n];
+			memcpy (f, q, n);
 			qsort (f, n, sizeof (char), cmpbyte);
 #define F ((char *) f)
 			if (n % 2)
@@ -226,6 +227,7 @@ double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, dou
 			break;
 		case RTS2_DATA_USHORT:
 			f = (char *) new uint16_t[n];
+			memcpy (f, q, n * sizeof (uint16_t));
 			qsort (f, n, sizeof (uint16_t), cmpuint16_t);
 #define F ((uint16_t *) f)
 			if (n % 2)
@@ -863,7 +865,6 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 	hig = (short unsigned int) (median + 5 * sigma);
 
 	std::cout << "Window median:" << median << " sigma " << sigma << " low:" << low << " hig:" << hig << std::endl;
-
 	// transfer iP to pixmap, zoom it on fly
 	for (i = 0; i < pixmapHeight; i++)
 	{
@@ -873,7 +874,15 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 			// do zooming..
 			if (master->zoom >= 1)
 			{
-				pW = (double) iP[((int) (i / master->zoom)) * iW + (int) (j / master->zoom)];
+				switch (image->getDataType ())
+				{
+					case RTS2_DATA_BYTE:
+						pW = (double) ((uint8_t *) iP)[((int) (i / master->zoom)) * iW + (int) (j / master->zoom)];
+						break;
+					case RTS2_DATA_USHORT:
+						pW = (double) ((uint16_t *) iP)[((int) (i / master->zoom)) * iW + (int) (j / master->zoom)];
+						break;
+				}
 			}
 			else
 			{
@@ -886,9 +895,20 @@ void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
 
 				for (int k = 0; k < bsize; k++)
 					for (int l = 0; l < bsize; l++)
-						pW += iP[(ii + k) * iW + jj + l];
+					{
+						switch (image->getDataType ())
+						{
+							case RTS2_DATA_BYTE:
+								pW += ((uint8_t *) iP)[(ii + k) * iW + jj + l];
+								break;
+							case RTS2_DATA_USHORT:
+								pW += ((uint16_t *) iP)[(ii + k) * iW + jj + l];
+								break;
+						}
+					}
 
 				pW /= bsize * bsize;
+
 			}
 			int grey = (int) floor (256.0 * (pW - (double) low) /
 				((double) hig - (double) low));
