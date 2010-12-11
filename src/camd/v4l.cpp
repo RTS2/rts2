@@ -48,6 +48,7 @@ class V4L:public Camera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual void initDataTypes ();	
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 		virtual int startExposure ();
 		virtual int stopExposure ();
 		virtual int doReadout ();
@@ -60,6 +61,10 @@ class V4L:public Camera
 		struct v4l2_requestbuffers reqbuf;
 		// native CCD format
 		__u32 format;
+
+		Rts2ValueSelection *greyMode;
+
+		void everyEvenByte (char *bytes);
 };
 
 }
@@ -71,6 +76,8 @@ V4L::V4L (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	videodev = "/dev/video0";
 	fd = 0;
 	buffers = NULL;
+
+	createValue (greyMode, "grey", "gray modes", true, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "videodevice. Defaults to /dev/video0");
 }
@@ -208,17 +215,37 @@ void V4L::initDataTypes ()
 {
 	switch (format)
 	{
-		case V4L2_PIX_FMT_GREY:
 		case V4L2_PIX_FMT_YUYV:
+			addDataType (RTS2_DATA_USHORT);
+			greyMode->addSelVal ("yuyv");
+		case V4L2_PIX_FMT_GREY:
 			addDataType (RTS2_DATA_BYTE);
+			greyMode->addSelVal ("grey_8bit");
 			break;
 		case V4L2_PIX_FMT_Y16:
 			addDataType (RTS2_DATA_USHORT);
+			greyMode->addSelVal ("grey_16bit");
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "data type " << format << " is not supported" << sendLog;
 			exit (EXIT_FAILURE);
 	}
+}
+
+int V4L::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == greyMode)
+	{
+		switch (format)
+		{
+			case V4L2_PIX_FMT_YUYV:
+				setDataType (newValue->getValueInteger ());
+				return 0;
+			default:
+				return -2;
+		}
+	}
+	return Camera::setValue (oldValue, newValue);
 }
 
 int V4L::startExposure ()
@@ -253,13 +280,42 @@ int V4L::stopExposure ()
 
 int V4L::doReadout ()
 {
-	sendReadoutData ((char *) buffers[0].start, chipByteSize ());
+	switch (format)
+	{
+		case V4L2_PIX_FMT_YUYV:
+			{
+				switch (greyMode->getValueInteger ())
+				{
+					case 0:
+						sendReadoutData ((char *) buffers[0].start, chipByteSize ());
+						break;
+					case 1:
+						memcpy (dataBuffer, buffers[0].start, chipByteSize () * 2);
+						everyEvenByte (dataBuffer);
+						sendReadoutData (dataBuffer, chipByteSize ());
+						break;
+				}
+			}
+			break;
+		case V4L2_PIX_FMT_GREY:
+		case V4L2_PIX_FMT_Y16:
+			sendReadoutData ((char *) buffers[0].start, chipByteSize ());
+			break;
+	}
 	if (ioctl (fd, VIDIOC_STREAMOFF, &(reqbuf.type)) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot end stream" << sendLog;
 		return -1;
 	}
 	return -2;
+}
+
+void V4L::everyEvenByte (char *bytes)
+{
+	char *s;
+	char *d;
+	for (s = bytes, d = bytes; d < bytes + chipByteSize (); s+=2, d++)
+		*d = *s;
 }
 
 int main (int argc, char **argv)
