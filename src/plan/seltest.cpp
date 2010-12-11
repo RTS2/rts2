@@ -21,6 +21,7 @@
 #include "rts2selector.h"
 
 #define OPT_FILTERS      OPT_LOCAL + 630
+#define OPT_FILTER_FILE  OPT_LOCAL + 631
 
 namespace rts2plan
 {
@@ -44,6 +45,8 @@ class SelectorApp:public PrintTarget
 	private:
 		int verbosity;
 
+		void readFilters (std::string camera, std::string fn);
+
 		std::map <std::string, std::vector < std::string > > availableFilters;
 };
 
@@ -57,6 +60,7 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 	addOption ('v', NULL, 0, "increase verbosity");
 
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
+	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
 }
 
 SelectorApp::~SelectorApp (void)
@@ -80,6 +84,25 @@ int SelectorApp::processOption (int opt)
 				return -1;
 			}
 			availableFilters[cam_filters[0]] = SplitStr (cam_filters[1], std::string (":"));
+			if (availableFilters[cam_filters[0]].size () == 0)
+			{
+				std::cerr << "empty filter names specified for camera " << cam_filters[0] << std::endl;
+				return -1;
+			}
+			break;
+		case OPT_FILTER_FILE:
+			cam_filters = SplitStr (std::string (optarg), std::string (":"));
+			if (cam_filters.size () != 2)
+			{
+				std::cerr << "camera name and filter file must be separated with :" << std::endl;
+				return -1;
+			}
+			readFilters(cam_filters[0], cam_filters[1]);
+			if (availableFilters[cam_filters[0]].size () == 0)
+			{
+				std::cerr << "empty filter file " << cam_filters[1] << " for camera " << cam_filters[0] << std::endl;
+				return -1;
+			}
 			break;
 		default:
 			return PrintTarget::processOption (opt);
@@ -133,6 +156,19 @@ int SelectorApp::doProcessing ()
 
 	delete sel;
 	return 0;
+}
+
+void SelectorApp::readFilters (std::string camera, std::string fn)
+{
+	std::ifstream ifs (fn.c_str ());
+	while (!ifs.fail ())
+	{
+		std::string fil;
+		ifs >> fil;
+		if (ifs.fail ())
+			break;
+		availableFilters[camera].push_back (fil);
+	}
 }
 
 int main (int argc, char **argv)
