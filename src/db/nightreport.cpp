@@ -199,8 +199,6 @@ int Rts2NightReport::init ()
 	if (ret)
 		return ret;
 
-	std::cout << localTime;
-
 	if (t_from == 0)
 		t_from = Rts2Config::instance ()->getNight ();
 	if (t_to == 0)

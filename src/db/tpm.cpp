@@ -216,7 +216,7 @@ int TPM::headline (Rts2Image * image, std::ostream & _os)
 	{
 		case TARGET:
 		case BEST:
-								 // we have J2000, not refracted coordinates from mount
+			// we have J2000, not refracted coordinates from mount
 			_os << " " << LibnovaDeg90 (obs.lat) << " 2000 1 01" << std::endl;
 			break;
 		case MOUNT:
