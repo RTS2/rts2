@@ -181,6 +181,10 @@ int ConnShooter::processAuger ()
 		>> db_LambdaErr
 		>> db_GHChi2
 		>> db_GHNdf
+		// 3 double
+		// >> db_DGHXmax1
+		// >> db_DGHXmax2
+		// >> db_DGHChi2Improv
 		>> db_LineFitChi2
 		>> db_EmEnergy
 		>> db_EmEnergyErr
