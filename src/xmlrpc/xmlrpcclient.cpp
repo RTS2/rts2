@@ -772,7 +772,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
         addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('S', NULL, 0, "get state of device(s) specified as argument");
-	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value) or ask if the system is in on/standby/off (if single argument is specified)");
+	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value) or ask if the system is in on/standby/off/rnight (if single argument is specified; night means in ready night state)");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption ('t', NULL, 0, "get device(s) type");

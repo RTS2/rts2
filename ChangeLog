@@ -1,3 +1,6 @@
+2010-12-11
+ * added rnight query for ready night master state
+
 2010-12-07
  * fixed redhat and slackware init files
  * fixed ARC support, confirms it is working

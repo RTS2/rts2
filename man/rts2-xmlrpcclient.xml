@@ -85,7 +85,7 @@
         <arg choice="plain"><option>-S <replaceable><arg rep="repeat">device</arg></replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>--master-state <replaceable>on|off|standby</replaceable></option></arg>
+        <arg choice="plain"><option>--master-state <replaceable>on|off|standby|rnight</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--schedticket <replaceable>ticket ID</replaceable></option></arg>
@@ -243,10 +243,10 @@ SENSOR 0 sensor 0
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--master-state <replaceable>on|off|standby</replaceable></option></term>
+        <term><option>--master-state <replaceable>on|off|standby|rnight</replaceable></option></term>
 	<listitem>
 	  <para>
-	    Get master state either as a number, or as 0/1 respons to query if the state is on(ready), standby or off. Following is an
+	    Get master state either as a number, or as 0/1 respons to query if the state is on(ready), standby, off or ready night (rnight argument). Following is an
 	    example, asking whenever system is in on state - reply 1 means it is (0 would mean it is not):
     <programlisting>
 <![CDATA[

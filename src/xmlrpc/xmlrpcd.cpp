@@ -732,6 +732,10 @@ class MasterStateIs: public SessionMethod
 					result = (ms & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
 						|| (ms & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF;
 				}
+				else if (params[0] == "rnight")
+				{
+					result = (ms & SERVERD_STATUS_MASK) == SERVERD_NIGHT && !(ms & SERVERD_STANDBY_MASK);
+				}
 				else
 				{
 					throw XmlRpcException ("Invalid status name parameter");
