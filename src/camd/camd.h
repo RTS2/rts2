@@ -355,6 +355,16 @@ class Camera:public Rts2ScriptDevice
 			return ((DataType *) dataType->getData ())->type;
 		}
 
+		/**
+		 * Set data type to given value. Value is index to dataType selection, created in 
+		 * initDataTypes method.
+		 *
+		 * @param ntype new data type index
+		 *
+		 * @see initDataTypes()
+		 */
+		void setDataType (int ntype) { dataType->setValueInteger (ntype); }
+
 		int nAcc;
 		struct imghdr *focusingHeader;
 
