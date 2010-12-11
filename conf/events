@@ -49,6 +49,13 @@
       </value>
     </device>
     <device name="SD">
+      <message type="CRITICAL">
+        <email>
+          <to>example@example.com</to>
+	  <subject>Critical error on dome occured.</subject>
+	  <body>There is critical error on Bootes dome. Please act immediatelly.</body>
+	</email>
+      </message>
       <value name="test_int" cadency="3" test="$SD.test_int &lt; 20">
         <record/>
 	<command>/etc/rts2/event.d/sd</command>
