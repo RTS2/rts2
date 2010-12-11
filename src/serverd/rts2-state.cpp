@@ -159,9 +159,9 @@ void StateApp::printDayStates (std::ostream & _os)
 		}
 		if (curr_time == currTime)
 		{
-			_os << LibnovaDate (&currTime) << " " << Rts2CentralState (curr_type) << " (current)" << std::endl;
+			_os << Timestamp (currTime) << " " << Rts2CentralState (curr_type) << " (current)" << std::endl;
 		}
-		_os << LibnovaDate (&ev_time) << " " << Rts2CentralState (next_type) << std::endl;
+		_os << Timestamp (ev_time) << " " << Rts2CentralState (next_type) << std::endl;
 
 		curr_time = ev_time + 1;
 	}
@@ -288,7 +288,7 @@ int StateApp::run ()
 	obs = Rts2Config::instance ()->getObserver ();
 
 	if (verbose > 0)
-		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << LibnovaDate (&currTime) << std::endl;
+		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << Timestamp (currTime) << std::endl;
 
 	if (calculateSun != NONE)
 	{
