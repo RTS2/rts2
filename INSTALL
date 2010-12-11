@@ -23,7 +23,7 @@ Instalation from SVN
    you begin, important note: on Ubuntu 64bit installations, you need to
    compile wcs with -fPIC CFLAG.
 
-user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.7.7.tar.gz
+user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.8.1.tar.gz
 user@host:tar xzf wcstools-3.7.7.tar.gz
 user@host:cd wcstools-3.7.7/
 
