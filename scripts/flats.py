@@ -105,7 +105,7 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.morningFlats = self.eveningFlats[:]
 			self.morningFlats.reverse ()
 		else:
-		  	self.morningFlats = None
+		  	self.morningFlats = morningFlats
 		
 		# If dark exposures for acquired filters should be taken.
 		self.doDarks = doDarks
