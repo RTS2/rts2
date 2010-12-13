@@ -84,7 +84,9 @@ class MICCD:public Camera
 		void addFilters (char *opt);
 		int clearCCD (int nclears);
 
-		Rts2ValueLong *id;
+		int reinitCamera ();
+
+		Rts2ValueInteger *id;
 		Rts2ValueSelection *mode;
 		Rts2ValueBool *fan;
 		Rts2ValueFloat *tempRamp;
@@ -185,7 +187,7 @@ int MICCD::init ()
 		return ret;
 	if (miccd_open (id->getValueInteger (), &camera))
 	{
-		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueLong () << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueInteger () << sendLog;
 		return -1;
 	}
 
@@ -242,12 +244,23 @@ int MICCD::initValues ()
 
 int MICCD::info ()
 {
+	if (!isIdle ())
+		return Camera::info ();
 	int ret;
 	float val;
 	uint16_t ival;
 	ret = miccd_chip_temperature (&camera, &val);
 	if (ret)
-		return -1;
+	{
+		if (camera.model != G10800)
+			return -1;
+		ret = reinitCamera ();
+		if (ret)
+			return -1;
+		ret = miccd_chip_temperature (&camera, &val);
+		if (ret)
+			return -1;
+	}
 	tempCCD->setValueFloat (val);
 	if (camera.model != G10800)
 	{
@@ -325,10 +338,23 @@ int MICCD::startExposure ()
 	switch (camera.model)
 	{
 		case G10800:
-			// G10800 does not allow > 2 sec exposures?
+			// G10800 does not allow > 8 sec exposures
 			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 			if (ret < 0)
-				return -1;
+			{
+				if (camera.model != G10800)	
+					return -1;
+				// else try to reinit..
+				logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinint.." << sendLog;
+				if (reinitCamera ())
+					return -1;
+				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
+				if (ret < 0)
+				{
+					logStream (MESSAGE_ERROR) << "reinit failed" << sendLog;
+					return -1;
+				}
+			}
 			setExposure (((float) ret) / 8000.0);
 			break;
 		case G2:
@@ -446,6 +472,33 @@ int MICCD::clearCCD (int nclear)
 		for (int i = 0; i < n; i++)
 			miccd_hclear (&camera);
 	}
+	return 0;
+}
+
+int MICCD::reinitCamera ()
+{
+	miccd_close (&camera);
+	if (miccd_open (id->getValueInteger (), &camera))
+		return -1;
+	switch (camera.model)
+	{
+		case G10800:
+			if (miccd_fan (&camera, fan->getValueInteger ()))
+			{
+				logStream (MESSAGE_ERROR) << "reinit failed - cannot set fan" << sendLog;
+				return -1;
+			}
+			break;
+		case G2:
+		case G3:
+			if (miccd_mode (&camera, mode->getValueInteger ()))
+			{
+				logStream (MESSAGE_ERROR) << "reinit failed - cannot set mode" << sendLog;
+				return -1;
+			}
+			break;
+	}
+	maskState (DEVICE_ERROR_MASK, 0, "all errors cleared");
 	return 0;
 }
 
