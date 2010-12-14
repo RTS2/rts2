@@ -35,11 +35,37 @@
 #define CONSTRAINT_LPHASE       "lunarPhase"
 #define CONSTRAINT_SDISTANCE    "solarDistance"
 #define CONSTRAINT_SALTITUDE    "sunAltitude"
+#define CONSTRAINT_MAXREPEATS   "maxRepeats"
 
 namespace rts2db
 {
 
 class Target;
+
+/**
+ * Abstract class for constraint.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Constraint
+{
+	public:
+		Constraint () {};
+
+		virtual void load (xmlNodePtr cons) = 0;
+		virtual bool satisfy (Target *tar, double JD) = 0;
+
+		/**
+		 * Add constraint from string.
+		 *
+		 * @param arg   argument - parsable string specifing constrain parameters
+                 */
+		virtual void parse (const char *arg) = 0;
+
+		virtual void print (std::ostream &os) = 0;
+
+		virtual const char* getName () = 0;
+};
 
 /**
  * Simple interval for constraints. Has lower and upper bounds.
@@ -70,31 +96,30 @@ class ConstraintDoubleInterval
 };
 
 /**
- * Abstract class for constraints.
+ * Abstract class for interval (lower/upper) constraints.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Constraint
+class ConstraintInterval: public Constraint
 {
 	public:
-		Constraint () {};
+		ConstraintInterval ():Constraint () {};
 
 		/**
 		 * Copy constraint intervals.
 		 */
-		Constraint (Constraint &cons);
+		ConstraintInterval (ConstraintInterval &cons);
 
 		virtual void load (xmlNodePtr cons);
-		virtual bool satisfy (Target *tar, double JD) = 0;
 
 		/**
 		 * Add interval from string. String containts colon (:) separating various intervals.
 		 *
-		 * @param interval   colon separated interval boundaries
+		 * @param arg   colon separated interval boundaries
                  */
-		virtual void parseInterval (const char *interval);
+		virtual void parse (const char *arg);
 
-		void print (std::ostream &os);
+		virtual void print (std::ostream &os);
 
 		virtual const char* getName () = 0;
 	protected:
@@ -112,7 +137,7 @@ class Constraint
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConstraintTime:public Constraint
+class ConstraintTime:public ConstraintInterval
 {
 	public:
 		virtual void load (xmlNodePtr cons);
@@ -121,7 +146,7 @@ class ConstraintTime:public Constraint
 		virtual const char* getName () { return CONSTRAINT_TIME; }
 };
 
-class ConstraintAirmass:public Constraint
+class ConstraintAirmass:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -129,7 +154,7 @@ class ConstraintAirmass:public Constraint
 		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
 };
 
-class ConstraintHA:public Constraint
+class ConstraintHA:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -137,7 +162,7 @@ class ConstraintHA:public Constraint
 		virtual const char* getName () { return CONSTRAINT_HA; }
 };
 
-class ConstraintLunarDistance:public Constraint
+class ConstraintLunarDistance:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -145,7 +170,7 @@ class ConstraintLunarDistance:public Constraint
 		virtual const char* getName () { return CONSTRAINT_LDISTANCE; }
 };
 
-class ConstraintLunarAltitude:public Constraint
+class ConstraintLunarAltitude:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -153,7 +178,7 @@ class ConstraintLunarAltitude:public Constraint
 		virtual const char* getName () { return CONSTRAINT_LALTITUDE; }
 };
 
-class ConstraintLunarPhase:public Constraint
+class ConstraintLunarPhase:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -161,7 +186,7 @@ class ConstraintLunarPhase:public Constraint
 		virtual const char* getName () { return CONSTRAINT_LPHASE; }
 };
 
-class ConstraintSolarDistance:public Constraint
+class ConstraintSolarDistance:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
@@ -169,12 +194,28 @@ class ConstraintSolarDistance:public Constraint
 		virtual const char* getName () { return CONSTRAINT_SDISTANCE; }
 };
 
-class ConstraintSunAltitude:public Constraint
+class ConstraintSunAltitude:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
 
 		virtual const char* getName () { return CONSTRAINT_SALTITUDE; }
+};
+
+class ConstraintMaxRepeat:public Constraint
+{
+	public:
+		ConstraintMaxRepeat ():Constraint () { maxRepeat = -1; }
+		virtual void load (xmlNodePtr cons);
+		virtual bool satisfy (Target *tar, double JD);
+
+		virtual void parse (const char *arg);
+
+		virtual void print (std::ostream &os);
+
+		virtual const char* getName () { return CONSTRAINT_MAXREPEATS; }
+	private:
+		int maxRepeat;
 };
 
 class Constraints:public std::map <std::string, ConstraintPtr >
@@ -229,12 +270,12 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		void load (const char *filename);
 
 		/**
-		 * Parse constraint intervals.
+		 * Parse constraint from arguments.
 		 *
 		 * @param name        constraint name
-		 * @param interval    constraint interval
+		 * @param arg         constraint argument, specifiing constraint parameters
 		 */
-		void parseInterval (const char *name, const char *interval);
+		void parse (const char *name, const char *arg);
 
 		/**
 		 * Print constraints.

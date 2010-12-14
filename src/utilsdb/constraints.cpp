@@ -51,13 +51,13 @@ void ConstraintDoubleInterval::print (std::ostream &os)
 	os << std::endl << "    </interval>" << std::endl;
 }
 
-Constraint::Constraint (Constraint &cons)
+ConstraintInterval::ConstraintInterval (ConstraintInterval &cons)
 {
 	for (std::list <ConstraintDoubleInterval>::iterator iter = cons.intervals.begin (); iter != cons.intervals.end (); iter++)
 		add (*iter);
 }
 
-void Constraint::load (xmlNodePtr cons)
+void ConstraintInterval::load (xmlNodePtr cons)
 {
 	intervals.clear ();
 	for (xmlNodePtr inter = cons->children; inter != NULL; inter = inter->next)
@@ -91,17 +91,17 @@ void Constraint::load (xmlNodePtr cons)
 	}
 }
 
-void Constraint::parseInterval (const char *interval)
+void ConstraintInterval::parse (const char *arg)
 {
 	double lower = rts2_nan ("f");
 	double upper = rts2_nan ("f");
 
-	char *sint = new char [strlen (interval) + 1];
-	strcpy (sint, interval);
+	char *sint = new char [strlen (arg) + 1];
+	strcpy (sint, arg);
 
 	char *cp = strchr (sint, ':');
 	if (cp == NULL)
-		throw rts2core::Error ((std::string ("the interval must contain a single : - cannot find : in interval ") + interval).c_str ());
+		throw rts2core::Error ((std::string ("the interval must contain a single : - cannot find : in interval ") + arg).c_str ());
 
 	char *endp;
 	*cp = '\0';
@@ -110,7 +110,7 @@ void Constraint::parseInterval (const char *interval)
 	{
 		lower = strtof (sint, &endp);
 		if (*endp != 0)
-			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + interval).c_str ());
+			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + arg).c_str ());
 	}
 	
 	if (*(cp + 1) != '\0')
@@ -125,7 +125,7 @@ void Constraint::parseInterval (const char *interval)
 	delete[] sint;
 }
 
-void Constraint::print (std::ostream &os)
+void ConstraintInterval::print (std::ostream &os)
 {
 	os << "  <" << getName () << ">" << std::endl;
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
@@ -135,7 +135,7 @@ void Constraint::print (std::ostream &os)
 	os << "  </" << getName () << ">" << std::endl;
 }
 
-bool Constraint::isBetween (double val)
+bool ConstraintInterval::isBetween (double val)
 {
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
 	{
@@ -225,6 +225,30 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	ln_get_hrz_from_equ (&eq_sun, Rts2Config::instance ()->getObserver (), JD, &hrz_sun);
 	return isBetween (hrz_sun.alt);
+}
+
+void ConstraintMaxRepeat::load (xmlNodePtr cons)
+{
+	if (!cons->children || !cons->children->content)
+		throw XmlUnexpectedNode (cons);
+	maxRepeat = atoi ((const char *) cons->children->content);
+}
+
+bool ConstraintMaxRepeat::satisfy (Target *tar, double JD)
+{
+	if (maxRepeat > 0)
+		return tar->getTotalNumberOfObservations () < maxRepeat;
+	return true;
+}
+
+void ConstraintMaxRepeat::parse (const char *arg)
+{
+	maxRepeat = atoi (arg);
+}
+
+void ConstraintMaxRepeat::print (std::ostream &os)
+{
+	os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
 }
 
 Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr > (cs)
@@ -321,19 +345,19 @@ void Constraints::load (const char *filename)
 	xmlCleanupParser ();
 }
 
-void Constraints::parseInterval (const char *name, const char *interval)
+void Constraints::parse (const char *name, const char *arg)
 {
 	Constraints::iterator iter = find(std::string (name));
 	if (iter != end ())
 	{
-		iter->second->parseInterval (interval);
+		iter->second->parse (arg);
 	}
 	else
 	{
 		Constraint *con = createConstraint (name);
 		if (con == NULL)
 			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
-		con->parseInterval (interval);
+		con->parse (arg);
 		(*this)[std::string (con->getName ())] = ConstraintPtr (con);
 	}
 }
@@ -366,6 +390,8 @@ Constraint *Constraints::createConstraint (const char *name)
 		return new ConstraintSolarDistance ();
 	else if (!strcmp (name, CONSTRAINT_SALTITUDE))
 		return new ConstraintSunAltitude ();
+	else if (!strcmp (name, CONSTRAINT_MAXREPEATS))
+		return new ConstraintMaxRepeat ();
 	return NULL;
 }
 

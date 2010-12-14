@@ -92,7 +92,8 @@
       before 8th August 2010 14:13:13 UT, or between 10th August 2010 14:15:16
       and 8th November 2010 11:12:13 UT, with airmas >= 2.0 and hour angle
       between -2 hours and +2hours (e.g. four hours around object transit
-      time).
+      time). The object will be also observed for 10 times. If the object was
+      already observed 10 times, it will not be observed again.
       <programlisting>
 <![CDATA[
 <constraints>
@@ -116,6 +117,7 @@
                         <upper>2</upper>
                 </interval>
         </HA>
+	<maxRepeats>10</maxRepeats>
 </constraints>
 ]]>
       </programlisting>
@@ -217,6 +219,15 @@
 	<listitem>
 	  <para>
 	    Sun altitude (angular distance from the horizon) at observe location.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>maxRepeats</term>
+	<listitem>
+          <para>
+	    Maximum number of observations. The target will not be selected if
+	    it has already given number of observations performed.
 	  </para>
 	</listitem>
       </varlistentry>

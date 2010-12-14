@@ -59,12 +59,13 @@
 #define OPT_AIRMASS         OPT_LOCAL + 835
 #define OPT_LUNAR_DISTANCE  OPT_LOCAL + 836
 #define OPT_LUNAR_ALTITUDE  OPT_LOCAL + 837
-#define OPT_PI_NAME         OPT_LOCAL + 838
-#define OPT_PROGRAM_NAME    OPT_LOCAL + 839
-#define OPT_DELETE          OPT_LOCAL + 840
+#define OPT_MAXREPEATS      OPT_LOCAL + 838
+#define OPT_PI_NAME         OPT_LOCAL + 839
+#define OPT_PROGRAM_NAME    OPT_LOCAL + 840
+#define OPT_DELETE          OPT_LOCAL + 841
 
-#define OPT_ID_ONLY         OPT_LOCAL + 841
-#define OPT_NAME_ONLY       OPT_LOCAL + 842
+#define OPT_ID_ONLY         OPT_LOCAL + 842
+#define OPT_NAME_ONLY       OPT_LOCAL + 844
 
 class CamScript
 {
@@ -119,7 +120,7 @@ class TargetApp:public Rts2AppDb
 
 		bool matchAll;
 
-		void parseInterval (const char *name, const char *interval) { constraints.parseInterval (name, interval); }
+		void parseConstraint (const char *name, const char *arg) { constraints.parse (name, arg); }
 
 		// constraints
 		rts2db::Constraints constraints;
@@ -176,6 +177,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	addOption (OPT_AIRMASS, "airmass", 1, "set airmass constraint for the target");
 	addOption (OPT_LUNAR_DISTANCE, "lunarDistance", 1, "set lunar distance constraint for the target");
 	addOption (OPT_LUNAR_ALTITUDE, "lunarAltitude", 1, "set lunar altitude (height above horizon) constraint for the target");
+	addOption (OPT_MAXREPEATS, "maxRepeats", 1, "set maximal number of target repeats");
 
 	addOption (OPT_DELETE, "delete-targets", 0, "delete targets and associated entries (observations, images) from the database");
 
@@ -267,15 +269,19 @@ int TargetApp::processOption (int in_opt)
 			op |= OP_TEMPDISABLE;
 			break;
 		case OPT_AIRMASS:
-			parseInterval (CONSTRAINT_AIRMASS, optarg);
+			parseConstraint (CONSTRAINT_AIRMASS, optarg);
 			op |= OP_CONSTRAINTS;
 			break;
 		case OPT_LUNAR_DISTANCE:
-			parseInterval (CONSTRAINT_LDISTANCE, optarg);
+			parseConstraint (CONSTRAINT_LDISTANCE, optarg);
 			op |= OP_CONSTRAINTS;
 			break;
 		case OPT_LUNAR_ALTITUDE:
-			parseInterval (CONSTRAINT_LALTITUDE, optarg);
+			parseConstraint (CONSTRAINT_LALTITUDE, optarg);
+			op |= OP_CONSTRAINTS;
+			break;
+		case OPT_MAXREPEATS:
+			parseConstraint (CONSTRAINT_MAXREPEATS, optarg);
 			op |= OP_CONSTRAINTS;
 			break;
 		case OPT_PI_NAME:

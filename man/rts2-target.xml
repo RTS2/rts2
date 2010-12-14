@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-05-24</date>">
+  <!ENTITY dhdate      "<date>2010-12-14</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -117,6 +117,9 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--lunarAltitude <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--maxRepeats <replaceable>maximal number of observations</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--id-only</option></arg>
@@ -330,6 +333,16 @@
             is not set in the missing direction.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--maxRepeats <replaceable>maximal number of observations</replaceable></option></term>
+	<listitem>
+          <para>
+	    Specify maximal number this observation will be repeated. Argument
+	    is an integer - upper limit for maximal number of repeats of given
+	    observation.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--id-only</option></term>
