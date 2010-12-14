@@ -75,11 +75,48 @@ class ConnShooter:public Rts2ConnNoSend
 
 		int processAuger ();
 		
-
 		// last_auger_xxx are used in processAuger and receive methods
 		double last_auger_date;
 		double last_auger_ra;
 		double last_auger_dec;
+
+		enum op_t {CMP_GT, CMP_GE, CMP_EQ, CMP_LE, CMP_LT};
+
+		std::list < std::string > failedCuts[3];
+		int cutindex;
+
+		std::string failedCutsString (int i);
+
+		template <class c> bool compare (c p1, op_t op, c p2, const char * pname)
+		{
+			bool ret = false;
+			static const char *op_c[] = {">", ">=", "==", "<=", "<"};
+			switch (op)
+			{
+				case CMP_GT:
+					ret = p1 > p2;
+					break;
+				case CMP_GE:
+					ret = p1 >= p2;
+					break;
+				case CMP_EQ:
+					ret = p1 == p2;
+					break;
+				case CMP_LE:
+					ret = p1 <= p2;
+					break;
+				case CMP_LT:
+					ret = p1 < p2;
+					break;
+			}
+			if (ret == false)
+			{
+				std::ostringstream os;
+				os << pname << " :" << p1 << op_c[op] << p2;
+				failedCuts[cutindex].push_back (os.str ());
+			}
+			return ret;
+		}
 };
 
 }
