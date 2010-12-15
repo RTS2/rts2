@@ -31,26 +31,28 @@
 
 #include <iostream>
 
-#define OP_NONE             0x0000
-#define OP_ENABLE           0x0003
-#define OP_DISABLE          0x0001
-#define OP_MASK_EN          0x0003
-#define OP_PRIORITY         0x0004
-#define OP_BONUS            0x0008
-#define OP_BONUS_TIME       0x0010
-#define OP_NEXT_TIME        0x0020
-#define OP_SCRIPT           0x0040
-#define OP_NEXT_OBSER       0x0080
+#define OP_NONE             0x000000
+#define OP_ENABLE           0x000003
+#define OP_DISABLE          0x000001
+#define OP_MASK_EN          0x000003
+#define OP_PRIORITY         0x000004
+#define OP_BONUS            0x000008
+#define OP_BONUS_TIME       0x000010
+#define OP_NEXT_TIME        0x000020
+#define OP_SCRIPT           0x000040
+#define OP_NEXT_OBSER       0x000080
 
-#define OP_OBS_START        0x0100
-#define OP_OBS_SLEW         0x0200
-#define OP_OBS_END          0x0400
-#define OP_TEMPDISABLE      0x0800
-#define OP_CONSTRAINTS      0x1000
+#define OP_OBS_START        0x000100
+#define OP_OBS_SLEW         0x000200
+#define OP_OBS_END          0x000400
+#define OP_TEMPDISABLE      0x000800
+#define OP_CONSTRAINTS      0x001000
 
-#define OP_PI_NAME          0x2000
-#define OP_PROGRAM_NAME     0x4000
-#define OP_DELETE           0x8000
+#define OP_PI_NAME          0x002000
+#define OP_PROGRAM_NAME     0x004000
+#define OP_DELETE           0x008000
+
+#define OP_CONS_RESET       0x010000
 
 #define OPT_OBSERVE_START   OPT_LOCAL + 831
 #define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
@@ -66,6 +68,8 @@
 
 #define OPT_ID_ONLY         OPT_LOCAL + 842
 #define OPT_NAME_ONLY       OPT_LOCAL + 844
+
+#define OPT_RESETC          OPT_LOCAL + 843
 
 class CamScript
 {
@@ -100,7 +104,7 @@ class TargetApp:public Rts2AppDb
 
 		virtual int doProcessing ();
 	private:
-		int op;
+		int32_t op;
 		std::vector < const char * >tar_names;
 		rts2db::TargetSet target_set;
 
@@ -183,6 +187,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 
 	addOption (OPT_ID_ONLY, "id-only", 0, "expect numeric target(s) names (IDs only)");
 	addOption (OPT_NAME_ONLY, "name-only", 0, "resolver target(s) as names (even pure numbers)");
+	addOption (OPT_RESETC, "reset-constraints", 0, "reset target constraints (do not add new constraints)");
 }
 
 TargetApp::~TargetApp ()
@@ -300,6 +305,9 @@ int TargetApp::processOption (int in_opt)
 			break;
 		case OPT_NAME_ONLY:
 			resType = rts2db::NAME_ONLY;
+			break;
+		case OPT_RESETC:
+			op |= OP_CONS_RESET;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -528,8 +536,16 @@ int TargetApp::doProcessing ()
 		{
 			try
 			{
-				target_set.setConstraints (constraints);
-				std::cout << "Set constraints for:" << std::endl << target_set << std::endl;
+				if (op & OP_CONS_RESET)
+				{
+					target_set.setConstraints (constraints);
+					std::cout << "Set constraints for:" << std::endl << target_set << std::endl;
+				}
+				else
+				{
+					target_set.appendConstraints (constraints);
+					std::cout << "Append constraints for:" << std::endl << target_set << std::endl;
+				}
 			}
 			catch (rts2core::Error f)
 			{
