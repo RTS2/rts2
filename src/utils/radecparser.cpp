@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "radecparser.h"
+#include "utilsfunc.h"
 
 double parseDMS (const char *hptr, double *mul)
 {
@@ -34,7 +35,7 @@ double parseDMS (const char *hptr, double *mul)
 	double ret;					 //to store return value
 
 	if (!(locptr = strdup (hptr)))
-		return nan ("f");
+		return rts2_nan ("f");
 
 	if (*locptr == '-')
 	{
@@ -57,12 +58,12 @@ double parseDMS (const char *hptr, double *mul)
 		if (isnan (n) || isinf (n))
 		{
 			errno = ERANGE;
-			return NAN;
+			return rts2_nan ("f");
 		}
 		ret += n * *mul;
 		
 		if (errno == ERANGE)
-			return NAN;
+			return rts2_nan ("f");
 		// we get sucessfuly to end
 		if (!*endptr)
 		{
@@ -74,7 +75,7 @@ double parseDMS (const char *hptr, double *mul)
 		if (locptr == endptr)
 		{
 			errno = EINVAL;
-			return NAN;
+			return rts2_nan ("f");
 		}
 
 		*mul /= 60;
