@@ -318,6 +318,14 @@ void TargetSet::setConstraints (Constraints &cons)
 	}
 }
 
+void TargetSet::appendConstraints (Constraints &cons)
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		(*iter).second->appendConstraints (cons);
+	}
+}
+
 int TargetSet::save (bool overwrite)
 {
 	int ret = 0;

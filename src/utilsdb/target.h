@@ -210,6 +210,8 @@ class Target:public Rts2Target
 		 */
 		void setConstraints (Constraints &cons);
 
+		void appendConstraints (Constraints &cons);
+
 		struct ln_lnlat_posn *getObserver () { return observer; }
 
 		// return target semi-diameter, in degrees

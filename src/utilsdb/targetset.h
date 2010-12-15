@@ -179,6 +179,8 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void setConstraints (Constraints &cons);
 
+		void appendConstraints (Constraints &cons);
+
 		int save (bool overwrite = true);
 		std::ostream &print (std::ostream & _os, double JD);
 

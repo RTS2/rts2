@@ -127,6 +127,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>--name-only</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--reset-constraints</option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -361,6 +364,17 @@
 	    not try to resolve them as numeric.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--reset-constraints</option></term>
+	<listitem>
+          <para>
+	    Reset constraints, do not append them. Without this option, new
+	    constraints are added to existing constraints. With this option
+	    set, new constraint file is created and will hold only constraints
+	    you specified (with <option>--airmass</option> and similar options).
+	  </para>
+	</listitem>
       </varlistentry>
     </variablelist>
 

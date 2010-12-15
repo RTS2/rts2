@@ -967,6 +967,21 @@ void Target::setConstraints (Constraints &cons)
 	}
 }
 
+void Target::appendConstraints (Constraints &cons)
+{
+  	Constraints tarc (cons);
+	try
+	{
+		tarc.load (getConstraintFile ());
+	}
+	catch (XmlError er)
+	{
+		logStream (MESSAGE_WARNING) << er << sendLog;
+	}
+	setConstraints (tarc);
+
+}
+
 void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
 	struct ln_equ_posn object;

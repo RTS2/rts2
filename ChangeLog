@@ -1,3 +1,6 @@
+2010-12-15
+ * added reset-constraints option to rts2-target
+
 2010-12-14
  * maxRepeat constraint
  * added comments to indicate failed Auger cuts
