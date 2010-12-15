@@ -1712,7 +1712,7 @@ void Rts2Image::computeStatistics ()
 				while (pixel < fullTop)
 				{
 					average += * ((uint16_t *) pixel);
-					pixel++;
+					pixel += sizeof (uint16_t);
 				}
 				break;
 		}
@@ -1745,7 +1745,7 @@ void Rts2Image::computeStatistics ()
 					}
 					break;
 				case RTS2_DATA_USHORT:
-					fullTop = pixel + sizeof (uint8_t) * (*iter)->getNPixels ();
+					fullTop = pixel + sizeof (uint16_t) * (*iter)->getNPixels ();
 					while (pixel < fullTop)
 					{
 						long double tmp_s = * ((uint16_t *) pixel) - average;
@@ -1756,7 +1756,7 @@ void Rts2Image::computeStatistics ()
 							bg_size++;
 						}
 						stdev += tmp_ss;
-						pixel++;
+						pixel += sizeof (uint16_t);
 					}
 					break;
 			}
