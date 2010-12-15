@@ -67,7 +67,7 @@ class CameraImage
 		{
 			image = in_image;
 			exStart = in_exStart;
-			exEnd = nan ("f");
+			exEnd = rts2_nan ("f");
 			dataWriten = false;
 			prematurelyReceived = _prematurelyReceived;
 		}

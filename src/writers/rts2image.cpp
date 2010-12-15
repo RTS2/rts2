@@ -2010,7 +2010,7 @@ double Rts2Image::getFWHM ()
 	int i;
 	int numStars;
 	if (sexResultNum < 4)
-		return nan ("f");
+		return rts2_nan ("f");
 
 	// qsort (sexResults, sexResultNum, sizeof (struct stardata), sdcompare);
 	// get average
@@ -2580,7 +2580,7 @@ void Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 
 double Rts2Image::getLongtitude ()
 {
-	double lng = nan ("f");
+	double lng = rts2_nan ("f");
 	getValue ("LONGITUD", lng, true);
 	return lng;
 }
