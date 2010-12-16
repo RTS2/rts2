@@ -15,7 +15,7 @@ librts2block_a_SOURCES = hoststring.cpp rts2app.cpp rts2block.cpp rts2daemon.cpp
 	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp rts2value.cpp rts2valuestat.cpp \
 	rts2devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp rts2connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
-	rts2message.cpp conntcp.cpp connudp.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp
+	rts2message.cpp conntcp.cpp connudp.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
 	rts2target.cpp rts2displayvalue.cpp rts2scriptdevice.cpp \
 	rts2cliapp.cpp rts2valueminmax.cpp expander.cpp \
 	riseset.cpp rts2valuerectangle.cpp rts2data.cpp radecparser.cpp \
