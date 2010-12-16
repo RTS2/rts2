@@ -191,7 +191,10 @@ void SelectorApp::readAliasFile (const char *aliasFile)
 	std::string f, a;
 	while (!as.fail ())
 	{
-		as >> f >> a;
+		as >> f;
+		if (as.fail ())
+			break;
+		as >> a;
 		if (as.fail ())
 			throw rts2core::Error ("invalid filter alias file");
 		filterAliases[f] = a;
