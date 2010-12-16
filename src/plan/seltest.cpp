@@ -22,6 +22,7 @@
 
 #define OPT_FILTERS      OPT_LOCAL + 630
 #define OPT_FILTER_FILE  OPT_LOCAL + 631
+#define OPT_FILTER_ALIAS OPT_LOCAL + 632
 
 namespace rts2plan
 {
@@ -46,8 +47,11 @@ class SelectorApp:public PrintTarget
 		int verbosity;
 
 		void readFilters (std::string camera, std::string fn);
+		void readAliasFile (const char *aliasFile);
 
 		std::map <std::string, std::vector < std::string > > availableFilters;
+
+		std::map <std::string, std::string> filterAliases;
 };
 
 }
@@ -61,6 +65,7 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
+	addOption (OPT_FILTER_ALIAS, "filter-aliases", 1, "filter aliases file");
 }
 
 SelectorApp::~SelectorApp (void)
@@ -104,6 +109,9 @@ int SelectorApp::processOption (int opt)
 				return -1;
 			}
 			break;
+		case OPT_FILTER_ALIAS:
+			readAliasFile (optarg);
+			break;
 		default:
 			return PrintTarget::processOption (opt);
 	}
@@ -140,6 +148,11 @@ int SelectorApp::doProcessing ()
 		sel->addFilters (iter->first.c_str (), iter->second);
 	}
 
+	for (std::map < std::string, std::string>::iterator iter = filterAliases.begin (); iter != filterAliases.end (); iter++)
+	{
+		sel->addFilterAlias (iter->first, iter->second);
+	}
+
 	next_tar = sel->selectNextNight (0, verbosity);
 
 	tar = createTarget (next_tar, observer);
@@ -169,6 +182,21 @@ void SelectorApp::readFilters (std::string camera, std::string fn)
 			break;
 		availableFilters[camera].push_back (fil);
 	}
+}
+
+void SelectorApp::readAliasFile (const char *aliasFile)
+{
+	std::ifstream as;
+	as.open (aliasFile);
+	std::string f, a;
+	while (!as.fail ())
+	{
+		as >> f >> a;
+		if (as.fail ())
+			throw rts2core::Error ("invalid filter alias file");
+		filterAliases[f] = a;
+	}
+	as.close ();
 }
 
 int main (int argc, char **argv)

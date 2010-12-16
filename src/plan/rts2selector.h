@@ -92,8 +92,16 @@ class Selector
 		 */
 		int setNightDisabledTypes (const char *types);
 
-		// add filters avaikabke for device
+		/**
+		 * Add filters avaikabke for device.
+		 */
 		void addFilters (const char *cam, std::vector <std::string> filters) { availableFilters[std::string(cam)] = filters; }
+
+		/**
+		 * Add filter aliases.
+		 */
+		void addFilterAlias (std::string filter, std::string alias) { aliases[filter] = alias; }
+
 	private:
 		std::vector < TargetEntry* > possibleTargets;
 		void considerTarget (int consider_tar_id, double JD);
@@ -109,6 +117,7 @@ class Selector
 
 		// available filters for filter command on cameras
 		std::map <std::string, std::vector < std::string > > availableFilters;
+		std::map <std::string, std::string> aliases;
 
 		/**
 		 * Checks if type is among types disabled for night selection.
