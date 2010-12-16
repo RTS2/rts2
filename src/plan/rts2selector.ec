@@ -147,6 +147,10 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 			if (os.str ().find ("filter=") == 0)
 			{
 				std::string ops = ((rts2script::ElementChangeValue *) (*se))->getOperands ();
+				// try alias..
+				std::map <std::string, std::string>::iterator alias = aliases.find (ops);
+				if (alias != aliases.end ())
+					ops = alias->second;
 				if (std::find (iter->second.begin (), iter->second.end (), ops) == iter->second.end ())
 				{
 					logStream (MESSAGE_WARNING) << "target " << newTar->getTargetName () << " (" << newTar->getTargetID () << ") rejected, as filter " << ops << " is not present among available filters" << sendLog;
