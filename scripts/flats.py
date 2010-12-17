@@ -177,12 +177,10 @@ class FlatScript (rts2comm.Rts2Comm):
 	def optimalExpTime(self,ratio,expMulti):
 		exptime = expMulti * self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
 		if (exptime < self.expTimes[0]):
-			if (self.isEvening ()):
-				return self.startExpTime
 			return self.expTimes[0]
 		if (exptime > self.expTimes[-1]):
-			if (self.isEvening ()):
-		  		return self.expTimes[-1]
+			if (self.isEvening () == False):
+		  		return self.expTimes[0]
 			return self.exptime  # the caller decides on exptime whether to continue or to stop
 
 		lastE = self.expTimes[0]
@@ -336,7 +334,7 @@ class FlatScript (rts2comm.Rts2Comm):
 			for exp in self.usedExpTimes:
 				sun_alt = self.getValueFloat('sun_alt','centrald')
 				next_t = self.getValueInteger('next','EXEC')
-				if (sun_alt >= 0.5 or not (next_t == 2 or next_t == -1)):
+				if (sun_alt >= -0.5 or not (next_t == 2 or next_t == 1 or next_t == -1)):
 					self.setValue('SHUTTER','LIGHT')
 					return
 				self.setValue('exposure',exp)
@@ -377,6 +375,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		else:
 		  	self.usedFlats = self.morningFlats
 			self.takeFlats(False)
+			self.log('I','finished skyflats, closing dome')
+			self.sendCommand('close','DOME')
 
 		if (self.doDarks):
 			self.log('I','finished flats, taking calibration darks')
