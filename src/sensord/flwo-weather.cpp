@@ -18,28 +18,39 @@
  */
 
 #include "sensord.h"
+#include "../utils/connudp.h"
 
 #include <fstream>
 #include <sstream>
 
 using namespace rts2sensord;
 
+class FlwoWeather;
+
+class MEarthWeather:public rts2core::ConnUDP
+{
+	public:
+		MEarthWeather (int port, FlwoWeather *master);
+	protected:
+		virtual int process (size_t len, struct sockaddr_in &from);
+};
+
 class FlwoWeather:public SensorWeather
 {
 	public:
 		FlwoWeather (int argc, char **argv);
-
+		virtual ~FlwoWeather ();
 	protected:
 		virtual int processOption (int opt);
-		/**
-		 * Retrieves weather informations.
-		 */
+		virtual int init ();
 		virtual int info ();
 
 		virtual bool isGoodWeather ();
 
 	private:
 		const char *weatherFile;
+		int me_port;
+		MEarthWeather *mearth;
 
 		Rts2ValueFloat *outsideTemp;
 		Rts2ValueFloat *windSpeed;
@@ -53,7 +64,55 @@ class FlwoWeather:public SensorWeather
 		Rts2ValueFloat *rain;
 		Rts2ValueFloat *dewpoint;
 		Rts2ValueBool *hatRain;
+
+		// ME values
+		Rts2ValueDouble *me_mjd;
+		Rts2ValueFloat *me_winddir;
+		Rts2ValueFloat *me_windspeed;
+		Rts2ValueFloat *me_temp;
+		Rts2ValueFloat *me_humidity;
+		Rts2ValueFloat *me_pressure;
+		Rts2ValueFloat *me_rain_accumulation;
+		Rts2ValueFloat *me_rain_duration;
+		Rts2ValueFloat *me_rain_intensity;
+		Rts2ValueFloat *me_hail_accumulation;
+		Rts2ValueFloat *me_hail_duration;
+		Rts2ValueFloat *me_hail_intensity;
+		Rts2ValueFloat *me_sky_temp;
+
+		friend class MEarthWeather;
 };
+
+MEarthWeather::MEarthWeather (int _port, FlwoWeather *_master):ConnUDP (_port, _master, 500)
+{
+};
+
+int MEarthWeather::process (size_t len, struct sockaddr_in &from)
+{
+	double _mjd;
+	float _winddir, _windspeed, _temp, _humidity, _pressure, _rain_accumulation, _rain_duration, _rain_intensity, _hail_accumulation, _hail_duration, _hail_intensity, _sky_temp;
+	std::istringstream is (buf);
+	is >> _mjd >> _winddir >> _windspeed >> _temp >> _humidity >> _pressure >> _rain_accumulation >> _rain_duration >> _rain_intensity >> _hail_accumulation >> _hail_duration >> _hail_intensity >> _sky_temp;
+	if (is.fail ())
+	{
+		logStream (MESSAGE_DEBUG) << "cannot process MEarth UDP socket: " << buf << sendLog;
+		return -1;
+	}
+	((FlwoWeather *) master)->me_mjd->setValueDouble (_mjd);
+	((FlwoWeather *) master)->me_winddir->setValueDouble (_winddir);
+	((FlwoWeather *) master)->me_windspeed->setValueDouble (_windspeed);
+	((FlwoWeather *) master)->me_temp->setValueDouble (_temp);
+	((FlwoWeather *) master)->me_humidity->setValueDouble (_humidity);
+	((FlwoWeather *) master)->me_pressure->setValueDouble (_pressure);
+	((FlwoWeather *) master)->me_rain_accumulation->setValueDouble (_rain_accumulation);
+	((FlwoWeather *) master)->me_rain_duration->setValueDouble (_rain_duration);
+	((FlwoWeather *) master)->me_rain_intensity->setValueDouble (_rain_intensity);
+	((FlwoWeather *) master)->me_hail_accumulation->setValueDouble (_hail_accumulation);
+	((FlwoWeather *) master)->me_hail_duration->setValueDouble (_hail_duration);
+	((FlwoWeather *) master)->me_hail_intensity->setValueDouble (_hail_intensity);
+	((FlwoWeather *) master)->me_sky_temp->setValueDouble (_sky_temp);
+	return 0;
+}
 
 FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -75,9 +134,32 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
 	createValue (hatRain, "HAT_rain", "hat rain status", false);
 
+	createValue (me_mjd, "me_mjd", "MEarth MJD", false);
+	createValue (me_winddir, "me_winddir", "MEarth wind direction", false);
+	createValue (me_windspeed, "me_windspeed", "MEarth wind speed", false);
+	createValue (me_temp, "me_temp", "MEarth temperature", false);
+	createValue (me_humidity, "me_humidity", "MEarth humidity", false);
+	createValue (me_pressure, "me_pressure", "MEarth atmospheric pressure", false);
+	createValue (me_rain_accumulation, "me_rain_accumulation", "MEarth rain accumulation", false);
+	createValue (me_rain_duration, "me_rain_duration", "MEarth rain duration", false);
+	createValue (me_rain_intensity, "me_rain_intensity", "MEarth rain intensity", false);
+	createValue (me_hail_accumulation, "me_hail_accumulation", "MEarth hail accumulation", false);
+	createValue (me_hail_duration, "me_hail_duration", "MEarth hail duration", false);
+	createValue (me_hail_intensity, "me_hail_intensity", "MEarth hail intensity", false);
+	createValue (me_sky_temp, "me_sky_temp", "MEarth sky temperature", false);
+
 	weatherFile = NULL;
 
+	me_port = 0;
+	mearth = NULL;
+
 	addOption ('f', NULL, 1, "file with weather informations");
+	addOption ('m', NULL, 1, "MEarth port number");
+}
+
+FlwoWeather::~FlwoWeather ()
+{
+	delete mearth;
 }
 
 int FlwoWeather::processOption (int opt)
@@ -87,8 +169,27 @@ int FlwoWeather::processOption (int opt)
 		case 'f':
 			weatherFile = optarg;
 			break;
+		case 'm':
+			me_port = atoi (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (opt);
+	}
+	return 0;
+}
+
+int FlwoWeather::init ()
+{
+	int ret = SensorWeather::init ();
+	if (ret)
+		return ret;
+	if (me_port > 0)
+	{
+		mearth = new MEarthWeather (me_port, this);
+		ret = mearth->init ();
+		if (ret)
+			return ret;
+		addConnection (mearth);
 	}
 	return 0;
 }

@@ -42,13 +42,12 @@ class ConnUDP:public Rts2ConnNoSend
 		virtual int receive (fd_set * set);
 	protected:
 		/**
-		 * Process received data.
+		 * Process received data. Data are stored in buf member variable.
 		 *
-		 * @param buf   null terminated buffer with data
 		 * @param len   received data length
 		 * @param from  address of the source (originator) of data
 		 */
-		virtual int process (char buf[], size_t len, struct sockaddr_in &from) = 0;
+		virtual int process (size_t len, struct sockaddr_in &from) = 0;
 		virtual void connectionError (int last_data_size)
 		{
 			// do NOT call Rts2Conn::connectionError, UDP connection must run forewer.

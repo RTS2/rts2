@@ -62,25 +62,29 @@ int ConnUDP::init ()
 	{
 		logStream (MESSAGE_ERROR) << "ConnUPD::init bind: " << strerror (errno) << sendLog;
 	}
+	if (maxSize >= buf_size)
+	{
+		delete[] buf;
+		buf = new char[maxSize + 1];
+	}
 	return ret;
 }
 
 int ConnUDP::receive (fd_set * set)
 {
-	char Wbuf[maxSize + 1];
 	int data_size = 0;
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
 		struct sockaddr_in from;
 		socklen_t size = sizeof (from);
-		data_size = recvfrom (sock, Wbuf, 80, 0, (struct sockaddr *) &from, &size);
+		data_size = recvfrom (sock, buf, maxSize, 0, (struct sockaddr *) &from, &size);
 		if (data_size < 0)
 		{
 			logStream (MESSAGE_DEBUG) << "error in receiving weather data: %m" << strerror (errno) << sendLog;
 			return 1;
 		}
-		Wbuf[data_size] = 0;
-		process (Wbuf, data_size, from);
+		buf[data_size] = 0;
+		process (data_size, from);
 	}
 	return data_size;
 }
