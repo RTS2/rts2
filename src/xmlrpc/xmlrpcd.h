@@ -31,6 +31,7 @@
 #include "../utils/rts2device.h"
 #endif /* HAVE_PGSQL */
 
+#include "directory.h"
 #include "events.h"
 #include "httpreq.h"
 #include "session.h"
@@ -52,6 +53,8 @@ using namespace XmlRpc;
 
 namespace rts2xmlrpc
 {
+
+class Directory;
 
 /**
  * XML-RPC client class. Provides functions for XML-RPCd to react on state

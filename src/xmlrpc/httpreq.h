@@ -149,23 +149,6 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		bool executePermission;
 };
 
-/**
- * Maps directory to request space.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class Directory: public GetRequestAuthorized
-{
-	public:
-		Directory (const char* prefix, const char *_dirPath, const char *_defaultFile, XmlRpc::XmlRpcServer* s);
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-	private:
-		std::string dirPath;
-		std::string defaultFile;
-};
-
 #ifdef HAVE_LIBJPEG
 
 /**
