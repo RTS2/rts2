@@ -59,15 +59,13 @@ class Focusing (rts2comm.Rts2Comm):
 
 	def __init__(self):
 		self.exptime = 20 # 60 # 10
-		self.step = 0.2 # 0.2
+		self.step = 50 # 0.2
 		self.attempts = 20 #30 # 20
 		self.focuser = 'F0'
 		# if |offset| is above this value, try linear fit
 		self.linear_fit = self.step * self.attempts
 		# target FWHM for linear fit
 		self.linear_fit_fwhm = 3.5
-		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
-		self.altaz (82,10)
 
 	def doFit(self,fit):
 		b = None
@@ -191,6 +189,9 @@ class Focusing (rts2comm.Rts2Comm):
 		return self.findBestFWHM(tries,rename_images=True)
 
 	def run(self):
+		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
+		a.altaz (82,10)
+
 		b,fit = self.takeImages()
 		if fit == LINEAR:
 			self.setValue('FOC_DEF',b,self.focuser)
