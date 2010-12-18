@@ -27,6 +27,10 @@ Directory::Directory (const char* prefix, const char *_dirPath, const char *_def
 {
 	dirPath = std::string (_dirPath);
 	defaultFile = std::string (_defaultFile);
+
+	responseTypes["html"] = "text/html";
+	responseTypes["htm"] = "text/html";
+	responseTypes["css"] = "text/css";
 }
 
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -55,6 +59,17 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 			throw XmlRpcException ("Cannot read file");
 		}
 		close (f);
+		// try to find type based on file extension
+		size_t extp = path.rfind ('.');
+		if (extp != std::string::npos)
+		{
+			std::map <std::string, const char *>::iterator iter = responseTypes.find (path.substr (extp + 1));
+			if (iter != responseTypes.end ())
+			{
+				response_type = iter->second;
+				return;
+			}
+		}
 		response_type = "text/html";
 		return;
 	}

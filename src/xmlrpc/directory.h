@@ -41,6 +41,9 @@ class Directory: public GetRequestAuthorized
 	private:
 		std::string dirPath;
 		std::string defaultFile;
+
+		// file type, based on file extension
+		std::map <std::string, const char *> responseTypes;
 };
 
 }
