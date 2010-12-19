@@ -82,6 +82,7 @@ int Dummy::processOption (int opt)
 
 int Dummy::initValues ()
 {
+        position->setValueFloat(0.) ;
 	temperature->setValueFloat (100);
 	return Focusd::initValues ();
 }
@@ -98,11 +99,20 @@ int Dummy::setTo (float num)
 
 int Dummy::isFocusing ()
 {
-	if (fabs (getPosition () - getTarget ()) < fabs (focSteps->getValueInteger ()))
-		position->setValueInteger (getTarget ());
-	else
-		position->setValueInteger (getPosition () + focSteps->getValueInteger ());
-	return Focusd::isFocusing ();
+  if (fabs (getPosition () - getTarget ()) < fabs (focSteps->getValueInteger ())) {
+    position->setValueInteger (getTarget ());
+    return -2 ;
+  } else {
+    
+    position->setValueInteger (getPosition () + focSteps->getValueInteger ());
+    return USEC_SEC;
+  }
+  // not using this method because focusTimeout is never set
+  // and the expression if (getPosition () != getTarget ())
+  // does a similar task as the above code, and (in)equality
+  // might not be a good idea under real conditions
+  // ToDo: should be replaced  
+  //return Focusd::isFocusing ();
 }
 
 int main (int argc, char **argv)
