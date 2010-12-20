@@ -69,6 +69,8 @@ class Alta:public Camera
 		Rts2ValueSelection *coolerStatus;
 		Rts2ValueBool *coolerEnabled;
 
+		Rts2ValueInteger *cameraId;
+
 		void setBitDepth (int newBit);
 };
 
@@ -209,6 +211,9 @@ int Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 Alta::Alta (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
+  	createValue (cameraId, "camera_id", "camera ID", false);
+	cameraId->setValueInteger (1);
+
 	createTempAir ();
 	createTempCCD ();
 	createTempSet ();
@@ -240,6 +245,7 @@ Alta::Alta (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	alta = NULL;
 	addOption ('b', NULL, 0, "switch to 12 bit readout mode; see alta specs for details");
 	addOption ('c', NULL, 1, "night cooling temperature");
+	addOption ('n', NULL, 1, "camera number (default to 1)");
 }
 
 Alta::~Alta (void)
@@ -259,7 +265,10 @@ int Alta::processOption (int in_opt)
 			bitDepth->setValueInteger (1);
 			break;
 		case 'c':
-			nightCoolTemp->setValueFloat (atof (optarg));
+			nightCoolTemp->setValueCharArr (optarg);
+			break;
+		case 'n':
+			cameraId->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -276,14 +285,14 @@ int Alta::init ()
 		return ret;
 	}
 	alta = (CApnCamera *) new CApnCamera ();
-	ret = alta->InitDriver (1, 0, 0);
+	ret = alta->InitDriver (cameraId->getValueInteger (), 0, 0);
 
 	if (!ret)
 	{
 		alta->ResetSystem ();
 		alta->CloseDriver ();
 		sleep (2);
-		ret = alta->InitDriver (1, 0, 0);
+		ret = alta->InitDriver (cameraId->getValueInteger (), 0, 0);
 		if (!ret)
 			return -1;
 	}
