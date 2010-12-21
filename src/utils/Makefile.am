@@ -7,7 +7,7 @@ bin_PROGRAMS=rts2-horizon
 AM_CXXFLAGS=@NOVA_CFLAGS@
 
 test_SOURCES = test.cpp utilsfunc.cpp
-test_LDFLAGS = librts2block.a @LIB_NOVA@
+test_LDADD = librts2block.a @LIB_NOVA@
 
 noinst_LIBRARIES = librts2block.a
 
@@ -49,10 +49,10 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 if EPICS
 noinst_LIBRARIES += librts2epics.a
 librts2epics_a_SOURCES = connepics.cpp
-librts2epics_a_CXXFLAGS = @INC_EPICS@
+librts2epics_a_CXXFLAGS = @INC_EPICS@ @NOVA_CFLAGS@
 else
 EXTRA_DIST += connepics.cpp
 endif
 
 rts2_horizon_SOURCES = horizonapp.cpp
-rts2_horizon_LDFLAGS = librts2block.a @LIB_NOVA@
+rts2_horizon_LDADD = librts2block.a @LIB_NOVA@
