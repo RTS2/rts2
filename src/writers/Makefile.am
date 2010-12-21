@@ -25,7 +25,7 @@ librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_
 librts2imagedb_a_SOURCES = rts2fitsfile.cpp channel.cpp rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp cameraimage.cpp rts2devclifoc.cpp
 
 rts2_image_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
-rts2_image_LDFLAGS = ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_image_LDADD = ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
