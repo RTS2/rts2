@@ -1,7 +1,8 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.8.0-2, petr@kubanek.net)
+AC_INIT(rts2, 0.8.1-2, petr@kubanek.net)
 
 AC_CANONICAL_BUILD
+AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -13,6 +14,7 @@ AM_MAINTAINER_MODE
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
+AC_PROG_RANLIB
 
 # check for lang
 AC_LANG_CPLUSPLUS
@@ -708,6 +710,7 @@ AC_CONFIG_HEADER(include/config.h)
 
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
+AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
 
 AC_OUTPUT([Makefile
 	   man/Makefile
@@ -761,8 +764,8 @@ AC_OUTPUT([Makefile
 )
 
 echo "
-***************************************
- RTS2 build configuration for ${build_os}
+*********************************************************
+ RTS2 build configuration for ${target_os} on ${build_os}
 
   focusing      ${focusing}
   xfocusc       ${xfocusc}
@@ -790,7 +793,7 @@ CCD's:
   miccd         ${MICCD}
   sbig          ${SBIG}
 
-MOUNT's:
+MONT's:
   paralib       ${PARALIB}
   mdmtcs        ${MDMTCS}
 
