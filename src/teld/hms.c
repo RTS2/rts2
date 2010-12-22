@@ -56,7 +56,7 @@ hmstod (const char *hptr)
 		ret += strtod (locptr, &endptr) * mul;
 		
 		if (errno == ERANGE)
-			return NAN;
+			return rts2_nan ("f");
 		// we get sucessfuly to end
 		if (!*endptr)
 		{
@@ -68,7 +68,7 @@ hmstod (const char *hptr)
 		if (locptr == endptr)
 		{
 			errno = EINVAL;
-			return NAN;
+			return rts2_nan ("f");
 		}
 
 		mul /= 60;

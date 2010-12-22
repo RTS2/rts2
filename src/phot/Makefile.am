@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = rts2-phot-optec rts2-phot-ssp5 rts2-phot-dummy
+bin_PROGRAMS = rts2-phot-ssp5 rts2-phot-dummy
 
 noinst_HEADERS = phot.h kernel/phot.h
 
@@ -12,7 +12,12 @@ AM_CXXFLAGS=@NOVA_CFLAGS@
 
 librts2phot_a_SOURCES = phot.cpp
 
+if SUONS
+EXTRA_DIST = phot_optec.cpp
+else
+bin_PROGRAMS += rts2-phot-optec
 rts2_phot_optec_SOURCES = phot_optec.cpp
+endif
 
 rts2_phot_ssp5_SOURCES = ssp5.cpp
 

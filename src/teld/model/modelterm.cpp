@@ -318,7 +318,7 @@ ObsConditions * obs_conditions, int i)
 				  break; */
 		default:
 			logStream (MESSAGE_ERROR) << "Unknow parameter " << param[i] << sendLog;
-			val = nan ("f");
+			val = rts2_nan ("f");
 	}
 	return val;
 }
