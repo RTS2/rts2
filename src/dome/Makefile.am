@@ -1,4 +1,4 @@
-bin_PROGRAS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
+bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl rts2-dome-flwo
 

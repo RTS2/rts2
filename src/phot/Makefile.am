@@ -12,7 +12,7 @@ AM_CXXFLAGS=@NOVA_CFLAGS@
 
 librts2phot_a_SOURCES = phot.cpp
 
-if SUONS
+if SUNOS
 EXTRA_DIST = phot_optec.cpp
 else
 bin_PROGRAMS += rts2-phot-optec
