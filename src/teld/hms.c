@@ -25,6 +25,8 @@
 #include <math.h>
 #include <string.h>
 
+#include "../utils/nan.h"
+
 extern double
 hmstod (const char *hptr)
 {

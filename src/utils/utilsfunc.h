@@ -31,23 +31,12 @@
 #include <string.h>
 
 #include "config.h"
+#include "nan.h"
 #include <math.h>
 
 #ifndef HAVE_ISINF
 #include <ieeefp.h>
 #endif
-
-#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
-
-/* Not a Number function generator */
-double rts2_nan (const char *code);
-
-#else
-
-#define rts2_nan(f)  nan(f)
-
-#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
-
 
 /**
  * Return random number in 0-1 range.
