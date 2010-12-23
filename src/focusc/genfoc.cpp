@@ -193,7 +193,7 @@ void Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 
 Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 {
-	defExposure = nan("f");
+	defExposure = rts2_nan ("f");
 	defCenter = 0;
 	defBin = -1;
 

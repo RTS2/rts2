@@ -283,7 +283,7 @@ int Trencin::stopWorm ()
 		tel_write_ra ('=', worm_start_unit_ra);
 		// set proper values for speed after reset
 		initRa ();
-		raWormStart->setValueDouble (nan ("f"));
+		raWormStart->setValueDouble (rts2_nan ("f"));
 		sendValueAll (raWormStart);
 		deleteTimers (EVENT_TIMER_RA_WORM);
 	}
@@ -626,7 +626,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	wormRa->setValueBool (false);
 
 	createValue (raWormStart, "ra_worm_start", "RA worm start time", false);
-	raWormStart->setValueDouble (nan ("f"));
+	raWormStart->setValueDouble (rts2_nan ("f"));
 
 	createValue (unitRa, "AXRA", "RA axis raw counts", true, RTS2_VALUE_WRITABLE);
 	unitRa->setValueInteger (0);

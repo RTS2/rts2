@@ -112,13 +112,13 @@ class AppOpenTPLError:public Rts2CliApp
 OpenTPLAxis
 AppOpenTPLError::getAxisStatus (const char *ax_name)
 {
-	double referenced = nan ("f");
-	double currpos = nan ("f");
-	double targetpos = nan ("f");
-	double offset = nan ("f");
-	double realpos = nan ("f");
-	double power = nan ("f");
-	double power_state = nan ("f");
+	double referenced = rts2_nan ("f");
+	double currpos = rts2_nan ("f");
+	double targetpos = rts2_nan ("f");
+	double offset = rts2_nan ("f");
+	double realpos = rts2_nan ("f");
+	double power = rts2_nan ("f");
+	double power_state = rts2_nan ("f");
 	int version = 0;
 	std::ostringstream * os;
 	int status = 0;

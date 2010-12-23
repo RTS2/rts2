@@ -280,7 +280,7 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 
 	// julian date (of observations start; as precession will not change a much in few hours spanning data acqusition time,
 	// we don't need exact date
-	double JD = nan("f");
+	double JD = rts2_nan ("f");
 
 	is.getline (caption, 80);
 	os << caption << spaceDegSep << std::endl;
@@ -334,8 +334,8 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				date.years = 2000;
 				date.months = 1;
 				date.days = 1;
-				temp = nan ("f");
-				press = nan ("f");
+				temp = rts2_nan ("f");
+				press = rts2_nan ("f");
 			}
 			else
 			{
@@ -343,8 +343,8 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				iss >> temp >> press;
 				if (iss.fail ())
 				{
-					temp = nan ("f");
-					press = nan ("f");
+					temp = rts2_nan ("f");
+					press = rts2_nan ("f");
 					telescope->setCorrections (true, true, true);
 				}
 				else

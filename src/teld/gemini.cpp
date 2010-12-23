@@ -868,7 +868,7 @@ Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	// default guiding speed
 	telGuidingSpeed->setValueDouble (0.2);
 
-	fixed_ha = nan ("f");
+	fixed_ha = rts2_nan ("f");
 
 	decFlipLimit = 4000;
 
@@ -1494,7 +1494,7 @@ int Gemini::startResync ()
 		return change_real (-1 * ra_diff, -1 * dec_diff);
 	}
 
-	fixed_ha = nan ("f");
+	fixed_ha = rts2_nan ("f");
 
 	if (telMotorState != TEL_OK) // lastMoveRa && lastMoveDec will bring us to correct location after we finish rebooting/reparking
 		return 0;
@@ -2138,7 +2138,7 @@ int Gemini::change_real (double chng_ra, double chng_dec)
 int Gemini::startPark ()
 {
 	int ret;
-	fixed_ha = nan ("f");
+	fixed_ha = rts2_nan ("f");
 	if (telMotorState != TEL_OK)
 		return -1;
 	stopMove ();

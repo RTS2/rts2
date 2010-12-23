@@ -1,7 +1,4 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
+#include "../utils/nan.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
