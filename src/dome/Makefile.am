@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
+bin_PROGRAMS = rts2-dome-bart rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl rts2-dome-flwo
 
@@ -31,8 +31,6 @@ rts2_cupola_mark_LDADD = cupola.o ${LDADD}
 
 rts2_cupola_dummy_SOURCES = cupola.cpp dummy_cup.cpp
 
-rts2_dome_watcher_SOURCES = watcher.cpp
-
 rts2_dome_bootes1a_SOURCES = bootes1a.cpp
 
 rts2_dome_bootes1b_SOURCES = bootes1b.cpp
@@ -44,9 +42,9 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 rts2_dome_flwo_SOURCES = flwo.cpp
 
 if SUNOS
-EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c
+EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c watcher.cpp
 else
-bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes
+bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-watcher
 
 noinst_LIBRARIES = librts2vermes.a librts2oak.a
 
@@ -59,6 +57,8 @@ rts2_cupola_vermes_LDADD =  librts2vermes.a  librts2dome-target-az.a @LIB_PTHREA
 
 rts2_dome_door_vermes_SOURCES = door_vermes.cpp
 rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2oak.a librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
+
+rts2_dome_watcher_SOURCES = watcher.cpp
 endif
 
 if COMEDI

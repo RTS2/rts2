@@ -95,7 +95,7 @@ Bootes1B::Bootes1B (int argc, char **argv):Ford (argc, argv)
 	createValue (sw_state, "sw_state", "switch state", false, RTS2_DT_HEX);
 
 	createValue (ignoreRainSensorTime, "ignore_rain_time", "time when rain sensor will be ignored", false);
-	ignoreRainSensorTime->setValueDouble (nan ("f"));
+	ignoreRainSensorTime->setValueDouble (rts2_nan ("f"));
 
 	createValue (rain, "rain", "state of the rain detector", false);
 
