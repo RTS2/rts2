@@ -17,24 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_NAN__
-#define __RTS2_NAN__
-
-#include <config.h>
-
-#ifndef HAVE_ISINF
-#include <ieeefp.h>
-#endif
+#include "nan.h"
 
 #if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
 
 /* Not a Number function generator */
-double rts2_nan (const char *code);
+double rts2_nan (const char *code)
+{
+        double zero = 0.0;
 
-#else
-
-#define rts2_nan(f)  nan(f)
+        return zero/0.0;
+}
 
 #endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
-
-#endif	 /* !__RTS2_NAN__ */

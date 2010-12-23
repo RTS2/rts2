@@ -20,7 +20,7 @@ librts2block_a_SOURCES = hoststring.cpp rts2app.cpp rts2block.cpp rts2daemon.cpp
 	rts2cliapp.cpp rts2valueminmax.cpp expander.cpp \
 	riseset.cpp rts2valuerectangle.cpp rts2data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
-	connopentpl.cpp connford.cpp expression.cpp
+	connopentpl.cpp connford.cpp expression.cpp nan.c
 
 EXTRA_DIST =
 

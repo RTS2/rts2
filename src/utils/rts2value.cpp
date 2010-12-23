@@ -28,18 +28,6 @@
 
 #include "radecparser.h"
 
-#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
-
-/* Not a Number function generator */
-double rts2_nan (const char *code)
-{
-        double zero = 0.0;
-
-        return zero/0.0;
-}
-
-#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
-
 Rts2Value::Rts2Value (std::string _val_name)
 {
 	valueName = _val_name;
