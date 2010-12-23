@@ -112,7 +112,7 @@ class ConnShooter:public Rts2ConnNoSend
 			if (ret == false)
 			{
 				std::ostringstream os;
-				os << pname << " :" << p1 << op_c[op] << p2;
+				os << pname << ": " << p1 << op_c[op] << p2 << " ";
 				failedCuts[cutindex].push_back (os.str ());
 			}
 			return ret;

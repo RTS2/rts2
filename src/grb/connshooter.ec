@@ -344,7 +344,8 @@ int ConnShooter::processAuger ()
 			<< ")" << sendLog;
 		for (int j = 0, i = 1; i < 8; i = i << 1, j++)
 		{
-			logStream (MESSAGE_INFO) << "cut set " << j << " failed: " << failedCutsString (j) << sendLog;
+			logStream (MESSAGE_INFO) << "cut set " << (j + 1) << " failed: " << failedCutsString (j) << sendLog;
+			failedCuts[j].clear ();
 		}
 		((DevAugerShooter*) master)->rejectedShower (db_auger_date, db_ra, db_dec);
 		return -1;
