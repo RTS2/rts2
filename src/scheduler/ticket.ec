@@ -97,12 +97,12 @@ void Ticket::load ()
 		obs_num = d_obs_num;
 
 	if (d_sched_from_ind < 0)
-		sched_from = nan("f");
+		sched_from = rts2_nan ("f");
 	else
 		sched_from = ln_get_julian_from_timet (&d_sched_from);
 
 	if (d_sched_to_ind < 0)
-		sched_to = nan("f");
+		sched_to = rts2_nan ("f");
 	else
 		sched_to = ln_get_julian_from_timet (&d_sched_to);
 

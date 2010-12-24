@@ -11,7 +11,7 @@ bin_PROGRAMS = rts2-scheduler
 
 rts2_scheduler_SOURCES = scheduler.cpp
 rts2_scheduler_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @JPEG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
-rts2_scheduler_LDFLAGS = librts2scheduler.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scheduler_LDADD = librts2scheduler.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

@@ -5,7 +5,7 @@ noinst_HEADERS = xmlstream.h xmlrpcd.h httpreq.h r2x.h session.h stateevents.h v
 	devicesreq.h planreq.h graphreq.h bsc.h libjavascript.h libcss.h bbserver.h api.h images.h messageevents.h switchstatereq.h \
 	directory.h
 
-AM_LDFLAGS = @LIB_M@ @LIB_NOVA@
+AM_LDADD = @LIB_M@ @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ -I../../lib/
 
 if PGSQL
@@ -15,7 +15,7 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	nightreq.cpp imgpreview.cpp obsreq.cpp targetreq.cpp dirsupport.cpp devicesreq.cpp planreq.cpp graphreq.cpp \
 	libjavascript.cpp libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDFLAGS = ../scheduler/librts2scheduler.a ../db/simbad/libsimbad.a ../utilsdb/librts2blockdb.a \
+rts2_xmlrpcd_LDADD= ../scheduler/librts2scheduler.a ../db/simbad/libsimbad.a ../utilsdb/librts2blockdb.a \
 	../writers/librts2imagedb.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBPG_LIBS@ \
 	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ $(AM_LDFLAGS)
 
@@ -30,8 +30,8 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp dirsupport.cpp devicesreq.cpp libjavascript.cpp \
 	libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDFLAGS = ../db/simbad/libsimbad.a ../writers/librts2image.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a \
-	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ $(AM_LDFLAGS)
+rts2_xmlrpcd_LDADD = ../db/simbad/libsimbad.a ../writers/librts2image.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a \
+	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ ${AM_LDADD}
 
 endif
 
@@ -39,4 +39,4 @@ EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec graphreq.cpp
 
 rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcclient_LDFLAGS = ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIB_NOVA@ $(AM_LDFLAGS)
+rts2_xmlrpcclient_LDADD = ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIB_NOVA@ $(AM_LDADD)
