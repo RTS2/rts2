@@ -28,8 +28,17 @@
 
 #if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* Not a Number function generator */
 double rts2_nan (const char *code);
+
+#ifdef __cplusplus
+}
+#endif
 
 #else
 
