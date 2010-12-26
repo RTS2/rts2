@@ -63,7 +63,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.attempts = 20 #30 # 20
 		self.focuser = 'F0'
 		# if |offset| is above this value, try linear fit
-		self.linear_fit = self.step * self.attempts
+		self.linear_fit = 2 * self.step * self.attempts
 		# target FWHM for linear fit
 		self.linear_fit_fwhm = 3.5
 
@@ -96,12 +96,12 @@ class Focusing (rts2comm.Rts2Comm):
 		elif fit == H3:
 			fitfunc = lambda p, x: sqrt(p[0] ** 2 + p[1] ** 2 * (x - p[2])**2)
 			errfunc = lambda p, x, y: fitfunc(p, x) - y # H3 - distance to the target function
-			p0 = [4., 3.46407715307, self.fwhm_MinimumX]  # initial guess based on real data
+			p0 = [400., 3.46407715307, self.fwhm_MinimumX]  # initial guess based on real data
 			fitfunc_r = lambda x, p0, p1, p2 : sqrt(p0 ** 2 + p1 ** 2 * (x - p2) ** 2)
 		elif fit == H2:
 			fitfunc = lambda p, x: sqrt(p[0] ** 2 + 3.46407715307 ** 2 * (x - p[1])**2) # 3.46 based on H3 fits
 			errfunc = lambda p, x, y: fitfunc(p, x) - y # H2 - distance to the target function
-			p0 = [4., self.fwhm_MinimumX]  # initial guess based on real data
+			p0 = [400., self.fwhm_MinimumX]  # initial guess based on real data
 			fitfunc_r = lambda x, p0, p1 : sqrt(p0 ** 2 + 3.46407715307 ** 2 * (x - p1) ** 2)
 		else:
 			raise Exception('Unknow fit type {0}'.format(fit))
@@ -124,7 +124,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.log('I', 'found FHWM minimum at offset {0}'.format(b))
 		return b
 
-	def findBestFWHM(self,tries,rename_images=False,default_fit=H3,min_stars=15):
+	def findBestFWHM(self,tries,rename_images=False,default_fit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -136,7 +136,7 @@ class Focusing (rts2comm.Rts2Comm):
 			if rename_images:
 				tries[k] = self.rename(tries[k],'%b/focusing/%o/%f')
 			try:
-				fwhm,nstars = sextractor.getFWHM(tries[k],min_stars)
+				fwhm,nstars = sextractor.getFWHM(tries[k],min_stars,ds9display,filterGalaxies,threshold=threshold,deblendmin=deblendmin)
 			except Exception, ex:
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue

@@ -55,8 +55,8 @@ class Sextractor:
 		pf.write(f + '\n')
 	pf.close()
 
-        cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', '/usr/share/sextractor/default.nnw', '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
-       	proc = subprocess.Popen(cmd)
+	cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', '/usr/share/sextractor/default.nnw', '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+	proc = subprocess.Popen(cmd)
 	proc.wait()
 
 	# parse output
@@ -82,26 +82,37 @@ class Sextractor:
 	self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
 	self.objects.reverse()
 
-def getFWHM(fn,starsn):
+def getFWHM(fn,starsn,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 	"""Returns average FWHM of first starsn stars from the image"""
-	c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
+	c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],threshold=threshold,deblendmin=deblendmin)
 	c.runSExtractor()
 
 	# sort by magnitude
 	c.sortObjects(2)
 
 	# display in ds9
+	if ds9display:
+		import ds9
+		d = ds9.ds9()
+		d.set('file {0}'.format(fn))
+
 	fwhmlist = []
 
 	a = 0
 	b = 0
 	for x in c.objects:
-		if (x[3] == 0 and x[4] != 0):
+		if x[3] == 0 and (filterGalaxies == False or x[4] != 0):
 			fwhmlist.append(x[5])
 			a += x[6]
 			b += x[7]
+			if ds9display:
+				d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
 			if len(fwhmlist) >= starsn:
-				break 
+				break
+		elif ds9display:
+			d.set('regions', 'image; point {0} {1} # point=cross'.format(x[0],x[1]))
+			d.set('regions', 'image; text {0} {1} # text={{{2}}}'.format(x[0],x[1] - 15,'{0} {1}'.format(x[3],x[4])))
+
 	if len(fwhmlist) >= starsn:
 		import numpy
 		return numpy.median(fwhmlist), len(fwhmlist)
@@ -120,6 +131,8 @@ if __name__ == "__main__":
 
 		# sort by magnitude
 		c.sortObjects(2)
+
+		print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
 
 		# display in ds9
 		d.set('file {0}'.format(fn))
