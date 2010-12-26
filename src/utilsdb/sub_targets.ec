@@ -641,6 +641,14 @@ float CalibrationTarget::getBonus (double JD)
 
 bool FocusingTarget::getScript (const char *device_name, std::string &buf)
 {
+ 	try
+	{
+		getDBScript (device_name, buf);
+		return false;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 	buf = std::string (COMMAND_FOCUSING);
 	return false;
 }
