@@ -46,7 +46,7 @@ EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target
 else
 bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-watcher
 
-noinst_LIBRARIES = librts2vermes.a librts2oak.a
+noinst_LIBRARIES += librts2vermes.a librts2oak.a
 
 librts2oak_a_SOURCES =  OakFeatureReports.c OakHidBase.c
 

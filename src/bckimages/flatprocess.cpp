@@ -6,7 +6,6 @@
 #include <fitsio.h>
 
 #include <dirent.h>
-#include <getopt.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -186,8 +185,8 @@ main (int argc, char **argv)
 	int c;
 	struct stat st;
 
-	max = NAN;
-	min = NAN;
+	max = rts2_nan ("f"); 
+	min = rts2_nan ("f");
 
 	while (1)
 	{
