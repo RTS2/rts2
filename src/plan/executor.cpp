@@ -47,7 +47,10 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 		int addFront (rts2db::Target *nt);
 		int addTarget (rts2db::Target *nt);
 
+		void popFront ();
+
 		void clearNext ();
+
 	private:
 		Rts2DeviceDb *master;
 
@@ -204,6 +207,12 @@ int ExecutorQueue::addTarget (rts2db::Target *nt)
 	push_back (nt);
 	updateVals ();
 	return 0;
+}
+
+void ExecutorQueue::popFront ()
+{
+	pop_front ();
+	updateVals ();
 }
 
 void ExecutorQueue::clearNext ()
@@ -660,7 +669,7 @@ int Executor::queueTarget (int tarId)
 void Executor::createQueue (const char *name)
 {
   	queues.push_back (ExecutorQueue (this, name));
-	activeQueue->addSelVal (name, (Rts2SelData *) &(queues[queues.size () - 1]));
+	activeQueue->addSelVal (name, (Rts2SelData *) &(queues.back()));
 }
 
 int Executor::setNow (int nextId)
@@ -846,7 +855,7 @@ void Executor::doSwitch ()
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ()))
 	{
 		if (getActiveQueue ()->size () != 0)
-			getActiveQueue ()->pop_front ();
+			getActiveQueue ()->popFront ();
 		// create again our target..since conditions changed, we will get different target id
 		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
 	}
@@ -866,7 +875,7 @@ void Executor::doSwitch ()
 			{
 				processTarget (currentTarget);
 				currentTarget = getActiveQueue ()->front ();
-				getActiveQueue ()->pop_front ();
+				getActiveQueue ()->popFront ();
 			}
 			// switch auto loop back to true
 			autoLoop->setValueBool (true);
@@ -875,7 +884,7 @@ void Executor::doSwitch ()
 		else
 		{
 			currentTarget = getActiveQueue ()->front ();
-			getActiveQueue ()->pop_front ();
+			getActiveQueue ()->popFront ();
 		}
 	}
 	if (currentTarget)
