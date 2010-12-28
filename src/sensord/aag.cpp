@@ -569,10 +569,10 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	aagConn = NULL;
 
 	createValue (tempSky,          "TEMP_SKY",     "temperature sky", true); // go to FITS
-	createValue (tempSkyCorrected, "TEMP_SKY_CORR","temperature sky corrected", false);
-	createValue (tempIRSensor,     "TEMP_IRS",     "temperature ir sensor", false);
+	createValue (tempSkyCorrected, "TEMP_SKY_CORR","temperature sky corrected", true);
+	createValue (tempIRSensor,     "TEMP_IRS",     "temperature ir sensor", true);
 	createValue (tempRain,         "TEMP_RAIN",    "rain sensor temperature", false);
-	createValue (rainFrequency,    "RAIN",         "rain frequency", false);
+	createValue (rainFrequency,    "RAIN",         "rain frequency", true);
 	createValue (pwmValue,         "PWM",          "pwm value", false);
 	createValue (ldrResistance,    "LDR_RES",      "pullup resistancetrue", false);
 	createValue (intVoltage,       "INT_VOLT",     "internal voltage", false);

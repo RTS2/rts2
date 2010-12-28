@@ -33,8 +33,8 @@
 enum AAGC_SETTINGS { IMP_DELTA, IMP_MIN, IMP_DURATION_WET, IMP_DURATION_RAIN, IMP_CYCLE_WET, IMP_CYCLE_RAIN } ;
 
 /* rts2 specific constants */
-#define AAG_WEATHER_TIMEOUT 60.      /* seconds */
-#define AAG_WEATHER_TIMEOUT_BAD 300. /* seconds */
+#define AAG_WEATHER_TIMEOUT 60.      /* 60 seconds */
+#define AAG_WEATHER_TIMEOUT_BAD 300. /* 300 seconds */
 #define AAG_POLLING_TIME 10.        /* seconds */
 
 /* device constants */
