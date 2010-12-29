@@ -17,15 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2devclient.h"
 #include "rts2selector.h"
+#include "connselector.h"
+
+#include "../utils/rts2devclient.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
-
-#define EVENT_SELECT_NEXT       RTS2_LOCAL_EVENT + 5077
 
 class Rts2DevClientTelescopeSel:public rts2core::Rts2DevClientTelescope
 {

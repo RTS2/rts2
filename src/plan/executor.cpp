@@ -21,6 +21,7 @@
 #include "../utils/valuearray.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
+#include "executorque.h"
 #include "rts2execcli.h"
 #include "rts2execclidb.h"
 #include "rts2devcliphot.h"
@@ -30,36 +31,6 @@
 
 namespace rts2plan
 {
-
-/**
- * Executor queue. Used to freely create queue inside executor
- * for queue execution. Allow users to define rules how the queue
- * should be used, provides method to support basic queue operations.
- * 
- * @author Petr Kubanek <kubanek@fzu.cz>
- */
-class ExecutorQueue:public std::list <rts2db::Target *>
-{
-	public:
-		ExecutorQueue (Rts2DeviceDb *master, const char *name);
-		virtual ~ExecutorQueue ();
-
-		int addFront (rts2db::Target *nt);
-		int addTarget (rts2db::Target *nt);
-
-		void popFront ();
-
-		void clearNext ();
-
-	private:
-		Rts2DeviceDb *master;
-
-		rts2core::IntegerArray *nextIds;
-		rts2core::StringArray *nextNames;
-
-		// update values from the target list
-		void updateVals ();
-};
 
 /**
  * Executor class.
@@ -164,63 +135,6 @@ class Executor:public Rts2DeviceDb
 }
 
 using namespace rts2plan;
-
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name)
-{
-  	master = _master;
-	std::string sn (name);
-	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
-	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
-}
-
-ExecutorQueue::~ExecutorQueue ()
-{
-	clearNext ();
-	updateVals ();
-}
-
-void ExecutorQueue::updateVals ()
-{
-	std::vector <int> _id_arr;
-	std::vector <std::string> _name_arr;
-	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
-	{
-		_id_arr.push_back ((*iter)->getTargetID ());
-		_name_arr.push_back ((*iter)->getTargetName ());
-		std::cout << (*iter)->getTargetID () << std::endl;
-	}
-	nextIds->setValueArray (_id_arr);
-	nextNames->setValueArray (_name_arr);
-	master->sendValueAll (nextIds);
-	master->sendValueAll (nextNames);
-}
-
-int ExecutorQueue::addFront (rts2db::Target *nt)
-{
-	push_front (nt);
-	updateVals ();
-	return 0;
-}
-
-int ExecutorQueue::addTarget (rts2db::Target *nt)
-{
-	push_back (nt);
-	updateVals ();
-	return 0;
-}
-
-void ExecutorQueue::popFront ()
-{
-	pop_front ();
-	updateVals ();
-}
-
-void ExecutorQueue::clearNext ()
-{
-	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
-		delete *iter;
-	clear ();
-}
 
 Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
@@ -444,7 +358,7 @@ void Executor::postEvent (Rts2Event * event)
 				}
 				// scriptCount is not 0, but we hit continues target..
 				else if (currentTarget->isContinues () == 1
-					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front()->getTargetID () == currentTarget->getTargetID ())
+					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ())
 					)
 				{
 					// wait, if we are in stop..don't queue it again..

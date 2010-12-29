@@ -5,7 +5,7 @@ noinst_HEADERS = rts2execcli.h script.h connimgprocess.h rts2selector.h element.
 		 devscript.h rts2devcliphot.h rts2spiral.h elementblock.h elementguiding.h \
 		 rts2execclidb.h elementacquire.h scriptexec.h rts2targetscr.h \
 		 elementtarget.h elementhex.h elementwaitfor.h rts2scriptinterface.h operands.h elementexe.h \
-		 printtarget.h connexe.h
+		 printtarget.h connexe.h connselector.h executorque.h
 
 EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
 
@@ -17,7 +17,7 @@ noinst_LIBRARIES = libscript.a
 
 libscript_a_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp devscript.cpp rts2spiral.cpp \
 		elementblock.cpp elementguiding.cpp rts2targetscr.cpp elementtarget.cpp elementhex.cpp elementwaitfor.cpp \
-		rts2scriptinterface.cpp operands.cpp elementexe.cpp printtarget.cpp connexe.cpp
+		rts2scriptinterface.cpp operands.cpp elementexe.cpp printtarget.cpp connexe.cpp connselector.cpp connselector.h
 libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 
 
@@ -43,7 +43,7 @@ bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-ma
 	       rts2-plan rts2-queue-selector
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
-rts2_executor_SOURCES = executor.cpp
+rts2_executor_SOURCES = executor.cpp executorque.cpp
 rts2_executor_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_executor_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
@@ -88,5 +88,7 @@ rts2_scriptor_LDADD = libscript.a ../writers/librts2image.a ../utils/librts2bloc
 rts2_imgproc_SOURCES = imgproc.cpp 
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_imgproc_LDADD = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+
+EXTRA_DIST += excutor.cpp executorque.cpp selector.cpp seltest.cpp targetinfo.cpp marchive.cpp planapp.cpp queue-selector.cpp
 
 endif
