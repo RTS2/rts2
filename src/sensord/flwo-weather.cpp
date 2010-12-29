@@ -33,6 +33,9 @@ class MEarthWeather:public rts2core::ConnUDP
 		MEarthWeather (int port, FlwoWeather *master);
 	protected:
 		virtual int process (size_t len, struct sockaddr_in &from);
+	private:
+		void paramNextDoubleME (Rts2ValueDouble *val);
+		void paramNextFloatME (Rts2ValueFloat *val);
 };
 
 class FlwoWeather:public SensorWeather
@@ -88,31 +91,71 @@ MEarthWeather::MEarthWeather (int _port, FlwoWeather *_master):ConnUDP (_port, _
 {
 };
 
+void MEarthWeather::paramNextDoubleME (Rts2ValueDouble *val)
+{
+	char *str_num;
+	char *endptr;
+	if (paramNextString (&str_num, ","))
+	{
+		throw rts2core::Error ("cannot get value");
+		return;
+	}
+	val->setValueDouble (strtod (str_num, &endptr));
+	if (*endptr == '\0')
+		return;
+	if (strcmp (str_num, "---") == 0)
+	{
+		val->setValueDouble (rts2_nan ("f"));
+		return;
+	}
+	throw rts2core::Error ("cannot parse " + std::string (str_num));
+}
+
+void MEarthWeather::paramNextFloatME (Rts2ValueFloat *val)
+{
+	char *str_num;
+	char *endptr;
+	if (paramNextString (&str_num, ","))
+	{
+		throw rts2core::Error ("cannot get value");
+		return;
+	}
+	val->setValueFloat (strtod (str_num, &endptr));
+	if (*endptr == '\0')
+		return;
+	if (strcmp (str_num, "---") == 0)
+	{
+		val->setValueDouble (rts2_nan ("f"));
+		return;
+	}
+	throw rts2core::Error ("cannot parse " + std::string (str_num));
+}
+
 int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 {
-	double _mjd;
-	float _winddir, _windspeed, _temp, _dewpoint, _humidity, _pressure, _rain_accumulation, _rain_duration, _rain_intensity, _hail_accumulation, _hail_duration, _hail_intensity, _sky_temp;
-	std::istringstream is (buf);
-	is >> _mjd >> _winddir >> _windspeed >> _temp >> _dewpoint >> _humidity >> _pressure >> _rain_accumulation >> _rain_duration >> _rain_intensity >> _hail_accumulation >> _hail_duration >> _hail_intensity >> _sky_temp;
-	if (is.fail ())
+	try
 	{
-		logStream (MESSAGE_DEBUG) << "cannot process MEarth UDP socket: " << buf << sendLog;
+		paramNextDoubleME (((FlwoWeather *) master)->me_mjd);
+		paramNextFloatME (((FlwoWeather *) master)->me_winddir);
+		paramNextFloatME (((FlwoWeather *) master)->me_windspeed);
+		paramNextFloatME (((FlwoWeather *) master)->me_temp);
+		paramNextFloatME (((FlwoWeather *) master)->me_dewpoint);
+		paramNextFloatME (((FlwoWeather *) master)->me_humidity);
+		paramNextFloatME (((FlwoWeather *) master)->me_pressure);
+		paramNextFloatME (((FlwoWeather *) master)->me_rain_accumulation);
+		paramNextFloatME (((FlwoWeather *) master)->me_rain_duration);
+		paramNextFloatME (((FlwoWeather *) master)->me_rain_intensity);
+		paramNextFloatME (((FlwoWeather *) master)->me_hail_accumulation);
+		paramNextFloatME (((FlwoWeather *) master)->me_hail_duration);
+		paramNextFloatME (((FlwoWeather *) master)->me_hail_intensity);
+		paramNextFloatME (((FlwoWeather *) master)->me_sky_temp);
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_DEBUG) << "cannot parse MEarth UDP packet, rest contet is " << buf << ", erorr is " << er << sendLog;
+		((FlwoWeather *) master)->me_mjd->setValueDouble (rts2_nan ("f"));
 		return -1;
 	}
-	((FlwoWeather *) master)->me_mjd->setValueDouble (_mjd);
-	((FlwoWeather *) master)->me_winddir->setValueFloat (_winddir);
-	((FlwoWeather *) master)->me_windspeed->setValueFloat (_windspeed);
-	((FlwoWeather *) master)->me_temp->setValueFloat (_temp);
-	((FlwoWeather *) master)->me_dewpoint->setValueFloat (_dewpoint);
-	((FlwoWeather *) master)->me_humidity->setValueFloat (_humidity);
-	((FlwoWeather *) master)->me_pressure->setValueFloat (_pressure);
-	((FlwoWeather *) master)->me_rain_accumulation->setValueFloat (_rain_accumulation);
-	((FlwoWeather *) master)->me_rain_duration->setValueFloat (_rain_duration);
-	((FlwoWeather *) master)->me_rain_intensity->setValueFloat (_rain_intensity);
-	((FlwoWeather *) master)->me_hail_accumulation->setValueFloat (_hail_accumulation);
-	((FlwoWeather *) master)->me_hail_duration->setValueFloat (_hail_duration);
-	((FlwoWeather *) master)->me_hail_intensity->setValueFloat (_hail_intensity);
-	((FlwoWeather *) master)->me_sky_temp->setValueFloat (_sky_temp);
 	return 0;
 }
 
@@ -164,7 +207,6 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 
 FlwoWeather::~FlwoWeather ()
 {
-	delete mearth;
 }
 
 int FlwoWeather::processOption (int opt)
