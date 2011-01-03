@@ -22,17 +22,22 @@
 
 using namespace rts2plan;
 
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name)
+ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer)
 {
   	master = _master;
 	std::string sn (name);
-	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
+	observer = _observer;
+	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
+	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
+
+	queueType->addSelVal ("FIFO");
+	queueType->addSelVal ("CIRCULAR");
 }
 
 ExecutorQueue::~ExecutorQueue ()
 {
-	clearNext ();
+	clearNext (NULL);
 	updateVals ();
 }
 
@@ -44,7 +49,6 @@ void ExecutorQueue::updateVals ()
 	{
 		_id_arr.push_back ((*iter)->getTargetID ());
 		_name_arr.push_back ((*iter)->getTargetName ());
-		std::cout << (*iter)->getTargetID () << std::endl;
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
@@ -66,16 +70,49 @@ int ExecutorQueue::addTarget (rts2db::Target *nt)
 	return 0;
 }
 
-void ExecutorQueue::popFront ()
+void ExecutorQueue::beforeChange ()
 {
-	pop_front ();
+	struct ln_hrz_posn altaz;
+	switch (queueType->getValueInteger ())
+	{
+		case 0:
+			break;
+		case 1:
+			front ()->getAltAz (&altaz);
+			if (front ()->isAboveHorizon (&altaz))
+			{
+				push_back (createTarget (front ()->getTargetID (), *observer));
+			}
+			else
+			{
+			  	logStream (MESSAGE_INFO) << "removing target " << front ()->getTargetName () << " (" << front ()->getTargetID () << ") from queue, as it is bellow horizon" << sendLog;
+			}
+			pop_front ();
+			break;
+	}
 	updateVals ();
 }
 
-void ExecutorQueue::clearNext ()
+void ExecutorQueue::popFront ()
+{
+	switch (queueType->getValueInteger ())
+	{
+		case 0:
+			pop_front ();
+			break;
+		case 1:
+			break;
+	}
+	updateVals ();
+}
+
+void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 {
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
-		delete *iter;
+	{
+		if (*iter != currentTarget)
+			delete *iter;
+	}
 	clear ();
 }
 

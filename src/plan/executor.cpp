@@ -87,11 +87,11 @@ class Executor:public Rts2DeviceDb
 		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 		Rts2ValueInteger *scriptCount;
 		int waitState;
-		std::vector < rts2db::Target * > targetsQue;
+		std::list < rts2db::Target * > targetsQue;
 		struct ln_lnlat_posn *observer;
 
 		// Queue management
-		std::vector < ExecutorQueue > queues;
+		std::list < ExecutorQueue > queues;
 		Rts2ValueSelection *activeQueue;
 
 		ExecutorQueue * getActiveQueue () { return (ExecutorQueue *) (activeQueue->getData ()); }
@@ -582,7 +582,7 @@ int Executor::queueTarget (int tarId)
 
 void Executor::createQueue (const char *name)
 {
-  	queues.push_back (ExecutorQueue (this, name));
+  	queues.push_back (ExecutorQueue (this, name, &observer));
 	activeQueue->addSelVal (name, (Rts2SelData *) &(queues.back()));
 }
 
@@ -730,7 +730,7 @@ int Executor::stop ()
 
 void Executor::clearNextTargets ()
 {
-  	getActiveQueue ()->clearNext ();
+  	getActiveQueue ()->clearNext (currentTarget);
 	sendValueAll (next_id);
 	sendValueAll (next_name);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
@@ -765,6 +765,8 @@ void Executor::doSwitch ()
 {
 	int ret;
 	int nextId;
+	// make sure queue is configured for target change
+	getActiveQueue ()->beforeChange ();
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ()))
 	{

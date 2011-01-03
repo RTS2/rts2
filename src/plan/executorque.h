@@ -33,21 +33,30 @@ namespace rts2plan
 class ExecutorQueue:public std::list <rts2db::Target *>
 {
 	public:
-		ExecutorQueue (Rts2DeviceDb *master, const char *name);
+		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt);
 		int addTarget (rts2db::Target *nt);
+		
+		/**
+		 * Put next target on front of the queue.
+		 */
+		void beforeChange ();
 
 		void popFront ();
 
-		void clearNext ();
+		void clearNext (rts2db::Target *currentTarget);
 
 	private:
 		Rts2DeviceDb *master;
 
 		rts2core::IntegerArray *nextIds;
 		rts2core::StringArray *nextNames;
+
+		Rts2ValueSelection *queueType;
+
+		struct ln_lnlat_posn **observer;
 
 		// update values from the target list
 		void updateVals ();
