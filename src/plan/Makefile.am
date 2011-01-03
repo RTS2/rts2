@@ -40,7 +40,7 @@ rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptor_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
-	       rts2-plan rts2-queue-selector
+	       rts2-plan 
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
 rts2_executor_SOURCES = executor.cpp executorque.cpp
@@ -72,10 +72,6 @@ rts2_marchive_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ..
 rts2_plan_SOURCES = planapp.cpp
 rts2_plan_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_plan_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
-
-rts2_queue_selector_SOURCES = queue-selector.cpp
-rts2_queue_selector_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_queue_selector_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
