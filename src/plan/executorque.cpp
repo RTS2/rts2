@@ -75,9 +75,9 @@ void ExecutorQueue::beforeChange ()
 	struct ln_hrz_posn altaz;
 	switch (queueType->getValueInteger ())
 	{
-		case 0:
+		case QUEUE_FIFO:
 			break;
-		case 1:
+		case QUEUE_CIRCULAR:
 			front ()->getAltAz (&altaz);
 			if (front ()->isAboveHorizon (&altaz))
 			{
@@ -97,10 +97,10 @@ void ExecutorQueue::popFront ()
 {
 	switch (queueType->getValueInteger ())
 	{
-		case 0:
+		case QUEUE_FIFO:
 			pop_front ();
 			break;
-		case 1:
+		case QUEUE_CIRCULAR:
 			break;
 	}
 	updateVals ();

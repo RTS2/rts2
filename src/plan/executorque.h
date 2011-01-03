@@ -20,6 +20,10 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 
+// queue modes
+#define QUEUE_FIFO          0
+#define QUEUE_CIRCULAR      1
+
 namespace rts2plan
 {
 
