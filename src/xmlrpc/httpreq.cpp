@@ -223,7 +223,7 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 			altaz.plotCross (&hrz, (*iter).second->getTargetName ());
 	}
 	
-	// write image to blob as JEPEG
+	// write image to blob as JPEG
 	Magick::Blob blob;
 	altaz.write (&blob, "jpeg");
 

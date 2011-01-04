@@ -342,7 +342,7 @@ void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 	prefix << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/" << tar_id << "/";
 	_os << "<p><a href='" << prefix.str ()
 		<< "main/'>main page</a>&nbsp;<a href='" << prefix.str ()
-		<< "info/'>info page</a>&nbsp;<a href='" << prefix.str ()
+		<< "info/'>details</a>&nbsp;<a href='" << prefix.str ()
 		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
 		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
 		<< "altplot/'>altitude plot</a></p>";
