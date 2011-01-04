@@ -26,6 +26,7 @@
 #include <ostream>
 #include <string>
 #include <string.h>
+#include <sstream>
 
 namespace rts2xmlrpc
 {
@@ -47,6 +48,36 @@ class ExpandStringString:public ExpandString
 		virtual void writeTo (std::ostream &os) { os << str; }
 	private:
 		char *str;
+};
+
+class ExpandStringTag:public ExpandString
+{
+	public:
+		ExpandStringTag () {}
+		virtual void writeTo (std::ostream &os) { os << oss.str (); }
+	protected:
+		std::ostringstream oss;
+};
+
+/**
+ * Expand node back to string.
+ */
+class ExpandStringOpenTag:public ExpandStringTag
+{
+	public:
+		ExpandStringOpenTag (xmlNodePtr ptr, bool closeTag = false);
+};
+
+class ExpandStringSingleTag:public ExpandStringOpenTag
+{
+	public:
+		ExpandStringSingleTag (xmlNodePtr ptr);
+};
+
+class ExpandStringCloseTag:public ExpandStringTag
+{
+	public:
+		ExpandStringCloseTag (xmlNodePtr ptr);
 };
 
 class ExpandStringDevice:public ExpandString
@@ -77,7 +108,7 @@ class ExpandStrings:public std::list <ExpandString *>
 	public:
 		ExpandStrings () {};
 		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
-		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName);
+		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bool ignoreUnknownTags = false);
 		std::string getString ();
 };
 

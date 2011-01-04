@@ -19,6 +19,7 @@
 
 #include "directory.h"
 #include "dirsupport.h"
+#include "expandstrings.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
@@ -31,6 +32,25 @@ Directory::Directory (const char* prefix, const char *_dirPath, const char *_def
 	responseTypes["html"] = "text/html";
 	responseTypes["htm"] = "text/html";
 	responseTypes["css"] = "text/css";
+}
+
+void parseFd (int f, char * &response, size_t &response_length)
+{
+	xmlDoc *doc = NULL;
+	xmlNodePtr root_element = NULL;
+	doc = xmlReadFd (f, NULL, NULL, XML_PARSE_NOBLANKS);
+	if (doc == NULL)
+		throw XmlRpcException ("cannot parse RTS2 file");
+	root_element = xmlDocGetRootElement (doc);
+
+	ExpandStrings rts2file;
+	rts2file.expandXML (root_element, "centrald", true);
+	
+	std::string es = rts2file.getString ();
+
+	response_length = es.length ();
+	response = new char[response_length];
+	memcpy (response, es.c_str (), response_length);
 }
 
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -46,6 +66,20 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 	int f = open (fn.c_str (), O_RDONLY);
 	if (f != -1)
 	{
+		// get file extension
+		size_t extp = path.rfind ('.');
+		std::string ext;
+		if (extp != std::string::npos)
+		{
+			ext = path.substr (extp + 1);
+			if (ext == "rts2")
+			{
+				parseFd (f, response, response_length);
+				response_type = "text/html";
+				return;
+			}
+		}
+
 		struct stat st;
 		if (fstat (f, &st) == -1)
 			throw XmlRpcException ("Cannot get file properties");
@@ -60,10 +94,9 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 		}
 		close (f);
 		// try to find type based on file extension
-		size_t extp = path.rfind ('.');
 		if (extp != std::string::npos)
 		{
-			std::map <std::string, const char *>::iterator iter = responseTypes.find (path.substr (extp + 1));
+			std::map <std::string, const char *>::iterator iter = responseTypes.find (ext);
 			if (iter != responseTypes.end ())
 			{
 				response_type = iter->second;

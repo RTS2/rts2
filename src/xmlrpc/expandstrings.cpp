@@ -27,6 +27,31 @@
 
 using namespace rts2xmlrpc;
 
+ExpandStringOpenTag::ExpandStringOpenTag (xmlNodePtr ptr, bool closeTag):ExpandStringTag ()
+{
+	oss << "<" << ptr->name;
+
+	for (xmlAttrPtr aptr = ptr->properties; aptr != NULL; aptr = aptr->next)
+	{
+		oss << " " << aptr->name;
+		if (aptr->children->content)
+			oss << "=" << aptr->children->content;
+	}
+
+	if (closeTag)
+		oss << "/";
+	oss << ">";
+}
+
+ExpandStringSingleTag::ExpandStringSingleTag (xmlNodePtr ptr):ExpandStringOpenTag (ptr, true)
+{
+}
+
+ExpandStringCloseTag::ExpandStringCloseTag (xmlNodePtr ptr):ExpandStringTag ()
+{
+	oss << "<" << ptr->name << "/>";
+}
+
 ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
 {
 	deviceName = new char[strlen (_deviceName) + 1];
@@ -66,9 +91,8 @@ void ExpandStringValue::writeTo (std::ostream &os)
 	os << getDisplayValue (val);
 }
 
-void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
+void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bool ignoreUnknownTags)
 {
-	clear ();
 	for (; ptr != NULL; ptr = ptr->next)
 	{
 		if (ptr->type == XML_COMMENT_NODE)
@@ -77,7 +101,14 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
 		}
 		else if (ptr->children == NULL)
 		{
-			push_back (new ExpandStringString ((char *) ptr->content));
+			if (ptr->content != NULL)
+			{
+				push_back (new ExpandStringString ((char *) ptr->content));
+			}
+			else if (ignoreUnknownTags)
+			{
+				push_back (new ExpandStringSingleTag (ptr));
+			}
 		}
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "value"))
 		{
@@ -103,7 +134,19 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
 		}
 		else
 		{
-			throw XmlUnexpectedNode (ptr);
+			if (ignoreUnknownTags)
+			{
+				push_back (new ExpandStringOpenTag (ptr));
+				for (xmlNodePtr chptr = ptr->children; chptr != NULL; chptr = chptr->next)
+				{
+					expandXML (chptr, defaultDeviceName, ignoreUnknownTags);
+				}
+				push_back (new ExpandStringCloseTag (ptr));
+			}
+			else
+			{
+				throw XmlUnexpectedNode (ptr);
+			}
 		}
 	}
 }
