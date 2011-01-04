@@ -28,6 +28,8 @@
 #include <string.h>
 #include <sstream>
 
+#include <iostream>
+
 namespace rts2xmlrpc
 {
 
@@ -54,7 +56,7 @@ class ExpandStringTag:public ExpandString
 {
 	public:
 		ExpandStringTag () {}
-		virtual void writeTo (std::ostream &os) { os << oss.str (); }
+		virtual void writeTo (std::ostream &os) { std::cout << oss.str () << std::endl; os << oss.str (); }
 	protected:
 		std::ostringstream oss;
 };

@@ -49,7 +49,7 @@ ExpandStringSingleTag::ExpandStringSingleTag (xmlNodePtr ptr):ExpandStringOpenTa
 
 ExpandStringCloseTag::ExpandStringCloseTag (xmlNodePtr ptr):ExpandStringTag ()
 {
-	oss << "<" << ptr->name << "/>";
+	oss << "</" << ptr->name << ">";
 }
 
 ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
@@ -137,10 +137,7 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bo
 			if (ignoreUnknownTags)
 			{
 				push_back (new ExpandStringOpenTag (ptr));
-				for (xmlNodePtr chptr = ptr->children; chptr != NULL; chptr = chptr->next)
-				{
-					expandXML (chptr, defaultDeviceName, ignoreUnknownTags);
-				}
+				expandXML (ptr->children, defaultDeviceName, ignoreUnknownTags);
 				push_back (new ExpandStringCloseTag (ptr));
 			}
 			else
