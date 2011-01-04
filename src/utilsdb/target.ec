@@ -982,13 +982,13 @@ void Target::appendConstraints (Constraints &cons)
 
 }
 
-void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
+void Target::getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn *obs)
 {
 	struct ln_equ_posn object;
 
 	getPosition (&object, JD);
 
-	ln_get_hrz_from_equ (&object, observer, JD, hrz);
+	ln_get_hrz_from_equ (&object, obs, JD, hrz);
 }
 
 void Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
@@ -1074,12 +1074,12 @@ double Target::getZenitDistance (double JD)
 	return 90.0 - hrz.alt;
 }
 
-double Target::getHourAngle (double JD)
+double Target::getHourAngle (double JD, struct ln_lnlat_posn *obs)
 {
 	double lst;
 	double ha;
 	struct ln_equ_posn pos;
-	lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
+	lst = ln_get_mean_sidereal_time (JD) * 15.0 + obs->lng;
 	getPosition (&pos);
 	ha = ln_range_degrees (lst - pos.ra);
 	if (ha > 180)

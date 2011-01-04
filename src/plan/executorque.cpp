@@ -33,6 +33,8 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
+	queueType->addSelVal ("HIGHEST");
+	queueType->addSelVal ("WESTEAST");
 }
 
 ExecutorQueue::~ExecutorQueue ()
@@ -78,16 +80,28 @@ void ExecutorQueue::beforeChange ()
 		case QUEUE_FIFO:
 			break;
 		case QUEUE_CIRCULAR:
-			front ()->getAltAz (&altaz);
-			if (front ()->isAboveHorizon (&altaz))
+			for (ExecutorQueue::iterator iter = begin (); iter != end ();)
 			{
-				push_back (createTarget (front ()->getTargetID (), *observer));
+				(*iter)->getAltAz (&altaz);
+				if ((*iter)->isAboveHorizon (&altaz))
+				{
+					push_back (createTarget ((*iter)->getTargetID (), *observer));
+					iter++;
+					pop_front ();
+					break;
+				}
+				else
+				{
+			  		logStream (MESSAGE_INFO) << "removing target " << (*iter)->getTargetName () << " (" << (*iter)->getTargetID () << ") from queue, as it is bellow horizon" << sendLog;
+					iter = erase (iter);
+				}
 			}
-			else
-			{
-			  	logStream (MESSAGE_INFO) << "removing target " << front ()->getTargetName () << " (" << front ()->getTargetID () << ") from queue, as it is bellow horizon" << sendLog;
-			}
-			pop_front ();
+			break;
+		case QUEUE_HIGHEST:
+			sort (rts2db::sortByAltitude (*observer));
+			break;
+		case QUEUE_WESTEAST:
+			sort (rts2db::sortWestEast (*observer));
 			break;
 	}
 	updateVals ();
@@ -98,6 +112,8 @@ void ExecutorQueue::popFront ()
 	switch (queueType->getValueInteger ())
 	{
 		case QUEUE_FIFO:
+		case QUEUE_HIGHEST:
+		case QUEUE_WESTEAST:
 			pop_front ();
 			break;
 		case QUEUE_CIRCULAR:

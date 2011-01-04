@@ -23,6 +23,8 @@
 // queue modes
 #define QUEUE_FIFO          0
 #define QUEUE_CIRCULAR      1
+#define QUEUE_HIGHEST       2
+#define QUEUE_WESTEAST      3
 
 namespace rts2plan
 {

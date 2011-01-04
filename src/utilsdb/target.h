@@ -233,12 +233,22 @@ class Target:public Rts2Target
 		void getAltAz (struct ln_hrz_posn *hrz) { getAltAz (hrz, ln_get_julian_from_sys ()); }
 
 		/**
-		 * Return target horizontal coordinates for given date.
+		 * Return target horizontal coordinates for given date on given position.
 		 *
-		 * @param hrz Returned coordinates.
-		 * @param JD  Julian data for which target coordinates will be calculated.
+		 * @param hrz returned coordinates
+		 * @param JD  Julian data for which target coordinates will be calculated
 		 */
-		virtual void getAltAz (struct ln_hrz_posn *hrz, double JD);
+		void getAltAz (struct ln_hrz_posn *hrz, double JD) { getAltAz (hrz, JD, observer); };
+
+
+		/**
+		 * Return target horizontal coordinates for given date on given position.
+		 *
+		 * @param hrz returned coordinates
+		 * @param JD  Julian data for which target coordinates will be calculated
+		 * @param obs observer position
+		 */
+		virtual void getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn *obs);
 
 		/**
 		 * Returns target minimal and maximal altitude during
@@ -306,11 +316,21 @@ class Target:public Rts2Target
 		/**
 		 * Returns target hour angle in arcdeg at given Julian day.
 		 *
-		 * @param JD Julian day for which target hour angle will be calculated.
+		 * @param JD    Julian day for which target hour angle will be calculated.
 		 *
 		 * @return Hour angle of the target at given Julian day.
 		 */
-		double getHourAngle (double JD);
+		double getHourAngle (double JD) { return getHourAngle (JD, observer); }
+
+		/**
+		 * Returns target hour angle in arcdeg at given Julian day.
+		 *
+		 * @param JD    Julian day for which target hour angle will be calculated.
+		 * @param obs   Observer position on the Earth surface
+		 *
+		 * @return Hour angle of the target at given Julian day.
+		 */
+		double getHourAngle (double JD, struct ln_lnlat_posn *obs);
 
 		/**
 		 * Returns angular distance of the target to a given position.

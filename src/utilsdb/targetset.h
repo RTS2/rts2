@@ -270,6 +270,33 @@ class TargetSetSingleton
 };
 
 /**
+ * Sorting based on altitude.
+ */
+class sortByAltitude
+{
+	public:
+		sortByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f"));
+		bool operator () (Target *tar1, Target *tar2);
+	private:
+		struct ln_lnlat_posn *observer;
+		double JD;
+};
+
+/**
+ * Sort from westmost to eastmost objects
+ */
+class sortWestEast
+{
+	public:
+		sortWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f"));
+		bool operator () (Target *tar1, Target *tar2);
+	private:
+		struct ln_lnlat_posn *observer;
+		double JD;
+};
+
+
+/**
  * Resolver for non-unique targetset names. Force targetset to contain all
  * matching names.
  *

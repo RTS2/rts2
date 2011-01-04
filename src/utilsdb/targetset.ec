@@ -495,6 +495,55 @@ std::ostream & operator << (std::ostream &_os, TargetSet &tar_set)
 	return _os;
 }
 
+sortByAltitude::sortByAltitude (struct ln_lnlat_posn *_obs, double _jd)
+{
+	if (!_obs)
+		observer = _obs;
+	else
+		observer = Rts2Config::instance ()->getObserver ();
+	if (isnan (_jd))
+		JD = ln_get_julian_from_sys ();
+	else
+		JD = _jd;
+}
+
+bool sortByAltitude::operator () (Target *tar1, Target *tar2)
+{
+	struct ln_hrz_posn hr1, hr2;
+	tar1->getAltAz (&hr1, JD, observer);
+	tar2->getAltAz (&hr2, JD, observer);
+	return hr1.alt > hr2.alt;
+}
+
+sortWestEast::sortWestEast (struct ln_lnlat_posn *_obs, double _jd)
+{
+	if (!_obs)
+		observer = _obs;
+	else
+		observer = Rts2Config::instance ()->getObserver ();
+	if (isnan (_jd))
+		JD = ln_get_julian_from_sys ();
+	else
+		JD = _jd;
+}
+
+bool sortWestEast::operator () (Target *tar1, Target *tar2)
+{
+	struct ln_hrz_posn hr1, hr2;
+	tar1->getAltAz (&hr1, JD, observer);
+	tar2->getAltAz (&hr2, JD, observer);
+	bool above1 = tar1->isAboveHorizon (&hr1);
+	bool above2 = tar2->isAboveHorizon (&hr2);
+	if (above1 != above2)
+		return above1 == true;
+	// compare hour angles
+	double ha1 = tar1->getHourAngle (JD, observer);
+	double ha2 = tar2->getHourAngle (JD, observer);
+	// ha1 on west, ha2 on east - ha1 is winner
+	return ha1 > ha2;
+		
+}
+
 TargetSet::iterator const rts2db::resolveAll (TargetSet *ts)
 {
 	return ts->end ();
