@@ -60,17 +60,19 @@ class Hlohovec:public Telescope
 		const char *devRA;
 		const char *devDEC;
 
-		Rts2ValueInteger *ra_rPos;
 		Rts2ValueInteger *ra_dPos;
+		Rts2ValueInteger *ra_rPos;
 		Rts2ValueInteger *ra_aCur;
 		Rts2ValueInteger *ra_appStatus;
 		Rts2ValueInteger *ra_faults;
 
-		Rts2ValueInteger *dec_rPos;
 		Rts2ValueInteger *dec_dPos;
+		Rts2ValueInteger *dec_rPos;
 		Rts2ValueInteger *dec_aCur;
 		Rts2ValueInteger *dec_appStatus;
 		Rts2ValueInteger *dec_faults;
+
+		void initDrive (TGDrive *drive);
 };
 
 }
@@ -94,6 +96,22 @@ int Hlohovec::processOption (int opt)
 			return Telescope::processOption (opt);
 	}
 	return 0;
+}
+
+void Hlohovec::initDrive (TGDrive * drive)
+{
+//	drive->write2b (TGA_MASTER_CMD, 6);
+	drive->write2b (TGA_MASTER_CMD, 2);
+	drive->write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
+	drive->write2b (TGA_MASTER_CMD, 5);
+	drive->write4b (TGA_MODE, 0x4004);
+
+//	drive->write4b (TGA_ACCEL, 4947850);
+//	drive->write4b (TGA_DECEL, 4947850);
+//	drive->write4b (TGA_VMAX, 458993459);
+
+//	drive->write2b (TGA_DESCUR, 500);
+	drive->write2b (TGA_MASTER_CMD, 4);
 }
 
 int Hlohovec::init ()
@@ -121,16 +139,8 @@ int Hlohovec::init ()
 	if (ret)
 		return ret;
 
-	raDrive->write2b (TGA_MASTER_CMD, 2);
-	raDrive->write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
-	raDrive->write2b (TGA_MASTER_CMD, 5);
-	raDrive->write4b (TGA_MODE, 0x4004);
+	initDrive (raDrive);
 
-	raDrive->write4b (TGA_ACCEL, 8947850);
-	raDrive->write4b (TGA_DECEL, 8947850);
-	raDrive->write4b (TGA_VMAX, 858993459);
-
-	raDrive->write2b (TGA_DESCUR, 500);
 
 	if (devDEC != NULL)
 	{
@@ -140,7 +150,7 @@ int Hlohovec::init ()
 		ret = decDrive->init ();
 		if (ret)
 			return ret;
-		decDrive->write2b (TGA_MASTER_CMD, 0x02);
+		initDrive (decDrive);
 	}
 
 	return 0;
@@ -159,8 +169,8 @@ int Hlohovec::info ()
 		dec_dPos->setValueInteger (decDrive->read4b (TGA_TARPOS));
 		dec_rPos->setValueInteger (decDrive->read4b (TGA_CURRPOS));
 		dec_aCur->setValueInteger (decDrive->read2b (TGA_ACTCUR));
-		ra_appStatus->setValueInteger (decDrive->read2b (TGA_STATUS));
-		ra_faults->setValueInteger (decDrive->read2b (TGA_FAULTS));
+		dec_appStatus->setValueInteger (decDrive->read2b (TGA_STATUS));
+		dec_faults->setValueInteger (decDrive->read2b (TGA_FAULTS));
 	}
 
 	return Telescope::info ();
@@ -171,6 +181,7 @@ int Hlohovec::resetMount ()
 	try
 	{
 		raDrive->write2b (TGA_MASTER_CMD, 5);
+		raDrive->write2b (TGA_MASTER_CMD, 2);
 		return Telescope::resetMount ();
 	}
 	catch (TGDriveError e)
@@ -219,6 +230,18 @@ int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 			return -2;
 		}
 	}
+	if (old_value == dec_dPos)
+	{
+		try
+		{
+			decDrive->write4b (TGA_TARPOS, new_value->getValueInteger ());
+			return 0;
+		}
+		catch (TGDriveError e)
+		{
+			return -2;
+		}
+	}
 	return Telescope::setValue (old_value, new_value);
 }
 
@@ -236,8 +259,8 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 	createValue (ra_appStatus, "AX_RA_S", "RA axis status", true, RTS2_DT_HEX);
 	createValue (ra_faults, "AX_RA_F", "RA axis faults", true, RTS2_DT_HEX);
 
-	createValue (dec_rPos, "AX_DEC_T", "target DEC position", true, RTS2_VALUE_WRITABLE);
-	createValue (dec_dPos, "AX_DEC_C", "current DEC position", true);
+	createValue (dec_dPos, "AX_DEC_T", "target DEC position", true, RTS2_VALUE_WRITABLE);
+	createValue (dec_rPos, "AX_DEC_C", "current DEC position", true);
 	createValue (dec_aCur, "AX_DEC_CU", "actual DEC current", false);
 	createValue (dec_appStatus, "AX_DEC_S", "DEC axis status", true, RTS2_DT_HEX);
 	createValue (dec_faults, "AX_DEC_F", "DEC axis faults", true, RTS2_DT_HEX);
