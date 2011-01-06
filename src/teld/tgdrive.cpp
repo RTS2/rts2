@@ -30,9 +30,25 @@
 
 using namespace rts2teld;
 
-TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
+TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
 {
 	setLogAsHex (true);
+
+	char pbuf[strlen (prefix) + 20];
+	char *p = pbuf + strlen (prefix);
+
+	strcpy (pbuf, prefix);
+
+	strcpy (p, "TPOS");
+	_master->createValue (dPos, pbuf, "target position", true, RTS2_VALUE_WRITABLE);
+	strcpy (p, "CPOS");
+	_master->createValue (rPos, pbuf, "current position", true);
+	strcpy (p, "CURRENT");
+	_master->createValue (aCur, pbuf, "actual current", false);
+	strcpy (p, "STATUS");
+	_master->createValue (appStatus, pbuf, "axis status", true, RTS2_DT_HEX);
+	strcpy (p, "FAULT");
+	_master->createValue (faults, pbuf, "axis faults", true, RTS2_DT_HEX);
 }
 
 int TGDrive::init ()
@@ -53,6 +69,33 @@ int TGDrive::init ()
 //	write2b (TGA_DESCUR, 500);
 	write2b (TGA_MASTER_CMD, 4);
 	return 0;
+}
+
+void TGDrive::info ()
+{
+	dPos->setValueInteger (read4b (TGA_TARPOS));
+	rPos->setValueInteger (read4b (TGA_CURRPOS));
+	aCur->setValueInteger (read2b (TGA_ACTCUR));
+	appStatus->setValueInteger (read2b (TGA_STATUS));
+	faults->setValueInteger (read2b (TGA_FAULTS));
+}
+
+int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == dPos)
+	{
+		try
+		{
+			write4b (TGA_TARPOS, new_value->getValueInteger ());
+			return 0;
+		}
+		catch (TGDriveError e)
+		{
+			return -2;
+		}
+	}
+	// otherwise pass to next possible value
+	return 1;
 }
 
 int16_t TGDrive::read2b (int16_t address)

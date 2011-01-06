@@ -18,6 +18,7 @@
  */
 
 #include "../utils/connserial.h"
+#include "../utils/rts2device.h"
 
 // interesting addresses
 
@@ -122,11 +123,30 @@ class TGDrive: public rts2core::ConnSerial
 		 * Create connection to TGDrive motor.
 		 *
 		 * @param _devName  Device name (ussually /dev/ttySx)
+		 * @param prefix    Device prefix (usually RA or DEC)
 		 * @param _master   Controlling block
 		 */
-		TGDrive (const char *_devName, Rts2Block *_master);
+		TGDrive (const char *_devName, const char *prefix, Rts2Device *_master);
 
 		virtual int init ();
+
+		/**
+		 * get info from unit, write it to value.
+		 *
+		 * @throw TGDriveError on error
+		 */
+		void info ();
+
+
+		/**
+		 * Set values.
+		 *
+		 *
+		 * @return 1 if value does not belong to this unit
+		 *
+		 * @see Rts2Block::setValue()
+		 */
+		int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 		/**
 		 * Read word (2 bytes) from interface.
@@ -178,6 +198,12 @@ class TGDrive: public rts2core::ConnSerial
 		void writeMsg (char op, int16_t address, char *data, int len);
 
 		void readStatus ();
+
+		Rts2ValueInteger *dPos;
+		Rts2ValueInteger *rPos;
+		Rts2ValueInteger *aCur;
+		Rts2ValueInteger *appStatus;
+		Rts2ValueInteger *faults;
 };
 
 }
