@@ -30,6 +30,60 @@
 
 using namespace rts2teld;
 
+TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
+{
+	setLogAsHex (true);
+}
+
+int TGDrive::init ()
+{
+	int ret = ConnSerial::init ();
+	if (ret)
+		return ret;	
+//	drive->write2b (TGA_MASTER_CMD, 6);
+	write2b (TGA_MASTER_CMD, 2);
+	write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
+	write2b (TGA_MASTER_CMD, 5);
+	write4b (TGA_MODE, 0x4004);
+
+//	write4b (TGA_ACCEL, 4947850);
+//	write4b (TGA_DECEL, 4947850);
+//	write4b (TGA_VMAX, 458993459);
+
+//	write2b (TGA_DESCUR, 500);
+	write2b (TGA_MASTER_CMD, 4);
+	return 0;
+}
+
+int16_t TGDrive::read2b (int16_t address)
+{
+	writeMsg (0xD1, address);
+	char msg[5];
+	ecRead (msg, 5);
+	return * (( int16_t *) (msg + 2));
+}
+
+void TGDrive::write2b (int16_t address, int16_t data)
+{
+	writeMsg (0x02, address, (char *) &data, 2);
+	readStatus ();
+}
+
+int32_t TGDrive::read4b (int16_t address)
+{
+	writeMsg (0xD2, address);
+	char msg[7];
+	ecRead (msg, 7);
+	return * (( int32_t *) (msg + 2));
+
+}
+
+void TGDrive::write4b (int16_t address, int32_t data)
+{
+	writeMsg (0x02, address, (char *) &data, 4);
+	readStatus ();
+}
+
 void TGDrive::ecWrite (char *msg)
 {
 	char ec_buf [4 + msg[2] * 2];
@@ -132,39 +186,4 @@ void TGDrive::readStatus ()
 {
 	char msg[3];
 	ecRead (msg, 3);
-}
-
-TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
-{
-	setLogAsHex (true);
-}
-
-
-int16_t TGDrive::read2b (int16_t address)
-{
-	writeMsg (0xD1, address);
-	char msg[5];
-	ecRead (msg, 5);
-	return * (( int16_t *) (msg + 2));
-}
-
-void TGDrive::write2b (int16_t address, int16_t data)
-{
-	writeMsg (0x02, address, (char *) &data, 2);
-	readStatus ();
-}
-
-int32_t TGDrive::read4b (int16_t address)
-{
-	writeMsg (0xD2, address);
-	char msg[7];
-	ecRead (msg, 7);
-	return * (( int32_t *) (msg + 2));
-
-}
-
-void TGDrive::write4b (int16_t address, int32_t data)
-{
-	writeMsg (0x02, address, (char *) &data, 4);
-	readStatus ();
 }

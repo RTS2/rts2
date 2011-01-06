@@ -71,8 +71,6 @@ class Hlohovec:public Telescope
 		Rts2ValueInteger *dec_aCur;
 		Rts2ValueInteger *dec_appStatus;
 		Rts2ValueInteger *dec_faults;
-
-		void initDrive (TGDrive *drive);
 };
 
 }
@@ -96,22 +94,6 @@ int Hlohovec::processOption (int opt)
 			return Telescope::processOption (opt);
 	}
 	return 0;
-}
-
-void Hlohovec::initDrive (TGDrive * drive)
-{
-//	drive->write2b (TGA_MASTER_CMD, 6);
-	drive->write2b (TGA_MASTER_CMD, 2);
-	drive->write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
-	drive->write2b (TGA_MASTER_CMD, 5);
-	drive->write4b (TGA_MODE, 0x4004);
-
-//	drive->write4b (TGA_ACCEL, 4947850);
-//	drive->write4b (TGA_DECEL, 4947850);
-//	drive->write4b (TGA_VMAX, 458993459);
-
-//	drive->write2b (TGA_DESCUR, 500);
-	drive->write2b (TGA_MASTER_CMD, 4);
 }
 
 int Hlohovec::init ()
@@ -139,8 +121,6 @@ int Hlohovec::init ()
 	if (ret)
 		return ret;
 
-	initDrive (raDrive);
-
 
 	if (devDEC != NULL)
 	{
@@ -150,7 +130,6 @@ int Hlohovec::init ()
 		ret = decDrive->init ();
 		if (ret)
 			return ret;
-		initDrive (decDrive);
 	}
 
 	return 0;

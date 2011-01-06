@@ -99,15 +99,15 @@ namespace rts2teld
 /**
  * Error reported by TGDrive.
  */
-class TGDriveError
+class TGDriveError: public rts2core::Error
 {
-	private:
-		char status;
 	public:
 		TGDriveError (char _status)
 		{
 			status = _status;
 		}
+	private:
+		char status;
 };
 
 /**
@@ -117,17 +117,6 @@ class TGDriveError
  */
 class TGDrive: public rts2core::ConnSerial
 {
-	private:
-		// escape, checksum and write..
-		void ecWrite (char *msg);
-		// read and test checksum, with expected length
-		void ecRead (char *msg, int len);
-
-		void writeMsg (char op, int16_t address);
-		void writeMsg (char op, int16_t address, char *data, int len);
-
-		void readStatus ();
-
 	public:
 		/**
 		 * Create connection to TGDrive motor.
@@ -136,6 +125,8 @@ class TGDrive: public rts2core::ConnSerial
 		 * @param _master   Controlling block
 		 */
 		TGDrive (const char *_devName, Rts2Block *_master);
+
+		virtual int init ();
 
 		/**
 		 * Read word (2 bytes) from interface.
@@ -176,6 +167,17 @@ class TGDrive: public rts2core::ConnSerial
 		 * @throw TGDriveError on error.
 		 */
 		void write4b (int16_t address, int32_t data);
+
+	private:
+		// escape, checksum and write..
+		void ecWrite (char *msg);
+		// read and test checksum, with expected length
+		void ecRead (char *msg, int len);
+
+		void writeMsg (char op, int16_t address);
+		void writeMsg (char op, int16_t address, char *data, int len);
+
+		void readStatus ();
 };
 
 }
