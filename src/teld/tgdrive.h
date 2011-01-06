@@ -85,6 +85,18 @@
 /** Current positon */
 #define TGA_CURRPOS                     0x0196
 
+/** Position error */
+#define TGA_POSERR                      0x0287
+
+/** maximal position error */
+#define TGA_MAXPOSERR                   0x01CB
+
+/** Desired speed */
+#define TGA_DSPEED                      0x0194
+
+/** Actual speed */
+#define TGA_ASPEED                      0x019A
+
 /** Maximal speed */
 #define TGA_VMAX                        0x01D2
 
@@ -93,6 +105,9 @@
 
 /** Deceleration */
 #define TGA_DECEL                       0x01D6
+
+/** Firmware version */
+#define TGA_FIRMWARE                    0x01B0
 
 namespace rts2teld
 {
@@ -200,10 +215,19 @@ class TGDrive: public rts2core::ConnSerial
 		void readStatus ();
 
 		Rts2ValueInteger *dPos;
-		Rts2ValueInteger *rPos;
+		Rts2ValueInteger *aPos;
+		Rts2ValueInteger *posErr;
+		Rts2ValueInteger *maxPosErr;
+		Rts2ValueInteger *dCur;
 		Rts2ValueInteger *aCur;
+		Rts2ValueInteger *dSpeed;
+		Rts2ValueInteger *aSpeed;
+		Rts2ValueInteger *maxSpeed;
 		Rts2ValueInteger *appStatus;
 		Rts2ValueInteger *faults;
+		Rts2ValueInteger *masterCmd;
+
+		Rts2ValueInteger *firmware;
 };
 
 }

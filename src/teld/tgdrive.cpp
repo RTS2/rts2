@@ -41,14 +41,30 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master)
 
 	strcpy (p, "TPOS");
 	_master->createValue (dPos, pbuf, "target position", true, RTS2_VALUE_WRITABLE);
-	strcpy (p, "CPOS");
-	_master->createValue (rPos, pbuf, "current position", true);
-	strcpy (p, "CURRENT");
+	strcpy (p, "APOS");
+	_master->createValue (aPos, pbuf, "actual position", true);
+	strcpy (p, "POSERR");
+	_master->createValue (posErr, pbuf, "position error", true);
+	strcpy (p, "MAXPOSERR");
+	_master->createValue (maxPosErr, pbuf, "maximal position error", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "DSPEED");
+	_master->createValue (dSpeed, pbuf, "desired speed", true, RTS2_VALUE_WRITABLE);
+	strcpy (p, "ASPEED");
+	_master->createValue (aSpeed, pbuf, "actual speed", false);
+	strcpy (p, "MAXSPEED");
+	_master->createValue (maxSpeed, pbuf, "maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "DCURRENT");
+	_master->createValue (dCur, pbuf, "desired current", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "ACURRENT");
 	_master->createValue (aCur, pbuf, "actual current", false);
 	strcpy (p, "STATUS");
 	_master->createValue (appStatus, pbuf, "axis status", true, RTS2_DT_HEX);
 	strcpy (p, "FAULT");
 	_master->createValue (faults, pbuf, "axis faults", true, RTS2_DT_HEX);
+	strcpy (p, "MASTERCMD");
+	_master->createValue (masterCmd, pbuf, "mastercmd register", true);
+	strcpy (p, "FIRMWARE");
+	_master->createValue (firmware, pbuf, "firmware version", true);
 }
 
 int TGDrive::init ()
@@ -68,34 +84,61 @@ int TGDrive::init ()
 
 //	write2b (TGA_DESCUR, 500);
 	write2b (TGA_MASTER_CMD, 4);
+	firmware->setValueInteger (read2b (TGA_FIRMWARE));
 	return 0;
 }
 
 void TGDrive::info ()
 {
 	dPos->setValueInteger (read4b (TGA_TARPOS));
-	rPos->setValueInteger (read4b (TGA_CURRPOS));
+	aPos->setValueInteger (read4b (TGA_CURRPOS));
+	posErr->setValueInteger (read4b (TGA_POSERR));
+	maxPosErr->setValueInteger (read4b (TGA_MAXPOSERR));
+	dSpeed->setValueInteger (read4b (TGA_DSPEED));
+	aSpeed->setValueInteger (read4b (TGA_ASPEED));
+	maxSpeed->setValueInteger (read4b (TGA_VMAX));
+	dCur->setValueInteger (read2b (TGA_DESCUR));
 	aCur->setValueInteger (read2b (TGA_ACTCUR));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
+	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
 }
 
 int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
-	if (old_value == dPos)
+	try
 	{
-		try
+		if (old_value == dPos)
 		{
 			write4b (TGA_TARPOS, new_value->getValueInteger ());
-			return 0;
 		}
-		catch (TGDriveError e)
+		else if (old_value == maxPosErr)
 		{
-			return -2;
+			write4b (TGA_MAXPOSERR, new_value->getValueInteger ());
+		}
+		else if (old_value == dCur)
+		{
+			write2b (TGA_DESCUR, new_value->getValueInteger ());
+		}
+		else if (old_value == dSpeed)
+		{
+			write4b (TGA_DSPEED, new_value->getValueInteger ());
+		}
+		else if (old_value == maxSpeed)
+		{
+			write4b (TGA_VMAX, new_value->getValueInteger ());
+		}
+		else
+		{
+			// otherwise pass to next possible value
+			return 1;
 		}
 	}
-	// otherwise pass to next possible value
-	return 1;
+	catch (TGDriveError e)
+	{
+		return -2;
+	}
+	return 0;
 }
 
 int16_t TGDrive::read2b (int16_t address)
