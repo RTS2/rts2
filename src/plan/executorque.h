@@ -61,11 +61,17 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 		rts2core::StringArray *nextNames;
 
 		Rts2ValueSelection *queueType;
+		Rts2ValueBool *skipBellowHorizon;
 
 		struct ln_lnlat_posn **observer;
 
 		// update values from the target list
 		void updateVals ();
+
+		// filter or skip observations bellow horizon
+		// if skipBellowHorizon is set to false (default), remove observations which are currently
+		// bellow horizon. If skipBellowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		void filterBellowHorizon ();
 };
 
 }

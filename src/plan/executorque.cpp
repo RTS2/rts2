@@ -30,6 +30,8 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
+	master->createValue (skipBellowHorizon, (sn + "_skip_bellow").c_str (), "skip targets bellow horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
+	skipBellowHorizon->setValueBool (false);
 
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
@@ -41,21 +43,6 @@ ExecutorQueue::~ExecutorQueue ()
 {
 	clearNext (NULL);
 	updateVals ();
-}
-
-void ExecutorQueue::updateVals ()
-{
-	std::vector <int> _id_arr;
-	std::vector <std::string> _name_arr;
-	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
-	{
-		_id_arr.push_back ((*iter)->getTargetID ());
-		_name_arr.push_back ((*iter)->getTargetName ());
-	}
-	nextIds->setValueArray (_id_arr);
-	nextNames->setValueArray (_name_arr);
-	master->sendValueAll (nextIds);
-	master->sendValueAll (nextNames);
 }
 
 int ExecutorQueue::addFront (rts2db::Target *nt)
@@ -74,27 +61,15 @@ int ExecutorQueue::addTarget (rts2db::Target *nt)
 
 void ExecutorQueue::beforeChange ()
 {
-	struct ln_hrz_posn altaz;
 	switch (queueType->getValueInteger ())
 	{
 		case QUEUE_FIFO:
 			break;
 		case QUEUE_CIRCULAR:
-			for (ExecutorQueue::iterator iter = begin (); iter != end ();)
+			if (!empty ())
 			{
-				(*iter)->getAltAz (&altaz);
-				if ((*iter)->isAboveHorizon (&altaz))
-				{
-					push_back (createTarget ((*iter)->getTargetID (), *observer));
-					iter++;
-					pop_front ();
-					break;
-				}
-				else
-				{
-			  		logStream (MESSAGE_INFO) << "removing target " << (*iter)->getTargetName () << " (" << (*iter)->getTargetID () << ") from queue, as it is bellow horizon" << sendLog;
-					iter = erase (iter);
-				}
+				push_back (createTarget (front ()->getTargetID (), *observer));
+				pop_front ();
 			}
 			break;
 		case QUEUE_HIGHEST:
@@ -104,6 +79,7 @@ void ExecutorQueue::beforeChange ()
 			sort (rts2db::sortWestEast (*observer));
 			break;
 	}
+	filterBellowHorizon ();
 	updateVals ();
 }
 
@@ -132,4 +108,50 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 	clear ();
 }
 
+void ExecutorQueue::updateVals ()
+{
+	std::vector <int> _id_arr;
+	std::vector <std::string> _name_arr;
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		_id_arr.push_back ((*iter)->getTargetID ());
+		_name_arr.push_back ((*iter)->getTargetName ());
+	}
+	nextIds->setValueArray (_id_arr);
+	nextNames->setValueArray (_name_arr);
+	master->sendValueAll (nextIds);
+	master->sendValueAll (nextNames);
+}
 
+void ExecutorQueue::filterBellowHorizon ()
+{
+	if (!empty ())
+	{
+		rts2db::Target *firsttar = NULL;
+		double JD = ln_get_julian_from_sys ();
+
+		for (ExecutorQueue::iterator iter = begin (); iter != end () && *iter != firsttar;)
+		{
+			struct ln_hrz_posn hrz;
+			(*iter)->getAltAz (&hrz, JD, *observer);
+			if ((*iter)->isAboveHorizon (&hrz))
+			{
+				iter++;
+				continue;
+			}
+
+			if (skipBellowHorizon->getValueBool ())
+			{
+				if (firsttar == NULL)
+					firsttar = *iter;
+
+				push_back (*iter);
+				iter = erase (iter);
+			}
+			else
+			{
+				iter = erase (iter);
+			}
+		}
+	}
+}
