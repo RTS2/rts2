@@ -48,23 +48,23 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master)
 	strcpy (p, "MAXPOSERR");
 	_master->createValue (maxPosErr, pbuf, "maximal position error", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DSPEED");
-	_master->createValue (dSpeed, pbuf, "desired speed", true, RTS2_VALUE_WRITABLE);
+	_master->createValue (dSpeed, pbuf, "[r/s] desired speed", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ASPEED");
-	_master->createValue (aSpeed, pbuf, "actual speed", false);
+	_master->createValue (aSpeed, pbuf, "[r/s] actual speed", false);
 	strcpy (p, "MAXSPEED");
-	_master->createValue (maxSpeed, pbuf, "maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (maxSpeed, pbuf, "[r/s] maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DCURRENT");
-	_master->createValue (dCur, pbuf, "desired current", false, RTS2_VALUE_WRITABLE);
+	_master->createValue (dCur, pbuf, "[A] desired current", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACURRENT");
-	_master->createValue (aCur, pbuf, "actual current", false);
+	_master->createValue (aCur, pbuf, "[A] actual current", false);
 	strcpy (p, "STATUS");
 	_master->createValue (appStatus, pbuf, "axis status", true, RTS2_DT_HEX);
 	strcpy (p, "FAULT");
 	_master->createValue (faults, pbuf, "axis faults", true, RTS2_DT_HEX);
 	strcpy (p, "MASTERCMD");
-	_master->createValue (masterCmd, pbuf, "mastercmd register", true);
+	_master->createValue (masterCmd, pbuf, "mastercmd register", false);
 	strcpy (p, "FIRMWARE");
-	_master->createValue (firmware, pbuf, "firmware version", true);
+	_master->createValue (firmware, pbuf, "firmware version", false);
 }
 
 int TGDrive::init ()
@@ -94,11 +94,11 @@ void TGDrive::info ()
 	aPos->setValueInteger (read4b (TGA_CURRPOS));
 	posErr->setValueInteger (read4b (TGA_POSERR));
 	maxPosErr->setValueInteger (read4b (TGA_MAXPOSERR));
-	dSpeed->setValueInteger (read4b (TGA_DSPEED));
-	aSpeed->setValueInteger (read4b (TGA_ASPEED));
-	maxSpeed->setValueInteger (read4b (TGA_VMAX));
-	dCur->setValueInteger (read2b (TGA_DESCUR));
-	aCur->setValueInteger (read2b (TGA_ACTCUR));
+	dSpeed->setValueDouble (read4b (TGA_DSPEED) / TGA_SPEEDFACTOR);
+	aSpeed->setValueDouble (read4b (TGA_ASPEED) / TGA_SPEEDFACTOR);
+	maxSpeed->setValueDouble (read4b (TGA_VMAX) / TGA_SPEEDFACTOR);
+	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
+	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
@@ -118,15 +118,15 @@ int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		}
 		else if (old_value == dCur)
 		{
-			write2b (TGA_DESCUR, new_value->getValueInteger ());
+			write2b (TGA_DESCUR, new_value->getValueFloat () * TGA_CURRENTFACTOR);
 		}
 		else if (old_value == dSpeed)
 		{
-			write4b (TGA_DSPEED, new_value->getValueInteger ());
+			write4b (TGA_DSPEED, new_value->getValueDouble () * TGA_SPEEDFACTOR);
 		}
 		else if (old_value == maxSpeed)
 		{
-			write4b (TGA_VMAX, new_value->getValueInteger ());
+			write4b (TGA_VMAX, new_value->getValueDouble () * TGA_SPEEDFACTOR);
 		}
 		else
 		{
@@ -222,10 +222,16 @@ void TGDrive::ecRead (char *msg, int len)
 			ret = readPort (msg + clen, escaped);
 			if (ret < 0)
 				throw rts2core::Error ("cannot read rest from port");
+			if (escaped > 1 && msg[clen + escaped - 1] == MSG_START && msg[clen + escaped - 2] != MSG_START)
+			{
+				ret = readPort (msg + clen + escaped, 1);
+				if (ret < 0)
+					throw rts2core::Error ("cannot read second escape");
+			}
 			clen += escaped;
 			escaped = 0;
 		}
-		for (; checked_end < len; checked_end++)
+		for (; checked_end < clen; checked_end++)
 		{
 			if (msg[checked_end] == MSG_START)
 			{
@@ -259,7 +265,11 @@ void TGDrive::ecRead (char *msg, int len)
 
 	if ((0x00ff & msg[len - 1]) != cs)
 	{
-	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (0x00ff & ((int) msg[len - 1])) << "." << sendLog;
+	  	Rts2LogStream ls = logStream (MESSAGE_ERROR);
+		ls << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (0x00ff & ((int) msg[len - 1])) << ":";
+		for (int j = 0; j < len; j++)
+			ls << std::hex << (int) msg[j] << " ";
+		ls << sendLog;
 		throw TGDriveError (2);
 	}
 	if (msg[1] != STAT_OK)

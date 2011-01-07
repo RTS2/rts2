@@ -194,7 +194,9 @@ int Hlohovec::startResync ()
 
 int Hlohovec::isMoving ()
 {
-	return 0;
+	if (raDrive->isMoving () || decDrive->isMoving ())
+		return USEC_SEC / 100;
+	return -2;
 }
 
 int Hlohovec::stopMove ()
