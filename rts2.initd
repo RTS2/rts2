@@ -104,7 +104,7 @@ function rts2-start
 {
 	grep '^centrald' $CENTRALD_FILE | while read centrald centrald_port centrald_options; do
 		if [ "x${centrald_port}" == "x" ]; then
-			centrald_port=2200
+			centrald_port=617
 		fi
 		case $system in
 			debian)
