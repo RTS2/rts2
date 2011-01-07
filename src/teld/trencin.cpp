@@ -128,9 +128,6 @@ class Trencin:public Fork
 
 		int32_t worm_start_unit_ra;
 
-		Rts2ValueSelection *raGuide;
-		Rts2ValueSelection *decGuide;
-
 		Rts2ValueDouble *guidingSpeed;
 
 		Rts2ValueInteger *unitRa;
@@ -600,15 +597,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
 	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
 
-	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
-	raGuide->addSelVal ("NONE");
-	raGuide->addSelVal ("MINUS");
-	raGuide->addSelVal ("PLUS");
-
-	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
-	decGuide->addSelVal ("NONE");
-	decGuide->addSelVal ("MINUS");
-	decGuide->addSelVal ("PLUS");
+	createRaGuide ();
+	createDecGuide ();
 
 	createValue (guidingSpeed, "guiding_speed", "guiding speed in deg/sec", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	guidingSpeed->setValueDouble (0.5);

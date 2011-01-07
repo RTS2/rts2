@@ -105,6 +105,8 @@
 
 /** Deceleration */
 #define TGA_DECEL                       0x01D6
+ 
+#define TGA_EMERDECEL                   0x0204 
 
 /** Firmware version */
 #define TGA_FIRMWARE                    0x01B0
@@ -116,6 +118,8 @@
 
 // convert current to amps
 #define TGA_CURRENTFACTOR               (1017.6 * 1.41)
+
+#define TGA_ACCELFACTOR                 178957
 
 namespace rts2teld
 {
@@ -171,11 +175,15 @@ class TGDrive: public rts2core::ConnSerial
 		 */
 		int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
-		void setTargetPos (int32_t pos) { write4b (TGA_TARPOS, pos); }
+		void setTargetPos (int32_t pos);
 
 		int32_t getPosition () { return aPos->getValueInteger (); }
 
 		bool isMoving () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
+
+		void stop ();
+
+		bool checkStop ();
 
 		/**
 		 * Read word (2 bytes) from interface.
@@ -232,16 +240,26 @@ class TGDrive: public rts2core::ConnSerial
 		Rts2ValueInteger *aPos;
 		Rts2ValueInteger *posErr;
 		Rts2ValueInteger *maxPosErr;
-		Rts2ValueFloat *dCur;
-		Rts2ValueFloat *aCur;
+
 		Rts2ValueDouble *dSpeed;
 		Rts2ValueDouble *aSpeed;
 		Rts2ValueDouble *maxSpeed;
+
+		Rts2ValueDouble *accel;
+		Rts2ValueDouble *decel;
+		Rts2ValueDouble *emerDecel;
+
+		Rts2ValueFloat *dCur;
+		Rts2ValueFloat *aCur;
+
 		Rts2ValueInteger *appStatus;
 		Rts2ValueInteger *faults;
 		Rts2ValueInteger *masterCmd;
 
 		Rts2ValueInteger *firmware;
+
+		bool stopped;
+		int32_t stoppedPosition;
 };
 
 }

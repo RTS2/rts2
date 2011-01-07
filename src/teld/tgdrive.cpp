@@ -53,6 +53,12 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master)
 	_master->createValue (aSpeed, pbuf, "[r/s] actual speed", false);
 	strcpy (p, "MAXSPEED");
 	_master->createValue (maxSpeed, pbuf, "[r/s] maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "ACCEL");
+	_master->createValue (accel, pbuf, "[r/s**2] acceleration", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "DECEL");
+	_master->createValue (decel, pbuf, "[r/s**2] decceleration", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "EMERDECEL");
+	_master->createValue (emerDecel, pbuf, "[r/s**2] emergency deceleration", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DCURRENT");
 	_master->createValue (dCur, pbuf, "[A] desired current", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACURRENT");
@@ -65,6 +71,8 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master)
 	_master->createValue (masterCmd, pbuf, "mastercmd register", false);
 	strcpy (p, "FIRMWARE");
 	_master->createValue (firmware, pbuf, "firmware version", false);
+
+	stopped = false;
 }
 
 int TGDrive::init ()
@@ -97,6 +105,9 @@ void TGDrive::info ()
 	dSpeed->setValueDouble (read4b (TGA_DSPEED) / TGA_SPEEDFACTOR);
 	aSpeed->setValueDouble (read4b (TGA_ASPEED) / TGA_SPEEDFACTOR);
 	maxSpeed->setValueDouble (read4b (TGA_VMAX) / TGA_SPEEDFACTOR);
+	accel->setValueDouble (read4b (TGA_ACCEL) / TGA_ACCELFACTOR);
+	decel->setValueDouble (read4b (TGA_DECEL) / TGA_ACCELFACTOR);
+	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
 	appStatus->setValueInteger (read2b (TGA_STATUS));
@@ -110,11 +121,23 @@ int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	{
 		if (old_value == dPos)
 		{
-			write4b (TGA_TARPOS, new_value->getValueInteger ());
+			setTargetPos (new_value->getValueInteger ());
 		}
 		else if (old_value == maxPosErr)
 		{
 			write4b (TGA_MAXPOSERR, new_value->getValueInteger ());
+		}
+		else if (old_value == accel)
+		{
+			write4b (TGA_ACCEL, new_value->getValueDouble () * TGA_ACCELFACTOR);
+		}
+		else if (old_value == decel)
+		{
+			write4b (TGA_DECEL, new_value->getValueDouble () * TGA_ACCELFACTOR);
+		}
+		else if (old_value == emerDecel)
+		{
+			write4b (TGA_EMERDECEL, new_value->getValueDouble () * TGA_ACCELFACTOR);
 		}
 		else if (old_value == dCur)
 		{
@@ -139,6 +162,42 @@ int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		return -2;
 	}
 	return 0;
+}
+
+void TGDrive::setTargetPos (int32_t pos)
+{
+	if (stopped)
+	{
+		write4b (TGA_MODE, 0x4004);
+		stopped = false;
+	}
+	write4b (TGA_TARPOS, pos);
+}
+
+void TGDrive::stop ()
+{
+	// other way to stop..with backslahs
+	//setTargetPos (getPosition ());
+
+	// other possibility is to switch to speed mode..
+	stoppedPosition = read4b (TGA_CURRPOS);
+	write4b (TGA_MODE, 0x2002);
+	stopped = true;
+}
+
+bool TGDrive::checkStop ()
+{
+	if (stopped == false)
+		return false;
+	appStatus->setValueInteger (read2b (TGA_STATUS));
+	if ((appStatus->getValueInteger () & 0x08) == 0x08)
+	{
+		write4b (TGA_MODE, 0x4004);
+		write4b (TGA_TARPOS, stoppedPosition);
+		stopped = false;
+		return false;
+	}
+	return true;
 }
 
 int16_t TGDrive::read2b (int16_t address)

@@ -144,9 +144,6 @@ class APGTO:public TelLX200 {
 		Rts2ValueSelection *APcenter_rate;
 		Rts2ValueSelection *APguide_rate;
 
-		Rts2ValueSelection *raGuide;
-		Rts2ValueSelection *decGuide;
-
 		Rts2ValueDouble *APutc_offset;
 		Rts2ValueString *APfirmware ;
 		Rts2ValueString *DECaxis_HAcoordinate ; // see pier_collision.c 
@@ -1704,15 +1701,8 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	APguide_rate->addSelVal ("0.5");
 	APguide_rate->addSelVal ("1.0");
 
-	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
-	raGuide->addSelVal ("NONE");
-	raGuide->addSelVal ("MINUS");
-	raGuide->addSelVal ("PLUS");
-
-	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
-	decGuide->addSelVal ("NONE");
-	decGuide->addSelVal ("MINUS");
-	decGuide->addSelVal ("PLUS");
+	createRaGuide ();
+	createDecGuide ();
 	
 	createValue (APutc_offset, "APUTCOFFSET", "AP mount UTC offset", true,  RTS2_DT_RA);
 	createValue (APfirmware, "APVERSION", "AP mount firmware revision", true);

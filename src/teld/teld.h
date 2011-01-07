@@ -262,6 +262,12 @@ class Telescope:public Rts2Device
 		 */
 		int getPointingModel () { return pointingModel->getValueInteger (); }
 
+		/**
+		 * Creates values for guiding movements.
+		 */
+		void createRaGuide ();
+		void createDecGuide ();
+
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
@@ -660,6 +666,9 @@ class Telescope:public Rts2Device
 		 * Local sidereal time.
 		 */
 		Rts2ValueDouble *lst;
+
+		Rts2ValueSelection *raGuide;
+		Rts2ValueSelection *decGuide;
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }

@@ -22,12 +22,20 @@
 
 #include "../utils/rts2config.h"
 
-#define OPT_RA            OPT_LOCALHOST + 2201
-#define OPT_DEC           OPT_LOCALHOST + 2202
+#define OPT_RA                   OPT_LOCALHOST + 2201
+#define OPT_DEC                  OPT_LOCALHOST + 2202
+
+#define RTS2_HLOHOVEC_TIMERRG    RTS2_LOCAL_EVENT + 1210
+#define RTS2_HLOHOVEC_TIMERDG    RTS2_LOCAL_EVENT + 1211
+#define RTS2_HLOHOVEC_TSTOPRG    RTS2_LOCAL_EVENT + 1212
+#define RTS2_HLOHOVEC_TSTOPDG    RTS2_LOCAL_EVENT + 1213
 
 // steps per full RA and DEC revolutions (360 degrees)
-#define RA_TICKS          1000000000
-#define DEC_TICKS         1000000000
+#define RA_TICKS                 1000000000
+#define DEC_TICKS                1000000000
+
+#define RAGSTEP                  100000000
+#define DEGSTEP                  100000000
 
 using namespace rts2teld;
 
@@ -44,6 +52,8 @@ class Hlohovec:public GEM
 	public:
 		Hlohovec (int argc, char **argv);
 		virtual ~Hlohovec ();
+
+		virtual void postEvent (Rts2Event *event);
 	protected:
 		virtual void usage ();
 		virtual int processOption (int opt);
@@ -62,7 +72,6 @@ class Hlohovec:public GEM
 		virtual int updateLimits ();
 		virtual int getHomeOffset (int32_t & off);
 
-
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	private:
 		TGDrive *raDrive;
@@ -70,8 +79,70 @@ class Hlohovec:public GEM
 
 		const char *devRA;
 		const char *devDEC;
+
+		void matchGuideRa (int rag);
+		void matchGuideDec (int decg);
 };
 
+}
+
+Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
+{
+	raDrive = NULL;
+	decDrive = NULL;
+
+	devRA = NULL;
+	devDEC = NULL;
+
+	ra_ticks = RA_TICKS;
+	dec_ticks = DEC_TICKS;
+
+	haCpd = RA_TICKS / 180.0;
+	decCpd = DEC_TICKS / 180.0;
+
+	acMargin = haCpd;
+	
+	haZero = decZero = 0;
+
+	createRaGuide ();
+	createDecGuide ();
+
+	addOption (OPT_RA, "ra", 1, "RA drive serial device");
+	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
+}
+
+Hlohovec::~Hlohovec ()
+{
+	delete raDrive;
+	delete decDrive;
+}
+
+void Hlohovec::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case RTS2_HLOHOVEC_TIMERRG:
+			matchGuideRa (raGuide->getValueInteger ());
+			break;
+		case RTS2_HLOHOVEC_TIMERDG:
+			matchGuideDec (decGuide->getValueInteger ());
+			break;
+		case RTS2_HLOHOVEC_TSTOPRG:
+			if (raDrive->checkStop ())
+			{
+				addTimer (0.1, event);
+				return;
+			}
+			break;
+		case RTS2_HLOHOVEC_TSTOPDG:
+			if (decDrive->checkStop ())
+			{
+				addTimer (0.1, event);
+				return;
+			}
+			break;
+	}
+	GEM::postEvent (event);
 }
 
 void Hlohovec::usage ()
@@ -201,6 +272,8 @@ int Hlohovec::isMoving ()
 
 int Hlohovec::stopMove ()
 {
+	raDrive->stop ();
+	decDrive->stop ();
 	return 0;
 }
 
@@ -234,8 +307,48 @@ int Hlohovec::getHomeOffset (int32_t & off)
 	return 0;
 }
 
+void Hlohovec::matchGuideRa (int rag)
+{
+	raDrive->info ();
+	if (rag == 0)
+	{
+		raDrive->stop ();
+		addTimer (0.1, new Rts2Event (RTS2_HLOHOVEC_TSTOPRG));
+	}
+	else
+	{
+		raDrive->setTargetPos (raDrive->getPosition () + ((rag == 1 ? -1 : 1) * RAGSTEP));
+		addTimer (1, new Rts2Event (RTS2_HLOHOVEC_TIMERRG));
+	}
+}
+
+void Hlohovec::matchGuideDec (int deg)
+{
+	decDrive->info ();
+	if (deg == 0)
+	{
+		decDrive->stop ();
+		addTimer (0.1, new Rts2Event (RTS2_HLOHOVEC_TSTOPDG));
+	}
+	else
+	{
+		decDrive->setTargetPos (decDrive->getPosition () + ((deg == 1 ? -1 : 1) * DEGSTEP));
+		addTimer (1, new Rts2Event (RTS2_HLOHOVEC_TIMERDG));
+	}
+}
+
 int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
+	if (old_value == raGuide)
+	{
+		matchGuideRa (new_value->getValueInteger ());
+		return 0;
+	}
+	else if (old_value == decGuide)
+	{
+		matchGuideDec (new_value->getValueInteger ());
+		return 0;
+	}
 	int ret = raDrive->setValue (old_value, new_value);
 	if (ret != 1)
 		return ret;
@@ -244,34 +357,6 @@ int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		return ret;
 	
 	return GEM::setValue (old_value, new_value);
-}
-
-Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
-{
-	raDrive = NULL;
-	decDrive = NULL;
-
-	devRA = NULL;
-	devDEC = NULL;
-
-	ra_ticks = RA_TICKS;
-	dec_ticks = DEC_TICKS;
-
-	haCpd = RA_TICKS / 180.0;
-	decCpd = DEC_TICKS / 180.0;
-
-	acMargin = haCpd;
-	
-	haZero = decZero = 0;
-
-	addOption (OPT_RA, "ra", 1, "RA drive serial device");
-	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
-}
-
-Hlohovec::~Hlohovec ()
-{
-	delete raDrive;
-	delete decDrive;
 }
 
 int main (int argc, char **argv)

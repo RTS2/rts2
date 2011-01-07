@@ -47,6 +47,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (i
 		timerclear (dir_timeouts + i);
 	}
 
+	raGuide = decGuide = NULL;
+
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
 	// users offset
@@ -228,6 +230,22 @@ double Telescope::getLocSidTime (double JD)
 	double ret;
 	ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongitude->getValueDouble ();
 	return ln_range_degrees (ret) / 15.0;
+}
+
+void Telescope::createRaGuide ()
+{
+	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
+	raGuide->addSelVal ("NONE");
+	raGuide->addSelVal ("MINUS");
+	raGuide->addSelVal ("PLUS");
+}
+
+void Telescope::createDecGuide ()
+{
+	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
+	decGuide->addSelVal ("NONE");
+	decGuide->addSelVal ("MINUS");
+	decGuide->addSelVal ("PLUS");
 }
 
 int Telescope::processOption (int in_opt)
