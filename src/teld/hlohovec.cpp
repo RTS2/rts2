@@ -18,10 +18,16 @@
  */
 
 #include "tgdrive.h"
-#include "teld.h"
+#include "gem.h"
+
+#include "../utils/rts2config.h"
 
 #define OPT_RA            OPT_LOCALHOST + 2201
 #define OPT_DEC           OPT_LOCALHOST + 2202
+
+// steps per full RA and DEC revolutions (360 degrees)
+#define RA_TICKS          1000000000
+#define DEC_TICKS         1000000000
 
 using namespace rts2teld;
 
@@ -33,7 +39,7 @@ namespace rts2teld
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Hlohovec:public Telescope
+class Hlohovec:public GEM
 {
 	public:
 		Hlohovec (int argc, char **argv);
@@ -47,10 +53,15 @@ class Hlohovec:public Telescope
 		virtual int resetMount ();
 
 		virtual int startResync ();
+		virtual int isMoving ();
 		virtual int stopMove ();
 		virtual int endMove ();
 		virtual int startPark ();
 		virtual int endPark ();
+
+		virtual int updateLimits ();
+		virtual int getHomeOffset (int32_t & off);
+
 
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	private:
@@ -79,7 +90,7 @@ int Hlohovec::processOption (int opt)
 			devDEC = optarg;
 			break;
 		default:
-			return Telescope::processOption (opt);
+			return GEM::processOption (opt);
 	}
 	return 0;
 }
@@ -87,7 +98,7 @@ int Hlohovec::processOption (int opt)
 int Hlohovec::init ()
 {
 	int ret;
-	ret = Telescope::init ();
+	ret = GEM::init ();
 	if (ret)
 		return ret;
 
@@ -120,6 +131,15 @@ int Hlohovec::init ()
 			return ret;
 	}
 
+	Rts2Config *config = Rts2Config::instance ();
+	ret = config->loadFile ();
+	if (ret)
+		return -1;
+
+	telLongitude->setValueDouble (config->getObserver ()->lng);
+	telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+
 	return 0;
 }
 
@@ -127,7 +147,7 @@ int Hlohovec::info ()
 {
 	raDrive->info ();
 	decDrive->info ();
-	return Telescope::info ();
+	return GEM::info ();
 }
 
 int Hlohovec::resetMount ()
@@ -142,7 +162,7 @@ int Hlohovec::resetMount ()
 			decDrive->write2b (TGA_MASTER_CMD, 2);
 		}
 
-		return Telescope::resetMount ();
+		return GEM::resetMount ();
 	}
 	catch (TGDriveError e)
 	{
@@ -152,6 +172,18 @@ int Hlohovec::resetMount ()
 }
 
 int Hlohovec::startResync ()
+{
+	int32_t ac;
+	int32_t dc;
+	int ret = sky2counts (ac, dc);
+	if (ret)
+		return -1;
+	raDrive->setTargetPos (ac);
+	decDrive->setTargetPos (dc);
+	return 0;
+}
+
+int Hlohovec::isMoving ()
 {
 	return 0;
 }
@@ -176,6 +208,21 @@ int Hlohovec::endPark ()
 	return 0;
 }
 
+int Hlohovec::updateLimits ()
+{
+	acMin = -RA_TICKS;
+	acMax = RA_TICKS;
+	dcMin = -DEC_TICKS;
+	dcMax = DEC_TICKS;
+	return 0;
+}
+
+int Hlohovec::getHomeOffset (int32_t & off)
+{
+	off = 0;
+	return 0;
+}
+
 int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	int ret = raDrive->setValue (old_value, new_value);
@@ -185,10 +232,10 @@ int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	if (ret != 1)
 		return ret;
 	
-	return Telescope::setValue (old_value, new_value);
+	return GEM::setValue (old_value, new_value);
 }
 
-Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
+Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
 {
 	raDrive = NULL;
 	decDrive = NULL;
@@ -196,6 +243,15 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 	devRA = NULL;
 	devDEC = NULL;
 
+	ra_ticks = RA_TICKS;
+	dec_ticks = DEC_TICKS;
+
+	haCpd = RA_TICKS / 180.0;
+	decCpd = DEC_TICKS / 180.0;
+
+	acMargin = haCpd;
+	
+	haZero = decZero = 0;
 
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");

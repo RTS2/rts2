@@ -339,7 +339,7 @@ class Telescope:public Rts2Device
 		 * return value is number of milliseconds for next isMoving
 		 * call.
 		 */
-		virtual int isMoving () { return -2; }
+		virtual int isMoving () = 0;
 
 		/**
 		 * Check if telescope is parking. Called during telescope

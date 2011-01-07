@@ -36,26 +36,6 @@ namespace rts2teld
 
 class ModelTest:public Telescope
 {
-	protected:
-		int startResync ()
-		{
-			return 0;
-		}
-		int stopMove ()
-		{
-			return 0;
-		}
-
-		int startPark ()
-		{
-			return 0;
-		}
-
-		int endPark ()
-		{
-			return 0;
-		}
-
 	public:
 		ModelTest ():Telescope (0, NULL)
 		{
@@ -67,10 +47,14 @@ class ModelTest:public Telescope
 			telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->lat);
 		}
 
-		void setObserverLat (double in_lat)
-		{
-			telLatitude->setValueDouble (in_lat);
-		}
+		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
+
+	protected:
+		int startResync () { return 0; }
+		int isMoving () { return -2; }
+		int stopMove () { return 0; }
+		int startPark () { return 0; }
+		int endPark () { return 0; }
 };
 
 class TelModelTest:public Rts2CliApp

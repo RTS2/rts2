@@ -42,6 +42,7 @@ class Kolonica:public Fork
 
 
 		virtual int startResync ();
+		virtual int isMoving ();
 		virtual int stopMove();
 		virtual int startPark();
 		virtual int endPark();
@@ -252,6 +253,11 @@ int Kolonica::init ()
 }
 
 int Kolonica::startResync ()
+{
+	return -1;
+}
+
+int Kolonica::isMoving ()
 {
 	return -1;
 }

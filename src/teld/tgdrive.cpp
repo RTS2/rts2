@@ -144,7 +144,7 @@ int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 int16_t TGDrive::read2b (int16_t address)
 {
 	writeMsg (0xD1, address);
-	char msg[5];
+	char msg[10];
 	ecRead (msg, 5);
 	return * (( int16_t *) (msg + 2));
 }
@@ -158,7 +158,7 @@ void TGDrive::write2b (int16_t address, int16_t data)
 int32_t TGDrive::read4b (int16_t address)
 {
 	writeMsg (0xD2, address);
-	char msg[7];
+	char msg[14];
 	ecRead (msg, 7);
 	return * (( int32_t *) (msg + 2));
 
@@ -207,8 +207,50 @@ void TGDrive::ecRead (char *msg, int len)
 	// read header
 	int ret;
 	ret = readPort (msg, len);
+	if (ret < 0)
+		throw rts2core::Error ("Cannot read from device");
 	// check checksum..
 	unsigned char cs = 0;
+	// get rid of all escapes..
+	int escaped = 0;
+	int checked_end = 1;
+	do
+	{
+		if (escaped > 0)
+		{
+			ret = readPort (msg + len, escaped);
+			if (ret < 0)
+				throw rts2core::Error ("cannot read rest from port");
+			len += escaped;
+			escaped = 0;
+		}
+		for (; checked_end < len; checked_end++)
+		{
+			if (msg[checked_end] == MSG_START)
+			{
+				if (checked_end == len - 1)
+				{
+					escaped++;
+					break;
+				}
+				checked_end++;
+				if (msg[checked_end] == MSG_START)
+				{
+					memmove (msg + checked_end - 1, msg + checked_end, len - checked_end);
+					len--;
+					checked_end--;
+					// only increase characters to receive if this is not the last character
+					if (checked_end < len - 1)
+						escaped++;
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "unescaped MSG_START" << sendLog;
+				}
+			}	
+		}
+	} while (escaped > 0);
+
 	for (int i = 1; i < len - 1; i++)
 		cs += msg[i];
 
@@ -270,6 +312,6 @@ void TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 
 void TGDrive::readStatus ()
 {
-	char msg[3];
+	char msg[6];
 	ecRead (msg, 3);
 }
