@@ -111,25 +111,25 @@ int Hlohovec::init ()
 	if (devDEC == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "DEC device file was not specified." << sendLog;
+		return -1;
 	}
 
 	raDrive = new TGDrive (devRA, "RA_", this);
-	raDrive->setDebug ();
+	if (printDebug ())
+		raDrive->setDebug ();
 	raDrive->setLogAsHex ();
 	ret = raDrive->init ();
 	if (ret)
 		return ret;
 
 
-	if (devDEC != NULL)
-	{
-		decDrive = new TGDrive (devDEC, "DEC_", this);
+	decDrive = new TGDrive (devDEC, "DEC_", this);
+	if (printDebug ())
 		decDrive->setDebug ();
-		decDrive->setLogAsHex ();
-		ret = decDrive->init ();
-		if (ret)
-			return ret;
-	}
+	decDrive->setLogAsHex ();
+	ret = decDrive->init ();
+	if (ret)
+		return ret;
 
 	Rts2Config *config = Rts2Config::instance ();
 	ret = config->loadFile ();
