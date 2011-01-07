@@ -64,8 +64,9 @@ class Hlohovec:public GEM
 
 		virtual int startResync ();
 		virtual int isMoving ();
-		virtual int stopMove ();
 		virtual int endMove ();
+		virtual int stopMove ();
+		virtual int setTo (double set_ra, double set_dec);
 		virtual int startPark ();
 		virtual int endPark ();
 
@@ -234,21 +235,16 @@ int Hlohovec::resetMount ()
 {
 	try
 	{
-		raDrive->write2b (TGA_MASTER_CMD, 5);
-		raDrive->write2b (TGA_MASTER_CMD, 2);
-		if (decDrive)
-		{
-			decDrive->write2b (TGA_MASTER_CMD, 5);
-			decDrive->write2b (TGA_MASTER_CMD, 2);
-		}
-
-		return GEM::resetMount ();
+		raDrive->reset ();
+		decDrive->reset ();
 	}
 	catch (TGDriveError e)
 	{
 	  	logStream (MESSAGE_ERROR) << "error reseting mount" << sendLog;
 		return -1;
 	}
+
+	return GEM::resetMount ();
 }
 
 int Hlohovec::startResync ()
@@ -270,6 +266,11 @@ int Hlohovec::isMoving ()
 	return -2;
 }
 
+int Hlohovec::endMove ()
+{
+	return 0;
+}
+
 int Hlohovec::stopMove ()
 {
 	raDrive->stop ();
@@ -277,8 +278,20 @@ int Hlohovec::stopMove ()
 	return 0;
 }
 
-int Hlohovec::endMove ()
+int Hlohovec::setTo (double set_ra, double set_dec)
 {
+	struct ln_equ_posn eq;
+	eq.ra = set_ra;
+	eq.dec = set_dec;
+	int32_t ac;
+	int32_t dc;
+	int32_t off;
+	getHomeOffset (off);
+	int ret = sky2counts (&eq, ac, dc, ln_get_julian_from_sys (), off);
+	if (ret)
+		return -1;
+	raDrive->setCurrentPos (ac);
+	decDrive->setCurrentPos (dc);
 	return 0;
 }
 

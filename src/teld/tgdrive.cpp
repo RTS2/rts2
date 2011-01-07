@@ -42,7 +42,7 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master)
 	strcpy (p, "TPOS");
 	_master->createValue (dPos, pbuf, "target position", true, RTS2_VALUE_WRITABLE);
 	strcpy (p, "APOS");
-	_master->createValue (aPos, pbuf, "actual position", true);
+	_master->createValue (aPos, pbuf, "actual position", true, RTS2_VALUE_WRITABLE);
 	strcpy (p, "POSERR");
 	_master->createValue (posErr, pbuf, "position error", true);
 	strcpy (p, "MAXPOSERR");
@@ -123,6 +123,10 @@ int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		{
 			setTargetPos (new_value->getValueInteger ());
 		}
+		else if (old_value == aPos)
+		{
+			setCurrentPos (new_value->getValueInteger ());
+		}
 		else if (old_value == maxPosErr)
 		{
 			write4b (TGA_MAXPOSERR, new_value->getValueInteger ());
@@ -174,6 +178,13 @@ void TGDrive::setTargetPos (int32_t pos)
 	write4b (TGA_TARPOS, pos);
 }
 
+void TGDrive::setCurrentPos (int32_t pos)
+{
+	write4b (TGA_CURRPOS, pos);
+	usleep (USEC_SEC / 10);
+	reset ();
+}
+
 void TGDrive::stop ()
 {
 	// other way to stop..with backslahs
@@ -198,6 +209,12 @@ bool TGDrive::checkStop ()
 		return false;
 	}
 	return true;
+}
+
+void TGDrive::reset ()
+{
+	write2b (TGA_MASTER_CMD, 5);
+	write2b (TGA_MASTER_CMD, 2);
 }
 
 int16_t TGDrive::read2b (int16_t address)
