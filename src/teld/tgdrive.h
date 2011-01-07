@@ -165,6 +165,8 @@ class TGDrive: public rts2core::ConnSerial
 
 		void setTargetPos (int32_t pos) { write4b (TGA_TARPOS, pos); }
 
+		int32_t getPosition () { return aPos->getValueInteger (); }
+
 		/**
 		 * Read word (2 bytes) from interface.
 		 *

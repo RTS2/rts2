@@ -214,21 +214,22 @@ void TGDrive::ecRead (char *msg, int len)
 	// get rid of all escapes..
 	int escaped = 0;
 	int checked_end = 1;
+	int clen = len;
 	do
 	{
 		if (escaped > 0)
 		{
-			ret = readPort (msg + len, escaped);
+			ret = readPort (msg + clen, escaped);
 			if (ret < 0)
 				throw rts2core::Error ("cannot read rest from port");
-			len += escaped;
+			clen += escaped;
 			escaped = 0;
 		}
 		for (; checked_end < len; checked_end++)
 		{
 			if (msg[checked_end] == MSG_START)
 			{
-				if (checked_end == len - 1)
+				if (checked_end == clen - 1)
 				{
 					escaped++;
 					break;
@@ -236,8 +237,8 @@ void TGDrive::ecRead (char *msg, int len)
 				checked_end++;
 				if (msg[checked_end] == MSG_START)
 				{
-					memmove (msg + checked_end - 1, msg + checked_end, len - checked_end);
-					len--;
+					memmove (msg + checked_end - 1, msg + checked_end, clen - checked_end);
+					clen--;
 					checked_end--;
 					// only increase characters to receive if this is not the last character
 					if (checked_end < len - 1)
