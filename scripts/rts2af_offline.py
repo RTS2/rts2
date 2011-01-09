@@ -123,10 +123,11 @@ class main(rts2af.AFScript):
             if( rts2af.verbose):
                 print '=======' + hdu.headerElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.headerElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
             
-            cat= rts2af.Catalogue(hdu,paramsSexctractor)
+            cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
             cat.runSExtractor()
             cat.createCatalogue()
             cat.cleanUp()
+
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             if( cat.matching(catr)):
                 print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
@@ -145,10 +146,15 @@ class main(rts2af.AFScript):
             cat.average('FWHM_IMAGE')
 
 
+        #cats.fitTheValues()
         #cats.average()
-        cats.fitTheValues()
+        #for focPos in sorted(fwhm):
+        #    print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
 
-        cats.printSelectedSXobjects()
+        #cats.printSelectedSXobjects()
+        #cats.ds9DisplayCatalogues()
+        cats.ds9WriteRegionFiles()
+        
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
 

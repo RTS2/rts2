@@ -90,6 +90,9 @@ class main(rts2af.AFScript):
         #cat.cleanUp()
 
         cat.average('FWHM_IMAGE')
+        cat.displayCatalogue()
+        time.sleep(1)
+
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

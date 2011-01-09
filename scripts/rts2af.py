@@ -463,6 +463,7 @@ class Catalogue():
     def __init__(self, fitsHDU=None, SExtractorParams=None, referenceCatalogue=None):
         self.fitsHDU  = fitsHDU
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
+        self.ds9RegionFileName= serviceFileOp.expandToDs9RegionFileName(self.fitsHDU)
         self.lines= []
         self.catalogue = {}
         self.sxObjects = {}
@@ -579,35 +580,98 @@ class Catalogue():
             if( sxObjectNumber== "12"):
                 print  "printCatalogue " + sxObjectNumber + ">"+ identifier + "< %f"% value 
 
-
     def printObject(self, sxObjectNumber):
-        for itentifier in self.SExtractorParams.identifiersAssoc:
-            if(((sxObjectNumber, itentifier)) in self.catalogue):
+        for identifier in self.SExtractorParams.identifiersAssoc:
+            if(((sxObjectNumber, identifier)) in self.catalogue):
                 if(verbose):
-                    print "printObject: object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
+                    print "printObject: object number " + sxObjectNumber + " identifier " + identifier + "value %f" % self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
 #                logger.error( "Catalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
             return True
 
         return False
+    
+    def ds9DisplayCatalogue(self, color="green", load=True):
+        import ds9
+        onscreenDisplay = ds9.ds9()
+        if( load):
+            onscreenDisplay.set('file {0}'.format(self.fitsHDU.fitsFileName))
+            # does not work (yet)       onscreenDisplay.set('global color=yellow')
+        try:
+            onscreenDisplay.set('regions', 'image; point ({0} {1}) '.format(self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY) + '# color=magenta font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {center acceptance}')
+            
+            onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) '.format(self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY,self.referenceCatalogue.circle.transformedRadius) + '# color=magenta font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {radius acceptance}')
+        except:
+            logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9: writing header")
+            
+        for (sxObjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
+            try:
+                onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')], color, sxObjectNumber))
+            except:
+                logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9, object: {0}".format(sxObjectNumber))
+                
 
+    def ds9WriteRegionFile(self, colorSelected="blue", colorAll="red"):
+
+        with open( self.ds9RegionFileName, 'wb') as ds9RegionFile:
+            ds9RegionFile.write("# Region file format: DS9 version 4.0\n")
+            ds9RegionFile.write("# Filename: {0}\n".format(self.fitsHDU.fitsFileName))
+
+
+            ds9RegionFile.write("image\n")
+            # ToDo: Solve that
+            if(runTimeConfig.value('DS9_DISPLAY_ACCEPTANCE_AREA')):
+                ds9RegionFile.write("point ({0},{1}) ".format( self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY) + "# color=magenta text = {center acceptance}\n")
+                ds9RegionFile.write("circle ({0},{1},{2}) ".format(self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY, self.referenceCatalogue.circle.transformedRadius) + "# color=magenta text = {radius acceptance}\n")
+
+            ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorSelected))
+
+            # objects selected (found in all fits images) 
+            for sxObjectNumber, sxObject in self.sxObjects.items():
+                sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                if( sxReferenceObject):
+                    radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]
+                    # ToDo: find out escape
+                    ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + "}\n")
+
+            # all objects found by sextractor
+            if(runTimeConfig.value('DS9_ALL')):
+                ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorAll))
+                ds9RegionFile.write("image\n")
+
+                for sxObjectNumber, sxObject in self.sxObjects.items():
+                    sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                    if( sxReferenceObject):
+                        # ToDo: find out escape
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + "}\n")
+                    else:
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + "}\n") 
+
+
+
+        ds9RegionFile.close()
+
+
+
+
+        
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
+            logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
             else:
                 logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " not found")
 
-        for itentifier in self.SExtractorParams.reference:
-            if(((sxObjectNumber, itentifier)) in self.catalogue):
-                del self.catalogue[(sxObjectNumber, itentifier)]
+        for identifier in self.SExtractorParams.reference:
+            if(((sxObjectNumber, identifier)) in self.catalogue):
+                del self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
 #                logger.error( "Catalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
@@ -816,12 +880,12 @@ class ReferenceCatalogue(Catalogue):
 
     def printObject(self, sxObjectNumber):
             
-        for itentifier in self.SExtractorParams.reference():
+        for identifier in self.SExtractorParams.reference():
             
-            if(((sxObjectNumber, itentifier)) in self.catalogue):
-                print "printObject: reference object number " + sxObjectNumber + " identifier " + itentifier + "value %f" % self.catalogue[(sxObjectNumber, itentifier)]
+            if(((sxObjectNumber, identifier)) in self.catalogue):
+                print "printObject: reference object number " + sxObjectNumber + " identifier " + identifier + "value %f" % self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "ReferenceCatalogue.printObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "ReferenceCatalogue.printObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
 #                logger.error( "ReferenceCatalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
@@ -831,18 +895,18 @@ class ReferenceCatalogue(Catalogue):
 
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found in sxObjects")
+            logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
             else:
                 logger.error( "ReferenceCatalogue.removeSXObject: object number " + sxObjectNumber + " not found")
 
-        for itentifier in self.SExtractorParams.reference:
-            if(((sxObjectNumber, itentifier)) in self.catalogue):
-                del self.catalogue[(sxObjectNumber, itentifier)]
+        for identifier in self.SExtractorParams.reference:
+            if(((sxObjectNumber, identifier)) in self.catalogue):
+                del self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + itentifier + "< not found, break")
+                logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
 #                logger.error( "ReferenceCatalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
@@ -962,13 +1026,15 @@ class Catalogues():
             self.dataFileNameFwhm= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FWHM_IMAGE')
             self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
             self.imageFilename= serviceFileOp.expandToFitImage( self.referenceCatalogue.fitsHDU)
+            self.ds9CommandFileName= serviceFileOp.expandToDs9CommandFileName(self.referenceCatalogue.fitsHDU)
         self.maxFwhm= 0.
         self.minFwhm= 0.
         self.maxFlux= 0.
         self.minFlux= 0.
         self.numberOfObjects= 0.
         self.numberOfObjectsFoundInAllFiles= 0.
-
+        self.ds9Command=""
+        
     def validate(self):
         if( len(self.CataloguesList) > 0):
             # default is False
@@ -1085,14 +1151,48 @@ class Catalogues():
         if(verbose):
             print "numberOfObjects========================= %d " % (self.numberOfObjects)
 
-        for focPos in sorted(fwhm):
-            print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
+    def ds9DisplayCatalogues(self):
+
+        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+            cat.ds9DisplayCatalogue("blue")
+            # if reference catr.ds9DisplayCatalogue("yellow", False)
+
+    def ds9WriteRegionFiles(self):
+
+        self.ds9Command= "ds9 -zoom to fit -scale mode zscale\\\n" 
+
+        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+
+            if( cat.catalogueFileName == cat.referenceCatalogue.catalogueFileName):
+                cat.ds9WriteRegionFile("yelow")
+            else:
+                cat.ds9WriteRegionFile("blue")
+
+            self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + " -region " + serviceFileOp.expandToDs9RegionFileName(cat.referenceCatalogue.fitsHDU) + "\\\n")
+
+
+        self.ds9CommandFileWrite()
+
+        
+    def ds9CommandFileWrite(self):
+        self.ds9CommandAdd(" -single -blink\n")
+
+        with open( self.ds9CommandFileName, 'wb') as ds9CommandFile:
+            ds9CommandFile.write("#!/bin/bash\n") 
+            ds9CommandFile.write(self.ds9Command) 
+
+        ds9CommandFile.close()
+
+        
+    def ds9CommandAdd(self, ds9CommandPart):
+        self.ds9Command= self.ds9Command + ds9CommandPart
+
 
 import sys
 import pyfits
 
 class FitsHDU():
-    """Class holding fits file name and ist properties"""
+    """Class holding fits file name and its properties"""
     def __init__(self, fitsFileName=None, referenceFitsHDU=None):
         if(referenceFitsHDU==None):
             self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName)
@@ -1327,7 +1427,42 @@ class ServiceFileOperations():
             return fileName
         else:
             return self.runTimePath + '/' + fileName
+# ToDo: refactor with expandToSkyList
+    def expandToDs9RegionFileName( self, fitsHDU=None):
+        if( fitsHDU==None):
+            logger.error('ServiceFileOperations.expandToDs9RegionFileName: no hdu given')
+        
+        
+        items= runTimeConfig.value('DS9_REGION_FILE').split('.')
+        # not nice
+        names= fitsHDU.fitsFileName.split('/')
+        try:
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '-' + names[-1] + '-' + str(fitsHDU.headerElements['FOC_POS']) + '.' + items[1])
+        except:
+            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
+            
+        if(verbose):
+            print 'ServiceFileOperations:expandToDs9RegionFileName expanded to ' + fileName
+        
+        return  self.expandToTmp(fileName)
 
+        
+    def expandToDs9CommandFileName( self, fitsHDU=None):
+        if( fitsHDU==None):
+            logger.error('ServiceFileOperations.expandToDs9COmmandFileName: no hdu given')
+        
+        items= runTimeConfig.value('DS9_REGION_FILE').split('.')
+        try:
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.' + items[1] + '.sh')
+        except:
+            fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1]+ '.sh')
+            
+        #if(verbose):
+        print 'ServiceFileOperations:expandToDs9CommandFileName expanded to ' + fileName
+        
+        return  self.expandToTmp(fileName)
+
+        
     def defineRunTimePath(self, fileName=None):
         if( self.absolutePath(fileName)):
             return fileName
@@ -1337,7 +1472,6 @@ class ServiceFileOperations():
                 self.runTimePath= root
                 return True
         return False
-
 
 #
 # stub, will be called in main script 
@@ -1349,4 +1483,4 @@ class Service():
     def __init__(self):
         print
 
-#  LocalWords:  itentifier
+
