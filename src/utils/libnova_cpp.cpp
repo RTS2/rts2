@@ -722,6 +722,11 @@ std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
 {
 	char old_fill = _os.fill ('0');
 	int old_precison = _os.precision (3);
+	if (l_date.date.seconds == -60)
+	{
+	  	_os << "----/--/-- --:--:--.--- UT";
+		return _os;
+	}
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os << std::setw (4) << l_date.date.years << "/"

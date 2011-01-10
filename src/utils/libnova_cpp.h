@@ -561,9 +561,16 @@ class LibnovaDateDouble:public LibnovaDate
 		 */
 		LibnovaDateDouble (double t):LibnovaDate (false)
 		{
-			time_t tt = (time_t) ceil (t);
-			ln_get_date_from_timet (&tt, &date);
-			date.seconds += (t - tt);
+			if (isnan (t))
+			{
+				date.seconds = -60;
+			}
+			else
+			{
+				time_t tt = (time_t) ceil (t);
+				ln_get_date_from_timet (&tt, &date);
+				date.seconds += (t - tt);
+			}
 		}
 };
 
