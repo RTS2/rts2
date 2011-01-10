@@ -1849,6 +1849,9 @@ int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 				case RTS2_VALUE_DOUBLE:
 					new_value = new DoubleArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 					break;
+				case RTS2_VALUE_TIME:
+					new_value = new TimeArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
 				case RTS2_VALUE_INTEGER:
 					new_value = new IntegerArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 					break;

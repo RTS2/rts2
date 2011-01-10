@@ -549,8 +549,7 @@ class Rts2ValueTime:public Rts2ValueDouble
 {
 	public:
 		Rts2ValueTime (std::string in_val_name);
-		Rts2ValueTime (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		void setValueTime (time_t in_value)
 		{
 			Rts2ValueDouble::setValueDouble (in_value);

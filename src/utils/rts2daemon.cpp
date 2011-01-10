@@ -532,6 +532,9 @@ Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 				case RTS2_VALUE_DOUBLE:
 					dup_val = new DoubleArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;
+				case RTS2_VALUE_TIME:
+					dup_val = new TimeArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
+					break;
 				case RTS2_VALUE_INTEGER:
 					dup_val = new IntegerArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;

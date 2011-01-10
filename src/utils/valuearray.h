@@ -1,6 +1,7 @@
 /* 
  * Array values.
  * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics CR <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -163,11 +164,25 @@ class DoubleArray: public ValueArray
 
 		double operator[] (int i) { return value[i]; }
 
-	private:
+	protected:
 		std::vector <double> value;
 		std::string _os;
 };
 
+/**
+ * Holds times. Can hold nan times.
+ */
+class TimeArray:public DoubleArray
+{
+	public:
+		TimeArray (std::string in_val_name);
+		TimeArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
+
+		virtual const char *getDisplayValue ();
+
+		virtual void setFromValue (Rts2Value *newValue);
+		virtual bool isEqual (Rts2Value *other_val);
+};
 
 /**
  * Holds array of integer values.

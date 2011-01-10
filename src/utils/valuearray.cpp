@@ -20,6 +20,7 @@
 #include "rts2conn.h"
 #include "valuearray.h"
 
+#include "libnova_cpp.h"
 #include "utilsfunc.h"
 
 using namespace rts2core;
@@ -181,6 +182,69 @@ bool DoubleArray::isEqual (Rts2Value *other_val)
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 	{
 		DoubleArray *ov = (DoubleArray *) other_val;
+		if (ov->size () != value.size ())
+			return false;
+		
+		std::vector <double>::iterator iter1;
+		std::vector <double>::iterator iter2;
+		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
+		{
+			if (*iter1 != *iter2)
+				return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+TimeArray::TimeArray (std::string in_val_name):DoubleArray (in_val_name)
+{
+	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_ARRAY | RTS2_VALUE_TIME;
+}
+
+TimeArray::TimeArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags):DoubleArray (_val_name, _description, writeToFits, flags)
+{
+	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_ARRAY | RTS2_VALUE_TIME;
+}
+
+const char *TimeArray::getDisplayValue ()
+{
+	std::ostringstream oss;
+	std::vector <double>::iterator iter = valueBegin ();
+	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	while (iter != valueEnd ())
+	{
+		oss << LibnovaDateDouble (*iter);
+		iter++;
+		if (iter == valueEnd ())
+			break;
+		oss << std::string (" ");
+	}
+	_os = oss.str ();
+	return _os.c_str ();
+}
+
+void TimeArray::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_TIME))
+	{
+		value.clear ();
+		TimeArray *nv = (TimeArray *) newValue;
+		for (std::vector <double>::iterator iter = nv->valueBegin (); iter != nv->valueEnd (); iter++)
+			value.push_back (*iter);
+		changed ();
+	}
+	else
+	{
+		setValueCharArr (newValue->getValue ());
+	}
+}
+
+bool TimeArray::isEqual (Rts2Value *other_val)
+{
+	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_TIME))
+	{
+		TimeArray *ov = (TimeArray *) other_val;
 		if (ov->size () != value.size ())
 			return false;
 		
