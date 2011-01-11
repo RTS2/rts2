@@ -1,6 +1,7 @@
 /* 
  * API access for RTS2.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,6 +46,24 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (iter == master->getConnections ()->end ())
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter);
+		}
+		else if (vals[0] == "set")
+		{
+			const char *device = params->getString ("d","");
+			const char *variable = params->getString ("n", "");
+			const char *value = params->getString ("v", "");
+			if (variable[0] == '\0')
+				throw XmlRpcException ("variable name not set - missing or empty n parameter");
+			if (value[0] == '\0')
+				throw XmlRpcException ("value not set - missing or empty v parameter");
+			Rts2Conn *conn = master->getOpenConnection (device);
+			if (conn == NULL)
+				throw XmlRpcException ("cannot find device with given name");
+			Rts2Value * rts2v = master->getValue (device, variable);
+			if (rts2v == NULL)
+				throw XmlRpcException ("cannot find variable");
+			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), '=', std::string (value)));
+			sendConnectionValues (os, conn);
 		}
 		else
 		{
