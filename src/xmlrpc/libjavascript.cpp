@@ -803,6 +803,27 @@ const char *widgetsScript =
   "hr.send(null);\n"
 "}\n";
 
+const char *setGetApi =
+"function setCall (device, variable, value){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/set?d=' + device + '&n=' + variable + '&v=' + value,true);\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+"function getCall (device, variable, input){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/get?d=' + device, true);\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "input.value = t[variable];\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n";
+
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
@@ -833,6 +854,8 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 		reply = tableScript;
 	else if (vals[0] == "widgets.js")
 	  	reply = widgetsScript;
+	else if (vals[0] == "setgetapi.js")
+	  	reply = setGetApi;
 	else
 		throw rts2core::Error ("JavaScript not found");
 

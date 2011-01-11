@@ -107,7 +107,15 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bo
 			}
 			else if (ignoreUnknownTags)
 			{
-				push_back (new ExpandStringSingleTag (ptr));
+			  	if (xmlStrEqual (ptr->name, (xmlChar *) "script"))
+				{
+					push_back (new ExpandStringOpenTag (ptr));
+					push_back (new ExpandStringCloseTag (ptr));
+				}
+				else
+				{
+					push_back (new ExpandStringSingleTag (ptr));
+				}
 			}
 		}
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "value"))

@@ -27,6 +27,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
+	Rts2Conn *conn;
 
 	// widgets - divs with informations
 	if (vals.size () >= 2 && vals[0] == "w")
@@ -56,13 +57,21 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw XmlRpcException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
 				throw XmlRpcException ("value not set - missing or empty v parameter");
-			Rts2Conn *conn = master->getOpenConnection (device);
+			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device with given name");
 			Rts2Value * rts2v = master->getValue (device, variable);
 			if (rts2v == NULL)
 				throw XmlRpcException ("cannot find variable");
 			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), '=', std::string (value)));
+			sendConnectionValues (os, conn);
+		}
+		else if (vals[0] == "get")
+		{
+			const char *device = params->getString ("d","");
+			conn = master->getOpenConnection (device);
+			if (conn == NULL)
+				throw XmlRpcException ("cannot find device");
 			sendConnectionValues (os, conn);
 		}
 		else
@@ -92,6 +101,8 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 			case RTS2_VALUE_INTEGER:
 			case RTS2_VALUE_LONGINT:
 			case RTS2_VALUE_SELECTION:
+			case RTS2_VALUE_BOOL:
+			case RTS2_VALUE_TIME:
 				os << "\"" << (*iter)->getName () << "\":" << (*iter)->getValue ();
 				break;
 			case RTS2_VALUE_RADEC:
