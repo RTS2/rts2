@@ -35,7 +35,7 @@ ExpandStringOpenTag::ExpandStringOpenTag (xmlNodePtr ptr, bool closeTag):ExpandS
 	{
 		oss << " " << aptr->name;
 		if (aptr->children->content)
-			oss << "=" << aptr->children->content;
+			oss << "='" << aptr->children->content << "'";
 	}
 
 	if (closeTag)
