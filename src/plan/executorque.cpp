@@ -29,6 +29,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	observer = _observer;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
+	master->createValue (nextTimes, (sn + "_times").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBellowHorizon, (sn + "_skip_bellow").c_str (), "skip targets bellow horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBellowHorizon->setValueBool (false);
@@ -45,16 +46,18 @@ ExecutorQueue::~ExecutorQueue ()
 	updateVals ();
 }
 
-int ExecutorQueue::addFront (rts2db::Target *nt)
+int ExecutorQueue::addFront (rts2db::Target *nt, double t)
 {
 	push_front (nt);
+	targetTimes[nt] = t;
 	updateVals ();
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t)
 {
 	push_back (nt);
+	targetTimes[nt] = t;
 	updateVals ();
 	return 0;
 }
@@ -66,7 +69,8 @@ void ExecutorQueue::beforeChange ()
 		case QUEUE_FIFO:
 			break;
 		case QUEUE_CIRCULAR:
-			if (!empty ())
+			// shift only if queue is not empty and time for first observation already expires..
+			if (!empty () && frontTimeExpires ())
 			{
 				push_back (createTarget (front ()->getTargetID (), *observer));
 				pop_front ();
@@ -80,6 +84,7 @@ void ExecutorQueue::beforeChange ()
 			break;
 	}
 	filterBellowHorizon ();
+	filterExpired ();
 	updateVals ();
 }
 
@@ -90,7 +95,8 @@ void ExecutorQueue::popFront ()
 		case QUEUE_FIFO:
 		case QUEUE_HIGHEST:
 		case QUEUE_WESTEAST:
-			pop_front ();
+			if (frontTimeExpires ())
+				pop_front ();
 			break;
 		case QUEUE_CIRCULAR:
 			break;
@@ -106,21 +112,26 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 			delete *iter;
 	}
 	clear ();
+	targetTimes.clear ();
 }
 
 void ExecutorQueue::updateVals ()
 {
 	std::vector <int> _id_arr;
 	std::vector <std::string> _name_arr;
+	std::vector <double> _times_arr;
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		_id_arr.push_back ((*iter)->getTargetID ());
 		_name_arr.push_back ((*iter)->getTargetName ());
+		_times_arr.push_back (targetTimes[(*iter)]);
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
+	nextTimes->setValueArray (_times_arr);
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
+	master->sendValueAll (nextTimes);
 }
 
 void ExecutorQueue::filterBellowHorizon ()
@@ -154,4 +165,55 @@ void ExecutorQueue::filterBellowHorizon ()
 			}
 		}
 	}
+}
+
+void ExecutorQueue::filterExpired ()
+{
+	ExecutorQueue::iterator iter = begin ();
+	if (iter == end ())
+		return;
+	ExecutorQueue::iterator iter2 = begin ();
+	iter2++;
+	while (iter2 != end ())
+	{
+		double t = targetTimes[(*iter2)];
+		bool do_erase = false;
+		switch (queueType->getValueInteger ())
+		{
+			case QUEUE_FIFO:
+			case QUEUE_CIRCULAR:
+				do_erase = (((*iter)->observationStarted () && isnan (t)) || t <= master->getNow ());
+				break;
+			default:
+				do_erase = (!isnan (t) && t <= master->getNow ());
+				break;
+		}
+
+		if (do_erase)
+		{
+			iter = erase (iter);
+			iter2 = iter;
+			iter2++;
+		}
+		else
+		{
+			iter++;
+			iter2++;
+		}
+	}
+}
+
+bool ExecutorQueue::frontTimeExpires ()
+{
+	ExecutorQueue::iterator iter = begin ();
+	if (iter == end ())
+		return false;
+	iter++;
+	if (iter == end ())
+		return false;
+	double t = targetTimes[*iter];
+	std::cout << "frontTimeExpires t: " << t << std::endl;
+	if (isnan (t) || t <= master->getNow ())
+		return true;
+	return false;
 }

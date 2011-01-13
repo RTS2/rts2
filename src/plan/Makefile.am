@@ -31,7 +31,7 @@ rts2_scriptor_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CF
 
 if PGSQL
 
-libscript_a_SOURCES += rts2execclidb.cpp elementacquire.cpp
+libscript_a_SOURCES += rts2execclidb.cpp elementacquire.cpp executorque.cpp
 
 rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptexec_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
@@ -43,7 +43,7 @@ bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-ma
 	       rts2-plan 
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
-rts2_executor_SOURCES = executor.cpp executorque.cpp
+rts2_executor_SOURCES = executor.cpp
 rts2_executor_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_executor_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 

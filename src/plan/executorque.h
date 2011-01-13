@@ -42,8 +42,8 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
 		virtual ~ExecutorQueue ();
 
-		int addFront (rts2db::Target *nt);
-		int addTarget (rts2db::Target *nt);
+		int addFront (rts2db::Target *nt, double t = rts2_nan ("f"));
+		int addTarget (rts2db::Target *nt, double t = rts2_nan ("f"));
 		
 		/**
 		 * Put next target on front of the queue.
@@ -59,6 +59,9 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 
 		rts2core::IntegerArray *nextIds;
 		rts2core::StringArray *nextNames;
+		rts2core::TimeArray *nextTimes;
+
+		std::map <rts2db::Target *, double> targetTimes;
 
 		Rts2ValueSelection *queueType;
 		Rts2ValueBool *skipBellowHorizon;
@@ -72,6 +75,13 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 		// if skipBellowHorizon is set to false (default), remove observations which are currently
 		// bellow horizon. If skipBellowHorizon is true, put them to back of the queue (so they will not be scheduled).
 		void filterBellowHorizon ();
+
+		// remove observations which observing time expired
+		void filterExpired ();
+
+		// return true if its't time to remove first element from the queue. This is usaully when the
+		// second observation next time is before the current time
+		bool frontTimeExpires ();
 };
 
 }
