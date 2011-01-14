@@ -853,7 +853,7 @@ class Camera:public Rts2ScriptDevice
 
 	protected:
 		Rts2ValueSelection *camFilterVal;
-		rts2core::IntegerArray *camFilterOffsets;
+		rts2core::DoubleArray *camFilterOffsets;
 	
 	private:
 		Rts2ValueInteger *camFocVal;

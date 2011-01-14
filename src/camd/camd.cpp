@@ -1185,7 +1185,7 @@ void Camera::offsetForFilter (int new_filter)
 		return;
 	struct focuserMove fm;
 	fm.focuserName = focuserDevice;
-	fm.value = camFilterOffsets->getValueAt (new_filter);
+	fm.value = (*camFilterOffsets)[new_filter];
 	fm.conn = this;
 	postEvent (new Rts2Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
 	if (fm.focuserName)
@@ -1363,10 +1363,10 @@ void Camera::setFilterOffsets (char *opt)
 		if (*o == ':')
 		{
 			*o = '\0';
-			camFilterOffsets->addValue (atoi (s));
+			camFilterOffsets->addValue (atof (s));
 			s = o + 1;
 		}
 	}
 	if (s != 0)
-		camFilterOffsets->addValue (atoi (s));
+		camFilterOffsets->addValue (atof (s));
 }

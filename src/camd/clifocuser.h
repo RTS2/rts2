@@ -33,7 +33,7 @@ namespace rts2camd
 struct focuserMove
 {
 	char *focuserName;
-	int value;
+	float value;
 	void *conn;
 };
 
