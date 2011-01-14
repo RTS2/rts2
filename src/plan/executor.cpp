@@ -933,14 +933,17 @@ int Executor::commandAuthorized (Rts2Conn * conn)
 		while (!conn->paramEnd ())
 		{
 			if (conn->paramNextInteger (&tar_id))
+			{
+				failed++;
 				continue;
+			}
 			int ret = queueTarget (tar_id);
 			if (ret)
 				failed++;
 		}
 		if (failed != 0)
 			return -2;
-		return 0;
+		return failed == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue_at"))
 	{
@@ -949,14 +952,15 @@ int Executor::commandAuthorized (Rts2Conn * conn)
 		while (!conn->paramEnd ())
 		{
 			if (conn->paramNextInteger (&tar_id) || conn->paramNextDouble (&t))
+			{
+				failed++;
 				continue;
+			}
 			int ret = queueTarget (tar_id, t);
 			if (ret)
 				failed++;
 		}
-		if (failed != 0)
-		 	return -2;
-		return 0;
+		return failed == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("next"))
 	{

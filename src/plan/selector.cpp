@@ -19,6 +19,7 @@
 
 #include "rts2selector.h"
 #include "connselector.h"
+#include "executorque.h"
 
 #include "../utils/rts2devclient.h"
 #include "../utilsdb/rts2devicedb.h"
@@ -26,44 +27,37 @@
 #include "../utils/rts2command.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
+#define OPT_ADD_QUEUE           OPT_LOCAL + 6
+
+namespace rts2selector
+{
 
 class Rts2DevClientTelescopeSel:public rts2core::Rts2DevClientTelescope
 {
-	protected:
-		virtual void moveEnd ();
 	public:
-		Rts2DevClientTelescopeSel (Rts2Conn * in_connection);
+		Rts2DevClientTelescopeSel (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection) {}
+
+	protected:
+		virtual void moveEnd ()
+		{
+			if (!moveWasCorrecting)
+				connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+			rts2core::Rts2DevClientTelescope::moveEnd ();
+		}
 };
-
-Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
-{
-}
-
-void Rts2DevClientTelescopeSel::moveEnd ()
-{
-	if (!moveWasCorrecting)
-		connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-	rts2core::Rts2DevClientTelescope::moveEnd ();
-}
-
 
 class Rts2DevClientExecutorSel:public rts2core::Rts2DevClientExecutor
 {
-	protected:
-		virtual void lastReadout ();
 	public:
-		Rts2DevClientExecutorSel (Rts2Conn * in_connection);
+		Rts2DevClientExecutorSel (Rts2Conn * in_connection):rts2core::Rts2DevClientExecutor (in_connection) {}
+
+	protected:
+		virtual void lastReadout ()
+		{
+			connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+			rts2core::Rts2DevClientExecutor::lastReadout ();
+		}
 };
-
-Rts2DevClientExecutorSel::Rts2DevClientExecutorSel (Rts2Conn * in_connection):rts2core::Rts2DevClientExecutor (in_connection)
-{
-}
-
-void Rts2DevClientExecutorSel::lastReadout ()
-{
-	connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-	rts2core::Rts2DevClientExecutor::lastReadout ();
-}
 
 class SelectorDev:public Rts2DeviceDb
 {
@@ -80,9 +74,13 @@ class SelectorDev:public Rts2DeviceDb
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
+
+		virtual int init ();
 
 	private:
 		rts2plan::Selector * sel;
@@ -98,7 +96,16 @@ class SelectorDev:public Rts2DeviceDb
 		Rts2ValueDouble *flatSunMax;
 
 		Rts2ValueString *nightDisabledTypes;
+
+		struct ln_lnlat_posn *observer;
+
+		std::list <rts2plan::ExecutorQueue> queues;
+		std::list <const char *> queueNames;
 };
+
+}
+
+using namespace rts2selector;
 
 SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
@@ -121,7 +128,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
 
-	addOption (OPT_IDLE_SELECT, "idle_select", 1, "selection timeout (reselect every I seconds)");
+	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
+	addOption (OPT_ADD_QUEUE, "add-queue", 1, "add queues with given names; queues will have priority in selection in order they are added");
 }
 
 SelectorDev::~SelectorDev (void)
@@ -137,6 +145,9 @@ int SelectorDev::processOption (int in_opt)
 			idle_select->setValueCharArr (optarg);
 			night_idle_select->setValueCharArr (optarg);
 			break;
+		case OPT_ADD_QUEUE:
+			queueNames.push_back (optarg);
+			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
 	}
@@ -146,8 +157,6 @@ int SelectorDev::processOption (int in_opt)
 int SelectorDev::reloadConfig ()
 {
 	int ret;
-	struct ln_lnlat_posn *observer;
-
 	ret = Rts2DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
@@ -168,6 +177,19 @@ int SelectorDev::reloadConfig ()
 	deleteTimers (EVENT_SELECT_NEXT);
 	addTimer (idle_select->getValueInteger (), new Rts2Event (EVENT_SELECT_NEXT));
 
+	return 0;
+}
+
+int SelectorDev::init ()
+{
+	int ret = Rts2DeviceDb::init ();
+	if (ret)
+		return ret;
+	
+	for (std::list <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
+	{
+		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
+	}
 	return 0;
 }
 
@@ -252,6 +274,50 @@ int SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 
 	return Rts2DeviceDb::setValue (old_value, new_value);
+}
+
+int SelectorDev::commandAuthorized (Rts2Conn * conn)
+{
+	int tar_id;
+	if (conn->isCommand ("queue"))
+	{
+		char *name;
+		if (conn->paramNextString (&name))
+			return -2;
+		// try to find queue with name..
+		int i = 0;
+		std::list <rts2plan::ExecutorQueue>::iterator qi = queues.begin ();
+		std::list <const char *>::iterator iter;
+		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, i++, qi++)
+		{
+			if (strcmp (*iter, name) == 0)
+				break;
+		}
+		if (iter == queueNames.end ())
+			return -2;
+		rts2plan::ExecutorQueue * q = &(*qi);
+		int failed = 0;
+		while (!conn->paramEnd ())
+		{
+			if (conn->paramNextInteger (&tar_id))
+			{
+				failed++;
+				continue;
+			}
+			rts2db::Target *nt = createTarget (tar_id, observer);
+			if (!nt)
+			{
+				failed++;
+				continue;
+			}
+			q->addTarget (nt);
+		}
+		return failed == 0 ? 0 : -2;
+	}
+	else
+	{
+		return Rts2DeviceDb::commandAuthorized (conn);
+	}
 }
 
 int SelectorDev::changeMasterState (int new_master_state)

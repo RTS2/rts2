@@ -46,6 +46,11 @@ class QueuedTarget
 
 		~QueuedTarget () {}
 
+		/**
+		 * Return true if target observation times does not expired - e.g. t_start is nan or t_start <= now.
+		 */
+		bool notExpired (double now);
+
 		rts2db::Target *target;
 		double t_start;
 		double t_end;
@@ -64,8 +69,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
 		virtual ~ExecutorQueue ();
 
-		int addFront (rts2db::Target *nt, double t = rts2_nan ("f"));
-		int addTarget (rts2db::Target *nt, double t = rts2_nan ("f"));
+		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
+		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		
 		/**
 		 * Put next target on front of the queue.
@@ -81,7 +86,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		rts2core::IntegerArray *nextIds;
 		rts2core::StringArray *nextNames;
-		rts2core::TimeArray *nextTimes;
+		rts2core::TimeArray *nextStartTimes;
+		rts2core::TimeArray *nextEndTimes;
 
 		Rts2ValueSelection *queueType;
 		Rts2ValueBool *skipBellowHorizon;

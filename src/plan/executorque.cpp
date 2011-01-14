@@ -41,6 +41,11 @@ class sortQuedTargetWestEast:public rts2db::sortWestEast
 		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
 };
 
+bool QueuedTarget::notExpired (double now)
+{
+	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end <= now);
+}
+
 ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer)
 {
   	master = _master;
@@ -48,7 +53,8 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	observer = _observer;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
-	master->createValue (nextTimes, (sn + "_times").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
+	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
+	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBellowHorizon, (sn + "_skip_bellow").c_str (), "skip targets bellow horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBellowHorizon->setValueBool (false);
@@ -65,16 +71,16 @@ ExecutorQueue::~ExecutorQueue ()
 	updateVals ();
 }
 
-int ExecutorQueue::addFront (rts2db::Target *nt, double t)
+int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 {
-	push_front (QueuedTarget (nt, t));
+	push_front (QueuedTarget (nt, t_start, t_end));
 	updateVals ();
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end)
 {
-	push_back (QueuedTarget (nt, t));
+	push_back (QueuedTarget (nt, t_start, t_end));
 	updateVals ();
 	return 0;
 }
@@ -138,19 +144,24 @@ void ExecutorQueue::updateVals ()
 {
 	std::vector <int> _id_arr;
 	std::vector <std::string> _name_arr;
-	std::vector <double> _times_arr;
+	std::vector <double> _start_arr;
+	std::vector <double> _end_arr;
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
 		_name_arr.push_back (iter->target->getTargetName ());
-		_times_arr.push_back (iter->t_start);
+		_start_arr.push_back (iter->t_start);
+		_end_arr.push_back (iter->t_end);
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
-	nextTimes->setValueArray (_times_arr);
+	nextStartTimes->setValueArray (_start_arr);
+	nextEndTimes->setValueArray (_end_arr);
+
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
-	master->sendValueAll (nextTimes);
+	master->sendValueAll (nextStartTimes);
+	master->sendValueAll (nextEndTimes);
 }
 
 void ExecutorQueue::filterBellowHorizon ()
@@ -230,8 +241,5 @@ bool ExecutorQueue::frontTimeExpires ()
 	iter++;
 	if (iter == end ())
 		return false;
-	double t = iter->t_start;
-	if (isnan (t) || t <= master->getNow ())
-		return true;
-	return false;
+	return iter->notExpired (master->getNow ());
 }
