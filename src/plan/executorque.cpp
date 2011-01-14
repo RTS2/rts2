@@ -1,6 +1,5 @@
 /*
- * Executor body.
- * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
+ * Executor queue.
  * Copyright (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +20,26 @@
 #include "executorque.h"
 
 using namespace rts2plan;
+
+/**
+ * Sorting based on altitude.
+ */
+class sortQuedTargetByAltitude:public rts2db::sortByAltitude
+{
+	public:
+		sortQuedTargetByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f")):rts2db::sortByAltitude (_observer, _jd) {}
+		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
+};
+
+/**
+ * Sort from westmost to eastmost objects
+ */
+class sortQuedTargetWestEast:public rts2db::sortWestEast
+{
+	public:
+		sortQuedTargetWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f")):rts2db::sortWestEast (_observer, _jd) {};
+		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
+};
 
 ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer)
 {
@@ -48,16 +67,14 @@ ExecutorQueue::~ExecutorQueue ()
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t)
 {
-	push_front (nt);
-	targetTimes[nt] = t;
+	push_front (QueuedTarget (nt, t));
 	updateVals ();
 	return 0;
 }
 
 int ExecutorQueue::addTarget (rts2db::Target *nt, double t)
 {
-	push_back (nt);
-	targetTimes[nt] = t;
+	push_back (QueuedTarget (nt, t));
 	updateVals ();
 	return 0;
 }
@@ -72,15 +89,15 @@ void ExecutorQueue::beforeChange ()
 			// shift only if queue is not empty and time for first observation already expires..
 			if (!empty () && frontTimeExpires ())
 			{
-				push_back (createTarget (front ()->getTargetID (), *observer));
+				push_back (createTarget (front ().target->getTargetID (), *observer));
 				pop_front ();
 			}
 			break;
 		case QUEUE_HIGHEST:
-			sort (rts2db::sortByAltitude (*observer));
+			sort (sortQuedTargetByAltitude (*observer));
 			break;
 		case QUEUE_WESTEAST:
-			sort (rts2db::sortWestEast (*observer));
+			sort (sortQuedTargetWestEast (*observer));
 			break;
 	}
 	filterBellowHorizon ();
@@ -108,11 +125,13 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 {
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (*iter != currentTarget)
-			delete *iter;
+		// do not delete current target
+		if (iter->target == currentTarget)
+			iter->target = NULL;
+		else
+			delete iter->target;
 	}
 	clear ();
-	targetTimes.clear ();
 }
 
 void ExecutorQueue::updateVals ()
@@ -122,9 +141,9 @@ void ExecutorQueue::updateVals ()
 	std::vector <double> _times_arr;
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
-		_id_arr.push_back ((*iter)->getTargetID ());
-		_name_arr.push_back ((*iter)->getTargetName ());
-		_times_arr.push_back (targetTimes[(*iter)]);
+		_id_arr.push_back (iter->target->getTargetID ());
+		_name_arr.push_back (iter->target->getTargetName ());
+		_times_arr.push_back (iter->t_start);
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
@@ -141,11 +160,11 @@ void ExecutorQueue::filterBellowHorizon ()
 		rts2db::Target *firsttar = NULL;
 		double JD = ln_get_julian_from_sys ();
 
-		for (ExecutorQueue::iterator iter = begin (); iter != end () && *iter != firsttar;)
+		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
 		{
 			struct ln_hrz_posn hrz;
-			(*iter)->getAltAz (&hrz, JD, *observer);
-			if ((*iter)->isAboveHorizon (&hrz))
+			iter->target->getAltAz (&hrz, JD, *observer);
+			if (iter->target->isAboveHorizon (&hrz))
 			{
 				iter++;
 				continue;
@@ -154,7 +173,7 @@ void ExecutorQueue::filterBellowHorizon ()
 			if (skipBellowHorizon->getValueBool ())
 			{
 				if (firsttar == NULL)
-					firsttar = *iter;
+					firsttar = iter->target;
 
 				push_back (*iter);
 				iter = erase (iter);
@@ -176,13 +195,13 @@ void ExecutorQueue::filterExpired ()
 	iter2++;
 	while (iter2 != end ())
 	{
-		double t = targetTimes[(*iter2)];
+		double t = iter2->t_start;
 		bool do_erase = false;
 		switch (queueType->getValueInteger ())
 		{
 			case QUEUE_FIFO:
 			case QUEUE_CIRCULAR:
-				do_erase = (((*iter)->observationStarted () && isnan (t)) || t <= master->getNow ());
+				do_erase = ((iter->target->observationStarted () && isnan (t)) || t <= master->getNow ());
 				break;
 			default:
 				do_erase = (!isnan (t) && t <= master->getNow ());
@@ -211,8 +230,7 @@ bool ExecutorQueue::frontTimeExpires ()
 	iter++;
 	if (iter == end ())
 		return false;
-	double t = targetTimes[*iter];
-	std::cout << "frontTimeExpires t: " << t << std::endl;
+	double t = iter->t_start;
 	if (isnan (t) || t <= master->getNow ())
 		return true;
 	return false;

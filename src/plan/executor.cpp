@@ -358,7 +358,7 @@ void Executor::postEvent (Rts2Event * event)
 				}
 				// scriptCount is not 0, but we hit continues target..
 				else if (currentTarget->isContinues () == 1
-					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ())
+					&& (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ())
 					)
 				{
 					// wait, if we are in stop..don't queue it again..
@@ -466,8 +466,8 @@ int Executor::info ()
 	}
 	else
 	{
-		next_id->setValueInteger (getActiveQueue ()->front ()->getTargetID ());
-		next_name->setValueCharArr (getActiveQueue ()->front ()->getTargetName ());
+		next_id->setValueInteger (getActiveQueue ()->front ().target->getTargetID ());
+		next_name->setValueCharArr (getActiveQueue ()->front ().target->getTargetName ());
 	}
 
 	return Rts2DeviceDb::info ();
@@ -530,7 +530,7 @@ int Executor::setNext (int nextId, const char *queue)
 {
 	if (getActiveQueue ()->size() != 0)
 	{
-		if (getActiveQueue ()->front ()->getTargetID () == nextId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+		if (getActiveQueue ()->front ().target->getTargetID () == nextId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
 			// asked for same target
 			return 0;
 		clearNextTargets ();
@@ -754,7 +754,7 @@ void Executor::beforeChange ()
 	else
 		currType = TYPE_UNKNOW;
 	if (getActiveQueue ()->size () != 0)
-		nextType = getActiveQueue ()->front ()->getTargetType ();
+		nextType = getActiveQueue ()->front ().target->getTargetType ();
 	else
 		nextType = currType;
 	if (currType == TYPE_DARK && nextType != TYPE_DARK)
@@ -768,7 +768,7 @@ void Executor::doSwitch ()
 	// make sure queue is configured for target change
 	getActiveQueue ()->beforeChange ();
 	// we need to change current target - usefull for planner runs
-	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ()->getTargetID () == currentTarget->getTargetID ()))
+	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{
 		if (getActiveQueue ()->size () != 0)
 			getActiveQueue ()->popFront ();
@@ -783,14 +783,14 @@ void Executor::doSwitch ()
 		if (currentTarget)
 		{
 			// next target is defined - tested on line -5
-			nextId = getActiveQueue ()->front ()->getTargetID ();
+			nextId = getActiveQueue ()->front ().target->getTargetID ();
 			ret = currentTarget->endObservation (nextId);
 			if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
 				// don't queue only in case nextTarget and currentTarget are
 				// same and endObservation returns 1
 			{
 				processTarget (currentTarget);
-				currentTarget = getActiveQueue ()->front ();
+				currentTarget = getActiveQueue ()->front ().target;
 				getActiveQueue ()->popFront ();
 			}
 			// switch auto loop back to true
@@ -799,7 +799,7 @@ void Executor::doSwitch ()
 		}
 		else
 		{
-			currentTarget = getActiveQueue ()->front ();
+			currentTarget = getActiveQueue ()->front ().target;
 			getActiveQueue ()->popFront ();
 		}
 	}
@@ -851,7 +851,7 @@ void Executor::switchTarget ()
 				break;
 			case SERVERD_DUSK | SERVERD_STANDBY:
 			case SERVERD_DAWN | SERVERD_STANDBY:
-				if (!currentTarget && getActiveQueue ()->size () != 0 && getActiveQueue ()->front ()->getTargetID () == 1)
+				if (!currentTarget && getActiveQueue ()->size () != 0 && getActiveQueue ()->front ().target->getTargetID () == 1)
 				{
 					// switch to dark..
 					doSwitch ();

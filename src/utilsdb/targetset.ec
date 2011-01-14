@@ -507,7 +507,7 @@ sortByAltitude::sortByAltitude (struct ln_lnlat_posn *_obs, double _jd)
 		JD = _jd;
 }
 
-bool sortByAltitude::operator () (Target *tar1, Target *tar2)
+bool sortByAltitude::doSort (Target *tar1, Target *tar2)
 {
 	struct ln_hrz_posn hr1, hr2;
 	tar1->getAltAz (&hr1, JD, observer);
@@ -527,7 +527,7 @@ sortWestEast::sortWestEast (struct ln_lnlat_posn *_obs, double _jd)
 		JD = _jd;
 }
 
-bool sortWestEast::operator () (Target *tar1, Target *tar2)
+bool sortWestEast::doSort (Target *tar1, Target *tar2)
 {
 	struct ln_hrz_posn hr1, hr2;
 	tar1->getAltAz (&hr1, JD, observer);

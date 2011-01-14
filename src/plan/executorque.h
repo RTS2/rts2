@@ -30,13 +30,35 @@ namespace rts2plan
 {
 
 /**
+ * Target queue information.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class QueuedTarget
+{
+	public:
+		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"))
+		{
+			target = _target;
+			t_start = _t_start;
+			t_end = _t_end;
+		}
+
+		~QueuedTarget () {}
+
+		rts2db::Target *target;
+		double t_start;
+		double t_end;
+};
+
+/**
  * Executor queue. Used to freely create queue inside executor
  * for queue execution. Allow users to define rules how the queue
  * should be used, provides method to support basic queue operations.
  * 
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
-class ExecutorQueue:public std::list <rts2db::Target *>
+class ExecutorQueue:public std::list <QueuedTarget>
 {
 	public:
 		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
@@ -60,8 +82,6 @@ class ExecutorQueue:public std::list <rts2db::Target *>
 		rts2core::IntegerArray *nextIds;
 		rts2core::StringArray *nextNames;
 		rts2core::TimeArray *nextTimes;
-
-		std::map <rts2db::Target *, double> targetTimes;
 
 		Rts2ValueSelection *queueType;
 		Rts2ValueBool *skipBellowHorizon;
