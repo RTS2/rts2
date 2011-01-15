@@ -143,7 +143,13 @@ class Rts2Comm:
 		return self.__imageAction("trash",imagename)
 	
 	def delete(self,imagename):
+		"""Delete image from disk."""
 		print "delete",imagename
+		sys.stdout.flush()
+	
+	def process(self,imagename):
+		"""Put image to image processor queue."""
+		print "process",imagename
 		sys.stdout.flush()
 
 	def doubleValue(self,name,desc,value):
