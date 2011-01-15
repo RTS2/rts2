@@ -30,6 +30,7 @@ using namespace rts2plan;
 
 Selector::Selector ()
 {
+	observer = NULL;
 }
 
 Selector::~Selector (void)
@@ -45,8 +46,6 @@ void Selector::init ()
 	Rts2Config *config;
 	std::string doNotObserve;
 	double val;
-
-	observer = NULL;
 
 	config = Rts2Config::instance ();
 

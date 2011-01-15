@@ -120,6 +120,7 @@ using namespace rts2selector;
 SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
 	sel = NULL;
+	observer = NULL;
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
