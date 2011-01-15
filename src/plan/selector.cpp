@@ -396,7 +396,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	{
 		return updateNext (true) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear"))
 	{
 		char *name;
 		bool withTimes = conn->isCommand ("queue_at");
@@ -414,6 +414,11 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		if (iter == queueNames.end ())
 			return -2;
 		rts2plan::ExecutorQueue * q = &(*qi);
+		if (conn->isCommand ("clear"))
+		{
+			q->clearNext (NULL);
+			return 0;
+		}
 		return q->queueFromConn (conn, withTimes) == 0 ? 0 : -2;
 	}
 	else
