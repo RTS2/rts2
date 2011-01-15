@@ -1,6 +1,7 @@
 /*
  * Selector body.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,6 +29,9 @@
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 #define OPT_ADD_QUEUE           OPT_LOCAL + 6
+#define OPT_FILTERS             OPT_LOCAL + 7
+#define OPT_FILTER_FILE         OPT_LOCAL + 8
+#define OPT_FILTER_ALIAS        OPT_LOCAL + 9
 
 namespace rts2selector
 {
@@ -103,6 +107,10 @@ class SelectorDev:public Rts2DeviceDb
 
 		std::list <rts2plan::ExecutorQueue> queues;
 		std::list <const char *> queueNames;
+
+		std::list <const char *> filterOptions;
+		std::list <const char *> filterFileOptions;
+		std::list <const char *> aliasFiles;
 };
 
 }
@@ -132,6 +140,10 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
 	addOption (OPT_ADD_QUEUE, "add-queue", 1, "add queues with given names; queues will have priority in selection in order they are added");
+
+	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
+	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
+	addOption (OPT_FILTER_ALIAS, "filter-aliases", 1, "filter aliases file");
 }
 
 SelectorDev::~SelectorDev (void)
@@ -149,6 +161,15 @@ int SelectorDev::processOption (int in_opt)
 			break;
 		case OPT_ADD_QUEUE:
 			queueNames.push_back (optarg);
+			break;
+		case OPT_FILTERS:
+			filterOptions.push_back (optarg);
+			break;
+		case OPT_FILTER_FILE:
+			filterFileOptions.push_back (optarg);
+			break;
+		case OPT_FILTER_ALIAS:
+			aliasFiles.push_back (optarg);
 			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
@@ -169,7 +190,21 @@ int SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new rts2plan::Selector (observer);
+	sel = new rts2plan::Selector ();
+
+	sel->setObserver (observer);
+	sel->init ();
+
+	std::list <const char *>::iterator iter;
+
+	for (iter = filterOptions.begin (); iter != filterOptions.end (); iter++)
+		sel->parseFilterOption (*iter);
+
+	for (iter = filterFileOptions.begin (); iter != filterFileOptions.end (); iter++)
+		sel->parseFilterFileOption (*iter);
+
+	for (iter = aliasFiles.begin (); iter != aliasFiles.end (); iter++)
+		sel->readAliasFile (*iter);
 
 	flatSunMin->setValueDouble (sel->getFlatSunMin ());
 	flatSunMax->setValueDouble (sel->getFlatSunMax ());

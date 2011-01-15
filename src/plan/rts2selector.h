@@ -1,6 +1,7 @@
 /*
  * Selector body.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -63,9 +64,13 @@ struct bonusSort: public std::binary_function <TargetEntry *, TargetEntry *, boo
 class Selector
 {
 	public:
-		Selector (struct ln_lnlat_posn *in_observer);
+		Selector ();
 		virtual ~ Selector (void);
-								 // return next observation..
+
+		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
+		void init ();
+
+		// return next observation..
 		int selectNext (int masterState);
 		int selectNextNight (int in_bonusLimit = 0, bool verbose = false);
 
@@ -100,7 +105,13 @@ class Selector
 		/**
 		 * Add filter aliases.
 		 */
-		void addFilterAlias (std::string filter, std::string alias) { aliases[filter] = alias; }
+		void addFilterAlias (std::string filter, std::string alias) { filterAliases[filter] = alias; }
+
+		void readFilters (std::string camera, std::string fn);
+		void readAliasFile (const char *aliasFile);
+
+		void parseFilterOption (const char *in_optarg);
+		void parseFilterFileOption (const char *in_optarg);
 
 	private:
 		std::vector < TargetEntry* > possibleTargets;
@@ -117,7 +128,7 @@ class Selector
 
 		// available filters for filter command on cameras
 		std::map <std::string, std::vector < std::string > > availableFilters;
-		std::map <std::string, std::string> aliases;
+		std::map <std::string, std::string> filterAliases;
 
 		/**
 		 * Checks if type is among types disabled for night selection.

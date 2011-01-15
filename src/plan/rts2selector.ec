@@ -1,6 +1,7 @@
 /*
  * Selector body.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,14 +28,25 @@
 
 using namespace rts2plan;
 
-Selector::Selector (struct ln_lnlat_posn * in_observer)
+Selector::Selector ()
 {
-	int ret;
+}
+
+Selector::~Selector (void)
+{
+	for (std::vector <TargetEntry *>::iterator iter = possibleTargets.begin (); iter != possibleTargets.end (); iter++)
+	{
+		delete *iter;
+	}
+}
+
+void Selector::init ()
+{
 	Rts2Config *config;
 	std::string doNotObserve;
 	double val;
 
-	observer = in_observer;
+	observer = NULL;
 
 	config = Rts2Config::instance ();
 
@@ -44,26 +56,14 @@ Selector::Selector (struct ln_lnlat_posn * in_observer)
 
 	flat_sun_min = 100;
 	flat_sun_max = 100;
-	ret = config->getDouble ("observatory", "flat_sun_min", flat_sun_min);
-	if (ret)
-		return;
-	ret = config->getDouble ("observatory", "flat_sun_max", flat_sun_max);
-	if (ret)
-		return;
+	config->getDouble ("observatory", "flat_sun_min", flat_sun_min);
+	config->getDouble ("observatory", "flat_sun_max", flat_sun_max);
 
 	if (flat_sun_min > flat_sun_max)
 	{
 		val = flat_sun_min;
 		flat_sun_min = flat_sun_max;
 		flat_sun_max = val;
-	}
-}
-
-Selector::~Selector (void)
-{
-	for (std::vector <TargetEntry *>::iterator iter = possibleTargets.begin (); iter != possibleTargets.end (); iter++)
-	{
-		delete *iter;
 	}
 }
 
@@ -148,8 +148,8 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 			{
 				std::string ops = ((rts2script::ElementChangeValue *) (*se))->getOperands ();
 				// try alias..
-				std::map <std::string, std::string>::iterator alias = aliases.find (ops);
-				if (alias != aliases.end ())
+				std::map <std::string, std::string>::iterator alias = filterAliases.find (ops);
+				if (alias != filterAliases.end ())
 					ops = alias->second;
 				if (std::find (iter->second.begin (), iter->second.end (), ops) == iter->second.end ())
 				{
@@ -346,4 +346,68 @@ int Selector::setNightDisabledTypes (const char *types)
 {
 	nightDisabledTypes = Str2CharVector (types);
 	return 0;
+}
+
+void Selector::readFilters (std::string camera, std::string fn)
+{
+	std::ifstream ifs (fn.c_str ());
+	while (!ifs.fail ())
+	{
+		std::string fil;
+		ifs >> fil;
+		if (ifs.fail ())
+			break;
+		availableFilters[camera].push_back (fil);
+	}
+	if (availableFilters[camera].size () == 0)
+	{
+		throw rts2core::Error (std::string ("empty filter file ") + fn + " for camera " + camera);
+	}
+}
+
+void Selector::readAliasFile (const char *aliasFile)
+{
+	std::ifstream as;
+	as.open (aliasFile);
+	std::string f, a;
+	while (!as.fail ())
+	{
+		as >> f;
+		if (as.fail ())
+			break;
+		as >> a;
+		if (as.fail ())
+			throw rts2core::Error ("invalid filter alias file");
+		filterAliases[f] = a;
+	}
+	as.close ();
+}
+
+void Selector::parseFilterOption (const char *in_optarg)
+{
+	std::vector <std::string> cam_filters;
+	std::vector < std::string > filters;
+	cam_filters = SplitStr (std::string (in_optarg), std::string (" "));
+	if (cam_filters.size () != 2)
+	{
+	  	throw rts2core::Error ("camera must be separated by space from filter names");
+	}
+	filters = SplitStr (cam_filters[1], std::string (":"));
+	if (filters.size () == 0)
+	{
+		throw rts2core::Error (std::string ("empty filter names specified for camera ") + cam_filters[0]);
+	}
+	addFilters (cam_filters[0].c_str (), filters);
+}
+
+void Selector::parseFilterFileOption (const char *in_optarg)
+{
+	std::vector <std::string> cam_filters;
+
+	cam_filters = SplitStr (std::string (in_optarg), std::string (":"));
+	if (cam_filters.size () != 2)
+	{
+		throw rts2core::Error ("camera name and filter file must be separated with :");
+	}
+	readFilters(cam_filters[0], cam_filters[1]);
 }

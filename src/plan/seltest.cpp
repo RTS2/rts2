@@ -46,19 +46,14 @@ class SelectorApp:public PrintTarget
 	private:
 		int verbosity;
 
-		void readFilters (std::string camera, std::string fn);
-		void readAliasFile (const char *aliasFile);
-
-		std::map <std::string, std::vector < std::string > > availableFilters;
-
-		std::map <std::string, std::string> filterAliases;
+		rts2plan::Selector sel;
 };
 
 }
 
 using namespace rts2plan;
 
-SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv)
+SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv),sel()
 {
 	verbosity = 0;
 	addOption ('v', NULL, 0, "increase verbosity");
@@ -75,42 +70,19 @@ SelectorApp::~SelectorApp (void)
 int SelectorApp::processOption (int opt)
 {
 	std::vector <std::string> cam_filters;
-	std::vector <std::string> filters;
 	switch (opt)
 	{
 		case 'v':
 			verbosity++;
 			break;
 		case OPT_FILTERS:
-			cam_filters = SplitStr (std::string (optarg), std::string (" "));
-			if (cam_filters.size () != 2)
-			{
-			  	std::cerr << "camera must be separated by space from filter names" << std::endl;
-				return -1;
-			}
-			availableFilters[cam_filters[0]] = SplitStr (cam_filters[1], std::string (":"));
-			if (availableFilters[cam_filters[0]].size () == 0)
-			{
-				std::cerr << "empty filter names specified for camera " << cam_filters[0] << std::endl;
-				return -1;
-			}
+			sel.parseFilterOption (optarg);
 			break;
 		case OPT_FILTER_FILE:
-			cam_filters = SplitStr (std::string (optarg), std::string (":"));
-			if (cam_filters.size () != 2)
-			{
-				std::cerr << "camera name and filter file must be separated with :" << std::endl;
-				return -1;
-			}
-			readFilters(cam_filters[0], cam_filters[1]);
-			if (availableFilters[cam_filters[0]].size () == 0)
-			{
-				std::cerr << "empty filter file " << cam_filters[1] << " for camera " << cam_filters[0] << std::endl;
-				return -1;
-			}
+			sel.parseFilterFileOption (optarg);
 			break;
 		case OPT_FILTER_ALIAS:
-			readAliasFile (optarg);
+			sel.readAliasFile (optarg);
 			break;
 		default:
 			return PrintTarget::processOption (opt);
@@ -134,26 +106,15 @@ int SelectorApp::doProcessing ()
 	Rts2Config *config;
 	struct ln_lnlat_posn *observer;
 
-	rts2plan::Selector *sel;
-
 	rts2db::Target *tar;
 
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();
 
-	sel = new rts2plan::Selector (observer);
+	sel.setObserver (observer);
+	sel.init ();
 
-	for (std::map < std::string, std::vector < std::string > >::iterator iter = availableFilters.begin (); iter != availableFilters.end (); iter++)
-	{
-		sel->addFilters (iter->first.c_str (), iter->second);
-	}
-
-	for (std::map < std::string, std::string>::iterator iter = filterAliases.begin (); iter != filterAliases.end (); iter++)
-	{
-		sel->addFilterAlias (iter->first, iter->second);
-	}
-
-	next_tar = sel->selectNextNight (0, verbosity);
+	next_tar = sel.selectNextNight (0, verbosity);
 
 	tar = createTarget (next_tar, observer);
 	if (tar)
@@ -167,39 +128,7 @@ int SelectorApp::doProcessing ()
 
 	delete tar;
 
-	delete sel;
 	return 0;
-}
-
-void SelectorApp::readFilters (std::string camera, std::string fn)
-{
-	std::ifstream ifs (fn.c_str ());
-	while (!ifs.fail ())
-	{
-		std::string fil;
-		ifs >> fil;
-		if (ifs.fail ())
-			break;
-		availableFilters[camera].push_back (fil);
-	}
-}
-
-void SelectorApp::readAliasFile (const char *aliasFile)
-{
-	std::ifstream as;
-	as.open (aliasFile);
-	std::string f, a;
-	while (!as.fail ())
-	{
-		as >> f;
-		if (as.fail ())
-			break;
-		as >> a;
-		if (as.fail ())
-			throw rts2core::Error ("invalid filter alias file");
-		filterAliases[f] = a;
-	}
-	as.close ();
 }
 
 int main (int argc, char **argv)
