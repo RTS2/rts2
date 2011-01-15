@@ -113,10 +113,11 @@ int Cloud4::readSensor (bool update)
 	float temp0, temp1, temp2, tempamb;
 	temp2 = tempamb = rts2_nan ("f");
 	int tno, tstat=1;
+	char checksum;
 	if (strncmp (buf_start, "$M4.0", 5) == 0)
 	{
-		int x = sscanf (buf_start + 6, "%d %f %f %*d %*d *%*2s", &tno, &temp0, &temp1);
-		if (x != 3) 
+		int x = sscanf (buf_start + 6, "%d %f %f %*d %*d *%2hhx", &tno, &temp0, &temp1, &checksum);
+		if (x != 4) 
 		{
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
@@ -124,8 +125,8 @@ int Cloud4::readSensor (bool update)
 	}
 	else if (strncmp (buf_start, "$M4.1", 5) == 0)
 	{
-		int x = sscanf (buf_start + 6, "%d %f %f %f %f %*d %*d *%*2s", &tno, &temp0, &temp1, &temp2, &tempamb);
-		if (x != 5) 
+		int x = sscanf (buf_start + 6, "%d %f %f %f %f %*d %*d *%2hhx", &tno, &temp0, &temp1, &temp2, &tempamb, &checksum);
+		if (x != 6) 
 		{
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
@@ -135,15 +136,20 @@ int Cloud4::readSensor (bool update)
 	{
 		logStream (MESSAGE_ERROR) << "invalid mrakomer version - supported are only M4.0 and M4.1: " << buf << sendLog;
 	}
-	temp0/=100.0;
-	temp1/=100.0;
+
+	// compute checksum
+	char ch = 0;
+	for (char *bs = buf_start + 1; *bs && *bs != '*'; bs++)
+		ch ^= *bs;
+	if (checksum != ch)
+		logStream (MESSAGE_ERROR) << "invalid checksum - expected " << checksum << ", calculated " << ch << sendLog;
 
 	if (update == false)
 		return 0;
 
 	tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
-	tempIn->addValue (temp0, 20);
-	tempOut->addValue (temp1, 20);
+	tempIn->addValue (temp0 / 100.0, 20);
+	tempOut->addValue (temp1 / 100.0, 20);
 	if (!isnan (temp2))
 	{
 		if (tempOut2 == NULL)
