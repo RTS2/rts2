@@ -104,22 +104,27 @@ int Cloud4::readSensor (bool update)
 		return ret;
 	buf[ret] = '\0';
 
+	char *buf_start = buf;
+
+	if (buf[0] == '\n')
+		buf_start++;
+
 	// parse response
 	float temp0, temp1, temp2, tempamb;
 	temp2 = tempamb = rts2_nan ("f");
 	int tno, tstat=1;
-	if (strncmp (buf, "$M4.0", 5) == 0)
+	if (strncmp (buf_start, "$M4.0", 5) == 0)
 	{
-		int x = sscanf (buf+6, "%d %f %f %*d %*d *%*2s", &tno, &temp0, &temp1);
+		int x = sscanf (buf_start + 6, "%d %f %f %*d %*d *%*2s", &tno, &temp0, &temp1);
 		if (x != 3) 
 		{
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
 		}
 	}
-	else if (strncmp (buf, "$M4.1", 5) == 0)
+	else if (strncmp (buf_start, "$M4.1", 5) == 0)
 	{
-		int x = sscanf (buf+6, "%d %f %f %f %f %*d %*d *%*2s", &tno, &temp0, &temp1, &temp2, &tempamb);
+		int x = sscanf (buf_start + 6, "%d %f %f %f %f %*d %*d *%*2s", &tno, &temp0, &temp1, &temp2, &tempamb);
 		if (x != 5) 
 		{
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
@@ -142,14 +147,20 @@ int Cloud4::readSensor (bool update)
 	if (!isnan (temp2))
 	{
 		if (tempOut2 == NULL)
+		{
 		 	createValue (tempOut2, "TEMP_OUT2", "temperature outside (second sensor)", true);
-		tempOut2->addValue (temp2);
+			updateMetaInformations (tempOut2);
+		}
+		tempOut2->addValue (temp2 / 100.0, 20);
 	}
 	if (!isnan (tempamb))
 	{
 		if (tempAmb == NULL)
+		{
 		 	createValue (tempAmb, "TEMP_AMB", "ambient temperature (outside sensor)", true);
-		tempAmb->addValue (tempamb);
+			updateMetaInformations (tempAmb);
+		}
+		tempAmb->addValue (tempamb / 100.0, 20);
 	}
 
 
@@ -308,6 +319,7 @@ int Cloud4::init ()
 		return ret;
 
 	mrakConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 10);
+	mrakConn->setDebug ();
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
