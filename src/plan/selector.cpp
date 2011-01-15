@@ -199,7 +199,6 @@ int SelectorDev::init ()
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
 		selectorQueue->addSelVal ((*iter));
 	}
-	selectorQueue->setValueInteger (0);
 	return 0;
 }
 
