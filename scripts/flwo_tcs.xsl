@@ -65,19 +65,21 @@ source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
 <xsl:if test='@value = "ampcen"'>
 set ampstatus=`tele ampcen ?`
 if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
-	tele ampcen <xsl:value-of select='@operands'/>
 	echo -n `date` 'set ampcen to <xsl:value-of select='@operands'/>'
+	tele ampcen <xsl:value-of select='@operands'/>
+	echo '.'
 else
-	echo -n `date` 'ampcen already on $ampstatus, not changing it'
+	echo `date` 'ampcen already on $ampstatus, not changing it'
 endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
 set guidestatus=`tele autog ?`
 if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
-	tele autog <xsl:value-of select='@operands'/>
 	echo -n `date` 'set autog to <xsl:value-of select='@operands'/>'
+	tele autog <xsl:value-of select='@operands'/>
+	echo '.'
 else
-	echo -n `date` 'autog already in $guidestatus status, not changing it'
+	echo `date` 'autog already in $guidestatus status, not changing it'
 endif
 </xsl:if>
 </xsl:template>
