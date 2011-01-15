@@ -705,7 +705,7 @@ moveType Target::afterSlewProcessed ()
 	return OBS_MOVE;
 }
 
-int Target::startObservation (Rts2Block *master)
+int Target::startObservation ()
 {
 	if (observationStarted ())
 		return 0;

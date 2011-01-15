@@ -252,16 +252,16 @@ void ExecutorQueue::filterExpired ()
 	iter2++;
 	while (iter2 != end ())
 	{
-		double t = iter2->t_start;
+		double t_start = iter2->t_start;
 		bool do_erase = false;
 		switch (queueType->getValueInteger ())
 		{
 			case QUEUE_FIFO:
 			case QUEUE_CIRCULAR:
-				do_erase = ((iter->target->observationStarted () && isnan (t)) || t <= master->getNow ());
+				do_erase = ((iter->target->observationStarted () && isnan (t_start)) || t_start <= master->getNow ());
 				break;
 			default:
-				do_erase = (!isnan (t) && t <= master->getNow ());
+				do_erase = (!isnan (t_start) && t_start <= master->getNow ());
 				break;
 		}
 

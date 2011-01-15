@@ -340,6 +340,7 @@ int SelectorDev::updateNext (bool started)
 			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
 			if (eq)
 			{
+				eq->front ().target->startObservation ();
 				eq->beforeChange ();
 				eq->popFront ();
 			}

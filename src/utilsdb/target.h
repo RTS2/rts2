@@ -446,9 +446,7 @@ class Target:public Rts2Target
 		int updateSlew (struct ln_equ_posn *position);
 
 		virtual moveType afterSlewProcessed ();
-		// return 1 if observation is already in progress, 0 if observation started, -1 on error
-		// 2 if we don't need to move
-		virtual int startObservation (Rts2Block * master);
+		virtual int startObservation ();
 
 		// similar to startSlew - return 0 if observation ends, 1 if
 		// it doesn't ends (ussually in case when in_next_id == target_id),

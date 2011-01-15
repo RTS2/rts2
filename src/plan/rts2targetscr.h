@@ -51,7 +51,7 @@ class Rts2TargetScr:public Rts2Target
 		virtual int save (bool overwrite, int tar_id);
 
 		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
-		virtual int startObservation (Rts2Block * master);
+		virtual int startObservation ();
 		virtual void writeToImage (Rts2Image * image, double JD);
 };
 #endif							 /* !__RTS2_TARGESCR__ */

@@ -221,7 +221,7 @@ class Rts2Target
 		virtual int beforeMove () { return 0; }
 
 		virtual moveType startSlew (struct ln_equ_posn * position, bool update_position = true) = 0;
-		virtual int startObservation (Rts2Block * master) = 0;
+		virtual int startObservation () = 0;
 
 		int getObsId () { return obs_id; }
 

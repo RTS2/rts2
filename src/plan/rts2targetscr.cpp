@@ -70,7 +70,7 @@ moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position, bool update_po
 	return OBS_MOVE_FAILED;
 }
 
-int Rts2TargetScr::startObservation (Rts2Block * in_master)
+int Rts2TargetScr::startObservation ()
 {
 	return -1;
 }
