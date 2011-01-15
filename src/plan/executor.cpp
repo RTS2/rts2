@@ -79,7 +79,7 @@ class Executor:public Rts2DeviceDb
 		void switchTarget ();
 
 		int setNext (int nextId, const char *que = "next");
-		int queueTarget (int nextId, double t = rts2_nan("f"));
+		int queueTarget (int nextId, double t_start = rts2_nan("f"), double t_end = rts2_nan ("f"));
 		int setNow (int nextId);
 		int setGrb (int grbId);
 		int setShower ();
@@ -538,7 +538,7 @@ int Executor::setNext (int nextId, const char *queue)
 	return queueTarget (nextId);
 }
 
-int Executor::queueTarget (int tarId, double t)
+int Executor::queueTarget (int tarId, double t_start, double t_end)
 {
 	try
 	{
@@ -566,7 +566,7 @@ int Executor::queueTarget (int tarId, double t)
 		{
 			return setNow (nt);
 		}
-		getActiveQueue ()->addTarget (nt, t);
+		getActiveQueue ()->addTarget (nt, t_start, t_end);
 		if (!currentTarget)
 			switchTarget ();
 		else
@@ -948,15 +948,16 @@ int Executor::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("queue_at"))
 	{
 		int failed = 0;
-		double t;
+		double t_start;
+		double t_end;
 		while (!conn->paramEnd ())
 		{
-			if (conn->paramNextInteger (&tar_id) || conn->paramNextDouble (&t))
+			if (conn->paramNextInteger (&tar_id) || conn->paramNextDouble (&t_start) || conn->paramNextDouble (&t_end))
 			{
 				failed++;
 				continue;
 			}
-			int ret = queueTarget (tar_id, t);
+			int ret = queueTarget (tar_id, t_start, t_end);
 			if (ret)
 				failed++;
 		}

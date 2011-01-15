@@ -386,7 +386,6 @@ int SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
-	int tar_id;
 	if (conn->isCommand ("next"))
 	{
 		return updateNext () == 0 ? 0 : -2;
@@ -396,9 +395,10 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	{
 		return updateNext (true) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at"))
 	{
 		char *name;
+		bool withTimes = conn->isCommand ("queue_at");
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
@@ -413,23 +413,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		if (iter == queueNames.end ())
 			return -2;
 		rts2plan::ExecutorQueue * q = &(*qi);
-		int failed = 0;
-		while (!conn->paramEnd ())
-		{
-			if (conn->paramNextInteger (&tar_id))
-			{
-				failed++;
-				continue;
-			}
-			rts2db::Target *nt = createTarget (tar_id, observer);
-			if (!nt)
-			{
-				failed++;
-				continue;
-			}
-			q->addTarget (nt);
-		}
-		return failed == 0 ? 0 : -2;
+		return q->queueFromConn (conn, withTimes) == 0 ? 0 : -2;
 	}
 	else
 	{

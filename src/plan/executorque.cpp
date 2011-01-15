@@ -154,6 +154,38 @@ int ExecutorQueue::selectNextObservation ()
 	return -1;
 }
 
+int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
+{
+	double t_start = rts2_nan ("f");
+	double t_end = rts2_nan ("f");
+	int tar_id;
+	int failed = 0;
+	while (!conn->paramEnd ())
+	{
+		if (conn->paramNextInteger (&tar_id))
+		{
+			failed++;
+			continue;
+		}
+		if (withTimes)
+		{
+			if (conn->paramNextDouble (&t_start) || conn->paramNextDouble (&t_end))
+			{
+				failed++;
+				continue;
+			}
+		}
+		rts2db::Target *nt = createTarget (tar_id, *observer);
+		if (!nt)
+		{
+			failed++;
+			continue;
+		}
+		addTarget (nt, t_start, t_end);
+	}
+	return failed;
+}
+
 void ExecutorQueue::updateVals ()
 {
 	std::vector <int> _id_arr;

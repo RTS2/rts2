@@ -89,6 +89,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 */
 		int selectNextObservation ();
 
+		int queueFromConn (Rts2Conn *conn, bool withTimes = false);
+
 	private:
 		Rts2DeviceDb *master;
 
