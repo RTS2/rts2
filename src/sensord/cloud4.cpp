@@ -1,6 +1,8 @@
 /* 
- * Sensor daemon for cloudsensor (mrakomer) by Martin Kakona
- * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
+ * Sensor daemon for cloudsensor (mrakomer) by Martin Kakona. Versions 4.0 and
+ * 4.1 are supported.
+ *
+ * Copyright (C) 2008-2009,20101 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2009 Martin Jelinek
  *
  * This program is free software; you can redistribute it and/or
@@ -61,6 +63,8 @@ class Cloud4: public SensorWeather
 		Rts2ValueDoubleStat *tempDiff;
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
+		Rts2ValueDoubleStat *tempOut2;
+		Rts2ValueDoubleStat *tempAmb;
 
 		Rts2ValueDouble *tempInCoeff;
 
@@ -101,28 +105,61 @@ int Cloud4::readSensor (bool update)
 	buf[ret] = '\0';
 
 	// parse response
-	float temp0, temp1;
+	float temp0, temp1, temp2, tempamb;
+	temp2 = tempamb = rts2_nan ("f");
 	int tno, tstat=1;
-	int x = sscanf (buf+6, "%d %f %f %*d %*d %*3s", &tno, &temp0, &temp1);
+	if (strncmp (buf, "$M4.0", 5) == 0)
+	{
+		int x = sscanf (buf+6, "%d %f %f %*d %*d *%*2s", &tno, &temp0, &temp1);
+		if (x != 3) 
+		{
+			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
+			return -1;
+		}
+	}
+	else if (strncmp (buf, "$M4.1", 5) == 0)
+	{
+		int x = sscanf (buf+6, "%d %f %f %f %f %*d %*d *%*2s", &tno, &temp0, &temp1, &temp2, &tempamb);
+		if (x != 5) 
+		{
+			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
+			return -1;
+		}
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "invalid mrakomer version - supported are only M4.0 and M4.1: " << buf << sendLog;
+	}
 	temp0/=100.0;
 	temp1/=100.0;
 
-	if (x != 3) 
-	{
-		logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '"
-			<< buf << "', return " << x << sendLog;
-		return -1;
-	}
 	if (update == false)
 		return 0;
 
 	tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
+	if (!isnan (temp2))
+	{
+		if (tempOut2 == NULL)
+		 	createValue (tempOut2, "TEMP_OUT2", "temperature outside (second sensor)", true);
+		tempOut2->addValue (temp2);
+	}
+	if (!isnan (tempamb))
+	{
+		if (tempAmb == NULL)
+		 	createValue (tempAmb, "TEMP_AMB", "ambient temperature (outside sensor)", true);
+		tempAmb->addValue (tempamb);
+	}
+
 
 	tempDiff->calculate ();
 	tempIn->calculate ();
 	tempOut->calculate ();
+	if (tempOut2)
+		tempOut2->calculate ();
+	if (tempAmb)
+		tempAmb->calculate ();
 
 	numberMes->setValueInteger (tno);
 	mrakStatus->setValueInteger (tstat);
@@ -137,6 +174,8 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference", true);
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
 	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
+
+	tempOut2 = tempAmb = NULL;
 
 	createValue (numVal, "num_stat", "number of measurements for weather statistic", false, RTS2_VALUE_WRITABLE);
 	numVal->setValueInteger (20);
