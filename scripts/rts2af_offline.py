@@ -83,7 +83,6 @@ class main(rts2af.AFScript):
 
 # create the administrative objects 
         HDUs= rts2af.FitsHDUs()
-        catrs= rts2af.Catalogues()
 
 # load the reference file first
         for fits in testFitsList:
@@ -103,9 +102,10 @@ class main(rts2af.AFScript):
             catr.createCatalogue()
             catr.cleanUpReference()
             catr.writeCatalogue()
-            catrs.CataloguesList.append(catr)
             cats= rts2af.Catalogues(catr)
-
+        else:
+            sys.exit(1)
+            
 # read the files 
         for fits in testFitsList:
             hdu= rts2af.FitsHDU( fits, hdur)
@@ -129,7 +129,7 @@ class main(rts2af.AFScript):
             cat.cleanUp()
 
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
-            if( cat.matching(catr)):
+            if( cat.matching()):
                 print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
                 cats.CataloguesList.append(cat)
             else:
@@ -146,7 +146,7 @@ class main(rts2af.AFScript):
             cat.average('FWHM_IMAGE')
 
 
-        #cats.fitTheValues()
+        cats.fitTheValues()
         #cats.average()
         #for focPos in sorted(fwhm):
         #    print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])

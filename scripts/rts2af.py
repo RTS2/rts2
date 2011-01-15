@@ -513,7 +513,7 @@ class Catalogue():
         if( self.SExtractorParams==None):
             logger.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
             return False
-
+    
         #if( not self.fitsHDU.isReference):
         SXcat= open( self.catalogueFileName, 'r')
         #else:
@@ -609,13 +609,12 @@ class Catalogue():
             
         for (sxObjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
             try:
-                onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')], color, sxObjectNumber))
+                onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/2., color, sxObjectNumber))
             except:
                 logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9, object: {0}".format(sxObjectNumber))
                 
 
-    def ds9WriteRegionFile(self, colorSelected="blue", colorAll="red"):
-
+    def ds9WriteRegionFile(self, writeSelected=False, writeMatched=False, writeAll=False, colorSelected="blue", colorMatched="green", colorAll="red"):
         with open( self.ds9RegionFileName, 'wb') as ds9RegionFile:
             ds9RegionFile.write("# Region file format: DS9 version 4.0\n")
             ds9RegionFile.write("# Filename: {0}\n".format(self.fitsHDU.fitsFileName))
@@ -629,44 +628,48 @@ class Catalogue():
 
             ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorSelected))
 
-            # objects selected (found in all fits images) 
-            for sxObjectNumber, sxObject in self.sxObjects.items():
-                sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
-                if( sxReferenceObject):
-                    radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]
-                    # ToDo: find out escape
-                    ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + "}\n")
+            # objects selected (found in all fits images)
+            if(writeSelected):
+                for sxObjectNumber, sxObject in self.sxObjects.items():
+                    sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                    if( sxReferenceObject.foundInAll):
+                        radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
+                        # ToDo: find out escape
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + " " + sxObjectNumber  + " }\n")
 
-            # all objects found by sextractor
-            if(runTimeConfig.value('DS9_ALL')):
+            # all objects which matched against the reference catalogue, but not found in all fits images
+            if(writeMatched):
+                ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorMatched))
+                ds9RegionFile.write("image\n")
+                for sxObjectNumber, sxObject in self.sxObjects.items():
+                    sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                    if( sxObject.matched):
+                        radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
+                        # ToDo: find out escape
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + " " + sxObjectNumber  + " }\n")
+
+            # all objects found by sextractor but not found in all fits images
+            # but not falling in the selected or matched category
+            if(writeAll):
                 ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorAll))
                 ds9RegionFile.write("image\n")
 
                 for sxObjectNumber, sxObject in self.sxObjects.items():
                     sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
-                    if( sxReferenceObject):
-                        # ToDo: find out escape
-                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + "}\n")
-                    else:
-                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + "}\n") 
-
-
+                    radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
+                    if( not (sxReferenceObject.foundInAll or sxObject.matched)):
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " "+ sxObjectNumber + "}\n") 
 
         ds9RegionFile.close()
-
-
-
-
         
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
             logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
+            return False
         else:
-            if( sxObjectNumber in self.sxObjects):
-                del self.sxObjects[sxObjectNumber]
-            else:
-                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " not found")
+            del self.sxObjects[sxObjectNumber]
 
+        # remove its properties
         for identifier in self.SExtractorParams.reference:
             if(((sxObjectNumber, identifier)) in self.catalogue):
                 del self.catalogue[(sxObjectNumber, identifier)]
@@ -678,34 +681,33 @@ class Catalogue():
             return True
         return False
 
-    # now done on catalogue for the sake of flexibility
     # ToDo, define if that shoud go into SXObject (now, better not)
     def checkProperties(self, sxObjectNumber): 
         if( self.catalogue[( sxObjectNumber, 'FLAGS')] != 0): # ToDo, ATTENTION
             #print "checkProperties flags %d" % self.catalogue[( sxObjectNumber, 'FLAGS')]
             return False
-        elif( self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY')): # ToDo, ATTENTION
+        if( self.catalogue[( sxObjectNumber, 'ELLIPTICITY')] > runTimeConfig.value('ELLIPTICITY')): # ToDo, ATTENTION
             #print "checkProperties elli %f %f" %  (self.catalogue[( sxObjectNumber, 'ELLIPTICITY')],runTimeConfig.value('ELLIPTICITY'))
             return False
         # TRUE    
         return True
 
     def cleanUp(self):
-        logger.error( 'Catalogue.cleanUp: catalogue, I am : ' + self.fitsHDU.fitsFileName)
+        logger.debug( 'Catalogue.cleanUp: catalogue, I am : ' + self.fitsHDU.fitsFileName)
 
         discardedObjects= 0
         sxObjectNumbers= self.sxObjects.keys()
         for sxObjectNumber in sxObjectNumbers:
             if( not self.checkProperties(sxObjectNumber)):
-                # self.removeSXObject( sxObjectNumber)
+#                self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
-        logger.error("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
+        logger.info("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
 
-    def matching(self, ReferenceCatalogue):
+    def matching(self):
         matched= 0
         for sxObjectNumber, sxObject in self.sxObjects.items():
-                sxReferenceObject= ReferenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+                sxReferenceObject= self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
                 if( sxReferenceObject != None):
                     if( self.multiplicity[sxReferenceObject.objectNumber] == 1): 
                         matched += 1
@@ -718,12 +720,13 @@ class Catalogue():
                         #    print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
 
         if(verbose):
-            print "number of matched sxObjects %d=" % matched + "of %d "% len(ReferenceCatalogue.sxObjects) + " required %f " % ( runTimeConfig.value('MATCHED_RATIO') * len(ReferenceCatalogue.sxObjects))
+            print "number of sxObjects =%d" % len(self.sxObjects)
+            print "number of matched sxObjects %d=" % matched + "of %d "% len(self.referenceCatalogue.sxObjects) + " required %f " % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects))
 
-        if( (float(matched)/float(len(ReferenceCatalogue.sxObjects))) > runTimeConfig.value('MATCHED_RATIO')):
+        if( (float(matched)/float(len(self.referenceCatalogue.sxObjects))) > runTimeConfig.value('MATCHED_RATIO')):
             return True
         else:
-            logger.error("main: too few sxObjects matched %d" % matched + " of %d" % len(ReferenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(ReferenceCatalogue.sxObjects)) + " sxobjects at FOC_POS+ %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+            logger.error("main: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS+ %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
             return False
 
 
@@ -738,7 +741,7 @@ class Catalogue():
 
         #if(verbose):
         if( i != 0):
-            print 'average ' + variable + ' %f ' % (sum/ float(i)) 
+            print 'average at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
@@ -764,7 +767,7 @@ class ReferenceCatalogue(Catalogue):
         ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
 
     def sxObjectByNumber(self, sxObjectNumber):
-        if(sxObjectNumber in self.sxObjects):
+        if(sxObjectNumber in self.sxObjects.keys()):
             return self.sxObjects[sxObjectNumber]
         return None
 
@@ -950,7 +953,7 @@ class ReferenceCatalogue(Catalogue):
             logger.error( 'ReferenceCatalogue.cleanUpReference: clean up only for a reference catalogue, I am : ' + self.fitsHDU.fitsFileName) 
             return False
         else:
-            logger.error( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
+            logger.debug( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
         flaggedSeparation= 0
         flaggedProperties= 0
         flaggedAcceptance= 0
@@ -982,16 +985,11 @@ class ReferenceCatalogue(Catalogue):
 
 
 class AcceptanceRegion():
-    """Class holding the properties of the acceptance circle"""
+    """Class holding the properties of the acceptance circle, units are (binned) pixel"""
     def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
         self.fitsHDU= fitsHDU
-# 1x1 
-#        self.binning= float(fitsHDU.headerElements['BINNING'])
-
-        self.binning= 2.
-        print "binning set to 2"
-        logger.error("binning set to 2") 
         try:
+            # if binning is used these values represent the rebinned pixels, e.g. 1x1 4096 and 2x2 2048
             self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
             self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
         except:
@@ -1007,7 +1005,7 @@ class AcceptanceRegion():
         l_y= 0.
         self.transformedCenterX= (self.naxis1- l_x)/2 + self.centerOffsetX 
         self.transformedCenterY= (self.naxis2- l_y)/2 + self.centerOffsetY
-        self.transformedRadius= self.radius/ self.binning
+        self.transformedRadius= self.radius
         if( verbose):
             print "AcceptanceRegion %f %f %f %f %f %f  %f %f %f" % (self.binning, self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
 
@@ -1034,6 +1032,7 @@ class Catalogues():
         self.numberOfObjects= 0.
         self.numberOfObjectsFoundInAllFiles= 0.
         self.ds9Command=""
+        self.averagesCalculated=False
         
     def validate(self):
         if( len(self.CataloguesList) > 0):
@@ -1119,6 +1118,11 @@ class Catalogues():
                 print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
 
     def __average__(self):
+        if( self.averagesCalculated):
+            return
+        else:
+            self.averagesCalculated=True
+            
         fwhm= defaultdict(list)
         flux= defaultdict(list)
         lenFwhm = []
@@ -1126,9 +1130,6 @@ class Catalogues():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
                 self.numberOfObjects += 1
                 for sxObject in sxReferenceObject.matchedsxObjects:
-             #       if( sxObject.focusPosition > 2600):
-                    #if( verbose):
-                    #    print "Ref "+ sxReferenceObject.objectNumber + " Obj "+ sxObject.objectNumber + " foc pos %d" % sxObject.focusPosition     
                     fwhm[sxObject.focusPosition].append(sxObject.fwhm)
                     flux[sxObject.focusPosition].append(sxObject.flux)
                     sxReferenceObject.foundInAll= True
@@ -1152,21 +1153,23 @@ class Catalogues():
             print "numberOfObjects========================= %d " % (self.numberOfObjects)
 
     def ds9DisplayCatalogues(self):
+        self.__average__()
 
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
             cat.ds9DisplayCatalogue("blue")
             # if reference catr.ds9DisplayCatalogue("yellow", False)
 
     def ds9WriteRegionFiles(self):
-
+        self.__average__()
+        
         self.ds9Command= "ds9 -zoom to fit -scale mode zscale\\\n" 
 
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
 
             if( cat.catalogueFileName == cat.referenceCatalogue.catalogueFileName):
-                cat.ds9WriteRegionFile("yelow")
+                cat.ds9WriteRegionFile(True, True, False, "yellow", "red")
             else:
-                cat.ds9WriteRegionFile("blue")
+                cat.ds9WriteRegionFile(True, runTimeConfig.value('DS9_MATCHED'), runTimeConfig.value('DS9_ALL'), "blue")
 
             self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + " -region " + serviceFileOp.expandToDs9RegionFileName(cat.referenceCatalogue.fitsHDU) + "\\\n")
 
@@ -1202,8 +1205,11 @@ class FitsHDU():
         self.referenceFitsHDU= referenceFitsHDU
         self.isValid= False
         self.headerElements={}
-        FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+        #ToDo: generalize
+        self.binning=-1
 
+
+        FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
 
     def headerProperties(self):
 
@@ -1219,25 +1225,36 @@ class FitsHDU():
             return False
 
         fitsHDU.close()
-        if( self.referenceFitsHDU== None):
-            if(verbose):
-                print "headerProperties I'm compatible with myself"
 
-            try:
-                self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
-                self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
-                self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
-                self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
-                self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
-                self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
-                self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
+        try:
+            self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
+            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+            self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
+            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
+            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+            self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
+            self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
+        except:
+            self.isValid= False
+            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the required header element not found, exiting')
+            return False
+        
+        if( not self.extractBinning()):
+            self.isValid= False
+            return False
+        # match the header elements with reference HDU
+        if( self.referenceFitsHDU != None):
+            if( self.matchHeaderElements(fitsHDU)):
                 self.isValid= True
                 return True
-            except:
-                logger.error('FitsHDU: the required header element not found, exiting')
-                sys.exit(1)
+            else:
+                self.isValid= False
                 return False
-
+        else:
+            self.isValid= True
+            return True
+            
+    def matchHeaderElements(self, fitsHDU):
         keys= self.referenceFitsHDU.headerElements.keys()
         i= 0
         for key in keys:
@@ -1260,6 +1277,22 @@ class FitsHDU():
         logger.error("headerProperties: fits file " + self.fitsFileName + " has different header properties")
         return False
 
+    def extractBinning(self):
+        #ToDo: clumsy
+        pbinning1x1 = re.compile( r'1x1')
+        binning1x1 = pbinning1x1.match(self.headerElements['BINNING'])
+        pbinning2x2 = re.compile( r'2x2')
+        binning2x2 = pbinning2x2.match(self.headerElements['BINNING'])
+
+        if( binning1x1):
+            self.binning= 1
+        elif(binning2x2):
+            self.binning= 2
+        else:
+            logger.error('headerProperties: fits file ' + self.fitsFileName +  ' binning: {0} not supported, exiting'.format(fitsHDU[0].header['BINNING']))
+            return False
+        return True
+    
 class FitsHDUs():
     """Class holding FitsHDU"""
     def __init__(self):
