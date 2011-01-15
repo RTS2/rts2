@@ -63,10 +63,16 @@ echo -n `date` 'moving filter wheel to <xsl:value-of select='@operands'/>'
 source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
 </xsl:if>
 <xsl:if test='@value = "ampcen"'>
-tele ampcen <xsl:value-of select='@operands'/>
+set ampstatus=`tele ampcen ?`
+if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
+	tele ampcen <xsl:value-of select='@operands'/>
+endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
-tele autog <xsl:value-of select='@operands'/>
+set guidestatus=`tele autog ?`
+if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
+	tele autog <xsl:value-of select='@operands'/>
+endif
 </xsl:if>
 </xsl:template>
 
