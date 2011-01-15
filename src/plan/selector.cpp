@@ -74,7 +74,13 @@ class SelectorDev:public Rts2DeviceDb
 		virtual int changeMasterState (int new_state);
 
 		int selectNext ();		 // return next observation..
-		int updateNext ();
+
+		/**
+		 * Update next observation.
+		 *
+		 * @param started    if true, queue providing last target ID will be informed that the target was observed/is being observed before it will be asked for next ID
+		 */
+		int updateNext (bool started = false);
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -104,6 +110,7 @@ class SelectorDev:public Rts2DeviceDb
 		struct ln_lnlat_posn *observer;
 
 		Rts2ValueSelection *selectorQueue;
+		Rts2ValueSelection *lastQueue;
 
 		std::list <rts2plan::ExecutorQueue> queues;
 		std::list <const char *> queueNames;
@@ -121,6 +128,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 {
 	sel = NULL;
 	observer = NULL;
+
+	selectorQueue = lastQueue = NULL;
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
@@ -226,14 +235,18 @@ int SelectorDev::init ()
 	
 	if (!queueNames.empty ())
 	{
-		createValue (selectorQueue, "selector_queue", "selector queue mechanism", false, RTS2_VALUE_WRITABLE);
-		selectorQueue->addSelVal ("auto");
+		createValue (selectorQueue, "selector_queue", "type of selector queue mechanism", false, RTS2_VALUE_WRITABLE);
+		selectorQueue->addSelVal ("auto", NULL);
+
+		createValue (lastQueue, "last_queue", "queue used for last selection", false);
+		lastQueue->addSelVal ("-");
 	}
 	
 	for (std::list <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
 	{
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
-		selectorQueue->addSelVal ((*iter));
+		selectorQueue->addSelVal (*iter, (Rts2SelData *) &(queues.back ()));
+		lastQueue->addSelVal (*iter);
 	}
 	return 0;
 }
@@ -275,6 +288,40 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
+	 	if (selectorQueue)
+		{
+			int id = -1;
+			int q = 1;
+			std::list <rts2plan::ExecutorQueue>::iterator iter;
+			switch (selectorQueue->getValueInteger ())
+			{
+				case 0:
+					for (iter = queues.begin (); iter != queues.end (); iter++, q++)
+					{
+						id = iter->selectNextObservation ();
+						if (id >= 0)
+						{
+							lastQueue->setValueInteger (q);
+							return id;
+						}
+					}
+					break;
+				default:
+					rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData ();
+					if (eq != NULL)
+					{
+						id = eq->selectNextObservation ();
+						if (id >= 0)
+						{
+							lastQueue->setValueInteger (selectorQueue->getValueInteger ());
+							return id;
+						}
+					}
+					break;
+			}
+			// use selector ass fall-back, if queues are empty
+			lastQueue->setValueInteger (0);
+		}
 		return sel->selectNext (getMasterState ());
 	}
 	catch (rts2core::Error er)
@@ -284,9 +331,25 @@ int SelectorDev::selectNext ()
 	return -1;
 }
 
-int SelectorDev::updateNext ()
+int SelectorDev::updateNext (bool started)
 {
+	if (started)
+	{
+		if (selectorQueue)
+		{
+			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
+			if (eq)
+			{
+				eq->beforeChange ();
+				eq->popFront ();
+			}
+		}
+	}
 	next_id->setValueInteger (selectNext ());
+	sendValueAll (next_id);
+	if (lastQueue)
+		sendValueAll (lastQueue);
+
 	if (next_id->getValueInteger () > 0)
 	{
 		connections_t::iterator iexec = getConnections ()->begin ();  	
@@ -327,6 +390,11 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	if (conn->isCommand ("next"))
 	{
 		return updateNext () == 0 ? 0 : -2;
+	}
+	// when observation starts
+	else if (conn->isCommand ("observation"))
+	{
+		return updateNext (true) == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue"))
 	{

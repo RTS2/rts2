@@ -1,6 +1,6 @@
 /*
  * Executor queue.
- * Copyright (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2010,2011      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -80,6 +80,14 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		void popFront ();
 
 		void clearNext (rts2db::Target *currentTarget);
+
+		/**
+		 * Select next valid observation target. As queues might hold targets which are invalid (e.g. start date of observation
+		 * is in future, object is bellow horizon,..), can return failure even if queue is not empty.
+		 *
+		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
+		 */
+		int selectNextObservation ();
 
 	private:
 		Rts2DeviceDb *master;

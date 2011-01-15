@@ -1,6 +1,6 @@
 /*
  * Executor queue.
- * Copyright (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2010,2011     Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,7 +43,7 @@ class sortQuedTargetWestEast:public rts2db::sortWestEast
 
 bool QueuedTarget::notExpired (double now)
 {
-	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end <= now);
+	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
 }
 
 ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer)
@@ -138,6 +138,20 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 			delete iter->target;
 	}
 	clear ();
+}
+
+int ExecutorQueue::selectNextObservation ()
+{
+	if (size () > 0)
+	{
+		struct ln_hrz_posn hrz;
+		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
+		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (master->getNow ()))
+		{
+			return front ().target->getTargetID ();
+		}
+	}
+	return -1;
 }
 
 void ExecutorQueue::updateVals ()
