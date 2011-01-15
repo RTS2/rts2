@@ -99,6 +99,8 @@ class SelectorDev:public Rts2DeviceDb
 
 		struct ln_lnlat_posn *observer;
 
+		Rts2ValueSelection *selectorQueue;
+
 		std::list <rts2plan::ExecutorQueue> queues;
 		std::list <const char *> queueNames;
 };
@@ -186,10 +188,18 @@ int SelectorDev::init ()
 	if (ret)
 		return ret;
 	
+	if (!queueNames.empty ())
+	{
+		createValue (selectorQueue, "selector_queue", "selector queue mechanism", false, RTS2_VALUE_WRITABLE);
+		selectorQueue->addSelVal ("auto");
+	}
+	
 	for (std::list <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
 	{
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
+		selectorQueue->addSelVal ((*iter));
 	}
+	selectorQueue->setValueInteger (0);
 	return 0;
 }
 
@@ -279,7 +289,11 @@ int SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
 	int tar_id;
-	if (conn->isCommand ("queue"))
+	if (conn->isCommand ("next"))
+	{
+		return updateNext () == 0 ? 0 : -2;
+	}
+	else if (conn->isCommand ("queue"))
 	{
 		char *name;
 		if (conn->paramNextString (&name))
