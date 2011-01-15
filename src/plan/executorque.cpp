@@ -68,7 +68,6 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 ExecutorQueue::~ExecutorQueue ()
 {
 	clearNext (NULL);
-	updateVals ();
 }
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
@@ -138,6 +137,7 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 			delete iter->target;
 	}
 	clear ();
+	updateVals ();
 }
 
 int ExecutorQueue::selectNextObservation ()
