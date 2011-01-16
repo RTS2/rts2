@@ -32,15 +32,14 @@ namespace rts2db
 
 class PlanSet:public std::list < Plan >
 {
-	private:
-		void load (std::string in_where);
-
 	public:
 		PlanSet ();
 		PlanSet (int prop_id);
 		PlanSet (time_t * t_from, time_t * t_to);
-
+		PlanSet (double t_from, double t_to);
 		virtual ~PlanSet (void);
+
+		void load ();
 
 		friend std::ostream & operator << (std::ostream & _os, PlanSet & plan_set)
 		{
@@ -51,6 +50,9 @@ class PlanSet:public std::list < Plan >
 			}
 			return _os;
 		}
+
+	private:
+		std::string where;
 };
 
 }

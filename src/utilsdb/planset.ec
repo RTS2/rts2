@@ -24,7 +24,7 @@
 
 using namespace rts2db;
 
-void PlanSet::load (std::string in_where)
+void PlanSet::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	char *stmp_c;
@@ -40,9 +40,9 @@ void PlanSet::load (std::string in_where)
 		"plan_id"
 	" FROM "
 		"plan";
-	if (in_where.length ())
+	if (where.length ())
 	{
-		os << " WHERE " << in_where;
+		os << " WHERE " << where;
 	}
 	os << " ORDER BY plan_start ASC;";
 
@@ -89,9 +89,8 @@ void PlanSet::load (std::string in_where)
 }
 
 
-PlanSet::PlanSet ()
+PlanSet::PlanSet ():where ("")
 {
-	load (std::string (""));
 }
 
 
@@ -100,7 +99,7 @@ PlanSet::PlanSet (int prop_id)
 	std::ostringstream os;
 
 	os << " prop_id = " << prop_id;
-	load (os.str());
+	where = os.str ();
 }
 
 
@@ -110,7 +109,16 @@ PlanSet::PlanSet (time_t *t_from, time_t *t_to)
 
 	os << " EXTRACT (EPOCH FROM plan_start) >= " << (*t_from)
 		<< " AND EXTRACT (EPOCH FROM plan_start) <= " << (*t_to);
-	load (os.str());
+	where = os.str ();
+}
+
+PlanSet::PlanSet (double t_from, double t_to)
+{
+	std::ostringstream os;
+
+	os << " EXTRACT (EPOCH FROM plan_start) >= " << t_from
+		<< " AND EXTRACT (EPOCH FROM plan_start) <= " << t_to;
+	where = os.str ();
 }
 
 PlanSet::~PlanSet (void)

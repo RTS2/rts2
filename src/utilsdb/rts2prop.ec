@@ -79,5 +79,7 @@ PlanSet * Rts2Prop::getPlanSet ()
 {
 	if (planSet)
 		return planSet;
-	return new PlanSet (prop_id);
+	PlanSet *p = new PlanSet (prop_id);
+	p->load ();
+	return p;
 }

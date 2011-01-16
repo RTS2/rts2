@@ -37,6 +37,7 @@ Plan::Plan ()
 	obs_id = -1;
 	observation = NULL;
 	plan_status = 0;
+	plan_start = plan_end = rts2_nan ("f");
 }
 
 Plan::Plan (int in_plan_id)
@@ -48,6 +49,7 @@ Plan::Plan (int in_plan_id)
 	obs_id = -1;
 	observation = NULL;
 	plan_status = 0;
+	plan_start = plan_end = rts2_nan ("f");
 }
 
 Plan::~Plan (void)
@@ -104,9 +106,9 @@ int Plan::load ()
 		obs_id = db_obs_id;
 	plan_start = (long) db_plan_start;
 	if (db_plan_end_ind)
-		plan_end = -1;
+		plan_end = rts2_nan ("f");
 	else
-		plan_end = (long) db_plan_end;
+		plan_end = db_plan_end;
 	plan_status = db_plan_status;
 	EXEC SQL COMMIT;
 	return 0;
@@ -123,7 +125,7 @@ int Plan::save ()
 		int db_obs_id_ind;
 		long db_plan_start = plan_start;
 		long db_plan_end = plan_end;
-		int db_plan_end_ind = (plan_end == -1 ? -1 : 0);
+		int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
 		int db_plan_status = plan_status;
 	EXEC SQL END DECLARE SECTION;
 
@@ -307,7 +309,8 @@ void Plan::print (std::ostream & _os)
 	int good;
 	double JD;
 	int ret;
-	JD = ln_get_julian_from_timet (&plan_start);
+	time_t t = plan_start;
+	JD = ln_get_julian_from_timet (&t);
 	ret = load ();
 	if (ret)
 	{
@@ -327,8 +330,8 @@ void Plan::print (std::ostream & _os)
 		<< std::left << std::setw (20) << tar_name << SEP
 		<< std::right << std::setw (8) << tar_id << SEP
 		<< std::setw (8) << obs_id << SEP
-		<< std::setw (9) << LibnovaDate (&(plan_start)) << SEP
-		<< std::setw (9) << LibnovaDate (&(plan_end)) << SEP
+		<< std::setw (9) << LibnovaDateDouble (plan_start) << SEP
+		<< std::setw (9) << LibnovaDateDouble (plan_end) << SEP
 		<< std::setw (8) << plan_status << SEP
 		<< lHrz << SEP
 		<< std::setw(1) << (good ? 'G' : 'B')
@@ -354,5 +357,7 @@ void Plan::read (std::istream & _is)
 	std::istringstream buf_s (buf);
 	LibnovaDate start_date;
 	buf_s >> tar_id >> start_date;
-	start_date.getTimeT (& plan_start);
+	time_t t;
+	start_date.getTimeT (& t);
+	plan_start = t;
 }

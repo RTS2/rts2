@@ -23,9 +23,10 @@
 #include "executorque.h"
 
 #include "../utils/rts2devclient.h"
-#include "../utilsdb/rts2devicedb.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
+#include "../utilsdb/rts2devicedb.h"
+#include "../utilsdb/planset.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 #define OPT_ADD_QUEUE           OPT_LOCAL + 6
@@ -118,6 +119,9 @@ class SelectorDev:public Rts2DeviceDb
 		std::list <const char *> filterOptions;
 		std::list <const char *> filterFileOptions;
 		std::list <const char *> aliasFiles;
+
+		// load plan to queue
+		void queuePlan (rts2plan::ExecutorQueue *, double t);
 };
 
 }
@@ -389,24 +393,27 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("next"))
 	{
+		if (!conn->paramEnd ())
+			return -2;
 		return updateNext () == 0 ? 0 : -2;
 	}
 	// when observation starts
 	else if (conn->isCommand ("observation"))
 	{
+		if (!conn->paramEnd ())
+			return -2;
 		return updateNext (true) == 0 ? 0 : -2;
 	}
-	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear"))
+	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan"))
 	{
 		char *name;
 		bool withTimes = conn->isCommand ("queue_at");
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
-		int i = 0;
 		std::list <rts2plan::ExecutorQueue>::iterator qi = queues.begin ();
 		std::list <const char *>::iterator iter;
-		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, i++, qi++)
+		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, qi++)
 		{
 			if (strcmp (*iter, name) == 0)
 				break;
@@ -416,7 +423,17 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		rts2plan::ExecutorQueue * q = &(*qi);
 		if (conn->isCommand ("clear"))
 		{
+			if (!conn->paramEnd ())
+				return -2;
 			q->clearNext (NULL);
+			return 0;
+		}
+		else if (conn->isCommand ("queue_plan"))
+		{
+			double t;
+			if (conn->paramNextDouble (&t) || !conn->paramEnd ())
+				return -2;
+			queuePlan (q, t);
 			return 0;
 		}
 		return q->queueFromConn (conn, withTimes) == 0 ? 0 : -2;
@@ -449,6 +466,18 @@ int SelectorDev::changeMasterState (int new_master_state)
 	}
 	updateNext ();
 	return Rts2DeviceDb::changeMasterState (new_master_state);
+}
+
+void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
+{
+	q->clearNext (NULL);
+	rts2db::PlanSet p (getNow (), getNow () + t);
+	p.load ();
+	for (rts2db::PlanSet::iterator iter = p.begin (); iter != p.end (); iter++)
+	{
+		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd ());
+		iter->clearTarget ();
+	}
 }
 
 int main (int argc, char **argv)

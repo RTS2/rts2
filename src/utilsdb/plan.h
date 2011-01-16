@@ -56,9 +56,11 @@ class Plan
 
 		int getPlanId () { return plan_id; }
 
-		time_t getPlanStart ()  { return plan_start; }
+		int getTargetId () { return tar_id; }
 
-		time_t getPlanEnd () { return plan_end; }
+		double getPlanStart ()  { return plan_start; }
+
+		double getPlanEnd () { return plan_end; }
 
 		friend std::ostream & operator << (std::ostream & _os, Plan * plan) { plan->print (_os); return _os; }
 		friend Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Plan * plan) { plan->printInfoVal (_os); return _os; }
@@ -70,8 +72,8 @@ class Plan
 		int prop_id;
 		int tar_id;
 		int obs_id;
-		time_t plan_start;
-		time_t plan_end;
+		double plan_start;
+		double plan_end;
 
 		int plan_status;
 
