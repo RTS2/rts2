@@ -24,6 +24,10 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#ifndef V4L2_PIX_FMT_Y16
+#define V4L2_PIX_FMT_Y16   v4l2_fourcc('Y', '1', '6', ' ')
+#endif
+
 namespace rts2camd
 {
 
