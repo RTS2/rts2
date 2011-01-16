@@ -140,10 +140,6 @@ class main(rts2af.AFScript):
         else:
             print "main: catalogues are invalid"
 
-        for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
-            if(rts2af.verbose):
-                print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
-            cat.average('FWHM_IMAGE')
 
 
         cats.fitTheValues()
@@ -152,9 +148,17 @@ class main(rts2af.AFScript):
         #    print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
 
         #cats.printSelectedSXobjects()
-        #cats.ds9DisplayCatalogues()
+        cats.ds9DisplayCatalogues()
         cats.ds9WriteRegionFiles()
         
+        for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+            if(rts2af.verbose):
+                print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
+            cat.average('FWHM_IMAGE')
+            cat.averageFWHM("selected")
+            cat.averageFWHM("matched")
+            cat.averageFWHM()
+
         logger.error("THIS IS THE END")
         print "THIS IS THE END"
 

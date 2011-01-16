@@ -715,9 +715,8 @@ class Catalogue():
                         sxReferenceObject.numberOfMatches += 1
                         sxReferenceObject.matchedsxObjects.append(sxObject)
                     else:
-                        pass
-                        #if( verbose):
-                        #    print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
+                        if( verbose):
+                            print "lost " + sxReferenceObject.objectNumber + " %d" % self.multiplicity[sxReferenceObject.objectNumber] # count
 
         if(verbose):
             print "number of sxObjects =%d" % len(self.sxObjects)
@@ -728,7 +727,6 @@ class Catalogue():
         else:
             logger.error("main: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS+ %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
             return False
-
 
 # example how to access the catalogue
     def average(self, variable):
@@ -742,6 +740,35 @@ class Catalogue():
         #if(verbose):
         if( i != 0):
             print 'average at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
+            return (sum/ float(i))
+        else:
+            print 'Error in average i=0'
+            return False
+    def averageFWHM(self, selection="all"):
+        sum= 0
+        i= 0
+        
+        
+        for sxObjectNumber, sxObject in self.sxObjects.items():
+            sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
+            if re.search("selected", selection):
+                if( sxReferenceObject.foundInAll):
+                    sum += sxObject.fwhm
+                    i += 1
+
+            elif re.search("matched", selection):
+                if( sxObject.matched):
+                    sum += sxObject.fwhm
+                    i += 1
+            else:
+                sum += sxObject.fwhm
+                i += 1
+
+
+                    
+        #if(verbose):
+        if( i != 0):
+            print 'average ' + selection + ' at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' FWHM  %f ' % (sum/ float(i))  + ' number of objects %d' % (i)
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
