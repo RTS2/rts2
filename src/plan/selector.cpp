@@ -292,7 +292,7 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
-	 	if (selectorQueue)
+	 	if (selectorQueue && getMasterState () == SERVERD_NIGHT)
 		{
 			int id = -1;
 			int q = 1;
