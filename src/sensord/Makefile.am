@@ -8,9 +8,9 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 
 noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
 
-EXTRA_DIST = rts2-sensor.pde
-
 noinst_LIBRARIES = librts2sensord.a
+
+EXTRA_DIST = 
 
 if GPIBLIB
 
