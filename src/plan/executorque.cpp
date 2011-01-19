@@ -253,7 +253,7 @@ void ExecutorQueue::filterExpired ()
 	{
 		double t_start = iter2->t_start;
 		double t_end = iter2->t_end;
-		if (!isnan (t_start) && t_start <= master->getNow () && (isnan (t_end) || t_end <= master->getNow ()))
+		if (!isnan (t_start) && t_start <= master->getNow () && !isnan (t_end) && t_end <= master->getNow ())
 			iter2 = erase (iter2);
 		else
 			iter2++;
