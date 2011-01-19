@@ -172,7 +172,7 @@ int Rts2UserApp::newUser ()
 int Rts2UserApp::deleteUser ()
 {
 	int ret;
-	bool ch;
+	bool ch = false;
 	std::ostringstream os;
 	os << "Delete user " << user;
 	ret = askForBoolean (os.str ().c_str (), ch);
