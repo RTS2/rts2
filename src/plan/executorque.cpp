@@ -249,13 +249,14 @@ void ExecutorQueue::filterExpired ()
 	if (iter == end ())
 		return;
 	ExecutorQueue::iterator iter2 = begin ();
-	for (;iter2 != end (); iter2++)
+	for (;iter2 != end ();)
 	{
-		double t_start = iter->t_start;
-		double t_end = iter->t_end;
+		double t_start = iter2->t_start;
+		double t_end = iter2->t_end;
 		if (!isnan (t_start) && t_start <= master->getNow () && (isnan (t_end) || t_end <= master->getNow ()))
-			erase (iter);
-		return;
+			iter2 = erase (iter2);
+		else
+			iter2++;
 	}
 	iter2 = iter;
 	iter++;
