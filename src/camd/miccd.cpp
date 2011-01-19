@@ -193,7 +193,10 @@ int MICCD::init ()
 
 	switch (camera.model)
 	{
+	 	case G10300:
 		case G10800:
+		case G11400:
+		case G12000:
 			mode = NULL;
 			createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			miccd_fan (&camera, 1);
@@ -252,26 +255,43 @@ int MICCD::info ()
 	ret = miccd_chip_temperature (&camera, &val);
 	if (ret)
 	{
-		if (camera.model != G10800)
-			return -1;
-		ret = reinitCamera ();
-		if (ret)
-			return -1;
-		ret = miccd_chip_temperature (&camera, &val);
-		if (ret)
-			return -1;
+		switch (camera.model)
+		{
+			case G10300:
+			case G10800:
+			case G11400:
+			case G12000:
+				ret = reinitCamera ();
+				if (ret)
+					return -1;
+				ret = miccd_chip_temperature (&camera, &val);
+				if (ret)
+					return -1;
+				break;
+			case G2:
+			case G3:
+				return -1;
+		}
 	}
 	tempCCD->setValueFloat (val);
-	if (camera.model != G10800)
+	switch (camera.model)
 	{
-		ret = miccd_environment_temperature (&camera, &val);
-		if (ret)
-			return -1;
-		tempAir->setValueFloat (val);
-		ret = miccd_gain (&camera, &ival);
-		if (ret)
-			return -1;
-		gain->setValueInteger (ival);
+		case G10300:
+		case G10800:
+		case G11400:
+		case G12000:
+			break;
+		case G2:
+		case G3:
+			ret = miccd_environment_temperature (&camera, &val);
+			if (ret)
+				return -1;
+			tempAir->setValueFloat (val);
+			ret = miccd_gain (&camera, &ival);
+			if (ret)
+				return -1;
+			gain->setValueInteger (ival);
+			break;
 	}
 	ret = miccd_power_voltage (&camera, &ival);
 	if (ret)
@@ -337,7 +357,10 @@ int MICCD::startExposure ()
 	
 	switch (camera.model)
 	{
+	 	case G10300:
 		case G10800:
+		case G11400:
+		case G12000:
 			// G10800 does not allow > 8 sec exposures
 			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 			if (ret < 0)
@@ -377,7 +400,10 @@ int MICCD::endExposure ()
 	{
 		switch (camera.model)
 		{
+			case G10300:
 			case G10800:
+			case G11400:
+			case G12000:
 				break;
 			case G2:
 			case G3:
@@ -395,7 +421,10 @@ int MICCD::stopExposure ()
  	int ret;
 	switch (camera.model)
 	{
+		case G10300:
 		case G10800:
+		case G11400:
+		case G12000:
 			ret = miccd_abort_exposure (&camera);
 			if (ret)
 				return -1;
@@ -416,7 +445,10 @@ int MICCD::doReadout ()
 
 	switch (camera.model)
 	{
+		case G10300:
 		case G10800:
+		case G11400:
+		case G12000:
 			ret = miccd_read_data (&camera, 2 * getUsedWidth () * getUsedHeight (), dataBuffer);
 			break;
 		case G2:
@@ -482,7 +514,10 @@ int MICCD::reinitCamera ()
 		return -1;
 	switch (camera.model)
 	{
+		case G10300:
 		case G10800:
+		case G11400:
+		case G12000:
 			if (miccd_fan (&camera, fan->getValueInteger ()))
 			{
 				logStream (MESSAGE_ERROR) << "reinit failed - cannot set fan" << sendLog;
