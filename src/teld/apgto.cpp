@@ -180,7 +180,8 @@ namespace rts2teld
     Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
     Rts2ValueBool    *mount_tracking ;
     Rts2ValueBool    *transition_while_tracking ; 
-    Rts2ValueBool    *block_sync_move;
+    Rts2ValueBool    *block_sync_apgto;
+    Rts2ValueBool    *block_move_apgto;
     Rts2ValueBool    *assume_parked;
     Rts2ValueBool    *slew_state; // (move_state)
     Rts2ValueBool    *exposure_detection; 
@@ -252,7 +253,7 @@ APGTO::f_scansexa ( const char *str0, double *dp) /* input string, cracked value
   r = sscanf (str, "%lf%*[^0-9]%lf%*[^0-9]%lf", &a, &b, &c);
   if (r < 1)
     return (-1);
-  *dp = a + b/60 + c/3600;
+  *dp = a + b/60. + c/3600.;
   if (neg)
     *dp *= -1;
   return (0);
@@ -434,7 +435,8 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
     logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
     return -1;
   }
-  *hmsptr = hmstod (wbuf);
+
+ *hmsptr = hmstod (wbuf);
   // ToDo 
   // Invalid argumentwbuf >-É84*24:58<
   // Invalid argumentwbuf >-Ê00*06:11<
@@ -447,14 +449,16 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
   if (errno) {
     logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
     errno= 0 ;
-    block_sync_move->setValueBool(true) ;
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading HMS"<< sendLog;
-    while( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
-      sleep(1) ;
-    }
-    sleep(1) ;
+    //block_sync_apgto->setValueBool(true) ;
+    //block_move_apgto->setValueBool(true) ;
+    //logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading HMS"<< sendLog;
+    //while( (abortAnyMotion () !=0)) {
+    //  logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
+    //  sleep(1) ;
+    //}
+    //sleep(1) ;
     // trying to recover
+    logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms NOT yet abortAnyMotion" << sendLog;
     if(setAPClearBuffer() < 0) {
       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms clearing the buffer failed" << sendLog;
     } else {
@@ -467,29 +471,38 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
     }
     *hmsptr = hmstod (wbuf);
     if (errno) {
-       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
-       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing serial port" <<sendLog;
-       errno= 0 ;
+   
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms second trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing serial port" <<sendLog;
+      errno= 0 ;
 
-       sleep(1) ;
-       if (tcflush (apgto_fd, TCIOFLUSH) < 0) {
-         logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing failed, giving up " <<sendLog;
+      sleep(1) ;
+      if (tcflush (apgto_fd, TCIOFLUSH) < 0) {
+	logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms flushing failed, giving up " <<sendLog;
+	return -1;
+      }
+      sleep(2) ;
+      if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
+	logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
 	 return -1;
-       }
-       sleep(2) ;
-       if (tel_write_read_hash (command, strlen (command), wbuf, 200) < 0) {
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: error tel_write_read_hash >" << command << "<END " << ", length " << strlen (command) << " failed" << sendLog;
-	 return -1;
-       }
-       *hmsptr = hmstod (wbuf);
-       if(errno) {
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
-	 logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: giving up" <<sendLog;
-	 errno= 0 ;
-       }
+      }
+      *hmsptr = hmstod (wbuf);
+      if(errno) {
+	logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: hmstod Error (errno): " << errno << " mesg : " << strerror( errno) << ", wbuf >" << wbuf << "<" <<sendLog;
+	logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms third trial: giving up" <<sendLog;
+	errno= 0 ;
+	block_sync_apgto->setValueBool(true) ;
+	block_move_apgto->setValueBool(true) ;
+	logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms block any sync and slew opertion due to error reading HMS"<< sendLog;
+	while( (abortAnyMotion () !=0)) {
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms abortAnyMotion failed to stop any tracking and motion, sleeping" << sendLog;
+	  sleep(1) ;
+      }
+      }
     } else {
-
-       block_sync_move->setValueBool(false) ;
+      
+       block_sync_apgto->setValueBool(false) ;
+       block_move_apgto->setValueBool(false) ;
        logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms unblocking telescope movement after second trial, received wbuf >>"<< wbuf << "<<"<< sendLog;
        return 0 ;
     }
@@ -720,11 +733,16 @@ APGTO::setAPMotionStop()
 {
   int error_type;
     
-  if ( (error_type = tel_write( "#:Q#", 4)) < 0)
-    return error_type;
 
-  mount_tracking->setValueBool(false) ;
-  notMoveCupola ();
+  if( slew_state->getValueBool()) {
+    if ( (error_type = tel_write( "#:Q#", 4)) < 0)
+      return error_type;
+
+    slew_state->setValueBool(false) ;
+    logStream (MESSAGE_ERROR) << "APGTO::setAPMotionStop successfully stoped motion #:Q#" << sendLog;
+    notMoveCupola ();
+  }
+
   return 0 ;
 }
 
@@ -799,8 +817,11 @@ APGTO::selectAPTrackingMode(int trackMode)
     //logStream (MESSAGE_DEBUG) <<"APGTO::selectAPTrackingMode setting tracking mode to zero." << sendLog;
     if ( (error_type = tel_write( "#:RT9#", 6)) < 0)
       return error_type;
-    mount_tracking->setValueBool(false) ;
-    notMoveCupola() ;
+    if( mount_tracking->getValueBool()){
+    	logStream (MESSAGE_ERROR) << "APGTO::selectAPTrackingMode successfully stoped tracking" << sendLog;
+	mount_tracking->setValueBool(false) ;
+	notMoveCupola() ;
+    }
 
     if( tel_read_ra ()) {
       logStream (MESSAGE_ERROR) <<"APGTO::selectAPTrackingMode can not read RA." << sendLog;
@@ -1168,7 +1189,8 @@ APGTO::tel_check_declination_axis ()
   snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
 	
   if( tel_read_declination_axis()) {
-    block_sync_move->setValueBool(true) ;
+    block_sync_apgto->setValueBool(true) ;
+    block_move_apgto->setValueBool(true) ;
     stop = 1 ;
     logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
   }
@@ -1178,7 +1200,8 @@ APGTO::tel_check_declination_axis ()
       if( transition_while_tracking->getValueBool()) {
 	// the mount is allowed to transit the meridian while tracking
       } else {
-	block_sync_move->setValueBool(true) ;
+	block_sync_apgto->setValueBool(true) ;
+	block_move_apgto->setValueBool(true) ;
 	stop = 1 ;
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", West), severe error, blocking any sync and moves" << sendLog;
 	// can not exit here because if HA>0, West the telecope must be manually "rot e" to the East
@@ -1191,7 +1214,8 @@ APGTO::tel_check_declination_axis ()
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error." << sendLog;
 	stop = 1 ;
       } else {
-	block_sync_move->setValueBool(true) ;
+	block_sync_apgto->setValueBool(true) ;
+	block_move_apgto->setValueBool(true) ;
 	stop = 1 ;
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, sync manually, blocking any sync and moves" << sendLog;
       }
@@ -1365,11 +1389,19 @@ APGTO::tel_slew_to (double ra, double dec)
   struct ln_equ_posn target_equ;
   struct ln_hrz_posn hrz;
   double JD;
+  if( block_move_apgto->getValueBool()){
+    if( block_sync_apgto->getValueBool()) {
 
-  if( block_sync_move->getValueBool()) {
-    logStream (MESSAGE_INFO) << "APGTO::tel_slew_to slew is blocked, see BLOCK_SYNC_MOVE, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
-    return -1 ;
+      logStream (MESSAGE_INFO) << "APGTO::tel_slew_to sync and move is blocked, see BLOCK_SYNC_APGTO, BLOCK_MOVE_APGTO, doing nothing" << sendLog;
+      return -1 ;
+    } else {
+      logStream (MESSAGE_INFO) << "APGTO::setTo move is blocked, see BLOCK_MOVE_APGTO, doing nothing" << sendLog;
+      return -1 ;
+    }
+  } else {
+      logStream (MESSAGE_INFO) << "APGTO::tel_slew_to moving while sync is blocked, see BLOCK_SYNC_APGTO" << sendLog;
   }
+
   if( slew_state->getValueBool()) {
     logStream (MESSAGE_INFO) << "APGTO::tel_slew_to mount is slewing, ignore slew command to RA " << ra << "Dec "<< dec << sendLog;
     return -1 ;
@@ -1448,7 +1480,8 @@ APGTO::tel_slew_to (double ra, double dec)
       notMoveCupola() ;
       return -1;
     } else {
-      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
+      startCupolaSync ();
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled, cupola synced." << sendLog;
     }
   }
   // slew now
@@ -1617,6 +1650,8 @@ APGTO::stopMove ()
       
       return -1;
   }
+  slew_state->setValueBool(false) ;
+
   return 0;
 }
 /*!
@@ -1634,11 +1669,19 @@ APGTO::setTo (double ra, double dec)
 {
   char readback[101];
 
-  if( block_sync_move->getValueBool()) {
+  if( block_sync_apgto->getValueBool()){
+    if( block_move_apgto->getValueBool()) {
 
-    logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_MOVE" << sendLog;
-    return -1 ;
+      logStream (MESSAGE_INFO) << "APGTO::setTo sync and move is blocked, see BLOCK_SYNC_APGTO, BLOCK_MOVE_APGTO, doing nothing" << sendLog;
+      return -1 ;
+    } else {
+      logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_APGTO, doing nothing" << sendLog;
+      return -1 ;
+    }
+  } else {
+      logStream (MESSAGE_INFO) << "APGTO::setTo syncing while move is blocked, see BLOCK_MOVE_APGTO" << sendLog;
   }
+
   if( slew_state->getValueBool()) {
     logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
       return -1 ;
@@ -1763,24 +1806,32 @@ APGTO::ParkDisconnect()
 int
 APGTO::startDir (char *dir)
 {
+  int ret= -1 ;
   switch (*dir) {
   case DIR_EAST:
   case DIR_WEST:
   case DIR_NORTH:
   case DIR_SOUTH:
-    return tel_start_move (*dir);
+    if( ! (ret= tel_start_move (*dir))) {
+      slew_state->setValueBool(true) ;
+    }
+    return ret ;
   }
   return -2;
 }
 int
 APGTO::stopDir (char *dir)
 {
+  int ret = -1 ;
   switch (*dir) {
   case DIR_EAST:
   case DIR_WEST:
   case DIR_NORTH:
   case DIR_SOUTH:
-    return tel_stop_move (*dir);
+    if( ! (ret= tel_stop_move (*dir))) {
+      slew_state->setValueBool(false) ;
+    }
+    return ret ;
   }
   return -2;
 }
@@ -1790,6 +1841,7 @@ APGTO::abortAnyMotion ()
   int ret = 0 ;
   int failed= 0 ;
 
+  if ( mount_tracking->getValueBool() || slew_state->getValueBool()){
     if((ret = setAPMotionStop()) < 0) {
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion stop motion #:Q# failed, SWITCH the mount OFF" << sendLog;
       failed = 1 ;
@@ -1798,13 +1850,12 @@ APGTO::abortAnyMotion ()
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion setting tracking mode ZERO failed." << sendLog;
       failed = 1 ;
     }
-    if( failed == 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion successfully stoped motion #:Q# and tracking" << sendLog;
-      return 0 ;
-    } else {
+    if( failed == 1) {
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion failed: check motion and tracking now" << sendLog;
       return -1 ;
     }
+  }
+  return 0 ;
 }
 bool
 APGTO::shutterClosed() {
@@ -1831,7 +1882,6 @@ APGTO::valueChanged (Rts2Value * changed_value)
   int slew_rate= -1 ;
   int move_rate= -1 ;
   char command ;
-
   if (changed_value ==APslew_rate){
     if(( slew_rate= APslew_rate->getValueInteger())== 1200) {
       command= SLEW_RATE_1200 ;
@@ -1875,7 +1925,7 @@ APGTO::valueChanged (Rts2Value * changed_value)
       // return -1 ;
     }
     return ;
-  }
+  } 
   Telescope::valueChanged (changed_value);
 }
 
@@ -1886,7 +1936,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 
   if (conn->isCommand ("abort")) {
     if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized failed to stop any tracking and motion" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized failed to abort any tracking and motion" << sendLog;
       return -1 ;
     }
     return 0;
@@ -1959,6 +2009,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     return startResync ();
 
   } else if ((conn->isCommand("sync"))||(conn->isCommand("sync_sg"))||(conn->isCommand("sync_ha"))||(conn->isCommand("sync_ha_sg")||(conn->isCommand("sync_delta")))) {
+    
     double sync_ra, sync_dec ;
     double sync_delta_ra, sync_delta_dec ; // defined for calrity
     double sync_ha ;
@@ -1994,6 +2045,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     } else if (conn->isCommand ("sync_ha_sg")) {
       char *sync_ha_str;
       char *sync_dec_str;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg" << sendLog;
       if (conn->paramNextStringNull (&sync_ha_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
 	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg paramNextString ra or dec failed" << sendLog;
 	return -2;
@@ -2082,7 +2134,7 @@ APGTO::info ()
   int flip= -1 ;
   int error= -1 ;
   if( !( exposure_detection->getValueBool())) {
-    logStream (MESSAGE_ERROR) << "APGTO::info  ccd exposure detection is disabled" << sendLog;
+    //logStream (MESSAGE_ERROR) << "APGTO::info  ccd exposure detection is disabled" << sendLog;
   } else {
   // if there are more than one CCD running use an iterator
   // and find the appropriate camera
@@ -2219,7 +2271,9 @@ APGTO::info ()
       
       if(ret != NO_COLLISION) {
 	stop= 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog ;
+	if(( mount_tracking->getValueBool()) || (( slew_state->getValueBool()))) {
+	  logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog ;
+	}
       } else {
 	if( ( HA >= 15. ) && ( HA < 180.)) { // 15. degrees are a matter of taste
 	  if( mount_tracking->getValueBool()) {
@@ -2237,7 +2291,9 @@ APGTO::info ()
 
       if(ret != NO_COLLISION) {
 	stop= 1 ;
-	logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog ;
+	if(( mount_tracking->getValueBool()) || (( slew_state->getValueBool()))) {
+	  logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog ;
+	}
       } else {
 	if( APAltAz->getAlt() < 10.) {
 	  if( mount_tracking->getValueBool()) {
@@ -2250,7 +2306,6 @@ APGTO::info ()
     } 
     if( stop !=0) {
       // if a collision is detected it is necessary that the mount can be moved with rot e, w, n, s commands
-      // set collision_detection to true if that occurs
       if( collision_detection->getValueBool()) {
 	if( (abortAnyMotion () !=0)) {
 	  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion" << sendLog;
@@ -2262,25 +2317,6 @@ APGTO::info ()
 	  return -1;
 	}
 	logStream (MESSAGE_ERROR) << "APGTO::info stop tracking but not motion" << sendLog;
-      }
-    }
-  } else {
-    ret= isMoving() ;
-
-    if( ret > 0) {
-      // still moving, ignore that here
-    } else {
-      switch (ret) {
-      case -2 :
-	move_state= NOTMOVE ;
-	slew_state->setValueBool(false) ;
-	break ;
-      case -1: // read error 
-	logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
-	break ;
-      default: 
-	logStream (MESSAGE_ERROR) << "APGTO::info no valid case :" << ret << sendLog;
-	break ;
       }
     }
   }
@@ -2701,7 +2737,8 @@ APGTO::initValues ()
     }
     if( block) {
       tracking_mode= TRACK_MODE_ZERO ; 
-      block_sync_move->setValueBool(true) ;
+      block_sync_apgto->setValueBool(true) ;
+      block_move_apgto->setValueBool(true) ;
       logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
     } 
   }
@@ -2711,13 +2748,15 @@ APGTO::initValues ()
   // the mount must be synced **manually**.
   if( force_start== true ) {
     tracking_mode= TRACK_MODE_ZERO ; 
-    block_sync_move->setValueBool(true) ; // don't get me twice!
-    logStream (MESSAGE_ERROR) << "APGTO::initValues set  BLOCK_SYNC_MOVE to false due to force_start== true, sync manually" << sendLog;
+    block_sync_apgto->setValueBool(true) ; // don't get me twice!
+    block_move_apgto->setValueBool(true) ; // don't get me twice!
+    logStream (MESSAGE_ERROR) << "APGTO::initValues set  BLOCK_SYNC_APGTO, BLOCK_MOVE_APGTO to false due to force_start== true, sync manually" << sendLog;
   }
   if(( ret= selectAPTrackingMode(tracking_mode)) < 0 ) { 
     logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"<< tracking_mode << " failed." << sendLog;
     return -1;
   }
+  //ToDo: a little bit erratic here
   move_state = NOTMOVE;
   slew_state->setValueBool(false) ;
   return Telescope::initValues ();
@@ -2757,7 +2796,8 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
   addOption (OPT_APGTO_CCD_DEVICE,    "ccd_device",  1, "ccd camera device name to monitor for data tacking timeouts");
 
-  createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
+  createValue (block_sync_apgto,          "BLOCK_SYNC_APGTO", "true inhibits any sync", false, RTS2_VALUE_WRITABLE);
+  createValue (block_move_apgto,          "BLOCK_MOVE_APGTO", "true inhibits any slew", false, RTS2_VALUE_WRITABLE);
   createValue (slew_state,               "SLEW",        "true: mount is slewing",           false);
   createValue (mount_tracking,           "TRACKING",    "true: mount is tracking",          false);
   createValue (transition_while_tracking,"TRANSITION",  "transition while tracking",        false);
@@ -2777,8 +2817,8 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 
   exposure_detection->setValueBool(true) ;
   collision_detection->setValueBool(true) ;
-  slew_state->setValueBool(false) ;
-  block_sync_move->setValueBool(false) ;
+  block_sync_apgto->setValueBool(true) ;
+  block_move_apgto->setValueBool(true) ;
   transition_while_tracking->setValueBool(false) ;
   assume_parked->setValueBool(false);
 
