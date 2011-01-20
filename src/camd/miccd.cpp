@@ -449,7 +449,7 @@ int MICCD::doReadout ()
 		case G10800:
 		case G11400:
 		case G12000:
-			ret = miccd_read_data (&camera, 2 * getUsedWidth () * getUsedHeight (), dataBuffer);
+			ret = miccd_read_data (&camera, 2 * getUsedWidth () * getUsedHeight (), dataBuffer, camera.w, camera.h);
 			break;
 		case G2:
 		case G3:
