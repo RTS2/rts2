@@ -84,6 +84,13 @@ int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end)
 	return 0;
 }
 
+void ExecutorQueue::filter ()
+{
+	filterBellowHorizon ();
+	filterExpired ();
+	updateVals ();
+}
+
 void ExecutorQueue::beforeChange ()
 {
 	switch (queueType->getValueInteger ())
@@ -105,8 +112,7 @@ void ExecutorQueue::beforeChange ()
 			sort (sortQuedTargetWestEast (*observer));
 			break;
 	}
-	filterBellowHorizon ();
-	filterExpired ();
+	filter ();
 	updateVals ();
 }
 
@@ -258,8 +264,10 @@ void ExecutorQueue::filterExpired ()
 		else
 			iter2++;
 	}
-	iter2 = iter;
-	iter++;
+	if (empty ())
+		return;
+	iter = iter2 = begin ();
+	iter2++;
 	while (iter2 != end ())
 	{
 		double t_start = iter2->t_start;

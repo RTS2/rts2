@@ -71,6 +71,11 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
+
+		/**
+		 * Runs queue filter, remove expired observations.
+		 */
+		void filter ();
 		
 		/**
 		 * Put next target on front of the queue.

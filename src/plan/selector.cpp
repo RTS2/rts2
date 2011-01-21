@@ -302,6 +302,7 @@ int SelectorDev::selectNext ()
 				case 0:
 					for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 					{
+						iter->filter ();
 						id = iter->selectNextObservation ();
 						if (id >= 0)
 						{
@@ -314,6 +315,7 @@ int SelectorDev::selectNext ()
 					rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData ();
 					if (eq != NULL)
 					{
+						eq->filter ();
 						id = eq->selectNextObservation ();
 						if (id >= 0)
 						{
@@ -337,17 +339,14 @@ int SelectorDev::selectNext ()
 
 int SelectorDev::updateNext (bool started)
 {
-	if (started)
+	if (started && selectorQueue)
 	{
-		if (selectorQueue)
+		rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
+		if (eq)
 		{
-			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
-			if (eq)
-			{
-				eq->front ().target->startObservation ();
-				eq->beforeChange ();
-				eq->popFront ();
-			}
+			eq->front ().target->startObservation ();
+			eq->beforeChange ();
+			eq->popFront ();
 		}
 	}
 	next_id->setValueInteger (selectNext ());
