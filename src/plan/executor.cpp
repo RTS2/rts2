@@ -76,7 +76,7 @@ class Executor:public Rts2DeviceDb
 		void queDarks ();
 		void beforeChange ();
 		void doSwitch ();
-		void switchTarget ();
+		int switchTarget ();
 
 		int setNext (int nextId, const char *que = "next");
 		int queueTarget (int nextId, double t_start = rts2_nan("f"), double t_end = rts2_nan ("f"));
@@ -568,7 +568,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		}
 		getActiveQueue ()->addTarget (nt, t_start, t_end);
 		if (!currentTarget)
-			switchTarget ();
+			return switchTarget () == 0 ? 0 : -2;
 		else
 			infoAll ();
 	}
@@ -812,13 +812,13 @@ void Executor::doSwitch ()
 	}
 }
 
-void Executor::switchTarget ()
+int Executor::switchTarget ()
 {
 	if (enabled->getValueBool () == false)
 	{
 		clearNextTargets ();
 		logStream (MESSAGE_WARNING) << "please switch executor to enabled to allow it carrying observations" << sendLog;
-		return;
+		return -1;
 	}
 
 	if (((getState () & EXEC_MASK_END) == EXEC_END)
@@ -865,9 +865,12 @@ void Executor::switchTarget ()
 				}
 				currentTarget = NULL;
 				clearNextTargets ();
+				logStream (MESSAGE_ERROR) << "system not in ON state, and ignore_day in EXECutor is not set - not changing the target" << sendLog;
+				return -1;
 		}
 	}
 	infoAll ();
+	return 0;
 }
 
 void Executor::processTarget (rts2db::Target * in_target)
