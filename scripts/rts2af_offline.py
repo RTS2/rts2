@@ -4,8 +4,26 @@
 #   usage 
 #   rtsaf_offline.py --help
 #   
-#   see man 1 rts2_catalogue.py
-#   see rts2_autofocus_unittest.py for unit tests
+#   not yet see man 1 rts2_catalogue.py
+#   not yet see rts2_autofocus_unittest.py for unit tests
+#
+#   Basic usage:
+#   Create a set of focusing images and define the reference file. The
+#   reference file has apparently the smallest FWHM.
+#   In your configuration file define the base directory parameter base_directory
+#   under which the reference file is found.
+#   This can be e.g. /scratch/focusing if the reference file is found at
+#   /scratch/focusing/2011-01-16-T17:37:55/X/
+#
+#   Then run, e.g.
+#   rts2af_offline.py  --config ./rts2-autofocus-offline.cfg --reference 20091106180858-517-RA.fits
+#
+#   The output is mostly written to /var/log/rts2-autofocus
+#
+#   In the /tmp directory you a lot of output for inspection. Or more
+#   conveniently, use executed the file with the ending sh, wich looks like, e.g.
+#   /tmp/rts2af-ds9-autofocus-X-2011-01-22T12:12:26.729174.reg.sh
+#   and check the results with DS9.
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -28,19 +46,7 @@
 
 __author__ = 'markus.wildi@one-arcsec.org'
 
-import io
-import os
-import re
-import shutil
-import string
 import sys
-import time
-from operator import itemgetter, attrgetter
-
-
-import numpy
-import pyfits
-import rts2comm 
 import rts2af 
 
 class main(rts2af.AFScript):
@@ -68,11 +74,12 @@ class main(rts2af.AFScript):
         if( args.referenceFitsFileName):
             referenceFitsFileName = args.referenceFitsFileName[0]
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logger.error('main: reference file '+ referenceFitsFileName + 'not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
                 sys.exit(1)
 # get the list of fits files
-        testFitsList=[]
-        testFitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
+        FitsList=[]
+        FitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
+
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
@@ -81,22 +88,11 @@ class main(rts2af.AFScript):
             print "exiting"
             sys.exit(1)
 
-# create the administrative objects 
-        HDUs= rts2af.FitsHDUs()
-
-# load the reference file first
-        for fits in testFitsList:
-            if( fits.find(referenceFitsFileName) >= 0):
-                break
-        else:
-            logger.error("main: reference file " + referenceFitsFileName + " not found")
-            sys.exit(1)
-
 # create the reference catalogue
         hdur= rts2af.FitsHDU(referenceFitsFileName)
 
         if(hdur.headerProperties()):
-            HDUs.fitsHDUsList.append(hdur)
+            HDUs= rts2af.FitsHDUs(hdur)
             catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
             catr.runSExtractor()
             catr.createCatalogue()
@@ -107,7 +103,7 @@ class main(rts2af.AFScript):
             sys.exit(1)
             
 # read the files 
-        for fits in testFitsList:
+        for fits in FitsList:
             hdu= rts2af.FitsHDU( fits, hdur)
             if(hdu.headerProperties()):
                 if(rts2af.verbose):
@@ -118,7 +114,7 @@ class main(rts2af.AFScript):
             logger.error("main: HDUs are not valid, exiting")
             sys.exit(1)
 
-# loop over hdus (including reference catalog currently)
+# loop over hdus, create the catalogues
         for hdu  in HDUs.fitsHDUsList:
             if( rts2af.verbose):
                 print '=======' + hdu.headerElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.headerElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
@@ -135,35 +131,39 @@ class main(rts2af.AFScript):
             else:
                 logger.error("main: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
 
-        if(cats.validate()):
-            print "main: catalogues are valid"
-        else:
-            print "main: catalogues are invalid"
+        if(not cats.validate()):
+            logger.error("main: catalogues are invalid, exiting")
+            sys.exit(1)
 
-
-
+        # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
         cats.fitTheValues()
+        # executed the latest /tmp/*.sh file ro see the results with DS9 
+        cats.ds9WriteRegionFiles()
+
+
+        # Various examples:
         #cats.average()
         #for focPos in sorted(fwhm):
         #    print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
 
+        # Print on terminal
         #cats.printSelectedSXobjects()
-        cats.ds9DisplayCatalogues()
-        cats.ds9WriteRegionFiles()
-        
-        for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
-            if(rts2af.verbose):
-                print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
-            cat.average('FWHM_IMAGE')
-            cat.averageFWHM("selected")
-            cat.averageFWHM("matched")
-            cat.averageFWHM()
+        # Live display can take a long time (it is not very useful):
+        #cats.ds9DisplayCatalogues()
+        #
+        #
+        # Check properties of the various data sets
+        #
+        #for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+        #    if(rts2af.verbose):
+        #        print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
+        #    cat.average('FWHM_IMAGE')
+        #    cat.averageFWHM("selected")
+        #    cat.averageFWHM("matched")
+        #    cat.averageFWHM()
 
-        logger.error("THIS IS THE END")
-        print "THIS IS THE END"
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()
-
 
 

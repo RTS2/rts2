@@ -30,6 +30,7 @@ __author__ = 'markus.wildi@one-arcsec.org'
 
 import argparse
 import logging
+import stat
 from operator import itemgetter
 # globals
 LOG_FILENAME = '/var/log/rts2-autofocus'
@@ -150,8 +151,8 @@ class Configuration:
         self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
         self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-autofocus.reg'
         
-        self.cp[('analysis', 'ANALYSIS_UPPER_LIMIT')]= 1.e12
-        self.cp[('analysis', 'ANALYSIS_LOWER_LIMIT')]= 0.
+        self.cp[('analysis', 'ANALYSIS_FOCUS_UPPER_LIMIT')]= 10000
+        self.cp[('analysis', 'ANALYSIS_FOCUS_LOWER_LIMIT')]= 0
         self.cp[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.cp[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
@@ -614,13 +615,13 @@ class Catalogue():
                 logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9, object: {0}".format(sxObjectNumber))
                 
 
-    def ds9WriteRegionFile(self, writeSelected=False, writeMatched=False, writeAll=False, colorSelected="blue", colorMatched="green", colorAll="red"):
+    def ds9WriteRegionFile(self, writeSelected=False, writeMatched=False, writeAll=False, colorSelected="cyan", colorMatched="green", colorAll="red"):
         with open( self.ds9RegionFileName, 'wb') as ds9RegionFile:
             ds9RegionFile.write("# Region file format: DS9 version 4.0\n")
             ds9RegionFile.write("# Filename: {0}\n".format(self.fitsHDU.fitsFileName))
 
-
             ds9RegionFile.write("image\n")
+            ds9RegionFile.write("text (" + str(80) + "," + str(10) + ") # color=magenta font=\"helvetica 15 normal\" text = {FOC_POS="+ str(self.fitsHDU.headerElements['FOC_POS']) + "}\n")
             # ToDo: Solve that
             if(runTimeConfig.value('DS9_DISPLAY_ACCEPTANCE_AREA')):
                 ds9RegionFile.write("point ({0},{1}) ".format( self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY) + "# color=magenta text = {center acceptance}\n")
@@ -635,18 +636,24 @@ class Catalogue():
                     if( sxReferenceObject.foundInAll):
                         radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
                         # ToDo: find out escape
-                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + " " + sxObjectNumber  + " }\n")
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {R:" + sxReferenceObject.objectNumber + ",O: " + sxObjectNumber  + ",F:" + str(self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]) + " }\n")
 
-            # all objects which matched against the reference catalogue, but not found in all fits images
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "\n")
+
+                        # cricle to enhance visibility
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], 40)  + '#  color= yellow\n') 
+            # all objects which matched against the reference catalogue, but not found on all fits images
             if(writeMatched):
                 ds9RegionFile.write("global color={0} font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n".format(colorMatched))
                 ds9RegionFile.write("image\n")
                 for sxObjectNumber, sxObject in self.sxObjects.items():
                     sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
                     if( sxObject.matched):
+                        if( writeSelected and sxReferenceObject.foundInAll):
+                            continue
                         radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
                         # ToDo: find out escape
-                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " " + sxReferenceObject.objectNumber + " " + sxObjectNumber  + " }\n")
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {R:" + sxReferenceObject.objectNumber + ",O:" + sxObjectNumber  +  ",F:" + str(self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]) + " }\n")
 
             # all objects found by sextractor but not found in all fits images
             # but not falling in the selected or matched category
@@ -658,7 +665,7 @@ class Catalogue():
                     sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
                     radius= self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/ 2. # not diameter
                     if( not (sxReferenceObject.foundInAll or sxObject.matched)):
-                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + str(self.fitsHDU.headerElements['FOC_POS']) + " "+ sxObjectNumber + "}\n") 
+                        ds9RegionFile.write("circle ({0},{1},{2})".format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], radius) + "# text = {" + " O:"+ sxObjectNumber +  ",F:" + str(self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]) + "}\n") 
 
         ds9RegionFile.close()
         
@@ -768,7 +775,7 @@ class Catalogue():
                     
         #if(verbose):
         if( i != 0):
-            print 'average ' + selection + ' at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' FWHM  %f ' % (sum/ float(i))  + ' number of objects %d' % (i)
+            print 'average %8s' %(selection) + ' at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' FWHM  %5.2f ' % (sum/ float(i))  + ' number of objects %5d' % (i)
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
@@ -1034,7 +1041,7 @@ class AcceptanceRegion():
         self.transformedCenterY= (self.naxis2- l_y)/2 + self.centerOffsetY
         self.transformedRadius= self.radius
         if( verbose):
-            print "AcceptanceRegion %f %f %f %f %f %f  %f %f %f" % (self.binning, self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
+            print "AcceptanceRegion %f %f %f %f %f  %f %f %f" % (self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
 
 
 import numpy
@@ -1177,13 +1184,13 @@ class Catalogues():
         self.maxFlux= numpy.amax(fluxList)
         self.minFlux= numpy.amax(fluxList)
         if(verbose):
-            print "numberOfObjects========================= %d " % (self.numberOfObjects)
+            print "numberOfObjects %d " % (self.numberOfObjects)
 
     def ds9DisplayCatalogues(self):
         self.__average__()
 
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
-            cat.ds9DisplayCatalogue("blue")
+            cat.ds9DisplayCatalogue("cyan")
             # if reference catr.ds9DisplayCatalogue("yellow", False)
 
     def ds9WriteRegionFiles(self):
@@ -1194,12 +1201,12 @@ class Catalogues():
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
 
             if( cat.catalogueFileName == cat.referenceCatalogue.catalogueFileName):
-                cat.ds9WriteRegionFile(True, True, False, "yellow", "red")
+                cat.ds9WriteRegionFile(True, True, False, "yellow")
             else:
-                cat.ds9WriteRegionFile(True, runTimeConfig.value('DS9_MATCHED'), runTimeConfig.value('DS9_ALL'), "blue")
+                cat.ds9WriteRegionFile(True, runTimeConfig.value('DS9_MATCHED'), runTimeConfig.value('DS9_ALL'), "cyan")
 
-            self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + " -region " + serviceFileOp.expandToDs9RegionFileName(cat.referenceCatalogue.fitsHDU) + "\\\n")
-
+#            self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + " -region " + serviceFileOp.expandToDs9RegionFileName(cat.referenceCatalogue.fitsHDU) + "\\\n")
+            self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + "\\\n")
 
         self.ds9CommandFileWrite()
 
@@ -1212,7 +1219,7 @@ class Catalogues():
             ds9CommandFile.write(self.ds9Command) 
 
         ds9CommandFile.close()
-
+        serviceFileOp.setModeExecutable(self.ds9CommandFileName)
         
     def ds9CommandAdd(self, ds9CommandPart):
         self.ds9Command= self.ds9Command + ds9CommandPart
@@ -1234,7 +1241,7 @@ class FitsHDU():
         self.headerElements={}
         #ToDo: generalize
         self.binning=-1
-
+        self.assumedBinning=False
 
         FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
 
@@ -1254,16 +1261,37 @@ class FitsHDU():
         fitsHDU.close()
 
         try:
-            self.headerElements['FILTER'] = fitsHDU[0].header['FILTER']
-            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+            self.headerElements['FILTER']= fitsHDU[0].header['FILTER']
+        except:
+            self.isValid= True
+            self.headerElements['FILTER']= 'NOFILTER' 
+            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
+
+        try:
             self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
-            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
-            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+        except:
+            self.isValid= True
+            self.assumedBinning=True
+            self.headerElements['BINNING']= '1x1'
+            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the binning header element not found, assuming 1x1 binning')
+
+        try:
             self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
             self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
         except:
+            self.isValid= True
+            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
+
+
+
+            
+        try:
+            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
+            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+        except:
             self.isValid= False
-            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the required header element not found, exiting')
+            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
             return False
         
         if( not self.extractBinning()):
@@ -1288,6 +1316,9 @@ class FitsHDU():
             if(key == 'FOC_POS'):
                 self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
                 continue
+            if( self.assumedBinning):
+                if(key == 'BINNING'):
+                    continue
             if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
                 logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
                 break
@@ -1322,11 +1353,15 @@ class FitsHDU():
     
 class FitsHDUs():
     """Class holding FitsHDU"""
-    def __init__(self):
+    def __init__(self, referenceHDU=None):
         self.fitsHDUsList= []
         self.isValid= False
         self.numberOfFocusPositions= 0 
-
+        if( referenceHDU !=None):
+            self.referenceHDU= referenceHDU
+        else:
+            self.referenceHDU=None
+            
     def findHDUByFitsFileName( self, fileName):
         for hdu in sorted(self.fitsHDUsList):
             if( fileName== hdu.fitsFileName):
@@ -1334,13 +1369,10 @@ class FitsHDUs():
         return False
 
     def findReference(self):
-        for hdu in self.fitsHDUsList:
-            if( hdu.referenceFitsHDU== None):
-                if(verbose):
-                    print "FitsHDUs.findReference: FOUND------------------HDU "+ hdu.fitsFileName
-                return hdu
-        return False
-
+        if( self.referenceHDU !=None):
+            return self.referenceHDU
+        else:
+            return False
     def findReferenceByFocPos(self, filterName):
         filter=  runTimeConfig.filterByName(filterName)
 #        for hdu in sorted(self.fitsHDUsList):
@@ -1517,8 +1549,8 @@ class ServiceFileOperations():
         except:
             fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1]+ '.sh')
             
-        #if(verbose):
-        print 'ServiceFileOperations:expandToDs9CommandFileName expanded to ' + fileName
+        if(verbose):
+            print 'ServiceFileOperations:expandToDs9CommandFileName expanded to ' + fileName
         
         return  self.expandToTmp(fileName)
 
@@ -1533,7 +1565,11 @@ class ServiceFileOperations():
                 return True
         return False
 
-#
+    def setModeExecutable(self, path):
+        #mode = os.stat(path)
+        os.chmod(path, 0744)
+
+    #
 # stub, will be called in main script 
 runTimeConfig= Configuration()
 serviceFileOp= ServiceFileOperations()
