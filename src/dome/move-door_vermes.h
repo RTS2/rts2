@@ -34,7 +34,7 @@ void *move_door( void *value);
 #define SETPOINT_CLOSE_DOOR        -100.
 #define SETPOINT_OPEN_DOOR_SLOW      40.
 #define SETPOINT_CLOSE_DOOR_SLOW    -40.
-#define SETPOINT_UNDEFINED_POSITION -40. // manual intervention: reach a defined state by closing the door until the end switch is reached 
+#define SETPOINT_UNDEFINED_POSITION -80. // manual intervention: reach a defined state by closing the door until the end switch is reached 
 
 
 // door state

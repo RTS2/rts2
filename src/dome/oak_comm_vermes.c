@@ -366,6 +366,7 @@ oak_digin_thread(void * args)
 	  errno= 0 ;
 	}
       }
+      set_setpoint(0.);
       fprintf( stderr, "oak_digin_thread: motor stopped\n") ;
       stop_motor= STOP_MOTOR_UNDEFINED ;
       struct ln_date utm;

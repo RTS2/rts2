@@ -208,6 +208,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	}
 	pthread_kill( move_door_id, SIGUSR2);
       }
+      set_setpoint(0.);
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
     }
