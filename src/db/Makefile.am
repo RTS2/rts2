@@ -5,7 +5,7 @@ if PGSQL
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 AM_LDADD = @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 
-bin_PROGRAMS = rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo
+bin_PROGRAMS = rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo rts2-plan
 
 noinst_HEADERS = rts2targetapp.h
 
@@ -34,5 +34,13 @@ rts2_newtarget_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a .
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
 rts2_simbadinfo_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS}
 rts2_simbadinfo_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBXML_LIBS@ $(AM_LDADD)
+
+rts2_plan_SOURCES = planapp.cpp
+rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
+rts2_plan_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+
+else
+
+EXTRA_DIST = nightreport.cpp targetlist.cpp target.cpp tpm.cpp obsinfo.cpp user.cpp newtarget.cpp rts2targetapp.cpp simbadinfo.cpp planapp.cpp
 
 endif
