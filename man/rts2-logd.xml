@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-logd">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -34,14 +34,7 @@
       <year>2008</year>
       <holder>&dhusername;</holder>
     </copyright>
-    <legalnotice>
-      <para>
-	This manual page was written by &dhusername; &dhemail;.  Permission is
-	granted to copy, distribute and/or modify this document under the terms
-	of the &gnu; General Public License, Version 2 any later version
-	published by the Free Software Foundation.
-      </para>
-    </legalnotice>
+    &legal;
   </refentryinfo>
   <refmeta>
     <refentrytitle>&dhpackage;</refentrytitle>
@@ -54,6 +47,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      &basicapp;
       <arg choice="opt">
 	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
       </arg>
@@ -64,16 +58,6 @@
 	<arg choice="plain"><option>-o <replaceable>log file</replaceable></option></arg>
       </arg>
       <arg choice="plain"><replaceable>config file</replaceable></arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -92,13 +76,10 @@
   <refsect1 id="options">
     <title>OPTIONS</title>
 
-    <para>
-      These programs follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
+      &basicapplist;
       <varlistentry>
         <term><option>--server <replaceable>central server hostname</replaceable></option></term>
         <listitem>
@@ -120,20 +101,6 @@
 	    <citerefentry><refentrytitle>rts2-ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
 	    Most probably you will put there %y%m%d-%H%M%S.%s.log.
 	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-V</option></term>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of program.</para>
         </listitem>
       </varlistentry>
     </variablelist>

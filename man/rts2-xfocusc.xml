@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubánek">
   <!ENTITY dhpackage   "rts2-xfocusc">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -52,29 +52,9 @@
     <refpurpose>X-Window based focusing interface.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
-
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-    </cmdsynopsis>
-
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable class="parameter">central server hostname</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable class="parameter">port number</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable class="parameter">config file</replaceable></option></arg>
-      </arg>
+      &clientapp;
       <arg choice="opt">
 	<arg choice="plain"><option>-d <replaceable class="parameter">camera device name</replaceable></option></arg>
       </arg>
@@ -137,44 +117,10 @@
   <refsect1>
     <title>OPTIONS</title>
 
-    <para>
-      These programs follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of program.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--server <replaceable class="parameter">central server hostname</replaceable></option></term>
-        <listitem>
-          <para>Change central server location. Defaults to localhost.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--port <replaceable class="parameter">port number</replaceable></option></term>
-        <listitem>
-          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--config <replaceable class="parameter">server name</replaceable></option></term>
-        <listitem>
-          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
+      &clientapplist;
       <varlistentry>
         <term><option>-d <replaceable class="parameter">camera device name</replaceable></option></term>
         <listitem>

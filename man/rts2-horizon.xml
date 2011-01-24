@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-horizon">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -34,14 +34,7 @@
       <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    <legalnotice>
-      <para>
-	This manual page was written by &dhusername; &dhemail;.  Permission is
-	granted to copy, distribute and/or modify this document under the terms
-	of the &gnu; General Public License, Version 2 any later version
-	published by the Free Software Foundation.
-      </para>
-    </legalnotice>
+    &legal;
   </refentryinfo>
   <refmeta>
     <refentrytitle>&dhpackage;</refentrytitle>
@@ -54,16 +47,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>rts2-horizon</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable>config-file</replaceable></option></arg>
-      </arg>
+      &configapp;
       <arg choice="opt">
         <arg choice="plain"><option>-f <replaceable>horizon file</replaceable></option></arg>
       </arg>
@@ -95,32 +79,10 @@
       </screen>
     </para>
 
-    <para>
-      The program follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of program.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--config <replaceable class="parameter">config file</replaceable></option></term>
-        <listitem>
-          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
+      &configapplist;
       <varlistentry>
         <term><option>-f <replaceable class="parameter">horizon file</replaceable></option></term>
         <listitem>
@@ -145,7 +107,7 @@
 
     <para>
       Configuration file should obey conventions for .ini files. It's format is
-      described at rts2.ini (5) man page.
+      described at <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry> man page.
     </para>
 
   </refsect1>

@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-scriptor">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -34,14 +34,7 @@
       <year>2007</year>
       <holder>&dhusername;</holder>
     </copyright>
-    <legalnotice>
-      <para>
-	This manual page was written by &dhusername; &dhemail;.  Permission is
-	granted to copy, distribute and/or modify this document under the terms
-	of the &gnu; General Public License, Version 2 any later version
-	published by the Free Software Foundation.
-      </para>
-    </legalnotice>
+    &legal;
   </refentryinfo>
   <refmeta>
     <refentrytitle>&dhpackage;</refentrytitle>
@@ -54,13 +47,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
+      &basicapp;
       <arg choice="opt">
 	<arg choice="plain"><option>--server <replaceable>server-name</replaceable></option></arg>
       </arg>
@@ -91,26 +78,10 @@
   <refsect1 id="options">
     <title>OPTIONS</title>
 
-    <para>
-      This program follows the usual &gnu; command line syntax,
-      with long options starting with two dashes (`--').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of the program.</para>
-        </listitem>
-      </varlistentry>
+      &basicapplist;
       <varlistentry>
         <term><option>--server <replaceable class="parameter">server-name</replaceable></option></term>
         <listitem>

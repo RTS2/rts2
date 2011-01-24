@@ -1,6 +1,7 @@
 # $Id$
 
 EXTRA_DIST = \
+    rts2.ent \
     rts2.xml \
     rts2.ini.xml \
     rts2-device.xml \
@@ -40,7 +41,8 @@ EXTRA_DIST = \
     rts2-autofocus.xml \
     rts2-talker.xml \
     rts2.target.xml \
-    rts2-newtarget.xml
+    rts2-newtarget.xml \
+    rts2-plan.xml 
 
 CLEANFILES = *.1 *.5 *.7
 
@@ -86,7 +88,8 @@ man_MANS = \
     rts2-autofocus.1 \
     rts2-talker.1 \
     rts2.target.5 \
-    rts2-newtarget.1
+    rts2-newtarget.1 \
+    rts2-plan.1
 
 XP=xsltproc --nonet
 

@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-teld">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -34,14 +34,7 @@
       <year>2009</year>
       <holder>&dhusername;</holder>
     </copyright>
-    <legalnotice>
-      <para>
-	This manual page was written by &dhusername; &dhemail;.  Permission is
-	granted to copy, distribute and/or modify this document under the terms
-	of the &gnu; General Public License, Version 2 any later version
-	published by the Free Software Foundation.
-      </para>
-    </legalnotice>
+    &legal;
   </refentryinfo>
   <refmeta>
     <refentrytitle>&dhpackage;</refentrytitle>
@@ -53,6 +46,8 @@
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &deviceapp;
       <arg choice="opt">
 	<arg choice="plain"><option>--start-position <replaceable>start position</replaceable></option></arg>
       </arg>
@@ -73,12 +68,10 @@
   <refsect1 id="options">
     <title>OPTIONS</title>
 
-    <para>
-      RTS2 follows the usual &gnu; command line syntax, with long options
-      starting with two dashes (`--').  A summary of options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
+      &deviceapplist;
       <varlistentry>
         <term><option>--start-position</option></term>
         <listitem>

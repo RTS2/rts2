@@ -1,0 +1,134 @@
+<!ENTITY gnu         "<acronym>GNU</acronym>">
+<!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+
+<!ENTITY optiongnu    "<para>
+      RTS2 follows the usual &gnu; command line syntax, with long options
+      starting with two dashes (`--').  A summary of options is included below.
+    </para>">
+
+<!ENTITY legal       "<legalnotice>
+      <para>
+	This manual page was written by &dhusername; &lt;&dhemail;&gt;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>">
+
+
+<!ENTITY fzu  "Petr Kubanek, Institute of Physics">
+<!ENTITY basicapp  "<arg choice='opt'>
+        <arg choice='plain'><option>-h</option></arg>
+	<arg choice='plain'><option>--help</option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--version</option></arg>
+      </arg>">
+<!ENTITY basicapplist  "<varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>">
+
+<!ENTITY configapp "&basicapp;
+      <arg choice='opt'>
+	<arg choice='plain'><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>" >
+
+<!ENTITY configapplist "&basicapplist;
+      <varlistentry>
+        <term><option>--config <replaceable class='parameter'>config-file</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>" >
+
+<!ENTITY dbapp  "&configapp;
+      <arg choice='opt'>
+	<arg choice='plain'><option>--database <replaceable>database</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+        <arg choice='plain'><option>--debugdb</option></arg>
+      </arg>
+">
+
+<!ENTITY dbapplist "&configapplist;
+       <varlistentry>
+        <term><option>--database <replaceable class='parameter'>database-name</replaceable></option></term>
+        <listitem>
+          <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
+        </listitem>
+      </varlistentry> ">
+
+<!ENTITY configapplist "&basicapplist;
+      <varlistentry>
+        <term><option>--config <replaceable class='parameter'>config-file</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>" >
+
+<!ENTITY deviceapp "&basicapp;
+      <arg choice='opt'>
+	<arg choice='plain'><option>-i</option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--local-port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--localhost <replaceable>hostname</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--modefile <replaceable>filename</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>-d <replaceable>device name</replaceable></option></arg>
+      </arg>" >
+
+<!ENTITY deviceapplist "&basicapplist;
+      <varlistentry>
+        <term><option>--server <replaceable class='parameter'>server-name[:port]</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify name of the host and possibly port, which runs
+	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	    This option is needed only for setups that use multiple computers.
+	    Its default is localhost for hostname and 617 for port number. If
+	    only hostname is provided, default port number - 617 - is used. 
+	    Default will work for simple setups.
+	  </para>
+        </listitem>
+      </varlistentry>" >
+
+<!ENTITY clientapp "&basicapp;      
+      <arg choice='opt'>
+	<arg choice='plain'><option>--server <replaceable>central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--port <replaceable>port number</replaceable></option></arg>
+      </arg>" >
+
+<!ENTITY clientapplist "&basicapplist;
+      <varlistentry>
+        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>" >

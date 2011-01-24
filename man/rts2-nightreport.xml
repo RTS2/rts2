@@ -10,8 +10,8 @@
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-nightreport">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
@@ -34,14 +34,7 @@
       <year>2007,2010</year>
       <holder>&dhusername;</holder>
     </copyright>
-    <legalnotice>
-      <para>
-	This manual page was written by &dhusername; &dhemail;.  Permission is
-	granted to copy, distribute and/or modify this document under the terms
-	of the &gnu; General Public License, Version 2 any later version
-	published by the Free Software Foundation.
-      </para>
-    </legalnotice>
+    &legal;
   </refentryinfo>
   <refmeta>
     <refentrytitle>&dhpackage;</refentrytitle>
@@ -54,19 +47,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>rts2-nightreport</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--database <replaceable class="parameter">database name</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable class="parameter">configuration file</replaceable></option></arg>
-      </arg>
+      &dbapp;
       <arg choice="opt">
         <arg choice="plain"><option>-f <replaceable class="parameter">from</replaceable> </option></arg>
       </arg>
@@ -120,41 +101,10 @@
   <refsect1 id="options">
     <title>OPTIONS</title>
 
-    <para>
-      These programs follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
-      <varlistentry>
-        <term><option>-h</option></term>
-        <term><option>--help</option></term>
-        <listitem>
-          <para>Show summary of options.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--version</option></term>
-        <listitem>
-          <para>Show version of program.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--database <replaceable class="parameter">database name</replaceable></option></term>
-        <listitem>
-	  <para>
-	    Specify database name. Will overwrite database name specified in
-	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--config <replaceable class="parameter">configuration file</replaceable></option></term>
-        <listitem>
-          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
+      &dbapplist;
       <varlistentry>
         <term><option>-f <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
         <listitem>

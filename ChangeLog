@@ -1,3 +1,6 @@
+2011-01-24
+ * changed man pages format - add rts2.ent file with entities for common options etc..
+
 2011-01-14
  * QueuedTarget class
 
