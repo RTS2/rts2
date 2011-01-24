@@ -37,6 +37,9 @@
 #include <sstream>
 #include <iomanip>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 EXEC SQL include sqlca;
 
 using namespace rts2db;
@@ -2025,6 +2028,8 @@ Constraints * Target::getConstraints ()
 {
 	if (constraints)
 		return constraints;
+	
+	struct stat fs;
 	// check for system level constraints
 	try
 	{
@@ -2036,16 +2041,23 @@ Constraints * Target::getConstraints ()
 		logStream (MESSAGE_WARNING) << "cannot load master constraint file:" << er << sendLogNoEndl;
 		constraints = new Constraints ();
 	}
-	// check for group constraint
-	try
+	if (stat (getGroupConstraintFile (), &fs))
 	{
-		constraints->load (getGroupConstraintFile ());
-		constraintsLoaded |= CONSTRAINTS_GROUP;
+		logStream (errno == ENOENT ? MESSAGE_DEBUG : MESSAGE_WARNING) << "cannot open " << getGroupConstraintFile () << ":" << strerror(errno) << sendLog;
 		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
-	catch (XmlError er)
+	else
 	{
-		logStream (MESSAGE_WARNING) << "cannot load group constraint file " << getGroupConstraintFile () << ":" << er << sendLogNoEndl;
+		// check for group constraint
+		try
+		{
+			constraints->load (getGroupConstraintFile ());
+			constraintsLoaded |= CONSTRAINTS_GROUP;
+		}
+		catch (XmlError er)
+		{
+			logStream (MESSAGE_WARNING) << "cannot load group constraint file " << getGroupConstraintFile () << ":" << er << sendLogNoEndl;
+		}
 	}
 	// load target constrainst
 	try
