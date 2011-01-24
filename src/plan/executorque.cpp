@@ -148,6 +148,7 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 
 int ExecutorQueue::selectNextObservation ()
 {
+	removeTimers ();
 	if (size () > 0)
 	{
 		struct ln_hrz_posn hrz;
@@ -155,6 +156,23 @@ int ExecutorQueue::selectNextObservation ()
 		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (master->getNow ()))
 		{
 			return front ().target->getTargetID ();
+		}
+		else
+		{
+			double t = master->getNow ();
+			// add timers..
+			double t_start = front ().t_start;
+			if (!isnan (t_start) && t_start > t)
+			{
+				master->addTimer (t - t_start, new Rts2Event (EVENT_NEXT_START));
+			}
+			else
+			{
+				double t_end = front ().t_end;
+				if (!isnan (t_end) && t_end > t)
+					master->addTimer (t - t_end, new Rts2Event (EVENT_NEXT_END));
+			}
+
 		}
 	}
 	return -1;
@@ -306,4 +324,10 @@ bool ExecutorQueue::frontTimeExpires ()
 	if (iter == end ())
 		return false;
 	return iter->notExpired (master->getNow ());
+}
+
+void ExecutorQueue::removeTimers ()
+{
+	master->deleteTimers (EVENT_NEXT_START);
+	master->deleteTimers (EVENT_NEXT_END);
 }

@@ -284,6 +284,10 @@ void SelectorDev::postEvent (Rts2Event * event)
 			updateNext ();
 			addTimer (idle_select->getValueInteger (), event);
 			return;
+		case EVENT_NEXT_START:
+		case EVENT_NEXT_END:
+			updateNext ();
+			break;
 	}
 	Rts2DeviceDb::postEvent (event);
 }
@@ -433,9 +437,13 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			if (conn->paramNextDouble (&t) || !conn->paramEnd ())
 				return -2;
 			queuePlan (q, t);
+			updateNext ();
 			return 0;
 		}
-		return q->queueFromConn (conn, withTimes) == 0 ? 0 : -2;
+		if (q->queueFromConn (conn, withTimes))
+			return -2;
+		updateNext ();
+		return 0;
 	}
 	else
 	{

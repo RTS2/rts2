@@ -26,6 +26,10 @@
 #define QUEUE_HIGHEST       2
 #define QUEUE_WESTEAST      3
 
+// timer events for queued start/end
+#define EVENT_NEXT_START      RTS2_LOCAL_EVENT + 1400
+#define EVENT_NEXT_END        RTS2_LOCAL_EVENT + 1401
+
 namespace rts2plan
 {
 
@@ -123,6 +127,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		// return true if its't time to remove first element from the queue. This is usaully when the
 		// second observation next time is before the current time
 		bool frontTimeExpires ();
+
+		// remove timers set by targets in queue
+		void removeTimers ();
 };
 
 }
