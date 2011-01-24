@@ -84,6 +84,7 @@ int ConnUDP::receive (fd_set * set)
 			return 1;
 		}
 		buf[data_size] = 0;
+		command_buf_top = buf;
 		process (data_size, from);
 	}
 	return data_size;

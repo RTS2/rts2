@@ -578,6 +578,8 @@ class Rts2Conn:public Rts2Object
 		size_t buf_size;
 		char *buf_top;
 
+		char *command_buf_top;
+
 		/**
 		 * Other side of connection state.
 		 */
@@ -682,8 +684,6 @@ class Rts2Conn:public Rts2Object
 		inline int isCommandReturn () { return (*(getCommand ()) == '+' || *(getCommand ()) == '-'); }
 
 	private:
-		char *command_buf_top;
-
 		char *full_data_end;	 // points to end of full data
 
 		conn_type_t type;
