@@ -93,7 +93,6 @@ PlanSet::PlanSet ():where ("")
 {
 }
 
-
 PlanSet::PlanSet (int prop_id)
 {
 	std::ostringstream os;
@@ -101,7 +100,6 @@ PlanSet::PlanSet (int prop_id)
 	os << " prop_id = " << prop_id;
 	where = os.str ();
 }
-
 
 PlanSet::PlanSet (time_t *t_from, time_t *t_to)
 {
@@ -123,4 +121,12 @@ PlanSet::PlanSet (double t_from, double t_to)
 
 PlanSet::~PlanSet (void)
 {
+}
+
+PlanSetTarget::PlanSetTarget (int tar_id)
+{
+	std::ostringstream os;
+
+	os << " tar_id = " << tar_id;
+	where = os.str ();
 }

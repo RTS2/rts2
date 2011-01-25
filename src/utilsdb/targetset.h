@@ -134,7 +134,9 @@ class TargetSet:public std::map <int, Target * >
 		 *
 		 * @throw SqlError if no target is found.
 		 */
-		void load (const char *name, bool approxName = true);
+		void loadByName (const char *name, bool approxName = true);
+
+		void load (const char *name, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
 
 		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
 

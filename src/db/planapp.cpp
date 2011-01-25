@@ -29,12 +29,13 @@
 
 #include <list>
 
-#define OPT_DUMP        OPT_LOCAL + 701
-#define OPT_LOAD        OPT_LOCAL + 702
-#define OPT_GENERATE    OPT_LOCAL + 703
-#define OPT_COPY        OPT_LOCAL + 704
-#define OPT_DELETE      OPT_LOCAL + 705
-#define OPT_ADD         OPT_LOCAL + 706
+#define OPT_DUMP          OPT_LOCAL + 701
+#define OPT_LOAD          OPT_LOCAL + 702
+#define OPT_GENERATE      OPT_LOCAL + 703
+#define OPT_COPY          OPT_LOCAL + 704
+#define OPT_DELETE        OPT_LOCAL + 705
+#define OPT_ADD           OPT_LOCAL + 706
+#define OPT_DUMP_TARGET   OPT_LOCAL + 707
 
 class Rts2PlanApp:public Rts2AppDb
 {
@@ -49,7 +50,7 @@ class Rts2PlanApp:public Rts2AppDb
 
 		virtual void usage ();
 	private:
-		enum { NO_OP, OP_ADD, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE } operation;
+		enum { NO_OP, OP_ADD, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE, OP_DUMP_TARGET } operation;
 		int addPlan ();
 		void doAddPlan (rts2db::Plan *addedplan);
 		int dumpPlan ();
@@ -57,13 +58,14 @@ class Rts2PlanApp:public Rts2AppDb
 		int generatePlan ();
 		int copyPlan ();
 		int deletePlan ();
+		int dumpTargetPlan ();
 
 		double parsePlanDate (const char *arg, double base);
 
 		double JD;
 		std::list <int> ids;
 
-		std::list <const char *> args;
+		std::vector <const char *> args;
 };
 
 Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -79,6 +81,7 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
 	addOption (OPT_COPY, "copy", 1, "copy plan to given night (from night given by -n)");
 	addOption (OPT_DELETE, "delete", 1, "delete plan with plan ID given as parameter");
+	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
 }
 
 Rts2PlanApp::~Rts2PlanApp (void)
@@ -88,7 +91,7 @@ Rts2PlanApp::~Rts2PlanApp (void)
 int Rts2PlanApp::addPlan ()
 {
 	rts2db::Plan *addedplan = NULL;
-	for (std::list <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
 		// check if new plan was fully specifed and can be saved
 		if (addedplan && !isnan (addedplan->getPlanStart ()) && !isnan (addedplan->getPlanEnd ()))
@@ -104,7 +107,7 @@ int Rts2PlanApp::addPlan ()
 			try
 			{
 				rts2db::TargetSet tar_set;
-				tar_set.load (*iter, true);
+				tar_set.load (*iter);
 				if (tar_set.empty ())
 				{
 					std::cerr << "cannot load target with name/ID" << *iter << std::endl;
@@ -207,6 +210,23 @@ int Rts2PlanApp::deletePlan ()
 	return 0;
 }
 
+int Rts2PlanApp::dumpTargetPlan ()
+{
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		rts2db::TargetSet ts;
+		ts.load (*iter);
+		for (rts2db::TargetSet::iterator tsi = ts.begin (); tsi != ts.end (); tsi++)
+		{
+			rts2db::PlanSetTarget ps (tsi->second->getTargetID ());
+			ps.load ();
+			tsi->second->printShortInfo (std::cout);
+			std::cout << std::endl << ps << std::endl;
+		}
+	}
+	return 0;
+}
+
 double Rts2PlanApp::parsePlanDate (const char *arg, double base)
 {
 	if (arg[0] == '+')
@@ -259,6 +279,11 @@ int Rts2PlanApp::processOption (int in_opt)
 			operation = OP_DELETE;
 			ids.push_back (atoi (optarg));
 			break;
+		case OPT_DUMP_TARGET:
+			if (operation != NO_OP)
+				return -1;
+			operation = OP_DUMP_TARGET;
+			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
 	}
@@ -267,7 +292,7 @@ int Rts2PlanApp::processOption (int in_opt)
 
 int Rts2PlanApp::processArgs (const char *arg)
 {
-	if (operation != OP_ADD)
+	if (operation != OP_ADD && operation != OP_DUMP_TARGET)
 		return Rts2AppDb::processArgs (arg);
 	args.push_back (arg);
 	return 0;
@@ -300,6 +325,8 @@ int Rts2PlanApp::doProcessing ()
 			return copyPlan ();
 		case OP_DELETE:
 			return deletePlan ();
+		case OP_DUMP_TARGET:
+			return dumpTargetPlan ();
 	}
 	return -1;
 }

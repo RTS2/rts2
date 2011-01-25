@@ -1,6 +1,7 @@
 /* 
  * Plan set class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,6 +31,12 @@
 namespace rts2db
 {
 
+/**
+ * List of plan entries, selected from various
+ * filtering criteria.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class PlanSet:public std::list < Plan >
 {
 	public:
@@ -51,8 +58,19 @@ class PlanSet:public std::list < Plan >
 			return _os;
 		}
 
-	private:
+	protected:
 		std::string where;
+};
+
+/**
+ * Set of plan entries for given target.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class PlanSetTarget:public PlanSet
+{
+	public:
+		PlanSetTarget (int tar_id);
 };
 
 }

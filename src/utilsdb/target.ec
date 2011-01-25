@@ -1744,7 +1744,7 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 Target *createTargetByName (const char *tar_name, struct ln_lnlat_posn * obs)
 {
 	TargetSet ts (obs);
-	ts.load (tar_name);
+	ts.loadByName (tar_name);
 	if (ts.size () == 1)
 	{
 		Target *ret = ts.begin ()->second;

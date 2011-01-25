@@ -85,7 +85,7 @@ void TargetSet::load (std::list<int> &target_ids)
 	}
 }
 
-void TargetSet::load (const char *name, bool approxName)
+void TargetSet::loadByName (const char *name, bool approxName)
 {
 	std::ostringstream os;
 	// replace spaces with %..
@@ -109,63 +109,68 @@ void TargetSet::load (const char *name, bool approxName)
 	load ();
 }
 
+void TargetSet::load (const char * name, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts), bool approxName, resolverType resType)
+{
+	if (resType == NAME_ID || resType == ID_ONLY)
+	{
+		char *endp;
+		int tid = strtol (name, &endp, 10);
+		if (*endp == '\0')
+		{
+			// numeric target
+			try
+			{
+				Target *tar = createTarget (tid, obs);
+				(*this)[tid] = tar;
+				return;
+			}
+			catch (SqlError err)
+			{
+				if (resType == ID_ONLY)
+					throw UnresolvedTarget (name);
+			}
+		}
+		else
+		{
+			// ID_ONLY with non-numeric ID
+			if (resType == ID_ONLY)
+				throw UnresolvedTarget (name);
+		}
+	}
+	TargetSet ts (obs);
+	ts.loadByName (name, approxName);
+	if (ts.size () == 0)
+	{
+		throw UnresolvedTarget (name);
+	}
+	if (ts.size () > 1)
+	{
+		if (multiple_resolver == NULL)
+				throw SqlError ((std::string ("cannot find unique target for ") + (name)).c_str ());
+		TargetSet::iterator res = multiple_resolver (&ts);
+		if (res != ts.end ())
+		{
+			(*this)[res->first] = res->second;
+			ts.erase (res);
+		}
+		else
+		{
+			insert (ts.begin (), ts.end ());
+			ts.clear ();
+		}
+	}
+	else if (ts.size () == 1)
+	{
+		(*this)[ts.begin ()->first] = ts.begin ()->second;
+		ts.clear ();
+	}
+}
+
 void TargetSet::load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts), bool approxName, resolverType resType)
 {
 	for (std::vector <const char *>::iterator iter = names.begin (); iter != names.end(); iter++)
 	{
-		if (resType == NAME_ID || resType == ID_ONLY)
-		{
-			char *endp;
-			int tid = strtol (*iter, &endp, 10);
-			if (*endp == '\0')
-			{
-				// numeric target
-				try
-				{
-					Target *tar = createTarget (tid, obs);
-					(*this)[tid] = tar;
-					continue;
-				}
-				catch (SqlError err)
-				{
-					if (resType == ID_ONLY)
-						throw UnresolvedTarget (*iter);
-				}
-			}
-			else
-			{
-				// ID_ONLY with non-numeric ID
-				if (resType == ID_ONLY)
-					throw UnresolvedTarget (*iter);
-			}
-		}
-		TargetSet ts (obs);
-		ts.load (*iter, approxName);
-		if (ts.size () == 0)
-		{
-			throw UnresolvedTarget (*iter);
-		}
-		if (ts.size () > 1)
-		{
-			if (multiple_resolver == NULL)
-					throw SqlError ((std::string ("cannot find unique target for ") + (*iter)).c_str ());
-			TargetSet::iterator res = multiple_resolver (&ts);
-			if (res != ts.end ())
-			{
-				(*this)[res->first] = res->second;
-				ts.erase (res);
-			}
-			else
-			{
-				insert (ts.begin (), ts.end ());
-				ts.clear ();
-			}
-		}
-		else if (ts.size () == 1)
-		{
-			(*this)[ts.begin ()->first] = ts.begin ()->second;
-			ts.clear ();
-		}
+		load (*iter, multiple_resolver, approxName, resType);
 	}
 }
 

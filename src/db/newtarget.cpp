@@ -270,7 +270,7 @@ int Rts2NewTarget::doProcessing ()
 	if (tryMatch)
 	{
 		rts2db::TargetSet ts;
-		ts.load (n_tar_name, true);
+		ts.loadByName (n_tar_name, true);
 		if (ts.size () == 1)
 		{
 			std::cout << "Target #" << ts.begin ()->second->getTargetID () << " matched name " << n_tar_name << std::endl;
