@@ -564,13 +564,6 @@ class Rts2Block: public Rts2App
 			setEndLoop (true);
 		}
 
-		double getNow ()
-		{
-			struct timeval infot;
-			gettimeofday (&infot, NULL);
-			return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
-		}
-
 		virtual int statusInfo (Rts2Conn * conn);
 
 		virtual int progress (Rts2Conn *conn, double start, double end) { return -1; }

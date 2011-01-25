@@ -202,6 +202,16 @@ class Rts2App:public Rts2Object
 		 */
 		virtual void sigHUP (int sig);
 
+		/**
+		 * Return current time as double.
+		 */
+		double getNow ()
+		{
+			struct timeval infot;
+			gettimeofday (&infot, NULL);
+			return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
+		}
+
 	protected:
 		/**
 		 * Called to process options of the programme.
