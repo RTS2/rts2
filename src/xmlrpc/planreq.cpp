@@ -31,7 +31,7 @@ void Plan::authorizedExecute (std::string path, XmlRpc::HttpParams *params, cons
 	switch (vals.size ())
 	{
 		case 0:
-			printPlans (response, response_length);
+			printPlans (params, response, response_length);
 			return;
 		case 1:
 			printPlan (vals[0].c_str (), response, response_length);
@@ -40,11 +40,33 @@ void Plan::authorizedExecute (std::string path, XmlRpc::HttpParams *params, cons
 	throw rts2core::Error ("Invalid path");
 }
 
-void Plan::printPlans (char* &response, size_t &response_length)
+void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
-	printHeader (_os, "Planning");
+	double t_from = params->getDouble ("from", getMasterApp ()->getNow ());
+	double t_to = params->getDouble ("to", rts2_nan ("f"));
+
+	std::ostringstream title;
+	title << "Plan entrie from " << LibnovaDateDouble (t_from);
+	if (!isnan (t_to))
+		title << "to " << LibnovaDateDouble (t_to);
+
+	printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "allPlans.refresh();");
+
+	includeJavaScript (_os, "equ.js");
+	includeJavaScriptWithPrefix (_os, "table.js");
+
+	_os << "<script type='text/javascript'>\n"
+		"allPlans = new Table('../api/plan?from=" << t_from;
+	if (!isnan (t_to))
+		_os << "&to=" << t_to;
+
+	_os << "','plan','allPlan');\n"
+		"</script>\n"
+		"<div id='plan'>Loading..</div>\n";
+
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];

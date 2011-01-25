@@ -114,8 +114,9 @@ PlanSet::PlanSet (double t_from, double t_to)
 {
 	std::ostringstream os;
 
-	os << " EXTRACT (EPOCH FROM plan_start) >= " << t_from
-		<< " AND EXTRACT (EPOCH FROM plan_start) <= " << t_to;
+	os << " EXTRACT (EPOCH FROM plan_start) >= " << t_from;
+	if (!isnan (t_to))
+		os << " AND EXTRACT (EPOCH FROM plan_start) <= " << t_to;
 	where = os.str ();
 }
 

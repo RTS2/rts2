@@ -43,6 +43,12 @@ class PlanSet:public std::list < Plan >
 		PlanSet ();
 		PlanSet (int prop_id);
 		PlanSet (time_t * t_from, time_t * t_to);
+		/**
+		 * Extract plan entries from given time range.
+		 *
+		 * @param t_from time from (ctime)
+		 * @param t_to   time to (ctime, can be null to indicate unlimited t_to)
+		 */
 		PlanSet (double t_from, double t_to);
 		virtual ~PlanSet (void);
 

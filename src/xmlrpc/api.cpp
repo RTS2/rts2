@@ -21,6 +21,8 @@
 #include "api.h"
 #include "xmlrpcd.h"
 
+#include "../utilsdb/planset.h"
+
 using namespace rts2xmlrpc;
 
 void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -73,6 +75,30 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
 			sendConnectionValues (os, conn);
+		}
+		else if (vals[0] == "plan")
+		{
+			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
+			ps.load ();
+
+			os << "\"h\":["
+				"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+				"{\"n\":\"Start\",\"t\":\"t\",\"c\":1},"
+				"{\"n\":\"End\",\"t\":\"t\",\"c\":2}],"
+				"\"d\" : [";
+
+			for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
+			{
+				if (iter != ps.begin ())
+					os << ",";
+				os << "[" << iter->getPlanId () << ",\"" 
+					<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
+					<< LibnovaDateDouble (iter->getPlanEnd ()) << "\"]";
+			}
+
+			os << "]";
+
+			std::cout << std::endl << os.str () << std::endl;
 		}
 		else
 		{

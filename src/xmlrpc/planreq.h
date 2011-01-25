@@ -36,7 +36,7 @@ class Plan: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
-		void printPlans (char* &response, size_t &response_length);
+		void printPlans (XmlRpc::HttpParams *params, char* &response, size_t &response_length);
 		void printPlan (const char *id, char* &response, size_t &response_length);
 };
 

@@ -848,7 +848,6 @@ void Targets::printTargetObservations (rts2db::Target *tar, const char* &respons
 
 	_os << "<script type='text/javascript'>\n"
 		"targetObs = new Table('../api/obs','observations','targetObs');\n"
-
 		"</script>\n"
 		"<div id='observations'>Loading..</div>\n";
 
@@ -874,7 +873,6 @@ void Targets::printTargetPlan (rts2db::Target *tar, const char* &response_type, 
 
 	_os << "<script type='text/javascript'>\n"
 		"targetPlan = new Table('../api/plan','plan','targetPlan');\n"
-
 		"</script>\n"
 		"<div id='plan'>Loading..</div>\n";
 
