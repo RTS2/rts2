@@ -37,9 +37,11 @@ import os
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, filename, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexconfig='/usr/share/sextractor/default.sex', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
+    def __init__(self, filename, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
         self.filename = filename
+	self.sexpath = sexpath
 	self.sexconfig = sexconfig
+	self.starnnw = starnnw
 
 	self.fields = fields
 	self.objects = []
@@ -55,7 +57,7 @@ class Sextractor:
 		pf.write(f + '\n')
 	pf.close()
 
-	cmd = ['sextractor', self.filename, '-c ', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', '/usr/share/sextractor/default.nnw', '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+	cmd = [self.sexpath, self.filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
 	proc = subprocess.Popen(cmd)
 	proc.wait()
 
