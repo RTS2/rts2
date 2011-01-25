@@ -118,6 +118,42 @@ void Labels::addLabel (int tar_id, const char *label, int type, bool create)
 	addLabel (tar_id, label_id);
 }
 
+std::vector <std::pair <int, std::string> > Labels::getTargetLabels (int tar_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_tar_id = tar_id;
+	int d_type;
+	VARCHAR label[501];
+	EXEC SQL END DECLARE SECTION;
+	std::vector <std::pair <int, std::string> > ret;
+
+	EXEC SQL DECLARE label_target_cur CURSOR FOR
+	SELECT
+		label_type, label_text
+	FROM
+		labels, target_labels
+	WHERE
+		target_labels.tar_id = :d_tar_id
+		AND target_labels.label_id = labels.label_id;
+	EXEC SQL OPEN label_target_cur;
+	while (true)
+	{
+		EXEC SQL FETCH next FROM label_target_cur INTO :d_type, :label;
+		if (sqlca.sqlcode)
+			break; 
+		label.arr[label.len] = '\0';
+		ret.push_back (std::pair <int, std::string> (d_type, label.arr));
+	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL ROLLBACK;
+		throw SqlError ();
+	}
+	EXEC SQL CLOSE label_target_cur;
+	EXEC SQL COMMIT;
+	return ret;
+}
+
 std::vector <std::string> Labels::getTargetLabels (int tar_id, int type)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -129,16 +165,16 @@ std::vector <std::string> Labels::getTargetLabels (int tar_id, int type)
 	std::vector <std::string> ret;
 
 	EXEC SQL DECLARE label_cur CURSOR FOR
-		SELECT label_text
-		FROM labels, target_labels
-		WHERE labels.label_id = target_labels.label_id
-			AND target_labels.tar_id = :d_tar_id
-			AND labels.label_type = :d_type;
+	SELECT label_text
+	FROM labels, target_labels
+	WHERE
+		labels.label_id = target_labels.label_id
+		AND target_labels.tar_id = :d_tar_id
+		AND labels.label_type = :d_type;
 	EXEC SQL OPEN label_cur;
 	while (true)
 	{
-		EXEC SQL FETCH next FROM label_cur INTO
-			:label;
+		EXEC SQL FETCH next FROM label_cur INTO :label;
 		if (sqlca.sqlcode)
 			break;
 		label.arr[label.len] = '\0';
@@ -166,4 +202,16 @@ void Labels::deleteTargetLabels (int tar_id, int type)
 	EXEC SQL COMMIT;
 	if (sqlca.sqlcode)
 		throw SqlError ();
+}
+
+const char *getLabelName (int type)
+{
+	switch (type)
+	{
+		case LABEL_PI:
+			return "PI";
+		case LABEL_PROGRAM:
+			return "PROGRAM";
+	}
+	return "unknown label type";
 }

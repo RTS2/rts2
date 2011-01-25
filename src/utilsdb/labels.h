@@ -1,6 +1,6 @@
 /* 
  * Labels support (for targets,..).
- * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2010-2011 Petr Kubanek, Insititute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -16,6 +16,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
+#ifndef __RTS2_LABELS__
+#define __RTS2_LABELS__ 
 
 #include <vector>
 #include <string>
@@ -41,9 +44,27 @@ class Labels
 		void addLabel (int tar_id, int label_id);
 		void addLabel (int tar_id, const char *label, int type, bool create);
 
+		/**
+		 * Return all labels beloging to given target ID.
+		 */
+		std::vector <std::pair <int, std::string> > getTargetLabels (int tar_id);
+
+		/**
+		 * Return all labels with given type for given target.
+		 *
+		 * @param tar_id  target id
+		 * @param type    label type
+		 */
 		std::vector <std::string> getTargetLabels (int tar_id, int type);
 
 		void deleteTargetLabels (int tar_id, int type);
 };
 
 }
+
+/**
+ * Return character string describing label type.
+ */
+const char *getLabelName (int type);
+
+#endif /* !__RTS2_LABELS__ */

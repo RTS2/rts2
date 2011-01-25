@@ -646,6 +646,11 @@ class Target:public Rts2Target
 		 */
 		virtual bool checkConstraints (double JD);
 
+		/**
+		 * Retrieve list of target labels.
+		 */
+		std::vector <std::pair <int, std::string> > getLabels () { return labels.getTargetLabels (getTargetID ()); }
+
 	protected:
 		char *target_comment;
 		struct ln_lnlat_posn *observer;
