@@ -20,6 +20,8 @@
 #include "planreq.h"
 #include "xmlrpcd.h"
 
+#include "../utilsdb/plan.h"
+
 using namespace rts2xmlrpc;
 
 void Plan::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -29,55 +31,51 @@ void Plan::authorizedExecute (std::string path, XmlRpc::HttpParams *params, cons
 	switch (vals.size ())
 	{
 		case 0:
-			printScheduling (response, response_length);
+			printPlans (response, response_length);
 			return;
 		case 1:
-			selectNext (response, response_length);
+			printPlan (vals[0].c_str (), response, response_length);
 			return;
 	}
 	throw rts2core::Error ("Invalid path");
 }
 
-void Plan::printScheduling (char* &response, size_t &response_length)
+void Plan::printPlans (char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
 	printHeader (_os, "Planning");
-
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn * conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
-
-	if (conn == NULL)
-		throw rts2core::Error ("Cannot find executor connection. Please check your setup");
-
-	Rts2Value *val = conn->getValue ("current_id");
-	if (val == NULL)
-		throw rts2core::Error ("Cannot find current target ID");
-
-	_os << "Current target is " << val->getDisplayValue () << "<br/>";
-
-	_os << "<a href='next'>Select next target</a>";
-
-	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Plan::selectNext (char* &response, size_t &response_length)
+void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	printHeader (_os, "Observing plan");
 
-	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	for (connections_t::iterator iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
+	char *end;
+	int pid = strtol (id, &end, 10);
+	if (end == id || *end != '\0')
+		throw XmlRpc::XmlRpcException ("Invalid plan ID");
+
+	rts2db::Plan p (pid);
+	p.load ();
+
+	_os << "<h1>Plan with ID" << pid << " for target <a href='../../targets/" << p.getTargetId () << "/'>" << p.getTarget ()->getTargetName () << "</a></h1>"
+		<< "<p>Active from " << LibnovaDateDouble (p.getPlanStart ()) << " to " << LibnovaDateDouble (p.getPlanEnd ()) << "</p>";
+	rts2db::Observation *o = p.getObservation ();
+	if (o == NULL)
 	{
-		_os << "<tr><td><a href='" << (*iter)->getName () << "/'>" << (*iter)->getName () << "</a></td></tr>\n";
+		_os << "<p>Plan was not observed.</p>";
+	}
+	else
+	{
+		_os << "<p>Plan was observed as observation <a href='../../observations/" << o->getObsId () << "'>" << o->getObsId () << "</a></p>";
 	}
 
-	_os << "\n</table>";
-	
 	printFooter (_os);
 
 	response_length = _os.str ().length ();

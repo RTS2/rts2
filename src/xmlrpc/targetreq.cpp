@@ -32,6 +32,7 @@
 #include "../utilsdb/targetset.h"
 #include "../utilsdb/constraints.h"
 #include "../utilsdb/planset.h"
+#include "../utilsdb/labels.h"
 #endif /* HAVE_PGSQL */
 
 #include "../utils/radecparser.h"
@@ -638,6 +639,12 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 		"<tr><td>Priority</td><td>" << tar->getTargetPriority () << "</td></tr>"
 		"<tr><td>Sidereal Time</td><td><span id='st'/></td></tr>"
 		"<tr><td>JD</td><td><span id='jd'/></td></tr>";
+	// print target labels
+	std::vector <std::pair <int, std::string> > labels = tar->getLabels ();
+	for (std::vector <std::pair <int, std::string> >::iterator iter = labels.begin (); iter != labels.end (); iter++)
+	{
+		_os << "<tr><td>" << getLabelName (iter->first) << "</td><td>" << iter->second << " </td></tr>";
+	}
 	if (canExecute ())
 	{
 		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_slew();'>slew to target</button><div id='slew' style='display:none'>not slewing</div></td></tr>"
@@ -860,7 +867,7 @@ void Targets::printTargetPlan (rts2db::Target *tar, const char* &response_type, 
 	printHeader (_os, (std::string ("Plan entries for target ") + tar->getTargetName ()).c_str (), NULL, "/css/table.css", "targetPlan.refresh();");
 	printTargetHeader (tar->getTargetID (), _os);
 
-	_os << "<h1>Plan entries for target " << tar->getTargetName () << "</h1>\n";
+	_os << "<h1>Plan entries for target <a href='../'>" << tar->getTargetName () << "</a></h1>\n";
 
 	includeJavaScript (_os, "equ.js");
 	includeJavaScriptWithPrefix (_os, "table.js");
