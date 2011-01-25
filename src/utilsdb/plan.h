@@ -58,7 +58,11 @@ class Plan
 
 		int getTargetId () { return tar_id; }
 
+		void setPlanStart (double d) { plan_start = d; }
+
 		double getPlanStart ()  { return plan_start; }
+
+		void setPlanEnd (double d) { plan_end = d; }
 
 		double getPlanEnd () { return plan_end; }
 

@@ -212,7 +212,7 @@ TargetSet::~TargetSet (void)
 {
 	for (TargetSet::iterator iter = begin (); iter != end (); iter++)
 	{
-		delete (*iter).second;
+		delete iter->second;
 	}
 	clear ();
 }
@@ -221,8 +221,8 @@ void TargetSet::addSet (TargetSet &_set)
 {
 	for (TargetSet::iterator iter = _set.begin (); iter != _set.end (); iter++)
 	{
-		if (find ((*iter).first) == end ())
-			(*this)[(*iter).first] = (*iter).second;
+		if (find (iter->first) == end ())
+			(*this)[iter->first] = iter->second;
 		else
 		  	throw SqlError ();
 	}
@@ -235,14 +235,14 @@ Target* TargetSet::getTarget (int _id)
 	TargetSet::iterator iter = find (_id);
 	if (iter == end ())
 		throw TargetNotFound (_id);
-	return (*iter).second;
+	return iter->second;
 }
 
 void TargetSet::setTargetEnabled (bool enabled, bool logit)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setTargetEnabled (enabled, logit);
+		iter->second->setTargetEnabled (enabled, logit);
 	}
 }
 
@@ -250,7 +250,7 @@ void TargetSet::setTargetPriority (float new_priority)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setTargetPriority (new_priority);
+		iter->second->setTargetPriority (new_priority);
 	}
 }
 
@@ -258,7 +258,7 @@ void TargetSet::setTargetBonus (float new_bonus)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setTargetBonus (new_bonus);
+		iter->second->setTargetBonus (new_bonus);
 	}
 }
 
@@ -266,7 +266,7 @@ void TargetSet::setTargetBonusTime (time_t *new_time)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setTargetBonusTime (new_time);
+		iter->second->setTargetBonusTime (new_time);
 	}
 }
 
@@ -274,7 +274,7 @@ void TargetSet::setNextObservable (time_t *time_ch)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setNextObservable (time_ch);
+		iter->second->setNextObservable (time_ch);
 	}
 }
 
@@ -282,7 +282,7 @@ void TargetSet::setTargetScript (const char *device_name, const char *script)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setScript (device_name, script);
+		iter->second->setScript (device_name, script);
 	}
 }
 
@@ -290,7 +290,7 @@ void TargetSet::setTargetPIName (const char *pi)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setPIName (pi);
+		iter->second->setPIName (pi);
 	}
 }
 
@@ -298,7 +298,7 @@ void TargetSet::setTargetProgramName (const char *program)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setProgramName (program);
+		iter->second->setProgramName (program);
 	}
 }
 
@@ -306,7 +306,7 @@ void TargetSet::deleteTargets ()
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->deleteTarget ();
+		iter->second->deleteTarget ();
 	}
 }
 
@@ -314,7 +314,7 @@ void TargetSet::setConstraints (Constraints &cons)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->setConstraints (cons);
+		iter->second->setConstraints (cons);
 	}
 }
 
@@ -322,7 +322,7 @@ void TargetSet::appendConstraints (Constraints &cons)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter).second->appendConstraints (cons);
+		iter->second->appendConstraints (cons);
 	}
 }
 
@@ -333,7 +333,7 @@ int TargetSet::save (bool overwrite)
 
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		ret_s = (*iter).second->save (overwrite);
+		ret_s = iter->second->save (overwrite);
 		if (ret_s)
 			ret--;
 	}
@@ -345,7 +345,7 @@ std::ostream & TargetSet::print (std::ostream & _os, double JD)
 {
 	for (TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
 	{
-		(*tar_iter).second->printShortInfo (_os, JD);
+		tar_iter->second->printShortInfo (_os, JD);
 		_os << std::endl;
 	}
 	return _os;
@@ -355,7 +355,7 @@ std::ostream & TargetSet::printBonusList (std::ostream & _os, double JD)
 {
 	for (TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
 	{
-		(*tar_iter).second->printShortBonusInfo (_os, JD);
+		tar_iter->second->printShortBonusInfo (_os, JD);
 		_os << std::endl;
 	}
 	return _os;
