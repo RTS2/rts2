@@ -56,6 +56,8 @@ class Plan
 
 		int getPlanId () { return plan_id; }
 
+		void setTargetId (int id) { tar_id = id; }
+
 		int getTargetId () { return tar_id; }
 
 		void setPlanStart (double d) { plan_start = d; }

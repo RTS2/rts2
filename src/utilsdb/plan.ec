@@ -145,6 +145,7 @@ int Plan::save ()
 			logStream(MESSAGE_ERROR) << "Error getting nextval" << sqlca.sqlcode << sqlca.sqlerrm.sqlerrmc << sendLog;
 			return -1;
 		}
+		plan_id = db_plan_id;
 	}
 
 	if (db_prop_id == -1)
