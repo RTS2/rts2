@@ -1,7 +1,7 @@
 /*
  * Connections for image processing forked instances.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2010 Petr Kubanek, Institute of Physics
+ * Copyright (C) 2010-2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -57,6 +57,35 @@ class ConnProcess:public rts2script::ConnExe
 };
 
 /**
+ * Only process the image, do not move it, do not try to distinguish if it's
+ * dark - don't use any RTS2 image operation functions.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+class ConnImgOnlyProcess:public ConnProcess
+{
+	public:  
+		/**
+		 *
+		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
+		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
+		 */
+		ConnImgOnlyProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout);
+
+		virtual void processLine ();
+
+	protected:
+		virtual void processCommand (char *cmd);
+
+		virtual void connectionError (int last_data_size);
+
+		std::string imgPath;
+
+		long id;
+		double ra, dec, ra_err, dec_err;
+};
+
+/**
  * "Connection" which reads output of image processor
  *
  * This class expect that images are stored in CENTRAL repository,
@@ -68,7 +97,7 @@ class ConnProcess:public rts2script::ConnExe
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnImgProcess:public ConnProcess
+class ConnImgProcess:public ConnImgOnlyProcess
 {
 	public:
 		/**
@@ -77,24 +106,15 @@ class ConnImgProcess:public ConnProcess
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
 		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
-		virtual ~ ConnImgProcess (void);
 
 		virtual int init ();
 
 		virtual int newProcess ();
-		virtual void processLine ();
 
 	protected:
-		virtual void processCommand (char *cmd);
-	
 		virtual void connectionError (int last_data_size);
 
 	private:
-		std::string imgPath;
-
-		long id;
-		double ra, dec, ra_err, dec_err;
-
 		int end_event;
 };
 

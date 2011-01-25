@@ -66,6 +66,7 @@ class ImageProc:public Rts2Device
 		int que (ConnProcess * newProc);
 
 		int queImage (const char *_path);
+		int onlyProcess (const char *_path);
 		int doImage (const char *_path);
 
 		int queDark (const char *_path);
@@ -382,6 +383,8 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 		// Rts2Device::deleteConnection will delete runningImage
 		switch (runningImage->getAstrometryStat ())
 		{
+			case NOT_ASTROMETRY:
+				break;	
 			case GET:
 				goodImages->inc ();
 				nightGoodImages->inc ();
@@ -521,6 +524,13 @@ int ImageProc::queImage (const char *_path)
 	return que (newImageConn);
 }
 
+int ImageProc::onlyProcess (const char *_path)
+{
+	ConnProcess *newConn;
+	newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
+	return que (newConn);
+}
+
 int ImageProc::doImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
@@ -602,6 +612,13 @@ int ImageProc::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
 			return -2;
 		return queImage (in_imageName);
+	}
+	else if (conn->isCommand ("only_process"))
+	{
+		char *in_imageName;
+		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+			return -2;
+		return onlyProcess (in_imageName);	
 	}
 	else if (conn->isCommand ("do_image"))
 	{

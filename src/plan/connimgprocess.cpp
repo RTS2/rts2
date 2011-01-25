@@ -52,15 +52,63 @@ int ConnProcess::init ()
 	return ConnExe::init ();
 }
 
-ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnProcess (_master, _exe, _timeout)
+ConnImgOnlyProcess::ConnImgOnlyProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout):ConnProcess (_master, _exe, _timeout)
 {
-	end_event = _end_event;
 	imgPath = std::string (_path);
 	addArg (imgPath);
 }
 
-ConnImgProcess::~ConnImgProcess (void)
+void ConnImgOnlyProcess::processCommand (char *cmd)
 {
+	if (!strcasecmp (cmd, "correct"))
+	{
+		if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
+			|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || !paramEnd ())
+		{
+			logStream (MESSAGE_WARNING) << "invalid correct string" << sendLog;
+		}
+		else
+		{
+			astrometryStat = GET;
+		}
+	}
+	else
+	{
+		ConnProcess::processCommand (cmd);
+	}
+}
+
+void ConnImgOnlyProcess::processLine ()
+{
+	int ret;
+	ret = sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err, &dec_err);
+
+	if (ret == 5)
+	{
+	 	ra_err /= 60.0;
+		dec_err /= 60.0;
+		astrometryStat = GET;
+		// inform others..
+	}
+	else
+	{
+		ConnProcess::processLine ();
+	}
+
+	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: " << ret << sendLog;
+	return;
+}
+
+void ConnImgOnlyProcess::connectionError (int last_data_size)
+{
+	if (astrometryStat == NOT_ASTROMETRY)
+		astrometryStat = BAD;
+	ConnProcess::connectionError (last_data_size);	  
+}
+
+ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnImgOnlyProcess (_master, _exe, _path, _timeout)
+{
+	end_event = _end_event;
 }
 
 int ConnImgProcess::init ()
@@ -90,49 +138,7 @@ int ConnImgProcess::newProcess ()
 	if (astrometryStat == DARK)
 		return 0;
 	
-	return rts2script::ConnExe::newProcess ();
-}
-
-void ConnImgProcess::processCommand (char *cmd)
-{
-	if (!strcasecmp (cmd, "correct"))
-	{
-		if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
-			|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || !paramEnd ())
-		{
-			logStream (MESSAGE_WARNING) << "invalid correct string" << sendLog;
-		}
-		else
-		{
-			astrometryStat = GET;
-		}
-	}
-	else
-	{
-		rts2script::ConnExe::processCommand (cmd);
-	}
-}
-
-void ConnImgProcess::processLine ()
-{
-	int ret;
-	ret = sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err, &dec_err);
-
-	if (ret == 5)
-	{
-	 	ra_err /= 60.0;
-		dec_err /= 60.0;
-		astrometryStat = GET;
-		// inform others..
-	}
-	else
-	{
-		ConnExe::processLine ();
-	}
-
-	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: "
-		<< ret << sendLog;
-	return;
+	return ConnImgOnlyProcess::newProcess ();
 }
 
 void ConnImgProcess::connectionError (int last_data_size)
@@ -170,7 +176,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			else
 			  	astrometryStat = DARK;
 			delete image;
-			rts2script::ConnExe::connectionError (last_data_size);
+			ConnImgOnlyProcess::connectionError (last_data_size);
 			return;
 		}
 
@@ -284,11 +290,11 @@ void ConnImgProcess::connectionError (int last_data_size)
 			}
 		}
 		astrometryStat = BAD;
-		rts2script::ConnExe::connectionError (last_data_size);
+		ConnImgOnlyProcess::connectionError (last_data_size);
 		return;
 	}
 
-	rts2script::ConnExe::connectionError (last_data_size);
+	ConnImgOnlyProcess::connectionError (last_data_size);
 }
 
 ConnObsProcess::ConnObsProcess (Rts2Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
