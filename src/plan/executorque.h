@@ -109,7 +109,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::TimeArray *nextEndTimes;
 
 		Rts2ValueSelection *queueType;
-		Rts2ValueBool *skipBellowHorizon;
+		Rts2ValueBool *skipBelowHorizon;
 
 		struct ln_lnlat_posn **observer;
 
@@ -117,9 +117,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		void updateVals ();
 
 		// filter or skip observations bellow horizon
-		// if skipBellowHorizon is set to false (default), remove observations which are currently
-		// bellow horizon. If skipBellowHorizon is true, put them to back of the queue (so they will not be scheduled).
-		void filterBellowHorizon ();
+		// if skipBelowHorizon is set to false (default), remove observations which are currently
+		// bellow horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		void filterBelowHorizon ();
 
 		// remove observations which observing time expired
 		void filterExpired ();

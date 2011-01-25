@@ -56,8 +56,8 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
-	master->createValue (skipBellowHorizon, (sn + "_skip_bellow").c_str (), "skip targets bellow horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
-	skipBellowHorizon->setValueBool (false);
+	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
+	skipBelowHorizon->setValueBool (false);
 
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
@@ -86,7 +86,7 @@ int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end)
 
 void ExecutorQueue::filter ()
 {
-	filterBellowHorizon ();
+	filterBelowHorizon ();
 	filterExpired ();
 	updateVals ();
 }
@@ -234,7 +234,7 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextEndTimes);
 }
 
-void ExecutorQueue::filterBellowHorizon ()
+void ExecutorQueue::filterBelowHorizon ()
 {
 	if (!empty ())
 	{
@@ -251,7 +251,7 @@ void ExecutorQueue::filterBellowHorizon ()
 				continue;
 			}
 
-			if (skipBellowHorizon->getValueBool ())
+			if (skipBelowHorizon->getValueBool ())
 			{
 				if (firsttar == NULL)
 					firsttar = iter->target;
