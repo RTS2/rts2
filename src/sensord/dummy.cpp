@@ -53,6 +53,8 @@ class Dummy:public Sensor
 			boolArray->addValue (true);
 			boolArray->addValue (true);
 
+			createValue (timeArray, "times", "tests of time array", true, RTS2_VALUE_WRITABLE);
+
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
@@ -160,6 +162,7 @@ class Dummy:public Sensor
 
 				statTest5->addValue (aval, 5);
 				statTest5->calculate ();
+				timeArray->addValue (getNow ());
 
 				infoAll ();
 				return 0;
@@ -187,6 +190,7 @@ class Dummy:public Sensor
 		rts2core::DoubleArray *statContent2;
 		rts2core::IntegerArray *statContent3;
 		rts2core::BoolArray *boolArray;
+		rts2core::TimeArray *timeArray;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 		Rts2ValueBool *hwError;

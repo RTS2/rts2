@@ -21,8 +21,9 @@
 
 #include "../utils/connserial.h"
 
-#define OPT_HEAT_ON     OPT_LOCAL + 343
-#define OPT_HEAT_DUR    OPT_LOCAL + 344
+#define OPT_HEAT_ON        OPT_LOCAL + 343
+#define OPT_HEAT_DUR       OPT_LOCAL + 344
+#define OPT_CONN_TIMEOUT   OPT_LOCAL + 345
 
 namespace rts2sensord
 {
@@ -72,6 +73,8 @@ class Mrakomer: public SensorWeather
 		Rts2ValueTime *heatStateChangeTime;
 		Rts2ValueInteger *heatInterval;
 		Rts2ValueInteger *heatDuration;
+
+		Rts2ValueInteger *connTimeout;
 
 		/**
 		 * Read sensor values.
@@ -135,6 +138,9 @@ int Mrakomer::processOption (int in_opt)
 		case OPT_HEAT_DUR:
 			heatDuration->setValueCharArr (optarg);
 			break;
+		case OPT_CONN_TIMEOUT:
+			connTimeout->setValueCharArr (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (in_opt);
 	}
@@ -167,8 +173,8 @@ int Mrakomer::info ()
 	ret = readSensor ();
 	if (ret)
 	{
-		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60, "cannot get values for last 60 seconds");
+		if (getLastInfoTime () > connTimeout->getValueInteger ()) 
+			setWeatherTimeout (60, "cannot get values for last connTimeout seconds");
 		return -1;
 	}
 	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
@@ -280,12 +286,17 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
+	createValue (connTimeout, "conn_timeout", "connection timeout", false, RTS2_VALUE_WRITABLE);
+	connTimeout->setValueInteger (60);
+
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
 
 	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
 	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
+
+	addOption (OPT_CONN_TIMEOUT, "conn-timeout", 1, "connection timeout (in seconds)");
 
 	setIdleInfoInterval (20);
 }
