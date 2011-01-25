@@ -31,6 +31,7 @@
 #include "../utilsdb/imageset.h"
 #include "../utilsdb/targetset.h"
 #include "../utilsdb/constraints.h"
+#include "../utilsdb/planset.h"
 #endif /* HAVE_PGSQL */
 
 #include "../utils/radecparser.h"
@@ -107,6 +108,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 				if (vals[1] == "obs")
 				{
 					printTargetObservations (tar, response_type, response, response_length);
+					break;
+				}
+				if (vals[1] == "plan")
+				{
+					printTargetPlan (tar, response_type, response, response_length);
 					break;
 				}
 #ifdef HAVE_LIBJPEG
@@ -345,6 +351,7 @@ void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 		<< "info/'>details</a>&nbsp;<a href='" << prefix.str ()
 		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
 		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
+		<< "plan/'>plan</a>&nbsp;<a href='" << prefix.str ()
 		<< "altplot/'>altitude plot</a></p>";
 }
 
@@ -458,6 +465,31 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 				<< LibnovaDateDouble (iter->getObsEnd ()) << "\","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages () << "]";
+		}
+
+		_os << "]}";
+
+		returnJSON (_os, response_type, response, response_length);
+		return;
+	}
+	if (req == "plan")
+	{
+		rts2db::PlanSetTarget ps (tar->getTargetID ());
+		ps.load ();
+
+		_os << "{\"h\":["
+			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Start\",\"t\":\"t\",\"c\":1},"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":2}],"
+			"\"d\" : [";
+
+		for (rts2db::PlanSetTarget::iterator iter = ps.begin (); iter != ps.end (); iter++)
+		{
+			if (iter != ps.begin ())
+				_os << ",";
+			_os << "[" << iter->getPlanId () << ",\"" 
+				<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
+				<< LibnovaDateDouble (iter->getPlanEnd ()) << "\"]";
 		}
 
 		_os << "]}";
@@ -812,6 +844,32 @@ void Targets::printTargetObservations (rts2db::Target *tar, const char* &respons
 
 		"</script>\n"
 		"<div id='observations'>Loading..</div>\n";
+
+	printFooter (_os);
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Targets::printTargetPlan (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+
+	printHeader (_os, (std::string ("Plan entries for target ") + tar->getTargetName ()).c_str (), NULL, "/css/table.css", "targetPlan.refresh();");
+	printTargetHeader (tar->getTargetID (), _os);
+
+	_os << "<h1>Plan entries for target " << tar->getTargetName () << "</h1>\n";
+
+	includeJavaScript (_os, "equ.js");
+	includeJavaScriptWithPrefix (_os, "table.js");
+
+	_os << "<script type='text/javascript'>\n"
+		"targetPlan = new Table('../api/plan','plan','targetPlan');\n"
+
+		"</script>\n"
+		"<div id='plan'>Loading..</div>\n";
 
 	printFooter (_os);
 

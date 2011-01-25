@@ -63,6 +63,7 @@ class Targets: public GetRequestAuthorized
 		void printTargetInfo (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetImages (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetObservations (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
+		void printTargetPlan (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
 
 		Rts2CamList cameras;
 
