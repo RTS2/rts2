@@ -110,6 +110,7 @@ class ImageProc:public Rts2Device
 
 		Rts2ValueTime *lastGood;
 		Rts2ValueTime *lastTrash;
+		Rts2ValueTime *lastBad;
 
 		Rts2ValueInteger *nightGoodImages;
 		Rts2ValueInteger *nightTrashImages;
@@ -167,6 +168,7 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	createValue (lastGood, "last_good", "last good image (with correct astrometry)", false);
 	createValue (lastTrash, "last_trash", "last trash image (processed, but without correct astrometry)", false);
+	createValue (lastBad, "last_bad", "last bad image (either process crashed during processing or not fully processed)", false);
 
 	createValue (nightGoodImages, "night_good", "number of good images taken during night", false);
 	createValue (nightTrashImages, "night_trash", "number of trash images taken during current night", false);
@@ -412,6 +414,8 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 				nightBadImages->inc ();
 				sendValueAll (badImages);
 				sendValueAll (nightBadImages);
+				lastBad->setValueDouble (getNow ());
+				sendValueAll (lastBad);
 				break;
 			case FLAT:
 				flatImages->inc ();
