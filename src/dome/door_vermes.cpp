@@ -63,6 +63,8 @@ namespace rts2dome {
     Rts2ValueBool *simulate_door;
     time_t nextDeadCheck; // wildi ToDo: clarify what happens!
     Rts2ValueString *lastMotorStop ;  
+    Rts2ValueDouble  *ssd650v_read_setpoint ;
+    Rts2ValueDouble  *ssd650v_current ;
 
     /**
      * Update status messages.
@@ -76,6 +78,7 @@ namespace rts2dome {
     virtual int processOption (int _opt);
     virtual int init ();
     virtual int info ();
+
     virtual int idle ();
     
     virtual int startOpen ();
@@ -191,24 +194,9 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if( simulate_door->getValueBool()){
 	doorState= DS_UNDEF ;
       } else {
-	// turning off the motor has to be done here since move_door opens,closes it during a sleep
-	// stop the motor first, then kill the thread
-	int ret ;
-	struct timespec sl ;
-	struct timespec rsl ;
-	sl.tv_sec= 0. ;
-	sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
-	
-	while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
-	  fprintf( stderr, "DoorVermes::valueChanged: can not turn motor off\n") ;
-	  ret= nanosleep( &sl, &rsl) ;
-	  if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
-	    fprintf( stderr, "Error in nanosleep\n") ;
-	  }
-	}
+        // sigHandler stops motor
 	pthread_kill( move_door_id, SIGUSR2);
       }
-      set_setpoint(0.);
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
     }
@@ -505,6 +493,11 @@ DoorVermes::info ()
   updateDoorStatus() ;
   updateDoorStatusMessage() ;
   lastMotorStop-> setValueString ( lastMotorStop_str) ; 
+  double readSetPoint= get_setpoint() ;
+  double current_percentage = get_current_percentage() ;
+  ssd650v_read_setpoint->setValueDouble( readSetPoint) ;
+  ssd650v_current->setValueDouble(current_percentage) ;
+
   return Dome::info ();
 }
 
@@ -761,21 +754,7 @@ DoorVermes::startClose ()
       } else {
 
 	if( doorState == DS_RUNNING_OPEN) {
-	  // turning off the motor has to be done here since move_door opens,closes it during a sleep
-	  // stop the motor first, then kill the thread
-	  int ret ;
-	  struct timespec sl ;
-	  struct timespec rsl ;
-	  sl.tv_sec= 0. ;
-	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
-	
-	  while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
-	    fprintf( stderr, "DoorVermes::startClose: can not turn motor off\n") ;
-	    ret= nanosleep( &sl, &rsl) ;
-	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
-	      fprintf( stderr, "Error in nanosleep\n") ;
-	    }
-	  }
+          // sigHandler stops motor
 	  pthread_kill( move_door_id, SIGUSR2);
 	  logStream (MESSAGE_INFO) << "DoorVermes::startClose was doorState== DS_RUNNING_OPEN: stopped motor" << sendLog ;
 	}
@@ -910,6 +889,8 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
   close_door_undefined->setValueBool (false);
   createValue (simulate_door, "SIMULATION", "true simulation door movements", false, RTS2_VALUE_WRITABLE);
   simulate_door->setValueBool (false);
+  createValue (ssd650v_current,      "SSDcurrent",      "ssd650v current as percentage of maximum", false);
+  createValue (ssd650v_read_setpoint,"SSDread_setpoint","ssd650v read setpoint [-100.,100]",  false);
 }
 
 DoorVermes::~DoorVermes ()

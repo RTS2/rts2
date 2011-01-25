@@ -44,8 +44,12 @@ int test_ssd= NO_TEST_SSD ;
 #define SLEEP_OPEN_DOOR  (time_t) 100 // 
 #define SLEEP_CLOSE_DOOR (time_t) 100 // 
 
+void off_zero();
+
+
 void sigHandler( int signum ) {
-/*  fprintf( stderr, "received signal %d\n", signum) ; */
+    fprintf( stderr, "received signal %d\n", signum) ; 
+    off_zero();
 }
 
 void off_zero()
@@ -125,7 +129,7 @@ int open_close( float setpoint, float setpoint_slow, int targetState, int testRu
 
 	if( ret == -1 ) {
 	  if( errno== EINTR)  {
-	    fprintf( stderr, "signal received in nanosleep: %d, motor is presumably stopped\n", ret) ;
+	    fprintf( stderr, "move_door: signal received in nanosleep: %d, motor is presumably stopped\n", ret) ;
 	  } else if((errno== EFAULT) ||( errno== EINVAL ))  {
 	    fprintf( stderr, "move_door: error in nanosleep: %d\n", ret) ;
 	  }
@@ -218,7 +222,7 @@ void *move_door( void *value)
 	default:
 	  fprintf( stderr, "move_door: error in nanosleep NONE of these\n") ;
 	}
-	fprintf( stderr, "signal received in nanosleep: %d, motor is presumably stopped\n", ret) ;
+	fprintf( stderr, "move_door: signal received in nanosleep: %d, motor is presumably stopped\n", ret) ;
       }      
     }
     if(doorEvent== EVNT_DOOR_CMD_OPEN) {
