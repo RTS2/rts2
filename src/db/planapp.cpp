@@ -163,9 +163,11 @@ void Rts2PlanApp::doAddPlan (rts2db::Plan *addedplan)
 int Rts2PlanApp::dumpPlan ()
 {
 	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
-	rts2db::PlanSet *plan_set = new rts2db::PlanSet (night.getFrom (), night.getTo ());
+	time_t *from = night.getFrom ();
+	time_t *to = night.getTo ();
+	rts2db::PlanSet *plan_set = new rts2db::PlanSet (from, to);
 	plan_set->load ();
-	std::cout << (*plan_set) << std::endl;
+	std::cout << "Plan entries from " << Timestamp (*from) << " to " << Timestamp (*to) << std::endl << (*plan_set) << std::endl;
 	delete plan_set;
 	return 0;
 }
