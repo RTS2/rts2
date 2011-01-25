@@ -34,6 +34,7 @@
 #define OPT_GENERATE    OPT_LOCAL + 703
 #define OPT_COPY        OPT_LOCAL + 704
 #define OPT_DELETE      OPT_LOCAL + 705
+#define OPT_ADD         OPT_LOCAL + 706
 
 class Rts2PlanApp:public Rts2AppDb
 {
@@ -44,27 +45,34 @@ class Rts2PlanApp:public Rts2AppDb
 		virtual int doProcessing ();
 	protected:
 		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
+
+		virtual void usage ();
 	private:
-		enum { NO_OP, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE } operation;
+		enum { NO_OP, OP_ADD, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE } operation;
+		int addPlan ();
+		void doAddPlan (rts2db::Plan *addedplan);
 		int dumpPlan ();
 		int loadPlan ();
 		int generatePlan ();
 		int copyPlan ();
 		int deletePlan ();
 
+		double parsePlanDate (const char *arg, double base);
+
 		double JD;
 		std::list <int> ids;
+
+		std::list <const char *> args;
 };
 
 Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
-
 	JD = ln_get_julian_from_sys ();
 
 	operation = NO_OP;
 
+	addOption (OPT_ADD, "add", 0, "add plan entry for target (specified as an argument)");
 	addOption ('n', NULL, 1, "work with this night");
 	addOption (OPT_DUMP, "dump", 0, "dump plan to standart output");
 	addOption (OPT_LOAD, "load", 0, "load plan from standart input");
@@ -77,12 +85,83 @@ Rts2PlanApp::~Rts2PlanApp (void)
 {
 }
 
+int Rts2PlanApp::addPlan ()
+{
+	rts2db::Plan *addedplan = NULL;
+	for (std::list <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		// check if new plan was fully specifed and can be saved
+		if (addedplan && !isnan (addedplan->getPlanStart ()) && !isnan (addedplan->getPlanEnd ()))
+		{
+			doAddPlan (addedplan);  
+			delete addedplan;
+			addedplan = NULL;
+		}
+		
+		// create new target if none existed..	
+		if (!addedplan)
+		{
+			try
+			{
+				rts2db::TargetSet tar_set;
+				tar_set.load (*iter, true);
+				if (tar_set.empty ())
+				{
+					std::cerr << "cannot load target with name/ID" << *iter << std::endl;
+					return -1;
+				}
+				if (tar_set.size () != 1)
+				{
+					std::cerr << "multiple targets matched " << *iter << ", please be more restrictive" << std::endl;
+					return -1;
+				}
+				addedplan = new rts2db::Plan ();
+				addedplan->setTargetId (tar_set.begin ()->second->getTargetID ());
+			}
+			catch (rts2core::Error er)
+			{
+				std::cerr << er << std::endl;
+				return -1;
+			}
+		}
+		else if (isnan (addedplan->getPlanStart ()))
+		{
+		  	addedplan->setPlanStart (parsePlanDate (*iter, getNow ()));
+		}
+		else
+		{
+			addedplan->setPlanEnd (parsePlanDate (*iter, addedplan->getPlanStart ()));
+		}
+	}
+
+	if (addedplan && !isnan (addedplan->getPlanStart ()))
+	{
+		doAddPlan (addedplan);
+		delete addedplan;
+		return 0;
+	}
+	delete addedplan;
+	return -1;
+}
+
+void Rts2PlanApp::doAddPlan (rts2db::Plan *addedplan)
+{
+	int ret = addedplan->save ();
+	if (ret)
+	{
+		std::ostringstream os;
+		os << "cannot save plan " << addedplan->getTarget ()->getTargetName () << " (#" << addedplan->getTargetId () << ")";
+		throw rts2core::Error (os.str ());
+	}
+	std::cout << addedplan << std::endl;
+}
+
+
 int Rts2PlanApp::dumpPlan ()
 {
 	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
 	rts2db::PlanSet *plan_set = new rts2db::PlanSet (night.getFrom (), night.getTo ());
 	plan_set->load ();
-	std::cout << "Night " << night << std::endl;
 	std::cout << (*plan_set) << std::endl;
 	delete plan_set;
 	return 0;
@@ -128,11 +207,27 @@ int Rts2PlanApp::deletePlan ()
 	return 0;
 }
 
+double Rts2PlanApp::parsePlanDate (const char *arg, double base)
+{
+	if (arg[0] == '+')
+		return base + atof (arg);
+	double d;
+	parseDate (arg, d);
+	time_t t;
+	ln_get_timet_from_julian (d, &t);
+	return t;
+}
+
 int Rts2PlanApp::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
 	{
+		case OPT_ADD:
+			if (operation != NO_OP)
+				return -1;
+			operation = OP_ADD;
+			break;
 		case 'n':
 			ret = parseDate (optarg, JD);
 			if (ret)
@@ -170,6 +265,21 @@ int Rts2PlanApp::processOption (int in_opt)
 	return 0;
 }
 
+int Rts2PlanApp::processArgs (const char *arg)
+{
+	if (operation != OP_ADD)
+		return Rts2AppDb::processArgs (arg);
+	args.push_back (arg);
+	return 0;
+}
+
+void Rts2PlanApp::usage ()
+{
+	std::cout << "To add new entry for target 1001 to plan schedule, with observations starting on 2011-01-24 20:00;00 UT, and running for 5 minutes" << std::endl
+		<< "  " << getAppName () << " --add 1001 2011-01-24T20:00:00 +300" << std::endl
+		<< std::endl;
+}
+
 int Rts2PlanApp::doProcessing ()
 {
 	switch (operation)
@@ -178,6 +288,8 @@ int Rts2PlanApp::doProcessing ()
 			std::cout << "Please select mode of operation.." << std::endl;
 			// interactive..
 			return 0;
+		case OP_ADD:
+			return addPlan ();
 		case OP_DUMP:
 			return dumpPlan ();
 		case OP_LOAD:
