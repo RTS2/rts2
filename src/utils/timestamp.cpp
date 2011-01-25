@@ -50,7 +50,7 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 	int old_precision = _os.precision (3);
 	char old_fill = _os.fill ('0');
 
-	_os << (tmval->tm_year + 1900) << "-"
+	_os << std::setw (4) << (tmval->tm_year + 1900) << "-"
 		<< std::setw (2) << (tmval->tm_mon + 1) << "-"
 		<< std::setw (2) << tmval->tm_mday << "T"
 		<< std::setw (2) << tmval->tm_hour << ":"

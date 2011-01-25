@@ -331,8 +331,8 @@ void Plan::print (std::ostream & _os)
 		<< std::left << std::setw (20) << tar_name << SEP
 		<< std::right << std::setw (8) << tar_id << SEP
 		<< std::setw (8) << obs_id << SEP
-		<< std::setw (9) << LibnovaDateDouble (plan_start) << SEP
-		<< std::setw (9) << LibnovaDateDouble (plan_end) << SEP
+		<< std::setw (9) << Timestamp (plan_start) << SEP
+		<< std::setw (9) << Timestamp (plan_end) << SEP
 		<< std::setw (8) << plan_status << SEP
 		<< lHrz << SEP
 		<< std::setw(1) << (good ? 'G' : 'B')
