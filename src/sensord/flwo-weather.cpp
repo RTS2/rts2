@@ -34,7 +34,7 @@ class MEarthWeather:public rts2core::ConnUDP
 	protected:
 		virtual int process (size_t len, struct sockaddr_in &from);
 	private:
-		void paramNextDoubleME (Rts2ValueDouble *val);
+		void paramNextTimeME (Rts2ValueTime *val);
 		void paramNextFloatME (Rts2ValueFloat *val);
 };
 
@@ -69,7 +69,7 @@ class FlwoWeather:public SensorWeather
 		Rts2ValueBool *hatRain;
 
 		// ME values
-		Rts2ValueDouble *me_mjd;
+		Rts2ValueTime *me_mjd;
 		Rts2ValueFloat *me_winddir;
 		Rts2ValueFloat *me_windspeed;
 		Rts2ValueFloat *me_temp;
@@ -91,7 +91,7 @@ MEarthWeather::MEarthWeather (int _port, FlwoWeather *_master):ConnUDP (_port, _
 {
 };
 
-void MEarthWeather::paramNextDoubleME (Rts2ValueDouble *val)
+void MEarthWeather::paramNextTimeME (Rts2ValueTime *val)
 {
 	char *str_num;
 	char *endptr;
@@ -100,9 +100,14 @@ void MEarthWeather::paramNextDoubleME (Rts2ValueDouble *val)
 		throw rts2core::Error ("cannot get value");
 		return;
 	}
-	val->setValueDouble (strtod (str_num, &endptr));
+	double mjd = strtod (str_num, &endptr);
 	if (*endptr == '\0')
+	{
+		time_t t;
+		ln_get_timet_from_julian (mjd + JD_TO_MJD_OFFSET, &t);
+		val->setValueDouble (t);
 		return;
+	}
 	if (strcmp (str_num, "---") == 0)
 	{
 		val->setValueDouble (rts2_nan ("f"));
@@ -135,7 +140,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 {
 	try
 	{
-		paramNextDoubleME (((FlwoWeather *) master)->me_mjd);
+		paramNextTimeME (((FlwoWeather *) master)->me_mjd);
 		paramNextFloatME (((FlwoWeather *) master)->me_winddir);
 		paramNextFloatME (((FlwoWeather *) master)->me_windspeed);
 		paramNextFloatME (((FlwoWeather *) master)->me_temp);

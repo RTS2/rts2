@@ -38,6 +38,10 @@
 #include <ieeefp.h>
 #endif
 
+#ifndef JD_TO_MJD_OFFSET
+#define JD_TO_MJD_OFFSET  2400000.5
+#endif
+
 /**
  * Return random number in 0-1 range.
  */
