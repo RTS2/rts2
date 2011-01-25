@@ -159,7 +159,7 @@ int TargetInfo::doProcessing ()
 			int tid = atoi (*iter);
 			try
 			{
-				ta->loadByName (tid);
+				ta->load (tid);
 				tar_set[tid] = ta;
 			}
 			catch (rts2db::SqlError err)
