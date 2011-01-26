@@ -52,11 +52,13 @@ class Plan
 		Target *getTarget ();
 		void clearTarget () { target = NULL; }
 
+		int getPlanId () { return plan_id; }
+
 		Observation *getObservation ();
 
-		void setObsId (int in_obs_id);
+		int getObsId () { return obs_id; }
 
-		int getPlanId () { return plan_id; }
+		void setObsId (int in_obs_id);
 
 		void setTargetId (int id) { tar_id = id; }
 
