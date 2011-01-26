@@ -100,6 +100,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		int queueFromConn (Rts2Conn *conn, bool withTimes = false);
 
+		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
+
 	private:
 		Rts2DeviceDb *master;
 

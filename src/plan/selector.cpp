@@ -478,6 +478,7 @@ int SelectorDev::changeMasterState (int new_master_state)
 void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 {
 	q->clearNext (NULL);
+	q->setSkipBelowHorizon (true);
 	rts2db::PlanSet p (getNow (), getNow () + t);
 	p.load ();
 	for (rts2db::PlanSet::iterator iter = p.begin (); iter != p.end (); iter++)
