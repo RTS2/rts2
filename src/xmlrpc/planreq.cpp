@@ -48,9 +48,9 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 	double t_to = params->getDouble ("to", rts2_nan ("f"));
 
 	std::ostringstream title;
-	title << "Plan entrie from " << LibnovaDateDouble (t_from);
+	title << "Plan entrie from " << Timestamp (t_from);
 	if (!isnan (t_to))
-		title << "to " << LibnovaDateDouble (t_to);
+		title << "to " << Timestamp (t_to);
 
 	printHeader (_os, title.str ().c_str (), NULL, "/css/table.css", "allPlans.refresh();");
 
@@ -95,7 +95,7 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 	}
 	else
 	{
-		_os << "<p>Plan was observed as observation <a href='../../observations/" << o->getObsId () << "'>" << o->getObsId () << "</a></p>";
+		_os << "<p>Plan was observed as observation <a href='../../observations/" << o->getObsId () << "/'>" << o->getObsId () << "</a></p>";
 	}
 
 	printFooter (_os);

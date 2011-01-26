@@ -107,8 +107,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				os << "[" << iter->getPlanId () << ","
 					<< iter->getTargetId () << ",\""
 					<< tar->getTargetName () << "\",\""
-					<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
-					<< LibnovaDateDouble (iter->getPlanEnd ()) << "\","
+					<< Timestamp (iter->getPlanStart ()) << "\",\""
+					<< Timestamp (iter->getPlanEnd ()) << "\","
 					<< equ.ra << "," << equ.dec << ","
 					<< hrz.alt << "," << hrz.az << "]";
 			}
