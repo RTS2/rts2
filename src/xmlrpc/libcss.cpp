@@ -135,6 +135,9 @@ static const char *calendarCss =
 "}\n";
 
 const char *tableCss =
+".time {\n"
+  "text-align:right;\n"
+"}\n"  
 ".TableHead {\n"
   "background-color: #CCC;\n"
   "border: 1px solid #000;\n"
