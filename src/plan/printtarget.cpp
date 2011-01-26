@@ -350,7 +350,7 @@ void PrintTarget::printTarget (rts2db::Target *target)
 		if (constraintFile && constraints)
 		{
 			std::cout << "satisfy constraints in " << constraintFile << " " << constraints->satisfy (target, JD) << std::endl;
-			std::list <rts2db::ConstraintPtr> vp;
+			rts2db::ConstraintsList vp;
 			constraints->getViolated (target, JD, vp);
 			std::cout << "number of violations " << vp.size ();
 			if (vp.size () > 0)

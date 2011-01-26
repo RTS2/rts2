@@ -1,6 +1,7 @@
 /* 
  * Constraints.
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +22,7 @@
 #define __RTS2_CONSTRAINTS__
 
 #include "target.h"
+#include "../utils/counted_ptr.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -218,6 +220,30 @@ class ConstraintMaxRepeat:public Constraint
 		int maxRepeat;
 };
 
+typedef counted_ptr <Constraint> ConstraintPtr;
+
+/**
+ * List of constraints.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class ConstraintsList:public std::list <ConstraintPtr>
+{
+	public:
+		ConstraintsList () {};
+
+		friend std::ostream & operator << (std::ostream &os, ConstraintsList clist)
+		{
+			for (ConstraintsList::iterator citer = clist.begin (); citer != clist.end (); citer++)
+			{
+				if (citer != clist.begin ())
+					os << " ";
+				os << (*citer)->getName ();
+			}
+			return os;
+		}
+};
+
 class Constraints:public std::map <std::string, ConstraintPtr >
 {
 	public:
@@ -244,7 +270,7 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param JD        Julian date of constraints check
 		 * @param violated  list of the violated constraints
 		 */
-		size_t getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated);
+		size_t getViolated (Target *tar, double JD, ConstraintsList &violated);
 
 		/**
 		 * Return number of satisfied constainst.
@@ -253,7 +279,7 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param JD        Julian date of constraints check
 		 * @param satisfied list of the satisifed constraints
 		 */
-		size_t getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied);
+		size_t getSatisfied (Target *tar, double JD, ConstraintsList &satisfied);
 
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.

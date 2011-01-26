@@ -1913,22 +1913,22 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 	if (_os.getStream ())
 		printAltTable (*(_os.getStream ()), JD);
 
-	std::list <ConstraintPtr> violated;
+	ConstraintsList violated;
 	getViolatedConstraints (JD, violated);
 
 	std::ostringstream violatedNames;
-	for (std::list <ConstraintPtr>::iterator iter = violated.begin (); iter != violated.end (); iter++)
+	for (ConstraintsList::iterator iter = violated.begin (); iter != violated.end (); iter++)
 	{
 		if (iter != violated.begin ())
 			violatedNames << " ";
 		violatedNames << (*iter)->getName ();
 	}
 
-	std::list <ConstraintPtr> satisfied;
+	ConstraintsList satisfied;
 	getSatisfiedConstraints (JD, satisfied);
 
 	std::ostringstream satisfiedNames;
-	for (std::list <ConstraintPtr>::iterator iter = satisfied.begin (); iter != satisfied.end (); iter++)
+	for (ConstraintsList::iterator iter = satisfied.begin (); iter != satisfied.end (); iter++)
 	{
 		if (iter != satisfied.begin ())
 			satisfiedNames << " ";
@@ -2014,14 +2014,28 @@ void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
 	_os << std::endl;
 }
 
-size_t Target::getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated)
+size_t Target::getViolatedConstraints (double JD, ConstraintsList &violated)
 {
 	return getConstraints ()->getViolated (this, JD, violated);
 }
 
-size_t Target::getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated)
+ConstraintsList Target::getViolatedConstraints (double JD)
 {
-	return getConstraints ()->getSatisfied (this, JD, violated);
+	ConstraintsList ret;
+	getViolatedConstraints (JD, ret);
+	return ret;
+}
+
+size_t Target::getSatisfiedConstraints (double JD, ConstraintsList &satisfied)
+{
+	return getConstraints ()->getSatisfied (this, JD, satisfied);
+}
+
+ConstraintsList Target::getSatisfiedConstraints (double JD)
+{
+	ConstraintsList ret;
+	getSatisfiedConstraints (JD, ret);
+	return ret;
 }
 
 TargetSet * Target::getCalTargets (double JD, double minaird)

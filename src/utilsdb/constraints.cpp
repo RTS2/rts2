@@ -272,7 +272,7 @@ bool Constraints::satisfy (Target *tar, double JD)
 	return true;
 }
 
-size_t Constraints::getViolated (Target *tar, double JD, std::list <ConstraintPtr> &violated)
+size_t Constraints::getViolated (Target *tar, double JD, ConstraintsList &violated)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
@@ -282,7 +282,7 @@ size_t Constraints::getViolated (Target *tar, double JD, std::list <ConstraintPt
 	return violated.size ();
 }
 
-size_t Constraints::getSatisfied (Target *tar, double JD, std::list <ConstraintPtr> &satisfied)
+size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satisfied)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{

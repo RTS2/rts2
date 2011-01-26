@@ -303,12 +303,6 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		else
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az;
 
-		std::list <rts2db::ConstraintPtr> violated;
-		iter->second->getViolatedConstraints (JD, violated);
-
-		std::list <rts2db::ConstraintPtr> satisfied;
-		iter->second->getSatisfiedConstraints (JD, satisfied);
-
 		_os << "," << tar->getTargetPriority ()
 			<< ",";
 		double b = tar->getBonus (JD);
@@ -316,28 +310,11 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << -1;
 		else
 			_os << tar->getBonus ();
-		_os << "," << tar->getTargetEnabled ()
-			<< ",\"";
-
-		std::list <rts2db::ConstraintPtr>::iterator citer;
 		
-		for (citer = violated.begin (); citer != violated.end (); citer++)
-		{
-			if (citer != violated.begin ())
-				_os << " ";
-			_os << (*citer)->getName ();
-		}
-
-		_os << "\",\"";
-
-		for (citer = satisfied.begin (); citer != satisfied.end (); citer++)
-		{
-			if (citer != violated.begin ())
-				_os << " ";
-			_os << (*citer)->getName ();
-		}
-
-		_os << "\"," << tar->getTotalNumberOfObservations ()
+		_os << "," << tar->getTargetEnabled ()
+			<< ",\"" << tar->getViolatedConstraints (JD)
+			<< "\",\"" << tar->getSatisfiedConstraints (JD)
+			<< "\"," << tar->getTotalNumberOfObservations ()
 		//	<< "," << tar->getFirstObs ()
 		//	<< "," << tar->getLastObsTime ()
 			<< "]";
@@ -651,6 +628,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 	printTargetHeader (tar->getTargetID (), _os);
 
 	// javascript to send requests..
+	double JD = ln_get_julian_from_sys ();
 	
 	_os << "<div id='info' class='b_left'><table><tr><td>Name</td><td>" << tar->getTargetName () << "</td></tr>"
 		"<tr><td>RA DEC</td><td>" << LibnovaRaDec (&tradec) << "</td></tr>"
@@ -658,7 +636,10 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 		"<tr><td>Bonus</td><td>" << tar->getBonus () << "</td></tr>"
 		"<tr><td>Priority</td><td>" << tar->getTargetPriority () << "</td></tr>"
 		"<tr><td>Sidereal Time</td><td><span id='st'/></td></tr>"
-		"<tr><td>JD</td><td><span id='jd'/></td></tr>";
+		"<tr><td>JD</td><td><span id='jd'/></td></tr>"
+		"<tr><td>Violated constrints</td><td>" << tar->getViolatedConstraints (JD) << "</td></tr>"
+		"<tr><td>Satisified constraints</td><td>" << tar->getSatisfiedConstraints (JD) << "</td></tr>";
+
 	// print target labels
 	std::vector <std::pair <int, std::string> > labels = tar->getLabels ();
 	for (std::vector <std::pair <int, std::string> >::iterator iter = labels.begin (); iter != labels.end (); iter++)

@@ -29,7 +29,6 @@
 
 #include "status.h"
 
-#include "../utils/counted_ptr.h"
 #include "../utils/infoval.h"
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
@@ -73,8 +72,7 @@ class TargetSet;
 class Constraints;
 class Observation;
 
-class Constraint;
-typedef counted_ptr <Constraint> ConstraintPtr;
+class ConstraintsList;
 
 /**
  * Execption raised when target name cannot be resolved.
@@ -593,12 +591,16 @@ class Target:public Rts2Target
 		/**
 		 * Return list and number of violated constraints.
 		 */
-		size_t getViolatedConstraints (double JD, std::list <ConstraintPtr> &violated);
+		size_t getViolatedConstraints (double JD, ConstraintsList &violated);
+
+		ConstraintsList getViolatedConstraints (double JD);
 
 		/**
 		 * Return list and number of satisfied constraints.
 		 */
-		size_t getSatisfiedConstraints (double JD, std::list <ConstraintPtr> &violated);
+		size_t getSatisfiedConstraints (double JD, ConstraintsList &satisfied);
+
+		ConstraintsList getSatisfiedConstraints (double JD);
 
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
