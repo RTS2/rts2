@@ -1474,6 +1474,52 @@ double Target::getLastObsTime ()
 	return d_time_diff;
 }
 
+int Target::getTotalNumberOfImages ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_count = 0;
+	int d_tar_id = getTargetID ();
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL
+	SELECT
+		count (*)
+	INTO
+		:d_count
+	FROM
+		observations,images
+	WHERE
+		observations.tar_id = :d_tar_id AND images.obs_id = observations.obs_id;
+	// runnign observations counts as well - hence obs_end is null
+
+	EXEC SQL COMMIT;
+
+	return d_count;
+}
+
+double Target::getTotalOpenTime ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	double total;
+	int d_tar_id = getTargetID ();
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL
+	SELECT
+		sum (images.img_exposure)
+	INTO
+		:total
+	FROM
+		observations,images
+	WHERE
+		observations.tar_id = :d_tar_id AND images.obs_id = observations.obs_id;
+	// runnign observations counts as well - hence obs_end is null
+
+	EXEC SQL COMMIT;
+
+	return total;
+}
+
 double Target::getFirstObs ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;

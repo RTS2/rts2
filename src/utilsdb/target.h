@@ -487,12 +487,23 @@ class Target:public Rts2Target
 		int setNextObservable (double validJD);
 
 		int getNumObs (time_t * start_time, time_t * end_time);
+
 		/**
 		 * Return total number of observations.
 		 */
 		int getTotalNumberOfObservations ();
 
 		double getLastObsTime ();// return time in seconds to last observation of same target
+
+		/**
+		 * Return total number of target images.
+		 */
+		int getTotalNumberOfImages (); 
+
+		/**
+		 * Returns total open shutter time in seconds.
+		 */
+		double getTotalOpenTime ();
 
 		int getCalledNum () { return startCalledNum; }
 

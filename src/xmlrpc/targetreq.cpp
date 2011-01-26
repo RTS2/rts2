@@ -101,6 +101,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					printTargetInfo (tar, response_type, response, response_length);
 					break;
 				}
+				if (vals[1] == "stat")
+				{
+					printTargetStat (tar, response_type, response, response_length);
+					break;
+				}
 				if (vals[1] == "images")
 				{
 					printTargetImages (tar, params, response_type, response, response_length);
@@ -350,6 +355,7 @@ void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 	_os << "<p><a href='" << prefix.str ()
 		<< "main/'>main page</a>&nbsp;<a href='" << prefix.str ()
 		<< "info/'>details</a>&nbsp;<a href='" << prefix.str ()
+		<< "stat/'>statistics</a>&nbsp;<a href='" << prefix.str () 
 		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
 		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
 		<< "plan/'>plan</a>&nbsp;<a href='" << prefix.str ()
@@ -760,6 +766,30 @@ void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, 
 
 	_os << "</pre>";
 	
+	printFooter (_os);
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Targets::printTargetStat (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+	
+	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
+
+	printTargetHeader (tar->getTargetID (), _os);
+
+	_os << "<h1>Target statistics data</h1>" << std::endl <<
+		"<div id='info' class='b_left'><table><tr><td>First observation</td><td>" << LibnovaDateDouble (tar->getFirstObs ()) << "</td></tr>"
+		"<tr><td>Last observation</td><td>" << LibnovaDateDouble (tar->getLastObs ()) << "</td></tr>"
+		"<tr><td># of observations</td><td>" << tar->getTotalNumberOfObservations () << "</td></tr>"
+		"<tr><td># of images</td<td>" << tar->getTotalNumberOfImages () << "</td></tr>"
+		"<tr><td>Total open shutter time</td><td>" << TimeDiff (tar->getTotalOpenTime ()) << "</td></tr>"
+		"</table></div>";
+
 	printFooter (_os);
 
 	response_type = "text/html";
