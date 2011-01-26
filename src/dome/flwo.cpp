@@ -65,9 +65,9 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	domeExe = NULL;
 	shouldClose = false;
 
-	opendome = NULL;
-	closedome = NULL;
-	slitfile = NULL;
+	opendome = "/usr/local/bin/openslit";
+	closedome = "/usr/local/bin/closeslit";
+	slitfile = "/Realtime/lib/slit_status";
 
 	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
@@ -191,7 +191,7 @@ long FLWO::isClosed ()
 {
 	if (domeExe)
 		return USEC_SEC;
-	if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
+	if ((getState () & DOME_DOME_MASK) == DOME_CLOSING || (getState () & DOME_DOME_MASK) == DOME_CLOSED)
 		return -2;
 	return -1;
 }
