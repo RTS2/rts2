@@ -97,6 +97,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2plan::Selector * sel;
 
 		Rts2ValueInteger *next_id;
+		Rts2ValueTime *nextTime;
 
 		Rts2ValueInteger *idle_select;
 		Rts2ValueInteger *night_idle_select;
@@ -137,6 +138,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
+
+	createValue (nextTime, "next_time", "time when selection method was run", false);
 
 	createValue (idle_select, "idle_select", "interval in seconds in which for selection of next target", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
 	idle_select->setValueInteger (300);
@@ -355,6 +358,9 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	}
 	next_id->setValueInteger (selectNext ());
 	sendValueAll (next_id);
+	nextTime->setValueDouble (getNow ());
+	sendValueAll (nextTime);
+
 	if (lastQueue)
 		sendValueAll (lastQueue);
 
