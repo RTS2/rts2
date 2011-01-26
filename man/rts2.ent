@@ -60,6 +60,17 @@
       </arg>
 ">
 
+<!ENTITY dbapponly "
+      <arg choice='opt'>
+	<arg choice='plain'><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+	<arg choice='plain'><option>--database <replaceable>database</replaceable></option></arg>
+      </arg>
+      <arg choice='opt'>
+        <arg choice='plain'><option>--debugdb</option></arg>
+      </arg>" >
+
 <!ENTITY dbapplist "&configapplist;
        <varlistentry>
         <term><option>--database <replaceable class='parameter'>database-name</replaceable></option></term>

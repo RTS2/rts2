@@ -51,46 +51,24 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--add <replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <replaceable class="parameter">end time</replaceable></option></arg>
-      </arg>
-    </cmdsynopsis>
+      &dbapponly;
+      <arg choice='plain'>
+        <arg><option>--add
+	  <arg choice='req' rep='repeat'><replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <arg><replaceable class="parameter">end time</replaceable></arg></arg>
+	</option></arg>
+	<arg>
+          <option>--dump</option>
+          <arg><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
+	</arg>  
+        <arg><option>--load</option></arg>
+        <arg><option>--generate</option></arg>
+        <arg><option>--copy <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
+        <arg><option>--delete <replaceable class="parameter">plan ID</replaceable></option></arg>
+      </arg>	
+    </cmdsynopsis>  
     <cmdsynopsis>
       <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--dump</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
-      </arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--load</option></arg>
-      </arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--generate</option></arg>
-      </arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--copy <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
-      </arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>--delete <replaceable class="parameter">plan ID</replaceable></option></arg>
-      </arg>
-    </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      &dbapp;
+      &basicapp;
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -111,7 +89,7 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>--add <replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <replaceable class="parameter">end time</replaceable></option></term>
+        <term><option>--add</option> <arg rep='repeat' choice='req'><replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <arg><replaceable class="parameter">end time</replaceable></arg></arg></term>
         <listitem>
           <para>
 	    Add new fixed schedule target. The end time is optional.
