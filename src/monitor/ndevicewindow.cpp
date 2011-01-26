@@ -306,7 +306,7 @@ void NDeviceCentralWindow::printValues ()
 		for (std::vector < FutureStateChange >::iterator iter = stateChanges.begin (); iter != stateChanges.end (); iter++)
 		{
 			std::ostringstream _os;
-			_os << LibnovaDateDouble ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
+			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
 
 			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
 		}
