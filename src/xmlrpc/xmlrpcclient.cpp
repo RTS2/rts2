@@ -354,9 +354,7 @@ int Client::executeCommands ()
 		twoArg[0] = c;
 		twoArg[1] = sep;
 
-		std::cout << "c " << c << " sep " << sep << std::endl;
-
-		int ret = runXmlMethod (R2X_DEVICE_COMMAND, twoArg, result);
+		int ret = runXmlMethod (R2X_DEVICE_COMMAND, twoArg, result, false);
 		if (ret)
 			return ret;
 	}
