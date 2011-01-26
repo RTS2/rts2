@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-plan">
+  <!ENTITY command     "rts2-plan">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
@@ -16,7 +16,7 @@
 
 <refentry>
   <refentryinfo>
-    <title>&dhpackage;</title>
+    <title>&command;</title>
     <productname>rts2</productname>
     <productnumber>0.8.2</productnumber>
     &dhdate;
@@ -24,7 +24,7 @@
       <author>
         &dhfirstname;
         &dhsurname;
-	<contrib>Wrote most of the RTS2 package.</contrib>
+	<contrib>Wrote this manual page.</contrib>
 	<address>
           &dhemail;
 	</address>
@@ -41,25 +41,24 @@
     &legal;
   </refentryinfo>
   <refmeta>
-    <refentrytitle>&dhpackage;</refentrytitle>
+    <refentrytitle>&command;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
-    <refname>&dhpackage;</refname>
+    <refname>&command;</refname>
     <refpurpose>Manage fixed-time observation scheduling.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>&dhpackage;</command>
-      &dbapp;
-      <arg choice="opt">
-        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
-      </arg>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--add <replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <replaceable class="parameter">end time</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--dump</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--load</option></arg>
@@ -73,6 +72,7 @@
       <arg choice="opt">
         <arg choice="plain"><option>--delete <replaceable class="parameter">plan ID</replaceable></option></arg>
       </arg>
+      &dbapp;
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -80,7 +80,9 @@
     <title>DESCRIPTION</title>
 
     <para>
-      With <command>&dhpackage;</command> users can manipulate target scheduling.
+      With <command>&command;</command> users can manipulate target scheduling.
+      New plan entries can be added, existing plan entries can be listed and
+      deleted. Plan entries for a given target can be listed.
     </para>
 
   </refsect1>
@@ -90,17 +92,115 @@
     &optiongnu;
 
     <variablelist>
-      &dbapplist;	
       <varlistentry>
         <term><option>--add <replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <replaceable class="parameter">end time</replaceable></option></term>
         <listitem>
           <para>
-	    Add new fixed schedule target.
+	    Add new fixed schedule target. The end time is optional.
+	  </para>
+	  <para>  
+	    If <replaceable class="parameter">start time</replaceable> or
+	    <replaceable class="parameter">end time</replaceable> parameters
+	    are numbers preceeded wih <emphasis>+</emphasis> sign, they are
+	    interpreted as time offsets. Base time is time current system time
+	    for start time parameter, and start time value for end time. Please
+            see <link linkend='examples'>examples</link> for details.
 	  </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>--dump</option></term>
+	<listitem>
+	  <para>
+	    Dump plan entries. Unless night is specified with
+	    <option>-n</option> option, the current night plan entries are
+	    printed on standard output.
+	  </para>
+	</listitem>
+      </varlistentry>	    
+      <varlistentry>
+	<term><option>-n <replaceable class='parameter'>YYYY-MM-DD</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Specify night for which targets will be dumped.
+	  </para>
+	</listitem>  
+      </varlistentry>
+      <varlistentry>
+        <term><option>--load</option></term>
+	<listitem>
+	  <para>
+            Load plan from standard input. Plan entries are separated by new line, and have the following format:
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--delete <replaceable class='parameter'>plan id</replaceable></option></term>
+	 <listitem>
+	   <para>
+	     Delete plan entry with given plan ID.
+	   </para>
+	 </listitem>  
+      </varlistentry>
+      <varlistentry>
+        <term><option>--target <replaceable class='parameter'>target name or id</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Print plan entries for given target.
+	  </para>  
+	</listitem>
+      </varlistentry>
+      &dbapplist;	
     </variablelist>  
   </refsect1>
+  <refsect1 xml:id='examples'>
+    <title>Examples</title>
+
+    <para>
+      Following example add new plan entry for target with name M31, to be
+      executed on 2013-03-13, at 12:34:41 UT. The target will be valid for 5
+      minutes (300 seconds).
+    </para>
+
+    <screen>
+      <command>&command;</command> <option>--add</option> <replaceable>M31</replaceable> <replaceable>2013-03-13T12:34:41</replaceable> <replaceable>+300</replaceable>
+    </screen>
+
+    <para>
+      Following examples schedules target with name M81 to be executed in one
+      hour (=3600 seconds) from now, and running until it is above horizon (as
+      end time is not specified):
+    </para>
+
+    <screen>
+      <command>&command;</command> <option>--add</option> <replaceable>M81</replaceable> <replaceable>+3600</replaceable>
+    </screen>  
+
+    <para>
+      To print plan for the current night, execute following:
+    </para>
+
+    <screen>
+      <command>&command;</command> <option>--dump</option>
+    </screen>
+
+    <para>
+      To print plan for night 2013-03-13, execute:
+    </para>
+
+    <screen>
+      <command>&command;</command> <option>--dump</option> <option>-n</option> <replaceable>2013-03-13</replaceable>
+    </screen>
+
+    <para>
+      To print all plan entries for target with name M81:
+    </para>
+    
+    <screen>
+      <command>&command;</command> <option>--target</option> <replaceable>M81</replaceable>
+    </screen>  
+     
+  </refsect1>  
   <refsect1>
     <title>SEE ALSO</title>
 
