@@ -238,9 +238,8 @@ class Rts2App:public Rts2Object
 		 * @param in_long_option   Long option. Can be string.
 		 * @param in_has_arg       0 if this option do not has an optarg, 1 if it has, 2 if it can have.
 		 * @param in_help_msg      Help message printed to the user.
-		 * @return -1 on failure, 0 on success.
 		 */
-		int addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg);
+		void addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg);
 
 		/**
 		 * Return application name, taken from the command line.
@@ -273,7 +272,7 @@ class Rts2App:public Rts2Object
 		/**
 		 * Holds options which might be passed to the program.
 		 */
-		std::vector < Rts2Option * >options;
+		std::vector < Rts2Option > options;
 
 		/**
 		 * Call to process options and arguments.

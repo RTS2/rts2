@@ -66,21 +66,14 @@ Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 
 	addOption ('h', "help", 0, "write this help");
 	addOption (OPT_UTTIME, "UT", 0, "use UT (not local) time for time displays");
-	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
 	addOption (OPT_VERSION, "version", 0, "show program version and license");
+	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
 
 	masterApp = this;
 }
 
 Rts2App::~Rts2App ()
 {
-	std::vector < Rts2Option * >::iterator opt_iter;
-
-	for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-	{
-		delete (*opt_iter);
-	}
-	options.clear ();
 }
 
 int Rts2App::initOptions ()
@@ -88,9 +81,7 @@ int Rts2App::initOptions ()
 	int c;
 	int ret;
 
-	std::vector < Rts2Option * >::iterator opt_iter;
-
-	Rts2Option *opt;
+	std::vector < Rts2Option >::iterator opt_iter;
 
 	struct option *long_option, *an_option;
 
@@ -104,13 +95,12 @@ int Rts2App::initOptions ()
 
 	for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
 	{
-		opt = (*opt_iter);
-		if (opt->haveLongOption ())
+		if (opt_iter->haveLongOption ())
 		{
-			opt->getOptionStruct (an_option);
+			opt_iter->getOptionStruct (an_option);
 			an_option++;
 		}
-		opt->getOptionChar (&end_opt);
+		opt_iter->getOptionChar (&end_opt);
 	}
 
 	*end_opt = '\0';
@@ -130,13 +120,12 @@ int Rts2App::initOptions ()
 		ret = processOption (c);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Error processing option " << c << " "
-				<< (char) c << sendLog;
+			logStream (MESSAGE_ERROR) << "Error processing option " << c << " " << (char) c << sendLog;
 			return ret;
 		}
 	}
 
-	delete[]opt_char;
+	delete[] opt_char;
 
 	while (optind < app_argc)
 	{
@@ -200,11 +189,9 @@ int Rts2App::init ()
 
 void Rts2App::helpOptions ()
 {
-	std::vector < Rts2Option * >::iterator opt_iter;
-	for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
-	{
-		(*opt_iter)->help ();
-	}
+	std::vector < Rts2Option >::reverse_iterator opt_iter;
+	for (opt_iter = options.rbegin (); opt_iter != options.rend (); opt_iter++)
+		opt_iter->help ();
 }
 
 void Rts2App::usage()
@@ -271,11 +258,9 @@ int Rts2App::processArgs (const char *arg)
 	return -1;
 }
 
-int Rts2App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
+void Rts2App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
 {
-	Rts2Option *an_option = new Rts2Option (in_short_option, in_long_option, in_has_arg, in_help_msg);
-	options.push_back (an_option);
-	return 0;
+	options.push_back (Rts2Option (in_short_option, in_long_option, in_has_arg, in_help_msg));
 }
 
 int Rts2App::askForInt (const char *desc, int &val)
