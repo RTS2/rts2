@@ -110,6 +110,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		Rts2ValueSelection *queueType;
 		Rts2ValueBool *skipBelowHorizon;
+		Rts2ValueBool *removeAfterExecution;
 
 		struct ln_lnlat_posn **observer;
 

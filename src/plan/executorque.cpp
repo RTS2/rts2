@@ -59,6 +59,9 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (false);
 
+	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, RTS2_VALUE_WRITABLE);
+	removeAfterExecution->setValueBool (true);
+
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
 	queueType->addSelVal ("HIGHEST");
@@ -164,13 +167,13 @@ int ExecutorQueue::selectNextObservation ()
 			double t_start = front ().t_start;
 			if (!isnan (t_start) && t_start > t)
 			{
-				master->addTimer (t - t_start, new Rts2Event (EVENT_NEXT_START));
+				master->addTimer (t_start - t, new Rts2Event (EVENT_NEXT_START));
 			}
 			else
 			{
 				double t_end = front ().t_end;
 				if (!isnan (t_end) && t_end > t)
-					master->addTimer (t - t_end, new Rts2Event (EVENT_NEXT_END));
+					master->addTimer (t_end - t, new Rts2Event (EVENT_NEXT_END));
 			}
 
 		}
@@ -279,7 +282,9 @@ void ExecutorQueue::filterExpired ()
 		double t_end = iter2->t_end;
 		if (!isnan (t_start) && t_start <= master->getNow () && !isnan (t_end) && t_end <= master->getNow ())
 			iter2 = erase (iter2);
-		else
+		else if (iter2->target->observationStarted () && removeAfterExecution->getValueBool () == true)
+		  	iter2 = erase (iter2);
+		else  
 			iter2++;
 	}
 	if (empty ())
