@@ -70,7 +70,7 @@ class Rts2PlanApp:public Rts2AppDb
 
 Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
-	JD = ln_get_julian_from_sys ();
+	JD = rts2_nan ("f");
 
 	operation = NO_OP;
 
@@ -162,12 +162,23 @@ void Rts2PlanApp::doAddPlan (rts2db::Plan *addedplan)
 
 int Rts2PlanApp::dumpPlan ()
 {
-	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
-	time_t *from = night.getFrom ();
-	time_t *to = night.getTo ();
-	rts2db::PlanSet *plan_set = new rts2db::PlanSet (from, to);
+	time_t from;
+	time_t to;
+
+	if (isnan (JD))
+	{
+		from = Rts2Config::instance ()->getNight ();
+		to = from + 86400;
+	}
+	else
+	{
+		Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
+		from = *(night.getFrom ());
+		to = *(night.getTo ());
+	}
+	rts2db::PlanSet *plan_set = new rts2db::PlanSet (&from, &to);
 	plan_set->load ();
-	std::cout << "Plan entries from " << Timestamp (*from) << " to " << Timestamp (*to) << std::endl << (*plan_set) << std::endl;
+	std::cout << "Plan entries from " << Timestamp (from) << " to " << Timestamp (to) << std::endl << (*plan_set) << std::endl;
 	delete plan_set;
 	return 0;
 }
