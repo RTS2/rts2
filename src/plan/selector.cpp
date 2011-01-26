@@ -98,6 +98,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		Rts2ValueInteger *next_id;
 		Rts2ValueTime *nextTime;
+		Rts2ValueBool *interrupt;
 
 		Rts2ValueInteger *idle_select;
 		Rts2ValueInteger *night_idle_select;
@@ -140,6 +141,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	next_id->setValueInteger (-1);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
+	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
+	interrupt->setValueBool (false);
 
 	createValue (idle_select, "idle_select", "interval in seconds in which for selection of next target", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
 	idle_select->setValueInteger (300);
@@ -289,7 +292,15 @@ void SelectorDev::postEvent (Rts2Event * event)
 			return;
 		case EVENT_NEXT_START:
 		case EVENT_NEXT_END:
-			updateNext ();
+			{
+				int last_id = next_id->getValueInteger ();
+				updateNext ();
+				if (last_id != next_id->getValueInteger ())
+				{
+					interrupt->setValueBool (true);
+					sendValueAll (interrupt);
+				}
+			}
 			break;
 	}
 	Rts2DeviceDb::postEvent (event);
@@ -346,14 +357,19 @@ int SelectorDev::selectNext ()
 
 int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 {
-	if (started && selectorQueue)
+	if (started)
 	{
-		rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
-		if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
+		interrupt->setValueBool (false);
+		sendValueAll (interrupt);
+		if (selectorQueue)
 		{
-			eq->front ().target->startObservation ();
-			eq->beforeChange ();
-			eq->popFront ();
+			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
+			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
+			{
+				eq->front ().target->startObservation ();
+				eq->beforeChange ();
+				eq->popFront ();
+			}
 		}
 	}
 	next_id->setValueInteger (selectNext ());
