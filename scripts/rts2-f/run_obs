@@ -28,7 +28,7 @@ endif
 
 set ti=`rts2-targetinfo $tar_id`
 
-set name=`echo $ti | awk '{ print $1 }' | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
+set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
 set pi=`rts2-targetinfo --pi $tar_id`
 set program=`rts2-targetinfo --program $tar_id`
 
