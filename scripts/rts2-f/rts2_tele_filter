@@ -1,10 +1,10 @@
 
 set curfilname=`tele filter ?`
 
-set curfilt=`grep -n '^$curfilname *$' /Realtime/lib/filt.dat | cut -f1 -d:`
+set curfilt=`grep -n "$curfilname" /Realtime/lib/filt.dat | cut -f1 -d:`
 
 switch ($1)
-	case [0-9]:
+	case [1-8]:
 		if ($curfilt == $1) then
 			echo "filter $1 already set"
 		else
@@ -15,7 +15,7 @@ switch ($1)
 		if ($curfilname == $1) then
 		  	echo "filter $1 already set"
 		else	
-			set filt=`grep -n '^1 *$' /Realtime/lib/filt.dat | cut -f1 -d:`
+			set filt=`grep -n "$1" /Realtime/lib/filt.dat | cut -f1 -d:`
 			if ($? != 0) then
 				echo "filter $1 not present, ignoring the request"
 			else
