@@ -87,7 +87,7 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 	p.load ();
 
 	_os << "<h1>Plan with ID" << pid << " for target <a href='../../targets/" << p.getTargetId () << "/'>" << p.getTarget ()->getTargetName () << "</a></h1>"
-		<< "<p>Active from " << LibnovaDateDouble (p.getPlanStart ()) << " to " << LibnovaDateDouble (p.getPlanEnd ()) << "</p>";
+		<< "<p>Active from " << Timestamp (p.getPlanStart ()) << " to " << Timestamp (p.getPlanEnd ()) << "</p>";
 	rts2db::Observation *o = p.getObservation ();
 	if (o == NULL)
 	{

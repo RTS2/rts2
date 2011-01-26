@@ -479,18 +479,30 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		ps.load ();
 
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":1},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":2}],"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":2},"
+			"{\"n\":\"RA\",\"t\":\"r\",\"c\":3},"
+			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":4},"
+			"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":5},"
+			"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":6}],"
 			"\"d\" : [";
 
 		for (rts2db::PlanSetTarget::iterator iter = ps.begin (); iter != ps.end (); iter++)
 		{
 			if (iter != ps.begin ())
 				_os << ",";
+			time_t t = iter->getPlanStart ();
+			double JDstart = ln_get_julian_from_timet (&t);
+			struct ln_equ_posn equ;
+			tar->getPosition (&equ, JDstart);
+			struct ln_hrz_posn hrz;
+			tar->getAltAz (&hrz, JDstart);
 			_os << "[" << iter->getPlanId () << ",\"" 
 				<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getPlanEnd ()) << "\"]";
+				<< LibnovaDateDouble (iter->getPlanEnd ()) << "\","
+				<< equ.ra << "," << equ.dec << ","
+				<< hrz.alt << "," << hrz.az << "]";
 		}
 
 		_os << "]}";

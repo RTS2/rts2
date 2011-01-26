@@ -82,23 +82,38 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			ps.load ();
 
 			os << "\"h\":["
-				"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-				"{\"n\":\"Start\",\"t\":\"t\",\"c\":1},"
-				"{\"n\":\"End\",\"t\":\"t\",\"c\":2}],"
-				"\"d\" : [";
+				"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
+				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
+				"{\"n\":\"Start\",\"t\":\"t\",\"c\":3},"
+				"{\"n\":\"End\",\"t\":\"t\",\"c\":4},"
+				"{\"n\":\"RA\",\"t\":\"r\",\"c\":5},"
+				"{\"n\":\"DEC\",\"t\":\"d\",\"c\":6},"
+				"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":7},"
+				"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":8}],"
+				"\"d\":[";
 
 			for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
 			{
 				if (iter != ps.begin ())
 					os << ",";
-				os << "[" << iter->getPlanId () << ",\"" 
+				rts2db::Target *tar = iter->getTarget ();
+				time_t t = iter->getPlanStart ();
+				double JDstart = ln_get_julian_from_timet (&t);
+				struct ln_equ_posn equ;
+				tar->getPosition (&equ, JDstart);
+				struct ln_hrz_posn hrz;
+				tar->getAltAz (&hrz, JDstart);
+				os << "[" << iter->getPlanId () << ","
+					<< iter->getTargetId () << ",\""
+					<< tar->getTargetName () << "\",\""
 					<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
-					<< LibnovaDateDouble (iter->getPlanEnd ()) << "\"]";
+					<< LibnovaDateDouble (iter->getPlanEnd ()) << "\","
+					<< equ.ra << "," << equ.dec << ","
+					<< hrz.alt << "," << hrz.az << "]";
 			}
 
 			os << "]";
-
-			std::cout << std::endl << os.str () << std::endl;
 		}
 		else
 		{
