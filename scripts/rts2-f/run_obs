@@ -2,7 +2,17 @@
 # assumes rts2-f-env script was called, so important variables
 # are set up
 
-setenv tar_id $1
+#setenv tar_id $1
+#setenv tar_id `$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases`
+
+set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+if ( $? != 0 || $tar_id <= 0 ) then
+	echo `date` selector is not running, executing seltest to select next target
+	set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
+	echo `date` selected $tar_id
+endif
+
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 
 if ( -r $lasttarget ) then
 	setenv last_tar_id `cut -f1 -d' ' $lasttarget`
@@ -16,14 +26,19 @@ if ( $last_tar_id != $tar_id ) then
 	echo $tar_id $obs_id > $lasttarget
 endif
 
-set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
+set ti=`rts2-targetinfo $tar_id`
+
+set name=`echo $ti | awk '{ print $1 }' | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
 set pi=`rts2-targetinfo --pi $tar_id`
 set program=`rts2-targetinfo --program $tar_id`
 
-set ra=$3
-set dec=$4
+set ra=`echo $ti | awk '{ print $3 }'`
+set dec=`echo $ti | awk '{ print $4 }'`
 
-echo "received obs_id $obs_id, name $name, ID $tar_id, pi $pi, program $program"
+echo "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
+echo "Observation ID is $obs_id"
+
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c 'SEL.observation $tar_id $obs_id'
 
 if ( $notmove == 1 ) then
   	echo "move to coordinates ignored"
@@ -31,7 +46,7 @@ if ( $notmove == 1 ) then
 	sleep 3
 else
 	if ( $last_tar_id != $tar_id ) then
-		echo -n "sending coordinates $3 $4 2000.0 .. "
+		echo -n "sending coordinates $ra $dec 2000.0 .. "
 		tele coords $ra $dec 2000.0
 
 		sleep 3
@@ -42,6 +57,8 @@ else
 
 		# mark end of slew
 		$RTS2/bin/rts2-target --observe $obs_id
+
+		echo "marked end of telescope movement"
 	endif
 endif
 	
@@ -63,4 +80,6 @@ $RTS2/bin/rts2-target --end $obs_id
 
 rm -f /tmp/$obs_id
 
-echo "observation $obs_id of object $name ($ra $dec) ends"
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+
+echo `date` "observation $obs_id of object $name ($ra $dec) ends"
