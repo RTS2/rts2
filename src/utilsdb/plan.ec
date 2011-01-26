@@ -237,35 +237,13 @@ int Plan::del ()
 
 moveType Plan::startSlew (struct ln_equ_posn *position, bool update_position)
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-		int db_plan_id = plan_id;
-		int db_obs_id;
-	EXEC SQL END DECLARE SECTION;
 	moveType ret;
 	ret = getTarget ()->startSlew (position, update_position);
 	if (obs_id > 0)
 		return ret;
 
-	obs_id = getTarget()->getObsId ();
-	db_obs_id = obs_id;
+	setObsId (getTarget()->getObsId ());
 
-	EXEC SQL
-		UPDATE
-			plan
-		SET
-			obs_id = :db_obs_id,
-			plan_status = plan_status | 1
-		WHERE
-			plan_id = :db_plan_id;
-	if (sqlca.sqlcode)
-	{
-		logStream (MESSAGE_ERROR) << "Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
-		EXEC SQL ROLLBACK;
-	}
-	else
-	{
-		EXEC SQL COMMIT;
-	}
 	return ret;
 }
 
@@ -300,6 +278,32 @@ Observation * Plan::getObservation ()
 		observation = NULL;
 	}
 	return observation;
+}
+
+void Plan::setObsId (int in_obs_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_plan_id = plan_id;
+	int db_obs_id = in_obs_id;
+	EXEC SQL END DECLARE SECTION;
+	EXEC SQL UPDATE
+		plan
+	SET
+		obs_id = :db_obs_id,
+		plan_status = plan_status | 1
+	WHERE
+		plan_id = :db_plan_id;
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "Plan::startSlew " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+		EXEC SQL ROLLBACK;
+	}
+	else
+	{
+		EXEC SQL COMMIT;
+		obs_id = db_obs_id;
+	}
 }
 
 void Plan::print (std::ostream & _os)

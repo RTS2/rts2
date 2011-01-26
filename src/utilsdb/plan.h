@@ -54,6 +54,8 @@ class Plan
 
 		Observation *getObservation ();
 
+		void setObsId (int in_obs_id);
+
 		int getPlanId () { return plan_id; }
 
 		void setTargetId (int id) { tar_id = id; }
