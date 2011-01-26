@@ -27,6 +27,7 @@
 #define OPT_PARSE_SCRIPT          OPT_LOCAL + 204
 #define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 205
 #define OPT_AIRMASS               OPT_LOCAL + 206
+#define OPT_TARGETID              OPT_LOCAL + 207
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -99,6 +100,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_NAME, "name", 0, "print target(s) name(s)");
+	addOption (OPT_TARGETID, "targetid", 0, "print target(s) id(s)");
 	addOption (OPT_PI, "pi", 0, "print target(s) PI name(s)");
 	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
@@ -207,6 +209,9 @@ int PrintTarget::processOption (int in_opt)
 		case OPT_NAME:
 			printExtended = -2;
 			break;
+		case OPT_TARGETID:
+			printExtended = -5;
+			break;
 		case OPT_PI:
 			printExtended = -3;
 			break;
@@ -308,6 +313,9 @@ void PrintTarget::printTarget (rts2db::Target *target)
 					break;
 				case -4:
 					std::cout << target->getProgramName () << std::endl;
+					break;
+				case -5:
+					std::cout << target->getTargetID () << std::endl;
 					break;
 				case 0:
 					target->printShortInfo (std::cout, JD);
