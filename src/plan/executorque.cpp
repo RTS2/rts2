@@ -55,6 +55,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
+	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false, RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (false);
@@ -80,9 +81,9 @@ int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int plan_id)
 {
-	push_back (QueuedTarget (nt, t_start, t_end));
+	push_back (QueuedTarget (nt, t_start, t_end, plan_id));
 	updateVals ();
 	return 0;
 }
@@ -149,7 +150,7 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation ()
+int ExecutorQueue::selectNextObservation (int &pid)
 {
 	removeTimers ();
 	if (size () > 0)
@@ -158,6 +159,7 @@ int ExecutorQueue::selectNextObservation ()
 		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
 		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (master->getNow ()))
 		{
+			pid = front ().planid;
 			return front ().target->getTargetID ();
 		}
 		else
@@ -219,22 +221,26 @@ void ExecutorQueue::updateVals ()
 	std::vector <std::string> _name_arr;
 	std::vector <double> _start_arr;
 	std::vector <double> _end_arr;
+	std::vector <int> _plan_arr;
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
 		_name_arr.push_back (iter->target->getTargetName ());
 		_start_arr.push_back (iter->t_start);
 		_end_arr.push_back (iter->t_end);
+		_plan_arr.push_back (iter->planid);
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
 	nextStartTimes->setValueArray (_start_arr);
 	nextEndTimes->setValueArray (_end_arr);
+	nextPlanIds->setValueArray (_plan_arr);
 
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
 	master->sendValueAll (nextStartTimes);
 	master->sendValueAll (nextEndTimes);
+	master->sendValueAll (nextPlanIds);
 }
 
 void ExecutorQueue::filterBelowHorizon ()

@@ -97,6 +97,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2plan::Selector * sel;
 
 		Rts2ValueInteger *next_id;
+		Rts2ValueInteger *next_plan_id;
 		Rts2ValueTime *nextTime;
 		Rts2ValueBool *interrupt;
 
@@ -139,6 +140,9 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
+
+	createValue (next_plan_id, "next_plan_id", "ID of next plan, if next target is from plan", false);
+	next_plan_id->setValueInteger (-1);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
@@ -314,6 +318,7 @@ int SelectorDev::selectNext ()
 		{
 			int id = -1;
 			int q = 1;
+			int next_pid = -1;
 			std::list <rts2plan::ExecutorQueue>::iterator iter;
 			switch (selectorQueue->getValueInteger ())
 			{
@@ -321,10 +326,11 @@ int SelectorDev::selectNext ()
 					for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 					{
 						iter->filter ();
-						id = iter->selectNextObservation ();
+						id = iter->selectNextObservation (next_pid);
 						if (id >= 0)
 						{
 							lastQueue->setValueInteger (q);
+							next_plan_id->setValueInteger (next_pid);
 							return id;
 						}
 					}
@@ -334,10 +340,11 @@ int SelectorDev::selectNext ()
 					if (eq != NULL)
 					{
 						eq->filter ();
-						id = eq->selectNextObservation ();
+						id = eq->selectNextObservation (next_pid);
 						if (id >= 0)
 						{
 							lastQueue->setValueInteger (selectorQueue->getValueInteger ());
+							next_plan_id->setValueInteger (next_pid);
 							return id;
 						}
 					}
@@ -367,6 +374,16 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 			{
 				eq->front ().target->startObservation ();
+				// update plan entry..
+				if (next_plan_id->getValueInteger () >= 0)
+				{
+					rts2db::Plan p (next_plan_id->getValueInteger ());
+					p.load ();
+					p.setObsId (obs_id);
+
+					next_plan_id->setValueInteger (-1);
+					sendValueAll (next_plan_id);
+				}
 				eq->beforeChange ();
 				eq->popFront ();
 			}
@@ -374,6 +391,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	}
 	next_id->setValueInteger (selectNext ());
 	sendValueAll (next_id);
+	sendValueAll (next_plan_id);
 	nextTime->setValueDouble (getNow ());
 	sendValueAll (nextTime);
 
@@ -507,7 +525,7 @@ void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 	p.load ();
 	for (rts2db::PlanSet::iterator iter = p.begin (); iter != p.end (); iter++)
 	{
-		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd ());
+		q->addTarget (iter->getTarget (), iter->getPlanStart (), iter->getPlanEnd (), iter->getPlanId ());
 		iter->clearTarget ();
 	}
 }

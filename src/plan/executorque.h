@@ -41,11 +41,12 @@ namespace rts2plan
 class QueuedTarget
 {
 	public:
-		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"))
+		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1)
 		{
 			target = _target;
 			t_start = _t_start;
 			t_end = _t_end;
+			planid = _plan_id;
 		}
 
 		~QueuedTarget () {}
@@ -58,6 +59,7 @@ class QueuedTarget
 		rts2db::Target *target;
 		double t_start;
 		double t_end;
+		int planid;
 };
 
 /**
@@ -74,7 +76,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
-		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
+		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1);
 
 		/**
 		 * Runs queue filter, remove expired observations.
@@ -96,7 +98,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 *
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
-		int selectNextObservation ();
+		int selectNextObservation (int &pid);
 
 		int queueFromConn (Rts2Conn *conn, bool withTimes = false);
 
@@ -109,6 +111,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::StringArray *nextNames;
 		rts2core::TimeArray *nextStartTimes;
 		rts2core::TimeArray *nextEndTimes;
+		rts2core::IntegerArray *nextPlanIds;
 
 		Rts2ValueSelection *queueType;
 		Rts2ValueBool *skipBelowHorizon;
