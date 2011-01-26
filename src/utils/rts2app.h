@@ -212,6 +212,8 @@ class Rts2App:public Rts2Object
 			return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
 		}
 
+		bool usesLocalTime () { return useLocalTime; }
+
 	protected:
 		/**
 		 * Called to process options of the programme.

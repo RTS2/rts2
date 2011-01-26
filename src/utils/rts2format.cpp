@@ -18,6 +18,7 @@
  */
 
 #include "rts2format.h"
+#include "rts2app.h"
 
 int flagSpace = -1;
 
@@ -62,5 +63,5 @@ std::ostream & localTime (std::ostream & _os)
 
 bool formatLocalTime (std::ostream & _os)
 {
-	return flagLocalTime != -1 && _os.iword (flagLocalTime) == 1;
+	return getMasterApp ()->usesLocalTime () || (flagLocalTime != -1 && _os.iword (flagLocalTime) == 1);
 }

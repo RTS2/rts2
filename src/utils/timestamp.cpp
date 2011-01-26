@@ -35,7 +35,11 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 	struct tm *tmval;
 	if (isnan (_ts.ts))
 	{
-		_os << std::setw (22) << "nan";
+		_os << std::right << std::setw (22) << "---- ";
+		if (formatLocalTime (_os))
+			_os << *tzname;
+		else
+			_os << "UT";  
 		return _os;
 	}
 	tv.tv_sec = (long) _ts.ts;
@@ -60,6 +64,8 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 
 	if (formatLocalTime (_os))
 		_os << " " << *tzname;
+	else
+		_os << " UT";  	
 
 	_os.flags (old_settings);
 	_os.precision (old_precision);

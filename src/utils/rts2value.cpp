@@ -322,7 +322,7 @@ const char * Rts2ValueTime::getDisplayValue ()
 	gettimeofday (&infot, NULL);
 
 	std::ostringstream _os;
-	_os << LibnovaDateDouble (getValueDouble ())
+	_os << Timestamp (getValueDouble ())
 		<< " (" << TimeDiff (infot.tv_sec + (double) infot.tv_usec / USEC_SEC, getValueDouble ()) << ")";
 
 	strncpy (buf, _os.str ().c_str (), VALUE_BUF_LEN - 1);
