@@ -73,10 +73,31 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
+std::string printTarget (rts2db::Target *tar, double t)
+{
+	time_t tt = t; 
+	double jd = ln_get_julian_from_timet (&tt);
+	std::ostringstream ret;
+
+	struct ln_equ_posn equ;
+	tar->getPosition (&equ, jd);
+
+	struct ln_hrz_posn hrz;
+	tar->getAltAz (&hrz, jd);
+
+	ret << "<table>"
+		"<tr><td>Equatorial</td><td class='deg'>" << LibnovaRaDec (&equ) << "</td></tr>"
+		"<tr><td>Horizontal</td><td class='deg'>" << LibnovaHrz (&hrz) << "</td></tr>"
+		"<tr><td>Is above horizon</td><td>" << (tar->isAboveHorizon (&hrz) ? "yes" : "no") << "</td></tr>"
+		"</table>";
+
+	return ret.str ();
+}
+
 void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	printHeader (_os, "Observing plan");
+	printHeader (_os, "Observing plan", NULL, "/css/table.css");
 
 	char *end;
 	int pid = strtol (id, &end, 10);
@@ -86,9 +107,17 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 	rts2db::Plan p (pid);
 	p.load ();
 
+	rts2db::Target *tar = p.getTarget ();
+
 	_os << "<h1>Plan with ID" << pid << " for target <a href='../../targets/" << p.getTargetId () << "/'>" << p.getTarget ()->getTargetName () << "</a></h1>"
-		<< "<p>Active from " << Timestamp (p.getPlanStart ()) << " to " << Timestamp (p.getPlanEnd ()) << "</p>";
-	rts2db::Observation *o = p.getObservation ();
+		"<table><tr><td>From</td><td class='time'>" << Timestamp (p.getPlanStart ()) << "</td></tr>"
+		"<tr><td>To</td><td class='time'>" << Timestamp (p.getPlanEnd ()) << "</td></tr>"
+		"<tr><td>At the beginning</td><td>" << printTarget (tar, p.getPlanStart ()) << "</td></tr>";
+	if (!isnan (p.getPlanEnd ()))
+		_os << "<tr><td>At the end</td><td>" << printTarget (tar, p.getPlanEnd ()) << "</td></tr>";
+	_os << "</table>";
+
+ 	rts2db::Observation *o = p.getObservation ();
 	if (o == NULL)
 	{
 		_os << "<p>Plan was not observed.</p>";
@@ -96,6 +125,12 @@ void Plan::printPlan (const char *id, char* &response, size_t &response_length)
 	else
 	{
 		_os << "<p>Plan was observed as observation <a href='../../observations/" << o->getObsId () << "/'>" << o->getObsId () << "</a></p>";
+
+		_os << "<table><tr><td>Slew</td><td>" << Timestamp (o->getObsSlew ()) << "</td></tr>"
+			"<tr><td>Start</td><td>" << Timestamp (o->getObsStart ()) << "</td></tr>"
+			"<tr><td>End</td><td>" << Timestamp (o->getObsEnd ()) << "</td></tr>"
+			"<tr><td>Images</td><td>" << o->getNumberOfImages () << "</td></tr>"
+			"</table>";
 	}
 
 	printFooter (_os);
