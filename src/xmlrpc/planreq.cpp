@@ -62,7 +62,7 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 	if (!isnan (t_to))
 		_os << "&to=" << t_to;
 
-	_os << "','plan','allPlan');\n"
+	_os << "','plan','allPlans');\n"
 		"</script>\n"
 		"<div id='plan'>Loading..</div>\n";
 

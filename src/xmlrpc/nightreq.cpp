@@ -314,8 +314,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			_os << "[" << iter->getObsId () << ","
 				<< iter->getTargetId () << ","
 				<< "\"" << iter->getTargetName () << "\",\""
-				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getObsEnd ())  << "\","
+				<< Timestamp (iter->getObsStart ()) << "\",\""
+				<< Timestamp (iter->getObsEnd ())  << "\","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages ()
 				<< "]\n";

@@ -467,9 +467,9 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			_os << "[" << iter->getObsId () << "," 
 				<< iter->getObsRa () << ","
 				<< iter->getObsDec () << ",\""
-				<< LibnovaDateDouble (iter->getObsSlew ()) << "\",\""
-				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getObsEnd ()) << "\","
+				<< Timestamp (iter->getObsSlew ()) << "\",\""
+				<< Timestamp (iter->getObsStart ()) << "\",\""
+				<< Timestamp (iter->getObsEnd ()) << "\","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages () << "]";
 		}
@@ -486,12 +486,13 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 
 		_os << "{\"h\":["
 			"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-			"{\"n\":\"Start\",\"t\":\"t\",\"c\":1},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":2},"
-			"{\"n\":\"RA\",\"t\":\"r\",\"c\":3},"
-			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":4},"
-			"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":5},"
-			"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":6}],"
+			"{\"n\":\"Obs ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":1,\"c\":1},"
+			"{\"n\":\"Start\",\"t\":\"t\",\"c\":2},"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":3},"
+			"{\"n\":\"RA\",\"t\":\"r\",\"c\":4},"
+			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":5},"
+			"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":6},"
+			"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":7}],"
 			"\"d\" : [";
 
 		for (rts2db::PlanSetTarget::iterator iter = ps.begin (); iter != ps.end (); iter++)
@@ -504,9 +505,10 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			tar->getPosition (&equ, JDstart);
 			struct ln_hrz_posn hrz;
 			tar->getAltAz (&hrz, JDstart);
-			_os << "[" << iter->getPlanId () << ",\"" 
-				<< LibnovaDateDouble (iter->getPlanStart ()) << "\",\""
-				<< LibnovaDateDouble (iter->getPlanEnd ()) << "\","
+			_os << "[" << iter->getPlanId () << "," 
+				<< iter->getObsId () << ",\""
+				<< Timestamp (iter->getPlanStart ()) << "\",\""
+				<< Timestamp (iter->getPlanEnd ()) << "\","
 				<< equ.ra << "," << equ.dec << ","
 				<< hrz.alt << "," << hrz.az << "]";
 		}
