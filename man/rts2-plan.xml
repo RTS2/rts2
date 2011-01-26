@@ -54,24 +54,42 @@
       <arg choice="opt">
         <arg choice="plain"><option>--add <replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <replaceable class="parameter">end time</replaceable></option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--dump</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--load</option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--generate</option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--copy <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       <arg choice="opt">
         <arg choice="plain"><option>--delete <replaceable class="parameter">plan ID</replaceable></option></arg>
       </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&command;</command>
       &dbapp;
     </cmdsynopsis>
   </refsynopsisdiv>
