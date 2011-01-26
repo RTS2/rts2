@@ -18,11 +18,18 @@ if ( -e $rts2abort ) then
 	rm -f $lasttarget
 	exit
 endif
-set ms=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --master-state on`
-if ( $? != 0 || $ms == 0 ) then
+if ( $ignoreday == 0 ) then
+	set ms=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --master-state rnight`
+	if ( $? != 0 || $ms == 0 ) then
+		rm -f $lasttarget
+		set continue=0
+	endif
+endif
+set in=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.interrupt`
+if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
-endif
+endif  
 </xsl:variable>
 
 <xsl:template match="disable">
@@ -39,9 +46,11 @@ echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 ccd gowait <xsl:value-of select='@length'/>
 <xsl:copy-of select='$abort'/>
 dstore
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 $RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c "IMGP.only_process $lastimage"
 if ( $xpa == 1 ) then
 	xpaset ds9 fits mosaicimage iraf &lt; $lastimage
 	xpaset -p ds9 zoom to fit
@@ -69,7 +78,7 @@ if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
 	tele ampcen <xsl:value-of select='@operands'/>
 	echo '.'
 else
-	echo `date` 'ampcen already on $ampstatus, not changing it'
+	echo `date` "ampcen already on $ampstatus, not changing it"
 endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
@@ -79,7 +88,7 @@ if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
 	tele autog <xsl:value-of select='@operands'/>
 	echo '.'
 else
-	echo `date` 'autog already in $guidestatus status, not changing it'
+	echo `date` "autog already in $guidestatus status, not changing it"
 endif
 </xsl:if>
 </xsl:template>
