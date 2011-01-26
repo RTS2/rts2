@@ -81,7 +81,7 @@ class SelectorDev:public Rts2DeviceDb
 		 *
 		 * @param started    if true, queue providing last target ID will be informed that the target was observed/is being observed before it will be asked for next ID
 		 */
-		int updateNext (bool started = false);
+		int updateNext (bool started = false, int tar_id = -1, int obs_id = -1);
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -341,12 +341,12 @@ int SelectorDev::selectNext ()
 	return -1;
 }
 
-int SelectorDev::updateNext (bool started)
+int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 {
 	if (started && selectorQueue)
 	{
 		rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
-		if (eq)
+		if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 		{
 			eq->front ().target->startObservation ();
 			eq->beforeChange ();
@@ -403,9 +403,11 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	// when observation starts
 	else if (conn->isCommand ("observation"))
 	{
-		if (!conn->paramEnd ())
+	  	int tar_id;
+		int obs_id;
+		if (conn->paramNextInteger (&tar_id) || conn->paramNextInteger (&obs_id) || !conn->paramEnd ())
 			return -2;
-		return updateNext (true) == 0 ? 0 : -2;
+		return updateNext (true, tar_id, obs_id) == 0 ? 0 : -2;
 	}
 	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan"))
 	{

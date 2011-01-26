@@ -247,6 +247,11 @@ void ExecutorQueue::filterBelowHorizon ()
 		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
 		{
 			struct ln_hrz_posn hrz;
+			if (!isnan (iter->t_start))
+			{
+				time_t t = iter->t_start;
+				JD = ln_get_julian_from_timet (&t);
+			}
 			iter->target->getAltAz (&hrz, JD, *observer);
 			if (iter->target->isAboveHorizon (&hrz))
 			{
