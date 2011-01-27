@@ -148,3 +148,48 @@
           <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
         </listitem>
       </varlistentry>" >
+
+<!ENTITY localtime "<para>
+     All time inputs are specified in YYYY-MM-DDxHH:MM:SS.ss format, where YYYY
+     is for year, MM is for month, DD is for day and HH,MM and SS.ss stands for
+     hours, minutes, seconds and fractions of seconds. If HH, MM or SS.ss are
+     not provided, they are assumed to be 0.
+</para>
+<para>     
+     The x determines, if local time
+     is entered, or UT time is specified. Please be aware that localtime is what your
+     computer thinks as local time, and it can be as well set to UT. The
+     following characters have the following meaning:
+
+     <variablelist>
+       <varlistentry>
+         <term>L</term>
+	 <term>T</term>
+	 <term> (space)</term>
+	 <listitem>
+	   <para>Specify that time is entered in local time.</para>
+	 </listitem>
+       </varlistentry>
+       <varlistentry>
+         <term>U</term>
+	 <term>G</term>
+	 <listitem>
+	   <para>Specify that time is entered in UT - univerzal time (Greenwich time, ZULU,..) time.</para>
+	 </listitem>
+       </varlistentry>
+     </variablelist>
+</para>
+<para>     
+     As entering times can be confusing, the system always print timezone
+     information. So you can verify if you entered correct time. Consider that
+     your system is set to NZST, which is New Zealand Standard Time (UTC -
+     12:00). Then entering <emphasis>2011-01-12T13:00:00.00</emphasis>
+     corresponds to UT 01:00:00 (on the same day). You can get the same time
+     entering <emphasis>2011-01-12U01:00:00</emphasis> or <emphasis>2011-1-12T1</emphasis>.
+</para>
+<para>
+     You can also use <option>--UT</option>, which switch all time printouts to
+     UT time. This does not affects inputs, but should provide hints if you are
+     unsure to which timezone the computer is set.
+</para>
+" >

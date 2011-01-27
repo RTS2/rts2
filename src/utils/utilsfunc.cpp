@@ -80,8 +80,6 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 		time (&now);
 		now += atoi (in_date);
 		ln_get_date_from_timet (&now, out_time);
-		// assumes localtime
-		islocal = true;
 		return 0;
 	}
 
@@ -111,7 +109,10 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 		}
 		// only year..
 		if (*in_date == '\0')
+		{
+			islocal = true;  
 			return 0;
+		}
 	}
 	std::cerr << "Cannot parse date: " << in_date << std::endl;
 	return -1;

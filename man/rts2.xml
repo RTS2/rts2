@@ -24,7 +24,7 @@
       <author>
         &dhfirstname;
         &dhsurname;
-	<contrib>Wrote most of the RTS2 package.</contrib>
+	<contrib>Main RTS2 author.</contrib>
 	<address>
 	  &dhemail;
 	</address>
@@ -60,7 +60,7 @@
 	<contrib>Help with manual pages, and a lot from LSST development.</contrib>
       </author>
       <author>
-        <surname>and many othersa</surname>
+        <surname>and many others</surname>
 	<contrib>ideas, bug-fixing, small changes.</contrib>
       </author>
     </authorgroup>
@@ -330,6 +330,10 @@
       </varlistentry>
     </variablelist>
 
+  </refsect1>
+  <refsect1>
+    <title>Time parameters input format</title>
+    &localtime;
   </refsect1>
   <refsect1>
     <title>IMAGE PATH EXPRESSION</title>

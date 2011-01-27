@@ -90,8 +90,11 @@
       New plan entries can be added, existing plan entries can be listed and
       deleted. Plan entries for a given target can be listed.
     </para>
-
   </refsect1>
+  <refsect1>
+    <title>Time inputs</title>
+    &localtime;
+  </refsect1>  
   <refsect1 id="options">
     <title>OPTIONS</title>
 
