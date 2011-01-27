@@ -80,7 +80,7 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
 	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n). Offset times with ~4m/day (to compensate for Earth orbit)");
 	addOption (OPT_FIXED_COPY, "copy-fixed", 0, "copy plan with the same times (do not offset ~4min/day)");
-	addOption (OPT_DELETE, "delete", 1, "delete plan with plan ID given as parameter");
+	addOption (OPT_DELETE, "delete", 0, "delete plan with plan ID given as parameter");
 	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
 }
 
@@ -228,7 +228,7 @@ int Rts2PlanApp::copyPlan (bool st_offsets)
 		 double d = (jd2 - JD) * 86400;
 		 if (st_offsets)
 		 {
-			d += ln_get_mean_sidereal_time (jd2) - ln_get_mean_sidereal_time (JD);
+			d += 3600 * (ln_get_mean_sidereal_time (JD) - ln_get_mean_sidereal_time (jd2));
 		 }
 
 		 for (rts2db::PlanSet::iterator pi = plan_set.begin (); pi != plan_set.end (); pi++)
@@ -256,6 +256,7 @@ int Rts2PlanApp::deletePlan ()
 	if (!isnan (JD))
 	{
 		rts2db::PlanSetNight pn (JD);
+		pn.load ();
 		if (pn.empty ())
 		{
 			std::cerr << "Plan from " << Timestamp (pn.getFrom ()) << " to " << Timestamp (pn.getTo ()) << " is empty" << std::endl;
