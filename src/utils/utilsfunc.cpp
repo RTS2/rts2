@@ -64,7 +64,7 @@ int mkpath (const char *path, mode_t mode)
 	return ret;
 }
 
-int parseDate (const char *in_date, struct ln_date *out_time)
+int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 {
 	int ret;
 	int ret2;
@@ -72,6 +72,7 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 	out_time->seconds = 0;
 	while (*in_date && isblank (*in_date))
 		in_date++;
+	islocal = false;	
 
 	if (in_date[0] == '+' || in_date[0] == '-')
 	{
@@ -79,6 +80,8 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 		time (&now);
 		now += atoi (in_date);
 		ln_get_date_from_timet (&now, out_time);
+		// assumes localtime
+		islocal = true;
 		return 0;
 	}
 
@@ -86,9 +89,13 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 	if (ret == 3)
 	{
 		in_date += ret2;
-		// we end with is T, let's check if it contains time..
-		if (*in_date == 'T' || isspace (*in_date))
+
+		// we end with is U for UT, let's check if it contains time..
+		if (*in_date == 'T' || *in_date == 'L' || *in_date == 'G' || *in_date == 'U' || isspace (*in_date))
 		{
+			// localtime
+			if (*in_date == 'T' || *in_date == 'L' || isspace (*in_date))
+				islocal = true;
 			in_date++;
 			ret2 = 	sscanf (in_date, "%u:%u:%lf", &out_time->hours,	&out_time->minutes, &out_time->seconds);
 			if (ret2 == 3)
@@ -103,11 +110,26 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 			return -1;
 		}
 		// only year..
-		return 0;
+		if (*in_date == '\0')
+			return 0;
 	}
 	std::cerr << "Cannot parse date: " << in_date << std::endl;
 	return -1;
 }
+
+int parseDate (const char *in_date, struct ln_date *out_time)
+{
+	bool islocal;
+	int ret = parseDate (in_date, out_time, islocal);
+	if (islocal)
+	{
+		double JD = ln_get_julian_day (out_time);
+		JD += timezone / 86400.0;
+		ln_get_date (JD, out_time);
+	}
+	return ret;
+}
+
 
 int parseDate (const char *in_date, double &JD)
 {
