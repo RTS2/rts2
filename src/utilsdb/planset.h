@@ -42,7 +42,6 @@ class PlanSet:public std::list < Plan >
 	public:
 		PlanSet ();
 		PlanSet (int prop_id);
-		PlanSet (time_t * t_from, time_t * t_to);
 		/**
 		 * Extract plan entries from given time range.
 		 *
@@ -65,6 +64,13 @@ class PlanSet:public std::list < Plan >
 		}
 
 	protected:
+		/**
+		 * Fill in where part for given dates.
+		 *
+		 * @param t_from   time from (in ctime, e.g. seconde from 1-1-1970)
+		 * @param t_to     time to (in ctime)
+		 */
+		void planFromTo (double t_from, double t_to);
 		std::string where;
 };
 
@@ -77,6 +83,28 @@ class PlanSetTarget:public PlanSet
 {
 	public:
 		PlanSetTarget (int tar_id);
+};
+
+/**
+ * Plan set for given night.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class PlanSetNight:public PlanSet
+{
+	public:
+		/**
+		 * Select all plan entries for night which includes JD date specified as parameter.
+		 * If JD is nan, it will select actual night.
+		 */
+		PlanSetNight (double JD = rts2_nan ("f"));
+
+		double getFrom () { return from; }
+		double getTo () { return to; }
+
+	private:
+		double from;
+		double to;		
 };
 
 }

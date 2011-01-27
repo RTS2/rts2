@@ -765,6 +765,8 @@ Rts2Night::Rts2Night (struct ln_date * ln_night, struct ln_lnlat_posn * obs)
 
 Rts2Night::Rts2Night (double JD, struct ln_lnlat_posn *obs)
 {
+	if (isnan (JD))
+		JD = ln_get_julian_from_sys ();  
 	struct ln_date l_date;
 	// let's calculate time from..t_from will contains start of night
 	// local 12:00 will be at ~ give time..

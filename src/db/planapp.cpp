@@ -36,6 +36,7 @@
 #define OPT_DELETE        OPT_LOCAL + 705
 #define OPT_ADD           OPT_LOCAL + 706
 #define OPT_DUMP_TARGET   OPT_LOCAL + 707
+#define OPT_FIXED_COPY    OPT_LOCAL + 708
 
 class Rts2PlanApp:public Rts2AppDb
 {
@@ -50,13 +51,13 @@ class Rts2PlanApp:public Rts2AppDb
 
 		virtual void usage ();
 	private:
-		enum { NO_OP, OP_ADD, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE, OP_DUMP_TARGET } operation;
+		enum { NO_OP, OP_ADD, OP_DUMP, OP_LOAD, OP_GENERATE, OP_COPY, OP_DELETE, OP_DUMP_TARGET, OP_FIXED_COPY } operation;
 		int addPlan ();
 		void doAddPlan (rts2db::Plan *addedplan);
 		int dumpPlan ();
 		int loadPlan ();
 		int generatePlan ();
-		int copyPlan ();
+		int copyPlan (bool st_offsets);
 		int deletePlan ();
 		int dumpTargetPlan ();
 
@@ -77,9 +78,8 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_DUMP, "dump", 0, "dump plan to standart output");
 	addOption (OPT_LOAD, "load", 0, "load plan from standart input");
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
-	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n)");
-
-
+	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n). Offset times with ~4m/day (to compensate for Earth orbit)");
+	addOption (OPT_FIXED_COPY, "copy-fixed", 0, "copy plan with the same times (do not offset ~4min/day)");
 	addOption (OPT_DELETE, "delete", 1, "delete plan with plan ID given as parameter");
 	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
 }
@@ -162,24 +162,10 @@ void Rts2PlanApp::doAddPlan (rts2db::Plan *addedplan)
 
 int Rts2PlanApp::dumpPlan ()
 {
-	time_t from;
-	time_t to;
-
-	if (isnan (JD))
-	{
-		from = Rts2Config::instance ()->getNight ();
-		to = from + 86400;
-	}
-	else
-	{
-		Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
-		from = *(night.getFrom ());
-		to = *(night.getTo ());
-	}
-	rts2db::PlanSet *plan_set = new rts2db::PlanSet (&from, &to);
-	plan_set->load ();
-	std::cout << "Plan entries from " << Timestamp (from) << " to " << Timestamp (to) << std::endl << (*plan_set) << std::endl;
-	delete plan_set;
+	rts2db::PlanSetNight plan_set (JD);
+	plan_set.load ();
+	std::cout << "Plan entries from " << Timestamp (plan_set.getFrom ()) << " to " << Timestamp (plan_set.getTo ()) << std::endl
+		<< plan_set << std::endl;
 	return 0;
 }
 
@@ -204,7 +190,7 @@ int Rts2PlanApp::generatePlan ()
 	return -1;
 }
 
-int Rts2PlanApp::copyPlan ()
+int Rts2PlanApp::copyPlan (bool st_offsets)
 {
 	if (isnan (JD))
 	{
@@ -219,29 +205,32 @@ int Rts2PlanApp::copyPlan ()
 	}
 
 	// load source plans..
-	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
-	time_t from = *(night.getFrom ());
-	time_t to = *(night.getTo ());
-
-	rts2db::PlanSet plan_set (&from, &to);
+	rts2db::PlanSetNight plan_set (JD);
 	plan_set.load ();
 
 	if (plan_set.empty ())
 	{
-		std::cerr << "Empy set for dates from " << Timestamp (from) << " to " << Timestamp (to) << std::endl;
+		std::cerr << "Empty set for dates from " << Timestamp (plan_set.getFrom ()) << " to " << Timestamp (plan_set.getTo ()) << std::endl;
 		return -1;
 	}
 
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
 		 double jd2;
+
 		 int ret = parseDate (*iter, jd2);
 		 if (ret)
 		 {
 		  	 std::cerr << "cannot parse date " << *iter << std::endl;
 			 return -1;
 		 }
+
 		 double d = (jd2 - JD) * 86400;
+		 if (st_offsets)
+		 {
+			d += ln_get_mean_sidereal_time (jd2) - ln_get_mean_sidereal_time (JD);
+		 }
+
 		 for (rts2db::PlanSet::iterator pi = plan_set.begin (); pi != plan_set.end (); pi++)
 		 {
 			rts2db::Plan np;
@@ -263,15 +252,41 @@ int Rts2PlanApp::copyPlan ()
 
 int Rts2PlanApp::deletePlan ()
 {
+	// delete night..  
+	if (!isnan (JD))
+	{
+		rts2db::PlanSetNight pn (JD);
+		if (pn.empty ())
+		{
+			std::cerr << "Plan from " << Timestamp (pn.getFrom ()) << " to " << Timestamp (pn.getTo ()) << " is empty" << std::endl;
+		}
+		else
+		{
+			std::cout << "Deleting " << pn.size () << " entries from " << Timestamp (pn.getFrom ()) << " to " << Timestamp (pn.getTo ()) << "." << std::endl;
+			for (rts2db::PlanSetNight::iterator iter = pn.begin (); iter != pn.end (); iter++)
+			{
+				if (iter->del ())
+				{
+					std::cerr << "cannot delete plan entry " << (*iter) << std::endl;
+					return -1;
+				}
+				else
+				{
+					std::cout << "deleted entry " << *iter << std::endl;
+				}
+			}
+		}
+	}
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
 		int id = atoi (*iter);
 		rts2db::Plan p (id);
 		if (p.del ())
 		{
-			logStream (MESSAGE_ERROR) << "cannot delete plan with ID " << (*iter) << sendLog;
+			std::cerr << "cannot delete plan with ID " << (*iter) << std::endl;
 			return -1;	
 		}
+		std::cout << "deleted plan with id " << id << std::endl;
 	}
 	return 0;
 }
@@ -315,6 +330,11 @@ int Rts2PlanApp::processOption (int in_opt)
 			operation = OP_ADD;
 			break;
 		case 'n':
+			if (!isnan (JD))
+			{
+				std::cerr << "you can specify night (-n parameter) only once" << std::endl; 
+				return -1;
+			}
 			ret = parseDate (optarg, JD);
 			if (ret)
 				return ret;
@@ -339,6 +359,11 @@ int Rts2PlanApp::processOption (int in_opt)
 				return -1;
 			operation = OP_COPY;
 			break;
+		case OPT_FIXED_COPY:
+			if (operation != NO_OP)
+				return -1;
+			operation = OP_FIXED_COPY;
+			break;	  
 		case OPT_DELETE:
 			if (operation != NO_OP)
 				return -1;
@@ -357,7 +382,7 @@ int Rts2PlanApp::processOption (int in_opt)
 
 int Rts2PlanApp::processArgs (const char *arg)
 {
-	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY && operation != OP_DELETE)
+	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY && operation != OP_DELETE && operation != OP_FIXED_COPY)
 		return Rts2AppDb::processArgs (arg);
 	args.push_back (arg);
 	return 0;
@@ -387,7 +412,9 @@ int Rts2PlanApp::doProcessing ()
 		case OP_GENERATE:
 			return generatePlan ();
 		case OP_COPY:
-			return copyPlan ();
+			return copyPlan (true);
+		case OP_FIXED_COPY:
+			return copyPlan (false);	
 		case OP_DELETE:
 			return deletePlan ();
 		case OP_DUMP_TARGET:

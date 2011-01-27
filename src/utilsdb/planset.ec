@@ -18,6 +18,7 @@
  */
 
 #include "planset.h"
+#include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
 #include <sstream>
@@ -101,16 +102,16 @@ PlanSet::PlanSet (int prop_id)
 	where = os.str ();
 }
 
-PlanSet::PlanSet (time_t *t_from, time_t *t_to)
+PlanSet::PlanSet (double t_from, double t_to)
 {
-	std::ostringstream os;
-
-	os << " EXTRACT (EPOCH FROM plan_start) >= " << (*t_from)
-		<< " AND EXTRACT (EPOCH FROM plan_start) <= " << (*t_to);
-	where = os.str ();
+	planFromTo (t_from, t_to);  
 }
 
-PlanSet::PlanSet (double t_from, double t_to)
+PlanSet::~PlanSet (void)
+{
+}
+
+void PlanSet::planFromTo (double t_from, double t_to)
 {
 	std::ostringstream os;
 
@@ -122,14 +123,18 @@ PlanSet::PlanSet (double t_from, double t_to)
 	where = os.str ();
 }
 
-PlanSet::~PlanSet (void)
-{
-}
-
 PlanSetTarget::PlanSetTarget (int tar_id)
 {
 	std::ostringstream os;
 
 	os << " tar_id = " << tar_id;
 	where = os.str ();
+}
+
+PlanSetNight::PlanSetNight (double JD)
+{
+	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
+	from = *(night.getFrom ());
+	to = *(night.getTo ());
+	planFromTo (from, to);
 }

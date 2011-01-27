@@ -72,7 +72,8 @@ class Plan
 
 		double getPlanEnd () { return plan_end; }
 
-		friend std::ostream & operator << (std::ostream & _os, Plan * plan) { plan->print (_os); return _os; }
+
+		friend std::ostream & operator << (std::ostream & _os, Plan & plan) { plan.print (_os); return _os; }
 		friend Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Plan * plan) { plan->printInfoVal (_os); return _os; }
 
 		friend std::istream & operator >> (std::istream & _is, Plan & plan) { plan.read (_is); return _is; }
