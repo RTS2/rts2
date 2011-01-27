@@ -99,22 +99,32 @@ if __name__ == '__main__':
     ra = dec = None
 
     ff=pyfits.fitsopen(sys.argv[1],'readonly')
-    ra=ff[0].header['TRA']
-    dec=ff[0].header['TDEC']
+    ra=ff[0].header['RA']
+    dec=ff[0].header['DEC']
     object=ff[0].header['OBJECT']
     ff.close()
 
     ret=a.run(scale=0.67,ra=ra,dec=dec)
 
-    raorig=dms.parseDMS(ra)
-    decorig=dms.parseDMS(dec)
+    if ret:
 
-    import rts2comm
-    c = rts2comm.Rts2Comm()
-    c.doubleValue('real_ra','image ra ac calculated from astrometry',ret[0])
-    c.doubleValue('real_dec','image dec as calculated from astrometry',ret[1])
+	    raorig=dms.parseDMS(ra)
+	    decorig=dms.parseDMS(dec)
 
-    c.doubleValue('tra','image ra ac calculated from astrometry',raorig)
-    c.doubleValue('tdec','image dec as calculated from astrometry',decorig)
+	    raastr=float(ret[0])
+	    decastr=float(ret[1])
 
-    c.stringValue('object','astrometry object',object)
+	    print "correct 1 ", raastr, decastr, raorig-raastr, decorig-decastr
+
+	    import rts2comm
+	    c = rts2comm.Rts2Comm()
+	    c.doubleValue('real_ra','image ra ac calculated from astrometry',raastr)
+	    c.doubleValue('real_dec','image dec as calculated from astrometry',decastr)
+
+	    c.doubleValue('tra','image ra ac calculated from astrometry',raorig)
+	    c.doubleValue('tdec','image dec as calculated from astrometry',decorig)
+
+	    c.doubleValue('ora','offsets ra ac calculated from astrometry',(raorig-raastr)*3600.0)
+	    c.doubleValue('odec','offsets dec as calculated from astrometry',(decorig-decastr)*3600.0)
+
+	    c.stringValue('object','astrometry object',object)

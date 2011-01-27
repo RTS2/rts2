@@ -9,6 +9,12 @@ unset imgdir
 set xpa=0
 xpaget ds9 >&amp; /dev/null
 if ( $? == 0 ) set xpa=1
+
+set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
+
+set lastra=0
+set lastdec=0
+
 <xsl:apply-templates select='*'/>
 </xsl:template>
 
@@ -19,13 +25,13 @@ if ( -e $rts2abort ) then
 	exit
 endif
 if ( $ignoreday == 0 ) then
-	set ms=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --master-state rnight`
+	set ms=`$xmlrpc --master-state rnight`
 	if ( $? != 0 || $ms == 0 ) then
 		rm -f $lasttarget
 		set continue=0
 	endif
 endif
-set in=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.interrupt`
+set in=`$xmlrpc -G SEL.interrupt`
 if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
@@ -42,16 +48,33 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
+        set cname=`$xmlrpc -G IMGP.object`
+	set ora=`$xmlrpc -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
+	set odec=`$xmlrpc -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
+	if ( $cname == $name ) then
+		if ( ${%ora} > 0 &amp;&amp; ${%odec} > 0 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &lt; 500 ) then
+		  	set rra=`expr $ora - $lastra`
+			set rdec=`expr $odec - $lastdec`
+			echo `date` "offseting $rra $rdec ($ora $odec; $lastra $lastdec)"
+			tele offset $rra $rdec
+			set lastra=$ora
+			set lastdec=$odec
+		else
+			echo `date` too big offset $ora $odec
+		endif	  	
+	else
+		echo `date` "name != cname: '$name' '$cname'"  
+	endif  
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
 	<xsl:copy-of select='$abort'/>
 	dstore
-	$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 	$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
-	$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c "IMGP.only_process $lastimage"
+	$xmlrpc -c "IMGP.only_process $lastimage"
 	if ( $xpa == 1 ) then
 		xpaset ds9 fits mosaicimage iraf &lt; $lastimage
 		xpaset -p ds9 zoom to fit
