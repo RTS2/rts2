@@ -23,7 +23,8 @@
       </arg>
       <arg choice='opt'>
 	<arg choice='plain'><option>--version</option></arg>
-      </arg>">
+      </arg>
+">
 <!ENTITY basicapplist  "<varlistentry>
         <term><option>-h</option></term>
         <term><option>--help</option></term>
@@ -36,28 +37,31 @@
         <listitem>
           <para>Show version of program.</para>
         </listitem>
-      </varlistentry>">
+      </varlistentry>
+">
 
-<!ENTITY configapp "&basicapp;
-      <arg choice='opt'>
+<!ENTITY configapp "<arg choice='opt'>
 	<arg choice='plain'><option>--config <replaceable>config file</replaceable></option></arg>
-      </arg>" >
+      </arg>
+      &basicapp;
+">
 
-<!ENTITY configapplist "&basicapplist;
-      <varlistentry>
+<!ENTITY configapplist "<varlistentry>
         <term><option>--config <replaceable class='parameter'>config-file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
-      </varlistentry>" >
+      </varlistentry>
+      &basicapplist;
+">
 
-<!ENTITY dbapp  "&configapp;
-      <arg choice='opt'>
+<!ENTITY dbapp  "<arg choice='opt'>      
 	<arg choice='plain'><option>--database <replaceable>database</replaceable></option></arg>
       </arg>
       <arg choice='opt'>
         <arg choice='plain'><option>--debugdb</option></arg>
       </arg>
+      &configapp;
 ">
 
 <!ENTITY dbapponly "
@@ -71,13 +75,14 @@
         <arg choice='plain'><option>--debugdb</option></arg>
       </arg>" >
 
-<!ENTITY dbapplist "&configapplist;
-       <varlistentry>
+<!ENTITY dbapplist "<varlistentry>
         <term><option>--database <replaceable class='parameter'>database-name</replaceable></option></term>
         <listitem>
           <para>Specify database name. Will overwrite database name specified in rts2.ini (5).</para>
         </listitem>
-      </varlistentry> ">
+      </varlistentry> 
+      &configapplist;
+">
 
 <!ENTITY configapplist "&basicapplist;
       <varlistentry>

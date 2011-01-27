@@ -24,7 +24,7 @@
       <author>
         &dhfirstname;
         &dhsurname;
-	<contrib>Wrote most of the RTS2 package.</contrib>
+	<contrib>Wrote this manual page.</contrib>
 	<address>
           &dhemail;
 	</address>
@@ -33,6 +33,10 @@
     <copyright>
       <year>2007-2010</year>
       <holder>&dhusername;</holder>
+    </copyright>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
     </copyright>
     &legal;
   </refentryinfo>

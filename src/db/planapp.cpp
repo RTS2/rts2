@@ -63,8 +63,6 @@ class Rts2PlanApp:public Rts2AppDb
 		double parsePlanDate (const char *arg, double base);
 
 		double JD;
-		std::list <int> ids;
-
 		std::vector <const char *> args;
 };
 
@@ -80,6 +78,7 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_LOAD, "load", 0, "load plan from standart input");
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
 	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n)");
+
 
 	addOption (OPT_DELETE, "delete", 1, "delete plan with plan ID given as parameter");
 	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
@@ -264,9 +263,10 @@ int Rts2PlanApp::copyPlan ()
 
 int Rts2PlanApp::deletePlan ()
 {
-	for (std::list <int>::iterator iter = ids.begin (); iter != ids.end (); iter++)
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
-		rts2db::Plan p (*iter);
+		int id = atoi (*iter);
+		rts2db::Plan p (id);
 		if (p.del ())
 		{
 			logStream (MESSAGE_ERROR) << "cannot delete plan with ID " << (*iter) << sendLog;
@@ -343,7 +343,6 @@ int Rts2PlanApp::processOption (int in_opt)
 			if (operation != NO_OP)
 				return -1;
 			operation = OP_DELETE;
-			ids.push_back (atoi (optarg));
 			break;
 		case OPT_DUMP_TARGET:
 			if (operation != NO_OP)
@@ -358,7 +357,7 @@ int Rts2PlanApp::processOption (int in_opt)
 
 int Rts2PlanApp::processArgs (const char *arg)
 {
-	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY)
+	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY && operation != OP_DELETE)
 		return Rts2AppDb::processArgs (arg);
 	args.push_back (arg);
 	return 0;

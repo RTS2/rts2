@@ -53,19 +53,29 @@
       <command>&command;</command>
       &dbapponly;
       <arg choice='plain'>
-        <arg><option>--add
+        <arg><option>--add</option>
 	  <arg choice='req' rep='repeat'><replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <arg><replaceable class="parameter">end time</replaceable></arg></arg>
-	</option></arg>
+	</arg>
 	<arg>
           <option>--dump</option>
-          <arg><option>-n <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
+          <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
 	</arg>  
         <arg><option>--load</option></arg>
         <arg><option>--generate</option></arg>
-        <arg><option>--copy <replaceable class="parameter">YYYY-MM-DD</replaceable></option></arg>
-        <arg><option>--delete <replaceable class="parameter">plan ID</replaceable></option></arg>
+      </arg>
+      <arg choice='plain'>	
+        <arg><option>--target</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>target id or name</replaceable></arg></arg>
+      </arg>
+      <arg choice='plain'>	
+        <arg><option>--copy</option> 
+          <arg choice='req'><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+          <arg choice='req' rep='repeat'><replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+        </arg>
+      </arg>
+      <arg choice='plain'>	
+        <arg><option>--delete</option> <arg choice='req' rep='repeat'><replaceable class="parameter">plan ID</replaceable></arg></arg>
       </arg>	
-    </cmdsynopsis>  
+    </cmdsynopsis>
     <cmdsynopsis>
       <command>&command;</command>
       &basicapp;
@@ -131,20 +141,34 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-         <term><option>--delete <replaceable class='parameter'>plan id</replaceable></option></term>
-	 <listitem>
-	   <para>
-	     Delete plan entry with given plan ID.
-	   </para>
-	 </listitem>  
-      </varlistentry>
-      <varlistentry>
-        <term><option>--target <replaceable class='parameter'>target name or id</replaceable></option></term>
+        <term><option>--copy</option>
+          <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+	  <arg rep='repeat' choice='req'><replaceable class='parameter'>YYYY-MM-DD</replaceable></arg>
+	</term>
 	<listitem>
 	  <para>
-	    Print plan entries for given target.
+	     Copy plan from a single night to other night(s). The plan entries
+	     from plan for night specified with <option>-n</option> are copied 
+	     to nights specified as arguments. The plan start and possibly (if
+	     filled) end dates are offseted with difference between nights.
 	  </para>  
 	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--target</option> <arg rep='repeat' choice='req'><replaceable class='parameter'>target name or id</replaceable></arg></term>
+	<listitem>
+	  <para>
+	    Print plan entries for given target(s).
+	  </para>  
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+         <term><option>--delete</option> <arg rep='repeat' choice='req'><replaceable class='parameter'>plan id</replaceable></arg></term>
+	 <listitem>
+	   <para>
+	     Delete plan entry with given plan IDs.
+	   </para>
+	 </listitem>  
       </varlistentry>
       &dbapplist;	
     </variablelist>  
@@ -194,7 +218,16 @@
     
     <screen>
       <command>&command;</command> <option>--target</option> <replaceable>M81</replaceable>
+    </screen>
+
+    <para>
+      To copy targets from night 2013-03-13 to nights of 2013-04-15 and 2013-04-16, use the following command:
+    </para>
+    
+    <screen>
+      <command>&command;</command> <option>-n</option> <replaceable>2013-03-13</replaceable> <option>--copy</option> <replaceable>2013-04-15</replaceable> <replaceable>2013-04-16</replaceable>
     </screen>  
+
      
   </refsect1>  
   <refsect1>
