@@ -156,6 +156,16 @@ class Rts2Comm:
 		"""Add to device double value."""
 		print "double",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
+
+	def integerValue(self,name,desc,value):
+		"""Add to device integer value."""
+		print "integer",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+	
+	def stringValue(self,name,desc,value):
+		"""Add to device string value."""
+		print "string",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
 	
 	def log(self,level,text):
 		print "log",level,text

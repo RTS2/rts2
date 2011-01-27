@@ -101,11 +101,20 @@ if __name__ == '__main__':
     ff=pyfits.fitsopen(sys.argv[1],'readonly')
     ra=ff[0].header['TRA']
     dec=ff[0].header['TDEC']
+    object=ff[0].header['OBJECT']
     ff.close()
 
     ret=a.run(scale=0.67,ra=ra,dec=dec)
+
+    raorig=dms.parseDMS(ra)
+    decorig=dms.parseDMS(dec)
 
     import rts2comm
     c = rts2comm.Rts2Comm()
     c.doubleValue('real_ra','image ra ac calculated from astrometry',ret[0])
     c.doubleValue('real_dec','image dec as calculated from astrometry',ret[1])
+
+    c.doubleValue('tra','image ra ac calculated from astrometry',raorig)
+    c.doubleValue('tdec','image dec as calculated from astrometry',decorig)
+
+    c.stringValue('object','astrometry object',object)

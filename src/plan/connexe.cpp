@@ -165,6 +165,34 @@ void ConnExe::processCommand (char *cmd)
 			master->updateMetaInformations (vi);
 		}
 	}
+	else if (!strcasecmp (cmd, "string"))
+	{
+		char *vname, *desc, *val;
+		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
+			throw rts2core::Error ("invalid string");
+		Rts2Value *v = ((Rts2Daemon *) master)->getOwnValue (vname);
+		// either variable with given name exists..
+		if (v)
+		{
+			if (v->getValueBaseType () == RTS2_VALUE_STRING)
+			{
+				((Rts2ValueInteger *) v)->setValueCharArr (val);
+				((Rts2Daemon *) master)->sendValueAll (v);
+			}
+			else
+			{
+				throw rts2core::Error (std::string ("value is not double ") + vname);
+			}
+		}
+		// or create it and distribute it..
+		else
+		{
+			Rts2ValueString *vi;
+			((Rts2Daemon *) master)->createValue (vi, vname, desc, false);
+			vi->setValueCharArr (val);
+			master->updateMetaInformations (vi);
+		}
+	}
 	else
 	{
 		throw rts2core::Error (std::string ("unknow command ") + cmd);
