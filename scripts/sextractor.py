@@ -34,6 +34,7 @@
 import sys
 import subprocess
 import os
+import tempfile
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
@@ -50,19 +51,19 @@ class Sextractor:
 	self.saturlevel = saturlevel
 
     def runSExtractor(self):
-    	pfn = '/tmp/pysex_{0}'.format(os.getpid())
-	output = '/tmp/pysex_out_{0}'.format(os.getpid())
-    	pf = open(pfn,'w')
+    	pf,pfn = tempfile.mkstemp()
+	ofd,output = tempfile.mkstemp()
+	pfi = os.fdopen(pf,'w')
 	for f in self.fields:
-		pf.write(f + '\n')
-	pf.close()
+		pfi.write(f + '\n')
+	pfi.flush()
 
 	cmd = [self.sexpath, self.filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
 	proc = subprocess.Popen(cmd)
 	proc.wait()
 
 	# parse output
-	of = open(output,'r')
+	of = os.fdopen(ofd,'r')
 	while (True):
 	 	x=of.readline()
 		if x == '':
@@ -72,6 +73,9 @@ class Sextractor:
 		self.objects.append(map(float,x.split()))
 	
 	# unlink tmp files
+	pfi.close()
+	of.close()
+
 	os.unlink(pfn)
 	os.unlink(output)
 
@@ -128,7 +132,7 @@ if __name__ == "__main__":
 	from ds9 import *
   	d = ds9()
   	for fn in sys.argv[1:]:
-		c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
+		c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/home/mink/bin/sex',sexconfig='/home/observer/findfwhm/Sextractor/focus.sex',starnnw='/home/observer/findfwhm/Sextractor/default.nnw')
 		c.runSExtractor()
 
 		# sort by magnitude
