@@ -79,7 +79,8 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_DUMP, "dump", 0, "dump plan to standart output");
 	addOption (OPT_LOAD, "load", 0, "load plan from standart input");
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
-	addOption (OPT_COPY, "copy", 1, "copy plan to given night (from night given by -n)");
+	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n)");
+
 	addOption (OPT_DELETE, "delete", 1, "delete plan with plan ID given as parameter");
 	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
 }
@@ -206,7 +207,59 @@ int Rts2PlanApp::generatePlan ()
 
 int Rts2PlanApp::copyPlan ()
 {
-	return -1;
+	if (isnan (JD))
+	{
+	  	std::cerr << "you must specify source night with -n" << std::endl;
+		return -1;
+	}
+
+	if (args.empty ())
+	{
+		std::cerr << "you must provide at least one argument for target night" << std::endl;
+		return -1;
+	}
+
+	// load source plans..
+	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
+	time_t from = *(night.getFrom ());
+	time_t to = *(night.getTo ());
+
+	rts2db::PlanSet plan_set (&from, &to);
+	plan_set.load ();
+
+	if (plan_set.empty ())
+	{
+		std::cerr << "Empy set for dates from " << Timestamp (from) << " to " << Timestamp (to) << std::endl;
+		return -1;
+	}
+
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		 double jd2;
+		 int ret = parseDate (*iter, jd2);
+		 if (ret)
+		 {
+		  	 std::cerr << "cannot parse date " << *iter << std::endl;
+			 return -1;
+		 }
+		 double d = (jd2 - JD) * 86400;
+		 for (rts2db::PlanSet::iterator pi = plan_set.begin (); pi != plan_set.end (); pi++)
+		 {
+			rts2db::Plan np;
+			np.setTargetId (pi->getTargetId ());
+			np.setPlanStart (pi->getPlanStart () + d);
+			if (!isnan (pi->getPlanEnd ()))
+				np.setPlanEnd (pi->getPlanEnd () + d);
+			ret = np.save ();
+			if (ret)
+			{
+				std::cerr << "error saving " << std::endl << (&np) << std::endl << ", exiting" << std::endl;
+				return -1;
+			}
+		 }
+		 std::cout << "copied " << plan_set.size () << " plan entries to " << *iter << std::endl;
+	}
+	return 0;
 }
 
 int Rts2PlanApp::deletePlan ()
@@ -305,7 +358,7 @@ int Rts2PlanApp::processOption (int in_opt)
 
 int Rts2PlanApp::processArgs (const char *arg)
 {
-	if (operation != OP_ADD && operation != OP_DUMP_TARGET)
+	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY)
 		return Rts2AppDb::processArgs (arg);
 	args.push_back (arg);
 	return 0;
