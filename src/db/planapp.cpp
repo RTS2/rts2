@@ -156,7 +156,7 @@ void Rts2PlanApp::doAddPlan (rts2db::Plan *addedplan)
 		os << "cannot save plan " << addedplan->getTarget ()->getTargetName () << " (#" << addedplan->getTargetId () << ")";
 		throw rts2core::Error (os.str ());
 	}
-	std::cout << addedplan << std::endl;
+	std::cout << *addedplan << std::endl;
 }
 
 
