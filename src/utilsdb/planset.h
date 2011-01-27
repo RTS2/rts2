@@ -58,7 +58,7 @@ class PlanSet:public std::list < Plan >
 			PlanSet::iterator plan_iter;
 			for (plan_iter = plan_set.begin (); plan_iter != plan_set.end (); plan_iter++)
 			{
-				_os << &(*plan_iter);
+				_os << *plan_iter;
 			}
 			return _os;
 		}
