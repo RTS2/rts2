@@ -829,6 +829,7 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 				if (msg == NULL)
 					msg = "NULL";
 				badWeatherReason->setValueCharArr ((std::string (device) + ": " + msg).c_str ());
+				logStream (MESSAGE_INFO) << "received bad weather from " << device << " claiming that: '" << msg << "'" << sendLog;
 			}
 		}
 	}
