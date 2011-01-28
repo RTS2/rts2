@@ -52,6 +52,21 @@ Plan::Plan (int in_plan_id)
 	plan_start = plan_end = rts2_nan ("f");
 }
 
+Plan::Plan (const Plan &cp)
+{
+	plan_id = cp.plan_id;
+	prop_id = cp.prop_id;
+	tar_id = cp.tar_id;
+	obs_id = cp.obs_id;
+	plan_start = cp.plan_start;
+	plan_end = cp.plan_end;
+	plan_status = cp.plan_status;
+	target = cp.target;
+
+	target = NULL;
+	observation = NULL;
+}
+
 Plan::~Plan (void)
 {
 	delete target;
@@ -123,8 +138,8 @@ int Plan::save ()
 		int db_prop_id_ind;
 		int db_obs_id = obs_id;
 		int db_obs_id_ind;
-		long db_plan_start = plan_start;
-		long db_plan_end = plan_end;
+		double db_plan_start = plan_start;
+		double db_plan_end = plan_end;
 		int db_plan_end_ind = (isnan (plan_end) ? -1 : 0);
 		int db_plan_status = plan_status;
 	EXEC SQL END DECLARE SECTION;
@@ -251,15 +266,7 @@ Target * Plan::getTarget ()
 {
 	if (target)
 		return target;
-	try
-	{
-		target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
-	}
-	catch (SqlError err)
-	{
-	  	logStream (MESSAGE_ERROR) << "error while retrieving target for plan: " << err << sendLog;
-		return NULL;
-	}
+	target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
 	return target;
 }
 
@@ -351,18 +358,28 @@ void Plan::printInfoVal (Rts2InfoValStream & _os)
 
 void Plan::read (std::istream & _is)
 {
-	char buf[201];
-	char *comt;
-	_is.getline (buf, 200);
-	// ignore comment..
-	comt = strchr (buf, '#');
-	if (comt)
-		*comt = '\0';
-
-	std::istringstream buf_s (buf);
-	LibnovaDate start_date;
-	buf_s >> tar_id >> start_date;
-	time_t t;
-	start_date.getTimeT (& t);
-	plan_start = t;
+	_is >> tar_id;
+	if (_is.fail ())
+		throw rts2core::Error ("cannot parse target ID");
+	LibnovaDate date;
+	_is >> date;
+	if (_is.fail ())
+		throw rts2core::Error ("cannot parse start date");
+	plan_start = date.getDateDouble ();
+	try
+	{
+		_is >> date;
+		plan_end = date.getDateDouble ();
+	}
+	catch (rts2core::Error &er)
+	{
+		plan_end = rts2_nan ("f");
+	}
+	Target *tar = getTarget ();
+	if (tar == NULL)
+	{
+		std::ostringstream os;
+		os << "cannot load target with ID " << getTargetId ();
+		throw rts2core::Error (os.str ());
+	}
 }

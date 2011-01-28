@@ -494,10 +494,6 @@ class LibnovaHrz
  */
 class LibnovaDate
 {
-	protected:
-		struct ln_date date;
-		// don't intialize value
-		LibnovaDate (bool sysinit) {}
 	public:
 		LibnovaDate () { ln_get_date_from_sys (&date); }
 
@@ -539,6 +535,10 @@ class LibnovaDate
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 		friend std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
+	protected:
+		struct ln_date date;
+		// don't intialize value
+		LibnovaDate (bool sysinit) {}
 };
 
 /**

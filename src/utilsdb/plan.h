@@ -42,6 +42,7 @@ class Plan
 	public:
 		Plan ();
 		Plan (int in_plan_id);
+		Plan (const Plan &cp);
 		virtual ~ Plan (void);
 		int load ();
 		int save ();

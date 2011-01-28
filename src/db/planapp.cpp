@@ -55,7 +55,7 @@ class Rts2PlanApp:public Rts2AppDb
 		int addPlan ();
 		void doAddPlan (rts2db::Plan *addedplan);
 		int dumpPlan ();
-		int loadPlan ();
+		int loadPlan (const char *fn);
 		int generatePlan ();
 		int copyPlan (bool st_offsets);
 		int deletePlan ();
@@ -73,15 +73,15 @@ Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 
 	operation = NO_OP;
 
-	addOption (OPT_ADD, "add", 0, "add plan entry for target (specified as an argument)");
-	addOption ('n', NULL, 1, "work with this night");
-	addOption (OPT_DUMP, "dump", 0, "dump plan to standart output");
-	addOption (OPT_LOAD, "load", 0, "load plan from standart input");
 	addOption (OPT_GENERATE, "generate", 0, "generate plan based on targets");
-	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n). Offset times with ~4m/day (to compensate for Earth orbit)");
-	addOption (OPT_FIXED_COPY, "copy-fixed", 0, "copy plan with the same times (do not offset ~4min/day)");
 	addOption (OPT_DELETE, "delete", 0, "delete plan with plan ID given as parameter");
 	addOption (OPT_DUMP_TARGET, "target", 0, "dump plan for given target");
+	addOption (OPT_FIXED_COPY, "fixed-copy", 0, "copy plan with the same times (do not offset ~4min/day)");
+	addOption (OPT_COPY, "copy", 0, "copy plan to given night (from night given by -n). Offset times with ~4m/day (to compensate for Earth orbit)");
+	addOption (OPT_LOAD, "load", 1, "load plan from file (or standard input, if - is provided)");
+	addOption ('n', NULL, 1, "work with this night");
+	addOption (OPT_DUMP, "dump", 0, "dump plan to standart output");
+	addOption (OPT_ADD, "add", 0, "add plan entry for target (specified as an argument)");
 }
 
 Rts2PlanApp::~Rts2PlanApp (void)
@@ -169,18 +169,26 @@ int Rts2PlanApp::dumpPlan ()
 	return 0;
 }
 
-int Rts2PlanApp::loadPlan ()
+int Rts2PlanApp::loadPlan (const char *fn)
 {
-	while (1)
+	std::ifstream is;
+	is.open (fn);
+	rts2db::PlanSet ps;
+	try
 	{
-		rts2db::Plan plan;
-		int ret;
-		std::cin >> plan;
-		if (std::cin.fail ())
-			break;
-		ret = plan.save ();
-		if (ret)
-			std::cerr << "Error loading plan" << std::endl;
+		is >> ps; 
+	}
+	catch (rts2core::Error &er)
+	{
+		std::cerr << "canot load plan file: " << er << std::endl
+			<< "aborting" << std::endl;
+		return -1;
+	}
+	for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
+	{
+		iter->save ();
+		iter->load ();
+		std::cout << *iter;
 	}
 	return 0;
 }
@@ -349,6 +357,7 @@ int Rts2PlanApp::processOption (int in_opt)
 			if (operation != NO_OP)
 				return -1;
 			operation = OP_LOAD;
+			args.push_back (optarg);
 			break;
 		case OPT_GENERATE:
 			if (operation != NO_OP)
@@ -409,7 +418,7 @@ int Rts2PlanApp::doProcessing ()
 		case OP_DUMP:
 			return dumpPlan ();
 		case OP_LOAD:
-			return loadPlan ();
+			return loadPlan (args.front ());
 		case OP_GENERATE:
 			return generatePlan ();
 		case OP_COPY:

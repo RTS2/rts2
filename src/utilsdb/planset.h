@@ -63,6 +63,32 @@ class PlanSet:public std::list < Plan >
 			return _os;
 		}
 
+		friend std::istream & operator >> (std::istream &is, PlanSet &plan_set)
+		{
+			while (true)
+			{
+				std::string buf;
+				getline (is, buf);
+				if (is.eof () || is.fail ())
+					break;
+				// ignore comments	
+				if (buf[0] == '#')
+					continue;
+				std::istringstream iss (buf);
+				Plan p;
+				try
+				{
+					iss >> p;
+				}
+				catch (rts2core::Error er)
+				{
+					throw rts2core::Error (buf + " " + er.what ());
+				}
+				plan_set.push_back (p);
+			}
+			return is;
+		}
+
 	protected:
 		/**
 		 * Fill in where part for given dates.

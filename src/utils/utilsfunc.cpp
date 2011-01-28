@@ -104,7 +104,6 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 			ret2 = sscanf (in_date, "%d", &out_time->hours);
 			if (ret2 == 1)
 				return 0;
-			std::cerr << "Cannot parse time of the date: " << in_date << std::endl;
 			return -1;
 		}
 		// only year..
@@ -114,7 +113,6 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 			return 0;
 		}
 	}
-	std::cerr << "Cannot parse date: " << in_date << std::endl;
 	return -1;
 }
 
@@ -127,6 +125,8 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 		double JD = ln_get_julian_day (out_time);
 		JD += timezone / 86400.0;
 		ln_get_date (JD, out_time);
+		if (out_time->seconds < 0.001)
+			out_time->seconds = 0;
 	}
 	return ret;
 }

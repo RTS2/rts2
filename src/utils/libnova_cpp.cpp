@@ -20,6 +20,7 @@
 #include "libnova_cpp.h"
 #include "radecparser.h"
 #include "rts2format.h"
+#include "error.h"
 
 // (this is in libnova_cpp.h) #include <math.h>
 #include <iomanip>
@@ -743,9 +744,10 @@ std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
 
 std::istream & operator >> (std::istream & _is, LibnovaDate & l_date)
 {
-	char ch;
-	_is >> l_date.date.years >> ch >> l_date.date.months >> ch >> l_date.date.days
-		>> l_date.date.hours >> ch >> l_date.date.minutes >> ch >> l_date.date.seconds;
+	std::string date;
+	_is >> date;
+	if (parseDate (date.c_str (), &(l_date.date)))
+		throw rts2core::Error ("cannot parse date " + date);
 	return _is;
 }
 
