@@ -46,10 +46,11 @@
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <arg choice="opt">
-	<arg choice="plain"><option>--start-position <replaceable>start position</replaceable></option></arg>
-      </arg>
+      <arg choice="opt"><option>--start-position <replaceable>start position</replaceable></option></arg>
+      &deviceapp;
     </cmdsynopsis>
+
+    &helpsynopsis;
 
   </refsynopsisdiv>
 
@@ -74,7 +75,6 @@
     </para>
 
     <variablelist>
-      &basicapplist;
       <varlistentry>
         <term><option>--start-position</option></term>
         <listitem>
@@ -87,6 +87,7 @@
 	  </para>
         </listitem>
       </varlistentry>
+      &deviceapplist;
     </variablelist>
   </refsect1>
   <refsect1>

@@ -51,14 +51,12 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      <arg choice="opt"><option>-p <replaceable>port number</replaceable></option></arg>
+      <arg choice="opt"><option>--event-file <replaceable>event file</replaceable></option></arg>
       &deviceapp;
-      <arg choice="opt">
-        <arg choice="plain"><option>-p <replaceable>port number</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--event-file <replaceable>event file</replaceable></option></arg>
-      </arg>
     </cmdsynopsis>
+
+    &helpsynopsis;
 
   </refsynopsisdiv>
 
@@ -82,7 +80,6 @@
     &optiongnu;
 
     <variablelist>
-      &deviceapplist;
       <varlistentry>
         <term><option>-p <replaceable class="parameter">port number</replaceable></option></term>
         <listitem>
@@ -102,6 +99,9 @@
 	  </para>
         </listitem>
       </varlistentry>
+
+      &deviceapplist;
+
     </variablelist>
   </refsect1> 
   <refsect1>

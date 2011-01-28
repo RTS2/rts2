@@ -22,14 +22,44 @@
 
 <!ENTITY fzu  "Petr Kubanek, Institute of Physics">
 
-<!ENTITY basicapp  "
-<arg choice='opt'><option>--UT</option></arg>
-<arg choice='opt'><option>--debug</option></arg>
+<!ENTITY help "
 <arg choice='opt'><option>--version</option></arg>
 <arg choice='opt'>
    <arg choice='plain'><option>-h</option></arg>
    <arg choice='plain'><option>--help</option></arg>
 </arg>
+">
+
+<!ENTITY helpsynopsis "
+<cmdsynopsis>
+  <command>&dhpackage;</command>
+  &help;
+</cmdsynopsis>
+">  
+
+<!ENTITY helplist "
+<varlistentry>
+  <term><option>--version</option></term>
+  <listitem>
+    <para>Show application version.</para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-h</option></term>
+  <term><option>--help</option></term>
+  <listitem>
+    <para>
+      Prints quick help and summary of the application's options. As the
+      options summary is generated from the source code, it is the definitive
+      source of the options - manual pages might miss some options.
+    </para>
+  </listitem>
+</varlistentry>
+">
+
+<!ENTITY basicapp  "
+<arg choice='opt'><option>--UT</option></arg>
+<arg choice='opt'><option>--debug</option></arg>
 ">
 
 <!ENTITY basicapplist  "
@@ -52,23 +82,7 @@
     </para>  
   </listitem>
 </varlistentry>
-<varlistentry>
-  <term><option>--version</option></term>
-  <listitem>
-    <para>Show application version.</para>
-  </listitem>
-</varlistentry>
-<varlistentry>
-  <term><option>-h</option></term>
-  <term><option>--help</option></term>
-  <listitem>
-    <para>
-      Prints quick help and summary of the application's options. As the
-      options summary is generated from the source code, it is the definitive
-      source of the options - manual pages might miss some options.
-    </para>
-  </listitem>
-</varlistentry>
+&helplist;
 ">
 
 <!ENTITY configapp "
@@ -88,7 +102,7 @@
 <arg choice='opt'><option>--config</option> <replaceable class='parameter'>config file</replaceable></arg>
 " >
 
-<!ENTITY dbapplist "
+<!ENTITY dbapponlylist "
 <varlistentry>
    <term><option>--database</option> <replaceable class='parameter'>database-name</replaceable></term>
    <listitem>
@@ -108,6 +122,11 @@
 &configapplist;
 ">
 
+<!ENTITY dbapplist "
+&dbapponlylist;
+&basicapplist;
+">
+
 <!ENTITY configapplist "
 <varlistentry>
   <term><option>--config</option> <replaceable class='parameter'>config-file</replaceable></term>
@@ -121,25 +140,76 @@
 " >
 
 <!ENTITY deviceapp "
-<arg choice='opt'><option>-i</option></arg>
-<arg choice='opt'><option>--local-port</option> <replaceable>port number</replaceable></arg>
-<arg choice='opt'><option>--localhost</option> <replaceable>hostname</replaceable></arg>
-<arg choice='opt'><option>--server</option> <replaceable>hostname[:port]</replaceable></arg>
-<arg choice='opt'><option>--modefile</option> <replaceable>filename</replaceable></arg>
 <arg choice='opt'><option>-d</option> <replaceable>device name</replaceable></arg>
+<arg choice='opt'><option>--modefile</option> <replaceable>filename</replaceable></arg>
+<arg choice='opt' rep='repeat'><option>--server</option> <replaceable>hostname<arg choice='opt'>:port</arg></replaceable></arg>
+<arg choice='opt'><option>--localhost</option> <replaceable>hostname</replaceable></arg>
+<arg choice='opt'><option>--notcheck</option></arg>
+<arg choice='opt'><option>-i</option></arg>
+&basicapp;
 " >
 
 <!ENTITY deviceapplist "
 <varlistentry>
-  <term><option>--server <replaceable class='parameter'>server-name[:port]</replaceable></option></term>
+  <term><option>-d</option> <replaceable class='parameter'>device name'</replaceable></term>
+  <listitem>
+    <para>
+      Specify device name. Device name is used to uniquely identify RTS2
+      component. It must be unique among all parts connected to a given
+      <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+    </para>
+    <para>
+      The best way how to specify device names is through
+      <emphasis>devices</emphasis> configuration file - please see <citerefentry>
+      <refentrytitle>rts2.devices</refentrytitle><manvolnum>5</manvolnum>
+      </citerefentry> for details.
+    </para>  
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--modefile</option> <replaceable class='parameter'>filename</replaceable></term>
+  <listitem>
+    <para>
+      Specify modefile. Modefiles are used to set different device modes.  They
+      contains name of modes, followed by list of variables and desired values.
+      They are used to quickly change between different device modes.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--server</option> <replaceable class='parameter'>hostname<arg choice='opt'>:port</arg></replaceable></term>
   <listitem>
     <para>
       Specify name of the host and possibly port, which runs
       <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
       This option is needed only for setups that use multiple computers.
-      Its default is localhost for hostname and 617 for port number. If
-      only hostname is provided, default port number - 617 - is used. 
-      Default will work for simple setups.
+      Its default is localhost for hostname and 617 for port number.
+    </para>
+    <para>
+      Multiple servers can be specified. The component then tries to connect to
+      all listed servers, and maintains connection with them.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--localhost</option> <replaceable class='parameter'>hostname</replaceable></term>
+  <listitem>
+    <para>
+      Specify localhost name. This options is rarely used when network is
+      not configured properly, and the user cannot change how network is
+      configured. Together with <emphasis>--local-port</emphasis> it can
+      be used to run RTS2 through tunnels.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>-i</option></term>
+  <listitem>
+    <para>
+      Run in interactive mode. Program is not daemonized (does not run in
+      background), so debug messages are printed directly on stdout. This
+      option is particuallary usefull when running application in debugger, as
+      it does not fork into background.
     </para>
   </listitem>
 </varlistentry>
@@ -152,7 +222,7 @@
 " >
 
 <!ENTITY deviceappdblist "
-&dbapplist;
+&dbapponlylist;
 &deviceapplist;
 " >
 

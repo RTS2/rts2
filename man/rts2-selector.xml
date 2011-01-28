@@ -59,7 +59,7 @@
     </cmdsynopsis>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      &basicapp;
+      &help;
     </cmdsynopsis>  
 
   </refsynopsisdiv>
@@ -103,9 +103,6 @@
 	   </para>
 	 </listitem>
       </varlistentry>
-      <variablelist>
-
-      </variablelist>
     </variablelist>
   </refsect1>
   <refsect1>

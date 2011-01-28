@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY command     "rts2-plan">
+  <!ENTITY dhpackage   "rts2-plan">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
@@ -16,7 +16,7 @@
 
 <refentry>
   <refentryinfo>
-    <title>&command;</title>
+    <title>&dhpackage;</title>
     <productname>rts2</productname>
     <productnumber>0.8.2</productnumber>
     &dhdate;
@@ -41,17 +41,16 @@
     &legal;
   </refentryinfo>
   <refmeta>
-    <refentrytitle>&command;</refentrytitle>
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>
-    <refname>&command;</refname>
+    <refname>&dhpackage;</refname>
     <refpurpose>Manage fixed-time observation scheduling.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>&command;</command>
-      &dbapponly;
+      <command>&dhpackage;</command>
       <arg choice='plain'>
         <arg><option>--add</option>
 	  <arg choice='req' rep='repeat'><replaceable class="parameter">target name or ID</replaceable> <replaceable class="parameter">start time</replaceable> <arg><replaceable class="parameter">end time</replaceable></arg></arg>
@@ -84,18 +83,18 @@
 	  <arg choice='choice' rep='repeat'><replaceable class="parameter">plan ID</replaceable></arg>
 	</arg>  
       </arg>	
+      &dbapp;
     </cmdsynopsis>
-    <cmdsynopsis>
-      <command>&command;</command>
-      &basicapp;
-    </cmdsynopsis>
+
+    &helpsynopsis;
+
   </refsynopsisdiv>
 
   <refsect1 id="description">
     <title>DESCRIPTION</title>
 
     <para>
-      With <command>&command;</command> users can manipulate target scheduling.
+      With <command>&dhpackage;</command> users can manipulate target scheduling.
       New plan entries can be added, existing plan entries can be listed and
       deleted. Plan entries for a given target can be listed.
     </para>
@@ -266,7 +265,7 @@
     </para>
 
     <screen>
-      <command>&command;</command> <option>--add</option> <replaceable>M31</replaceable> <replaceable>2013-03-13T12:34:41</replaceable> <replaceable>+300</replaceable>
+      <command>&dhpackage;</command> <option>--add</option> <replaceable>M31</replaceable> <replaceable>2013-03-13T12:34:41</replaceable> <replaceable>+300</replaceable>
     </screen>
 
     <para>
@@ -276,7 +275,7 @@
     </para>
 
     <screen>
-      <command>&command;</command> <option>--add</option> <replaceable>M81</replaceable> <replaceable>+3600</replaceable>
+      <command>&dhpackage;</command> <option>--add</option> <replaceable>M81</replaceable> <replaceable>+3600</replaceable>
     </screen>  
 
     <para>
@@ -284,7 +283,7 @@
     </para>
 
     <screen>
-      <command>&command;</command> <option>--dump</option>
+      <command>&dhpackage;</command> <option>--dump</option>
     </screen>
 
     <para>
@@ -292,7 +291,7 @@
     </para>
 
     <screen>
-      <command>cat</command> <replaceable>filename.plan</replaceable> | <command>&command;</command> <option>--load</option> <replaceable>-</replaceable>
+      <command>cat</command> <replaceable>filename.plan</replaceable> | <command>&dhpackage;</command> <option>--load</option> <replaceable>-</replaceable>
     </screen> 
 
     <para>
@@ -300,7 +299,7 @@
     </para>
 
     <screen>
-      <command>&command;</command> <option>--dump</option> <option>-n</option> <replaceable>2013-03-13</replaceable>
+      <command>&dhpackage;</command> <option>--dump</option> <option>-n</option> <replaceable>2013-03-13</replaceable>
     </screen>
 
     <para>
@@ -308,7 +307,7 @@
     </para>
     
     <screen>
-      <command>&command;</command> <option>--target</option> <replaceable>M81</replaceable>
+      <command>&dhpackage;</command> <option>--target</option> <replaceable>M81</replaceable>
     </screen>
 
     <para>
@@ -316,7 +315,7 @@
     </para>
     
     <screen>
-      <command>&command;</command> <option>-n</option> <replaceable>2013-03-13</replaceable> <option>--copy</option> <replaceable>2013-04-15</replaceable> <replaceable>2013-04-16</replaceable>
+      <command>&dhpackage;</command> <option>-n</option> <replaceable>2013-03-13</replaceable> <option>--copy</option> <replaceable>2013-04-15</replaceable> <replaceable>2013-04-16</replaceable>
     </screen>  
 
      

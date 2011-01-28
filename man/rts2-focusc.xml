@@ -7,7 +7,7 @@
   <!ENTITY dhdate      "<date>2006-10-21</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-focusc">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
@@ -56,11 +56,7 @@
   <refsect1>
     <title>OPTIONS</title>
 
-    <para>
-      These programs follow the usual &gnu; command line syntax,
-      with long options starting with two dashes (`-').  A summary of
-      options is included below.
-    </para>
+    &optiongnu;
 
     <variablelist>
       &basicapplist;
