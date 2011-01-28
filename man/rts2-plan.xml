@@ -60,7 +60,7 @@
           <option>--dump</option>
           <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
 	</arg>  
-        <arg><option>--load</option></arg>
+        <arg><option>--load</option> <replaceable class="paramter">filename</replaceable></arg>
         <arg><option>--generate</option></arg>
       </arg>
       <arg choice='plain'>	
@@ -73,7 +73,16 @@
         </arg>
       </arg>
       <arg choice='plain'>	
-        <arg><option>--delete</option> <arg choice='req' rep='repeat'><replaceable class="parameter">plan ID</replaceable></arg></arg>
+        <arg><option>--fixed-copy</option> 
+          <arg choice='req'><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+          <arg choice='req' rep='repeat'><replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+        </arg>
+      </arg>
+      <arg choice='plain'>	
+        <arg><option>--delete</option>
+          <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+	  <arg choice='choice' rep='repeat'><replaceable class="parameter">plan ID</replaceable></arg>
+	</arg>  
       </arg>	
     </cmdsynopsis>
     <cmdsynopsis>
@@ -113,12 +122,15 @@
 	    are numbers preceeded wih <emphasis>+</emphasis> sign, they are
 	    interpreted as time offsets. Base time is time current system time
 	    for start time parameter, and start time value for end time. Please
-            see <link linkend='examples'>examples</link> for details.
+	    see <link linkend='examples'>examples</link> at the end of this
+	    document for details.
 	  </para>
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--dump</option></term>
+        <term><option>--dump</option>
+          <arg choice='req'><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+	</term>  
 	<listitem>
 	  <para>
 	    Dump plan entries. Unless night is specified with
@@ -131,29 +143,52 @@
 	<term><option>-n <replaceable class='parameter'>YYYY-MM-DD</replaceable></option></term>
 	<listitem>
 	  <para>
-	    Specify night for which targets will be dumped.
+	    Specify night for which targets will be dumped, copied or deleted.
 	  </para>
 	</listitem>  
       </varlistentry>
       <varlistentry>
-        <term><option>--load</option></term>
+        <term><option>--load</option> <replaceable class='parameter'>filename</replaceable></term>
 	<listitem>
 	  <para>
-            Load plan from standard input. Plan entries are separated by new line, and have the following format:
+	    Load plan from file (or standard input, if "-" is specified as
+	    filename). Plan entries are separated by new line, and have the format described in
+	    <link linkend='planfile'>plan file format</link> section.
+	  </para>  
+	  <para>
+	    The command tests for validity of IDs entered in the entry file. It
+	    refuses to load plan which contains IDs not present in the system.
 	  </para>
 	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>--copy</option>
-          <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+          <arg choice='req'><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
 	  <arg rep='repeat' choice='req'><replaceable class='parameter'>YYYY-MM-DD</replaceable></arg>
 	</term>
 	<listitem>
 	  <para>
 	     Copy plan from a single night to other night(s). The plan entries
-	     from plan for night specified with <option>-n</option> are copied 
+	     from plan for night specified with <option>-n</option> are copied
 	     to nights specified as arguments. The plan start and possibly (if
-	     filled) end dates are offseted with difference between nights.
+	     filled) end dates are offseted with difference of sidereal time
+	     between the nights. This quarantees that the objects will be
+	     observed at the same horizontal position. If you wish to observe
+	     objects at the same time, please use <option>--fixed-copy</option>.
+	  </para>  
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--fixed-copy</option>
+          <arg choice='req'><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+	  <arg rep='repeat' choice='req'><replaceable class='parameter'>YYYY-MM-DD</replaceable></arg>
+	</term>
+	<listitem>
+	  <para>
+	     Similar to <option>--copy</option>, but keeps times unchanged. So
+	     if there is target scheduled at 22:00, and you copy it a month
+	     ahead, it will still remain scheduled at 22:00 (assuming time
+	     reference is not affected by daylight saving time change).
 	  </para>  
 	</listitem>
       </varlistentry>
@@ -166,16 +201,61 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-         <term><option>--delete</option> <arg rep='repeat' choice='req'><replaceable class='parameter'>plan id</replaceable></arg></term>
+         <term><option>--delete</option>
+           <arg><option>-n</option> <replaceable class="parameter">YYYY-MM-DD</replaceable></arg>
+	   <arg rep='repeat'><replaceable class='parameter'>plan id</replaceable></arg>
+	 </term>
 	 <listitem>
 	   <para>
-	     Delete plan entry with given plan IDs.
+	     Delete plan entry with given plan IDs., or being observed at given night.
 	   </para>
 	 </listitem>  
       </varlistentry>
       &dbapplist;	
     </variablelist>  
   </refsect1>
+  <refsect1>
+    <title id='planfile'>Plan file format</title>
+    <para>
+      This section describe format of the plan file, which can be used with
+      <option>--load</option> to load a plan from file.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>target id</term>
+	<listitem>
+	  <para>target ID, e.g. numerical value. Names are not supported.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>start time</term>
+	<listitem>
+	  <para>plan entry start Time in RTS2 time format.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>end time</term>
+	<listitem>
+	  <para>
+	    optional plan entry end time. Observation without end time are
+	    observed only once, e.g. the script is not repeated.
+	  </para>  
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    <para>
+      There is an example of the input file.
+      <programlisting>
+1001	2011-01-17T00:00:00	2011-1-17T00:10
+1002	2011-01-17U00:20:00
+1003	2011-01-17L00:40:00	2011-1-17T2
+      </programlisting>
+      This introduce to the system three plan entries, all for 17th
+      January 2011. Start times use mixed local and UT times - please see
+      <citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+      for details.
+    </para>
+  </refsect1>  
   <refsect1 xml:id='examples'>
     <title>Examples</title>
 
@@ -206,6 +286,14 @@
     <screen>
       <command>&command;</command> <option>--dump</option>
     </screen>
+
+    <para>
+      To load plan entries from standard input (e.g. from file named filename.plan):
+    </para>
+
+    <screen>
+      <command>cat</command> <replaceable>filename.plan</replaceable> | <command>&command;</command> <option>--load</option> <replaceable>-</replaceable>
+    </screen> 
 
     <para>
       To print plan for night 2013-03-13, execute:
