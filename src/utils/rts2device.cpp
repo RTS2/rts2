@@ -509,10 +509,10 @@ Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, const c
 	doCheck = true;
 
 	// now add options..
+	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some reccomended values are not set");
 	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
 	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
-	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some reccomended values are not set");
 	addOption ('d', NULL, 1, "name of device");
 }
 
