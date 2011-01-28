@@ -65,9 +65,9 @@ Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 	tzset ();
 
 	addOption ('h', "help", 0, "write this help");
-	addOption (OPT_UTTIME, "UT", 0, "use UT (not local) time for time displays");
 	addOption (OPT_VERSION, "version", 0, "show program version and license");
 	addOption (OPT_DEBUG, "debug", 0, "print debug messages");
+	addOption (OPT_UTTIME, "UT", 0, "use UT (not local) time for time displays");
 
 	masterApp = this;
 }
