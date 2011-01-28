@@ -48,7 +48,7 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 	double t_to = params->getDouble ("to", rts2_nan ("f"));
 
 	std::ostringstream title;
-	title << "Plan entrie from " << Timestamp (t_from);
+	title << "Plan entries from " << Timestamp (t_from);
 	if (!isnan (t_to))
 		title << "to " << Timestamp (t_to);
 
