@@ -47,17 +47,12 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      &basicapp;
-      <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable>port number</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-c</option></arg>
-      </arg>
+      <arg><option>-c</option></arg>
+      &clientapp;
     </cmdsynopsis>
+
+    &helpsynopsis;
+
   </refsynopsisdiv>
 
   <refsect1 id="description">
@@ -350,25 +345,13 @@
     &optiongnu;
 
     <variablelist>
-      &basicapplist;
-      <varlistentry>
-        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
-        <listitem>
-          <para>Change central server location. Defaults to localhost.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--port <replaceable>port number</replaceable></option></term>
-        <listitem>
-          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
-        </listitem>
-      </varlistentry>
       <varlistentry>
         <term><option>-c</option></term>
         <listitem>
           <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
         </listitem>
       </varlistentry>
+      &clientapplist;
     </variablelist>
   </refsect1>
   <refsect1>

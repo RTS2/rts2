@@ -151,7 +151,7 @@
 
 <!ENTITY deviceapplist "
 <varlistentry>
-  <term><option>-d</option> <replaceable class='parameter'>device name'</replaceable></term>
+  <term><option>-d</option> <replaceable class='parameter'>device name</replaceable></term>
   <listitem>
     <para>
       Specify device name. Device name is used to uniquely identify RTS2
@@ -227,13 +227,13 @@
 " >
 
 
-<!ENTITY clientapp "&basicapp;      
+<!ENTITY clientapp "
 <arg choice='opt'><option>--server</option> <replaceable class='parameter'>central server hostname</replaceable></arg>
 <arg choice='opt'><option>--port</option> <replaceable class='parameter'>port number</replaceable></arg>
+&basicapp;
 " >
 
 <!ENTITY clientapplist "
-&basicapplist;
 <varlistentry>
   <term><option>--server</option> <replaceable class='parameter'>central server hostname</replaceable></term>
   <listitem>
@@ -246,6 +246,7 @@
     <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
   </listitem>
 </varlistentry>
+&basicapplist;
 " >
 
 <!ENTITY selectorlist

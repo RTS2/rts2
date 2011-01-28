@@ -140,9 +140,8 @@ Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc, in_argv
 	login = "petr";
 	password = "petr";
 
-	addOption (OPT_SERVER, "server", 1,
-		"hostname of central server; default to localhost");
 	addOption (OPT_PORT, "port", 1, "port of centrald server");
+	addOption (OPT_SERVER, "server", 1, "hostname of central server; default to localhost");
 }
 
 Rts2Client::~Rts2Client (void)
