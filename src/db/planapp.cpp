@@ -171,17 +171,42 @@ int Rts2PlanApp::dumpPlan ()
 
 int Rts2PlanApp::loadPlan (const char *fn)
 {
-	std::ifstream is;
-	is.open (fn);
+	std::istream *is;
+	bool file = false;
+	if (strcmp (fn, "-"))
+	{
+		is = new std::ifstream ();
+		((std::ifstream *) is)->open (fn);
+		file = true;
+	}
+	else
+	{
+		is = &std::cin;
+	}
 	rts2db::PlanSet ps;
 	try
 	{
-		is >> ps; 
+		*is >> ps; 
 	}
 	catch (rts2core::Error &er)
 	{
 		std::cerr << "canot load plan file: " << er << std::endl
 			<< "aborting" << std::endl;
+		if (file)
+			delete is;
+		return -1;
+	}
+	if (is->fail () && !is->eof ())
+	{
+		if (file)
+		{
+			std::cerr << "failed to read " << fn << std::endl;
+			delete is;
+		}
+		else
+		{
+			std::cerr << "failed to read standard input" << std::endl;
+		}
 		return -1;
 	}
 	for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
@@ -190,6 +215,8 @@ int Rts2PlanApp::loadPlan (const char *fn)
 		iter->load ();
 		std::cout << *iter;
 	}
+	if (file)
+		delete is;
 	return 0;
 }
 
