@@ -43,8 +43,9 @@
   <refnamediv>
     <refname>&dhpackage;</refname>
     <refpurpose>
-      Provides XML-RPC access to RTS2 and state and values changes triggered
-      scripts.
+      Provides XML-RPC and JSON access to RTS2. It also triggers execution of
+      state and events based scripts, and includes HTTP server serving database
+      access pages.
     </refpurpose>
   </refnamediv>
   <refsynopsisdiv>

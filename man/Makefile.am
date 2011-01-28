@@ -42,7 +42,8 @@ EXTRA_DIST = \
     rts2-talker.xml \
     rts2.target.xml \
     rts2-newtarget.xml \
-    rts2-plan.xml 
+    rts2-plan.xml \
+    rts2-selector.xml
 
 CLEANFILES = *.1 *.5 *.7
 
@@ -89,7 +90,8 @@ man_MANS = \
     rts2-talker.1 \
     rts2.target.5 \
     rts2-newtarget.1 \
-    rts2-plan.1
+    rts2-plan.1 \
+    rts2-selector.7
 
 XP=xsltproc --nonet
 
