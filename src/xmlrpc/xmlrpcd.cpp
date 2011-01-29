@@ -1246,14 +1246,22 @@ class ListTargets: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
-			tar_set->load ();
+			rts2db::TargetSet tar_set;
+
+			if (params.size () == 1)
+			{
+				tar_set.loadByName (((std::string) params[0]).c_str ());
+			}
+			else
+			{
+				tar_set.load ();
+			}
 
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
 
-			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set.begin(); tar_iter != tar_set.end (); tar_iter++, i++)
 			{
 				rts2db::Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();

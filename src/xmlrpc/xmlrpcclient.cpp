@@ -27,6 +27,7 @@
 
 #include "r2x.h"
 #include "../utils/rts2configraw.h"
+#include "../utils/libnova_cpp.h"
 
 using namespace XmlRpc;
 
@@ -35,6 +36,7 @@ using namespace XmlRpc;
 #define OPT_SCHED_TICKET             OPT_LOCAL + 3
 #define OPT_TEST                     OPT_LOCAL + 4
 #define OPT_MASTER_STATE             OPT_LOCAL + 5
+#define OPT_TARGET_LIST              OPT_LOCAL + 6
 
 namespace rts2xmlrpc
 {
@@ -68,7 +70,7 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TARGET_LIST, HTTP_GET, TEST, NOOP} xmlOp;
 
 		const char *masterStateQuery;
 
@@ -166,6 +168,13 @@ class Client: public Rts2CliApp
 		 * Retrieve messages from message buffer.
 		 */
 		int getMessages ();
+
+		void printTargets (XmlRpcValue &result);
+
+		/**
+		 * Resolve target(s) by name(s) and return them to user.
+		 */
+		int getTargets ();
 };
 
 }
@@ -544,6 +553,41 @@ int Client::getMessages ()
 	return ret;
 }
 
+void Client::printTargets (XmlRpcValue &results)
+{
+	for (int i=0; i < results.size (); i++)
+	{
+		std::cout << results[i]["id"] << " " << results[i]["type"] << " " << results[i]["name"] << " " << LibnovaRa (results[i]["ra"]) << " " << LibnovaDec (results[i]["dec"]) << std::endl;
+	}
+}
+
+int Client::getTargets ()
+{
+	XmlRpcValue tarNames, result;
+
+	if (args.empty ())
+	{
+		int ret = runXmlMethod (R2X_TARGETS_LIST, tarNames, result, false);
+		if (ret)
+			return ret;
+
+		printTargets (result);
+	}
+
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		tarNames[0] = *iter;
+		int ret = runXmlMethod (R2X_TARGETS_LIST, tarNames, result, false);
+
+		if (ret)
+			return ret;
+
+		printTargets (result);
+	}
+
+	return 0;
+}
+
 void Client::usage ()
 {
 	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manula pages for details." << std::endl << std::endl
@@ -619,6 +663,9 @@ int Client::processOption (int opt)
 		case OPT_MASTER_STATE:
 			xmlOp = GET_MASTER_STATE;
 			break;
+		case OPT_TARGET_LIST:
+			xmlOp = TARGET_LIST;
+			break;
 		case 'm':
 			xmlOp = GET_MESSAGES;
 			break;
@@ -643,7 +690,7 @@ int Client::processArgs (const char *arg)
 		masterStateQuery = arg;
 		return 0;
 	}
-	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET || xmlOp == TARGET_LIST))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -690,6 +737,8 @@ int Client::doProcessing ()
 			return getTypes ();
 		case GET_MESSAGES:
 			return getMessages ();
+		case TARGET_LIST:
+			return getTargets ();
 		case TEST:
 			return doTests ();
 		case HTTP_GET:
@@ -777,6 +826,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption ('m', NULL, 0, "retrieve messages from XML-RPCd message buffer");
 	addOption (OPT_TEST, "test", 0, "perform various tests");
 	addOption ('u', NULL, 0, "retrieve given path(s) from the server (through HTTP GET request)");
+	addOption (OPT_TARGET_LIST, "targets", 0, "list all targets (or those whose names matches the arguments)");
 }
 
 Client::~Client (void)
