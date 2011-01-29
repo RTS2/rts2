@@ -9,7 +9,7 @@ EXTRA_DIST =
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
-	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test
+	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -37,11 +37,11 @@ rts2_teld_lx200test_LDADD = librts2pier-collision.a ${LDADD}
 
 # comment this and uncomment next for alternative APT-GOTO driver
 
-rts2_teld_apgto_SOURCES = apgto.cpp hms.c
-rts2_teld_apgto_LDADD = librts2pier-collision.a ${LDADD}
+#rts2_teld_apgto_SOURCES = apgto.cpp hms.c
+#rts2_teld_apgto_LDADD = librts2pier-collision.a ${LDADD}
 
-# rts2_teld_apgto_SOURCES = apgto_pk.cpp
-# rts2_teld_apgto_LDADD = librts2tellx200.a librts2pier-collision.a ${LDADD}
+rts2_teld_apgto_SOURCES = apgto_pk.cpp
+rts2_teld_apgto_LDADD = librts2tellx200.a librts2pier-collision.a ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 
@@ -57,6 +57,8 @@ rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
 rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
 
 rts2_teld_trencin_SOURCES = trencin.cpp
+
+rts2_teld_nexstar_SOURCES = nexstar.cpp
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
