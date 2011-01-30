@@ -565,12 +565,14 @@ int Client::getTargets ()
 {
 	XmlRpcValue tarNames, result;
 
+	int tot = 0;
+
 	if (args.empty ())
 	{
 		int ret = runXmlMethod (R2X_TARGETS_LIST, tarNames, result, false);
 		if (ret)
 			return ret;
-
+		tot += result.size ();
 		printTargets (result);
 	}
 
@@ -581,8 +583,13 @@ int Client::getTargets ()
 
 		if (ret)
 			return ret;
-
+		tot += result.size ();
 		printTargets (result);
+	}
+	if (tot == 0)
+	{
+		std::cerr << "cannot find any targets" << std::endl;
+		return -1;
 	}
 
 	return 0;
@@ -711,10 +718,9 @@ int Client::doProcessing ()
 			}
 			return setVariables (args[0], args[1]);
 		case INC_VARIABLE:
-			if (args.size () != 2)
+			if (args.size () == 0)
 			{
-				logStream (MESSAGE_ERROR) << "Invalid number of parameters - " << args.size () 
-					<< ", expected 2." << sendLog;
+				logStream (MESSAGE_ERROR) << "Invalid number of parameters - " << args.size () << ", expected 2." << sendLog;
 				return -1;
 			}
 			return incVariable (args[0], args[1]);
@@ -809,24 +815,24 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 	masterStateQuery = NULL;
 
+	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
+	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
+	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
-	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
-	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
-	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
-	addOption ('c', NULL, 0, "execute given command(s)");
-	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
-        addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
-	addOption ('s', NULL, 0, "set variables specified by variable list");
-	addOption ('S', NULL, 0, "get state of device(s) specified as argument");
-	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value) or ask if the system is in on/standby/off/rnight (if single argument is specified; night means in ready night state)");
-	addOption ('i', NULL, 0, "increment to variables specified by variable list");
-	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
-	addOption ('t', NULL, 0, "get device(s) type");
-	addOption ('m', NULL, 0, "retrieve messages from XML-RPCd message buffer");
 	addOption (OPT_TEST, "test", 0, "perform various tests");
 	addOption ('u', NULL, 0, "retrieve given path(s) from the server (through HTTP GET request)");
+	addOption ('t', NULL, 0, "get device(s) type");
+	addOption ('m', NULL, 0, "retrieve messages from XML-RPCd message buffer");
+	addOption (OPT_MASTER_STATE, "master-state", 0, "retrieve master state (as single value) or ask if the system is in on/standby/off/rnight)");
+	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption (OPT_TARGET_LIST, "targets", 0, "list all targets (or those whose names matches the arguments)");
+	addOption ('c', NULL, 0, "execute given command(s)");
+	addOption ('S', NULL, 0, "get state of device(s) specified as argument(s)");
+	addOption ('i', NULL, 0, "increment variable(s) specified as argument(s)");
+	addOption ('s', NULL, 0, "set variables specified by variable list");
+        addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
+	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
 }
 
 Client::~Client (void)

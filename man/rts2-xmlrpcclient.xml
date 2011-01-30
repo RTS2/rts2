@@ -4,11 +4,14 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2009-08-11</date>">
+  <!ENTITY dhdate      "<date>2011-01-28</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-xmlrpcclient">
+
+  <!ENTITY devvar      "<arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable></arg>">
+
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
   %rts2;
@@ -18,7 +21,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.8.0</productnumber>
+    <productnumber>0.8.2</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -34,6 +37,10 @@
       <year>2008-2009</year>
       <holder>&dhusername;</holder>
     </copyright>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
+    </copyright>
     &legal;
   </refentryinfo>
   <refmeta>
@@ -42,71 +49,50 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-    <refpurpose>Communicate with RTS2 XML-RPC daemon. Provides XML-RPC implementation usefull for tests, as well as some usefull commands..</refpurpose>
+    <refpurpose>
+      Communicate with RTS2 XML-RPC daemon. Provides commands to interact with
+      RTS2 through a single HTTP-accessible communication channel.
+    </refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      <group choice='req'>
+        <arg choice='plain'><option>-g</option> &devvar;</arg>
+        <arg choice='plain'><option>-G</option> &devvar;</arg>
+        <arg choice='plain'><option>-s</option> <arg choice='plain' rep='repeat'><arg choice='req'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable> <replaceable>value</replaceable></arg></arg></arg>
+        <arg choice='plain'><option>-i</option> <arg choice='req' rep='repeat'><arg choice='req'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable> <replaceable class='parameter'>increment</replaceable></arg></arg></arg>
+        <arg choice='plain'><option>-S</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable></arg></arg>
+        <arg choice='plain'><option>-c</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>command</replaceable></arg></arg>
+	<arg choice='plain'><option>--targets</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>target name</replaceable></arg></arg>
+        <arg choice='plain'><option>--schedticket <replaceable class='parameter'>ticket ID</replaceable></option></arg>
+        <arg choice='plain'><option>--master-state <replaceable class='parameter'>on|off|standby|rnight</replaceable></option></arg>
+        <arg choice='plain'><option>-m</option></arg>
+        <arg choice='plain'><option>-t</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable></arg></arg>
+        <arg choice='plain'><option>-u</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>url</replaceable></arg></arg>
+        <arg choice='plain'><option>--test</option></arg>
+      </group>	
+      <arg choice='opt'><option>--hostname <replaceable class='parameter'>XML-RPCd host</replaceable></option></arg>
+      <arg choice='opt'><option>--port <replaceable class='parameter'>XML-RPCd port number</replaceable></option></arg>
+      <arg choice='opt'><option>--user <replaceable class='parameter'>username</replaceable></option></arg>
+      <arg choice='opt'><option>--config <replaceable class='parameter'>config file</replaceable></option></arg>
+      <arg choice='opt' rep='repeat'><option>-v</option></arg>
       &basicapp;
-      <arg choice="opt">
-	<arg choice="plain"><option>--hostname <replaceable>XML-RPCd host</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable>XML-RPCd port number</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--user <replaceable>username</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-v</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-c <replaceable>device</replaceable>.<replaceable>command</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-g</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-G</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-s</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-S <replaceable><arg rep="repeat">device</arg></replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--master-state <replaceable>on|off|standby|rnight</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--schedticket <replaceable>ticket ID</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-t</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-m</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--test</option></arg>
-      </arg>
     </cmdsynopsis>
+    &helpsynopsis;
   </refsynopsisdiv>
 
   <refsect1 id="description">
     <title>DESCRIPTION</title>
     <para>
-      RTS2-XMLRPCCLIENT is a test implementation of XMl-RPC protocol used by
+      &dhpackage; is a test implementation of XMl-RPC protocol used by
       RTS2. It shares libraries with
       <citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
-      so it should work when rts2-xmlrpcd works.
+      so it should work when <command>rts2-xmlrpcd</command> works.
     </para>
     <para>
-      Apart from being test implementation, rts2-xmlrpcclient also provides a
-      few handy commands, which retrieve or set RTS2 values. This feature can
+      Apart from being the test implementation, rts2-xmlrpcclient also provides a
+      few handy commands, which retrieve or set RTS2 values. Those commands can
       be used to interact with RTS2 from the command shell. RTS2 XML-RPC
       protocol can be used in various high level languages.
     </para>
@@ -124,7 +110,8 @@
     </para>
 
     <para>
-      If you specify username and password in a configuration file, the content of the file should look as in an example bellow.
+      If you specify username and password in a configuration file, the content
+      of the file should look as in an example bellow.
     </para>
     <programlisting>
 <![CDATA[
@@ -143,34 +130,6 @@ authorization = "user:password"
     &optiongnu;
 
     <variablelist>
-      &basicapplist;
-      <varlistentry>
-        <term><option>--hostname <replaceable>XML-RPCd host</replaceable></option></term>
-        <listitem>
-          <para>Specify XML-RPCd hostname.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--port <replaceable>XML-RPCd port number</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify port on which XML-RPCd listen to incoming requests. Default
-	    to 8889.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--user</option></term>
-        <listitem>
-          <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-c <replaceable>device</replaceable>.<replaceable>command</replaceable></option></term>
-        <listitem>
-          <para>Show version of program.</para>
-        </listitem>
-      </varlistentry>
       <varlistentry>
         <term><option>-g</option></term>
         <listitem>
@@ -197,6 +156,27 @@ SENSOR.var2=56.34
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-s</option> <arg choice='plain' rep='repeat'><arg choice='req'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable> <replaceable>value</replaceable></arg></arg></term>
+	<listitem>
+	  <para>
+	    Set variables specified on command line.
+	    Device name, variable name and value need to
+	    be specified. Device name is separated from
+	    the variable name with . (colon).
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-i</option> <arg choice='req' rep='repeat'><arg choice='req'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable> <replaceable class='parameter'>increment</replaceable></arg></arg></term>
+	<listitem>
+	  <para>
+	    Increment variable(s). Works simirarly to
+	    <option>-s</option>, only executes +=
+	    operation instead of =.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-S <replaceable><arg rep="repeat">device</arg></replaceable></option></term>
 	<listitem>
 	  <para>
@@ -210,6 +190,37 @@ SENSOR 0 sensor 0
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>-c</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>command</replaceable></arg></term>
+	<listitem>
+	  <para>
+	    Executes commandi(s) on the given device. The
+	    executed commands are standard RTS2 system
+	    commands, which are either documented in the
+	    components (devices) man pages, or can be
+	    found in the source files.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--targets</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>target name</replaceable></arg></term>
+        <listitem>
+	  <para>
+	    List target(s) matching specifed names. You can use '%' as
+	    wildcard. If no name is specifid, all targets in the database are
+	    printed.
+	  </para>
+	  <para>
+	    The matching targets are separated with newlines. The line includes
+	    target ID, type, name, and target RA and DEC. Following example
+	    list gives resonse to query for target with name M31.
+	  </para>
+	  <programlisting>
+user@machine:~$ rts2-xmlrpcclient --targets M31
+1001 79 M31 00:42:44.350 +41:16:08.63
+          </programlisting>
+	</listitem>
+      </varlistentry>	
       <varlistentry>
         <term><option>--master-state <replaceable>on|off|standby|rnight</replaceable></option></term>
 	<listitem>
@@ -225,6 +236,44 @@ user@machine:~$ rts2-xmlrcclient --master-state on
 	  </para>
 	</listitem>
       </varlistentry>
+     <varlistentry>
+        <term><option>--hostname <replaceable>XML-RPCd host</replaceable></option></term>
+        <listitem>
+          <para>Specify XML-RPCd hostname.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>XML-RPCd port number</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify port on which XML-RPCd listen to incoming requests. Default
+	    to 8889.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--user</option></term>
+        <listitem>
+          <para>
+	    Specify user login. User password must be specified from terminal.
+	    If you would like to automatise logins, you can place user
+	    credentials in configuration file, specified with
+	    <option>--config</option>.
+	  </para>  
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config</option> <replaceable class='parameter'>config file</replaceable></term>
+	<listitem>
+	  <para>
+	    Specify configuration file. The configuration file can hold user credentials.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><arg choice='plain' rep='repeat'><option>-v</option></arg></term>
+      </varlistentry>
+      &basicapplist;
     </variablelist>  
   </refsect1>
   <refsect1>
