@@ -482,8 +482,16 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			updateNext ();
 			return 0;
 		}
-		if (q->queueFromConn (conn, withTimes))
+		try
+		{
+			if (q->queueFromConn (conn, withTimes))
+				return -2;
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << er << sendLog;
 			return -2;
+		}
 		updateNext ();
 		return 0;
 	}
