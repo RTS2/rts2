@@ -779,13 +779,13 @@ int Paramount::idle ()
 	if (ret)
 	{
 		sleep (10);
-		return Rts2Device::idle ();
+		return rts2core::Device::idle ();
 	}
 	ret = getHomeOffset (homeOff);
 	if (ret)
 	{
 		sleep (10);
-		return Rts2Device::idle ();
+		return rts2core::Device::idle ();
 	}
 	ac += homeOff;
 	if (telLatitude->getValueDouble () < 0)
@@ -804,7 +804,7 @@ int Paramount::idle ()
 		// give mount time to recover
 		sleep (10);
 		// don't check for move etc..
-		return Rts2Device::idle ();
+		return rts2core::Device::idle ();
 	}
 	// if we need homing..
 /*	if ((!(status0 & MOTOR_HOMED)) && (!(status0 & MOTOR_HOMING)))
