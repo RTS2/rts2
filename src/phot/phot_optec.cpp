@@ -6,7 +6,6 @@
 #define FILTER_STEP  33
 
 #include "phot.h"
-#include "../utils/rts2device.h"
 #include "kernel/phot.h"
 
 #include <fcntl.h>
@@ -54,8 +53,7 @@ class Rts2DevPhotOptec:public Rts2DevPhot
 		virtual int disableMove ();
 };
 
-int
-Rts2DevPhotOptec::phot_command (char command, short arg)
+int Rts2DevPhotOptec::phot_command (char command, short arg)
 {
 	char cmd_buf[3];
 	int ret;
@@ -67,9 +65,7 @@ Rts2DevPhotOptec::phot_command (char command, short arg)
 	return -1;
 }
 
-
-Rts2DevPhotOptec::Rts2DevPhotOptec (int in_argc, char **in_argv):Rts2DevPhot (in_argc,
-in_argv)
+Rts2DevPhotOptec::Rts2DevPhotOptec (int in_argc, char **in_argv):Rts2DevPhot (in_argc, in_argv)
 {
 	addOption ('f', "phot_file", 1, "photometer file (default to /dev/phot0)");
 	phot_dev = "/dev/phot0";
@@ -82,18 +78,14 @@ Rts2DevPhotOptec::~Rts2DevPhotOptec (void)
 	close (fd);
 }
 
-
-int
-Rts2DevPhotOptec::scriptEnds ()
+int Rts2DevPhotOptec::scriptEnds ()
 {
 	// set filter to black
 	startFilterMove (0);
 	return Rts2DevPhot::scriptEnds ();
 }
 
-
-int
-Rts2DevPhotOptec::processOption (int in_opt)
+int Rts2DevPhotOptec::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -101,14 +93,12 @@ Rts2DevPhotOptec::processOption (int in_opt)
 			phot_dev = optarg;
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return Rts2DevPhot::processOption (in_opt);
 	}
 	return 0;
 }
 
-
-int
-Rts2DevPhotOptec::init ()
+int Rts2DevPhotOptec::init ()
 {
 	int ret;
 	ret = Rts2DevPhot::init ();
@@ -126,9 +116,7 @@ Rts2DevPhotOptec::init ()
 	return 0;
 }
 
-
-long
-Rts2DevPhotOptec::getCount ()
+long Rts2DevPhotOptec::getCount ()
 {
 	int ret;
 	unsigned short result[2];
@@ -167,37 +155,27 @@ Rts2DevPhotOptec::getCount ()
 	return 1000;
 }
 
-
-int
-Rts2DevPhotOptec::homeFilter ()
+int Rts2DevPhotOptec::homeFilter ()
 {
 	return phot_command (PHOT_CMD_RESET, 0);
 }
 
-
-int
-Rts2DevPhotOptec::startIntegrate ()
+int Rts2DevPhotOptec::startIntegrate ()
 {
 	return phot_command (PHOT_CMD_INTEGRATE, (short) (req_time * 1000));
 }
 
-
-int
-Rts2DevPhotOptec::endIntegrate ()
+int Rts2DevPhotOptec::endIntegrate ()
 {
 	return Rts2DevPhot::endIntegrate ();
 }
 
-
-int
-Rts2DevPhotOptec::stopIntegrate ()
+int Rts2DevPhotOptec::stopIntegrate ()
 {
 	return Rts2DevPhot::stopIntegrate ();
 }
 
-
-int
-Rts2DevPhotOptec::startFilterMove (int new_filter)
+int Rts2DevPhotOptec::startFilterMove (int new_filter)
 {
 	int ret;
 	ret = phot_command (PHOT_CMD_MOVEFILTER, new_filter * FILTER_STEP);
@@ -209,9 +187,7 @@ Rts2DevPhotOptec::startFilterMove (int new_filter)
 	return Rts2DevPhot::startFilterMove (new_filter);
 }
 
-
-long
-Rts2DevPhotOptec::isFilterMoving ()
+long Rts2DevPhotOptec::isFilterMoving ()
 {
 	time_t now;
 	time (&now);
@@ -221,16 +197,12 @@ Rts2DevPhotOptec::isFilterMoving ()
 	return USEC_SEC;
 }
 
-
-int
-Rts2DevPhotOptec::enableMove ()
+int Rts2DevPhotOptec::enableMove ()
 {
 	return phot_command (PHOT_CMD_INTEGR_ENABLED, 1);
 }
 
-
-int
-Rts2DevPhotOptec::disableMove ()
+int Rts2DevPhotOptec::disableMove ()
 {
 	int ret;
 	ret = phot_command (PHOT_CMD_INTEGR_ENABLED, 0);
@@ -239,9 +211,7 @@ Rts2DevPhotOptec::disableMove ()
 	return ret;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2DevPhotOptec device = Rts2DevPhotOptec (argc, argv);
 	return device.run ();

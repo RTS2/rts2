@@ -20,7 +20,7 @@
 #ifndef __RTS2_SENSORD__
 #define __RTS2_SENSORD__
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 /**
  * Abstract sensors, SensorWeather with functions to set weather state, and various other sensors.
@@ -37,7 +37,7 @@ namespace rts2sensord
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Sensor:public Rts2Device
+class Sensor:public rts2core::Device
 {
 	public:
 		Sensor (int argc, char **argv);

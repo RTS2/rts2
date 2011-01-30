@@ -30,7 +30,7 @@
 
 using namespace rts2teld;
 
-TGDrive::TGDrive (const char *_devName, const char *prefix, Rts2Device *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
+TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
 {
 	setLogAsHex (true);
 

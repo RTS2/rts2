@@ -20,7 +20,7 @@
 #ifndef __RTS2_DEVICEDB__
 #define __RTS2_DEVICEDB__
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/rts2config.h"
 
 /**
@@ -30,7 +30,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DeviceDb:public Rts2Device
+class Rts2DeviceDb:public rts2core::Device
 {
 	public:
 		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);

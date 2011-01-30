@@ -17,9 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2scriptdevice.h"
+#include "scriptdevice.h"
 
-Rts2ScriptDevice::Rts2ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
+using namespace rts2core;
+
+ScriptDevice::ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name):Device (in_argc, in_argv, in_device_type, default_name)
 {
 	createValue (scriptRepCount, "SCRIPREP", "script loop count", true, RTS2_VALUE_WRITABLE, 0);
 	scriptRepCount->setValueInteger (0);

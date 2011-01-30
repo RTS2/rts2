@@ -23,7 +23,7 @@
 
 using namespace rts2focusd;
 
-Focusd::Focusd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
+Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	temperature = NULL;
 
@@ -48,7 +48,7 @@ int Focusd::processOption (int in_opt)
 			defaultPosition->setValueCharArr (optarg);
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 	}
 	return 0;
 }
@@ -96,13 +96,13 @@ int Focusd::initValues ()
 		target->setValueFloat (getPosition ());
 	}
 
-	return Rts2Device::initValues ();
+	return rts2core::Device::initValues ();
 }
 
 int Focusd::idle ()
 {
 	checkState ();
-	return Rts2Device::idle ();
+	return rts2core::Device::idle ();
 }
 
 int Focusd::setPosition (float num)
@@ -171,7 +171,7 @@ int Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat ())? -2 : 0;
 	}
-	return Rts2Device::setValue (old_value, new_value);
+	return rts2core::Device::setValue (old_value, new_value);
 }
 
 int Focusd::scriptEnds ()
@@ -179,7 +179,7 @@ int Focusd::scriptEnds ()
 	tempOffset->setValueFloat (0);
 	setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ());
 	sendValueAll (tempOffset);
-	return Rts2Device::scriptEnds ();
+	return rts2core::Device::scriptEnds ();
 }
 
 int Focusd::commandAuthorized (Rts2Conn * conn)
@@ -198,5 +198,5 @@ int Focusd::commandAuthorized (Rts2Conn * conn)
 
 		return autoFocus (conn);
 	}
-	return Rts2Device::commandAuthorized (conn);
+	return rts2core::Device::commandAuthorized (conn);
 }

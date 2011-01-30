@@ -95,7 +95,6 @@ void ConnImgOnlyProcess::processLine ()
 		ConnProcess::processLine ();
 	}
 
-	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: " << ret << sendLog;
 	return;
 }
 

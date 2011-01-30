@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/rts2command.h"
 
 #include "indidevapi.h"
@@ -36,7 +36,7 @@
  * 
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Indi:public Rts2Device
+class Indi:public rts2core::Device
 {
 	protected:
 		const char *telescopeName;
@@ -68,7 +68,7 @@ Indi::willConnect (Rts2Address * in_addr)
 
 
 Indi::Indi (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_INDI, "INDI")
+rts2core::Device (in_argc, in_argv, DEVICE_TYPE_INDI, "INDI")
 {
 	telescopeName = "T0";
 	setLockPrefix ("/tmp/rts2_");
@@ -84,12 +84,10 @@ Indi::~Indi (void)
 
 }
 
-
-int
-Indi::init ()
+int Indi::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 
@@ -97,9 +95,7 @@ Indi::init ()
 	return 0;
 }
 
-
-int
-Indi::processOption (int opt)
+int Indi::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -107,14 +103,12 @@ Indi::processOption (int opt)
 			telescopeName = optarg;
 			break;
 		default:
-			return Rts2Device::processOption (opt);
+			return rts2core::Device::processOption (opt);
 	}
 	return 0;
 }
 
-
-void
-Indi::message (Rts2Message & msg)
+void Indi::message (Rts2Message & msg)
 {
 	IDMessage (mydev, "%s %s", msg.getMessageOName (), msg.getMessageString ());
 }
@@ -127,8 +121,7 @@ static ISwitch PowerS[] =
 	{"DISCONNECT", "Disconnect", ISS_ON, 0, 0}
 };
 
-ISwitchVectorProperty PowerSP =
-{mydev, "CONNECTION", "Connection", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0,	IPS_IDLE, PowerS, NARRAY (PowerS), 0, 0};
+ISwitchVectorProperty PowerSP = {mydev, "CONNECTION", "Connection", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0,	IPS_IDLE, PowerS, NARRAY (PowerS), 0, 0};
 
 static ISwitch StatesS[] =
 {
@@ -190,8 +183,7 @@ static ISwitchVectorProperty abortSlewSw =
 
 static Indi *device = NULL;
 
-void
-Indi::setStates ()
+void Indi::setStates ()
 {
 	if (StatesSP.sp[0].s == ISS_ON)
 	{
@@ -213,9 +205,7 @@ Indi::setStates ()
 	}
 }
 
-
-void
-Indi::setObjRaDec (double ra, double dec)
+void Indi::setObjRaDec (double ra, double dec)
 {
 	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
@@ -224,9 +214,7 @@ Indi::setObjRaDec (double ra, double dec)
 	}
 }
 
-
-void
-Indi::setCorrRaDec (double ra, double dec)
+void Indi::setCorrRaDec (double ra, double dec)
 {
 	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
@@ -235,9 +223,7 @@ Indi::setCorrRaDec (double ra, double dec)
 	}
 }
 
-
-int
-Indi::changeMasterState (int new_state)
+int Indi::changeMasterState (int new_state)
 {
 	StatesSP.s = IPS_BUSY;
 	IDSetSwitch (&StatesSP, NULL);
@@ -256,12 +242,10 @@ Indi::changeMasterState (int new_state)
 	StatesSP.s = IPS_OK;
 	IDSetSwitch (&StatesSP, "Changed RTS2 state from other source");
 
-	return Rts2Device::changeMasterState (new_state);
+	return rts2core::Device::changeMasterState (new_state);
 }
 
-
-void
-Indi::ISPoll ()
+void Indi::ISPoll ()
 {
 	oneRunLoop ();
 
@@ -331,26 +315,21 @@ Indi::ISPoll ()
 /**
  * That's INDI specific part..
  */
-void
-ISInit ()
+void ISInit ()
 {
 	if (device)
 		return;
 	device->initDaemon ();
 }
 
-
-void
-ISPoll (void *p)
+void ISPoll (void *p)
 {
 	ISInit ();
 	device->ISPoll ();
 	IEAddTimer (POLLMS, ISPoll, NULL);
 }
 
-
-void
-ISGetProperties (const char *dev)
+void ISGetProperties (const char *dev)
 {
 	ISInit ();
 
@@ -367,9 +346,7 @@ ISGetProperties (const char *dev)
 	IEAddTimer (POLLMS, ISPoll, NULL);
 }
 
-
-void
-ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[], int n)
+void ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[], int n)
 {
 	ISInit ();
 	if (!strcmp (name, StatesSP.name))
@@ -379,16 +356,12 @@ ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[],
 	}
 }
 
-
-void
-ISNewText (const char *dev, const char *name, char *texts[], char *names[], int n)
+void ISNewText (const char *dev, const char *name, char *texts[], char *names[], int n)
 {
 	ISInit ();
 }
 
-
-void
-ISNewNumber (const char *dev, const char *name, double values[], char *names[], int n)
+void ISNewNumber (const char *dev, const char *name, double values[], char *names[], int n)
 {
 	ISInit ();
 
@@ -463,21 +436,17 @@ ISNewNumber (const char *dev, const char *name, double values[], char *names[], 
 	}
 }
 
-void
-ISNewBLOB (const char *dev, const char *name, int sizes[], int blobsizes[], char *blobs[], char *formats[], char *names[], int n)
+void ISNewBLOB (const char *dev, const char *name, int sizes[], int blobsizes[], char *blobs[], char *formats[], char *names[], int n)
 {
 	ISInit ();
 }
 
-void
-ISSnoopDevice (XMLEle *root)
+void ISSnoopDevice (XMLEle *root)
 {
 	ISInit ();
 }
 
-
-int
-main (int ac, char **av)
+int main (int ac, char **av)
 {
 	device = new Indi (ac, av);
 	std::cerr << "new" << std::endl;

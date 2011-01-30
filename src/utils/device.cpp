@@ -23,7 +23,7 @@
 
 #include <config.h>
 #include "status.h"
-#include "rts2device.h"
+#include "device.h"
 #include "rts2command.h"
 
 #define MINDATAPORT   5556
@@ -73,7 +73,7 @@ int Rts2DevConn::command ()
 	return Rts2Conn::command ();
 }
 
-Rts2DevConn::Rts2DevConn (int in_sock, Rts2Device * in_master):Rts2Conn (in_sock, in_master)
+Rts2DevConn::Rts2DevConn (int in_sock, Device * in_master):Rts2Conn (in_sock, in_master)
 {
 	address = NULL;
 	master = in_master;
@@ -280,8 +280,7 @@ void Rts2DevConnMaster::connConnected ()
 		}
 	}
 	setConnState (CONN_AUTH_PENDING);
-	queSend (new Rts2CommandRegister (getMaster (), getCentraldNum (), device_name,
-		device_type, device_host, device_port));
+	queSend (new Rts2CommandRegister (getMaster (), getCentraldNum (), device_name, device_type, device_host, device_port));
 }
 
 void Rts2DevConnMaster::connectionError (int last_data_size)
@@ -445,7 +444,7 @@ void Rts2DevConnMaster::setState (int in_value, char * msg)
 void Rts2DevConnMaster::setBopState (int in_value)
 {
 	Rts2Conn::setBopState (in_value);
-	((Rts2Device *) master)->setFullBopState (in_value);
+	((Device *) master)->setFullBopState (in_value);
 }
 
 int Rts2DevConnMaster::authorize (Rts2DevConn * conn)
@@ -463,7 +462,7 @@ void Rts2DevConnMaster::setConnState (conn_state_t new_conn_state)
         }
 }
 
-Rts2CommandDeviceStatusInfo::Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn):Rts2Command (master)
+Rts2CommandDeviceStatusInfo::Rts2CommandDeviceStatusInfo (Device * master, Rts2Conn * in_owner_conn):Rts2Command (master)
 {
 	owner_conn = in_owner_conn;
 	setCommand ("status_info");
@@ -471,13 +470,13 @@ Rts2CommandDeviceStatusInfo::Rts2CommandDeviceStatusInfo (Rts2Device * master, R
 
 int Rts2CommandDeviceStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
-	((Rts2Device *) owner)->endDeviceStatusCommand ();
+	((Device *) owner)->endDeviceStatusCommand ();
 	return Rts2Command::commandReturnOK (conn);
 }
 
 int Rts2CommandDeviceStatusInfo::commandReturnFailed (int status, Rts2Conn * conn)
 {
-	((Rts2Device *) owner)->endDeviceStatusCommand ();
+	((Device *) owner)->endDeviceStatusCommand ();
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
@@ -487,7 +486,7 @@ void Rts2CommandDeviceStatusInfo::deleteConnection (Rts2Conn * conn)
 		owner_conn = NULL;
 }
 
-Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, const char *default_name):Rts2Daemon (in_argc, in_argv)
+Device::Device (int in_argc, char **in_argv, int in_device_type, const char *default_name):Daemon (in_argc, in_argv)
 {
 	/* put defaults to variables.. */
 	device_name = default_name;
@@ -516,17 +515,17 @@ Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, const c
 	addOption ('d', NULL, 1, "name of device");
 }
 
-Rts2Device::~Rts2Device (void)
+Device::~Device (void)
 {
 	delete modeconf;
 }
 
-Rts2DevConn * Rts2Device::createConnection (int in_sock)
+Rts2DevConn * Device::createConnection (int in_sock)
 {
 	return new Rts2DevConn (in_sock, this);
 }
 
-int Rts2Device::commandAuthorized (Rts2Conn * conn)
+int Device::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("info"))
 	{
@@ -575,7 +574,7 @@ int Rts2Device::commandAuthorized (Rts2Conn * conn)
 	return -5;
 }
 
-int Rts2Device::loadModefile ()
+int Device::loadModefile ()
 {
 	if (!modefile)
 		return 0;
@@ -600,7 +599,7 @@ int Rts2Device::loadModefile ()
 	return setMode (0);
 }
 
-int Rts2Device::setMode (int new_mode)
+int Device::setMode (int new_mode)
 {
 	if (modesel == NULL)
 	{
@@ -676,7 +675,7 @@ int Rts2Device::setMode (int new_mode)
 	return 0;
 }
 
-int Rts2Device::processOption (int in_opt)
+int Device::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -696,12 +695,12 @@ int Rts2Device::processOption (int in_opt)
 			device_name = optarg;
 			break;
 		default:
-			return Rts2Daemon::processOption (in_opt);
+			return Daemon::processOption (in_opt);
 	}
 	return 0;
 }
 
-Rts2Conn *Rts2Device::getCentraldConn (const char *server)
+Rts2Conn *Device::getCentraldConn (const char *server)
 {
 	std::list <HostString>::iterator iter_h;
 	connections_t::iterator iter_c;
@@ -715,22 +714,22 @@ Rts2Conn *Rts2Device::getCentraldConn (const char *server)
 	return NULL;
 }
 
-void Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
+void Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
 {
 	deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, in_owner_conn);
 	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
 }
 
-int Rts2Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == modesel)
 	{
 		return setMode (new_value->getValueInteger ())? -2 : 0;
 	}
-	return Rts2Daemon::setValue (old_value, new_value);
+	return Daemon::setValue (old_value, new_value);
 }
 
-Rts2Conn * Rts2Device::createClientConnection (Rts2Address * in_addres)
+Rts2Conn * Device::createClientConnection (Rts2Address * in_addres)
 {
 	Rts2DevConn *conn;
 	if (in_addres->isAddress (device_name))
@@ -740,7 +739,7 @@ Rts2Conn * Rts2Device::createClientConnection (Rts2Address * in_addres)
 	return conn;
 }
 
-void Rts2Device::checkQueChanges (int fakeState)
+void Device::checkQueChanges (int fakeState)
 {
 	int ret;
 	bool changed = false;
@@ -785,25 +784,25 @@ void Rts2Device::checkQueChanges (int fakeState)
 	}
 }
 
-void Rts2Device::stateChanged (int new_state, int old_state, const char *description)
+void Device::stateChanged (int new_state, int old_state, const char *description)
 {
-	Rts2Daemon::stateChanged (new_state, old_state, description);
+	Daemon::stateChanged (new_state, old_state, description);
 	// try to wake-up queued changes..
 	checkQueChanges (new_state);
 	sendStatusMessage (getState (), description);
 }
 
-void Rts2Device::sendFullStateInfo (Rts2Conn * conn)
+void Device::sendFullStateInfo (Rts2Conn * conn)
 {
 	sendBopMessage (getState (), fullBopState, conn);
 }
 
-int Rts2Device::init ()
+int Device::init ()
 {
 	int ret;
 	// try to open log file..
 
-	ret = Rts2Daemon::init ();
+	ret = Daemon::init ();
 	if (ret)
 		return ret;
 
@@ -824,12 +823,12 @@ int Rts2Device::init ()
 	return 0;
 }
 
-int Rts2Device::initValues ()
+int Device::initValues ()
 {
 	return loadModefile ();
 }
 
-void Rts2Device::beforeRun ()
+void Device::beforeRun ()
 {
 	if (doCheck && checkNotNulls ())
 	{
@@ -854,7 +853,7 @@ void Rts2Device::beforeRun ()
 		exit (ret);
 }
 
-int Rts2Device::authorize (int centrald_num, Rts2DevConn * conn)
+int Device::authorize (int centrald_num, Rts2DevConn * conn)
 {
 	connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
@@ -865,7 +864,7 @@ int Rts2Device::authorize (int centrald_num, Rts2DevConn * conn)
 	return -1;
 }
 
-int Rts2Device::sendMasters (const char *msg)
+int Device::sendMasters (const char *msg)
 {
 	connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
@@ -875,15 +874,15 @@ int Rts2Device::sendMasters (const char *msg)
 	return 0;
 }
 
-void Rts2Device::centraldConnRunning (Rts2Conn *conn)
+void Device::centraldConnRunning (Rts2Conn *conn)
 {
-	Rts2Daemon::centraldConnRunning (conn);
+	Daemon::centraldConnRunning (conn);
 	sendMetaInfo (conn);
 }
 
-void Rts2Device::sendMessage (messageType_t in_messageType, const char *in_messageString)
+void Device::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
-	Rts2Daemon::sendMessage (in_messageType, in_messageString);
+	Daemon::sendMessage (in_messageType, in_messageString);
 	for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 	{
 		Rts2Message msg = Rts2Message (getDeviceName (), in_messageType, in_messageString);
@@ -891,7 +890,7 @@ void Rts2Device::sendMessage (messageType_t in_messageType, const char *in_messa
 	}
 }
 
-int Rts2Device::killAll ()
+int Device::killAll ()
 {
 	// remove all queued changes - do not perform them
 	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); )
@@ -905,7 +904,7 @@ int Rts2Device::killAll ()
 	return ret;
 }
 
-int Rts2Device::scriptEnds ()
+int Device::scriptEnds ()
 {
 	if (modesel)
 	{
@@ -916,13 +915,13 @@ int Rts2Device::scriptEnds ()
 	return 0;
 }
 
-int Rts2Device::statusInfo (Rts2Conn * conn)
+int Device::statusInfo (Rts2Conn * conn)
 {
 	sendStatusMessage (getState (), conn);
 	return 0;
 }
 
-void Rts2Device::setFullBopState (int new_state)
+void Device::setFullBopState (int new_state)
 {
 	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); iter++)
 	{
@@ -938,19 +937,19 @@ void Rts2Device::setFullBopState (int new_state)
 	fullBopState = new_state;
 }
 
-Rts2Value * Rts2Device::getValue (const char *_device_name, const char *value_name)
+Rts2Value * Device::getValue (const char *_device_name, const char *value_name)
 {
 	if (!strcmp (_device_name, getDeviceName ()) || !strcmp (_device_name, "."))
 		return getOwnValue (value_name);
-	return Rts2Daemon::getValue (_device_name, value_name);
+	return Daemon::getValue (_device_name, value_name);
 }
 
-int Rts2Device::maskQueValueBopState (int new_state, int valueQueCondition)
+int Device::maskQueValueBopState (int new_state, int valueQueCondition)
 {
 	return new_state;
 }
 
-void Rts2Device::signaledHUP ()
+void Device::signaledHUP ()
 {
 	loadModefile ();
 }

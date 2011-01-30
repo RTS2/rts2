@@ -20,6 +20,7 @@
 #include "dome.h"
 
 using namespace rts2dome;
+using namespace rts2core;
 
 #define OPT_WEATHER_OPENS     OPT_LOCAL + 200
 #define OPT_STATE_MASTER      OPT_LOCAL + 201
@@ -81,7 +82,7 @@ int Dome::domeCloseEnd ()
 	return 0;
 };
 
-Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc, in_argv, in_device_type, "DOME")
+Dome::Dome (int in_argc, char **in_argv, int in_device_type):Device (in_argc, in_argv, in_device_type, "DOME")
 {
 	stateMaster = NULL;
 
@@ -124,7 +125,7 @@ int Dome::processOption (int in_opt)
 			nextGoodWeather->setValueDouble (getNow () - 300);
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return Device::processOption (in_opt);
 	}
 	return 0;
 }
@@ -132,7 +133,7 @@ int Dome::processOption (int in_opt)
 int Dome::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = Device::init ();
 	if (ret)
 		return ret;
 
@@ -159,7 +160,7 @@ bool Dome::isGoodWeather ()
 {
 	if (getIgnoreMeteo () == true)
 		return true;
-	if (Rts2Device::isGoodWeather () == false)
+	if (Device::isGoodWeather () == false)
 	  	return false;
 	if (getNextOpen () > getNow ())
 		return false;
@@ -266,7 +267,7 @@ int Dome::idle ()
 		  	setWeatherState (false, "some centrald are not connected");
 	}
 
-	return Rts2Device::idle ();
+	return Device::idle ();
 }
 
 int Dome::closeDomeWeather ()
@@ -352,7 +353,7 @@ int Dome::changeMasterState (int new_state)
 				off ();
 		}
 	}
-	return Rts2Device::changeMasterState (new_state);
+	return Device::changeMasterState (new_state);
 }
 
 void Dome::setIgnoreTimeout (time_t _ignore_time)
@@ -395,5 +396,5 @@ int Dome::commandAuthorized (Rts2Conn * conn)
 		nextGoodWeather->setValueDouble (getNow () - 1);
 		return 0;
 	}
-	return Rts2Device::commandAuthorized (conn);
+	return Device::commandAuthorized (conn);
 }

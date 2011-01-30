@@ -25,7 +25,7 @@
 #include <libnova/libnova.h>
 
 #include <config.h>
-#include "../utils/rts2daemon.h"
+#include "../utils/daemon.h"
 #include "../utils/rts2config.h"
 #include "status.h"
 
@@ -58,7 +58,7 @@ class Rts2ConnCentrald;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Centrald:public Rts2Daemon
+class Rts2Centrald:public Daemon
 {
 	public:
 		Rts2Centrald (int argc, char **argv);
@@ -168,7 +168,7 @@ class Rts2Centrald:public Rts2Daemon
 		/**
 		 * Return state of system, as seen from device identified by connection.
 		 *
-		 * This command return state. It is similar to Rts2Daemon::getState() call.
+		 * This command return state. It is similar to Daemon::getState() call.
 		 * It result only differ when connection which is asking for state is a
 		 * device connection. In this case, BOP mask is composed only from devices
 		 * which can block querying device.

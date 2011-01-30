@@ -106,6 +106,9 @@ class SelectorDev:public Rts2DeviceDb
 
 		Rts2ValueBool *selEnabled;
 
+		Rts2ValueDouble *azLimit1;
+		Rts2ValueDouble *azLimit2;
+
 		Rts2ValueDouble *flatSunMin;
 		Rts2ValueDouble *flatSunMax;
 
@@ -157,17 +160,23 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false, RTS2_VALUE_WRITABLE);
 	selEnabled->setValueBool (true);
 
+	createValue (azLimit1, "azlimit_1", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
+	createValue (azLimit2, "azlimit_2", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
+	azLimit1->setValueDouble (-1);
+	azLimit2->setValueDouble (-1);
+
 	createValue (flatSunMin, "flat_sun_min", "minimal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
 	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
 
 	addOption (OPT_IDLE_SELECT, "idle-select", 1, "selection timeout (reselect every I seconds)");
-	addOption (OPT_ADD_QUEUE, "add-queue", 1, "add queues with given names; queues will have priority in selection in order they are added");
 
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
 	addOption (OPT_FILTER_ALIAS, "filter-aliases", 1, "filter aliases file");
+
+	addOption (OPT_ADD_QUEUE, "add-queue", 1, "add queues with given names; queues will have priority in selection in order they are added");
 }
 
 SelectorDev::~SelectorDev (void)
@@ -314,6 +323,12 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
+		double az1 = azLimit1->getValueDouble ();
+		double az2 = azLimit2->getValueDouble ();
+		if (az1 < 0 || az2 < 0)
+		{
+			az1 = az2 = rts2_nan ("f");
+		}
 	 	if (selectorQueue && getMasterState () == SERVERD_NIGHT)
 		{
 			int id = -1;
@@ -353,7 +368,7 @@ int SelectorDev::selectNext ()
 			// use selector ass fall-back, if queues are empty
 			lastQueue->setValueInteger (0);
 		}
-		return sel->selectNext (getMasterState ());
+		return sel->selectNext (getMasterState (), az1, az2);
 	}
 	catch (rts2core::Error er)
 	{

@@ -309,7 +309,7 @@ void Executor::postEvent (Rts2Event * event)
 			break;
 		case EVENT_ACQUSITION_END:
 			// we receive event before any connection - connections
-			// receive it from Rts2Device.
+			// receive it from rts2core::Device.
 			// So we can safely change target status here, and it will
 			// propagate to devices connections
 			maskState (EXEC_STATE_MASK, EXEC_OBSERVE);
@@ -425,7 +425,7 @@ void Executor::postEvent (Rts2Event * event)
 				(currentTarget) ? currentTarget->getAcquired () : -2;
 			break;
 	}
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 }
 
 void Executor::deviceReady (Rts2Conn * conn)

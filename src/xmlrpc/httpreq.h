@@ -32,7 +32,6 @@
 #include "valueplot.h"
 #endif // HAVE_LIBJPEG
 #include "../utils/rts2config.h"
-#include "../utils/rts2device.h"
 #else
 
 #endif // HAVE_PGSQL

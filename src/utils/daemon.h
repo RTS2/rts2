@@ -31,6 +31,9 @@
 
 #include <vector>
 
+namespace rts2core
+{
+
 /**
  * Abstract class for centrald and all devices.
  *
@@ -38,7 +41,7 @@
  *
  * @ingroup RTS2Block
  */
-class Rts2Daemon:public Rts2Block
+class Daemon:public Rts2Block
 {
 	public:
 		/**
@@ -48,14 +51,14 @@ class Rts2Daemon:public Rts2Block
 		 * @param _argv         Arguments values.
 		 * @param _init_state   Initial state.
 		 */
-		Rts2Daemon (int in_argc, char **in_argv, int _init_state = 0);
+		Daemon (int in_argc, char **in_argv, int _init_state = 0);
 
-		virtual ~ Rts2Daemon (void);
+		virtual ~ Daemon (void);
 		virtual int run ();
 
 		/**
 		 * Init daemon.
-		 * This is call to init daemon. It calls @see Rts2Daemon::init and @see Rts2Daemon::initValues
+		 * This is call to init daemon. It calls @see Daemon::init and @see Daemon::initValues
 		 * functions to complete daemon initialization.
 		 */
 		void initDaemon ();
@@ -522,4 +525,6 @@ class Rts2Daemon:public Rts2Block
 		 */
 		const char *lockPrefix;
 };
+
+}
 #endif							 /* ! __RTS2_DAEMON__ */

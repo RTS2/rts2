@@ -1193,10 +1193,12 @@ int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
 	}
 	if (oldValue == raGuide || oldValue == decGuide)
 	{
-		const char *cmd[] = {":Qe#:Qw#", ":Mw#", ":Me#"};
-		if (oldValue == decGuide)
-			cmd = {":Qs#:Qn#", ":Ms#", ":Mn#"};
-		const char *c = cmd[newValue->getValueInteger ()];
+		const char *cmd[2][3] = {{":Qe#:Qw#", ":Mw#", ":Me#"}, {":Qs#:Qn#", ":Ms#", ":Mn#"}};
+		const char *c;
+		if (oldValue == raGuide)
+			c = cmd[0][newValue->getValueInteger ()];
+		else
+			c = cmd[1][newValue->getValueInteger ()];
 		return serConn->writePort (c, strlen (c)) ? -2 : 0;
 	}
 	return TelLX200::setValue (oldValue, newValue);

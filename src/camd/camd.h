@@ -24,7 +24,7 @@
 #include <time.h>
 
 #include "../utils/rts2block.h"
-#include "../utils/rts2scriptdevice.h"
+#include "../utils/scriptdevice.h"
 #include "imghdr.h"
 
 #define MAX_CHIPS  3
@@ -138,7 +138,7 @@ digraph "Camera states" {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Camera:public Rts2ScriptDevice
+class Camera:public rts2core::ScriptDevice
 {
 	public:
 		virtual int deleteConnection (Rts2Conn * conn);

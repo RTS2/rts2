@@ -69,7 +69,7 @@ class Rts2App:public Rts2Object
 		 * Application is responsible for calling init () method to read
 		 * variables etc..
 		 *
-		 * Both Rts2Daemon and Rts2CliApp define run method, so this method is
+		 * Both Daemon and Rts2CliApp define run method, so this method is
 		 * pure virtual. It makes sense for all descendats of Rts2App
 		 * to provide this method.
 		 */

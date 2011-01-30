@@ -25,7 +25,7 @@
 #include <time.h>
 
 #include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/objectcheck.h"
 
 // pointing models
@@ -85,7 +85,7 @@ namespace rts2teld
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Telescope:public Rts2Device
+class Telescope:public rts2core::Device
 {
 	public:
 		Telescope (int argc, char **argv, bool diffTrack = false);
@@ -536,7 +536,7 @@ class Telescope:public Rts2Device
 		{
 			if (in_conn == move_connection)
 				move_connection = NULL;
-			return Rts2Device::deleteConnection (in_conn);
+			return rts2core::Device::deleteConnection (in_conn);
 		}
 
 		// reload model

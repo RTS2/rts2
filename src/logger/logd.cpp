@@ -18,9 +18,9 @@
  */
 
 #include "rts2loggerbase.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
-class Rts2Logd:public Rts2Device, public Rts2LoggerBase
+class Rts2Logd:public rts2core::Device, public Rts2LoggerBase
 {
 	public:
 		Rts2Logd (int in_argc, char **in_argv);
@@ -38,7 +38,7 @@ class Rts2Logd:public Rts2Device, public Rts2LoggerBase
 		int setLogFile (const char *new_file);
 };
 
-Rts2Logd::Rts2Logd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
+Rts2Logd::Rts2Logd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
 {
 	setTimeout (USEC_SEC);
 
@@ -61,17 +61,13 @@ int Rts2Logd::setLogConfig (const char *new_config)
 	return ret;
 }
 
-
-int
-Rts2Logd::setLogFile (const char *new_file)
+int Rts2Logd::setLogFile (const char *new_file)
 {
 	postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void *) new_file));
 	return 0;
 }
 
-
-int
-Rts2Logd::processOption (int in_opt)
+int Rts2Logd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -82,15 +78,13 @@ Rts2Logd::processOption (int in_opt)
 			logFile->setValueCharArr (optarg);
 			return 0;
 	}
-	return Rts2Device::processOption (in_opt);
+	return rts2core::Device::processOption (in_opt);
 }
 
-
-int
-Rts2Logd::init ()
+int Rts2Logd::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 	if (logConfig->getValue () && *logConfig->getValue () != '\n')
@@ -108,7 +102,7 @@ int Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return (setLogFile (new_value->getValue ()) == 0) ? 0 : -2;
 	}
-	return Rts2Device::setValue (old_value, new_value);
+	return rts2core::Device::setValue (old_value, new_value);
 }
 
 int Rts2Logd::processArgs (const char *arg)
@@ -129,7 +123,7 @@ rts2core::Rts2DevClient *Rts2Logd::createOtherType (Rts2Conn * conn, int other_d
 		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));
 		return cli;
 	}
-	return Rts2Device::createOtherType (conn, other_device_type);
+	return rts2core::Device::createOtherType (conn, other_device_type);
 }
 
 int main (int argc, char **argv)

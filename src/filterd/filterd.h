@@ -20,7 +20,7 @@
 #ifndef __RTS2_FILTERD__
 #define __RTS2_FILTERD__
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 /**
  * Filter wheel and related classes.
@@ -35,7 +35,7 @@ namespace rts2filterd
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Filterd:public Rts2Device
+class Filterd:public rts2core::Device
 {
 	public:
 		Filterd (int in_argc, char **in_argv);

@@ -19,12 +19,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 namespace rts2core
 {
 
-class MoodD: public Rts2Device
+class MoodD: public Device
 {
 	private:
 		void checkCentarlds ();
@@ -70,38 +70,31 @@ MoodD::checkCentarlds ()
 	setWeatherState (true, "all OK");
 }
 
-
-void
-MoodD::centraldConnRunning (Rts2Conn *conn)
+void MoodD::centraldConnRunning (Rts2Conn *conn)
 {
-	Rts2Device::centraldConnRunning (conn);
+	Device::centraldConnRunning (conn);
 	checkCentarlds ();
 }
 
-
-void
-MoodD::centraldConnBroken (Rts2Conn *conn)
+void MoodD::centraldConnBroken (Rts2Conn *conn)
 {
-	Rts2Device::centraldConnBroken (conn);
+	Device::centraldConnBroken (conn);
  	checkCentarlds ();
 }
 
-MoodD::MoodD (int argc, char **argv)
-:Rts2Device (argc, argv, DEVICE_TYPE_SENSOR, "MOODD")
+MoodD::MoodD (int argc, char **argv):Device (argc, argv, DEVICE_TYPE_SENSOR, "MOODD")
 {
 
 }
 
-int
-MoodD::setMasterState (Rts2Conn *_conn, int new_state)
+int MoodD::setMasterState (Rts2Conn *_conn, int new_state)
 {
-	Rts2Device::setMasterState (_conn, new_state);
+	Device::setMasterState (_conn, new_state);
 	checkCentarlds ();
 	return 0;
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	MoodD device = MoodD (argc, argv);
 	return device.run ();

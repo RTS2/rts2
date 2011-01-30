@@ -20,8 +20,7 @@
 #ifndef __RTS2_DOME__
 #define __RTS2_DOME__
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 #define DEF_WEATHER_TIMEOUT 10
 
@@ -36,7 +35,7 @@ namespace rts2dome {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Dome:public Rts2Device
+class Dome:public rts2core::Device
 {
 	public:
 		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);

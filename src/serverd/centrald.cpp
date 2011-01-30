@@ -370,7 +370,7 @@ int Rts2ConnCentrald::command ()
 	return Rts2Conn::command ();
 }
 
-Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
+Rts2Centrald::Rts2Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
 {
 	connNum = 0;
 
@@ -507,7 +507,7 @@ int Rts2Centrald::processOption (int in_opt)
 			logFileSource = LOGFILE_ARG;
 			break;
 		default:
-			return Rts2Daemon::processOption (in_opt);
+			return Daemon::processOption (in_opt);
 	}
 	return 0;
 }
@@ -516,7 +516,7 @@ int Rts2Centrald::init ()
 {
 	int ret;
 	setPort (atoi (CENTRALD_PORT));
-	ret = Rts2Daemon::init ();
+	ret = Daemon::init ();
 	if (ret)
 		return ret;
 
@@ -579,7 +579,7 @@ int Rts2Centrald::initValues ()
 
 	next_event_time = 0;
 
-	return Rts2Daemon::initValues ();
+	return Daemon::initValues ();
 }
 
 void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
@@ -599,7 +599,7 @@ void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 
 void Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
 {
-	Rts2Daemon::stateChanged (new_state, old_state, description);
+	Daemon::stateChanged (new_state, old_state, description);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
 	{
 		logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
@@ -684,7 +684,7 @@ int Rts2Centrald::info ()
 	moonRise->setValueDouble (timetFromJD (rst.rise));
 	moonSet->setValueDouble (timetFromJD (rst.set));
 
-	return Rts2Daemon::info ();
+	return Daemon::info ();
 }
 
 int Rts2Centrald::idle ()
@@ -697,7 +697,7 @@ int Rts2Centrald::idle ()
 	curr_time = time (NULL);
 
 	if (curr_time < next_event_time)
-		return Rts2Daemon::idle ();
+		return Daemon::idle ();
 
 	next_event (observer, &curr_time, &call_state, &next_event_type,
 		&next_event_time, nightHorizon->getValueDouble (),
@@ -749,12 +749,12 @@ int Rts2Centrald::idle ()
 		// send update about next state transits..
 		infoAll ();
 	}
-	return Rts2Daemon::idle ();
+	return Daemon::idle ();
 }
 
 void Rts2Centrald::deviceReady (Rts2Conn * conn)
 {
-	Rts2Daemon::deviceReady (conn);
+	Daemon::deviceReady (conn);
 	// check again for weather state..
 	weatherChanged (conn->getName (), "device ready");
 	stopChanged (conn->getName (), "device ready");
@@ -763,7 +763,7 @@ void Rts2Centrald::deviceReady (Rts2Conn * conn)
 void Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	Rts2Message msg = Rts2Message ("centrald", in_messageType, in_messageString);
-	Rts2Daemon::sendMessage (in_messageType, in_messageString);
+	Daemon::sendMessage (in_messageType, in_messageString);
 	processMessage (msg);
 }
 
@@ -791,7 +791,7 @@ void Rts2Centrald::processMessage (Rts2Message & msg)
 void Rts2Centrald::signaledHUP ()
 {
 	reloadConfig ();
-	Rts2Daemon::signaledHUP ();
+	Daemon::signaledHUP ();
 }
 
 void Rts2Centrald::weatherChanged (const char * device, const char * msg)

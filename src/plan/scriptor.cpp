@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "rts2execcli.h"
 #include "rts2devcliphot.h"
 #include "rts2targetscr.h"
@@ -39,7 +39,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
+class Rts2Scriptor:public rts2core::Device, public Rts2ScriptInterface
 {
 	private:
 		Rts2ValueInteger *scriptCount;
@@ -65,7 +65,7 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		virtual void getPosition (struct ln_equ_posn *posn, double JD);
 };
 
-Rts2Scriptor::Rts2Scriptor (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SCRIPTOR, "SCRIPTOR"), Rts2ScriptInterface ()
+Rts2Scriptor::Rts2Scriptor (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_SCRIPTOR, "SCRIPTOR"), Rts2ScriptInterface ()
 {
 	createValue (scriptCount, "script_count", "number of scripts execuced", false);
 	createValue (expandPath, "expand_path", "expand path for new images", false, RTS2_VALUE_WRITABLE);
@@ -88,7 +88,7 @@ Rts2Scriptor::~Rts2Scriptor (void)
 int Rts2Scriptor::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 
@@ -109,7 +109,7 @@ int Rts2Scriptor::processOption (int in_opt)
 			scriptGen->addSelVal (optarg);
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 	}
 	return 0;
 }
@@ -128,7 +128,7 @@ Rts2DevClient * Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_
 		case DEVICE_TYPE_CCD:
 			return new Rts2DevClientCameraExec (conn, expandPath);
 		default:
-			return Rts2Device::createOtherType (conn, other_device_type);
+			return rts2core::Device::createOtherType (conn, other_device_type);
 	}
 }
 
@@ -155,7 +155,7 @@ void Rts2Scriptor::postEvent (Rts2Event * event)
 //			postEvent (new Rts2Event (EVENT_OBSERVE));
 			break;
 	}
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 }
 
 int Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)

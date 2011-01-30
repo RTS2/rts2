@@ -6,7 +6,6 @@
 #define FILTER_STEP  33
 
 #include "phot.h"
-#include "../utils/rts2device.h"
 
 #include <time.h>
 

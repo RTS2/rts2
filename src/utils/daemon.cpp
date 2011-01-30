@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "rts2daemon.h"
+#include "daemon.h"
 
 #ifndef LOCK_SH
 #define   LOCK_SH   1    /* shared lock */
@@ -48,7 +48,7 @@
 
 using namespace rts2core;
 
-void Rts2Daemon::addConnectionSock (int in_sock)
+void Daemon::addConnectionSock (int in_sock)
 {
 	Rts2Conn *conn = createConnection (in_sock);
 	if (sendMetaInfo (conn))
@@ -59,7 +59,7 @@ void Rts2Daemon::addConnectionSock (int in_sock)
 	addConnection (conn);
 }
 
-Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _argv)
+Daemon::Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _argv)
 {
 	lockPrefix = NULL;
 	lock_fname = NULL;
@@ -80,7 +80,7 @@ Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_ar
 	addOption (OPT_LOCKPREFIX, "lock-prefix", 1, "prefix for lock file");
 }
 
-Rts2Daemon::~Rts2Daemon (void)
+Daemon::~Daemon (void)
 {
 	if (listen_sock >= 0)
 		close (listen_sock);
@@ -90,7 +90,7 @@ Rts2Daemon::~Rts2Daemon (void)
 	closelog ();
 }
 
-int Rts2Daemon::processOption (int in_opt)
+int Daemon::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -109,7 +109,7 @@ int Rts2Daemon::processOption (int in_opt)
 	return 0;
 }
 
-int Rts2Daemon::checkLockFile (const char *_lock_fname)
+int Daemon::checkLockFile (const char *_lock_fname)
 {
 	int ret;
 	lock_fname = _lock_fname;
@@ -141,7 +141,7 @@ int Rts2Daemon::checkLockFile (const char *_lock_fname)
 	return 0;
 }
 
-int Rts2Daemon::checkNotNulls ()
+int Daemon::checkNotNulls ()
 {
 	int failed = 0;
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
@@ -152,7 +152,7 @@ int Rts2Daemon::checkNotNulls ()
 	return failed;
 }
 
-int Rts2Daemon::doDaemonize ()
+int Daemon::doDaemonize ()
 {
 	if (daemonize != DO_DAEMONIZE)
 		return 0;
@@ -165,7 +165,7 @@ int Rts2Daemon::doDaemonize ()
 	ret = fork ();
 	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Daemon::int daemonize fork " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Daemon::int daemonize fork " << strerror (errno) << sendLog;
 		exit (2);
 	}
 	if (ret)
@@ -185,14 +185,14 @@ int Rts2Daemon::doDaemonize ()
 	return 0;
 }
 
-const char * Rts2Daemon::getLockPrefix ()
+const char * Daemon::getLockPrefix ()
 {
 	if (lockPrefix == NULL)
 		return LOCK_PREFIX;
 	return lockPrefix;
 }
 
-int Rts2Daemon::lockFile ()
+int Daemon::lockFile ()
 {
 	if (!lock_file)
 		return -1;
@@ -208,7 +208,7 @@ int Rts2Daemon::lockFile ()
 	return 0;
 }
 
-int Rts2Daemon::init ()
+int Daemon::init ()
 {
 	int ret;
 	try
@@ -216,7 +216,7 @@ int Rts2Daemon::init ()
 		ret = Rts2Block::init ();
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2Daemon::init Rts2block returns " << ret << sendLog;
+			logStream (MESSAGE_ERROR) << "Daemon::init Rts2block returns " << ret << sendLog;
 			return ret;
 		}
 	}
@@ -229,7 +229,7 @@ int Rts2Daemon::init ()
 	listen_sock = socket (PF_INET, SOCK_STREAM, 0);
 	if (listen_sock == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Daemon::init create listen socket " <<
+		logStream (MESSAGE_ERROR) << "Daemon::init create listen socket " <<
 			strerror (errno) << sendLog;
 		return -1;
 	}
@@ -241,13 +241,13 @@ int Rts2Daemon::init ()
 	server.sin_port = htons (getPort ());
 	server.sin_addr.s_addr = htonl (INADDR_ANY);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2Daemon::init binding to port: " <<
+	logStream (MESSAGE_DEBUG) << "Daemon::init binding to port: " <<
 		getPort () << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	ret = bind (listen_sock, (struct sockaddr *) &server, sizeof (server));
 	if (ret == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Daemon::init bind " <<
+		logStream (MESSAGE_ERROR) << "Daemon::init bind " <<
 			strerror (errno) << sendLog;
 		return -1;
 	}
@@ -255,7 +255,7 @@ int Rts2Daemon::init ()
 	ret = getsockname (listen_sock, (struct sockaddr *) &server, &sock_size);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Daemon::init getsockname " <<
+		logStream (MESSAGE_ERROR) << "Daemon::init getsockname " <<
 			strerror (errno) << sendLog;
 		return -1;
 	}
@@ -272,12 +272,12 @@ int Rts2Daemon::init ()
 	return 0;
 }
 
-int Rts2Daemon::initValues ()
+int Daemon::initValues ()
 {
 	return 0;
 }
 
-void Rts2Daemon::initDaemon ()
+void Daemon::initDaemon ()
 {
 	int ret;
 	ret = init ();
@@ -295,7 +295,7 @@ void Rts2Daemon::initDaemon ()
 	}
 }
 
-void Rts2Daemon::setIdleInfoInterval (double interval)
+void Daemon::setIdleInfoInterval (double interval)
 {
 	// activate infoall event
 	if (interval > 0)
@@ -307,7 +307,7 @@ void Rts2Daemon::setIdleInfoInterval (double interval)
 	idleInfoInterval = interval;
 }
 
-int Rts2Daemon::run ()
+int Daemon::run ()
 {
 	initDaemon ();
 	beforeRun ();
@@ -318,7 +318,7 @@ int Rts2Daemon::run ()
 	return 0;
 }
 
-int Rts2Daemon::idle ()
+int Daemon::idle ()
 {
 	if (doHupIdleLoop)
 	{
@@ -329,7 +329,7 @@ int Rts2Daemon::idle ()
 	return Rts2Block::idle ();
 }
 
-void Rts2Daemon::setInfoTime (struct tm *_date)
+void Daemon::setInfoTime (struct tm *_date)
 {
 	static char p_tz[100];
 	std::string old_tz;
@@ -349,7 +349,7 @@ void Rts2Daemon::setInfoTime (struct tm *_date)
 	putenv (p_tz);
 }
 
-void Rts2Daemon::postEvent (Rts2Event *event)
+void Daemon::postEvent (Rts2Event *event)
 {
 	switch (event->getType ())
 	{
@@ -367,14 +367,14 @@ void Rts2Daemon::postEvent (Rts2Event *event)
 	Rts2Block::postEvent (event);
 }
 
-void Rts2Daemon::forkedInstance ()
+void Daemon::forkedInstance ()
 {
 	if (listen_sock >= 0)
 		close (listen_sock);
 	Rts2Block::forkedInstance ();
 }
 
-void Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageString)
+void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	int prio;
 	switch (daemonize)
@@ -412,7 +412,7 @@ void Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messa
 	}
 }
 
-void Rts2Daemon::centraldConnRunning (Rts2Conn *conn)
+void Daemon::centraldConnRunning (Rts2Conn *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
@@ -420,7 +420,7 @@ void Rts2Daemon::centraldConnRunning (Rts2Conn *conn)
 	}
 }
 
-void Rts2Daemon::centraldConnBroken (Rts2Conn *conn)
+void Daemon::centraldConnBroken (Rts2Conn *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
@@ -429,13 +429,13 @@ void Rts2Daemon::centraldConnBroken (Rts2Conn *conn)
 	}
 }
 
-void Rts2Daemon::addSelectSocks ()
+void Daemon::addSelectSocks ()
 {
 	FD_SET (listen_sock, &read_set);
 	Rts2Block::addSelectSocks ();
 }
 
-void Rts2Daemon::selectSuccess ()
+void Daemon::selectSuccess ()
 {
 	int client;
 	// accept connection on master
@@ -458,12 +458,12 @@ void Rts2Daemon::selectSuccess ()
 	Rts2Block::selectSuccess ();
 }
 
-void Rts2Daemon::addValue (Rts2Value * value, int queCondition)
+void Daemon::addValue (Rts2Value * value, int queCondition)
 {
 	values.push_back (new Rts2CondValue (value, queCondition));
 }
 
-Rts2Value * Rts2Daemon::getOwnValue (const char *v_name)
+Rts2Value * Daemon::getOwnValue (const char *v_name)
 {
 	Rts2CondValue *c_val = getCondValue (v_name);
 	if (c_val == NULL)
@@ -471,7 +471,7 @@ Rts2Value * Rts2Daemon::getOwnValue (const char *v_name)
 	return c_val->getValue ();
 }
 
-Rts2CondValue * Rts2Daemon::getCondValue (const char *v_name)
+Rts2CondValue * Daemon::getCondValue (const char *v_name)
 {
 	Rts2CondValueVector::iterator iter;
 	for (iter = values.begin (); iter != values.end (); iter++)
@@ -483,7 +483,7 @@ Rts2CondValue * Rts2Daemon::getCondValue (const char *v_name)
 	return NULL;
 }
 
-Rts2CondValue * Rts2Daemon::getCondValue (const Rts2Value *val)
+Rts2CondValue * Daemon::getCondValue (const Rts2Value *val)
 {
 	Rts2CondValueVector::iterator iter;
 	for (iter = values.begin (); iter != values.end (); iter++)
@@ -495,7 +495,7 @@ Rts2CondValue * Rts2Daemon::getCondValue (const Rts2Value *val)
 	return NULL;
 }
 
-Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
+Rts2Value * Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 {
 	// create new value, which will be passed to hook
 	Rts2Value *dup_val = NULL;
@@ -556,33 +556,33 @@ Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 	return dup_val;
 }
 
-void Rts2Daemon::addConstValue (Rts2Value * value)
+void Daemon::addConstValue (Rts2Value * value)
 {
 	constValues.push_back (value);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
+void Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
 	val->setValueCharArr (in_value);
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, std::string in_value)
+void Daemon::addConstValue (const char *in_name, const char *in_desc, std::string in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
 	val->setValueString (in_value);
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, double in_value)
+void Daemon::addConstValue (const char *in_name, const char *in_desc, double in_value)
 {
 	Rts2ValueDouble *val = new Rts2ValueDouble (in_name, std::string (in_desc));
 	val->setValueDouble (in_value);
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, int in_value)
+void Daemon::addConstValue (const char *in_name, const char *in_desc, int in_value)
 {
 	Rts2ValueInteger *val =
 		new Rts2ValueInteger (in_name, std::string (in_desc));
@@ -590,28 +590,28 @@ void Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, int in
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, const char *in_value)
+void Daemon::addConstValue (const char *in_name, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name);
 	val->setValueCharArr (in_value);
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, double in_value)
+void Daemon::addConstValue (const char *in_name, double in_value)
 {
 	Rts2ValueDouble *val = new Rts2ValueDouble (in_name);
 	val->setValueDouble (in_value);
 	addConstValue (val);
 }
 
-void Rts2Daemon::addConstValue (const char *in_name, int in_value)
+void Daemon::addConstValue (const char *in_name, int in_value)
 {
 	Rts2ValueInteger *val = new Rts2ValueInteger (in_name);
 	val->setValueInteger (in_value);
 	addConstValue (val);
 }
 
-int Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
+int Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 {
 	// if for some reason writable value makes it there, it means that it was not caught downstream, and it can be set
 	if (old_value->isWritable ())
@@ -620,7 +620,7 @@ int Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 	return -2;
 }
 
-int Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
+int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
 {
 	// que change if that's necessary
 	if ((op != '=' || !old_value_cond->getValue ()->isEqual (new_value) || queValues.contains (old_value_cond->getValue ()))
@@ -638,7 +638,7 @@ int Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value
 	return doSetValue (old_value_cond, op, new_value);
 }
 
-int Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
+int Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
 {
 	int ret;
 
@@ -681,22 +681,22 @@ int Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value *
 
 	return 0;
 err:
-	logStream (MESSAGE_ERROR) << "Rts2Daemon::loadValues cannot set value " << new_value->getName () << sendLog;
+	logStream (MESSAGE_ERROR) << "Daemon::loadValues cannot set value " << new_value->getName () << sendLog;
 
 	delete new_value;
 	return ret;
 }
 
-void Rts2Daemon::valueChanged (Rts2Value *changed_value)
+void Daemon::valueChanged (Rts2Value *changed_value)
 {
 }
 
-int Rts2Daemon::baseInfo ()
+int Daemon::baseInfo ()
 {
 	return 0;
 }
 
-int Rts2Daemon::baseInfo (Rts2Conn * conn)
+int Daemon::baseInfo (Rts2Conn * conn)
 {
 	int ret;
 	ret = baseInfo ();
@@ -708,7 +708,7 @@ int Rts2Daemon::baseInfo (Rts2Conn * conn)
 	return sendBaseInfo (conn);
 }
 
-int Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
+int Daemon::sendBaseInfo (Rts2Conn * conn)
 {
 	for (Rts2ValueVector::iterator iter = constValues.begin ();
 		iter != constValues.end (); iter++)
@@ -719,13 +719,13 @@ int Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 	return 0;
 }
 
-int Rts2Daemon::info ()
+int Daemon::info ()
 {
 	updateInfoTime ();
 	return 0;
 }
 
-int Rts2Daemon::info (Rts2Conn * conn)
+int Daemon::info (Rts2Conn * conn)
 {
 	int ret;
 	ret = info ();
@@ -740,7 +740,7 @@ int Rts2Daemon::info (Rts2Conn * conn)
 	return ret;
 }
 
-int Rts2Daemon::infoAll ()
+int Daemon::infoAll ()
 {
 	int ret;
 	ret = info ();
@@ -761,7 +761,7 @@ int Rts2Daemon::infoAll ()
 	return 0;
 }
 
-void Rts2Daemon::constInfoAll ()
+void Daemon::constInfoAll ()
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -770,7 +770,7 @@ void Rts2Daemon::constInfoAll ()
 		sendBaseInfo (*iter);
 }
 
-int Rts2Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
+int Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 {
 	if (!isRunning (conn))
 		return -1;
@@ -787,7 +787,7 @@ int Rts2Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 	return 0;
 }
 
-void Rts2Daemon::sendValueAll (Rts2Value * value)
+void Daemon::sendValueAll (Rts2Value * value)
 {
 	if (value->needSend ())
 	{
@@ -800,7 +800,7 @@ void Rts2Daemon::sendValueAll (Rts2Value * value)
 	}
 }
 
-void Rts2Daemon::sendProgressAll (double start, double end)
+void Daemon::sendProgressAll (double start, double end)
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -809,7 +809,7 @@ void Rts2Daemon::sendProgressAll (double start, double end)
 	  	(*iter)->sendProgress (start, end);
 }
 
-int Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
+int Daemon::sendMetaInfo (Rts2Conn * conn)
 {
 	int ret;
 	ret = info_time->sendMetaInfo (conn);
@@ -832,7 +832,7 @@ int Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	return 0;
 }
 
-int Rts2Daemon::setValue (Rts2Conn * conn)
+int Daemon::setValue (Rts2Conn * conn)
 {
 	char *v_name;
 	char *op;
@@ -939,23 +939,23 @@ err:
 	return ret;
 }
 
-void Rts2Daemon::setState (int new_state, const char *description)
+void Daemon::setState (int new_state, const char *description)
 {
 	if (state == new_state)
 		return;
 	stateChanged (new_state, state, description);
 }
 
-void Rts2Daemon::stateChanged (int new_state, int old_state, const char *description)
+void Daemon::stateChanged (int new_state, int old_state, const char *description)
 {
 	state = new_state;
 }
 
-void Rts2Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end)
+void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2Device::maskState state: state_mask: " << std::hex << state_mask
+		<< "Device::maskState state: state_mask: " << std::hex << state_mask
 		<< " new_state: " << std::hex << new_state
 		<< " desc: " << description
 		<< " start: " << start
@@ -972,12 +972,12 @@ void Rts2Daemon::maskState (int state_mask, int new_state, const char *descripti
 		sendProgressAll (start, end);
 }
 
-void Rts2Daemon::signaledHUP ()
+void Daemon::signaledHUP ()
 {
 	// empty here, shall be supplied in descendants..
 }
 
-void Rts2Daemon::sigHUP (int sig)
+void Daemon::sigHUP (int sig)
 {
 	doHupIdleLoop = true;
 }

@@ -21,7 +21,7 @@
 #include "r2x.h"
 
 #include "../utils/hoststring.h"
-#include "../utils/rts2daemon.h"
+#include "../utils/daemon.h"
 
 using namespace rts2xmlrpc;
 

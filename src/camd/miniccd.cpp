@@ -22,7 +22,6 @@
 
 #include "camd.h"
 #include "ccd_msg.h"
-#include "../utils/rts2device.h"
 
 namespace rts2camd
 {

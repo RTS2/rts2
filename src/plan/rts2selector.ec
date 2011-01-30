@@ -66,7 +66,7 @@ void Selector::init ()
 	}
 }
 
-int Selector::selectNext (int masterState)
+int Selector::selectNext (int masterState, double az1, double az2)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
@@ -77,12 +77,12 @@ int Selector::selectNext (int masterState)
 	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_NIGHT:
-			return selectNextNight ();
+			return selectNextNight (0, false, az1, az2);
 			break;
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
 			// special case - select GRBs, which are new (=targets with priority higher then 1500)
-			ret = selectNextNight (1500);
+			ret = selectNextNight (1500, false, az1, az2);
 			if (ret != -1)
 				return ret;
 			// otherwise select darks/flats/whatever
@@ -263,7 +263,7 @@ void Selector::findNewTargets ()
 	EXEC SQL CLOSE findnewtargets;
 };
 
-int Selector::selectNextNight (int in_bonusLimit, bool verbose)
+int Selector::selectNextNight (int in_bonusLimit, bool verbose, double az1, double az2)
 {
 	// search for new observation targets..
 	findNewTargets ();
@@ -289,6 +289,13 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose)
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
 		rts2db::Target *tar = (*target_list)->target;
+		if (!isnan (az1) && !isnan (az2))
+		{
+			struct ln_hrz_posn hrz;
+			tar->getAltAz (&hrz, JD);
+			if (hrz.az < az1 || hrz.az > az2)
+				continue;  
+		}
 		if (tar->checkConstraints (JD))
 		{
 			if (!verbose)

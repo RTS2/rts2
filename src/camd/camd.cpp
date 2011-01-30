@@ -187,7 +187,7 @@ int Camera::deleteConnection (Rts2Conn * conn)
 	{
 		exposureConn = NULL;
 	}
-	return Rts2Device::deleteConnection (conn);
+	return rts2core::ScriptDevice::deleteConnection (conn);
 }
 
 int Camera::endReadout ()
@@ -277,7 +277,7 @@ bool Camera::supportFrameTransfer ()
 	return false;
 }
 
-Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
+Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
 	expType = NULL;
 
@@ -413,7 +413,7 @@ int Camera::willConnect (Rts2Address * in_addr)
 	if (focuserDevice && in_addr->getType () == DEVICE_TYPE_FOCUS
 		&& in_addr->isAddress (focuserDevice))
 		return 1;
-	return Rts2ScriptDevice::willConnect (in_addr);
+	return rts2core::ScriptDevice::willConnect (in_addr);
 }
 
 rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_device_type)
@@ -425,7 +425,7 @@ rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_dev
 		case DEVICE_TYPE_FOCUS:
 			return new ClientFocusCamera (conn);
 	}
-	return Rts2ScriptDevice::createOtherType (conn, other_device_type);
+	return rts2core::ScriptDevice::createOtherType (conn, other_device_type);
 }
 
 void Camera::checkQueChanges (int fakeState)
@@ -433,7 +433,7 @@ void Camera::checkQueChanges (int fakeState)
 	// do not check if we have queued exposures
 	if (quedExpNumber->getValueInteger () > 0)
 		return;
-	Rts2ScriptDevice::checkQueChanges (fakeState);
+	rts2core::ScriptDevice::checkQueChanges (fakeState);
 	if (queValues.empty ())
 	{
 		if (waitingForEmptyQue->getValueBool () == true)
@@ -480,7 +480,7 @@ int Camera::killAll ()
 	sendValueAll (waitingForNotBop);
 	sendValueAll (waitingForEmptyQue);
 
-	return Rts2ScriptDevice::killAll ();
+	return rts2core::ScriptDevice::killAll ();
 }
 
 int Camera::scriptEnds ()
@@ -510,14 +510,14 @@ int Camera::scriptEnds ()
 		sendValueAll (expType);
 	}
 
-	return Rts2ScriptDevice::scriptEnds ();
+	return rts2core::ScriptDevice::scriptEnds ();
 }
 
 int Camera::info ()
 {
 	camFilterVal->setValueInteger (getFilterNum ());
 	camFocVal->setValueInteger (getFocPos ());
-	return Rts2ScriptDevice::info ();
+	return rts2core::ScriptDevice::info ();
 }
 
 int Camera::processOption (int in_opt)
@@ -541,7 +541,7 @@ int Camera::processOption (int in_opt)
 			break;
 		case 'c':
 			if (nightCoolTemp == NULL)
-				return Rts2ScriptDevice::processOption (in_opt);
+				return rts2core::ScriptDevice::processOption (in_opt);
 			nightCoolTemp->setValueCharArr (optarg);
 			break;
 		case 'r':
@@ -556,7 +556,7 @@ int Camera::processOption (int in_opt)
 			sharedMemId = -1;
 			break;
 		default:
-			return Rts2ScriptDevice::processOption (in_opt);
+			return rts2core::ScriptDevice::processOption (in_opt);
 	}
 	return 0;
 }
@@ -741,7 +741,7 @@ int Camera::initValues ()
 		addTimer (tempCCDHistoryInterval->getValueInteger (), new Rts2Event (EVENT_TEMP_CHECK));
 	}
 
-	return Rts2ScriptDevice::initValues ();
+	return rts2core::ScriptDevice::initValues ();
 }
 
 void Camera::checkExposures ()
@@ -858,7 +858,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		setDefaultPlate (xplate->getValueDouble (), new_value->getValueDouble ());
 		return 0;
 	}
-	return Rts2ScriptDevice::setValue (old_value, new_value);
+	return rts2core::ScriptDevice::setValue (old_value, new_value);
 }
 
 void Camera::valueChanged (Rts2Value *changed_value)
@@ -918,14 +918,14 @@ void Camera::postEvent (Rts2Event * event)
 			addTimer (tempCCDHistoryInterval->getValueInteger (), event);
 			return;
 	}
-	Rts2ScriptDevice::postEvent (event);
+	rts2core::ScriptDevice::postEvent (event);
 }
 
 int Camera::idle ()
 {
 	checkExposures ();
 	checkReadouts ();
-	return Rts2ScriptDevice::idle ();
+	return rts2core::ScriptDevice::idle ();
 }
 
 int Camera::changeMasterState (int new_state)
@@ -945,7 +945,7 @@ int Camera::changeMasterState (int new_state)
 		default:
 			afterNight ();
 	}
-	return Rts2ScriptDevice::changeMasterState (new_state);
+	return rts2core::ScriptDevice::changeMasterState (new_state);
 }
 
 int Camera::camStartExposure ()
@@ -1322,7 +1322,7 @@ int Camera::commandAuthorized (Rts2Conn * conn)
 		//TODO send data
 		return -2;
 	}
-	return Rts2ScriptDevice::commandAuthorized (conn);
+	return rts2core::ScriptDevice::commandAuthorized (conn);
 }
 
 int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
@@ -1336,7 +1336,7 @@ int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 
 void Camera::setFullBopState (int new_state)
 {
-	Rts2Device::setFullBopState (new_state);
+	rts2core::ScriptDevice::setFullBopState (new_state);
 	if (!(new_state & BOP_EXPOSURE) && quedExpNumber->getValueInteger () > 0 && waitingForNotBop->getValueBool ())
 	{
 		if ((new_state & BOP_TRIG_EXPOSE) && !(getState () & BOP_WILL_EXPOSE))

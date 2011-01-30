@@ -24,7 +24,7 @@
 #include <time.h>
 #include <libnova/libnova.h>
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/libnova_cpp.h"
 
 #include "teld.h"
@@ -40,7 +40,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -283,7 +283,7 @@ int Telescope::processOption (int in_opt)
 			correctionLimit->setValueCharArr (optarg);
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 	}
 	return 0;
 }
@@ -392,7 +392,7 @@ int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	  	setDiffTrack (((Rts2ValueRaDec *)new_value)->getRa (), ((Rts2ValueRaDec *)new_value)->getDec ());
 		return 0;
 	}
-	return Rts2Device::setValue (old_value, new_value);
+	return rts2core::Device::setValue (old_value, new_value);
 }
 
 void Telescope::valueChanged (Rts2Value * changed_value)
@@ -419,7 +419,7 @@ void Telescope::valueChanged (Rts2Value * changed_value)
 	{
 		moveAltAz ();
 	}
-	Rts2Device::valueChanged (changed_value);
+	rts2core::Device::valueChanged (changed_value);
 }
 
 void Telescope::applyAberation (struct ln_equ_posn *pos, double JD)
@@ -638,7 +638,7 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 int Telescope::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 
@@ -670,7 +670,7 @@ int Telescope::initValues ()
 	objRaDec->setFromValue (telRaDec);
 	modelRaDec->setValueRaDec (0, 0);
 
-	return Rts2Device::initValues ();
+	return rts2core::Device::initValues ();
 }
 
 void Telescope::checkMoves ()
@@ -766,7 +766,7 @@ void Telescope::checkMoves ()
 int Telescope::idle ()
 {
 	checkMoves ();
-	return Rts2Device::idle ();
+	return rts2core::Device::idle ();
 }
 
 void Telescope::postEvent (Rts2Event * event)
@@ -781,14 +781,14 @@ void Telescope::postEvent (Rts2Event * event)
 			cupolas->remove (((ClientCupola *)(event->getArg ()))->getName ());
 			break;
 	}
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 }
 
 int Telescope::willConnect (Rts2Address * in_addr)
 {
 	if (in_addr->getType () == DEVICE_TYPE_CUPOLA)
 		return 1;
-	return Rts2Device::willConnect (in_addr);
+	return rts2core::Device::willConnect (in_addr);
 }
 
 rts2core::Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
@@ -800,7 +800,7 @@ rts2core::Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_
 			cupolas->addValue (std::string (conn->getName ()));
 			return new ClientCupola (conn);
 	}
-	return Rts2Device::createOtherType (conn, other_device_type);
+	return rts2core::Device::createOtherType (conn, other_device_type);
 }
 
 int Telescope::changeMasterState (int new_state)
@@ -837,7 +837,7 @@ int Telescope::changeMasterState (int new_state)
 			blockMove->setValueBool (false);
 	}
 
-	return Rts2Device::changeMasterState (new_state);
+	return rts2core::Device::changeMasterState (new_state);
 }
 
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
@@ -890,14 +890,14 @@ int Telescope::info ()
 		}
 	}
 
-	return Rts2Device::info ();
+	return rts2core::Device::info ();
 }
 
 int Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
-	return Rts2Device::scriptEnds ();
+	return rts2core::Device::scriptEnds ();
 }
 
 void Telescope::applyCorrections (struct ln_equ_posn *pos, double JD)
@@ -1189,7 +1189,7 @@ void Telescope::signaledHUP ()
 				modelFile << sendLog;
 		}
 	}
-	Rts2Device::signaledHUP ();
+	rts2core::Device::signaledHUP ();
 }
 
 int Telescope::moveAltAz ()
@@ -1405,12 +1405,12 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		}
 		return ret;
 	}
-	return Rts2Device::commandAuthorized (conn);
+	return rts2core::Device::commandAuthorized (conn);
 }
 
 void Telescope::setFullBopState (int new_state)
 {
-	Rts2Device::setFullBopState (new_state);
+	rts2core::Device::setFullBopState (new_state);
 	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))
 		startResyncMove (NULL, true);
 }

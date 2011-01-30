@@ -21,7 +21,7 @@
 
 using namespace rts2filterd;
 
-Filterd::Filterd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
+Filterd::Filterd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
 	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 
@@ -39,20 +39,20 @@ int Filterd::processOption (int in_opt)
 		case 'F':
 			return setFilters (optarg);
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 	}
 	return 0;
 }
 
 int Filterd::initValues ()
 {
-	return Rts2Device::initValues ();
+	return rts2core::Device::initValues ();
 }
 
 int Filterd::info ()
 {
 	filter->setValueInteger (getFilterNum ());
-	return Rts2Device::info ();
+	return rts2core::Device::info ();
 }
 
 int Filterd::getFilterNum ()
@@ -69,7 +69,7 @@ int Filterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == filter)
 		return setFilterNumMask (new_value->getValueInteger ()) == 0 ? 0 : -2;
-	return Rts2Device::setValue (old_value, new_value);
+	return rts2core::Device::setValue (old_value, new_value);
 }
 
 int Filterd::homeFilter ()
@@ -157,5 +157,5 @@ int Filterd::commandAuthorized (Rts2Conn * conn)
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
-	return Rts2Device::commandAuthorized (conn);
+	return rts2core::Device::commandAuthorized (conn);
 }

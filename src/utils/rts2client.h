@@ -117,7 +117,7 @@ class Rts2CommandLogin:public Rts2Command
  * Common class for client aplication.
  *
  * Connect to centrald, get names of all devices.
- * Works similary to Rts2Device.
+ * Works similary to Device.
  *
  * @ingroup RTS2Block RTS2Client
  *

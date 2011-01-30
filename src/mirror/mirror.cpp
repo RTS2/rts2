@@ -1,26 +1,20 @@
 #include "../utils/nan.h"
-#include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
 
 #include "mirror.h"
 
-Rts2DevMirror::Rts2DevMirror (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, "M0")
+Rts2DevMirror::Rts2DevMirror (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MIRROR, "M0")
 {
 }
-
 
 Rts2DevMirror::~Rts2DevMirror (void)
 {
 
 }
 
-
-int
-Rts2DevMirror::idle ()
+int Rts2DevMirror::idle ()
 {
 	int ret;
-	ret = Rts2Device::idle ();
+	ret = rts2core::Device::idle ();
 	switch (getState () & MIRROR_MASK)
 	{
 		case MIRROR_A_B:
@@ -41,9 +35,7 @@ Rts2DevMirror::idle ()
 	return ret;
 }
 
-
-int
-Rts2DevMirror::startOpen (Rts2Conn * conn)
+int Rts2DevMirror::startOpen (Rts2Conn * conn)
 {
 	int ret;
 	ret = startOpen ();
@@ -55,9 +47,7 @@ Rts2DevMirror::startOpen (Rts2Conn * conn)
 	return 0;
 }
 
-
-int
-Rts2DevMirror::startClose (Rts2Conn * conn)
+int Rts2DevMirror::startClose (Rts2Conn * conn)
 {
 	int ret;
 	ret = startClose ();
@@ -69,9 +59,7 @@ Rts2DevMirror::startClose (Rts2Conn * conn)
 	return 0;
 }
 
-
-int
-Rts2DevMirror::commandAuthorized (Rts2Conn * conn)
+int Rts2DevMirror::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("mirror"))
 	{
@@ -114,5 +102,5 @@ Rts2DevMirror::commandAuthorized (Rts2Conn * conn)
 			}
 		}
 	}
-	return Rts2Device::commandAuthorized (conn);
+	return rts2core::Device::commandAuthorized (conn);
 }

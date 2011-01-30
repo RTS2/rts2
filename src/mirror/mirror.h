@@ -1,10 +1,9 @@
 #ifndef __RTS2_MIRROR__
 #define __RTS2_MIRROR__
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
-class Rts2DevMirror:public Rts2Device
+class Rts2DevMirror:public rts2core::Device
 {
 	public:
 		Rts2DevMirror (int argc, char **argv);

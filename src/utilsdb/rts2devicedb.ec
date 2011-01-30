@@ -30,7 +30,7 @@ int Rts2DeviceDb::willConnect (Rts2Address * in_addr)
 	return 0;
 }
 
-Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):Rts2Device (argc, argv, in_device_type, default_name)
+Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):rts2core::Device (argc, argv, in_device_type, default_name)
 {
 	connectString = NULL;		 // defualt DB
 	configFile = NULL;
@@ -60,7 +60,7 @@ void Rts2DeviceDb::postEvent (Rts2Event *event)
 			}
 			break;
 	}
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 }
 
 int Rts2DeviceDb::processOption (int in_opt)
@@ -78,7 +78,7 @@ int Rts2DeviceDb::processOption (int in_opt)
 			ECPGdebug (1, stderr);
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 	}
 	return 0;
 }
@@ -171,7 +171,7 @@ int Rts2DeviceDb::init ()
 {
 	int ret;
 
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 
@@ -183,7 +183,7 @@ void Rts2DeviceDb::forkedInstance ()
 {
 	// dosn't work??
 	//  EXEC SQL DISCONNECT;
-	Rts2Device::forkedInstance ();
+	rts2core::Device::forkedInstance ();
 }
 
 void Rts2DeviceDb::signaledHUP ()

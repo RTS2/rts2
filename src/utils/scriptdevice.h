@@ -20,7 +20,10 @@
 #ifndef __RTS2_SCRIPTDEVICE__
 #define __RTS2_SCRIPTDEVICE__
 
-#include "rts2device.h"
+#include "device.h"
+
+namespace rts2core
+{
 
 /**
  * Base class for devices which can run scripts. This class holds variables
@@ -31,10 +34,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ScriptDevice:public Rts2Device
+class ScriptDevice:public Device
 {
 	public:
-		Rts2ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
+		ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 
 	private:
 		Rts2ValueInteger * scriptRepCount;
@@ -44,4 +47,6 @@ class Rts2ScriptDevice:public Rts2Device
 		Rts2ValueInteger *scriptPosition;
 		Rts2ValueInteger *scriptLen;
 };
+
+}
 #endif							 /* !__RTS2_SCRIPTDEVICE__ */

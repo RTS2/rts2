@@ -20,7 +20,7 @@
 #ifndef __RTS2_FOCUSD_CPP__
 #define __RTS2_FOCUSD_CPP__
 
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 /**
  * Focuser interface.
@@ -36,7 +36,7 @@ namespace rts2focusd
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Stanislav Vitek
  */
-class Focusd:public Rts2Device
+class Focusd:public rts2core::Device
 {
 	public:
 		Focusd (int argc, char **argv);

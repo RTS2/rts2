@@ -18,7 +18,7 @@
  */
 
 #include "phot.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "kernel/phot.h"
 #include "status.h"
 
@@ -31,7 +31,7 @@
 #include <syslog.h>
 #include <time.h>
 
-Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
+Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
 	integrateConn = NULL;
 
@@ -67,14 +67,14 @@ int Rts2DevPhot::initValues ()
 {
 	addConstValue ("type", photType);
 
-	return Rts2ScriptDevice::initValues ();
+	return ScriptDevice::initValues ();
 }
 
 int Rts2DevPhot::idle ()
 {
 	// check filter moving..
 	checkFilterMove ();
-	return Rts2ScriptDevice::idle ();
+	return ScriptDevice::idle ();
 }
 
 int Rts2DevPhot::homeFilter ()
@@ -186,7 +186,7 @@ int Rts2DevPhot::enableFilter (Rts2Conn * conn)
 int Rts2DevPhot::scriptEnds ()
 {
 	stopIntegrate ();
-	return Rts2ScriptDevice::scriptEnds ();
+	return ScriptDevice::scriptEnds ();
 }
 
 int Rts2DevPhot::changeMasterState (int new_state)
@@ -200,7 +200,7 @@ int Rts2DevPhot::changeMasterState (int new_state)
 			disableMove ();
 			break;
 	}
-	return Rts2ScriptDevice::changeMasterState (new_state);
+	return ScriptDevice::changeMasterState (new_state);
 }
 
 void Rts2DevPhot::setReqTime (float in_req_time)
@@ -223,7 +223,7 @@ void Rts2DevPhot::postEvent (Rts2Event *event)
 				endIntegrate ();
 			break;	
 	}
-	Rts2ScriptDevice::postEvent (event);
+	ScriptDevice::postEvent (event);
 }
 
 int Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
@@ -232,7 +232,7 @@ int Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == exp)
 		return setExposure (new_value->getValueFloat ()) == 0 ? 0 : -2;
-	return Rts2ScriptDevice::setValue (old_value, new_value);
+	return ScriptDevice::setValue (old_value, new_value);
 }
 
 void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
@@ -315,5 +315,5 @@ int Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
 		conn->sendMsg ("stop - stop any running integration");
 		return 0;
 	}
-	return Rts2ScriptDevice::commandAuthorized (conn);
+	return ScriptDevice::commandAuthorized (conn);
 }

@@ -31,7 +31,7 @@
 
 #include "../utils/infoval.h"
 #include "../utils/objectcheck.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/rts2target.h"
 
 #include "targetset.h"

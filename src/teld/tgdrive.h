@@ -18,7 +18,7 @@
  */
 
 #include "../utils/connserial.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 
 // interesting addresses
 
@@ -153,7 +153,7 @@ class TGDrive: public rts2core::ConnSerial
 		 * @param prefix    Device prefix (usually RA or DEC)
 		 * @param _master   Controlling block
 		 */
-		TGDrive (const char *_devName, const char *prefix, Rts2Device *_master);
+		TGDrive (const char *_devName, const char *prefix, rts2core::Device *_master);
 
 		virtual int init ();
 

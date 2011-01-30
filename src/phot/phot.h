@@ -26,19 +26,21 @@
 #ifndef __RTS2_PHOT__
 #define __RTS2_PHOT__
 
-#include "../utils/rts2scriptdevice.h"
+#include "../utils/scriptdevice.h"
 #include "status.h"
 
 #include <sys/time.h>
 
 #define PHOT_EVENT_CHECK    RTS2_LOCAL_EVENT + 1250
 
+using namespace rts2core;
+
 /**
  * Abstract photometer class.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevPhot:public Rts2ScriptDevice
+class Rts2DevPhot:public ScriptDevice
 {
 	private:
 		struct timeval nextCountDue;
@@ -107,7 +109,7 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		{
 			if (integrateConn == conn)
 				integrateConn = NULL;
-			return Rts2ScriptDevice::deleteConnection (conn);
+			return ScriptDevice::deleteConnection (conn);
 		}
 };
 #endif							 /* !__RTS2_PHOT__ */

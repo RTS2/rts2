@@ -164,7 +164,7 @@ int Ifw::changeMasterState (int new_state)
 			homeCount = 0;
 			break;
 	}
-	return Rts2Device::changeMasterState (new_state);
+	return Filterd::changeMasterState (new_state);
 }
 
 int Ifw::getFilterNum (void)

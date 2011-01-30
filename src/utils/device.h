@@ -26,10 +26,13 @@
 
 #include "hoststring.h"
 #include "rts2command.h"
-#include "rts2daemon.h"
+#include "daemon.h"
 #include "rts2configraw.h"
 
-class Rts2Device;
+namespace rts2core
+{
+
+class Device;
 
 /**
  * Device connection.
@@ -43,7 +46,7 @@ class Rts2Device;
 class Rts2DevConn:public Rts2Conn
 {
 	public:
-		Rts2DevConn (int in_sock, Rts2Device * in_master);
+		Rts2DevConn (int in_sock, Device * in_master);
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
@@ -62,7 +65,7 @@ class Rts2DevConn:public Rts2Conn
 		// in case we know address of other side..
 		Rts2Address * address;
 
-		Rts2Device *master;
+		Device *master;
 };
 
 /**
@@ -114,8 +117,6 @@ class Rts2DevConnMaster:public Rts2Conn
 		time_t nextTime;
 };
 
-namespace rts2core
-{
 
 /**
  * Register device to central server.
@@ -179,7 +180,7 @@ class Rts2CommandRegister:public Rts2Command
 class Rts2CommandDeviceStatusInfo:public Rts2Command
 {
 	public:
-		Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn);
+		Rts2CommandDeviceStatusInfo (Device * master, Rts2Conn * in_owner_conn);
 		virtual int commandReturnOK (Rts2Conn * conn);
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 
@@ -193,19 +194,17 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		Rts2Conn * owner_conn;
 };
 
-}
-
 /**
  * Represents RTS2 device. From this class, different devices are
  * derived.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Device:public Rts2Daemon
+class Device:public Daemon
 {
 	public:
-		Rts2Device (int in_argc, char **in_argv, int in_device_type, const char *default_name);
-		virtual ~Rts2Device (void);
+		Device (int in_argc, char **in_argv, int in_device_type, const char *default_name);
+		virtual ~Device (void);
 		virtual Rts2DevConn *createConnection (int in_sock);
 
 		/**
@@ -395,5 +394,7 @@ class Rts2Device:public Rts2Daemon
 		int blockState;
 		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 };
+
+}
 
 #endif							 /* !__RTS2_DEVICE__ */

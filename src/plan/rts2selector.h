@@ -71,8 +71,8 @@ class Selector
 		void init ();
 
 		// return next observation..
-		int selectNext (int masterState);
-		int selectNextNight (int in_bonusLimit = 0, bool verbose = false);
+		int selectNext (int masterState, double az1 = rts2_nan ("f"), double az2 = rts2_nan ("f"));
+		int selectNextNight (int in_bonusLimit = 0, bool verbose = false, double az1 = rts2_nan ("f"), double az2 = rts2_nan ("f"));
 
 		double getFlatSunMin () { return flat_sun_min; }
 		double getFlatSunMax () { return flat_sun_max; }

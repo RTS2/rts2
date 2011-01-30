@@ -21,7 +21,7 @@
 
 using namespace rts2sensord;
 
-Sensor::Sensor (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
+Sensor::Sensor (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
 {
 	setIdleInfoInterval (60);
 }

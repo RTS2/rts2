@@ -75,21 +75,16 @@ SimbadInfo::SimbadInfo (int argc, char **argv):Rts2TargetApp (argc, argv)
 	addOption ('v', NULL, 0, "pretty print target visibility and exit");
 }
 
-
 SimbadInfo::~SimbadInfo ()
 {
 }
 
-
-void
-SimbadInfo::usage ()
+void SimbadInfo::usage ()
 {
 	std::cout << "\t" << getAppName () << " 'M 31' 'NGC 321' 'IGR J05346-5759' 'TW Pic'" << std::endl
 		<< "\t" << getAppName () << " -v 'M 31'" << std::endl
 		<< getAppName () << " support communication through SIMBAD server using HTTP PROXY, specified in http_proxy environment variable." << std::endl;
-;
 }
-
 
 int
 SimbadInfo::processOption (int in_opt)
@@ -192,9 +187,7 @@ int SimbadInfo::doProcessing ()
 	}
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	SimbadInfo app = SimbadInfo (argc, argv);
 	return app.run ();
