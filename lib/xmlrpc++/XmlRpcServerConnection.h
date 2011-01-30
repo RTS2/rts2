@@ -139,6 +139,8 @@ namespace XmlRpc
 
 			// Whether to keep the current client connection open for further requests
 			bool _keepAlive;
+		private:
+			std::string getHttpDate ();
 	};
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERCONNECTION_H_

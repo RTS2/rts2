@@ -5,12 +5,15 @@
 #include "XmlRpc.h"
 #include "base64.h"
 #include <sstream>
+#include <iomanip>
 
 #ifndef MAKEDEPEND
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
 #endif
+
+#include <time.h>
 
 using namespace XmlRpc;
 
@@ -27,6 +30,9 @@ const std::string XmlRpcServerConnection::PARAMS = "params";
 
 const std::string XmlRpcServerConnection::FAULTCODE = "faultCode";
 const std::string XmlRpcServerConnection::FAULTSTRING = "faultString";
+
+const char *wdays[7] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+const char *months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
 // The server delegates handling client requests to a serverConnection object.
 XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose /*= false*/) : XmlRpcSource(fd, deleteOnClose)
@@ -165,6 +171,20 @@ bool XmlRpcServerConnection::readHeader()
 		}
 	}
 
+	// Parse out any interesting bits from the header (HTTP version, connection)
+	_keepAlive = true;
+	if (_header.find("HTTP/1.0") != std::string::npos)
+	{
+		if (kp == 0 || strncasecmp(kp, "keep-alive", 10) != 0)
+			_keepAlive = false;	 // Default for HTTP 1.0 is to close the connection
+	}
+	else
+	{
+		if (kp != 0 && strncasecmp(kp, "close", 5) == 0)
+			_keepAlive = false;
+	}
+	XmlRpcUtil::log(3, "KeepAlive: %d", _keepAlive);
+
 	// XML-RPC requests are POST. If we received GET request, then get request string and call it a day..
 	if (gp != 0)
 	{
@@ -218,20 +238,6 @@ bool XmlRpcServerConnection::readHeader()
 	_request = _request_buf;
 
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: request %s", _request_buf);
-
-	// Parse out any interesting bits from the header (HTTP version, connection)
-	_keepAlive = true;
-	if (_header.find("HTTP/1.0") != std::string::npos)
-	{
-		if (kp == 0 || strncasecmp(kp, "keep-alive", 10) != 0)
-			_keepAlive = false;	 // Default for HTTP 1.0 is to close the connection
-	}
-	else
-	{
-		if (kp != 0 && strncasecmp(kp, "close", 5) == 0)
-			_keepAlive = false;
-	}
-	XmlRpcUtil::log(3, "KeepAlive: %d", _keepAlive);
 
 	_header = "";
 	free(_header_buf);
@@ -516,8 +522,9 @@ void XmlRpcServerConnection::executeGet()
 
 	std::ostringstream _os;
 
-	_os << "HTTP/1.0 " << http_code << " " << http_code_string
-		<< "\r\nServer: XMLRCP\r\nContent-Type: " << response_type
+	_os << "HTTP/1.1 " << http_code << " " << http_code_string
+		<< "\r\nDate: " << getHttpDate ()
+		<< "\r\nServer: " << XMLRPC_VERSION << "\r\nContent-Type: " << response_type
 		<< "\r\nContent-length: " << _get_response_length;
 
 	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
@@ -640,7 +647,8 @@ std::string XmlRpcServerConnection::generateHeader(std::string const& body)
 {
 	std::string header =
 		"HTTP/1.1 200 OK\r\n"
-		"Server: ";
+		"Date: " + getHttpDate () +
+		"\r\nServer: ";
 	header += XMLRPC_VERSION;
 	header += "\r\n"
 		"Content-Type: text/xml\r\n"
@@ -667,4 +675,21 @@ void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, 
 	std::string header = generateHeader(body);
 
 	_response = header + body;
+}
+
+std::string XmlRpcServerConnection::getHttpDate ()
+{
+	std::ostringstream ret;
+	time_t now;
+	time (&now);
+	struct tm *tmm = gmtime (&now);
+	ret.fill ('0');
+	ret << wdays[tmm->tm_wday] << ", "
+		<< std::setw (2) << tmm->tm_mday << " "
+		<< months[tmm->tm_mon] << " "
+		<< std::setw (4) << tmm->tm_year + 1900 << " "
+		<< std::setw (2) << tmm->tm_hour << ":"
+		<< tmm->tm_min << ":"
+		<< tmm->tm_sec << " GMT";
+	return ret.str ();
 }
