@@ -1,0 +1,11 @@
+#!/usr/bin/python
+
+import xmlrpclib
+import sys
+
+server = xmlrpclib.ServerProxy('http://user:password@localhost:8889', use_datetime=True)
+for x in sys.argv[1:]:
+	res=server.rts2.targets.list(x)
+	for t in res:
+		server.rts2.device.command('SEL','queue plan {0}'.format(t['id']))
+		print 'Queued target {0} with ID {1}, on ra dec {2} {3}'.format(t['name'],t['id'],t['ra'],t['dec'])
