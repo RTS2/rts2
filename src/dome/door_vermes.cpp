@@ -305,6 +305,11 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       close_door->setValueBool(false) ;
       // it is already close_door_undefined->setValueBool(true) ;
 
+      if( doorState == DS_STOPPED_CLOSED) {
+	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged do not close due to being already in state DS_STOPPED_CLOSED" << sendLog ;
+	  return ;
+      }
+
       if( oak_thread_state== THREAD_STATE_RUNNING) {
 	if( simulate_door->getValueBool()){
 	  doorState= DS_STOPPED_CLOSED ;
