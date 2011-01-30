@@ -41,8 +41,8 @@ int test_ssd= NO_TEST_SSD ;
 #define AngularSpeed 90./180. *M_PI / 120. 
 #define POLLSEC          (time_t)   1 // make it variable
 #define SLEEP_TEST_SSD   (time_t)   1 // seconds!
-#define SLEEP_OPEN_DOOR  (time_t) 100 // 
-#define SLEEP_CLOSE_DOOR (time_t) 100 // 
+#define SLEEP_OPEN_DOOR  (time_t) 130 // 
+#define SLEEP_CLOSE_DOOR (time_t) 130 // 
 
 void off_zero();
 
