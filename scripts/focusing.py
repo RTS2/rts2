@@ -61,7 +61,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.exptime = 20 # 60 # 10
 		self.step = 50 # 0.2
 		self.attempts = 20 #30 # 20
-		self.focuser = 'F0'
+		self.focuser = self.getValue('focuser')
 		# if |offset| is above this value, try linear fit
 		self.linear_fit = 2 * self.step * self.attempts
 		# target FWHM for linear fit

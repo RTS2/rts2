@@ -52,7 +52,7 @@ class Rts2Comm:
 		else:
 			print 'G',device,value
 		sys.stdout.flush()
-		return sys.stdin.readline()
+		return sys.stdin.readline().rstrip('\n')
 
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
