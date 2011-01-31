@@ -83,6 +83,7 @@ class FlwoWeather:public SensorWeather
 		Rts2ValueFloat *me_hail_duration;
 		Rts2ValueFloat *me_hail_intensity;
 		Rts2ValueFloat *me_sky_temp;
+		Rts2ValueFloat *me_sky_limit;
 
 		friend class MEarthWeather;
 };
@@ -198,6 +199,8 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (me_hail_duration, "me_hail_duration", "MEarth hail duration", false);
 	createValue (me_hail_intensity, "me_hail_intensity", "MEarth hail intensity", false);
 	createValue (me_sky_temp, "me_sky_temp", "MEarth sky temperature", false);
+	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false);
+	me_sky_limit->setValueFloat (-20);
 
 	weatherFile = NULL;
 
@@ -388,6 +391,10 @@ bool FlwoWeather::isGoodWeather ()
 	if (windGustSpeed->getValueFloat () > windGustSpeed_limit->getValueFloat ())
 	{
 		setWeatherTimeout (600, "wind gust speed is above limit");
+	}
+	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
+	{
+		setWeatherTimeout (600, "skytemp is above limit");
 	}
 	return SensorWeather::isGoodWeather ();
 }
