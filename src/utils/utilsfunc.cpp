@@ -83,8 +83,10 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 		return 0;
 	}
 
-	ret = sscanf (in_date, "%d-%d-%d%n", &out_time->years, &out_time->months, &out_time->days, &ret2);
-	if (ret == 3)
+	char ch1, ch2;
+
+	ret = sscanf (in_date, "%d%c%d%c%d%n", &out_time->years, &ch1, &out_time->months, &ch2, &out_time->days, &ret2);
+	if (ret == 5 && ((ch1 == '-' && ch2 == '-') || (ch1 == '/' && ch2 == '/')))
 	{
 		in_date += ret2;
 
