@@ -76,6 +76,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw XmlRpcException ("cannot find device");
 			sendConnectionValues (os, conn);
 		}
+#ifdef HAVE_PGSQL
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
@@ -117,6 +118,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 
 			os << "]";
 		}
+#endif
 		else
 		{
 			throw XmlRpcException ("invalid request " + path);

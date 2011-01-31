@@ -35,7 +35,7 @@
 #include "../writers/rts2imagedb.h"
 #else
 #include "../utils/rts2config.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #endif /* HAVE_PGSQL */
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
@@ -193,7 +193,7 @@ int XmlRpcd::processOption (int in_opt)
 			config_file = optarg;
 			break;
 		default:
-			return Rts2Device::processOption (in_opt);
+			return rts2core::Device::processOption (in_opt);
 #endif
 	}
 	return 0;
@@ -205,7 +205,7 @@ int XmlRpcd::init ()
 #ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::init ();
 #else
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 #endif
 	if (ret)
 		return ret;
@@ -260,7 +260,7 @@ void XmlRpcd::addSelectSocks ()
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::addSelectSocks ();
 #else
-	Rts2Device::addSelectSocks ();
+	rts2core::Device::addSelectSocks ();
 #endif
 	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
 }
@@ -270,7 +270,7 @@ void XmlRpcd::selectSuccess ()
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
 #else
-	Rts2Device::selectSuccess ();
+	rts2core::Device::selectSuccess ();
 #endif
 	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
@@ -280,7 +280,7 @@ void XmlRpcd::signaledHUP ()
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
 #else
-	Rts2Device::selectSuccess ();
+	rts2core::Device::selectSuccess ();
 #endif
 	reloadEventsFile ();
 }
@@ -288,7 +288,7 @@ void XmlRpcd::signaledHUP ()
 #ifdef HAVE_PGSQL
 XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #else
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
+XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #endif
 {
 	rpcPort = 8889;
@@ -434,7 +434,7 @@ void XmlRpcd::postEvent (Rts2Event *event)
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::postEvent (event);
 #else
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 #endif
 }
 

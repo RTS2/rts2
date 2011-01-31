@@ -28,7 +28,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #else
 #include "../utils/rts2config.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #endif /* HAVE_PGSQL */
 
 #include "directory.h"
@@ -84,7 +84,7 @@ class XmlDevClient:public rts2core::Rts2DevClient
 #ifdef HAVE_PGSQL
 class XmlRpcd:public Rts2DeviceDb
 #else
-class XmlRpcd:public Rts2Device
+class XmlRpcd:public rts2core::Device
 #endif
 {
 	public:

@@ -32,7 +32,7 @@
 #ifdef HAVE_PGSQL
 #include "../utilsdb/rts2devicedb.h"
 #else
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/rts2config.h"
 #endif
 
@@ -47,7 +47,7 @@ namespace rts2plan
 #ifdef HAVE_PGSQL
 class ImageProc:public Rts2DeviceDb
 #else
-class ImageProc:public Rts2Device
+class ImageProc:public rts2core::Device
 #endif
 {
 	public:
@@ -142,7 +142,7 @@ ImageProc::ImageProc (int _argc, char **_argv)
 #ifdef HAVE_PGSQL
 :Rts2DeviceDb (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #else
-:Rts2Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
+:rts2core::Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #endif
 {
 	runningImage = NULL;
@@ -253,7 +253,7 @@ int ImageProc::processOption (int opt)
 			configFile = optarg;
 			break;
 		default:
-			return Rts2Device::processOption (opt);
+			return rts2core::Device::processOption (opt);
 	}
 	return 0;
 }
@@ -261,7 +261,7 @@ int ImageProc::processOption (int opt)
 int ImageProc::init ()
 {
 	int ret;
-	ret = Rts2Device::init ();
+	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
 	return reloadConfig ();
@@ -281,7 +281,7 @@ void ImageProc::postEvent (Rts2Event * event)
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::postEvent (event);
 #else
-	Rts2Device::postEvent (event);
+	rts2core::Device::postEvent (event);
 #endif
 }
 
@@ -298,7 +298,7 @@ int ImageProc::idle ()
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::idle ();
 #else
-	return Rts2Device::idle ();
+	return rts2core::Device::idle ();
 #endif
 }
 
@@ -309,7 +309,7 @@ int ImageProc::info ()
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::info ();
 #else
-	return Rts2Device::info ();
+	return rts2core::Device::info ();
 #endif
 }
 
@@ -359,7 +359,7 @@ int ImageProc::changeMasterState (int new_state)
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::changeMasterState (new_state);
 #else
-	return Rts2Device::changeMasterState (new_state);
+	return rts2core::Device::changeMasterState (new_state);
 #endif
 }
 
@@ -382,7 +382,7 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 	if (conn == runningImage)
 	{
 		// que next image
-		// Rts2Device::deleteConnection will delete runningImage
+		// rts2core::Device::deleteConnection will delete runningImage
 		switch (runningImage->getAstrometryStat ())
 		{
 			case NOT_ASTROMETRY:
@@ -466,7 +466,7 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::deleteConnection (conn);
 #else
-	return Rts2Device::deleteConnection (conn);
+	return rts2core::Device::deleteConnection (conn);
 #endif
 }
 
@@ -667,7 +667,7 @@ int ImageProc::commandAuthorized (Rts2Conn * conn)
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::commandAuthorized (conn);
 #else
-	return Rts2Device::commandAuthorized (conn);
+	return rts2core::Device::commandAuthorized (conn);
 #endif
 }
 
