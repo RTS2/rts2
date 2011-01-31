@@ -95,11 +95,25 @@
 	     <citerefentry><refentrytitle>rts2-plan</refentrytitle><manvolnum>1</manvolnum></citerefentry>
 	     for description of plan entries management tool.
 	   </para>
+	   <para>
+	     Entries from queues are executed iregardless if the target is
+	     enabled or not. This allows observers to specify what they exactly
+	     want to observe, and do not worry about details that the target is
+	     currently disabled, have low priority or does not fit some
+	     constraints.
+	   </para>
 	 </listitem>
+      </varlistentry>
+      <varlistentry>	 
 	 <term>priority based selection</term>
 	 <listitem>
 	   <para>
-	     This selection runs the autonomous selection.
+	     This selection runs the autonomous selection. It select among
+	     eneabled targets. The best target is selected as next target. The
+	     best target is target which have highest bonus parameter. Please
+	     see
+	     <citerefentry><refentrytitle>rts2-targetinfo</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	     for details how to obtain target bonus.
 	   </para>
 	 </listitem>
       </varlistentry>
@@ -125,6 +139,10 @@
         <term>next_plan_id</term>
 	<listitem>
 	  <para>
+	    If next target is taken from the scheduler plan, containts its plan
+	    ID. Please see
+	    <citerefentry><refentrytitle>rts2-plan</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	    for details on plan management.
 	  </para>
 	</listitem>
       </varlistentry>
