@@ -43,13 +43,13 @@ class Bootes2: public SensorWeather
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-		Rts2ValueBool *raining;
+		rts2core::ValueBool *raining;
 	
-		Rts2ValueDoubleStat *tempMeas;
-		Rts2ValueDoubleStat *humiMeas;
+		rts2core::ValueDoubleStat *tempMeas;
+		rts2core::ValueDoubleStat *humiMeas;
 		
-		Rts2ValueDouble *humBad;
-		Rts2ValueDouble *humGood;
+		rts2core::ValueDouble *humBad;
+		rts2core::ValueDouble *humGood;
 
 		/**
 		 * Returns volts from the device.

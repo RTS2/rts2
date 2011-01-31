@@ -440,7 +440,7 @@ void Rts2Block::bopStateChanged ()
 		(*iter)->masterStateChanged ();
 }
 
-void Rts2Block::updateMetaInformations (Rts2Value *value)
+void Rts2Block::updateMetaInformations (rts2core::Value *value)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -839,7 +839,7 @@ Rts2Conn * Rts2Block::getMinConn (const char *valueName)
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
-		Rts2Value *que_size;
+		rts2core::Value *que_size;
 		Rts2Conn *conn = *iter;
 		que_size = conn->getValue (valueName);
 		if (que_size)
@@ -855,7 +855,7 @@ Rts2Conn * Rts2Block::getMinConn (const char *valueName)
 	return minConn;
 }
 
-Rts2Value * Rts2Block::getValue (const char *device_name, const char *value_name)
+rts2core::Value * Rts2Block::getValue (const char *device_name, const char *value_name)
 {
 	Rts2Conn *conn = getOpenConnection (device_name);
 	if (!conn)

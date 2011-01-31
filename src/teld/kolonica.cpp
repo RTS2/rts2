@@ -49,7 +49,7 @@ class Kolonica:public Fork
 		virtual int updateLimits();
 		virtual int getHomeOffset(int32_t&);
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 	private:
 		const char *telDev;
@@ -115,11 +115,11 @@ class Kolonica:public Fork
 		 */
 		int setMotor (int axId, bool on);
 
-		Rts2ValueLong *axAlt;
-		Rts2ValueLong *axAz;
+		rts2core::ValueLong *axAlt;
+		rts2core::ValueLong *axAz;
 
-		Rts2ValueBool *motorAlt;
-		Rts2ValueBool *motorAz;
+		rts2core::ValueBool *motorAlt;
+		rts2core::ValueBool *motorAz;
 };
 
 };
@@ -287,7 +287,7 @@ int Kolonica::getHomeOffset(int32_t&)
 	return 0;
 }
 
-int Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Kolonica::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == axAlt)
 	{
@@ -299,11 +299,11 @@ int Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == motorAlt)
 	{
-		return setMotor (1, ((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return setMotor (1, ((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	if (old_value == motorAz)
 	{
-		return setMotor (2, ((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return setMotor (2, ((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	return Fork::setValue (old_value, new_value);
 }

@@ -52,7 +52,7 @@ class V4L:public Camera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual void initDataTypes ();	
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 		virtual int startExposure ();
 		virtual int stopExposure ();
 		virtual int doReadout ();
@@ -66,7 +66,7 @@ class V4L:public Camera
 		// native CCD format
 		__u32 format;
 
-		Rts2ValueSelection *greyMode;
+		rts2core::ValueSelection *greyMode;
 
 		void everyEvenByte (char *bytes);
 };
@@ -236,7 +236,7 @@ void V4L::initDataTypes ()
 	}
 }
 
-int V4L::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int V4L::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == greyMode)
 	{

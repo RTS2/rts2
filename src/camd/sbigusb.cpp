@@ -89,9 +89,9 @@ class Sbig:public Camera
 		ReadoutLineParams rlp;
 		int sbig_readout_mode;
 
-		Rts2ValueInteger *coolingPower;
-		Rts2ValueSelection *tempRegulation;
-		Rts2ValueBool *fan;
+		rts2core::ValueInteger *coolingPower;
+		rts2core::ValueSelection *tempRegulation;
+		rts2core::ValueBool *fan;
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -119,7 +119,7 @@ class Sbig:public Camera
 		virtual int endReadout ();
 		virtual int doReadout ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	public:
 		Sbig (int argc, char **argv);
@@ -233,7 +233,7 @@ int Sbig::doReadout ()
 	return -2;
 }
 
-int Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Sbig::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -255,7 +255,7 @@ int Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == fan)
 	{
-		return set_fan (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return set_fan (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }

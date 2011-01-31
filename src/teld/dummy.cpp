@@ -34,7 +34,7 @@ class Dummy:public Telescope
 	private:
 
                 struct ln_equ_posn dummyPos;
-                Rts2ValueBool *move_fast;
+                rts2core::ValueBool *move_fast;
 	public:
 	        Dummy (int argc, char **argv);
         	virtual int processOption (int in_opt);

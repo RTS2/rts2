@@ -48,13 +48,13 @@ class System:public Sensor
 		virtual int init ();
 		virtual int info ();
 	private:
-		Rts2ValueTime *lastWrite;
+		rts2core::ValueTime *lastWrite;
 
-		Rts2ValueString *path;
-		Rts2ValueDouble *freeSize;
-		Rts2ValueDoubleStat *history;
-		Rts2ValueFloat *nfree;
-		Rts2ValueLong *bytesNight;
+		rts2core::ValueString *path;
+		rts2core::ValueDouble *freeSize;
+		rts2core::ValueDoubleStat *history;
+		rts2core::ValueFloat *nfree;
+		rts2core::ValueLong *bytesNight;
 
 		void addHistoryValue (double val);
 

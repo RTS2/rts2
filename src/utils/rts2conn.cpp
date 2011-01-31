@@ -24,9 +24,9 @@
 #include "rts2centralstate.h"
 #include "rts2command.h"
 
-#include "rts2valuestat.h"
-#include "rts2valueminmax.h"
-#include "rts2valuerectangle.h"
+#include "valuestat.h"
+#include "valueminmax.h"
+#include "valuerectangle.h"
 #include "valuearray.h"
 
 #include <iostream>
@@ -1797,14 +1797,14 @@ void Rts2Conn::dataReceived ()
 	}
 }
 
-Rts2Value * Rts2Conn::getValue (const char *value_name)
+rts2core::Value * Rts2Conn::getValue (const char *value_name)
 {
 	return values.getValue (value_name);
 }
 
-Rts2Value * Rts2Conn::getValueType (const char *value_name, int value_type)
+rts2core::Value * Rts2Conn::getValueType (const char *value_name, int value_type)
 {
-	Rts2Value * ret = getValue (value_name);
+	rts2core::Value * ret = getValue (value_name);
 	if (ret == NULL)
 		throw Error (std::string ("cannot find value with name ") + value_name);
 	if (ret->getValueType () != value_type)
@@ -1812,10 +1812,10 @@ Rts2Value * Rts2Conn::getValueType (const char *value_name, int value_type)
 	return ret;
 }
 
-void Rts2Conn::addValue (Rts2Value * value)
+void Rts2Conn::addValue (rts2core::Value * value)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))
-		info_time = (Rts2ValueTime *) value;
+		info_time = (rts2core::ValueTime *) value;
 	// if value exists, remove it from list
 	values.removeValue (value->getName ().c_str ());
 	values.push_back (value);
@@ -1823,7 +1823,7 @@ void Rts2Conn::addValue (Rts2Value * value)
 
 int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 {
-	Rts2Value *new_value;
+	rts2core::Value *new_value;
 	switch (rts2Type & RTS2_EXT_TYPE)
 	{
 		case 0:
@@ -1832,13 +1832,13 @@ int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 				return -2;
 			break;
 		case RTS2_VALUE_STAT:
-			new_value = new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new rts2core::ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_MMAX:
-			new_value = new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new rts2core::ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			new_value = new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new rts2core::ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_ARRAY:
 			switch (rts2Type & RTS2_BASE_TYPE)
@@ -1873,16 +1873,16 @@ int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 
 int Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
 {
-	Rts2Value *val = getValue (value_name);
+	rts2core::Value *val = getValue (value_name);
 	if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
 		return -2;
-	((Rts2ValueSelection *) val)->addSelVal (sel_name);
+	((rts2core::ValueSelection *) val)->addSelVal (sel_name);
 	return -1;
 }
 
 const char * Rts2Conn::getValueChar (const char *value_name)
 {
-	Rts2Value *val;
+	rts2core::Value *val;
 	val = getValue (value_name);
 	if (val)
 		return val->getValue ();
@@ -1891,7 +1891,7 @@ const char * Rts2Conn::getValueChar (const char *value_name)
 
 double Rts2Conn::getValueDouble (const char *value_name)
 {
-	Rts2Value *val;
+	rts2core::Value *val;
 	val = getValue (value_name);
 	if (val)
 		return val->getValueDouble ();
@@ -1900,7 +1900,7 @@ double Rts2Conn::getValueDouble (const char *value_name)
 
 int Rts2Conn::getValueInteger (const char *value_name)
 {
-	Rts2Value *val;
+	rts2core::Value *val;
 	val = getValue (value_name);
 	if (val)
 		return val->getValueInteger ();
@@ -1909,25 +1909,25 @@ int Rts2Conn::getValueInteger (const char *value_name)
 
 const char * Rts2Conn::getValueSelection (const char *value_name)
 {
-	Rts2Value *val;
+	rts2core::Value *val;
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelName ();
+	return ((rts2core::ValueSelection *) val)->getSelName ();
 }
 
 const char * Rts2Conn::getValueSelection (const char *value_name, int val_num)
 {
-	Rts2Value *val;
+	rts2core::Value *val;
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelName (val_num);
+	return ((rts2core::ValueSelection *) val)->getSelName (val_num);
 }
 
 int Rts2Conn::commandValue (const char *v_name)
 {
-	Rts2Value *value = getValue (v_name);
+	rts2core::Value *value = getValue (v_name);
 	if (value)
 	{
 		int ret;
@@ -1948,7 +1948,7 @@ int Rts2Conn::commandValue (const char *v_name)
 
 bool Rts2Conn::existWriteType (int w_type)
 {
-	for (Rts2ValueVector::iterator iter = values.begin ();
+	for (rts2core::ValueVector::iterator iter = values.begin ();
 		iter != values.end (); iter++)
 	{
 		if ((*iter)->getValueWriteFlags () == w_type)

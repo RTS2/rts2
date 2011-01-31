@@ -20,28 +20,30 @@
 #ifndef __RTS2_VALUE_MINMAX__
 #define __RTS2_VALUE_MINMAX__
 
-#include "rts2value.h"
+#include "value.h"
+
+namespace rts2core
+{
 
 /**
  * Class holding double value with its limits.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-
-class Rts2ValueDoubleMinMax:public Rts2ValueDouble
+class ValueDoubleMinMax:public ValueDouble
 {
 	public:
-		Rts2ValueDoubleMinMax (std::string in_val_name);
-		Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueDoubleMinMax (std::string in_val_name);
+		ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int checkNotNull ();
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual void setFromValue (Rts2Value * newValue);
+		virtual void setFromValue (Value * newValue);
 
-		void copyMinMax (Rts2ValueDoubleMinMax * from)
+		void copyMinMax (ValueDoubleMinMax * from)
 		{
 			min = from->getMin ();
 			max = from->getMax ();
@@ -63,4 +65,6 @@ class Rts2ValueDoubleMinMax:public Rts2ValueDouble
 		double min;
 		double max;
 };
+
+}
 #endif							 /* !__RTS2_VALUE_MINMAX__ */

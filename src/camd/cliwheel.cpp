@@ -70,7 +70,7 @@ void ClientFilterCamera::postEvent (Rts2Event * event)
 	rts2core::Rts2DevClientFilter::postEvent (event);
 }
 
-void  ClientFilterCamera::valueChanged (Rts2Value * value)
+void  ClientFilterCamera::valueChanged (rts2core::Value * value)
 {
 	if (value->getName () == "filter")
 	{

@@ -61,52 +61,52 @@ class DevAugerShooter:public Rts2DeviceDb
 		int port;
 		const char *testParsing;
 
-		Rts2ValueTime *lastAugerSeen;
-		Rts2ValueTime *lastAugerDate;
-		Rts2ValueDouble *lastAugerRa;
-		Rts2ValueDouble *lastAugerDec;
+		rts2core::ValueTime *lastAugerSeen;
+		rts2core::ValueTime *lastAugerDate;
+		rts2core::ValueDouble *lastAugerRa;
+		rts2core::ValueDouble *lastAugerDec;
 
-		Rts2ValueDouble *minEnergy;
-		Rts2ValueDouble *maxXmaxErr;
-		Rts2ValueDouble *maxEnergyDiv;
-		Rts2ValueDouble *maxGHChiDiv;
-		Rts2ValueDouble *minLineFitDiff;
-		Rts2ValueDouble *maxAxisDist;
-		Rts2ValueDouble *minRp;
-		Rts2ValueDouble *minChi0;
-		Rts2ValueDouble *maxSPDDiv;
-		Rts2ValueDouble *maxTimeDiv;
-		Rts2ValueDouble *maxTheta;
+		rts2core::ValueDouble *minEnergy;
+		rts2core::ValueDouble *maxXmaxErr;
+		rts2core::ValueDouble *maxEnergyDiv;
+		rts2core::ValueDouble *maxGHChiDiv;
+		rts2core::ValueDouble *minLineFitDiff;
+		rts2core::ValueDouble *maxAxisDist;
+		rts2core::ValueDouble *minRp;
+		rts2core::ValueDouble *minChi0;
+		rts2core::ValueDouble *maxSPDDiv;
+		rts2core::ValueDouble *maxTimeDiv;
+		rts2core::ValueDouble *maxTheta;
 
-		Rts2ValueInteger *maxTime;
-		Rts2ValueInteger *EyeId1;
+		rts2core::ValueInteger *maxTime;
+		rts2core::ValueInteger *EyeId1;
 
-		Rts2ValueBool *triggeringEnabled;
+		rts2core::ValueBool *triggeringEnabled;
 
    /*       second set of cuts         */
-		Rts2ValueInteger *EyeId2;
-		Rts2ValueDouble *minEnergy2;
-		Rts2ValueInteger *minPix2;
-		Rts2ValueDouble *maxAxisDist2;
-		Rts2ValueDouble *maxTimeDiff2;
-		Rts2ValueDouble *maxGHChiDiv2;
-		Rts2ValueDouble *maxLineFitDiv2;
-		Rts2ValueDouble *minViewAngle2;
+		rts2core::ValueInteger *EyeId2;
+		rts2core::ValueDouble *minEnergy2;
+		rts2core::ValueInteger *minPix2;
+		rts2core::ValueDouble *maxAxisDist2;
+		rts2core::ValueDouble *maxTimeDiff2;
+		rts2core::ValueDouble *maxGHChiDiv2;
+		rts2core::ValueDouble *maxLineFitDiv2;
+		rts2core::ValueDouble *minViewAngle2;
  /*       second set of cuts - end   */
 
  /*       third set of cuts          */
-		Rts2ValueInteger *EyeId3;
-		Rts2ValueDouble *minEnergy3;
-		Rts2ValueDouble *maxXmaxErr3;
-		Rts2ValueDouble *maxEnergyDiv3;
-		Rts2ValueDouble *maxGHChiDiv3;
-		Rts2ValueDouble *maxLineFitDiv3;
-		Rts2ValueInteger *minPix3;
-		Rts2ValueDouble *maxAxisDist3;
-		Rts2ValueDouble *minRp3;
-		Rts2ValueDouble *minChi03;
-		Rts2ValueDouble *maxSPDDiv3;
-		Rts2ValueDouble *maxTimeDiv3;
+		rts2core::ValueInteger *EyeId3;
+		rts2core::ValueDouble *minEnergy3;
+		rts2core::ValueDouble *maxXmaxErr3;
+		rts2core::ValueDouble *maxEnergyDiv3;
+		rts2core::ValueDouble *maxGHChiDiv3;
+		rts2core::ValueDouble *maxLineFitDiv3;
+		rts2core::ValueInteger *minPix3;
+		rts2core::ValueDouble *maxAxisDist3;
+		rts2core::ValueDouble *minRp3;
+		rts2core::ValueDouble *minChi03;
+		rts2core::ValueDouble *maxSPDDiv3;
+		rts2core::ValueDouble *maxTimeDiv3;
  /*       third set of cuts - end    */
 };
 

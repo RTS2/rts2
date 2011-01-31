@@ -38,10 +38,10 @@ namespace rts2sensord
 class Osn: public SensorWeather
 {
 	private:
-		Rts2ValueFloat *temp;
-		Rts2ValueFloat *humidity;
-		Rts2ValueFloat *wind1;
-		Rts2ValueFloat *wind2;
+		rts2core::ValueFloat *temp;
+		rts2core::ValueFloat *humidity;
+		rts2core::ValueFloat *wind1;
+		rts2core::ValueFloat *wind2;
 
 	protected:
 		virtual int info ();

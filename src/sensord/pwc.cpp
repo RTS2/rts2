@@ -50,7 +50,7 @@ class PWC:public Sensor
 	private:
 		const char *videoDevice;
 		int videoFd;
-		Rts2ValueInteger *gain;
+		rts2core::ValueInteger *gain;
 };
 
 };

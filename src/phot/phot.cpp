@@ -226,7 +226,7 @@ void Rts2DevPhot::postEvent (Rts2Event *event)
 	ScriptDevice::postEvent (event);
 }
 
-int Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Rts2DevPhot::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == filter)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;

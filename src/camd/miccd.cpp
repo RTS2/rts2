@@ -63,7 +63,7 @@ class MICCD:public Camera
 		}
 
 		virtual int info ();
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
@@ -86,15 +86,15 @@ class MICCD:public Camera
 
 		int reinitCamera ();
 
-		Rts2ValueInteger *id;
-		Rts2ValueSelection *mode;
-		Rts2ValueBool *fan;
-		Rts2ValueFloat *tempRamp;
-		Rts2ValueFloat *tempTarget;
-		Rts2ValueInteger *power;
-		Rts2ValueInteger *gain;
+		rts2core::ValueInteger *id;
+		rts2core::ValueSelection *mode;
+		rts2core::ValueBool *fan;
+		rts2core::ValueFloat *tempRamp;
+		rts2core::ValueFloat *tempTarget;
+		rts2core::ValueInteger *power;
+		rts2core::ValueInteger *gain;
 
-		Rts2ValueInteger *shift;
+		rts2core::ValueInteger *shift;
 
 		camera_t camera;
 		camera_info_t cami;
@@ -300,7 +300,7 @@ int MICCD::info ()
 	return Camera::info ();
 }
 
-int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int MICCD::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == mode)
 		return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;

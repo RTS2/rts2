@@ -92,26 +92,26 @@ class Fram:public Ford
 		
 		char *extraSwitchFile;
 
-		Rts2ValueDouble *wdcTimeOut;
-		Rts2ValueDouble *wdcTemperature;
+		rts2core::ValueDouble *wdcTimeOut;
+		rts2core::ValueDouble *wdcTemperature;
 
-		Rts2ValueBool *swOpenLeft;
-		Rts2ValueBool *swCloseLeft;
-		Rts2ValueBool *swCloseRight;
-		Rts2ValueBool *swOpenRight;
+		rts2core::ValueBool *swOpenLeft;
+		rts2core::ValueBool *swCloseLeft;
+		rts2core::ValueBool *swCloseRight;
+		rts2core::ValueBool *swOpenRight;
 
-		Rts2ValueBool *valveOpenLeft;
-		Rts2ValueBool *valveCloseLeft;
-		Rts2ValueBool *valveOpenRight;
-		Rts2ValueBool *valveCloseRight;
+		rts2core::ValueBool *valveOpenLeft;
+		rts2core::ValueBool *valveCloseLeft;
+		rts2core::ValueBool *valveOpenRight;
+		rts2core::ValueBool *valveCloseRight;
 
-		Rts2ValueInteger *reclosing_num;
+		rts2core::ValueInteger *reclosing_num;
 
-		Rts2ValueBool *switchBatBack;
-		Rts2ValueBool *plug1;
-		Rts2ValueBool *plug_photometer;
-		Rts2ValueBool *plug3;
-		Rts2ValueBool *plug4;
+		rts2core::ValueBool *switchBatBack;
+		rts2core::ValueBool *plug1;
+		rts2core::ValueBool *plug_photometer;
+		rts2core::ValueBool *plug3;
+		rts2core::ValueBool *plug4;
 
 		int zjisti_stav_portu_rep ();
 
@@ -183,7 +183,7 @@ class Fram:public Ford
 		virtual int init ();
 		virtual int idle ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -787,27 +787,27 @@ int Fram::idle ()
 	return Ford::idle ();
 }
 
-int Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Fram::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == switchBatBack)
 	{
-		return setValueSwitch (SWITCH_BATBACK, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (SWITCH_BATBACK, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug_photometer)
 	{
-		return setValueSwitch (PLUG_PHOTOMETER, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_PHOTOMETER, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug1)
 	{
-		return setValueSwitch (PLUG_1, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_1, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug3)
 	{
-		return setValueSwitch (PLUG_3, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_3, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug4)
 	{
-		return setValueSwitch (PLUG_4, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_4, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	return Ford::setValue (oldValue, newValue);
 }

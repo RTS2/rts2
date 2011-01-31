@@ -49,7 +49,7 @@ class FLWO:public Dome
 	private:
 		rts2core::ConnFork *domeExe;
 
-		Rts2ValueBool *openInOn;
+		rts2core::ValueBool *openInOn;
 
 		bool shouldClose;
 

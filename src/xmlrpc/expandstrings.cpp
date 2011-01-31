@@ -66,7 +66,7 @@ void ExpandStringDevice::writeTo (std::ostream &os)
 		os << "unknow device " << deviceName << std::endl;
 		return;
 	}
-	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
 		os << (*iter)->getName () << "=" << getDisplayValue (*iter) << std::endl;
 	}
@@ -82,7 +82,7 @@ ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valu
 
 void ExpandStringValue::writeTo (std::ostream &os)
 {
-	Rts2Value *val = ((Rts2Block *) getMasterApp ())->getValue (deviceName, valueName);
+	rts2core::Value *val = ((Rts2Block *) getMasterApp ())->getValue (deviceName, valueName);
 	if (val == NULL)
 	{
 		os << "unknow value " << deviceName << "." << valueName;

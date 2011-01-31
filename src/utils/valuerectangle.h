@@ -20,35 +20,38 @@
 #ifndef __RTS2_RECTANGLE__
 #define __RTS2_RECTANGLE__
 
-#include "rts2value.h"
+#include "value.h"
+
+namespace rts2core
+{
 
 /**
- * Rectangle value. Rectangle have four points, each of Rts2Value, which
+ * Rectangle value. Rectangle have four points, each of Value, which
  * represents X, Y coordinates and width and height.
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueRectangle: public Rts2Value
+class ValueRectangle: public Value
 {
 	private:
-		Rts2Value *x;
-		Rts2Value *y;
-		Rts2Value *w;
-		Rts2Value *h;
+		Value *x;
+		Value *y;
+		Value *w;
+		Value *h;
 
 		void createValues ();
 		void checkChange ();
 	public:
-		Rts2ValueRectangle (std::string in_val_name, int32_t baseType);
-		Rts2ValueRectangle (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags);
-		virtual ~Rts2ValueRectangle (void);
+		ValueRectangle (std::string in_val_name, int32_t baseType);
+		ValueRectangle (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags);
+		virtual ~ValueRectangle (void);
 
 		/**
 		 * Get value of X coordinate of the rectangle.
 		 *
-		 * @return Rts2Value class with value of X coordinate.
+		 * @return Value class with value of X coordinate.
 		 */
-		Rts2Value * getX ()
+		Value * getX ()
 		{
 			return x;
 		}
@@ -66,9 +69,9 @@ class Rts2ValueRectangle: public Rts2Value
 		/**
 		 * Get value of Y coordinate of the rectangle.
 		 *
-		 * @return Rts2Value class with value of Y coordinate.
+		 * @return Value class with value of Y coordinate.
 		 */
-		Rts2Value * getY ()
+		Value * getY ()
 		{
 			return y;
 		}
@@ -86,9 +89,9 @@ class Rts2ValueRectangle: public Rts2Value
 		/**
 		 * Get width of the rectangle.
 		 *
-		 * @return Rts2Value class with rectangle width.
+		 * @return Value class with rectangle width.
 		 */
-		Rts2Value * getWidth () { return w; }
+		Value * getWidth () { return w; }
 
 		/**
 		 * Return width integer value.
@@ -102,9 +105,9 @@ class Rts2ValueRectangle: public Rts2Value
 		/**
 		 * Get height of the rectangle.
 		 *
-		 * @return Rts2Value class with rectangle height.
+		 * @return Value class with rectangle height.
 		 */
-		Rts2Value * getHeight () { return h; }
+		Value * getHeight () { return h; }
 
 		/**
 		 * Return height integer value.
@@ -124,10 +127,12 @@ class Rts2ValueRectangle: public Rts2Value
 
 		virtual const char *getValue ();
 
-		virtual void setFromValue(Rts2Value * new_value);
+		virtual void setFromValue(Value * new_value);
 
-		virtual bool isEqual (Rts2Value * other_value);
+		virtual bool isEqual (Value * other_value);
 
 		virtual void resetValueChanged ();
 };
+
+}
 #endif							 // !__RTS2_RECTANGLE__

@@ -102,7 +102,7 @@ class LX200TEST:public Telescope
 
 		void set_move_timeout (time_t plus_time);
 
-                Rts2ValueInteger  *DECaxis_HAcoordinate ; // see pier_collision.c 
+                rts2core::ValueInteger  *DECaxis_HAcoordinate ; // see pier_collision.c 
 
 	public:
 		LX200TEST (int argc, char **argv);

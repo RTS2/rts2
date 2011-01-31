@@ -58,10 +58,10 @@ namespace rts2sensord
 			 *
 			 * @throw ConnError
 			 */
-			void getValue (const char *var, Rts2ValueFloat *value);
+			void getValue (const char *var, rts2core::ValueFloat *value);
 
-			void getValue (const char *var, Rts2ValueInteger *value);
-			void getValue (const char *var, Rts2ValueString *value);
+			void getValue (const char *var, rts2core::ValueInteger *value);
+			void getValue (const char *var, rts2core::ValueString *value);
 
 			template <typename t> void getVal (const char *var, t &val);
 	};
@@ -78,19 +78,19 @@ namespace rts2sensord
 			const char *upsName;
 			ConnNUT *connNUT;
 
-			Rts2ValueString *model;
+			rts2core::ValueString *model;
 
-			Rts2ValueFloat *loadpct;
-			Rts2ValueFloat *bcharge;
-			Rts2ValueInteger *bruntime;
+			rts2core::ValueFloat *loadpct;
+			rts2core::ValueFloat *bcharge;
+			rts2core::ValueInteger *bruntime;
 
-			Rts2ValueTime *onbatterytimeout;
+			rts2core::ValueTime *onbatterytimeout;
 
-			Rts2ValueString *upsstatus;
+			rts2core::ValueString *upsstatus;
 			
-			Rts2ValueFloat *minbcharge;
-			Rts2ValueInteger *mintimeleft;
-			Rts2ValueInteger *maxonbattery;
+			rts2core::ValueFloat *minbcharge;
+			rts2core::ValueInteger *mintimeleft;
+			rts2core::ValueInteger *maxonbattery;
 
 		protected:
 			virtual int processOption (int opt);
@@ -150,21 +150,21 @@ template <typename t> void ConnNUT::getVal (const char *var, t &val)
 	delete _is;
 }
 
-void ConnNUT::getValue (const char *var, Rts2ValueFloat *value)
+void ConnNUT::getValue (const char *var, rts2core::ValueFloat *value)
 {
 	float val;
 	getVal (var, val);
 	value->setValueFloat (val);
 }
 
-void ConnNUT::getValue (const char *var, Rts2ValueInteger *value)
+void ConnNUT::getValue (const char *var, rts2core::ValueInteger *value)
 {
 	int val;
 	getVal (var, val);
 	value->setValueInteger (val);
 }
 
-void ConnNUT::getValue (const char *var, Rts2ValueString *value)
+void ConnNUT::getValue (const char *var, rts2core::ValueString *value)
 {
 	std::istringstream *_is = NULL;
 

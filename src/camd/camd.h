@@ -48,7 +48,7 @@ namespace rts2camd
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Binning2D: public Rts2SelData
+class Binning2D: public rts2core::Rts2SelData
 {
 	public:
 		/**
@@ -87,7 +87,7 @@ class Binning2D: public Rts2SelData
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DataType: public Rts2SelData
+class DataType: public rts2core::Rts2SelData
 {
 	public:
 		int type;
@@ -283,15 +283,15 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void nullExposureConn () { exposureConn = NULL; }
 
-		Rts2ValueDouble *pixelsSecond;
+		rts2core::ValueDouble *pixelsSecond;
 
 		//! number of connection waiting to be executed
-		Rts2ValueInteger *quedExpNumber;
+		rts2core::ValueInteger *quedExpNumber;
 
 		/**
 		 * Shutter control.
 		 */
-		Rts2ValueSelection *expType;
+		rts2core::ValueSelection *expType;
 
 		/**
 		 * Change flip of the camera. This is usually done when chaning
@@ -473,7 +473,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual int processData (char *data, size_t size);
 
-		Rts2ValueRectangle *chipUsedReadout;
+		rts2core::ValueRectangle *chipUsedReadout;
 
 		/**
 		 * Handles options passed on the command line. For a list of options, please
@@ -488,18 +488,18 @@ class Camera:public rts2core::ScriptDevice
 		int willConnect (Rts2Address * in_addr);
 		char *device_file;
 		// number of data channels
-		Rts2ValueInteger *dataChannels;
+		rts2core::ValueInteger *dataChannels;
 
 		// temperature and others; all in deg Celsius
-		Rts2ValueFloat *tempAir;
-		Rts2ValueFloat *tempCCD;
-		Rts2ValueDoubleStat *tempCCDHistory;
-		Rts2ValueInteger *tempCCDHistoryInterval;
-		Rts2ValueInteger *tempCCDHistorySize;
-		Rts2ValueFloat *tempSet;
+		rts2core::ValueFloat *tempAir;
+		rts2core::ValueFloat *tempCCD;
+		rts2core::ValueDoubleStat *tempCCDHistory;
+		rts2core::ValueInteger *tempCCDHistoryInterval;
+		rts2core::ValueInteger *tempCCDHistorySize;
+		rts2core::ValueFloat *tempSet;
 
 		// night cooling temperature
-		Rts2ValueFloat *nightCoolTemp;
+		rts2core::ValueFloat *nightCoolTemp;
 
 		char ccdType[64];
 		char *ccdRealType;
@@ -665,9 +665,9 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual int stopExposure ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual void valueChanged (Rts2Value *changed_value);
+		virtual void valueChanged (rts2core::Value *changed_value);
 
 		/**
 		 * Create shutter variable,
@@ -685,7 +685,7 @@ class Camera:public rts2core::ScriptDevice
 		 * @param enumName  Value which will be used for enumeration.
 		 * @param @data     Optional data associated with enumeration.
 		 */
-		void addShutterType (const char *enumName, Rts2SelData *data = NULL) { expType->addSelVal (enumName, data); }
+		void addShutterType (const char *enumName, rts2core::Rts2SelData *data = NULL) { expType->addSelVal (enumName, data); }
 
 		/**
 		 * CCDs with multiple data channels.
@@ -782,11 +782,11 @@ class Camera:public rts2core::ScriptDevice
 		char* shmBuffer;
 
 		// number of exposures camera takes
-		Rts2ValueLong *exposureNumber;
+		rts2core::ValueLong *exposureNumber;
 		// exposure number inside script
-		Rts2ValueLong *scriptExposureNum;
-		Rts2ValueBool *waitingForEmptyQue;
-		Rts2ValueBool *waitingForNotBop;
+		rts2core::ValueLong *scriptExposureNum;
+		rts2core::ValueBool *waitingForEmptyQue;
+		rts2core::ValueBool *waitingForNotBop;
 
 		char *focuserDevice;
 		char *wheelDevice;
@@ -796,15 +796,15 @@ class Camera:public rts2core::ScriptDevice
 		int currentImageData;
 
 		// whenewer statistics should be calculated
-		Rts2ValueSelection *calculateStatistics;
+		rts2core::ValueSelection *calculateStatistics;
 
 		// image parameters
-		Rts2ValueDouble *average;
-		Rts2ValueDouble *min;
-		Rts2ValueDouble *max;
-		Rts2ValueDouble *sum;
+		rts2core::ValueDouble *average;
+		rts2core::ValueDouble *min;
+		rts2core::ValueDouble *max;
+		rts2core::ValueDouble *sum;
 
-		Rts2ValueLong *computedPix;
+		rts2core::ValueLong *computedPix;
 
 		// update statistics
 		template <typename t> int updateStatistics (t *data, size_t dataSize)
@@ -834,48 +834,48 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 								 // DARK of LIGHT frames
-		Rts2ValueFloat *exposure;
-		Rts2ValueInteger *flip;
+		rts2core::ValueFloat *exposure;
+		rts2core::ValueInteger *flip;
 		bool defaultFlip;
 
-		Rts2ValueDouble *xplate;
-		Rts2ValueDouble *yplate;
+		rts2core::ValueDouble *xplate;
+		rts2core::ValueDouble *yplate;
 		double defaultXplate;
 		double defaultYplate;
 
 		int setPlate (const char *arg);
 		void setDefaultPlate (double x, double y);
 
-		Rts2ValueRectangle *chipSize;
+		rts2core::ValueRectangle *chipSize;
 
 		int camStartExposure ();
 		int camStartExposureWithoutCheck ();
 
 	protected:
-		Rts2ValueSelection *camFilterVal;
+		rts2core::ValueSelection *camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;
 	
 	private:
-		Rts2ValueInteger *camFocVal;
-		Rts2ValueDouble *rotang;
+		rts2core::ValueInteger *camFocVal;
+		rts2core::ValueDouble *rotang;
 
 		int getStateChip (int chip);
 
 		// chip binning
-		Rts2ValueSelection *binning;
+		rts2core::ValueSelection *binning;
 
 		// allowed chip data type
-		Rts2ValueSelection *dataType;
+		rts2core::ValueSelection *dataType;
 
 		// when chip exposure will end
-		Rts2ValueTime *exposureEnd;
+		rts2core::ValueTime *exposureEnd;
 
 		// filter wheel is moving
-		Rts2ValueBool *filterMoving;
-		Rts2ValueBool *focuserMoving;
+		rts2core::ValueBool *filterMoving;
+		rts2core::ValueBool *focuserMoving;
 
 		// set chipUsedSize size
-		int box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *retv = NULL);
+		int box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv = NULL);
 
 		// callback functions from camera connection
 		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);

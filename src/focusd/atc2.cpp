@@ -89,9 +89,9 @@ class ATC2:public Focusd
 			return false;
 		}
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 	private:
-		void getValue (const char *name, Rts2Value *val);
+		void getValue (const char *name, rts2core::Value *val);
 		void openRem ();
 
 		int findOptima ();
@@ -100,14 +100,14 @@ class ATC2:public Focusd
 		const char *device_file;
                 rts2core::ConnSerial *ATC2Conn; // communication port with ATC2
 
-		Rts2ValueInteger *mirrorTarget;
-		Rts2ValueInteger *fanSpeed;
-		Rts2ValueFloat *primMirrorTemp;
-		Rts2ValueFloat *secMirrorTemp;
-		Rts2ValueBool *shutter;
-		Rts2ValueFloat *humidity;
-		Rts2ValueFloat *pressure;
-		Rts2ValueFloat *dewpoint;
+		rts2core::ValueInteger *mirrorTarget;
+		rts2core::ValueInteger *fanSpeed;
+		rts2core::ValueFloat *primMirrorTemp;
+		rts2core::ValueFloat *secMirrorTemp;
+		rts2core::ValueBool *shutter;
+		rts2core::ValueFloat *humidity;
+		rts2core::ValueFloat *pressure;
+		rts2core::ValueFloat *dewpoint;
 };
 
 }
@@ -187,7 +187,7 @@ int ATC2::initValues ()
 	return Focusd::initValues ();
 }
 
-void ATC2::getValue (const char *name, Rts2Value *val)
+void ATC2::getValue (const char *name, rts2core::Value *val)
 {
 	int ret = ATC2Conn->readPort (buf, 12, '\n');
 	if (ret != 12)
@@ -199,7 +199,7 @@ void ATC2::getValue (const char *name, Rts2Value *val)
 		return;
 	if (val->getValueBaseType () == RTS2_VALUE_BOOL)
 	{
-		((Rts2ValueBool *) val)->setValueBool (atoi (buf + l));
+		((rts2core::ValueBool *) val)->setValueBool (atoi (buf + l));
 	}
 	else
 	{
@@ -300,7 +300,7 @@ int ATC2::isFocusing ()
 	return -2;
 }
 
-int ATC2::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int ATC2::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == fanSpeed)
 	{

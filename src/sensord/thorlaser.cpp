@@ -43,39 +43,39 @@ class ThorLaser:public Sensor
 		virtual int init ();
 		virtual int info ();
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 	private:
 		char *device_file;
 		rts2core::ConnSerial *laserConn;
 
 		int currentChannel;
 
-		Rts2ValueString *id;
-		Rts2ValueFloat *version;
+		rts2core::ValueString *id;
+		rts2core::ValueFloat *version;
 
-		Rts2ValueBool *systemEnable;
+		rts2core::ValueBool *systemEnable;
 
-		Rts2ValueFloat *defaultTemp;
+		rts2core::ValueFloat *defaultTemp;
 
-		Rts2ValueBool *enable[CHAN_NUM];
-		Rts2ValueFloat *temp[CHAN_NUM];
-		Rts2ValueFloat *target[CHAN_NUM];
-		Rts2ValueFloat *current[CHAN_NUM];
+		rts2core::ValueBool *enable[CHAN_NUM];
+		rts2core::ValueFloat *temp[CHAN_NUM];
+		rts2core::ValueFloat *target[CHAN_NUM];
+		rts2core::ValueFloat *current[CHAN_NUM];
 
-		Rts2ValueInteger *wavelength[CHAN_NUM];
-		Rts2ValueFloat *pout[CHAN_NUM];
-		Rts2ValueFloat *iop[CHAN_NUM];
-		Rts2ValueFloat *imon[CHAN_NUM];
-		Rts2ValueFloat *ith[CHAN_NUM];
-		Rts2ValueString *serialNum[CHAN_NUM];
+		rts2core::ValueInteger *wavelength[CHAN_NUM];
+		rts2core::ValueFloat *pout[CHAN_NUM];
+		rts2core::ValueFloat *iop[CHAN_NUM];
+		rts2core::ValueFloat *imon[CHAN_NUM];
+		rts2core::ValueFloat *ith[CHAN_NUM];
+		rts2core::ValueString *serialNum[CHAN_NUM];
 
 		void checkChannel (int chan);
 
-		int getValue (int chan, const char *name, Rts2Value *value);
-		int setValue (int chan, const char *name, Rts2Value *value);
+		int getValue (int chan, const char *name, rts2core::Value *value);
+		int setValue (int chan, const char *name, rts2core::Value *value);
 
 		void getSpec (int chan);
-		void getSpecVal (Rts2Value *val, const char *name);
+		void getSpecVal (rts2core::Value *val, const char *name);
 
 		void resetValues();
 };
@@ -147,7 +147,7 @@ int ThorLaser::info ()
 	return Sensor::info ();
 }
 
-int ThorLaser::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int ThorLaser::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == systemEnable)
 		return setValue (currentChannel, "system", new_value) ? -2 : 0;
@@ -232,7 +232,7 @@ void ThorLaser::checkChannel (int chan)
 	currentChannel = chan;
 }
 
-int ThorLaser::getValue (int chan, const char *name, Rts2Value *value)
+int ThorLaser::getValue (int chan, const char *name, rts2core::Value *value)
 {
 	checkChannel (chan);
 
@@ -255,13 +255,13 @@ int ThorLaser::getValue (int chan, const char *name, Rts2Value *value)
 		throw rts2core::Error ("empty reply");
 	buf[ret - 1] = '\0';
 	if (value->getValueBaseType () == RTS2_VALUE_BOOL)
-		((Rts2ValueBool *) value)->setValueBool (buf[0] == '1');
+		((rts2core::ValueBool *) value)->setValueBool (buf[0] == '1');
 	else	
 		value->setValueCharArr (buf);
 	return 0;
 }
 
-int ThorLaser::setValue (int chan, const char *name, Rts2Value *value)
+int ThorLaser::setValue (int chan, const char *name, rts2core::Value *value)
 {
 	checkChannel (chan);
 
@@ -289,7 +289,7 @@ void ThorLaser::getSpec (int chan)
 	getSpecVal (serialNum[chan], "SerialNumber");
 }
 
-void ThorLaser::getSpecVal (Rts2Value *val, const char *name)
+void ThorLaser::getSpecVal (rts2core::Value *val, const char *name)
 {
 	int ret;
 	char buf[50];

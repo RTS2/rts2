@@ -173,7 +173,7 @@ class TGDrive: public rts2core::ConnSerial
 		 *
 		 * @see Rts2Block::setValue()
 		 */
-		int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		void setTargetPos (int32_t pos);
 		void setCurrentPos (int32_t pos);
@@ -239,27 +239,27 @@ class TGDrive: public rts2core::ConnSerial
 
 		void readStatus ();
 
-		Rts2ValueInteger *dPos;
-		Rts2ValueInteger *aPos;
-		Rts2ValueInteger *posErr;
-		Rts2ValueInteger *maxPosErr;
+		rts2core::ValueInteger *dPos;
+		rts2core::ValueInteger *aPos;
+		rts2core::ValueInteger *posErr;
+		rts2core::ValueInteger *maxPosErr;
 
-		Rts2ValueDouble *dSpeed;
-		Rts2ValueDouble *aSpeed;
-		Rts2ValueDouble *maxSpeed;
+		rts2core::ValueDouble *dSpeed;
+		rts2core::ValueDouble *aSpeed;
+		rts2core::ValueDouble *maxSpeed;
 
-		Rts2ValueDouble *accel;
-		Rts2ValueDouble *decel;
-		Rts2ValueDouble *emerDecel;
+		rts2core::ValueDouble *accel;
+		rts2core::ValueDouble *decel;
+		rts2core::ValueDouble *emerDecel;
 
-		Rts2ValueFloat *dCur;
-		Rts2ValueFloat *aCur;
+		rts2core::ValueFloat *dCur;
+		rts2core::ValueFloat *aCur;
 
-		Rts2ValueInteger *appStatus;
-		Rts2ValueInteger *faults;
-		Rts2ValueInteger *masterCmd;
+		rts2core::ValueInteger *appStatus;
+		rts2core::ValueInteger *faults;
+		rts2core::ValueInteger *masterCmd;
 
-		Rts2ValueInteger *firmware;
+		rts2core::ValueInteger *firmware;
 
 		bool stopped;
 		int32_t stoppedPosition;

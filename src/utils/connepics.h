@@ -68,11 +68,11 @@ class ConnEpicsErrorChannel:public ConnEpicsError
 class EpicsVal
 {
 	public:
-		Rts2Value *value;
+		rts2core::Value *value;
 		chid vchid;
 		void *storage;
 
-		EpicsVal (Rts2Value *_value, chid _vchid)
+		EpicsVal (rts2core::Value *_value, chid _vchid)
 		{
 			value = _value;
 			vchid = _vchid;
@@ -97,7 +97,7 @@ class ConnEpics: public Rts2ConnNoSend
 	private:
 		std::list <EpicsVal> channels;
 
-		EpicsVal * findValue (Rts2Value *value);
+		EpicsVal * findValue (rts2core::Value *value);
 	public:
 		ConnEpics (Rts2Block *_master);
 
@@ -106,13 +106,13 @@ class ConnEpics: public Rts2ConnNoSend
 		virtual int init ();
 
 		/**
-		 * Associate Rts2Value with channel.
+		 * Associate Value with channel.
 		 */
-		void addRts2Value (Rts2Value *value, const char *pvname);
+		void addValue (rts2core::Value *value, const char *pvname);
 
-		void addRts2Value (Rts2Value *value, const char *prefix, const char *pvname)
+		void addValue (rts2core::Value *value, const char *prefix, const char *pvname)
 		{
-			addRts2Value (value, (std::string (prefix) + std::string (pvname)).c_str ());
+			addValue (value, (std::string (prefix) + std::string (pvname)).c_str ());
 		}
 
 		chid createChannel (const char *pvname);
@@ -137,12 +137,12 @@ class ConnEpics: public Rts2ConnNoSend
 		 *
 		 * @param value Value which is requested.
 		 */
-		void queueGetValue (Rts2Value *value);
+		void queueGetValue (rts2core::Value *value);
 
 		/**
 		 * Queue value for set operation.
 		 */
-		void queueSetValue (Rts2Value *value);
+		void queueSetValue (rts2core::Value *value);
 
 		/**
 		 * Set integer value.

@@ -37,12 +37,12 @@ class SSP5:public Rts2DevPhot
 		const char *photFile;
 		rts2core::ConnSerial *photConn;
 
-		Rts2ValueSelection *gain;
+		rts2core::ValueSelection *gain;
 
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int setExposure (float _exp);
 
@@ -101,7 +101,7 @@ int SSP5::init ()
 	return 0;
 }
 
-int SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int SSP5::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == gain)
 	{

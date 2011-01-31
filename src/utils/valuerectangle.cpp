@@ -17,11 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2valuerectangle.h"
+#include "valuerectangle.h"
 #include "rts2conn.h"
 
-void
-Rts2ValueRectangle::createValues ()
+using namespace rts2core;
+
+void ValueRectangle::createValues ()
 {
 	x = newValue (rts2Type & RTS2_BASE_TYPE, getName () + ".X", getDescription () + " X");
 	y = newValue (rts2Type & RTS2_BASE_TYPE, getName () + ".Y", getDescription () + " Y");
@@ -29,33 +30,25 @@ Rts2ValueRectangle::createValues ()
 	h = newValue (rts2Type & RTS2_BASE_TYPE, getName () + ".HEIGHT", getDescription () + " HEIGHT");
 }
 
-
-void
-Rts2ValueRectangle::checkChange ()
+void ValueRectangle::checkChange ()
 {
 	if (x->wasChanged () || y->wasChanged () || w->wasChanged () || h->wasChanged ())
 		changed ();
 }
 
-
-Rts2ValueRectangle::Rts2ValueRectangle (std::string in_val_name, int32_t baseType):
-Rts2Value (in_val_name)
+ValueRectangle::ValueRectangle (std::string in_val_name, int32_t baseType):Value (in_val_name)
 {
 	rts2Type = RTS2_VALUE_RECTANGLE | baseType;
 	createValues ();
 }
 
-
-Rts2ValueRectangle::Rts2ValueRectangle (std::string in_val_name, std::string in_description,
-bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+ValueRectangle::ValueRectangle (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Value (in_val_name, in_description, writeToFits, flags)
 {
 	rts2Type = RTS2_VALUE_RECTANGLE | flags;
 	createValues ();
 }
 
-
-Rts2ValueRectangle::~Rts2ValueRectangle (void)
+ValueRectangle::~ValueRectangle (void)
 {
 	delete x;
 	delete y;
@@ -63,9 +56,7 @@ Rts2ValueRectangle::~Rts2ValueRectangle (void)
 	delete h;
 }
 
-
-void
-Rts2ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
+void ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
 {
 	x->setValueInteger (in_x);
 	y->setValueInteger (in_y);
@@ -74,9 +65,7 @@ Rts2ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
 	checkChange ();
 }
 
-
-int
-Rts2ValueRectangle::setValue (Rts2Conn *connection)
+int ValueRectangle::setValue (Rts2Conn *connection)
 {
 	char *val;
 	if (connection->paramNextString (&val) || x->setValueCharArr (val))
@@ -91,9 +80,7 @@ Rts2ValueRectangle::setValue (Rts2Conn *connection)
 	return connection->paramEnd () ? 0 : -2;
 }
 
-
-int
-Rts2ValueRectangle::setValueCharArr (const char *in_value)
+int ValueRectangle::setValueCharArr (const char *in_value)
 {
 	strncpy (buf, in_value, VALUE_BUF_LEN);
 	// split on spaces
@@ -137,56 +124,46 @@ Rts2ValueRectangle::setValueCharArr (const char *in_value)
 	return 0;
 }
 
-
-int
-Rts2ValueRectangle::setValueInteger (int in_value)
+int ValueRectangle::setValueInteger (int in_value)
 {
 	return -1;
 }
 
-
-const char *
-Rts2ValueRectangle::getValue ()
+const char * ValueRectangle::getValue ()
 {
 	sprintf (buf, "%s %s %s %s", x->getValue (), y->getValue (), w->getValue (), h->getValue ());
 	return buf;
 }
 
-
-void
-Rts2ValueRectangle::setFromValue(Rts2Value * new_value)
+void ValueRectangle::setFromValue(Value * new_value)
 {
 	if (new_value->getValueExtType () == RTS2_VALUE_RECTANGLE)
 	{
-		x->setFromValue (((Rts2ValueRectangle *)new_value)->getX ());
-		y->setFromValue (((Rts2ValueRectangle *)new_value)->getY ());
-		w->setFromValue (((Rts2ValueRectangle *)new_value)->getWidth ());
-		h->setFromValue (((Rts2ValueRectangle *)new_value)->getHeight ());
+		x->setFromValue (((ValueRectangle *)new_value)->getX ());
+		y->setFromValue (((ValueRectangle *)new_value)->getY ());
+		w->setFromValue (((ValueRectangle *)new_value)->getWidth ());
+		h->setFromValue (((ValueRectangle *)new_value)->getHeight ());
 		checkChange ();
 	}
 }
 
-
-bool
-Rts2ValueRectangle::isEqual (Rts2Value *other_value)
+bool ValueRectangle::isEqual (Value *other_value)
 {
 	if (other_value->getValueExtType () == RTS2_VALUE_RECTANGLE)
 	{
-		return x->isEqual (((Rts2ValueRectangle *)other_value)->getX ())
-			&& y->isEqual (((Rts2ValueRectangle *)other_value)->getY ())
-			&& w->isEqual (((Rts2ValueRectangle *)other_value)->getWidth ())
-			&& h->isEqual (((Rts2ValueRectangle *)other_value)->getHeight ());
+		return x->isEqual (((ValueRectangle *)other_value)->getX ())
+			&& y->isEqual (((ValueRectangle *)other_value)->getY ())
+			&& w->isEqual (((ValueRectangle *)other_value)->getWidth ())
+			&& h->isEqual (((ValueRectangle *)other_value)->getHeight ());
 	}
 	return false;
 }
 
-
-void
-Rts2ValueRectangle::resetValueChanged ()
+void ValueRectangle::resetValueChanged ()
 {
 	x->resetValueChanged ();
 	y->resetValueChanged ();
 	w->resetValueChanged ();
 	h->resetValueChanged ();
-	Rts2Value::resetValueChanged ();
+	Value::resetValueChanged ();
 }

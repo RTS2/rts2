@@ -111,32 +111,32 @@ class Davis: public SensorWeather
 		virtual int idle ();
 
 		virtual int info ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		DavisUdp *weatherConn;
 
-		Rts2ValueInteger *connTimeout;
+		rts2core::ValueInteger *connTimeout;
 
-		Rts2ValueFloat *temperature;
-		Rts2ValueFloat *humidity;
-		Rts2ValueBool *rain;
+		rts2core::ValueFloat *temperature;
+		rts2core::ValueFloat *humidity;
+		rts2core::ValueBool *rain;
 
-		Rts2ValueFloat *avgWindSpeed;
-		Rts2ValueFloat *peekWindSpeed;
+		rts2core::ValueFloat *avgWindSpeed;
+		rts2core::ValueFloat *peekWindSpeed;
 
-		Rts2ValueFloat *rainRate;
+		rts2core::ValueFloat *rainRate;
 
-		Rts2ValueDouble *wetness;
+		rts2core::ValueDouble *wetness;
 
-		Rts2ValueDouble *cloud;
-		Rts2ValueDouble *cloudTop;
-		Rts2ValueDouble *cloudBottom;
-		Rts2ValueDouble *cloud_bad;
+		rts2core::ValueDouble *cloud;
+		rts2core::ValueDouble *cloudTop;
+		rts2core::ValueDouble *cloudBottom;
+		rts2core::ValueDouble *cloud_bad;
 
-		Rts2ValueFloat *maxWindSpeed;
-		Rts2ValueFloat *maxPeekWindSpeed;
+		rts2core::ValueFloat *maxWindSpeed;
+		rts2core::ValueFloat *maxPeekWindSpeed;
 
-		Rts2ValueInteger *udpPort;
+		rts2core::ValueInteger *udpPort;
 };
 
 }

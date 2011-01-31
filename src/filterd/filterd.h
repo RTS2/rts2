@@ -57,10 +57,10 @@ class Filterd:public rts2core::Device
 		virtual int getFilterNum (void);
 		virtual int setFilterNum (int new_filter);
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
-		Rts2ValueSelection *filter;
+		rts2core::ValueSelection *filter;
 
 		/**
 		 * Set filter names from space separated argument list.

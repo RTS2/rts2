@@ -73,7 +73,7 @@ class Hlohovec:public GEM
 		virtual int updateLimits ();
 		virtual int getHomeOffset (int32_t & off);
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 	private:
 		TGDrive *raDrive;
 		TGDrive *decDrive;
@@ -350,7 +350,7 @@ void Hlohovec::matchGuideDec (int deg)
 	}
 }
 
-int Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == raGuide)
 	{

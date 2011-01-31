@@ -40,7 +40,7 @@ class Robofocus:public Focusd
 		char checksum;
 		int step_num;
 
-		Rts2ValueBool *switches[4];
+		rts2core::ValueBool *switches[4];
 
 		// high-level I/O functions
 		int focus_move (const char *cmd, int steps);
@@ -60,7 +60,7 @@ class Robofocus:public Focusd
 			return false;
 		}
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 	public:
 		Robofocus (int argc, char **argv);
 		~Robofocus (void);
@@ -309,13 +309,13 @@ int Robofocus::isFocusing ()
 	return 0;
 }
 
-int Robofocus::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	for (int i = 0; i < 4; i++)
 	{
 		if (switches[i] == oldValue)
 		{
-			return setSwitch (i, ((Rts2ValueBool *) newValue)->getValueBool ()) == 0 ? 0 : -2;
+			return setSwitch (i, ((rts2core::ValueBool *) newValue)->getValueBool ()) == 0 ? 0 : -2;
 		}
 	}
 	return Focusd::setValue (oldValue, newValue);

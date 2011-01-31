@@ -31,12 +31,12 @@ class Cryocon;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueTempInput
+class rts2core::ValueTempInput
 {
 	public:
-		std::list < Rts2Value * >values;
+		std::list < rts2core::Value * >values;
 
-		Rts2ValueTempInput (Cryocon * dev, char in_chan);
+		rts2core::ValueTempInput (Cryocon * dev, char in_chan);
 
 		char getChannel () { return chan; }
 
@@ -49,24 +49,24 @@ class Rts2ValueTempInput
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueLoop
+class rts2core::ValueLoop
 {
 	public:
-		Rts2ValueSelection * source;
-		Rts2ValueDouble *setpt;
-		Rts2ValueSelection *type;
-		Rts2ValueSelection *range;
-		Rts2ValueBool *ramp;
-		Rts2ValueDouble *rate;
-		Rts2ValueDouble *pgain;
-		Rts2ValueDouble *igain;
-		Rts2ValueDouble *dgain;
-		Rts2ValueDouble *htrread;
-		Rts2ValueFloat *pmanual;
+		rts2core::ValueSelection * source;
+		rts2core::ValueDouble *setpt;
+		rts2core::ValueSelection *type;
+		rts2core::ValueSelection *range;
+		rts2core::ValueBool *ramp;
+		rts2core::ValueDouble *rate;
+		rts2core::ValueDouble *pgain;
+		rts2core::ValueDouble *igain;
+		rts2core::ValueDouble *dgain;
+		rts2core::ValueDouble *htrread;
+		rts2core::ValueFloat *pmanual;
 
-		Rts2ValueLoop (Cryocon * dev, int in_loop);
+		rts2core::ValueLoop (Cryocon * dev, int in_loop);
 
-		std::list < Rts2Value * >values;
+		std::list < rts2core::Value * >values;
 
 		int getLoop ()
 		{
@@ -87,7 +87,7 @@ class Cryocon:public Gpib
 		Cryocon (int argc, char **argv);
 		virtual ~ Cryocon (void);
 
-		void createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc);
+		void createTempInputValue (rts2core::ValueDouble ** val, char chan, const char *name, const char *desc);
 
 		template < typename T > void createLoopValue (T * &val, int loop, const char *in_val_name, const char *in_desc, bool writeToFits = true, uint32_t flags = 0)
 		{
@@ -104,33 +104,33 @@ class Cryocon:public Gpib
 		virtual int commandAuthorized (Rts2Conn * conn);
 
 	protected:
-		virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
+		virtual int setValue (rts2core::Value * oldValue, rts2core::Value * newValue);
 
 	private:
-		const char *getLoopVal (int l, Rts2Value * val);
+		const char *getLoopVal (int l, rts2core::Value * val);
 
-		Rts2ValueTempInput *chans[4];
-		Rts2ValueLoop *loops[2];
+		rts2core::ValueTempInput *chans[4];
+		rts2core::ValueLoop *loops[2];
 
-		std::list < Rts2Value * >systemList;
+		std::list < rts2core::Value * >systemList;
 
-		Rts2ValueDouble *statTime;
+		rts2core::ValueDouble *statTime;
 
-		Rts2ValueDouble *amb;
-		Rts2ValueFloat *htrread;
-		Rts2ValueFloat *htrhst;
-		Rts2ValueBool *heaterEnabled;
+		rts2core::ValueDouble *amb;
+		rts2core::ValueFloat *htrread;
+		rts2core::ValueFloat *htrhst;
+		rts2core::ValueBool *heaterEnabled;
 };
 
 };
 
 using namespace rts2sensord;
 
-Rts2ValueTempInput::Rts2ValueTempInput (Cryocon * dev, char in_chan)
+rts2core::ValueTempInput::rts2core::ValueTempInput (Cryocon * dev, char in_chan)
 {
 	chan = in_chan;
 	// values are passed to dev, and device deletes them!
-	Rts2ValueDouble *v;
+	rts2core::ValueDouble *v;
 
 	dev->createTempInputValue (&v, chan, "TEMP", "cryocon temperature from channel ");
 	values.push_back (v);
@@ -151,7 +151,7 @@ Rts2ValueTempInput::Rts2ValueTempInput (Cryocon * dev, char in_chan)
 	values.push_back (v);
 }
 
-Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
+rts2core::ValueLoop::rts2core::ValueLoop (Cryocon * dev, int in_loop)
 {
 	loop = in_loop;
 
@@ -204,7 +204,7 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 	values.push_back (pmanual);
 }
 
-const char * Cryocon::getLoopVal (int l, Rts2Value * val)
+const char * Cryocon::getLoopVal (int l, rts2core::Value * val)
 {
 	static char buf[100];
 	strcpy (buf, "LOOP ");
@@ -215,15 +215,15 @@ const char * Cryocon::getLoopVal (int l, Rts2Value * val)
 	return buf;
 }
 
-int Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
+int Cryocon::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 {
 	try
 	{
 		for (int l = 0; l < 2; l++)
 		{
-			for (std::list < Rts2Value * >::iterator iter = loops[l]->values.begin (); iter != loops[l]->values.end (); iter++)
+			for (std::list < rts2core::Value * >::iterator iter = loops[l]->values.begin (); iter != loops[l]->values.end (); iter++)
 			{
-				Rts2Value *val = *iter;
+				rts2core::Value *val = *iter;
 				if (oldValue == val)
 				{
 					writeValue (getLoopVal (l, val), newValue);
@@ -233,7 +233,7 @@ int Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 		}
 		if (oldValue == heaterEnabled)
 		{
-			if (((Rts2ValueBool *) newValue)->getValueBool ())
+			if (((rts2core::ValueBool *) newValue)->getValueBool ())
 				gpibWrite ("CONTROL");
 			else
 				gpibWrite ("STOP");
@@ -254,12 +254,12 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 
 	for (i = 0; i < 4; i++)
 	{
-		chans[i] = new Rts2ValueTempInput (this, 'A' + i);
+		chans[i] = new rts2core::ValueTempInput (this, 'A' + i);
 	}
 
 	for (i = 0; i < 2; i++)
 	{
-		loops[i] = new Rts2ValueLoop (this, i);
+		loops[i] = new rts2core::ValueLoop (this, i);
 	}
 
 	createValue (statTime, "STATTIME", "time for which statistic was collected", true);
@@ -279,7 +279,7 @@ Cryocon::~Cryocon (void)
 {
 }
 
-void Cryocon::createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc)
+void Cryocon::createTempInputValue (rts2core::ValueDouble ** val, char chan, const char *name, const char *desc)
 {
 	char *n = new char[strlen (name) + 3];
 	n[0] = chan;

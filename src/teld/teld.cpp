@@ -379,7 +379,7 @@ double Telescope::getLstDeg (double JD)
 		telLongitude->getValueDouble ());
 }
 
-int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == mpec)
 	{
@@ -389,13 +389,13 @@ int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == diffTrackRaDec)
 	{
-	  	setDiffTrack (((Rts2ValueRaDec *)new_value)->getRa (), ((Rts2ValueRaDec *)new_value)->getDec ());
+	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
 		return 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
 
-void Telescope::valueChanged (Rts2Value * changed_value)
+void Telescope::valueChanged (rts2core::Value * changed_value)
 {
 	if (changed_value == woffsRaDec)
 	{

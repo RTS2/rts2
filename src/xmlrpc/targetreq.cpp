@@ -364,9 +364,9 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		(*iter)->queCommand (new rts2core::Rts2CommandMove (master, NULL, pos.ra, pos.dec));
 
 		// return status..
-		Rts2ValueRaDec *telRaDec = (Rts2ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
-		Rts2ValueAltAz *telAltAz = (Rts2ValueAltAz *) ((*iter)->getValueType ("TEL_", RTS2_VALUE_RADEC));
-		Rts2ValueRaDec *tarRaDec = (Rts2ValueRaDec *) ((*iter)->getValueType ("TAR", RTS2_VALUE_RADEC));
+		rts2core::ValueRaDec *telRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
+		rts2core::ValueAltAz *telAltAz = (rts2core::ValueAltAz *) ((*iter)->getValueType ("TEL_", RTS2_VALUE_RADEC));
+		rts2core::ValueRaDec *tarRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TAR", RTS2_VALUE_RADEC));
 
 		std::ostringstream os;
 		os << "{\"remaining\":" << ((*iter)->getValueDouble ("move_end") - ((XmlRpcd *)getMasterApp ())->getNow ())

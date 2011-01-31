@@ -71,7 +71,7 @@ class XmlDevClient:public rts2core::Rts2DevClient
 
 		virtual void stateChanged (Rts2ServerState * state);
 
-		virtual void valueChanged (Rts2Value * value);
+		virtual void valueChanged (rts2core::Value * value);
 };
 
 /**
@@ -95,7 +95,7 @@ class XmlRpcd:public rts2core::Device
 
 		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
 
-		void valueChangedEvent (Rts2Conn *conn, Rts2Value *new_value);
+		void valueChangedEvent (Rts2Conn *conn, rts2core::Value *new_value);
 
 		virtual void message (Rts2Message & msg);
 
@@ -169,7 +169,7 @@ class XmlRpcd:public rts2core::Device
 
 		Events events;
 
-		Rts2ValueBool *send_emails;
+		rts2core::ValueBool *send_emails;
 
 #ifndef HAVE_PGSQL
 		const char *config_file;
@@ -179,7 +179,7 @@ class XmlRpcd:public rts2core::Device
 
 		void sendBB ();
 
-		Rts2ValueInteger *bbCadency;
+		rts2core::ValueInteger *bbCadency;
 
 		void reloadEventsFile ();
 };

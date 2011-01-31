@@ -45,28 +45,28 @@ class Keithley:public Gpib
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual bool canCallInfoFromTimer () { return false; }
 
 	private:
-		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
+		void getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
 		void waitOpc ();
 		void readErrors ();
 
-		Rts2ValueBool *azero;
+		rts2core::ValueBool *azero;
 
 		// triggering mode
-		Rts2ValueSelection *triggerMode;
+		rts2core::ValueSelection *triggerMode;
 
 		// current statistics and value
-		Rts2ValueDoubleStat *scurrent;
+		rts2core::ValueDoubleStat *scurrent;
 		rts2core::DoubleArray *current;
 		rts2core::DoubleArray *meas_times;
 
-		Rts2ValueInteger *countNum;
-		Rts2ValueFloat *nplc;
+		rts2core::ValueInteger *countNum;
+		rts2core::ValueFloat *nplc;
 
 		int groupNumber;
 };
@@ -75,7 +75,7 @@ class Keithley:public Gpib
 
 using namespace rts2sensord;
 
-void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count)
+void Keithley::getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count)
 {
 	int bsize = 10000;
 	char *rbuf = new char[bsize];
@@ -241,13 +241,13 @@ int Keithley::init ()
 
 int Keithley::initValues ()
 {
-	Rts2ValueString *model = new Rts2ValueString ("model");
+	rts2core::ValueString *model = new rts2core::ValueString ("model");
 	readValue ("*IDN?", model);
 	addConstValue (model);
 	return Gpib::initValues ();
 }
 
-int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == triggerMode)
 	{

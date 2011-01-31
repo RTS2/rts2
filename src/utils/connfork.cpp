@@ -199,9 +199,9 @@ void ConnFork::fillConnectionEnv (Rts2Conn *conn, const char *prefix)
 	sprintf (envV, "%s_state=%s", prefix, _os.str ().c_str ());
 	putenv (envV);
 
-	for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
+	for (rts2core::ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
 	{
-		Rts2Value *val = (*viter);
+		rts2core::Value *val = (*viter);
 		// replace non-alpha characters
 		std::string valn = val->getName ();
 		for (std::string::iterator siter = valn.begin (); siter != valn.end (); siter++)

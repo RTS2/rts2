@@ -87,22 +87,22 @@ namespace rts2sensord
 		private:
 			HostString *host;
 
-			Rts2ValueString *model;
+			rts2core::ValueString *model;
 
-			Rts2ValueFloat *loadpct;
-			Rts2ValueFloat *bcharge;
-			Rts2ValueInteger *timeleft;
-			Rts2ValueFloat *itemp;
-			Rts2ValueInteger *tonbatt;
-			Rts2ValueString *status;
+			rts2core::ValueFloat *loadpct;
+			rts2core::ValueFloat *bcharge;
+			rts2core::ValueInteger *timeleft;
+			rts2core::ValueFloat *itemp;
+			rts2core::ValueInteger *tonbatt;
+			rts2core::ValueString *status;
 
-			Rts2ValueInteger *battimeout;
+			rts2core::ValueInteger *battimeout;
 
-			Rts2ValueFloat *minbcharge;
-			Rts2ValueInteger *mintimeleft;
+			rts2core::ValueFloat *minbcharge;
+			rts2core::ValueInteger *mintimeleft;
 
-			Rts2ValueTime *xOnBatt;
-			Rts2ValueTime *xOffBatt;
+			rts2core::ValueTime *xOnBatt;
+			rts2core::ValueTime *xOffBatt;
 	};
 
 }

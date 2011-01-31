@@ -43,7 +43,7 @@ int ElementWaitFor::defnextCommand (Rts2DevClient * client, Rts2Command ** new_c
 
 int ElementWaitFor::idle ()
 {
-	Rts2Value *val = script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
+	rts2core::Value *val = script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
 	if (!val)
 	{
 		Rts2Address *add = script->getMaster ()->findAddress (deviceName.c_str ());

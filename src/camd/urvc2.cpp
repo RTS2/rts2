@@ -69,7 +69,7 @@ class Urvc2:public Camera
 		virtual int stopExposure ();
 		virtual int doReadout ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual int setFilterNum (int new_filter);
 		virtual int getFilterNum ();
@@ -85,9 +85,9 @@ class Urvc2:public Camera
 		int setcool (int reg, int setpt, int prel);
 		int setTempRegulation (int tempReg);
 
-		Rts2ValueInteger *coolingPower;
-		Rts2ValueSelection *tempRegulation;
-		Rts2ValueBool *fan;
+		rts2core::ValueInteger *coolingPower;
+		rts2core::ValueSelection *tempRegulation;
+		rts2core::ValueBool *fan;
 
 
 };
@@ -263,7 +263,7 @@ int Urvc2::doReadout ()
 	return -2;
 }
 
-int Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Urvc2::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -285,7 +285,7 @@ int Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == fan)
 	{
-		return set_fan (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return set_fan (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }

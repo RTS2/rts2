@@ -34,24 +34,24 @@ void ConnGpib::readInt (const char *buf, int &val)
 	val = atol (rb);
 }
 
-void ConnGpib::readValue (const char *buf, Rts2Value * val)
+void ConnGpib::readValue (const char *buf, rts2core::Value * val)
 {
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_DOUBLE:
-			readValue (buf, (Rts2ValueDouble *) val);
+			readValue (buf, (rts2core::ValueDouble *) val);
 			return;
 		case RTS2_VALUE_FLOAT:
-			readValue (buf, (Rts2ValueFloat *) val);
+			readValue (buf, (rts2core::ValueFloat *) val);
 			return;
 		case RTS2_VALUE_BOOL:
-			readValue (buf, (Rts2ValueBool *) val);
+			readValue (buf, (rts2core::ValueBool *) val);
 			return;
 		case RTS2_VALUE_INTEGER:
-			readValue (buf, (Rts2ValueInteger *) val);
+			readValue (buf, (rts2core::ValueInteger *) val);
 			return;
 		case RTS2_VALUE_SELECTION:
-			readValue (buf, (Rts2ValueSelection *) val);
+			readValue (buf, (rts2core::ValueSelection *) val);
 			return;
 		default:
 			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
@@ -60,12 +60,12 @@ void ConnGpib::readValue (const char *buf, Rts2Value * val)
 }
 
 
-void ConnGpib::readValue (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
+void ConnGpib::readValue (const char *subsystem, std::list < rts2core::Value * >&vals, int prefix_num)
 {
 	char rb[500];
 	char *retTop;
 	char *retEnd;
-	std::list < Rts2Value * >::iterator iter;
+	std::list < rts2core::Value * >::iterator iter;
 
 	strcpy (rb, subsystem);
 
@@ -108,7 +108,7 @@ void ConnGpib::readValue (const char *subsystem, std::list < Rts2Value * >&vals,
 }
 
 
-void ConnGpib::readValue (const char *buf, Rts2ValueString * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueString * val)
 {
 	char rb[200];
 	gpibWriteRead (buf, rb, 200);
@@ -122,7 +122,7 @@ void ConnGpib::readValue (const char *buf, Rts2ValueString * val)
 }
 
 
-void ConnGpib::readValue (const char *buf, Rts2ValueDouble * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueDouble * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
@@ -130,28 +130,28 @@ void ConnGpib::readValue (const char *buf, Rts2ValueDouble * val)
 }
 
 
-void ConnGpib::readValue (const char *buf, Rts2ValueFloat * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueFloat * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
 	val->setValueCharArr (rb);
 }
 
-void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueBool * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
 	val->setValueBool (!strncmp (rb, "ON", 2));
 }
 
-void ConnGpib::readValue (const char *buf, Rts2ValueInteger * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueInteger * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
 	val->setValueCharArr (rb);
 }
 
-void ConnGpib::readValue (const char *buf, Rts2ValueSelection * val)
+void ConnGpib::readValue (const char *buf, rts2core::ValueSelection * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);

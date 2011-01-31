@@ -89,8 +89,8 @@ class MM2:public Telescope
 		{ RUNNING, STOPED }
 		worm_state;
 
-		Rts2ValueDouble *axRa;
-		Rts2ValueDouble *axDec;
+		rts2core::ValueDouble *axRa;
+		rts2core::ValueDouble *axDec;
 
 		time_t last_pos_update;
 		double last_pos_ra;

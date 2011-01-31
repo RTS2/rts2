@@ -166,9 +166,9 @@ class Dummy:public Camera
 	private:
 		bool supportFrameT;
 		int infoSleep;
-		Rts2ValueDouble *readoutSleep;
-		Rts2ValueSelection *genType;
-		Rts2ValueDouble *noiseRange;
+		rts2core::ValueDouble *readoutSleep;
+		rts2core::ValueSelection *genType;
+		rts2core::ValueDouble *noiseRange;
 		int width;
 		int height;
 

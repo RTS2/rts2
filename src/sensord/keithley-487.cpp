@@ -37,14 +37,14 @@ struct keithG4Header
 class Keithley487:public Gpib
 {
 	private:
-		Rts2ValueFloat * curr;
-		Rts2ValueBool *sourceOn;
-		Rts2ValueDoubleMinMax *voltage;
-		Rts2ValueSelection *zeroCheck;
+		rts2core::ValueFloat * curr;
+		rts2core::ValueBool *sourceOn;
+		rts2core::ValueDoubleMinMax *voltage;
+		rts2core::ValueSelection *zeroCheck;
 	protected:
 		virtual int init ();
 		virtual int info ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	public:
 		Keithley487 (int argc, char **argv);
 };
@@ -121,7 +121,7 @@ int Keithley487::info ()
 	return Gpib::info ();
 }
 
-int Keithley487::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Keithley487::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	char buf[50];
 	try
@@ -130,7 +130,7 @@ int Keithley487::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		{
 			// operate..
 			strcpy (buf, "O0X");
-			if (((Rts2ValueBool *) new_value)->getValueBool ())
+			if (((rts2core::ValueBool *) new_value)->getValueBool ())
 				buf[1] = '1';
 			gpibWrite (buf);
 			return 0;

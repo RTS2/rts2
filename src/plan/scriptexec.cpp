@@ -34,7 +34,7 @@ using namespace rts2plan;
 class ClientCameraScript:public Rts2DevClientCameraExec
 {
 	public:
-		ClientCameraScript (Rts2Conn *conn, Rts2ValueString *_expandPath):Rts2DevClientCameraExec (conn, _expandPath) {};
+		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath):Rts2DevClientCameraExec (conn, _expandPath) {};
 		virtual imageProceRes processImage (Rts2Image * image);
 };
 
@@ -120,7 +120,7 @@ int ScriptExec::processOption (int in_opt)
 			deviceName = NULL;
 			break;
 		case 'e':
-			expandPath = new Rts2ValueString ("expand_path");
+			expandPath = new rts2core::ValueString ("expand_path");
 			expandPath->setValueString (optarg);
 			break;
 		default:
@@ -194,7 +194,7 @@ int ScriptExec::init ()
 	{
 		std::string fp;
 		config->getString ("scriptexec", "expand_path", fp, "%f");
-		expandPath = new Rts2ValueString ("expand_path");
+		expandPath = new rts2core::ValueString ("expand_path");
 		expandPath->setValueString (fp.c_str ());
 	}
 

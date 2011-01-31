@@ -24,7 +24,7 @@
 #include <string>
 
 #include "../utils/error.h"
-#include "../utils/rts2value.h"
+#include "../utils/value.h"
 #include "../utils/utilsfunc.h"
 
 namespace rts2db

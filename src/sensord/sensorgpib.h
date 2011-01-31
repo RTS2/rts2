@@ -50,27 +50,27 @@ class Gpib:public Sensor
 		 * using either ON or OFF as value.
 		 *
 		 * @param name   GPIB value name.
-		 * @param value  Rts2Value class.
+		 * @param value  rts2core::Value class.
 		 *
 		 * @throw rts2core::Error and its descendants.
 		 */
-		void writeValue (const char *name, Rts2Value *value);
+		void writeValue (const char *name, rts2core::Value *value);
 
 		void readInt (const char *buf, int &val) { connGpib->readInt (buf, val); }
 
-		void readValue (const char *buf, Rts2Value *val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::Value *val) { connGpib->readValue (buf, val); }
 
-		void readValue (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num) { connGpib->readValue (subsystem, vals, prefix_num); }
+		void readValue (const char *subsystem, std::list < rts2core::Value * >&vals, int prefix_num) { connGpib->readValue (subsystem, vals, prefix_num); }
 
-		void readValue (const char *buf, Rts2ValueString * val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::ValueString * val) { connGpib->readValue (buf, val); }
 
-		void readValue (const char *buf, Rts2ValueDouble * val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::ValueDouble * val) { connGpib->readValue (buf, val); }
 
-		void readValue (const char *buf, Rts2ValueFloat * val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::ValueFloat * val) { connGpib->readValue (buf, val); }
 
-		void readValue (const char *buf, Rts2ValueBool * val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::ValueBool * val) { connGpib->readValue (buf, val); }
 
-		void readValue (const char *buf, Rts2ValueSelection * val) { connGpib->readValue (buf, val); }
+		void readValue (const char *buf, rts2core::ValueSelection * val) { connGpib->readValue (buf, val); }
 
 		void gpibWaitSRQ () { connGpib->gpibWaitSRQ (); }
 

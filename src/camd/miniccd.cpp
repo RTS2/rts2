@@ -37,7 +37,7 @@ class Miniccd:public Camera
 		int ccd_dac_bits;
 		int sizeof_pixel;
 
-		Rts2ValueBool * tempControl;
+		rts2core::ValueBool * tempControl;
 
 		CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 		CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];

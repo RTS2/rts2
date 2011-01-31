@@ -64,7 +64,7 @@ void ConnExe::processCommand (char *cmd)
 		if (paramNextString (&device) || paramNextString (&value) || master == NULL)
 			return;
 
-		Rts2Value *val = NULL;
+		rts2core::Value *val = NULL;
 
 		if (isCentraldName (device))
 			val = master->getSingleCentralConn ()->getValue (value);
@@ -113,13 +113,13 @@ void ConnExe::processCommand (char *cmd)
 		double val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || !paramEnd ())
 			throw rts2core::Error ("invalid double string");
-		Rts2Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
 			if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
 			{
-				((Rts2ValueDouble *) v)->setValueDouble (val);
+				((rts2core::ValueDouble *) v)->setValueDouble (val);
 				((rts2core::Daemon *) master)->sendValueAll (v);
 			}
 			else
@@ -130,7 +130,7 @@ void ConnExe::processCommand (char *cmd)
 		// or create it and distribute it..
 		else
 		{
-			Rts2ValueDouble *vd;
+			rts2core::ValueDouble *vd;
 			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false);
 			vd->setValueDouble (val);
 			master->updateMetaInformations (vd);
@@ -142,13 +142,13 @@ void ConnExe::processCommand (char *cmd)
 		int val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextInteger (&val) || !paramEnd ())
 			throw rts2core::Error ("invalid integer string");
-		Rts2Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
 			if (v->getValueBaseType () == RTS2_VALUE_INTEGER)
 			{
-				((Rts2ValueInteger *) v)->setValueInteger (val);
+				((rts2core::ValueInteger *) v)->setValueInteger (val);
 				((rts2core::Daemon *) master)->sendValueAll (v);
 			}
 			else
@@ -159,7 +159,7 @@ void ConnExe::processCommand (char *cmd)
 		// or create it and distribute it..
 		else
 		{
-			Rts2ValueInteger *vi;
+			rts2core::ValueInteger *vi;
 			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false);
 			vi->setValueInteger (val);
 			master->updateMetaInformations (vi);
@@ -170,13 +170,13 @@ void ConnExe::processCommand (char *cmd)
 		char *vname, *desc, *val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
 			throw rts2core::Error ("invalid string");
-		Rts2Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
 			if (v->getValueBaseType () == RTS2_VALUE_STRING)
 			{
-				((Rts2ValueInteger *) v)->setValueCharArr (val);
+				((rts2core::ValueInteger *) v)->setValueCharArr (val);
 				((rts2core::Daemon *) master)->sendValueAll (v);
 			}
 			else
@@ -187,7 +187,7 @@ void ConnExe::processCommand (char *cmd)
 		// or create it and distribute it..
 		else
 		{
-			Rts2ValueString *vi;
+			rts2core::ValueString *vi;
 			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false);
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);

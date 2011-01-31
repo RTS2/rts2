@@ -77,7 +77,7 @@ class APGTO:public TelLX200 {
   
 		virtual int abortAnyMotion () ;
 	protected:
-		virtual int setValue (Rts2Value * oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value * oldValue, rts2core::Value *newValue);
 
 		virtual int willConnect (Rts2Address * in_addr);
 
@@ -137,19 +137,19 @@ class APGTO:public TelLX200 {
 		int tel_check_coords (double ra, double dec);
 
 		// fixed offsets
-		Rts2ValueRaDec *fixedOffsets;
+		rts2core::ValueRaDec *fixedOffsets;
 		
-		Rts2ValueSelection *trackingRate;
-		Rts2ValueSelection *APslew_rate;
-		Rts2ValueSelection *APcenter_rate;
-		Rts2ValueSelection *APguide_rate;
+		rts2core::ValueSelection *trackingRate;
+		rts2core::ValueSelection *APslew_rate;
+		rts2core::ValueSelection *APcenter_rate;
+		rts2core::ValueSelection *APguide_rate;
 
-		Rts2ValueDouble *APutc_offset;
-		Rts2ValueString *APfirmware ;
-		Rts2ValueString *DECaxis_HAcoordinate ; // see pier_collision.c 
-		Rts2ValueBool *assume_parked;
-		Rts2ValueBool *collision_detection; 
-		Rts2ValueBool *avoidBellowHorizon;
+		rts2core::ValueDouble *APutc_offset;
+		rts2core::ValueString *APfirmware ;
+		rts2core::ValueString *DECaxis_HAcoordinate ; // see pier_collision.c 
+		rts2core::ValueBool *assume_parked;
+		rts2core::ValueBool *collision_detection; 
+		rts2core::ValueBool *avoidBellowHorizon;
 
 		// limit switch bussiness
 		char *limitSwitchName;
@@ -1053,9 +1053,9 @@ int APGTO::stopMove ()
 		Rts2Conn *conn = getOpenConnection (limitSwitchName);
 		if (conn != NULL)
 		{
-			Rts2Value *vral = conn->getValue ("RA_LIMIT");
-			Rts2Value *vrah = conn->getValue ("RA_HOME");
-			Rts2Value *vdech = conn->getValue ("DEC_HOME");
+			rts2core::Value *vral = conn->getValue ("RA_LIMIT");
+			rts2core::Value *vrah = conn->getValue ("RA_HOME");
+			rts2core::Value *vdech = conn->getValue ("DEC_HOME");
 			if (vral != NULL && vrah != NULL && vdech != NULL && (vral->getValueInteger () || vdech->getValueInteger ()))
 			{
 				logStream (MESSAGE_INFO) << " values in limit - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
@@ -1172,7 +1172,7 @@ int APGTO::abortAnyMotion ()
     }
 }
 
-int APGTO::setValue (Rts2Value * oldValue, Rts2Value *newValue)
+int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == trackingRate)
 	{
@@ -1628,9 +1628,9 @@ void APGTO::postEvent (Rts2Event *event)
 				Rts2Conn *conn = getOpenConnection (limitSwitchName);
 				if (conn != NULL)
 				{
-					Rts2Value *vral = conn->getValue ("RA_LIMIT");
-					Rts2Value *vrah = conn->getValue ("RA_HOME");
-					Rts2Value *vdech = conn->getValue ("DEC_HOME");
+					rts2core::Value *vral = conn->getValue ("RA_LIMIT");
+					rts2core::Value *vrah = conn->getValue ("RA_HOME");
+					rts2core::Value *vdech = conn->getValue ("DEC_HOME");
 					if (vral != NULL && vrah != NULL && vdech != NULL)
 					{
 						logStream (MESSAGE_INFO) << " limit values after recovery - RA_HOME " << vrah->getValueInteger () << " RA LIMIT " << vral->getValueInteger () << " DEC_HOME " << vdech->getValueInteger () << sendLog;
@@ -1682,10 +1682,10 @@ APGTO::APGTO (int in_argc, char **in_argv):TelLX200 (in_argc,in_argv)
 	createValue (DECaxis_HAcoordinate, "DECXHA", "DEC axis HA coordinate, West/East",true);
 
 	createValue (trackingRate, "TRACK", "tracking rate", true, RTS2_VALUE_WRITABLE);
-	trackingRate->addSelVal ("NONE", (Rts2SelData *) ":RT9#");
-	trackingRate->addSelVal ("SIDEREAL", (Rts2SelData *) ":RT2#");
-	trackingRate->addSelVal ("LUNAR", (Rts2SelData *) ":RT0#");
-	trackingRate->addSelVal ("SOLAR", (Rts2SelData *) ":RT1#");
+	trackingRate->addSelVal ("NONE", (rts2core::Rts2SelData *) ":RT9#");
+	trackingRate->addSelVal ("SIDEREAL", (rts2core::Rts2SelData *) ":RT2#");
+	trackingRate->addSelVal ("LUNAR", (rts2core::Rts2SelData *) ":RT0#");
+	trackingRate->addSelVal ("SOLAR", (rts2core::Rts2SelData *) ":RT1#");
 
 	createValue (APslew_rate, "slew_rate", "AP slew rate (1200, 900, 600)", false, RTS2_VALUE_WRITABLE);
 	APslew_rate->addSelVal ("600");

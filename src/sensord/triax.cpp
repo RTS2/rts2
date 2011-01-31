@@ -38,20 +38,20 @@ class Triax:public Gpib
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 	
 	private:
-		Rts2ValueString *mainVersion;
-		Rts2ValueString *bootVersion;
-		Rts2ValueInteger *motorPosition;
+		rts2core::ValueString *mainVersion;
+		rts2core::ValueString *bootVersion;
+		rts2core::ValueInteger *motorPosition;
 
-		Rts2ValueSelection *entryMirror;
-		Rts2ValueSelection *exitMirror;
+		rts2core::ValueSelection *entryMirror;
+		rts2core::ValueSelection *exitMirror;
 
 		void initTriax ();
 		// send command, wait for reply - 'o' comming from GPIB
 		void sendCommand (const char *cmd);
-		void getValue (Rts2Value *val, const char *cmd);
+		void getValue (rts2core::Value *val, const char *cmd);
 
 		void setValue (char cmd, int p1, int p2);
 
@@ -149,7 +149,7 @@ int Triax::initValues ()
 	return 0;
 }
 
-int Triax::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Triax::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	try
 	{
@@ -213,7 +213,7 @@ void Triax::sendCommand (const char *cmd)
 		throw rts2core::Error ("Invalid reply from device!");
 }
 
-void Triax::getValue (Rts2Value *val, const char *cmd)
+void Triax::getValue (rts2core::Value *val, const char *cmd)
 {
 	char buf[21];
 	int l = 20;

@@ -54,36 +54,36 @@ class Cloud4: public SensorWeather
 
 		virtual int info ();
 
-		virtual void valueChanged (Rts2Value *value);
+		virtual void valueChanged (rts2core::Value *value);
 
 	private:
 		char *device_file;
 		rts2core::ConnSerial *mrakConn;
 
-		Rts2ValueDoubleStat *tempDiff;
-		Rts2ValueDoubleStat *tempIn;
-		Rts2ValueDoubleStat *tempOut;
-		Rts2ValueDoubleStat *tempOut2;
-		Rts2ValueDoubleStat *tempAmb;
+		rts2core::ValueDoubleStat *tempDiff;
+		rts2core::ValueDoubleStat *tempIn;
+		rts2core::ValueDoubleStat *tempOut;
+		rts2core::ValueDoubleStat *tempOut2;
+		rts2core::ValueDoubleStat *tempAmb;
 
-		Rts2ValueDouble *tempInCoeff;
+		rts2core::ValueDouble *tempInCoeff;
 
 		// use this value only for logging to detect if we reported trips
 		double lastTempDiff;
 		
-		Rts2ValueInteger *numVal;
+		rts2core::ValueInteger *numVal;
 
-		Rts2ValueDouble *triggerBad;
-		Rts2ValueDouble *triggerGood;
+		rts2core::ValueDouble *triggerBad;
+		rts2core::ValueDouble *triggerGood;
 
-		Rts2ValueBool *heater;
+		rts2core::ValueBool *heater;
 
-		Rts2ValueInteger *numberMes;
-		Rts2ValueInteger *mrakStatus;
+		rts2core::ValueInteger *numberMes;
+		rts2core::ValueInteger *mrakStatus;
 
-		Rts2ValueTime *heatStateChangeTime;
-		Rts2ValueInteger *heatInterval;
-		Rts2ValueInteger *heatDuration;
+		rts2core::ValueTime *heatStateChangeTime;
+		rts2core::ValueInteger *heatInterval;
+		rts2core::ValueInteger *heatDuration;
 
 		/**
 		 * Read sensor values.
@@ -383,7 +383,7 @@ int Cloud4::info ()
 	return SensorWeather::info ();
 }
 
-void Cloud4::valueChanged (Rts2Value *value)
+void Cloud4::valueChanged (rts2core::Value *value)
 {
 	if (value == heatInterval || value == heatDuration)
 	{

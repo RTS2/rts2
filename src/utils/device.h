@@ -270,7 +270,7 @@ class Device:public Daemon
 		 */
 		virtual void setFullBopState (int new_state);
 
-		virtual Rts2Value *getValue (const char *_device_name, const char *value_name);
+		virtual rts2core::Value *getValue (const char *_device_name, const char *value_name);
 
 		/**
 		 * Hook called to mask device BOP state with possible blocking values from que.
@@ -356,7 +356,7 @@ class Device:public Daemon
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		std::list <HostString> centraldHosts;
 
@@ -366,7 +366,7 @@ class Device:public Daemon
 		// mode related variable
 		char *modefile;
 		Rts2ConfigRaw *modeconf;
-		Rts2ValueSelection *modesel;
+		rts2core::ValueSelection *modesel;
 
 		bool doCheck;
 

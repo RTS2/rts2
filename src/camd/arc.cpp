@@ -70,11 +70,11 @@ class Arc:public Camera
 		int w;
 		int h;
 
-		Rts2ValueInteger *biasWidth;
-		Rts2ValueInteger *biasPosition;
+		rts2core::ValueInteger *biasWidth;
+		rts2core::ValueInteger *biasPosition;
 
-		Rts2ValueString *timFile;
-                Rts2ValueString *utilFile;
+		rts2core::ValueString *timFile;
+                rts2core::ValueString *utilFile;
 
 #ifdef ARC_API_1_7
 		HANDLE pci_fd;

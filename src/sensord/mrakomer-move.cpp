@@ -54,12 +54,12 @@ class MrakomerMove:public SensorWeather
 
 		void checkCloud ();
 
-		Rts2ValueSelection *heating;
+		rts2core::ValueSelection *heating;
 
-		Rts2ValueInteger *ground;
-		Rts2ValueInteger *s45;
-		Rts2ValueInteger *s90;
-		Rts2ValueInteger *s135;
+		rts2core::ValueInteger *ground;
+		rts2core::ValueInteger *s45;
+		rts2core::ValueInteger *s90;
+		rts2core::ValueInteger *s135;
 
 	protected:
 		virtual int processOption (int _opt);

@@ -120,7 +120,7 @@ void ValueChangeRecord::recordValueBoolean (int recval_id, bool val, double vali
 		throw rts2db::SqlError ();
 }
 
-void ValueChangeRecord::run (Rts2Value *val, double validTime)
+void ValueChangeRecord::run (rts2core::Value *val, double validTime)
 {
 
 	std::ostringstream _os;
@@ -132,15 +132,15 @@ void ValueChangeRecord::run (Rts2Value *val, double validTime)
 			recordValueDouble (getRecvalId (NULL, RTS2_VALUE_DOUBLE | val->getValueDisplayType ()), val->getValueDouble (), validTime);
 			break;
 		case RTS2_VALUE_RADEC:
-			recordValueDouble (getRecvalId ("RA", RTS2_VALUE_DOUBLE | RTS2_DT_RA), ((Rts2ValueRaDec *) val)->getRa (), validTime);
-			recordValueDouble (getRecvalId ("DEC", RTS2_VALUE_DOUBLE | RTS2_DT_DEC), ((Rts2ValueRaDec *) val)->getDec (), validTime);
+			recordValueDouble (getRecvalId ("RA", RTS2_VALUE_DOUBLE | RTS2_DT_RA), ((rts2core::ValueRaDec *) val)->getRa (), validTime);
+			recordValueDouble (getRecvalId ("DEC", RTS2_VALUE_DOUBLE | RTS2_DT_DEC), ((rts2core::ValueRaDec *) val)->getDec (), validTime);
 			break;
 		case RTS2_VALUE_ALTAZ:
-			recordValueDouble (getRecvalId ("ALT", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
-			recordValueDouble (getRecvalId ("AZ", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((Rts2ValueAltAz *) val)->getAz (), validTime);
+			recordValueDouble (getRecvalId ("ALT", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((rts2core::ValueAltAz *) val)->getAlt (), validTime);
+			recordValueDouble (getRecvalId ("AZ", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((rts2core::ValueAltAz *) val)->getAz (), validTime);
 			break;
 		case RTS2_VALUE_BOOL:
-			recordValueBoolean (getRecvalId (NULL, RTS2_VALUE_BOOL), ((Rts2ValueBool *) val)->getValueBool (), validTime);
+			recordValueBoolean (getRecvalId (NULL, RTS2_VALUE_BOOL), ((rts2core::ValueBool *) val)->getValueBool (), validTime);
 			break;
 		default:
 			_os << "Cannot record value " << valueName.c_str ();

@@ -63,7 +63,7 @@ class NDeviceWindow:public NSelWindow
 		 *
 		 * @param value  Value to print.
 		 */
-		void printValue (Rts2Value * value);
+		void printValue (rts2core::Value * value);
 
 		virtual void drawValuesList ();
 
@@ -71,8 +71,8 @@ class NDeviceWindow:public NSelWindow
 		WINDOW * valueList;
 		Rts2Conn *connection;
 		void printState ();
-		Rts2Value *getSelValue ();
-		void printValueDesc (Rts2Value * val);
+		rts2core::Value *getSelValue ();
+		void printValueDesc (rts2core::Value * val);
 		void endValueBox ();
 		void createValueBox ();
 		ValueBox *valueBox;

@@ -56,7 +56,7 @@ class D50:public Fork
 
 		virtual void updateTrack ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		const char *device_name;
 		rts2core::ConnSerial *d50Conn;
@@ -69,33 +69,33 @@ class D50:public Fork
 		int tel_write_unit (int unit, const char *command, int len);
 		int tel_write_unit (int unit, const char command, int32_t value);
 
-		int tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc);
-		int tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc);
+		int tel_read (const char command, rts2core::ValueInteger * value, rts2core::ValueInteger * proc);
+		int tel_read_unit (int unit, const char command, rts2core::ValueInteger * value, rts2core::ValueInteger * proc);
 
-		Rts2ValueBool *motorRa;
-		Rts2ValueBool *motorDec;
+		rts2core::ValueBool *motorRa;
+		rts2core::ValueBool *motorDec;
 
-		Rts2ValueBool *wormRa;
-		Rts2ValueBool *wormDec;
+		rts2core::ValueBool *wormRa;
+		rts2core::ValueBool *wormDec;
 
-		Rts2ValueInteger *wormRaSpeed;
+		rts2core::ValueInteger *wormRaSpeed;
 
-		Rts2ValueBool *moveSleep;
+		rts2core::ValueBool *moveSleep;
 
-		Rts2ValueInteger *unitRa;
-		Rts2ValueInteger *unitDec;
+		rts2core::ValueInteger *unitRa;
+		rts2core::ValueInteger *unitDec;
 
-		Rts2ValueInteger *utarRa;
-		Rts2ValueInteger *utarDec;
+		rts2core::ValueInteger *utarRa;
+		rts2core::ValueInteger *utarDec;
 
-		Rts2ValueInteger *procRa;
-		Rts2ValueInteger *procDec;
+		rts2core::ValueInteger *procRa;
+		rts2core::ValueInteger *procDec;
 
-		Rts2ValueInteger *velRa;
-		Rts2ValueInteger *velDec;
+		rts2core::ValueInteger *velRa;
+		rts2core::ValueInteger *velDec;
 
-		Rts2ValueInteger *accRa;
-		Rts2ValueInteger *accDec;
+		rts2core::ValueInteger *accRa;
+		rts2core::ValueInteger *accDec;
 
 		int32_t ac, dc;
 };
@@ -151,7 +151,7 @@ int D50::tel_write_unit (int unit, const char command, int32_t value)
 	return tel_write (command, value);
 }
 
-int D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+int D50::tel_read (const char command, rts2core::ValueInteger * value, rts2core::ValueInteger * proc)
 {
 	int ret;
 	static char buf[16];
@@ -186,7 +186,7 @@ int D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueIntege
 	return 0;
 }
 
-int D50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+int D50::tel_read_unit (int unit, const char command, rts2core::ValueInteger * value, rts2core::ValueInteger * proc)
 {
 	int ret;
 	ret = tel_write ('x', unit);
@@ -347,28 +347,28 @@ void D50::updateTrack ()
 {
 }
 
-int D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int D50::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == motorRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
+			((rts2core::ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
 	}
 	if (old_value == motorDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
+			((rts2core::ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
 	}
 	if (old_value == wormRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
+			((rts2core::ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
 
 	}
 	if (old_value == wormDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
+			((rts2core::ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
 
 	}
 	if (old_value == wormRaSpeed)

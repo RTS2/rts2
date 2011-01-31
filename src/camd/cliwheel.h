@@ -43,7 +43,7 @@ class ClientFilterCamera:public rts2core::Rts2DevClientFilter
 		virtual ~ ClientFilterCamera (void);
 		virtual void filterMoveFailed (int status);
 		virtual void postEvent (Rts2Event * event);
-		virtual void valueChanged (Rts2Value * value);
+		virtual void valueChanged (rts2core::Value * value);
 	protected:
 		virtual void filterMoveEnd ();
 	private:

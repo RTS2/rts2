@@ -44,17 +44,17 @@ class Arduino:public Sensor
 		char *device_file;
 		rts2core::ConnSerial *arduinoConn;
 
-		Rts2ValueBool *decHome;
-		Rts2ValueBool *raHome;
-		Rts2ValueBool *raLimit;
+		rts2core::ValueBool *decHome;
+		rts2core::ValueBool *raHome;
+		rts2core::ValueBool *raLimit;
 
-		Rts2ValueFloat *a1_x;
-		Rts2ValueFloat *a1_y;
-		Rts2ValueFloat *a1_z;
+		rts2core::ValueFloat *a1_x;
+		rts2core::ValueFloat *a1_y;
+		rts2core::ValueFloat *a1_z;
 
-		Rts2ValueFloat *a2_x;
-		Rts2ValueFloat *a2_y;
-		Rts2ValueFloat *a2_z;
+		rts2core::ValueFloat *a2_x;
+		rts2core::ValueFloat *a2_y;
+		rts2core::ValueFloat *a2_z;
 };
 
 }

@@ -60,7 +60,7 @@ class Rts2DevClientLogger:public rts2core::Rts2DevClient
 		 */
 		void setOutputFile (const char *pattern);
 	private:
-		std::list < Rts2Value * >logValues;
+		std::list < rts2core::Value * >logValues;
 		std::list < std::string > logNames;
 
 		std::ostream * outputStream;

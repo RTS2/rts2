@@ -47,19 +47,19 @@ class LPNHE: public Sensor
 		virtual int processOption (int _opt);
 		virtual int init ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 	private:
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-		Rts2ValueDouble *humidity;
-		Rts2ValueDouble *vacuum;
-		Rts2ValueSelection *filter;
+		rts2core::ValueDouble *humidity;
+		rts2core::ValueDouble *vacuum;
+		rts2core::ValueSelection *filter;
 
-		Rts2ValueBool *filterHomed;
-		Rts2ValueBool *filterMoving;
-		Rts2ValueBool *shutter;
+		rts2core::ValueBool *filterHomed;
+		rts2core::ValueBool *filterMoving;
+		rts2core::ValueBool *shutter;
 	
 		int filterChange (int num);
 
@@ -148,7 +148,7 @@ int LPNHE::init ()
 	return homeFilter ();
 }
 
-int LPNHE::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int LPNHE::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == filter)
 	{
@@ -159,7 +159,7 @@ int LPNHE::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	}
 	if (oldValue == shutter)
 	{
-		return comedi_dio_write (comediDevice, 2, 2, ((Rts2ValueBool *)newValue)->getValueBool ()) == 1 ? 0 : -2;
+		return comedi_dio_write (comediDevice, 2, 2, ((rts2core::ValueBool *)newValue)->getValueBool ()) == 1 ? 0 : -2;
 	}
 	return Sensor::setValue (oldValue, newValue);
 }

@@ -69,7 +69,7 @@ class OpenTPL:public Telescope
 	protected:
 		rts2core::OpenTpl *opentplConn;
 
-		Rts2ValueInteger *model_recordcount;
+		rts2core::ValueInteger *model_recordcount;
 
 		time_t timeout;
 
@@ -79,7 +79,7 @@ class OpenTPL:public Telescope
 		virtual int initValues ();
 		virtual int idle ();
 
-		Rts2ValueDouble *derotatorOffset;
+		rts2core::ValueDouble *derotatorOffset;
 
 		void powerOn ();
 		void powerOff ();
@@ -92,7 +92,7 @@ class OpenTPL:public Telescope
 
 		int setTelescopeTrack (int new_track);
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		bool getDerotatorPower () { return derotatorPower->getValueBool (); }
 		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
@@ -113,40 +113,40 @@ class OpenTPL:public Telescope
 
 		std::string errorList;
 
-		Rts2ValueBool *debugConn;
+		rts2core::ValueBool *debugConn;
 
-		Rts2ValueBool *cabinetPower;
-		Rts2ValueFloat *cabinetPowerState;
+		rts2core::ValueBool *cabinetPower;
+		rts2core::ValueFloat *cabinetPowerState;
 
-		Rts2ValueDouble *derotatorCurrpos;
+		rts2core::ValueDouble *derotatorCurrpos;
 
-		Rts2ValueBool *derotatorPower;
+		rts2core::ValueBool *derotatorPower;
 
-		Rts2ValueDouble *targetDist;
-		Rts2ValueDouble *targetTime;
+		rts2core::ValueDouble *targetDist;
+		rts2core::ValueDouble *targetTime;
 
-		Rts2ValueDouble *cover;
+		rts2core::ValueDouble *cover;
 
-		Rts2ValueInteger *mountTrack;
+		rts2core::ValueInteger *mountTrack;
 
-		Rts2ValueAltAz *parkPos;
+		rts2core::ValueAltAz *parkPos;
 
 		// model values
-		Rts2ValueString *model_dumpFile;
-		std::vector <Rts2ValueDouble *> modelParams;
+		rts2core::ValueString *model_dumpFile;
+		std::vector <rts2core::ValueDouble *> modelParams;
 
 		int infoModel ();
 
 		int irTracking;
 
-		Rts2ValueDouble *modelQuality;
-		Rts2ValueDouble *goodSep;
+		rts2core::ValueDouble *modelQuality;
+		rts2core::ValueDouble *goodSep;
 
 		// modeling offsets
-		Rts2ValueRaDec *om_radec;
-		Rts2ValueAltAz *om_altaz;
+		rts2core::ValueRaDec *om_radec;
+		rts2core::ValueAltAz *om_altaz;
 
-		Rts2ValueBool *standbyPoweroff;
+		rts2core::ValueBool *standbyPoweroff;
 
 		double derOff;
 
@@ -247,18 +247,18 @@ int OpenTPL::setTelescopeTrack (int new_track)
 	return status;
 }
 
-int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int OpenTPL::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	int status = TPL_OK;
 	if (old_value == debugConn)
 	{
-		opentplConn->setDebug (((Rts2ValueBool *) new_value)->getValueBool ());
+		opentplConn->setDebug (((rts2core::ValueBool *) new_value)->getValueBool ());
 		return 0;
 	}
 	if (old_value == cabinetPower)
 	{
 	  	opentplConn->setDebug ();
-		status = opentplConn->set ("CABINET.POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
+		status = opentplConn->set ("CABINET.POWER", ((rts2core::ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
 	  	opentplConn->setDebug (debugConn->getValueBool ());
 		if (status != TPL_OK)
 			return -2;
@@ -280,7 +280,7 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == derotatorPower)
 	{
-		status = opentplConn->set ("DEROTATOR[3].POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
+		status = opentplConn->set ("DEROTATOR[3].POWER", ((rts2core::ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -310,7 +310,7 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return 0;
 	}
 	// find model parameters..
-	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
+	for (std::vector <rts2core::ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
 		if (old_value == *iter)
 		{
@@ -499,7 +499,7 @@ int OpenTPL::initValues ()
 
 	createValue (model_dumpFile, "dump_file", "model dump file", false);
 
-	Rts2ValueDouble *modelP;
+	rts2core::ValueDouble *modelP;
 
 	// switch mount type
 	if (config_mount == "RA-DEC")
@@ -833,7 +833,7 @@ int OpenTPL::infoModel ()
 
 	status = opentplConn->get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
 
-	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
+	for (std::vector <rts2core::ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
 		double pv;
 		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
@@ -1125,7 +1125,7 @@ int OpenTPL::saveModel ()
 	std::ofstream of;
 	of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
 	of.precision (20);
-	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
+	for (std::vector <rts2core::ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
 		double pv;
 		int status = TPL_OK;

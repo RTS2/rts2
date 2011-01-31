@@ -66,7 +66,7 @@ class Executor:public Rts2DeviceDb
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 	private:
 		rts2db::Target * currentTarget;
@@ -85,51 +85,51 @@ class Executor:public Rts2DeviceDb
 		int setShower ();
 
 		// -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
-		Rts2ValueInteger *scriptCount;
+		rts2core::ValueInteger *scriptCount;
 		int waitState;
 		std::list < rts2db::Target * > targetsQue;
 		struct ln_lnlat_posn *observer;
 
 		// Queue management
 		std::list < ExecutorQueue > queues;
-		Rts2ValueSelection *activeQueue;
+		rts2core::ValueSelection *activeQueue;
 
 		ExecutorQueue * getActiveQueue () { return (ExecutorQueue *) (activeQueue->getData ()); }
 
 		void createQueue (const char *name);
 
-		Rts2ValueDouble *grb_sep_limit;
-		Rts2ValueDouble *grb_min_sep;
+		rts2core::ValueDouble *grb_sep_limit;
+		rts2core::ValueDouble *grb_min_sep;
 
-		Rts2ValueBool *enabled;
+		rts2core::ValueBool *enabled;
 
-		Rts2ValueInteger *acqusitionOk;
-		Rts2ValueInteger *acqusitionFailed;
+		rts2core::ValueInteger *acqusitionOk;
+		rts2core::ValueInteger *acqusitionFailed;
 
 		int setNow (rts2db::Target * newTarget);
 
 		void processTarget (rts2db::Target * in_target);
 		void updateScriptCount ();
 
-		Rts2ValueInteger *current_id;
-		Rts2ValueInteger *current_id_sel;
-		Rts2ValueString *current_name;
-		Rts2ValueString *current_type;
-		Rts2ValueInteger *current_obsid;
+		rts2core::ValueInteger *current_id;
+		rts2core::ValueInteger *current_id_sel;
+		rts2core::ValueString *current_name;
+		rts2core::ValueString *current_type;
+		rts2core::ValueInteger *current_obsid;
 
-		Rts2ValueString *pi;
-		Rts2ValueString *program;
+		rts2core::ValueString *pi;
+		rts2core::ValueString *program;
 
-		Rts2ValueBool *autoLoop;
+		rts2core::ValueBool *autoLoop;
 
-		Rts2ValueInteger *next_id;
-		Rts2ValueString *next_name;
+		rts2core::ValueInteger *next_id;
+		rts2core::ValueString *next_name;
 
-		Rts2ValueBool *doDarks;
-		Rts2ValueBool *flatsDone;
-		Rts2ValueBool *ignoreDay;
+		rts2core::ValueBool *doDarks;
+		rts2core::ValueBool *flatsDone;
+		rts2core::ValueBool *ignoreDay;
 
-		Rts2ValueInteger *img_id;
+		rts2core::ValueInteger *img_id;
 };
 
 }
@@ -236,9 +236,9 @@ int Executor::reloadConfig ()
 	return 0;
 }
 
-int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Executor::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
-	if (oldValue == enabled && ((Rts2ValueBool *) newValue)->getValueBool () == false)
+	if (oldValue == enabled && ((rts2core::ValueBool *) newValue)->getValueBool () == false)
 	{
 		stop ();
 		return 0;

@@ -37,16 +37,16 @@ class FramWeather: public SensorWeather
 {
 	private:
 		// measured values
-		Rts2ValueFloat *windSpeed;
-		Rts2ValueBool *rain;
-		Rts2ValueSelection *watch;
+		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueBool *rain;
+		rts2core::ValueSelection *watch;
 
-		Rts2ValueFloat *maxWindSpeed;
-		Rts2ValueInteger *connUpdateSep;
+		rts2core::ValueFloat *maxWindSpeed;
+		rts2core::ValueInteger *connUpdateSep;
 
-		Rts2ValueInteger *timeoutConn;
-		Rts2ValueInteger *timeoutRain;
-		Rts2ValueInteger *timeoutWindspeed;
+		rts2core::ValueInteger *timeoutConn;
+		rts2core::ValueInteger *timeoutRain;
+		rts2core::ValueInteger *timeoutWindspeed;
 
 		ConnFramWeather *weatherConn;
 

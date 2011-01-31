@@ -616,7 +616,7 @@ int Device::setMode (int new_mode)
 	// setup values
 	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
-		Rts2Value *val = getOwnValue ((*iter).getValueName ().c_str ());
+		rts2core::Value *val = getOwnValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)
 		{
 			logStream (MESSAGE_ERROR)
@@ -633,13 +633,13 @@ int Device::setMode (int new_mode)
 			{
 				if (!strcasecmp (suffix.c_str (), "min"))
 				{
-					((Rts2ValueDoubleMinMax *) val)->setMin ((*iter).getValueDouble ());
+					((rts2core::ValueDoubleMinMax *) val)->setMin ((*iter).getValueDouble ());
 					sendValueAll (val);
 					continue;
 				}
 				else if (!strcasecmp (suffix.c_str (), "max"))
 				{
-					((Rts2ValueDoubleMinMax *) val)->setMax ((*iter).getValueDouble ());
+					((rts2core::ValueDoubleMinMax *) val)->setMax ((*iter).getValueDouble ());
 					sendValueAll (val);
 					continue;
 				}
@@ -650,7 +650,7 @@ int Device::setMode (int new_mode)
 			return -1;
 		}
 		// create and set new value
-		Rts2Value *new_value = duplicateValue (val);
+		rts2core::Value *new_value = duplicateValue (val);
 		int ret;
 		ret = new_value->setValueCharArr ((*iter).getValue ().c_str ());
 		if (ret)
@@ -720,7 +720,7 @@ void Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
 	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
 }
 
-int Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Device::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == modesel)
 	{
@@ -743,9 +743,9 @@ void Device::checkQueChanges (int fakeState)
 {
 	int ret;
 	bool changed = false;
-	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end ();)
+	for (rts2core::ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end ();)
 	{
-		Rts2ValueQue *queVal = *iter;
+		rts2core::ValueQue *queVal = *iter;
 		// free qued values
 		if (!queValueChange (queVal->getCondValue (), fakeState))
 		{
@@ -757,7 +757,7 @@ void Device::checkQueChanges (int fakeState)
 				);
 			if (ret)
 				logStream (MESSAGE_ERROR)
-					<< "cannot set qued value "
+					<< "cannot set queued value "
 					<< queVal->getOldValue ()->getName ()
 					<< " with operator " << queVal->getOperation ()
 					<< " and operand " << newValStr
@@ -893,7 +893,7 @@ void Device::sendMessage (messageType_t in_messageType, const char *in_messageSt
 int Device::killAll ()
 {
 	// remove all queued changes - do not perform them
-	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); )
+	for (rts2core::ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); )
 	{
 		delete *iter;
 		iter = queValues.erase (iter);
@@ -923,7 +923,7 @@ int Device::statusInfo (Rts2Conn * conn)
 
 void Device::setFullBopState (int new_state)
 {
-	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); iter++)
+	for (rts2core::ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); iter++)
 	{
 		new_state = maskQueValueBopState (new_state, (*iter)->getStateCondition ());
 	}
@@ -937,7 +937,7 @@ void Device::setFullBopState (int new_state)
 	fullBopState = new_state;
 }
 
-Rts2Value * Device::getValue (const char *_device_name, const char *value_name)
+rts2core::Value * Device::getValue (const char *_device_name, const char *value_name)
 {
 	if (!strcmp (_device_name, getDeviceName ()) || !strcmp (_device_name, "."))
 		return getOwnValue (value_name);

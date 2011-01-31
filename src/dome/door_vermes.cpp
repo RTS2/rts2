@@ -54,17 +54,17 @@ namespace rts2dome {
   class DoorVermes: public Dome 
   {
   private:
-    Rts2ValueString  *doorStateMessage;
-    Rts2ValueBool *block_door;
-    Rts2ValueBool *open_door;
-    Rts2ValueBool *stop_door;
-    Rts2ValueBool *close_door;
-    Rts2ValueBool *close_door_undefined;
-    Rts2ValueBool *simulate_door;
+    rts2core::ValueString  *doorStateMessage;
+    rts2core::ValueBool *block_door;
+    rts2core::ValueBool *open_door;
+    rts2core::ValueBool *stop_door;
+    rts2core::ValueBool *close_door;
+    rts2core::ValueBool *close_door_undefined;
+    rts2core::ValueBool *simulate_door;
     time_t nextDeadCheck; // wildi ToDo: clarify what happens!
-    Rts2ValueString *lastMotorStop ;  
-    Rts2ValueDouble  *ssd650v_read_setpoint ;
-    Rts2ValueDouble  *ssd650v_current ;
+    rts2core::ValueString *lastMotorStop ;  
+    rts2core::ValueDouble  *ssd650v_read_setpoint ;
+    rts2core::ValueDouble  *ssd650v_current ;
 
     /**
      * Update status messages.
@@ -91,7 +91,7 @@ namespace rts2dome {
   public:
     DoorVermes (int argc, char **argv);
     virtual ~DoorVermes ();
-    virtual void valueChanged (Rts2Value * changed_value) ;
+    virtual void valueChanged (rts2core::Value * changed_value) ;
   };
 }
 
@@ -158,7 +158,7 @@ DoorVermes::updateDoorStatusMessage ()
   }
 }
 void 
-DoorVermes::valueChanged (Rts2Value * changed_value)
+DoorVermes::valueChanged (rts2core::Value * changed_value)
 {
   if( simulate_door->getValueBool()) { 
     // do not set status here

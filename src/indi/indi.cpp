@@ -252,11 +252,11 @@ void Indi::ISPoll ()
 	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
-		Rts2Value *val = tel->getValue ("OBJ");
+		rts2core::Value *val = tel->getValue ("OBJ");
 		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
 		{
-			eqNum.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
-			eqNum.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqNum.np[0].value = ((rts2core::ValueRaDec *) val)->getRa () / 15.0;
+			eqNum.np[1].value = ((rts2core::ValueRaDec *) val)->getDec ();
 			eqNum.s = IPS_OK;
 		}
 		else
@@ -268,8 +268,8 @@ void Indi::ISPoll ()
 		val = tel->getValue ("OFFS");
 		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
 		{
-			eqOffsets.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
-			eqOffsets.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqOffsets.np[0].value = ((rts2core::ValueRaDec *) val)->getRa () / 15.0;
+			eqOffsets.np[1].value = ((rts2core::ValueRaDec *) val)->getDec ();
 			eqOffsets.s = IPS_OK;
 		}
 		else
@@ -281,8 +281,8 @@ void Indi::ISPoll ()
 		val = tel->getValue ("CORR_");
 		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
 		{
-			eqCorr.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
-			eqCorr.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqCorr.np[0].value = ((rts2core::ValueRaDec *) val)->getRa () / 15.0;
+			eqCorr.np[1].value = ((rts2core::ValueRaDec *) val)->getDec ();
 			eqCorr.s = IPS_OK;
 		}
 		else
@@ -294,8 +294,8 @@ void Indi::ISPoll ()
 		val = tel->getValue ("TEL_");
 		if (val && val->getValueBaseType () == RTS2_VALUE_ALTAZ)
 		{
-			horNum.np[0].value = ((Rts2ValueAltAz *) val)->getAlt ();
-			horNum.np[1].value = ((Rts2ValueAltAz *) val)->getAz ();
+			horNum.np[0].value = ((rts2core::ValueAltAz *) val)->getAlt ();
+			horNum.np[1].value = ((rts2core::ValueAltAz *) val)->getAz ();
 			horNum.s = IPS_OK;
 		}
 		else

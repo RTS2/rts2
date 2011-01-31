@@ -83,7 +83,7 @@ class SelectorDev:public Rts2DeviceDb
 		 */
 		int updateNext (bool started = false, int tar_id = -1, int obs_id = -1);
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 
@@ -96,28 +96,28 @@ class SelectorDev:public Rts2DeviceDb
 	private:
 		rts2plan::Selector * sel;
 
-		Rts2ValueInteger *next_id;
-		Rts2ValueInteger *next_plan_id;
-		Rts2ValueTime *nextTime;
-		Rts2ValueBool *interrupt;
+		rts2core::ValueInteger *next_id;
+		rts2core::ValueInteger *next_plan_id;
+		rts2core::ValueTime *nextTime;
+		rts2core::ValueBool *interrupt;
 
-		Rts2ValueInteger *idle_select;
-		Rts2ValueInteger *night_idle_select;
+		rts2core::ValueInteger *idle_select;
+		rts2core::ValueInteger *night_idle_select;
 
-		Rts2ValueBool *selEnabled;
+		rts2core::ValueBool *selEnabled;
 
-		Rts2ValueDouble *azLimit1;
-		Rts2ValueDouble *azLimit2;
+		rts2core::ValueDouble *azLimit1;
+		rts2core::ValueDouble *azLimit2;
 
-		Rts2ValueDouble *flatSunMin;
-		Rts2ValueDouble *flatSunMax;
+		rts2core::ValueDouble *flatSunMin;
+		rts2core::ValueDouble *flatSunMax;
 
-		Rts2ValueString *nightDisabledTypes;
+		rts2core::ValueString *nightDisabledTypes;
 
 		struct ln_lnlat_posn *observer;
 
-		Rts2ValueSelection *selectorQueue;
-		Rts2ValueSelection *lastQueue;
+		rts2core::ValueSelection *selectorQueue;
+		rts2core::ValueSelection *lastQueue;
 
 		std::list <rts2plan::ExecutorQueue> queues;
 		std::list <const char *> queueNames;
@@ -426,7 +426,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	return -1;
 }
 
-int SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int SelectorDev::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == flatSunMin)
 	{

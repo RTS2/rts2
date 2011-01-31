@@ -43,7 +43,7 @@ typedef enum {A_plus, A_minus, B, C, D} edtAlgoType;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueEdt: public Rts2ValueDoubleMinMax
+class ValueEdt: public rts2core::ValueDoubleMinMax
 {
 	public:
 		ValueEdt (std::string in_val_name);
@@ -77,11 +77,11 @@ class ValueEdt: public Rts2ValueDoubleMinMax
 
 using namespace rts2camd;
 
-ValueEdt::ValueEdt (std::string in_val_name):Rts2ValueDoubleMinMax (in_val_name)
+ValueEdt::ValueEdt (std::string in_val_name):rts2core::ValueDoubleMinMax (in_val_name)
 {
 }
 
-ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
+ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):rts2core::ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
 {
 }
 
@@ -188,7 +188,7 @@ class EdtSao:public Camera
 
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual void beforeRun ();
 		virtual void initBinnings ();
@@ -214,24 +214,24 @@ class EdtSao:public Camera
 
 		u_int status;
 
-		Rts2ValueSelection *edtGain;
-		Rts2ValueInteger *parallelClockSpeed;
+		rts2core::ValueSelection *edtGain;
+		rts2core::ValueInteger *parallelClockSpeed;
 		// number of lines to skip in serial mode
-		Rts2ValueInteger *skipLines;
+		rts2core::ValueInteger *skipLines;
 		
 		// number of jigle lines
-		Rts2ValueInteger *jiggleLines;
+		rts2core::ValueInteger *jiggleLines;
 
-		Rts2ValueBool *dofcl;
-		Rts2ValueInteger *fclrNum;
-		Rts2ValueInteger *fclrFailed;
+		rts2core::ValueBool *dofcl;
+		rts2core::ValueInteger *fclrNum;
+		rts2core::ValueInteger *fclrFailed;
 
-		Rts2ValueBool *edtSplit;
-		Rts2ValueBool *edtUni;
+		rts2core::ValueBool *edtSplit;
+		rts2core::ValueBool *edtUni;
 
-		Rts2ValueString *signalFile;
-		Rts2ValueString *signalFileDir;
-		Rts2ValueString *sigtosc;
+		rts2core::ValueString *signalFile;
+		rts2core::ValueString *signalFileDir;
+		rts2core::ValueString *sigtosc;
 
 		bool verbose;
 
@@ -334,7 +334,7 @@ class EdtSao:public Camera
 		rts2core::IntegerArray *ADoffsets;
 
 		int setEdtValue (ValueEdt * old_value, float new_value);
-		int setEdtValue (ValueEdt * old_value, Rts2Value * new_value);
+		int setEdtValue (ValueEdt * old_value, rts2core::Value * new_value);
 
 		// write single command to controller
 		void writeCommand (bool parallel, int addr, command_t command);
@@ -354,16 +354,16 @@ class EdtSao:public Camera
 		int writePartialPattern ();
 
 		// number of collumns
-		Rts2ValueInteger *chipWidth;
+		rts2core::ValueInteger *chipWidth;
 
 		// number of rows
-		Rts2ValueInteger *chipHeight;
+		rts2core::ValueInteger *chipHeight;
 
 		// number of rows to skip. If negative, rows will be moved up. Partial readout is not active if this equals to 0.
-		Rts2ValueInteger *partialReadout;
+		rts2core::ValueInteger *partialReadout;
 
 		// Grayscale off/on
-		Rts2ValueBool *grayScale;
+		rts2core::ValueBool *grayScale;
 
 		int lastSkipLines;
 		int lastJiggleLines;
@@ -1242,7 +1242,7 @@ int EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 	return edtwrite (old_value->getHexValue (new_value));
 }
 
-int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
+int EdtSao::setEdtValue (ValueEdt * old_value, rts2core::Value * new_value)
 {
 	int ret = edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
 	logStream (MESSAGE_INFO) << "setting "<< old_value->getName () << " to " << new_value->getValueFloat () << sendLog;
@@ -1251,7 +1251,7 @@ int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 	return ret;
 }
 
-int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int EdtSao::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == chipHeight)
 	{
@@ -1291,15 +1291,15 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == grayScale)
 	{
-		return (setGrayScale (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+		return (setGrayScale (((rts2core::ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
 	}
 	if (old_value == edtSplit)
 	{
-		return (setEDTSplit (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+		return (setEDTSplit (((rts2core::ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
 	}
 	if (old_value == edtUni)
 	{
-		return (setEDTUni (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+		return (setEDTUni (((rts2core::ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
 	}
 	if (old_value == signalFile)
 	{

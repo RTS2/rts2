@@ -469,7 +469,7 @@ double ElementFor::getExpectedDuration ()
 
 int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	Rts2Value *val = client->getConnection ()->getValue ("que_exp_num");
+	rts2core::Value *val = client->getConnection ()->getValue ("que_exp_num");
 
 	int ret;
 	if (endLoop () || blockElements.empty ())

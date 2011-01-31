@@ -113,9 +113,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::TimeArray *nextEndTimes;
 		rts2core::IntegerArray *nextPlanIds;
 
-		Rts2ValueSelection *queueType;
-		Rts2ValueBool *skipBelowHorizon;
-		Rts2ValueBool *removeAfterExecution;
+		rts2core::ValueSelection *queueType;
+		rts2core::ValueBool *skipBelowHorizon;
+		rts2core::ValueBool *removeAfterExecution;
 
 		struct ln_lnlat_posn **observer;
 

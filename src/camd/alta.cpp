@@ -54,7 +54,7 @@ class Alta:public Camera
 		virtual int stopExposure ();
 		virtual int doReadout ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual long suggestBufferSize ()
 		{
@@ -63,13 +63,13 @@ class Alta:public Camera
 
 	private:
 		CApnCamera * alta;
-		Rts2ValueSelection * bitDepth;
-		Rts2ValueSelection *fanMode;
+		rts2core::ValueSelection * bitDepth;
+		rts2core::ValueSelection *fanMode;
 
-		Rts2ValueSelection *coolerStatus;
-		Rts2ValueBool *coolerEnabled;
+		rts2core::ValueSelection *coolerStatus;
+		rts2core::ValueBool *coolerEnabled;
 
-		Rts2ValueInteger *cameraId;
+		rts2core::ValueInteger *cameraId;
 
 		void setBitDepth (int newBit);
 };
@@ -188,7 +188,7 @@ int Alta::doReadout ()
 	return -2;
 }
 
-int Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Alta::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == bitDepth)
 	{
@@ -197,7 +197,7 @@ int Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == coolerEnabled)
 	{
-		alta->write_CoolerEnable (((Rts2ValueBool *)new_value)->getValueBool ());
+		alta->write_CoolerEnable (((rts2core::ValueBool *)new_value)->getValueBool ());
 		return 0;
 	}
 	if (old_value == fanMode)

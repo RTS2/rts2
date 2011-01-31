@@ -61,15 +61,15 @@ class Bootes1B:public Ford
 
 		int lastWeatherCheckState;
 	
-		Rts2ValueInteger *sw_state;
-		Rts2ValueTime *ignoreRainSensorTime;
+		rts2core::ValueInteger *sw_state;
+		rts2core::ValueTime *ignoreRainSensorTime;
 
-		Rts2ValueBool *rain;
-		Rts2ValueBool *telSwitch;
-		Rts2ValueBool *asmSwitch;
+		rts2core::ValueBool *rain;
+		rts2core::ValueBool *telSwitch;
+		rts2core::ValueBool *asmSwitch;
 
 	protected:
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		virtual bool isGoodWeather ();
 
@@ -115,11 +115,11 @@ Bootes1B::~Bootes1B (void)
 {
 }
 
-int Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Bootes1B::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == telSwitch)
 	{
-		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
 		{
 			return ZAP(TEL_SWITCH) == 0 ? 0 : -2;
 		}
@@ -130,7 +130,7 @@ int Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == asmSwitch)
 	{
-		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
 		{
 			return ZAP(ASM_SWITCH) == 0 ? 0 : -2;
 		}

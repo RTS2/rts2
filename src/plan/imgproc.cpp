@@ -99,25 +99,25 @@ class ImageProc:public rts2core::Device
 #endif
 		std::list < ConnProcess * >imagesQue;
 		ConnProcess *runningImage;
-		Rts2ValueInteger *goodImages;
-		Rts2ValueInteger *trashImages;
-		Rts2ValueInteger *badImages;
+		rts2core::ValueInteger *goodImages;
+		rts2core::ValueInteger *trashImages;
+		rts2core::ValueInteger *badImages;
 
-		Rts2ValueInteger *darkImages;
-		Rts2ValueInteger *flatImages;
+		rts2core::ValueInteger *darkImages;
+		rts2core::ValueInteger *flatImages;
 
-		Rts2ValueInteger *queSize;
+		rts2core::ValueInteger *queSize;
 
-		Rts2ValueTime *lastGood;
-		Rts2ValueTime *lastTrash;
-		Rts2ValueTime *lastBad;
+		rts2core::ValueTime *lastGood;
+		rts2core::ValueTime *lastTrash;
+		rts2core::ValueTime *lastBad;
 
-		Rts2ValueInteger *nightGoodImages;
-		Rts2ValueInteger *nightTrashImages;
-		Rts2ValueInteger *nightBadImages;
+		rts2core::ValueInteger *nightGoodImages;
+		rts2core::ValueInteger *nightTrashImages;
+		rts2core::ValueInteger *nightBadImages;
 
-		Rts2ValueInteger *nightDarks;
-		Rts2ValueInteger *nightFlats;
+		rts2core::ValueInteger *nightDarks;
+		rts2core::ValueInteger *nightFlats;
 
 		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
 

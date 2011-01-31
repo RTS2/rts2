@@ -115,7 +115,7 @@ void TGDrive::info ()
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
 }
 
-int TGDrive::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	try
 	{

@@ -88,8 +88,8 @@ class Apogee:public Camera
 
 		time_t expExposureEnd;
 
-		Rts2ValueSelection *coolerStatus;
-		Rts2ValueSelection *coolerMode;
+		rts2core::ValueSelection *coolerStatus;
+		rts2core::ValueSelection *coolerMode;
 };
 
 };

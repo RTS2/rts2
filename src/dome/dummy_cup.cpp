@@ -32,8 +32,8 @@ namespace rts2dome
 class Dummy:public Cupola
 {
 	private:
-		Rts2ValueInteger * mcount;
-		Rts2ValueInteger *moveCountTop;
+		rts2core::ValueInteger * mcount;
+		rts2core::ValueInteger *moveCountTop;
 	protected:
 		virtual int moveStart ()
 		{

@@ -20,7 +20,7 @@
 #ifndef __RTS2_CONN_GPIB__
 #define __RTS2_CONN_GPIB__
 
-#include "../utils/rts2value.h"
+#include "../utils/value.h"
 
 #include <list>
 
@@ -91,21 +91,21 @@ class ConnGpib
 		/**
 		 * Read value from GPIB bus.
 		 */
-		void readValue (const char *buf, Rts2Value *val);
+		void readValue (const char *buf, rts2core::Value *val);
 
-		void readValue (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num);
+		void readValue (const char *subsystem, std::list < rts2core::Value * >&vals, int prefix_num);
 
-		void readValue (const char *buf, Rts2ValueString * val);
+		void readValue (const char *buf, rts2core::ValueString * val);
 
-		void readValue (const char *buf, Rts2ValueDouble * val);
+		void readValue (const char *buf, rts2core::ValueDouble * val);
 
-		void readValue (const char *buf, Rts2ValueFloat * val);
+		void readValue (const char *buf, rts2core::ValueFloat * val);
 
-		void readValue (const char *buf, Rts2ValueBool * val);
+		void readValue (const char *buf, rts2core::ValueBool * val);
 
-		void readValue (const char *buf, Rts2ValueInteger * val);
+		void readValue (const char *buf, rts2core::ValueInteger * val);
 
-		void readValue (const char *buf, Rts2ValueSelection * val);
+		void readValue (const char *buf, rts2core::ValueSelection * val);
 
 		/**
 		 * Initialize GPIB connection.

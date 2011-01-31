@@ -38,15 +38,15 @@ class OpenTpl:public Dome
 
 		rts2core::OpenTpl *opentplConn;
 
-		Rts2ValueFloat *domeUp;
-		Rts2ValueFloat *domeDown;
+		rts2core::ValueFloat *domeUp;
+		rts2core::ValueFloat *domeDown;
 
-		Rts2ValueDouble *domeCurrAz;
-		Rts2ValueDouble *domeTargetAz;
-		Rts2ValueBool *domePower;
-		Rts2ValueDouble *domeTarDist;
+		rts2core::ValueDouble *domeCurrAz;
+		rts2core::ValueDouble *domeTargetAz;
+		rts2core::ValueBool *domePower;
+		rts2core::ValueDouble *domeTarDist;
 
-		Rts2ValueBool *domeAutotrack;
+		rts2core::ValueBool *domeAutotrack;
 
 		/**
 		 * Set dome autotrack.
@@ -61,7 +61,7 @@ class OpenTpl:public Dome
 	protected:
 		virtual int processOption (int in_opt);
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 	public:
 		OpenTpl (int argc, char **argv);
@@ -83,12 +83,12 @@ class OpenTpl:public Dome
 
 using namespace rts2dome;
 
-int OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int OpenTpl::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {	
 	int status = TPL_OK;
 	if (old_value == domeAutotrack)
 	{
-		status = setDomeTrack (((Rts2ValueBool *) new_value)->getValueBool ());
+		status = setDomeTrack (((rts2core::ValueBool *) new_value)->getValueBool ());
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -120,7 +120,7 @@ int OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	if (old_value == domePower)
 	{
 		status =  opentplConn->set ("DOME[0].POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+			((rts2core::ValueBool *) new_value)->getValueBool ()? 1 : 0,
 			&status);
 		if (status != TPL_OK)
 			return -2;

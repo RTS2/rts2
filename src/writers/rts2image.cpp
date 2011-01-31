@@ -2272,7 +2272,7 @@ void Rts2Image::print (std::ostream & _os, int in_flags)
 	_os.precision (old_precision);
 }
 
-void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *desc)
+void Rts2Image::writeConnBaseValue (const char* name, rts2core::Value * val, const char *desc)
 {
 	switch (val->getValueBaseType ())
 	{
@@ -2292,13 +2292,13 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 			setValue (name, val->getValueFloat (), desc);
 			break;
 		case RTS2_VALUE_BOOL:
-			setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
+			setValue (name, ((rts2core::ValueBool *) val)->getValueBool (), desc);
 			break;
 		case RTS2_VALUE_SELECTION:
-			setValue (name, ((Rts2ValueSelection *) val)->getSelName (), desc);
+			setValue (name, ((rts2core::ValueSelection *) val)->getSelName (), desc);
 			break;
 		case RTS2_VALUE_LONGINT:
-			setValue (name, ((Rts2ValueLong *) val)->getValueLong (), desc);
+			setValue (name, ((rts2core::ValueLong *) val)->getValueLong (), desc);
 			break;
 		case RTS2_VALUE_RADEC:
 		{
@@ -2310,20 +2310,20 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 			strcat (v_name, "RA");
 			strcpy (v_desc, desc);
 			strcat (v_desc, " RA");
-			setValue (v_name, ((Rts2ValueRaDec *) val)->getRa (), v_desc);
+			setValue (v_name, ((rts2core::ValueRaDec *) val)->getRa (), v_desc);
 			// now DEC
 			strcpy (v_name, name);
 			strcat (v_name, "DEC");
 			strcpy (v_desc, desc);
 			strcat (v_desc, " DEC");
-			setValue (v_name, ((Rts2ValueRaDec *) val)->getDec (), v_desc);
+			setValue (v_name, ((rts2core::ValueRaDec *) val)->getDec (), v_desc);
 			// if it is mount ra dec - write heliocentric time
 			if (!strcmp ("TEL", name))
 			{
 				double JD = getMidExposureJD ();
 				struct ln_equ_posn equ;
-				equ.ra = ((Rts2ValueRaDec *) val)->getRa ();
-				equ.dec = ((Rts2ValueRaDec *) val)->getDec ();
+				equ.ra = ((rts2core::ValueRaDec *) val)->getRa ();
+				equ.dec = ((rts2core::ValueRaDec *) val)->getDec ();
 				setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "helioceentric JD");
 			}
 
@@ -2342,13 +2342,13 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 			strcat (v_name, "ALT");
 			strcpy (v_desc, desc);
 			strcat (v_desc, " altitude");
-			setValue (v_name, ((Rts2ValueAltAz *) val)->getAlt (), v_desc);
+			setValue (v_name, ((rts2core::ValueAltAz *) val)->getAlt (), v_desc);
 			// now DEC
 			strcpy (v_name, name);
 			strcat (v_name, "AZ");
 			strcpy (v_desc, desc);
 			strcat (v_desc, " azimuth");
-			setValue (v_name, ((Rts2ValueAltAz *) val)->getAz (), v_desc);
+			setValue (v_name, ((rts2core::ValueAltAz *) val)->getAz (), v_desc);
 			// free memory
 			delete[] v_name;
 			delete[] v_desc;
@@ -2374,7 +2374,7 @@ void Rts2Image::writeConnArray (TableData *tableData)
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
-ColumnData *getColumnData (const char *name, Rts2Value * val)
+ColumnData *getColumnData (const char *name, rts2core::Value * val)
 {
 	switch  (val->getValueBaseType ())
 	{
@@ -2391,7 +2391,7 @@ ColumnData *getColumnData (const char *name, Rts2Value * val)
 	throw rts2core::Error ("unknow array datatype");
 }
 
-void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
+void Rts2Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
 	char *name = (char *) val->getName ().c_str ();
@@ -2420,7 +2420,7 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 
 			if (ai == arrayGroups.end ())
 			{
-				Rts2Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
+				rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
 				if (infoTime)
 				{
 					TableData *td = new TableData (name, infoTime->getValueDouble ());
@@ -2443,15 +2443,15 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 			*n_top = '.';
 			n_top++;
 			strcpy (n_top, "MODE");
-			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMode (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMode (), desc);
 			strcpy (n_top, "MIN");
-			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMin (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMin (), desc);
 			strcpy (n_top, "MAX");
-			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getMax (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getMax (), desc);
 			strcpy (n_top, "STD");
-			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getStdev (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getStdev (), desc);
 			strcpy (n_top, "NUM");
-			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getNumMes (), desc);
+			setValue (name_stat, ((rts2core::ValueDoubleStat *) val)->getNumMes (), desc);
 			delete[]name_stat;
 			break;
 		case RTS2_VALUE_RECTANGLE:
@@ -2463,29 +2463,29 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 			strcpy (n_top, "X");
 			writeConnBaseValue (
 				name_stat,
-				((Rts2ValueRectangle *)val)->getX (),
-				((Rts2ValueRectangle *)val)->getX ()->getDescription ().c_str ()
+				((rts2core::ValueRectangle *)val)->getX (),
+				((rts2core::ValueRectangle *)val)->getX ()->getDescription ().c_str ()
 				);
 
 			strcpy (n_top, "Y");
 			writeConnBaseValue (
 				name_stat,
-				((Rts2ValueRectangle *)val)->getY (),
-				((Rts2ValueRectangle *)val)->getY ()->getDescription ().c_str ()
+				((rts2core::ValueRectangle *)val)->getY (),
+				((rts2core::ValueRectangle *)val)->getY ()->getDescription ().c_str ()
 				);
 
 			strcpy (n_top, "HEIGHT");
 			writeConnBaseValue (
 				name_stat,
-				((Rts2ValueRectangle *)val)->getHeight (),
-				((Rts2ValueRectangle *)val)->getHeight ()->getDescription ().c_str ()
+				((rts2core::ValueRectangle *)val)->getHeight (),
+				((rts2core::ValueRectangle *)val)->getHeight ()->getDescription ().c_str ()
 				);
 
 			strcpy (n_top, "WIDTH");
 			writeConnBaseValue (
 				name_stat,
-				((Rts2ValueRectangle *)val)->getWidth (),
-				((Rts2ValueRectangle *)val)->getWidth ()->getDescription ().c_str ()
+				((rts2core::ValueRectangle *)val)->getWidth (),
+				((rts2core::ValueRectangle *)val)->getWidth ()->getDescription ().c_str ()
 				);
 
 			delete[]name_stat;
@@ -2500,7 +2500,7 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 	}
 }
 
-void Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
+void Rts2Image::recordChange (Rts2Conn * conn, rts2core::Value * val)
 {
 	char *name;
 	// construct name
@@ -2544,10 +2544,10 @@ Rts2Image::setEnvironmentalValues ()
 
 void Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 {
-	for (Rts2ValueVector::iterator iter = conn->valueBegin ();
+	for (rts2core::ValueVector::iterator iter = conn->valueBegin ();
 		iter != conn->valueEnd (); iter++)
 	{
-		Rts2Value *val = *iter;
+		rts2core::Value *val = *iter;
 		if (val->getWriteToFits ())
 		{
 			switch (which)

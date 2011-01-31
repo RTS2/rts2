@@ -50,14 +50,14 @@ class Fram:public Sensor
 		
 		char *extraSwitchFile;
 
-		Rts2ValueDouble *wdcTimeOut;
-		Rts2ValueDouble *wdcTemperature;
+		rts2core::ValueDouble *wdcTimeOut;
+		rts2core::ValueDouble *wdcTemperature;
 
-		Rts2ValueBool *switchBatBack;
-		Rts2ValueBool *plug_para;
-		Rts2ValueBool *plug_photometer;
-		Rts2ValueBool *plug1;
-		Rts2ValueBool *plug4;
+		rts2core::ValueBool *switchBatBack;
+		rts2core::ValueBool *plug_para;
+		rts2core::ValueBool *plug_photometer;
+		rts2core::ValueBool *plug1;
+		rts2core::ValueBool *plug4;
 
 		int openWDC ();
 		void closeWDC ();
@@ -77,7 +77,7 @@ class Fram:public Sensor
 
 		virtual int changeMasterState (int new_state);
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 	public:
 		Fram (int argc, char **argv);
@@ -319,27 +319,27 @@ int Fram::idle ()
 	return Sensor::idle ();
 }
 
-int Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Fram::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == switchBatBack)
 	{
-		return setValueSwitch (SWITCH_BATBACK, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (SWITCH_BATBACK, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug_photometer)
 	{
-		return setValueSwitch (PLUG_PHOTOMETER, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_PHOTOMETER, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug_para)
 	{
-		return setValueSwitch (PLUG_PARA, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_PARA, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug1)
 	{
-		return setValueSwitch (PLUG_1, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_1, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug4)
 	{
-		return setValueSwitch (PLUG_4, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_4, ((rts2core::ValueBool *) newValue)->getValueBool ());
 	}
 	return Sensor::setValue (oldValue, newValue);
 }

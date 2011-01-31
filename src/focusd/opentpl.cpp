@@ -35,7 +35,7 @@ class OpenTpl:public Focusd
 
 		rts2core::OpenTpl *opentplConn;
 
-		Rts2ValueFloat *realPos;
+		rts2core::ValueFloat *realPos;
 
 		int initOpenTplDevice ();
 

@@ -768,15 +768,15 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		void writePhysical (int x, int y, int bin_x, int bin_y);
 
-		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
+		void writeConnBaseValue (const char *name, rts2core::Value *val, const char *desc);
 
 		void writeConnArray (TableData *tableData);
 
 		// writes one value to image
-		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
+		void writeConnValue (Rts2Conn *conn, rts2core::Value *val);
 
 		// record value changes
-		void recordChange (Rts2Conn *conn, Rts2Value *val);
+		void recordChange (Rts2Conn *conn, rts2core::Value *val);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);

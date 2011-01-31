@@ -94,13 +94,13 @@ using namespace rts2xmlrpc;
 void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
 {
 	int i = 0;
-	for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+	for (rts2core::ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
 	{
 		XmlRpcValue retVar;
 		retVar["name"] = (*variter)->getName ();
 		retVar["flags"] = (*variter)->getFlags ();
 
-		Rts2Value *val = *variter;
+		rts2core::Value *val = *variter;
 
 		switch (val->getValueExtType ())
 		{
@@ -127,7 +127,7 @@ void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
 						break;
 					case RTS2_VALUE_BOOL:
 						bool bool_val;
-						bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
+						bool_val = ((rts2core::ValueBool*)(*variter))->getValueBool ();
 						retVar["value"] = bool_val;
 						break;
 					case RTS2_VALUE_LONGINT:
@@ -137,7 +137,7 @@ void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
 					case RTS2_VALUE_TIME:
 						struct tm tm_s;
 						long usec;
-						((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
+						((rts2core::ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
 						retVar["value"] = XmlRpcValue (&tm_s);
 						break;
 					default:
@@ -155,7 +155,7 @@ void XmlDevClient::stateChanged (Rts2ServerState * state)
 	rts2core::Rts2DevClient::stateChanged (state);
 }
 
-void XmlDevClient::valueChanged (Rts2Value * value)
+void XmlDevClient::valueChanged (rts2core::Value * value)
 {
 	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
 	rts2core::Rts2DevClient::valueChanged (value);
@@ -347,7 +347,7 @@ void XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 	}
 }
 
-void XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
+void XmlRpcd::valueChangedEvent (Rts2Conn * conn, rts2core::Value * new_value)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -815,7 +815,7 @@ class ListValues: public SessionMethod
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
 			connections_t::iterator iter;
-			Rts2ValueVector::iterator variter;
+			rts2core::ValueVector::iterator variter;
 			int i = 0;
 			// print results for single device..
 			for (iter = serv->getCentraldConns ()->begin (); iter != serv->getCentraldConns ()->end (); iter++)
@@ -882,7 +882,7 @@ class ListValuesDevice: public ListValues
 			else
 			{
 				connections_t::iterator iter;
-				Rts2ValueVector::iterator variter;
+				rts2core::ValueVector::iterator variter;
 				for (iter = serv->getCentraldConns ()->begin (); iter != serv->getCentraldConns ()->end (); iter++)
 				{
 					conn = *iter;
@@ -951,7 +951,7 @@ class GetValue: public SessionMethod
 			{
 				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
 			}
-			Rts2Value *val = conn->getValue (valueName.c_str ());
+			rts2core::Value *val = conn->getValue (valueName.c_str ());
 			if (!val)
 			{
 				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
@@ -969,12 +969,12 @@ class GetValue: public SessionMethod
 					result = val->getValueDouble ();
 					break;
 				case RTS2_VALUE_BOOL:
-					result = ((Rts2ValueBool *)val)->getValueBool ();
+					result = ((rts2core::ValueBool *)val)->getValueBool ();
 					break;
 				case RTS2_VALUE_TIME:
 					struct tm tm_s;
 					long usec;
-					((Rts2ValueTime*)val)->getStructTm (&tm_s, &usec);
+					((rts2core::ValueTime*)val)->getStructTm (&tm_s, &usec);
 					result = XmlRpcValue (&tm_s);
 					break;
 				default:
@@ -995,7 +995,7 @@ class SessionMethodValue:public SessionMethod
 			double d_val;
 			std::string s_val;
 
-			Rts2Value *val = conn->getValue (valueName.c_str ());
+			rts2core::Value *val = conn->getValue (valueName.c_str ());
 			if (!val)
 			{
 				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (conn->getName ()) + "'.");
@@ -1120,7 +1120,7 @@ class IncValue: public SessionMethod
 			{
 				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
 			}
-			Rts2Value *val = conn->getValue (valueName.c_str ());
+			rts2core::Value *val = conn->getValue (valueName.c_str ());
 			if (!val)
 			{
 				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");

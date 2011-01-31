@@ -22,7 +22,7 @@
 
 #include "rts2object.h"
 #include "rts2block.h"
-#include "rts2value.h"
+#include "value.h"
 
 class Rts2ServerState;
 
@@ -150,7 +150,7 @@ class Rts2DevClient:public Rts2Object
 
 		virtual void idle ();
 
-		virtual void valueChanged (Rts2Value * value)
+		virtual void valueChanged (rts2core::Value * value)
 		{
 
 		}
@@ -278,7 +278,7 @@ class Rts2DevClientPhot:public Rts2DevClient
 
 		bool isIntegrating ();
 
-		virtual void valueChanged (Rts2Value * value);
+		virtual void valueChanged (rts2core::Value * value);
 };
 
 class Rts2DevClientFilter:public Rts2DevClient

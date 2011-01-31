@@ -19,11 +19,12 @@
 
 #include <algorithm>
 
-#include "rts2valuestat.h"
+#include "valuestat.h"
 #include "rts2conn.h"
 
-void
-Rts2ValueDoubleStat::clearStat ()
+using namespace rts2core;
+
+void ValueDoubleStat::clearStat ()
 {
 	numMes = 0;
 	mode = rts2_nan ("f");
@@ -34,9 +35,7 @@ Rts2ValueDoubleStat::clearStat ()
 	changed ();
 }
 
-
-void
-Rts2ValueDoubleStat::calculate ()
+void ValueDoubleStat::calculate ()
 {
 	if (valueList.size () == 0)
 		return;
@@ -69,25 +68,19 @@ Rts2ValueDoubleStat::calculate ()
 	changed ();
 }
 
-
-Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name):Rts2ValueDouble
-(in_val_name)
+ValueDoubleStat::ValueDoubleStat (std::string in_val_name):ValueDouble (in_val_name)
 {
 	clearStat ();
 	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
-
-Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDouble (in_val_name, in_description, writeToFits,
-flags)
+ValueDoubleStat::ValueDoubleStat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueDouble (in_val_name, in_description, writeToFits,flags)
 {
 	clearStat ();
 	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
-
-int
-Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
+int ValueDoubleStat::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&value)
 		|| connection->paramNextInteger (&numMes)
@@ -99,43 +92,35 @@ Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-const char *
-Rts2ValueDoubleStat::getValue ()
+const char * ValueDoubleStat::getValue ()
 {
 	sprintf (buf, "%.20le %i %.20le %.20le %.20le %.20le", value, numMes, mode, min, max, stdev);
 	return buf;
 }
 
-
-const char *
-Rts2ValueDoubleStat::getDisplayValue ()
+const char * ValueDoubleStat::getDisplayValue ()
 {
 	sprintf (buf, "%f %i %f %f %f %f", getValueDouble (), numMes, mode, min, max, stdev);
 	return buf;
 }
 
-
-void
-Rts2ValueDoubleStat::send (Rts2Conn * connection)
+void ValueDoubleStat::send (Rts2Conn * connection)
 {
 	if (numMes != (int) valueList.size ())
 		calculate ();
-	Rts2ValueDouble::send (connection);
+	ValueDouble::send (connection);
 }
 
-
-void
-Rts2ValueDoubleStat::setFromValue (Rts2Value * newValue)
+void ValueDoubleStat::setFromValue (Value * newValue)
 {
-	Rts2ValueDouble::setFromValue (newValue);
+	ValueDouble::setFromValue (newValue);
 	if (newValue->getValueType () == (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
 	{
-		numMes = ((Rts2ValueDoubleStat *) newValue)->getNumMes ();
-		mode = ((Rts2ValueDoubleStat *) newValue)->getMode ();
-		min = ((Rts2ValueDoubleStat *) newValue)->getMin ();
-		max = ((Rts2ValueDoubleStat *) newValue)->getMax ();
-		stdev = ((Rts2ValueDoubleStat *) newValue)->getStdev ();
-		valueList = ((Rts2ValueDoubleStat *) newValue)->getMesList ();
+		numMes = ((ValueDoubleStat *) newValue)->getNumMes ();
+		mode = ((ValueDoubleStat *) newValue)->getMode ();
+		min = ((ValueDoubleStat *) newValue)->getMin ();
+		max = ((ValueDoubleStat *) newValue)->getMax ();
+		stdev = ((ValueDoubleStat *) newValue)->getStdev ();
+		valueList = ((ValueDoubleStat *) newValue)->getMesList ();
 	}
 }

@@ -33,17 +33,17 @@ class AAG: public SensorWeather
 	private:
 		char *device_file;
 		rts2core::ConnSerial *aagConn;
-		Rts2ValueDouble *tempSky;
-		Rts2ValueDouble *tempIRSensor;
-		Rts2ValueDouble *tempSkyCorrected;
-                Rts2ValueDouble *intVoltage ; 
-                Rts2ValueDouble *ldrResistance ;
-                Rts2ValueDouble *tempRain ;
-                Rts2ValueDouble *rainFrequency ;
-                Rts2ValueDouble* pwmValue ;
-		Rts2ValueDouble *triggerRain;
-		Rts2ValueDouble *triggerSky;
-		Rts2ValueDouble *triggerNoSnow;
+		rts2core::ValueDouble *tempSky;
+		rts2core::ValueDouble *tempIRSensor;
+		rts2core::ValueDouble *tempSkyCorrected;
+                rts2core::ValueDouble *intVoltage ; 
+                rts2core::ValueDouble *ldrResistance ;
+                rts2core::ValueDouble *tempRain ;
+                rts2core::ValueDouble *rainFrequency ;
+                rts2core::ValueDouble* pwmValue ;
+		rts2core::ValueDouble *triggerRain;
+		rts2core::ValueDouble *triggerSky;
+		rts2core::ValueDouble *triggerNoSnow;
 		/*
 		 * Read sensor values and caculate.
 		 */
@@ -61,7 +61,7 @@ class AAG: public SensorWeather
 		virtual int init ();
 		virtual int info ();
 		virtual int idle ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	public:
 		AAG (int in_argc, char **in_argv);
@@ -560,7 +560,7 @@ AAG::idle ()
 	return SensorWeather::idle ();
 }
 int
-AAG::setValue (Rts2Value * old_value, Rts2Value * new_value)
+AAG::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	return SensorWeather::setValue (old_value, new_value);
 }

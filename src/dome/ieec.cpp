@@ -58,7 +58,7 @@ class IEEC: public Dome
 		const char *comediFile;
 
 
-		void comediReadDIO (int channel, Rts2ValueBool *val, const char *name);
+		void comediReadDIO (int channel, rts2core::ValueBool *val, const char *name);
 
 	protected:
 		virtual int processOption (int _opt);
@@ -82,7 +82,7 @@ class IEEC: public Dome
 
 using namespace rts2dome;
 
-void IEEC::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
+void IEEC::comediReadDIO (int channel, rts2core::ValueBool *val, const char *name)
 {
 	int ret;
 	unsigned int v;

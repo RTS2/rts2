@@ -27,7 +27,7 @@
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"
 
-Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2ValueString *_expandPath):Rts2DevClientCameraImage (_connection), DevScript (_connection)
+Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath):Rts2DevClientCameraImage (_connection), DevScript (_connection)
 {
 	expandPath = _expandPath;
 	waitForExposure = false;
@@ -119,7 +119,7 @@ int Rts2DevClientCameraExec::getNextCommand ()
 
 bool Rts2DevClientCameraExec::canEndScript ()
 {
-	Rts2Value *queExpNum = getConnection ()->getValue ("que_exp_num");
+	rts2core::Value *queExpNum = getConnection ()->getValue ("que_exp_num");
 	if (queExpNum && queExpNum->getValueInteger () != 0)
 		return false;
 	if (isExposing ())
@@ -153,7 +153,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		}
 	}
 
-	Rts2Value *val;
+	rts2core::Value *val;
 
 	//std::cout << "bopMask " << std::hex << nextComd->getBopMask () << std::endl;
 
@@ -335,7 +335,7 @@ void Rts2DevClientCameraExec::exposureStarted ()
 
 void Rts2DevClientCameraExec::exposureEnd ()
 {
-	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+	rts2core::Value *val = getConnection ()->getValue ("que_exp_num");
 	// if script is running, inform it about end of exposure..
 	if (exposureScript.get ())
 		exposureScript->exposureEnd ();

@@ -41,11 +41,11 @@ class TPS534: public SensorWeather
 	private:
 		char default_device_file[64] ;
 		char *device_file ;
-		Rts2ValueDouble *temperatureSky;
-		Rts2ValueDouble *ambientTemperatureBeta;
-		Rts2ValueDouble *ambientTemperatureLUT;
-		Rts2ValueDouble *rTheta;
-		Rts2ValueDouble *triggerSky;
+		rts2core::ValueDouble *temperatureSky;
+		rts2core::ValueDouble *ambientTemperatureBeta;
+		rts2core::ValueDouble *ambientTemperatureLUT;
+		rts2core::ValueDouble *rTheta;
+		rts2core::ValueDouble *triggerSky;
                 char *doorDevice;
 
      	protected:
@@ -133,7 +133,7 @@ TPS534::info ()
   bool doorOpen= false ;
   Rts2Conn * conn_door = getOpenConnection (doorDevice);
   if( conn_door) {
-    Rts2Value * doorState =  conn_door->getValue ("DOORSTATE");
+    rts2core::Value * doorState =  conn_door->getValue ("DOORSTATE");
     if( doorState) {
       if( doorState->getValueType()== RTS2_VALUE_STRING) {
 	if( ! strcmp(doorState->getDisplayValue(), "stopped, open")) {

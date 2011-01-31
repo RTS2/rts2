@@ -42,11 +42,11 @@
 class Rts2Scriptor:public rts2core::Device, public Rts2ScriptInterface
 {
 	private:
-		Rts2ValueInteger *scriptCount;
-		Rts2ValueString *expandPath;
-		Rts2ValueSelection *scriptGen;
+		rts2core::ValueInteger *scriptCount;
+		rts2core::ValueString *expandPath;
+		rts2core::ValueSelection *scriptGen;
 
-		std::map <std::string, Rts2ValueString *> scriptVar;
+		std::map <std::string, rts2core::ValueString *> scriptVar;
 
 		Rts2TargetScr *currentTarget;
 	protected:
@@ -135,7 +135,7 @@ Rts2DevClient * Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_
 void Rts2Scriptor::deviceReady (Rts2Conn * conn)
 {
 	// add variable for this device..
-	Rts2ValueString *stringVal;
+	rts2core::ValueString *stringVal;
 	createValue (stringVal, (std::string (DEV_SCRIPT_PREFIX) + std::string (conn->getName())).c_str (), std::string ("Script value for ") + std::string (conn->getName ()), true);
 	updateMetaInformations (stringVal);
 	scriptVar[std::string (conn->getName ())] = stringVal;
@@ -176,10 +176,10 @@ int Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 	logStream (MESSAGE_DEBUG) << "Script '" << buf << "'." << sendLog;
 	pclose (gen);
 
-	std::map <std::string, Rts2ValueString *>::iterator iter = scriptVar.find (in_deviceName);
+	std::map <std::string, rts2core::ValueString *>::iterator iter = scriptVar.find (in_deviceName);
 	if (iter != scriptVar.end ())
 	{
-		Rts2ValueString *val = (*iter).second;
+		rts2core::ValueString *val = (*iter).second;
 		val->setValueString (filebuf);
 		sendValueAll (val);
 	}

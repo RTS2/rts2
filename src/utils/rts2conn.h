@@ -39,7 +39,7 @@
 #include "rts2serverstate.h"
 #include "rts2message.h"
 #include "rts2logstream.h"
-#include "rts2valuelist.h"
+#include "valuelist.h"
 
 #define MAX_DATA    200
 
@@ -79,12 +79,11 @@ class Rts2Block;
 
 class Rts2Event;
 
-class Rts2Value;
-
 class Rts2Conn;
 
 namespace rts2core
 {
+class Value;
 
 class Rts2Command;
 
@@ -467,7 +466,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
 		 */
-		Rts2Value *getValue (const char *value_name);
+		rts2core::Value *getValue (const char *value_name);
 
 		/**
 		 * Returns value with given name and type. Throw error if such value does not exists.
@@ -477,7 +476,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @throw Error 
 		 */
-		Rts2Value *getValueType (const char *value_name, int value_type);
+		rts2core::Value *getValueType (const char *value_name, int value_type);
 
 		int getOtherType ();
 		// set to -1 if we don't need timeout checks..
@@ -495,7 +494,7 @@ class Rts2Conn:public Rts2Object
 
 
 		// value management functions
-		void addValue (Rts2Value * value);
+		void addValue (rts2core::Value * value);
 
 		int metaInfo (int rts2Type, std::string m_name, std::string desc);
 		int selMetaInfo (const char *value_name, char *sel_name);
@@ -508,9 +507,9 @@ class Rts2Conn:public Rts2Object
 
 		virtual int commandValue (const char *v_name);
 
-		Rts2ValueVector::iterator valueBegin () { return values.begin (); }
-		Rts2ValueVector::iterator valueEnd () { return values.end (); }
-		Rts2Value *valueAt (int index)
+		rts2core::ValueVector::iterator valueBegin () { return values.begin (); }
+		rts2core::ValueVector::iterator valueEnd () { return values.end (); }
+		rts2core::Value *valueAt (int index)
 		{
 			if ((size_t) index < values.size ())
 				return values[index];
@@ -752,7 +751,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Holds connection values.
 		 */
-		Rts2ValueVector values;
+		rts2core::ValueVector values;
 
 		/**
 		 * Time when last information was received.
@@ -762,7 +761,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Holds info_time variable.
 		 */
-		Rts2ValueTime *info_time;
+		rts2core::ValueTime *info_time;
 
 		/**
 		 * Called when new data connection is created.

@@ -50,7 +50,7 @@ Rts2DevClientLogger::fillLogValues ()
 	for (std::list < std::string >::iterator iter = logNames.begin ();
 		iter != logNames.end (); iter++)
 	{
-		Rts2Value *val = getConnection ()->getValue ((*iter).c_str ());
+		rts2core::Value *val = getConnection ()->getValue ((*iter).c_str ());
 		if (val)
 		{
 			logValues.push_back (val);
@@ -111,7 +111,7 @@ Rts2DevClientLogger::infoOK ()
 	// check if we have to change log file..
 	changeOutputStream ();
 	*outputStream << getName ();
-	for (std::list < Rts2Value * >::iterator iter = logValues.begin ();
+	for (std::list < rts2core::Value * >::iterator iter = logValues.begin ();
 		iter != logValues.end (); iter++)
 	{
 		*outputStream << " " << getDisplayValue (*iter);

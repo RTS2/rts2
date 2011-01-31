@@ -34,8 +34,8 @@ class MEarthWeather:public rts2core::ConnUDP
 	protected:
 		virtual int process (size_t len, struct sockaddr_in &from);
 	private:
-		void paramNextTimeME (Rts2ValueTime *val);
-		void paramNextFloatME (Rts2ValueFloat *val);
+		void paramNextTimeME (rts2core::ValueTime *val);
+		void paramNextFloatME (rts2core::ValueFloat *val);
 };
 
 class FlwoWeather:public SensorWeather
@@ -55,35 +55,35 @@ class FlwoWeather:public SensorWeather
 		int me_port;
 		MEarthWeather *mearth;
 
-		Rts2ValueFloat *outsideTemp;
-		Rts2ValueFloat *windSpeed;
-		Rts2ValueFloat *windSpeed_limit;
-		Rts2ValueFloat *windGustSpeed;
-		Rts2ValueFloat *windGustSpeed_limit;
-		Rts2ValueFloat *windDir;
-		Rts2ValueFloat *pressure;
-		Rts2ValueFloat *humidity;
-		Rts2ValueFloat *humidity_limit;
-		Rts2ValueFloat *rain;
-		Rts2ValueFloat *dewpoint;
-		Rts2ValueBool *hatRain;
+		rts2core::ValueFloat *outsideTemp;
+		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueFloat *windSpeed_limit;
+		rts2core::ValueFloat *windGustSpeed;
+		rts2core::ValueFloat *windGustSpeed_limit;
+		rts2core::ValueFloat *windDir;
+		rts2core::ValueFloat *pressure;
+		rts2core::ValueFloat *humidity;
+		rts2core::ValueFloat *humidity_limit;
+		rts2core::ValueFloat *rain;
+		rts2core::ValueFloat *dewpoint;
+		rts2core::ValueBool *hatRain;
 
 		// ME values
-		Rts2ValueTime *me_mjd;
-		Rts2ValueFloat *me_winddir;
-		Rts2ValueFloat *me_windspeed;
-		Rts2ValueFloat *me_temp;
-		Rts2ValueFloat *me_dewpoint;
-		Rts2ValueFloat *me_humidity;
-		Rts2ValueFloat *me_pressure;
-		Rts2ValueFloat *me_rain_accumulation;
-		Rts2ValueFloat *me_rain_duration;
-		Rts2ValueFloat *me_rain_intensity;
-		Rts2ValueFloat *me_hail_accumulation;
-		Rts2ValueFloat *me_hail_duration;
-		Rts2ValueFloat *me_hail_intensity;
-		Rts2ValueFloat *me_sky_temp;
-		Rts2ValueFloat *me_sky_limit;
+		rts2core::ValueTime *me_mjd;
+		rts2core::ValueFloat *me_winddir;
+		rts2core::ValueFloat *me_windspeed;
+		rts2core::ValueFloat *me_temp;
+		rts2core::ValueFloat *me_dewpoint;
+		rts2core::ValueFloat *me_humidity;
+		rts2core::ValueFloat *me_pressure;
+		rts2core::ValueFloat *me_rain_accumulation;
+		rts2core::ValueFloat *me_rain_duration;
+		rts2core::ValueFloat *me_rain_intensity;
+		rts2core::ValueFloat *me_hail_accumulation;
+		rts2core::ValueFloat *me_hail_duration;
+		rts2core::ValueFloat *me_hail_intensity;
+		rts2core::ValueFloat *me_sky_temp;
+		rts2core::ValueFloat *me_sky_limit;
 
 		friend class MEarthWeather;
 };
@@ -92,7 +92,7 @@ MEarthWeather::MEarthWeather (int _port, FlwoWeather *_master):ConnUDP (_port, _
 {
 };
 
-void MEarthWeather::paramNextTimeME (Rts2ValueTime *val)
+void MEarthWeather::paramNextTimeME (rts2core::ValueTime *val)
 {
 	char *str_num;
 	char *endptr;
@@ -117,7 +117,7 @@ void MEarthWeather::paramNextTimeME (Rts2ValueTime *val)
 	throw rts2core::Error ("cannot parse " + std::string (str_num));
 }
 
-void MEarthWeather::paramNextFloatME (Rts2ValueFloat *val)
+void MEarthWeather::paramNextFloatME (rts2core::ValueFloat *val)
 {
 	char *str_num;
 	char *endptr;

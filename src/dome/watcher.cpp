@@ -60,7 +60,7 @@ class Watcher:public Dome
 
 		const char *isOnString (int mask);
 
-		Rts2ValueInteger *sw_state;
+		rts2core::ValueInteger *sw_state;
 
 	protected:
 		virtual int processOption (int in_opt);

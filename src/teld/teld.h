@@ -312,18 +312,18 @@ class Telescope:public rts2core::Device
 
 		virtual int willConnect (Rts2Address * in_addr);
 		char telType[64];
-		Rts2ValueAltAz *telAltAz;
+		rts2core::ValueAltAz *telAltAz;
 
-		Rts2ValueInteger *telFlip;
+		rts2core::ValueInteger *telFlip;
 
 		double defaultRotang;
 
-		Rts2ValueDouble *rotang;
+		rts2core::ValueDouble *rotang;
 
-		Rts2ValueDouble *telLongitude;
-		Rts2ValueDouble *telLatitude;
-		Rts2ValueDouble *telAltitude;
-		Rts2ValueString *telescope;
+		rts2core::ValueDouble *telLongitude;
+		rts2core::ValueDouble *telLatitude;
+		rts2core::ValueDouble *telAltitude;
+		rts2core::ValueString *telescope;
 
 		/**
 		 * Check if telescope is moving to fixed position. Called during telescope
@@ -528,9 +528,9 @@ class Telescope:public rts2core::Device
 
 		void needStop () { maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP); }
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual void valueChanged (Rts2Value * changed_value);
+		virtual void valueChanged (rts2core::Value * changed_value);
 
 		virtual int deleteConnection (Rts2Conn * in_conn)
 		{
@@ -665,10 +665,10 @@ class Telescope:public rts2core::Device
 		/**
 		 * Local sidereal time.
 		 */
-		Rts2ValueDouble *lst;
+		rts2core::ValueDouble *lst;
 
-		Rts2ValueSelection *raGuide;
-		Rts2ValueSelection *decGuide;
+		rts2core::ValueSelection *raGuide;
+		rts2core::ValueSelection *decGuide;
 
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
@@ -680,99 +680,99 @@ class Telescope:public rts2core::Device
 		/**
 		 * Last error.
 		 */
-		Rts2ValueDouble *posErr;
+		rts2core::ValueDouble *posErr;
 
 		/**
 		 * If correction is bellow that value, it is ignored.
 		 */
-		Rts2ValueDouble *ignoreCorrection;
+		rts2core::ValueDouble *ignoreCorrection;
 
-		Rts2ValueDouble *defIgnoreCorrection;
+		rts2core::ValueDouble *defIgnoreCorrection;
 
 		/**
 		 * If correction is bellow that value, it is considered as small correction.
 		 */
-		Rts2ValueDouble *smallCorrection;
+		rts2core::ValueDouble *smallCorrection;
 
 		/**
 		 * Limit for corrections.
 		 */
-		Rts2ValueDouble *correctionLimit; 
+		rts2core::ValueDouble *correctionLimit; 
 
 		/**
 		 * If move is above this limit, correction is rejected.
 		 */
-		Rts2ValueDouble *modelLimit;
+		rts2core::ValueDouble *modelLimit;
 
 		/**
 		 * If correction is above that limit, cancel exposures and
 		 * move immediatelly. This is to signal we are out of all cameras
 		 * FOV.
 		 */
-		Rts2ValueDouble *telFov;
+		rts2core::ValueDouble *telFov;
 
 		/**
 		 * Object we are observing original positions.
 		 */
-		Rts2ValueRaDec *oriRaDec;
+		rts2core::ValueRaDec *oriRaDec;
 
 		/**
 		 * User offsets, used to create dithering pattern.
 		 */
-		Rts2ValueRaDec *offsRaDec;
+		rts2core::ValueRaDec *offsRaDec;
 
 		/**
 		 * Offsets which should be applied from last movement.
 		 */
-		Rts2ValueRaDec *woffsRaDec;
+		rts2core::ValueRaDec *woffsRaDec;
 
-		Rts2ValueRaDec *diffTrackRaDec;
+		rts2core::ValueRaDec *diffTrackRaDec;
 
 		/**
 		 * Real coordinates of the object, after offsets are applied.
 		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
 		 */
-		Rts2ValueRaDec *objRaDec;
+		rts2core::ValueRaDec *objRaDec;
 
 		/**
 		 * Target we are pointing to. Coordinates feeded to telescope.
 		 * TAR[RA|DEC] = OBJ[RA|DEC] + modelling, precession, etc.
 		 */
-		Rts2ValueRaDec *tarRaDec;
+		rts2core::ValueRaDec *tarRaDec;
 
 		/**
 		 * Corrections from astrometry/user.
 		 */
-		Rts2ValueRaDec *corrRaDec;
+		rts2core::ValueRaDec *corrRaDec;
 
 		/**
 		 * RA DEC correction which waits to be applied.
 		 */
-		Rts2ValueRaDec *wcorrRaDec;
+		rts2core::ValueRaDec *wcorrRaDec;
 
 		/**
 		 * Modelling changes.
 		 */
-		Rts2ValueRaDec *modelRaDec;
+		rts2core::ValueRaDec *modelRaDec;
 
 		/**
 		 * Corrected, modelled coordinates feeded to telescope.
 		 */
-		Rts2ValueRaDec *telTargetRaDec;
+		rts2core::ValueRaDec *telTargetRaDec;
 
 		/**
 		 * If this value is true, any software move of the telescope is blocked.
 		 */
-		Rts2ValueBool *blockMove;
+		rts2core::ValueBool *blockMove;
 
-		Rts2ValueBool *blockOnStandby;
+		rts2core::ValueBool *blockOnStandby;
 
 		// object + telescope position
 
-		Rts2ValueBool *calAberation;
-		Rts2ValueBool *calPrecession;
-		Rts2ValueBool *calRefraction;
-		Rts2ValueBool *calModel;
+		rts2core::ValueBool *calAberation;
+		rts2core::ValueBool *calPrecession;
+		rts2core::ValueBool *calRefraction;
+		rts2core::ValueBool *calModel;
 
 		rts2core::StringArray *cupolas;
 
@@ -790,32 +790,32 @@ class Telescope:public rts2core::Device
 		 * Telescope RA and DEC. In perfect world readed from sensors.
 		 * target + model + corrRaDec = requested position -> telRaDec
 		 */
-		Rts2ValueRaDec *telRaDec;
+		rts2core::ValueRaDec *telRaDec;
 
 		/**
 		 * Current airmass.
 		 */
-		Rts2ValueDouble *airmass;
+		rts2core::ValueDouble *airmass;
 
 		/**
 		 * Hour angle.
 		 */
-		Rts2ValueDouble *hourAngle;
+		rts2core::ValueDouble *hourAngle;
 
 		/**
 		 * Distance to target in degrees.
 		 */
-		Rts2ValueDouble *targetDistance;
+		rts2core::ValueDouble *targetDistance;
 
 		/**
 		 * Time when movement was started.
 		 */
-		Rts2ValueTime *targetStarted;
+		rts2core::ValueTime *targetStarted;
 
 		/**
 		 * Estimate time when current movement will be finished.
 		 */
-		Rts2ValueTime *targetReached;
+		rts2core::ValueTime *targetReached;
 
 		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec, bool onlyCorrect);
 
@@ -824,12 +824,12 @@ class Telescope:public rts2core::Device
 		/**
 		 * Date and time when last park command was issued.
 		 */
-		Rts2ValueTime *mountParkTime;
+		rts2core::ValueTime *mountParkTime;
 
-		Rts2ValueInteger *moveNum;
-		Rts2ValueInteger *corrImgId;
+		rts2core::ValueInteger *moveNum;
+		rts2core::ValueInteger *corrImgId;
 
-		Rts2ValueInteger *wCorrImgId;
+		rts2core::ValueInteger *wCorrImgId;
 
 		void checkMoves ();
 
@@ -838,7 +838,7 @@ class Telescope:public rts2core::Device
 		char *modelFile;
 		rts2telmodel::Model *model;
 
-		Rts2ValueSelection *standbyPark;
+		rts2core::ValueSelection *standbyPark;
 		const char *horizonFile;
 
 		ObjectCheck *hardHorizon;
@@ -866,7 +866,7 @@ class Telescope:public rts2core::Device
 		/** 
 		 * Which coordinates are used for pointing (eq, alt-az,..)
 		 */
-		Rts2ValueSelection *pointingModel;
+		rts2core::ValueSelection *pointingModel;
 
 		struct ln_ell_orbit mpec_orbit;
 
@@ -874,13 +874,13 @@ class Telescope:public rts2core::Device
 		 * Minor Planets Ephemerids one-line element. If set, target position and differential
 		 * tracking are calculated from this string.
 		 */
-		Rts2ValueString *mpec;
+		rts2core::ValueString *mpec;
 
-		Rts2ValueDouble *mpec_refresh;
-		Rts2ValueDouble *mpec_angle;
+		rts2core::ValueDouble *mpec_refresh;
+		rts2core::ValueDouble *mpec_angle;
 
 		// Value for RA DEC differential tracking
-		Rts2ValueRaDec *diffRaDec;
+		rts2core::ValueRaDec *diffRaDec;
 
 		void recalculateMpecDIffs ();
 };

@@ -131,15 +131,15 @@ class OpenTpl: public ConnTCP
 		}
 
 		/**
-		 * Set Rts2ValueDouble from OpenTPL.
+		 * Set rts2core::ValueDouble from OpenTPL.
 		 *
 		 * @param _name   Value _name.
-		 * @param value  Rts2ValueDouble which will be set.
+		 * @param value  rts2core::ValueDouble which will be set.
 		 * @param tpl_status OpenTPL status.
 		 *
 		 * @return OpenTPL status of the get operation.
 		 */
-		int getValueDouble (const char *_name, Rts2ValueDouble *value, int *tpl_status)
+		int getValueDouble (const char *_name, rts2core::ValueDouble *value, int *tpl_status)
 		{
 			double val;
 			int ret = get (_name, val, tpl_status);
@@ -150,15 +150,15 @@ class OpenTpl: public ConnTCP
 		}
 
 		/**
-		 * Set Rts2ValueInteger from OpenTPL.
+		 * Set rts2core::ValueInteger from OpenTPL.
 		 *
 		 * @param _name Value name.
-		 * @param value Rts2ValueInteger which will be set.
+		 * @param value rts2core::ValueInteger which will be set.
 		 * @param tpl_status OpenTPL status.
 		 *
 		 * @return OpenTPL status of the get operation.
 		 */
-		int getValueInteger (const char *_name, Rts2ValueInteger *value, int *tpl_status)
+		int getValueInteger (const char *_name, rts2core::ValueInteger *value, int *tpl_status)
 		{
 			int val;
 			int ret = get (_name, val, tpl_status);

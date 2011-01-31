@@ -124,14 +124,14 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 	// get current target position..
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	Rts2Conn *conn = serv->getOpenConnection (DEVICE_TYPE_MOUNT);
-	Rts2Value *val;
+	rts2core::Value *val;
 	if (conn)
 	{
 		val = conn->getValue ("TEL_");
 		if (val && val->getValueType () == RTS2_VALUE_ALTAZ)
 		{
-			hrz.alt = ((Rts2ValueAltAz *) val)->getAlt ();
-			hrz.az = ((Rts2ValueAltAz *) val)->getAz ();
+			hrz.alt = ((rts2core::ValueAltAz *) val)->getAlt ();
+			hrz.az = ((rts2core::ValueAltAz *) val)->getAz ();
 
 			altaz.plotCross (&hrz, "Telescope", "green");
 		}
@@ -139,8 +139,8 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 		val = conn->getValue ("TAR");
 		if (val && val->getValueType () == RTS2_VALUE_RADEC)
 		{
-			pos.ra = ((Rts2ValueRaDec *) val)->getRa ();
-			pos.dec  = ((Rts2ValueRaDec *) val)->getDec ();
+			pos.ra = ((rts2core::ValueRaDec *) val)->getRa ();
+			pos.dec  = ((rts2core::ValueRaDec *) val)->getDec ();
 
 			if (!(isnan (pos.ra) || isnan (pos.dec)))
 			{

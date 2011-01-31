@@ -93,7 +93,7 @@ class Andor:public Camera
 		virtual int stopExposure ();
 		virtual long isExposing ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual int doReadout ();
 
@@ -109,41 +109,41 @@ class Andor:public Camera
 		int disable_ft;
 		int shutter_with_ft;
 
-		Rts2ValueSelection *tempStatus;
+		rts2core::ValueSelection *tempStatus;
 
-		Rts2ValueInteger *gain;
-		Rts2ValueInteger *emccdgain;
+		rts2core::ValueInteger *gain;
+		rts2core::ValueInteger *emccdgain;
 
-		Rts2ValueBool *useFT;
-		Rts2ValueBool *useRunTillAbort;
+		rts2core::ValueBool *useFT;
+		rts2core::ValueBool *useRunTillAbort;
 
-		Rts2ValueInteger *VSAmp;
-		Rts2ValueBool *FTShutter;
+		rts2core::ValueInteger *VSAmp;
+		rts2core::ValueBool *FTShutter;
 
-		Rts2ValueDouble *subExposure;
+		rts2core::ValueDouble *subExposure;
 
 		// informational values
-		Rts2ValueSelection *ADChannel;
-		Rts2ValueBool *EMOn;
-		Rts2ValueInteger *HSpeed;
-		Rts2ValueInteger *VSpeed;
-		Rts2ValueFloat *HSpeedHZ;
-		Rts2ValueFloat *VSpeedHZ;
+		rts2core::ValueSelection *ADChannel;
+		rts2core::ValueBool *EMOn;
+		rts2core::ValueInteger *HSpeed;
+		rts2core::ValueInteger *VSpeed;
+		rts2core::ValueFloat *HSpeedHZ;
+		rts2core::ValueFloat *VSpeedHZ;
 
-		Rts2ValueInteger *bitDepth;
-		Rts2ValueInteger *acqusitionMode;
+		rts2core::ValueInteger *bitDepth;
+		rts2core::ValueInteger *acqusitionMode;
 
-		Rts2ValueInteger *outputAmp;
-		Rts2ValueInteger *outPreAmpGain;
+		rts2core::ValueInteger *outputAmp;
+		rts2core::ValueInteger *outPreAmpGain;
 
-		Rts2ValueBool *emAdvanced;
-		Rts2ValueSelection *emGainMode;
-		Rts2ValueSelection *fanMode;
+		rts2core::ValueBool *emAdvanced;
+		rts2core::ValueSelection *emGainMode;
+		rts2core::ValueSelection *fanMode;
 
-		Rts2ValueBool *filterCr;
+		rts2core::ValueBool *filterCr;
 
-		Rts2ValueBool *baselineClamp;
-		Rts2ValueInteger *baselineOff;
+		rts2core::ValueBool *baselineClamp;
+		rts2core::ValueInteger *baselineOff;
 
 		int defaultGain;
 
@@ -688,7 +688,7 @@ int Andor::scriptEnds ()
 	return Camera::scriptEnds ();
 }
 
-int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Andor::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == gain)
 		return setGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -699,15 +699,15 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == VSAmp)
 		return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == EMOn)
-		return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool ()? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
+		return setHSSpeed (((rts2core::ValueBool *) new_value)->getValueBool ()? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == HSpeed)
 		return setHSSpeed (EMOn->getValueBool ()? 0 : 1, new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSpeed)
 		return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == FTShutter)
-		return setFTShutter (((Rts2ValueBool *) new_value)->getValueBool ()) ==	0 ? 0 : -2;
+		return setFTShutter (((rts2core::ValueBool *) new_value)->getValueBool ()) ==	0 ? 0 : -2;
 	if (old_value == useFT)
-	  	return setUseFT (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+	  	return setUseFT (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	if (old_value == useRunTillAbort)
 		return 0;
 	if (old_value == outputAmp)
@@ -720,11 +720,11 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == filterCr)
 	{
-		return SetFilterMode (((Rts2ValueBool *)new_value)->getValueBool () ? 2 : 0) == DRV_SUCCESS ? 0 : -2;
+		return SetFilterMode (((rts2core::ValueBool *)new_value)->getValueBool () ? 2 : 0) == DRV_SUCCESS ? 0 : -2;
 	}
 	if (old_value == baselineClamp)
 	{
-		return SetBaselineClamp (((Rts2ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
+		return SetBaselineClamp (((rts2core::ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
 	}
 	if (old_value == baselineOff)
 	{
@@ -732,7 +732,7 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == emAdvanced)
 	{
-		return SetEMAdvanced (((Rts2ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
+		return SetEMAdvanced (((rts2core::ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
 	}
 	if (old_value == emGainMode)
 	{

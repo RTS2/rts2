@@ -107,7 +107,7 @@ class Zelio:public Dome
 
 		virtual int init ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual bool isGoodWeather ();
 
@@ -134,63 +134,63 @@ class Zelio:public Dome
 		// if model have humidity level indicator
 		bool haveHumidityOutput;
 
-		Rts2ValueString *zelioModelString;
+		rts2core::ValueString *zelioModelString;
 
-		Rts2ValueInteger *deadTimeout;
+		rts2core::ValueInteger *deadTimeout;
 
-		Rts2ValueBool *rain;
-		Rts2ValueBool *openingIgnoreRain;
-		Rts2ValueBool *ignoreRain;
-		Rts2ValueBool *automode;
-		Rts2ValueBool *timeoutOccured;
-		Rts2ValueBool *onPower;
-		Rts2ValueBool *weather;
-		Rts2ValueBool *emergencyButton;
+		rts2core::ValueBool *rain;
+		rts2core::ValueBool *openingIgnoreRain;
+		rts2core::ValueBool *ignoreRain;
+		rts2core::ValueBool *automode;
+		rts2core::ValueBool *timeoutOccured;
+		rts2core::ValueBool *onPower;
+		rts2core::ValueBool *weather;
+		rts2core::ValueBool *emergencyButton;
 
-		Rts2ValueBool *swOpenLeft;
-		Rts2ValueBool *swCloseLeft;
-		Rts2ValueBool *swCloseRight;
-		Rts2ValueBool *swOpenRight;
+		rts2core::ValueBool *swOpenLeft;
+		rts2core::ValueBool *swCloseLeft;
+		rts2core::ValueBool *swCloseRight;
+		rts2core::ValueBool *swOpenRight;
 
-		Rts2ValueBool *motOpenLeft;
-		Rts2ValueBool *motCloseLeft;
-		Rts2ValueBool *motOpenRight;
-		Rts2ValueBool *motCloseRight;
+		rts2core::ValueBool *motOpenLeft;
+		rts2core::ValueBool *motCloseLeft;
+		rts2core::ValueBool *motOpenRight;
+		rts2core::ValueBool *motCloseRight;
 
-		Rts2ValueBool *timeoOpenLeft;
-		Rts2ValueBool *timeoCloseLeft;
-		Rts2ValueBool *timeoOpenRight;
-		Rts2ValueBool *timeoCloseRight;
+		rts2core::ValueBool *timeoOpenLeft;
+		rts2core::ValueBool *timeoCloseLeft;
+		rts2core::ValueBool *timeoOpenRight;
+		rts2core::ValueBool *timeoCloseRight;
 	
-		Rts2ValueBool *blockOpenLeft;
-		Rts2ValueBool *blockCloseLeft;
-		Rts2ValueBool *blockOpenRight;
-		Rts2ValueBool *blockCloseRight;
+		rts2core::ValueBool *blockOpenLeft;
+		rts2core::ValueBool *blockCloseLeft;
+		rts2core::ValueBool *blockOpenRight;
+		rts2core::ValueBool *blockCloseRight;
 
-		Rts2ValueBool *emergencyReset;
+		rts2core::ValueBool *emergencyReset;
 
-		Rts2ValueBool *Q8;
-		Rts2ValueBool *Q9;
-		Rts2ValueBool *QA;
+		rts2core::ValueBool *Q8;
+		rts2core::ValueBool *Q9;
+		rts2core::ValueBool *QA;
 
 		const char *Q8_name;
 		const char *Q9_name;
 		const char *QA_name;
 
-		Rts2ValueFloat *battery;
-		Rts2ValueFloat *batteryMin;
+		rts2core::ValueFloat *battery;
+		rts2core::ValueFloat *batteryMin;
 
-		Rts2ValueFloat *humidity;
+		rts2core::ValueFloat *humidity;
 
-		Rts2ValueInteger *J1XT1;
-		Rts2ValueInteger *J2XT1;
-		Rts2ValueInteger *J3XT1;
-		Rts2ValueInteger *J4XT1;
+		rts2core::ValueInteger *J1XT1;
+		rts2core::ValueInteger *J2XT1;
+		rts2core::ValueInteger *J3XT1;
+		rts2core::ValueInteger *J4XT1;
 
-		Rts2ValueInteger *O1XT1;
-		Rts2ValueInteger *O2XT1;
-		Rts2ValueInteger *O3XT1;
-		Rts2ValueInteger *O4XT1;
+		rts2core::ValueInteger *O1XT1;
+		rts2core::ValueInteger *O2XT1;
+		rts2core::ValueInteger *O3XT1;
+		rts2core::ValueInteger *O4XT1;
 
 		rts2core::ConnModbus *zelioConn;
 
@@ -831,26 +831,26 @@ void Zelio::createZelioValues ()
 	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
 }
 
-int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == emergencyReset)
-	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (zelioModel == ZELIO_FRAM || zelioModel == ZELIO_BOOTES3)
 	{
 		if (oldValue == Q8)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 		if (oldValue == Q9)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 		if (oldValue == QA)
-		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	else
 	{
 		if (oldValue == Q9)
-		  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	if (oldValue == ignoreRain)
-	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((rts2core::ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (oldValue == deadTimeout)
 		return 0;
 	try

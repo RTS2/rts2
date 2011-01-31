@@ -62,7 +62,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device with given name");
-			Rts2Value * rts2v = master->getValue (device, variable);
+			rts2core::Value * rts2v = master->getValue (device, variable);
 			if (rts2v == NULL)
 				throw XmlRpcException ("cannot find variable");
 			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), '=', std::string (value)));
@@ -134,7 +134,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 {
-	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
+	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
 	{
 		switch ((*iter)->getValueType ())
 		{
@@ -151,7 +151,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 				os << "\"" << (*iter)->getName () << "\":" << (*iter)->getValue ();
 				break;
 			case RTS2_VALUE_RADEC:
-				os << "\"" << (*iter)->getName () << "\":{\"ra\":" << ((Rts2ValueRaDec *) (*iter))->getRa () << ",\"dec\":" << ((Rts2ValueRaDec *) (*iter))->getDec () << "}";
+				os << "\"" << (*iter)->getName () << "\":{\"ra\":" << ((rts2core::ValueRaDec *) (*iter))->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) (*iter))->getDec () << "}";
 				break;
 			default:
 				iter++;

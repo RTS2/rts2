@@ -54,7 +54,7 @@ void NDeviceWindow::printValue (const char *name, const char *value, bool writea
 	wprintw (getWriteWindow (), "%c %-20s %30s\n", (writeable ? 'W' : ' '), name, value);
 }
 
-void NDeviceWindow::printValue (Rts2Value * value)
+void NDeviceWindow::printValue (rts2core::Value * value)
 {
 	// customize value display
 	std::ostringstream _os;
@@ -100,13 +100,13 @@ void NDeviceWindow::printValue (Rts2Value * value)
 			{
 				if (value->getValueDisplayType () == RTS2_DT_DEGREES)
 				{
-					LibnovaDeg v_rd (((Rts2ValueRaDec *) value)->getRa ());
-					LibnovaDeg v_dd (((Rts2ValueRaDec *) value)->getDec ());
+					LibnovaDeg v_rd (((rts2core::ValueRaDec *) value)->getRa ());
+					LibnovaDeg v_dd (((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_rd << " " << v_dd;
 				}
 				else
 				{
-					LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
+					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_radec;
 				}
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
@@ -114,13 +114,13 @@ void NDeviceWindow::printValue (Rts2Value * value)
 			break;
 		case RTS2_VALUE_ALTAZ:
 			{
-				LibnovaHrz hrz (((Rts2ValueAltAz *) value)->getAlt (), ((Rts2ValueAltAz *) value)->getAz ());
+				LibnovaHrz hrz (((rts2core::ValueAltAz *) value)->getAlt (), ((rts2core::ValueAltAz *) value)->getAz ());
 				_os << hrz;
 				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
-			wprintw (getWriteWindow (), "%c %-20s %5i %24s\n", value->isWritable () ? 'W' : ' ', value->getName ().c_str (), value->getValueInteger (), ((Rts2ValueSelection *) value)->getSelName ());
+			wprintw (getWriteWindow (), "%c %-20s %5i %24s\n", value->isWritable () ? 'W' : ' ', value->getName ().c_str (), value->getValueInteger (), ((rts2core::ValueSelection *) value)->getSelName ());
 			break;
 		default:
 			printValue (value->getName ().c_str (), getDisplayValue (value).c_str (), value->isWritable ());
@@ -134,14 +134,14 @@ void NDeviceWindow::drawValuesList ()
 
 	maxrow = 0;
 
-	for (Rts2ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
+	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
 	{
 		maxrow++;
 		printValue (*iter);
 	}
 }
 
-Rts2Value * NDeviceWindow::getSelValue ()
+rts2core::Value * NDeviceWindow::getSelValue ()
 {
 	int s = getSelRow ();
 	if (s >= 0)
@@ -149,7 +149,7 @@ Rts2Value * NDeviceWindow::getSelValue ()
 	return NULL;
 }
 
-void NDeviceWindow::printValueDesc (Rts2Value * val)
+void NDeviceWindow::printValueDesc (rts2core::Value * val)
 {
 	wattron (window, A_REVERSE);
 	mvwprintw (window, getHeight () - 1, 2, "D: \"%s\"",
@@ -168,48 +168,48 @@ void NDeviceWindow::createValueBox ()
 	int s = getSelRow ();
 	if (s < 0)
 		return;
-	Rts2Value *val = connection->valueAt (s);
+	rts2core::Value *val = connection->valueAt (s);
 	if (!val || val->isWritable () == false)
 		return;
 	s -= getPadoffY ();
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_BOOL:
-			valueBox = new ValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
+			valueBox = new ValueBoxBool (this, (rts2core::ValueBool *) val, 21, s - 1);
 			break;
 		case RTS2_VALUE_STRING:
-			valueBox = new ValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
+			valueBox = new ValueBoxString (this, (rts2core::ValueString *) val, 21, s - 1);
 			break;
 		case RTS2_VALUE_INTEGER:
-			valueBox = new ValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
+			valueBox = new ValueBoxInteger (this, (rts2core::ValueInteger *) val, 21, s);
 			break;
 		case RTS2_VALUE_LONGINT:
-			valueBox = new ValueBoxLongInteger (this, (Rts2ValueLong *) val, 21, s);
+			valueBox = new ValueBoxLongInteger (this, (rts2core::ValueLong *) val, 21, s);
 			break;
 		case RTS2_VALUE_FLOAT:
-			valueBox = new ValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
+			valueBox = new ValueBoxFloat (this, (rts2core::ValueFloat *) val, 21, s);
 			break;
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE:
-			valueBox = new ValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
+			valueBox = new ValueBoxDouble (this, (rts2core::ValueDouble *) val, 21, s);
 			break;
 		case RTS2_VALUE_SELECTION:
-			valueBox = new ValueBoxSelection (this, (Rts2ValueSelection *) val, 21, s);
+			valueBox = new ValueBoxSelection (this, (rts2core::ValueSelection *) val, 21, s);
 			break;
 		case RTS2_VALUE_TIME:
-			valueBox = new ValueBoxTimeDiff (this, (Rts2ValueTime *) val, 21, s);
+			valueBox = new ValueBoxTimeDiff (this, (rts2core::ValueTime *) val, 21, s);
 			break;
 		case RTS2_VALUE_RADEC:
-			valueBox = new ValueBoxPair (this, (Rts2ValueRaDec *) val, 21, s, "RA", "DEC");
+			valueBox = new ValueBoxPair (this, (rts2core::ValueRaDec *) val, 21, s, "RA", "DEC");
 			break;
 		case RTS2_VALUE_ALTAZ:
-			valueBox = new ValueBoxPair (this, (Rts2ValueRaDec *) val, 21, s, "ALT", "AZ");
+			valueBox = new ValueBoxPair (this, (rts2core::ValueRaDec *) val, 21, s, "ALT", "AZ");
 			break;
 		default:
 			switch (val->getValueExtType ())
 			{
 				case RTS2_VALUE_RECTANGLE:
-					valueBox = new ValueBoxRectangle (this, (Rts2ValueRectangle *) val, 21, s - 1);
+					valueBox = new ValueBoxRectangle (this, (rts2core::ValueRectangle *) val, 21, s - 1);
 					break;
 				case RTS2_VALUE_ARRAY:
 					valueBox = new ValueBoxArray (this, (rts2core::ValueArray *) val, 21, s);
@@ -268,7 +268,7 @@ void NDeviceWindow::draw ()
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
 
 	printState ();
-	Rts2Value *val = getSelValue ();
+	rts2core::Value *val = getSelValue ();
 	if (val != NULL)
 		printValueDesc (val);
 	winrefresh ();
@@ -300,7 +300,7 @@ void NDeviceCentralWindow::printValues ()
 {
 	// print statusChanges
 
-	Rts2Value *nextState = getConnection ()->getValue ("next_state");
+	rts2core::Value *nextState = getConnection ()->getValue ("next_state");
 	if (nextState && nextState->getValueType () == RTS2_VALUE_SELECTION)
 	{
 		for (std::vector < FutureStateChange >::iterator iter = stateChanges.begin (); iter != stateChanges.end (); iter++)
@@ -308,7 +308,7 @@ void NDeviceCentralWindow::printValues ()
 			std::ostringstream _os;
 			_os << Timestamp ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
 
-			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
+			printValue (((rts2core::ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
 		}
 	}
 }
@@ -323,8 +323,8 @@ void NDeviceCentralWindow::drawValuesList ()
 		return;
 	}
 
-	Rts2Value *valLng = getConnection ()->getValue ("longitude");
-	Rts2Value *valLat = getConnection ()->getValue ("latitude");
+	rts2core::Value *valLng = getConnection ()->getValue ("longitude");
+	rts2core::Value *valLat = getConnection ()->getValue ("latitude");
 
 	if (valLng && valLat && !isnan (valLng->getValueDouble ()) && !isnan (valLat->getValueDouble ()))
 	{
@@ -335,11 +335,11 @@ void NDeviceCentralWindow::drawValuesList ()
 
 		// get next night, or get beginnign of current night
 
-		Rts2Value *valNightHorizon = getConnection ()->getValue ("night_horizon");
-		Rts2Value *valDayHorizon = getConnection ()->getValue ("day_horizon");
+		rts2core::Value *valNightHorizon = getConnection ()->getValue ("night_horizon");
+		rts2core::Value *valDayHorizon = getConnection ()->getValue ("day_horizon");
 
-		Rts2Value *valEveningTime = getConnection ()->getValue ("evening_time");
-		Rts2Value *valMorningTime = getConnection ()->getValue ("morning_time");
+		rts2core::Value *valEveningTime = getConnection ()->getValue ("evening_time");
+		rts2core::Value *valMorningTime = getConnection ()->getValue ("morning_time");
 
 		if (valNightHorizon
 			&& valDayHorizon

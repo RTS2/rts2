@@ -72,7 +72,7 @@ class Bart:public Ford
 
 		time_t domeTimeout;
 
-		Rts2ValueInteger *sw_state;
+		rts2core::ValueInteger *sw_state;
 
 	protected:
 		virtual int init ();

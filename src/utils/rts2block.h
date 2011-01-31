@@ -41,7 +41,7 @@
 #include "rts2address.h"
 #include "rts2user.h"
 #include "rts2devclient.h"
-#include "rts2value.h"
+#include "value.h"
 #include "rts2app.h"
 #include "rts2serverstate.h"
 
@@ -554,10 +554,10 @@ class Rts2Block: public Rts2App
 		 * @param device_name Name of the device.
 		 * @param value_name  Name of the value.
 		 *
-		 * @return Pointer to Rts2Value object holding the value, or NULL if device or value with given name
+		 * @return Pointer to rts2core::Value object holding the value, or NULL if device or value with given name
 		 * does not exists.
 		 */
-		virtual Rts2Value *getValue (const char *device_name, const char *value_name);
+		virtual rts2core::Value *getValue (const char *device_name, const char *value_name);
 
 		virtual void endRunLoop ()
 		{
@@ -605,7 +605,7 @@ class Rts2Block: public Rts2App
 		 *
 		 * @param value Value whose metainformation will be send out.
 		 */
-		void updateMetaInformations (Rts2Value *value);
+		void updateMetaInformations (rts2core::Value *value);
 
 	protected:
 

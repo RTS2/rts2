@@ -50,7 +50,7 @@ namespace rts2dome
 class Bootes1A:public Ford
 {
 	private:
-		Rts2ValueInteger *sw_state;
+		rts2core::ValueInteger *sw_state;
 
 		time_t timeOpenClose;
 		time_t timeOpen;

@@ -85,12 +85,12 @@ const char * StringArray::getValue ()
 	return _os.c_str ();
 }
 
-void StringArray::setFromValue (Rts2Value * newValue)
+void StringArray::setFromValue (rts2core::Value * newValue)
 {
 	setValueCharArr (newValue->getValue ());
 }
 
-bool StringArray::isEqual (Rts2Value *other_val)
+bool StringArray::isEqual (rts2core::Value *other_val)
 {
 	return !strcmp (getValue (), other_val->getValue ());
 }
@@ -161,7 +161,7 @@ const char * DoubleArray::getValue ()
 	return _os.c_str ();
 }
 
-void DoubleArray::setFromValue (Rts2Value * newValue)
+void DoubleArray::setFromValue (rts2core::Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 	{
@@ -177,7 +177,7 @@ void DoubleArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-bool DoubleArray::isEqual (Rts2Value *other_val)
+bool DoubleArray::isEqual (rts2core::Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 	{
@@ -224,7 +224,7 @@ const char *TimeArray::getDisplayValue ()
 	return _os.c_str ();
 }
 
-void TimeArray::setFromValue (Rts2Value * newValue)
+void TimeArray::setFromValue (rts2core::Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_TIME))
 	{
@@ -240,7 +240,7 @@ void TimeArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-bool TimeArray::isEqual (Rts2Value *other_val)
+bool TimeArray::isEqual (rts2core::Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_TIME))
 	{
@@ -326,7 +326,7 @@ const char * IntegerArray::getValue ()
 	return _os.c_str ();
 }
 
-void IntegerArray::setFromValue (Rts2Value * newValue)
+void IntegerArray::setFromValue (rts2core::Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
 	{
@@ -342,7 +342,7 @@ void IntegerArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-bool IntegerArray::isEqual (Rts2Value *other_val)
+bool IntegerArray::isEqual (rts2core::Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
 	{
@@ -445,7 +445,7 @@ int BoolArray::setValueCharArr (const char *_value)
 	return 0;
 }
 
-void BoolArray::setFromValue (Rts2Value * newValue)
+void BoolArray::setFromValue (rts2core::Value * newValue)
 {
 	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_BOOL))
 	{
@@ -461,7 +461,7 @@ void BoolArray::setFromValue (Rts2Value * newValue)
 	}
 }
 
-bool BoolArray::isEqual (Rts2Value *other_val)
+bool BoolArray::isEqual (rts2core::Value *other_val)
 {
 	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_BOOL))
 	{

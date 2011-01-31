@@ -35,22 +35,22 @@ class MS257:public Sensor
 	protected:
 		virtual int init ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
 
 	private:
-		Rts2ValueDouble * msVer;
-		Rts2ValueDouble *wavelenght;
-		Rts2ValueInteger *slitA;
-		Rts2ValueInteger *slitB;
-		Rts2ValueInteger *slitC;
-		Rts2ValueInteger *bandPass;
-		Rts2ValueSelection *shutter;
-		Rts2ValueBool *openShutter;
-		Rts2ValueInteger *filter1;
-		//  Rts2ValueInteger *filter2;
-		Rts2ValueInteger *msteps;
-		Rts2ValueInteger *grat;
+		rts2core::ValueDouble * msVer;
+		rts2core::ValueDouble *wavelenght;
+		rts2core::ValueInteger *slitA;
+		rts2core::ValueInteger *slitB;
+		rts2core::ValueInteger *slitC;
+		rts2core::ValueInteger *bandPass;
+		rts2core::ValueSelection *shutter;
+		rts2core::ValueBool *openShutter;
+		rts2core::ValueInteger *filter1;
+		//  rts2core::ValueInteger *filter2;
+		rts2core::ValueInteger *msteps;
+		rts2core::ValueInteger *grat;
 
 		rts2core::ConnSerial *ms257Dev;		
 
@@ -62,11 +62,11 @@ class MS257:public Sensor
 		int readPort (int &ret, const char *cmd);
 		int readPort (double &ret, const char *cmd);
 
-		template < typename T > int writeValue (const char *valueName, T val, char qStr = '=', Rts2Value *value = NULL);
+		template < typename T > int writeValue (const char *valueName, T val, char qStr = '=', rts2core::Value *value = NULL);
 		template < typename T > int readValue (const char *valueName, T & val);
 
-		int readRts2Value (const char *valueName, Rts2Value * val);
-		int readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val);
+		int readRts2Value (const char *valueName, rts2core::Value * val);
+		int readRts2ValueFilter (const char *valueName, rts2core::ValueInteger * val);
 
 		const char *dev;
 };
@@ -150,7 +150,7 @@ int MS257::readPort (double &ret, const char *cmd)
 	return 0;
 }
 
-template < typename T > int MS257::writeValue (const char *valueName, T val, char qStr, Rts2Value *value)
+template < typename T > int MS257::writeValue (const char *valueName, T val, char qStr, rts2core::Value *value)
 {
 	int ret;
 	char *rstr;
@@ -185,7 +185,7 @@ template < typename T > int MS257::readValue (const char *valueName, T & val)
 	return ret;
 }
 
-int MS257::readRts2Value (const char *valueName, Rts2Value * val)
+int MS257::readRts2Value (const char *valueName, rts2core::Value * val)
 {
 	int ret;
 	int iret;
@@ -194,18 +194,18 @@ int MS257::readRts2Value (const char *valueName, Rts2Value * val)
 	{
 		case RTS2_VALUE_INTEGER:
 			ret = readValue (valueName, iret);
-			((Rts2ValueInteger *) val)->setValueInteger (iret);
+			((rts2core::ValueInteger *) val)->setValueInteger (iret);
 			return ret;
 		case RTS2_VALUE_DOUBLE:
 			ret = readValue (valueName, dret);
-			((Rts2ValueDouble *) val)->setValueDouble (dret);
+			((rts2core::ValueDouble *) val)->setValueDouble (dret);
 			return ret;
 	}
 	logStream (MESSAGE_ERROR) << "Reading unknow value type " << val->getValueType () << sendLog;
 	return -1;
 }
 
-int MS257::readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val)
+int MS257::readRts2ValueFilter (const char *valueName, rts2core::ValueInteger * val)
 {
 	int ret;
 	char *cval;
@@ -258,7 +258,7 @@ MS257::~MS257 ()
 	delete ms257Dev;
 }
 
-int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int MS257::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == wavelenght)
 	{
@@ -289,7 +289,7 @@ int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == openShutter)
 	{
-		return writeValue ("SHUTTER", ((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0, '!');
+		return writeValue ("SHUTTER", ((rts2core::ValueBool *) new_value)->getValueBool () ? 1 : 0, '!');
 	}
 	if (old_value == filter1)
 	{

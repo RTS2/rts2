@@ -24,14 +24,14 @@
 
 using namespace rts2sensord;
 
-void Gpib::writeValue (const char *name, Rts2Value *value)
+void Gpib::writeValue (const char *name, rts2core::Value *value)
 {
 	std::ostringstream _os;
 	_os << name << " ";
 	switch (value->getValueType ())
 	{
 		case RTS2_VALUE_BOOL:
-			_os << (((Rts2ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+			_os << (((rts2core::ValueBool *) value)->getValueBool () ? "ON" : "OFF");
 			break;
 		default:
 			_os << value->getDisplayValue ();

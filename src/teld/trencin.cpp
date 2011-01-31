@@ -66,9 +66,9 @@ class Trencin:public Fork
 
 		virtual void updateTrack ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual void valueChanged (Rts2Value *changed_value);
+		virtual void valueChanged (rts2core::Value *changed_value);
 
 		// start worm drive on given unit
 		virtual int startWorm ();
@@ -103,13 +103,13 @@ class Trencin:public Fork
 		void tel_write_dec (char command, int32_t value);
 
 		// read axis - registers 1-3
-		int readAxis (rts2core::ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
+		int readAxis (rts2core::ConnSerial *conn, rts2core::ValueInteger *value, bool write_axis = true);
 
 		void setGuideRa (int value);
 		void setGuideDec (int value);
 		void setGuidingSpeed (double value);
 
-		void checkAcc (rts2core::ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop);
+		void checkAcc (rts2core::ConnSerial *conn, rts2core::ValueInteger *acc, rts2core::ValueInteger *startStop);
 
 		void setSpeedRa (int new_speed);
 		void setSpeedDec (int new_speed);
@@ -117,50 +117,50 @@ class Trencin:public Fork
 		void setRa (long new_ra);
 		void setDec (long new_dec);
 
-		Rts2ValueInteger *raMoving;
-		Rts2ValueInteger *decMoving;
+		rts2core::ValueInteger *raMoving;
+		rts2core::ValueInteger *decMoving;
 
-		Rts2ValueTime *raMovingEnd;
-		Rts2ValueTime *decMovingEnd;
+		rts2core::ValueTime *raMovingEnd;
+		rts2core::ValueTime *decMovingEnd;
 
-		Rts2ValueBool *wormRa;
-		Rts2ValueTime *raWormStart;
+		rts2core::ValueBool *wormRa;
+		rts2core::ValueTime *raWormStart;
 
 		int32_t worm_start_unit_ra;
 
-		Rts2ValueDouble *guidingSpeed;
+		rts2core::ValueDouble *guidingSpeed;
 
-		Rts2ValueInteger *unitRa;
-		Rts2ValueInteger *unitDec;
+		rts2core::ValueInteger *unitRa;
+		rts2core::ValueInteger *unitDec;
 
-		Rts2ValueInteger *cycleRa;
-		Rts2ValueInteger *cycleDec;
+		rts2core::ValueInteger *cycleRa;
+		rts2core::ValueInteger *cycleDec;
 
 		int cycleMoveRa;
 		int cycleMoveDec;
 
-		Rts2ValueInteger *velRa;
-		Rts2ValueInteger *velDec;
+		rts2core::ValueInteger *velRa;
+		rts2core::ValueInteger *velDec;
 
-		Rts2ValueInteger *accRa;
-		Rts2ValueInteger *accDec;
+		rts2core::ValueInteger *accRa;
+		rts2core::ValueInteger *accDec;
 
-		Rts2ValueInteger *qRa;
-		Rts2ValueInteger *qDec;
+		rts2core::ValueInteger *qRa;
+		rts2core::ValueInteger *qDec;
 
-		Rts2ValueInteger *microRa;
-		Rts2ValueInteger *microDec;
+		rts2core::ValueInteger *microRa;
+		rts2core::ValueInteger *microDec;
 
-		Rts2ValueInteger *numberRa;
-		Rts2ValueInteger *numberDec;
+		rts2core::ValueInteger *numberRa;
+		rts2core::ValueInteger *numberDec;
 
-		Rts2ValueInteger *startRa;
-		Rts2ValueInteger *startDec;
+		rts2core::ValueInteger *startRa;
+		rts2core::ValueInteger *startDec;
 
-		Rts2ValueInteger *accWormRa;
-		Rts2ValueInteger *velWormRa;
-		Rts2ValueInteger *backWormRa;
-		Rts2ValueInteger *waitWormRa;
+		rts2core::ValueInteger *accWormRa;
+		rts2core::ValueInteger *velWormRa;
+		rts2core::ValueInteger *backWormRa;
+		rts2core::ValueInteger *waitWormRa;
 
 		int32_t ac, dc;
 
@@ -352,7 +352,7 @@ void Trencin::selectSuccess ()
 	Telescope::selectSuccess ();
 }
 
-int Trencin::readAxis (rts2core::ConnSerial *conn, Rts2ValueInteger *value, bool write_axis)
+int Trencin::readAxis (rts2core::ConnSerial *conn, rts2core::ValueInteger *value, bool write_axis)
 {
 	int ret;
 	char buf[10];
@@ -456,7 +456,7 @@ void Trencin::setGuidingSpeed (double value)
 		setGuideDec (decGuide->getValueInteger ());
 }
 
-void Trencin::checkAcc (rts2core::ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop)
+void Trencin::checkAcc (rts2core::ConnSerial *conn, rts2core::ValueInteger *acc, rts2core::ValueInteger *startStop)
 {
 	if (startStop->getValueInteger () <= 30)
 		acc->setValueInteger (116);
@@ -842,7 +842,7 @@ void Trencin::updateTrack ()
 }
 
 
-int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Trencin::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	try
 	{
@@ -937,7 +937,7 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		}
 		else if (old_value == wormRa)
 		{
-			if (((Rts2ValueBool *)new_value)->getValueBool () == true)
+			if (((rts2core::ValueBool *)new_value)->getValueBool () == true)
 			{
 				if (raMoving->getValueInteger () == 0)
 					startWorm ();
@@ -958,7 +958,7 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-void Trencin::valueChanged (Rts2Value *changed_value)
+void Trencin::valueChanged (rts2core::Value *changed_value)
 {
 	if (changed_value == accWormRa || changed_value == velWormRa
 		|| changed_value == backWormRa || changed_value == waitWormRa)
@@ -1240,8 +1240,8 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 		conn->setVTime (40);
 		conn->flushPortIO ();
 
-		Rts2ValueInteger *unit;
-		Rts2ValueInteger *cycle;
+		rts2core::ValueInteger *unit;
+		rts2core::ValueInteger *cycle;
 		int cycleMove;
 
 

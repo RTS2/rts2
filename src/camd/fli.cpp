@@ -84,12 +84,12 @@ class Fli:public Camera
 		virtual int stopExposure ();
 		virtual int doReadout ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
-		Rts2ValueSelection *fliShutter;
-		Rts2ValueBool *useBgFlush;
-		Rts2ValueSelection *fliMode;
+		rts2core::ValueSelection *fliShutter;
+		rts2core::ValueBool *useBgFlush;
+		rts2core::ValueSelection *fliMode;
 
 		int bgFlush;
 
@@ -102,7 +102,7 @@ class Fli:public Camera
 		char *camName;
 
 		int fliDebug;
-		Rts2ValueInteger *nflush;
+		rts2core::ValueInteger *nflush;
 };
 
 };
@@ -206,7 +206,7 @@ int Fli::doReadout ()
 	return -2;
 }
 
-int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Fli::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == fliShutter)
 	{
@@ -238,7 +238,7 @@ int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == useBgFlush)
 	{
-		return FLIControlBackgroundFlush (dev, ((Rts2ValueBool *) new_value)->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP) ? -2 : 0;
+		return FLIControlBackgroundFlush (dev, ((rts2core::ValueBool *) new_value)->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP) ? -2 : 0;
 	}
 	if (old_value == fliMode)
 	{

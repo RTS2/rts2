@@ -44,9 +44,9 @@ class Brooks356: public Sensor
 		char *device_file;
 		rts2core::ConnSerial *brookConn;
 
-		Rts2ValueDouble *pressure;
+		rts2core::ValueDouble *pressure;
 
-		Rts2ValueInteger *address;
+		rts2core::ValueInteger *address;
 };
 
 }

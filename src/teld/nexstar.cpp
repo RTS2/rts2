@@ -104,7 +104,7 @@ class NexStar:public Telescope
 
 		char vmajor, vminor;
 
-		Rts2ValueString *version;
+		rts2core::ValueString *version;
 };
 
 }

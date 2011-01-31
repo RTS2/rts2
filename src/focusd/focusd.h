@@ -57,13 +57,13 @@ class Focusd:public rts2core::Device
 	protected:
 		std::string focType;
 
-		Rts2ValueFloat *position;
-		Rts2ValueFloat *target;
-		Rts2ValueFloat *temperature;
+		rts2core::ValueFloat *position;
+		rts2core::ValueFloat *target;
+		rts2core::ValueFloat *temperature;
 
-		Rts2ValueFloat *defaultPosition;
-		Rts2ValueFloat *focusingOffset;
-		Rts2ValueFloat *tempOffset;
+		rts2core::ValueFloat *defaultPosition;
+		rts2core::ValueFloat *focusingOffset;
+		rts2core::ValueFloat *tempOffset;
 
 		virtual int processOption (int in_opt);
 
@@ -74,7 +74,7 @@ class Focusd:public rts2core::Device
 
 		virtual bool isAtStartPosition () = 0;
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		void createTemperature ()
 		{

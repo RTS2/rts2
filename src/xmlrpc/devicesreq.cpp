@@ -89,7 +89,7 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 	Rts2Conn *conn = serv->getOpenConnection (device);
 	if (conn == NULL)
 		throw rts2core::Error ("Cannot find specified device");
-	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
 		_os << "<tr><td>";
 		if ((*iter)->isWritable ())

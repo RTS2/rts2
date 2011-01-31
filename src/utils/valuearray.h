@@ -21,7 +21,7 @@
 #ifndef __RTS2_VALUEARRAY__
 #define __RTS2_VALUEARRAY__
 
-#include "rts2value.h"
+#include "value.h"
 #include <algorithm>
 
 namespace rts2core
@@ -32,11 +32,11 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueArray: public Rts2Value
+class ValueArray: public rts2core::Value
 {
 	public:
-		ValueArray (std::string _val_name):Rts2Value (_val_name) {}
-		ValueArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0):Rts2Value (_val_name, _description, writeToFits, flags) {}
+		ValueArray (std::string _val_name):rts2core::Value (_val_name) {}
+		ValueArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0):rts2core::Value (_val_name, _description, writeToFits, flags) {}
 
 		virtual ~ValueArray () {}
 		/**
@@ -66,8 +66,8 @@ class StringArray: public ValueArray
 		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_val);
+		virtual void setFromValue (rts2core::Value * newValue);
+		virtual bool isEqual (rts2core::Value *other_val);
 
 		void setValueArray (std::vector <std::string> _arr)
 		{
@@ -132,8 +132,8 @@ class DoubleArray: public ValueArray
 		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
-		virtual void setFromValue (Rts2Value *newValue);
-		virtual bool isEqual (Rts2Value *other_val);
+		virtual void setFromValue (rts2core::Value *newValue);
+		virtual bool isEqual (rts2core::Value *other_val);
 
 		void setValueArray (std::vector <double> _arr)
 		{
@@ -180,8 +180,8 @@ class TimeArray:public DoubleArray
 
 		virtual const char *getDisplayValue ();
 
-		virtual void setFromValue (Rts2Value *newValue);
-		virtual bool isEqual (Rts2Value *other_val);
+		virtual void setFromValue (rts2core::Value *newValue);
+		virtual bool isEqual (rts2core::Value *other_val);
 };
 
 /**
@@ -203,8 +203,8 @@ class IntegerArray: public ValueArray
 		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
-		virtual void setFromValue (Rts2Value *newValue);
-		virtual bool isEqual (Rts2Value *other_val);
+		virtual void setFromValue (rts2core::Value *newValue);
+		virtual bool isEqual (rts2core::Value *other_val);
 
 		void setValueArray (std::vector <int> _arr)
 		{
@@ -264,8 +264,8 @@ class BoolArray: public IntegerArray
 		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
 		virtual int setValueCharArr (const char *_value);
 
-		virtual void setFromValue (Rts2Value *newValue);
-		virtual bool isEqual (Rts2Value *other_val);
+		virtual void setFromValue (rts2core::Value *newValue);
+		virtual bool isEqual (rts2core::Value *other_val);
 
 		bool operator[] (int i) { return value[i] ? true : false; }
 };

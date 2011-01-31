@@ -899,8 +899,8 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 
 	if (file == "RA_script.js")
 	{
-		Rts2ValueDouble *telHa = (Rts2ValueDouble *) ((*iter)->getValueType ("HA", RTS2_VALUE_DOUBLE));
-		Rts2ValueInteger *telFlip = (Rts2ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
+		rts2core::ValueDouble *telHa = (rts2core::ValueDouble *) ((*iter)->getValueType ("HA", RTS2_VALUE_DOUBLE));
+		rts2core::ValueInteger *telFlip = (rts2core::ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
 		double ha = telHa->getValueDouble ();
 		if (telFlip->getValueInteger () == 1)
 			ha -= 180;
@@ -913,8 +913,8 @@ void LibJavaScript::processVrml (std::string file, const char* &response_type, c
 	}
 	else if (file == "DEC_script.js")
 	{
-		Rts2ValueRaDec *telRaDec = (Rts2ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
-		Rts2ValueInteger *telFlip = (Rts2ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
+		rts2core::ValueRaDec *telRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
+		rts2core::ValueInteger *telFlip = (rts2core::ValueInteger *) ((*iter)->getValueType ("MNT_FLIP", RTS2_VALUE_INTEGER));
 		double dec = telRaDec->getDec ();
 		if (telFlip->getValueInteger () == 1)
 			dec -= 2*(90-fabs(dec));

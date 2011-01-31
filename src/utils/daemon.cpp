@@ -74,7 +74,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _arg
 
 	state = _init_state;
 
-	info_time = new Rts2ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
+	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
 
 	idleInfoInterval = -1;
 
@@ -230,7 +230,7 @@ int Daemon::init ()
 			return ret;
 		}
 	}
-	catch (rts2core::Error &er)
+	catch (Error &er)
 	{
 		std::cerr << er << std::endl;
 		return -1;
@@ -468,12 +468,12 @@ void Daemon::selectSuccess ()
 	Rts2Block::selectSuccess ();
 }
 
-void Daemon::addValue (Rts2Value * value, int queCondition)
+void Daemon::addValue (Value * value, int queCondition)
 {
 	values.push_back (new Rts2CondValue (value, queCondition));
 }
 
-Rts2Value * Daemon::getOwnValue (const char *v_name)
+Value * Daemon::getOwnValue (const char *v_name)
 {
 	Rts2CondValue *c_val = getCondValue (v_name);
 	if (c_val == NULL)
@@ -493,7 +493,7 @@ Rts2CondValue * Daemon::getCondValue (const char *v_name)
 	return NULL;
 }
 
-Rts2CondValue * Daemon::getCondValue (const Rts2Value *val)
+Rts2CondValue * Daemon::getCondValue (const Value *val)
 {
 	Rts2CondValueVector::iterator iter;
 	for (iter = values.begin (); iter != values.end (); iter++)
@@ -505,10 +505,10 @@ Rts2CondValue * Daemon::getCondValue (const Rts2Value *val)
 	return NULL;
 }
 
-Rts2Value * Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
+Value * Daemon::duplicateValue (Value * old_value, bool withVal)
 {
 	// create new value, which will be passed to hook
-	Rts2Value *dup_val = NULL;
+	Value *dup_val = NULL;
 	switch (old_value->getValueExtType ())
 	{
 		case 0:
@@ -517,21 +517,21 @@ Rts2Value * Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 			switch (old_value->getValueType ())
 			{
 				case RTS2_VALUE_SELECTION:
-					((Rts2ValueSelection *) dup_val)->copySel ((Rts2ValueSelection *) old_value);
+					((ValueSelection *) dup_val)->copySel ((ValueSelection *) old_value);
 					break;
 			}
 			if (withVal)
-				((Rts2ValueString *) dup_val)->setFromValue (old_value);
+				((ValueString *) dup_val)->setFromValue (old_value);
 			break;
 		case RTS2_VALUE_STAT:
-			dup_val = new Rts2ValueDoubleStat (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
+			dup_val = new ValueDoubleStat (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
 			break;
 		case RTS2_VALUE_MMAX:
-			dup_val = new Rts2ValueDoubleMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
-			((Rts2ValueDoubleMinMax *) dup_val)->copyMinMax ((Rts2ValueDoubleMinMax *) old_value);
+			dup_val = new ValueDoubleMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
+			((ValueDoubleMinMax *) dup_val)->copyMinMax ((ValueDoubleMinMax *) old_value);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			dup_val = new Rts2ValueRectangle (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
+			dup_val = new ValueRectangle (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 			break;
 		case RTS2_VALUE_ARRAY:
 			switch (old_value->getValueBaseType ())
@@ -566,62 +566,62 @@ Rts2Value * Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 	return dup_val;
 }
 
-void Daemon::addConstValue (Rts2Value * value)
+void Daemon::addConstValue (Value * value)
 {
 	constValues.push_back (value);
 }
 
 void Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
 {
-	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
+	ValueString *val = new ValueString (in_name, std::string (in_desc));
 	val->setValueCharArr (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, const char *in_desc, std::string in_value)
 {
-	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
+	ValueString *val = new ValueString (in_name, std::string (in_desc));
 	val->setValueString (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, const char *in_desc, double in_value)
 {
-	Rts2ValueDouble *val = new Rts2ValueDouble (in_name, std::string (in_desc));
+	ValueDouble *val = new ValueDouble (in_name, std::string (in_desc));
 	val->setValueDouble (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, const char *in_desc, int in_value)
 {
-	Rts2ValueInteger *val =
-		new Rts2ValueInteger (in_name, std::string (in_desc));
+	ValueInteger *val =
+		new ValueInteger (in_name, std::string (in_desc));
 	val->setValueInteger (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, const char *in_value)
 {
-	Rts2ValueString *val = new Rts2ValueString (in_name);
+	ValueString *val = new ValueString (in_name);
 	val->setValueCharArr (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, double in_value)
 {
-	Rts2ValueDouble *val = new Rts2ValueDouble (in_name);
+	ValueDouble *val = new ValueDouble (in_name);
 	val->setValueDouble (in_value);
 	addConstValue (val);
 }
 
 void Daemon::addConstValue (const char *in_name, int in_value)
 {
-	Rts2ValueInteger *val = new Rts2ValueInteger (in_name);
+	ValueInteger *val = new ValueInteger (in_name);
 	val->setValueInteger (in_value);
 	addConstValue (val);
 }
 
-int Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
+int Daemon::setValue (Value * old_value, Value * newValue)
 {
 	// if for some reason writable value makes it there, it means that it was not caught downstream, and it can be set
 	if (old_value->isWritable ())
@@ -630,14 +630,14 @@ int Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 	return -2;
 }
 
-int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
+int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value)
 {
 	// que change if that's necessary
 	if ((op != '=' || !old_value_cond->getValue ()->isEqual (new_value) || queValues.contains (old_value_cond->getValue ()))
 		&& (queValueChange (old_value_cond, getState ()))
 		)
 	{
-		queValues.push_back (new Rts2ValueQue (old_value_cond, op, new_value));
+		queValues.push_back (new ValueQue (old_value_cond, op, new_value));
 		return -1;
 	}
 
@@ -648,11 +648,11 @@ int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * n
 	return doSetValue (old_value_cond, op, new_value);
 }
 
-int Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
+int Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Value * new_value)
 {
 	int ret;
 
-	Rts2Value *old_value = old_cond_value->getValue ();
+	Value *old_value = old_cond_value->getValue ();
 
 	ret = new_value->doOpValue (op, old_value);
 	if (ret)
@@ -697,7 +697,7 @@ err:
 	return ret;
 }
 
-void Daemon::valueChanged (Rts2Value *changed_value)
+void Daemon::valueChanged (Value *changed_value)
 {
 }
 
@@ -720,10 +720,10 @@ int Daemon::baseInfo (Rts2Conn * conn)
 
 int Daemon::sendBaseInfo (Rts2Conn * conn)
 {
-	for (Rts2ValueVector::iterator iter = constValues.begin ();
+	for (ValueVector::iterator iter = constValues.begin ();
 		iter != constValues.end (); iter++)
 	{
-		Rts2Value *val = *iter;
+		Value *val = *iter;
 		val->send (conn);
 	}
 	return 0;
@@ -764,7 +764,7 @@ int Daemon::infoAll ()
 
 	for (Rts2CondValueVector::iterator iter2 = values.begin (); iter2 != values.end (); iter2++)
 	{
-		Rts2Value *val = (*iter2)->getValue ();
+		Value *val = (*iter2)->getValue ();
 		val->resetNeedSend ();
 	}
 
@@ -786,7 +786,7 @@ int Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 		return -1;
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
-		Rts2Value *val = (*iter)->getValue ();
+		Value *val = (*iter)->getValue ();
 		if (val->needSend () || forceSend)
 		{
 			val->send (conn);
@@ -797,7 +797,7 @@ int Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 	return 0;
 }
 
-void Daemon::sendValueAll (Rts2Value * value)
+void Daemon::sendValueAll (Value * value)
 {
 	if (value->needSend ())
 	{
@@ -825,16 +825,16 @@ int Daemon::sendMetaInfo (Rts2Conn * conn)
 	ret = info_time->sendMetaInfo (conn);
 	if (ret < 0)
 		return -1;
-	for (Rts2ValueVector::iterator iter = constValues.begin (); iter != constValues.end (); iter++)
+	for (ValueVector::iterator iter = constValues.begin (); iter != constValues.end (); iter++)
 	{
-		Rts2Value *val = *iter;
+		Value *val = *iter;
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
 			return -1;
 	}
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
-		Rts2Value *val = (*iter)->getValue ();
+		Value *val = (*iter)->getValue ();
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
 			return -1;
@@ -895,7 +895,7 @@ int Daemon::setValue (Rts2Conn * conn)
 
 	if (!old_value_cond)
 		return -2;
-	Rts2Value *old_value = old_value_cond->getValue ();
+	Value *old_value = old_value_cond->getValue ();
 	if (!old_value)
 		return -2;
 	if (!old_value->isWritable ())
@@ -911,7 +911,7 @@ int Daemon::setValue (Rts2Conn * conn)
 	}
 
 	// array needs to be allocated with values, as it will then only modify some indices in a new array
-	Rts2Value *newValue = duplicateValue (old_value, (old_value->getFlags () & RTS2_VALUE_ARRAY));
+	Value *newValue = duplicateValue (old_value, (old_value->getFlags () & RTS2_VALUE_ARRAY));
 
 	if (newValue == NULL)
 		return -2;
@@ -919,13 +919,13 @@ int Daemon::setValue (Rts2Conn * conn)
 	if (ai)
 	{
 		const char *endp;
-		std::vector <int> indices = parseRange (ai, ((rts2core::ValueArray *)old_value)->size (), endp);
+		std::vector <int> indices = parseRange (ai, ((ValueArray *)old_value)->size (), endp);
 		if (*endp)
 		{
 			conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, endp);
 			return -1;
 		}
-		ret = ((rts2core::ValueArray *)newValue)->setValues (indices, conn);
+		ret = ((ValueArray *)newValue)->setValues (indices, conn);
 	}
 	else
 	{

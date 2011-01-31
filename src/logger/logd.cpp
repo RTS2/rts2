@@ -28,12 +28,12 @@ class Rts2Logd:public rts2core::Device, public Rts2LoggerBase
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processArgs (const char *arg);
 		virtual int willConnect (Rts2Address * in_addr);
 	private:
-		Rts2ValueString * logConfig;
-		Rts2ValueString *logFile;
+		rts2core::ValueString * logConfig;
+		rts2core::ValueString *logFile;
 		int setLogConfig (const char *new_config);
 		int setLogFile (const char *new_file);
 };
@@ -92,7 +92,7 @@ int Rts2Logd::init ()
 	return 0;
 }
 
-int Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Rts2Logd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == logConfig)
 	{

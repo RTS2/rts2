@@ -20,7 +20,7 @@
 #ifndef __RTS2__VALUEEVENTS__
 #define __RTS2__VALUEEVENTS__
 
-#include "../utils/rts2value.h"
+#include "../utils/value.h"
 #include "../utils/expression.h"
 
 #include "emailaction.h"
@@ -63,7 +63,7 @@ class ValueChange:public Rts2Object
 		/**
 		 * Triggered when value is changed. Throws Errors on error.
 		 */
-		virtual void run (Rts2Value *val, double validTime) = 0;
+		virtual void run (rts2core::Value *val, double validTime) = 0;
 
 		/**
 		 * Called at the end of run method, when command change was run succesfully.
@@ -96,7 +96,7 @@ class ValueChangeRecord: public ValueChange
 	public:
 		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test) {}
 
-		virtual void run (Rts2Value *val, double validTime);
+		virtual void run (rts2core::Value *val, double validTime);
 #ifdef HAVE_PGSQL
 	private:
 		std::map <const char *, int> dbValueIds;
@@ -120,7 +120,7 @@ class ValueChangeCommand: public ValueChange
 			commandName = _commandName;
 		}
 
-		virtual void run (Rts2Value *val, double validTime);
+		virtual void run (rts2core::Value *val, double validTime);
 	private:
 		std::string commandName;
 };
@@ -135,7 +135,7 @@ class ValueChangeEmail: public ValueChange, public EmailAction
 	public:
 		ValueChangeEmail (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test), EmailAction () {}
 
-		virtual void run (Rts2Value *val, double validTime);
+		virtual void run (rts2core::Value *val, double validTime);
 };
 
 /**

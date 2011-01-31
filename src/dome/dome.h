@@ -149,17 +149,17 @@ class Dome:public rts2core::Device
 	private:
 		// time for which weather will be ignored - usefull for manual override of
 		// dome operations
-		Rts2ValueTime *ignoreTimeout;
+		rts2core::ValueTime *ignoreTimeout;
 
-		Rts2ValueBool *weatherOpensDome;
-		Rts2ValueTime *nextGoodWeather;
+		rts2core::ValueBool *weatherOpensDome;
+		rts2core::ValueTime *nextGoodWeather;
 
 		// call isOpened and isClosed and decide what to do..
 		int checkOpening ();
 
 		int closeDomeWeather ();
 
-		Rts2ValueString *stateMaster;
+		rts2core::ValueString *stateMaster;
 };
 
 }

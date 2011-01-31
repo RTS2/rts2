@@ -40,7 +40,7 @@ class DS21Axis
 		/**
 		 * @return -3 when value was not found in this axis.
 		 */
-		int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 		int info ();
 
 		/**
@@ -56,16 +56,16 @@ class DS21Axis
 		DS21 *master;
 		char anum;
 
-		Rts2ValueBool *enabled;
-		Rts2ValueLong *position;
-		Rts2ValueLong *poserr;
-		Rts2ValueInteger *velocity;
-		Rts2ValueInteger *acceleration;
-		Rts2ValueInteger *status;
+		rts2core::ValueBool *enabled;
+		rts2core::ValueLong *position;
+		rts2core::ValueLong *poserr;
+		rts2core::ValueInteger *velocity;
+		rts2core::ValueInteger *acceleration;
+		rts2core::ValueInteger *status;
 
-		Rts2ValueBool *limitSwitch;
+		rts2core::ValueBool *limitSwitch;
 
-		Rts2ValueString *commandSet;
+		rts2core::ValueString *commandSet;
 };
 
 /**
@@ -100,12 +100,12 @@ class DS21: public Sensor
 
 		int writeReadPort (char anum, const char *msg, char *buf, int blen);
 
-		int writeValue (char anum, const char cmd[3], Rts2Value *val);
-		int readValue (char anum, const char *cmd, Rts2Value *val);
+		int writeValue (char anum, const char cmd[3], rts2core::Value *val);
+		int readValue (char anum, const char *cmd, rts2core::Value *val);
 		/**
 		 * Reads binary value.
 		 */
-		int readValueBin (char anum, const char *cmd, Rts2Value *val);
+		int readValueBin (char anum, const char *cmd, rts2core::Value *val);
 
 		/**
 		 * Called when axis start moving.
@@ -122,7 +122,7 @@ class DS21: public Sensor
 
 		virtual int idle ();
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 	private:
 		const char *dev;
@@ -164,11 +164,11 @@ DS21Axis::DS21Axis (DS21 *in_master, char in_anum)
 	}
 }
 
-int DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int DS21Axis::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == enabled)
 	{
-		if (master->writePort (anum, ((Rts2ValueBool *) new_value)->getValueBool () ? "MN" : "MF"))
+		if (master->writePort (anum, ((rts2core::ValueBool *) new_value)->getValueBool () ? "MN" : "MF"))
 			return -2;
 		updateStatus ();
 		return 0;
@@ -190,7 +190,7 @@ int DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == limitSwitch)
 	{
-		return (master->writePort (anum, ((Rts2ValueBool *) new_value)->getValueBool () ? "LN" : "LF")) ? -2 : 0;
+		return (master->writePort (anum, ((rts2core::ValueBool *) new_value)->getValueBool () ? "LN" : "LF")) ? -2 : 0;
 	}
 	return -3;
 }
@@ -280,7 +280,7 @@ int DS21::idle ()
 	return Sensor::idle ();
 }
 
-int DS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int DS21::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
 	{
@@ -368,7 +368,7 @@ int DS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
 
 }
 
-int DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
+int DS21::writeValue (char anum, const char cmd[3], rts2core::Value *val)
 {
 	int ret;
 	const char *sval = val->getValue ();
@@ -382,7 +382,7 @@ int DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 	return ret;
 }
 
-int DS21::readValue (char anum, const char *cmd, Rts2Value *val)
+int DS21::readValue (char anum, const char *cmd, rts2core::Value *val)
 {
 	int ret;
 	char buf[500];
@@ -395,7 +395,7 @@ int DS21::readValue (char anum, const char *cmd, Rts2Value *val)
 	return val->setValueCharArr (buf);
 }
 
-int DS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
+int DS21::readValueBin (char anum, const char *cmd, rts2core::Value *val)
 {
 	int ret;
 	char buf[500];

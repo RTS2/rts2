@@ -27,11 +27,11 @@ Rts2CMonitorConnection::printStatus ()
 	cout << "============================== \n\
   " << getName () << " status OK \n";
 	// get values..
-	Rts2ValueVector::iterator val_iter;
+	rts2core::ValueVector::iterator val_iter;
 	for (val_iter = valueBegin ();
 		val_iter != valueEnd (); val_iter++)
 	{
-		Rts2Value *val = (*val_iter);
+		rts2core::Value *val = (*val_iter);
 		const char *val_buf;
 		val_buf = val->getValue ();
 		cout << fixed << setprecision (2);

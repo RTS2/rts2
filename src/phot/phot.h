@@ -44,15 +44,15 @@ class Rts2DevPhot:public ScriptDevice
 {
 	private:
 		struct timeval nextCountDue;
-		Rts2ValueInteger *count;
-		Rts2ValueFloat *exp;
-		Rts2ValueBool *is_ov;
+		rts2core::ValueInteger *count;
+		rts2core::ValueFloat *exp;
+		rts2core::ValueBool *is_ov;
 		Rts2Conn * integrateConn;
 
 	protected:
-		Rts2ValueInteger *req_count;
+		rts2core::ValueInteger *req_count;
 
-		Rts2ValueSelection *filter;
+		rts2core::ValueSelection *filter;
 		float req_time;
 		void setReqTime (float in_req_time);
 
@@ -61,7 +61,7 @@ class Rts2DevPhot:public ScriptDevice
 
 		virtual void postEvent (Rts2Event *event);
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		void sendCount (int in_count, float in_exp, bool in_is_ov);
 		virtual int startIntegrate ();

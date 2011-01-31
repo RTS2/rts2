@@ -227,6 +227,9 @@
 
 class Rts2Conn;
 
+namespace rts2core
+{
+
 /**
  * Holds values send over TCP/IP.
  * Values which are in RTS2 system belongs to one component. They are
@@ -238,21 +241,21 @@ class Rts2Conn;
  * @ingroup RTS2Block
  * @ingroup RTS2Value
  */
-class Rts2Value
+class Value
 {
 	public:
 		/**
 		 * Create value. RA and DEC names will be composed by suffixing
 		 * in_val_name with RA and DEC strings.
 		 */
-		Rts2Value (std::string _val_name);
+		Value (std::string _val_name);
 
 		/**
 		 * Create value. RA and DEC names will be composed by suffixing
 		 * in_val_name with RA and DEC strings.
 		 */
-		Rts2Value (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
-		virtual ~ Rts2Value (void) {}
+		Value (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
+		virtual ~ Value (void) {}
 
 		int isValue (const char *in_val_name) { return !strcasecmp (in_val_name, valueName.c_str ()); }
 
@@ -288,14 +291,14 @@ class Rts2Value
 		 *
 		 * @param newValue Value which content will be copied.
 		 */
-		virtual void setFromValue (Rts2Value * newValue) = 0;
+		virtual void setFromValue (Value * newValue) = 0;
 
 		/**
 		 * Returns true, if value is equal to other value.
 		 *
 		 * @return True if value is equal to other value, otherwise false.
 		 */
-		virtual bool isEqual (Rts2Value *other_value) = 0;
+		virtual bool isEqual (Value *other_value) = 0;
 
 		/**
 		 * Check if variable is not null. Returns number of violations. This
@@ -317,7 +320,7 @@ class Rts2Value
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 
 		/**
 		 * Return value as displayed in rts2-mon and other
@@ -429,20 +432,20 @@ class Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueString:public Rts2Value
+class ValueString:public Value
 {
 	public:
-		Rts2ValueString (std::string in_val_name);
-		Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0); 
-		virtual ~ Rts2ValueString (void) {}
+		ValueString (std::string in_val_name);
+		ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0); 
+		virtual ~ ValueString (void) {}
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
 		std::string getValueString () { return value; }
 		virtual void send (Rts2Conn * connection);
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 		virtual int checkNotNull ();
 	private:
 		std::string value;
@@ -453,11 +456,11 @@ class Rts2ValueString:public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueInteger:public Rts2Value
+class ValueInteger:public Value
 {
 	public:
-		Rts2ValueInteger (std::string in_val_name);
-		Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueInteger (std::string in_val_name);
+		ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		/**
@@ -473,7 +476,7 @@ class Rts2ValueInteger:public Rts2Value
 			}
 			return 0;
 		}
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 		virtual const char *getValue ();
 		virtual double getValueDouble () { return value; }
 		virtual float getValueFloat () { return value; }
@@ -488,8 +491,8 @@ class Rts2ValueInteger:public Rts2Value
 			changed ();
 			return value--;
 		}
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 		virtual int checkNotNull ();
 	private:
 		int value;
@@ -500,15 +503,15 @@ class Rts2ValueInteger:public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueDouble:public Rts2Value
+class ValueDouble:public Value
 {
 	public:
-		Rts2ValueDouble (std::string in_val_name);
-		Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueDouble (std::string in_val_name);
+		ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 		void setValueDouble (double in_value)
 		{
 			if (value != in_value)
@@ -533,8 +536,8 @@ class Rts2ValueDouble:public Rts2Value
 				return -1;
 			return (long int) value;
 		}
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 		virtual int checkNotNull ();
 	protected:
 		double value;
@@ -545,14 +548,14 @@ class Rts2ValueDouble:public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueTime:public Rts2ValueDouble
+class ValueTime:public ValueDouble
 {
 	public:
-		Rts2ValueTime (std::string in_val_name);
-		Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueTime (std::string in_val_name);
+		ValueTime (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		void setValueTime (time_t in_value)
 		{
-			Rts2ValueDouble::setValueDouble (in_value);
+			ValueDouble::setValueDouble (in_value);
 		}
 		virtual const char *getDisplayValue ();
 
@@ -579,18 +582,18 @@ class Rts2ValueTime:public Rts2ValueDouble
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueFloat:public Rts2Value
+class ValueFloat:public Value
 {
 	private:
 		float value;
 	public:
-		Rts2ValueFloat (std::string in_val_name);
-		Rts2ValueFloat (std::string in_val_name, std::string in_description,
+		ValueFloat (std::string in_val_name);
+		ValueFloat (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 		void setValueDouble (double in_value)
 		{
 			if (value != in_value)
@@ -617,8 +620,8 @@ class Rts2ValueFloat:public Rts2Value
 				return -1;
 			return (int) value;
 		}
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 };
 
 /**
@@ -626,12 +629,12 @@ class Rts2ValueFloat:public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueBool:public Rts2ValueInteger
+class ValueBool:public ValueInteger
 {
 	// value - 2 means unknow, 0 is false, 1 is true
 	public:
-		Rts2ValueBool (std::string in_val_name);
-		Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueBool (std::string in_val_name);
+		ValueBool (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 
@@ -702,16 +705,16 @@ class SelVal
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueSelection:public Rts2ValueInteger
+class ValueSelection:public ValueInteger
 {
 	public:
-		Rts2ValueSelection (std::string in_val_name);
-		Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits = false, int32_t flags = 0);
-		virtual ~Rts2ValueSelection (void);
+		ValueSelection (std::string in_val_name);
+		ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits = false, int32_t flags = 0);
+		virtual ~ValueSelection (void);
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 
 		int getSelIndex (std::string in_val);
 
@@ -721,7 +724,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		{
 			if (in_value < 0 || (size_t) in_value >= values.size ())
 				return -1;
-			return Rts2ValueInteger::setValueInteger (in_value);
+			return ValueInteger::setValueInteger (in_value);
 		}
 
 		int setSelIndex (char *selVal)
@@ -732,7 +735,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 			setValueInteger (i);
 			return 0;
 		}
-		void copySel (Rts2ValueSelection * sel);
+		void copySel (ValueSelection * sel);
 
 		/**
 		 * Adds selection value.
@@ -789,7 +792,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		int selSize () { return values.size (); }
 
-		void duplicateSelVals (Rts2ValueSelection * otherValue);
+		void duplicateSelVals (ValueSelection * otherValue);
 
 	protected:
 		virtual int sendTypeMetaInfo (Rts2Conn * connection);
@@ -805,15 +808,15 @@ class Rts2ValueSelection:public Rts2ValueInteger
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueLong:public Rts2Value
+class ValueLong:public Value
 {
 	public:
-		Rts2ValueLong (std::string in_val_name);
-		Rts2ValueLong (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueLong (std::string in_val_name);
+		ValueLong (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
 		virtual double getValueDouble () { return value; }
@@ -839,8 +842,8 @@ class Rts2ValueLong:public Rts2Value
 			}
 			return 0;
 		}
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 	private:
 		long int value;
 };
@@ -850,11 +853,11 @@ class Rts2ValueLong:public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueRaDec: public Rts2Value
+class ValueRaDec: public Value
 {
 	public:
-		Rts2ValueRaDec (std::string in_val_name);
-		Rts2ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueRaDec (std::string in_val_name);
+		ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 
 		/**
@@ -920,7 +923,7 @@ class Rts2ValueRaDec: public Rts2Value
 			}
 		}
 
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
 		virtual double getValueDouble () { return rts2_nan("f"); }
@@ -944,8 +947,8 @@ class Rts2ValueRaDec: public Rts2Value
 		 */
 		double getDec () { return decl; }
 
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 
 	private:
 		double ra;
@@ -957,11 +960,11 @@ class Rts2ValueRaDec: public Rts2Value
  *
  * @ingroup RTS2Value
  */
-class Rts2ValueAltAz: public Rts2Value
+class ValueAltAz: public Value
 {
 	public:
-		Rts2ValueAltAz (std::string in_val_name);
-		Rts2ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueAltAz (std::string in_val_name);
+		ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 
 		/**
@@ -1011,7 +1014,7 @@ class Rts2ValueAltAz: public Rts2Value
 			}
 		}
 
-		virtual int doOpValue (char op, Rts2Value * old_value);
+		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
 		virtual double getValueDouble () { return rts2_nan("f"); }
@@ -1037,14 +1040,16 @@ class Rts2ValueAltAz: public Rts2Value
 
 		void getAltAz (struct ln_hrz_posn *hrz) { hrz->alt = getAlt (); hrz->az = getAz (); }
 
-		virtual void setFromValue (Rts2Value * newValue);
-		virtual bool isEqual (Rts2Value *other_value);
+		virtual void setFromValue (Value * newValue);
+		virtual bool isEqual (Value *other_value);
 
 	private:
 		double alt;
 		double az;
 };
 
+
+}
 
 /**
  * Creates value from meta information.
@@ -1053,5 +1058,6 @@ class Rts2ValueAltAz: public Rts2Value
  * @param name Value name.
  * @param desc Value description.
  */
-Rts2Value *newValue (int rts2Type, std::string name, std::string desc);
+rts2core::Value *newValue (int rts2Type, std::string name, std::string desc);
+
 #endif							 /* !__RTS2_VALUE__ */

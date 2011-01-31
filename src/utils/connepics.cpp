@@ -22,7 +22,7 @@
 using namespace rts2core;
 
 
-EpicsVal * ConnEpics::findValue (Rts2Value *value)
+EpicsVal * ConnEpics::findValue (rts2core::Value *value)
 {
 	for (std::list <EpicsVal>::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
@@ -53,7 +53,7 @@ int ConnEpics::init ()
 	return 0;
 }
 
-void ConnEpics::addRts2Value (Rts2Value *value, const char *pvname)
+void ConnEpics::addValue (rts2core::Value *value, const char *pvname)
 {
   	chid pchid = createChannel (pvname);
 	channels.push_back (EpicsVal (value, pchid));
@@ -89,7 +89,7 @@ void ConnEpics::get (chid _ch, double *val)
 	}
 }
 
-void ConnEpics::queueGetValue (Rts2Value *value)
+void ConnEpics::queueGetValue (rts2core::Value *value)
 {
 	int result;
 	chtype pchtype;
@@ -126,7 +126,7 @@ void ConnEpics::queueGetValue (Rts2Value *value)
 	}
 }
 
-void ConnEpics::queueSetValue (Rts2Value *value)
+void ConnEpics::queueSetValue (rts2core::Value *value)
 {
 	int result;
 	chtype pchtype;
@@ -137,12 +137,12 @@ void ConnEpics::queueSetValue (Rts2Value *value)
 		case RTS2_VALUE_DOUBLE:
 			pchtype = DBR_DOUBLE;
 			data = malloc (sizeof (double));
-			*((double *)data) = ((Rts2ValueDouble *) value)->getValueDouble ();
+			*((double *)data) = ((rts2core::ValueDouble *) value)->getValueDouble ();
 			break;
 		case RTS2_VALUE_SELECTION:
 			pchtype = DBR_DOUBLE;
 			data = malloc (sizeof (double));
-			*((double *)data) = ((Rts2ValueDouble *) value)->getValueInteger ();
+			*((double *)data) = ((rts2core::ValueDouble *) value)->getValueInteger ();
 			break;
 		case RTS2_VALUE_INTEGER:
 			pchtype = DBR_INT;
@@ -211,15 +211,15 @@ void ConnEpics::callPendIO ()
 			switch ((*iter).value->getValueBaseType ())
 			{
 				case RTS2_VALUE_DOUBLE:
-					((Rts2ValueDouble *) (*iter).value)->setValueDouble (*((double *) (*iter).storage));
+					((rts2core::ValueDouble *) (*iter).value)->setValueDouble (*((double *) (*iter).storage));
 					break;
 				case RTS2_VALUE_SELECTION:
-					((Rts2ValueSelection *) (*iter).value)->setValueInteger (*((double *) (*iter).storage));
+					((rts2core::ValueSelection *) (*iter).value)->setValueInteger (*((double *) (*iter).storage));
 				case RTS2_VALUE_INTEGER:
 					(*iter).value->setValueInteger (*((int*) (*iter).storage));
 					break;
 				case RTS2_VALUE_LONGINT:
-					((Rts2ValueLong *)(*iter).value)->setValueLong (*((long*) (*iter).storage));
+					((rts2core::ValueLong *)(*iter).value)->setValueLong (*((long*) (*iter).storage));
 					break;
 				default:
 					throw ConnEpicsErrorChannel ("callPendIO unsupported value type ", ca_name ((*iter).vchid), ECA_NORMAL);

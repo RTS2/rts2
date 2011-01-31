@@ -148,7 +148,7 @@ class Paramount:public GEM
 		virtual int isMoving ();
 		virtual int isParking ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
 		virtual int updateLimits ();
 
@@ -184,20 +184,20 @@ class Paramount:public GEM
 		CWORD16 status0;
 		CWORD16 status1;
 
-		Rts2ValueInteger *statusRa;
-		Rts2ValueInteger *statusDec;
+		rts2core::ValueInteger *statusRa;
+		rts2core::ValueInteger *statusDec;
 
-		Rts2ValueLong *hourRa;
-		Rts2ValueLong *baseRa;
-		Rts2ValueLong *baseDec;
+		rts2core::ValueLong *hourRa;
+		rts2core::ValueLong *baseRa;
+		rts2core::ValueLong *baseDec;
 
-		Rts2ValueLong *creepRa;
-		Rts2ValueLong *creepDec;
+		rts2core::ValueLong *creepRa;
+		rts2core::ValueLong *creepDec;
 
-		Rts2ValueLong *relRa;
-		Rts2ValueLong *relDec;
+		rts2core::ValueLong *relRa;
+		rts2core::ValueLong *relDec;
 
-		Rts2ValueBool *tracking;
+		rts2core::ValueBool *tracking;
 
 		CWORD32 park_axis[2];
 
@@ -211,14 +211,14 @@ class Paramount:public GEM
 
 		std::vector < ParaVal > paramountValues;
 
-		Rts2ValueLong *axRa;
-		Rts2ValueLong *axDec;
+		rts2core::ValueLong *axRa;
+		rts2core::ValueLong *axDec;
 
-		Rts2ValueLong *homeOffsetRa;
-		Rts2ValueLong *homeOffsetDec;
+		rts2core::ValueLong *homeOffsetRa;
+		rts2core::ValueLong *homeOffsetDec;
 
-		Rts2ValueLong *encoderRa;
-		Rts2ValueLong *encoderDec;
+		rts2core::ValueLong *encoderRa;
+		rts2core::ValueLong *encoderDec;
 
 		int saveAxis (std::ostream & os, const MKS3Id & axis);
 
@@ -234,8 +234,8 @@ class Paramount:public GEM
 		int getHomeOffsetAxis (MKS3Id axis, int32_t & off);
 
 		// return RA and DEC value pair
-		int getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec);
-		int setParamountValue32 (int id, Rts2Value *vRa, Rts2Value *vDec);
+		int getParamountValue32 (int id, rts2core::ValueLong *vRa, rts2core::ValueLong *vDec);
+		int setParamountValue32 (int id, rts2core::Value *vRa, rts2core::Value *vDec);
 };
 
 };
@@ -1148,11 +1148,11 @@ int Paramount::isParking ()
 	return -2;
 }
 
-int Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Paramount::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == tracking)
 	{
-		if (((Rts2ValueBool * ) newValue)->getValueBool () == true)
+		if (((rts2core::ValueBool * ) newValue)->getValueBool () == true)
 			MKS3MotorOn (axis0);
 		else
 			MKS3MotorOff (axis0);
@@ -1320,7 +1320,7 @@ void Paramount::setDiffTrack (double dra, double ddec)
 	setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 }
 
-int Paramount::getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec)
+int Paramount::getParamountValue32 (int id, rts2core::ValueLong *vRa, rts2core::ValueLong *vDec)
 {
   	CWORD32 _ra,_dec;
 	ret0 = _MKS3DoGetVal32 (axis0, id, &_ra);
@@ -1335,7 +1335,7 @@ int Paramount::getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *v
 	return 0;
 }
 
-int Paramount::setParamountValue32 (int id, Rts2Value *vRa, Rts2Value *vDec)
+int Paramount::setParamountValue32 (int id, rts2core::Value *vRa, rts2core::Value *vDec)
 {
 	CWORD32 _ra = vRa->getValueLong ();
 	CWORD32 _dec = vDec->getValueLong ();

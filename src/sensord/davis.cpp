@@ -121,7 +121,7 @@ int Davis::info ()
 	return 0;
 }
 
-int Davis::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Davis::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == connTimeout)
 	{

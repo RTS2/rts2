@@ -32,7 +32,7 @@ namespace rts2focusd
 class Dummy:public Focusd
 {
 	private:
-		Rts2ValueFloat *focSteps;
+		rts2core::ValueFloat *focSteps;
 	protected:
 		virtual int processOption (int opt);
 		virtual int initValues ();

@@ -58,14 +58,14 @@ void ValueChange::postEvent (Rts2Event *event)
 
 #ifndef HAVE_PGSQL
 
-void ValueChangeRecord::run (Rts2Value *val, double validTime)
+void ValueChangeRecord::run (rts2core::Value *val, double validTime)
 {
 	std::cout << Timestamp (validTime) << " value: " << deviceName.c_str () << " " << valueName.c_str () << val->getDisplayValue () << std::endl;
 }
 
 #endif /* ! HAVE_PGSQL */
 
-void ValueChangeCommand::run (Rts2Value *val, double validTime)
+void ValueChangeCommand::run (rts2core::Value *val, double validTime)
 {
 	int ret;
 	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
@@ -81,7 +81,7 @@ void ValueChangeCommand::run (Rts2Value *val, double validTime)
 	master->addConnection (cf);
 }
 
-void ValueChangeEmail::run (Rts2Value *val, double validTime)
+void ValueChangeEmail::run (rts2core::Value *val, double validTime)
 {
 	EmailAction::run (master);
 }

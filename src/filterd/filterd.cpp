@@ -65,7 +65,7 @@ int Filterd::setFilterNum (int new_filter)
 	return -1;
 }
 
-int Filterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Filterd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == filter)
 		return setFilterNumMask (new_value->getValueInteger ()) == 0 ? 0 : -2;

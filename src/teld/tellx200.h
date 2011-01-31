@@ -43,7 +43,7 @@ class TelLX200:public Telescope
 
 		rts2core::ConnSerial *serConn;
 
-		Rts2ValueDouble *localTime;
+		rts2core::ValueDouble *localTime;
 
 		/**
 		 * Reads some value from LX200 in hms format.

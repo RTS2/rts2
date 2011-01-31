@@ -68,7 +68,7 @@ class Pixy:public Sensor
 		char *device_port;
 		Rts2ConnPixy *pixyConn;
 
-		Rts2ValueInteger *lightening;
+		rts2core::ValueInteger *lightening;
 
 		virtual int processOption (int in_opt);
 		virtual int init ();

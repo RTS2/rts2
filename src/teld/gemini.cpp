@@ -94,14 +94,14 @@ class Gemini:public Telescope
 	private:
 		const char *device_file;
 
-		Rts2ValueTime *telLocalTime;
-		Rts2ValueFloat *telGuidingSpeed;
+		rts2core::ValueTime *telLocalTime;
+		rts2core::ValueFloat *telGuidingSpeed;
 
-		Rts2ValueSelection *resetState;
-		Rts2ValueInteger *featurePort;
+		rts2core::ValueSelection *resetState;
+		rts2core::ValueInteger *featurePort;
 
-		Rts2ValueDouble *axRa;
-		Rts2ValueDouble *axDec;
+		rts2core::ValueDouble *axRa;
+		rts2core::ValueDouble *axDec;
 
 		const char *geminiConfig;
 
@@ -377,9 +377,9 @@ class Gemini:public Telescope
 		double haMinusLimit;
 		double haPlusLimit;
 
-		Rts2ValueInteger *centeringSpeed;
-		Rts2ValueFloat *guidingSpeed;
-		Rts2ValueDouble *guideLimit;
+		rts2core::ValueInteger *centeringSpeed;
+		rts2core::ValueFloat *guidingSpeed;
+		rts2core::ValueDouble *guideLimit;
 
 		int expectedType;
 		int forceType;

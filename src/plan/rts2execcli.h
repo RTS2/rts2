@@ -73,7 +73,7 @@ using namespace rts2script;
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 {
 	public:
-		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
+		Rts2DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL);
 		virtual ~ Rts2DevClientCameraExec (void);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);
@@ -113,7 +113,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 
 		virtual bool canEndScript ();
 	private:
-		Rts2ValueString *expandPath;
+		rts2core::ValueString *expandPath;
 		bool waitForExposure;
 		bool waitMetaData;
 };

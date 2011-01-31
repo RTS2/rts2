@@ -81,20 +81,20 @@ class Grbd:public Rts2DeviceDb
 		char *addExe;
 		int execFollowups;
 
-		Rts2ValueBool *grb_enabled;
+		rts2core::ValueBool *grb_enabled;
 
-		Rts2ValueTime *last_packet;
-		Rts2ValueDouble *delta;
-		Rts2ValueString *last_target;
-		Rts2ValueTime *last_target_time;
-		Rts2ValueRaDec *last_target_radec;
-		Rts2ValueBool *execConnection;
+		rts2core::ValueTime *last_packet;
+		rts2core::ValueDouble *delta;
+		rts2core::ValueString *last_target;
+		rts2core::ValueTime *last_target_time;
+		rts2core::ValueRaDec *last_target_radec;
+		rts2core::ValueBool *execConnection;
 
-		Rts2ValueTime *lastSwift;
-		Rts2ValueRaDec *lastSwiftRaDec;
+		rts2core::ValueTime *lastSwift;
+		rts2core::ValueRaDec *lastSwiftRaDec;
 
-		Rts2ValueTime *lastIntegral;
-		Rts2ValueRaDec *lastIntegralRaDec;
+		rts2core::ValueTime *lastIntegral;
+		rts2core::ValueRaDec *lastIntegralRaDec;
 };
 
 }

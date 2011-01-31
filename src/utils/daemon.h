@@ -22,11 +22,11 @@
 
 #include "rts2block.h"
 #include "rts2logstream.h"
-#include "rts2value.h"
-#include "rts2valuelist.h"
-#include "rts2valuestat.h"
-#include "rts2valueminmax.h"
-#include "rts2valuerectangle.h"
+#include "value.h"
+#include "valuelist.h"
+#include "valuestat.h"
+#include "valueminmax.h"
+#include "valuerectangle.h"
 #include "valuearray.h"
 
 #include <vector>
@@ -118,13 +118,13 @@ class Daemon:public Rts2Block
 		 *
 		 * @return NULL if value with specifed name does not exists
 		 */
-		Rts2Value *getOwnValue (const char *v_name);
+		Value *getOwnValue (const char *v_name);
 
 		/**
 		 * Create new value, and return pointer to it.
 		 * It also saves value pointer to the internal values list.
 		 *
-		 * @param value          Rts2Value which will be created.
+		 * @param value          Value which will be created.
 		 * @param in_val_name    Value name.
 		 * @param in_description Value description.
 		 * @param writeToFits    When true, value will be writen to FITS.
@@ -146,7 +146,7 @@ class Daemon:public Rts2Block
 		/**
 		 * Send new value over the wire to all connections.
 		 */
-		void sendValueAll (Rts2Value * value);
+		void sendValueAll (Value * value);
 
 	protected:
 		/**
@@ -223,7 +223,7 @@ class Daemon:public Rts2Block
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
 
-		Rts2ValueQueVector queValues;
+		ValueQueVector queValues;
 
 		/**
 		 * Return conditional value entry for given value name.
@@ -241,7 +241,7 @@ class Daemon:public Rts2Block
 		 *
 		 * @return Rts2CondValue for given value, if this exists. NULL if it does not exist.
 		 */
-		Rts2CondValue *getCondValue (const Rts2Value *val);
+		Rts2CondValue *getCondValue (const Value *val);
 
 		/**
 		 * Duplicate variable.
@@ -251,12 +251,12 @@ class Daemon:public Rts2Block
 		 *
 		 * @return Duplicate of old_value.
 		 */
-		Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
+		Value *duplicateValue (Value * old_value, bool withVal = false);
 
 		/**
 		 * Create new constant value, and return pointer to it.
 		 *
-		 * @param value          Rts2Value which will be created
+		 * @param value          Value which will be created
 		 * @param in_val_name    value name
 		 * @param in_description value description
 		 * @param writeToFits    when true, value will be writen to FITS
@@ -269,7 +269,7 @@ class Daemon:public Rts2Block
 			val = new T (in_val_name, in_description, writeToFits, valueFlags);
 			addConstValue (val);
 		}
-		void addConstValue (Rts2Value * value);
+		void addConstValue (Value * value);
 		void addConstValue (const char *in_name, const char *in_desc, const char *in_value);
 		void addConstValue (const char *in_name, const char *in_desc, std::string in_value);
 		void addConstValue (const char *in_name, const char *in_desc, double in_value);
@@ -294,7 +294,7 @@ class Daemon:public Rts2Block
 		 * {
 		 *   ....
 		 *   protected:
-		 *       virtual int setValue (Rts2Value * old_value, Rts2Value *new_value)
+		 *       virtual int setValue (Value * old_value, Value *new_value)
 		 *       {
 		 *             if (old_value == var1)
 		 *                   return 0;
@@ -315,14 +315,14 @@ class Daemon:public Rts2Block
 		 * time to perform, 0 when value can be se immediately, -1 when
 		 * value set was queued and -2 on an error.
 		 */
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (Value * old_value, Value * new_value);
 
 		/**
 		 * Perform value changes. Check if value can be changed before performing change.
 		 *
 		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
 		 */
-		int setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value);
+		int setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value);
 
 		/**
 		 * Really perform value change.
@@ -332,14 +332,14 @@ class Daemon:public Rts2Block
 		 *   (numerical or string), but "=", "+=" and "-=" are ussualy supported.
 		 * @param new_value
 		 */
-		int doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value);
+		int doSetValue (Rts2CondValue * old_cond_value, char op, Value * new_value);
 
 		/**
 		 * Called after value was changed.
 		 *
 		 * @param changed_value Pointer to changed value.
 		 */
-		virtual void valueChanged (Rts2Value *changed_value);
+		virtual void valueChanged (Value *changed_value);
 
 		/**
 		 * Returns whenever value change with old_value needs to be qued or
@@ -507,18 +507,18 @@ class Daemon:public Rts2Block
 		Rts2CondValueVector values;
 		// values which do not change, they are send only once at connection
 		// initialization
-		Rts2ValueVector constValues;
+		ValueVector constValues;
 
-		Rts2ValueTime *info_time;
+		ValueTime *info_time;
 
 		double idleInfoInterval;
 
 		/**
 		 * Adds value to list of values supported by daemon.
 		 *
-		 * @param value Rts2Value which will be added.
+		 * @param value Value which will be added.
 		 */
-		void addValue (Rts2Value * value, int queCondition = 0);
+		void addValue (Value * value, int queCondition = 0);
 
 		bool doHupIdleLoop;
 

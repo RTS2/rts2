@@ -226,13 +226,13 @@ class Rts2Centrald:public Daemon
 		time_t next_event_time;
 		struct ln_lnlat_posn *observer;
 
-		Rts2ValueBool *morning_off;
-		Rts2ValueBool *morning_standby;
+		rts2core::ValueBool *morning_off;
+		rts2core::ValueBool *morning_standby;
 
 		StringArray *requiredDevices;
 		StringArray *failedDevices;
 
-		Rts2ValueString *badWeatherReason;
+		rts2core::ValueString *badWeatherReason;
 
 		char *configFile;
 		std::string logFile;
@@ -247,37 +247,37 @@ class Rts2Centrald:public Daemon
 
 		int connNum;
 
-		Rts2ValueString *priorityClient;
-		Rts2ValueInteger *priority;
+		rts2core::ValueString *priorityClient;
+		rts2core::ValueInteger *priority;
 
-		Rts2ValueTime *nextStateChange;
-		Rts2ValueSelection *nextState;
-		Rts2ValueDouble *observerLng;
-		Rts2ValueDouble *observerLat;
+		rts2core::ValueTime *nextStateChange;
+		rts2core::ValueSelection *nextState;
+		rts2core::ValueDouble *observerLng;
+		rts2core::ValueDouble *observerLat;
 
-		Rts2ValueDouble *nightHorizon;
-		Rts2ValueDouble *dayHorizon;
+		rts2core::ValueDouble *nightHorizon;
+		rts2core::ValueDouble *dayHorizon;
 
-		Rts2ValueInteger *eveningTime;
-		Rts2ValueInteger *morningTime;
+		rts2core::ValueInteger *eveningTime;
+		rts2core::ValueInteger *morningTime;
 
-		Rts2ValueTime *nightStart;
-		Rts2ValueTime *nightStop;
+		rts2core::ValueTime *nightStart;
+		rts2core::ValueTime *nightStop;
 
-		Rts2ValueDouble *sunAlt;
-		Rts2ValueDouble *sunAz;
+		rts2core::ValueDouble *sunAlt;
+		rts2core::ValueDouble *sunAz;
 
-		Rts2ValueTime *sunRise;
-		Rts2ValueTime *sunSet;
+		rts2core::ValueTime *sunRise;
+		rts2core::ValueTime *sunSet;
 
-		Rts2ValueDouble *moonAlt;
-		Rts2ValueDouble *moonAz;
+		rts2core::ValueDouble *moonAlt;
+		rts2core::ValueDouble *moonAz;
 
-		Rts2ValueDouble *lunarPhase;
-		Rts2ValueDouble *lunarLimb;
+		rts2core::ValueDouble *lunarPhase;
+		rts2core::ValueDouble *lunarLimb;
 
-		Rts2ValueTime *moonRise;
-		Rts2ValueTime *moonSet;
+		rts2core::ValueTime *moonRise;
+		rts2core::ValueTime *moonSet;
 
 		void processMessage (Rts2Message & msg);
 };

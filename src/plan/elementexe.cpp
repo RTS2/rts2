@@ -209,7 +209,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
-		Rts2Value *val = masterElement->getConnection()->getValue (value);
+		rts2core::Value *val = masterElement->getConnection()->getValue (value);
 		if (val)
 		{
 			writeToProcess (val->getValue ());

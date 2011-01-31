@@ -66,17 +66,17 @@ class Bootes2: public Dome
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-		Rts2ValueDoubleStat *tempMeas;
-		Rts2ValueDoubleStat *humiMeas;
+		rts2core::ValueDoubleStat *tempMeas;
+		rts2core::ValueDoubleStat *humiMeas;
 
-		Rts2ValueBool *swOpenLeft;
-		Rts2ValueBool *swCloseLeft;
-		Rts2ValueBool *swOpenRight;
-		Rts2ValueBool *swCloseRight;
+		rts2core::ValueBool *swOpenLeft;
+		rts2core::ValueBool *swCloseLeft;
+		rts2core::ValueBool *swOpenRight;
+		rts2core::ValueBool *swCloseRight;
 
-		Rts2ValueBool *raining;
+		rts2core::ValueBool *raining;
 
-		void comediReadDIO (int channel, Rts2ValueBool *val, const char *name);
+		void comediReadDIO (int channel, rts2core::ValueBool *val, const char *name);
 
 		/**
 		 * Returns volts from the device.
@@ -204,7 +204,7 @@ Bootes2::updateTemperature ()
 	return 0;
 }
 
-void Bootes2::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
+void Bootes2::comediReadDIO (int channel, rts2core::ValueBool *val, const char *name)
 {
 	int ret;
 	uint32_t v;

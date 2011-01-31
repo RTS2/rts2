@@ -17,24 +17,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2valueminmax.h"
+#include "valueminmax.h"
 #include "rts2conn.h"
 
-Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name):Rts2ValueDouble (in_val_name)
+using namespace rts2core;
+
+ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name):ValueDouble (in_val_name)
 {
 	min = rts2_nan ("f");
 	max = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
-Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
+ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
 	min = rts2_nan ("f");
 	max = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
-int Rts2ValueDoubleMinMax::setValue (Rts2Conn * connection)
+int ValueDoubleMinMax::setValue (Rts2Conn * connection)
 {
 	double new_val;
 	if (connection->paramNextDouble (&new_val))
@@ -56,7 +58,7 @@ int Rts2ValueDoubleMinMax::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int Rts2ValueDoubleMinMax::checkNotNull ()
+int ValueDoubleMinMax::checkNotNull ()
 {
 	int local_failures = 0;
 	if (isnan (min))
@@ -70,10 +72,10 @@ int Rts2ValueDoubleMinMax::checkNotNull ()
 		logStream (MESSAGE_ERROR) << getName () << " limit (maximum) is not set" << sendLog;
 	}
 
-	return local_failures + Rts2ValueDouble::checkNotNull ();
+	return local_failures + ValueDouble::checkNotNull ();
 }
 
-int Rts2ValueDoubleMinMax::doOpValue (char op, Rts2Value * old_value)
+int ValueDoubleMinMax::doOpValue (char op, Value * old_value)
 {
 	double new_val;
 	switch (op)
@@ -97,23 +99,23 @@ int Rts2ValueDoubleMinMax::doOpValue (char op, Rts2Value * old_value)
 	return 0;
 }
 
-const char * Rts2ValueDoubleMinMax::getValue ()
+const char * ValueDoubleMinMax::getValue ()
 {
 	sprintf (buf, "%.20le %.20le %.20le", getValueDouble (), getMin (), getMax ());
 	return buf;
 }
 
-const char * Rts2ValueDoubleMinMax::getDisplayValue ()
+const char * ValueDoubleMinMax::getDisplayValue ()
 {
 	sprintf (buf, "%f %f %f", getValueDouble (), getMin (), getMax ());
 	return buf;
 }
 
-void Rts2ValueDoubleMinMax::setFromValue (Rts2Value * newValue)
+void ValueDoubleMinMax::setFromValue (Value * newValue)
 {
-	Rts2ValueDouble::setFromValue (newValue);
+	ValueDouble::setFromValue (newValue);
 	if (newValue->getValueType () == (RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE))
 	{
-		copyMinMax ((Rts2ValueDoubleMinMax *) newValue);
+		copyMinMax ((ValueDoubleMinMax *) newValue);
 	}
 }

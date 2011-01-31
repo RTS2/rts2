@@ -153,7 +153,7 @@ int Focusd::endFocusing ()
 	return 0;
 }
 
-int Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == position || old_value == target)
 	{

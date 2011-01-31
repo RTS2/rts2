@@ -31,14 +31,14 @@ class Lakeshore;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class TempChannel:public std::map < const char*, std::list <Rts2Value *> >
+class TempChannel:public std::map < const char*, std::list <rts2core::Value *> >
 {
 	public:
 		TempChannel () {};
 		/**
 		 * Returns iterator to array holding value.
 		 */
-		std::map <const char *, std::list <Rts2Value *> >::iterator findValue (Rts2Value *value);
+		std::map <const char *, std::list <rts2core::Value *> >::iterator findValue (rts2core::Value *value);
 };
 
 /**
@@ -58,15 +58,15 @@ class Lakeshore:public Gpib
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
+		virtual int setValue (rts2core::Value * oldValue, rts2core::Value * newValue);
 
 	private:
 		TempChannel *temps[2];
 		TempChannel *loops[2];
 
-		Rts2ValueBool *tunest;
+		rts2core::ValueBool *tunest;
 
-		template < typename T> Rts2Value *tempValue (T *&val, const char *prefix, char chan, const char *_info, bool writeToFits, uint32_t flags = 0)
+		template < typename T> rts2core::Value *tempValue (T *&val, const char *prefix, char chan, const char *_info, bool writeToFits, uint32_t flags = 0)
 		{
 			std::ostringstream _os_n, _os_i;
 			_os_n << prefix << "_" << chan;
@@ -75,18 +75,18 @@ class Lakeshore:public Gpib
 			return val;
 		}
 
-		void changeTempValue (char chan, std::map <const char *, std::list <Rts2Value *> >::iterator it, Rts2Value *oldValue, Rts2Value *newValue);
+		void changeTempValue (char chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue);
 };
 
 }
 
 using namespace rts2sensord;
 
-std::map <const char *, std::list <Rts2Value *> >::iterator TempChannel::findValue (Rts2Value *value)
+std::map <const char *, std::list <rts2core::Value *> >::iterator TempChannel::findValue (rts2core::Value *value)
 {
-	for (std::map <const char *, std::list <Rts2Value *> >::iterator iter = begin (); iter != end (); iter++)
+	for (std::map <const char *, std::list <rts2core::Value *> >::iterator iter = begin (); iter != end (); iter++)
 	{
-		std::list <Rts2Value *>::iterator it_val = std::find (iter->second.begin (), iter->second.end (), value);
+		std::list <rts2core::Value *>::iterator it_val = std::find (iter->second.begin (), iter->second.end (), value);
 		if (it_val != iter->second.end ())
 			return iter;
 	}
@@ -97,10 +97,10 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	int i;
 	char chan;
-	Rts2ValueDouble *vd;
-	Rts2ValueInteger *vi;
-	Rts2ValueBool *vb;
-	Rts2ValueSelection *vs;
+	rts2core::ValueDouble *vd;
+	rts2core::ValueInteger *vi;
+	rts2core::ValueBool *vb;
+	rts2core::ValueSelection *vs;
 
 	for (i = 0, chan = 'A'; i < 2; i++, chan++)
 	{
@@ -182,7 +182,7 @@ int Lakeshore::info ()
 		char chan;
 		for (i = 0, chan = 'A'; i < 2; i++, chan++)
 		{
-			for (std::map <const char*, std::list <Rts2Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
+			for (std::map <const char*, std::list <rts2core::Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
 			{
 				std::ostringstream _os;
 				_os << iter->first << "? " << chan;
@@ -192,7 +192,7 @@ int Lakeshore::info ()
 				std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
 
 				std::vector<std::string>::iterator iter_sc = sc.begin ();
-				std::list <Rts2Value*>::iterator iter_v = iter->second.begin ();
+				std::list <rts2core::Value*>::iterator iter_v = iter->second.begin ();
 				for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
 				{
 					(*iter_v)->setValueCharArr (iter_sc->c_str ());
@@ -202,7 +202,7 @@ int Lakeshore::info ()
 
 		for (i = 0, chan = '1'; i < 2; i++, chan++)
 		{
-			for (std::map <const char*, std::list <Rts2Value*> >::iterator iter = loops[i]->begin (); iter != loops[i]->end (); iter++)
+			for (std::map <const char*, std::list <rts2core::Value*> >::iterator iter = loops[i]->begin (); iter != loops[i]->end (); iter++)
 			{
 				std::ostringstream _os;
 				_os << iter->first << "? " << chan;
@@ -212,7 +212,7 @@ int Lakeshore::info ()
 				std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
 
 				std::vector<std::string>::iterator iter_sc = sc.begin ();
-				std::list <Rts2Value*>::iterator iter_v = iter->second.begin ();
+				std::list <rts2core::Value*>::iterator iter_v = iter->second.begin ();
 				for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
 				{
 					(*iter_v)->setValueCharArr (iter_sc->c_str ());
@@ -237,13 +237,13 @@ int Lakeshore::init ()
 
 int Lakeshore::initValues ()
 {
-	Rts2ValueString *model = new Rts2ValueString ("model");
+	rts2core::ValueString *model = new rts2core::ValueString ("model");
 	readValue ("*IDN?", model);
 	addConstValue (model);
 	return Gpib::initValues ();
 }
 
-int Lakeshore::setValue (Rts2Value * oldValue, Rts2Value * newValue)
+int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 {
 	try
 	{
@@ -251,7 +251,7 @@ int Lakeshore::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 		char chan;
 		for (i = 0, chan = 'A'; i < 2; i++, chan++)
 		{
-			std::map <const char *, std::list <Rts2Value *> >::iterator it = temps[i]->findValue (oldValue);
+			std::map <const char *, std::list <rts2core::Value *> >::iterator it = temps[i]->findValue (oldValue);
 			if (it != temps[i]->end ())
 			{
 				changeTempValue (chan, it, oldValue, newValue);
@@ -260,7 +260,7 @@ int Lakeshore::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 		}
 		for (i = 0, chan = '1'; i < 2; i++, chan++)
 		{
-			std::map <const char *, std::list <Rts2Value *> >::iterator it = loops[i]->findValue (oldValue);
+			std::map <const char *, std::list <rts2core::Value *> >::iterator it = loops[i]->findValue (oldValue);
 			if (it != loops[i]->end ())
 			{
 				changeTempValue (chan, it, oldValue, newValue);
@@ -276,12 +276,12 @@ int Lakeshore::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 	return Gpib::setValue (oldValue, newValue);
 }
 
-void Lakeshore::changeTempValue (char chan, std::map <const char *, std::list <Rts2Value *> >::iterator it, Rts2Value *oldValue, Rts2Value *newValue)
+void Lakeshore::changeTempValue (char chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	std::ostringstream _os;
 	_os << it->first << " " << chan;
 	_os << std::fixed;
-	for (std::list <Rts2Value *>::iterator it_val = it->second.begin (); it_val != it->second.end (); it_val++)
+	for (std::list <rts2core::Value *>::iterator it_val = it->second.begin (); it_val != it->second.end (); it_val++)
 	{
 		_os << ",";
 		if (*it_val == oldValue)

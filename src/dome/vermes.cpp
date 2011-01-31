@@ -58,16 +58,16 @@ namespace rts2dome
   {
   private:
     Rts2Config *config ;
-    Rts2ValueDouble  *target_azimut_cupola ;
-    Rts2ValueInteger *barcode_reader_state ;
-    Rts2ValueDouble  *azimut_difference ;
-    Rts2ValueString  *ssd650v_state ;
-    Rts2ValueDouble  *ssd650v_read_setpoint ;
-    Rts2ValueDouble  *ssd650v_setpoint ;
-    Rts2ValueBool    *synchronizeTelescope ;
-    Rts2ValueDouble  *ssd650v_min_setpoint ;
-    Rts2ValueDouble  *ssd650v_max_setpoint ;
-    Rts2ValueDouble  *ssd650v_current ;
+    rts2core::ValueDouble  *target_azimut_cupola ;
+    rts2core::ValueInteger *barcode_reader_state ;
+    rts2core::ValueDouble  *azimut_difference ;
+    rts2core::ValueString  *ssd650v_state ;
+    rts2core::ValueDouble  *ssd650v_read_setpoint ;
+    rts2core::ValueDouble  *ssd650v_setpoint ;
+    rts2core::ValueBool    *synchronizeTelescope ;
+    rts2core::ValueDouble  *ssd650v_min_setpoint ;
+    rts2core::ValueDouble  *ssd650v_max_setpoint ;
+    rts2core::ValueDouble  *ssd650v_current ;
     void parkCupola ();
   protected:
     virtual int moveStart () ;
@@ -88,7 +88,7 @@ namespace rts2dome
     virtual double getSplitWidth (double alt) ;
     virtual int info () ;
     virtual int idle ();
-    virtual void valueChanged (Rts2Value * changed_value) ;
+    virtual void valueChanged (rts2core::Value * changed_value) ;
     // park copula
     virtual int standby ();
     virtual int off ();
@@ -180,7 +180,7 @@ int Vermes::off ()
   return Cupola::off ();
 }
 
-void Vermes::valueChanged (Rts2Value * changed_value)
+void Vermes::valueChanged (rts2core::Value * changed_value)
 {
   int ret ;
   static int lastMovementState ;

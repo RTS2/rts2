@@ -36,7 +36,7 @@ class NewportLamp: public Sensor
 		virtual ~NewportLamp (void);
 
 	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int info ();
@@ -45,27 +45,27 @@ class NewportLamp: public Sensor
 		char *lampDev;
 		rts2core::ConnSerial *lampSerial;
 
-		Rts2ValueBool *on;
+		rts2core::ValueBool *on;
 
-		Rts2ValueInteger *status;
-		Rts2ValueInteger *esr;
-		Rts2ValueFloat *amps;
-		Rts2ValueInteger *volts;
-		Rts2ValueInteger *watts;
-		Rts2ValueFloat *apreset;
-		Rts2ValueInteger *ppreset;
-		Rts2ValueFloat *alim;
-		Rts2ValueInteger *plim;
-		Rts2ValueInteger *idn;
-		Rts2ValueInteger *hours;
+		rts2core::ValueInteger *status;
+		rts2core::ValueInteger *esr;
+		rts2core::ValueFloat *amps;
+		rts2core::ValueInteger *volts;
+		rts2core::ValueInteger *watts;
+		rts2core::ValueFloat *apreset;
+		rts2core::ValueInteger *ppreset;
+		rts2core::ValueFloat *alim;
+		rts2core::ValueInteger *plim;
+		rts2core::ValueInteger *idn;
+		rts2core::ValueInteger *hours;
 
 		int writeCommand (const char *cmd);
 
 		int writeValue (const char *valueName, float val);
 		int writeValue (const char *valueName, int val);
 		template < typename T > int readValue (const char *valueName, T & val);
-		int getStatus (const char *valueName, Rts2ValueInteger *val);
-		int readStatus (const char *valueName, Rts2ValueInteger *val);
+		int getStatus (const char *valueName, rts2core::ValueInteger *val);
+		int readStatus (const char *valueName, rts2core::ValueInteger *val);
 };
 
 };
@@ -121,7 +121,7 @@ template < typename T > int NewportLamp::readValue (const char *valueName, T & v
 	return val->setValueCharArr (buf);
 }
 
-int NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
+int NewportLamp::getStatus (const char *valueName, rts2core::ValueInteger *val)
 {
 	int ret;
 	char buf[50];
@@ -138,7 +138,7 @@ int NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
 	return val->setValueInteger (strtol (buf + strlen (valueName), NULL, 16));
 }
 
-int NewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
+int NewportLamp::readStatus (const char *valueName, rts2core::ValueInteger *val)
 {
 	int ret;
 	ret = lampSerial->writePort (valueName, strlen (valueName));
@@ -178,12 +178,12 @@ NewportLamp::~NewportLamp ()
 	delete lampSerial;
 }
 
-int NewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int NewportLamp::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	int ret;
 	if (old_value == on)
 	{
-		if (((Rts2ValueBool *) new_value)->getValueBool ())
+		if (((rts2core::ValueBool *) new_value)->getValueBool ())
 			ret = writeCommand ("START") == 0 ? 0 : -2;
 		else
 			ret = writeCommand ("STOP") == 0 ? 0 : -2;

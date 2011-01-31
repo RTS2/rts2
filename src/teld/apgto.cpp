@@ -168,24 +168,24 @@ namespace rts2teld
     // further discussion with Petr required
     //int changeMasterState (int new_state);
     // Astro-Physics properties
-    Rts2ValueAltAz   *APAltAz ;
-    Rts2ValueInteger *APslew_rate;
-    Rts2ValueInteger *APmove_rate;
-    Rts2ValueDouble  *APlocal_sidereal_time;
-    Rts2ValueDouble  *APlocal_time;
-    Rts2ValueDouble  *APutc_offset;
-    Rts2ValueDouble  *APlongitude;
-    Rts2ValueDouble  *APlatitude;
-    Rts2ValueString  *APfirmware ;
-    Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
-    Rts2ValueBool    *mount_tracking ;
-    Rts2ValueBool    *transition_while_tracking ; 
-    Rts2ValueBool    *block_sync_apgto;
-    Rts2ValueBool    *block_move_apgto;
-    Rts2ValueBool    *assume_parked;
-    Rts2ValueBool    *slew_state; // (move_state)
-    Rts2ValueBool    *exposure_detection; 
-    Rts2ValueBool    *collision_detection; 
+    rts2core::ValueAltAz   *APAltAz ;
+    rts2core::ValueInteger *APslew_rate;
+    rts2core::ValueInteger *APmove_rate;
+    rts2core::ValueDouble  *APlocal_sidereal_time;
+    rts2core::ValueDouble  *APlocal_time;
+    rts2core::ValueDouble  *APutc_offset;
+    rts2core::ValueDouble  *APlongitude;
+    rts2core::ValueDouble  *APlatitude;
+    rts2core::ValueString  *APfirmware ;
+    rts2core::ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
+    rts2core::ValueBool    *mount_tracking ;
+    rts2core::ValueBool    *transition_while_tracking ; 
+    rts2core::ValueBool    *block_sync_apgto;
+    rts2core::ValueBool    *block_move_apgto;
+    rts2core::ValueBool    *assume_parked;
+    rts2core::ValueBool    *slew_state; // (move_state)
+    rts2core::ValueBool    *exposure_detection; 
+    rts2core::ValueBool    *collision_detection; 
 
   protected:
     virtual void startCupolaSync ();
@@ -217,7 +217,7 @@ namespace rts2teld
     virtual int abortAnyMotion () ;
     virtual bool shutterClosed() ;
     virtual int commandAuthorized (Rts2Conn * conn);
-    virtual void valueChanged (Rts2Value * changed_value) ;
+    virtual void valueChanged (rts2core::Value * changed_value) ;
   };
 
 };
@@ -1842,7 +1842,7 @@ APGTO::shutterClosed() {
 
   Rts2Conn * conn_shutter = getOpenConnection (ccdDevice);
   if( conn_shutter) {
-    Rts2Value * flishutter =  conn_shutter->getValue ("SHUTTER");
+    rts2core::Value * flishutter =  conn_shutter->getValue ("SHUTTER");
     if( flishutter) {
       if(flishutter->getValueType()== RTS2_VALUE_SELECTION) {
 	if( flishutter->getValueInteger() !=0)  { //0=LIGHT, 1=DARK
@@ -1856,7 +1856,7 @@ APGTO::shutterClosed() {
   return false ;
 }
 void 
-APGTO::valueChanged (Rts2Value * changed_value)
+APGTO::valueChanged (rts2core::Value * changed_value)
 {
   int ret= -1 ;
   int slew_rate= -1 ;
@@ -2139,7 +2139,7 @@ APGTO::info ()
 	  }
 	  Rts2Conn * conn_time = getOpenConnection (ccdDevice);
 	  if( conn_time) {
-	    Rts2Value * flitime = conn_time->getValue ("exposure_end"); // it is time when shutter closes!
+	    rts2core::Value * flitime = conn_time->getValue ("exposure_end"); // it is time when shutter closes!
 	    if( flitime) {
 	      if( flitime->getValueType() == RTS2_VALUE_TIME) { // No it is not a Double
 		if(( flitime->getValueDouble() - time(&now) + TIMEOUT_CCD_NOTTAKING_IMAGE) < 0.) {

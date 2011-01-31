@@ -45,28 +45,28 @@ class A3200:public Sensor
 		int commandAuthorized (Rts2Conn * conn);
 
 	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
 
 	private:
 		HAERCTRL hAerCtrl;
 		AXISINDEX mAxis;
 
-		Rts2ValueDoubleMinMax *ax1;
-		Rts2ValueDoubleMinMax *ax2;
-		Rts2ValueDoubleMinMax *ax3;
+		rts2core::ValueDoubleMinMax *ax1;
+		rts2core::ValueDoubleMinMax *ax2;
+		rts2core::ValueDoubleMinMax *ax3;
 
-		Rts2ValueLong *speed1;
-		Rts2ValueLong *speed2;
-		Rts2ValueLong *speed3;
+		rts2core::ValueLong *speed1;
+		rts2core::ValueLong *speed2;
+		rts2core::ValueLong *speed3;
 
-		Rts2ValueBool *out1;
-		Rts2ValueBool *out2;
-		Rts2ValueBool *out3;
+		rts2core::ValueBool *out1;
+		rts2core::ValueBool *out2;
+		rts2core::ValueBool *out3;
 
-		Rts2ValueBool *lightOff;
+		rts2core::ValueBool *lightOff;
 
-		Rts2ValueInteger *moveCount;
+		rts2core::ValueInteger *moveCount;
 
 		LPCTSTR initFile;
 
@@ -205,7 +205,7 @@ int A3200::setIO (AXISINDEX ax, bool state)
 }
 
 
-int A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int A3200::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == ax1)
 	{
@@ -221,15 +221,15 @@ int A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == out1)
 	{
-		return setIO (AXISMASK_1, ((Rts2ValueBool *) new_value)->getValueBool ());
+		return setIO (AXISMASK_1, ((rts2core::ValueBool *) new_value)->getValueBool ());
 	}
 	if (old_value == out2)
 	{
-		return setIO (AXISMASK_2, ((Rts2ValueBool *) new_value)->getValueBool ());
+		return setIO (AXISMASK_2, ((rts2core::ValueBool *) new_value)->getValueBool ());
 	}
 	if (old_value == out3)
 	{
-		return setIO (AXISMASK_3, ((Rts2ValueBool *) new_value)->getValueBool ());
+		return setIO (AXISMASK_3, ((rts2core::ValueBool *) new_value)->getValueBool ());
 	}
 	return Sensor::setValue (old_value, new_value);
 }

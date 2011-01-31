@@ -92,7 +92,7 @@ int Camera::setBinning (int in_vert, int in_hori)
 	return 0;
 }
 
-int Camera::box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *retv)
+int Camera::box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv)
 {
 	// tests for -1 -> full size
 	if (_x == -1)
@@ -827,7 +827,7 @@ void Camera::afterReadout ()
 	setTimeout (USEC_SEC);
 }
 
-int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == camFocVal)
 	{
@@ -845,7 +845,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == chipUsedReadout)
 	{
-		Rts2ValueRectangle *rect = (Rts2ValueRectangle *) new_value;
+		rts2core::ValueRectangle *rect = (rts2core::ValueRectangle *) new_value;
 		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt (), rect) == 0 ? 0 : -2;
 	}
 	if (old_value == xplate)
@@ -861,7 +861,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return rts2core::ScriptDevice::setValue (old_value, new_value);
 }
 
-void Camera::valueChanged (Rts2Value *changed_value)
+void Camera::valueChanged (rts2core::Value *changed_value)
 {
 	if (changed_value == binning)
 	{
@@ -884,11 +884,11 @@ void Camera::deviceReady (Rts2Conn * conn)
 	if (wheelDevice && !strcmp (conn->getName (), wheelDevice) && conn->getOtherDevClient ())
 	{
 		// copy content of device filter variable to our list..
-		Rts2Value *val = conn->getValue ("filter");
+		rts2core::Value *val = conn->getValue ("filter");
 		// it's filter and it's correct type
 		if (val != NULL && val->getValueType () == RTS2_VALUE_SELECTION)
 		{
-			camFilterVal->duplicateSelVals ((Rts2ValueSelection *) val);
+			camFilterVal->duplicateSelVals ((rts2core::ValueSelection *) val);
 			// sends filter metainformations to all connected devices
 			updateMetaInformations (camFilterVal);
 		}

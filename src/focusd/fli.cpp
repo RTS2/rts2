@@ -47,7 +47,7 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (float num);
-		Rts2ValueLong *focExtent;
+		rts2core::ValueLong *focExtent;
 
 	public:
 		Fli (int argc, char **argv);

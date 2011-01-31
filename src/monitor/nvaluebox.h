@@ -21,8 +21,8 @@
 #define __RTS2_NVALUEBOX__
 
 #include "../utils/valuearray.h"
-#include "../utils/rts2value.h"
-#include "../utils/rts2valuerectangle.h"
+#include "../utils/value.h"
+#include "../utils/valuerectangle.h"
 
 #include "nwindow.h"
 #include "nwindowedit.h"
@@ -39,17 +39,17 @@ namespace rts2ncurses
 class ValueBox
 {
 	public:
-		ValueBox (NWindow * top, Rts2Value * _val);
+		ValueBox (NWindow * top, rts2core::Value * _val);
 		virtual ~ValueBox (void);
 		virtual keyRet injectKey (int key) = 0;
 		virtual void draw () = 0;
 		virtual void sendValue (Rts2Conn * connection) = 0;
 		virtual bool setCursor () = 0;
 	protected:
-		Rts2Value * getValue () { return val; }
+		rts2core::Value * getValue () { return val; }
 	private:
 		NWindow * topWindow;
-		Rts2Value * val;
+		rts2core::Value * val;
 };
 
 /**
@@ -60,7 +60,7 @@ class ValueBox
 class ValueBoxBool:public ValueBox, NSelWindow
 {
 	public:
-		ValueBoxBool (NWindow * top, Rts2ValueBool * _val, int _x, int _y);
+		ValueBoxBool (NWindow * top, rts2core::ValueBool * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -75,7 +75,7 @@ class ValueBoxBool:public ValueBox, NSelWindow
 class ValueBoxString:public ValueBox, NWindowEdit
 {
 	public:
-		ValueBoxString (NWindow * top, Rts2Value * _val, int _x, int _y);
+		ValueBoxString (NWindow * top, rts2core::Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -90,7 +90,7 @@ class ValueBoxString:public ValueBox, NWindowEdit
 class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 {
 	public:
-		ValueBoxInteger (NWindow * top, Rts2ValueInteger * _val, int _x, int _y);
+		ValueBoxInteger (NWindow * top, rts2core::ValueInteger * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -105,7 +105,7 @@ class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 {
 	public:
-		ValueBoxLongInteger (NWindow * top, Rts2ValueLong * _val, int _x, int _y);
+		ValueBoxLongInteger (NWindow * top, rts2core::ValueLong * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -120,7 +120,7 @@ class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 class ValueBoxFloat:public ValueBox, NWindowEditDigits
 {
 	public:
-		ValueBoxFloat (NWindow * top, Rts2ValueFloat * _val, int _x, int _y);
+		ValueBoxFloat (NWindow * top, rts2core::ValueFloat * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -136,7 +136,7 @@ class ValueBoxFloat:public ValueBox, NWindowEditDigits
 class ValueBoxDouble:public ValueBox, NWindowEditDigits
 {
 	public:
-		ValueBoxDouble (NWindow * top, Rts2ValueDouble * _val, int _x, int _y);
+		ValueBoxDouble (NWindow * top, rts2core::ValueDouble * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -152,7 +152,7 @@ class ValueBoxDouble:public ValueBox, NWindowEditDigits
 class AbstractBoxSelection:public ValueBox, public NSelWindow
 {
 	public:
-		AbstractBoxSelection (NWindow * top, Rts2Value * _val, int _x, int _y);
+		AbstractBoxSelection (NWindow * top, rts2core::Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual bool setCursor ();
 	protected:
@@ -167,7 +167,7 @@ class AbstractBoxSelection:public ValueBox, public NSelWindow
 class ValueBoxSelection:public AbstractBoxSelection
 {
 	public:
-		ValueBoxSelection (NWindow * top, Rts2ValueSelection * _val, int _x, int _y);
+		ValueBoxSelection (NWindow * top, rts2core::ValueSelection * _val, int _x, int _y);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 };
@@ -180,7 +180,7 @@ class ValueBoxSelection:public AbstractBoxSelection
 class ValueBoxTimeDiff:public AbstractBoxSelection
 {
 	public:
-		ValueBoxTimeDiff (NWindow * top, Rts2ValueTime *_val, int _x, int _y);
+		ValueBoxTimeDiff (NWindow * top, rts2core::ValueTime *_val, int _x, int _y);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 };
@@ -193,7 +193,7 @@ class ValueBoxTimeDiff:public AbstractBoxSelection
 class ValueBoxRectangle:public ValueBox, NWindowEdit
 {
 	public:
-		ValueBoxRectangle (NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
+		ValueBoxRectangle (NWindow * top, rts2core::ValueRectangle * _val, int _x, int _y);
 		virtual ~ValueBoxRectangle ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -231,7 +231,7 @@ class ValueBoxArray:public ValueBox, NWindowEdit
 class ValueBoxPair:public ValueBox, NWindowEdit
 {
 	public:
-		ValueBoxPair (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2);
+		ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2);
 		virtual ~ValueBoxPair ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();

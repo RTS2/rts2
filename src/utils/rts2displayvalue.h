@@ -20,7 +20,7 @@
 #ifndef __RTS2_DISPLAYVALUE__
 #define __RTS2_DISPLAYVALUE__
 
-#include "rts2value.h"
+#include "value.h"
 #include "libnova_cpp.h"
 
 /**
@@ -35,5 +35,5 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-std::string getDisplayValue (Rts2Value * value);
+std::string getDisplayValue (rts2core::Value * value);
 #endif							 /* !__RTS2_DISPLAYVALUE__ */

@@ -48,7 +48,7 @@ class MiniccdIl:public Camera
 		struct timeval slave1ReadoutStart;
 		struct timeval slave2ExposureStart;
 
-		Rts2ValueBool * tempControl;
+		rts2core::ValueBool * tempControl;
 
 		CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 		CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];

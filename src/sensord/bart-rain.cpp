@@ -39,8 +39,8 @@ class BartRain: public SensorWeather
 		int rain_port;
 		const char *rain_detector;
 
-		Rts2ValueBool *rain;
-		Rts2ValueInteger *timeoutRain;
+		rts2core::ValueBool *rain;
+		rts2core::ValueInteger *timeoutRain;
 
 	protected:
 		virtual int processOption (int _opt);

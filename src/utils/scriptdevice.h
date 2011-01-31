@@ -40,12 +40,12 @@ class ScriptDevice:public Device
 		ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 
 	private:
-		Rts2ValueInteger * scriptRepCount;
-		Rts2ValueString *runningScript;
-		Rts2ValueString *scriptComment;
-		Rts2ValueInteger *commentNumber;
-		Rts2ValueInteger *scriptPosition;
-		Rts2ValueInteger *scriptLen;
+		rts2core::ValueInteger * scriptRepCount;
+		rts2core::ValueString *runningScript;
+		rts2core::ValueString *scriptComment;
+		rts2core::ValueInteger *commentNumber;
+		rts2core::ValueInteger *scriptPosition;
+		rts2core::ValueInteger *scriptLen;
 };
 
 }

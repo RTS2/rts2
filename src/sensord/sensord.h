@@ -73,7 +73,7 @@ class SensorWeather:public Sensor
 
 		virtual bool isGoodWeather ();
 	private:
-		Rts2ValueTime *nextGoodWeather;
+		rts2core::ValueTime *nextGoodWeather;
 };
 
 };

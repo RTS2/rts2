@@ -20,9 +20,12 @@
 #ifndef __RTS2_VALUESTAT__
 #define __RTS2_VALUESTAT__
 
-#include "rts2value.h"
+#include "value.h"
 
 #include <deque>
+
+namespace rts2core
+{
 
 /**
  * This class holds values which were obtained from series
@@ -30,11 +33,11 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueDoubleStat:public Rts2ValueDouble
+class ValueDoubleStat:public ValueDouble
 {
 	public:
-		Rts2ValueDoubleStat (std::string in_val_name);
-		Rts2ValueDoubleStat (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
+		ValueDoubleStat (std::string in_val_name);
+		ValueDoubleStat (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 
 		/**
 		 * Clear values in value list.
@@ -50,7 +53,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
 		virtual void send (Rts2Conn * connection);
-		virtual void setFromValue (Rts2Value * newValue);
+		virtual void setFromValue (Value * newValue);
 
 		int getNumMes () { return numMes; }
 
@@ -109,4 +112,6 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		double stdev;
 		std::deque < double >valueList;
 };
+
+}
 #endif							 /* !__RTS2_VALUESTAT__ */

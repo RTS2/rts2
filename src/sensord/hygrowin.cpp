@@ -44,8 +44,8 @@ class Hygrowin: public Sensor
 		char *device_file;
 		rts2core::ConnSerial *hygroConn;
 
-		Rts2ValueFloat *temperature;
-		Rts2ValueFloat *humidity;
+		rts2core::ValueFloat *temperature;
+		rts2core::ValueFloat *humidity;
 };
 
 };

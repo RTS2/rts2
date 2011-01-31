@@ -34,16 +34,16 @@ class MM2500:public Gpib
 
 	protected:
 		virtual int init ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
-		Rts2ValueInteger *ax1;
-		Rts2ValueInteger *ax2;
+		rts2core::ValueInteger *ax1;
+		rts2core::ValueInteger *ax2;
 
-		Rts2ValueInteger *dp1;
-		Rts2ValueInteger *dp2;
+		rts2core::ValueInteger *dp1;
+		rts2core::ValueInteger *dp2;
 
-		Rts2ValueInteger *moveCount;
+		rts2core::ValueInteger *moveCount;
 
 		int moveAxis (int axis, int newVal);
 
@@ -100,7 +100,7 @@ int MM2500::init ()
 	return ret;
 }
 
-int MM2500::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int MM2500::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == ax1)
 	{

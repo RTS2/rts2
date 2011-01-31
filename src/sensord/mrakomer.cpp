@@ -47,34 +47,34 @@ class Mrakomer: public SensorWeather
 
 		virtual int idle ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
 		char *device_file;
 		rts2core::ConnSerial *mrakConn;
 
-		Rts2ValueDoubleStat *tempDiff;
-		Rts2ValueDoubleStat *tempIn;
-		Rts2ValueDoubleStat *tempOut;
+		rts2core::ValueDoubleStat *tempDiff;
+		rts2core::ValueDoubleStat *tempIn;
+		rts2core::ValueDoubleStat *tempOut;
 
 		// use this value only for logging to detect if we reported trips
 		double lastTempDiff;
 
-		Rts2ValueInteger *numVal;
+		rts2core::ValueInteger *numVal;
 
-		Rts2ValueDouble *triggerBad;
-		Rts2ValueDouble *triggerGood;
+		rts2core::ValueDouble *triggerBad;
+		rts2core::ValueDouble *triggerGood;
 
-		Rts2ValueBool *heater;
+		rts2core::ValueBool *heater;
 
-		Rts2ValueInteger *numberMes;
-		Rts2ValueInteger *mrakStatus;
+		rts2core::ValueInteger *numberMes;
+		rts2core::ValueInteger *mrakStatus;
 
-		Rts2ValueTime *heatStateChangeTime;
-		Rts2ValueInteger *heatInterval;
-		Rts2ValueInteger *heatDuration;
+		rts2core::ValueTime *heatStateChangeTime;
+		rts2core::ValueInteger *heatInterval;
+		rts2core::ValueInteger *heatDuration;
 
-		Rts2ValueInteger *connTimeout;
+		rts2core::ValueInteger *connTimeout;
 
 		/**
 		 * Read sensor values.
@@ -242,7 +242,7 @@ int Mrakomer::idle ()
 	return SensorWeather::idle ();
 }
 
-int Mrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Mrakomer::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == heatInterval || old_value == heatDuration)
 	{

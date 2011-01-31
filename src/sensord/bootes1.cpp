@@ -39,11 +39,11 @@ class Bootes1:public Sensor
 
 		virtual int info ();
 	
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 	private:
-		Rts2ValueBool *telSwitch;
-		Rts2ValueBool *asmSwitch;
+		rts2core::ValueBool *telSwitch;
+		rts2core::ValueBool *asmSwitch;
 
 		const char *ford_file;
 		rts2core::FordConn *fordConn;
@@ -99,11 +99,11 @@ int Bootes1::processOption (int in_opt)
 	return 0;
 }
 
-int Bootes1::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Bootes1::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 	if (old_value == telSwitch)
 	{
-		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
 		{
 			return fordConn->ZAP(TEL_SWITCH) == 0 ? 0 : -2;
 		}
@@ -114,7 +114,7 @@ int Bootes1::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == asmSwitch)
 	{
-		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		if (((rts2core::ValueBool* )new_value)->getValueBool () == true)
 		{
 			return fordConn->ZAP(ASM_SWITCH) == 0 ? 0 : -2;
 		}

@@ -40,7 +40,7 @@ class Phytron:public Sensor
 		virtual int info ();
 
 	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
 
 	private:
@@ -51,13 +51,13 @@ class Phytron:public Sensor
 
 		char cmdbuf[CMDBUF_LEN];
 
-		Rts2ValueInteger* axis0;
-		Rts2ValueInteger* runFreq;
-		Rts2ValueSelection* phytronParams[47];
+		rts2core::ValueInteger* axis0;
+		rts2core::ValueInteger* runFreq;
+		rts2core::ValueSelection* phytronParams[47];
 
-		int readValue (int ax, int reg, Rts2ValueInteger *val);
+		int readValue (int ax, int reg, rts2core::ValueInteger *val);
 		int readAxis ();
-		int setValue (int ax, int reg, Rts2ValueInteger *val);
+		int setValue (int ax, int reg, rts2core::ValueInteger *val);
 		int setAxis (int new_val);
 		const char *dev;
 };
@@ -98,7 +98,7 @@ int Phytron::readPort ()
 	return phytronDev->readPort (cmdbuf, CMDBUF_LEN, '\003') > 0 ? 0 : -1;
 }
 
-int Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
+int Phytron::readValue (int ax, int reg, rts2core::ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iR", ax, reg);
@@ -135,7 +135,7 @@ int Phytron::readAxis ()
 	return ret;
 }
 
-int Phytron::setValue (int ax, int reg, Rts2ValueInteger *val)
+int Phytron::setValue (int ax, int reg, rts2core::ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iS%i", ax, reg, val->getValueInteger ());
@@ -176,14 +176,14 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
-		((Rts2ValueSelection *) phytronParams[0])->addSelVal ("rotational");
-		((Rts2ValueSelection *) phytronParams[0])->addSelVal ("linear");
+		((rts2core::ValueSelection *) phytronParams[0])->addSelVal ("rotational");
+		((rts2core::ValueSelection *) phytronParams[0])->addSelVal ("linear");
 
-		createValue ((Rts2ValueSelection *)phytronParams[1], "P02", "Measuring units of movement", false);
-		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("step");
-		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("mm");
-		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("inch");
-		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("degree"); */
+		createValue ((rts2core::ValueSelection *)phytronParams[1], "P02", "Measuring units of movement", false);
+		((rts2core::ValueSelection *) phytronParams[1])->addSelVal ("step");
+		((rts2core::ValueSelection *) phytronParams[1])->addSelVal ("mm");
+		((rts2core::ValueSelection *) phytronParams[1])->addSelVal ("inch");
+		((rts2core::ValueSelection *) phytronParams[1])->addSelVal ("degree"); */
 
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
@@ -193,12 +193,12 @@ Phytron::~Phytron (void)
 	delete phytronDev;
 }
 
-int Phytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Phytron::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == axis0)
 		return setAxis (new_value->getValueInteger ());
 	if (old_value == runFreq)
-		return setValue (1, 14, (Rts2ValueInteger *)new_value);
+		return setValue (1, 14, (rts2core::ValueInteger *)new_value);
 	return Sensor::setValue (old_value, new_value);
 }
 

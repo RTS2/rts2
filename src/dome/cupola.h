@@ -94,11 +94,11 @@ class Cupola:public Dome
 								 // defaults to 0, 0; will be readed from config file
 		struct ln_lnlat_posn *observer;
 
-		Rts2ValueDouble *tarRa;
-		Rts2ValueDouble *tarDec;
-		Rts2ValueDouble *tarAlt;
-		Rts2ValueDouble *tarAz;
-		Rts2ValueDouble *currentAz;
+		rts2core::ValueDouble *tarRa;
+		rts2core::ValueDouble *tarDec;
+		rts2core::ValueDouble *tarAlt;
+		rts2core::ValueDouble *tarAz;
+		rts2core::ValueDouble *currentAz;
 
 		char *configFile;
 

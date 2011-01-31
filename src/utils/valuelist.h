@@ -22,26 +22,29 @@
 
 #include <vector>
 
-#include "rts2value.h"
+#include "value.h"
 #include "rts2app.h"
 
+namespace rts2core
+{
+
 /**
- * Represent set of Rts2Values. It's used to store values which shall
+ * Represent set of Values. It's used to store values which shall
  * be reseted when new script starts etc..
  *
  * @ingroup RTS2Value
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueVector:public std::vector < Rts2Value * >
+class ValueVector:public std::vector < Value * >
 {
 	public:
-		Rts2ValueVector ()
+		ValueVector ()
 		{
 		}
-		~Rts2ValueVector (void)
+		~ValueVector (void)
 		{
-			for (Rts2ValueVector::iterator iter = begin (); iter != end (); iter++)
+			for (ValueVector::iterator iter = begin (); iter != end (); iter++)
 				delete *iter;
 		}
 
@@ -52,12 +55,12 @@ class Rts2ValueVector:public std::vector < Rts2Value * >
 		 *
 		 * @return Interator reference of the value with given name.
 		 */
-		Rts2ValueVector::iterator getValueIterator (const char *value_name)
+		ValueVector::iterator getValueIterator (const char *value_name)
 		{
-			Rts2ValueVector::iterator val_iter;
+			ValueVector::iterator val_iter;
 			for (val_iter = begin (); val_iter != end (); val_iter++)
 			{
-				Rts2Value *val;
+				Value *val;
 				val = (*val_iter);
 				if (val->isValue (value_name))
 					return val_iter;
@@ -72,9 +75,9 @@ class Rts2ValueVector:public std::vector < Rts2Value * >
 		 *
 		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
 		 */
-		Rts2Value *getValue (const char *value_name)
+		Value *getValue (const char *value_name)
 		{
-			Rts2ValueVector::iterator val_iter = getValueIterator (value_name);
+			ValueVector::iterator val_iter = getValueIterator (value_name);
 			if (val_iter == end ())
 				return NULL;
 			return (*val_iter);
@@ -87,7 +90,7 @@ class Rts2ValueVector:public std::vector < Rts2Value * >
 		 */
 		void removeValue (const char *value_name)
 		{
-			Rts2ValueVector::iterator val_iter = getValueIterator (value_name);
+			ValueVector::iterator val_iter = getValueIterator (value_name);
 			if (val_iter == end ())
 				return;
 			delete (*val_iter);
@@ -105,11 +108,11 @@ class Rts2ValueVector:public std::vector < Rts2Value * >
 class Rts2CondValue
 {
 	private:
-		Rts2Value *value;
+		Value *value;
 		int stateCondition;
 		int save;
 	public:
-		Rts2CondValue (Rts2Value * in_value, int in_stateCondition)
+		Rts2CondValue (Value * in_value, int in_stateCondition)
 		{
 			value = in_value;
 			stateCondition = in_stateCondition;
@@ -125,7 +128,7 @@ class Rts2CondValue
 		void clearLoadedFromQue () { save &= ~0x08; }
 		bool loadedFromQue () { return save & 0x08; }
 
-		Rts2Value *getValue () { return value; }
+		Value *getValue () { return value; }
 };
 
 /**
@@ -154,21 +157,21 @@ class Rts2CondValueVector:public std::vector < Rts2CondValue * >
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueQue
+class ValueQue
 {
 	private:
 		char operation;
 		Rts2CondValue *old_value;
-		Rts2Value *new_value;
+		Value *new_value;
 	public:
-		Rts2ValueQue (Rts2CondValue * in_old_value, char in_operation,
-			Rts2Value * in_new_value)
+		ValueQue (Rts2CondValue * in_old_value, char in_operation,
+			Value * in_new_value)
 		{
 			old_value = in_old_value;
 			operation = in_operation;
 			new_value = in_new_value;
 		}
-		~Rts2ValueQue (void)
+		~ValueQue (void)
 		{
 		}
 		int getStateCondition ()
@@ -183,7 +186,7 @@ class Rts2ValueQue
 		{
 			return old_value;
 		}
-		Rts2Value *getOldValue ()
+		Value *getOldValue ()
 		{
 			return old_value->getValue ();
 		}
@@ -191,28 +194,28 @@ class Rts2ValueQue
 		{
 			return operation;
 		}
-		Rts2Value *getNewValue ()
+		Value *getNewValue ()
 		{
 			return new_value;
 		}
 };
 
 /**
- * Holds Rts2ValueQue.
+ * Holds ValueQue.
  *
  * @ingroup RTS2Value
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueQueVector:public std::vector < Rts2ValueQue * >
+class ValueQueVector:public std::vector < ValueQue * >
 {
 	public:
-		Rts2ValueQueVector ()
+		ValueQueVector ()
 		{
 		}
-		~Rts2ValueQueVector (void)
+		~ValueQueVector (void)
 		{
-			for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
+			for (ValueQueVector::iterator iter = begin (); iter != end (); iter++)
 				delete *iter;
 		}
 
@@ -223,12 +226,14 @@ class Rts2ValueQueVector:public std::vector < Rts2ValueQue * >
 		 *
 		 * @return True if que value vector contain given value.
 		 */
-		bool contains (Rts2Value *value)
+		bool contains (Value *value)
 		{
-			for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
+			for (ValueQueVector::iterator iter = begin (); iter != end (); iter++)
 				if ((*iter)->getOldValue () == value)
 					return true;
 			return false;
 		}
 };
+
+}
 #endif							 /* !__RTS2_VALUELIST__ */

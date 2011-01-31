@@ -110,25 +110,25 @@ class Dummy:public Sensor
 		 	Sensor::setFullBopState (new_state);
 		}
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * newValue)
 		{
 		  	if (old_value == hwError)
 			{
-				maskState (DEVICE_ERROR_MASK, ((Rts2ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
+				maskState (DEVICE_ERROR_MASK, ((rts2core::ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
 				return 0;
 			}
 			if (old_value == goodWeather)
 			{
-			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
+			  	setWeatherState (((rts2core::ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
 				return 0;
 			}
 			if (old_value == stopMove)
 			{
-				setStopState (((Rts2ValueBool *)newValue)->getValueBool (), "move state set from stop_move value");
+				setStopState (((rts2core::ValueBool *)newValue)->getValueBool (), "move state set from stop_move value");
 			}
 			if (old_value == timerEnabled)
 			{
-				if (((Rts2ValueBool *) newValue)->getValueBool () == true)
+				if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
 				{
 					deleteTimers (EVENT_TIMER_TEST);
 					addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
@@ -137,7 +137,7 @@ class Dummy:public Sensor
 			}
 			if (old_value == generateCriticalMessages)
 			{
-				if (((Rts2ValueBool *) newValue)->getValueBool () == true)
+				if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
 				{
 					sendCriticalMessage ();
 				}
@@ -181,24 +181,24 @@ class Dummy:public Sensor
 			return 0;
 		}
 	private:
-		Rts2ValueInteger *testInt;
-		Rts2ValueBool *goodWeather;
-		Rts2ValueBool *stopMove;
-		Rts2ValueBool *testOnOff;
-		Rts2ValueDoubleStat *statTest;
+		rts2core::ValueInteger *testInt;
+		rts2core::ValueBool *goodWeather;
+		rts2core::ValueBool *stopMove;
+		rts2core::ValueBool *testOnOff;
+		rts2core::ValueDoubleStat *statTest;
 		rts2core::DoubleArray *statContent1;
 		rts2core::DoubleArray *statContent2;
 		rts2core::IntegerArray *statContent3;
 		rts2core::BoolArray *boolArray;
 		rts2core::TimeArray *timeArray;
-		Rts2ValueDoubleStat *statTest5;
-		Rts2ValueDoubleMinMax *minMaxTest;
-		Rts2ValueBool *hwError;
+		rts2core::ValueDoubleStat *statTest5;
+		rts2core::ValueDoubleMinMax *minMaxTest;
+		rts2core::ValueBool *hwError;
 
-		Rts2ValueBool *timerEnabled;
-		Rts2ValueLong *timerCount;
+		rts2core::ValueBool *timerEnabled;
+		rts2core::ValueLong *timerCount;
 		
-		Rts2ValueBool *generateCriticalMessages;
+		rts2core::ValueBool *generateCriticalMessages;
 
 		void sendCriticalMessage ()
 		{
