@@ -18,6 +18,8 @@
  */
 
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/fcntl.h>
@@ -64,6 +66,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _arg
 	lockPrefix = NULL;
 	lock_fname = NULL;
 	lock_file = 0;
+	runAs = NULL;
 
 	daemonize = DO_DAEMONIZE;
 
@@ -78,6 +81,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _arg
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
 	addOption (OPT_LOCALPORT, "local-port", 1, "define local port on which we will listen to incoming requests");
 	addOption (OPT_LOCKPREFIX, "lock-prefix", 1, "prefix for lock file");
+	addOption (OPT_RUNAS, "run-as", 1, "run under specified user (and group, if it's provided after .)");
 }
 
 Daemon::~Daemon (void)
@@ -102,6 +106,9 @@ int Daemon::processOption (int in_opt)
 			break;
 		case OPT_LOCKPREFIX:
 			setLockPrefix (optarg);
+			break;
+		case OPT_RUNAS:
+			runAs = optarg;
 			break;
 		default:
 			return Rts2Block::processOption (in_opt);
@@ -173,6 +180,9 @@ int Daemon::doDaemonize ()
 		lock_file = 0;
 		exit (0);
 	}
+	if (runAs)
+		switchUser (runAs);
+
 	close (0);
 	close (1);
 	close (2);
@@ -980,4 +990,55 @@ void Daemon::signaledHUP ()
 void Daemon::sigHUP (int sig)
 {
 	doHupIdleLoop = true;
+}
+
+void Daemon::switchUser (const char *usrgrp)
+{
+	char *user = (char *) usrgrp;
+	char *grp = strchr (user, '.');
+	if (grp)
+	{
+		*grp = '\0';
+		grp++;
+	}
+
+	errno = 0;
+
+	struct passwd *pw = getpwnam (user);
+	if (pw == NULL)
+	{
+		std::cerr << "cannot find user with name " << usrgrp;
+		if (errno)
+			std::cerr << strerror (errno) << " (" << errno << ")";
+		std::cerr << ", exiting" << std::endl;
+		exit (3);
+	}
+
+	int grpid = pw->pw_gid;
+
+	if (grp)
+	{
+		struct group *gr = getgrnam (grp);
+		if (gr == NULL)
+		{
+			std::cerr << "cannot find group with name " << grp;
+			if (errno)
+				std::cerr << strerror (errno) << " (" << errno << ")";
+			std::cerr << ", exiting" << std::endl;
+			exit (5);
+		}
+		grpid = gr->gr_gid;
+	}
+
+	if (setgid (grpid))
+	{
+		std::cerr << "cannot switch group to uid " << grpid << " " << strerror (errno) << std::endl;
+		exit (4);
+	}
+
+	if (setuid (pw->pw_uid))
+	{
+		std::cerr << "cannot switch user to uid " << pw->pw_uid << " " << strerror (errno) << std::endl;
+		exit (4);
+	}
 }

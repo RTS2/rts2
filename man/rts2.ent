@@ -140,11 +140,14 @@
 " >
 
 <!ENTITY deviceapp "
-<arg choice='opt'><option>-d</option> <replaceable>device name</replaceable></arg>
-<arg choice='opt'><option>--modefile</option> <replaceable>filename</replaceable></arg>
-<arg choice='opt' rep='repeat'><option>--server</option> <replaceable>hostname<arg choice='opt'>:port</arg></replaceable></arg>
-<arg choice='opt'><option>--localhost</option> <replaceable>hostname</replaceable></arg>
+<arg choice='opt'><option>-d</option> <replaceable class='parameter'>device name</replaceable></arg>
+<arg choice='opt'><option>--modefile</option> <replaceable class='parameter'>filename</replaceable></arg>
+<arg choice='opt' rep='repeat'><option>--server</option> <replaceable class='parameter'>hostname<arg choice='opt'>:port</arg></replaceable></arg>
+<arg choice='opt'><option>--localhost</option> <replaceable class='parameter'>hostname</replaceable></arg>
 <arg choice='opt'><option>--notcheck</option></arg>
+<arg choice='opt'><option>--run-as</option> <replaceable class='parameter'>user<arg choice='opt'>.group</arg></replaceable></arg>
+<arg choice='opt'><option>--lock-prefix</option> <replaceable class='parameter'>path to lock file</replaceable></arg>
+<arg choice='opt'><option>--local-port</option> <replaceable class='parameter'>local port</replaceable></arg>
 <arg choice='opt'><option>-i</option></arg>
 &basicapp;
 " >
@@ -172,7 +175,9 @@
     <para>
       Specify modefile. Modefiles are used to set different device modes.  They
       contains name of modes, followed by list of variables and desired values.
-      They are used to quickly change between different device modes.
+      They are used to quickly change between different device modes. Please see
+      <citerefentry><refentrytitle>rts2.modelfiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      for modefiles description.
     </para>
   </listitem>
 </varlistentry>
@@ -199,6 +204,59 @@
       not configured properly, and the user cannot change how network is
       configured. Together with <emphasis>--local-port</emphasis> it can
       be used to run RTS2 through tunnels.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--notcheck</option></term>
+  <listitem>
+    <para>
+      Ignore unset variables. Some variables are marked as required to be
+      not-null before the component is initialized. This is done by modefiles -
+      see
+      <citerefentry><refentrytitle>rts2.modelfiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      for details. If the programme should be run without those check, the
+      <option>--notcheck</option> provides exactly this.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--run-as</option> <replaceable class='parameter'>user<arg choice='opt'>.group</arg></replaceable></term>
+  <listitem>
+    <para>
+      Run as specified user. The main program must be than run as superuser.
+      User (and possibly group) is changed right after fork call.
+    </para>
+    <para>
+      This option should specifically be provided for services who do not need
+      access to hardware, and especially any services accesible from outside
+      (e.g.
+      <citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>).
+      You must make sure that the database is accessible from this user - but
+      you should get a clear warning during initialization if that's not the
+      case.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--lock-prefix</option> <replaceable class='parameter'>path to lock file</replaceable></term>
+  <listitem>
+    <para>
+      Specify lock prefix. The default is <emphasis>/var/run/RTS2_</emphasis>. The lock files, which are used to signify that the device is up and running, are device names prefixed with lock prefix.
+    </para>
+    <para>
+      This option is particualarly usefull for non-root installations.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--local-port</option> <replaceable class='parameter'>local port</replaceable></term>
+  <listitem>
+    <para>
+      Specify local port, which is opened to listed for incoming TCP-IP
+      traffic. Ussually the port number is not fixed, and is taken from the
+      system, which provides some unused port number. If you for any reason
+      would like to provide port number, you can do it using this option.
     </para>
   </listitem>
 </varlistentry>

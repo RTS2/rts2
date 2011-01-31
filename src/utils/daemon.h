@@ -499,6 +499,8 @@ class Daemon:public Rts2Block
 		const char * lock_fname;
 		int lock_file;
 
+		const char *runAs;
+
 		// daemon state
 		int state;
 
@@ -524,6 +526,13 @@ class Daemon:public Rts2Block
 		 * Prefix (directory) for lock file.
 		 */
 		const char *lockPrefix;
+
+		/**
+		 * Switch running user to new user (and group, if provided with .)
+		 *
+		 * @param usrgrp user and possibly group, separated by .
+		 */
+		void switchUser (const char *usrgrp);
 };
 
 }

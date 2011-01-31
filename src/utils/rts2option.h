@@ -49,6 +49,8 @@
 
 #define OPT_NOTCHECKNULL    1010
 
+#define OPT_RUNAS           1011
+
 /**
  * Start of local option number playground.
  */
