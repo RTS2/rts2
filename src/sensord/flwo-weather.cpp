@@ -199,7 +199,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (me_hail_duration, "me_hail_duration", "MEarth hail duration", false);
 	createValue (me_hail_intensity, "me_hail_intensity", "MEarth hail intensity", false);
 	createValue (me_sky_temp, "me_sky_temp", "MEarth sky temperature", false);
-	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false);
+	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false, RTS2_VALUE_WRITABLE);
 	me_sky_limit->setValueFloat (-20);
 
 	weatherFile = NULL;
