@@ -28,7 +28,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "rts2block.h"
+#include "block.h"
 #include "rts2client.h"
 #include "rts2devclient.h"
 #include "rts2logstream.h"
@@ -37,7 +37,7 @@
 
 using namespace rts2core;
 
-Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, int _centrald_num, char *_name):Rts2Conn (in_master)
+Rts2ConnClient::Rts2ConnClient (rts2core::Block * in_master, int _centrald_num, char *_name):Rts2Conn (in_master)
 {
 	setName (_centrald_num, _name);
 	setConnState (CONN_RESOLVING_DEVICE);
@@ -132,7 +132,7 @@ int Rts2Client::willConnect (Rts2Address * in_addr)
 	return 1;
 }
 
-Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc, in_argv)
+Rts2Client::Rts2Client (int in_argc, char **in_argv):rts2core::Block (in_argc, in_argv)
 {
 	central_host = "localhost";
 	central_port = CENTRALD_PORT;
@@ -159,7 +159,7 @@ int Rts2Client::processOption (int in_opt)
 			central_port = optarg;
 			break;
 		default:
-			return Rts2Block::processOption (in_opt);
+			return rts2core::Block::processOption (in_opt);
 	}
 	return 0;
 }
@@ -175,7 +175,7 @@ int Rts2Client::init ()
 {
 	int ret;
 
-	ret = Rts2Block::init ();
+	ret = rts2core::Block::init ();
 	if (ret)
 	{
 		std::cerr << "Cannot init application, exiting." << std::endl;
@@ -213,7 +213,7 @@ int Rts2Client::run ()
 	return 0;
 }
 
-Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):Rts2Conn (in_master)
+Rts2ConnCentraldClient::Rts2ConnCentraldClient (rts2core::Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):Rts2Conn (in_master)
 {
 	master_host = in_master_host;
 	master_port = in_master_port;
@@ -291,7 +291,7 @@ void Rts2ConnCentraldClient::setState (int in_value, char * msg)
 	master->setMasterState (this, in_value);
 }
 
-Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login, const char *in_password):Rts2Command (in_master)
+Rts2CommandLogin::Rts2CommandLogin (rts2core::Block * in_master, const char *in_login, const char *in_password):Rts2Command (in_master)
 {
 	std::ostringstream _os;
 	login = in_login;

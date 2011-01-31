@@ -165,24 +165,24 @@ class Rts2DevClientWriteImage:public rts2core::Rts2DevClient
 class Rts2CommandQueImage:public rts2core::Rts2Command
 {
 	public:
-		Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
+		Rts2CommandQueImage (rts2core::Block * in_owner, Rts2Image * image);
 };
 
 class Rts2CommandQueDark:public rts2core::Rts2Command
 {
 	public:
-		Rts2CommandQueDark (Rts2Block * in_owner, Rts2Image * image);
+		Rts2CommandQueDark (rts2core::Block * in_owner, Rts2Image * image);
 };
 
 class Rts2CommandQueFlat:public rts2core::Rts2Command
 {
 	public:
-		Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image);
+		Rts2CommandQueFlat (rts2core::Block * in_owner, Rts2Image * image);
 };
 
 class Rts2CommandQueObs:public rts2core::Rts2Command
 {
 	public:
-		Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId);
+		Rts2CommandQueObs (rts2core::Block * in_owner, int in_obsId);
 };
 #endif							 /* !__RTS2_DEVCLIENT_IMG__ */

@@ -21,7 +21,7 @@
 
 using namespace rts2plan;
 
-ConnSelector::ConnSelector (Rts2Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
+ConnSelector::ConnSelector (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
 	waitNext = false;
 }

@@ -40,7 +40,7 @@ namespace rts2core
 class ConnFork:public Rts2ConnNoSend
 {
 	public:
-		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout = 0);
+		ConnFork (rts2core::Block * _master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout = 0);
 		virtual ~ConnFork ();
 
 

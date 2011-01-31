@@ -134,7 +134,7 @@ void NSelWindow::changeSelRow (int change)
 	selrow %= maxrow;
 }
 
-NDevListWindow::NDevListWindow (Rts2Block * in_block, connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
+NDevListWindow::NDevListWindow (rts2core::Block * in_block, connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
 {
 	block = in_block;
 	conns = in_conns;

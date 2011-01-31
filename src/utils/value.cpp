@@ -22,7 +22,7 @@
 #include <sstream>
 
 #include "libnova_cpp.h"
-#include "rts2block.h"
+#include "block.h"
 #include "value.h"
 #include "timestamp.h"
 

@@ -20,7 +20,7 @@
 #ifndef __RTS2_TARGET__
 #define __RTS2_TARGET__
 
-#include "rts2block.h"
+#include "block.h"
 
 #include <libnova/libnova.h>
 #include <time.h>

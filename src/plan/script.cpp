@@ -112,7 +112,7 @@ int Script::getNextParamInteger (int *val)
 	return 0;
 }
 
-Script::Script (Rts2Block * _master):Rts2Object ()
+Script::Script (rts2core::Block * _master):Rts2Object ()
 {
 	defaultDevice[0] = '\0';
 	master = _master;

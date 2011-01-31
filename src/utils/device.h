@@ -81,7 +81,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		/**
 		 * Construct new connection to central server.
 		 *
-		 * @param _master        Rts2Block which commands connection.
+		 * @param _master        rts2core::Block which commands connection.
 		 * @param _device_host   Hostname of computer with device.
 		 * @param _device_port   Listening port for incoming connections
 		 * @param _device_name   Name of the device.
@@ -90,7 +90,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		 * @param _master_port   Central server port for the connectio.
 		 * @param _serverNum     Server number (number of centrald which device is connected to)
 		 */
-		Rts2DevConnMaster (Rts2Block * _master, char *_device_host, int _device_port,
+		Rts2DevConnMaster (rts2core::Block * _master, char *_device_host, int _device_port,
 			const char *_device_name, int _device_type,
 			const char *_master_host, int _master_port, int _serverNum);
 		virtual ~ Rts2DevConnMaster (void);
@@ -126,7 +126,7 @@ class Rts2DevConnMaster:public Rts2Conn
 class Rts2CommandRegister:public Rts2Command
 {
 	public:
-		Rts2CommandRegister (Rts2Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
+		Rts2CommandRegister (rts2core::Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
 			:Rts2Command (in_master)
 		{
 			std::ostringstream _os;

@@ -100,7 +100,7 @@ class ConnTCP:public Rts2ConnNoSend
 		 * @param _hostname APC UPSD IP address or hostname.
 		 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
 		 */
-		ConnTCP (Rts2Block *_master, const char *_hostname, int _port);
+		ConnTCP (rts2core::Block *_master, const char *_hostname, int _port);
 
 		/**
 		 * Init TCP/IP connection to host given at constructor.

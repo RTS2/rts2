@@ -23,7 +23,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "../utils/rts2block.h"
 #include "../utils/scriptdevice.h"
 #include "imghdr.h"
 

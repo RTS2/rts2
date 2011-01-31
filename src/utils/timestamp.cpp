@@ -19,7 +19,7 @@
 
 #include "timestamp.h"
 #include "rts2format.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 
 #include <iomanip>
 #include <math.h>

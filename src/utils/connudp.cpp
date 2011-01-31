@@ -30,7 +30,7 @@
 
 using namespace rts2core;
 
-ConnUDP::ConnUDP (int _port, Rts2Block * _master, size_t _maxSize):Rts2ConnNoSend (_master)
+ConnUDP::ConnUDP (int _port, rts2core::Block * _master, size_t _maxSize):Rts2ConnNoSend (_master)
 {
 	setPort (_port);
 	maxSize = _maxSize;

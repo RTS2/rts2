@@ -27,7 +27,7 @@
 
 using namespace rts2core;
 
-ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port):Rts2ConnNoSend (_master)
+ConnTCP::ConnTCP (rts2core::Block *_master, const char *_hostname, int _port):Rts2ConnNoSend (_master)
 {
 	hostname = _hostname;
 	port = _port;

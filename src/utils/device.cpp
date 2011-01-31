@@ -239,7 +239,7 @@ void Rts2DevConn::setConnState (conn_state_t new_conn_state)
 	}
 }
 
-Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Rts2Conn (-1, _master)
+Rts2DevConnMaster::Rts2DevConnMaster (rts2core::Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum):Rts2Conn (-1, _master)
 {
 	device_host = _device_host;
 	device_port = _device_port;

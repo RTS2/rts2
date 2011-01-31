@@ -24,7 +24,7 @@
 
 #include "camd.h"
 #include "../utils/rts2device.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 
 #include "sbigudrv.h"
 #include "csbigcam.h"

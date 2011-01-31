@@ -21,7 +21,7 @@
 #include <sys/ioctl.h>
 
 #include "connserial.h"
-#include "rts2block.h"
+#include "block.h"
 #include <iomanip>
 
 using namespace rts2core;
@@ -36,7 +36,7 @@ int ConnSerial::setAttr ()
 	return 0;
 }
 
-ConnSerial::ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime):Rts2ConnNoSend (_master)
+ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime):Rts2ConnNoSend (_master)
 {
 	sock = open (_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 

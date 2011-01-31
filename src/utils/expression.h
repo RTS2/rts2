@@ -20,7 +20,7 @@
 #ifndef __RTS2_EXPRESSION__
 #define __RTS2_EXPRESSION__
 
-#include "rts2block.h"
+#include "block.h"
 #include "error.h"
 
 #include <ostream>

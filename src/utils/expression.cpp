@@ -73,7 +73,7 @@ Expression *ExpressionPair::add (Expression *_exp)
 
 double ExpressionValue::evaluate ()
 {
-	rts2core::Value *val = ((Rts2Block *)getMasterApp ())->getValue (deviceName.c_str (), valueName.c_str ());
+	rts2core::Value *val = ((rts2core::Block *)getMasterApp ())->getValue (deviceName.c_str (), valueName.c_str ());
 	if (val)
 		return val->getValueDouble ();
 	throw ExpressionErrorValueMissing (deviceName.c_str (), valueName.c_str ());

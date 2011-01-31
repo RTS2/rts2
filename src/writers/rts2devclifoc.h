@@ -52,7 +52,7 @@ class Rts2ConnFocus:public rts2core::ConnFork
 		virtual void initFailed ();
 		virtual void beforeFork ();
 	public:
-		Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
+		Rts2ConnFocus (rts2core::Block * in_master, Rts2Image * in_image,
 			const char *in_exe, int in_endEvent);
 		virtual ~ Rts2ConnFocus (void);
 		virtual int newProcess ();

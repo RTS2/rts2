@@ -20,7 +20,7 @@
 #ifndef __RTS2_DAEMON__
 #define __RTS2_DAEMON__
 
-#include "rts2block.h"
+#include "block.h"
 #include "rts2logstream.h"
 #include "value.h"
 #include "valuelist.h"
@@ -41,7 +41,7 @@ namespace rts2core
  *
  * @ingroup RTS2Block
  */
-class Daemon:public Rts2Block
+class Daemon:public rts2core::Block
 {
 	public:
 		/**

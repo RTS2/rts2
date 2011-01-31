@@ -22,7 +22,7 @@
 
 /**
  * @file
- * Holds base Rts2Block class. This class is common ancestor of RTS2 devices, daemons and clients.
+ * Holds base Block class. This class is common ancestor of RTS2 devices, daemons and clients.
  *
  * @defgroup RTS2Block Core RTS2 classes
  * @defgroup RTS2Protocol RTS2 protocol
@@ -79,17 +79,17 @@
 
 class Rts2ClientTCPDataConn;
 
+class Rts2LogStream;
+
+/** Hold list of connections. It is used to store @see Rts2Conn objects. */
+typedef std::vector < Rts2Conn * > connections_t;
+
 namespace rts2core
 {
 class Rts2Command;
 
 class Rts2DevClient;
-}
 
-class Rts2LogStream;
-
-/** Hold list of connections. It is used to store @see Rts2Conn objects. */
-typedef std::vector < Rts2Conn * > connections_t;
 
 /**
  * Base class of RTS2 devices and clients.
@@ -99,7 +99,7 @@ typedef std::vector < Rts2Conn * > connections_t;
  *
  * @ingroup RTS2Block
  */
-class Rts2Block: public Rts2App
+class Block: public Rts2App
 {
 	public:
 
@@ -109,17 +109,17 @@ class Rts2Block: public Rts2App
 		 * @param in_argc Number of agruments, ussually argc passed from main call.
 		 * @param in_argv Block arguments, ussually passed from main call.
 		 */
-		Rts2Block (int in_argc, char **in_argv);
+		Block (int in_argc, char **in_argv);
 
 		/**
-		 * Delete list of conncection, clear Rts2Block structure.
+		 * Delete list of conncection, clear Block structure.
 		 */
-		virtual ~Rts2Block (void);
+		virtual ~Block (void);
 
 		/**
 		 * Set port number of listening socket.
 		 *
-		 * Rts2Block ussually create listening socket, so other RTS2 programs can connect to the component.
+		 * Block ussually create listening socket, so other RTS2 programs can connect to the component.
 		 *
 		 * @param in_port Port number. Usually RTS2 blocks will use ports above 1020.
 		 */
@@ -170,7 +170,7 @@ class Rts2Block: public Rts2App
 		/**
 		 * Ask if command que is empty.
 		 *
-		 * If command is running (e.g. was send to the conection, but Rts2Block does
+		 * If command is running (e.g. was send to the conection, but Block does
 		 * not received reply), it will return True.
 		 *
 		 * @return True if command que is empty and new command will be executed
@@ -181,7 +181,7 @@ class Rts2Block: public Rts2App
 		/**
 		 * Event handling mechanism.
 		 *
-		 * Send Event to all connections which are members of Rts2Block structure.
+		 * Send Event to all connections which are members of Block structure.
 		 *
 		 * @see Rts2Event
 		 * @see Rts2Object::postEvent
@@ -327,7 +327,7 @@ class Rts2Block: public Rts2App
 		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
 		 * will need this call to check if master is in day etc..
 		 *
-		 * @see Rts2Block::getMasterStateFull()
+		 * @see Block::getMasterStateFull()
 		 *
 		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
 		 */
@@ -337,7 +337,7 @@ class Rts2Block: public Rts2App
 		}
 
 		/**
-		 * Returns full master state, including BOP mask and weather. For checking server state. see Rts2Block::getMasterState()
+		 * Returns full master state, including BOP mask and weather. For checking server state. see Block::getMasterState()
 		 *
 		 * @return Master state.
 		 */
@@ -681,7 +681,7 @@ class Rts2Block: public Rts2App
 		 * @return 0 when connection can be deleted, non-zero when some error is
 		 *    detected and connection should be keeped in list of active connections.
 		 *
-		 * @post conn is removed from the list, @see Rts2Block::connectionRemoved is
+		 * @post conn is removed from the list, @see Block::connectionRemoved is
 		 * called, and conn is deleted.
 		 */
 		virtual int deleteConnection (Rts2Conn * conn);
@@ -742,4 +742,6 @@ class Rts2Block: public Rts2App
 		int masterState;
 		Rts2Conn *stateMasterConn;
 };
+
+}
 #endif							 // !__RTS2_NETBLOCK__

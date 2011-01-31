@@ -33,7 +33,7 @@ typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
 class ConnProcess:public rts2script::ConnExe
 {
 	public:
-		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
+		ConnProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout);
 
 		virtual int init ();
 
@@ -70,7 +70,7 @@ class ConnImgOnlyProcess:public ConnProcess
 		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
-		ConnImgOnlyProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout);
+		ConnImgOnlyProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout);
 
 		virtual void processLine ();
 
@@ -105,7 +105,7 @@ class ConnImgProcess:public ConnImgOnlyProcess
 		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
-		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
+		ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
 
 		virtual int init ();
 
@@ -128,7 +128,7 @@ class ConnObsProcess:public ConnProcess
 		char *obsTarIdCh;
 		char *obsTarTypeCh;
 	public:
-		ConnObsProcess (Rts2Block * in_master,
+		ConnObsProcess (rts2core::Block * in_master,
 			const char *in_exe, int in_obsId, int in_timeout);
 
 		virtual int newProcess ();
@@ -138,7 +138,7 @@ class ConnObsProcess:public ConnProcess
 class ConnDarkProcess:public ConnProcess
 {
 	public:
-		ConnDarkProcess (Rts2Block * in_master,
+		ConnDarkProcess (rts2core::Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual void processLine ();
@@ -147,7 +147,7 @@ class ConnDarkProcess:public ConnProcess
 class ConnFlatProcess:public ConnProcess
 {
 	public:
-		ConnFlatProcess (Rts2Block * in_master,
+		ConnFlatProcess (rts2core::Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual void processLine ();

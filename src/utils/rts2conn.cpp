@@ -20,7 +20,7 @@
 #include "radecparser.h"
 
 #include "rts2conn.h"
-#include "rts2block.h"
+#include "block.h"
 #include "rts2centralstate.h"
 #include "rts2command.h"
 
@@ -54,7 +54,7 @@ ConnError::ConnError (Rts2Conn *conn, const char *_msg, int _errn): Error ()
 	conn->connectionError (-1);
 }
 
-Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
+Rts2Conn::Rts2Conn (rts2core::Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
 	buf_size = MAX_DATA;
@@ -97,7 +97,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	activeSharedMem = NULL;
 }
 
-Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
+Rts2Conn::Rts2Conn (int in_sock, rts2core::Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
 	buf_size = MAX_DATA;

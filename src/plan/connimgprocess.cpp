@@ -35,7 +35,7 @@
 
 using namespace rts2plan;
 
-ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
+ConnProcess::ConnProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
 {
 	astrometryStat = NOT_ASTROMETRY;
 
@@ -52,7 +52,7 @@ int ConnProcess::init ()
 	return ConnExe::init ();
 }
 
-ConnImgOnlyProcess::ConnImgOnlyProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout):ConnProcess (_master, _exe, _timeout)
+ConnImgOnlyProcess::ConnImgOnlyProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout):ConnProcess (_master, _exe, _timeout)
 {
 	imgPath = std::string (_path);
 	addArg (imgPath);
@@ -105,7 +105,7 @@ void ConnImgOnlyProcess::connectionError (int last_data_size)
 	ConnProcess::connectionError (last_data_size);	  
 }
 
-ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnImgOnlyProcess (_master, _exe, _path, _timeout)
+ConnImgProcess::ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnImgOnlyProcess (_master, _exe, _path, _timeout)
 {
 	end_event = _end_event;
 }
@@ -296,7 +296,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 	ConnImgOnlyProcess::connectionError (last_data_size);
 }
 
-ConnObsProcess::ConnObsProcess (Rts2Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
+ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
 #ifdef HAVE_PGSQL
 	obsId = in_obsId;
@@ -339,7 +339,7 @@ void ConnObsProcess::processLine ()
 	return;
 }
 
-ConnDarkProcess::ConnDarkProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
+ConnDarkProcess::ConnDarkProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 
@@ -348,7 +348,7 @@ void ConnDarkProcess::processLine ()
 	return;
 }
 
-ConnFlatProcess::ConnFlatProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
+ConnFlatProcess::ConnFlatProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 

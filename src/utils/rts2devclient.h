@@ -21,12 +21,10 @@
 #define __RTS2_DEVCLIENT__
 
 #include "rts2object.h"
-#include "rts2block.h"
+#include "block.h"
 #include "value.h"
 
 class Rts2ServerState;
-
-class Rts2Block;
 
 namespace rts2core
 {
@@ -116,7 +114,7 @@ class Rts2DevClient:public Rts2Object
 			return connection->getOtherType ();
 		}
 
-		Rts2Block *getMaster ()
+		rts2core::Block *getMaster ()
 		{
 			return connection->getMaster ();
 		}

@@ -26,7 +26,7 @@
 
 using namespace rts2core;
 
-ConnFork::ConnFork (Rts2Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):Rts2ConnNoSend (_master)
+ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):Rts2ConnNoSend (_master)
 {
 	childPid = -1;
 	sockerr = -1;

@@ -491,28 +491,28 @@ void Rts2DevClientWriteImage::stateChanged (Rts2ServerState * state)
 		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
 }
 
-Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
+Rts2CommandQueImage::Rts2CommandQueImage (rts2core::Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_image " << image->getFileName ();
 	setCommand (_os);
 }
 
-Rts2CommandQueDark::Rts2CommandQueDark (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
+Rts2CommandQueDark::Rts2CommandQueDark (rts2core::Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_dark " << image->getFileName ();
 	setCommand (_os);
 }
 
-Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
+Rts2CommandQueFlat::Rts2CommandQueFlat (rts2core::Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_flat " << image->getFileName ();
 	setCommand (_os);
 }
 
-Rts2CommandQueObs::Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId):rts2core::Rts2Command (in_owner)
+Rts2CommandQueObs::Rts2CommandQueObs (rts2core::Block * in_owner, int in_obsId):rts2core::Rts2Command (in_owner)
 {
 	std::ostringstream _os;
 	_os << "que_obs " << in_obsId;

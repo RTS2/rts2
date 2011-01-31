@@ -22,7 +22,7 @@
 
 #include "nwindow.h"
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2conn.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2devclient.h"
@@ -86,12 +86,12 @@ class NSelWindow:public NWindow
 class NDevListWindow:public NSelWindow
 {
 	public:
-		NDevListWindow (Rts2Block * in_block, connections_t *in_conns);
+		NDevListWindow (rts2core::Block * in_block, connections_t *in_conns);
 		virtual ~ NDevListWindow (void);
 		virtual void draw ();
 
 	private:
-		Rts2Block * block;
+		rts2core::Block * block;
 		connections_t *conns;
 };
 

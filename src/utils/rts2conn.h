@@ -75,8 +75,6 @@ typedef enum
 
 class Rts2Address;
 
-class Rts2Block;
-
 class Rts2Event;
 
 class Rts2Conn;
@@ -84,6 +82,8 @@ class Rts2Conn;
 namespace rts2core
 {
 class Value;
+
+class Block;
 
 class Rts2Command;
 
@@ -111,7 +111,7 @@ class ConnError: public Error
  * handles various TCP/IP issues.  Connection is primary network connection,
  * but there are descendand classes which holds forked instance output.
  *
- * Rts2Conn is used primarly in @see Rts2Block, which holds list of connections
+ * Rts2Conn is used primarly in @see rts2core::Block, which holds list of connections
  * and provide function to manage them.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -121,8 +121,8 @@ class ConnError: public Error
 class Rts2Conn:public Rts2Object
 {
 	public:
-		Rts2Conn (Rts2Block * in_master);
-		Rts2Conn (int in_sock, Rts2Block * in_master);
+		Rts2Conn (rts2core::Block * in_master);
+		Rts2Conn (int in_sock, rts2core::Block * in_master);
 		virtual ~ Rts2Conn (void);
 
 		virtual void postEvent (Rts2Event * event);
@@ -130,7 +130,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Add to read/write/exception sets sockets identifiers which
 		 * belong to current connection. Those sets are used in 
-		 * main select call of Rts2Block.
+		 * main select call of rts2core::Block.
 		 *
 		 * @param readset   Set of sockets which will be checked for new data.
 		 * @param writeset  Set of sockets which will be checked for possibility to write new data.
@@ -455,7 +455,7 @@ class Rts2Conn:public Rts2Object
 
 		int paramNextTimeval (struct timeval *tv);
 
-		Rts2Block *getMaster () { return master; }
+		rts2core::Block *getMaster () { return master; }
 
 		virtual void childReturned (pid_t child_pid) {}
 
@@ -592,7 +592,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Pointer to master object.
 		 */
-		Rts2Block *master;
+		rts2core::Block *master;
 		char *command_start;
 
 		/**

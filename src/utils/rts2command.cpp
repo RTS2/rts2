@@ -25,7 +25,7 @@
 using namespace std;
 using namespace rts2core;
 
-Rts2Command::Rts2Command (Rts2Block * _owner)
+Rts2Command::Rts2Command (rts2core::Block * _owner)
 {
 	owner = _owner;
 	text = NULL;
@@ -33,7 +33,7 @@ Rts2Command::Rts2Command (Rts2Block * _owner)
 	originator = NULL;
 }
 
-Rts2Command::Rts2Command (Rts2Block * _owner, const char *_text)
+Rts2Command::Rts2Command (rts2core::Block * _owner, const char *_text)
 {
 	owner = _owner;
 	setCommand (_text);
@@ -124,7 +124,7 @@ void Rts2Command::deleteConnection (Rts2Conn * conn)
 		originator = NULL;
 }
 
-Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * _master, int _centrald_id, int _centrald_num, int _key):Rts2Command (_master)
+Rts2CommandSendKey::Rts2CommandSendKey (rts2core::Block * _master, int _centrald_id, int _centrald_num, int _key):Rts2Command (_master)
 {
 	centrald_id = _centrald_id;
 	centrald_num = _centrald_num;
@@ -141,14 +141,14 @@ int Rts2CommandSendKey::send ()
 	return Rts2Command::send ();
 }
 
-Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * _master, int centralId, int key):Rts2Command (_master)
+Rts2CommandAuthorize::Rts2CommandAuthorize (rts2core::Block * _master, int centralId, int key):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "authorize " << centralId << " " << key;
 	setCommand (_os);
 }
 
-Rts2CommandKey::Rts2CommandKey (Rts2Block * _master, const char *device_name):Rts2Command (_master)
+Rts2CommandKey::Rts2CommandKey (rts2core::Block * _master, const char *device_name):Rts2Command (_master)
 {
  	std::ostringstream _os;
 	_os << "key " << device_name;
@@ -159,7 +159,7 @@ Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * _cam
 {
 }
 
-Rts2CommandExposure::Rts2CommandExposure (Rts2Block * _master, Rts2DevClientCamera * _camera, int _bopMask):Rts2Command (_master)
+Rts2CommandExposure::Rts2CommandExposure (rts2core::Block * _master, Rts2DevClientCamera * _camera, int _bopMask):Rts2Command (_master)
 {
 	setCommand ("expose");
 	camera = _camera;
@@ -172,7 +172,7 @@ int Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandReadout::Rts2CommandReadout (Rts2Block * _master):Rts2Command (_master)
+Rts2CommandReadout::Rts2CommandReadout (rts2core::Block * _master):Rts2Command (_master)
 {
 	setCommand ("readout");
 }
@@ -312,12 +312,12 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::st
 	setCommand (_os);
 }
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel):Rts2Command (_master)
+Rts2CommandMove::Rts2CommandMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel):Rts2Command (_master)
 {
 	tel = _tel;
 }
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
+Rts2CommandMove::Rts2CommandMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "move " << ra << " " << dec;
@@ -331,35 +331,35 @@ int Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
+Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << "move_not_model " << ra << " " << dec;
 	setCommand (_os);
 }
 
-Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master,_tel)
+Rts2CommandMoveFixed::Rts2CommandMoveFixed (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master,_tel)
 {
 	std::ostringstream _os;
 	_os << "fixed " << ra << " " << dec;
 	setCommand (_os);
 }
 
-Rts2CommandMoveAltAz::Rts2CommandMoveAltAz (Rts2Block * _master, Rts2DevClientTelescope * _tel, double alt, double az):Rts2CommandMove (_master, _tel)
+Rts2CommandMoveAltAz::Rts2CommandMoveAltAz (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double alt, double az):Rts2CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << "altaz " << alt << " " << az;
 	setCommand (_os);
 }
 
-Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
+Rts2CommandResyncMove::Rts2CommandResyncMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec):Rts2CommandMove (_master, _tel)
 {
 	std::ostringstream _os;
 	_os << "resync " << ra << " " << dec;
 	setCommand (_os);
 }
 
-Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec):Rts2Command (_master)
+Rts2CommandChange::Rts2CommandChange (rts2core::Block * _master, double ra, double dec):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "change " << ra << " " << dec;
@@ -387,7 +387,7 @@ int Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):Rts2Command (_master)
+Rts2CommandCorrect::Rts2CommandCorrect (rts2core::Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):Rts2Command (_master)
 {
  	std::ostringstream _os;
 	_os << "correct " << corr_mark << " " << corr_img
@@ -396,14 +396,14 @@ Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int 
 	setCommand (_os);
 }
 
-Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * _master, char dir, double dir_dist):Rts2Command (_master)
+Rts2CommandStartGuide::Rts2CommandStartGuide (rts2core::Block * _master, char dir, double dir_dist):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "start_guide " << dir << " " << dir_dist;
 	setCommand (_os);
 }
 
-Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * _master, char dir):Rts2Command (_master)
+Rts2CommandStopGuide::Rts2CommandStopGuide (rts2core::Block * _master, char dir):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "stop_guide " << dir;
@@ -538,50 +538,50 @@ int Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * _master, int next_id):Rts2Command (_master)
+Rts2CommandExecNext::Rts2CommandExecNext (rts2core::Block * _master, int next_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "next " << next_id;
 	setCommand (_os);
 }
 
-Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * _master, int now_id):Rts2Command (_master)
+Rts2CommandExecNow::Rts2CommandExecNow (rts2core::Block * _master, int now_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "now " << now_id;
 	setCommand (_os);
 }
 
-Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * _master, int grb_id):Rts2Command (_master)
+Rts2CommandExecGrb::Rts2CommandExecGrb (rts2core::Block * _master, int grb_id):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "grb " << grb_id;
 	setCommand (_os);
 }
 
-Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * _master):Rts2Command (_master)
+Rts2CommandExecShower::Rts2CommandExecShower (rts2core::Block * _master):Rts2Command (_master)
 {
 	setCommand ("shower");
 }
 
-Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block *_master):Rts2Command (_master)
+Rts2CommandKillAll::Rts2CommandKillAll (rts2core::Block *_master):Rts2Command (_master)
 {
 	setCommand ("killall");
 }
 
-Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block *_master):Rts2Command (_master)
+Rts2CommandScriptEnds::Rts2CommandScriptEnds (rts2core::Block *_master):Rts2Command (_master)
 {
 	setCommand ("script_ends");
 }
 
-Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * _master, int _mask):Rts2Command (_master)
+Rts2CommandMessageMask::Rts2CommandMessageMask (rts2core::Block * _master, int _mask):Rts2Command (_master)
 {
 	std::ostringstream _os;
 	_os << "message_mask " << _mask;
 	setCommand (_os);
 }
 
-Rts2CommandInfo::Rts2CommandInfo (Rts2Block * _master):Rts2Command (_master)
+Rts2CommandInfo::Rts2CommandInfo (rts2core::Block * _master):Rts2Command (_master)
 {
 	setCommand ("info");
 }
@@ -600,7 +600,7 @@ int Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
 	return Rts2Command::commandReturnFailed (status, conn);
 }
 
-Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * _control_conn):Rts2Command(master)
+Rts2CommandStatusInfo::Rts2CommandStatusInfo (rts2core::Block * master, Rts2Conn * _control_conn):Rts2Command(master)
 {
 	control_conn = _control_conn;
 	setCommand ("status_info");
@@ -627,7 +627,7 @@ void Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
 	Rts2Command::deleteConnection (conn);
 }
 
-Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * _control_conn):Rts2CommandStatusInfo (master, _control_conn)
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (rts2core::Block * master, Rts2Conn * _control_conn):Rts2CommandStatusInfo (master, _control_conn)
 {
 	setCommand ("device_status");
 }

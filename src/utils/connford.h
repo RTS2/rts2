@@ -121,7 +121,7 @@ class FordConn: public ConnSerial
 			flushPortIO ();
 		}
 
-		FordConn (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
+		FordConn (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
 
 		virtual ~FordConn ();
 

@@ -66,7 +66,7 @@ class OpenTpl: public ConnTCP
 		int waitReply ();
 		
 	public:
-		OpenTpl (Rts2Block *_master, std::string _host_name, int _port);
+		OpenTpl (rts2core::Block *_master, std::string _host_name, int _port);
 		virtual ~OpenTpl ();
 
 		virtual int idle ();

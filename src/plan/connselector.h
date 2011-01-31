@@ -35,7 +35,7 @@ namespace rts2plan
 class ConnSelector:public ConnProcess
 {
 	public:
-		ConnSelector (Rts2Block * in_master, const char *in_exe, int in_timeout);
+		ConnSelector (rts2core::Block * in_master, const char *in_exe, int in_timeout);
 
 		virtual void postEvent (Rts2Event *event);
 

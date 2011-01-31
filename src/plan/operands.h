@@ -22,7 +22,7 @@
 
 #include "../utils/error.h"
 #include "../utils/utilsfunc.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 
 #include <vector>
 #include <ostream>
@@ -79,11 +79,11 @@ class Number:public Operand
 class SystemValue:public Operand
 {
 	public:
-		SystemValue (Rts2Block *_master, std::string _device, std::string _value):Operand () { master = _master; device = _device; value = _value; }
+		SystemValue (rts2core::Block *_master, std::string _device, std::string _value):Operand () { master = _master; device = _device; value = _value; }
 		virtual double getDouble ();
 		virtual std::ostream & writeTo (std::ostream &_os) { _os << getDouble (); return _os; }
 	private:
-		Rts2Block *master;
+		rts2core::Block *master;
 		std::string device;
 		std::string value;
 };

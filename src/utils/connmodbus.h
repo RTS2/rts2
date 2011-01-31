@@ -61,7 +61,7 @@ class ConnModbus: public ConnTCP
 		 * @param _hostname   Modbus server IP address or hostname.
 		 * @param _port       Modbus server port number (default is 502).
 		 */
-		ConnModbus (Rts2Block *_master, const char *_hostname, int _port);
+		ConnModbus (rts2core::Block *_master, const char *_hostname, int _port);
 
 
 		/**

@@ -33,7 +33,7 @@ namespace rts2script {
 class ConnExe:public rts2core::ConnFork
 {
 	public:
-		ConnExe (Rts2Block * _master, const char *_exec, bool fillConnEnv, int timeout = 0);
+		ConnExe (rts2core::Block * _master, const char *_exec, bool fillConnEnv, int timeout = 0);
 		virtual ~ConnExe ();
 
 		virtual void processLine ();

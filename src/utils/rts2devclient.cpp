@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-#include "rts2block.h"
+#include "block.h"
 #include "rts2command.h"
 #include "rts2devclient.h"
 

@@ -61,7 +61,7 @@ void Daemon::addConnectionSock (int in_sock)
 	addConnection (conn);
 }
 
-Daemon::Daemon (int _argc, char **_argv, int _init_state):Rts2Block (_argc, _argv)
+Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc, _argv)
 {
 	lockPrefix = NULL;
 	lock_fname = NULL;
@@ -111,7 +111,7 @@ int Daemon::processOption (int in_opt)
 			runAs = optarg;
 			break;
 		default:
-			return Rts2Block::processOption (in_opt);
+			return rts2core::Block::processOption (in_opt);
 	}
 	return 0;
 }
@@ -223,7 +223,7 @@ int Daemon::init ()
 	int ret;
 	try
 	{
-		ret = Rts2Block::init ();
+		ret = rts2core::Block::init ();
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Daemon::init Rts2block returns " << ret << sendLog;
@@ -273,7 +273,7 @@ int Daemon::init ()
 	ret = listen (listen_sock, 5);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Block::init cannot listen: " <<
+		logStream (MESSAGE_ERROR) << "rts2core::Block::init cannot listen: " <<
 			strerror (errno) << sendLog;
 		close (listen_sock);
 		listen_sock = -1;
@@ -336,7 +336,7 @@ int Daemon::idle ()
 		doHupIdleLoop = false;
 	}
 
-	return Rts2Block::idle ();
+	return rts2core::Block::idle ();
 }
 
 void Daemon::setInfoTime (struct tm *_date)
@@ -374,14 +374,14 @@ void Daemon::postEvent (Rts2Event *event)
 			}
 			break;
 	}
-	Rts2Block::postEvent (event);
+	rts2core::Block::postEvent (event);
 }
 
 void Daemon::forkedInstance ()
 {
 	if (listen_sock >= 0)
 		close (listen_sock);
-	Rts2Block::forkedInstance ();
+	rts2core::Block::forkedInstance ();
 }
 
 void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageString)
@@ -417,7 +417,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 				break;
 		case DONT_DAEMONIZE:
 			// print to stdout
-			Rts2Block::sendMessage (in_messageType, in_messageString);
+			rts2core::Block::sendMessage (in_messageType, in_messageString);
 			break;
 	}
 }
@@ -442,7 +442,7 @@ void Daemon::centraldConnBroken (Rts2Conn *conn)
 void Daemon::addSelectSocks ()
 {
 	FD_SET (listen_sock, &read_set);
-	Rts2Block::addSelectSocks ();
+	rts2core::Block::addSelectSocks ();
 }
 
 void Daemon::selectSuccess ()
@@ -465,7 +465,7 @@ void Daemon::selectSuccess ()
 			addConnectionSock (client);
 		}
 	}
-	Rts2Block::selectSuccess ();
+	rts2core::Block::selectSuccess ();
 }
 
 void Daemon::addValue (Value * value, int queCondition)

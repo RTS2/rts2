@@ -219,6 +219,17 @@
  */
 #define RTS2_VALUE_NOTNULL            0x08000000
 
+/**
+ * Value is approaching out-of-limits.
+ */
+#define RTS2_VALUE_WARNING            0x10000000
+
+/**
+ * Value is out-of-limits.
+ */
+#define RTS2_VALUE_ERROR              0x20000000  
+
+
 #define VALUE_BUF_LEN                 200
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)

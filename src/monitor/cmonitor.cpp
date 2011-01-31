@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2command.h"
 
@@ -14,7 +14,7 @@ class Rts2CMonitorConnection:public Rts2ConnClient
 	private:
 		void printStatus ();
 	public:
-		Rts2CMonitorConnection (Rts2Block * _master, int _centrald_num, char *_name)
+		Rts2CMonitorConnection (rts2core::Block * _master, int _centrald_num, char *_name)
 		:Rts2ConnClient (_master, _centrald_num, _name)
 		{
 		}
@@ -68,7 +68,7 @@ class CommandInfo:public rts2core::Rts2Command
 {
 
 	public:
-		CommandInfo (Rts2Block * in_owner):rts2core::Rts2Command (in_owner, "info")
+		CommandInfo (rts2core::Block * in_owner):rts2core::Rts2Command (in_owner, "info")
 		{
 		}
 		virtual int commandReturnOK (Rts2Conn * conn)

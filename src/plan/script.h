@@ -25,7 +25,7 @@
 #include <config.h>
 
 #include "../utils/counted_ptr.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2target.h"
@@ -100,7 +100,7 @@ typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT } printType;
 class Script:public Rts2Object, public std::list <Element *>
 {
 	public:
-		Script (Rts2Block * _master = NULL);
+		Script (rts2core::Block * _master = NULL);
 		Script (const char *script);
 		virtual ~ Script (void);
 
@@ -138,7 +138,7 @@ class Script:public Rts2Object, public std::list <Element *>
 
 		int processImage (Rts2Image * image);
 
-		Rts2Block *getMaster ()	{ return master; }
+		rts2core::Block *getMaster ()	{ return master; }
 
 		int getExecutedCount () { return executedCount; }
 
@@ -198,7 +198,7 @@ class Script:public Rts2Object, public std::list <Element *>
 		rts2operands::Operand *parseOperand (Rts2Target * target, struct ln_equ_posn *target_pos, rts2operands::Operand *op = NULL);
 
 		std::list < Element * >::iterator el_iter;
-		Rts2Block *master;
+		rts2core::Block *master;
 
 		// counts comments
 		int commentNumber;

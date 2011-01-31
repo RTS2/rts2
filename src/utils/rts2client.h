@@ -20,7 +20,7 @@
 #ifndef __RTS2_CLIENT__
 #define __RTS2_CLIENT__
 
-#include "rts2block.h"
+#include "block.h"
 #include "rts2command.h"
 #include "rts2devclient.h"
 
@@ -48,7 +48,7 @@ class Rts2ConnClient:public Rts2Conn
 	protected:
 		virtual void connConnected ();
 	public:
-		Rts2ConnClient (Rts2Block *_master, int _centrald_num, char *_name);
+		Rts2ConnClient (rts2core::Block *_master, int _centrald_num, char *_name);
 		virtual ~ Rts2ConnClient (void);
 
 		virtual int init ();
@@ -87,7 +87,7 @@ class Rts2ConnCentraldClient:public Rts2Conn
 		virtual void setState (int in_value, char * msg);
 
 	public:
-		Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
+		Rts2ConnCentraldClient (rts2core::Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
 		virtual int init ();
 
 		virtual int command ();
@@ -106,7 +106,7 @@ class Rts2CommandLogin:public Rts2Command
 		{ LOGIN_SEND, PASSWORD_SEND, INFO_SEND }
 		state;
 	public:
-		Rts2CommandLogin (Rts2Block * master, const char *in_login,
+		Rts2CommandLogin (rts2core::Block * master, const char *in_login,
 			const char *in_password);
 		virtual int commandReturnOK (Rts2Conn * conn);
 };
@@ -123,7 +123,7 @@ class Rts2CommandLogin:public Rts2Command
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Client:public Rts2Block
+class Rts2Client:public rts2core::Block
 {
 	public:
 		Rts2Client (int in_argc, char **in_argv);

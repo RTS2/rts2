@@ -24,7 +24,7 @@
 
 using namespace rts2core;
 
-ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port):ConnTCP (_master, _hostname, _port)
+ConnModbus::ConnModbus (rts2core::Block * _master, const char *_hostname, int _port):ConnTCP (_master, _hostname, _port)
 {
 	transId = 1;
 	unitId = 0;

@@ -171,7 +171,7 @@ class TGDrive: public rts2core::ConnSerial
 		 *
 		 * @return 1 if value does not belong to this unit
 		 *
-		 * @see Rts2Block::setValue()
+		 * @see rts2core::Block::setValue()
 		 */
 		int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 

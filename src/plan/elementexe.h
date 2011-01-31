@@ -37,7 +37,7 @@ class Execute;
 class ConnExecute:public ConnExe
 {
 	public:
-		ConnExecute (Execute *_masterElement, Rts2Block * _master, const char *_exec);
+		ConnExecute (Execute *_masterElement, rts2core::Block * _master, const char *_exec);
 		virtual ~ConnExecute ();
 
 		void nullMasterElement () { masterElement = NULL; }
@@ -69,7 +69,7 @@ class ConnExecute:public ConnExe
 class Execute:public Element
 {
 	public:
-		Execute (Script * _script, Rts2Block * _master, const char *_exec);
+		Execute (Script * _script, rts2core::Block * _master, const char *_exec);
 		virtual ~Execute ();
 
 		virtual int defnextCommand (Rts2DevClient * _client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
@@ -92,7 +92,7 @@ class Execute:public Element
 
 		Rts2DevClient *client;
 
-		Rts2Block *master;
+		rts2core::Block *master;
 		const char *exec;
 };
 

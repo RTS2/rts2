@@ -96,7 +96,7 @@ class ConnSerial: public Rts2ConnNoSend
 		 * @param _parity    Device parity.
 		 * @param _vTime     Time to wait for single read before giving up.
 		 */
-		ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
+		ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
 
 		/**
 		 * Init serial port.

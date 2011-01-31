@@ -18,7 +18,7 @@
  */
 
 #include "rts2message.h"
-#include "rts2block.h"
+#include "block.h"
 
 #include <sys/time.h>
 #include <time.h>

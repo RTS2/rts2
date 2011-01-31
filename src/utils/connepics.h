@@ -99,7 +99,7 @@ class ConnEpics: public Rts2ConnNoSend
 
 		EpicsVal * findValue (rts2core::Value *value);
 	public:
-		ConnEpics (Rts2Block *_master);
+		ConnEpics (rts2core::Block *_master);
 
 		virtual ~ConnEpics ();
 

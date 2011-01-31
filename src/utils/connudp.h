@@ -37,7 +37,7 @@ namespace rts2core
 class ConnUDP:public Rts2ConnNoSend
 {
 	public:
-		ConnUDP (int _port, Rts2Block * _master, size_t _maxSize = 500);
+		ConnUDP (int _port, rts2core::Block * _master, size_t _maxSize = 500);
 		virtual int init ();
 		virtual int receive (fd_set * set);
 	protected:

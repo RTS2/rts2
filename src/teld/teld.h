@@ -24,7 +24,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "../utils/rts2block.h"
 #include "../utils/device.h"
 #include "../utils/objectcheck.h"
 

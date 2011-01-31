@@ -161,7 +161,7 @@ int OpenTpl::waitReply ()
 	return 0;
 }
 
-OpenTpl::OpenTpl (Rts2Block *_master, std::string _hostname, int _port):ConnTCP (_master, _hostname.c_str(), _port)
+OpenTpl::OpenTpl (rts2core::Block *_master, std::string _hostname, int _port):ConnTCP (_master, _hostname.c_str(), _port)
 {
 	tpl_command_no = 1;
 }

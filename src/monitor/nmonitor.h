@@ -24,7 +24,7 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2command.h"
 

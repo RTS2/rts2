@@ -24,7 +24,7 @@
 #include "rts2spiral.h"
 #include "../writers/rts2image.h"
 #include "../utils/rts2object.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utilsdb/scriptcommands.h"
 
 #include "status.h"

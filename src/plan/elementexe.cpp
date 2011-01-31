@@ -23,7 +23,7 @@
 
 using namespace rts2script;
 
-ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const char *_exec):ConnExe (_master, _exec, true)
+ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, const char *_exec):ConnExe (_master, _exec, true)
 {
 	masterElement = _masterElement;
 }
@@ -280,7 +280,7 @@ std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
 	return iter;
 }
 
-Execute::Execute (Script * _script, Rts2Block * _master, const char *_exec): Element (_script)
+Execute::Execute (Script * _script, rts2core::Block * _master, const char *_exec): Element (_script)
 {
 	connExecute = NULL;
 	client = NULL;
@@ -334,7 +334,7 @@ int Execute::defnextCommand (Rts2DevClient * _client, Rts2Command ** new_command
 
 	if (connExecute->getConnState () == CONN_DELETE)
 	{
-		// connExecute will be deleted by Rts2Block holding connection
+		// connExecute will be deleted by rts2core::Block holding connection
 		connExecute = NULL;
 		client = NULL;
 		return NEXT_COMMAND_NEXT;
