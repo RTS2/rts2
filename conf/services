@@ -3,3 +3,4 @@ imgproc		IMGP
 grbd		GRBD
 executor	EXEC
 selector	SEL
+xmlrpcd		XMLRPC		--run-as user
