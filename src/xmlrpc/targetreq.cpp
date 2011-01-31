@@ -680,12 +680,12 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 			"<div id='genscript'></div>"
 			"<div>Camera: <select id='cam'>";
 
-		connections_t::iterator camiter = ((Rts2Block *) getMasterApp ())->getConnections ()->begin ();
+		connections_t::iterator camiter = ((rts2core::Block *) getMasterApp ())->getConnections ()->begin ();
 
 		while (true)
 		{
-			((Rts2Block *) getMasterApp ())->getOpenConnectionType (DEVICE_TYPE_CCD, camiter);
-			if (camiter == ((Rts2Block *) getMasterApp ())->getConnections ()->end ())
+			((rts2core::Block *) getMasterApp ())->getOpenConnectionType (DEVICE_TYPE_CCD, camiter);
+			if (camiter == ((rts2core::Block *) getMasterApp ())->getConnections ()->end ())
 				break;
 			const char *n = (*camiter)->getName ();
 			_os << "<option value='" << n << "'>" << n << "</option>";

@@ -22,7 +22,7 @@
 #include "stateevents.h"
 #include "message.h"
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2logstream.h"
 
 #include <libxml/parser.h>

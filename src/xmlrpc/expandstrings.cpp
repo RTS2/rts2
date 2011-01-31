@@ -21,7 +21,7 @@
 #include "expandstrings.h"
 #include "xmlrpcd.h"
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2conn.h"
 #include "../utils/rts2displayvalue.h"
 
@@ -60,7 +60,7 @@ ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
 
 void ExpandStringDevice::writeTo (std::ostream &os)
 {
-	Rts2Conn *conn = ((Rts2Block *) getMasterApp ())->getOpenConnection (deviceName);
+	Rts2Conn *conn = ((rts2core::Block *) getMasterApp ())->getOpenConnection (deviceName);
 	if (conn == NULL)
 	{
 		os << "unknow device " << deviceName << std::endl;
@@ -82,7 +82,7 @@ ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valu
 
 void ExpandStringValue::writeTo (std::ostream &os)
 {
-	rts2core::Value *val = ((Rts2Block *) getMasterApp ())->getValue (deviceName, valueName);
+	rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValue (deviceName, valueName);
 	if (val == NULL)
 	{
 		os << "unknow value " << deviceName << "." << valueName;
