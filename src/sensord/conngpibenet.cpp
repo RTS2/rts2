@@ -213,7 +213,7 @@ void ConnGpibEnet::settmo (float _sec)
 	sresp (NULL);
 }
 
-ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
+ConnGpibEnet::ConnGpibEnet (rts2core::Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
 {
 	sad = 0;
 	pad = _pad;

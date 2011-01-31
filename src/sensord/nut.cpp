@@ -48,7 +48,7 @@ namespace rts2sensord
 			 * @param _port     Portnumber of NUP UPS daemon (default to 3493).
 			 * @param _upsName  Name of UPS.
 			 */
-			ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName);
+			ConnNUT (rts2core::Block *_master, const char *_hostname, int _port, const char *_upsName);
 
 			/**
 			 * Call GET VAR command to receive variable from UPS.
@@ -109,7 +109,7 @@ namespace rts2sensord
 using namespace rts2sensord;
 
 
-ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName):rts2core::ConnTCP (_master, _hostname, _port)
+ConnNUT::ConnNUT (rts2core::Block *_master, const char *_hostname, int _port, const char *_upsName):rts2core::ConnTCP (_master, _hostname, _port)
 {
 	upsName = std::string (_upsName);
 }

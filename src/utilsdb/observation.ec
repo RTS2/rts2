@@ -444,7 +444,7 @@ int Observation::getUnprocessedCount ()
 	return db_count;
 }
 
-int Observation::checkUnprocessedImages (Rts2Block *master)
+int Observation::checkUnprocessedImages (rts2core::Block *master)
 {
 	int ret;
 	load ();

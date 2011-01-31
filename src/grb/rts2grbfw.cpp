@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-Rts2GrbForwardConnection::Rts2GrbForwardConnection (Rts2Block * in_master,
+Rts2GrbForwardConnection::Rts2GrbForwardConnection (rts2core::Block * in_master,
 int in_forwardPort):
 Rts2ConnNoSend (in_master)
 {
@@ -108,7 +108,7 @@ Rts2GrbForwardConnection::receive (fd_set * set)
  * Takes cares of client connections.
  */
 
-Rts2GrbForwardClientConn::Rts2GrbForwardClientConn (int in_sock, Rts2Block * in_master):Rts2ConnNoSend (in_sock,
+Rts2GrbForwardClientConn::Rts2GrbForwardClientConn (int in_sock, rts2core::Block * in_master):Rts2ConnNoSend (in_sock,
 in_master)
 {
 }

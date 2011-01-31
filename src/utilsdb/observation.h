@@ -213,7 +213,7 @@ class Observation
 		 * was already finished, -1 when observation is still ongoing, > 0 when there are
 		 * return images to process, but observation was ended.
 		 */
-		int checkUnprocessedImages (Rts2Block * master);
+		int checkUnprocessedImages (rts2core::Block * master);
 
 		int getNumberOfImages ();
 

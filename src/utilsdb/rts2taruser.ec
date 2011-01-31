@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "rts2taruser.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 
 Rts2UserEvent::Rts2UserEvent (const Rts2UserEvent &in_user)
 {

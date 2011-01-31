@@ -20,7 +20,7 @@
 
 #include "messagedb.h"
 #include "sqlerror.h"
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 
 #include <iostream>
 

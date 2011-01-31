@@ -22,7 +22,7 @@
 
 #include "conngpib.h"
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/conntcp.h"
 
 
@@ -53,7 +53,7 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 			eot = _eot;
 		}
 
-		ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad);
+		ConnGpibEnet (rts2core::Block *_master, const char *_address, int _port, int _pad);
 		virtual ~ ConnGpibEnet (void);
 
 		virtual void setDebug (bool _debug = true) { rts2core::ConnTCP::setDebug (_debug); }

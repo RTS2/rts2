@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2block.h"
+#include "../utils/block.h"
 #include "../utils/rts2connnosend.h"
 #include "grbconst.h"
 #include "grbd.h"
@@ -67,7 +67,7 @@ class Rts2ConnFwGrb:public Rts2ConnNoSend
 		time_t nextTime;
 	public:
 		Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port,
-			Rts2Block * in_master);
+			rts2core::Block * in_master);
 		virtual ~ Rts2ConnFwGrb (void);
 		virtual int idle ();
 		virtual int init ();
@@ -104,7 +104,7 @@ Rts2ConnFwGrb::pr_imalive ()
 }
 
 
-Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, Rts2Block * in_master):Rts2ConnNoSend
+Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master):Rts2ConnNoSend
 (in_master)
 {
 	gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
@@ -418,7 +418,7 @@ Rts2ConnFwGrb::receive (fd_set * set)
 
 
 // now the application
-class Rts2AppFw:public Rts2Block
+class Rts2AppFw:public rts2core::Block
 {
 	private:
 		Rts2ConnFwGrb * gcncnn;
@@ -448,7 +448,7 @@ class Rts2AppFw:public Rts2Block
 };
 
 Rts2AppFw::Rts2AppFw (int in_argc, char **in_argv):
-Rts2Block (in_argc, in_argv)
+rts2core::Block (in_argc, in_argv)
 {
 	gcncnn = NULL;
 	gcn_host = NULL;

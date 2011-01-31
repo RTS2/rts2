@@ -45,7 +45,7 @@ namespace rts2sensord
 			 * @param _hostname APC UPSD IP address or hostname.
 			 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
 			 */
-			ConnApcUps (Rts2Block *_master, const char *_hostname, int _port);
+			ConnApcUps (rts2core::Block *_master, const char *_hostname, int _port);
 
 			/**
 			 * Call command, get reply.
@@ -109,7 +109,7 @@ namespace rts2sensord
 
 using namespace rts2sensord;
 
-ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port):rts2core::ConnTCP (_master, _hostname, _port)
+ConnApcUps::ConnApcUps (rts2core::Block *_master, const char *_hostname, int _port):rts2core::ConnTCP (_master, _hostname, _port)
 {
 }
 

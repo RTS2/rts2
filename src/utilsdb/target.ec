@@ -721,7 +721,7 @@ int Target::startObservation ()
 	return 0;
 }
 
-int Target::endObservation (int in_next_id, Rts2Block *master)
+int Target::endObservation (int in_next_id, rts2core::Block *master)
 {
 	int old_obs_id = getObsId ();
 

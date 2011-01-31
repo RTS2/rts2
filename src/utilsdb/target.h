@@ -449,7 +449,7 @@ class Target:public Rts2Target
 		// similar to startSlew - return 0 if observation ends, 1 if
 		// it doesn't ends (ussually in case when in_next_id == target_id),
 		// -1 on errror
-		int endObservation (int in_next_id, Rts2Block * master);
+		int endObservation (int in_next_id, rts2core::Block * master);
 
 		virtual int endObservation (int in_next_id);
 
