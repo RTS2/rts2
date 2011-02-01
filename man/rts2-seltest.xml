@@ -3,11 +3,11 @@
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
-  <!ENTITY dhdate      "<date>2006-10-21</date>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2011-02-01</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
+  <!ENTITY dhusername  "Petr Kubanek">
   <!ENTITY dhpackage   "rts2-seltest">
 
   <!ENTITY % rts2 SYSTEM "rts2.ent">
@@ -18,13 +18,13 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.3</productnumber>
+    <productnumber>0.8.2</productnumber>
     &dhdate;
     <authorgroup>
       <author>
         &dhfirstname;
         &dhsurname;
-	<contrib>Wrote most of the RTS2 package.</contrib>
+	<contrib>Wrote this manual page.</contrib>
 	<address>
           &dhemail;
 	</address>
@@ -34,6 +34,10 @@
       <year>2006</year>
       <holder>&dhusername;</holder>
     </copyright>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
+    </copyright>
     &legal;
   </refentryinfo>
   <refmeta>
@@ -42,9 +46,20 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-
     <refpurpose>Test selector alghorithm, gives next selected target in current circumstances.</refpurpose>
   </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice='opt'><option>-i</option></arg>
+      <arg choice='opt'><option>--print-all</option></arg>
+      <arg choice='opt'><option>-v</option></arg>
+      &dbapp;
+    </cmdsynopsis>
+
+    &helpsynopsis;
+
+  </refsynopsisdiv>
   <refsect1>
     <title>DESCRIPTION</title>
 
@@ -60,7 +75,70 @@
     &optiongnu;
 
     <variablelist>
+      <varlistentry>
+        <term><option>-i</option></term>
+	<listitem>
+	  <para>
+	    Run in interactive mode. This allows to adjust queue so it better
+	    fits user needs. Please see bellow for available options.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--print-satisfied</option></term>
+	<listitem>
+	  <para>
+	    Print targets satisfiing constraints.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--print-dissatisfied</option></term>
+	<listitem>
+	  <para>
+	    Print targets not satisfiing constraints.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--print-all</option></term>
+	<listitem>
+	  <para>
+	    Prints enabled targets. The targets constraints are not check and
+	    targets which does not satisfy constraints are printed out. If you
+	    would like to filter targets not satisifing the constraints, please
+	    use <option>--print-satisfied</option>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option></term>
+	<listitem>
+	  <para>
+	    Increase verbosity. Multiple <option>-v</option> increases verbosity.
+	  </para>
+	</listitem>
+      </varlistentry>
       &dbapplist;
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Interactive menus</title>
+    <para>
+      If the programm is run with the <option>-i</option>, it starts in
+      interactive menu. The menu offers to print the list of possible targets,
+      and manipulate target characteristics - disable or enable it, change its
+      priorities or period for which it should not be observed.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>p</term>
+	<listitem>
+	  <para>
+	    Print target(s) available for autonomouse selector for selection.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>

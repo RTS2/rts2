@@ -418,21 +418,6 @@ void Selector::parseFilterFileOption (const char *in_optarg)
 	readFilters(cam_filters[0], cam_filters[1]);
 }
 
-void Selector::printPossible (std::ostream &os)
-{
-	os << "List of targets selected for observations. Sort from the one with the highest priority to lowest priorities" << std::endl << std::endl;  
-	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();  
-	os << std::fixed;
-	for (int i = 1; iter != possibleTargets.end (); iter++, i++)
-	{
-		os << std::setw (4) << std::right << i << " ";
-		os << std::setprecision(2) << std::setw (8) << std::right << (*iter)->target->getBonus () << " "
-			<< std::setw (8) << std::right << (*iter)->target->getTargetPriority () << " ";
-		(*iter)->target->printShortInfo (os);
-		os << std::endl;
-	}
-}
-
 void Selector::disableTarget (int n)
 {
 	possibleTargets[n]->target->setTargetEnabled (false);

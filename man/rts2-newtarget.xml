@@ -46,24 +46,17 @@
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>rts2-newtarget</command>
+      <command>&dhpackage;</command>
+      <arg choice="opt"><option>-a</option></arg>
+      <arg choice="opt"><option>-m</option></arg>
+      <arg choice="opt"><option>-r</option> <replaceable class="parameter">radius</replaceable></arg>
+      <arg choice="opt"><option>--pi</option> <replaceable class="parameter">PI name</replaceable></arg>
+      <arg choice="opt"><option>--program</option> <replaceable class="parameter">program name</replaceable></arg>
       &dbapp;
-      <arg choice="opt">
-        <arg choice="plain"><option>-a</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-m</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-r <replaceable class="parameter">radius</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--pi <replaceable class="parameter">PI name</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--program <replaceable class="parameter">program name</replaceable></option></arg>
-      </arg>
     </cmdsynopsis>
+
+    &helpsynopsis;
+
   </refsynopsisdiv>
 
   <refsect1 id="description">
@@ -82,7 +75,6 @@
     &optiongnu;
 
     <variablelist>
-      &dbapplist;
       <varlistentry>
         <term><option>-a</option></term>
         <listitem>
@@ -126,6 +118,7 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      &dbapplist;
     </variablelist>
   </refsect1>
   <refsect1>

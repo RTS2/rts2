@@ -20,13 +20,42 @@
 #include "printtarget.h"
 #include "rts2selector.h"
 
-#define OPT_FILTERS      OPT_LOCAL + 630
-#define OPT_FILTER_FILE  OPT_LOCAL + 631
-#define OPT_FILTER_ALIAS OPT_LOCAL + 632
-#define OPT_PRINT_ALL    OPT_LOCAL + 633
+#define OPT_FILTERS             OPT_LOCAL + 630
+#define OPT_FILTER_FILE         OPT_LOCAL + 631
+#define OPT_FILTER_ALIAS        OPT_LOCAL + 632
+#define OPT_PRINT_ALL           OPT_LOCAL + 633
+#define OPT_PRINT_SATISFIED     OPT_LOCAL + 634
+#define OPT_PRINT_DISSATISFIED  OPT_LOCAL + 635
 
 namespace rts2plan
 {
+
+typedef enum {NONE, ALL, SATISIFED, DISSATISIFIED} printFilter_t;
+
+class PrintFilter
+{
+	public:
+		PrintFilter (printFilter_t _pf, double _JD) { pf = _pf; JD = _JD; }
+
+		bool operator () (rts2db::Target * t)
+		{
+			switch (pf)
+			{
+				case NONE:
+					return false;  
+				case SATISIFED:
+					return t->checkConstraints (JD);
+				case DISSATISIFIED:
+					return !t->checkConstraints (JD);
+				default:
+					return true;	
+			}
+		}
+
+	private:
+		printFilter_t pf;
+		double JD;
+};
 
 /**
  * Selector test application class.
@@ -47,7 +76,7 @@ class SelectorApp:public PrintTarget
 	private:
 		int verbosity;
 		bool interactive;
-		bool printAll;
+		printFilter_t printFilter;
 
 		rts2plan::Selector sel;
 
@@ -68,7 +97,9 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 	verbosity = 0;
 	addOption ('v', NULL, 0, "increase verbosity");
 
-	printAll = false;
+	printFilter = NONE;
+	addOption (OPT_PRINT_SATISFIED, "print-satisfied", 0, "print all available targets satisfiing observing conditions, ordered by priority");
+	addOption (OPT_PRINT_DISSATISFIED, "print-dissatisfied", 0, "print all available targets not satisfiing observing conditions, ordered by priority");
 	addOption (OPT_PRINT_ALL, "print-all", 0, "print all available targets, ordered by priority");
 
 	interactive = false;
@@ -88,8 +119,20 @@ int SelectorApp::processOption (int opt)
 			verbosity++;
 			break;
 		case OPT_PRINT_ALL:
-			printAll = true;
-			break;	
+			if (printFilter != NONE)
+				return -1;  
+			printFilter = ALL;
+			break;
+		case OPT_PRINT_SATISFIED:
+			if (printFilter != NONE)
+				return -1;
+			printFilter = SATISIFED;
+			break;
+		case OPT_PRINT_DISSATISFIED:
+			if (printFilter != NONE)
+				return -1;  
+			printFilter = DISSATISIFIED;
+			break;
 		case OPT_FILTERS:
 			sel.parseFilterOption (optarg);
 			break;
@@ -132,8 +175,8 @@ int SelectorApp::doProcessing ()
 
 	next_tar = sel.selectNextNight (0, verbosity);
 
-	if (printAll)
-	  	sel.printPossible (std::cout);
+	if (printFilter != NONE)
+	  	sel.printPossible (std::cout, PrintFilter (printFilter, ln_get_julian_from_sys ()));
 
 	if (interactive)
 		return runInteractive ();  
@@ -169,7 +212,7 @@ int SelectorApp::runInteractive ()
 		switch (ret)
 		{
 			case 'p':
-				sel.printPossible (std::cout);
+				sel.printPossible (std::cout, PrintFilter (ALL, 0));
 				break;
 			case 'd':
 				disableTargets ();

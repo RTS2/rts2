@@ -118,8 +118,9 @@ class Selector
 		 * Print possible targets.
 		 *
 		 * @param os    output stream, where target will be directed
+		 * @param pred  filter for selecting targets to print out
 		 */
-		void printPossible (std::ostream &os);
+		template <class Predicate> void printPossible (std::ostream &os, Predicate pred);
 
 		/**
 		 * Temporary disable targets, so they will not be picked up.
@@ -159,6 +160,24 @@ class Selector
 			return (std::find (nightDisabledTypes.begin (), nightDisabledTypes.end (), target_type) != nightDisabledTypes.end ());
 		}
 };
+
+template <class Predicate> void Selector::printPossible (std::ostream &os, Predicate pred)
+{
+	os << "List of targets selected for observations. Sort from the one with the highest priority to lowest priorities" << std::endl << std::endl;  
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();  
+	os << std::fixed;
+	for (int i = 1; iter != possibleTargets.end (); iter++)
+	{
+	  	if (!pred ((*iter)->target))
+		  	continue;
+		os << std::setw (4) << std::right << i << " ";
+		os << std::setprecision(2) << std::setw (8) << std::right << (*iter)->target->getBonus () << " "
+			<< std::setw (8) << std::right << (*iter)->target->getTargetPriority () << " ";
+		(*iter)->target->printShortInfo (os);
+		os << std::endl;
+		i++;
+	}
+}
 
 }
 #endif							 /* !__RTS2_SELECTOR__ */
