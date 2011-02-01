@@ -189,6 +189,7 @@ int Mrakomer::info ()
 					<< sendLog;
 			}
 			setWeatherTimeout (300, "gets bellow bad trigger point");
+			valueError (tempDiff);
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
@@ -197,11 +198,13 @@ int Mrakomer::info ()
 				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerGood->getValueDouble ()
 					<< sendLog;
+				valueGood (tempDiff);
 			}
 		}
 		else if (getWeatherState () == false)
 		{
 			setWeatherTimeout (300, "in gray period - between TRIGBAD and TRIGGOOD");
+			valueWarning (tempDiff);
 		}
 	}
 	// record last value
