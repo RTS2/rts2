@@ -23,14 +23,14 @@
 #define OPT_FILTERS             OPT_LOCAL + 630
 #define OPT_FILTER_FILE         OPT_LOCAL + 631
 #define OPT_FILTER_ALIAS        OPT_LOCAL + 632
-#define OPT_PRINT_ALL           OPT_LOCAL + 633
+#define OPT_PRINT_POSSIBLE      OPT_LOCAL + 633
 #define OPT_PRINT_SATISFIED     OPT_LOCAL + 634
 #define OPT_PRINT_DISSATISFIED  OPT_LOCAL + 635
 
 namespace rts2plan
 {
 
-typedef enum {NONE, ALL, SATISIFED, DISSATISIFIED} printFilter_t;
+typedef enum {NONE, POSSIBLE, SATISIFED, DISSATISIFIED} printFilter_t;
 
 class PrintFilter
 {
@@ -100,7 +100,7 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 	printFilter = NONE;
 	addOption (OPT_PRINT_SATISFIED, "print-satisfied", 0, "print all available targets satisfiing observing conditions, ordered by priority");
 	addOption (OPT_PRINT_DISSATISFIED, "print-dissatisfied", 0, "print all available targets not satisfiing observing conditions, ordered by priority");
-	addOption (OPT_PRINT_ALL, "print-all", 0, "print all available targets, ordered by priority");
+	addOption (OPT_PRINT_POSSIBLE, "print-all", 0, "print all available targets, ordered by priority");
 
 	interactive = false;
 	addOption ('i', NULL, 0, "interactive mode (allows modifing priorities,..");
@@ -118,10 +118,10 @@ int SelectorApp::processOption (int opt)
 		case 'v':
 			verbosity++;
 			break;
-		case OPT_PRINT_ALL:
+		case OPT_PRINT_POSSIBLE:
 			if (printFilter != NONE)
 				return -1;  
-			printFilter = ALL;
+			printFilter = POSSIBLE;
 			break;
 		case OPT_PRINT_SATISFIED:
 			if (printFilter != NONE)
@@ -212,7 +212,7 @@ int SelectorApp::runInteractive ()
 		switch (ret)
 		{
 			case 'p':
-				sel.printPossible (std::cout, PrintFilter (ALL, 0));
+				sel.printPossible (std::cout, PrintFilter (POSSIBLE, 0));
 				break;
 			case 'd':
 				disableTargets ();

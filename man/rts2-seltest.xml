@@ -52,7 +52,9 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <arg choice='opt'><option>-i</option></arg>
-      <arg choice='opt'><option>--print-all</option></arg>
+      <arg choice='opt'><option>--print-satisfied</option></arg>
+      <arg choice='opt'><option>--print-dissatisfied</option></arg>
+      <arg choice='opt'><option>--print-possible</option></arg>
       <arg choice='opt'><option>-v</option></arg>
       &dbapp;
     </cmdsynopsis>
@@ -101,7 +103,7 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--print-all</option></term>
+        <term><option>--print-possible</option></term>
 	<listitem>
 	  <para>
 	    Prints enabled targets. The targets constraints are not check and
