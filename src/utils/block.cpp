@@ -912,6 +912,9 @@ void Block::deleteTimers (int event_type)
 
 void Block::valueMaskError (Value *val, int32_t err)
 {
-	val->maskError (err);
-	updateMetaInformations (val);
+  	if ((val->getFlags () & RTS2_VALUE_ERRORMASK) != err)
+	{
+		val->maskError (err);
+		updateMetaInformations (val);
+	}
 }
