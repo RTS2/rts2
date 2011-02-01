@@ -58,23 +58,19 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 {
 	// customize value display
 	std::ostringstream _os;
-	if (value->getWriteToFits ())
+	switch (value->getFlags () & RTS2_VALUE_ERRORMASK)
 	{
-		wcolor_set (getWriteWindow (), CLR_FITS, NULL);
-	}
-	else
-	{
-		switch (value->getFlags () & RTS2_VALUE_ERRORMASK)
-		{
-			case RTS2_VALUE_WARNING:
-				wcolor_set (getWriteWindow (), CLR_WARNING, NULL);
-				break;
-			case RTS2_VALUE_ERROR:
-				wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
-				break;
-			default:
+		case RTS2_VALUE_WARNING:
+			wcolor_set (getWriteWindow (), CLR_WARNING, NULL);
+			break;
+		case RTS2_VALUE_ERROR:
+			wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+			break;
+		default:
+			if (value->getWriteToFits ())
+				wcolor_set (getWriteWindow (), CLR_FITS, NULL);
+			else
 				wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-		}
 	}
 	// ultra special handling of SCRIPT value
 	if (value->getValueDisplayType () == RTS2_DT_SCRIPT)
