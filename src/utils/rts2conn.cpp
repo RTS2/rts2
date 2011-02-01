@@ -1817,8 +1817,8 @@ void Rts2Conn::addValue (rts2core::Value * value)
 	if (value->isValue (RTS2_VALUE_INFOTIME))
 		info_time = (rts2core::ValueTime *) value;
 	// if value exists, remove it from list
-	values.removeValue (value->getName ().c_str ());
-	values.push_back (value);
+	ValueVector::iterator eiter = values.removeValue (value->getName ().c_str ());
+	values.insert (eiter, value);
 }
 
 int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)

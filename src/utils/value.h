@@ -219,6 +219,10 @@
  */
 #define RTS2_VALUE_NOTNULL            0x08000000
 
+#define RTS2_VALUE_ERRORMASK          0x30000000
+
+#define RTS2_VALUE_GOOD               0x00000000
+
 /**
  * Value is approaching out-of-limits.
  */
@@ -419,13 +423,15 @@ class Value
 
 		int getWriteGroup () { return ((rts2Type & RTS2_WR_GROUP_NR_MASK) >> 16) - 0x20; }
 
+		void maskError (int32_t err) { rts2Type = ( rts2Type & ~RTS2_VALUE_ERRORMASK ) | err; }
+
 	protected:
 		char buf[VALUE_BUF_LEN];
 		int32_t rts2Type;
 
 		void setValueFlags (int32_t flags)
 		{
-			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL) & flags;
+			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL | RTS2_VALUE_ERRORMASK) & flags;
 		}
 
 		/**

@@ -86,10 +86,10 @@ typedef std::vector < Rts2Conn * > connections_t;
 
 namespace rts2core
 {
+
 class Rts2Command;
 
 class Rts2DevClient;
-
 
 /**
  * Base class of RTS2 devices and clients.
@@ -396,7 +396,7 @@ class Block: public Rts2App
 
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		void addUser (int p_centraldId, const char *p_login);
 		int addUser (Rts2ConnUser * in_user);
 
@@ -523,7 +523,7 @@ class Block: public Rts2App
 		 */
 		void clearAll ();
 
-		int queAll (rts2core::Rts2Command * cmd);
+		int queAll (Rts2Command * cmd);
 		int queAll (const char *text);
 
 		void queAllCentralds (const char *command);
@@ -533,10 +533,22 @@ class Block: public Rts2App
 		 */
 		Rts2Conn *getMinConn (const char *valueName);
 
+		/**
+		 * Called when connection to centrald is established and running.
+		 *
+		 * @param conn centrald connection
+		 */
 		virtual void centraldConnRunning (Rts2Conn *conn)
 		{
 		}
 
+		/**
+		 * Called when connection with centrald breaks. Usefull for hooking up
+		 * functions defining what should be done in this case - e.g.
+		 * shut down the roof,..
+		 *
+		 * @param conn broken centrald connection
+		 */
 		virtual void centraldConnBroken (Rts2Conn *conn)
 		{
 		}
@@ -554,10 +566,10 @@ class Block: public Rts2App
 		 * @param device_name Name of the device.
 		 * @param value_name  Name of the value.
 		 *
-		 * @return Pointer to rts2core::Value object holding the value, or NULL if device or value with given name
+		 * @return Pointer to Value object holding the value, or NULL if device or value with given name
 		 * does not exists.
 		 */
-		virtual rts2core::Value *getValue (const char *device_name, const char *value_name);
+		virtual Value *getValue (const char *device_name, const char *value_name);
 
 		virtual void endRunLoop ()
 		{
@@ -605,7 +617,7 @@ class Block: public Rts2App
 		 *
 		 * @param value Value whose metainformation will be send out.
 		 */
-		void updateMetaInformations (rts2core::Value *value);
+		void updateMetaInformations (Value *value);
 
 	protected:
 
@@ -719,6 +731,20 @@ class Block: public Rts2App
 		 */
 		bool centralServerInState (int state);
 
+		/**
+		 * Make sure that the value is reporting all good - e.g. is inside limits.
+		 *
+		 * @param value value which error flags will be possibly cleared
+		 */
+		void valueGood (Value *val) { valueMaskError (val, RTS2_VALUE_GOOD); }
+
+		/**
+		 * Display warning on value.
+		 */
+		void valueWarning (Value *val) { valueMaskError (val, RTS2_VALUE_WARNING); }
+
+		void valueError (Value *val) { valueMaskError (val, RTS2_VALUE_ERROR); }
+
 	private:
 		int port;
 		long int idle_timeout;	 // in nsec
@@ -741,6 +767,13 @@ class Block: public Rts2App
 
 		int masterState;
 		Rts2Conn *stateMasterConn;
+
+		/**
+		 * Set value error mask.
+		 *
+		 * @param err error bits to set
+		 */
+		void valueMaskError (Value *val, int32_t err);
 };
 
 }

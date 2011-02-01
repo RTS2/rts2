@@ -88,13 +88,14 @@ class ValueVector:public std::vector < Value * >
 		 *
 		 * @param value_name  Name of the value.
 		 */
-		void removeValue (const char *value_name)
+		ValueVector::iterator removeValue (const char *value_name)
 		{
 			ValueVector::iterator val_iter = getValueIterator (value_name);
 			if (val_iter == end ())
-				return;
+				return val_iter;
 			delete (*val_iter);
-			erase (val_iter);
+			val_iter = erase (val_iter);
+			return val_iter;
 		}
 };
 
