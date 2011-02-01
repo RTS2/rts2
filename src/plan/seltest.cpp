@@ -100,7 +100,7 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 	printFilter = NONE;
 	addOption (OPT_PRINT_SATISFIED, "print-satisfied", 0, "print all available targets satisfiing observing conditions, ordered by priority");
 	addOption (OPT_PRINT_DISSATISFIED, "print-dissatisfied", 0, "print all available targets not satisfiing observing conditions, ordered by priority");
-	addOption (OPT_PRINT_POSSIBLE, "print-all", 0, "print all available targets, ordered by priority");
+	addOption (OPT_PRINT_POSSIBLE, "print-possible", 0, "print all available targets, ordered by priority");
 
 	interactive = false;
 	addOption ('i', NULL, 0, "interactive mode (allows modifing priorities,..");
