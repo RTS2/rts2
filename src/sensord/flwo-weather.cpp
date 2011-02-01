@@ -382,19 +382,42 @@ bool FlwoWeather::isGoodWeather ()
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
 	  	setWeatherTimeout (600, "humidity is above limit");
+	  	valueError (humidity);
 		return false;
+	}
+	else
+	{
+		valueGood (humidity);
 	}
 	if (windSpeed->getValueFloat () > windSpeed_limit->getValueFloat ())
 	{
 		setWeatherTimeout (600, "windspeed is above limit");
+		valueError (windSpeed);
+		return false;
+	}
+	else
+	{
+		valueGood (windSpeed);
 	}
 	if (windGustSpeed->getValueFloat () > windGustSpeed_limit->getValueFloat ())
 	{
 		setWeatherTimeout (600, "wind gust speed is above limit");
+		valueError (windGustSpeed);
+		return false;
+	}
+	else
+	{
+		valueGood (windGustSpeed);
 	}
 	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
 	{
 		setWeatherTimeout (600, "skytemp is above limit");
+		valueError (me_sky_temp);
+		return false;
+	}
+	else
+	{
+		valueGood (me_sky_temp);
 	}
 	return SensorWeather::isGoodWeather ();
 }
