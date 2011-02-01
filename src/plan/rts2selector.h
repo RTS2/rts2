@@ -25,6 +25,7 @@
 
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
+#include "../utils/rts2askchoice.h"
 
 namespace rts2plan
 {
@@ -112,6 +113,22 @@ class Selector
 
 		void parseFilterOption (const char *in_optarg);
 		void parseFilterFileOption (const char *in_optarg);
+
+		/**
+		 * Print possible targets.
+		 *
+		 * @param os    output stream, where target will be directed
+		 */
+		void printPossible (std::ostream &os);
+
+		/**
+		 * Temporary disable targets, so they will not be picked up.
+		 *
+		 * @param n     index of target to disable (counting from 0!)
+		 */
+		void disableTarget (int n);
+
+		void saveTargets ();
 
 	private:
 		std::vector < TargetEntry* > possibleTargets;

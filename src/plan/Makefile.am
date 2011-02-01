@@ -57,8 +57,8 @@ rts2_selector_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2
 
 nodist_rts2_seltest_SOURCES = rts2selector.cpp
 rts2_seltest_SOURCES = seltest.cpp
-rts2_seltest_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_seltest_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_seltest_CXXFLAGS = @LIBNCURSES_CFLAGS@ ${PLAN_STDLIBS}
+rts2_seltest_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@
 
 rts2_targetinfo_SOURCES = targetinfo.cpp
 rts2_targetinfo_CXXFLAGS = ${PLAN_STDLIBS}

@@ -23,6 +23,7 @@
 #define OPT_FILTERS      OPT_LOCAL + 630
 #define OPT_FILTER_FILE  OPT_LOCAL + 631
 #define OPT_FILTER_ALIAS OPT_LOCAL + 632
+#define OPT_PRINT_ALL    OPT_LOCAL + 633
 
 namespace rts2plan
 {
@@ -45,8 +46,13 @@ class SelectorApp:public PrintTarget
 		virtual int doProcessing ();
 	private:
 		int verbosity;
+		bool interactive;
+		bool printAll;
 
 		rts2plan::Selector sel;
+
+		int runInteractive ();
+		void disableTargets ();
 };
 
 }
@@ -55,12 +61,18 @@ using namespace rts2plan;
 
 SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv),sel()
 {
-	verbosity = 0;
-	addOption ('v', NULL, 0, "increase verbosity");
-
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
 	addOption (OPT_FILTER_ALIAS, "filter-aliases", 1, "filter aliases file");
+
+	verbosity = 0;
+	addOption ('v', NULL, 0, "increase verbosity");
+
+	printAll = false;
+	addOption (OPT_PRINT_ALL, "print-all", 0, "print all available targets, ordered by priority");
+
+	interactive = false;
+	addOption ('i', NULL, 0, "interactive mode (allows modifing priorities,..");
 }
 
 SelectorApp::~SelectorApp (void)
@@ -75,6 +87,9 @@ int SelectorApp::processOption (int opt)
 		case 'v':
 			verbosity++;
 			break;
+		case OPT_PRINT_ALL:
+			printAll = true;
+			break;	
 		case OPT_FILTERS:
 			sel.parseFilterOption (optarg);
 			break;
@@ -84,6 +99,9 @@ int SelectorApp::processOption (int opt)
 		case OPT_FILTER_ALIAS:
 			sel.readAliasFile (optarg);
 			break;
+		case 'i':
+			interactive = true;
+			break;	
 		default:
 			return PrintTarget::processOption (opt);
 	}
@@ -106,8 +124,6 @@ int SelectorApp::doProcessing ()
 	Rts2Config *config;
 	struct ln_lnlat_posn *observer;
 
-	rts2db::Target *tar;
-
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();
 
@@ -116,19 +132,70 @@ int SelectorApp::doProcessing ()
 
 	next_tar = sel.selectNextNight (0, verbosity);
 
-	tar = createTarget (next_tar, observer);
+	if (printAll)
+	  	sel.printPossible (std::cout);
+
+	if (interactive)
+		return runInteractive ();  
+
+	rts2db::Target *tar = createTarget (next_tar, observer);
+	
 	if (tar)
 	{
 		printTarget (tar);
 	}
 	else
 	{
-		std::cout << "cannot create target" << std::endl;
+		std::cout << "cannot create target with ID " << next_tar << std::endl;
 	}
 
 	delete tar;
 
 	return 0;
+}
+
+int SelectorApp::runInteractive ()
+{
+	Rts2AskChoice main (this);
+	main.addChoice ('p', "Print targets");
+	main.addChoice ('d', "Disable targets");
+	main.addChoice ('s', "Save targets");
+	main.addChoice ('q', "Quit");
+
+	while (true)
+	{
+		char ret;
+		ret = main.query (std::cout);
+		switch (ret)
+		{
+			case 'p':
+				sel.printPossible (std::cout);
+				break;
+			case 'd':
+				disableTargets ();
+				break;	
+			case 's':
+				sel.saveTargets ();
+				break;	
+			case 'q':
+				return 0;
+			default:
+				std::cerr << "Unknow key pressed: " << ret << std::endl;
+				break;
+		}
+	}
+}
+
+void SelectorApp::disableTargets ()
+{
+	int n = 1;
+	askForInt ("Enter target index from the printout", n);
+	if (n <= 0)
+	{
+		std::cerr << "Invalid index " << n << std::endl;
+		return;
+	}
+	sel.disableTarget (n);
 }
 
 int main (int argc, char **argv)
