@@ -92,6 +92,30 @@ void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, con
 	os << ">";
 }
 
+void GetRequestAuthorized::printSubMenus (std::ostream &os, const char *prefix, const char *current, const char *submenus[][2])
+{
+	const char **p = submenus[0];  
+	const char *a = p[0];
+	const char *n = p[1];
+	while (true)
+	{
+		if (strcmp (current, a))
+		{
+			os << "<a href='" << prefix << a << "/'>" << n << "</a>";
+		}
+		else
+		{
+			os << n;
+		}
+		p += 2;
+		a = p[0];
+		n = p[1];
+		if (a == NULL)
+			break;
+		os << "&nbsp;";
+	}
+}
+
 void GetRequestAuthorized::printFooter (std::ostream &os)
 {
 	os << "</body></html>";

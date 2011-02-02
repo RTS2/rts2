@@ -94,6 +94,15 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		void printHeader (std::ostream &os, const char *title, const char *css = NULL, const char *cssLink = NULL, const char *onLoad = NULL);
 
 		/**
+		 * Prints menu for subpages. Forms structure to href pointing to the pages, labeled with decsription.
+		 *
+		 * @param _os       stream which will receive the menu
+		 * @param current   current submenu. This submenu will not receive href highllting
+		 * @param submenus  NULL terminated structur holding const char* references to hrefs and names to print
+		 */
+		void printSubMenus (std::ostream &os, const char *prefix, const char *current, const char *submenus[][2]);
+
+		/**
 		 * Prints document footer.
 		 *
 		 * @param os    output stream

@@ -55,7 +55,7 @@ class Targets: public GetRequestAuthorized
 		void listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void processAPI (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetHeader (int tar_id, std::ostringstream &_os);
+		void printTargetHeader (int tar_id, const char *current, std::ostringstream &_os);
 		void callAPI (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printTarget (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);

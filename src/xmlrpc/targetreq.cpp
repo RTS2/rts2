@@ -96,7 +96,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					printTarget (tar, response_type, response, response_length);
 					break;
 				}
-				if (vals[1] == "info")
+				if (vals[1] == "details")
 				{
 					printTargetInfo (tar, response_type, response, response_length);
 					break;
@@ -270,7 +270,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 	_os << "{\"h\":["
 		"{\"n\":\"Select\",\"t\":\"sel\",\"c\":0,\"spn\":\"tid\"},"
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
-		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":1},"
+		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"suffix\":\"/main\",\"c\":1},"
 		"{\"n\":\"NOBS\",\"t\":\"s\",\"c\":11},"
 		"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
 		"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
@@ -325,18 +325,16 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 	returnJSON (_os, response_type, response, response_length);
 }
 
-void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
+void Targets::printTargetHeader (int tar_id, const char *current, std::ostringstream &_os)
 {
 	std::ostringstream prefix;
 	prefix << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/" << tar_id << "/";
-	_os << "<p><a href='" << prefix.str ()
-		<< "main/'>main page</a>&nbsp;<a href='" << prefix.str ()
-		<< "info/'>details</a>&nbsp;<a href='" << prefix.str ()
-		<< "stat/'>statistics</a>&nbsp;<a href='" << prefix.str () 
-		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
-		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
-		<< "plan/'>plan</a>&nbsp;<a href='" << prefix.str ()
-		<< "altplot/'>altitude plot</a></p>";
+
+	_os << "<p>";
+
+	const char *subm[][2] = {{"main", "main page"},{"details", "details"},{"stat", "statistics"},{"images", "images"},{"obs", "observations"},{"plan", "plan"},{"altplot","altitude plot"},{NULL, NULL}};
+
+	printSubMenus (_os, prefix.str ().c_str (), current, subm);
 }
 
 void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -504,6 +502,8 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str (), ".b_left { float: left; width:50%; } .b_right {float: left; width: 50%;} ", NULL, "altAzTimer ();");
 
+	printTargetHeader (tar->getTargetID (), "main", _os);
+
 	includeJavaScript (_os, "equ.js");
 
 	struct ln_equ_posn tradec;
@@ -625,8 +625,6 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 
 	_os << "</script>\n";
 
-	printTargetHeader (tar->getTargetID (), _os);
-
 	// javascript to send requests..
 	double JD = ln_get_julian_from_sys ();
 	
@@ -739,7 +737,7 @@ void Targets::printTargetInfo (rts2db::Target *tar, const char* &response_type, 
 	
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
-	printTargetHeader (tar->getTargetID (), _os);
+	printTargetHeader (tar->getTargetID (), "details", _os);
 
 	_os << "<pre>";
 
@@ -763,7 +761,7 @@ void Targets::printTargetStat (rts2db::Target *tar, const char* &response_type, 
 	
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
-	printTargetHeader (tar->getTargetID (), _os);
+	printTargetHeader (tar->getTargetID (), "stat", _os);
 
 	_os << "<h1>Target statistics data</h1>" << std::endl <<
 		"<div id='info' class='b_left'><table><tr><td>First observation</td><td>" << LibnovaDateDouble (tar->getFirstObs ()) << "</td></tr>"
@@ -808,7 +806,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
 
-	printTargetHeader (tar->getTargetID (), _os);
+	printTargetHeader (tar->getTargetID (), "images", _os);
 	
 	preview.script (_os, label_encoded, quantiles, chan);
 		
@@ -864,7 +862,7 @@ void Targets::printTargetObservations (rts2db::Target *tar, const char* &respons
 	std::ostringstream _os;
 
 	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, "/css/table.css", "targetObs.refresh();");
-	printTargetHeader (tar->getTargetID (), _os);
+	printTargetHeader (tar->getTargetID (), "obs", _os);
 
 	_os << "<h1>Observations of target " << tar->getTargetName () << "</h1>\n";
 
@@ -889,7 +887,7 @@ void Targets::printTargetPlan (rts2db::Target *tar, const char* &response_type, 
 	std::ostringstream _os;
 
 	printHeader (_os, (std::string ("Plan entries for target ") + tar->getTargetName ()).c_str (), NULL, "/css/table.css", "targetPlan.refresh();");
-	printTargetHeader (tar->getTargetID (), _os);
+	printTargetHeader (tar->getTargetID (), "plan", _os);
 
 	_os << "<h1>Plan entries for target <a href='../'>" << tar->getTargetName () << "</a></h1>\n";
 

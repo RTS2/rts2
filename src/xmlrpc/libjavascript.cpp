@@ -676,7 +676,7 @@ const char *tableScript =
       "case 'a':\n"
 	"if (row[header.href] != -1) {\n"
           "var a = document.createElement('a');\n"
-          "a.href = header.prefix + row[header.href] + '/';\n"
+          "a.href = header.prefix + row[header.href] + header.suffix + '/';\n"
           "a.innerHTML = row[header.c];\n"
           "td.appendChild(a);\n"
 	"} else {\n"
