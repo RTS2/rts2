@@ -303,7 +303,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		else
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az;
 
-		_os << "," << tar->getTargetPriority ()
+		_os << "," << std::setprecision (3) << tar->getTargetPriority ()
 			<< ",";
 		double b = tar->getBonus (JD);
 		if (isnan (b))
