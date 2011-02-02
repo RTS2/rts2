@@ -248,7 +248,7 @@ AppOpenTPLError::processOption (int in_opt)
 			op = SAMPLE;
 			break;
 		default:
-			return Rts2App::processOption (in_opt);
+			return rts2core::App::processOption (in_opt);
 	}
 	return 0;
 }
@@ -266,7 +266,7 @@ int
 AppOpenTPLError::init ()
 {
 	int ret;
-	ret = Rts2App::init ();
+	ret = rts2core::App::init ();
 	if (ret)
 		return ret;
 

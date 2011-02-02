@@ -21,7 +21,7 @@
 
 #include "rts2configraw.h"
 #include "utilsfunc.h"
-#include "rts2app.h"
+#include "app.h"
 
 #ifdef DEBUG_EXTRA
 #include <iostream>

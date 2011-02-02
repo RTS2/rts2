@@ -20,7 +20,7 @@
 #ifndef __RTS2_CLIAPP__
 #define __RTS2_CLIAPP__
 
-#include "rts2app.h"
+#include "app.h"
 
 #include <libnova/libnova.h>
 
@@ -32,7 +32,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CliApp:public Rts2App
+class Rts2CliApp:public rts2core::App
 {
 	public:
 		Rts2CliApp (int in_argc, char **in_argv);

@@ -122,7 +122,7 @@ class Rts2LogValName
 };
 
 /**
- * Bse class for logging. Provides functions for both Rts2App and Rts2Device, which
+ * Bse class for logging. Provides functions for both rts2core::App and Rts2Device, which
  * shall be called from the respective program bodies.
  *
  * @ingroup RTS2Logger

@@ -24,7 +24,10 @@
 
 #include <message.h>
 
-class Rts2App;
+namespace rts2core
+{
+class App;
+}
 
 /**
  * Class used for streaming log messages. This class provides operators which
@@ -39,12 +42,12 @@ class Rts2App;
 class Rts2LogStream
 {
 	private:
-		Rts2App * masterApp;
+		rts2core::App * masterApp;
 		messageType_t messageType;
 		std::ostringstream ls;
 	public:
 
-		Rts2LogStream (Rts2App * in_master, messageType_t in_type)
+		Rts2LogStream (rts2core::App * in_master, messageType_t in_type)
 		{
 			masterApp = in_master;
 			messageType = in_type;

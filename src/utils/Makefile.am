@@ -11,7 +11,7 @@ test_LDADD = librts2block.a @LIB_NOVA@
 
 noinst_LIBRARIES = librts2block.a
 
-librts2block_a_SOURCES = hoststring.cpp rts2app.cpp block.cpp daemon.cpp device.cpp rts2option.cpp \
+librts2block_a_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp rts2option.cpp \
 	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp value.cpp valuestat.cpp \
 	rts2devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp rts2connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
@@ -37,7 +37,7 @@ else
 EXTRA_DIST += getopt_own.c
 endif
 
-noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h block.h daemon.h device.h rts2option.h \
+noinst_HEADERS = hoststring.h utilsfunc.h app.h block.h daemon.h device.h rts2option.h \
 	rts2address.h rts2user.h rts2client.h rts2command.h value.h valuestat.h \
 	rts2devclient.h rts2event.h rts2configraw.h rts2config.h rts2object.h rts2connnosend.h \
 	connfork.h objectcheck.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \

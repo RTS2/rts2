@@ -18,7 +18,7 @@
  */
 
 #include "error.h"
-#include "rts2app.h"
+#include "app.h"
 
 #include "config.h"
 
@@ -34,13 +34,15 @@
 #include <string.h>
 #include <unistd.h>
 
-static Rts2App *masterApp = NULL;
+using namespace rts2core;
+
+static App *masterApp = NULL;
 
 #define OPT_VERSION      999
 #define OPT_DEBUG        998
 #define OPT_UTTIME       997
 
-Rts2App *getMasterApp ()
+App *getMasterApp ()
 {
 	return masterApp;
 }
@@ -51,7 +53,7 @@ Rts2LogStream logStream (messageType_t in_messageType)
 	return ls;
 }
 
-Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
+App::App (int argc, char **argv):Rts2Object ()
 {
 	app_argc = argc;
 	app_argv = argv;
@@ -72,11 +74,11 @@ Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 	masterApp = this;
 }
 
-Rts2App::~Rts2App ()
+App::~App ()
 {
 }
 
-int Rts2App::initOptions ()
+int App::initOptions ()
 {
 	int c;
 	int ret;
@@ -168,7 +170,7 @@ void killSignal (int sig)
 	}
 }
 
-int Rts2App::init ()
+int App::init ()
 {
 	signal (SIGHUP, signalHUP);
 	signal (SIGINT, killSignal);
@@ -187,19 +189,19 @@ int Rts2App::init ()
 	}
 }
 
-void Rts2App::helpOptions ()
+void App::helpOptions ()
 {
 	std::vector < Rts2Option >::reverse_iterator opt_iter;
 	for (opt_iter = options.rbegin (); opt_iter != options.rend (); opt_iter++)
 		opt_iter->help ();
 }
 
-void Rts2App::usage()
+void App::usage()
 {
 	std::cout << "\tUsage pattern not defined, please add feature request for missing usage pattern to http://www.rts2.org/featreq" << std::endl;
 }
 
-void Rts2App::help ()
+void App::help ()
 {
 	std::cout << "Usage:" << std::endl;
 	usage ();
@@ -207,7 +209,7 @@ void Rts2App::help ()
 	helpOptions ();
 }
 
-int Rts2App::processOption (int in_opt)
+int App::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -253,17 +255,17 @@ This is free software, and you are welcome to redistribute it under certain cond
 	return 0;
 }
 
-int Rts2App::processArgs (const char *arg)
+int App::processArgs (const char *arg)
 {
 	return -1;
 }
 
-void Rts2App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
+void App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
 {
 	options.push_back (Rts2Option (in_short_option, in_long_option, in_has_arg, in_help_msg));
 }
 
-int Rts2App::askForInt (const char *desc, int &val)
+int App::askForInt (const char *desc, int &val)
 {
 	char temp[200];
 	while (!getEndLoop ())
@@ -295,7 +297,7 @@ int Rts2App::askForInt (const char *desc, int &val)
 	return 0;
 }
 
-int Rts2App::askForDouble (const char *desc, double &val)
+int App::askForDouble (const char *desc, double &val)
 {
 	char temp[200];
 	while (!getEndLoop ())
@@ -322,7 +324,7 @@ int Rts2App::askForDouble (const char *desc, double &val)
 	return 0;
 }
 
-int Rts2App::askForString (const char *desc, std::string & val)
+int App::askForString (const char *desc, std::string & val)
 {
 	while (!getEndLoop ())
 	{
@@ -348,7 +350,7 @@ int Rts2App::askForString (const char *desc, std::string & val)
 	return 0;
 }
 
-int Rts2App::askForPassword (const char *desc, std::string & val)
+int App::askForPassword (const char *desc, std::string & val)
 {
 	std::cout << desc << ":";
 	struct termios oldt, newt;
@@ -374,7 +376,7 @@ int Rts2App::askForPassword (const char *desc, std::string & val)
 	return 0;
 }
 
-bool Rts2App::askForBoolean (const char *desc, bool val)
+bool App::askForBoolean (const char *desc, bool val)
 {
 	char temp[20];
 	while (!getEndLoop ())
@@ -411,7 +413,7 @@ bool Rts2App::askForBoolean (const char *desc, bool val)
 	return val;
 }
 
-int Rts2App::askForChr (const char *desc, char &out)
+int App::askForChr (const char *desc, char &out)
 {
 	char temp[201];
 	std::cout << desc << ":";
@@ -427,7 +429,7 @@ int Rts2App::askForChr (const char *desc, char &out)
 	return 0;
 }
 
-void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageString)
+void App::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
@@ -435,7 +437,7 @@ void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageS
 	std::cerr << msg << std::endl;
 }
 
-void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString)
+void App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messageString)
 {
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
@@ -443,18 +445,18 @@ void Rts2App::sendMessageNoEndl (messageType_t in_messageType, const char *in_me
 	std::cerr << msg;
 }
 
-void Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
+void App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
 {
 	sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
+Rts2LogStream App::logStream (messageType_t in_messageType)
 {
 	Rts2LogStream ls (this, in_messageType);
 	return ls;
 }
 
-void Rts2App::sigHUP (int sig)
+void App::sigHUP (int sig)
 {
 	endRunLoop ();
 }

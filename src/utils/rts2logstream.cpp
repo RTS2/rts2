@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2app.h"
+#include "app.h"
 #include "rts2logstream.h"
 
 #include <iomanip>

@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "value.h"
-#include "rts2app.h"
+#include "app.h"
 
 namespace rts2core
 {

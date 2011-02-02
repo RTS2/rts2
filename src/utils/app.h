@@ -29,13 +29,16 @@
 #include "rts2message.h"
 #include "rts2logstream.h"
 
+namespace rts2core
+{
+
 /**
  * Abstract class which provides functions for an application.
  * 
  * This class encapsulates method to process options, main arguments and
  * contains run method.
  *
- * Ussual implementation of a main routine of an application using Rts2App
+ * Ussual implementation of a main routine of an application using App
  * descendat looks like:
  *
  @code
@@ -51,17 +54,17 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2App:public Rts2Object
+class App:public Rts2Object
 {
 	public:
 		/**
-		 * Constructor for Rts2App.
+		 * Constructor for App.
 		 *
 		 * @param argc Number of arguments passed in argv.
 		 * @param argv Application options and arguments.
 		 */
-		Rts2App (int argc, char **argv);
-		virtual ~ Rts2App ();
+		App (int argc, char **argv);
+		virtual ~ App ();
 
 		/**
 		 * Run method of the application.
@@ -70,7 +73,7 @@ class Rts2App:public Rts2Object
 		 * variables etc..
 		 *
 		 * Both Daemon and Rts2CliApp define run method, so this method is
-		 * pure virtual. It makes sense for all descendats of Rts2App
+		 * pure virtual. It makes sense for all descendats of App
 		 * to provide this method.
 		 */
 		virtual int run () = 0;
@@ -308,15 +311,16 @@ class Rts2App:public Rts2Object
 		bool useLocalTime;
 };
 
+}
 
 /**
  * Returns master (singleton) application.
  * If there are more then one App object in the executable, the one which constructor was
  * called latter will be used.
  *
- * @return Rts2App object.
+ * @return App object.
  */
-Rts2App *getMasterApp ();
+rts2core::App *getMasterApp ();
 
 /**
  * Create logging stream.

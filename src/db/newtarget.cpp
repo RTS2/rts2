@@ -282,7 +282,7 @@ int Rts2NewTarget::doProcessing ()
 	if (n_tar_id == INT_MIN)
 		return saveTarget ();
 
-	Rts2AskChoice selection = Rts2AskChoice (this);
+	Rts2AskChoice selection (this);
 	selection.addChoice ('s', "Save");
 	selection.addChoice ('q', "Quit");
 	selection.addChoice ('o', "List observations around position");

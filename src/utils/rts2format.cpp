@@ -18,7 +18,7 @@
  */
 
 #include "rts2format.h"
-#include "rts2app.h"
+#include "app.h"
 
 int flagSpace = -1;
 

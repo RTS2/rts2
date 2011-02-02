@@ -1,6 +1,6 @@
 noinst_LIBRARIES = librts2image.a 
 
-noinst_HEADERS = rts2fitsfile.h channel.h rts2image.h rts2devcliimg.h cameraimage.h rts2imagedb.h rts2devclifoc.h rts2appdbimage.h rts2appimage.h memimage.h
+noinst_HEADERS = rts2fitsfile.h channel.h rts2image.h rts2devcliimg.h cameraimage.h rts2imagedb.h rts2devclifoc.h rts2appdbimage.h appimage.h memimage.h
 
 LDADD = @LIB_M@ @LIB_NOVA@
 

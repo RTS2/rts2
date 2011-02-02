@@ -26,7 +26,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Choice & choice)
 }
 
 
-Rts2AskChoice::Rts2AskChoice (Rts2App * in_app)
+Rts2AskChoice::Rts2AskChoice (rts2core::App * in_app)
 {
 	app = in_app;
 }

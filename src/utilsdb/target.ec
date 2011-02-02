@@ -29,7 +29,7 @@
 #include "sqlerror.h"
 
 #include "../utils/infoval.h"
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"

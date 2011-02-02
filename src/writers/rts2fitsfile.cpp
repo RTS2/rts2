@@ -19,7 +19,7 @@
 
 #include "rts2fitsfile.h"
 
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 #include "../utils/utilsfunc.h"
 
 #include "config.h"

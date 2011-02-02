@@ -18,7 +18,7 @@
  */
 
 #include "sqlerror.h"
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 #include "../utils/rts2event.h"
 
 #include <sstream>

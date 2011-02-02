@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-Rts2CliApp::Rts2CliApp (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)
+Rts2CliApp::Rts2CliApp (int in_argc, char **in_argv):rts2core::App (in_argc, in_argv)
 {
 }
 

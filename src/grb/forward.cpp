@@ -484,7 +484,7 @@ Rts2AppFw::processOption (int in_opt)
 			forwardPort = atoi (optarg);
 			break;
 		default:
-			return Rts2App::processOption (in_opt);
+			return rts2core::App::processOption (in_opt);
 	}
 	return 0;
 }
@@ -495,7 +495,7 @@ Rts2AppFw::init ()
 {
 	int ret;
 
-	ret = Rts2App::init ();
+	ret = rts2core::App::init ();
 	if (ret)
 		return ret;
 

@@ -6,18 +6,21 @@
 
 #include <list>
 
-class Rts2AppImage:public Rts2CliApp
+namespace rts2image
+{
+
+class AppImageCore:public Rts2CliApp
 {
 	protected:
 		std::list < const char *>imageNames;
 		bool readOnly;
 		virtual int processImage (Rts2Image * image) { return 0; }
 	public:
-		Rts2AppImage (int in_argc, char **in_argv, bool in_readOnly):Rts2CliApp (in_argc, in_argv)
+		AppImageCore (int in_argc, char **in_argv, bool in_readOnly):Rts2CliApp (in_argc, in_argv)
 		{
 			readOnly = in_readOnly;
 		}
-		virtual ~ Rts2AppImage (void)
+		virtual ~ rts2image::AppImageCore (void)
 		{
 			imageNames.clear ();
 		}
@@ -44,4 +47,7 @@ class Rts2AppImage:public Rts2CliApp
 			return ret;
 		}
 };
+
+}
+
 #endif							 /* !__RTS2_APP_IMAGE__ */

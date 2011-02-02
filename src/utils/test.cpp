@@ -24,7 +24,7 @@
 
 #include "utilsfunc.h"
 
-#include "rts2app.h"
+#include "app.h"
 #include "rts2config.h"
 #include "expander.h"
 
@@ -33,10 +33,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TestApp:public Rts2App
+class Rts2TestApp:public rts2core::App
 {
 	public:
-		Rts2TestApp (int in_argc, char **in_argv):Rts2App (in_argc, in_argv) {}
+		Rts2TestApp (int in_argc, char **in_argv):rts2core::App (in_argc, in_argv) {}
 		virtual int run ();
 };
 

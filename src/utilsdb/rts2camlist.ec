@@ -1,6 +1,6 @@
 #include "rts2camlist.h"
 
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 
 Rts2CamList::Rts2CamList ()
 {

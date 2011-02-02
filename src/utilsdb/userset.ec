@@ -18,7 +18,7 @@
  */
 
 #include "userset.h"
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 #include "sqlerror.h"
 
 using namespace rts2db;

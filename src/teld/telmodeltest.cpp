@@ -149,7 +149,7 @@ int TelModelTest::processOption (int in_opt)
 			rpoint = true;
 			break;
 		default:
-			return Rts2App::processOption (in_opt);
+			return rts2core::App::processOption (in_opt);
 	}
 	return 0;
 }
@@ -163,7 +163,7 @@ int TelModelTest::processArgs (const char *in_arg)
 int TelModelTest::init ()
 {
 	int ret;
-	ret = Rts2App::init ();
+	ret = rts2core::App::init ();
 	if (ret)
 		return ret;
 

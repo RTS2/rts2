@@ -18,7 +18,7 @@
  */
 
 #include "user.h"
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 
 using namespace rts2db;
 

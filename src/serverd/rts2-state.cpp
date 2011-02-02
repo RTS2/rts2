@@ -24,7 +24,7 @@
 
 #include "../utils/riseset.h"
 #include "../utils/libnova_cpp.h"
-#include "../utils/rts2app.h"
+#include "../utils/app.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2centralstate.h"
 
@@ -49,7 +49,7 @@ namespace rts2centrald
  *
  * Configuration file CONFIG_FILE is used
  */
-class StateApp:public Rts2App
+class StateApp:public rts2core::App
 {
 	public:
 		StateApp (int in_argc, char **in_argv);
@@ -170,7 +170,7 @@ void StateApp::printDayStates (std::ostream & _os)
 void StateApp::help ()
 {
 	std::cout << "Observing state display tool." << std::endl;
-	Rts2App::help ();
+	rts2core::App::help ();
 }
 
 int StateApp::processOption (int in_opt)
@@ -209,13 +209,13 @@ int StateApp::processOption (int in_opt)
 			conff = optarg;
 			break;
 		default:
-			return Rts2App::processOption (in_opt);
+			return rts2core::App::processOption (in_opt);
 	}
 	return 0;
 }
 
 
-StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
+StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 {
 	lng = lat = -1000;
 	verbose = 0;
@@ -241,7 +241,7 @@ int StateApp::init ()
 	Rts2Config *config;
 	int ret;
 
-	ret = Rts2App::init ();
+	ret = rts2core::App::init ();
 	if (ret)
 		return ret;
 

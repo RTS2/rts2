@@ -42,7 +42,7 @@
 #include "rts2user.h"
 #include "rts2devclient.h"
 #include "value.h"
-#include "rts2app.h"
+#include "app.h"
 #include "rts2serverstate.h"
 
 // protocol specific commands
@@ -99,7 +99,7 @@ class Rts2DevClient;
  *
  * @ingroup RTS2Block
  */
-class Block: public Rts2App
+class Block: public rts2core::App
 {
 	public:
 

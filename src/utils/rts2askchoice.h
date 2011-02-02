@@ -20,7 +20,7 @@
 #ifndef __RTS2_ASKCHOICE__
 #define __RTS2_ASKCHOICE__
 
-#include "rts2app.h"
+#include "app.h"
 
 #include <list>
 #include <ostream>
@@ -71,7 +71,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Choice & choice);
 class Rts2AskChoice: public std::list <Rts2Choice>
 {
 	private:
-		Rts2App * app;
+		rts2core::App * app;
 	public:
 		/**
 		 * Construct choice set.
@@ -79,7 +79,7 @@ class Rts2AskChoice: public std::list <Rts2Choice>
 		 * @param in_app Application associted with the set. Its askForChar
 		 * method will be used in askChoice call.
 		 */
-		Rts2AskChoice (Rts2App * in_app);
+		Rts2AskChoice (rts2core::App * in_app);
 
 		/**
 		 * Destructor of the choice set.
