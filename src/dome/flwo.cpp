@@ -23,6 +23,7 @@
 #define OPT_OPEN     OPT_LOCAL + 620
 #define OPT_CLOSE    OPT_LOCAL + 621
 #define OPT_SLITST   OPT_LOCAL + 622
+#define OPT_COVERST  OPT_LOCAL + 623
 
 using namespace rts2dome;
 
@@ -50,14 +51,19 @@ class FLWO:public Dome
 		rts2core::ConnFork *domeExe;
 
 		rts2core::ValueBool *openInOn;
+		rts2core::ValueBool *coverOpened;
 
 		bool shouldClose;
 
 		const char *opendome;
 		const char *closedome;
 		const char *slitfile;
+		const char *coverfile;
+
+		int getFileStatus (const char *fn);
 
 		void getSlitStatus ();
+		void getCoverStatus ();
 };
 
 FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
@@ -65,16 +71,19 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	domeExe = NULL;
 	shouldClose = false;
 
-	opendome = NULL;
-	closedome = NULL;
-	slitfile = NULL;
+	opendome = "/usr/local/bin/openslit";
+	closedome = "/usr/local/bin/closeslit";
+	slitfile = "/Realtime/lib/slit_status";
+	coverfile = "/Realtime/lib/cover_status";
 
+	createValue (coverOpened, "cover_opened", "telescope cover status", false);
 	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
 
 	addOption (OPT_OPEN, "bin-open", 1, "path to program for opening the dome");
 	addOption (OPT_CLOSE, "bin-close", 1, "path to program to close the dome");
-	addOption (OPT_SLITST, "slit-file", 1, "path to slit file (/Rea...)");
+	addOption (OPT_SLITST, "slit-file", 1, "path to slit status file");
+	addOption (OPT_COVERST, "cover-file", 1, "path to cover state file");
 }
 
 int FLWO::changeMasterState (int new_state)
@@ -99,6 +108,9 @@ int FLWO::processOption (int opt)
 		case OPT_SLITST:
 			slitfile = optarg;
 			break;
+		case OPT_COVERST:
+			coverfile = optarg;
+			break;	
 		default:
 			return Dome::processOption (opt);
 	}
@@ -113,13 +125,25 @@ int FLWO::init ()
 	if (closedome == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "missing required --bin-close option, please specify it" << sendLog;
+		return -1;
 	}
 	if (opendome == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "missing required --bin-open option, please specify it" << sendLog;
 		return -1;
 	}
+	if (slitfile == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "missing required --slit-file option, please specify it" << sendLog;
+		return -1;
+	}
+	if (coverfile == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "missing required --cover-file option, please specify it" << sendLog;
+		return -1;
+	}
 	getSlitStatus ();
+	getCoverStatus ();
 	setIdleInfoInterval (20);
 	return 0;
 }
@@ -130,6 +154,7 @@ int FLWO::info ()
 	{
 	  	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED || (getState () & DOME_DOME_MASK) == DOME_OPENED)
 			getSlitStatus ();
+		getCoverStatus ();	
 	}
 	catch (rts2core::Error &er)
 	{
@@ -208,28 +233,46 @@ int FLWO::deleteConnection (Rts2Conn * conn)
 	return Dome::deleteConnection (conn);
 }
 
-void FLWO::getSlitStatus ()
+int FLWO::getFileStatus (const char *fn)
 {
-	if (slitfile == NULL)
-		throw rts2core::Error ("slitfile not specified");
-	std::ifstream sf (slitfile);
+	if (fn == NULL)
+		throw rts2core::Error ("status file not specified");
+	std::ifstream sf (fn);
 	if (sf.fail ())
 	{
-		throw rts2core::Error (std::string ("cannot open slitfile") + strerror (errno));
+		throw rts2core::Error (std::string ("cannot open status file ") + strerror (errno));
 	}
 	std::string slst;
 	sf >> slst;
 	if (sf.fail ())
-	{
+	  	// assume file is empty = closed
+		return 0;
+	else if (slst == "Open")
+		return 1;
+	else if (slst == "Close")
+	  	return -1;
+	else
+		throw rts2core::Error (std::string ("unknow string in status file ") + fn + " " + slst);
+}
+
+void FLWO::getSlitStatus ()
+{
+  	int ret = getFileStatus (slitfile);
+	if (ret <= 0)
 	  	// assume file is empty = closed
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome detected closed");
-	}
-	else if (slst == "Open")
-		maskState (DOME_DOME_MASK, DOME_OPENED, "dome detected opened");
-	else if (slst == "Close")
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome detected closed");
 	else
-		throw rts2core::Error (std::string ("unknow string in slitfile") + slst);
+		maskState (DOME_DOME_MASK, DOME_OPENED, "dome detected opened");
+}
+
+
+void FLWO::getCoverStatus ()
+{
+	int ret = getFileStatus (coverfile);  
+	if (ret <= 0)
+		coverOpened->setValueBool (false);
+	else
+		coverOpened->setValueBool (true);  	  
 }
 
 int main (int argc, char **argv)
