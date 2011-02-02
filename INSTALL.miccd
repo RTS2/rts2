@@ -1,0 +1,17 @@
+Instructions to install MI CCD driver
+=====================================
+
+For Moravian Instruments CCDs (http://ccd.mii.cz) you will need to obtain Linux
+library. This is distributed on request. Please contact Petr Kubanek
+<petr@kubanek.net> or Pavel Cagas <pc@mii.cz> to obtain the tar.gz source file
+and compile it.
+
+Then you will need to run ./configure from rts2 with --with-miccd option:
+
+user@host:~/apogee$ cd ~/rts2
+user@host:~/rts2$ ./configure --without-wcs --with-miccd=$HOME/miccd
+
+asuming that MI CCD Linux library was installed in %HOME/miccd directory.
+
+Then run make and (as root) make install. Please see RUN file for details on
+that.

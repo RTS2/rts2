@@ -11,4 +11,4 @@ SUBDIRS =	include \
 
 EXTRA_DIST = autogen.sh RUN rts2.initd \
 	INSTALL INSTALL.alta INSTALL.fli INSTALL.paramount INSTALL.andor \
-	INSTALL.comedi rts2-init
+	INSTALL.comedi INSTALL.miccd rts2-init
