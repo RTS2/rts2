@@ -16,16 +16,21 @@ import sys
 import string
 
 class Rts2Queue:
-	def __init__(self,server):
+	def __init__(self,queue,server):
+		self.queue = queue
 		self.server = server
 
 	def getTarget(self,name):
-		resp = json.load(urllib.urlopen(server + '/tbyname?' + urllib.urlencode({'n':name})))
+		resp = json.load(urllib.urlopen(self.server + '/tbyname?' + urllib.urlencode({'n':name})))
 		return resp['d']
 			
 	def queueTargets(self,ids):
-		args = urllib.urlencode({'d':'SEL','c':"queue plan {0}".format(string.join(map(str,ids),' '))})
-		return json.load(urllib.urlopen(server + '/cmd?' + args))
+		args = urllib.urlencode({'d':'SEL','c':"queue {0} {1}".format(self.queue, string.join(map(str,ids),' '))})
+		return json.load(urllib.urlopen(self.server + '/cmd?' + args))
+
+	def clearQueue(self):
+		args = urllib.urlencode({'d':'SEL','c':'clear {0}'.format(self.queue)})
+		return json.load(urllib.urlopen(self.server + '/cmd?' + args))
 
 if __name__ == '__main__':
 	server = 'http://username:password@localhost:8889/api'
@@ -34,11 +39,17 @@ if __name__ == '__main__':
   	parser = OptionParser()
 
 	parser.add_option("--unique", help="only accept unique target", action='store_true', dest='unique')
-	parser.add_option("--server", help="specify URL to RTS2 JSON api", action="store", dest='server')
+	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
+	parser.add_option("--queue", help='provide queue name', action='store', dest='queue', default='plan')
+	parser.add_option("--server", help="specify URL to RTS2 JSON api", action="store", dest='server', default=server)
 
 	(options,args)=parser.parse_args()
 
-	q = Rts2Queue(server)
+	q = Rts2Queue(options.queue,options.server)
+
+	if options.clear:
+		resp = q.clearQueue()
+		print "cleared queue {0}: {1}".format(options.queue, resp['plan_ids'])
 
 	for x in args:
 	  	tars = q.getTarget(x)
@@ -52,6 +63,6 @@ if __name__ == '__main__':
 		tids = []	
 		for t in tars:
 		  	tids.append(t[0])
-			print 'Queued target {0} with ID {1}, on ra dec {2} {3}'.format(t[1],t[0],t[2],t[3])
+			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
 		resp = q.queueTargets(tids)
 		print resp['plan_ids']
