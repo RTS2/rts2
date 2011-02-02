@@ -9,8 +9,12 @@
 #
 #   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
 
-import xmlrpclib
+import json
+import urllib
+from optparse import OptionParser
 import sys
+import string
 
-server = xmlrpclib.ServerProxy('http://user:password@localhost:8889', use_datetime=True)
-server.rts2.device.command('SEL','clear plan')
+server = 'http://username:password@localhost:8889/api'
+resp = json.load(urllib.urlopen(server + '/cmd?' + urllib.urlencode({'d':'SEL','c':'clear plan'})))
+print 'cleared queue: {0}'.format(resp['plan_ids'])

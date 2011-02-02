@@ -76,7 +76,46 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw XmlRpcException ("cannot find device");
 			sendConnectionValues (os, conn);
 		}
+		else if (vals[0] == "cmd")
+		{
+			const char *device = params->getString ("d", "");
+			const char *cmd = params->getString ("c", "");
+			if (cmd[0] == '\0')
+				throw XmlRpcException ("empty command");
+			conn = master->getOpenConnection (device);
+			if (conn == NULL)
+				throw XmlRpcException ("cannot find device");
+			conn->queCommand (new rts2core::Rts2Command (master, cmd));
+			sendConnectionValues (os, conn);	  
+		}
 #ifdef HAVE_PGSQL
+		else if (vals[0] == "tbyname")
+		{
+			rts2db::TargetSet tar_set;
+			const char *name = params->getString ("n", "");
+			if (name[0] == '\0')
+				throw XmlRpcException ("empty n parameter");
+			tar_set.loadByName (name);	  
+			os << "\"h\":["
+				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+				"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
+				"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
+				"\"d\":[";
+			double JD = ln_get_julian_from_sys ();	
+			for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
+			{
+				if (iter != tar_set.begin ())
+					os << ",";
+				struct ln_equ_posn equ;
+				rts2db::Target *tar = iter->second;
+				tar->getPosition (&equ, JD);
+				os << "[" << tar->getTargetID () << ",\"" 
+					<< tar->getTargetName () << "\","
+					<< equ.ra << "," << equ.dec << "]";
+			}
+			os << "]";
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
@@ -126,10 +165,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	}
 	os << "}";
 
-	response_type = "application/json";
-	response_length = os.str ().length ();
-	response = new char[response_length];
-	memcpy (response, os.str ().c_str (), response_length);
+	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
 
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
@@ -154,8 +190,8 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 				os << "\"" << (*iter)->getName () << "\":{\"ra\":" << ((rts2core::ValueRaDec *) (*iter))->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) (*iter))->getDec () << "}";
 				break;
 			default:
-				iter++;
-				continue;
+				os << "\"" << (*iter)->getName () << "\":\"" << (*iter)->getDisplayValue () << "\"";
+				break;
 		}
 		iter++;
 		if (iter != conn->valueEnd ())

@@ -9,12 +9,49 @@
 #
 #   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
 
-import xmlrpclib
+import json
+import urllib
+from optparse import OptionParser
 import sys
+import string
 
-server = xmlrpclib.ServerProxy('http://user:password@localhost:8889', use_datetime=True)
-for x in sys.argv[1:]:
-	res=server.rts2.targets.list(x)
-	for t in res:
-		server.rts2.device.command('SEL','queue plan {0}'.format(t['id']))
-		print 'Queued target {0} with ID {1}, on ra dec {2} {3}'.format(t['name'],t['id'],t['ra'],t['dec'])
+class Rts2Queue:
+	def __init__(self,server):
+		self.server = server
+
+	def getTarget(self,name):
+		resp = json.load(urllib.urlopen(server + '/tbyname?' + urllib.urlencode({'n':name})))
+		return resp['d']
+			
+	def queueTargets(self,ids):
+		args = urllib.urlencode({'d':'SEL','c':"queue plan {0}".format(string.join(map(str,ids),' '))})
+		return json.load(urllib.urlopen(server + '/cmd?' + args))
+
+if __name__ == '__main__':
+	server = 'http://username:password@localhost:8889/api'
+	unique = False
+
+  	parser = OptionParser()
+
+	parser.add_option("--unique", help="only accept unique target", action='store_true', dest='unique')
+	parser.add_option("--server", help="specify URL to RTS2 JSON api", action="store", dest='server')
+
+	(options,args)=parser.parse_args()
+
+	q = Rts2Queue(server)
+
+	for x in args:
+	  	tars = q.getTarget(x)
+		if len(tars) == 0:
+			print >> sys.stderr, "cannot find target with name {0}".format(x)
+			sys.exit(1)
+		if unique and len(tars) != 1:
+		  	print >> sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x,'TBD')
+			sys.exit(2)
+
+		tids = []	
+		for t in tars:
+		  	tids.append(t[0])
+			print 'Queued target {0} with ID {1}, on ra dec {2} {3}'.format(t[1],t[0],t[2],t[3])
+		resp = q.queueTargets(tids)
+		print resp['plan_ids']
