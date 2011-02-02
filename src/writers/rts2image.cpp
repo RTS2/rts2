@@ -1467,13 +1467,13 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 
 			lw = 0;
 			lh = 0;
-			n = 0;
+			n = 2;
 
 			int loff = 0;
 
-			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n++)
+			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n = (n + 1) % 4)
 			{
-			  	if (n % w == 0)
+			  	if (iter != channels.begin () && (n % w == 0))
 				{
 				  	lh += lw;
 					lw = 0;

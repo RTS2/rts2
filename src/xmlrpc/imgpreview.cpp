@@ -90,11 +90,30 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 "}</script>" << std::endl;
 }
 
-void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const char *label)
+void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, const char *label)
 {
 	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
 	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
-	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'></input><input type='submit' value='Label'></input>&nbsp;\n"
+	<< "<form name='label' method='get' action='./'>"
+#ifdef CHANNELS
+	"\nChannels <select name='chan'><option value='-1'";
+
+	if (c < 0)
+		_os << " selected";
+	
+	_os << ">All</option>";	
+
+	for (int i = 0; i < CHANNELS; i++)
+	{
+		_os << "<option value='" << i << "'";
+		if (c == i)
+			_os << "selected";
+		_os << ">" << (i + 1) << "</option>";
+	}
+
+	_os << "</select>\n";
+#endif
+	_os << "Label <input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'></input><input type='submit' value='Redraw'></input>&nbsp;\n"
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
@@ -196,7 +215,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
 	
 	_os << "</p><p>";
 

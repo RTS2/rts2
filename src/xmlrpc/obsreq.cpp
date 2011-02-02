@@ -92,7 +92,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
 
 	_os << "</p><p>";
 

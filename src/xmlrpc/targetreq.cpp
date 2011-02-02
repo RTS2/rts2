@@ -812,7 +812,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 		
 	_os << "<p>";
 
-	preview.form (_os, pageno, prevsize, pagesiz, label);
+	preview.form (_os, pageno, prevsize, pagesiz, chan, label);
 	
 	_os << "</p><p>";
 

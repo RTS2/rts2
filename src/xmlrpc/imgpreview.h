@@ -22,7 +22,9 @@
 #include "xmlrpcd.h"
 
 #define DEFAULT_QUANTILES    0.005
-#define DEFAULT_CHAN         0
+#define DEFAULT_CHAN         -1
+// number of channels in image
+//#define CHANNELS             4
 
 namespace rts2xmlrpc
 {
@@ -48,7 +50,15 @@ class Previewer
 		 */
 		void script (std::ostringstream& _os, const char *label_encoded, float quantiles, int chan);
 
-		void form (std::ostringstream& _os, int page, int ps, int s, const char *label);
+		/**
+		 *
+		 *
+                 * @param ps     preview size
+		 * @param s      size
+		 * @param c      selected channel (image extension)
+		 * @param label  image label
+		 */
+		void form (std::ostringstream& _os, int page, int ps, int s, int c, const char *label);
 
 		/**
 		 * Create image href entry.
