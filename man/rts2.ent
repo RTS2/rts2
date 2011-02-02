@@ -396,3 +396,11 @@
   unsure to which timezone the computer is set.
 </para>
 " >
+
+<!ENTITY targetnamesexp "
+<para>
+  Target names can include &percnt; character, which match any possible string. So
+  if user provide as target name <emphasis>B&percnt;</emphasis> all targets beginning
+  with <emphasis>B</emphasis> will be used.
+</para>
+">

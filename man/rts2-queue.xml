@@ -129,6 +129,28 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Target arguments</title>
+    <para>
+      if any target names are added to the command, their IDs will be resolved,
+	and their IDs will be added to the queue specified with
+	<option>--queue</option> option (or to <emphasis>plan</emphasis>, which
+	is the default queue).
+    </para>
+    &targetnamesexp;
+  </refsect1>
+  <refsect1 xml:id='examples'>
+    <title>Examples</title>
+    <para>
+      Following will place on queue named <emphasis>manual</emphasis> all
+      targets beginning with <emphasis>B</emphasis>.  It will first clear
+      queue, so target entries will not be added to the targets already in the
+      queue.
+    </para> 
+    <screen>
+      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B&percnt;</replaceable>
+    </screen>
+  </refsect1>
+  <refsect1>
     <title>SEE ALSO</title>
 
     <para>
