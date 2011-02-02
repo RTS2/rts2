@@ -1,0 +1,154 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2011-02-01</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-queue">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.2</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote this manual page.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Manipulate selector queues.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice='opt'><option>-h</option></arg>
+      <arg choice='opt'><option>--help</option></arg>
+    </cmdsynopsis>  
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice='opt'><option>--unique</option></arg>
+      <arg choice='opt'><option>--clear</option></arg>
+      <arg choice='opt'><option>--queue</option>=<replaceable class='parameter'>QUEUE</replaceable></arg>
+      <arg choice='opt'><option>--server</option>=<replaceable class='parameter'>SERVER</replaceable></arg>
+      <arg choice='opt' rep='repeat'>target name</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>
+      Provides queue management functions. Queues are used in scheduling, and are particularly usefull for 
+      <emphasis>human-in-the-loop</emphasis> scheduling.
+    </para>
+
+    <para>
+      Observers can append or clear targets from the queue. Queue name and
+      server hosting the API can be specified as parameters.
+    </para>  
+
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+	<listitem>
+	  <para>
+	    Prints short help describing available options.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--unique</option></term>
+	<listitem>
+	  <para>
+	    When resolving target names, only unique names will be used. If the
+	    name matches two or more targets, error will be printed and the
+	    command will exit, not performing any modification to the queue.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--clear</option></term>
+	<listitem>
+	  <para>
+	    Clear queue. Queue content is printed on command line.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--queue</option>=<replaceable class='parameter'>QUEUE</replaceable></term>
+	<listitem>
+	  <para>
+	    Specify queue which will be used. The default is
+	    <emphasis>plan</emphasis> queue.
+
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--server</option>=<replaceable class='parameter'>SERVER</replaceable></term>
+	<listitem>
+	  <para>
+	    Specify server which will be used. The server full URL must be
+	    entered, possibly with username and password. The default is
+	    <emphasis>http://localhost:8889/api</emphasis>.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2.queues</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-selector</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-seltest</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>  
+
+  </refsect1>
+</refentry>

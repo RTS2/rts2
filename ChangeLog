@@ -1,3 +1,7 @@
+2011-02-01
+ * finished and documented (man page) rts2-queue
+ * removed rts2-clearq (replaced with --clear option to rts2-queue)
+
 2011-01-31
  * move all Rts2Values to rts2core, removed Rts2 prefix
 
