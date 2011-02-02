@@ -39,6 +39,8 @@ class FLWO:public Dome
 		virtual int init ();
 		virtual int info ();
 
+		virtual bool isGoodWeather ();
+
 		virtual int startOpen ();
 		virtual long isOpened ();
 		virtual int endOpen ();
@@ -52,6 +54,7 @@ class FLWO:public Dome
 
 		rts2core::ValueBool *openInOn;
 		rts2core::ValueBool *coverOpened;
+		rts2core::ValueTime *coverTimeout;
 
 		bool shouldClose;
 
@@ -71,12 +74,15 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	domeExe = NULL;
 	shouldClose = false;
 
-	opendome = "/usr/local/bin/openslit";
-	closedome = "/usr/local/bin/closeslit";
-	slitfile = "/Realtime/lib/slit_status";
-	coverfile = "/Realtime/lib/cover_status";
+	opendome = NULL;
+	closedome = NULL;
+	slitfile = NULL;
+	coverfile = NULL;
 
 	createValue (coverOpened, "cover_opened", "telescope cover status", false);
+	createValue (coverTimeout, "cover_timeout", "hard close cover after this timeout exprires", false);
+	coverTimeout->setValueDouble (rts2_nan ("f"));
+
 	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
 
@@ -148,6 +154,14 @@ int FLWO::init ()
 	return 0;
 }
 
+bool FLWO::isGoodWeather ()
+{
+	// if system is waiting for cover closure, recheck dome state  
+	if (!isnan (coverTimeout->getValueDouble ()))
+		return false;  
+	return Dome::isGoodWeather ();
+}
+
 int FLWO::info ()
 {
 	try
@@ -173,6 +187,8 @@ int FLWO::startOpen ()
 	if (ret)
 		return ret;
 	addConnection (domeExe);
+	coverTimeout->setValueDouble (rts2_nan ("f"));
+	sendValueAll (coverTimeout);
 	return 0;
 }
 
@@ -204,6 +220,24 @@ int FLWO::startClose ()
 		shouldClose = true;
 		return -1;
 	}
+	getCoverStatus ();
+	// do not close if cover is opened..
+	if (coverOpened->getValueBool () == true && getMasterState () != SERVERD_HARD_OFF && getMasterState () != SERVERD_SOFT_OFF)
+	{
+		if (isnan (coverTimeout->getValueDouble ()))
+		{
+			coverTimeout->setValueDouble (getNow () + 180);
+			sendValueAll (coverTimeout);
+			logStream (MESSAGE_INFO) << "setting cover timeout to " << Timestamp (coverTimeout->getValueDouble ()) << sendLog;
+			return -1;
+		}
+		if (coverTimeout->getValueDouble () > getNow ())
+		{
+			logStream (MESSAGE_WARNING) << "waiting for telescope cover closure. Please switch to OFF if you believe telescope should close right now" << sendLog;  
+			return -1;
+		}
+		logStream (MESSAGE_ERROR) << "cover timeout, closing slit regardless of cover state" << sendLog;
+	}
 	domeExe = new rts2core::ConnFork (this, closedome, false, false);
 	int ret = domeExe->init ();
 	if (ret)
@@ -223,6 +257,8 @@ long FLWO::isClosed ()
 
 int FLWO::endClose ()
 {
+ 	coverTimeout->setValueDouble (rts2_nan ("f"));
+	sendValueAll (coverTimeout);
 	return 0;
 }
 
