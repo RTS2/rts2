@@ -59,7 +59,7 @@ XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, boo
 	_get_response_length = 0;
 	_get_response = NULL;
 
-	memcpy (&_saddr, &saddr, addrlen);
+	memcpy (&_saddr, saddr, addrlen);
 	_addrlen = addrlen;
 }
 
