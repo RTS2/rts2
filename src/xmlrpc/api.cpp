@@ -25,6 +25,31 @@
 
 using namespace rts2xmlrpc;
 
+#ifdef HAVE_PGSQL
+void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os)
+{
+	os << "\"h\":["
+		"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
+		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
+		"\"d\":[";
+	double JD = ln_get_julian_from_sys ();	
+	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
+	{
+		if (iter != tar_set.begin ())
+			os << ",";
+		struct ln_equ_posn equ;
+		rts2db::Target *tar = iter->second;
+		tar->getPosition (&equ, JD);
+		os << "[" << tar->getTargetID () << ",\"" 
+			<< tar->getTargetName () << "\","
+			<< equ.ra << "," << equ.dec << "]";
+	}
+	os << "]";
+}
+#endif // HAVE_PGSQL
+
 void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -95,26 +120,28 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *name = params->getString ("n", "");
 			if (name[0] == '\0')
 				throw XmlRpcException ("empty n parameter");
-			tar_set.loadByName (name);	  
-			os << "\"h\":["
-				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
-				"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
-				"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
-				"\"d\":[";
-			double JD = ln_get_julian_from_sys ();	
-			for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
-			{
-				if (iter != tar_set.begin ())
-					os << ",";
-				struct ln_equ_posn equ;
-				rts2db::Target *tar = iter->second;
-				tar->getPosition (&equ, JD);
-				os << "[" << tar->getTargetID () << ",\"" 
-					<< tar->getTargetName () << "\","
-					<< equ.ra << "," << equ.dec << "]";
-			}
-			os << "]";
+			tar_set.loadByName (name);
+			jsonTargets (tar_set, os);
+		}
+		else if (vals[0] == "tbylabel")
+		{
+			rts2db::TargetSet tar_set;
+			int label = params->getInteger ("l", -1);
+			if (label == -1)
+			  	throw XmlRpcException ("empty l parameter");
+			tar_set.loadByLabelId (label);
+			jsonTargets (tar_set, os);	
+		}
+		else if (vals[0] == "labels")
+		{
+			const char *label = params->getString ("l", "");
+			if (label[0] == '\0')
+				throw XmlRpcException ("empty l parameter");
+			int t = params->getInteger ("t", -1);
+			if (t < 0)
+				throw XmlRpcException ("invalid type parametr");
+			rts2db::Labels lb;
+			os << lb.getLabel (label, t);
 		}
 		else if (vals[0] == "plan")
 		{
@@ -179,11 +206,17 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 				break;
 			case RTS2_VALUE_DOUBLE:
 			case RTS2_VALUE_FLOAT:
+			case RTS2_VALUE_TIME:
+				os << "\"" << (*iter)->getName () << "\":";
+				if (isnan ((*iter)->getValueDouble ()))
+					os << "null";
+				else	
+					os << (*iter)->getValue ();
+				break;
 			case RTS2_VALUE_INTEGER:
 			case RTS2_VALUE_LONGINT:
 			case RTS2_VALUE_SELECTION:
 			case RTS2_VALUE_BOOL:
-			case RTS2_VALUE_TIME:
 				os << "\"" << (*iter)->getName () << "\":" << (*iter)->getValue ();
 				break;
 			case RTS2_VALUE_RADEC:
