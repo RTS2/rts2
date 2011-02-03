@@ -109,6 +109,37 @@ void TargetSet::loadByName (const char *name, bool approxName)
 	load ();
 }
 
+void TargetSet::loadByLabel (const char *label)
+{
+	int d_label_id;
+	
+	Labels lb;
+	for (int i = LABEL_PI; i <= LABEL_PROGRAM; i++)
+	{
+		try
+		{
+			d_label_id = lb.getLabel (label, i);
+			loadByLabelId (d_label_id);
+		}
+		catch (rts2core::Error &er)
+		{
+			// ignore error  
+		}
+	}
+}
+
+void TargetSet::loadByLabelId (int label_id)
+{
+	std::ostringstream os;
+	
+	os << "where EXISTS SELECT (*) FROM target_labels where target_labels.tar_id = targets.tar_id and label_id = " << label_id;
+
+	where = os.str ();
+	order_by = "tar_id asc";
+
+	load ();
+}
+
 void TargetSet::load (const char * name, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts), bool approxName, resolverType resType)
 {
 	if (resType == NAME_ID || resType == ID_ONLY)

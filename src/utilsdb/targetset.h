@@ -136,6 +136,15 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void loadByName (const char *name, bool approxName = true);
 
+		/**
+		 * Load targets with given label.
+		 *
+		 * @param label        label name
+		 */
+		void loadByLabel (const char *label); 
+
+		void loadByLabelId (int label_id);
+
 		void load (const char *name, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
 
 		void load (std::vector <const char *> &names, TargetSet::iterator const (*multiple_resolver) (TargetSet *ts) = NULL, bool approxName = true, resolverType resType = NAME_ID);
