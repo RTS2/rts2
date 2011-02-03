@@ -40,7 +40,7 @@ using namespace rts2xmlrpc;
 void GetRequestAuthorized::execute (struct sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	// if it is public page..
-	if (((XmlRpcd *) getMasterApp ())->isPublic (getPrefix () + path))
+	if (((XmlRpcd *) getMasterApp ())->isPublic (saddr, getPrefix () + path))
 	{
 		http_code = HTTP_OK;
 		authorizedExecute (path, params, response_type, response, response_length);

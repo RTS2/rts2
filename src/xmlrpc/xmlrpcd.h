@@ -50,7 +50,6 @@ using namespace XmlRpc;
  *
  * @defgroup XMLRPC XML-RPC
  */
-
 namespace rts2xmlrpc
 {
 
@@ -137,9 +136,14 @@ class XmlRpcd:public rts2core::Device
 		const char* getPagePrefix () { return page_prefix.c_str (); }
 
 		/**
+		 * If requests from localhost should be authorized.
+		 */
+		bool authorizeLocalhost () { return auth_localhost; }
+
+		/**
 		 * Returns true, if given path is marked as being public - accessible to all.
 		 */
-		bool isPublic (const std::string &path) { return events.isPublic (path); }
+		bool isPublic (struct sockaddr_in *saddr, const std::string &path);
 
 		/**
 		 * Return default image label.
@@ -174,6 +178,8 @@ class XmlRpcd:public rts2core::Device
 #ifndef HAVE_PGSQL
 		const char *config_file;
 #endif
+
+		bool auth_localhost;
 
 		std::string page_prefix;
 

@@ -64,6 +64,7 @@ using namespace Magick;
 
 #include "r2x.h"
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -249,6 +250,9 @@ int XmlRpcd::init ()
 	// get page prefix
 	Rts2Config::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
 
+	// auth_localhost
+	auth_localhost = Rts2Config::instance ()->getBoolean ("xmlrpcd", "auth_localhost", auth_localhost);
+
 #ifdef HAVE_LIBJPEG
 	Magick::InitializeMagick (".");
 #endif /* HAVE_LIBJPEG */
@@ -294,6 +298,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	rpcPort = 8889;
 	stateChangeFile = NULL;
 	defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
+
+	auth_localhost = true;
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
@@ -438,6 +444,13 @@ void XmlRpcd::postEvent (Rts2Event *event)
 #endif
 }
 
+bool XmlRpcd::isPublic (struct sockaddr_in *saddr, const std::string &path)
+{
+	if (authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)
+		return events.isPublic (path);
+	return true;
+}
+
 const char *XmlRpcd::getDefaultImageLabel ()
 {
 	return defLabel;
@@ -522,37 +535,45 @@ class Login: public XmlRpcServerMethod
 class SessionMethod: public XmlRpcServerMethod
 {
 	public:
-		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s) { executePermission = false; }
+		SessionMethod (const char *method, XmlRpcServer* s);
 
-		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
-		{
-			//if (((XmlRpcd *) getMasterApp ())->hostAuthorized 
-			if (getUsername () == std::string ("session_id"))
-			{
-				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
-				{
-					throw XmlRpcException ("Invalid session ID");
-				}
-			}
-
-#ifdef HAVE_PGSQL
-			if (verifyUser (getUsername (), getPassword (), executePermission) == false)
-			{
-				throw XmlRpcException ("Invalid login or password");
-			}
-#else
-			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-				throw XmlRpcException ("Login not supported");
-#endif /* HAVE_PGSQL */
-
-			sessionExecute (params, result);
-		}
+		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result);
 
 		virtual void sessionExecute (XmlRpcValue& params, XmlRpcValue& result) = 0;
 	private:
 		bool executePermission;
 };
 
+SessionMethod::SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s)
+{
+	executePermission = false;
+}
+
+void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
+{
+	if (((XmlRpcd *) getMasterApp ())->authorizeLocalhost () || ntohl (saddr->sin_addr.s_addr) != INADDR_LOOPBACK)
+	{
+		if (getUsername () == std::string ("session_id"))
+		{
+			if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
+			{
+				throw XmlRpcException ("Invalid session ID");
+			}
+		}
+
+#ifdef HAVE_PGSQL
+		if (verifyUser (getUsername (), getPassword (), executePermission) == false)
+		{
+			throw XmlRpcException ("Invalid login or password");
+		}
+#else
+		if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
+			throw XmlRpcException ("Login not supported");
+#endif /* HAVE_PGSQL */
+	}
+
+	sessionExecute (params, result);
+}
 
 /**
  * Returns number of devices connected to the system.
