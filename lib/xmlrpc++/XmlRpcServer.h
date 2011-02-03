@@ -15,6 +15,7 @@
 #endif
 
 #include "XmlRpcDispatch.h"
+#include "XmlRpcSocket.h"
 #include "XmlRpcSource.h"
 
 namespace XmlRpc
@@ -113,8 +114,11 @@ namespace XmlRpc
 			virtual void acceptConnection();
 
 			//! Create a new connection object for processing requests from a specific client.
-			virtual XmlRpcServerConnection* createConnection(int socket);
-
+#ifdef _WINDOWS
+			virtual XmlRpcServerConnection* createConnection(int socket, struct sockaddr_in *saddr, int addrlen);
+#else
+			virtual XmlRpcServerConnection* createConnection(int socket, struct sockaddr_in *saddr, socklen_t addrlen);
+#endif
 			// Whether the introspection API is supported by this server
 			bool _introspectionEnabled;
 

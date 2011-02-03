@@ -11,6 +11,16 @@
 # include <string>
 #endif
 
+#ifdef _WINDOWS
+#include <winsock2.h>
+#else
+extern "C"
+{
+	#include <sys/types.h>
+	#include <netinet/in.h>
+}
+#endif
+
 namespace XmlRpc
 {
 
@@ -50,7 +60,11 @@ namespace XmlRpc
 			static bool listen(int socket, int backlog);
 
 			//! Accept a client connection request
-			static int accept(int socket);
+#ifdef _WINDOWS
+			static int accept(int socket, struct sockaddr_in &addr, int &addrlen);
+#else
+			static int accept(int socket, struct sockaddr_in &addr, socklen_t &addrlen);
+#endif
 
 			//! Connect a socket to a server (from a client)
 			static bool connect(int socket, std::string& host, int port);

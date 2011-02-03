@@ -37,7 +37,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void GetRequestAuthorized::execute (struct sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	// if it is public page..
 	if (((XmlRpcd *) getMasterApp ())->isPublic (getPrefix () + path))
@@ -134,7 +134,7 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 
 #ifdef HAVE_LIBJPEG
 
-void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void CurrentPosition::execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	int s = params->getInteger ("s", 250);
 	AltAz altaz = AltAz (s, s);

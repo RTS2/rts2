@@ -21,8 +21,6 @@ extern "C"
 	# include <unistd.h>
 	# include <stdio.h>
 	# include <sys/types.h>
-	# include <sys/socket.h>
-	# include <netinet/in.h>
 	# include <netdb.h>
 	# include <errno.h>
 	# include <fcntl.h>
@@ -124,15 +122,13 @@ XmlRpcSocket::listen(int fd, int backlog)
 
 
 int
-XmlRpcSocket::accept(int fd)
+#ifdef _WINDOWS
+XmlRpcSocket::accept(int fd, struct sockaddr_in &addr, int &addrlen)
+#else
+XmlRpcSocket::accept(int fd, struct sockaddr_in &addr, socklen_t &addrlen)
+#endif
 {
-	struct sockaddr_in addr;
-	#if defined(_WINDOWS)
-	int
-		#else
-		socklen_t
-		#endif
-		addrlen = sizeof(addr);
+	addrlen = sizeof(addr);
 
 	return (int) ::accept(fd, (struct sockaddr*)&addr, &addrlen);
 }

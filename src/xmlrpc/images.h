@@ -24,5 +24,5 @@ class ImageReq: public XmlRpc::XmlRpcServerGetRequest
 	public:
 		ImageReq (const char* prefix, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, NULL, s) {}
 
-		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
+		virtual void execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 };

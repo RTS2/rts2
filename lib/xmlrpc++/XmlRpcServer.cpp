@@ -3,9 +3,12 @@
 #include "XmlRpcServerConnection.h"
 #include "XmlRpcServerMethod.h"
 #include "XmlRpcServerGetRequest.h"
-#include "XmlRpcSocket.h"
 #include "XmlRpcUtil.h"
 #include "XmlRpcException.h"
+
+extern "C" {
+	# include <arpa/inet.h>
+}
 
 using namespace XmlRpc;
 
@@ -174,8 +177,14 @@ unsigned XmlRpcServer::handleEvent(unsigned mask)
 // handle method calls from the client.
 void XmlRpcServer::acceptConnection()
 {
-	int s = XmlRpcSocket::accept(this->getfd());
-	XmlRpcUtil::log(2, "XmlRpcServer::acceptConnection: socket %d", s);
+	struct sockaddr_in saddr;
+#ifdef _WINDOWS
+	int addrlen;
+#else
+	socklen_t addrlen;
+#endif
+	int s = XmlRpcSocket::accept(this->getfd(), saddr, addrlen);
+	XmlRpcUtil::log(2, "XmlRpcServer::acceptConnection: socket %d from %s", s, inet_ntoa (saddr.sin_addr));
 	if (s < 0)
 	{
 		//this->close();
@@ -189,15 +198,19 @@ void XmlRpcServer::acceptConnection()
 	else						 // Notify the dispatcher to listen for input on this source when we are in work()
 	{
 		XmlRpcUtil::log(2, "XmlRpcServer::acceptConnection: creating a connection");
-		_disp.addSource(this->createConnection(s), XmlRpcDispatch::ReadableEvent);
+		_disp.addSource(this->createConnection(s, &saddr, addrlen), XmlRpcDispatch::ReadableEvent);
 	}
 }
 
 // Create a new connection object for processing requests from a specific client.
-XmlRpcServerConnection* XmlRpcServer::createConnection(int s)
+#ifdef _WINDOWS
+XmlRpcServerConnection* XmlRpcServer::createConnection(int s, struct sockaddr_in *saddr, int addrlen)
+#else
+XmlRpcServerConnection* XmlRpcServer::createConnection(int s, struct sockaddr_in *saddr, socklen_t addrlen)
+#endif
 {
 	// Specify that the connection object be deleted when it is closed
-	return new XmlRpcServerConnection(s, this, true);
+	return new XmlRpcServerConnection(s, this, true, saddr, addrlen);
 }
 
 void XmlRpcServer::removeConnection(XmlRpcServerConnection* sc)
@@ -229,7 +242,7 @@ class ListMethods : public XmlRpcServerMethod
 	public:
 		ListMethods(XmlRpcServer* s) : XmlRpcServerMethod(LIST_METHODS, s) {}
 
-		void execute(XmlRpcValue& params, XmlRpcValue& result)
+		void execute(struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
 			_server->listMethods(result);
 		}
@@ -243,7 +256,7 @@ class MethodHelp : public XmlRpcServerMethod
 	public:
 		MethodHelp(XmlRpcServer* s) : XmlRpcServerMethod(METHOD_HELP, s) {}
 
-		void execute(XmlRpcValue& params, XmlRpcValue& result)
+		void execute(struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params[0].getType() != XmlRpcValue::TypeString)
 				throw XmlRpcException(METHOD_HELP + ": Invalid argument type");

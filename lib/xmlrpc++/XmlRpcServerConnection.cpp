@@ -35,7 +35,11 @@ const char *wdays[7] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 const char *months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
 // The server delegates handling client requests to a serverConnection object.
-XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose /*= false*/) : XmlRpcSource(fd, deleteOnClose)
+#ifdef _WINDOWS
+XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose, struct sockaddr_in *saddr, int addrlen) : XmlRpcSource(fd, deleteOnClose)
+#else
+XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose, struct sockaddr_in *saddr, socklen_t addrlen) : XmlRpcSource(fd, deleteOnClose)
+#endif
 {
 	XmlRpcUtil::log(2,"XmlRpcServerConnection: new socket %d.", fd);
 
@@ -54,6 +58,9 @@ XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, boo
 
 	_get_response_length = 0;
 	_get_response = NULL;
+
+	memcpy (&_saddr, &saddr, addrlen);
+	_addrlen = addrlen;
 }
 
 XmlRpcServerConnection::~XmlRpcServerConnection()
@@ -493,7 +500,7 @@ void XmlRpcServerConnection::executeGet()
 
 			request->setConnection (this);
 
-			request->execute (path, &params, http_code, response_type, _get_response, _get_response_length);
+			request->execute (&_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
 		catch (const std::exception& ex)
 		{
@@ -567,7 +574,7 @@ bool XmlRpcServerConnection::executeMethod(const std::string& methodName, XmlRpc
 
 	method->setAuthorization (_authorization);
 
-	method->execute (params, result);
+	method->execute (&_saddr, params, result);
 
 	// Ensure a valid result value
 	if ( ! result.valid ())

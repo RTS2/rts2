@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "XmlRpcValue.h"
+#include "XmlRpcSocket.h"
 #include "XmlRpcSource.h"
 
 namespace XmlRpc
@@ -43,7 +44,11 @@ namespace XmlRpc
 			static const std::string FAULTSTRING;
 
 			//! Constructor
-			XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose = false);
+#ifdef _WINDOWS
+			XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose, struct sockaddr_in *saddr, int addrlen);
+#else
+			XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose, struct sockaddr_in *saddr, socklen_t addrlen);
+#endif
 			//! Destructor
 			virtual ~XmlRpcServerConnection();
 
@@ -141,6 +146,13 @@ namespace XmlRpc
 			bool _keepAlive;
 		private:
 			std::string getHttpDate ();
+
+			struct sockaddr_in _saddr;
+#ifdef _WINDOWS
+			int _addrlen;
+#else
+			socklen_t _addrlen;
+#endif
 	};
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERCONNECTION_H_

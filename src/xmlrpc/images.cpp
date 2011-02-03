@@ -31,7 +31,7 @@ const image_t up = {
 	606
 };
 
-void ImageReq::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void ImageReq::execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	const image_t *selImage = NULL;
 	if (path == "/up.png")

@@ -483,7 +483,7 @@ class Login: public XmlRpcServerMethod
 	public:
 		Login (XmlRpcServer* s): XmlRpcServerMethod (R2X_LOGIN, s) { executePermission = false; }
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 2)
 			{
@@ -524,8 +524,9 @@ class SessionMethod: public XmlRpcServerMethod
 	public:
 		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s) { executePermission = false; }
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
+			//if (((XmlRpcd *) getMasterApp ())->hostAuthorized 
 			if (getUsername () == std::string ("session_id"))
 			{
 				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
@@ -1715,7 +1716,7 @@ class UserLogin: public XmlRpcServerMethod
 	public:
 		UserLogin (XmlRpcServer* s) : XmlRpcServerMethod (R2X_USER_LOGIN, s) { executePermission = false; }
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size() != 2)
 				throw XmlRpcException ("Invalid number of parameters");
