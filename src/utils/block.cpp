@@ -449,6 +449,31 @@ void Block::updateMetaInformations (Value *value)
 		value->sendMetaInfo (*iter);
 }
 
+std::map <Rts2Conn *, std::vector <Value *> > Block::failedValues ()
+{
+	std::map <Rts2Conn *, std::vector <Value *> > ret;
+	ValueVector::iterator viter;
+	for (connections_t::iterator iter = connections.begin (); iter != connections.end (); iter++)
+	{
+		viter = (*iter)->valueBegin ();
+		for (viter = (*iter)->getFailedValue (viter); viter != (*iter)->valueEnd (); viter = (*iter)->getFailedValue (viter))
+		{
+			ret[*iter].push_back (*viter);
+			viter++;
+		}
+	}
+	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+	{
+		viter = (*iter)->valueBegin ();
+		for (viter = (*iter)->getFailedValue (viter); viter != (*iter)->valueEnd (); viter = (*iter)->getFailedValue (viter))
+		{
+			ret[*iter].push_back (*viter);
+			viter++;
+		}
+	}
+	return ret;
+}
+
 bool Block::centralServerInState (int state)
 {
 	for (connections_t::iterator iter = centraldConns.begin (); iter != centraldConns.end (); iter++)

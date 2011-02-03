@@ -1812,6 +1812,16 @@ rts2core::Value * Rts2Conn::getValueType (const char *value_name, int value_type
 	return ret;
 }
 
+rts2core::ValueVector::iterator & Rts2Conn::getFailedValue (rts2core::ValueVector::iterator &iter)
+{
+	for (; iter != values.end (); iter++)
+	{
+		if (((*iter)->getFlags () & RTS2_VALUE_ERRORMASK) != RTS2_VALUE_GOOD)
+			return iter;
+	}
+	return iter;
+}
+
 void Rts2Conn::addValue (rts2core::Value * value)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))

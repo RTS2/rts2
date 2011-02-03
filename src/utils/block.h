@@ -619,6 +619,11 @@ class Block: public rts2core::App
 		 */
 		void updateMetaInformations (Value *value);
 
+		/**
+		 * Return vector of failed values.
+		 */
+		std::map <Rts2Conn *, std::vector <Value *> > failedValues ();
+
 	protected:
 
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;

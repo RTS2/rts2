@@ -478,6 +478,14 @@ class Rts2Conn:public Rts2Object
 		 */
 		rts2core::Value *getValueType (const char *value_name, int value_type);
 
+		/**
+		 * Return iterator to the next failed value, starting from position
+		 * specified as parameter.
+		 *
+		 * @param iter    starting position from which the failed value will be searched
+		 */
+		rts2core::ValueVector::iterator & getFailedValue (rts2core::ValueVector::iterator &iter);
+
 		int getOtherType ();
 		// set to -1 if we don't need timeout checks..
 		void setConnTimeout (int new_connTimeout) { connectionTimeout = new_connTimeout; }
