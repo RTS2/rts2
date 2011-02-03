@@ -59,6 +59,12 @@ void NStatusWindow::draw ()
 		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + Rts2Config::instance ()->getObserver ()->lng;
 		struct ln_hms hms;
 		ln_deg_to_hms (lst, &hms);
+		std::map <Rts2Conn *, std::vector < rts2core::Value *> > failed = master->failedValues ();
+		int f = 0;
+		for (std::map <Rts2Conn *, std::vector < rts2core::Value *> >::iterator i = failed.begin (); i != failed.end (); i++)
+			f += i->second.size ();
+
+		mvwprintw (window, 0, COLS - 38, "%2i %2i", failed.size (), f);
 		mvwprintw (window, 0, COLS - 33, "|LST %02i:%02i:%02i", hms.hours, hms.minutes, (int) hms.seconds);
 	}
 	wcolor_set (window, CLR_DEFAULT, NULL);
