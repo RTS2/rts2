@@ -111,9 +111,9 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 		_os << ">" << (i + 1) << "</option>";
 	}
 
-	_os << "</select>\n";
+	_os << "</select> \n" 
 #endif
-	_os << "Label <input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'></input><input type='submit' value='Redraw'></input>&nbsp;\n"
+	"Label <input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'></input><input type='submit' value='Redraw'></input>&nbsp;\n"
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 

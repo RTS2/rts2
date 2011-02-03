@@ -20,7 +20,7 @@ class AppImageCore:public Rts2CliApp
 		{
 			readOnly = in_readOnly;
 		}
-		virtual ~ rts2image::AppImageCore (void)
+		virtual ~ AppImageCore (void)
 		{
 			imageNames.clear ();
 		}
