@@ -1,5 +1,5 @@
-Instructions to install Alta Apogee devices
-===========================================
+Instructions to install Andor EMCCD driver
+==========================================
 
 For Andor CCDs, you will need to install Andor SDK. You can get one from Andor
 (http://www.andor.com) if you ever ordered CCD from them. Andor works in 32bit
