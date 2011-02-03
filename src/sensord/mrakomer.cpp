@@ -198,8 +198,8 @@ int Mrakomer::info ()
 				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerGood->getValueDouble ()
 					<< sendLog;
-				valueGood (tempDiff);
 			}
+			valueGood (tempDiff);
 		}
 		else if (getWeatherState () == false)
 		{
