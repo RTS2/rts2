@@ -29,7 +29,7 @@ using namespace rts2xmlrpc;
 void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os)
 {
 	os << "\"h\":["
-		"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
