@@ -42,9 +42,16 @@ void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os)
 		struct ln_equ_posn equ;
 		rts2db::Target *tar = iter->second;
 		tar->getPosition (&equ, JD);
-		os << "[" << tar->getTargetID () << ",\"" 
-			<< tar->getTargetName () << "\","
-			<< equ.ra << "," << equ.dec << "]";
+		const char *n = tar->getTargetName ();
+		os << "[" << tar->getTargetID () << ",";
+		if (n == NULL)
+			os << "null,";
+		else
+			os << "\"" << n << "\",";
+		if (isnan (equ.ra) || isnan(equ.dec))
+			os << "null,null]";
+		else
+			os << equ.ra << "," << equ.dec << "]";
 	}
 	os << "]";
 }
