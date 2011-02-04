@@ -6,14 +6,11 @@ Rts2CamList::Rts2CamList ()
 {
 }
 
-
 Rts2CamList::~Rts2CamList ()
 {
 }
 
-
-int
-Rts2CamList::load ()
+int Rts2CamList::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
     VARCHAR d_camera_name[8];
