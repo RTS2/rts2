@@ -127,6 +127,11 @@ class TargetSet:public std::map <int, Target * >
 		void load (std::list < int >&target_ids);
 
 		/**
+		 * Load single target ID.
+		 */
+		void load (int id);
+
+		/**
 		 * Load targets with name matching pattern.
 		 *
 		 * @param name         target name

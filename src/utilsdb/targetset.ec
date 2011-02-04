@@ -79,10 +79,13 @@ void TargetSet::load ()
 void TargetSet::load (std::list<int> &target_ids)
 {
 	for (std::list<int>::iterator iter = target_ids.begin(); iter != target_ids.end(); iter++)
-	{
-		Target *tar = createTarget (*iter, obs);
-		(*this)[*iter] = tar;
-	}
+	  	load (*iter);
+}
+
+void TargetSet::load (int id)
+{
+	Target *tar = createTarget (id, obs);
+	(*this)[id] = tar;
 }
 
 void TargetSet::loadByName (const char *name, bool approxName)
