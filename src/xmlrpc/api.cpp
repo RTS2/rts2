@@ -131,6 +131,15 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.loadByName (name);
 			jsonTargets (tar_set, os);
 		}
+		else if (vals[0] == "tbyid")
+		{
+			rts2db::TargetSet tar_set;
+			int id = params->getInteger ("id", -1);
+			if (id <= 0)
+				throw XmlRpcException ("empty id parameter");
+			tar_set.load (id);
+			jsonTargets (tar_set, os);
+		}
 		else if (vals[0] == "tbylabel")
 		{
 			rts2db::TargetSet tar_set;
@@ -203,37 +212,66 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
 
+void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
+{
+	switch (value->getValueBaseType ())
+	{
+		case RTS2_VALUE_INTEGER:
+			os << "\"" << value->getName () << "\":[";
+			for (std::vector <int>::iterator iter = ((rts2core::IntegerArray *) value)->valueBegin (); iter != ((rts2core::IntegerArray *) value)->valueEnd (); iter++)
+			{
+			  	if (iter != ((rts2core::IntegerArray *) value)->valueBegin ())
+					os << ",";
+				os << (*iter);
+			}
+			os << "]";
+			break;
+		default:
+			os << "\"" << value->getName () << "\":\"" << value->getDisplayValue () << "\"";
+			break;
+	}
+}
+
+void API::sendValue (rts2core::Value *value, std::ostringstream &os)
+{
+	switch (value->getValueBaseType ())
+	{
+		case RTS2_VALUE_STRING:
+			os << "\"" << value->getName () << "\":\"" << value->getValue () << "\"";
+			break;
+		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_FLOAT:
+		case RTS2_VALUE_TIME:
+			os << "\"" << value->getName () << "\":";
+			if (isnan (value->getValueDouble ()))
+				os << "null";
+			else	
+				os << value->getValue ();
+			break;
+		case RTS2_VALUE_INTEGER:
+		case RTS2_VALUE_LONGINT:
+		case RTS2_VALUE_SELECTION:
+		case RTS2_VALUE_BOOL:
+			os << "\"" << value->getName () << "\":" << value->getValue ();
+			break;
+		case RTS2_VALUE_RADEC:
+			os << "\"" << value->getName () << "\":{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
+			break;
+		default:
+			os << "\"" << value->getName () << "\":\"" << value->getDisplayValue () << "\"";
+			break;
+	}
+}
+
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
 {
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
 	{
-		switch ((*iter)->getValueType ())
-		{
-			case RTS2_VALUE_STRING:
-				os << "\"" << (*iter)->getName () << "\":\"" << (*iter)->getValue () << "\"";
-				break;
-			case RTS2_VALUE_DOUBLE:
-			case RTS2_VALUE_FLOAT:
-			case RTS2_VALUE_TIME:
-				os << "\"" << (*iter)->getName () << "\":";
-				if (isnan ((*iter)->getValueDouble ()))
-					os << "null";
-				else	
-					os << (*iter)->getValue ();
-				break;
-			case RTS2_VALUE_INTEGER:
-			case RTS2_VALUE_LONGINT:
-			case RTS2_VALUE_SELECTION:
-			case RTS2_VALUE_BOOL:
-				os << "\"" << (*iter)->getName () << "\":" << (*iter)->getValue ();
-				break;
-			case RTS2_VALUE_RADEC:
-				os << "\"" << (*iter)->getName () << "\":{\"ra\":" << ((rts2core::ValueRaDec *) (*iter))->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) (*iter))->getDec () << "}";
-				break;
-			default:
-				os << "\"" << (*iter)->getName () << "\":\"" << (*iter)->getDisplayValue () << "\"";
-				break;
-		}
+	  	if ((*iter)->getValueExtType())
+		  	sendArrayValue (*iter, os);
+		else
+		  	sendValue (*iter, os);
+
 		iter++;
 		if (iter != conn->valueEnd ())
 			os << ",";

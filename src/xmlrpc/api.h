@@ -38,6 +38,9 @@ class API:public GetRequestAuthorized
 	private:
 		void sendConnectionValues (std::ostringstream &os, Rts2Conn * conn);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
+		void sendValue (rts2core::Value *value, std::ostringstream &os);
 };
 
 }
