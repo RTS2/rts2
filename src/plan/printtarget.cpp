@@ -250,7 +250,7 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 			std::cout << " error : " << er << std::endl;
 		}
 		// try to parse it..
-		rts2script::Script script = rts2script::Script ();
+		rts2script::Script script;
 		script.setTarget (cam_name, target);
 		failedCount = script.getFaultLocation ();
 		if (failedCount != -1)
