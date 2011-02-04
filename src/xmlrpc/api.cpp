@@ -22,41 +22,14 @@
 #include "xmlrpcd.h"
 
 #include "../utilsdb/planset.h"
+#include "../plan/script.h"
 
 using namespace rts2xmlrpc;
 
-#ifdef HAVE_PGSQL
-void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os)
+
+API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
-	os << "\"h\":["
-		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
-		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
-		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
-		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
-		"\"d\":[";
-	double JD = ln_get_julian_from_sys ();
-	os.precision (8);
-	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
-	{
-		if (iter != tar_set.begin ())
-			os << ",";
-		struct ln_equ_posn equ;
-		rts2db::Target *tar = iter->second;
-		tar->getPosition (&equ, JD);
-		const char *n = tar->getTargetName ();
-		os << "[" << tar->getTargetID () << ",";
-		if (n == NULL)
-			os << "null,";
-		else
-			os << "\"" << n << "\",";
-		if (isnan (equ.ra) || isnan(equ.dec))
-			os << "null,null]";
-		else
-			os << equ.ra << "," << equ.dec << "]";
-	}
-	os << "]";
 }
-#endif // HAVE_PGSQL
 
 void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
@@ -129,7 +102,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (name[0] == '\0')
 				throw XmlRpcException ("empty n parameter");
 			tar_set.loadByName (name);
-			jsonTargets (tar_set, os);
+			jsonTargets (tar_set, os, params);
 		}
 		else if (vals[0] == "tbyid")
 		{
@@ -138,7 +111,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (id <= 0)
 				throw XmlRpcException ("empty id parameter");
 			tar_set.load (id);
-			jsonTargets (tar_set, os);
+			jsonTargets (tar_set, os, params);
 		}
 		else if (vals[0] == "tbylabel")
 		{
@@ -147,7 +120,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (label == -1)
 			  	throw XmlRpcException ("empty l parameter");
 			tar_set.loadByLabelId (label);
-			jsonTargets (tar_set, os);	
+			jsonTargets (tar_set, os, params);
 		}
 		else if (vals[0] == "labels")
 		{
@@ -303,3 +276,70 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 	response = new char[response_length];
 	memcpy (response, os.str ().c_str (), response_length);
 }
+
+#ifdef HAVE_PGSQL
+void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params)
+{
+	bool extended = params->getInteger ("e", false);  
+	os << "\"h\":["
+		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
+		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
+		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
+		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}";
+	if (extended)
+		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":4},"
+		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":5}";
+	os << "],\"d\":[";
+
+	double JD = ln_get_julian_from_sys ();
+	os.precision (8);
+	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
+	{
+		if (iter != tar_set.begin ())
+			os << ",";
+		struct ln_equ_posn equ;
+		rts2db::Target *tar = iter->second;
+		tar->getPosition (&equ, JD);
+		const char *n = tar->getTargetName ();
+		os << "[" << tar->getTargetID () << ",";
+		if (n == NULL)
+			os << "null,";
+		else
+			os << "\"" << n << "\",";
+		if (isnan (equ.ra) || isnan(equ.dec))
+			os << "null,null";
+		else
+			os << equ.ra << "," << equ.dec;
+
+		if (extended)
+		{
+			double md = -1;
+			std::ostringstream cs;
+			for (Rts2CamList::iterator cam = ((XmlRpcd *) getMasterApp ())->cameras.begin (); cam != ((XmlRpcd *) getMasterApp ())->cameras.end (); cam++)
+			{
+				try
+				{
+
+					std::string script_buf;
+					rts2script::Script script;
+					tar->getScript (cam->c_str(), script_buf);
+					if (cam != ((XmlRpcd *) getMasterApp ())->cameras.begin ())
+						cs << ",";
+					script.setTarget (cam->c_str (), tar);
+					double d = script.getExpectedDuration ();
+					cs << "{\"" << *cam << "\":[\"" << script_buf << "\"," << d << "]}";
+					if (d > md)
+						md = d;  
+				}
+				catch (rts2core::Error &er)
+				{
+					logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
+				}
+			}
+			os << "," << md << ",[" << cs.str () << "]";
+		}
+		os << "]";
+	}
+	os << "]";
+}
+#endif // HAVE_PGSQL

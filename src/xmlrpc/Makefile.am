@@ -16,7 +16,7 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	libjavascript.cpp libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp \
 	expandstrings.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDADD= ../scheduler/librts2scheduler.a ../db/simbad/libsimbad.a ../utilsdb/librts2blockdb.a \
+rts2_xmlrpcd_LDADD= ../scheduler/librts2scheduler.a ../db/simbad/libsimbad.a ../plan/libscript.a ../utilsdb/librts2blockdb.a \
 	../writers/librts2imagedb.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBPG_LIBS@ \
 	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ $(AM_LDFLAGS)
 

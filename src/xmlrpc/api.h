@@ -31,7 +31,7 @@ namespace rts2xmlrpc
 class API:public GetRequestAuthorized
 {
 	public:
-		API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
+		API (const char* prefix, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
@@ -41,6 +41,7 @@ class API:public GetRequestAuthorized
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
+		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params);
 };
 
 }
