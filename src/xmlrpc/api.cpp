@@ -34,7 +34,8 @@ void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os)
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}],"
 		"\"d\":[";
-	double JD = ln_get_julian_from_sys ();	
+	double JD = ln_get_julian_from_sys ();
+	os.precision (8);
 	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
 	{
 		if (iter != tar_set.begin ())
