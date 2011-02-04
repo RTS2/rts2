@@ -589,7 +589,7 @@ int ImageProc::checkNotProcessed ()
 	config = Rts2Config::instance ();
 
 	ret = config->getString ("imgproc", "imageglob", image_glob);
-	if (ret)
+	if (ret || image_glob.length () == 0)
 		return ret;
 
 	ret = glob (image_glob.c_str (), 0, NULL, &imageGlob);
