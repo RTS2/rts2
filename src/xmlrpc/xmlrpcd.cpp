@@ -246,6 +246,8 @@ int XmlRpcd::init ()
 	ret = Rts2Config::instance ()->loadFile (config_file);
 	if (ret)
 		return ret;
+#else
+	cameras.load ();
 #endif
 	// get page prefix
 	Rts2Config::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
