@@ -36,7 +36,7 @@ class API:public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
-		void sendConnectionValues (std::ostringstream &os, Rts2Conn * conn);
+		void sendConnectionValues (std::ostringstream &os, Rts2Conn * conn, XmlRpc::HttpParams *params);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);

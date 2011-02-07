@@ -54,7 +54,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 			if (iter == master->getConnections ()->end ())
 			 	throw XmlRpcException ("executor is not connected");
-			sendConnectionValues (os, *iter);
+			sendConnectionValues (os, *iter, params);
 		}
 		else if (vals[0] == "set")
 		{
@@ -65,22 +65,29 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw XmlRpcException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
 				throw XmlRpcException ("value not set - missing or empty v parameter");
-			conn = master->getOpenConnection (device);
+			if (isCentraldName (device))
+				conn = master->getSingleCentralConn ();
+			else
+				conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device with given name");
 			rts2core::Value * rts2v = master->getValue (device, variable);
 			if (rts2v == NULL)
 				throw XmlRpcException ("cannot find variable");
 			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), '=', std::string (value)));
-			sendConnectionValues (os, conn);
+			sendConnectionValues (os, conn, params);
 		}
 		else if (vals[0] == "get")
 		{
 			const char *device = params->getString ("d","");
+			if (isCentraldName (device))
+				conn = master->getSingleCentralConn ();
+			else
+				conn = master->getOpenConnection (device);
 			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
-			sendConnectionValues (os, conn);
+			sendConnectionValues (os, conn, params);
 		}
 		else if (vals[0] == "cmd")
 		{
@@ -88,11 +95,14 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *cmd = params->getString ("c", "");
 			if (cmd[0] == '\0')
 				throw XmlRpcException ("empty command");
-			conn = master->getOpenConnection (device);
+			if (isCentraldName (device))
+				conn = master->getSingleCentralConn ();
+			else
+				conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
 			conn->queCommand (new rts2core::Rts2Command (master, cmd));
-			sendConnectionValues (os, conn);	  
+			sendConnectionValues (os, conn, params);	  
 		}
 #ifdef HAVE_PGSQL
 		else if (vals[0] == "tbyname")
@@ -190,7 +200,7 @@ void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 	switch (value->getValueBaseType ())
 	{
 		case RTS2_VALUE_INTEGER:
-			os << "\"" << value->getName () << "\":[";
+			os << "[";
 			for (std::vector <int>::iterator iter = ((rts2core::IntegerArray *) value)->valueBegin (); iter != ((rts2core::IntegerArray *) value)->valueEnd (); iter++)
 			{
 			  	if (iter != ((rts2core::IntegerArray *) value)->valueBegin ())
@@ -200,7 +210,7 @@ void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 			os << "]";
 			break;
 		default:
-			os << "\"" << value->getName () << "\":\"" << value->getDisplayValue () << "\"";
+			os << "\"" << value->getDisplayValue () << "\"";
 			break;
 	}
 }
@@ -210,12 +220,11 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 	switch (value->getValueBaseType ())
 	{
 		case RTS2_VALUE_STRING:
-			os << "\"" << value->getName () << "\":\"" << value->getValue () << "\"";
+			os << "\"" << value->getValue () << "\"";
 			break;
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_FLOAT:
 		case RTS2_VALUE_TIME:
-			os << "\"" << value->getName () << "\":";
 			if (isnan (value->getValueDouble ()))
 				os << "null";
 			else	
@@ -225,27 +234,32 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 		case RTS2_VALUE_LONGINT:
 		case RTS2_VALUE_SELECTION:
 		case RTS2_VALUE_BOOL:
-			os << "\"" << value->getName () << "\":" << value->getValue ();
+			os << value->getValue ();
 			break;
 		case RTS2_VALUE_RADEC:
-			os << "\"" << value->getName () << "\":{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
+			os << "{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
 			break;
 		default:
-			os << "\"" << value->getName () << "\":\"" << value->getDisplayValue () << "\"";
+			os << "\"" << value->getDisplayValue () << "\"";
 			break;
 	}
 }
 
-void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn)
+void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params)
 {
+	bool extended = params->getInteger ("e", false);  
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
 	{
+		os << "\"" << (*iter)->getName () << "\":";
+		if (extended)
+			os << "[" << (*iter)->getValueType () << ",";
 	  	if ((*iter)->getValueExtType())
 		  	sendArrayValue (*iter, os);
 		else
 		  	sendValue (*iter, os);
-
 		iter++;
+		if (extended)
+			os << "]";
 		if (iter != conn->valueEnd ())
 			os << ",";
 	}
