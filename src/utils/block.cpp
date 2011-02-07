@@ -943,3 +943,8 @@ void Block::valueMaskError (Value *val, int32_t err)
 		updateMetaInformations (val);
 	}
 }
+
+bool isCentraldName (const char *_name)
+{
+	return !strcmp (_name, "..") || !strcmp (_name, "centrald");
+}

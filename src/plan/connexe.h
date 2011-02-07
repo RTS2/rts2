@@ -43,7 +43,6 @@ class ConnExe:public rts2core::ConnFork
 
 		virtual void processErrorLine (char *errbuf);
 
-		bool isCentraldName (const char *_name) { return !strcmp (_name, "..") || !strcmp (_name, "centrald"); }
 		Rts2Conn *getConnectionForScript (const char *name);
 		int getDeviceType (const char *name);
 };

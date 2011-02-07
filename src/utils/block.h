@@ -782,4 +782,13 @@ class Block: public rts2core::App
 };
 
 }
+
+/**
+ * Determine if name of the device is representing centrald. Centrald device
+ * can be named either '..' or 'centrald'.
+ *
+ * @return true if name matches centrald.
+ */
+bool isCentraldName (const char *_name);
+
 #endif							 // !__RTS2_NETBLOCK__
