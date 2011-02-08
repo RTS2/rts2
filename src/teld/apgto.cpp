@@ -1168,7 +1168,7 @@ APGTO::tel_check_declination_axis ()
     block_sync_apgto->setValueBool(true) ;
     block_move_apgto->setValueBool(true) ;
     stop = 1 ;
-    logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, blocking." << sendLog;
   }
   if (!strcmp("West", DECaxis_HAcoordinate->getValue())) {
     if(( HA > 180.) && ( HA <= 360.)) {
@@ -1474,7 +1474,9 @@ APGTO::tel_slew_to (double ra, double dec)
 	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to stoped any tracking and motion" << sendLog;
       }
     }
+    // slew was successful, set and reset the state 
     on_set_HA= target_HA ; // used for defining state transition while tracking
+    transition_while_tracking->setValueBool(false) ;
     time(&slew_start_time);
     return 0;
   }
@@ -2236,7 +2238,12 @@ APGTO::info ()
     transition_while_tracking->setValueBool(true) ;
     logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
   } else {
-    transition_while_tracking->setValueBool(false) ;
+    // Do not reset here!
+    // Do that if a new successful slew occured
+    //if(transition_while_tracking->getValueBool()) {
+    //  logStream (MESSAGE_INFO) << "APGTO::info resetting \"transition while tracking occured\", HA:"<< HA << " on_set_HA:" << on_set_HA << sendLog;
+    //}
+    //transition_while_tracking->setValueBool(false) ;
   }
   // wildi ToDo: This is the real stuff
 //   if ((getState () & TEL_MASK_MOVING) == TEL_MOVING) {
