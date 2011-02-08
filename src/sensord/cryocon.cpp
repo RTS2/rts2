@@ -31,12 +31,12 @@ class Cryocon;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class rts2core::ValueTempInput
+class ValueTempInput
 {
 	public:
 		std::list < rts2core::Value * >values;
 
-		rts2core::ValueTempInput (Cryocon * dev, char in_chan);
+		ValueTempInput (Cryocon * dev, char in_chan);
 
 		char getChannel () { return chan; }
 
@@ -49,7 +49,7 @@ class rts2core::ValueTempInput
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class rts2core::ValueLoop
+class ValueLoop
 {
 	public:
 		rts2core::ValueSelection * source;
@@ -64,7 +64,7 @@ class rts2core::ValueLoop
 		rts2core::ValueDouble *htrread;
 		rts2core::ValueFloat *pmanual;
 
-		rts2core::ValueLoop (Cryocon * dev, int in_loop);
+		ValueLoop (Cryocon * dev, int in_loop);
 
 		std::list < rts2core::Value * >values;
 
@@ -109,8 +109,8 @@ class Cryocon:public Gpib
 	private:
 		const char *getLoopVal (int l, rts2core::Value * val);
 
-		rts2core::ValueTempInput *chans[4];
-		rts2core::ValueLoop *loops[2];
+		ValueTempInput *chans[4];
+		ValueLoop *loops[2];
 
 		std::list < rts2core::Value * >systemList;
 
@@ -126,7 +126,7 @@ class Cryocon:public Gpib
 
 using namespace rts2sensord;
 
-rts2core::ValueTempInput::rts2core::ValueTempInput (Cryocon * dev, char in_chan)
+ValueTempInput::ValueTempInput (Cryocon * dev, char in_chan)
 {
 	chan = in_chan;
 	// values are passed to dev, and device deletes them!
@@ -151,7 +151,7 @@ rts2core::ValueTempInput::rts2core::ValueTempInput (Cryocon * dev, char in_chan)
 	values.push_back (v);
 }
 
-rts2core::ValueLoop::rts2core::ValueLoop (Cryocon * dev, int in_loop)
+ValueLoop::ValueLoop (Cryocon * dev, int in_loop)
 {
 	loop = in_loop;
 
@@ -185,7 +185,7 @@ rts2core::ValueLoop::rts2core::ValueLoop (Cryocon * dev, int in_loop)
 	dev->createLoopValue (ramp, loop, "RAMP", "Control loop ramp status");
 	values.push_back (ramp);
 
-	dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
+	dev->createLoopValue (rate, loop, "RATE", "[K/min] Control loop ramp rate", true, RTS2_VALUE_WRITABLE);
 	values.push_back (rate);
 
 	dev->createLoopValue (pgain, loop, "PGAIN", "Control loop proportional gain term", true, RTS2_VALUE_WRITABLE);
@@ -254,12 +254,12 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 
 	for (i = 0; i < 4; i++)
 	{
-		chans[i] = new rts2core::ValueTempInput (this, 'A' + i);
+		chans[i] = new ValueTempInput (this, 'A' + i);
 	}
 
 	for (i = 0; i < 2; i++)
 	{
-		loops[i] = new rts2core::ValueLoop (this, i);
+		loops[i] = new ValueLoop (this, i);
 	}
 
 	createValue (statTime, "STATTIME", "time for which statistic was collected", true);
