@@ -2379,6 +2379,7 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 	switch  (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_TIME:
 			return new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ());
 			break;
 		case RTS2_VALUE_INTEGER:
