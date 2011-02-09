@@ -68,7 +68,7 @@ void DevScript::startTarget (bool callScriptEnds)
 	}
 	scriptCount++;
 
-	counted_ptr <Script> sc (new Script (script_connection->getMaster ()));
+	counted_ptr <Script> sc (new Script (scriptLoopCount, script_connection->getMaster ()));
 	sc->setTarget (script_connection->getName (), currentTarget);
 	setScript (sc);
 

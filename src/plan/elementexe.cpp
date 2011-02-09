@@ -237,6 +237,12 @@ void ConnExecute::processCommand (char *cmd)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
+	else if (!strcmp (cmd, "loopcount"))
+	{
+		std::ostringstream os;
+		os << masterElement->getScript ()->getLoopCount ();
+		writeToProcess (os.str ().c_str ());
+	}
 	else
 	{
 		ConnExe::processCommand (cmd);

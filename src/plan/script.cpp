@@ -112,10 +112,11 @@ int Script::getNextParamInteger (int *val)
 	return 0;
 }
 
-Script::Script (rts2core::Block * _master):Rts2Object ()
+Script::Script (int scriptLoopCount, rts2core::Block * _master):Rts2Object ()
 {
 	defaultDevice[0] = '\0';
 	master = _master;
+	loopCount = scriptLoopCount;
 	executedCount = 0;
 	lineOffset = 0;
 	cmdBuf = NULL;
@@ -127,6 +128,7 @@ Script::Script (const char *script):Rts2Object ()
 {
 	defaultDevice[0] = '\0';
 	master = NULL;
+	loopCount = 0;
 	executedCount = 0;
 	lineOffset = 0;
 	cmdBuf = new char[strlen (script) + 1];
@@ -543,6 +545,15 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		rts2operands::Operand *condition = parseOperand (target, target_pos);
 		doEl->setCondition (condition);
 		return doEl;
+	}
+	else if (!strcmp (commandStart, COMMAND_BLOCK_ONCE))
+	{
+		el = nextElement ();
+		if (*el != '{')
+			return NULL;
+		ElementOnce *singleEl = new ElementOnce (this);
+		parseBlock (singleEl, target, target_pos);
+		return singleEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT_SOD))
 	{

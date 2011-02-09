@@ -250,5 +250,21 @@ class ElementDo:public ElementBlock
 		int max_cycles;
 };
 
+/**
+ * Run command only if it is the first script execution.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ElementOnce:public ElementBlock
+{
+	public:
+		ElementOnce (Script *_script):ElementBlock (_script) {}
+		virtual ~ElementOnce () {}
+
+		virtual void printScript (std::ostream &os);
+	protected:
+		virtual bool endLoop ();
+};
+
 }
 #endif							 /* !__RTS2_SCRIPT_BLOCK__ */

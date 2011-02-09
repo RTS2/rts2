@@ -100,7 +100,7 @@ typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT } printType;
 class Script:public Rts2Object, public std::list <Element *>
 {
 	public:
-		Script (rts2core::Block * _master = NULL);
+		Script (int scriptLoopCount = 0, rts2core::Block * _master = NULL);
 		Script (const char *script);
 		virtual ~ Script (void);
 
@@ -163,11 +163,14 @@ class Script:public Rts2Object, public std::list <Element *>
 		 */
 		double getExpectedDuration ();
 
+		int getLoopCount () { return loopCount; }
+
 	private:
 		char *cmdBuf;
 		std::string wholeScript;
 		char *cmdBufTop;
 		char *commandStart;
+		int loopCount;
 
 		char defaultDevice[DEVICE_NAME_SIZE];
 

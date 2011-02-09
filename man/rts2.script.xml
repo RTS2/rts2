@@ -432,6 +432,24 @@
 
       <varlistentry>
         <term>
+	  <option>once [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute block only when the target script is executed for the first
+	    time. This command is ideal for executing focusing runs before the
+	    first science image.
+	  </para>
+	  <para>
+	    This command is usefull only for scripts executed from the
+	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+	    The block is run as without <emphasis>once</emphasis> command,
+	    when executed from the other tools capable of script execution.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>waitfor {variable} {value} {range}</option>
 	</term>
 	<listitem>
@@ -697,6 +715,13 @@ echo value WINDOW = 0 0 10 10
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>loopcount</option></term>
+	<listitem><para>
+	  Print current loopcount. It is 0 when target script is executed for
+	  the first time.
+	</para></listitem>
+      </varlistentry>	
+      <varlistentry>
         <term><option>? {value name}</option></term>
 	<listitem><para>
 	  Retrieves value of variable from scripting device. The value of
@@ -796,6 +821,12 @@ echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>waitidle</option></term>
+	<listitem><para>
+
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>log {level} {message}</option></term>
 	<listitem><para>
 	  Log something through RTS2 logging system. First letter of loglevel
@@ -885,6 +916,14 @@ for x in 1 2; do
 	sleep 5
 done
     </literallayout>
+
+    <para>
+      The following script will run <emphasis>exe .. E 10</emphasis> part only
+      once, when the target script is first observed. If target is changed, the
+      <emphasis>once</emphasis> part will be run again.
+    </para>
+
+    <para>once { exe .. E 10 } E 20 E 30</para>
 
     <para>
       Following script can be used for finding focus position. It moves focuser

@@ -168,6 +168,8 @@ class Element:public Rts2Object
 		 */
 		virtual double getExpectedDuration () { return 0; }
 
+		Script *getScript () { return script; }
+
 	protected:
 		Script * script;
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);

@@ -81,6 +81,10 @@ void ConnExe::processCommand (char *cmd)
 			writeToProcess ("ERR");
 		}
 	}
+	else if (!strcmp (cmd, "waitidle"))
+	{
+
+	}
 	else if (!strcmp (cmd, "log"))
 	{
 		if (paramNextString (&device) || (value = paramNextWholeString ()) == NULL)

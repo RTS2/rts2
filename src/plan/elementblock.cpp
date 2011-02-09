@@ -532,3 +532,17 @@ bool ElementDo::endLoop ()
 		return false;
 	return getLoopCount () >= max_cycles || condition->getDouble () == 0;
 }
+
+void ElementOnce::printScript (std::ostream &os)
+{
+	os << COMMAND_BLOCK_ONCE;
+	ElementBlock::printScript (os);
+}
+
+bool ElementOnce::endLoop ()
+{
+	// only execute if both local (block) and script count are 0
+	if (script->getLoopCount () == 0 && getLoopCount () == 0)
+		return false;
+	return true;
+}
