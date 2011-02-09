@@ -21,7 +21,6 @@ SUBDIRS = \
 	bckimages \
 	sql \
 	sensord \
-	indi \
 	logger \
 	scheduler \
 	xmlrpc
