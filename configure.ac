@@ -731,7 +731,6 @@ AC_OUTPUT([Makefile
 	   src/camd/edtsao/Makefile
 	   src/dome/Makefile
 	   src/dome/zelio/Makefile
-	   src/indi/Makefile
 	   src/libindi/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
