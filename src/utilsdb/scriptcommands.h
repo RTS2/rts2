@@ -45,6 +45,7 @@
 #define COMMAND_BLOCK_FOR       "for"
 #define COMMAND_BLOCK_WHILE     "while"
 #define COMMAND_BLOCK_DO        "do"
+#define COMMAND_BLOCK_ONCE      "once"
 #define COMMAND_WAIT_SOD        "waitsod"
 #define COMMAND_WAITFOR         "waitfor"
 #define COMMAND_SLEEP           "sleep"
