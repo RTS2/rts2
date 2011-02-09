@@ -1094,9 +1094,26 @@ void Rts2Image::getValues (const char *name, char **values, int num, bool requir
 	fitsStatusGetValue (name, required);
 }
 
-int Rts2Image::writeImgHeader (struct imghdr *im_h)
+int Rts2Image::writeImgHeader (struct imghdr *im_h, int nchan)
 {
 	writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
+	if (nchan != 1)
+		setValue ("CHANNEL", ntohs (im_h->channel), "channel number");
+	if (templateFile)
+	{
+		// write header from template..
+		std::ostringstream sec;
+		sec << ntohs (im_h->channel);
+
+		Rts2ConfigSection *hc = templateFile->getSection (sec.str ().c_str (), false);
+		if (hc)
+		{
+			for (Rts2ConfigSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
+			{
+				setValue (iter->getValueName ().c_str (), iter->getValue ().c_str (), "value from template");
+			}
+		}
+	}
 	return 0;
 }
 
@@ -1226,7 +1243,7 @@ int Rts2Image::writeData (char *in_data, char *fullTop, int nchan)
 		}
 	}
 
-	ret = writeImgHeader (im_h);
+	ret = writeImgHeader (im_h, nchan);
 
 	long pixelSize = dataSize / getPixelByteSize ();
 	switch (dataType)

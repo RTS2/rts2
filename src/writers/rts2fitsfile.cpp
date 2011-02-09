@@ -243,6 +243,7 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
+	templateFile = NULL;
 }
 
 Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
@@ -256,6 +257,7 @@ Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsf
 	setFileName (_fitsfile->getFileName ());
 
 	fits_status = _fitsfile->fits_status;
+	templateFile = NULL;
 }
 
 Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
@@ -263,6 +265,8 @@ Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
+
+	templateFile = NULL;
 
 	createFile (_fileName);
 }
@@ -273,6 +277,7 @@ Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
+	templateFile = NULL;
 }
 
 Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
@@ -280,6 +285,7 @@ Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
+	templateFile = NULL;
 
 	createFile (expandPath (_expression));
 }
@@ -291,6 +297,19 @@ Rts2FitsFile::~Rts2FitsFile (void)
 	if (fileName != absoluteFileName)
 		delete[] absoluteFileName;
 	delete[] fileName;
+}
+
+void Rts2FitsFile::loadTemlate (const char *fn)
+{
+	templateFile = new Rts2ConfigRaw ();
+
+	int ret = templateFile->loadFile (fn);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot load template file " << fn << sendLog;
+		delete templateFile;
+		templateFile = NULL;
+	}
 }
 
 void Rts2FitsFile::writeHistory (const char *history)

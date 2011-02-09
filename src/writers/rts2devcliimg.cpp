@@ -281,6 +281,8 @@ void Rts2DevClientCameraImage::exposureStarted ()
 		image->setOrigin (origin.c_str ());
 	
 		image->setEnvironmentalValues ();
+
+		image->loadTemlate ("/etc/rts2/template.rts2");
 	
 		focuser = getConnection ()->getValueChar ("focuser");
 		if (focuser)

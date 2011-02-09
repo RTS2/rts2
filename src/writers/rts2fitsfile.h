@@ -20,6 +20,7 @@
 #include "../utils/expander.h"
 #include "../utils/error.h"
 #include "../utils/valuearray.h"
+#include "../utils/rts2configraw.h"
 
 #include <fitsio.h>
 
@@ -135,6 +136,15 @@ class Rts2FitsFile: public rts2core::Expander
 		virtual ~Rts2FitsFile (void);
 
 		/**
+		 * Load given template file. Template file specifies values
+		 * which should be written to the FITS headers, and general
+		 * FITS file conventions.
+		 *
+		 * @param fn   template file path
+		 */
+		void loadTemlate (const char *fn);
+
+		/**
 		 * Return absolute filename. As filename is created in
 		 * setFileName() call and it is check if it's absolute,
 		 * the returned string is always absolute (e.g. begins with /).
@@ -213,6 +223,9 @@ class Rts2FitsFile: public rts2core::Expander
 		int fits_status;
 		int flags;
 
+		// template - header config file
+		Rts2ConfigRaw *templateFile;
+
 		void setFileName (const char *_filename);
 
 		virtual int createFile ();
@@ -244,7 +257,6 @@ class Rts2FitsFile: public rts2core::Expander
 		char *fileName;
 		char *absoluteFileName;
 };
-
 
 namespace rts2image
 {

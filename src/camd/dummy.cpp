@@ -23,6 +23,7 @@
 #define OPT_WIDTH        OPT_LOCAL + 1
 #define OPT_HEIGHT       OPT_LOCAL + 2
 #define OPT_DATA_SIZE    OPT_LOCAL + 3
+#define OPT_CHANNELS     OPT_LOCAL + 4
 
 namespace rts2camd
 {
@@ -67,6 +68,7 @@ class Dummy:public Camera
 			addOption (OPT_WIDTH, "width", 1, "width of simulated CCD");
 			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
+			addOption (OPT_CHANNELS, "channels", 1, "number of data channels");
 		}
 
 		virtual ~Dummy (void)
@@ -95,6 +97,10 @@ class Dummy:public Camera
 					break;
 				case OPT_DATA_SIZE:
 					dataSize = atoi (optarg);
+					break;
+				case OPT_CHANNELS:
+					createDataChannels ();
+					setNumChannels (atoi (optarg));
 					break;
 				default:
 					return Camera::processOption (in_opt);
@@ -183,48 +189,56 @@ int Dummy::doReadout ()
 {
 	int ret;
 	long usedSize = dataBufferSize;
+	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
-	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-	for (int i = 0; i < usedSize; i += 2)
+	int nch = 0;
+	for (size_t ch = 0; ch < channels->size (); ch++)
 	{
-		uint16_t *d = (uint16_t* ) (dataBuffer + i);
-		double n;
-		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
-			n = noiseRange->getValueDouble ();
-		switch (genType->getValueInteger ())
+		if ((*channels)[ch] == false)
+			continue;
+		for (int i = 0; i < usedSize; i += 2)
 		{
-			case 0:  // random
-				*d = 20000 + n * random_num () - n / 2;
-				break;
-			case 1:  // linear
-				*d = i;
-				break;
-			case 2:
-				// linear shifted
-				*d = i + (int) (getExposureNumber () * 10);
-				break;
-			case 3:
-				// flats dusk
-				*d = n * random_num ();
-				if (getScriptExposureNumber () < 55)
-					*d += (56 - getScriptExposureNumber ()) * 1000;
-				*d -= n / 2;
-				break;
-			case 4:
-				// flats dawn
-				*d = n * random_num ();
-				if (getScriptExposureNumber () < 55)
-					*d += getScriptExposureNumber () * 1000;
-				else
-				  	*d += 55000;
-				*d -= n / 2;
-				break;
+			uint16_t *d = (uint16_t* ) (dataBuffer + i);
+			double n;
+			if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
+				n = noiseRange->getValueDouble ();
+			// generate data
+			switch (genType->getValueInteger ())
+			{
+				case 0:  // random
+					*d = 20000 + n * random_num () - n / 2;
+					break;
+				case 1:  // linear
+					*d = i;
+					break;
+				case 2:
+					// linear shifted
+					*d = i + (int) (getExposureNumber () * 10);
+					break;
+				case 3:
+					// flats dusk
+					*d = n * random_num ();
+					if (getScriptExposureNumber () < 55)
+						*d += (56 - getScriptExposureNumber ()) * 1000;
+					*d -= n / 2;
+					break;
+				case 4:
+					// flats dawn
+					*d = n * random_num ();
+					if (getScriptExposureNumber () < 55)
+						*d += getScriptExposureNumber () * 1000;
+					else
+					  	*d += 55000;
+					*d -= n / 2;
+					break;
+			}
 		}
+		ret = sendReadoutData (dataBuffer, usedSize, nch);
+		nch++;
+		if (ret < 0)
+			return ret;
 	}
-	ret = sendReadoutData (dataBuffer, usedSize);
-	if (ret < 0)
-		return ret;
 
 	if (getWriteBinaryDataSize () == 0)
 		return -2;				 // no more data..

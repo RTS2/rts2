@@ -216,6 +216,19 @@ void Camera::clearReadout ()
 {
 }
 
+int Camera::getPhysicalChannel (int ch)
+{
+	if (channels == NULL)
+		return ch;
+	size_t j = 0;
+	for (int i = 0; i < ch && j < channels->size(); j++)
+	{
+		if ((*channels)[j])
+			i++;
+	}
+	return j;
+}
+
 void Camera::startImageData (Rts2Conn * conn)
 {
 	if (sharedMemId >= 0)
@@ -235,7 +248,7 @@ void Camera::startImageData (Rts2Conn * conn)
 	}
 }
 
-int Camera::sendFirstLine (int chan)
+int Camera::sendFirstLine (int chan, int pchan)
 {
 	int w, h;
 	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
@@ -255,8 +268,7 @@ int Camera::sendFirstLine (int chan)
 	else
 		focusingHeader->shutter = 0;
 
-	focusingHeader->channel = chan;
-	focusingHeader->totalChannel = 1;
+	focusingHeader->channel = htons (pchan);
 
 	sum->setValueDouble (0);
 	average->setValueDouble (0);
@@ -282,6 +294,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	expType = NULL;
 
 	dataChannels = NULL;
+	channels = NULL;
 
 	tempAir = NULL;
 	tempCCD = NULL;
@@ -576,7 +589,7 @@ int Camera::sendImage (char *data, size_t dataSize)
 		if (currentImageData == -1)
 			return -1;
 	}
-	sendFirstLine (0);
+	sendFirstLine (0, 0);
 	return sendReadoutData (data, dataSize);
 }
 
@@ -987,6 +1000,23 @@ int Camera::camStartExposureWithoutCheck ()
 
 	incExposureNumber ();
 
+	// recalculate number of data channels
+	if (dataChannels)
+	{
+		dataChannels->setValueInteger (0);
+
+		// write channels and their order..
+		for (size_t i = 0; i < channels->size (); i++)
+		{
+			if ((*channels)[i])
+			{
+				dataChannels->inc ();
+			}
+		}
+
+		sendValueAll (dataChannels);
+	}
+
 	ret = startExposure ();
 	if (ret)
 		return ret;
@@ -1104,7 +1134,7 @@ int Camera::readoutStart ()
 	int ret;
 	for (int i = 0; i < (dataChannels ? dataChannels->getValueInteger () : 1); i++)
 	{
-		ret = sendFirstLine (i);
+		ret = sendFirstLine (i, getPhysicalChannel (i + 1));
 		if (ret)
 			return ret;
 	}

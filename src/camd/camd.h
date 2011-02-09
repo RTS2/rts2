@@ -488,6 +488,8 @@ class Camera:public rts2core::ScriptDevice
 		char *device_file;
 		// number of data channels
 		rts2core::ValueInteger *dataChannels;
+		// which channels are off (and which are on)
+		rts2core::BoolArray *channels;
 
 		// temperature and others; all in deg Celsius
 		rts2core::ValueFloat *tempAir;
@@ -689,7 +691,17 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * CCDs with multiple data channels.
 		 */
-		void createDataChannels () { createValue (dataChannels, "DATA_CHANNELS", "total number of data channels"); }
+		void createDataChannels ()
+		{ 
+			createValue (dataChannels, "DATA_CHANNELS", "total number of data channels");
+			createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
+		}
+
+		void setNumChannels (int num)
+		{
+			for (int i = 0; i < num; i++)
+				channels->addValue (true);
+		}
 
 		/**
 		 * Create value for air temperature camera sensor. Use on CCDs which
@@ -881,8 +893,21 @@ class Camera:public rts2core::ScriptDevice
 		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
+		/**
+		 * Return physical channel associated with
+		 * data channel number.
+		 *
+		 * @param ch channel number.
+		 */
+		int getPhysicalChannel (int ch);
+
 		void startImageData (Rts2Conn * conn);
-		int sendFirstLine (int chan);
+
+		/**
+		 * @param chan    channel number (0..nchan)
+		 * @param pchan   physical channel number (any number)
+		 */
+		int sendFirstLine (int chan, int pchan);
 
 		// if true, send command OK after exposure is started
 		bool sendOkInExposure;

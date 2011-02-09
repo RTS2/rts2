@@ -1,6 +1,7 @@
 /* 
  * Configuration file read routines.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,8 +52,7 @@ class Rts2ConfigValue
 		std::string valueSuffix;
 		std::string value;
 	public:
-		Rts2ConfigValue (std::string in_valueName, std::string in_valueSuffix,
-			std::string in_value)
+		Rts2ConfigValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value)
 		{
 			valueName = in_valueName;
 			valueSuffix = in_valueSuffix;
@@ -66,20 +66,14 @@ class Rts2ConfigValue
 		 *
 		 * @return True if value name is equal to name.
 		 */
-		bool isValue (std::string name)
-		{
-			return (valueName == name && valueSuffix.length () == 0);
-		}
+		bool isValue (std::string name) { return (valueName == name && valueSuffix.length () == 0); }
 
 		/**
 		 * Return value name.
 		 *
 		 * @return Value name.
 		 */
-		std::string getValueName ()
-		{
-			return valueName;
-		}
+		std::string getValueName () { return valueName; }
 
 		/**
 		 * Return value suffix. Value suffix is used for .min and .max
@@ -87,32 +81,21 @@ class Rts2ConfigValue
 		 *
 		 * @return Value suffix.
 		 */
- 		std::string getSuffix ()
- 		{
- 			return valueSuffix;
- 		}
+ 		std::string getSuffix () { return valueSuffix; }
 
 		/**
 		 * Return value as string.
 		 *
 		 * @return Value as string.
 		 */
-		std::string getValue ()
-		{
-			return value;
-		}
+		std::string getValue () { return value; }
 
 		/**
 		 * Return value as double number.
 		 *
 		 * @return Value as double number.
 		 */
-		double getValueDouble ()
-		{
-			return atof (value.c_str ());
-		}
-
-
+		double getValueDouble () { return atof (value.c_str ()); }
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
 };
@@ -142,15 +125,10 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 		 *
 		 * @return True if section have name name.
 		 */
-		bool isSection (std::string name)
-		{
-			return sectName == name;
-		}
+		bool isSection (std::string name) { return sectName == name; }
 
-		std::string getName ()
-		{
-			return sectName;
-		}
+		std::string getName () { return sectName; }
+
 		/**
 		 * Look for value with given name.
 		 *
@@ -193,38 +171,21 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 
 class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 {
-	private:
-		bool verboseEntry;
-
-		void setVerboseEntry ()
-		{
-			verboseEntry = true;
-		}
-
-		void clearVerboseEntry ()
-		{
-			verboseEntry = false;
-		}
-
-		void clearSections ();
-		int parseConfigFile (const char *filename);
-
-		// sections which are know to be missing
-		std::vector <std::string> missingSections;
-
-		Rts2ConfigSection *getSection (const char *section, bool verbose=true);
-		Rts2ConfigValue *getValue (const char *section, const char *valueName);
-	protected:
-		std::ifstream * configStream;
-		virtual int getSpecialValues ()
-		{
-			return 0;
-		}
-
 	public:
 		Rts2ConfigRaw ();
 		virtual ~ Rts2ConfigRaw (void);
 		int loadFile (const char *filename = NULL);
+
+		/**
+		 * Return full section from the configuration file.
+		 *
+		 * @param section  section name
+		 * @param verbose  if true, print error messages
+		 *
+		 * @return NULL if section cannot be found
+		 */
+		Rts2ConfigSection *getSection (const char *section, bool verbose=true);
+
 		/**
 		 * Get string from configuration file.
 		 *
@@ -329,5 +290,24 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 * @callergraph
 		 */
 		const bool blockDevice (const char *device_name, const char *querying_device);
+
+	protected:
+		std::ifstream * configStream;
+		virtual int getSpecialValues () { return 0; }
+
+	private:
+		bool verboseEntry;
+
+		void setVerboseEntry () { verboseEntry = true; }
+
+		void clearVerboseEntry () { verboseEntry = false; }
+
+		void clearSections ();
+		int parseConfigFile (const char *filename);
+
+		// sections which are know to be missing
+		std::vector <std::string> missingSections;
+
+		Rts2ConfigValue *getValue (const char *section, const char *valueName);
 };
 #endif							 /*! __RTS2_CONFIG_RAW__ */

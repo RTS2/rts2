@@ -253,7 +253,6 @@ class EdtSao:public Camera
 		 */
 		int writeSignalFile (const char *filename);
 
-		rts2core::BoolArray *channels;
 		int totalChannels;
 
 		// perform camera-specific functions
@@ -622,13 +621,13 @@ void EdtSao::beforeRun ()
 	if (ret)
 		exit (ret);
 
-	ret = writeBinFile ("e2vsc.bin");
+	/*ret = writeBinFile ("e2vsc.bin");
 	if (ret)
 		exit (ret);
 
 	ret = writeBinFile ("e2v_pidlesc.bin");
 	if (ret)
-		exit (ret);
+		exit (ret); */
 
 	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 
@@ -812,17 +811,10 @@ int EdtSao::startExposure ()
 {
 	int ret;
 
-	dataChannels->setValueInteger (0);
-
-	// write channels and their order..
-	for (int i = 0; i < totalChannels; i++)
+	for (int i = 0; i < channels->size (); i++)
 	{
-		setChannel (i, (*channels)[i], i + 1 == totalChannels);
-		if ((*channels)[i])
-			dataChannels->inc ();
+		setChannel (i, (*channels)[i], i + 1 == channels->size ());
 	}
-
-	sendValueAll (dataChannels);
 
 	if (partialReadout->getValueInteger () != 0)
 	{
@@ -845,11 +837,11 @@ int EdtSao::startExposure ()
 	sendValueAll (dofcl);
 	if (ret)
 		return ret;
-	writeBinFile ("e2v_nidlesc.bin");
+	/*writeBinFile ("e2v_nidlesc.bin"); */
 	if (dofcl->getValueBool ())
 		fclr_r (fclrNum->getValueInteger ());
 
-	writeBinFile ("e2v_freezesc.bin");
+	/*writeBinFile ("e2v_freezesc.bin"); */
 
 	// taken from expose.c
 	/* set time */
@@ -902,7 +894,7 @@ long EdtSao::isExposing ()
 	if ((!overrun && shutter) || overrun)
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
-	writeBinFile ("e2v_unfreezesc.bin");
+	//writeBinFile ("e2v_unfreezesc.bin");
 	return 0;
 }
 
@@ -1068,7 +1060,7 @@ int EdtSao::endReadout ()
 		pdv_flush_fifo (pd);
 		pdv_reset_serial (pd);
 		edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
-		writeBinFile ("e2v_pidlesc.bin");
+		//writeBinFile ("e2v_pidlesc.bin");
 	}
 	return Camera::endReadout ();
 }
@@ -1352,7 +1344,6 @@ int EdtSao::init ()
 			break;
 	} */
 
-	createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	dataChannels->setValueInteger (totalChannels);

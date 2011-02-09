@@ -756,7 +756,7 @@ class Rts2Image:public Rts2FitsFile
 
 		void initData ();
 
-		int writeImgHeader (struct imghdr *im_h);
+		int writeImgHeader (struct imghdr *im_h, int nchan);
 
 		/**
 		 * Record image physical coordinates.
