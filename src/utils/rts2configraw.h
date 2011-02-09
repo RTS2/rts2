@@ -174,7 +174,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 	public:
 		Rts2ConfigRaw ();
 		virtual ~ Rts2ConfigRaw (void);
-		int loadFile (const char *filename = NULL);
+		int loadFile (const char *filename = NULL, bool parseFullLine = false);
 
 		/**
 		 * Return full section from the configuration file.
@@ -303,7 +303,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		void clearVerboseEntry () { verboseEntry = false; }
 
 		void clearSections ();
-		int parseConfigFile (const char *filename);
+		int parseConfigFile (const char *filename, bool parseFullLine = false);
 
 		// sections which are know to be missing
 		std::vector <std::string> missingSections;

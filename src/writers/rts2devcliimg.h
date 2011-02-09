@@ -127,6 +127,9 @@ class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 
 		// already received informations from those devices..
 		std::vector < rts2core::Rts2DevClient * > prematurelyReceived;
+
+		// template for headers.
+		Rts2ConfigRaw *fitsTemplate;
 };
 
 class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope

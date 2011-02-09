@@ -29,6 +29,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 	chipNumbers = 0;
 	saveImage = 1;
 
+	fitsTemplate = NULL;
+
 	Rts2Config *config = Rts2Config::instance ();
 
 	xoa = rts2_nan ("f");
@@ -49,6 +51,25 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 	config->getString (connection->getName (), "telescop", telescop);
 	config->getString (connection->getName (), "origin", origin);
 
+	// load template file..
+	std::string tfn;
+	config->getString (connection->getName (), "template", tfn);
+
+	if (tfn.length () > 0)
+	{
+		fitsTemplate = new Rts2ConfigRaw ();
+		if (fitsTemplate->loadFile (tfn.c_str (), true))
+		{
+			delete fitsTemplate;
+			fitsTemplate = NULL;
+			logStream (MESSAGE_ERROR) << "cannot load FITS template from " << tfn << sendLog;
+		}
+		else
+		{
+			logStream (MESSAGE_INFO) << "loaded FITS template from " << tfn << sendLog;
+		}
+	}
+
 	actualImage = NULL;
 	lastImage = NULL;
 
@@ -59,6 +80,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rt
 
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
 {
+	delete fitsTemplate;
 }
 
 Rts2Image * Rts2DevClientCameraImage::setImage (Rts2Image * old_img, Rts2Image * new_image)
@@ -273,6 +295,8 @@ void Rts2DevClientCameraImage::exposureStarted ()
 		Rts2Image *image = createImage (&expStart);
 		if (image == NULL)
 			return;
+		image->setTemplate (fitsTemplate);
+
 		image->setExposureLength (exposureTime);
 	
 		image->setCameraName (getName ());
@@ -282,8 +306,6 @@ void Rts2DevClientCameraImage::exposureStarted ()
 	
 		image->setEnvironmentalValues ();
 
-		image->loadTemlate ("/etc/rts2/template.rts2");
-	
 		focuser = getConnection ()->getValueChar ("focuser");
 		if (focuser)
 		{

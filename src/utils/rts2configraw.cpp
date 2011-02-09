@@ -131,7 +131,7 @@ void Rts2ConfigRaw::clearSections ()
 	clear ();
 }
 
-int Rts2ConfigRaw::parseConfigFile (const char *filename)
+int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 {
 	int ln = 0;
 	Rts2ConfigSection *sect = NULL;
@@ -167,8 +167,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 		{
 			if (!sect)
 			{
-				logStream (MESSAGE_ERROR) << "value without section on line " <<
-					ln << ": " << line <<  sendLog;
+				logStream (MESSAGE_ERROR) << "value without section on line " << ln << ": " << line <<  sendLog;
 				return -1;
 			}
 			// now create value..
@@ -234,6 +233,12 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename)
 						if (isspace (*es))
 						{
 							pstate = VAL_END;
+							if (parseFullLine)
+							{
+								es  = line.end ();
+								while (isspace (*es))
+									es--;
+							}	
 							val = line.substr (top - line.begin (), es - top);
 							es = line.end ();
 						}
@@ -295,7 +300,7 @@ Rts2ConfigRaw::~Rts2ConfigRaw (void)
 {
 }
 
-int Rts2ConfigRaw::loadFile (const char *filename)
+int Rts2ConfigRaw::loadFile (const char *filename, bool parseFullLine)
 {
 	clearSections ();
 
@@ -312,7 +317,7 @@ int Rts2ConfigRaw::loadFile (const char *filename)
 		return -1;
 	}
 	// fill sections
-	if (parseConfigFile (filename))
+	if (parseConfigFile (filename, parseFullLine))
 	{
 		delete configStream;
 		return -1;

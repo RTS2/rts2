@@ -144,6 +144,8 @@ class Rts2FitsFile: public rts2core::Expander
 		 */
 		void loadTemlate (const char *fn);
 
+		void setTemplate (Rts2ConfigRaw *temp) { templateFile = temp; }
+
 		/**
 		 * Return absolute filename. As filename is created in
 		 * setFileName() call and it is check if it's absolute,

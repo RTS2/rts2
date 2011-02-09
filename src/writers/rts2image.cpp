@@ -1110,7 +1110,31 @@ int Rts2Image::writeImgHeader (struct imghdr *im_h, int nchan)
 		{
 			for (Rts2ConfigSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
 			{
-				setValue (iter->getValueName ().c_str (), iter->getValue ().c_str (), "value from template");
+				std::string v = iter->getValue ();
+				std::string com;
+				// find comment begin..
+				size_t cb = v.find ('/');
+				if (cb != std::string::npos)
+				{
+					com = v.substr (cb + 1);
+					v = v.substr (0, cb - 1);
+				}
+				// value type based on suffix
+				std::string suff = iter->getSuffix ();
+				if (suff == "i")
+				{
+					long dl = atol (v.c_str ());
+					setValue (iter->getValueName ().c_str (), dl, com.c_str ());
+				}
+				else if (suff == "d")
+				{
+					double dv = atof (v.c_str ());
+					setValue (iter->getValueName ().c_str (), dv, com.c_str ());
+				}
+				else
+				{
+					setValue (iter->getValueName ().c_str (), iter->getValue ().c_str (), com.c_str ());
+				}
 			}
 		}
 	}
