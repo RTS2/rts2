@@ -163,6 +163,12 @@ int ElementBlock::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_co
 	return blockScriptRet (ret);
 }
 
+void ElementBlock::exposureEnd ()
+{
+	if (curr_element != blockElements.end ())
+		(*curr_element)->exposureEnd ();
+}
+
 int ElementBlock::processImage (Rts2Image * image)
 {
 	if (curr_element != blockElements.end ())
