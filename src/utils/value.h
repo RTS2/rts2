@@ -184,6 +184,11 @@
 #define RTS2_DT_ONOFF                 0x000b0000
 
 /**
+ * Array value, writen to header as string.
+ */
+#define RTS2_DT_SIMPLE_ARRAY          0x00100000
+
+/**
  * Sets when value was modified and needs to be send during infoAll call.
  */
 #define RTS2_VALUE_NEED_SEND          0x01000000

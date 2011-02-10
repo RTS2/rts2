@@ -1,5 +1,5 @@
 /* 
- * Class which represents image.
+ i Class which represents image.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -1096,7 +1096,6 @@ void Rts2Image::getValues (const char *name, char **values, int num, bool requir
 
 int Rts2Image::writeImgHeader (struct imghdr *im_h, int nchan)
 {
-	writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
 	if (nchan != 1)
 		setValue ("CHANNEL", ntohs (im_h->channel), "channel number");
 	if (templateFile)
@@ -1133,10 +1132,14 @@ int Rts2Image::writeImgHeader (struct imghdr *im_h, int nchan)
 				}
 				else
 				{
-					setValue (iter->getValueName ().c_str (), iter->getValue ().c_str (), com.c_str ());
+					setValue (iter->getValueName ().c_str (), v.c_str (), com.c_str ());
 				}
 			}
 		}
+	}
+	else
+	{
+		writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
 	}
 	return 0;
 }
@@ -2403,18 +2406,6 @@ void Rts2Image::writeConnBaseValue (const char* name, rts2core::Value * val, con
 	}
 }
 
-void Rts2Image::writeConnArray (TableData *tableData)
-{
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	writeArray (tableData->getName (), tableData);
-	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
-}
-
 ColumnData *getColumnData (const char *name, rts2core::Value * val)
 {
 	switch  (val->getValueBaseType ())
@@ -2431,6 +2422,75 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 			break;
 	}
 	throw rts2core::Error ("unknow array datatype");
+}
+
+void Rts2Image::prepareArrayData (const char *name, Rts2Conn *conn, rts2core::Value *val)
+{
+	// if it's simple array, just write as header cards
+	if (val->getValueDisplayType () & RTS2_DT_SIMPLE_ARRAY)
+	{
+		int s = (int)(((rts2core::ValueArray *)val)->size ());
+		if (!val->prefixWithDevice ())
+			name = val->getName ().c_str ();
+		setValue (name, s, val->getDescription ().c_str ());
+		size_t l = strlen (name);
+		char *indexname = new char[l + (s / 10) + 2];
+		memcpy (indexname, name, l + 1);
+		char *ip = indexname + strlen(name);
+		for (int i = 0; i < s; i++)
+		{
+			sprintf (ip, "%d", i + 1);
+			switch (val->getValueBaseType ())
+			{
+				case RTS2_VALUE_DOUBLE:
+					setValue (indexname, (*((rts2core::DoubleArray *)val))[i],"");
+					break;
+				case RTS2_VALUE_TIME:
+					setValue (indexname, (*((rts2core::TimeArray *)val))[i],"");
+					break;
+				case RTS2_VALUE_INTEGER:
+					setValue (indexname, (*((rts2core::IntegerArray *)val))[i],"");
+					break;
+				case RTS2_VALUE_STRING:
+					setValue (indexname, (*((rts2core::StringArray *)val))[i].c_str (),"");
+					break;
+				case RTS2_VALUE_BOOL:
+					setValue (indexname, (*((rts2core::BoolArray *)val))[i],"");
+					break;
+			}
+		}
+		delete[] indexname;
+		return;
+	}
+	// otherwise, prepare data structure to be written
+	std::map <int, TableData *>::iterator ai = arrayGroups.find (val->getWriteGroup ());
+	
+	if (ai == arrayGroups.end ())
+	{
+		rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
+		if (infoTime)
+		{
+			TableData *td = new TableData (name, infoTime->getValueDouble ());
+			td->push_back (getColumnData (name, val));
+			arrayGroups[val->getWriteGroup ()] = td;
+		}
+	}
+	else
+	{
+		ai->second->push_back (getColumnData (name, val));
+	}
+}
+
+void Rts2Image::writeConnArray (TableData *tableData)
+{
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openImage ();
+	}
+	writeArray (tableData->getName (), tableData);
+	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
 void Rts2Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
@@ -2450,7 +2510,6 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
 		strcat (name, val->getName ().c_str ());
 	}
 
-	std::map <int, TableData *>::iterator ai;
 
 	switch (val->getValueExtType ())
 	{
@@ -2458,23 +2517,7 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
 			writeConnBaseValue (name, val, desc);
 			break;
 		case RTS2_VALUE_ARRAY:
-			ai = arrayGroups.find (val->getWriteGroup ());
-
-			if (ai == arrayGroups.end ())
-			{
-				rts2core::Value *infoTime = conn->getValue (RTS2_VALUE_INFOTIME);
-				if (infoTime)
-				{
-					TableData *td = new TableData (name, infoTime->getValueDouble ());
-					td->push_back (getColumnData (name, val));
-					arrayGroups[val->getWriteGroup ()] = td;
-				}
-			}
-			else
-			{
-				ai->second->push_back (getColumnData (name, val));
-			}
-
+			prepareArrayData (name, conn, val);
 			break;
 		case RTS2_VALUE_STAT:
 			writeConnBaseValue (name, val, desc);

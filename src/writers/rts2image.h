@@ -770,6 +770,12 @@ class Rts2Image:public Rts2FitsFile
 
 		void writeConnBaseValue (const char *name, rts2core::Value *val, const char *desc);
 
+		/**
+		 * Either prepare array data to be written, or write them to header if those are simple
+		 * data.
+		 */
+		void prepareArrayData (const char *name, Rts2Conn *conn, rts2core::Value *val);
+
 		void writeConnArray (TableData *tableData);
 
 		// writes one value to image
