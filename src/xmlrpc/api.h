@@ -41,7 +41,9 @@ class API:public GetRequestAuthorized
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
+#ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params);
+#endif
 };
 
 }
