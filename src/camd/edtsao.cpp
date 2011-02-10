@@ -23,7 +23,8 @@
 #include "../utils/connfork.h"
 #include "../utils/valuearray.h"
 
-#define OPT_NOTIMEOUT  OPT_LOCAL + 3
+#define OPT_NOTIMEOUT  OPT_LOCAL + 73
+#define OPT_NOWRITE    OPT_LOCAL + 74
 
 /*
  * Depends on libedtsao.a, which is build from edtsao directory. This
@@ -102,8 +103,8 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 			setMax (10);
 			break;
 		case A_minus:
-			setMin (-10);
-			setMax (0);
+			setMin (0);
+			setMax (10);
 			break;
 		case B:
 			setMin (-5);
@@ -139,7 +140,7 @@ long ValueEdt::getHexValue (float in_v)
 			val = (long) (in_v * 204.7);
 			break;
 		case D:
-			val = (long) (in_v * 158.0);
+			val = (long) (in_v * 136.5);
 			break;
 	}
 	if (val > 0xfff)
@@ -211,6 +212,8 @@ class EdtSao:public Camera
 		int sdelay;
 
 		enum {CHANNEL_4, CHANNEL_16} controllerType;
+
+		bool not_write;
 
 		u_int status;
 
@@ -383,7 +386,14 @@ int EdtSao::edtwrite (unsigned long lval)
 	unsigned long lsval = lval;
 	if (ft_byteswap ())
 		swap4 ((char *) &lsval, (char *) &lval, sizeof (lval));
-	ccd_serial_write (pd, (u_char *) (&lsval), 4);
+	if (not_write)
+	{
+		std::cout << "edtwrite " << std::hex << lval << std::endl;
+	}
+	else
+	{
+		ccd_serial_write (pd, (u_char *) (&lsval), 4);
+	}
 	return 0;
 }
 
@@ -811,7 +821,7 @@ int EdtSao::startExposure ()
 {
 	int ret;
 
-	for (int i = 0; i < channels->size (); i++)
+	for (size_t i = 0; i < channels->size (); i++)
 	{
 		setChannel (i, (*channels)[i], i + 1 == channels->size ());
 	}
@@ -1072,6 +1082,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	pd = NULL;
 	verbose = false;
 
+	not_write = false;
+
 	notimeout = 0;
 	sdelay = 0;
 
@@ -1089,6 +1101,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	// add overscan pixel option
 	addOption ('S', "hskip", 1, "number of lines to skip (overscan pixels)");
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
+	addOption (OPT_NOWRITE, "nowrite", 0, "dry run - do not write to device");
 	addOption ('s', "sdelay", 1, "serial delay");
 	addOption ('v', "verbose", 0, "verbose report");
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
@@ -1209,6 +1222,9 @@ int EdtSao::processOption (int in_opt)
 	                break;
 		case OPT_NOTIMEOUT:
 			notimeout = true;
+			break;
+		case OPT_NOWRITE:
+			not_write = true;
 			break;
 		case 's':
 			sdelay = atoi (optarg);
