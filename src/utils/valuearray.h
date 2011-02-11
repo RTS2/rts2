@@ -108,6 +108,8 @@ class StringArray: public ValueArray
 
 		std::vector <std::string>::iterator valueEnd () { return value.end (); }
 
+		std::string operator[] (int i) { return value[i]; }
+
 	private:
 		std::vector <std::string> value;
 		std::string _os;
