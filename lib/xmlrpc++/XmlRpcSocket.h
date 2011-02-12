@@ -17,6 +17,7 @@
 extern "C"
 {
 	#include <sys/types.h>
+	#include <netdb.h>
 	#include <netinet/in.h>
 }
 #endif
