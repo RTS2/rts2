@@ -84,20 +84,36 @@ void FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status,
 	struct tm _tm;
 	windSpeed->setValueFloat (_windSpeed);
 	if (_windSpeed >= maxWindSpeed->getValueFloat ())
+	{
 		setWeatherTimeout (timeoutWindspeed->getValueInteger (), "wind speed above max wind speed");
+		valueError (windSpeed);
+	}
+	else
+	{
+		valueGood (windSpeed);
+	}
 	
 	rain->setValueBool (_rain);
 	if (_rain == true)
+	{
 		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
+		valueError (rain);
+	}
+	else
+	{
+		valueGood (rain);
+	}
 
 	if (strcmp (_status, "watch") == 0)
 	{
 		watch->setValueInteger (0);
+		valueGood (watch);
 	}
 	else
 	{
 	  	watch->setValueInteger (1);
 		setWeatherTimeout (timeoutConn->getValueInteger (), "meteo station not in 'watch' mode");
+		valueError (watch);
 	}
 	// change from date to tm
 	bzero (&_tm, sizeof(struct tm));
@@ -111,6 +127,11 @@ void FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status,
 	if (getLastInfoTime () > connUpdateSep->getValueInteger ())
 	{
 		setWeatherTimeout (timeoutConn->getValueInteger (), "last weather updated received too late");
+		valueError (connUpdateSep);
+	}
+	else
+	{
+		valueGood (connUpdateSep);
 	}
 	infoAll ();
 }
