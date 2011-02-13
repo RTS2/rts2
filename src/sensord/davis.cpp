@@ -159,6 +159,11 @@ void Davis::setCloud (double _cloud, double _top, double _bottom)
       if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
       {
 	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "cloud sensor reports cloudy");
+	      valueError (cloud);
+      }
+      else
+      {
+              valueGood (cloud);
       }
 }
 

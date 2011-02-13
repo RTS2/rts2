@@ -63,7 +63,14 @@ class Davis: public SensorWeather
 		{
 			rain->setValueBool (_rain);
 			if (_rain)
+			{
 				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
+				valueError (rain);
+			}
+			else
+			{
+				valueGood (rain);
+			}
 		}
 		bool getRain ()
 		{
@@ -74,21 +81,42 @@ class Davis: public SensorWeather
 		{
 			avgWindSpeed->setValueFloat (_avgWindSpeed);
 			if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
+			{
 				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high average wind");
+				valueError (avgWindSpeed);
+			}
+			else
+			{
+				valueGood (avgWindSpeed);
+			}
 		}
 
 		void setPeekWindSpeed (float _peekWindSpeed)
 		{
 			peekWindSpeed->setValueFloat (_peekWindSpeed);
 			if (!isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
+			{
 				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high peek wind");
+				valueError (peekWindSpeed);
+			}
+			else
+			{
+				valueGood (peekWindSpeed);
+			}
 		}
 
 		void setRainRate (float _rainRate)
 		{
 			rainRate->setValueFloat (_rainRate);
 			if (_rainRate > 0)
+			{
 				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining (rainrate)");	
+				valueError (rainRate);
+			}
+			else
+			{
+				valueGood (rainRate);
+			}
 		}
 
 		void setWetness (double _wetness);
