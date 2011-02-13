@@ -311,13 +311,22 @@ int NUT::info ()
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
 		setWeatherTimeout (1200, "low battery charge");
+		valueError (bcharge);
+	}
+	else
+	{
+		valueGood (bcharge);
 	}
 
 	if (bruntime && bruntime->getValueInteger () < mintimeleft->getValueInteger ())
 	{
 	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
 		setWeatherTimeout (1200, "low minimal battery time");
-
+		valueError (bruntime);
+	}
+	else
+	{
+		valueGood (bruntime);
 	}
 
 	// if there is any UPS error, set big timeout..
@@ -329,6 +338,11 @@ int NUT::info ()
 	{
 		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
 		setWeatherTimeout (1200, "unknow status");
+		valueError (upsstatus);
+	}
+	else
+	{
+		valueGood (upsstatus);
 	}
 
 	// we are online - increase onbatterytimeout
@@ -342,6 +356,11 @@ int NUT::info ()
 	{
 		logStream (MESSAGE_WARNING) << "running for too long on battery" << sendLog;
 		setWeatherTimeout (1200, "running for too long on battery");
+		valueError (onbatterytimeout);
+	}
+	else
+	{
+		valueGood (onbatterytimeout);
 	}
 	
 	return SensorWeather::info ();
