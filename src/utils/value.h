@@ -182,6 +182,8 @@
 #define RTS2_DT_KMG                   0x00090000
 #define RTS2_DT_INTERVAL              0x000a0000
 #define RTS2_DT_ONOFF                 0x000b0000
+// write values to FITS headers, even if it is an array
+#define RTS2_FITS_HEADERS             0x00100000
 
 /**
  * Array value, writen to header as string.
@@ -429,6 +431,12 @@ class Value
 		int getWriteGroup () { return ((rts2Type & RTS2_WR_GROUP_NR_MASK) >> 16) - 0x20; }
 
 		void maskError (int32_t err) { rts2Type = ( rts2Type & ~RTS2_VALUE_ERRORMASK ) | err; }
+
+		int32_t getErrorMask () { return rts2Type & RTS2_VALUE_ERRORMASK; }
+
+		bool isError () { return getErrorMask () & RTS2_VALUE_ERROR; }
+
+		bool isWarning () { return getErrorMask () & RTS2_VALUE_WARNING; }
 
 	protected:
 		char buf[VALUE_BUF_LEN];
