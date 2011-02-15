@@ -49,6 +49,14 @@ class NWindowEdit:public NWindow
 		virtual keyRet injectKey (int key);
 		virtual void winrefresh ();
 
+		/**
+		 * Set window size, shift it to left if its too big to fit on screen.
+		 *
+		 * @param w new window width (in characters)
+		 * @param h new window height (in characters)
+		 */
+		void setSize (int w, int h);
+
 		virtual bool setCursor ();
 
 		virtual WINDOW *getWriteWindow () { return comwin; }

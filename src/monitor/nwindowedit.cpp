@@ -104,13 +104,30 @@ void NWindowEdit::winrefresh ()
 		mheight -= 1;
 	}
 
-	if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex,
-		MIN (y + ey + eh, mheight),
-		MIN (x + ex + ew, mwidth)) == ERR)
+	if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth)) == ERR)
 	{
+		if (y > 1 || x > 1)
+		{
+			if (y + ey + eh > LINES)
+				y = 1;
+			if (x + ex + ew > COLS)
+				x = 1;
+			winmove (x, y);
+			NWindow::draw ();
+			if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth)) != ERR)
+				return;
+		}
 		errorMove ("pnoutrefresh comwin", y + ey, x + ey,
 			MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth));
 	}
+}
+
+void NWindowEdit::setSize (int w, int h)
+{
+	ew = w;
+	eh = h;
+	wresize (window, eh, ew);
+	winrefresh ();
 }
 
 bool NWindowEdit::setCursor ()

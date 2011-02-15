@@ -89,6 +89,7 @@ bool ValueBoxBool::setCursor ()
 
 ValueBoxString::ValueBoxString (NWindow * top, rts2core::Value * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
+	setSize (strlen (_val->getValue ()) + 5, 3);
 	wprintw (getWriteWindow (), "%s", _val->getValue ());
 }
 
