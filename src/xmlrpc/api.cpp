@@ -252,7 +252,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 	{
 		os << "\"" << (*iter)->getName () << "\":";
 		if (extended)
-			os << "[" << (*iter)->getValueType () << ",";
+			os << "[" << (*iter)->getFlags () << ",";
 	  	if ((*iter)->getValueExtType())
 		  	sendArrayValue (*iter, os);
 		else
