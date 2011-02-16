@@ -54,7 +54,7 @@ void ConnGpib::readValue (const char *buf, rts2core::Value * val)
 			readValue (buf, (rts2core::ValueSelection *) val);
 			return;
 		default:
-			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
 			throw rts2core::Error ("unknow value type");
 	}
 }
@@ -155,7 +155,8 @@ void ConnGpib::readValue (const char *buf, rts2core::ValueSelection * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setSelIndex (rb);
+	if (val->setValueCharArr (rb))
+		throw rts2core::Error (std::string ("unknow value for selection ") + val->getName () + " " + rb);
 }
 
 char ConnGpib::getTimeoutTmo (float &_sec)
