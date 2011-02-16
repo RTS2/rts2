@@ -69,7 +69,7 @@ class Lakeshore:public Gpib
 		template < typename T> rts2core::Value *tempValue (T *&val, const char *prefix, char chan, const char *_info, bool writeToFits, uint32_t flags = 0)
 		{
 			std::ostringstream _os_n, _os_i;
-			_os_n << prefix << "_" << chan;
+			_os_n << chan << "." << prefix;
 			_os_i << chan << " " << _info;
 			createValue (val, _os_n.str ().c_str (), _os_i.str ().c_str (), writeToFits, flags);
 			return val;
