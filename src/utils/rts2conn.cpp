@@ -742,8 +742,8 @@ void Rts2Conn::processLine ()
 	else if (isCommand (PROTO_SHARED))
 	{
 		int sharedMem;
-		if (paramNextInteger (&sharedMem)
-			|| !paramEnd ())
+		int dC;
+		if (paramNextInteger (&sharedMem) || paramNextInteger (&dC) || !paramEnd ())
 		{
 			connectionError (-2);
 			ret = -2;
@@ -767,7 +767,7 @@ void Rts2Conn::processLine ()
 				newDataConn (-1);
 			}
 		}
-		std::cout << "PROTO_SHARED" << std::endl;
+		std::cout << "PROTO_SHARED " << ret << std::endl;
 	}
 	else if (isCommand (PROTO_SHARED_FULL))
 	{
@@ -785,12 +785,12 @@ void Rts2Conn::processLine ()
 		}
 		else
 		{
-			std::cout << "PROTO_SHARED_FULL" << std::endl;
+			std::cout << "PROTO_SHARED_FULL " << otherDevice << std::endl;
 			if (otherDevice)
 			{
-/*				DataChannels _channel();
+				DataChannels _channel;
 				_channel.push_back (new DataShared (activeSharedMem));
-				otherDevice->fullDataReceived (-1, &_channel); */
+				otherDevice->fullDataReceived (-1, &_channel);
 			}
 			ret = -1;
 		}

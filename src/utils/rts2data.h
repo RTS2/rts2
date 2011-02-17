@@ -39,9 +39,43 @@ class DataAbstractRead
 	public:
 		DataAbstractRead () {}
 		virtual ~DataAbstractRead () {}
+
+		/**
+		 * Read data size from connection.
+		 */
+		virtual int readDataSize (Rts2Conn *conn) = 0;
+
+		/**
+		 * Adds data to the buffer.
+		 *
+		 * @param data Data to add.
+		 * @param data_size Size of data.
+		 *
+		 * @return Actual size of data added.
+		 */
+		virtual long addData (char *data, long data_size) = 0;
+
+		/**
+		 * Receive data from socket.
+		 *
+		 * @return -1 on error, otherwise size of read data.
+		 */
+		virtual int getData (int sock) = 0;
 		
 		virtual char *getDataBuff () = 0;
 		virtual char *getDataTop () = 0;
+
+		/**
+		 * Return size of data to read.
+		 *
+		 * @return Size of data which remains to be read.
+		 */
+		virtual long getRestSize () = 0;
+
+		/**
+		 * Return remaining size of chunk, which has to be read from actual data chunk.
+		 */
+		virtual long getChunkSize () = 0;
 };
 
 /**
@@ -51,21 +85,6 @@ class DataAbstractRead
  */
 class DataRead:public DataAbstractRead
 {
-	private:
-		// binary data
-		// when it is positive, there are binary data to read from connection
-		// when it is 0, we should send confirmation that we received binary data
-		// when it is negative, there aren't any data waiting
-		long binaryReadDataSize;
-
-		char *binaryReadBuff;
-		char *binaryReadTop;
-
-		// type of data we are reading
-		int binaryReadType;
-
-		// remaining size of binary data chunk which needed to be read
-		long binaryReadChunkSize;
 	public:
 		DataRead (long in_binaryReadDataSize, int in_type)
 		{
@@ -81,17 +100,14 @@ class DataRead:public DataAbstractRead
 			delete[] binaryReadBuff;
 		}
 
-		/**
-		 * Read data size from connection.
-		 */
-		int readDataSize (Rts2Conn *conn);
+		virtual int readDataSize (Rts2Conn *conn);
 
 		/**
 		 * Receive data from socket.
 		 *
 		 * @return -1 on error, otherwise size of read data.
 		 */
-		int getData (int sock)
+		virtual int getData (int sock)
 		{
 			int data_size;
 			data_size = read (sock, binaryReadTop, binaryReadChunkSize);
@@ -109,15 +125,7 @@ class DataRead:public DataAbstractRead
 			return data_size;
 		}
 
-		/**
-		 * Adds data to the buffer.
-		 *
-		 * @param data Data to add.
-		 * @param data_size Size of data.
-		 *
-		 * @return Actual size of data added.
-		 */
-		long addData (char *data, long data_size)
+		virtual long addData (char *data, long data_size)
 		{
 			if (data_size > binaryReadChunkSize)
 				data_size = binaryReadChunkSize;
@@ -132,17 +140,25 @@ class DataRead:public DataAbstractRead
 
 		virtual char *getDataTop () { return binaryReadTop; }
 
-		/**
-		 * Return size of data to read.
-		 *
-		 * @return Size of data which remains to be read.
-		 */
-		long getRestSize () { return binaryReadDataSize; }
+		virtual long getRestSize () { return binaryReadDataSize; }
 
-		/**
-		 * Return remaining size of chunk, which has to be read from actual data chunk.
-		 */
-		long getChunkSize () { return binaryReadChunkSize; }
+		virtual long getChunkSize () { return binaryReadChunkSize; }
+
+	private:
+		// binary data
+		// when it is positive, there are binary data to read from connection
+		// when it is 0, we should send confirmation that we received binary data
+		// when it is negative, there aren't any data waiting
+		long binaryReadDataSize;
+
+		char *binaryReadBuff;
+		char *binaryReadTop;
+
+		// type of data we are reading
+		int binaryReadType;
+
+		// remaining size of binary data chunk which needed to be read
+		long binaryReadChunkSize;
 };
 
 /**
@@ -154,8 +170,14 @@ class DataShared: public DataAbstractRead
 {
 	public:
 		DataShared (char *_data) { data = _data; }
+
+		virtual int readDataSize (Rts2Conn *conn) { return 0; }
+		virtual long addData (char *_data, long data_size) { return -1; }
+		virtual int getData (int sock) { return -1; }
 		virtual char *getDataBuff () { return data + sizeof (unsigned long); }
 		virtual char *getDataTop () { return data + *((unsigned long *) data) + sizeof (unsigned long); }
+		virtual long getRestSize () { return 0; }
+		virtual long getChunkSize () { return -1; }
 	private:
 		char *data;
 };
@@ -184,7 +206,7 @@ class DataWrite
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DataChannels:public std::vector <DataRead *>
+class DataChannels:public std::vector <DataAbstractRead *>
 {
 	public:
 		DataChannels () {}

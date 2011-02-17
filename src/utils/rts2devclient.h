@@ -87,7 +87,7 @@ class Rts2DevClient:public Rts2Object
 		 *
 		 * @param data  pointer to Rts2DataRead object which received data.
 		 */
-		virtual void dataReceived (DataRead *data);
+		virtual void dataReceived (DataAbstractRead *data);
 
 		/**
 		 * Called when full image is received.

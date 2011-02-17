@@ -62,7 +62,7 @@ void Rts2DevClient::newDataConn (int data_conn)
 {
 }
 
-void Rts2DevClient::dataReceived (DataRead *data)
+void Rts2DevClient::dataReceived (DataAbstractRead *data)
 {
 }
 

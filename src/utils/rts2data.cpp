@@ -43,7 +43,7 @@ long DataWrite::getDataSize ()
 
 DataChannels::~DataChannels ()
 {
-	for (std::vector <DataRead *>::iterator iter = begin (); iter != end (); iter++)
+	for (DataChannels::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
 }
 
@@ -66,7 +66,7 @@ void DataChannels::initFromConnection (Rts2Conn *conn)
 long DataChannels::getRestSize ()
 {
 	long ret = 0;
-	for (std::vector <DataRead *>::iterator iter = begin (); iter != end (); iter++)
+	for (DataChannels::iterator iter = begin (); iter != end (); iter++)
 		ret += (*iter)->getRestSize ();
 	return ret;	
 }
