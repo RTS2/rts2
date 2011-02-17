@@ -439,7 +439,6 @@ int EdtSao::writeBinFile (const char *filename)
 
 int EdtSao::writeSignalFile (const char *filename)
 {
-
 	std::string full_name;
 
 	if (*filename != '/')
@@ -631,13 +630,13 @@ void EdtSao::beforeRun ()
 	if (ret)
 		exit (ret);
 
-	/*ret = writeBinFile ("e2vsc.bin");
+	ret = writeSignalFile (signalFile->getValue ());
 	if (ret)
 		exit (ret);
 
 	ret = writeBinFile ("e2v_pidlesc.bin");
 	if (ret)
-		exit (ret); */
+		exit (ret);
 
 	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 
@@ -746,28 +745,79 @@ int EdtSao::writePattern ()
 		<< " getUsedHeight=" << getUsedHeight ()
 		<< " getUsedWidth=" << getUsedWidth ()
 		<< sendLog;
-	// write paraller commands
+	// CCD readout pattern. The two important commands are SKIP and READ. Both does what their name
+	// suggest. The various parameters affecting which part of CCD will be read out are described bellow:
+	//
+	//
+	//  _ and | - software boundaries (e.g. how controller generates signal)
+	//  X       - real chip size (excluding prescan,..)
+	//
+	//   ______XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX___________     _   HEIGHT (rest)
+	//   |     X                                           X           |
+	//   |   SKIPPED (to clear full chip, can be dropped if needed)    |
+	//   |_____X___________________________________________X___________|    _   getUsedHeight (ROI, WINDOW)
+	//   |     X         |                          |      X           |    
+	//   |PRE  X         |  ACTIVE (READ)           |  SKIPED          |
+	//   |SCAN X         |    PIXELS = ROI          |  (end of window) |
+	//   |     X         |   = IMAGE you should get |  (can be dropped)|
+	//   |_____X_________|__________________________|______X___________|    _   getUsedY (ROI, WINDOW)
+	//   |     X                                           X           |
+	//   |   SKIPPED (for Window..0 when reading full chip)X           |
+	//   |_____XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX___________|    _   0
+	//
+	//
+	//   parameters affecting row
+	//   |     |         |                          |                  |
+	//   0   HSKIP    getUsedX (ROI, WINDOW)    getUsedWitdh (ROI,..) WIDTH  (rest)
+	//
+	//   Please note, that controller does not know geometry of the device. Everything
+	//   is left on you - you must specify correct parameters.
+	//   Of course getUsedX can be 0, WIDTH can be full chip width,.. - then you get image
+	//   from full device. And if you set HSKIP to 0, you will receive full image.
+	//   including both software (noise) and hardware (black) pixels.
+	//
+	//   You might modify parameters to get different signal geometry.
+	//
+	// -------------------------------
+	// write paraller commands to read lines
+	// note true as the first parameter to writeXXX - those are PARALLER (vertical) commands
+	// start paraller section
 	writeCommand (true, addr++, ZERO);
 
+	// first, jiggle some pixels
 	for (int i = 0; i < jiggleLines->getValueInteger (); i++)
 		writeCommand (true, addr++, JIGGLE);
 
+	// skip some lines if getUsedY - window - is not 0
 	writeSkip (true, getUsedY (), addr);
 
+	// write lines till getUsedHeight line
 	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
+	// skip lines till end (top) of CCD
 	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
 
+	// end paraller (vertical) section
 	writeCommand (true, addr++, VEND);
-	// write serial commands
+
+	// ---------------------------------------
+	// write serial commands to read pixels
+	// note false as the first parameter to writeXX - those aren't PARALLER commands
 	addr = 0;
+	// start serial section
 	writeCommand (false, addr++, ZERO);
+	// skip some lines - HSKIP
 	writeSkip (false, skipLines->getValueInteger (), addr);
 
+	// skip more lines, if we are in window mode
 	writeSkip (false, getUsedX (), addr);
+	// write read pixels
 	chipUsedReadout->setWidth (writeReadPattern (false, getUsedWidth (), binningHorizontal (), addr));
+	// skip pixels till end of line
 	writeSkip (false, getWidth () - getUsedWidth () - getUsedX (), addr);
 
+	// end serial 
 	writeCommand (false, addr++, HEND);
+	// end pattern
 	writeCommandEnd ();
 	logStream (MESSAGE_DEBUG) << "pattern written" << sendLog;
 	return 0;
@@ -847,11 +897,11 @@ int EdtSao::startExposure ()
 	sendValueAll (dofcl);
 	if (ret)
 		return ret;
-	/*writeBinFile ("e2v_nidlesc.bin"); */
+	writeBinFile ("e2v_nidlesc.bin");
 	if (dofcl->getValueBool ())
 		fclr_r (fclrNum->getValueInteger ());
 
-	/*writeBinFile ("e2v_freezesc.bin"); */
+	writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
 	/* set time */
@@ -904,7 +954,7 @@ long EdtSao::isExposing ()
 	if ((!overrun && shutter) || overrun)
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
-	//writeBinFile ("e2v_unfreezesc.bin");
+	writeBinFile ("e2v_unfreezesc.bin");
 	return 0;
 }
 
@@ -1070,7 +1120,7 @@ int EdtSao::endReadout ()
 		pdv_flush_fifo (pd);
 		pdv_reset_serial (pd);
 		edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
-		//writeBinFile ("e2v_pidlesc.bin");
+		writeBinFile ("e2v_pidlesc.bin");
 	}
 	return Camera::endReadout ();
 }
