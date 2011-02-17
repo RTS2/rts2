@@ -258,7 +258,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		else
 		  	sendValue (*iter, os);
 		if (extended)
-			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << "]";
+			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
 		iter++;
 		if (iter != conn->valueEnd ())
 			os << ",";
