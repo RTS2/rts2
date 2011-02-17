@@ -197,22 +197,30 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 
 void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 {
+	os << "[";
 	switch (value->getValueBaseType ())
 	{
 		case RTS2_VALUE_INTEGER:
-			os << "[";
 			for (std::vector <int>::iterator iter = ((rts2core::IntegerArray *) value)->valueBegin (); iter != ((rts2core::IntegerArray *) value)->valueEnd (); iter++)
 			{
 			  	if (iter != ((rts2core::IntegerArray *) value)->valueBegin ())
 					os << ",";
 				os << (*iter);
 			}
-			os << "]";
+			break;
+		case RTS2_VALUE_STRING:
+			for (std::vector <std::string>::iterator iter = ((rts2core::StringArray *) value)->valueBegin (); iter != ((rts2core::StringArray *) value)->valueEnd (); iter++)
+			{
+			  	if (iter != ((rts2core::StringArray *) value)->valueBegin ())
+					os << ",";
+				os << "\"" << (*iter) << "\"";
+			}
 			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
 			break;
 	}
+	os << "]";
 }
 
 void API::sendValue (rts2core::Value *value, std::ostringstream &os)
