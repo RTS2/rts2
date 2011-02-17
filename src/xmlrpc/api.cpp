@@ -245,7 +245,10 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 			os << value->getValue ();
 			break;
 		case RTS2_VALUE_RADEC:
-			os << "{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
+			if (isnan (((rts2core::ValueRaDec *) value)->getRa ()) || isnan (((rts2core::ValueRaDec *) value)->getRa ()))
+			  	os << "{\"ra\":null,\"dec\":null}";
+			else
+				os << "{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
 			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
