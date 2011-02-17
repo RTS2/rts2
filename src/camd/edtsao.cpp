@@ -577,7 +577,7 @@ void EdtSao::fclr_r (int num)
 		logStream (MESSAGE_ERROR) << "cannot do fclr, trying again." << sendLog;
 		fclrFailed->inc ();
 		sendValueAll (fclrFailed);
-		sleep (10);
+		sleep (2);
 	}
 }
 
@@ -898,6 +898,7 @@ int EdtSao::startExposure ()
 	if (ret)
 		return ret;
 	writeBinFile ("e2v_nidlesc.bin");
+	usleep (USEC_SEC / 2);
 	if (dofcl->getValueBool ())
 		fclr_r (fclrNum->getValueInteger ());
 
