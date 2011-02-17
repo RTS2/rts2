@@ -116,6 +116,8 @@ class SelectorDev:public Rts2DeviceDb
 
 		struct ln_lnlat_posn *observer;
 
+		rts2core::StringArray *selQueNames;
+
 		rts2core::ValueSelection *selectorQueue;
 		rts2core::ValueSelection *lastQueue;
 
@@ -258,6 +260,7 @@ int SelectorDev::init ()
 	
 	if (!queueNames.empty ())
 	{
+		createValue (selQueNames, "queue_names", "selector queue names", false);
 		createValue (selectorQueue, "selector_queue", "type of selector queue mechanism", false, RTS2_VALUE_WRITABLE);
 		selectorQueue->addSelVal ("auto", NULL);
 
@@ -270,6 +273,8 @@ int SelectorDev::init ()
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
 		selectorQueue->addSelVal (*iter, (Rts2SelData *) &(queues.back ()));
 		lastQueue->addSelVal (*iter);
+
+		selQueNames->addValue (std::string (*iter));
 	}
 	return 0;
 }
