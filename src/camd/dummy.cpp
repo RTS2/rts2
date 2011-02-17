@@ -179,6 +179,8 @@ class Dummy:public Camera
 		int height;
 
 		long dataSize;
+
+		void generateImage (long usedSize);
 };
 
 };
@@ -193,56 +195,69 @@ int Dummy::doReadout ()
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
 	int nch = 0;
-	for (size_t ch = 0; ch < channels->size (); ch++)
+	if (channels)
 	{
-		if ((*channels)[ch] == false)
-			continue;
-		for (int i = 0; i < usedSize; i += 2)
+		for (size_t ch = 0; ch < channels->size (); ch++)
 		{
-			uint16_t *d = (uint16_t* ) (dataBuffer + i);
-			double n;
-			if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
-				n = noiseRange->getValueDouble ();
-			// generate data
-			switch (genType->getValueInteger ())
-			{
-				case 0:  // random
-					*d = 20000 + n * random_num () - n / 2;
-					break;
-				case 1:  // linear
-					*d = i;
-					break;
-				case 2:
-					// linear shifted
-					*d = i + (int) (getExposureNumber () * 10);
-					break;
-				case 3:
-					// flats dusk
-					*d = n * random_num ();
-					if (getScriptExposureNumber () < 55)
-						*d += (56 - getScriptExposureNumber ()) * 1000;
-					*d -= n / 2;
-					break;
-				case 4:
-					// flats dawn
-					*d = n * random_num ();
-					if (getScriptExposureNumber () < 55)
-						*d += getScriptExposureNumber () * 1000;
-					else
-					  	*d += 55000;
-					*d -= n / 2;
-					break;
-			}
+			if (channels && (*channels)[ch] == false)
+				continue;
+			generateImage (usedSize);
+			ret = sendReadoutData (dataBuffer, usedSize, nch);
+			nch++;
+			if (ret < 0)
+				return ret;
 		}
-		ret = sendReadoutData (dataBuffer, usedSize, nch);
-		nch++;
-		if (ret < 0)
-			return ret;
+	}
+	else
+	{
+		generateImage (usedSize);
+		ret = sendReadoutData (dataBuffer, usedSize, 0);
 	}
 
 	if (getWriteBinaryDataSize () == 0)
 		return -2;				 // no more data..
 	return 0;					 // imediately send new data
+}
+
+void Dummy::generateImage (long usedSize)
+{
+	for (int i = 0; i < usedSize; i += 2)
+	{
+		uint16_t *d = (uint16_t* ) (dataBuffer + i);
+		double n;
+		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
+			n = noiseRange->getValueDouble ();
+		// generate data
+		switch (genType->getValueInteger ())
+		{
+			case 0:  // random
+				*d = 20000 + n * random_num () - n / 2;
+				break;
+			case 1:  // linear
+				*d = i;
+				break;
+			case 2:
+				// linear shifted
+				*d = i + (int) (getExposureNumber () * 10);
+				break;
+			case 3:
+				// flats dusk
+				*d = n * random_num ();
+				if (getScriptExposureNumber () < 55)
+					*d += (56 - getScriptExposureNumber ()) * 1000;
+				*d -= n / 2;
+				break;
+			case 4:
+				// flats dawn
+				*d = n * random_num ();
+				if (getScriptExposureNumber () < 55)
+					*d += getScriptExposureNumber () * 1000;
+				else
+				  	*d += 55000;
+				*d -= n / 2;
+				break;
+		}
+	}
 }
 
 int main (int argc, char **argv)
