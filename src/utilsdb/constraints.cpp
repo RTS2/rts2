@@ -189,6 +189,11 @@ bool ConstraintAirmass::satisfy (Target *tar, double JD)
 	return isBetween (tar->getAirmass (JD));
 }
 
+bool ConstraintZenithDistance::satisfy (Target *tar, double JD)
+{
+	return isBetween(tar->getZenitDistance (JD));
+}
+
 bool ConstraintHA::satisfy (Target *tar, double JD)
 {
 	return isBetween (tar->getHourAngle (JD));

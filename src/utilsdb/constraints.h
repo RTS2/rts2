@@ -31,6 +31,7 @@
 
 #define CONSTRAINT_TIME         "time"
 #define CONSTRAINT_AIRMASS      "airmass"
+#define CONSTRAINT_ZENITH_DIST  "zenithDistance"
 #define CONSTRAINT_HA           "HA"
 #define CONSTRAINT_LDISTANCE    "lunarDistance"
 #define CONSTRAINT_LALTITUDE    "lunarAltitude"
@@ -154,6 +155,13 @@ class ConstraintAirmass:public ConstraintInterval
 		virtual bool satisfy (Target *tar, double JD);
 
 		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
+};
+
+class ConstraintZenithDistance:public ConstraintInterval
+{
+	public:
+		virtual bool satisfy (Target *tar, double JD);
+		virtual const char* getName () { return CONSTRAINT_ZENITH_DIST; }
 };
 
 class ConstraintHA:public ConstraintInterval

@@ -165,6 +165,15 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term>zenithDistance</term>
+	<listitem>
+	  <para>
+	    Zenith distance boundaries. Zenith distance is 0 at zenith, 90&deg; at horizon and
+	    is equal to 90.0 - object altitude.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term>HA</term>
 	<listitem>
 	  <para>
