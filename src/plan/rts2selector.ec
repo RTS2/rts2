@@ -81,21 +81,28 @@ int Selector::selectNext (int masterState, double az1, double az2)
 			break;
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
-			// special case - select GRBs, which are new (=targets with priority higher then 1500)
-			ret = selectNextNight (1500, false, az1, az2);
-			if (ret != -1)
-				return ret;
-			// otherwise select darks/flats/whatever
-			if (flat_sun_min >= flat_sun_max)
-				return selectDarks ();
-			JD = ln_get_julian_from_sys ();
-			ln_get_solar_equ_coords (JD, &eq_sun);
-			ln_get_hrz_from_equ (&eq_sun, observer, JD, &sun_hrz);
-			if (sun_hrz.alt >= flat_sun_min && sun_hrz.alt <= flat_sun_max)
-				return selectFlats ();
+			// if flats were requested..
+			if (flat_sun_min < flat_sun_max)
+			{
+				JD = ln_get_julian_from_sys ();
+				ln_get_solar_equ_coords (JD, &eq_sun);
+				ln_get_hrz_from_equ (&eq_sun, observer, JD, &sun_hrz);
+				if (sun_hrz.alt >= flat_sun_min && sun_hrz.alt <= flat_sun_max)
+				{
+					return selectFlats ();
+				}
+				else if (sun_hrz.alt < flat_sun_min)
+				{
+					// special case - select GRBs, which are new (=targets with priority higher then 1500)
+					ret = selectNextNight (1500, false, az1, az2);
+					if (ret != -1)
+						return ret;
+				}
+			}
 			// don't break, select darks
 		case SERVERD_DAWN | SERVERD_STANDBY:
 		case SERVERD_DUSK | SERVERD_STANDBY:
+			// otherwise select darks/flats/whatever
 			return selectDarks ();
 			break;
 	}
