@@ -53,6 +53,7 @@ class FLWO:public Dome
 		rts2core::ConnFork *domeExe;
 
 		rts2core::ValueBool *openInOn;
+		rts2core::ValueBool *closeOnBadWeather;
 		rts2core::ValueBool *coverOpened;
 		rts2core::ValueTime *coverTimeout;
 
@@ -85,6 +86,9 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 
 	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
 	openInOn->setValueBool (false);
+
+	createValue (closeOnBadWeather, "close_bad_weather", "close if bad weather is detected", false, RTS2_VALUE_WRITABLE);
+	closeOnBadWeather->setValueBool (false);
 
 	addOption (OPT_OPEN, "bin-open", 1, "path to program for opening the dome");
 	addOption (OPT_CLOSE, "bin-close", 1, "path to program to close the dome");
@@ -156,9 +160,12 @@ int FLWO::init ()
 
 bool FLWO::isGoodWeather ()
 {
+  	// it is always good weather if closeOnBadWeather is set to false
+	if (closeOnBadWeather->getValueBool () == false)
+		return true;
 	// if system is waiting for cover closure, recheck dome state  
 	if (!isnan (coverTimeout->getValueDouble ()))
-		return false;  
+		return true;
 	return Dome::isGoodWeather ();
 }
 
@@ -189,6 +196,8 @@ int FLWO::startOpen ()
 	addConnection (domeExe);
 	coverTimeout->setValueDouble (rts2_nan ("f"));
 	sendValueAll (coverTimeout);
+	closeOnBadWeather->setValueBool (true);
+	sendValueAll (closeOnBadWeather);
 	return 0;
 }
 
