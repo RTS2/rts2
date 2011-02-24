@@ -28,7 +28,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.optimalRange = 0.2
 
 		self.expTimes = range(1,30) # allowed exposure times
-		self.expTimes = map(lambda x: x/2.0, self.expTimes)
+		self.expTimes = map(lambda x: x*2.0, self.expTimes)
 
 		self.startExpTime = self.expTimes[0] # starting exposure time. Must be within expTimes[0] .. expTimes[-1]
 
@@ -56,7 +56,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		"""Acquires images for flats. Return 0 if image was added to flats, 1 if it was too brigth, -1 if it was too dark."""
 		self.setValue('exposure',self.exptime)
 		img = self.exposure(self.beforeReadout)
-		avrg = self.getValueFloat('average')
+		avrg = self.getValueFloat('max')
 		ratio = (avrg - self.BiasLevel) / self.OptimalLevel
 		ret = None
 
@@ -81,7 +81,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		elif (ret > 0):
 			brightness = 'bright'
 
-		self.log('I',"run ratio %f avrg %f next exptime %f ret %" % (ratio,avrg,self.exptime,brightness))
+		self.log('I',"run ratio %f avrg %f next exptime %f ret %s" % (ratio,avrg,self.exptime,brightness))
 		self.process(img)
 
 	def configure(self):
