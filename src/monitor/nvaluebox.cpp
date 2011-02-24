@@ -505,8 +505,9 @@ keyRet ValueBoxArray::injectKey (int key)
 			}
 			break;
 	}
-
-	return edt[edtSelected]->injectKey (key);
+	if (edtSelected < edt.size ())
+		return edt[edtSelected]->injectKey (key);
+	return NWindowEdit::injectKey (key);
 }
 
 void ValueBoxArray::draw ()
@@ -553,7 +554,9 @@ void ValueBoxArray::sendValue (Rts2Conn * connection)
 
 bool ValueBoxArray::setCursor ()
 {
-	return edt[edtSelected]->setCursor ();
+	if (edtSelected < edt.size ())
+		return edt[edtSelected]->setCursor ();
+	return false;
 }
 
 ValueBoxPair::ValueBoxPair (NWindow * top, rts2core::ValueRaDec * _val, int _x, int _y, const char *p1, const char *p2):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)

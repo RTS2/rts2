@@ -201,7 +201,7 @@ class ValueBoxRectangle:public ValueBox, NWindowEdit
 		virtual bool setCursor ();
 	private:
 		NWindowEditIntegers * edt[4];
-		int edtSelected;
+		size_t edtSelected;
 };
 
 /**
@@ -220,7 +220,7 @@ class ValueBoxArray:public ValueBox, NWindowEdit
 		virtual bool setCursor ();
 	private:
 		std::vector <NWindowEdit *> edt;
-		int edtSelected;
+		size_t edtSelected;
 };
 
 /**
