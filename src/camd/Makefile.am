@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar
 
 noinst_HEADERS = camd.h ccd_msg.h cliwheel.h clifocuser.h
 
@@ -18,6 +18,8 @@ rts2_camd_miniccd_SOURCES = miniccd.cpp
 rts2_camd_miniccd_il_SOURCES = miniccd_il.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
+
+rts2_camd_sidecar_SOURCES = sidecar.cpp
 
 EXTRA_DIST = 
 
