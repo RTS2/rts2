@@ -631,3 +631,10 @@ Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (rts2core::Block * master, Rts2
 {
 	setCommand ("device_status");
 }
+
+Rts2CommandObservation::Rts2CommandObservation (rts2core::Block * master, int tar_id, int obs_id):Rts2Command (master)
+{
+	std::ostringstream _os;
+	_os << "observation " << tar_id << " " << obs_id;
+	setCommand (_os);
+}

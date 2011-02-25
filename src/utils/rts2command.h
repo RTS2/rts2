@@ -664,5 +664,14 @@ class Rts2CommandDeviceStatus:public Rts2CommandStatusInfo
 		Rts2CommandDeviceStatus (rts2core::Block * master, Rts2Conn * _control_conn);
 };
 
+/**
+ * Sends information to selector at the end of observation.
+ */
+class Rts2CommandObservation:public Rts2Command
+{
+	public:
+		Rts2CommandObservation (rts2core::Block * master, int tar_id, int obs_id);
+};
+
 }
 #endif							 /* !__RTS2_COMMAND__ */

@@ -1,7 +1,7 @@
 /*
  * Executor body.
  * Copyright (C) 2003-2010 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2010      Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2010-2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -887,6 +887,14 @@ void Executor::processTarget (rts2db::Target * in_target)
 			break;
 	}
 	logStream (MESSAGE_INFO) << "observation # " << current_obsid->getValueInteger () << " of target " << in_target->getTargetName () << " ended." << sendLog;
+	// send note to selector..
+	connections_t::iterator c = getConnections ()->begin ();
+	getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+	while (c != getConnections ()->end ())
+	{
+		(*c)->queCommand (new Rts2CommandObservation (this, in_target->getTargetID (), current_obsid->getValueInteger ()));
+		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+	}
 	// if the target was flat..
 	if (in_target->getTargetType () == TYPE_FLAT)
 	{
