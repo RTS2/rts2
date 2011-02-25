@@ -816,6 +816,7 @@ void Executor::doSwitch ()
 	while (c != getConnections ()->end ())
 	{
 		(*c)->queCommand (new Rts2CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
+                c++;
 		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
 	}
 }
