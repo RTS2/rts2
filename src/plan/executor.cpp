@@ -810,6 +810,14 @@ void Executor::doSwitch ()
 		postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 		postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 	}
+	// send note to selector..
+	connections_t::iterator c = getConnections ()->begin ();
+	getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+	while (c != getConnections ()->end ())
+	{
+		(*c)->queCommand (new Rts2CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
+		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+	}
 }
 
 int Executor::switchTarget ()
@@ -887,14 +895,6 @@ void Executor::processTarget (rts2db::Target * in_target)
 			break;
 	}
 	logStream (MESSAGE_INFO) << "observation # " << current_obsid->getValueInteger () << " of target " << in_target->getTargetName () << " ended." << sendLog;
-	// send note to selector..
-	connections_t::iterator c = getConnections ()->begin ();
-	getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
-	while (c != getConnections ()->end ())
-	{
-		(*c)->queCommand (new Rts2CommandObservation (this, in_target->getTargetID (), current_obsid->getValueInteger ()));
-		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
-	}
 	// if the target was flat..
 	if (in_target->getTargetType () == TYPE_FLAT)
 	{
