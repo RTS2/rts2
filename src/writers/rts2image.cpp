@@ -1511,7 +1511,10 @@ Image Rts2Image::getMagickImage (const char *label, float quantiles, int chan)
 
 			lw = 0;
 			lh = 0;
-			n = 2;
+			if (channels.size () == 1)
+				n = 0;
+			else
+				n = 2;
 
 			int loff = 0;
 
