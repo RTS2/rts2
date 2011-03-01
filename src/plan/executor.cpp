@@ -809,15 +809,15 @@ void Executor::doSwitch ()
 		queAll (new Rts2CommandScriptEnds (this));
 		postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 		postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
-	}
-	// send note to selector..
-	connections_t::iterator c = getConnections ()->begin ();
-	getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
-	while (c != getConnections ()->end ())
-	{
-		(*c)->queCommand (new Rts2CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
-                c++;
+		// send note to selector..
+		connections_t::iterator c = getConnections ()->begin ();
 		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+		while (c != getConnections ()->end ())
+		{
+			(*c)->queCommand (new Rts2CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
+			c++;
+			getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
+		}
 	}
 }
 
