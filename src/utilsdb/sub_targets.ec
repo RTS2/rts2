@@ -182,8 +182,8 @@ void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
-	currPos.ra = 0;
-	currPos.dec = 0;
+	currPos.ra = rts2_nan ("f");
+	currPos.dec = rts2_nan ("f");
 }
 
 DarkTarget::~DarkTarget ()
