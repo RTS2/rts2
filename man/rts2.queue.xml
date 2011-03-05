@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2011-02-25</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>kubanek@fzu.cz</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.queue">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.3</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote this manual page.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Description of queues available inside RTS2 human scheduling system.</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      Queues are used to enable observers interact with what is available for
+      the observations. Each queue is a set of targets, which will be scheduled
+      by some algorithm. The algorithm for ordering targets to the queue is
+      affected by the parameters of the queue, described bellow. 
+    </para>
+
+    <para>
+      Queue parameterization provides powerfull way how to make sure the
+      targets are optionally observed the way observer wants to schedule them,
+      and uses all time available during the night. However, some parameters
+      are hard to explain in the text - if in doubts, please consult examples
+      bellow, they might provide an answer to the question you are asking.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>Queuing mode parameters</title>
+
+    <para>
+      Ordering of the targets in the queue is affected by _queing parameter.
+      This is so far the most important parameter which describes queue
+      behaviour. The parameter can have one of the following values:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>FIFO</option>
+	</term>
+	<listitem>
+	  <para>
+	    Stands for "first-in, first-out". The targets will be picked from
+	    the queue in order they are entered. Targets which are not
+	    accesible at the time they should be selected for observations are
+	    either skipped and put to the end of queue, or ignored.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>CIRCULAR</option>
+	</term>
+	<listitem>
+	  <para>
+	    In circular queue, targets are recycled. After the target is
+	    observed, it is put to the end of queue. This queue is particularly
+	    suited for long-term monitoring, when the goal is to study a long
+	    variability of given objects.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>HIGHEST</option>
+	</term>
+	<listitem>
+	  <para>
+	    Will order targets by actual altitute at the observing site. The
+	    highest target is then selected for observation.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>WESTEAST</option>
+	</term>
+	<listitem>
+	  <para>
+	    Order observations from west towards east. This is the prefered
+	    method how to make sure that observations from the set will be
+	    observed as close to local meridian as possible.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Other parameters affecting queue selection algorithm</title>
+    <para>
+      The following parameters affect target scheduling as well. They are not
+      as important as _queing, which determines order of targets in the queue.
+      They specify what happens with the target when it is on top of the queue.
+    </para>
+    <para>
+      Those additional parameters might render queue
+      <emphasis>inactive</emphasis>. If the queue is inactive, its targets will
+      not be selected by the scheduler. Please see
+      <citerefentry><refentrytitle>rts2-selector</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+      for description how the selector handles inactive queues.
+    </para>
+    <refsect2>
+      <title>Time parameters - _start and _end</title>
+      <para>
+	Those arrays holds time when the observation in the queue should be
+	started and end. Both can be empty, start or end filled, or both can be
+	filled. The list bellow gives explanation of how the queue is affected
+	when various combination is filled.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Skip targets outside observing limits - -skip_below</title>
+      <para>
+	This parameter affect what will be done with targets bellow horizon
+	when they make it to the top of the queue, and so should be executed.
+	The following is possible:
+      </para>
+      <variablelist>
+        <varlistentry>
+	  <term>Target is in observing limits</term>
+	  <para>
+	    If the target is in observing limits, the _skip bellow parameter
+	    does not affect target scheduling.
+	  </para>
+	</varlistentry>
+        <varlistentry>
+	  <term>Target is outside observing limits, _skip_bellow is set to false</term>
+	  <para>
+	    In such case, the target is simply removed from the queue and the
+	    next is evaluated. That applies even to
+	    <emphasis>CIRCULAR</emphasis> queue - even for it, the targets are
+	    removed once they fall outside observing limits.
+	  </para>
+	</varlistentry>
+	<varlistentry>
+	  <term>Target is outside observing limits, _skip_bellow is set to true</term>
+	  <para>
+	    In this case, the target will be moved to to the end of the queue.
+	    This should enable its observation during later periods. This
+	    setting is particularly usefull with <emphasis>CIRCULAR</emphasis>
+	    queing, where targets are kept all night for a constatnt
+	    monitoring.
+	  </para>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-queue</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

@@ -44,7 +44,8 @@ EXTRA_DIST = \
     rts2-newtarget.xml \
     rts2-plan.xml \
     rts2-selector.xml \
-    rts2-queue.xml
+    rts2-queue.xml \
+    rts2.queue.xml
 
 CLEANFILES = *.1 *.5 *.7
 
@@ -93,7 +94,8 @@ man_MANS = \
     rts2-newtarget.1 \
     rts2-plan.1 \
     rts2-selector.7 \
-    rts2-queue.1
+    rts2-queue.1 \
+    rts2.queue.5
 
 XP=xsltproc --nonet
 
