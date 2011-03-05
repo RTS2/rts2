@@ -1432,7 +1432,7 @@ APGTO::tel_slew_to (double ra, double dec)
     }
     return -1;
   }
-  logStream (MESSAGE_INFO) << "APGTO::tel_slew_to cleared geometry  slewing ra " << target_equ.ra << " target_equ.dec " << dec  << sendLog;
+  logStream (MESSAGE_INFO) << "APGTO::tel_slew_to cleared geometry  slewing ra " << target_equ.ra << " target_equ.dec " << dec  << " target_HA " << target_HA << sendLog;
 
   if (( ret=tel_write_ra (target_equ.ra)) < 0) {
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, not slewing, tel_write_ra return value was " << ret << sendLog ;
@@ -2096,7 +2096,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       sleep( 1) ;
     }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo (sync) failed" << sendLog;
       return -1 ;
     }
     if( tel_check_declination_axis()) {
