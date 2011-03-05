@@ -34,11 +34,16 @@
 
 int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst, struct ln_rst_time *rst_naut, int *sun_rs, double night_horizon, double day_horizon)
 {
-	double t_jd = jd - 1;
+	double t_jd = jd - 2;
 	int sun_naut;
+	struct ln_rst_time last_naut;
+	struct ln_rst_time last_rst;
 
 	rst_naut->rise = rst_naut->transit = rst_naut->set = 0;
 	rst->rise = rst->transit = rst->set = 0;
+
+	last_naut.rise = last_naut.transit = last_naut.set = 0;
+	last_rst.rise = last_rst.transit = last_rst.set = 0;
 	*sun_rs = 0;
 	// find first next day, on which nautic sunset is occuring
 	do
@@ -47,19 +52,57 @@ int next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rs
 		sun_naut = ln_get_solar_rst_horizon (t_jd, observer, night_horizon, &t_rst);
 		if (!rst_naut->rise && jd < t_rst.rise)
 			rst_naut->rise = t_rst.rise;
+		if (last_naut.rise && (t_rst.rise - last_naut.rise) > 1.5)
+		{
+			last_naut.rise = (t_rst.rise + last_naut.rise) / 2.0;
+			if (jd < last_naut.rise)
+				rst_naut->rise = last_naut.rise;
+		}
 		if (!rst_naut->transit && jd < t_rst.transit)
 			rst_naut->transit = t_rst.transit;
+		if (last_naut.transit && (t_rst.transit - last_naut.transit) > 1.5)
+		{
+			last_naut.transit = (t_rst.transit + last_naut.transit) / 2.0;
+			if (jd < last_naut.transit)
+				rst_naut->transit = last_naut.transit;
+		}
 		if (!rst_naut->set && jd < t_rst.set)
 			rst_naut->set = t_rst.set;
+		if (last_naut.set && (t_rst.set - last_naut.set) > 1.5)
+		{
+			last_naut.set = (t_rst.set + last_naut.set) / 2.0;
+			if (jd < last_naut.set)
+				rst_naut->set = last_naut.set;
+		}
+		last_naut = t_rst;
 		if (!ln_get_solar_rst_horizon (t_jd, observer, day_horizon, &t_rst))
 		{
 			*sun_rs = 1;
 			if (!rst->set && jd < t_rst.set)
 				rst->set = t_rst.set;
+			if (last_rst.set && (t_rst.set - last_rst.set) > 1.5)
+			{
+				last_rst.set = (t_rst.set + last_rst.set) / 2.0;
+				if (jd < last_rst.set)
+					rst->set = last_rst.set;
+			}
 			if (!rst->transit && jd < t_rst.transit)
 				rst->transit = t_rst.transit;
+			if (last_rst.transit && (t_rst.transit - last_rst.transit) > 1.5)
+			{
+				last_rst.transit = (t_rst.transit + last_rst.transit) / 2.0;
+				if (jd < last_rst.transit)
+					rst->transit = last_rst.transit;
+			}
 			if (!rst->rise && jd < t_rst.rise)
 				rst->rise = t_rst.rise;
+			if (last_rst.rise && (t_rst.rise - last_rst.rise) > 1.5)
+			{
+				last_rst.rise = (t_rst.rise + last_rst.rise) / 2.0;
+				if (jd < last_rst.rise)
+					rst->rise = last_rst.rise;
+			}
+			last_rst = t_rst;
 		}
 		t_jd++;
 	}
