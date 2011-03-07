@@ -72,6 +72,13 @@ class XmlDevClient:public rts2core::Rts2DevClient
 		virtual void stateChanged (Rts2ServerState * state);
 
 		virtual void valueChanged (rts2core::Value * value);
+
+		double getValueChangedTime (rts2core::Value *value);
+	
+
+	private:
+		// value change times
+		std::map <rts2core::Value *, double> changedTimes;
 };
 
 /**

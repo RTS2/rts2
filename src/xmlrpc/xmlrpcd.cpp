@@ -158,8 +158,18 @@ void XmlDevClient::stateChanged (Rts2ServerState * state)
 
 void XmlDevClient::valueChanged (rts2core::Value * value)
 {
+	changedTimes[value] = getMaster()->getNow ();
 	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
+	// record change time..
 	rts2core::Rts2DevClient::valueChanged (value);
+}
+
+double XmlDevClient::getValueChangedTime (rts2core::Value *value)
+{
+	std::map <rts2core::Value *, double>::iterator iter = changedTimes.find (value);
+	if (iter == changedTimes.end ())
+		return rts2_nan ("f");
+	return iter->second;
 }
 
 #ifndef HAVE_PGSQL

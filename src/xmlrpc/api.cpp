@@ -84,10 +84,11 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				conn = master->getSingleCentralConn ();
 			else
 				conn = master->getOpenConnection (device);
+			double from = params->getInteger ("from",0);
 			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
-			sendConnectionValues (os, conn, params);
+			sendConnectionValues (os, conn, params, from);
 		}
 		else if (vals[0] == "cmd")
 		{
@@ -102,7 +103,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
 			conn->queCommand (new rts2core::Rts2Command (master, cmd));
-			sendConnectionValues (os, conn, params);	  
+			sendConnectionValues (os, conn, params);
 		}
 #ifdef HAVE_PGSQL
 		else if (vals[0] == "tbyname")
@@ -256,11 +257,21 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 	}
 }
 
-void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params)
+void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
 {
-	bool extended = params->getInteger ("e", false);  
+	bool extended = params->getInteger ("e", false);
+	os << "\"d\":{";
+	double mfrom = rts2_nan ("f");
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
 	{
+		if (conn->getOtherDevClient ())
+		{
+			double ch = ((XmlDevClient *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
+			if (isnan (mfrom) || ch > mfrom)
+				mfrom = ch;
+			if (!isnan (from) && !isnan (ch) && ch <= from)
+				continue;
+		}
 		os << "\"" << (*iter)->getName () << "\":";
 		if (extended)
 			os << "[" << (*iter)->getFlags () << ",";
@@ -274,6 +285,11 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		if (iter != conn->valueEnd ())
 			os << ",";
 	}
+	os << "},\"f\":";
+	if (isnan (mfrom))
+		os << "null";
+	else
+		os << mfrom;  	
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
