@@ -84,7 +84,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				conn = master->getSingleCentralConn ();
 			else
 				conn = master->getOpenConnection (device);
-			double from = params->getInteger ("from",0);
+			double from = params->getDouble ("from", 0);
 			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
@@ -262,16 +262,23 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 	bool extended = params->getInteger ("e", false);
 	os << "\"d\":{";
 	double mfrom = rts2_nan ("f");
-	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd ();)
+	bool first = true;
+	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
 		if (conn->getOtherDevClient ())
 		{
 			double ch = ((XmlDevClient *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
 			if (isnan (mfrom) || ch > mfrom)
 				mfrom = ch;
-			if (!isnan (from) && !isnan (ch) && ch <= from)
+			if (!isnan (from) && !isnan (ch) && ch < from)
 				continue;
 		}
+
+		if (first)
+			first = false;
+		else
+			os << ",";
+
 		os << "\"" << (*iter)->getName () << "\":";
 		if (extended)
 			os << "[" << (*iter)->getFlags () << ",";
@@ -281,15 +288,12 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		  	sendValue (*iter, os);
 		if (extended)
 			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
-		iter++;
-		if (iter != conn->valueEnd ())
-			os << ",";
 	}
 	os << "},\"f\":";
 	if (isnan (mfrom))
 		os << "null";
 	else
-		os << mfrom;  	
+		os << std::fixed << mfrom;  	
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
