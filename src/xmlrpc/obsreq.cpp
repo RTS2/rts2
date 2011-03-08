@@ -128,7 +128,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 	rts2db::Observation obs (obs_id);
 	rts2db::ImageSetObs images (&obs);
 	images.load ();
-	_os << "[";
+	_os << "[" << std::fixed;
 	
 	for (rts2db::ImageSetObs::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
@@ -136,7 +136,7 @@ void Observation::obsApi (int obs_id, XmlRpc::HttpParams *params, const char* &r
 			_os << ",";
 		_os << "[\"" << (*iter)->getAbsoluteFileName () << "\","
 			<< (*iter)->getExposureLength () << ","
-			<< LibnovaDateDouble ((*iter)->getExposureStart ())
+			<< (*iter)->getExposureStart ()
 			<< "]";
 	}
 

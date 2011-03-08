@@ -160,7 +160,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				"{\"n\":\"DEC\",\"t\":\"d\",\"c\":7},"
 				"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":8},"
 				"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":9}],"
-				"\"d\":[";
+				"\"d\":[" << std::fixed;
 
 			for (rts2db::PlanSet::iterator iter = ps.begin (); iter != ps.end (); iter++)
 			{
@@ -177,8 +177,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 					<< iter->getTargetId () << ",\""
 					<< tar->getTargetName () << "\","
 					<< iter->getObsId () << ",\""
-					<< Timestamp (iter->getPlanStart ()) << "\",\""
-					<< Timestamp (iter->getPlanEnd ()) << "\","
+					<< iter->getPlanStart () << "\",\""
+					<< iter->getPlanEnd () << "\","
 					<< equ.ra << "," << equ.dec << ","
 					<< hrz.alt << "," << hrz.az << "]";
 			}
@@ -334,7 +334,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 	if (extended)
 		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":4},"
 		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":5}";
-	os << "],\"d\":[";
+	os << "],\"d\":[" << std::fixed;
 
 	double JD = ln_get_julian_from_sys ();
 	os.precision (8);

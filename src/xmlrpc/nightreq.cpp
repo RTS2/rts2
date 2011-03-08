@@ -290,8 +290,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
 			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
-			"{\"n\":\"Start\",\"t\":\"t\",\"c\":3},"
-			"{\"n\":\"End\",\"t\":\"t\",\"c\":4},"
+			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":3},"
+			"{\"n\":\"End\",\"t\":\"tT\",\"c\":4},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5},"
 			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
 			"],\"d\":[";
@@ -307,6 +307,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 
 		os.loadTime (&from, &end);
 
+		_os << std::fixed;
+
 		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
 		{
 			if (iter != os.begin ())
@@ -314,8 +316,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			_os << "[" << iter->getObsId () << ","
 				<< iter->getTargetId () << ","
 				<< "\"" << iter->getTargetName () << "\",\""
-				<< Timestamp (iter->getObsStart ()) << "\",\""
-				<< Timestamp (iter->getObsEnd ())  << "\","
+				<< iter->getObsStart () << "\",\""
+				<< iter->getObsEnd () << "\","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages ()
 				<< "]\n";

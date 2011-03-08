@@ -427,13 +427,13 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 		_os << "{\"h\":["
 			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
-			"{\"n\":\"DEC\",\"t\":\"t\",\"c\":2},"
+			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":2},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
 			"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 			"{\"n\":\"Images\",\"t\":\"n\",\"c\":6},"
 			"{\"n\":\"Good images\",\"t\":\"n\",\"c\":7}],"
-			"\"d\" : [";
+			"\"d\" : [" << std::fixed;
 
 		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
 		{
@@ -442,9 +442,9 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			_os << "[" << iter->getObsId () << "," 
 				<< iter->getObsRa () << ","
 				<< iter->getObsDec () << ",\""
-				<< Timestamp (iter->getObsSlew ()) << "\",\""
-				<< Timestamp (iter->getObsStart ()) << "\",\""
-				<< Timestamp (iter->getObsEnd ()) << "\","
+				<< iter->getObsSlew () << "\",\""
+				<< iter->getObsStart () << "\",\""
+				<< iter->getObsEnd () << "\","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages () << "]";
 		}
@@ -468,7 +468,7 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			"{\"n\":\"DEC\",\"t\":\"d\",\"c\":5},"
 			"{\"n\":\"Alt start\",\"t\":\"altD\",\"c\":6},"
 			"{\"n\":\"Az start\",\"t\":\"azD\",\"c\":7}],"
-			"\"d\" : [";
+			"\"d\" : [" << std::fixed;
 
 		for (rts2db::PlanSetTarget::iterator iter = ps.begin (); iter != ps.end (); iter++)
 		{
@@ -482,8 +482,8 @@ void Targets::callTargetAPI (rts2db::Target *tar, const std::string &req, XmlRpc
 			tar->getAltAz (&hrz, JDstart);
 			_os << "[" << iter->getPlanId () << "," 
 				<< iter->getObsId () << ",\""
-				<< Timestamp (iter->getPlanStart ()) << "\",\""
-				<< Timestamp (iter->getPlanEnd ()) << "\","
+				<< iter->getPlanStart () << "\",\""
+				<< iter->getPlanEnd () << "\","
 				<< equ.ra << "," << equ.dec << ","
 				<< hrz.alt << "," << hrz.az << "]";
 		}
