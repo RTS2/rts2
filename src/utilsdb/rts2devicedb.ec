@@ -164,6 +164,8 @@ int Rts2DeviceDb::initDB ()
 		}
 	}
 
+	cameras.load ();
+
 	return 0;
 }
 

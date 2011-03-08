@@ -23,6 +23,8 @@
 #include "../utils/device.h"
 #include "../utils/rts2config.h"
 
+#include "rts2camlist.h"
+
 /**
  * Adds database connectivity to device class.
  * Provides parameters to specify database location,
@@ -37,6 +39,9 @@ class Rts2DeviceDb:public rts2core::Device
 		virtual ~ Rts2DeviceDb (void);
 
 		virtual void postEvent (Rts2Event *event);
+
+		Rts2CamList cameras;
+
 	protected:
 		virtual int willConnect (Rts2Address * in_addr);
 		virtual int processOption (int in_opt);
@@ -52,6 +57,7 @@ class Rts2DeviceDb:public rts2core::Device
 		virtual void forkedInstance ();
 
 		virtual void signaledHUP ();
+
 	private:
 		char *connectString;
 		char *configFile;

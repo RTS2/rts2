@@ -26,7 +26,6 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/rts2camlist.h"
 #else
 #include "../utils/rts2config.h"
 #include "../utils/device.h"
@@ -157,10 +156,6 @@ class XmlRpcd:public rts2core::Device
 		 * Return default image label.
 		 */
 		const char *getDefaultImageLabel ();
-
-#ifdef HAVE_PGSQL
-		Rts2CamList cameras;
-#endif
 
 	protected:
 #ifndef HAVE_PGSQL
