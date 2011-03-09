@@ -101,6 +101,11 @@ int ConnShooter::processAuger ()
 	double db_LambdaErr;      /// Uncertainty of Lambda (g/cm^2)
 	double db_GHChi2;         /// Chi^2 of Gaisser-Hillas db_it
 	int    db_GHNdf;          /// Degrees of db_reedom of GH db_it
+
+	double db_DGHXmax1;
+	double db_DGHXmax2;
+	double db_DGHChi2Improv;
+
 	double db_LineFitChi2;    /// Chi^2 of linear db_it to profile
 
 	double db_EmEnergy;       /// Calorimetric energy db_rom GH db_it (EeV)
@@ -182,9 +187,9 @@ int ConnShooter::processAuger ()
 		>> db_GHChi2
 		>> db_GHNdf
 		// 3 double
-		// >> db_DGHXmax1
-		// >> db_DGHXmax2
-		// >> db_DGHChi2Improv
+		>> db_DGHXmax1
+		>> db_DGHXmax2
+		>> db_DGHChi2Improv
 		>> db_LineFitChi2
 		>> db_EmEnergy
 		>> db_EmEnergyErr
