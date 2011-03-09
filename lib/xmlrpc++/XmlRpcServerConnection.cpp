@@ -4,6 +4,7 @@
 #include "XmlRpcSocket.h"
 #include "XmlRpc.h"
 #include "base64.h"
+#include "urlencoding.h"
 #include <sstream>
 #include <iomanip>
 
@@ -499,6 +500,8 @@ void XmlRpcServerConnection::executeGet()
 			}
 
 			request->setConnection (this);
+
+			urldecode (path);
 
 			request->execute (&_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
