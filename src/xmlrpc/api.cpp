@@ -217,6 +217,18 @@ void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 				os << "\"" << (*iter) << "\"";
 			}
 			break;
+		case RTS2_VALUE_DOUBLE:	
+		case RTS2_VALUE_TIME:
+			for (std::vector <double>::iterator iter = ((rts2core::DoubleArray *) value)->valueBegin (); iter != ((rts2core::DoubleArray *) value)->valueEnd (); iter++)
+			{
+				if (iter != ((rts2core::DoubleArray *) value)->valueBegin ())
+					os << ",";
+				if (isnan (*iter))
+					os << "null";
+				else	  	
+					os << (*iter);
+			}
+			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
 			break;
