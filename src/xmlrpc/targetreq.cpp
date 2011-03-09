@@ -68,15 +68,26 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 			processAPI (params, response_type, response, response_length);
 			return;
 		}
+		rts2db::Target *tar = NULL;
 		// get target id..
 		char *endptr;
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
 		if (*endptr != '\0')
-			throw rts2core::Error ("Expected target number!");
-		if (tar_id < 0)
-			throw rts2core::Error ("Target id < 0");
+		{
+			rts2db::TargetSet ts (Rts2Config::instance()->getObserver ());
+			ts.loadByName (vals[0].c_str ());
+			if (ts.size () != 1)
+				throw rts2core::Error ("Cannot find target with name" + vals[0]);
+			tar = ts.begin ()->second;
+			ts.clear ();
+		}
+		else
+		{
+			if (tar_id < 0)
+				throw rts2core::Error ("Target id < 0");
 
-		rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+			tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+		}	
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
 
@@ -339,9 +350,32 @@ void Targets::printTargetHeader (int tar_id, const char *current, std::ostringst
 
 void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
+	const char *e = params->getString ("jd", NULL);
+	if (e != NULL)
+	{
+		// return target values in API format..
+		std::ostringstream os;
+		struct ln_equ_posn tp;
+		struct ln_hrz_posn hp;
+		double JD = rts2_nan ("f");
+		JD = atof (e);
+		if (isnan (JD))
+			JD = ln_get_julian_from_sys ();
+
+		tar->getPosition (&tp, JD);
+		tar->getAltAz (&hp, JD);
+		os << std::fixed << "{\"name\":\"" << tar->getTargetName ()
+			<< "\",\"id\":" << tar->getTargetID ()
+			<< ",\"ra\":" << tp.ra << ",\"dec\":" << tp.dec 
+			<< ",\"alt\":" << hp.alt << ",\"az\":" << hp.az
+			<< ",\"airmass\":" << tar->getAirmass (JD) << "}";
+
+		returnJSON (os, response_type, response, response_length);
+		return;
+	}	
 	if (!canExecute ())
 		throw XmlRpcException ("you do not have permission to change anything");
-	const char *e = params->getString ("e", NULL);
+	e = params->getString ("e", NULL);
 	if (e != NULL)
 	{
 		tar->setTargetEnabled (!strcmp (e, "true"), true);
@@ -386,7 +420,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		(*iter)->queCommand (new rts2core::Rts2CommandExecNext (master, tar->getTargetID ()));
 
 		std::ostringstream os;
-		os << "{\"status\": 0 }";
+		os << "{\"status\":0}";
 		returnJSON (os.str ().c_str (), response_type, response, response_length);
 		return;
 	}
@@ -408,7 +442,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 	if (e != NULL && c != NULL)
 	{
 		tar->setScript (c, e);
-		returnJSON ("{\"statu,s\": 0}", response_type, response, response_length);
+		returnJSON ("{\"status\":0}", response_type, response, response_length);
 		return;
 	}
 	throw XmlRpcException ("invalid API request");
