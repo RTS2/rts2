@@ -63,7 +63,7 @@ if ( $continue == 1 ) then
 			echo `date` too big offset $ora $odec
 		endif	  	
 	else
-		echo `date` "name != cname: '$name' '$cname'"  
+		echo `date` "not offseting - correction from different target (observing $name, correction from $cname)"  
 	endif  
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
@@ -88,8 +88,21 @@ endif
 
 <xsl:template match='exe'>
 if ( $continue == 1 ) then
-	echo `date` 'executing script <xsl:value-of select='@path'/>'
-	source <xsl:value-of select='@path'/>
+	if ( '<xsl:value-of select='@path'/>' == '-' ) then
+		set go = 0
+		while ( $go == 0 )
+			echo -n 'Command (or go to continue with the robot): '
+			set x = "$&lt;"
+			if ( "$x" == 'go' ) then
+				set go = 1
+			else
+				eval $x
+			endif
+		end
+	else
+		echo `date` 'executing script <xsl:value-of select='@path'/>'
+		source <xsl:value-of select='@path'/>
+	fi
 endif
 </xsl:template>
 
