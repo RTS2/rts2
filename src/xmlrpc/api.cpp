@@ -84,10 +84,9 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				conn = master->getSingleCentralConn ();
 			else
 				conn = master->getOpenConnection (device);
-			double from = params->getDouble ("from", 0);
-			conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
+			double from = params->getDouble ("from", 0);
 			sendConnectionValues (os, conn, params, from);
 		}
 		else if (vals[0] == "cmd")
