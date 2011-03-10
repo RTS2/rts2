@@ -855,7 +855,7 @@ const char *setGetApi =
   "hr.onreadystatechange = function(){\n"
     "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
     "var t = JSON.parse(this.responseText);\n"
-    "input.value = t[variable];\n"
+    "input.value = t.d[variable];\n"
   "}\n"
   "hr.send(null);\n"
 "}\n";
