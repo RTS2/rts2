@@ -271,7 +271,7 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
 {
 	bool extended = params->getInteger ("e", false);
-	os << "\"d\":{";
+	os << "\"d\":{" << std::fixed;
 	double mfrom = rts2_nan ("f");
 	bool first = true;
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
@@ -304,7 +304,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 	if (isnan (mfrom))
 		os << "null";
 	else
-		os << std::fixed << mfrom;  	
+		os << mfrom;  	
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
