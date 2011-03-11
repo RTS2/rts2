@@ -326,6 +326,9 @@ int ConnShooter::processAuger ()
 			<< " maxEnergyDiv " << master->maxEnergyDiv->getValueDouble ()
 			<< " GHChi2 " << db_GHChi2
 			<< " GHNdf " << db_GHNdf
+			<< " DGHXmax1 " << db_DGHXmax1
+			<< " DGHXmax2 " << db_DGHXmax2
+			<< " DGHChi2Improv " << db_DGHChi2Improv
 			<< " maxGHChiDiv " << master->maxGHChiDiv->getValueDouble ()
 			<< " (LineFitChi2 " << db_LineFitChi2 << " - GHChi2 " << db_GHChi2 << ")"
 			<< " minLineFitDiff " << master->minLineFitDiff->getValueDouble ()
@@ -405,6 +408,9 @@ int ConnShooter::processAuger ()
 		LambdaErr,
 		GHChi2,
 		GHNdf,
+		DGHXmax1,
+		DGHXmax2,
+		DGHChi2Improv,
 		LineFitChi2,
 		EmEnergy,
 		EmEnergyErr,
@@ -477,6 +483,9 @@ int ConnShooter::processAuger ()
 		:db_LambdaErr,
 		:db_GHChi2,
 		:db_GHNdf,
+		:db_DGHXmax1,
+		:db_DGHXmax2,
+		:db_DGHChi2Improv,
 		:db_LineFitChi2,
 		:db_EmEnergy,
 		:db_EmEnergyErr,
