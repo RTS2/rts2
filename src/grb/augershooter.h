@@ -108,6 +108,13 @@ class DevAugerShooter:public Rts2DeviceDb
 		rts2core::ValueDouble *maxSPDDiv3;
 		rts2core::ValueDouble *maxTimeDiv3;
  /*       third set of cuts - end    */
+
+ /*       fourth set of cuts         */
+		rts2core::ValueInteger *EyeId4;
+		rts2core::ValueDouble *minEnergy4;
+		rts2core::ValueDouble *maxDGHChi2Improv4;
+ /*       fourth set of cuts - end   */		
+
 };
 
 }

@@ -308,8 +308,19 @@ int ConnShooter::processAuger ()
 		&& compare ((db_SDPChi2 / db_SDPNdf), CMP_LT, master->maxSPDDiv3->getValueDouble (), "SDPChi2 to SDPNdf ratio")
 		&& compare ((db_TimeChi2 / db_TimeNdf), CMP_LT, master->maxTimeDiv3->getValueDouble (), "TimeChi2 to TimeNdf ratio")
 	)
-              db_cut |= 4;
+		db_cut |= 4;
  	/*       third set of cuts - end    */
+
+
+	cutindex = 3;
+
+	/*       fourth set of cuts         */
+	if (compare (db_Energy, CMP_GT, master->minEnergy4->getValueDouble (), "Energy")
+		&& compare (db_Eye, CMP_EQ, master->EyeId4->getValueInteger (), "Eye")
+		&& compare (db_DGHChi2Improv, CMP_LT, master->maxDGHChi2Improv4->getValueDouble (), "DGHChi2Improv")
+	)
+		db_cut |= 8;
+	/*       fourth set of cuts - end   */
 
 	if (db_cut == 0)
 	{
@@ -350,7 +361,7 @@ int ConnShooter::processAuger ()
 			<< " dec " << db_dec
 			<< " params " << rest
 			<< ")" << sendLog;
-		for (int j = 0, i = 1; i < 8; i = i << 1, j++)
+		for (int j = 0, i = 1; i < (1 << NUM_CUTS); i = i << 1, j++)
 		{
 			logStream (MESSAGE_INFO) << "cut set " << (j + 1) << " failed: " << failedCutsString (j) << sendLog;
 			failedCuts[j].clear ();

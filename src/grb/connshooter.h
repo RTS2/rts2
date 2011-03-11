@@ -26,6 +26,9 @@
 
 #define AUGER_BUF_SIZE  20000
 
+// number of cuts
+#define NUM_CUTS        4
+
 namespace rts2grbd
 {
 
@@ -82,7 +85,7 @@ class ConnShooter:public Rts2ConnNoSend
 
 		enum op_t {CMP_GT, CMP_GE, CMP_EQ, CMP_LE, CMP_LT};
 
-		std::list < std::string > failedCuts[3];
+		std::list < std::string > failedCuts[NUM_CUTS];
 		int cutindex;
 
 		std::string failedCutsString (int i);

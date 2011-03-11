@@ -146,6 +146,19 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):Rts2DeviceDb (in_
 	createValue (maxTimeDiv3, "max_TimeDiv_cut3", "Maximal time difference, cut3", true, RTS2_VALUE_WRITABLE);
 	maxTimeDiv3->setValueDouble (8.);
  /*       third set of cuts - end    */
+
+ /*       fourth set of cuts         */
+	createValue (EyeId4, "Eye_Id_cut4", "Eye Id, cut4", true, RTS2_VALUE_WRITABLE);
+	EyeId4->setValueInteger (1);
+
+	createValue (minEnergy4, "min_energy_cut4", "minimal shower energy, cut4", true, RTS2_VALUE_WRITABLE);
+	minEnergy4->setValueDouble (10.);
+
+	createValue (maxDGHChi2Improv4, "max_dghchi2_improv4", "maximal DGHChi2 Improv, cut4", true, RTS2_VALUE_WRITABLE);
+	minEnergy4->setValueDouble (-29.);
+
+ /*       fourth set of cuts - end   */
+
 }
 
 DevAugerShooter::~DevAugerShooter (void)
