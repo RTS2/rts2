@@ -295,7 +295,6 @@ class sortByAltitude
 		bool operator () (Target *tar1, Target *tar2) { return doSort (tar1, tar2); }
 	protected:
 		bool doSort (Target *tar1, Target *tar2);
-	private:
 		struct ln_lnlat_posn *observer;
 		double JD;
 };
@@ -310,7 +309,6 @@ class sortWestEast
 		bool operator () (Target *tar1, Target *tar2) { return doSort (tar1, tar2); }
 	protected:
 		bool doSort (Target *tar1, Target *tar2);
-	private:
 		struct ln_lnlat_posn *observer;
 		double JD;
 };
