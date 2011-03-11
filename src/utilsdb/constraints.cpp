@@ -258,6 +258,34 @@ void ConstraintMaxRepeat::print (std::ostream &os)
 
 Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr > (cs)
 {
+	for (Constraints::iterator iter = cs.begin (); iter != cs.end (); iter++)
+	{
+		Constraint *con = createConstraint (iter->first.c_str ());
+		// can "compare" chars, as they are const char*
+		if (con->getName () == CONSTRAINT_TIME
+			|| con->getName () == CONSTRAINT_AIRMASS
+			|| con->getName () == CONSTRAINT_ZENITH_DIST
+			|| con->getName () == CONSTRAINT_HA
+			|| con->getName () == CONSTRAINT_LDISTANCE
+			|| con->getName () == CONSTRAINT_LALTITUDE
+			|| con->getName () == CONSTRAINT_LPHASE
+			|| con->getName () == CONSTRAINT_SDISTANCE
+			|| con->getName () == CONSTRAINT_SALTITUDE)
+		{
+			((ConstraintInterval *) con)->copyIntervals (((ConstraintInterval *) iter->second->th ()));
+		}
+		else if (con->getName () == CONSTRAINT_MAXREPEATS)
+		{
+			((ConstraintMaxRepeat *) con)->copyConstraint (((ConstraintMaxRepeat *) iter->second->th ()));
+		}
+		else
+		{
+			std::cerr << "unsuported constraint type in copy constructor " __FILE__ ":" << __LINE__ << std::endl;
+			exit (10);
+		}
+
+		(*this)[iter->first] = ConstraintPtr (con);
+	}
 }
 
 Constraints::~Constraints ()

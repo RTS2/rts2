@@ -2088,7 +2088,7 @@ Constraints * Target::getConstraints ()
 {
 	if (constraints)
 		return constraints;
-	
+
 	struct stat fs;
 	// check for system level constraints
 	try

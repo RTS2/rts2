@@ -29,16 +29,16 @@
 
 #include <xmlerror.h>
 
-#define CONSTRAINT_TIME         "time"
-#define CONSTRAINT_AIRMASS      "airmass"
-#define CONSTRAINT_ZENITH_DIST  "zenithDistance"
-#define CONSTRAINT_HA           "HA"
-#define CONSTRAINT_LDISTANCE    "lunarDistance"
-#define CONSTRAINT_LALTITUDE    "lunarAltitude"
-#define CONSTRAINT_LPHASE       "lunarPhase"
-#define CONSTRAINT_SDISTANCE    "solarDistance"
-#define CONSTRAINT_SALTITUDE    "sunAltitude"
-#define CONSTRAINT_MAXREPEATS   "maxRepeats"
+static const char* CONSTRAINT_TIME         = "time";
+static const char* CONSTRAINT_AIRMASS      = "airmass";
+static const char* CONSTRAINT_ZENITH_DIST  = "zenithDistance";
+static const char* CONSTRAINT_HA           = "HA";
+static const char* CONSTRAINT_LDISTANCE    = "lunarDistance";
+static const char* CONSTRAINT_LALTITUDE    = "lunarAltitude";
+static const char* CONSTRAINT_LPHASE       = "lunarPhase";
+static const char* CONSTRAINT_SDISTANCE    = "solarDistance";
+static const char* CONSTRAINT_SALTITUDE    = "sunAltitude";
+static const char* CONSTRAINT_MAXREPEATS   = "maxRepeats";
 
 namespace rts2db
 {
@@ -57,6 +57,8 @@ class Constraint
 
 		virtual void load (xmlNodePtr cons) = 0;
 		virtual bool satisfy (Target *tar, double JD) = 0;
+
+		Constraint *th (){ return this; }
 
 		/**
 		 * Add constraint from string.
@@ -78,6 +80,7 @@ class Constraint
 class ConstraintDoubleInterval
 {
 	public:
+		ConstraintDoubleInterval (const ConstraintDoubleInterval *i) { lower = i->lower; upper = i->upper; }
 		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
 		bool satisfy (double val);
 		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
@@ -93,6 +96,7 @@ class ConstraintDoubleInterval
 		 * Print interval.
 		 */
 		void print (std::ostream &os);
+
 	private:
 		double lower;
 		double upper;
@@ -123,6 +127,12 @@ class ConstraintInterval: public Constraint
 		virtual void parse (const char *arg);
 
 		virtual void print (std::ostream &os);
+
+		void copyIntervals (ConstraintInterval *cs)
+		{
+			for (std::list <ConstraintDoubleInterval>::iterator i = cs->intervals.begin (); i != cs->intervals.end (); i++)
+				intervals.push_back (ConstraintDoubleInterval (*i));
+		}
 
 		virtual const char* getName () = 0;
 	protected:
@@ -224,6 +234,8 @@ class ConstraintMaxRepeat:public Constraint
 		virtual void print (std::ostream &os);
 
 		virtual const char* getName () { return CONSTRAINT_MAXREPEATS; }
+
+		void copyConstraint (ConstraintMaxRepeat *i) { maxRepeat = i->maxRepeat; }
 	private:
 		int maxRepeat;
 };
