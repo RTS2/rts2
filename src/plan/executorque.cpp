@@ -18,6 +18,8 @@
  */
 
 #include "executorque.h"
+#include "script.h"
+#include "../utilsdb/constraints.h"
 
 using namespace rts2plan;
 
@@ -41,6 +43,26 @@ class sortQuedTargetWestEast:public rts2db::sortWestEast
 		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
 };
 
+/**
+ * Sort by priority, and then west to east
+ */
+class sortByMeridianPriority:public rts2db::sortWestEast
+{
+	public:
+		sortByMeridianPriority (struct ln_lnlat_posn *_observer, double jd):rts2db::sortWestEast (_observer, jd) {};
+		bool operator () (rts2db::Target *tar1, rts2db::Target *tar2) { return doSort (tar1, tar2); }
+	protected:
+		bool doSort (rts2db::Target *tar1, rts2db::Target *tar2);
+};
+
+bool sortByMeridianPriority::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
+{
+	if (tar1->getTargetPriority () == tar2->getTargetPriority ())
+		return sortWestEast::doSort (tar1, tar2);
+	else
+		return tar1->getTargetPriority () > tar2->getTargetPriority ();
+}
+
 bool QueuedTarget::notExpired (double now)
 {
 	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
@@ -60,6 +82,9 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (false);
 
+	master->createValue (testConstraints, (sn + "_test_constr").c_str (), "test target constraints (e.g. not only simple horizon)", false, RTS2_VALUE_WRITABLE);
+	testConstraints->setValueBool (true);
+
 	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, RTS2_VALUE_WRITABLE);
 	removeAfterExecution->setValueBool (true);
 
@@ -67,6 +92,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	queueType->addSelVal ("CIRCULAR");
 	queueType->addSelVal ("HIGHEST");
 	queueType->addSelVal ("WESTEAST");
+	queueType->addSelVal ("WESTEAST_MERIDIAN");
 }
 
 ExecutorQueue::~ExecutorQueue ()
@@ -88,11 +114,111 @@ int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, 
 	return 0;
 }
 
+double ExecutorQueue::getMaximalDuration (rts2db::Target *tar)
+{
+	double md = 0;
+	for (Rts2CamList::iterator cam = master->cameras.begin (); cam != master->cameras.end (); cam++)
+	{
+		try
+		{
+			std::string script_buf;
+			rts2script::Script script;
+			tar->getScript (cam->c_str(), script_buf);
+			script.setTarget (cam->c_str (), tar);
+			double d = script.getExpectedDuration ();
+			if (d > md)
+				md = d;  
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
+		}
+	}
+	return md;
+}
+
+const ExecutorQueue::iterator ExecutorQueue::findTarget (rts2db::Target *tar)
+{
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->target == tar)
+			return iter;  
+	}
+	return end ();
+}
+
+void ExecutorQueue::orderByTargetList (std::list <rts2db::Target *> tl)
+{
+	ExecutorQueue::iterator fi = begin ();
+	for (std::list <rts2db::Target *>::iterator iter = tl.begin (); iter != tl.end (); iter++)
+	{
+		const ExecutorQueue::iterator qi = findTarget (*iter);
+		if (qi != end ())
+		{
+			fi = insert (fi, *qi);
+			erase (qi);
+			fi++;
+		}
+	}
+}
+
 void ExecutorQueue::filter ()
 {
-	filterBelowHorizon ();
 	filterExpired ();
+	filterBelowHorizon ();
 	updateVals ();
+}
+
+void ExecutorQueue::sortWestEastMeridian ()
+{
+	std::list < rts2db::Target *> preparedTargets;  
+	std::list < rts2db::Target *> orderedTargets;
+	double jd = ln_get_julian_from_sys ();
+	for (ExecutorQueue::iterator ti = begin (); ti != end (); ti++)
+	{
+		preparedTargets.push_back (ti->target);
+	}
+	while (!preparedTargets.empty ())
+	{
+		// find maximal priority in targets, and order by HA..
+		preparedTargets.sort (sortByMeridianPriority (*observer, jd));
+		// now find the first target which is on west (for HA + its duration).
+		std::list < rts2db::Target *>::iterator iter;
+
+		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
+		{
+		  	std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+			// skip target if it's not above horizon
+			ExecutorQueue::iterator qi = findTarget (*iter);
+			double tjd = jd;
+			if (!isAboveHorizon (*qi, tjd))
+			{
+				std::cout << "target not met constraints: " << (*iter)->getTargetName () << std::endl;
+				continue;
+			}
+
+			jd = tjd;	
+			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
+				break;  
+		}
+		// If such target does not exists, select front..
+		if (iter == preparedTargets.end ())
+		{
+			std::cout << "end reached, takes from beginning" << std::endl;  
+			iter = preparedTargets.begin ();
+		}
+
+		jd += getMaximalDuration (*iter) / 86400.0;  
+		orderedTargets.push_back ((*iter));
+		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
+		preparedTargets.erase (iter);
+	}
+	std::cout << "ordering.." << std::endl;
+	for (std::list < rts2db::Target *>::iterator i = orderedTargets.begin (); i != orderedTargets.end (); i++)
+	{
+		std::cout << (*i)->getTargetName () << " " << (*i)->getTargetID () << std::endl;
+	}
+	orderByTargetList (orderedTargets);
 }
 
 void ExecutorQueue::beforeChange ()
@@ -115,9 +241,11 @@ void ExecutorQueue::beforeChange ()
 		case QUEUE_WESTEAST:
 			sort (sortQuedTargetWestEast (*observer));
 			break;
+		case QUEUE_WESTEAST_MERIDIAN:
+			sortWestEastMeridian ();
+			break;
 	}
 	filter ();
-	updateVals ();
 }
 
 void ExecutorQueue::popFront ()
@@ -127,6 +255,7 @@ void ExecutorQueue::popFront ()
 		case QUEUE_FIFO:
 		case QUEUE_HIGHEST:
 		case QUEUE_WESTEAST:
+		case QUEUE_WESTEAST_MERIDIAN:
 			if (frontTimeExpires ())
 				pop_front ();
 			break;
@@ -212,6 +341,7 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
 		}
 		addTarget (nt, t_start, t_end);
 	}
+	beforeChange ();
 	return failed;
 }
 
@@ -243,6 +373,19 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 }
 
+bool ExecutorQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
+{
+	struct ln_hrz_posn hrz;
+	if (!isnan (qt.t_start))
+	{
+		time_t t = qt.t_start;
+		JD = ln_get_julian_from_timet (&t);
+	}
+	qt.target->getAltAz (&hrz, JD, *observer);
+	rts2db::ConstraintsList violated;
+	return (qt.target->isAboveHorizon (&hrz) && (!testConstraints->getValueBool () || qt.target->getViolatedConstraints (JD, violated) == 0));
+}
+
 void ExecutorQueue::filterBelowHorizon ()
 {
 	if (!empty ())
@@ -252,29 +395,24 @@ void ExecutorQueue::filterBelowHorizon ()
 
 		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
 		{
-			struct ln_hrz_posn hrz;
-			if (!isnan (iter->t_start))
-			{
-				time_t t = iter->t_start;
-				JD = ln_get_julian_from_timet (&t);
-			}
-			iter->target->getAltAz (&hrz, JD, *observer);
-			if (iter->target->isAboveHorizon (&hrz))
-			{
-				iter++;
-				continue;
-			}
+			// isAboveHorizon changes jd parameter - we would like to keep the current time
+		  	double tjd = JD;
+			if (isAboveHorizon (*iter, tjd))
+				return;
 
 			if (skipBelowHorizon->getValueBool ())
 			{
 				if (firsttar == NULL)
 					firsttar = iter->target;
 
+				std::cout << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << std::endl;
+
 				push_back (*iter);
 				iter = erase (iter);
 			}
 			else
 			{
+				std::cout << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << std::endl;
 				iter = erase (iter);
 			}
 		}
@@ -339,7 +477,7 @@ bool ExecutorQueue::frontTimeExpires ()
 	iter++;
 	if (iter == end ())
 		return false;
-	return iter->notExpired (master->getNow ());
+	return !iter->notExpired (master->getNow ());
 }
 
 void ExecutorQueue::removeTimers ()
