@@ -108,7 +108,7 @@ int MDM::setFilterNum (int new_filter)
 		logStream (MESSAGE_ERROR) << "Cannot set filter number" << sendLog;
 		return -1;
 	}
-	return 0;
+	return Filterd::setFilterNum (new_filter);
 }
 
 int MDM::getFilterNum ()

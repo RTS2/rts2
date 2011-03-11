@@ -146,7 +146,8 @@ int Fli::init (void)
 
 int Fli::changeMasterState (int new_state)
 {
-	homeFilter ();
+	if ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY || (new_state & SERVERD_STATUS_MASK) == SERVERD_STANDBY_MASK || new_state == SERVERD_SOFT_OFF || new_state == SERVERD_HARD_OFF)
+		homeFilter ();
 	return Filterd::changeMasterState (new_state);
 }
 
@@ -169,7 +170,7 @@ int Fli::setFilterNum (int new_filter)
 	ret = FLISetFilterPos (dev, new_filter);
 	if (ret)
 		return -1;
-	return 0;
+	return Filterd::setFilterNum (new_filter);
 }
 
 int Fli::homeFilter ()

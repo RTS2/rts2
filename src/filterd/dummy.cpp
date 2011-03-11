@@ -38,7 +38,7 @@ class Dummy:public Filterd
 			filterNum = new_filter;
 
 			sleep (filterSleep);
-			return 0;
+			return Filterd::setFilterNum (new_filter);
 		}
 
 	public:

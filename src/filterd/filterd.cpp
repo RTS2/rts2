@@ -62,7 +62,9 @@ int Filterd::getFilterNum ()
 
 int Filterd::setFilterNum (int new_filter)
 {
-	return -1;
+	filter->setValueInteger (new_filter);
+  	sendValueAll (filter);
+	return 0;
 }
 
 int Filterd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)

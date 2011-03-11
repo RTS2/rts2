@@ -53,8 +53,12 @@ class Filterd:public rts2core::Device
 		virtual int processOption (int in_opt);
 
 		virtual int initValues ();
+		
+		virtual int getFilterNum (void) = 0;
 
-		virtual int getFilterNum (void);
+		/**
+		 * Must be called by subclasses, so filter number is updated.
+		 */
 		virtual int setFilterNum (int new_filter);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);

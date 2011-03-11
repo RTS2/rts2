@@ -225,15 +225,10 @@ int Ifw::setFilterNum (int new_filter)
 			// try to set filter number again after homing
 			setFilterNum (new_filter);
 		}
-		ret = -1;
+		return -1;
 	}
-	else
-	{
-		homeCount = 0;
-		ret = 0;
-	}
-
-	return ret;
+	homeCount = 0;
+	return Filterd::setFilterNum (new_filter);
 }
 
 int main (int argc, char **argv)
