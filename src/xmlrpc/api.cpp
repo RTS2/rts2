@@ -21,6 +21,7 @@
 #include "api.h"
 #include "xmlrpcd.h"
 
+#include "../utilsdb/constraints.h"
 #include "../utilsdb/planset.h"
 #include "../plan/script.h"
 
@@ -344,10 +345,14 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}";
 	if (extended)
 		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":4},"
-		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":5}";
+		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":5},"
+		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":6},"
+		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":7},"
+		"{\"n\":\"Transit\",\"t\":\"t\",\"c\":8},"
+		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":9}";
 	os << "],\"d\":[" << std::fixed;
 
-	double JD = ln_get_julian_from_sys ();
+	double JD = params->getDouble ("jd", ln_get_julian_from_sys ());
 	os.precision (8);
 	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
 	{
@@ -375,7 +380,6 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 			{
 				try
 				{
-
 					std::string script_buf;
 					rts2script::Script script;
 					tar->getScript (cam->c_str(), script_buf);
@@ -392,7 +396,27 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 					logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
 				}
 			}
-			os << "," << md << ",[" << cs.str () << "]";
+			os << "," << md << ",[" << cs.str () << "],";
+
+			tar->getSatisfiedConstraints (JD).printJSON (os);
+			
+			os << ",";
+		
+			tar->getViolatedConstraints (JD).printJSON (os);
+
+			struct ln_hrz_posn hrz;
+			tar->getAltAz (&hrz, JD);
+
+			struct ln_rst_time rst;
+			tar->getRST (&rst, JD, 0);
+
+			os << ",";
+			
+			if (isnan (rst.transit))
+				os << "null";
+			else
+				os << rst.transit;
+			os << "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 		}
 		os << "]";
 	}

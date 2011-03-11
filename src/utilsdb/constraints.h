@@ -250,6 +250,8 @@ class ConstraintsList:public std::list <ConstraintPtr>
 			}
 			return os;
 		}
+		
+		void printJSON (std::ostream &os);
 };
 
 class Constraints:public std::map <std::string, ConstraintPtr >

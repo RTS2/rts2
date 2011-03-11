@@ -348,16 +348,6 @@ void Targets::printTargetHeader (int tar_id, const char *current, std::ostringst
 	printSubMenus (_os, prefix.str ().c_str (), current, subm);
 }
 
-void printConstraints (std::ostringstream &os, rts2db::ConstraintsList cl)
-{
-	for (rts2db::ConstraintsList::iterator iter = cl.begin (); iter != cl.end (); iter++)
-	{
-		if (iter != cl.begin ())
-			os << ",";
-		os << '"' << (*iter)->getName() << '"';
-	}
-}
-
 void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *e = params->getString ("jd", NULL);
@@ -378,18 +368,18 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 			<< "\",\"id\":" << tar->getTargetID ()
 			<< ",\"ra\":" << tp.ra << ",\"dec\":" << tp.dec 
 			<< ",\"alt\":" << hp.alt << ",\"az\":" << hp.az
-			<< ",\"airmass\":" << tar->getAirmass (JD) << ",\"satisfied\":[";
+			<< ",\"airmass\":" << tar->getAirmass (JD) << ",\"satisfied\":";
 		
-		printConstraints (os, tar->getSatisfiedConstraints (JD));
+		tar->getSatisfiedConstraints (JD).printJSON (os);
 
-		os << "],\"violated\":[";
+		os << ",\"violated\":";
 
-		printConstraints (os, tar->getViolatedConstraints (JD));
+		tar->getViolatedConstraints (JD).printJSON (os);
 
 		struct ln_rst_time rst;
 		tar->getRST (&rst, JD, 0);
 
-		os << "],\"transit\":" << rst.transit << ",\"is_above\":" << tar->isAboveHorizon (&hp) << "}";
+		os << ",\"transit\":" << rst.transit << ",\"is_above\":" << tar->isAboveHorizon (&hp) << "}";
 
 		returnJSON (os, response_type, response, response_length);
 		return;

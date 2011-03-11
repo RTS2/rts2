@@ -410,3 +410,15 @@ Constraints & MasterConstraints::getConstraint ()
 	masterCons->load (Rts2Config::instance ()->getMasterConstraintFile ());
 	return *masterCons;
 }
+
+void ConstraintsList::printJSON (std::ostream &os)
+{
+	os << "[";
+	for (ConstraintsList::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter != begin ())
+			os << ",";
+		os << '"' << (*iter)->getName() << '"';
+	}
+	os << "]";
+}
