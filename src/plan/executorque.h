@@ -21,10 +21,12 @@
 #include "../utilsdb/target.h"
 
 // queue modes
-#define QUEUE_FIFO          0
-#define QUEUE_CIRCULAR      1
-#define QUEUE_HIGHEST       2
-#define QUEUE_WESTEAST      3
+#define QUEUE_FIFO                   0
+#define QUEUE_CIRCULAR               1
+#define QUEUE_HIGHEST                2
+#define QUEUE_WESTEAST               3
+// observe targets only when they pass meridian
+#define QUEUE_WESTEAST_MERIDIAN      4
 
 // timer events for queued start/end
 #define EVENT_NEXT_START      RTS2_LOCAL_EVENT + 1400
@@ -78,10 +80,20 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1);
 
+		double getMaximalDuration (rts2db::Target *tar);
+
+		const ExecutorQueue::iterator findTarget (rts2db::Target *tar);
+
+		// order by given target list
+		void orderByTargetList (std::list <rts2db::Target *> tl);
+
 		/**
 		 * Runs queue filter, remove expired observations.
 		 */
 		void filter ();
+
+
+		void sortWestEastMeridian ();
 		
 		/**
 		 * Put next target on front of the queue.
@@ -115,12 +127,15 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		rts2core::ValueSelection *queueType;
 		rts2core::ValueBool *skipBelowHorizon;
+		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
 
 		struct ln_lnlat_posn **observer;
 
 		// update values from the target list
 		void updateVals ();
+
+		bool isAboveHorizon (QueuedTarget &tar, double &JD);
 
 		// filter or skip observations bellow horizon
 		// if skipBelowHorizon is set to false (default), remove observations which are currently

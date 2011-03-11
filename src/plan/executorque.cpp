@@ -57,6 +57,14 @@ class sortByMeridianPriority:public rts2db::sortWestEast
 
 bool sortByMeridianPriority::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 {
+	// if both targets are did not yet pass meridian, pick the highest
+	if (tar1->getHourAngle (JD, observer) < 0 && tar2->getHourAngle (JD, observer) < 0)
+	{
+		struct ln_hrz_posn hr1, hr2;
+		tar1->getAltAz (&hr1, JD, observer);
+		tar2->getAltAz (&hr2, JD, observer);
+		return hr1.alt > hr2.alt;
+	}	
 	if (tar1->getTargetPriority () == tar2->getTargetPriority ())
 		return sortWestEast::doSort (tar1, tar2);
 	else
