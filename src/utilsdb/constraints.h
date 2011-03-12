@@ -308,14 +308,15 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 *
 		 * @throw XmlError
 		 */
-		void load (xmlNodePtr _node);
+		void load (xmlNodePtr _node, bool overwrite);
 
 		/**
 		 * Load constraints from file.
 		 *
 		 * @param filename   name of file holding constraints in XML
+		 * @param overwrite  if existing constraints should be overwriten
 		 */
-		void load (const char *filename);
+		void load (const char *filename, bool overwrite = true);
 
 		/**
 		 * Parse constraint from arguments.

@@ -975,14 +975,13 @@ void Target::appendConstraints (Constraints &cons)
   	Constraints tarc (cons);
 	try
 	{
-		tarc.load (getConstraintFile ());
+		tarc.load (getConstraintFile (), false);
 	}
 	catch (XmlError er)
 	{
 		logStream (MESSAGE_WARNING) << er << sendLog;
 	}
 	setConstraints (tarc);
-
 }
 
 void Target::getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn *obs)

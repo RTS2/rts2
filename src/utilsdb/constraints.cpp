@@ -325,7 +325,7 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 	return satisfied.size ();
 }
 
-void Constraints::load (xmlNodePtr _node)
+void Constraints::load (xmlNodePtr _node, bool overwrite)
 {
 	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)
 	{
@@ -333,8 +333,11 @@ void Constraints::load (xmlNodePtr _node)
 			continue;
 	  	ConstraintPtr con;
 		Constraints::iterator candidate = find (std::string ((const char *) cons->name));
+		// found existing constrain - if commanded to not overwrite, do not overwrite it
 		if (candidate != end ())
 		{
+			if (overwrite == false)
+				continue;  
 			con = candidate->second;
 		}
 		else 
@@ -360,7 +363,7 @@ void Constraints::load (xmlNodePtr _node)
 	}
 }
 
-void Constraints::load (const char *filename)
+void Constraints::load (const char *filename, bool overwrite)
 {
 	LIBXML_TEST_VERSION
 
@@ -373,7 +376,7 @@ void Constraints::load (const char *filename)
 	if (!xmlStrEqual (root_element->name, (xmlChar *) "constraints"))
 		throw XmlUnexpectedNode (root_element);
 
-	load (root_element);
+	load (root_element, overwrite);
 	xmlFreeDoc (doc);
 	xmlCleanupParser ();
 }
