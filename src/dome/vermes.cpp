@@ -97,6 +97,9 @@ namespace rts2dome
 
 int Vermes::moveEnd ()
 {
+  struct ln_hrz_posn hrz;
+  getTargetAltAz (&hrz);
+  setCurrentAz (hrz.az);
   return Cupola::moveEnd ();
 }
 int Vermes::moveStop ()
@@ -249,6 +252,8 @@ int Vermes::info ()
   target_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   ssd650v_current->setValueDouble(current_percentage) ;
+  // Yes, we are open, always
+  setState (DOME_OPENED, "Dome is opened");
 
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 
