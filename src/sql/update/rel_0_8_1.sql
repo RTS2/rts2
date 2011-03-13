@@ -19,6 +19,7 @@ DELETE FROM images WHERE EXISTS (SELECT * FROM observations WHERE observations.o
 DELETE FROM observations WHERE tar_id = $1;
 DELETE FROM scripts WHERE tar_id = $1;
 DELETE FROM target_labels WHERE tar_id = $1;
+DELETE FROM plan WHERE tar_id = $1;
 DELETE FROM grb WHERE tar_id = $1;
 DELETE FROM targets WHERE tar_id = $1;
 SELECT 1;
