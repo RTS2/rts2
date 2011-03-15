@@ -19,6 +19,7 @@
 
 #include "httpreq.h"
 #include "../utils/rts2conn.h"
+#include "../utilsdb/imageset.h"
 
 namespace rts2xmlrpc
 {
@@ -69,6 +70,7 @@ class API:public GetRequestAuthorized
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
 #ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params);
+		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 #endif
 };
 

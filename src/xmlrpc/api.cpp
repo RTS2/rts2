@@ -132,6 +132,17 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.loadByLabelId (label);
 			jsonTargets (tar_set, os, params);
 		}
+		else if (vals[0] == "ibyoid")
+		{
+			int obsid = params->getInteger ("oid", -1);
+			if (obsid == -1)
+				throw XmlRpcException ("empty oid parameter");
+			rts2db::Observation obs (obsid);
+			if (obs.load ())
+				throw XmlRpcException ("Cannot load observation set");
+			obs.loadImages ();	
+			jsonImages (obs.getImageSet (), os, params);
+		}
 		else if (vals[0] == "labels")
 		{
 			const char *label = params->getString ("l", "");
@@ -424,6 +435,28 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		}
 		os << "]";
 	}
+	os << "]";
+}
+
+void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params)
+{
+	os << "\"h\":["
+		"{\"n\":\"Image\",\"t\":\"ccdi\",\"c\":0},"
+		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":1},"
+		"{\"n\":\"Exptime\",\"t\":\"dur\",\"c\":2},"
+		"{\"n\":\"Filter\",\"t\":\"s\",\"c\":3}"
+	"],\"d\":[" << std::fixed;
+
+	for (rts2db::ImageSet::iterator iter = img_set->begin (); iter != img_set->end (); iter++)
+	{
+		if (iter != img_set->begin ())
+			os << ",";
+		os << "[\"" << (*iter)->getFileName () << "\","
+			<< JsonDouble ((*iter)->getExposureSec () + (*iter)->getExposureUsec () / USEC_SEC) << ","
+			<< JsonDouble ((*iter)->getExposureLength ()) << ",\""
+			<< (*iter)->getFilter () << "\"]";
+	}
+
 	os << "]";
 }
 #endif // HAVE_PGSQL
