@@ -27,7 +27,6 @@
 
 using namespace rts2xmlrpc;
 
-
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
 }
@@ -223,10 +222,29 @@ void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 			{
 				if (iter != ((rts2core::DoubleArray *) value)->valueBegin ())
 					os << ",";
-				if (isnan (*iter))
-					os << "null";
-				else	  	
-					os << (*iter);
+				os << JsonDouble (*iter);
+			}
+			break;
+		default:
+			os << "\"" << value->getDisplayValue () << "\"";
+			break;
+	}
+	os << "]";
+}
+
+void API::sendStatValue (rts2core::Value *value, std::ostringstream &os)
+{
+	os << "[";
+	switch (value->getValueBaseType ())
+	{
+		case RTS2_VALUE_DOUBLE:
+			{
+				rts2core::ValueDoubleStat *vds = (rts2core::ValueDoubleStat *) value;
+				os << vds->getNumMes () << ","
+					<< JsonDouble (vds->getMode ()) << ","
+					<< JsonDouble (vds->getStdev ()) << ","
+					<< JsonDouble (vds->getMin ()) << ","
+					<< JsonDouble (vds->getMax ());
 			}
 			break;
 		default:
@@ -246,10 +264,7 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_FLOAT:
 		case RTS2_VALUE_TIME:
-			if (isnan (value->getValueDouble ()))
-				os << "null";
-			else	
-				os << value->getValue ();
+			os << JsonDouble (value->getValueDouble ());
 			break;
 		case RTS2_VALUE_INTEGER:
 		case RTS2_VALUE_LONGINT:
@@ -258,10 +273,7 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 			os << value->getValue ();
 			break;
 		case RTS2_VALUE_RADEC:
-			if (isnan (((rts2core::ValueRaDec *) value)->getRa ()) || isnan (((rts2core::ValueRaDec *) value)->getRa ()))
-			  	os << "{\"ra\":null,\"dec\":null}";
-			else
-				os << "{\"ra\":" << ((rts2core::ValueRaDec *) value)->getRa () << ",\"dec\":" << ((rts2core::ValueRaDec *) value)->getDec () << "}";
+			os << "{\"ra\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getRa ()) << ",\"dec\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getDec ()) << "}";
 			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
@@ -294,18 +306,16 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		os << "\"" << (*iter)->getName () << "\":";
 		if (extended)
 			os << "[" << (*iter)->getFlags () << ",";
-	  	if ((*iter)->getValueExtType())
+	  	if ((*iter)->getValueExtType() & RTS2_VALUE_ARRAY)
 		  	sendArrayValue (*iter, os);
+		else if ((*iter)->getValueExtType() & RTS2_VALUE_STAT)
+			sendStatValue (*iter, os);
 		else
 		  	sendValue (*iter, os);
 		if (extended)
 			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
 	}
-	os << "},\"f\":";
-	if (isnan (mfrom))
-		os << "null";
-	else
-		os << mfrom;  	
+	os << "},\"f\":" << JsonDouble (mfrom);
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -366,11 +376,8 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		if (n == NULL)
 			os << "null,";
 		else
-			os << "\"" << n << "\",";
-		if (isnan (equ.ra) || isnan(equ.dec))
-			os << "null,null";
-		else
-			os << equ.ra << "," << equ.dec;
+			os << "\"" << n << "\","
+				<< JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec);
 
 		if (extended)
 		{
@@ -412,10 +419,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 
 			os << ",";
 			
-			if (isnan (rst.transit))
-				os << "null";
-			else
-				os << rst.transit;
+			JsonDouble (rst.transit);
 			os << "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 		}
 		os << "]";

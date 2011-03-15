@@ -24,6 +24,26 @@ namespace rts2xmlrpc
 {
 
 /**
+ * Display double value as JSON - instead of nan, write nul.
+ */
+class JsonDouble
+{
+	public:
+		JsonDouble (double _v) { v = _v; }
+		friend std::ostream & operator << (std::ostream &os, JsonDouble d)
+		{
+			if (isnan (d.v))
+				os << "null";
+			else
+				os << d.v;
+			return os;
+		}
+
+	private:
+		double v;
+};
+
+/**
  * Class for API requests.
  *
  * @author Petr Kubánek <petr@kubanek.net>
@@ -45,6 +65,7 @@ class API:public GetRequestAuthorized
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
+		void sendStatValue (rts2core::Value *value, std::ostringstream &os);
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
 #ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params);
