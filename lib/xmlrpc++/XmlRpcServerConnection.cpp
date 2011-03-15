@@ -503,7 +503,7 @@ void XmlRpcServerConnection::executeGet()
 
 			urldecode (path);
 
-			request->execute (&_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
+			request->execute (this, &_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
 		catch (const std::exception& ex)
 		{
@@ -575,9 +575,9 @@ bool XmlRpcServerConnection::executeMethod(const std::string& methodName, XmlRpc
 
 	if ( ! method) return false;
 
-	method->setAuthorization (_authorization);
+	method->setAuthorization(_authorization);
 
-	method->execute (&_saddr, params, result);
+	method->execute(&_saddr, params, result);
 
 	// Ensure a valid result value
 	if ( ! result.valid ())
@@ -668,6 +668,12 @@ std::string XmlRpcServerConnection::generateHeader(std::string const& body)
 	sprintf(buffLen,"%i\r\n\r\n", (int) body.size());
 
 	return header + buffLen;
+}
+
+// Set response mask - for create asynchronous call
+void XmlRpcServerConnection::setSourceEvents(unsigned eventMask)
+{
+	_server->setSourceEvents(this, eventMask);
 }
 
 void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, int errorCode)

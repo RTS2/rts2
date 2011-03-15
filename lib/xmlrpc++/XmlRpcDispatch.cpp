@@ -168,7 +168,7 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 
 		if ( ! newMask)
 		{
-								 // Stop monitoring this one
+			// Stop monitoring this one
 			_sources.erase(thisIt);
 			if ( ! src->getKeepOpen())
 				src->close();

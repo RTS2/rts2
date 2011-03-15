@@ -37,7 +37,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void GetRequestAuthorized::execute (struct sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	// if it is public page..
 	if (((XmlRpcd *) getMasterApp ())->isPublic (saddr, getPrefix () + path))
@@ -134,7 +134,7 @@ void GetRequestAuthorized::includeJavaScriptWithPrefix (std::ostream &os, const 
 
 #ifdef HAVE_LIBJPEG
 
-void CurrentPosition::execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
+void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	int s = params->getInteger ("s", 250);
 	AltAz altaz = AltAz (s, s);
@@ -206,8 +206,6 @@ void CurrentPosition::execute (struct sockaddr_in *saddr, std::string path, XmlR
 
 	Magick::Blob blob;
 	altaz.write (&blob, "jpeg");
-
-	http_code = HTTP_OK;
 
 	response_type = "image/jpeg";
 

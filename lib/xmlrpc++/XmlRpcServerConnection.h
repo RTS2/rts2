@@ -97,6 +97,9 @@ namespace XmlRpc
 			// The XmlRpc server that accepted this connection
 			XmlRpcServer* _server;
 
+			// Set response mask - for create asynchronous call
+			void setSourceEvents(unsigned eventMask);
+
 			// Possible IO states for the connection
 			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE };
 			ServerConnectionState _connectionState;

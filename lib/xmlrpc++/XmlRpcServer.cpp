@@ -145,6 +145,12 @@ bool XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
 	return true;
 }
 
+//! Modify the types of events to watch for on this source
+void XmlRpcServer::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
+{
+	_disp.setSourceEvents(source, eventMask);
+}
+
 // Process client requests for the specified time
 void XmlRpcServer::work(double msTime)
 {

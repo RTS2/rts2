@@ -82,6 +82,9 @@ namespace XmlRpc
 			//! set it in listen mode to make it available for clients.
 			bool bindAndListen(int port, int backlog = 5);
 
+			//! Modify the types of events to watch for on this source
+			void setSourceEvents(XmlRpcSource* source, unsigned eventMask);
+
 			//! Process client requests for the specified time
 			void work(double msTime);
 

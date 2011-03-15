@@ -63,7 +63,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 	public:
 		GetRequestAuthorized (const char* prefix, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s) { executePermission = false; }
 
-		virtual void execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
+		virtual void execute (XmlRpc::XmlRpcSource *source, struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
 		/**
 		 * Received exact path and HTTP params. Returns response - MIME
@@ -162,12 +162,12 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 /**
  * Plot current position of telescope, target and next target position.
  */
-class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
+class CurrentPosition:public GetRequestAuthorized
 {
 	public:
-		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, "current telescope position", s) {};
+		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "current telescope position", s) {};
 
-		virtual void execute (struct sockaddr_in *saddr, std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* HAVE_LIBJPEG */
