@@ -276,7 +276,6 @@ fi
 ALTA="${withval}";
 LIB_ALTA_USB="${ALTA}/apogee_USB.so ${LIBUSB_LDFLAGS}";
 LIB_ALTA_NET="${ALTA}/apogee_NET.so ${LIBUSB_LDFLAGS}";
-LIB_ALTA_FILTER="${ALTA}/ApogeeUsbLinux.o ${ALTA}/filter_USB.so ${LIBUSB_LDFLAGS}";
 INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
 [ALTA=no])
 

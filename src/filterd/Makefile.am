@@ -27,7 +27,7 @@ endif
 if ALTA
 bin_PROGRAMS += rts2-filterd-alta
 rts2_filterd_alta_SOURCES = alta.cpp
-rts2_filterd_alta_LDADD = @LIB_ALTA_FILTER@ @LIB_M@ ${LDADD}
+rts2_filterd_alta_LDADD = @LIB_ALTA_USB@ @LIB_M@ ${LDADD}
 rts2_filterd_alta_CXXFLAGS = @INC_ALTA@
 else
 EXTRA_DIST += alta.cpp

@@ -16,7 +16,7 @@ and apogee_NET.so libraries. For this build, you will need libusb-dev package
 commands:
 
 user@host:~$ cd apogee
-user@host:~/apogee$ make apogee_USB.so filter_USB.so apogee_NET.so
+user@host:~/apogee$ make apogee_USB.so apogee_NET.so
 
 Then you will need to run ./configure from rts2 with --with-alta option:
 
