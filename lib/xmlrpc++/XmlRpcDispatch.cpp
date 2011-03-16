@@ -61,10 +61,10 @@ XmlRpcDispatch::setSourceEvents(XmlRpcSource* source, unsigned eventMask)
 {
 	for (SourceList::iterator it=_sources.begin(); it!=_sources.end(); ++it)
 		if (it->getSource() == source)
-	{
-		it->getMask() = eventMask;
-		break;
-	}
+		{
+			it->getMask() = eventMask;
+			break;
+		}
 }
 
 
@@ -159,8 +159,18 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 		int fd = src->getfd();
 		unsigned newMask = (unsigned) -1;
 		// If you select on multiple event types this could be ambiguous
-		if (FD_ISSET(fd, inFd))
-			newMask &= src->handleEvent(ReadableEvent);
+		try
+		{
+			if (FD_ISSET(fd, inFd))
+				newMask &= src->handleEvent(ReadableEvent);
+		}
+		catch (const XmlRpcAsynchronous &async)
+		{
+			XmlRpcUtil::log(3, "Asynchronous event while handling response.");
+			// stop monitoring the source..
+			thisIt->getMask() = 0;
+		}
+
 		if (FD_ISSET(fd, outFd))
 			newMask &= src->handleEvent(WritableEvent);
 		if (FD_ISSET(fd, excFd))

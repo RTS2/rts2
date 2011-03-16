@@ -309,7 +309,7 @@ bool XmlRpcServerConnection::handleGet()
 
 	if (_getHeaderWritten != _get_response_header.length ())
 	{
-		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header.c_str () + _getHeaderWritten, _get_response_header.length (), &_getHeaderWritten))
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header.c_str (), _get_response_header.length (), &_getHeaderWritten))
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
@@ -432,6 +432,25 @@ void XmlRpcServerConnection::executeRequest()
 	}
 }
 
+// Prints HTTP headers to string.
+std::string printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length, std::list <std::pair <const char*, std::string> > &_extra_headers)
+{
+	std::ostringstream _os;
+
+	_os << "HTTP/1.1 " << http_code << " " << http_code_string
+		<< "\r\nDate: " << XmlRpcServerConnection::getHttpDate ()
+		<< "\r\nServer: " << XMLRPC_VERSION 
+		<< "\r\nContent-Type: " << response_type
+		<< "\r\nContent-length: " << response_length;
+
+	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
+	  	_os << "\r\n" << iter->first << ": " << iter->second;
+	
+	_os << "\r\n\r\n";
+
+	return _os.str ();
+}
+
 // Run the method, generate _get_response buffer, fill _get_response_length
 void XmlRpcServerConnection::executeGet()
 {
@@ -530,19 +549,7 @@ void XmlRpcServerConnection::executeGet()
 			break;
 	}
 
-	std::ostringstream _os;
-
-	_os << "HTTP/1.1 " << http_code << " " << http_code_string
-		<< "\r\nDate: " << getHttpDate ()
-		<< "\r\nServer: " << XMLRPC_VERSION << "\r\nContent-Type: " << response_type
-		<< "\r\nContent-length: " << _get_response_length;
-
-	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
-	  	_os << "\r\n" << iter->first << ": " << iter->second;
-	
-	_os << "\r\n\r\n";
-
-	_get_response_header = _os.str ();
+	_get_response_header =  printHeaders (http_code, http_code_string, response_type, _get_response_length, _extra_headers);
 	printf ("%s", _get_response_header.c_str ());
 }
 

@@ -20,6 +20,14 @@ namespace XmlRpc
 	// An RPC source represents a file descriptor to monitor
 	class XmlRpcSource;
 
+	//! Thrown when execute should not return response - mark asynchronous connection,
+	//  where response is received later.
+	class XmlRpcAsynchronous
+	{
+		public:
+			XmlRpcAsynchronous () {};
+	};
+
 	//! An object which monitors file descriptors for events and performs
 	//! callbacks when interesting events happen.
 	class XmlRpcDispatch

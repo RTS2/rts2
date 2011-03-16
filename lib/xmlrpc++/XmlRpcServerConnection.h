@@ -66,6 +66,8 @@ namespace XmlRpc
 			void addExtraHeader (const char *name, const char *value) { _extra_headers.push_back (std::pair <const char *, std::string> (name, std::string (value))); }
 			void addExtraHeader (const char *name, std::string value) { _extra_headers.push_back (std::pair <const char *, std::string> (name, value)); }
 
+			static std::string getHttpDate ();
+
 		protected:
 
 			bool readHeader();
@@ -148,8 +150,6 @@ namespace XmlRpc
 			// Whether to keep the current client connection open for further requests
 			bool _keepAlive;
 		private:
-			std::string getHttpDate ();
-
 			struct sockaddr_in _saddr;
 #ifdef _WINDOWS
 			int _addrlen;

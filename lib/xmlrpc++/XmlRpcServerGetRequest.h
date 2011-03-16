@@ -101,6 +101,8 @@ namespace XmlRpc
 		protected:
 			XmlRpcServer* _server;
 
+			XmlRpcServerConnection *connection;
+
 			void addExtraHeader (const char *name, const char *value) { connection->addExtraHeader (name, value); }
 			/**
 			 * Specify max age in seconds. For this time cached response will be valid. This method
@@ -120,8 +122,6 @@ namespace XmlRpc
 
 			std::string _username;
 			std::string _password;
-
-			XmlRpcServerConnection *connection;
 	};
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERGETREQUEST_H_
