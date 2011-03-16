@@ -20,6 +20,17 @@ bin_PROGRAMS += rts2-filterd-fli
 rts2_filterd_fli_SOURCES = fli.cpp
 rts2_filterd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_filterd_fli_CXXFLAGS = @INC_FLI@
+else
+EXTRA_DIST += fli.cpp
+endif
+
+if ALTA
+bin_PROGRAMS += rts2-filterd-alta
+rts2_filterd_alta_SOURCES = alta.cpp
+rts2_filterd_alta_LDADD = @LIB_ALTA_FILTER@ @LIB_M@ ${LDADD}
+rts2_filterd_alta_CXXFLAGS = @INC_ALTA@
+else
+EXTRA_DIST += alta.cpp
 endif
 
 if MDMTCS
