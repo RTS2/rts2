@@ -252,6 +252,7 @@ void API::sendStatValue (rts2core::Value *value, std::ostringstream &os)
 			{
 				rts2core::ValueDoubleStat *vds = (rts2core::ValueDoubleStat *) value;
 				os << vds->getNumMes () << ","
+					<< JsonDouble (vds->getValueDouble ()) << ","
 					<< JsonDouble (vds->getMode ()) << ","
 					<< JsonDouble (vds->getStdev ()) << ","
 					<< JsonDouble (vds->getMin ()) << ","
