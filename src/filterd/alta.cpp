@@ -86,7 +86,7 @@ int Alta::init (void)
 		return ret;
 	
 	dev = new CApnFilterWheel ();
-	ret = dev->Init (filterType, 0);
+	ret = dev->Init (filterType, 1);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot init filter wheel driver" << sendLog;
@@ -106,6 +106,7 @@ int Alta::getFilterNum (void)
 	bool ret;
 	unsigned long f;
 	ret = dev->GetPosition (&f);
+	f--;
 	if (!ret)
 		return -1;
 	return (int) f;
@@ -117,7 +118,7 @@ int Alta::setFilterNum (int new_filter)
 	if (new_filter < -1 || new_filter >= filter_count)
 		return -1;
 
-	ret = dev->SetPosition (new_filter);
+	ret = dev->SetPosition (new_filter+1);
 	if (!ret)
 		return -1;
 	return Filterd::setFilterNum (new_filter);
@@ -125,7 +126,7 @@ int Alta::setFilterNum (int new_filter)
 
 int Alta::homeFilter ()
 {
-	return setFilterNum (0);
+	return setFilterNum (1);
 }
 
 int main (int argc, char **argv)
