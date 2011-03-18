@@ -19,7 +19,7 @@
  */
 
 #include "httpreq.h"
-#include "../utils/rts2conn.h"
+#include "../utils/block.h"
 #include "../utilsdb/imageset.h"
 
 namespace rts2xmlrpc
@@ -43,6 +43,32 @@ class JsonDouble
 
 	private:
 		double v;
+};
+
+class API;
+
+/**
+ * Contain code exacuted when async command returns.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+class AsyncAPI:public Rts2Object
+{
+	public:
+		AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source);
+		
+		virtual void postEvent (Rts2Event *event);
+
+		/**
+		 * Check if the request is for connection or source..
+		 */
+		bool isForSource (XmlRpcServerConnection *_source) { return source == _source; }
+		bool isForConnection (Rts2Conn *_conn) { return conn == _conn; }
+
+	private:
+		API *req;
+		Rts2Conn *conn;
+		XmlRpcServerConnection *source;
 };
 
 /**

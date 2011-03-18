@@ -110,6 +110,8 @@ namespace XmlRpc
 
 			virtual void goAsync () {}
 
+			virtual void asyncFinished (XmlRpcServerConnection*) {};
+
 			//! Remove a connection from the dispatcher
 			virtual void removeConnection(XmlRpcServerConnection*);
 

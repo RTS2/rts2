@@ -644,6 +644,7 @@ void XmlRpcServerConnection::asyncFinished ()
 {
 	prepareForNext ();
 	setSourceEvents (XmlRpcDispatch::ReadableEvent);
+	_server->asyncFinished (this);
 }
 
 std::string XmlRpcServerConnection::getHttpDate ()

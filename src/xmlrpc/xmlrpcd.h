@@ -174,7 +174,13 @@ class XmlRpcd:public rts2core::Device
 		 */
 		const char *getDefaultImageLabel ();
 
+		/**
+		 * Register asynchronous API call.
+		 */
+		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
+
 	protected:
+		virtual int idle ();
 #ifndef HAVE_PGSQL
 		virtual int willConnect (Rts2Address * _addr);
 #endif
@@ -185,6 +191,11 @@ class XmlRpcd:public rts2core::Device
 
 		virtual void signaledHUP ();
 
+		virtual void connectionRemoved (Rts2Conn *coon);
+
+		virtual void asyncFinished (XmlRpcServerConnection *source);
+
+		virtual void removeConnection (XmlRpcServerConnection *source);
 	private:
 		int rpcPort;
 		const char *stateChangeFile;
@@ -194,6 +205,8 @@ class XmlRpcd:public rts2core::Device
 		std::deque <Rts2Message> messages;
 
 		std::vector <Directory *> directories;
+		std::list <AsyncAPI *> asyncAPIs;
+		std::list <AsyncAPI *> deleteAsync;
 
 		Events events;
 

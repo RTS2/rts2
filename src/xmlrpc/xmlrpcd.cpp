@@ -76,6 +76,20 @@ double XmlDevClient::getValueChangedTime (rts2core::Value *value)
 	return iter->second;
 }
 
+int XmlRpcd::idle ()
+{
+	for (std::list <AsyncAPI *>::iterator iter = deleteAsync.begin (); iter != deleteAsync.end (); iter++)
+	{
+		delete *iter;
+	}
+	deleteAsync.clear ();
+#ifdef HAVE_PGSQL
+	return Rts2DeviceDb::idle ();
+#else
+	return Rts2Device::idle ();
+#endif
+}
+
 #ifndef HAVE_PGSQL
 int XmlRpcd::willConnect (Rts2Address *_addr)
 {
@@ -201,6 +215,51 @@ void XmlRpcd::signaledHUP ()
 	rts2core::Device::selectSuccess ();
 #endif
 	reloadEventsFile ();
+}
+
+void XmlRpcd::connectionRemoved (Rts2Conn *conn)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	{
+		if ((*iter)->isForConnection (conn))
+			iter = asyncAPIs.erase (iter);
+		else
+			iter++;
+	}
+#ifdef HAVE_PGSQL
+	Rts2DeviceDb::connectionRemoved (conn);
+#else
+	Rts2Device::connectionRemoved (conn);
+#endif
+}
+
+void XmlRpcd::asyncFinished (XmlRpcServerConnection *source)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	{
+		if ((*iter)->isForSource (source))
+		{
+			deleteAsync.push_back (*iter);
+			iter = asyncAPIs.erase (iter);
+		}
+		else
+		{
+			iter++;
+		}
+	}
+	XmlRpcServer::asyncFinished (source);
+}
+
+void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	{
+		if ((*iter)->isForSource (source))
+			iter = asyncAPIs.erase (iter);
+		else
+			iter++;
+	}
+	XmlRpcServer::removeConnection (source);
 }
 
 #ifdef HAVE_PGSQL

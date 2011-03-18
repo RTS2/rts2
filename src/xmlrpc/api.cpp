@@ -26,24 +26,6 @@
 
 using namespace rts2xmlrpc;
 
-/**
- * Contain code exacuted when async command returns.
- *
- * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
- */
-class AsyncAPI:public Rts2Object
-{
-	public:
-		AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source);
-		
-		virtual void postEvent (Rts2Event *event);
-
-	private:
-		API *req;
-		Rts2Conn *conn;
-		XmlRpcServerConnection *source;
-};
-
 AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):Rts2Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
@@ -66,7 +48,11 @@ void AsyncAPI::postEvent (Rts2Event *event)
 			}
 			break;
 		case EVENT_COMMAND_FAILED:
-			std::cerr << "failed" << event->getArg ();
+			std::ostringstream os;
+			os << "{";
+			req->sendConnectionValues (os, conn, NULL);
+			os << "}";
+			req->sendAsyncJSON (os, source);
 			break;
 	}
 	Rts2Object::postEvent (event);
@@ -156,6 +142,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			{
 				// TODO must deallocated..
 				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
 				conn->queCommand (new rts2core::Rts2Command (master, cmd), 0, aa);
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
