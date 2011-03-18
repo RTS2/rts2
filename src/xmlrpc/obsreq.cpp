@@ -17,8 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "obsreq.h"
-#include "imgpreview.h"
+#include "xmlrpcd.h"
 #include "xmlrpc++/XmlRpcException.h"
 #include "xmlrpc++/urlencoding.h"
 #include "../utilsdb/observation.h"

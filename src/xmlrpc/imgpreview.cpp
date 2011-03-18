@@ -21,7 +21,6 @@
 #define	_FILE_OFFSET_BITS 64
 #endif
 
-#include "imgpreview.h"
 #include "../writers/rts2image.h"
 #include "bsc.h"
 #include "dirsupport.h"
@@ -31,6 +30,7 @@
 #endif
 
 #include "xmlrpc++/urlencoding.h"
+#include "xmlrpcd.h"
 
 using namespace rts2xmlrpc;
 

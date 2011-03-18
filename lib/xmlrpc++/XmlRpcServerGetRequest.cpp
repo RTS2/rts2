@@ -8,6 +8,7 @@
 #include "string.h"
 #include <stdlib.h>
 #include <algorithm>
+#include <iostream>
 
 namespace XmlRpc
 {
@@ -144,5 +145,18 @@ namespace XmlRpc
 
 		response = new char[response_length + 1];
 		strcpy (response, r);
+	}
+
+
+	void XmlRpcServerGetRequest::sendAsyncJSON (std::ostringstream &_os, XmlRpcServerConnection *source)
+	{
+		std::cout << "length: " << _os.str ().length () << std::endl;
+		std::string head = printHeaders (HTTP_OK, "OK", "application/json", _os.str ().length ());
+		head += "\r\n\r\n";
+		int i = 0;
+		XmlRpcSocket::nbWrite (source->getfd (), head, &i);
+		i = 0;
+		XmlRpcSocket::nbWrite (source->getfd (), _os.str (), &i);
+		source->asyncFinished ();
 	}
 }								 // namespace XmlRpc

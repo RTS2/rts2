@@ -108,6 +108,8 @@ namespace XmlRpc
 			//! Handle client connection requests
 			virtual unsigned handleEvent(unsigned eventType);
 
+			virtual void goAsync () {}
+
 			//! Remove a connection from the dispatcher
 			virtual void removeConnection(XmlRpcServerConnection*);
 

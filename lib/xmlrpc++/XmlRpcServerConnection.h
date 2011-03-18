@@ -58,6 +58,16 @@ namespace XmlRpc
 			virtual unsigned handleEvent(unsigned eventType);
 
 			/**
+			 * Go to async mode.
+			 */
+			virtual void goAsync () { _connectionState = WAIT_ASYNC; }
+
+			/**
+			 * Async request finished.
+			 */
+			virtual void asyncFinished ();
+
+			/**
 			 * Add extra header among HTTP headers sent to client.
 			 *
 			 * @param name  Name of extra header
@@ -67,6 +77,9 @@ namespace XmlRpc
 			void addExtraHeader (const char *name, std::string value) { _extra_headers.push_back (std::pair <const char *, std::string> (name, value)); }
 
 			static std::string getHttpDate ();
+
+			// Set response mask - for create asynchronous call
+			void setSourceEvents(unsigned eventMask);
 
 		protected:
 
@@ -99,11 +112,8 @@ namespace XmlRpc
 			// The XmlRpc server that accepted this connection
 			XmlRpcServer* _server;
 
-			// Set response mask - for create asynchronous call
-			void setSourceEvents(unsigned eventMask);
-
 			// Possible IO states for the connection
-			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE };
+			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC };
 			ServerConnectionState _connectionState;
 
 			// Request headers
@@ -156,6 +166,13 @@ namespace XmlRpc
 #else
 			socklen_t _addrlen;
 #endif
+			// prepare to receive next data
+			void prepareForNext ();
 	};
+
+
+	std::string printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length);
+
+	std::string printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length, std::list <std::pair <const char*, std::string> > &_extra_headers);
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERCONNECTION_H_

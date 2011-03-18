@@ -1,5 +1,6 @@
 /* 
  * XML-RPC daemon.
+ * Copyright (C) 2010-2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
@@ -36,6 +37,22 @@
 #include "httpreq.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
+
+#include "xmlapi.h"
+
+#include "augerreq.h"
+#include "nightreq.h"
+#include "obsreq.h"
+#include "targetreq.h"
+#include "imgpreview.h"
+#include "devicesreq.h"
+#include "planreq.h"
+#include "graphreq.h"
+#include "switchstatereq.h"
+#include "libjavascript.h"
+#include "libcss.h"
+#include "api.h"
+#include "images.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 
@@ -88,7 +105,7 @@ class XmlDevClient:public rts2core::Rts2DevClient
  * @addgroup XMLRPC
  */
 #ifdef HAVE_PGSQL
-class XmlRpcd:public Rts2DeviceDb
+class XmlRpcd:public Rts2DeviceDb, XmlRpc::XmlRpcServer
 #else
 class XmlRpcd:public rts2core::Device
 #endif
@@ -195,6 +212,61 @@ class XmlRpcd:public rts2core::Device
 		rts2core::ValueInteger *bbCadency;
 
 		void reloadEventsFile ();
+
+		// pages
+		Login login;
+		DeviceCount deviceCount;
+		ListDevices listDevices;
+		DeviceByType deviceByType;
+		DeviceType deviceType;
+		DeviceCommand deviceCommand;
+		MasterState masterState;
+		MasterStateIs masterStateIs;
+		DeviceState deviceState;
+		ListValues listValues;
+		ListValuesDevice listValuesDevice;
+		GetValue _getValue;
+		SetValue setValue;
+		SetValueByType setValueByType;
+		IncValue incValue;
+		GetMessages _getMessages;
+
+#ifdef HAVE_PGSQL
+		ListTargets listTargets;
+		ListTargetsByType listTargetsByType;
+		TargetInfo targetInfo;
+		TargetAltitude targetAltitude;
+		ListTargetObservations listTargetObservations;
+		ListMonthObservations listMonthObservations;
+		ListImages listImages;
+		TicketInfo ticketInfo;
+		RecordsValues recordsValues;
+		Records records;
+		RecordsAverage recordsAverage;
+		UserLogin userLogin;
+#endif // HAVE_PGSQL
+
+#ifdef HAVE_LIBJPEG
+		JpegImageRequest jpegRequest;
+		JpegPreview jpegPreview;
+		DownloadRequest downloadRequest;
+		CurrentPosition current;
+		Graph graph;
+		AltAzTarget altAzTarget;
+		ImageReq imageReq;
+#endif /* HAVE_LIBJPEG */
+		FitsImageRequest fitsRequest;
+		LibJavaScript javaScriptRequests;
+		LibCSS cssRequests;
+		API api;
+		Auger auger;
+		Night night;
+		Observation observation;
+		Targets targets;
+		AddTarget addTarget;
+		Plan plan;
+		SwitchState switchState;
+		Devices devices;
 };
 
 };

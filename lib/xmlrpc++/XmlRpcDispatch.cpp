@@ -169,6 +169,7 @@ XmlRpcDispatch::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 			XmlRpcUtil::log(3, "Asynchronous event while handling response.");
 			// stop monitoring the source..
 			thisIt->getMask() = 0;
+			src->goAsync ();
 		}
 
 		if (FD_ISSET(fd, outFd))

@@ -83,6 +83,10 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 
 	protected:
 		/**
+		 * Register asynchronous call.
+		 */
+
+		/**
 		 * Prints document header.
 		 *
 		 * @param os      output stream

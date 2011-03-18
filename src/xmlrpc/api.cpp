@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "api.h"
 #include "xmlrpcd.h"
 
 #include "../utilsdb/constraints.h"
@@ -26,6 +25,52 @@
 #include "../plan/script.h"
 
 using namespace rts2xmlrpc;
+
+/**
+ * Contain code exacuted when async command returns.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+class AsyncAPI:public Rts2Object
+{
+	public:
+		AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source);
+		
+		virtual void postEvent (Rts2Event *event);
+
+	private:
+		API *req;
+		Rts2Conn *conn;
+		XmlRpcServerConnection *source;
+};
+
+AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):Rts2Object ()
+{
+	// that's legal - requests are statically allocated and will cease exists with the end of application
+	req = _req;
+	conn = _conn;
+	source = _source;
+}
+
+void AsyncAPI::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_COMMAND_OK:
+			{
+				std::ostringstream os;
+				os << "{";
+				req->sendConnectionValues (os, conn, NULL);
+				os << "}";
+				req->sendAsyncJSON (os, source);
+			}
+			break;
+		case EVENT_COMMAND_FAILED:
+			std::cerr << "failed" << event->getArg ();
+			break;
+	}
+	Rts2Object::postEvent (event);
+}
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
@@ -93,6 +138,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			const char *device = params->getString ("d", "");
 			const char *cmd = params->getString ("c", "");
+			int async = params->getInteger ("async", 0);
 			if (cmd[0] == '\0')
 				throw XmlRpcException ("empty command");
 			if (isCentraldName (device))
@@ -101,8 +147,18 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
 				throw XmlRpcException ("cannot find device");
-			conn->queCommand (new rts2core::Rts2Command (master, cmd));
-			sendConnectionValues (os, conn, params);
+			if (async)
+			{
+				conn->queCommand (new rts2core::Rts2Command (master, cmd));
+				sendConnectionValues (os, conn, params);
+			}
+			else
+			{
+				// TODO must deallocated..
+				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+				conn->queCommand (new rts2core::Rts2Command (master, cmd), 0, aa);
+				throw XmlRpc::XmlRpcAsynchronous ();
+			}
 		}
 #ifdef HAVE_PGSQL
 		else if (vals[0] == "tbyname")
@@ -295,7 +351,10 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
 {
-	bool extended = params->getInteger ("e", false);
+	bool extended = true;
+	if (params)
+		extended = params->getInteger ("e", false);
+
 	os << "\"d\":{" << std::fixed;
 	double mfrom = rts2_nan ("f");
 	bool first = true;

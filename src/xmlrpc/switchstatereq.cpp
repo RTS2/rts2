@@ -18,7 +18,6 @@
  */
 
 #include "httpreq.h"
-#include "switchstatereq.h"
 #include "xmlrpcd.h"
 
 using namespace rts2xmlrpc;

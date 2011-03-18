@@ -1,6 +1,7 @@
 /* 
  * API access for RTS2.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,14 +56,13 @@ class API:public GetRequestAuthorized
 		API (const char* prefix, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-	
-	private:
 		/**
 		 * Send connection values as JSON string to the client.
 		 *
 		 * @param time from which changed values will be reported. nan means that all values will be reported.
 		 */
 		void sendConnectionValues (std::ostringstream &os, Rts2Conn * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"));
+	private:
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);

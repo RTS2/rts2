@@ -88,6 +88,8 @@ namespace XmlRpc
 			//!  @see XmlRpcDispatch::EventType
 			virtual unsigned handleEvent(unsigned eventType);
 
+			virtual void goAsync () {}
+
 		protected:
 			// Execution processing helpers
 			virtual bool doConnect();

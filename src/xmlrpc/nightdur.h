@@ -17,5 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <time.h>
+#include <sys/types.h>
 
 void getNightDuration (int year, int month, int day, time_t &from, int64_t &duration);

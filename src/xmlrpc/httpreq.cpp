@@ -23,7 +23,6 @@
 #include "altplot.h"
 #include "directory.h"
 #include "dirsupport.h"
-#include "imgpreview.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"

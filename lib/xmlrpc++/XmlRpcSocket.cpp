@@ -201,7 +201,7 @@ XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
 
 // Write text to the specified socket. Returns false on error.
 bool
-XmlRpcSocket::nbWrite(int fd, std::string& s, int *bytesSoFar)
+XmlRpcSocket::nbWrite(int fd, std::string s, int *bytesSoFar)
 {
 	int nToWrite = int(s.length()) - *bytesSoFar;
 	char *sp = const_cast<char*>(s.c_str()) + *bytesSoFar;

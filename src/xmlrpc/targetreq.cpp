@@ -18,10 +18,8 @@
  */
 
 #include "xmlrpcd.h"
-#include "targetreq.h"
 #include "altplot.h"
 #include "dirsupport.h"
-#include "imgpreview.h"
 #include "xmlrpc++/urlencoding.h"
 #include "../db/simbad/simbadtarget.h"
 #include "../utils/rts2command.h"

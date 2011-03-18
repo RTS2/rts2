@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "httpreq.h"
-#include "xmlrpcd.h"
+#include "xmlapi.h"
 
 #define DEFAULT_QUANTILES    0.005
 #define DEFAULT_CHAN         0

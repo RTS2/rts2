@@ -43,7 +43,7 @@ namespace XmlRpc
 			static bool nbRead(int socket, char* &s, int &l, bool *eof);
 
 			//! Write text to the specified socket. Returns false on error.
-			static bool nbWrite(int socket, std::string& s, int *bytesSoFar);
+			static bool nbWrite(int socket, std::string s, int *bytesSoFar);
 
 			//! Write buffer to the specified socket. Returns false on error.
 			static bool nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar);

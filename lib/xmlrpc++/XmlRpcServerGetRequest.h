@@ -98,6 +98,9 @@ namespace XmlRpc
 
 			void setConnection (XmlRpcServerConnection *_connection) { connection = _connection; }
 
+			//! Send JSON to XmlRpcSource connection. Re-enables read mask (as async call finished)
+			void sendAsyncJSON (std::ostringstream &_os, XmlRpcServerConnection *source);
+
 		protected:
 			XmlRpcServer* _server;
 

@@ -328,29 +328,7 @@ bool XmlRpcServerConnection::handleGet()
 
 	// Prepare to read the next request
 	if (_getHeaderWritten == _get_response_header.length () && _getWritten == _get_response_length)
-	{
-		_authorization = "";
-		_get = "";
-		_post = "";
-		_header = "";
-		if (_header_buf)
-			free(_header_buf);
-		_header_buf  = NULL;
-		_header_length = 0;
-		_request = "";
-		if (_request_buf)
-			free(_request_buf);
-		_request_buf = NULL;
-		_request_length = 0;
-		_get_response_header = std::string ();
-		_extra_headers.clear ();
-		delete[] _get_response;
-		
-		_get_response_length = 0;
-		_get_response = NULL;
-		_response = "";
-		_connectionState = READ_HEADER;
-	}
+		prepareForNext ();
 
 	return _keepAlive;			 // Continue monitoring this source if true
 }
@@ -384,27 +362,7 @@ bool XmlRpcServerConnection::writeResponse()
 
 	// Prepare to read the next request
 	if (_bytesWritten == int(_response.length()))
-	{
-		_authorization = "";
-		_get = "";
-		_post = "";
-		_header = "";
-		if (_header_buf)
-			free(_header_buf);
-		_header_buf = NULL;
-		_header_length = 0;
-		_request = "";
-		if (_request_buf)
-			free(_request_buf);
-		_request_buf = NULL;
-		_request_length = 0;
-		_get_response_header = std::string ("");
-		_extra_headers.clear ();
-		_get_response_length = 0;
-		_get_response = NULL;
-		_response = "";
-		_connectionState = READ_HEADER;
-	}
+		prepareForNext ();
 
 	return _keepAlive;			 // Continue monitoring this source if true
 }
@@ -430,25 +388,6 @@ void XmlRpcServerConnection::executeRequest()
 			fault.getMessage().c_str());
 		generateFaultResponse(fault.getMessage(), fault.getCode());
 	}
-}
-
-// Prints HTTP headers to string.
-std::string printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length, std::list <std::pair <const char*, std::string> > &_extra_headers)
-{
-	std::ostringstream _os;
-
-	_os << "HTTP/1.1 " << http_code << " " << http_code_string
-		<< "\r\nDate: " << XmlRpcServerConnection::getHttpDate ()
-		<< "\r\nServer: " << XMLRPC_VERSION 
-		<< "\r\nContent-Type: " << response_type
-		<< "\r\nContent-length: " << response_length;
-
-	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
-	  	_os << "\r\n" << iter->first << ": " << iter->second;
-	
-	_os << "\r\n\r\n";
-
-	return _os.str ();
 }
 
 // Run the method, generate _get_response buffer, fill _get_response_length
@@ -506,11 +445,6 @@ void XmlRpcServerConnection::executeGet()
 				params.parse (path.substr (pi + 1));
 				path = path.substr (0, pi);
 			}
-			// check for ..
-			if (path.find ("..") != std::string::npos)
-				throw XmlRpcException ("Path contains ..");
-			if (path.find ("!") != std::string::npos)
-				throw XmlRpcException ("Path contains !");
 			
 			// add params from _request for POST requests
 			if (_connectionState == POST_REQUEST)
@@ -521,6 +455,12 @@ void XmlRpcServerConnection::executeGet()
 			request->setConnection (this);
 
 			urldecode (path);
+
+			// check for ..
+			if (path.find ("..") != std::string::npos)
+				throw XmlRpcException ("Path contains ..");
+			if (path.find ("!") != std::string::npos)
+				throw XmlRpcException ("Path contains !");
 
 			request->execute (this, &_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
@@ -700,6 +640,12 @@ void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, 
 	_response = header + body;
 }
 
+void XmlRpcServerConnection::asyncFinished ()
+{
+	prepareForNext ();
+	setSourceEvents (XmlRpcDispatch::ReadableEvent);
+}
+
 std::string XmlRpcServerConnection::getHttpDate ()
 {
 	std::ostringstream ret;
@@ -715,4 +661,54 @@ std::string XmlRpcServerConnection::getHttpDate ()
 		<< tmm->tm_min << ":"
 		<< tmm->tm_sec << " GMT";
 	return ret.str ();
+}
+
+void XmlRpcServerConnection::prepareForNext ()
+{
+	_authorization = "";
+	_get = "";
+	_post = "";
+	_header = "";
+	if (_header_buf)
+		free(_header_buf);
+	_header_buf = NULL;
+	_header_length = 0;
+	_request = "";
+	if (_request_buf)
+		free(_request_buf);
+	_request_buf = NULL;
+	_request_length = 0;
+	_get_response_header = std::string ("");
+	_extra_headers.clear ();
+	_get_response_length = 0;
+	_get_response = NULL;
+	_response = "";
+	_connectionState = READ_HEADER;
+}
+
+// Prints HTTP headers to string.
+std::string XmlRpc::printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length)
+{
+	std::ostringstream _os;
+
+	_os << "HTTP/1.1 " << http_code << " " << http_code_string
+		<< "\r\nDate: " << XmlRpcServerConnection::getHttpDate ()
+		<< "\r\nServer: " << XMLRPC_VERSION 
+		<< "\r\nContent-Type: " << response_type
+		<< "\r\nContent-length: " << response_length;
+
+	return _os.str ();
+}
+
+std::string XmlRpc::printHeaders (int http_code, const char *http_code_string, const char *response_type, size_t response_length, std::list <std::pair <const char*, std::string> > &_extra_headers)
+{
+	std::ostringstream _os;
+	_os << printHeaders (http_code, http_code_string, response_type, response_length);
+
+	for (std::list <std::pair <const char*, std::string> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
+	  	_os << "\r\n" << iter->first << ": " << iter->second;
+
+	_os << "\r\n\r\n";
+	
+	return _os.str ();
 }

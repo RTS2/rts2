@@ -39,6 +39,8 @@ namespace XmlRpc
 			//! Return true to continue monitoring this source
 			virtual unsigned handleEvent(unsigned eventType) = 0;
 
+			virtual void goAsync () = 0;
+
 		private:
 
 			// Socket. This should really be a SOCKET (an alias for unsigned int*) on windows...
