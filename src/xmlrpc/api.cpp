@@ -476,10 +476,8 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 			struct ln_rst_time rst;
 			tar->getRST (&rst, JD, 0);
 
-			os << ",";
-			
-			JsonDouble (rst.transit);
-			os << "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
+			os << "," << JsonDouble (rst.transit) 
+				<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 		}
 		os << "]";
 	}
