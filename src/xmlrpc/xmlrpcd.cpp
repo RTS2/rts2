@@ -86,7 +86,7 @@ int XmlRpcd::idle ()
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::idle ();
 #else
-	return Rts2Device::idle ();
+	return rts2core::Device::idle ();
 #endif
 }
 
@@ -229,7 +229,7 @@ void XmlRpcd::connectionRemoved (Rts2Conn *conn)
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::connectionRemoved (conn);
 #else
-	Rts2Device::connectionRemoved (conn);
+	rts2core::Device::connectionRemoved (conn);
 #endif
 }
 
@@ -285,9 +285,9 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   setValue (this),
   setValueByType (this),
   incValue (this),
-  _getMessages (this)
+  _getMessages (this),
 #ifdef HAVE_PGSQL
- ,listTargets (this),
+  listTargets (this),
   listTargetsByType (this),
   targetInfo (this),
   targetAltitude (this),
@@ -315,12 +315,14 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   javaScriptRequests ("/js", this),
   cssRequests ("/css", this),
   api ("/api", this),
+#ifdef HAVE_PGSQL
   auger ("/auger", this),
   night ("/nights", this),
   observation ("/observations", this),
   targets ("/targets", this),
   addTarget ("/addtarget", this),
   plan ("/plan", this),
+#endif // HAVE_PGSQL
   switchState ("/switchstate", this),
   devices ("/devices", this)
 

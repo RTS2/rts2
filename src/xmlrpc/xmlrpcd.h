@@ -107,7 +107,7 @@ class XmlDevClient:public rts2core::Rts2DevClient
 #ifdef HAVE_PGSQL
 class XmlRpcd:public Rts2DeviceDb, XmlRpc::XmlRpcServer
 #else
-class XmlRpcd:public rts2core::Device
+class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 #endif
 {
 	public:
@@ -272,12 +272,14 @@ class XmlRpcd:public rts2core::Device
 		LibJavaScript javaScriptRequests;
 		LibCSS cssRequests;
 		API api;
+#ifdef HAVE_PGSQL
 		Auger auger;
 		Night night;
 		Observation observation;
 		Targets targets;
 		AddTarget addTarget;
 		Plan plan;
+#endif // HAVE_PGSQL
 		SwitchState switchState;
 		Devices devices;
 };
