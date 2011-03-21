@@ -470,14 +470,21 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		
 			tar->getViolatedConstraints (JD).printJSON (os);
 
-			struct ln_hrz_posn hrz;
-			tar->getAltAz (&hrz, JD);
+			if (isnan (equ.ra) || isnan (equ.dec))
+			{
+				os << ",null,true";
+			}
+			else
+			{
+				struct ln_hrz_posn hrz;
+				tar->getAltAz (&hrz, JD);
 
-			struct ln_rst_time rst;
-			tar->getRST (&rst, JD, 0);
+				struct ln_rst_time rst;
+				tar->getRST (&rst, JD, 0);
 
-			os << "," << JsonDouble (rst.transit) 
-				<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
+				os << "," << JsonDouble (rst.transit) 
+					<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
+			}
 		}
 		os << "]";
 	}
