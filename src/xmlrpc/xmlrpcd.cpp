@@ -307,8 +307,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   jpegPreview ("/preview", "/", this),
   downloadRequest ("/download", this),
   current ("/current", this),
-  graph ("/graph", this),
 #ifdef HAVE_PGSQL
+  graph ("/graph", this),
   altAzTarget ("/altaz", this),
 #endif // HAVE_PGSQL
   imageReq ("/images", this),

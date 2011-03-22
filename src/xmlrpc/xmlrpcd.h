@@ -264,8 +264,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		JpegPreview jpegPreview;
 		DownloadRequest downloadRequest;
 		CurrentPosition current;
-		Graph graph;
 #ifdef HAVE_PGSQL
+		Graph graph;
 		AltAzTarget altAzTarget;
 #endif // HAVE_PGSQL
 		ImageReq imageReq;
