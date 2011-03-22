@@ -105,6 +105,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2core::ValueInteger *night_idle_select;
 
 		rts2core::ValueBool *selEnabled;
+		rts2core::ValueBool *queueOnly;
 
 		rts2core::ValueDouble *azLimit1;
 		rts2core::ValueDouble *azLimit2;
@@ -161,6 +162,9 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false, RTS2_VALUE_WRITABLE);
 	selEnabled->setValueBool (true);
+
+	createValue (queueOnly, "queue_only", "select targets only from queue", false, RTS2_VALUE_WRITABLE);
+	queueOnly->setValueBool (false);
 
 	createValue (azLimit1, "azlimit_1", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
 	createValue (azLimit2, "azlimit_2", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
@@ -373,7 +377,9 @@ int SelectorDev::selectNext ()
 			// use selector ass fall-back, if queues are empty
 			lastQueue->setValueInteger (0);
 		}
-		return sel->selectNext (getMasterState (), az1, az2);
+		if (queueOnly->getValueBool () == false)
+			return sel->selectNext (getMasterState (), az1, az2);
+		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
 	catch (rts2core::Error er)
 	{
@@ -405,7 +411,6 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 					sendValueAll (next_plan_id);
 				}
 				eq->beforeChange ();
-				eq->popFront ();
 			}
 		}
 	}
