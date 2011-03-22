@@ -265,7 +265,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		DownloadRequest downloadRequest;
 		CurrentPosition current;
 		Graph graph;
+#ifdef HAVE_PGSQL
 		AltAzTarget altAzTarget;
+#endif // HAVE_PGSQL
 		ImageReq imageReq;
 #endif /* HAVE_LIBJPEG */
 		FitsImageRequest fitsRequest;
