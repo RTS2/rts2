@@ -90,6 +90,25 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		}
 		os << "]";
 	}
+	else if (vals.size () == 1 && vals[0] == "devbytype")
+	{
+		os << "[";
+		int t = params->getInteger ("t",0);
+		connections_t::iterator iter = master->getConnections ()->begin ();
+		bool first = true;
+		while (true)
+		{
+			master->getOpenConnectionType (t, iter);
+			if (iter == master->getConnections ()->end ())
+				break;
+			if (first)
+				first = false;
+			else
+				os << ",";
+			os << '"' << (*iter)->getName () << '"';
+		}
+		os << ']';
+	}
 	else if (vals.size () == 1)
 	{
 		os << "{";
