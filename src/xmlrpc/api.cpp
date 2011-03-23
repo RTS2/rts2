@@ -460,8 +460,9 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		if (n == NULL)
 			os << "null,";
 		else
-			os << "\"" << n << "\","
-				<< JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec);
+			os << "\"" << n << "\",";
+
+		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec);
 
 		if (extended)
 		{
