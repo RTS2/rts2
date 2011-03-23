@@ -75,10 +75,24 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		return;
 	}
 
-	os << "{";
+
 	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
-	if (vals.size () == 1)
+
+	// calls returning arrays
+	if (vals.size () == 1 && vals[0] == "devices")
 	{
+		os << "[";
+		for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
+		{
+			if (iter != master->getConnections ()->begin ())
+				os << ",";
+			os << '"' << (*iter)->getName () << '"';
+		}
+		os << "]";
+	}
+	else if (vals.size () == 1)
+	{
+		os << "{";
 		if (vals[0] == "executor")
 		{
 			connections_t::iterator iter = master->getConnections ()->begin ();
@@ -86,6 +100,17 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (iter == master->getConnections ()->end ())
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter, params);
+		}
+		else if (vals[0] == "devices")
+		{
+			os << "[";
+			for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
+			{
+				if (iter != master->getConnections ()->begin ())
+					os << ",";
+				os << '"' << (*iter)->getName () << '"';
+			}
+			os << "]";
 		}
 		else if (vals[0] == "set")
 		{
@@ -244,8 +269,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			throw XmlRpcException ("invalid request " + path);
 		}
+		os << "}";
 	}
-	os << "}";
 
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
