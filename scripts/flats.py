@@ -175,14 +175,48 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.waitingSubWindow = waitingSubWindow
 	
 	def optimalExpTime(self,ratio,expMulti):
-		exptime = expMulti * self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
-		if (exptime < self.expTimes[0]):
-			return self.expTimes[0]
-		if (exptime > self.expTimes[-1]):
-			if (self.isEvening () == False):
-		  		return self.expTimes[0]
-			return self.exptime  # the caller decides on exptime whether to continue or to stop
+		"""Get optimal exposure time. ratio is the ratio of image
+		average vs. optimal flat image - e.g. ratio is 1 if the image is the optimal skyflat image, < 1 if
+		it is too dim and > 1 if it is too bright.
 
+		expMulti is used as slope parameter to adjust morning or evening exposure times on systems with 
+		a long readout time. It is generally >=1 at evening and <= 1 at morning. Its purpose is to adjust for
+		time lost during readout of the detector - at evening as sky gets dimmer, exposure time of the next
+		frame must be increased to get proper average value. It should
+		be left to == 1 at beginning, and etimated if needed. The current algorithm behaves on usuall setups fine
+		if CCD readout time is < ~1 minute.
+		  
+		Returns either one of the self.expTimes values, or value bigger
+		than self.expTimes[-1] if image is too dim and new images
+		should not be attempted."""
+
+		exptime = expMulti * self.exptime / ratio # adjust the exposure time for the next exposure, so that it is close to the optimal value. expMulti adjust for time lost during CCD readout
+		if (exptime < self.expTimes[0]):
+			# too dim image. return the first value, will wait at
+			# morning for brighter sky, will move to next filter at
+			# evening
+			return self.expTimes[0]
+	
+		if (exptime > self.expTimes[-1]): # too dim image
+			if (self.isEvening () == False):
+				 # if that happens at morning, return low
+				 # exposure time for probing The objective is
+				 # to stay at low exposure time as long as the
+				 # images are too dim, so the algorithm will
+				 # cover period when the brightness of the
+				 # morning sky is enought to provide a good
+				 # skyflat at long eposure time
+		  		return self.expTimes[0]
+			# the caller decides on exptime whether to continue or to stop
+			return self.exptime
+
+		# extreme cases, e.g. estimated exposure time laying outside of
+		# allowed exposure range, were sorted above. The algorithm now
+		# search for exposure time lower than the estimated exposure
+		# time - so the returned exposure time is one in the expTimes
+		# array.  This measurement is indended to set skyflat at
+		# "standartize" exposure times, so only limited number of dark
+		# images has to be taken to properly calibrate images.
 		lastE = self.expTimes[0]
 		for e in self.expTimes:
 			if (exptime < e):
