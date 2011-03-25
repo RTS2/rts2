@@ -849,6 +849,15 @@ const char *setGetApi =
   "hr.send(null);\n"
 "}\n"
 
+"function setCallRaDec (device, variable, ra, dec){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/set?d=' + device + '&n=' + variable + '&v=' + ra + ' ' + dec,true);\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
 "function getCall (device, variable, input){\n"
   "var hr = new XMLHttpRequest();\n"
   "hr.open('GET','../api/get?d=' + device, true);\n"

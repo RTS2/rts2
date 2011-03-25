@@ -97,12 +97,13 @@ class ExpandStringValue:public ExpandString
 {
 	public:
 		ExpandStringValue (const char *_deviceName, const char *_valueName);
-		~ExpandStringValue () { delete []deviceName; delete []valueName; }
+		~ExpandStringValue () { delete []deviceName; delete []valueName; delete []subName; }
 		virtual void writeTo (std::ostream &os);
 
 	private:
 		char *deviceName;
 		char *valueName;
+		char *subName;
 };
 
 class ExpandStrings:public std::list <ExpandString *>

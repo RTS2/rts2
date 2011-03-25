@@ -120,17 +120,6 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter, params);
 		}
-		else if (vals[0] == "devices")
-		{
-			os << "[";
-			for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
-			{
-				if (iter != master->getConnections ()->begin ())
-					os << ",";
-				os << '"' << (*iter)->getName () << '"';
-			}
-			os << "]";
-		}
 		else if (vals[0] == "set")
 		{
 			const char *device = params->getString ("d","");

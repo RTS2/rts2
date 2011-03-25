@@ -76,8 +76,23 @@ ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valu
 {
 	deviceName = new char[strlen (_deviceName) + 1];
 	strcpy (deviceName, _deviceName);
-	valueName = new char[strlen (_valueName) + 1];
-	strcpy (valueName, _valueName);
+	// check for . - value pair separator
+	const char *p = strchr (_valueName, '.');
+	if (p == NULL)
+	{
+		valueName = new char[strlen (_valueName) + 1];
+		strcpy (valueName, _valueName);
+		subName = NULL;
+	}
+	else
+	{
+		int nlen = p - _valueName;
+		valueName = new char[nlen + 1];
+		strncpy (valueName, _valueName, nlen);
+		valueName[nlen] = '\0';
+		subName = new char[strlen (_valueName) - nlen + 1];
+		strcpy (subName, p + 1);
+	}
 }
 
 void ExpandStringValue::writeTo (std::ostream &os)
@@ -85,7 +100,26 @@ void ExpandStringValue::writeTo (std::ostream &os)
 	rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValue (deviceName, valueName);
 	if (val == NULL)
 	{
-		os << "unknow value " << deviceName << "." << valueName;
+		os << "unknow value " << deviceName << "." << valueName << " ";
+		return;
+	}
+	if (subName)
+	{
+		if (val->getValueBaseType () == RTS2_VALUE_RADEC)
+		{
+			if (strcasecmp (subName, "ra") == 0)
+			{
+				os << ((rts2core::ValueRaDec *) val)->getRa ();
+			}
+			else if (strcasecmp (subName, "dec") == 0)
+			{
+				os << ((rts2core::ValueRaDec *) val)->getDec ();
+			}
+		}
+		else
+		{
+			os << "invalid subname " << subName << " for value " << deviceName << " " << valueName << " ";
+		}
 		return;
 	}
 	os << getDisplayValue (val);
