@@ -85,8 +85,7 @@ class Daemon:public rts2core::Block
 		virtual void postEvent (Rts2Event *event);
 
 		virtual void forkedInstance ();
-		virtual void sendMessage (messageType_t in_messageType,
-			const char *in_messageString);
+		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
 		virtual void centraldConnRunning (Rts2Conn *conn);
 		virtual void centraldConnBroken (Rts2Conn *conn);
 
