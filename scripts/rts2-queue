@@ -10,30 +10,68 @@
 #   Please visit http://www.gnu.org/licenses/gpl.html for license informations.
 
 import json
+import httplib
 import urllib
 from optparse import OptionParser
 import sys
 import string
 
 class Rts2Queue:
-	def __init__(self,queue,server):
+	def __init__(self,queue,url,login,password):
 		self.queue = queue
-		self.server = server
+
+		slash = url.find('/')
+		if slash >= 0:
+			self.prefix = url[slash:]
+			self.host = url[:slash]
+		else:
+		  	self.prefix = ''
+			self.host = url
+
+		a = self.host.split(':')
+		self.port = 80
+		if len(a) > 2:
+			raise Exception('too much : separating port and server')
+		elif len(a) == 2:
+			self.port = int(a[1])
+			self.host = a[0]
+
+		import base64
+		import string
+
+		self.hlib = httplib.HTTPConnection(self.host,self.port)
+
+		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring(login + ':' + password))}
+
+	def loadJson(self,path,args={}):
+		self.hlib.request('GET', self.prefix + path + '?' + urllib.urlencode(args), None, self.headers)
+		try:
+			r = None
+			try:
+				r = self.hlib.getresponse()
+			except httplib.BadStatusLine,ex:
+				# try to reload
+				self.hlib = httplib.HTTPConnection(self.host,self.port)
+				self.hlib.request('GET', self.prefix + path + '?' + urllib.urlencode(args), None, self.headers)
+				r = self.hlib.getresponse()
+			return json.load(r)
+		except Exception,ec:
+			print 'Cannot parse',(self.prefix + path + '?' + urllib.urlencode(args)),':',ec
+			raise ec
 
 	def getTarget(self,name):
-		resp = json.load(urllib.urlopen(self.server + '/tbyname?' + urllib.urlencode({'n':name})))
-		return resp['d']
+		return self.loadJson('/api/tbyname',{'n':name})['d']
 			
 	def queueTargets(self,ids):
-		args = urllib.urlencode({'d':'SEL','c':"queue {0} {1}".format(self.queue, string.join(map(str,ids),' '))})
-		return json.load(urllib.urlopen(self.server + '/cmd?' + args))
+		return self.loadJson('/api/cmd',{'d':'SEL','c':"queue {0} {1}".format(self.queue, string.join(map(str,ids),' '))})
 
 	def clearQueue(self):
-		args = urllib.urlencode({'d':'SEL','c':'clear {0}'.format(self.queue)})
-		return json.load(urllib.urlopen(self.server + '/cmd?' + args))
+		return self.loadJson('/api/cmd',{'d':'SEL','c':'clear {0}'.format(self.queue)})
 
 if __name__ == '__main__':
-	server = 'http://username:password@localhost:8889/api'
+	server = 'localhost:8889'
+	username = 'username'
+	password = 'password'
 	unique = False
 
   	parser = OptionParser()
@@ -42,14 +80,16 @@ if __name__ == '__main__':
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
 	parser.add_option("--queue", help='provide queue name', action='store', dest='queue', default='plan')
 	parser.add_option("--server", help="specify URL to RTS2 JSON api", action="store", dest='server', default=server)
+	parser.add_option("--user",help="user name",action="store",dest='username',default=username)
+	parser.add_option("--password",help="user password",action="store",dest='password',default=password)
 
 	(options,args)=parser.parse_args()
 
-	q = Rts2Queue(options.queue,options.server)
+	q = Rts2Queue(options.queue,options.server,options.username,options.password)
 
 	if options.clear:
 		resp = q.clearQueue()
-		print "cleared queue {0}: {1}".format(options.queue, resp['plan_ids'])
+		print "cleared queue {0}: {1}".format(options.queue, resp['d']['plan_ids'][1])
 
 	for x in args:
 	  	tars = q.getTarget(x)
@@ -65,4 +105,4 @@ if __name__ == '__main__':
 		  	tids.append(t[0])
 			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
 		resp = q.queueTargets(tids)
-		print resp['plan_ids']
+		print resp['d']['plan_ids'][1]
