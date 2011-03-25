@@ -56,6 +56,8 @@
       <arg choice='opt'><option>--clear</option></arg>
       <arg choice='opt'><option>--queue</option>=<replaceable class='parameter'>QUEUE</replaceable></arg>
       <arg choice='opt'><option>--server</option>=<replaceable class='parameter'>SERVER</replaceable></arg>
+      <arg choice='opt'><option>--user</option>=<replaceable class='parameter'>USERNAME</replaceable></arg>
+      <arg choice='opt'><option>--password</option>=<replaceable class='parameter'>PASSWORD</replaceable></arg>
       <arg choice='opt' rep='repeat'>target name</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -122,7 +124,23 @@
 	  <para>
 	    Specify server which will be used. The server full URL must be
 	    entered, possibly with username and password. The default is
-	    <emphasis>http://localhost:8889/api</emphasis>.
+	    <emphasis>localhost:8889/api</emphasis>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--user</option>=<replaceable class='parameter'>USERNAME</replaceable></term>
+	<listitem>
+	  <para>
+	    Specify username for server login.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--password</option>=<replaceable class='parameter'>PASSWORD</replaceable></term>
+	<listitem>
+	  <para>
+	    Specify password for server login.
 	  </para>
 	</listitem>
       </varlistentry>
