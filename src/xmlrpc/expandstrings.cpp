@@ -66,10 +66,14 @@ void ExpandStringDevice::writeTo (std::ostream &os)
 		os << "unknow device " << deviceName << std::endl;
 		return;
 	}
+	os << "<table>" << std::endl;
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		os << (*iter)->getName () << "=" << getDisplayValue (*iter) << std::endl;
+		os << " <tr><td>" << (*iter)->getName () << "</td><td id='" << deviceName << "_" << (*iter)->getName () << "'>---</td></tr>" << std::endl;
 	}
+	os << "</table>" << std::endl << "<script type='text/javascript' language='javascript'>" << std::endl
+		<< "refreshDeviceTable('" << deviceName << "');" << std::endl
+		<< "</script>" << std::endl;
 }
 
 ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valueName)

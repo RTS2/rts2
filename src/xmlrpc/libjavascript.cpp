@@ -869,6 +869,20 @@ const char *setGetApi =
     "this.input.value = t.d[this.variable];\n"
   "}\n"
   "hr.send(null);\n"
+"}\n"
+
+"function refreshDeviceTable (device){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/get?d=' + device + '&e=1', true);\n"
+  "hr.device = device;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "for (v in t.d) {\n"
+      "document.getElementById(this.device + '_' + v).innerHTML = t.d[v];\n"
+    "}\n"  
+  "}\n"
+  "hr.send(null);\n"
 "}\n";
 
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
