@@ -390,6 +390,19 @@ AC_SUBST(A3200)
 AC_SUBST(LIB_A3200)
 AC_SUBST(INC_A3200)
 
+# Check for Boltwood
+AC_ARG_WITH(boltwood,
+[  --with-boltwood        path for Boltwood SDK],
+BOLTWOOD="${withval}";
+LIB_BOLTWOOD="${withval}/weather/libOCWeather.a ${withval}/common/libOCCdrivers.a ${withval}/util/libMTutil.a";
+INC_BOLTWOOD="-I${withval}",
+[BOLTWOOD=no])
+
+AM_CONDITIONAL(BOLTWOOD, test x$BOLTWOOD != xno)
+AC_SUBST(BOLTWOOD)
+AC_SUBST(LIB_BOLTWOOD)
+AC_SUBST(INC_BOLTWOOD)
+
 # Define prefix variable
 
 AH_TEMPLATE([RTS2_PREFIX],[prefix])
@@ -802,6 +815,7 @@ DOME's:
 
 SENSOR's:
   A3200         ${A3200}
+  BOLTWOOD      ${BOLTWOOD}
 
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}

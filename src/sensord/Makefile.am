@@ -143,3 +143,17 @@ else
 EXTRA_DIST += a3200.cpp
 
 endif
+
+if BOLTWOOD
+
+bin_PROGRAMS += rts2-sensor-bwcloudsensorii-weather
+
+rts2_sensor_bwcloudsensorii_weather_SOURCES = boltwood.cpp
+rts2_sensor_bwcloudsensorii_weather_CXXFLAGS = @INC_BOLTWOOD@
+rts2_sensor_bwcloudsensorii_weather_LDADD = @LIB_BOLTWOOD@ ${LDADD}
+
+else
+
+EXTRA_DIST += boltwood.cpp
+
+endif 
