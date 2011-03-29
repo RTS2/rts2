@@ -31,6 +31,20 @@ ConnExe::~ConnExe ()
 {
 }
 
+int32_t typeFromString (const char *dt_string)
+{
+	if (dt_string == NULL)
+		return 0;
+	static const char *types [0xb] = {"DT_RA", "DT_DEC", "DT_DEGREES", "DT_DEG_DIST", "DT_PERCENTS", "DT_ROTANG", "DT_HEX", "DT_BYTESIZE", "DT_KMG", "DT_INTERVAL", "DT_ONOFF"};
+	const char** vn = types;
+	for (int32_t i = 0; i < 0xc; i++, vn++)
+	{
+		if (!strcasecmp (*vn, dt_string))
+			return i << 16;
+	}
+	throw rts2core::Error (std::string ("invalid data type ") + dt_string);
+}
+
 void ConnExe::processCommand (char *cmd)
 {
 	char *device;
@@ -115,7 +129,8 @@ void ConnExe::processCommand (char *cmd)
 	{
 		char *vname, *desc;
 		double val;
-		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || !paramEnd ())
+		char *rts2_type = NULL;
+		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || (!paramEnd () && ( paramNextString (&rts2_type) || !paramEnd () )) )
 			throw rts2core::Error ("invalid double string");
 		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
@@ -135,7 +150,7 @@ void ConnExe::processCommand (char *cmd)
 		else
 		{
 			rts2core::ValueDouble *vd;
-			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false);
+			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, typeFromString (rts2_type));
 			vd->setValueDouble (val);
 			master->updateMetaInformations (vd);
 		}

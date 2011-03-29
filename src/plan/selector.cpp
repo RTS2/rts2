@@ -392,6 +392,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 {
 	if (started)
 	{
+		// see what was selected from the queue..
 		interrupt->setValueBool (false);
 		sendValueAll (interrupt);
 		if (selectorQueue)
@@ -399,6 +400,8 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 			{
+				// log it..
+				logStream (MESSAGE_INFO) << "Selecting from queue " << selectorQueue->getDisplayValue () << " ," << eq << sendLog;
 				eq->front ().target->startObservation ();
 				// update plan entry..
 				if (next_plan_id->getValueInteger () >= 0)

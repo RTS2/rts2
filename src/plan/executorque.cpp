@@ -88,7 +88,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false, RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
-	skipBelowHorizon->setValueBool (false);
+	skipBelowHorizon->setValueBool (true);
 
 	master->createValue (testConstraints, (sn + "_test_constr").c_str (), "test target constraints (e.g. not only simple horizon)", false, RTS2_VALUE_WRITABLE);
 	testConstraints->setValueBool (true);
@@ -254,23 +254,6 @@ void ExecutorQueue::beforeChange ()
 			break;
 	}
 	filter ();
-}
-
-void ExecutorQueue::popFront ()
-{
-	switch (queueType->getValueInteger ())
-	{
-		case QUEUE_FIFO:
-		case QUEUE_HIGHEST:
-		case QUEUE_WESTEAST:
-		case QUEUE_WESTEAST_MERIDIAN:
-			if (frontTimeExpires ())
-				pop_front ();
-			break;
-		case QUEUE_CIRCULAR:
-			break;
-	}
-	updateVals ();
 }
 
 void ExecutorQueue::clearNext (rts2db::Target *currentTarget)

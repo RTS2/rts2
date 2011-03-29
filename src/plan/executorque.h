@@ -100,8 +100,6 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 */
 		void beforeChange ();
 
-		void popFront ();
-
 		void clearNext (rts2db::Target *currentTarget);
 
 		/**
@@ -115,6 +113,17 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		int queueFromConn (Rts2Conn *conn, bool withTimes = false);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
+
+		// prints queue configuration into stream
+		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
+		{
+			os << " type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " contains";
+			for (std::vector <int>::iterator iter = eq->nextIds->valueBegin (); iter != eq->nextIds->valueEnd (); iter++)
+			{
+				os << " " << *iter;
+			}
+			return os;
+		}
 
 	private:
 		Rts2DeviceDb *master;
@@ -151,6 +160,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		// remove timers set by targets in queue
 		void removeTimers ();
+
 };
 
 }

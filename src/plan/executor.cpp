@@ -770,8 +770,6 @@ void Executor::doSwitch ()
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{
-		if (getActiveQueue ()->size () != 0)
-			getActiveQueue ()->popFront ();
 		// create again our target..since conditions changed, we will get different target id
 		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
 	}
@@ -791,7 +789,6 @@ void Executor::doSwitch ()
 			{
 				processTarget (currentTarget);
 				currentTarget = getActiveQueue ()->front ().target;
-				getActiveQueue ()->popFront ();
 			}
 			// switch auto loop back to true
 			autoLoop->setValueBool (true);
@@ -800,7 +797,6 @@ void Executor::doSwitch ()
 		else
 		{
 			currentTarget = getActiveQueue ()->front ().target;
-			getActiveQueue ()->popFront ();
 		}
 	}
 	if (currentTarget)
