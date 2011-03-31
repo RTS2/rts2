@@ -88,7 +88,7 @@ void TargetSet::load (int id)
 	(*this)[id] = tar;
 }
 
-void TargetSet::loadByName (const char *name, bool approxName)
+void TargetSet::loadByName (const char *name, bool approxName, bool ignoreCase)
 {
 	std::ostringstream os;
 	// replace spaces with %..
@@ -100,11 +100,25 @@ void TargetSet::loadByName (const char *name, bool approxName)
 			if (n[l] == ' ')
 				n[l] = '%';
 		}
-		os << "tar_name LIKE '" << n << "'";
+		if (ignoreCase)
+		{
+			os << "lower(tar_name) LIKE lower('" << n << "')";
+		}
+		else
+		{
+			os << "tar_name LIKE '" << n << "'";
+		}
 	}
 	else
 	{
-		os << "tar_name = '" << n << "'";
+		if (ignoreCase)
+		{
+			os << "lower(tar_name) = lower('" << n << "')";
+		}
+		else
+		{
+			os << "tar_name = '" << n << "'";
+		}
 	}
 	where = os.str ();
 	order_by = "tar_id asc";

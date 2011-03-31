@@ -136,10 +136,11 @@ class TargetSet:public std::map <int, Target * >
 		 *
 		 * @param name         target name
 		 * @param approxName   if true, target is seached using approximation - spaces are replaced with %
+		 * @param ignoreCase   ignore lower/upper case
 		 *
 		 * @throw SqlError if no target is found.
 		 */
-		void loadByName (const char *name, bool approxName = true);
+		void loadByName (const char *name, bool approxName = true, bool ignoreCase = true);
 
 		/**
 		 * Load targets with given label.

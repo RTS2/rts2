@@ -186,9 +186,11 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			rts2db::TargetSet tar_set;
 			const char *name = params->getString ("n", "");
+			bool ic = params->getInteger ("ic",1);
+			bool pm = params->getInteger ("pm",1);
 			if (name[0] == '\0')
 				throw XmlRpcException ("empty n parameter");
-			tar_set.loadByName (name);
+			tar_set.loadByName (name, pm, ic);
 			jsonTargets (tar_set, os, params);
 		}
 		else if (vals[0] == "tbyid")
