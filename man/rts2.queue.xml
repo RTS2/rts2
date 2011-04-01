@@ -187,6 +187,13 @@
 	</varlistentry>
       </variablelist>
     </refsect2>
+    <refsect2>
+      <title>Queue enabled</title>
+      <para>
+	Determines if the queue will be used during selection. If the queue is
+	disabled, its objects will be ignored by the selection algorithm.
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
