@@ -92,7 +92,6 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 */
 		void filter ();
 
-
 		void sortWestEastMeridian ();
 		
 		/**
@@ -117,13 +116,15 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		// prints queue configuration into stream
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
-			os << " type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " contains";
+			os << " type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
 			for (std::vector <int>::iterator iter = eq->nextIds->valueBegin (); iter != eq->nextIds->valueEnd (); iter++)
 			{
 				os << " " << *iter;
 			}
 			return os;
 		}
+
+		const rts2core::ValueBool * getEnabledValue () { return queueEnabled; }
 
 	private:
 		Rts2DeviceDb *master;
@@ -138,6 +139,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::ValueBool *skipBelowHorizon;
 		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
+		rts2core::ValueBool *queueEnabled;
 
 		struct ln_lnlat_posn **observer;
 

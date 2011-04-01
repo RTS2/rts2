@@ -96,6 +96,9 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, RTS2_VALUE_WRITABLE);
 	removeAfterExecution->setValueBool (true);
 
+	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queuei for selection", false, RTS2_VALUE_WRITABLE);
+	queueEnabled->setValueBool (true);
+
 	queueType->addSelVal ("FIFO");
 	queueType->addSelVal ("CIRCULAR");
 	queueType->addSelVal ("HIGHEST");
@@ -273,6 +276,8 @@ void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
 int ExecutorQueue::selectNextObservation (int &pid)
 {
 	removeTimers ();
+	if (queueEnabled->getValueBool () == false)
+		return -1;
 	if (size () > 0)
 	{
 		struct ln_hrz_posn hrz;

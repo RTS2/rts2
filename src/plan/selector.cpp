@@ -93,6 +93,8 @@ class SelectorDev:public Rts2DeviceDb
 
 		virtual int init ();
 
+		virtual void valueChanged (rts2core::Value *value);
+
 	private:
 		rts2plan::Selector * sel;
 
@@ -119,11 +121,10 @@ class SelectorDev:public Rts2DeviceDb
 
 		rts2core::StringArray *selQueNames;
 
-		rts2core::ValueSelection *selectorQueue;
 		rts2core::ValueSelection *lastQueue;
 
-		std::list <rts2plan::ExecutorQueue> queues;
-		std::list <const char *> queueNames;
+		std::deque <rts2plan::ExecutorQueue> queues;
+		std::deque <const char *> queueNames;
 
 		std::list <const char *> filterOptions;
 		std::list <const char *> filterFileOptions;
@@ -142,7 +143,7 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	sel = NULL;
 	observer = NULL;
 
-	selectorQueue = lastQueue = NULL;
+	lastQueue = NULL;
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
@@ -265,17 +266,13 @@ int SelectorDev::init ()
 	if (!queueNames.empty ())
 	{
 		createValue (selQueNames, "queue_names", "selector queue names", false);
-		createValue (selectorQueue, "selector_queue", "type of selector queue mechanism", false, RTS2_VALUE_WRITABLE);
-		selectorQueue->addSelVal ("auto", NULL);
-
 		createValue (lastQueue, "last_queue", "queue used for last selection", false);
 		lastQueue->addSelVal ("-");
 	}
 	
-	for (std::list <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
+	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
 	{
 		queues.push_back (rts2plan::ExecutorQueue (this, *iter, &observer));
-		selectorQueue->addSelVal (*iter, (Rts2SelData *) &(queues.back ()));
 		lastQueue->addSelVal (*iter);
 
 		selQueNames->addValue (std::string (*iter));
@@ -338,41 +335,22 @@ int SelectorDev::selectNext ()
 		{
 			az1 = az2 = rts2_nan ("f");
 		}
-	 	if (selectorQueue && getMasterState () == SERVERD_NIGHT)
+	 	if (getMasterState () == SERVERD_NIGHT)
 		{
 			int id = -1;
 			int q = 1;
 			int next_pid = -1;
-			std::list <rts2plan::ExecutorQueue>::iterator iter;
-			switch (selectorQueue->getValueInteger ())
+			std::deque <rts2plan::ExecutorQueue>::iterator iter;
+			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
-				case 0:
-					for (iter = queues.begin (); iter != queues.end (); iter++, q++)
-					{
-						iter->filter ();
-						id = iter->selectNextObservation (next_pid);
-						if (id >= 0)
-						{
-							lastQueue->setValueInteger (q);
-							next_plan_id->setValueInteger (next_pid);
-							return id;
-						}
-					}
-					break;
-				default:
-					rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData ();
-					if (eq != NULL)
-					{
-						eq->filter ();
-						id = eq->selectNextObservation (next_pid);
-						if (id >= 0)
-						{
-							lastQueue->setValueInteger (selectorQueue->getValueInteger ());
-							next_plan_id->setValueInteger (next_pid);
-							return id;
-						}
-					}
-					break;
+				iter->filter ();
+				id = iter->selectNextObservation (next_pid);
+				if (id >= 0)
+				{
+					lastQueue->setValueInteger (q);
+					next_plan_id->setValueInteger (next_pid);
+					return id;
+				}
 			}
 			// use selector ass fall-back, if queues are empty
 			lastQueue->setValueInteger (0);
@@ -395,13 +373,13 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		// see what was selected from the queue..
 		interrupt->setValueBool (false);
 		sendValueAll (interrupt);
-		if (selectorQueue)
+		if (lastQueue->getValueInteger () > 0)
 		{
-			rts2plan::ExecutorQueue *eq = (rts2plan::ExecutorQueue *) selectorQueue->getData (lastQueue->getValueInteger ());
+			rts2plan::ExecutorQueue *eq = &(queues[lastQueue->getValueInteger () - 1]);
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 			{
 				// log it..
-				logStream (MESSAGE_INFO) << "Selecting from queue " << selectorQueue->getDisplayValue () << " ," << eq << sendLog;
+				logStream (MESSAGE_INFO) << "Selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " ," << eq << sendLog;
 				eq->front ().target->startObservation ();
 				// update plan entry..
 				if (next_plan_id->getValueInteger () >= 0)
@@ -460,6 +438,25 @@ int SelectorDev::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 	return Rts2DeviceDb::setValue (old_value, new_value);
 }
 
+void SelectorDev::valueChanged (rts2core::Value *value)
+{
+	if ((value == selEnabled && selEnabled->getValueBool ())
+		|| value == queueOnly)
+		updateNext ();
+	else
+	{
+		for (std::deque <rts2plan::ExecutorQueue>::iterator qi = queues.begin (); qi != queues.end (); qi++)
+		{
+			if (qi->getEnabledValue () == value)
+			{
+				updateNext ();
+				break;
+			}
+		}
+	}
+	Rts2DeviceDb::valueChanged (value);
+}
+
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("next"))
@@ -484,8 +481,8 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
-		std::list <rts2plan::ExecutorQueue>::iterator qi = queues.begin ();
-		std::list <const char *>::iterator iter;
+		std::deque <rts2plan::ExecutorQueue>::iterator qi = queues.begin ();
+		std::deque <const char *>::iterator iter;
 		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, qi++)
 		{
 			if (strcmp (*iter, name) == 0)
