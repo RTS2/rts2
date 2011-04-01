@@ -54,6 +54,15 @@ class Davis: public SensorWeather
 		void setHumidity (float in_humidity)
 		{
 			humidity->setValueFloat (in_humidity);
+			if (!isnan (maxHumidity->getValueFloat ()) && humidity->getValueFloat () > maxHumidity->getValueFloat ())
+			{
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
+				valueError (humidity);
+			}
+			else
+			{
+				valueGood (humidity);
+			}
 		}
 		float getHumidity ()
 		{
@@ -163,6 +172,8 @@ class Davis: public SensorWeather
 
 		rts2core::ValueFloat *maxWindSpeed;
 		rts2core::ValueFloat *maxPeekWindSpeed;
+
+		rts2core::ValueFloat *maxHumidity;
 
 		rts2core::ValueInteger *udpPort;
 };
