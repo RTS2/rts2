@@ -669,6 +669,15 @@ class Telescope:public rts2core::Device
 		rts2core::ValueSelection *raGuide;
 		rts2core::ValueSelection *decGuide;
 
+		/**
+		 * Returns differential tracking values. Telescope must support
+		 * differential tracking for those to not core dump. Those methods
+		 * should be called only from child subclass which pass true for
+		 * diffTrack in Telescope contructor.
+		 */
+		double getDiffRa () { return diffRaDec->getRa (); }
+		double getDiffDec () { return diffRaDec->getDec (); }
+
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 	private:
