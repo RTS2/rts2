@@ -318,3 +318,15 @@ char * strcasestr(const char * haystack, const char * needle)
 	return NULL;
 }
 #endif // HAVE_STRCASESTR
+
+#ifndef HAVE_GETLINE
+ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+{
+	if (*lineptr == NULL)
+		*lineptr = (char *) malloc (*n);
+	char *ret = fgets (*lineptr, *n, stream);
+	if (ret == NULL)
+		return -1;
+	return *n; 
+}
+#endif

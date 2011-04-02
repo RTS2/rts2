@@ -254,4 +254,8 @@ struct ci_char_traits : public std::char_traits<char>
 
 typedef std::basic_string<char, ci_char_traits> ci_string;
 
+#ifndef HAVE_GETLINE
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
+
 #endif							 /* !__RTS_UTILSFUNC__ */
