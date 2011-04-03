@@ -109,6 +109,26 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		}
 		os << ']';
 	}
+	// returns array with selection value strings
+	else if (vals.size () == 1 && vals[0] == "selval")
+	{
+		const char *device = params->getString ("d","");
+		const char *variable = params->getString ("n", "");
+		if (variable[0] == '\0')
+			throw XmlRpcException ("variable name not set - missing or empty n parameter");
+		if (isCentraldName (device))
+			conn = master->getSingleCentralConn ();
+		else
+			conn = master->getOpenConnection (device);
+		if (conn == NULL)
+			throw XmlRpcException ("cannot find device with given name");
+		rts2core::Value * rts2v = master->getValue (device, variable);
+		if (rts2v == NULL)
+			throw XmlRpcException ("cannot find variable");
+		if (rts2v->getValueBaseType () != RTS2_VALUE_SELECTION)
+			throw XmlRpcException ("variable is not selection");
+		sendSelection (os, (rts2core::ValueSelection *) rts2v);
+	}
 	else if (vals.size () == 1)
 	{
 		os << "{";
@@ -370,6 +390,19 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 			os << "\"" << value->getDisplayValue () << "\"";
 			break;
 	}
+}
+
+void API::sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
+{
+	os << "[";
+	for (std::vector <rts2core::SelVal>::iterator iter = value->selBegin (); iter != value->selEnd (); iter++)
+	{
+		if (iter != value->selBegin ())
+			os << ",";
+		os << '"' << iter->name << '"';
+	}
+	os << "]";
+
 }
 
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
