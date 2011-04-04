@@ -229,7 +229,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		if (self.isSubWindow == True):
 			return
 		if (self.shiftRa != 0 or self.shiftDec != 0):
-			self.incrementValue("OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__(),"T0")
+			self.incrementValue("OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__(), self.mountDevice)
 
 	def fullWindow(self):
 		if (self.flat.window is None):
@@ -399,7 +399,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
-	def run(self):
+	def run(self, domeDevice='DOME', tmpDirectory='/tmp/', mountDevice='T0'):
+		self.mountDevice= mountDevice
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
@@ -410,7 +411,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	self.usedFlats = self.morningFlats
 			self.takeFlats(False)
 			self.log('I','finished skyflats, closing dome')
-			self.sendCommand('close','DOME')
+			self.sendCommand('close',domeDevice)
 
 		if (self.doDarks):
 			self.log('I','finished flats, taking calibration darks')
@@ -425,7 +426,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	sig = self.usedFlats[i].signature()
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (sig))
-				self.createMasterFits('/tmp/master_%s.fits' % (sig), self.flatImages[i])
+				self.createMasterFits(tmpDirectory + '/master_%s.fits' % (sig), self.flatImages[i])
 				self.goodFlats.append(self.usedFlats[i])
 			else:
 			  	self.badFlats.append(self.usedFlats[i])

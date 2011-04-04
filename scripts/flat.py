@@ -17,6 +17,7 @@ f = FlatScript(eveningFlats=[Flat('Z'),Flat('u'),Flat('V'),Flat('B'),Flat('g'),F
 f.flatLevels(defaultNumberFlats=5,biasLevel=550,allowedOptimalDeviation=0.1)
 
 # Run it..
+# Configure domeDevice,tmpDirectory and mountDevice if your device names differ
 f.run()
 
 # Send some optional emails - configure before uncomenting this line
