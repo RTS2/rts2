@@ -335,7 +335,7 @@ int SelectorDev::selectNext ()
 		{
 			az1 = az2 = rts2_nan ("f");
 		}
-	 	if (getMasterState () == SERVERD_NIGHT)
+	 	if (getMasterState () == SERVERD_NIGHT && lastQueue != NULL)
 		{
 			int id = -1;
 			int q = 1;
