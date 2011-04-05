@@ -61,7 +61,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):rts2core::Dev
 
 	if (diffTrack)
 	{
-		createValue (diffTrackRaDec, "DTRA", "[deg/hour] differential tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+		createValue (diffTrackRaDec, "DSPEED", "[deg/hour] differential tracking speed", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
 		diffTrackRaDec->setValueRaDec (0, 0);
 	}
 	else
@@ -109,7 +109,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):rts2core::Dev
 
 	if (diffTrack)
 	{
-		createValue (diffRaDec, "DSPEED", "[degrees/hour] MPEC differential tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES, TEL_MOVING);
+		createValue (diffRaDec, "mpec_dif", "[degrees/hour] calculated MPEC differential tracking", true, RTS2_DT_DEGREES, TEL_MOVING);
 		diffRaDec->setValueRaDec (0, 0);
 	}
 	else
