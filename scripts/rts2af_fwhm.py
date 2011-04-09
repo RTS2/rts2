@@ -64,10 +64,11 @@ class main(rts2af.AFScript):
         runTimeConfig.readConfiguration(configFileName)
 
         if( args.referenceFitsFileName):
+
             referenceFitsFileName = args.referenceFitsFileName[0]
-#            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-#                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
-#                sys.exit(1)
+            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
+                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                sys.exit(1)
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
@@ -78,6 +79,7 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
         hdu= rts2af.FitsHDU( referenceFitsFileName)
+
         if(hdu.headerProperties()):
             print "append "+ hdu.fitsFileName
         else:
@@ -87,11 +89,11 @@ class main(rts2af.AFScript):
 
         cat.runSExtractor()
         cat.createCatalogue()
-        #cat.cleanUp()
+        cat.cleanUpReference()
 
         cat.average('FWHM_IMAGE')
-        cat.displayCatalogue()
-        time.sleep(1)
+        # does not work yet cat.ds9WriteRegionFile(writeSelected=True)
+        #cat.displayCatalogue()
 
 
 if __name__ == '__main__':

@@ -970,7 +970,7 @@ class ReferenceCatalogue(Catalogue):
 
     def checkAcceptance(self, sxObject=None, circle=None):
         distance= sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
-        
+ 
         if( circle.transformedRadius >= 0):
             if( distance < abs( circle.transformedRadius)):
                 return True
@@ -1022,6 +1022,9 @@ class AcceptanceRegion():
     """Class holding the properties of the acceptance circle, units are (binned) pixel"""
     def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
         self.fitsHDU= fitsHDU
+        self.naxis1= 0
+        self.naxis2= 0
+
         try:
             # if binning is used these values represent the rebinned pixels, e.g. 1x1 4096 and 2x2 2048
             self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
@@ -1282,9 +1285,6 @@ class FitsHDU():
             self.isValid= True
             logger.error('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
 
-
-
-            
         try:
             self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
             self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
@@ -1452,7 +1452,7 @@ class ServiceFileOperations():
     def absolutePath(self, fileName=None):
         if( fileName==None):
             logger.error('ServiceFileOperations.absolutePath: no file name given')
-
+            
         pLeadingSlash = re.compile( r'\/.*')
         leadingSlash = pLeadingSlash.match(fileName)
         if( leadingSlash):
