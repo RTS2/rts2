@@ -283,7 +283,7 @@ int NUT::init ()
 	if (ret)
 		return ret;
 
-	setIdleInfoInterval (10);
+	setIdleInfoInterval (20);
 	return 0;
 }
 
@@ -307,27 +307,33 @@ int NUT::info ()
 
 	// perform variable checks..
 	
-	if (bcharge && bcharge->getValueFloat () < minbcharge->getValueFloat ())
+	if (bcharge)
 	{
-	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
-		setWeatherTimeout (1200, "low battery charge");
-		valueError (bcharge);
-	}
-	else
-	{
-		valueGood (bcharge);
+		if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
+		{
+		 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
+			setWeatherTimeout (1200, "low battery charge");
+			valueError (bcharge);
+		}
+		else
+		{
+			valueGood (bcharge);
+		}
 	}
 
-	if (bruntime && bruntime->getValueInteger () < mintimeleft->getValueInteger ())
+	if (bruntime)
 	{
-	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
-		setWeatherTimeout (1200, "low minimal battery time");
-		valueError (bruntime);
-	}
-	else
-	{
-		valueGood (bruntime);
-	}
+		if (bruntime->getValueInteger () < mintimeleft->getValueInteger ())
+		{
+		 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
+			setWeatherTimeout (1200, "low minimal battery time");
+			valueError (bruntime);
+		}
+		else
+		{
+			valueGood (bruntime);
+		}
+	}	
 
 	// if there is any UPS error, set big timeout..
 	if (!(upsstatus->getValue () == std::string("OL CHRG") || upsstatus->getValue () == std::string ("OB DISCHRG")
