@@ -37,6 +37,8 @@ namespace rts2camd
 
 typedef enum {A_plus, A_minus, B, C, D} edtAlgoType;
 
+typedef enum {CHANNEL_4, CHANNEL_16} t_controllerType;
+
 /**
  * Variable for EDT-SAO registers. It holds information
  * about which register the variable represents and which
@@ -57,7 +59,7 @@ class ValueEdt: public rts2core::ValueDoubleMinMax
 		 * @param in_reg   register prefix
 		 * @param in_algo  type of algorithm used to convert float value to register value
 		 */
-		void initEdt (long in_reg, edtAlgoType in_algo);
+		void initEdt (long in_reg, edtAlgoType in_algo, t_controllerType ct);
 
 		/**
 		 * Convert float value to register value.
@@ -66,7 +68,7 @@ class ValueEdt: public rts2core::ValueDoubleMinMax
 		 *
 		 * @return hex value of in_v
 		 */
-		long getHexValue (float in_v);
+		long getHexValue (float in_v, t_controllerType controllerType);
 	private:
 		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
 		long reg;
@@ -90,7 +92,7 @@ ValueEdt::~ValueEdt (void)
 {
 }
 
-void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
+void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, t_controllerType controllerType)
 {
 	reg = (in_reg << 12);
 	algo = in_algo;
@@ -107,8 +109,17 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 			setMax (10);
 			break;
 		case B:
-			setMin (-5);
-			setMax (5);
+			switch (controllerType)
+			{
+				case CHANNEL_4:
+					setMin (-5);
+					setMax (5);
+					break;
+				case CHANNEL_16:
+					setMin (-4);
+					setMax (6);
+					break;
+			}
 			break;
 		case C:
 			setMin (0);
@@ -116,12 +127,20 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 			break;
 		case D:
 			setMin (0);
-			setMax (25.9);
+			switch (controllerType)
+			{
+				case CHANNEL_4:
+					setMax (25.9);
+					break;
+				case CHANNEL_16:
+					setMax (30);
+					break;
+			}
 			break;
 	}
 }
 
-long ValueEdt::getHexValue (float in_v)
+long ValueEdt::getHexValue (float in_v, t_controllerType controllerType)
 {
 	long val = 0;
 	// calculate value by algorithm
@@ -134,10 +153,18 @@ long ValueEdt::getHexValue (float in_v)
 			val = (long) (fabs (in_v) * 409.5);
 			break;
 		case B:
-			val = (long) ((5 - in_v) * 409.5);
+			val = (long) ((getMax () - in_v) * 409.5);
 			break;
 		case C:
-			val = (long) (in_v * 204.7);
+			switch (controllerType)
+			{
+				case CHANNEL_4:
+					val = (long) (in_v * 204.7);
+					break;
+				case CHANNEL_16:
+					val = (long) (in_v * 204.75);
+					break;
+			}
 			break;
 		case D:
 			val = (long) (in_v * 136.5);
@@ -211,7 +238,7 @@ class EdtSao:public Camera
 		bool notimeout;
 		int sdelay;
 
-		enum {CHANNEL_4, CHANNEL_16} controllerType;
+		t_controllerType controllerType;
 
 		bool not_write;
 
@@ -1200,46 +1227,19 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	grayScale = NULL;
 
 	createValue (vhi, "VHI", "[V] V high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	vhi->initEdt (0xA0080, A_plus);
-
 	createValue (vlo, "VLO", "[V] V low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	vlo->initEdt (0xA0188, A_minus);
-
 	createValue (phi, "PHI", "[V] P high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	phi->initEdt (0xA0084, A_plus);
-
 	createValue (plo, "PLO", "[V] P low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	plo->initEdt (0xA0184, A_minus);
-
 	createValue (shi, "SHI", "[V] S high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	shi->initEdt (0xA008C, A_plus);
-
 	createValue (slo, "SLO", "[V] S low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	slo->initEdt (0xA0180, A_minus);
-
 	createValue (rhi, "RHI", "[V] R high", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	rhi->initEdt (0xA0088, A_plus);
-
 	createValue (rlo, "RLO", "[V] R low", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	rlo->initEdt (0xA018C, A_minus);
-
 	createValue (rd, "RD", "[V] RD", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	rd->initEdt (0xA0384, C);
-
 	createValue (od1r, "OD1_R", "[V] OD 1 right", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	od1r->initEdt (0xA0388, D);
-
 	createValue (od2l, "OD2_L", "[V] OD 2 left", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	od2l->initEdt (0xA038C, D);
-
 	createValue (og1r, "OG1_R", "[V] OG 1 right", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	og1r->initEdt (0xA0288, B);
-
 	createValue (og2l, "OG2_L", "[V] OG 2 left", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	og2l->initEdt (0xA028C, B);
-
 	createValue (dd, "DD", "[V] DD", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL, CAM_WORKING);
-	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
 	lastSkipLines = lastJiggleLines = lastX = lastY = lastW = lastH = lastSplitMode = lastPartialReadout = -1;
@@ -1298,12 +1298,12 @@ int EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 	if (old_value->testValue (new_value) == false)
 		return -2;
 	old_value->setValueDouble (new_value);
-	return edtwrite (old_value->getHexValue (new_value));
+	return edtwrite (old_value->getHexValue (new_value, controllerType));
 }
 
 int EdtSao::setEdtValue (ValueEdt * old_value, rts2core::Value * new_value)
 {
-	int ret = edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
+	int ret = edtwrite (old_value->getHexValue (new_value->getValueFloat (), controllerType));
 	logStream (MESSAGE_INFO) << "setting "<< old_value->getName () << " to " << new_value->getValueFloat () << sendLog;
 	if (old_value == rd)
 		sleep (1);
@@ -1430,6 +1430,31 @@ int EdtSao::initValues ()
 	addConstValue ("DEVNUM", "device unit number", devunit);
 	addConstValue ("DEVNT", "device no timeout", notimeout);
 	addConstValue ("SDELAY", "device serial delay", sdelay);
+
+	vhi->initEdt (0xA0080, A_plus, controllerType);
+	vlo->initEdt (0xA0188, A_minus, controllerType);
+	phi->initEdt (0xA0084, A_plus, controllerType);
+	plo->initEdt (0xA0184, A_minus, controllerType);
+	shi->initEdt (0xA008C, A_plus, controllerType);
+	slo->initEdt (0xA0180, A_minus, controllerType);
+	rhi->initEdt (0xA0088, A_plus, controllerType);
+	rlo->initEdt (0xA018C, A_minus, controllerType);
+	rd->initEdt (0xA0384, C, controllerType);
+	od1r->initEdt (0xA0388, D, controllerType);
+	od2l->initEdt (0xA038C, D, controllerType);
+	og1r->initEdt (0xA0288, B, controllerType);
+	og2l->initEdt (0xA028C, B, controllerType);
+	
+	switch (controllerType)
+	{
+		case CHANNEL_4:
+			dd->initEdt (0xA0380, C, controllerType);
+			break
+		case CHANNEL_16:
+			dd->initEdt (0xA0380, D, controllerType);
+			break;
+	}
+
 	return Camera::initValues ();
 }
 
