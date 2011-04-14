@@ -117,9 +117,12 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
 			os << " type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
-			for (std::vector <int>::iterator iter = eq->nextIds->valueBegin (); iter != eq->nextIds->valueEnd (); iter++)
+			std::vector <int>::iterator niditer = eq->nextIds->valueBegin ();
+			std::vector <double>::iterator startiter = eq->nextStartTimes->valueBegin ();
+			std::vector <double>::iterator enditer = eq->nextEndTimes->valueBegin ();
+			for (; niditer != eq->nextIds->valueEnd (); niditer++, startiter++, enditer++)
 			{
-				os << " " << *iter;
+				os << " " << *niditer << "(" << LibnovaDateDouble (*startiter) << " to " << LibnovaDateDouble (*enditer) << ")";
 			}
 			return os;
 		}
@@ -163,6 +166,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		// remove timers set by targets in queue
 		void removeTimers ();
 
+		// remove target with debug entry why it was removed from the queue
+		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const char *reason);
 };
 
 }

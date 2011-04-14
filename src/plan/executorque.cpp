@@ -83,9 +83,9 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	observer = _observer;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
-	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
-	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false, RTS2_VALUE_WRITABLE);
-	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false, RTS2_VALUE_WRITABLE);
+	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false);
+	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
+	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (true);
@@ -401,14 +401,14 @@ void ExecutorQueue::filterBelowHorizon ()
 				if (firsttar == NULL)
 					firsttar = iter->target;
 
-				std::cout << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << std::endl;
+				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
 
 				push_back (*iter);
 				iter = erase (iter);
 			}
 			else
 			{
-				std::cout << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << std::endl;
+				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
 				iter = erase (iter);
 			}
 		}
@@ -417,18 +417,18 @@ void ExecutorQueue::filterBelowHorizon ()
 
 void ExecutorQueue::filterExpired ()
 {
-	ExecutorQueue::iterator iter = begin ();
-	if (iter == end ())
+	if (empty ())
 		return;
+	ExecutorQueue::iterator iter;
 	ExecutorQueue::iterator iter2 = begin ();
 	for (;iter2 != end ();)
 	{
 		double t_start = iter2->t_start;
 		double t_end = iter2->t_end;
 		if (!isnan (t_start) && t_start <= master->getNow () && !isnan (t_end) && t_end <= master->getNow ())
-			iter2 = erase (iter2);
+			iter2 = removeEntry (iter2, "both start and end times expired");
 		else if (iter2->target->observationStarted () && removeAfterExecution->getValueBool () == true)
-		  	iter2 = erase (iter2);
+		  	iter2 = removeEntry (iter2, "its observations started and removeAfterExecution was set to true");
 		else  
 			iter2++;
 	}
@@ -444,7 +444,7 @@ void ExecutorQueue::filterExpired ()
 		{
 			case QUEUE_FIFO:
 			case QUEUE_CIRCULAR:
-				do_erase = ((iter->target->observationStarted () && isnan (t_start)) || t_start <= master->getNow ());
+				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= master->getNow ()));
 				break;
 			default:
 				do_erase = (!isnan (t_start) && t_start <= master->getNow ());
@@ -453,7 +453,7 @@ void ExecutorQueue::filterExpired ()
 
 		if (do_erase)
 		{
-			iter = erase (iter);
+			iter = removeEntry (iter, "it was observed and next target start time passed");
 			iter2 = iter;
 			iter2++;
 		}
@@ -480,4 +480,10 @@ void ExecutorQueue::removeTimers ()
 {
 	master->deleteTimers (EVENT_NEXT_START);
 	master->deleteTimers (EVENT_NEXT_END);
+}
+
+ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const char *reason)
+{
+	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") because " << reason << sendLog;
+	return erase (iter);
 }
