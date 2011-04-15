@@ -126,13 +126,20 @@ class Configuration:
         self.cp[('basic', 'CCD_CAMERA')]= 'CD'
         self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
 
-        self.cp[('filter properties', 'U')]= '[0, U, 5074, -1500, 1500, 100, 40]'
-        self.cp[('filter properties', 'B')]= '[1, B, 4712, -1500, 1500, 100, 30]'
-        self.cp[('filter properties', 'V')]= '[2, V, 4678, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'R')]= '[4, R, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'I')]= '[4, I, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'X')]= '[5, X, 3270, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'Y')]= '[6, Y, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F01')]= '[0, U, 5074, -1500, 1500, 100, 40]'
+        self.cp[('filter properties', 'F02')]= '[1, B, 4712, -1500, 1500, 100, 30]'
+        self.cp[('filter properties', 'F03')]= '[2, V, 4678, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'F04')]= '[4, R, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'F05')]= '[4, I, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'F06')]= '[5, X, 3270, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F07')]= '[6, a, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F08')]= '[6, b, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F09')]= '[6, c, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F0A')]= '[6, d, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F0B')]= '[6, e, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F0C')]= '[6, f, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F0D')]= '[6, g, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'F0E')]= '[6, h, 3446, -1500, 1500, 100, 10]'
         self.cp[('filter properties', 'NOFILTER')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
         
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
@@ -186,8 +193,13 @@ class Configuration:
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
             self.defaults[(identifier)]= value
-#            print 'value ', self.defaults[(identifier)]
+        #            print 'value ', self.defaults[(identifier)]
  
+
+    def configurationFileName(self):
+        return  self.defaults['CONFIGURATION_FILE']
+
+    
     def configIdentifiers(self):
         return sorted(self.cp.iteritems())
 
@@ -214,16 +226,16 @@ class Configuration:
 
     def filterByName(self, name):
         for filter in  self.filters:
-            print "NAME>" + name + "<>" + filter.filterName
-            if( name == filter.filterName):
-                print "NAME" + name + filter.filterName
+            #print "NAME>" + name + "<>" + filter.name
+            if( name == filter.name):
+                #print "NAME: {0} {1}".format(name, filter.name)
                 return filter
 
         return False
 
     def filterInUseByName(self, name):
         for filter in  self.filtersInUse:
-            if( name == filter.filterName):
+            if( name == filter.name):
                 return filter
         return False
 
@@ -245,18 +257,17 @@ class Configuration:
             self.config.write(configfile)
 
     def readConfiguration( self, configFileName):
-
+        verbose=False
         config = ConfigParser.ConfigParser()
         try:
             config.readfp(open(configFileName))
         except:
-            logger.error('Configuration.readConfiguration: config file ' + configFileName + ' not found, exiting')
+            logger.error('Configuration.readConfiguration: config file >' + configFileName + '< not found or wrong syntax, exiting')
             sys.exit(1)
 
 # read the defaults
         for (section, identifier), value in self.configIdentifiers():
-             self.values[identifier]= value
-
+            self.values[identifier]= value
 # over write the defaults
         for (section, identifier), value in self.configIdentifiers():
 
@@ -264,7 +275,8 @@ class Configuration:
                 value = config.get( section, identifier)
             except:
                 logger.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
-# first bool, then int !
+
+            # first bool, then int !
             if(isinstance(self.values[identifier], bool)):
 #ToDO, looking for a direct way
                 if( value == 'True'):
@@ -305,14 +317,16 @@ class Configuration:
                             print 'filterInUse---------:>' + item + '<'
                         self.filtersInUse.append(item)
 
+                    
         if(verbose):
             for (identifier), value in self.defaultsIdentifiers():
                print "over ", identifier, self.values[(identifier)]
 
         if(verbose):
            for filter in self.filters:
-               print 'Filter --------' + filter.filterName
+               print 'Filter --------' + filter.name
                print 'Filter --------%d'  % filter.exposure 
+
 
         if(verbose):
             for filter in self.filtersInUse:
@@ -393,19 +407,27 @@ class SExtractorParams():
                 print "Reference element : >"+ element+"<"
             for element in  self.assoc:
                 print "Association element : >" + element+"<"
-
+class Setting:
+    """Class holding settings for a given position, offset and exposure time"""
+    def __init__(self, offset=0, exposure=0):
+        self.offset= offset
+        self.exposure = exposure
+                
 class Filter:
     """Class for filter properties"""
 
-    def __init__(self, filterName, focDef, lowerLimit, upperLimit, resolution, exposure, ):
-        self.filterName= filterName
+    def __init__(self, name, focDef, lowerLimit, upperLimit, resolution, exposure, ):
+        self.name= name
         self.focDef    = focDef
         self.lowerLimit= lowerLimit
         self.upperLimit= upperLimit
         self.stepSize  = resolution # [tick]
         self.exposure  = exposure
+        self.settings=[]
+        for offset in range (self.lowerLimit, self.upperLimit +  self.stepSize,  self.stepSize):
+            self.settings.append(Setting( offset, self.exposure))
 
-
+        
 class SXObject():
     """Class holding the used properties of SExtractor object"""
     def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
@@ -1320,7 +1342,7 @@ class FitsHDU():
                 if(key == 'BINNING'):
                     continue
             if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
-                logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
+##wildi                logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
                 break
             else:
                 self.headerElements[key] = fitsHDU[0].header[key]
@@ -1373,8 +1395,8 @@ class FitsHDUs():
             return self.referenceHDU
         else:
             return False
-    def findReferenceByFocPos(self, filterName):
-        filter=  runTimeConfig.filterByName(filterName)
+    def findReferenceByFocPos(self, name):
+        filter=  runTimeConfig.filterByName(name)
 #        for hdu in sorted(self.fitsHDUsList):
         for hdu in sorted(self.fitsHDUsList):
             if( filter.focDef < hdu.headerElements['FOC_POS']):
@@ -1383,10 +1405,10 @@ class FitsHDUs():
                 return hdu
         return False
 
-    def validate(self, filterName=None):
+    def validate(self, name=None):
         hdur= self.findReference()
         if( hdur== False):
-            hdur= self.findReferenceByFocPos(filterName)
+            hdur= self.findReferenceByFocPos(name)
             if( hdur== False):
                 if( verbose):
                     print "Nothing found in findReference and findReferenceByFocPos"
@@ -1538,7 +1560,6 @@ class ServiceFileOperations():
         
         return  self.expandToTmp(fileName)
 
-        
     def expandToDs9CommandFileName( self, fitsHDU=None):
         if( fitsHDU==None):
             logger.error('ServiceFileOperations.expandToDs9COmmandFileName: no hdu given')
@@ -1553,6 +1574,16 @@ class ServiceFileOperations():
             print 'ServiceFileOperations:expandToDs9CommandFileName expanded to ' + fileName
         
         return  self.expandToTmp(fileName)
+        
+    def expandToAcquisitionBasePath(self, filter=None):
+
+        if( filter== None):
+            return runTimeConfig.value('BASE_DIRECTORY') + '/' + self.now + '/'  
+        else: 
+            return runTimeConfig.value('BASE_DIRECTORY') + '/' + self.now + '/' + filter.name + '/'
+        
+    def createAcquisitionBasePath(self, filter=None):
+        os.makedirs( self.expandToAcquisitionBasePath( filter))
 
         
     def defineRunTimePath(self, fileName=None):
@@ -1564,7 +1595,9 @@ class ServiceFileOperations():
                 self.runTimePath= root
                 return True
         return False
+        
 
+    
     def setModeExecutable(self, path):
         #mode = os.stat(path)
         os.chmod(path, 0744)
