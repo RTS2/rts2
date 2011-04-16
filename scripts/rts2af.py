@@ -107,7 +107,7 @@ import string
 
 class Configuration:
     """Configuration for any AFScript"""    
-    def __init__(self, fileName='rts2-autofocus-offline.cfg'):
+    def __init__(self, fileName='rts2af-offline.cfg'):
         self.configFileName = fileName
         self.values={}
         self.filters=[]
@@ -117,7 +117,7 @@ class Configuration:
 
         self.config = ConfigParser.RawConfigParser()
         
-        self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/autofocus/rts2-autofocus.cfg'
+        self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/autofocus/rts2af.cfg'
         
         self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
@@ -126,21 +126,21 @@ class Configuration:
         self.cp[('basic', 'CCD_CAMERA')]= 'CD'
         self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
 
-        self.cp[('filter properties', 'F01')]= '[0, U, 5074, -1500, 1500, 100, 40]'
-        self.cp[('filter properties', 'F02')]= '[1, B, 4712, -1500, 1500, 100, 30]'
-        self.cp[('filter properties', 'F03')]= '[2, V, 4678, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'F04')]= '[4, R, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'F05')]= '[4, I, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'F06')]= '[5, X, 3270, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F07')]= '[6, a, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F08')]= '[6, b, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F09')]= '[6, c, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F0A')]= '[6, d, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F0B')]= '[6, e, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F0C')]= '[6, f, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F0D')]= '[6, g, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'F0E')]= '[6, h, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'NOFILTER')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
+        self.cp[('filter properties', 'f01')]= '[0, U, 5074, -1500, 1500, 100, 40]'
+        self.cp[('filter properties', 'f02')]= '[1, B, 4712, -1500, 1500, 100, 30]'
+        self.cp[('filter properties', 'f03')]= '[2, V, 4678, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f04')]= '[4, R, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f05')]= '[4, I, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f06')]= '[5, X, 3275, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f07')]= '[6, H, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f08')]= '[6, b, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f09')]= '[6, c, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0a')]= '[6, d, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0b')]= '[6, e, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0c')]= '[6, f, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0d')]= '[6, g, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0e')]= '[6, h, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'nofilter')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
         
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
@@ -247,14 +247,16 @@ class Configuration:
 
             self.config.set(section, identifier, value)
 
+
         with open( self.configFileName, 'wb') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
-            configfile.write('# default configuration for rts2-autofocus.py\n')
+            configfile.write('# default configuration for rts2af-autofocus.py\n')
             configfile.write('# generated with rts2-autofous.py -p\n')
-            configfile.write('# see man rts2-autofocus.py for details\n')
+            configfile.write('# see man rts2af-autofocus.py for details\n')
             configfile.write('#\n')
             configfile.write('#\n')
             self.config.write(configfile)
+
 
     def readConfiguration( self, configFileName):
         verbose=False
@@ -320,12 +322,13 @@ class Configuration:
                     
         if(verbose):
             for (identifier), value in self.defaultsIdentifiers():
-               print "over ", identifier, self.values[(identifier)]
+                print "over ", identifier, self.values[(identifier)]
 
         if(verbose):
-           for filter in self.filters:
-               print 'Filter --------' + filter.name
-               print 'Filter --------%d'  % filter.exposure 
+            for filter in self.filters:
+                print 'Filter --------' + filter.name
+                print 'Filter --------%d'  % filter.exposure 
+                print 'Filter --------%d'  % filter.focDef
 
 
         if(verbose):
@@ -1158,7 +1161,7 @@ class Catalogues():
         if( self.writeFitInputValues()):
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
             cmd= [ runTimeConfig.value('FOCROOT'),
-                   "1", # 1 interactive, 0 batch
+                   "0", # 1 interactive, 0 batch
                    self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
                    serviceFileOp.now,
                    str(self.numberOfObjectsFoundInAllFiles),
@@ -1166,8 +1169,11 @@ class Catalogues():
                    self.dataFileNameFlux,
                    self.imageFilename]
         
-            output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
-            print output
+            output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            # 
+            #print 'output from subprocess {0}'.format(output)
+
+            print 'FOCUs: {0}'.format(output[0].split()[1])
         else:
             logger.error('Catalogues.fitTheValues: do not fit')
 
@@ -1460,10 +1466,12 @@ import os
 
 class ServiceFileOperations():
     """Class performing various task on files, e.g. expansion to (full) path"""
-    def __init__(self):
+    def __init__(self, runTimePath=None):
         self.now= datetime.datetime.now().isoformat()
-        self.runTimePath='/'
-
+        if( runTimePath==None):
+            self.runTimePath='/'
+        else:
+            self.runTimePath= runTimePath
     def prefix( self, fileName):
         return 'rts2af-' +fileName
 
