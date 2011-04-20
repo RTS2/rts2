@@ -580,6 +580,7 @@ Paramount::~Paramount (void)
 {
 	delete track0;
 	delete track1;
+	MKS3Free ();
 }
 
 int Paramount::processOption (int in_opt)
@@ -779,6 +780,8 @@ int Paramount::idle ()
 	if (ret)
 	{
 		sleep (10);
+		MKS3Free ();
+		init ();
 		return rts2core::Device::idle ();
 	}
 	ret = getHomeOffset (homeOff);
