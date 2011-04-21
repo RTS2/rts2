@@ -117,7 +117,7 @@ class Andor:public Camera
 		rts2core::ValueBool *useFT;
 		rts2core::ValueBool *useRunTillAbort;
 
-		rts2core::ValueInteger *VSAmp;
+		rts2core::ValueSelection *VSAmp;
 		rts2core::ValueBool *FTShutter;
 
 		rts2core::ValueDouble *subExposure;
@@ -126,7 +126,7 @@ class Andor:public Camera
 		rts2core::ValueSelection *ADChannel;
 		rts2core::ValueBool *EMOn;
 		rts2core::ValueInteger *HSpeed;
-		rts2core::ValueInteger *VSpeed;
+		rts2core::ValueSelection *VSpeed;
 		rts2core::ValueFloat *HSpeedHZ;
 		rts2core::ValueFloat *VSpeedHZ;
 
@@ -163,7 +163,8 @@ class Andor:public Camera
 		int printInfo ();
 		void printCapabilities ();
 		int printNumberADCs ();
-		int printHSSpeeds (int camera_type, int ad_channel, int amplifier);
+		int printHSSpeeds (int ad_channel, int amplifier);
+		int updateHSSpeeds ();
 		int printVSSpeeds ();
 
 		void initAndorValues ();
@@ -348,14 +349,13 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	ADChannel->setValueInteger (0);
 
 	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	VSpeed->setValueInteger (1);
 
-	createValue (EMOn, "EMON", "If EM is enabled", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (EMOn, "EMON", "Electron Multipliing status", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 	EMOn->setValueBool (false);
 	setDefaultFlip (0);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	HSpeed->setValueInteger (1);
+	HSpeed->setValueInteger (0);
 
 	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	FTShutter->setValueBool (false);
@@ -470,11 +470,9 @@ int Andor::setVSAmplitude (int in_vsamp)
 	int ret;
 	if ((ret = SetVSAmplitude (in_vsamp)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) << "andor setVSAmplitude error " << ret <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "andor setVSAmplitude error " << ret << sendLog;
 		return -1;
 	}
-	VSAmp->setValueInteger (in_vsamp);
 	return 0;
 }
 
@@ -494,16 +492,19 @@ int Andor::setHSSpeed (int in_amp, int in_hsspeed)
 		logStream (MESSAGE_WARNING) << "cannot set horizontal shift speed to " << in_hsspeed
 			<< ", changing request to " << (num - 1) << sendLog;
 		in_hsspeed = num - 1;
+		num = -1;
 	}
 	if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) << "andor setHSSpeed amplifier " << in_amp << " speed " << in_hsspeed << " error " << ret <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "andor setHSSpeed amplifier " << in_amp << " speed " << in_hsspeed << " error " << ret << sendLog;
 		return -1;
 	}
 	EMOn->setValueBool (in_amp == 0 ? true : false);
 	updateFlip ();
 	HSpeed->setValueInteger (in_hsspeed);
+	sendValueAll (HSpeed);
+	if (num == -1)
+		return -2;
 	return 0;
 
 }
@@ -513,11 +514,9 @@ int Andor::setVSSpeed (int in_vsspeed)
 	int ret;
 	if ((ret = SetVSSpeed (in_vsspeed)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) << "andor setVSSpeed error " << ret <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "andor setVSSpeed error " << ret << sendLog;
 		return -1;
 	}
-	VSpeed->setValueInteger (in_vsspeed);
 	return 0;
 }
 
@@ -660,21 +659,18 @@ int Andor::scriptEnds ()
 		setGain (defaultGain);
 
 	// set default values..
-	setVSSpeed (1);
 	VSpeed->setValueInteger (1);
-
+	setVSSpeed (VSpeed->getValueInteger ());
 	sendValueAll (VSpeed);
 
-	setHSSpeed (false, 1);
 	EMOn->setValueBool (false);
 	HSpeed->setValueInteger (1);
 
+	setHSSpeed (EMOn->getValueBool (), HSpeed->getValueInteger ());
 	sendValueAll (EMOn);
 	sendValueAll (HSpeed);
 
-	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	FTShutter->setValueBool (false);
-
 	sendValueAll (FTShutter);
 
 	setUseFT (true);
@@ -699,7 +695,7 @@ int Andor::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	if (old_value == VSAmp)
 		return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == EMOn)
-		return setHSSpeed (((rts2core::ValueBool *) new_value)->getValueBool ()? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
+		return setHSSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == HSpeed)
 		return setHSSpeed (EMOn->getValueBool ()? 0 : 1, new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSpeed)
@@ -831,8 +827,6 @@ void Andor::printCapabilities ()
 		printf (" 16BIT");
 	if (cap.ulPixelMode & AC_PIXELMODE_32BIT)
 		printf (" 32BIT");
-	if (cap.ulPixelMode & AC_PIXELMODE_32BIT)
-		printf (" 32BIT");
 	if (cap.ulPixelMode & AC_PIXELMODE_MONO)
 		printf (" MONO");
 	if (cap.ulPixelMode & AC_PIXELMODE_RGB)
@@ -866,47 +860,43 @@ int Andor::printNumberADCs ()
 	int ret, n_ad;
 	if ((ret = GetNumberADChannels (&n_ad)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"andor cannot get number of AD channels" << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot get number of AD channels" << sendLog;
 		return -1;
 	}
-	printf ("AD Channels: %d (", n_ad);
+	std::cout << "AD Channels: " << n_ad << " (";
 	for (int ad = 0; ad < n_ad; ad++)
 	{
 		int depth;
 		if ((ret = GetBitDepth (ad, &depth)) != DRV_SUCCESS)
 		{
-			logStream (MESSAGE_ERROR) <<
-				"andor cannot get depth for ad " << ad << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot retrieve get depth for ad " << ad << sendLog;
 			return -1;
 		}
 		if (n_ad > 1)
-			printf ("%d=%d-bit", ad, depth);
+			std::cout << ad << "=" << depth << "-bit";
 		else
-			printf ("%d-bit", depth);
+			std::cout << depth << "-bit";
 		if (ad == (n_ad - 1))
-			printf (")\n");
+			std::cout << ")" << std::endl;
 		else
-			printf (", ");
+			std::cout << ", ";
 	}
 	return n_ad;
 }
 
-int Andor::printHSSpeeds (int camera_type, int ad, int amp)
+int Andor::printHSSpeeds (int ad, int amp)
 {
 	int ret;
 	int nhs, npreamps;
 	if ((ret = GetNumberHSSpeeds (ad, amp, &nhs)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"andor cannot get number of horizontal speeds " << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot retrieve number of horizontal speeds" << sendLog;
 		return -1;
 	}
 
 	if ((ret = GetNumberPreAmpGains (&npreamps)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"cannot get number of preAmps gains " << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot retrieve number of preAmps gains" << sendLog;
 		return -1;
 	}
 
@@ -925,7 +915,7 @@ int Andor::printHSSpeeds (int camera_type, int ad, int amp)
 		std::cout << std::setprecision (2) << val;
 		if (s == (nhs - 1))
 		{
-			switch (camera_type)
+			switch (cap.ulCameraType)
 			{
 				case AC_CAMERATYPE_IXON:
 					std::cout << " MHz)" << std::endl;
@@ -961,20 +951,19 @@ int Andor::printVSSpeeds ()
 	int ret, vspeeds;
 	if ((ret = GetNumberVSSpeeds (&vspeeds)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"andor init cannot get vertical speeds" << sendLog;
+		logStream (MESSAGE_ERROR) << "andor init cannot get vertical speeds" << sendLog;
 		return -1;
 	}
-	printf ("Vertical Speeds: %d (", vspeeds);
+	std::cout << "Vertical Speeds: " << vspeeds << " (";
 	for (int s = 0; s < vspeeds; s++)
 	{
 		float val;
 		GetVSSpeed (s, &val);
-		printf ("%.2f", val);
+		std::cout << val;
 		if (s == (vspeeds - 1))
-			printf (" usec/pix)\n");
+			std::cout << " usec/pix)" << std::endl;
 		else
-			printf (", ");
+			std::cout << ", ";
 	}
 	return 0;
 }
@@ -1027,7 +1016,7 @@ int Andor::printInfo ()
 
 	for (int ad = 0; ad < n_ad; ad++)
 		for (int amp = 0; amp < n_amp; amp++)
-			if ((ret = printHSSpeeds (cap.ulCameraType, ad, amp)) != 0)
+			if ((ret = printHSSpeeds (ad, amp)) != 0)
 				return ret;
 
 	if ((ret = printVSSpeeds ()) != 0)
@@ -1079,6 +1068,25 @@ int Andor::initChips ()
 		logStream (MESSAGE_ERROR) << "andor init attempt to set frame transfer failed " << ret << sendLog;
 		return -1;
 	}
+
+	// init vspeed selection
+	int vspeeds;
+
+	if ((ret = GetNumberVSSpeeds (&vspeeds)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "cannot retrieve number of VSpeeds" << sendLog;
+		return -1;
+	}
+
+	for (int i = 0; i < vspeeds; i++)
+	{
+		std::ostringstream os;
+		float val;
+		GetVSSpeed (i, &val);
+		os << val << " usec/pix";
+		VSpeed->addSelVal (os.str ());
+	}
+
 	return 0;
 }
 
@@ -1181,9 +1189,14 @@ int Andor::init ()
 
 void Andor::initAndorValues ()
 {
-	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
+	if (cap.ulSetFunctions & AC_SETFUNCTION_VSAMPLITUDE)
 	{
 		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+		VSAmp->addSelVal ("normal");
+		VSAmp->addSelVal ("+1");
+		VSAmp->addSelVal ("+2");
+		VSAmp->addSelVal ("+3");
+		VSAmp->addSelVal ("+4");
 		VSAmp->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_PREAMPGAIN)
