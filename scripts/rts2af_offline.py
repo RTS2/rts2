@@ -132,7 +132,7 @@ class main(rts2af.AFScript):
 
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             if( cat.matching()):
-                print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
+                #print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
                 cats.CataloguesList.append(cat)
             else:
                 logger.error("main: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)

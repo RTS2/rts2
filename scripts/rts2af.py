@@ -248,7 +248,7 @@ class Configuration:
             self.config.set(section, identifier, value)
 
 
-        with open( self.configFileName, 'wb') as configfile:
+        with open( self.configFileName, 'w') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
             configfile.write('# default configuration for rts2af-autofocus.py\n')
             configfile.write('# generated with rts2-autofous.py -p\n')
@@ -268,7 +268,7 @@ class Configuration:
             self.config.set(section, identifier, value)
 
 
-        with open( fileName, 'wb') as configfile:
+        with open( fileName, 'w') as configfile:
             configfile.write('# 2011-04-19, Markus Wildi\n')
             configfile.write('# default configuration for rts2af-autofocus.py\n')
             configfile.write('# generated with rts2-autofous.py -p\n')
@@ -664,7 +664,7 @@ class Catalogue():
                 
 
     def ds9WriteRegionFile(self, writeSelected=False, writeMatched=False, writeAll=False, colorSelected="cyan", colorMatched="green", colorAll="red"):
-        with open( self.ds9RegionFileName, 'wb') as ds9RegionFile:
+        with open( self.ds9RegionFileName, 'w') as ds9RegionFile:
             ds9RegionFile.write("# Region file format: DS9 version 4.0\n")
             ds9RegionFile.write("# Filename: {0}\n".format(self.fitsHDU.fitsFileName))
 
@@ -861,7 +861,7 @@ class ReferenceCatalogue(Catalogue):
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
-        SXcat= open( self.skyList, 'wb')
+        SXcat= open( self.skyList, 'w')
 
         for line in self.lines:
             element= pElement.search(line)
@@ -1172,27 +1172,28 @@ class Catalogues():
 
     def writeFitInputValues(self):
         
-        fitInput= open( self.dataFileNameFwhm, 'wb')
+        fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
             line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
             fitInput.write(line)
 
         fitInput.close()
-        fitInput= open( self.dataFileNameFlux, 'wb')
+        fitInput= open( self.dataFileNameFlux, 'w')
         for focPos in sorted(self.averageFlux):
             line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
             fitInput.write(line)
 
         fitInput.close()
 
-    def fitTheValues(self):
+    def fitTheValues(self, configFileName=None):
+# ToDo: think about a better solution for  configFileName
 
         if( self.countObjectsFoundInAllFiles()):
             self.__average__()
             self.writeFitInputValues()
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
             cmd= [ runTimeConfig.value('FOCROOT'),
-                   "0", # 1 interactive, 0 batch
+                   "1", # 1 interactive, 0 batch
                    self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
                    serviceFileOp.now,
                    str(self.numberOfObjectsFoundInAllFiles),
@@ -1201,12 +1202,27 @@ class Catalogues():
                    self.imageFilename]
         
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-            # 
-            #print 'output from subprocess {0}'.format(output)
 
-            print 'FOCUS: {0}'.format(output[0].split()[1])
+            if( configFileName==None):
+                # offline mode
+                print 'FOCUS: {0}'.format(output[0].split()[1])
+            else:
+                # acquire mode
+                fitResultFileName= serviceFileOp.reconstructFitResultPath(configFileName) 
+                if(fitResultFileName==None):
+                    # if something really wen wrong
+                    print 'FOCUS: {0}'.format(output[0].split()[1])
+                else:
+                    # ToDo: discuss with Petr
+                    print 'FOCUS: {0}'.format(output[0].split()[1])
+                    with open( fitResultFileName, 'a') as frfn:
+                        for item in output:
+                            frfn.write(item)
+
+                    frfn.close()
+
         else:
-            logger.error('Catalogues.fitTheValues: do not fit')
+            logger.error('Catalogues.fitTheValues: too few objects, do not fit')
 
     def __average__(self):
         numberOfObjects = 0
@@ -1290,7 +1306,7 @@ class Catalogues():
     def ds9CommandFileWrite(self):
         self.ds9CommandAdd(" -single -blink\n")
 
-        with open( self.ds9CommandFileName, 'wb') as ds9CommandFile:
+        with open( self.ds9CommandFileName, 'w') as ds9CommandFile:
             ds9CommandFile.write("#!/bin/bash\n") 
             ds9CommandFile.write(self.ds9Command) 
 
@@ -1640,6 +1656,39 @@ class ServiceFileOperations():
         else: 
             return runTimeConfig.value('BASE_DIRECTORY') + '/' + self.now + '/' + filter.name + '/'
         
+    def expandToTmpConfigurationPath(self, fileName=None):
+        if( fileName==None):
+            logger.error('ServiceFileOperations.expandToTmpConfigurationPath: no filename given')
+
+        fileName= fileName + self.now + '.cfg'
+        return self.expandToTmp(fileName)
+
+
+    def expandToFitResultPath(self, fileName=None):
+        if( fileName==None):
+            logger.error('ServiceFileOperations.expandToFitResultPath: no filename given')
+
+        return self.expandToTmp(fileName + self.now + '.fit')
+
+
+    def reconstructFitResultPath(self, configFileName):
+        # If the configuration file name of the present process has a time stamp, like
+        # /tmp/rts2af-acquire-V-2011-04-22T11:32:20.061022.cfg
+        # then it was created by rts2af_acquire.py
+        # This timestamp is used to identify an existing file which contains the results
+        # of a given focus run, e.g. the filters U:B:V:...
+        # this is appropriate but not real good idea.
+        date= re.search( r'([0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}\.[0-9]{1,6})\.cfg', configFileName)
+        originator= re.search(r'rts2af-(\w+)-', configFileName)
+
+        if(date==None or originator==None):
+            return None
+        else:
+            return self.expandToTmp( '{0}{1}.fit'.format(originator.group(0), date.group(1)))
+
+
+
+
     def createAcquisitionBasePath(self, filter=None):
         os.makedirs( self.expandToAcquisitionBasePath( filter))
 

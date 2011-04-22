@@ -1,29 +1,18 @@
 #!/usr/bin/python
-# (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
+# (C) 2011, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   rtsaf_offline.py --help
+#   rts2af_analysis.py --help
 #   
-#   not yet see man 1 rts2_catalogue.py
-#   not yet see rts2_autofocus_unittest.py for unit tests
+#   not yet see man 1 rts2af_analysis.py
 #
-#   Basic usage:
-#   Create a set of focusing images and define the reference file. The
-#   reference file has apparently the smallest FWHM.
-#   In your configuration file define the base directory parameter base_directory
-#   under which the reference file is found.
-#   This can be e.g. /scratch/focusing if the reference file is found at
-#   /scratch/focusing/2011-01-16-T17:37:55/X/
-#
-#   Then run, e.g.
-#   rts2af_analysis.py  --config ./rts2-autofocus-offline.cfg 
-#
-#   The output is mostly written to /var/log/rts2-autofocus
-#
-#   In the /tmp directory you a lot of output for inspection. Or more
-#   conveniently, use executed the file with the ending sh, wich looks like, e.g.
-#   /tmp/rts2af-ds9-autofocus-X-2011-01-22T12:12:26.729174.reg.sh
-#   and check the results with DS9.
+#   rts2af_analysis.py is mainly called by rts2af_acquire.py during an rts2
+#   initiated focus run.
+#   The first fits file is used as reference catalogue and its focuser 
+#   position must be as close as possible to the real focus.
+#   
+#   rts2af_analysis.py has no connection via rts2comm.py to rts2-centrald
+#   Therefore logging must be done do a separate file.
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -47,12 +36,14 @@
 __author__ = 'markus.wildi@one-arcsec.org'
 
 import sys
+import re
 import rts2af 
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
+        self.test = False
 
     def main(self):
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
@@ -60,21 +51,19 @@ class main(rts2af.AFScript):
         logger    = self.configureLogger()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
 
-        test = False
-
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            logger.error('main: logger no config file specified, taking default' + configFileName)
+            logger.error('rts2af_analysis.py: logger no config file specified, taking default' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
 
         if( args.referenceFitsFileName):
             referenceFitsFileName = args.referenceFitsFileName[0]
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY' + 'exiting'))
+                logger.error('rts2af_analysis.py: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY' + 'exiting'))
                 sys.exit(1)
 
 # read the SExtractor parameters
@@ -86,11 +75,10 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
 # create the reference catalogue
-
         referenceFitsFileName = sys.stdin.readline()
 
-        if( test== True):
-            logger.error("main: got reference file {0}".format(referenceFitsFileName))
+        if( self.test== True):
+            logger.error("rts2af_analysis.py: got reference file {0}".format(referenceFitsFileName))
         else:
             hdur= rts2af.FitsHDU(referenceFitsFileName)
 
@@ -108,15 +96,15 @@ class main(rts2af.AFScript):
                     cats= rts2af.Catalogues(catr)
                 else:
                     print 'FOCUS: -1'
-                    logger.error('main: exiting due to invalid reference catalogue'.format(referenceFitsFileName))
+                    logger.error('rts2af_analysis.py: exiting due to invalid reference catalogue'.format(referenceFitsFileName))
                     sys.exit(1)
 
             else:
                 print 'FOCUS: -1'
-                print 'main: exiting due to no hdur.headerProperties in file'.format(referenceFitsFileName)
+                print 'rts2af_analysis.py: exiting due to no hdur.headerProperties in file'.format(referenceFitsFileName)
                 sys.exit(1)
-            
-# read the files sys.stdin.readline() 
+
+# read the files sys.stdin.readline() normally rts2af_analysis.py is fed by rts2af_acquire.py
         while(True):
 
             fits=None
@@ -124,23 +112,31 @@ class main(rts2af.AFScript):
                 fits= sys.stdin.readline()
             except:
 # doesn't work
-                logger.error("main: got EOF, breaking")
+                logger.error("rts2af_analysis.py: got EOF, breaking")
                 break
 # doesn't work
             if( fits==None):
-                logger.error("main: got None, breaking")
+                logger.error("rts2af_analysis.py: got None, breaking")
                 break
-            if(len(fits) < 2):
+            
+            quit_match= re.search( r'^Q', fits)
+            if( not quit_match==None): 
+                logger.error("rts2af_analysis.py: got Q, breaking")
+                break
+
+            if(len(fits) < 10):
 # works but bad
-                logger.error("main: got short, breaking")
+                logger.error("rts2af_analysis.py: got short, breaking")
                 break
-            if( test== True):
-                logger.error("main: got file >>{0}<<".format(fits))
+
+
+            if( self.test== True):
+                logger.error("rts2af_analysis.py: got file >>{0}<<".format(fits))
             else:
                 hdu= rts2af.FitsHDU( fits, hdur)
                 if(hdu.headerProperties()):
                     if(rts2af.verbose):
-                        logger.error("main: append "+ hdu.fitsFileName)
+                        logger.error("rts2af_analysis.py: append "+ hdu.fitsFileName)
                     HDUs.fitsHDUsList.append(hdu)
 
                     cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
@@ -152,16 +148,16 @@ class main(rts2af.AFScript):
                     if( cat.matching()):
                         cats.CataloguesList.append(cat)
                     else:
-                        logger.error("main: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
+                        logger.error("rts2af_analysis.py: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
                 else:
-                    logger.error("main: could not analyze >>{0}<<".format(fits))
+                    logger.error("rts2af_analysis.py: could not analyze >>{0}<<".format(fits))
 
 
         # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
-        if( test== True):
-            logger.error("main: would fit now {0}".format(referenceFitsFileName))
+        if( self.test== True):
+            logger.error("rts2af_analysis.py: would fit now {0}".format(referenceFitsFileName))
         else:
-            cats.fitTheValues()
+            cats.fitTheValues(configFileName) # ToDo: not nice
 
 
 if __name__ == '__main__':
