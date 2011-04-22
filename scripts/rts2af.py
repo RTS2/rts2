@@ -241,7 +241,7 @@ class Configuration:
 
     def writeDefaultConfiguration(self):
         for (section, identifier), value in sorted(self.cp.iteritems()):
-#            print section, '=>', identifier, '=>', value
+            print section, '=>', identifier, '=>', value
             if( self.config.has_section(section)== False):
                 self.config.add_section(section)
 
@@ -250,6 +250,26 @@ class Configuration:
 
         with open( self.configFileName, 'wb') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
+            configfile.write('# default configuration for rts2af-autofocus.py\n')
+            configfile.write('# generated with rts2-autofous.py -p\n')
+            configfile.write('# see man rts2af-autofocus.py for details\n')
+            configfile.write('#\n')
+            configfile.write('#\n')
+            self.config.write(configfile)
+
+    def writeConfigurationForFilter(self, fileName=None, filter=None):
+
+        self.cp[( 'filters',  'filters')]= filter
+
+        for (section, identifier), value in sorted(self.cp.iteritems()):
+            if( self.config.has_section(section)== False):
+                self.config.add_section(section)
+
+            self.config.set(section, identifier, value)
+
+
+        with open( fileName, 'wb') as configfile:
+            configfile.write('# 2011-04-19, Markus Wildi\n')
             configfile.write('# default configuration for rts2af-autofocus.py\n')
             configfile.write('# generated with rts2-autofous.py -p\n')
             configfile.write('# see man rts2af-autofocus.py for details\n')
@@ -277,6 +297,9 @@ class Configuration:
                 value = config.get( section, identifier)
             except:
                 logger.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
+
+            # overwrite the default configuration (if needed)
+            self.cp[( section,  identifier)]= value
 
             # first bool, then int !
             if(isinstance(self.values[identifier], bool)):
@@ -738,6 +761,7 @@ class Catalogue():
 
     def matching(self):
         matched= 0
+        #verbose= True
         for sxObjectNumber, sxObject in self.sxObjects.items():
                 sxReferenceObject= self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
                 if( sxReferenceObject != None):
@@ -754,11 +778,16 @@ class Catalogue():
             print "number of sxObjects =%d" % len(self.sxObjects)
             print "number of matched sxObjects %d=" % matched + "of %d "% len(self.referenceCatalogue.sxObjects) + " required %f " % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects))
 
-        if( (float(matched)/float(len(self.referenceCatalogue.sxObjects))) > runTimeConfig.value('MATCHED_RATIO')):
-            return True
+        if( self.referenceCatalogue.numberReferenceObjects() > 0):
+            if( (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > runTimeConfig.value('MATCHED_RATIO')):
+                return True
+            else:
+                logger.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+                return False
         else:
-            logger.error("main: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS+ %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+            logger.error('matching: should not happen here, number reference objects is {0} should greater 0'.format( self.referenceCatalogue.numberReferenceObjects()))
             return False
+                    
 
 # example how to access the catalogue
     def average(self, variable):
@@ -780,7 +809,6 @@ class Catalogue():
         sum= 0
         i= 0
         
-        
         for sxObjectNumber, sxObject in self.sxObjects.items():
             sxReferenceObject=  self.referenceCatalogue.sxObjectByNumber(sxObject.associatedSXobject)
             if re.search("selected", selection):
@@ -795,8 +823,6 @@ class Catalogue():
             else:
                 sum += sxObject.fwhm
                 i += 1
-
-
                     
         #if(verbose):
         if( i != 0):
@@ -935,10 +961,17 @@ class ReferenceCatalogue(Catalogue):
                 break
 
         else: # exhausted 
-            logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
-            self.isValid= True
+            if( self.numberReferenceObjects() > 0):
+                logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} number of objects {1}'.format( self.fitsHDU.fitsFileName, self.numberReferenceObjects()))
+                self.isValid= True
+            else:
+                logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} no objects found'.format( self.fitsHDU.fitsFileName))
+                self.isValid= False
 
         return self.isValid
+
+    def numberReferenceObjects(self):
+        return len(self.sxObjects)
 
     def printObject(self, sxObjectNumber):
             
@@ -1091,7 +1124,6 @@ class Catalogues():
         self.minFwhm= 0.
         self.maxFlux= 0.
         self.minFlux= 0.
-        self.numberOfObjects= 0.
         self.numberOfObjectsFoundInAllFiles= 0.
         self.ds9Command=""
         self.averagesCalculated=False
@@ -1132,33 +1164,32 @@ class Catalogues():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
                 self.numberOfObjectsFoundInAllFiles += 1
 
-
-    def writeFitInputValues(self):
-        self.countObjectsFoundInAllFiles()
-
         if( self.numberOfObjectsFoundInAllFiles < runTimeConfig.value('MINIMUM_OBJECTS')):
             logger.error('Catalogues.writeFitInputValues: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
             return False
         else:
+            return True
 
-            fitInput= open( self.dataFileNameFwhm, 'wb')
-            for focPos in sorted(self.averageFwhm):
-                line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
-                fitInput.write(line)
+    def writeFitInputValues(self):
+        
+        fitInput= open( self.dataFileNameFwhm, 'wb')
+        for focPos in sorted(self.averageFwhm):
+            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
+            fitInput.write(line)
 
-            fitInput.close()
-            fitInput= open( self.dataFileNameFlux, 'wb')
-            for focPos in sorted(self.averageFlux):
-                line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
-                fitInput.write(line)
+        fitInput.close()
+        fitInput= open( self.dataFileNameFlux, 'wb')
+        for focPos in sorted(self.averageFlux):
+            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
+            fitInput.write(line)
 
-            fitInput.close()
-
-        return True
+        fitInput.close()
 
     def fitTheValues(self):
-        self.__average__()
-        if( self.writeFitInputValues()):
+
+        if( self.countObjectsFoundInAllFiles()):
+            self.__average__()
+            self.writeFitInputValues()
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
             cmd= [ runTimeConfig.value('FOCROOT'),
                    "0", # 1 interactive, 0 batch
@@ -1173,16 +1204,12 @@ class Catalogues():
             # 
             #print 'output from subprocess {0}'.format(output)
 
-            print 'FOCUs: {0}'.format(output[0].split()[1])
+            print 'FOCUS: {0}'.format(output[0].split()[1])
         else:
             logger.error('Catalogues.fitTheValues: do not fit')
 
-    def printSelectedSXobjects(self):
-        for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
-            if( sxReferenceObject.foundInAll): 
-                print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
-
     def __average__(self):
+        numberOfObjects = 0
         if( self.averagesCalculated):
             return
         else:
@@ -1190,15 +1217,14 @@ class Catalogues():
             
         fwhm= defaultdict(list)
         flux= defaultdict(list)
-        lenFwhm = []
         for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
-                self.numberOfObjects += 1
+                numberOfObjects += 1
                 for sxObject in sxReferenceObject.matchedsxObjects:
                     fwhm[sxObject.focusPosition].append(sxObject.fwhm)
                     flux[sxObject.focusPosition].append(sxObject.flux)
                     sxReferenceObject.foundInAll= True
-                lenFwhm.append(len(fwhm))
+
 
         fwhmList=[]
         fluxList=[]
@@ -1210,22 +1236,41 @@ class Catalogues():
             self.averageFlux[focPos] = numpy.mean(flux[focPos], axis=0)
             fluxList.append(self.averageFlux[focPos])
 
-        self.maxFwhm= numpy.amax(fwhmList)
-        self.minFwhm= numpy.amax(fwhmList)
-        self.maxFlux= numpy.amax(fluxList)
-        self.minFlux= numpy.amax(fluxList)
+        try:
+            self.maxFwhm= numpy.amax(fwhmList)
+        except:
+            logger.error('__average__: something wrong with fwhmList maximum')
+            return False
+        try:
+            self.minFwhm= numpy.amax(fwhmList)
+        except:
+            logger.error('__average__: something wrong with fwhmList minimum')
+            return False
+        try:
+            self.maxFlux= numpy.amax(fluxList)
+        except:
+            logger.error('__average__: something wrong with fluxList maximum')
+            return False
+        try:
+            self.minFlux= numpy.amax(fluxList)
+        except:
+            logger.error('__average__: something wrong with fluxList minimum')
+            return False
+
         if(verbose):
-            print "numberOfObjects %d " % (self.numberOfObjects)
+            print "numberOfObjects %d " % (numberOfObjects)
+
+        return True
 
     def ds9DisplayCatalogues(self):
-        self.__average__()
+# deprecated        self.__average__()
 
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
             cat.ds9DisplayCatalogue("cyan")
             # if reference catr.ds9DisplayCatalogue("yellow", False)
 
     def ds9WriteRegionFiles(self):
-        self.__average__()
+# deprecated         self.__average__()
         
         self.ds9Command= "ds9 -zoom to fit -scale mode zscale\\\n" 
 
@@ -1254,6 +1299,11 @@ class Catalogues():
         
     def ds9CommandAdd(self, ds9CommandPart):
         self.ds9Command= self.ds9Command + ds9CommandPart
+
+    def printSelectedSXobjects(self):
+        for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
+            if( sxReferenceObject.foundInAll): 
+                print "======== %d %d %f %f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
 
 
 import sys
@@ -1449,7 +1499,7 @@ class FitsHDUs():
                 self.isValid= True
         else:
             logger.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
-        logger.error('FitsHDUs.validate: hdus are invalid')
+
         return self.isValid
     def countFocuserPositions(self):
         differentFocuserPositions={}

@@ -67,9 +67,10 @@ class main(rts2af.AFScript):
             configFileName= runTimeConfig.configurationFileName()
             cmd= 'logger no config file specified, taking default' + configFileName
             #print cmd 
-            os.system( cmd)
+            ##os.system( cmd)
 
         runTimeConfig.readConfiguration(configFileName)
+
 
         if( args.referenceFitsFileName):
             referenceFitsFileName = args.referenceFitsFileName[0]
@@ -95,12 +96,17 @@ class main(rts2af.AFScript):
             HDUs= rts2af.FitsHDUs(hdur)
             catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
             catr.runSExtractor()
-            catr.createCatalogue()
-            catr.cleanUpReference()
-            catr.writeCatalogue()
-            cats= rts2af.Catalogues(catr)
+            
+            if(catr.createCatalogue()):
+                catr.cleanUpReference()
+                catr.writeCatalogue()
+                cats= rts2af.Catalogues(catr)
+            else:
+                print 'FOCUS: -1'
+                sys.exit(1)
         else:
             sys.exit(1)
+            print 'FOCUS: -1'
             
 # read the files 
         for fits in FitsList:

@@ -51,6 +51,7 @@ class Acquire(rts2af.AFScript):
         self.serviceFileOp= rts2af.serviceFileOp= rts2af.ServiceFileOperations()
         self.runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
         self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has options
+        self.test= False #True: feed rts2af_acquire.py with rts2af_feed_acquire.py
 
     def acquireImage(self, focToff=None, exposure=None, filter=None, analysis=None):
         r2c.setValue('exposure', exposure)
@@ -58,22 +59,33 @@ class Acquire(rts2af.AFScript):
 
         r2c.log('I','XX-----starting {0}s exposure on offset {1}'.format(exposure, focToff))
         acquisitionPath = r2c.exposure()
+
+        if( acquisitionPath==None): # used with rts2af_feed_acquire.py
+            return
+
         r2c.log('I','YY-----XSWending {0}s exposure on offset {1}'.format(exposure, focToff))
         storePath=self.serviceFileOp.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
         r2c.log('I','acquired {0} storing at {1}'.format(acquisitionPath, storePath))
-        r2c.move(acquisitionPath, storePath)
-        analysis.stdin.write(storePath + '\n')
+        if( not self.test):
+            r2c.move(acquisitionPath, storePath)
+
+        try:
+            if(self.test):
+                analysis.stdin.write(acquisitionPath + '\n')
+            else:
+                analysis.stdin.write(storePath + '\n')
+
+        except:
+            r2c.log('E','could not write to pipe: {0},  {1}'.format(acquisitionPath, storePath))
 
         return
 
-    
     def prepareAcquisition(self, nofilter, filter):
         r2c.setValue('FOC_FOFF',   filter.focDef, self.focuser)
         r2c.setValue('FOC_TOFF',               0, self.focuser)
         r2c.setValue('FOC_DEF' , nofilter.focDef, self.focuser)
         r2c.setValue('SHUTTER','LIGHT')
         r2c.setValue('filter' , filter.name)
-
 
     def saveState(self):
         return
@@ -93,6 +105,8 @@ class Acquire(rts2af.AFScript):
             r2c.log('I','Filter {0}, offset {1}, expousre {2}'.format( filter.name, filter.focDef, filter.exposure))
 
             fileName= '/tmp/rts2af-acquire-' + filter.name + '.cfg'
+            self.runTimeConfig.writeConfigurationForFilter(fileName, fltName)
+
             cmd= [ '/usr/local/src/rts-2-head/scripts/rts2af_analysis.py',
                    '--config', fileName
                    ]
@@ -100,20 +114,28 @@ class Acquire(rts2af.AFScript):
             self.prepareAcquisition( nofilter, filter)
             self.serviceFileOp.createAcquisitionBasePath( filter)
 
-#            analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-            analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            # create the reference catalogue
-            r2c.log('I','Reference catalogue: Filter {0}, position {1}, exposure {2}'.format( filter.name, filter.focDef, filter.exposure))
+            # open the analysis suprocess
+            try:
+                analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                r2c.log('I','Reference catalogue: Filter {0}, position {1}, exposure {2}'.format( filter.name, filter.focDef, filter.exposure))
+            except:
+                r2c.log('E','could not start {0}: Filter {1}, position {2}, exposure {3}'.format( cmd, filter.name, filter.focDef, filter.exposure))
+
             
+            # create the reference catalogue
             self.acquireImage( 0, filter.exposure, filter, analysis[filter.name]) # exposure will later depend on position
-#           r2c.log('I','received from pipe: {0}'.format(analysis[filter.name].stdout))
+            r2c.log('I','rts2af_acquire: received from pipe: {0}'.format(analysis[filter.name].stdout))
+
+
             for setting in filter.settings:
                 r2c.log('I','===========Filter {0} offset {1} exposure {2}'.format(filter.name, setting.offset, setting.exposure))
                 self.acquireImage( setting.offset, setting.exposure, filter, analysis[filter.name])
                 
-            r2c.log('I','focusing exposures finished, processing data')
-        # read out the NOFILTER value
 
+            r2c.log('I','focusing exposures finished for filter {0}'.format(filter.name))
+
+        # read out the NOFILTER value
+#        r2c.log( 'I', 'FOC_POS'.format(analysis['X'].stdout.readline()))
 
         return
 

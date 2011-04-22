@@ -102,12 +102,18 @@ class main(rts2af.AFScript):
                 HDUs= rts2af.FitsHDUs(hdur)
                 catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
                 catr.runSExtractor()
-                catr.createCatalogue()
-                catr.cleanUpReference()
-                catr.writeCatalogue()
-                cats= rts2af.Catalogues(catr)
+                if(catr.createCatalogue()):
+                    catr.cleanUpReference()
+                    catr.writeCatalogue()
+                    cats= rts2af.Catalogues(catr)
+                else:
+                    print 'FOCUS: -1'
+                    logger.error('main: exiting due to invalid reference catalogue'.format(referenceFitsFileName))
+                    sys.exit(1)
+
             else:
-                print "exiting due to no hdur.headerProperties"
+                print 'FOCUS: -1'
+                print 'main: exiting due to no hdur.headerProperties in file'.format(referenceFitsFileName)
                 sys.exit(1)
             
 # read the files sys.stdin.readline() 
