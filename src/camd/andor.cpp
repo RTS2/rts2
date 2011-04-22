@@ -656,30 +656,18 @@ int Andor::startExposure ()
 int Andor::scriptEnds ()
 {
 	if (!isnan (defaultGain) && gain)
-		setGain (defaultGain);
+		changeValue (gain, defaultGain);
 
 	// set default values..
-	VSpeed->setValueInteger (1);
-	setVSSpeed (VSpeed->getValueInteger ());
-	sendValueAll (VSpeed);
+	changeValue (VSpeed, 1);
+	changeValue (EMOn, false);
+	changeValue (HSpeed, 0);
 
-	EMOn->setValueBool (false);
-	HSpeed->setValueInteger (1);
+	changeValue (FTShutter, false);
+	changeValue (useFT, true);
 
-	setHSSpeed (EMOn->getValueBool (), HSpeed->getValueInteger ());
-	sendValueAll (EMOn);
-	sendValueAll (HSpeed);
-
-	FTShutter->setValueBool (false);
-	sendValueAll (FTShutter);
-
-	setUseFT (true);
-	useFT->setValueBool (true);
-	sendValueAll (useFT);
-
-	useRunTillAbort->setValueBool (false);
-	sendValueAll (useRunTillAbort);
-
+	changeValue (useRunTillAbort, false);
+	
 	//	closeShutter ();
 	return Camera::scriptEnds ();
 }
@@ -697,7 +685,7 @@ int Andor::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	if (old_value == EMOn)
 		return setHSSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == HSpeed)
-		return setHSSpeed (EMOn->getValueBool ()? 0 : 1, new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return setHSSpeed (EMOn->getValueBool () ? 0 : 1, new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSpeed)
 		return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == FTShutter)
@@ -900,7 +888,7 @@ int Andor::printHSSpeeds (int ad, int amp)
 		return -1;
 	}
 
-	std::cout << "Horizontal speeds: " << nhs << " (";
+	std::cout << "Horizontal speeds for AD " << ad << " and amplifier " << amp << ": " << nhs << std::endl;
 
 	for (int s = 0; s < nhs; s++)
 	{
@@ -912,22 +900,15 @@ int Andor::printHSSpeeds (int ad, int amp)
 				" ad " << ad << " amp " << amp << sendLog;
 			return -1;
 		}
-		std::cout << std::setprecision (2) << val;
-		if (s == (nhs - 1))
+		std::cout << val;
+		switch (cap.ulCameraType)
 		{
-			switch (cap.ulCameraType)
-			{
-				case AC_CAMERATYPE_IXON:
-					std::cout << " MHz)" << std::endl;
-					break;
-				default:
-					std::cout << " usec/pix)" << std::endl;
-					break;
-			}
-		}
-		else
-		{
-			std::cout << ", ";
+			case AC_CAMERATYPE_IXON:
+				std::cout << " MHz)" << std::endl;
+				break;
+			default:
+				std::cout << " usec/pix)" << std::endl;
+				break;
 		}
 		// prints available preAmpGains
 		for (int p = 0; p < npreamps; p++)
@@ -936,13 +917,13 @@ int Andor::printHSSpeeds (int ad, int amp)
 			int isPreAmp;
 			GetPreAmpGain (p, &preAmpGain);
 			IsPreAmpGainAvailable (ad, amp, s, p, &isPreAmp);
-			std::cout << "pream " << p
+			std::cout << "  pream " << p
 				<< " preampVal " << preAmpGain
 				<< " is " << isPreAmp
-				<< " ";
-
+				<< " " << std::endl;
 		}
 	}
+
 	return 0;
 }
 
