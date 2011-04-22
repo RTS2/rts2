@@ -630,7 +630,6 @@ int Paramount::init ()
 
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
-
 								 // south hemispehere
 	if (telLatitude->getValueDouble () < 0)
 	{
@@ -781,7 +780,7 @@ int Paramount::idle ()
 	{
 		sleep (10);
 		MKS3Free ();
-		init ();
+		MKS3Init ((char *) device_name);
 		return rts2core::Device::idle ();
 	}
 	ret = getHomeOffset (homeOff);
