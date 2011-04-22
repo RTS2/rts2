@@ -140,7 +140,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter, params);
 		}
-		else if (vals[0] == "set")
+		else if (vals[0] == "set" || vals[0] == "inc")
 		{
 			const char *device = params->getString ("d","");
 			const char *variable = params->getString ("n", "");
@@ -158,7 +158,12 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			rts2core::Value * rts2v = master->getValue (device, variable);
 			if (rts2v == NULL)
 				throw XmlRpcException ("cannot find variable");
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), '=', std::string (value)));
+			char op;
+			if (vals[0] == "inc")
+				op = '+';
+			else
+				op = '=';
+			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
 			sendConnectionValues (os, conn, params);
 		}
 		else if (vals[0] == "get")
