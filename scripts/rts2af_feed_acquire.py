@@ -50,9 +50,13 @@ class main():
     """Script to  feed rts2af_acquire.py with previously taken fits files."""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
-        # 
-        self.storePath='/scratch/focus/2011-04-15-T23:58:06/X'
-        self.referenceFile='20110416000404-782-RA.fits'
+        # 2011-04-15-T23:58:06
+        self.storePath=[]
+        self.storePath.append('/scratch/focus/2011-04-15-T23:58:06/X') # X
+        self.storePath.append('/scratch/focus/2011-04-23T00:33:19.510523/H') # H
+        self.referenceFile=[]
+        self.referenceFile.append('20110415235822-154-RA.fits') # X
+        self.referenceFile.append('20110422224736-422-RA.fits') # H
         self.cmd= '/usr/local/src/rts-2-head/scripts/rts2af_acquire.py'
         self.focuser = 'FOC_DMY'  
         #
@@ -60,21 +64,20 @@ class main():
 
     def ignoreOutput(self, acq):
         while(True):
-            time.sleep(0.5)
+            time.sleep(.1)
             output= acq.stdout.readline()
             if( self.pexposure.match(output)):
-                #print 'rts2af_feed_acquire, breaking on exposure output >>{0}<<'.format(output)
+                print 'rts2af_feed_acquire, breaking on exposure output >>{0}<<'.format(output)
                 break
             else:
                 log_match= re.search( r'log', output)
                 if(log_match):
-                    print 'rts2af_feed_acquire ignore: {0}'.format(output)
+                    print 'rts2af_feed_acquire ignore (only to the first <CR>): >>{0}<<>>'.format(output)
 
     def main(self):
 
         fitsFiles=[]
-        fitsFiles= glob.glob( self.storePath + '/' + '*fits')
- 
+
         acquire_cmd= [ self.cmd, 'test']
         acquire= subprocess.Popen( acquire_cmd, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 
@@ -83,37 +86,51 @@ class main():
         print 'rts2af_feed_acquire, output: >>{0}<<, focuser'.format(output, self.focuser)
         acquire.stdin.write('{0}\n'.format(self.focuser))
 
+        for storePath in  self.storePath:
+            
+            fitsFiles= glob.glob( storePath + '/' + '*fits')
+ 
+            # first file is the reference catalogue
+            self.ignoreOutput(acquire)
+            time.sleep(3)
+            acquire.stdin.write('{0}\n'.format('exposure_end'))
+            popoff= self.referenceFile.pop(0)
+            print 'rts2af_feed_acquire: poping reference file {0}'.format(popoff)
 
-        # first file is the reference catalogue
-        self.ignoreOutput(acquire)
-        acquire.stdin.write('{0}\n'.format('exposure_end'))
-        acquire.stdin.write('img {0}\n'.format( self.storePath + '/' + self.referenceFile))
-        
-        # acquire dialog
-        for fitsFile in fitsFiles:
-#            print 'rts2af_feed_acquire, fits file     {0}'.format(fitsFile)
-            # ignore lines until next exposure
+            acquire.stdin.write('img {0} \n'.format( storePath + '/' + popoff))
+            acquire.stdin.flush()
+
+            # acquire dialog
+            for fitsFile in fitsFiles:
+                #            print 'rts2af_feed_acquire, fits file     {0}'.format(fitsFile)
+                # ignore lines until next exposure
+                self.ignoreOutput(acquire)
+                time.sleep(2)
+                # exposure ends
+                acquire.stdin.write('{0}\n'.format('exposure_end'))
+                acquire.stdin.write('img {0} \n'.format(fitsFile))
+                acquire.stdin.flush()
+                print 'rts2af_feed_acquire, exposure ends {0}'.format(fitsFile)
+
+            # send a Q
             self.ignoreOutput(acquire)
             time.sleep(3)
             # exposure ends
             acquire.stdin.write('{0}\n'.format('exposure_end'))
-            acquire.stdin.write('img {0}\n'.format(fitsFile))
+            acquire.stdin.write('img /abc/{0}\n'.format('Q'))
+            acquire.stdin.flush()
 
-            print 'rts2af_feed_acquire, exposure ends {0}'.format(fitsFile)
+            print 'rts2af_feed_acquire, sent a Q'
 
-        # send a Q
-        self.ignoreOutput(acquire)
-        time.sleep(3)
-        # exposure ends
-        acquire.stdin.write('{0}\n'.format('exposure_end'))
-        acquire.stdin.write('img {0}\n'.format('Q\n'))
-
-        print 'rts2af_feed_acquire, sent a Q'
 
         print 'rts2af_feed_acquire ending, reading stdin for ever'
         while(True):
-            print 'rts2af_feed_acquire.py: from rts2af_acquire.py: {0}'.format( acquire.stdout.readline())
-            
+            try:
+                print 'rts2af_feed_acquire.py: from rts2af_acquire.py: {0}'.format( acquire.stdout.readline())
+            except:
+                print 'rts2af_feed_acquire.py: cought exception, breaking'
+                break
+            time.sleep(1)
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

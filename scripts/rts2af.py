@@ -117,7 +117,7 @@ class Configuration:
 
         self.config = ConfigParser.RawConfigParser()
         
-        self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/autofocus/rts2af.cfg'
+        self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2af/rts2af-acquire.cfg'
         
         self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
@@ -785,7 +785,7 @@ class Catalogue():
                 logger.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
                 return False
         else:
-            logger.error('matching: should not happen here, number reference objects is {0} should greater 0'.format( self.referenceCatalogue.numberReferenceObjects()))
+            logger.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
             return False
                     
 
