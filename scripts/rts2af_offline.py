@@ -16,12 +16,12 @@
 #   /scratch/focusing/2011-01-16-T17:37:55/X/
 #
 #   Then run, e.g.
-#   rts2af_offline.py  --config ./rts2-autofocus-offline.cfg --reference 20091106180858-517-RA.fits
+#   rts2af_offline.py  --config ./rts2af-offline.cfg --reference 20091106180858-517-RA.fits
 #
 #   The output is mostly written to /var/log/rts2-autofocus
 #
-#   In the /tmp directory you a lot of output for inspection. Or more
-#   conveniently, use executed the file with the ending sh, wich looks like, e.g.
+#   In the /tmp directory is a lot of output for inspection. Or more
+#   conveniently, execute the file with the ending .sh, wich looks like, e.g.
 #   /tmp/rts2af-ds9-autofocus-X-2011-01-22T12:12:26.729174.reg.sh
 #   and check the results with DS9.
 #
@@ -47,6 +47,8 @@
 __author__ = 'markus.wildi@one-arcsec.org'
 
 import sys
+import logging
+
 import rts2af 
 
 class main(rts2af.AFScript):
@@ -56,26 +58,22 @@ class main(rts2af.AFScript):
 
     def main(self):
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
-        args      = self.arguments()
-        logger    = self.configureLogger()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
+        args         = self.arguments()
 
         configFileName=''
         if( args.fileName):
             configFileName= args.fileName[0]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            cmd= 'logger no config file specified, taking default' + configFileName
-            #print cmd 
-            ##os.system( cmd)
+            logging.info('logger no config file specified, taking default' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
-
 
         if( args.referenceFitsFileName):
             referenceFitsFileName = args.referenceFitsFileName[0]
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                logging.error('rts2af_offline.py reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
                 sys.exit(1)
 # get the list of fits files
         FitsList=[]
@@ -117,7 +115,7 @@ class main(rts2af.AFScript):
                 HDUs.fitsHDUsList.append(hdu)
 
         if( not HDUs.validate()):
-            logger.error("main: HDUs are not valid, exiting")
+            logging.error("rts2af_offline.py: HDUs are not valid, exiting")
             sys.exit(1)
 
 # loop over hdus, create the catalogues
@@ -135,17 +133,16 @@ class main(rts2af.AFScript):
                 #print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
                 cats.CataloguesList.append(cat)
             else:
-                logger.error("main: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
+                logging.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
 
         if(not cats.validate()):
-            logger.error("main: catalogues are invalid, exiting")
+            logging.error("rts2af_offline.py: catalogues are invalid, exiting")
             sys.exit(1)
 
         # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
         cats.fitTheValues()
         # executed the latest /tmp/*.sh file ro see the results with DS9 
         cats.ds9WriteRegionFiles()
-
 
         # Various examples:
         #cats.average()
@@ -167,7 +164,6 @@ class main(rts2af.AFScript):
         #    cat.averageFWHM("selected")
         #    cat.averageFWHM("matched")
         #    cat.averageFWHM()
-
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

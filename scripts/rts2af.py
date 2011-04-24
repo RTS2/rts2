@@ -31,10 +31,9 @@ __author__ = 'markus.wildi@one-arcsec.org'
 import argparse
 import logging
 import stat
+import os
 from operator import itemgetter
 # globals
-LOG_FILENAME = '/var/log/rts2-autofocus'
-logger= logging.getLogger('rts2_af_logger') ;
 
 
 class AFScript:
@@ -43,6 +42,7 @@ class AFScript:
         self.scriptName= scriptName
 
     def arguments( self): 
+        
 
         parser = argparse.ArgumentParser(description='RTS2 autofocus', epilog="See man 1 rts2-autofocus.py for mor information")
 #        parser.add_argument(
@@ -63,10 +63,15 @@ class AFScript:
                             metavar='REFERENCE', nargs=1, type=str,
                             help='reference file name')
 
-        parser.add_argument('-l', '--logging', dest='logLevel', action='store', 
+        parser.add_argument('-l', '--loglevel', dest='logLevel', action='store', 
                             metavar='LOGLEVEL', nargs=1, type=str,
                             default='warning',
                             help=' log level: usual levels')
+
+        parser.add_argument('-t', '--logto', dest='logTo', action='store', 
+                            metavar='LOGTO', nargs=1, type=str,
+                            default='-',
+                            help=' log file: filename or - for stdout')
 
 #        parser.add_argument('-t', '--test', dest='test', action='store', 
 #                            metavar='TEST', nargs=1,
@@ -79,6 +84,12 @@ class AFScript:
                             )
 
         self.args= parser.parse_args()
+        self.logformat= '%(asctime)s %(levelname)s %(message)s'
+
+        if(self.args.logTo[0] == '-'):
+            logging.basicConfig(level=logging.WARN, format='%(asctime)s %(levelname)s %(message)s')
+        else:
+            logging.basicConfig(filename=self.args.logTo[0], level=logging.INFO, format= self.logformat)
 
         if(self.args.verbose):
             global verbose
@@ -93,14 +104,6 @@ class AFScript:
 
         return  self.args
 
-    def configureLogger(self):
-
-        if( self.args.logLevel[0]== 'debug'): 
-            logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
-        else:
-            logging.basicConfig(filename=LOG_FILENAME,level=logging.WARN)
-
-        return logger
 
 import ConfigParser
 import string
@@ -124,23 +127,27 @@ class Configuration:
         self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.cp[('basic', 'CCD_CAMERA')]= 'CD'
-        self.cp[('basic', 'CHECK_RTS2_CONFIGURATION')]= False
-
-        self.cp[('filter properties', 'f01')]= '[0, U, 5074, -1500, 1500, 100, 40]'
-        self.cp[('filter properties', 'f02')]= '[1, B, 4712, -1500, 1500, 100, 30]'
-        self.cp[('filter properties', 'f03')]= '[2, V, 4678, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f04')]= '[4, R, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f05')]= '[4, I, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f06')]= '[5, X, 3275, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f07')]= '[6, H, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f08')]= '[6, b, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f09')]= '[6, c, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0a')]= '[6, d, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0b')]= '[6, e, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0c')]= '[6, f, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0d')]= '[6, g, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0e')]= '[6, h, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'nofilter')]= '[6, NOFILTER, 3446, -1500, 1500, 109, 19]'
+        #                                        name
+        #                                           offset to clear path
+        #                                                 relative lower acquisition limit [tick]
+        #                                                        relative upper acquisition limit [tick]
+        #                                                              stepsize [tick]
+        #                                                                   exposure time [sec]
+        self.cp[('filter properties', 'f01')]= '[U, 5074, -1500, 1500, 100, 40]'
+        self.cp[('filter properties', 'f02')]= '[B, 4712, -1500, 1500, 100, 30]'
+        self.cp[('filter properties', 'f03')]= '[V, 4678, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f04')]= '[R, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f05')]= '[I, 4700, -1500, 1500, 100, 20]'
+        self.cp[('filter properties', 'f06')]= '[X, 3275, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f07')]= '[H, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f08')]= '[b, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f09')]= '[c, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0a')]= '[d, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0b')]= '[e, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0c')]= '[f, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0d')]= '[g, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'f0e')]= '[h, 3446, -1500, 1500, 100, 10]'
+        self.cp[('filter properties', 'nofilter')]= '[NOFILTER, 3446, -1500, 1500, 109, 19]'
         
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
@@ -169,6 +176,7 @@ class Configuration:
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         
         self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
+        self.cp[('fitting', 'DISPLAYFIT')]= True
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
         self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/autofocus/sex-autofocus.cfg'
@@ -182,13 +190,11 @@ class Configuration:
         self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         
-        self.cp[('mode', 'TAKE_DATA')]= False
         self.cp[('mode', 'SET_FOCUS')]= True
         self.cp[('mode', 'CCD_BINNING')]= 0
         self.cp[('mode', 'AUTO_FOCUS')]= False
         self.cp[('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')]= 10
         
-        self.cp[('rts2', 'RTS2_DEVICES')]= '/etc/rts2/devices'
         
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -226,9 +232,9 @@ class Configuration:
 
     def filterByName(self, name):
         for filter in  self.filters:
-            #print "NAME>" + name + "<>" + filter.name
+            print "NAME>" + name + "<>" + filter.name
             if( name == filter.name):
-                #print "NAME: {0} {1}".format(name, filter.name)
+                print "NAME: {0} {1}".format(name, filter.name)
                 return filter
 
         return False
@@ -284,7 +290,7 @@ class Configuration:
         try:
             config.readfp(open(configFileName))
         except:
-            logger.error('Configuration.readConfiguration: config file >' + configFileName + '< not found or wrong syntax, exiting')
+            logging.error('Configuration.readConfiguration: config file >' + configFileName + '< not found or wrong syntax, exiting')
             sys.exit(1)
 
 # read the defaults
@@ -296,8 +302,7 @@ class Configuration:
             try:
                 value = config.get( section, identifier)
             except:
-                logger.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
-
+                logging.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
             # overwrite the default configuration (if needed)
             self.cp[( section,  identifier)]= value
 
@@ -312,14 +317,13 @@ class Configuration:
                 try:
                     self.values[identifier]= int(value)
                 except:
-                    logger.error('Configuration.readConfiguration: no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
+                    logging.error('Configuration.readConfiguration: no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
                     
-
             elif(isinstance(self.values[identifier], float)):
                 try:
                     self.values[identifier]= float(value)
                 except:
-                    logger.error('Configuration.readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
+                    logging.error('Configuration.readConfiguration: no float '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
 
             else:
                 self.values[identifier]= value
@@ -330,10 +334,10 @@ class Configuration:
                     for item in items: 
                         item= string.replace( item, ' ', '')
 
-                    items[1]= string.replace( items[1], ' ', '')
+                    items[0]= string.replace( items[0], ' ', '')
                     if(verbose):
-                        print '-----------filterInUse---------:>' + items[1] + '<'
-                    self.filters.append( Filter( items[1], string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5]), string.atoi(items[6])))
+                        print '-----------filterInUse---------:>' + items[0] + '<'
+                    self.filters.append( Filter( items[0], string.atoi(items[1]), string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5])))
                 elif( section == 'filters'):
                     items= value.split(':')
                     for item in items:
@@ -351,7 +355,7 @@ class Configuration:
             for filter in self.filters:
                 print 'Filter --------' + filter.name
                 print 'Filter --------%d'  % filter.exposure 
-                print 'Filter --------%d'  % filter.focDef
+                print 'Filter --------%d'  % filter.OffsetToClearPath
 
 
         if(verbose):
@@ -442,9 +446,9 @@ class Setting:
 class Filter:
     """Class for filter properties"""
 
-    def __init__(self, name, focDef, lowerLimit, upperLimit, resolution, exposure, ):
+    def __init__(self, name, OffsetToClearPath, lowerLimit, upperLimit, resolution, exposure):
         self.name= name
-        self.focDef    = focDef
+        self.OffsetToClearPath    = OffsetToClearPath
         self.lowerLimit= lowerLimit
         self.upperLimit= upperLimit
         self.stepSize  = resolution # [tick]
@@ -560,7 +564,7 @@ class Catalogue():
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
     def createCatalogue(self):
         if( self.SExtractorParams==None):
-            logger.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
+            logging.error( 'Catalogue.createCatalogue: no SExtractor parameter configuration given')
             return False
     
         #if( not self.fitsHDU.isReference):
@@ -596,7 +600,7 @@ class Catalogue():
                     try:
                         self.SExtractorParams.assoc.index(element.group(2))
                     except:
-                        logger.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
+                        logging.error( 'Catalogue.createCatalogue: no matching element for ' + element.group(2) +' found')
                         break
             elif( data):
                 items= line.split()
@@ -613,12 +617,12 @@ class Catalogue():
                 else:
                     self.multiplicity[sxObjectNumberASSOC]= 1
             else:
-                logger.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
-                logger.error( 'Catalogue.readCatalogue: ' + line)
+                logging.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
+                logging.error( 'Catalogue.readCatalogue: ' + line)
                 break
 
         else: # exhausted 
-            logger.error( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
+            logging.info( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
             self.isValid= True
 
         return self.isValid
@@ -635,10 +639,10 @@ class Catalogue():
                 if(verbose):
                     print "printObject: object number " + sxObjectNumber + " identifier " + identifier + "value %f" % self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
+                logging.error( "Catalogue.printObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
-#                logger.error( "Catalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
+#                logging.error( "Catalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
             return True
 
         return False
@@ -654,13 +658,13 @@ class Catalogue():
             
             onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) '.format(self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY,self.referenceCatalogue.circle.transformedRadius) + '# color=magenta font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {radius acceptance}')
         except:
-            logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9: writing header")
+            logging.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9: writing header")
             
         for (sxObjectNumber,identifier), value in sorted( self.catalogue.iteritems()):
             try:
                 onscreenDisplay.set('regions', 'image; circle ({0} {1} {2}) # font=\"helvetica 10 normal\" color={{{3}}} select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source text = {{{4}}}'.format( self.catalogue[(sxObjectNumber, 'X_IMAGE')], self.catalogue[(sxObjectNumber, 'Y_IMAGE')], self.catalogue[(sxObjectNumber, 'FWHM_IMAGE')]/2., color, sxObjectNumber))
             except:
-                logger.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9, object: {0}".format(sxObjectNumber))
+                logging.error( "Catalogue.ds9DisplayCatalogue: No contact to ds9, object: {0}".format(sxObjectNumber))
                 
 
     def ds9WriteRegionFile(self, writeSelected=False, writeMatched=False, writeAll=False, colorSelected="cyan", colorMatched="green", colorAll="red"):
@@ -719,7 +723,7 @@ class Catalogue():
         
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
+            logging.error( "Catalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
             return False
         else:
             del self.sxObjects[sxObjectNumber]
@@ -729,10 +733,10 @@ class Catalogue():
             if(((sxObjectNumber, identifier)) in self.catalogue):
                 del self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
+                logging.error( "Catalogue.removeSXObject: object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
-#                logger.error( "Catalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
+#                logging.error( "Catalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
         return False
 
@@ -748,7 +752,7 @@ class Catalogue():
         return True
 
     def cleanUp(self):
-        logger.debug( 'Catalogue.cleanUp: catalogue, I am : ' + self.fitsHDU.fitsFileName)
+        logging.debug( 'Catalogue.cleanUp: catalogue, I am : ' + self.fitsHDU.fitsFileName)
 
         discardedObjects= 0
         sxObjectNumbers= self.sxObjects.keys()
@@ -757,7 +761,7 @@ class Catalogue():
 #                self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
-        logger.info("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
+        logging.info("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
 
     def matching(self):
         matched= 0
@@ -782,10 +786,10 @@ class Catalogue():
             if( (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > runTimeConfig.value('MATCHED_RATIO')):
                 return True
             else:
-                logger.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
                 return False
         else:
-            logger.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
+            logging.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
             return False
                     
 
@@ -857,7 +861,7 @@ class ReferenceCatalogue(Catalogue):
         return None
 
     def writeCatalogue(self):
-        logger.error( 'ReferenceCatalogue.writeCatalogue: writing reference catalogue, for ' + self.fitsHDU.fitsFileName) 
+        logging.info( 'ReferenceCatalogue.writeCatalogue: writing reference catalogue, for ' + self.fitsHDU.fitsFileName) 
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
@@ -873,7 +877,7 @@ class ReferenceCatalogue(Catalogue):
                     try:
                         SXcat.write(line)
                     except:
-                        logger.error( 'ReferenceCatalogue.writeCatalogue: could not write line for object ' + data.group(1))
+                        logging.error( 'ReferenceCatalogue.writeCatalogue: could not write line for object ' + data.group(1))
                         sys.exit(1)
                         break
         SXcat.close()
@@ -910,7 +914,7 @@ class ReferenceCatalogue(Catalogue):
 # checking against reference items see http://www.wellho.net/resources/ex.php4?item=y115/re1.py
     def createCatalogue(self):
         if( self.SExtractorParams==None):
-            logger.error( 'ReferenceCatalogue.createCatalogue: no SExtractor parameter configuration given')
+            logging.error( 'ReferenceCatalogue.createCatalogue: no SExtractor parameter configuration given')
             return False
 
         # if( not self.fitsHDU.isReference):
@@ -919,7 +923,7 @@ class ReferenceCatalogue(Catalogue):
         try:
             SXcat= open( self.skyList, 'r')
         except:
-            logger.error("could not open file " + self.skyList + ", exiting")
+            logging.error("could not open file " + self.skyList + ", exiting")
             sys.exit(1) 
 
         self.lines= SXcat.readlines()
@@ -956,16 +960,16 @@ class ReferenceCatalogue(Catalogue):
 
                 self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX])) # position, bool is used for clean up (default True, True)
             else:
-                logger.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
-                logger.error( 'ReferenceCatalogue.readCatalogue: ' + line)
+                logging.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
+                logging.error( 'ReferenceCatalogue.readCatalogue: ' + line)
                 break
 
         else: # exhausted 
             if( self.numberReferenceObjects() > 0):
-                logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} number of objects {1}'.format( self.fitsHDU.fitsFileName, self.numberReferenceObjects()))
+                logging.info( 'ReferenceCatalogue.readCatalogue: catalogue created {0} number of objects {1}'.format( self.fitsHDU.fitsFileName, self.numberReferenceObjects()))
                 self.isValid= True
             else:
-                logger.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} no objects found'.format( self.fitsHDU.fitsFileName))
+                logging.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} no objects found'.format( self.fitsHDU.fitsFileName))
                 self.isValid= False
 
         return self.isValid
@@ -980,31 +984,31 @@ class ReferenceCatalogue(Catalogue):
             if(((sxObjectNumber, identifier)) in self.catalogue):
                 print "printObject: reference object number " + sxObjectNumber + " identifier " + identifier + "value %f" % self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "ReferenceCatalogue.printObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
+                logging.error( "ReferenceCatalogue.printObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
-#                logger.error( "ReferenceCatalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
+#                logging.error( "ReferenceCatalogue.printObject: for object number " + sxObjectNumber + " all elements printed")
             return True
 
         return False
 
     def removeSXObject(self, sxObjectNumber):
         if( not sxObjectNumber in self.sxObjects):
-            logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
+            logging.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found in sxObjects")
         else:
             if( sxObjectNumber in self.sxObjects):
                 del self.sxObjects[sxObjectNumber]
             else:
-                logger.error( "ReferenceCatalogue.removeSXObject: object number " + sxObjectNumber + " not found")
+                logging.error( "ReferenceCatalogue.removeSXObject: object number " + sxObjectNumber + " not found")
 
         for identifier in self.SExtractorParams.reference:
             if(((sxObjectNumber, identifier)) in self.catalogue):
                 del self.catalogue[(sxObjectNumber, identifier)]
             else:
-                logger.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
+                logging.error( "ReferenceCatalogue.removeSXObject: reference Object number " + sxObjectNumber + " for >" + identifier + "< not found, break")
                 break
         else:
-#                logger.error( "ReferenceCatalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
+#                logging.error( "ReferenceCatalogue.removeSXObject: for object number " + sxObjectNumber + " all elements deleted")
             return True
 
         return False
@@ -1042,10 +1046,10 @@ class ReferenceCatalogue(Catalogue):
 
     def cleanUpReference(self):
         if( not  self.isReference):
-            logger.error( 'ReferenceCatalogue.cleanUpReference: clean up only for a reference catalogue, I am : ' + self.fitsHDU.fitsFileName) 
+            logging.debug( 'ReferenceCatalogue.cleanUpReference: clean up only for a reference catalogue, I am : ' + self.fitsHDU.fitsFileName) 
             return False
         else:
-            logger.debug( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
+            logging.debug( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
         flaggedSeparation= 0
         flaggedProperties= 0
         flaggedAcceptance= 0
@@ -1072,7 +1076,7 @@ class ReferenceCatalogue(Catalogue):
                 self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
-        logger.error("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
+        logging.info("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
 
 
 
@@ -1088,7 +1092,7 @@ class AcceptanceRegion():
             self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
             self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
         except:
-            logger.error("AcceptanceRegion.__init__: something went wrong here")
+            logging.error("AcceptanceRegion.__init__: something went wrong here")
 
         if( centerOffsetX==None):
             self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))
@@ -1143,7 +1147,7 @@ class Catalogues():
                     try:
                         del self.CataloguesList[cat]
                     except:
-                        logger.error('Catalogues.validate: could not remove cat for ' + cat.fitsHDU.fitsFileName)
+                        logging.error('Catalogues.validate: could not remove cat for ' + cat.fitsHDU.fitsFileName)
                         if(verbose):
                             print "Catalogues.validate: failed to removed cat: " + cat.fitsHDU.fitsFileName
                     break
@@ -1153,9 +1157,9 @@ class Catalogues():
                     self.isValid= True
                     return self.isValid
                 else:
-                    logger.error('Catalogues.validate: no catalogues found after validation')
+                    logging.error('Catalogues.validate: no catalogues found after validation')
         else:
-            logger.error('Catalogues.validate: no catalogues found')
+            logging.error('Catalogues.validate: no catalogues found')
         return False
 
     def countObjectsFoundInAllFiles(self):
@@ -1165,7 +1169,7 @@ class Catalogues():
                 self.numberOfObjectsFoundInAllFiles += 1
 
         if( self.numberOfObjectsFoundInAllFiles < runTimeConfig.value('MINIMUM_OBJECTS')):
-            logger.error('Catalogues.writeFitInputValues: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
+            logging.error('Catalogues.writeFitInputValues: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
             return False
         else:
             return True
@@ -1192,8 +1196,12 @@ class Catalogues():
             self.__average__()
             self.writeFitInputValues()
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
+            if(runTimeConfig.value('DISPLAYFIT')):
+                display= '1'
+            else:
+                display= '0'
             cmd= [ runTimeConfig.value('FOCROOT'),
-                   "1", # 1 interactive, 0 batch
+                   display, 
                    self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
                    serviceFileOp.now,
                    str(self.numberOfObjectsFoundInAllFiles),
@@ -1222,7 +1230,7 @@ class Catalogues():
                     frfn.close()
 
         else:
-            logger.error('Catalogues.fitTheValues: too few objects, do not fit')
+            logging.error('Catalogues.fitTheValues: too few objects, do not fit')
 
     def __average__(self):
         numberOfObjects = 0
@@ -1255,22 +1263,22 @@ class Catalogues():
         try:
             self.maxFwhm= numpy.amax(fwhmList)
         except:
-            logger.error('__average__: something wrong with fwhmList maximum')
+            logging.error('__average__: something wrong with fwhmList maximum')
             return False
         try:
             self.minFwhm= numpy.amax(fwhmList)
         except:
-            logger.error('__average__: something wrong with fwhmList minimum')
+            logging.error('__average__: something wrong with fwhmList minimum')
             return False
         try:
             self.maxFlux= numpy.amax(fluxList)
         except:
-            logger.error('__average__: something wrong with fluxList maximum')
+            logging.error('__average__: something wrong with fluxList maximum')
             return False
         try:
             self.minFlux= numpy.amax(fluxList)
         except:
-            logger.error('__average__: something wrong with fluxList minimum')
+            logging.error('__average__: something wrong with fluxList minimum')
             return False
 
         if(verbose):
@@ -1350,9 +1358,9 @@ class FitsHDU():
             fitsHDU = pyfits.fitsopen(self.fitsFileName)
         except:
             if( self.fitsFileName):
-                logger.error('FitsHDU: file not found : ' + self.fitsFileName)
+                logging.error('FitsHDU: file not found : ' + self.fitsFileName)
             else:
-                logger.error('FitsHDU: file name not given (None)')
+                logging.error('FitsHDU: file name not given (None)')
             return False
 
         fitsHDU.close()
@@ -1362,7 +1370,7 @@ class FitsHDU():
         except:
             self.isValid= True
             self.headerElements['FILTER']= 'NOFILTER' 
-            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
 
         try:
             self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
@@ -1370,14 +1378,14 @@ class FitsHDU():
             self.isValid= True
             self.assumedBinning=True
             self.headerElements['BINNING']= '1x1'
-            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the binning header element not found, assuming 1x1 binning')
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the binning header element not found, assuming 1x1 binning')
 
         try:
             self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
             self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
         except:
             self.isValid= True
-            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
 
         try:
             self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
@@ -1385,7 +1393,7 @@ class FitsHDU():
             self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
         except:
             self.isValid= False
-            logger.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
+            logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
             return False
         
         if( not self.extractBinning()):
@@ -1414,7 +1422,7 @@ class FitsHDU():
                 if(key == 'BINNING'):
                     continue
             if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
-##wildi                logger.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
+##wildi                logging.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
                 break
             else:
                 self.headerElements[key] = fitsHDU[0].header[key]
@@ -1426,7 +1434,7 @@ class FitsHDU():
 
             return True
         
-        logger.error("headerProperties: fits file " + self.fitsFileName + " has different header properties")
+        logging.error("headerProperties: fits file " + self.fitsFileName + " has different header properties")
         return False
 
     def extractBinning(self):
@@ -1441,7 +1449,7 @@ class FitsHDU():
         elif(binning2x2):
             self.binning= 2
         else:
-            logger.error('headerProperties: fits file ' + self.fitsFileName +  ' binning: {0} not supported, exiting'.format(fitsHDU[0].header['BINNING']))
+            logging.error('headerProperties: fits file ' + self.fitsFileName +  ' binning: {0} not supported, exiting'.format(fitsHDU[0].header['BINNING']))
             return False
         return True
     
@@ -1471,7 +1479,7 @@ class FitsHDUs():
         filter=  runTimeConfig.filterByName(name)
 #        for hdu in sorted(self.fitsHDUsList):
         for hdu in sorted(self.fitsHDUsList):
-            if( filter.focDef < hdu.headerElements['FOC_POS']):
+            if( filter.OffsetToClearPath < hdu.headerElements['FOC_POS']):
                 if(verbose):
                     print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
                 return hdu
@@ -1498,7 +1506,7 @@ class FitsHDUs():
                     try:
                         del self.fitsHDUsList[hdu]
                     except:
-                        logger.error('FitsHDUs.validate: could not remove hdu for ' + hdu.fitsFileName)
+                        logging.error('FitsHDUs.validate: could not remove hdu for ' + hdu.fitsFileName)
                         if(verbose):
                             print "FitsHDUs.validate: removed hdu: " + hdu.fitsFileName + "========== %d" %  self.fitsHDUsList.index(hdu)
                     break # really break out the keys loop 
@@ -1511,10 +1519,10 @@ class FitsHDUs():
 
         if( self.numberOfFocusPositions >= runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
             if( len(self.fitsHDUsList) > 0):
-                logger.error('FitsHDUs.validate: hdus are valid')
+                logging.info('FitsHDUs.validate: hdus are valid')
                 self.isValid= True
         else:
-            logger.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+            logging.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
 
         return self.isValid
     def countFocuserPositions(self):
@@ -1547,7 +1555,7 @@ class ServiceFileOperations():
 
     def absolutePath(self, fileName=None):
         if( fileName==None):
-            logger.error('ServiceFileOperations.absolutePath: no file name given')
+            logging.error('ServiceFileOperations.absolutePath: no file name given')
             
         pLeadingSlash = re.compile( r'\/.*')
         leadingSlash = pLeadingSlash.match(fileName)
@@ -1570,7 +1578,7 @@ class ServiceFileOperations():
 
     def expandToSkyList( self, fitsHDU=None):
         if( fitsHDU==None):
-            logger.error('ServiceFileOperations.expandToCat: no hdu given')
+            logging.error('ServiceFileOperations.expandToCat: no hdu given')
         
         items= runTimeConfig.value('SEXSKY_LIST').split('.')
         try:
@@ -1585,7 +1593,7 @@ class ServiceFileOperations():
 
     def expandToCat( self, fitsHDU=None):
         if( fitsHDU==None):
-            logger.error('ServiceFileOperations.expandToCat: no hdu given')
+            logging.error('ServiceFileOperations.expandToCat: no hdu given')
         try:
             fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat')
         except:
@@ -1596,14 +1604,14 @@ class ServiceFileOperations():
     def expandToFitInput(self, fitsHDU=None, element=None):
         items= runTimeConfig.value('FIT_RESULT_FILE').split('.')
         if((fitsHDU==None) or ( element==None)):
-            logger.error('ServiceFileOperations.expandToFitInput: no hdu or elementgiven')
+            logging.error('ServiceFileOperations.expandToFitInput: no hdu or elementgiven')
 
         fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
         return self.expandToTmp(self.prefix(fileName))
 
     def expandToFitImage(self, fitsHDU=None):
         if( fitsHDU==None):
-            logger.error('ServiceFileOperations.expandToFitImage: no hdu given')
+            logging.error('ServiceFileOperations.expandToFitImage: no hdu given')
 
         items= runTimeConfig.value('FIT_RESULT_FILE').split('.') 
 # ToDo png
@@ -1618,7 +1626,7 @@ class ServiceFileOperations():
 # ToDo: refactor with expandToSkyList
     def expandToDs9RegionFileName( self, fitsHDU=None):
         if( fitsHDU==None):
-            logger.error('ServiceFileOperations.expandToDs9RegionFileName: no hdu given')
+            logging.error('ServiceFileOperations.expandToDs9RegionFileName: no hdu given')
         
         
         items= runTimeConfig.value('DS9_REGION_FILE').split('.')
@@ -1636,7 +1644,7 @@ class ServiceFileOperations():
 
     def expandToDs9CommandFileName( self, fitsHDU=None):
         if( fitsHDU==None):
-            logger.error('ServiceFileOperations.expandToDs9COmmandFileName: no hdu given')
+            logging.error('ServiceFileOperations.expandToDs9COmmandFileName: no hdu given')
         
         items= runTimeConfig.value('DS9_REGION_FILE').split('.')
         try:
@@ -1658,7 +1666,7 @@ class ServiceFileOperations():
         
     def expandToTmpConfigurationPath(self, fileName=None):
         if( fileName==None):
-            logger.error('ServiceFileOperations.expandToTmpConfigurationPath: no filename given')
+            logging.error('ServiceFileOperations.expandToTmpConfigurationPath: no filename given')
 
         fileName= fileName + self.now + '.cfg'
         return self.expandToTmp(fileName)
@@ -1666,7 +1674,7 @@ class ServiceFileOperations():
 
     def expandToFitResultPath(self, fileName=None):
         if( fileName==None):
-            logger.error('ServiceFileOperations.expandToFitResultPath: no filename given')
+            logging.error('ServiceFileOperations.expandToFitResultPath: no filename given')
 
         return self.expandToTmp(fileName + self.now + '.fit')
 
@@ -1685,9 +1693,6 @@ class ServiceFileOperations():
             return None
         else:
             return self.expandToTmp( '{0}{1}.fit'.format(originator.group(0), date.group(1)))
-
-
-
 
     def createAcquisitionBasePath(self, filter=None):
         os.makedirs( self.expandToAcquisitionBasePath( filter))

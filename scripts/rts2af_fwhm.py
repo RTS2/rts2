@@ -33,6 +33,7 @@ import shutil
 import string
 import sys
 import time
+import logging
 from operator import itemgetter, attrgetter
 
 
@@ -49,7 +50,6 @@ class main(rts2af.AFScript):
     def main(self):
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         args      = self.arguments()
-        logger    = self.configureLogger()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
 
         configFileName=''
@@ -57,9 +57,7 @@ class main(rts2af.AFScript):
             configFileName= args.fileName[0]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            cmd= 'logger no config file specified, taking default' + configFileName
-            #print cmd 
-            os.system( cmd)
+            logging.info('rts2af_fwhm.py: no config file specified, taking default ' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
 
