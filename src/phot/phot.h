@@ -88,7 +88,7 @@ class Rts2DevPhot:public ScriptDevice
 
 		virtual int scriptEnds ();
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 

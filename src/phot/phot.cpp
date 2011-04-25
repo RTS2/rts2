@@ -130,8 +130,6 @@ int Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_coun
 int Rts2DevPhot::endIntegrate ()
 {
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
-	// keep us update in old time
-	startIntegrate ();
 	req_count->setValueInteger (-1);
 	return 0;
 }
@@ -189,7 +187,7 @@ int Rts2DevPhot::scriptEnds ()
 	return ScriptDevice::scriptEnds ();
 }
 
-int Rts2DevPhot::changeMasterState (int new_state)
+void Rts2DevPhot::changeMasterState (int old_state, int new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -200,7 +198,7 @@ int Rts2DevPhot::changeMasterState (int new_state)
 			disableMove ();
 			break;
 	}
-	return ScriptDevice::changeMasterState (new_state);
+	ScriptDevice::changeMasterState (old_state, new_state);
 }
 
 void Rts2DevPhot::setReqTime (float in_req_time)
@@ -217,7 +215,7 @@ void Rts2DevPhot::postEvent (Rts2Event *event)
 	{
 		case PHOT_EVENT_CHECK:
 			ret = getCount ();
-			if (ret >= 0)
+			if (ret >= 0 && req_count->getValueInteger () > 0)
 				addTimer (ret, new Rts2Event (PHOT_EVENT_CHECK, this));
 			else if (ret < 0)
 				endIntegrate ();

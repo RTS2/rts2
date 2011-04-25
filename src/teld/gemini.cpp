@@ -64,7 +64,7 @@ class Gemini:public Telescope
 		Gemini (int argc, char **argv);
 		virtual ~ Gemini (void);
 		virtual int init ();
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 		virtual int info ();
 		virtual int startResync ();
 		virtual int isMoving ();
@@ -1264,10 +1264,10 @@ int Gemini::idle ()
 	return Telescope::idle ();
 }
 
-int Gemini::changeMasterState (int new_state)
+void Gemini::changeMasterState (int old_state, int new_state)
 {
 	matchCount = 0;
-	return Telescope::changeMasterState (new_state);
+	return Telescope::changeMasterState (old_state, new_state);
 }
 
 void Gemini::getAxis ()

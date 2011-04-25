@@ -72,7 +72,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual void postEvent (Rts2Event * event);
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		int selectNext ();		 // return next observation..
 
@@ -526,9 +526,9 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	}
 }
 
-int SelectorDev::changeMasterState (int new_master_state)
+void SelectorDev::changeMasterState (int old_state, int new_state)
 {
-	switch (new_master_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
@@ -547,7 +547,7 @@ int SelectorDev::changeMasterState (int new_master_state)
 			break;
 	}
 	updateNext ();
-	return Rts2DeviceDb::changeMasterState (new_master_state);
+	Rts2DeviceDb::changeMasterState (old_state, new_state);
 }
 
 void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)

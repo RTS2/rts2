@@ -941,7 +941,7 @@ int Camera::idle ()
 	return rts2core::ScriptDevice::idle ();
 }
 
-int Camera::changeMasterState (int new_state)
+void Camera::changeMasterState (int old_state, int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -958,7 +958,7 @@ int Camera::changeMasterState (int new_state)
 		default:
 			afterNight ();
 	}
-	return rts2core::ScriptDevice::changeMasterState (new_state);
+	rts2core::ScriptDevice::changeMasterState (old_state, new_state);
 }
 
 int Camera::camStartExposure ()

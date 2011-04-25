@@ -419,7 +419,7 @@ void Block::deviceIdle (Rts2Conn * conn)
 {
 }
 
-int Block::changeMasterState (int new_state)
+void Block::changeMasterState (int old_state, int new_state)
 {
 	connections_t::iterator iter;
 	// send message to all connections that they can possibly continue executing..
@@ -427,7 +427,6 @@ int Block::changeMasterState (int new_state)
 		(*iter)->masterStateChanged ();
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		(*iter)->masterStateChanged ();
-	return 0;
 }
 
 void Block::bopStateChanged ()
@@ -506,7 +505,7 @@ int Block::setMasterState (Rts2Conn *_conn, int new_state)
 	if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
 	{
 		// call changeMasterState only if something except BOP_MASK changed
-		changeMasterState (new_state);
+		changeMasterState (old_state, new_state);
 	}
 	if ((old_state & BOP_MASK) != (new_state & BOP_MASK))
 	{

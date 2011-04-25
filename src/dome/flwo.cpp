@@ -32,7 +32,8 @@ class FLWO:public Dome
 	public:
 		FLWO (int argc, char **argv);
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
+		virtual bool getIgnoreMeteo ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -96,13 +97,23 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	addOption (OPT_COVERST, "cover-file", 1, "path to cover state file");
 }
 
-int FLWO::changeMasterState (int new_state)
+void FLWO::changeMasterState (int old_state, int new_state)
 {
 	// do not open dome if open
 	// close dome if not switching to night
 	if (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
-		return rts2core::Device::changeMasterState (new_state);
-	return Dome::changeMasterState (new_state);
+	{
+		rts2core::Device::changeMasterState (old_state, new_state);
+		return;
+	}
+	Dome::changeMasterState (old_state, new_state);
+}
+
+bool FLWO::getIgnoreMeteo ()
+{
+	if (closeOnBadWeather->getValueBool () == true)
+		return true;
+	return Dome::getIgnoreMeteo ();
 }
 
 int FLWO::processOption (int opt)
@@ -252,6 +263,7 @@ int FLWO::startClose ()
 	if (ret)
 		return ret;
 	addConnection (domeExe);
+	logStream (MESSAGE_DEBUG) << "starting to close dome, close_bad_weather is " << closeOnBadWeather->getValueBool () << sendLog;
 	return 0;
 }
 

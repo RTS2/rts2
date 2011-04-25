@@ -32,7 +32,7 @@ class Fli:public Filterd
 		virtual int processOption (int in_opt);
 		virtual int init (void);
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual int getFilterNum (void);
 		virtual int setFilterNum (int new_filter);
@@ -144,11 +144,11 @@ int Fli::init (void)
 	return 0;
 }
 
-int Fli::changeMasterState (int new_state)
+void Fli::changeMasterState (int old_state, int new_state)
 {
 	if ((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY || (new_state & SERVERD_STATUS_MASK) == SERVERD_STANDBY_MASK || new_state == SERVERD_SOFT_OFF || new_state == SERVERD_HARD_OFF)
 		homeFilter ();
-	return Filterd::changeMasterState (new_state);
+	Filterd::changeMasterState (old_state, new_state);
 }
 
 int Fli::getFilterNum (void)

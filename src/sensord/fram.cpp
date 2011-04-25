@@ -75,7 +75,7 @@ class Fram:public Sensor
 		virtual int init ();
 		virtual int idle ();
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 
@@ -231,7 +231,7 @@ int Fram::getWDCTemp (int id)
 	return i;
 }
 
-int Fram::changeMasterState (int new_state)
+void Fram::changeMasterState (int old_state, int new_state)
 {
 
 	if ((new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
@@ -243,14 +243,15 @@ int Fram::changeMasterState (int new_state)
 			case SERVERD_DAWN:
 				if (extraSwitch)
 					extraSwitch->VYP (SWITCH_BATBACK);
-				return Sensor::changeMasterState (new_state);
+				Sensor::changeMasterState (old_state, new_state);
+				return;
 			default:
 				break;
 		}
 	}
 	if (extraSwitch)
 		extraSwitch->ZAP (SWITCH_BATBACK);
-	return Sensor::changeMasterState (new_state);
+	Sensor::changeMasterState (old_state, new_state);
 }
 
 int Fram::processOption (int in_opt)

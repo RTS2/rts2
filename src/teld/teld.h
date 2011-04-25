@@ -92,7 +92,7 @@ class Telescope:public rts2core::Device
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 

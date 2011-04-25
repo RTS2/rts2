@@ -320,9 +320,14 @@ int Dome::setMasterOn ()
 	return 0;
 }
 
-int Dome::changeMasterState (int new_state)
+void Dome::changeMasterState (int old_state, int new_state)
 {
-	if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	// detect state changes triggered by bad weather
+	if ((old_state & WEATHER_MASK) == GOOD_WEATHER && (new_state & WEATHER_MASK) == BAD_WEATHER && getIgnoreMeteo () == true)
+	{
+		logStream (MESSAGE_INFO) << "ignoring bad weather trigerred state change" << sendLog;
+	}
+	else if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	{
 		switch (new_state & SERVERD_STATUS_MASK)
 		{
@@ -353,7 +358,7 @@ int Dome::changeMasterState (int new_state)
 				off ();
 		}
 	}
-	return Device::changeMasterState (new_state);
+	Device::changeMasterState (old_state, new_state);
 }
 
 void Dome::setIgnoreTimeout (time_t _ignore_time)

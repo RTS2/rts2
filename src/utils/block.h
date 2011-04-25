@@ -316,7 +316,13 @@ class Block: public rts2core::App
 		 */
 		virtual void deviceIdle (Rts2Conn * conn);
 
-		virtual int changeMasterState (int new_state);
+		/**
+		 * Called when master state is changed.
+		 *
+		 * @param old_state  old system state
+		 * @param new_state  new system state (as commanded by system state change).
+		 */
+		virtual void changeMasterState (int old_state, int new_state);
 
 		/**
 		 * Called when new state information arrives.

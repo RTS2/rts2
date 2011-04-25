@@ -41,7 +41,7 @@ class Dome:public rts2core::Device
 		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
 		virtual ~Dome ();
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		/**
 		 * Increases ignore timeout by given amount of seconds.
@@ -50,7 +50,10 @@ class Dome:public rts2core::Device
 		 */ 
 		void setIgnoreTimeout (time_t _ignore_time);
 
-		bool getIgnoreMeteo ();
+		/**
+		 * Returns true if weather status (BAD_WEATHER system-wide flag) should be ignored.
+		 */
+		virtual bool getIgnoreMeteo ();
 
 		void setWeatherTimeout (time_t wait_time, const char *msg);
 

@@ -164,7 +164,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual int idle ();
 

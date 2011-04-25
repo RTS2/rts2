@@ -50,7 +50,7 @@ class Executor:public Rts2DeviceDb
 
 		virtual int info ();
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		int end ()
 		{
@@ -473,10 +473,10 @@ int Executor::info ()
 	return Rts2DeviceDb::info ();
 }
 
-int Executor::changeMasterState (int new_state)
+void Executor::changeMasterState (int old_state, int new_state)
 {
 	if (ignoreDay->getValueBool () == true)
-		return Rts2DeviceDb::changeMasterState (new_state);
+		return Rts2DeviceDb::changeMasterState (old_state, new_state);
 
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -523,7 +523,7 @@ int Executor::changeMasterState (int new_state)
 			stop ();
 			break;
 	}
-	return Rts2DeviceDb::changeMasterState (new_state);
+	return Rts2DeviceDb::changeMasterState (old_state, new_state);
 }
 
 int Executor::setNext (int nextId, const char *queue)

@@ -803,7 +803,7 @@ rts2core::Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_
 	return rts2core::Device::createOtherType (conn, other_device_type);
 }
 
-int Telescope::changeMasterState (int new_state)
+void Telescope::changeMasterState (int old_state, int new_state)
 {
 	// stop when STOP is triggered
 	if ((getState () & STOP_MASK) != STOP_EVERYTHING && (new_state & STOP_MASK) == STOP_EVERYTHING)
@@ -837,7 +837,7 @@ int Telescope::changeMasterState (int new_state)
 			blockMove->setValueBool (false);
 	}
 
-	return rts2core::Device::changeMasterState (new_state);
+	rts2core::Device::changeMasterState (old_state, new_state);
 }
 
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)

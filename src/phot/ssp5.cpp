@@ -179,6 +179,7 @@ long SSP5::getCount ()
 		{
 			// overflow
 			sendCount (0, req_time, true);
+			photConn->flushPortIO ();
 			return 0;
 		}
 		photConn->flushPortIO ();

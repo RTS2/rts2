@@ -59,7 +59,7 @@ class ImageProc:public rts2core::Device
 
 		virtual int info ();
 
-		virtual int changeMasterState (int new_state);
+		virtual void changeMasterState (int old_state, int new_state);
 
 		virtual int deleteConnection (Rts2Conn * conn);
 
@@ -313,7 +313,7 @@ int ImageProc::info ()
 #endif
 }
 
-int ImageProc::changeMasterState (int new_state)
+void ImageProc::changeMasterState (int old_state, int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -357,9 +357,9 @@ int ImageProc::changeMasterState (int new_state)
 	}
 	// start dark & flat processing
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::changeMasterState (new_state);
+	Rts2DeviceDb::changeMasterState (old_state, new_state);
 #else
-	return rts2core::Device::changeMasterState (new_state);
+	rts2core::Device::changeMasterState (old_state, new_state);
 #endif
 }
 
