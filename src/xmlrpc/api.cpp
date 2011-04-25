@@ -129,6 +129,26 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			throw XmlRpcException ("variable is not selection");
 		sendSelection (os, (rts2core::ValueSelection *) rts2v);
 	}
+	else if (vals.size () == 1 && vals[0] == "script")
+	{
+		int id = params->getInteger ("id", -1);
+		if (id <= 0)
+			throw XmlRpcException ("empty id parameter");
+		const char *cname = params->getString ("cn", "");
+		if (cname[0] == '\0')
+			throw XmlRpcException ("empty camera name");
+		
+		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver ());
+		rts2script::Script script = rts2script::Script ();
+		script.setTarget (cname, target);
+		script.prettyPrint (os, rts2script::PRINT_XML);
+
+		response_type = "application/xml";
+		response_length = os.str ().length ();
+		response = new char[response_length];
+		memcpy (response, os.str().c_str (), response_length);
+		return;
+	}
 	else if (vals.size () == 1)
 	{
 		os << "{";
