@@ -21,4 +21,5 @@
 			<upper>2</upper>
 		</interval>
 	</HA>
+	<maxRepeats>10</maxRepeats>
 </constraints>
