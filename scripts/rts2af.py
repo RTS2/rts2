@@ -194,7 +194,16 @@ class Configuration:
         self.cp[('mode', 'CCD_BINNING')]= 0
         self.cp[('mode', 'AUTO_FOCUS')]= False
         self.cp[('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')]= 10
-        
+        # mapping of fits header elements to canonical
+        self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_AAG.TEMP_IRS'
+        self.cp[('fits header mapping', 'DATETIME')]= 'JD'
+        self.cp[('fits header mapping', 'EXPOSURE')]= 'EXPOSURE'
+        self.cp[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
+        self.cp[('fits header mapping', 'FOC_POS')] = 'FOC_POS'
+
+        self.cp[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
+        self.cp[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
+
         
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -232,9 +241,9 @@ class Configuration:
 
     def filterByName(self, name):
         for filter in  self.filters:
-            print "NAME>" + name + "<>" + filter.name
+            #print "NAME>" + name + "<>" + filter.name
             if( name == filter.name):
-                print "NAME: {0} {1}".format(name, filter.name)
+                #print "NAME: {0} {1}".format(name, filter.name)
                 return filter
 
         return False
@@ -510,7 +519,8 @@ class SXReferenceObject(SXObject):
 import shlex
 import subprocess
 import re
-from math import sqrt
+import math
+
 class Catalogue():
     """Class for a catalogue (SExtractor result)"""
     def __init__(self, fitsHDU=None, SExtractorParams=None, referenceCatalogue=None):
@@ -527,8 +537,8 @@ class Catalogue():
         self.referenceCatalogue= referenceCatalogue
         self.indexeFlag       = self.SExtractorParams.assoc.index('FLAGS')  
         self.indexellipticity = self.SExtractorParams.assoc.index('ELLIPTICITY')
-        
-        Catalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
+        # ToDo: might be broken
+        Catalogue.__lt__ = lambda self, other: self.fitsHDU.variableHeaderElements['FOC_POS'] < other.fitsHDU.variableHeaderElements['FOC_POS']
 
     def runSExtractor(self):
         if( verbose):
@@ -610,8 +620,12 @@ class Catalogue():
                 for (j, item) in enumerate(items):
                     self.catalogue[(sxObjectNumber, self.SExtractorParams.assoc[j])]=  float(item)
 
-
-                self.sxObjects[sxObjectNumber]= SXObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX]), items[itemNrASSOC_NUMBER]) # position, bool is used for clean up (default True, True)
+                if( self.fitsHDU.variableHeaderElements['EXPOSURE'] != 0):
+                    normalizedFlux= float(items[itemNrFLUX_MAX])/float(self.fitsHDU.variableHeaderElements['EXPOSURE'])
+                else:
+                    normalizedFlux= float(items[itemNrFLUX_MAX])
+ 
+                self.sxObjects[sxObjectNumber]= SXObject(sxObjectNumber, self.fitsHDU.variableHeaderElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), normalizedFlux, items[itemNrASSOC_NUMBER]) # position, bool is used for clean up (default True, True)
                 if( sxObjectNumberASSOC in self.multiplicity): # interesting
                     self.multiplicity[sxObjectNumberASSOC] += 1
                 else:
@@ -673,7 +687,7 @@ class Catalogue():
             ds9RegionFile.write("# Filename: {0}\n".format(self.fitsHDU.fitsFileName))
 
             ds9RegionFile.write("image\n")
-            ds9RegionFile.write("text (" + str(80) + "," + str(10) + ") # color=magenta font=\"helvetica 15 normal\" text = {FOC_POS="+ str(self.fitsHDU.headerElements['FOC_POS']) + "}\n")
+            ds9RegionFile.write("text (" + str(80) + "," + str(10) + ") # color=magenta font=\"helvetica 15 normal\" text = {FOC_POS="+ str(self.fitsHDU.variableHeaderElements['FOC_POS']) + "}\n")
             # ToDo: Solve that
             if(runTimeConfig.value('DS9_DISPLAY_ACCEPTANCE_AREA')):
                 ds9RegionFile.write("point ({0},{1}) ".format( self.referenceCatalogue.circle.transformedCenterX,self.referenceCatalogue.circle.transformedCenterY) + "# color=magenta text = {center acceptance}\n")
@@ -786,13 +800,12 @@ class Catalogue():
             if( (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > runTimeConfig.value('MATCHED_RATIO')):
                 return True
             else:
-                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.headerElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.variableHeaderElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
                 return False
         else:
             logging.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
             return False
                     
-
 # example how to access the catalogue
     def average(self, variable):
         sum= 0
@@ -804,7 +817,7 @@ class Catalogue():
 
         #if(verbose):
         if( i != 0):
-            print 'average at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
+            print 'average at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
@@ -830,7 +843,7 @@ class Catalogue():
                     
         #if(verbose):
         if( i != 0):
-            print 'average %8s' %(selection) + ' at FOC_POS: ' + str(self.fitsHDU.headerElements['FOC_POS']) + ' FWHM  %5.2f ' % (sum/ float(i))  + ' number of objects %5d' % (i)
+            print 'average %8s' %(selection) + ' at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' FWHM  %5.2f ' % (sum/ float(i))  + ' number of objects %5d' % (i)
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
@@ -852,8 +865,8 @@ class ReferenceCatalogue(Catalogue):
         self.indexellipticity = self.SExtractorParams.reference.index('ELLIPTICITY')
         self.skyList= serviceFileOp.expandToSkyList(self.fitsHDU)
         self.circle= AcceptanceRegion( self.fitsHDU) 
-
-        ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.headerElements['FOC_POS'] < other.fitsHDU.headerElements['FOC_POS']
+        # ToDo: might be broken
+        ReferenceCatalogue.__lt__ = lambda self, other: self.fitsHDU.variableHeaderElements['FOC_POS'] < other.fitsHDU.variableHeaderElements['FOC_POS']
 
     def sxObjectByNumber(self, sxObjectNumber):
         if(sxObjectNumber in self.sxObjects.keys()):
@@ -957,8 +970,13 @@ class ReferenceCatalogue(Catalogue):
                 for (j, item) in enumerate(items):
                     self.catalogue[(sxObjectNumber, self.SExtractorParams.reference[j])]=  float(item)
 
+                    
+                if( self.fitsHDU.variableHeaderElements['EXPOSURE'] != 0):
+                    normalizedFlux= float(items[itemNrFLUX_MAX])/float(self.fitsHDU.variableHeaderElements['EXPOSURE'])
+                else:
+                    normalizedFlux= float(items[itemNrFLUX_MAX])
 
-                self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.headerElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), float(items[itemNrFLUX_MAX])) # position, bool is used for clean up (default True, True)
+                self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.variableHeaderElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), normalizedFlux) # position, bool is used for clean up (default True, True)
             else:
                 logging.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
                 logging.error( 'ReferenceCatalogue.readCatalogue: ' + line)
@@ -1031,7 +1049,7 @@ class ReferenceCatalogue(Catalogue):
         return True
 
     def checkAcceptance(self, sxObject=None, circle=None):
-        distance= sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
+        distance= math.sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
  
         if( circle.transformedRadius >= 0):
             if( distance < abs( circle.transformedRadius)):
@@ -1078,8 +1096,6 @@ class ReferenceCatalogue(Catalogue):
 
         logging.info("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
 
-
-
 class AcceptanceRegion():
     """Class holding the properties of the acceptance circle, units are (binned) pixel"""
     def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
@@ -1089,8 +1105,8 @@ class AcceptanceRegion():
 
         try:
             # if binning is used these values represent the rebinned pixels, e.g. 1x1 4096 and 2x2 2048
-            self.naxis1 = float(fitsHDU.headerElements['NAXIS1'])
-            self.naxis2 = float(fitsHDU.headerElements['NAXIS2'])
+            self.naxis1 = float(fitsHDU.staticHeaderElements['NAXIS1'])
+            self.naxis2 = float(fitsHDU.staticHeaderElements['NAXIS2'])
         except:
             logging.error("AcceptanceRegion.__init__: something went wrong here")
 
@@ -1107,7 +1123,6 @@ class AcceptanceRegion():
         self.transformedRadius= self.radius
         if( verbose):
             print "AcceptanceRegion %f %f %f %f %f  %f %f %f" % (self.naxis1, self.naxis1, self.centerOffsetX, self.centerOffsetY, self.radius, self.transformedCenterX, self.transformedCenterY, self.transformedRadius)
-
 
 import numpy
 from collections import defaultdict
@@ -1175,7 +1190,6 @@ class Catalogues():
             return True
 
     def writeFitInputValues(self):
-        
         fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
             line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
@@ -1202,7 +1216,8 @@ class Catalogues():
                 display= '0'
             cmd= [ runTimeConfig.value('FOCROOT'),
                    display, 
-                   self.referenceCatalogue.fitsHDU.headerElements['FILTER'],
+#                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                   '{0}, T={1}C'.format(self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'], self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
                    serviceFileOp.now,
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
@@ -1289,7 +1304,7 @@ class Catalogues():
     def ds9DisplayCatalogues(self):
 # deprecated        self.__average__()
 
-        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.variableHeaderElements['FOC_POS']):
             cat.ds9DisplayCatalogue("cyan")
             # if reference catr.ds9DisplayCatalogue("yellow", False)
 
@@ -1298,7 +1313,7 @@ class Catalogues():
         
         self.ds9Command= "ds9 -zoom to fit -scale mode zscale\\\n" 
 
-        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+        for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.variableHeaderElements['FOC_POS']):
 
             if( cat.catalogueFileName == cat.referenceCatalogue.catalogueFileName):
                 cat.ds9WriteRegionFile(True, True, False, "yellow")
@@ -1309,7 +1324,6 @@ class Catalogues():
             self.ds9CommandAdd(" " + cat.fitsHDU.fitsFileName + " -region " +  serviceFileOp.expandToDs9RegionFileName(cat.fitsHDU) + "\\\n")
 
         self.ds9CommandFileWrite()
-
         
     def ds9CommandFileWrite(self):
         self.ds9CommandAdd(" -single -blink\n")
@@ -1343,12 +1357,13 @@ class FitsHDU():
 
         self.referenceFitsHDU= referenceFitsHDU
         self.isValid= False
-        self.headerElements={}
+        self.staticHeaderElements={}
+        self.variableHeaderElements={}
         #ToDo: generalize
         self.binning=-1
         self.assumedBinning=False
-
-        FitsHDU.__lt__ = lambda self, other: self.headerElements['FOC_POS'] < other.headerElements['FOC_POS']
+        # ToDo: might be broken
+        FitsHDU.__lt__ = lambda self, other: self.variableHeaderElements['FOC_POS'] < other.variableHeaderElements['FOC_POS']
 
     def headerProperties(self):
 
@@ -1366,31 +1381,40 @@ class FitsHDU():
         fitsHDU.close()
 
         try:
-            self.headerElements['FILTER']= fitsHDU[0].header['FILTER']
+            self.staticHeaderElements['FILTER']= fitsHDU[0].header['FILTER']
         except:
             self.isValid= True
-            self.headerElements['FILTER']= 'NOFILTER' 
+            self.staticHeaderElements['FILTER']= 'NOFILTER' 
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
 
         try:
-            self.headerElements['BINNING']= fitsHDU[0].header['BINNING']
+            self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
         except:
             self.isValid= True
             self.assumedBinning=True
-            self.headerElements['BINNING']= '1x1'
+            self.staticHeaderElements['BINNING']= '1x1'
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the binning header element not found, assuming 1x1 binning')
 
         try:
-            self.headerElements['ORIRA']  = fitsHDU[0].header['ORIRA']
-            self.headerElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
+            self.staticHeaderElements['ORIRA']  = fitsHDU[0].header['ORIRA']
+            self.staticHeaderElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
         except:
             self.isValid= True
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
 
         try:
-            self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
-            self.headerElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
-            self.headerElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
+            self.variableHeaderElements['EXPOSURE'] = fitsHDU[0].header[runTimeConfig.value('EXPOSURE')]
+            self.variableHeaderElements['DATETIME'] = fitsHDU[0].header[runTimeConfig.value('DATETIME')]
+            self.variableHeaderElements['CCD_TEMP'] = fitsHDU[0].header[runTimeConfig.value('CCD_TEMP')]
+            self.variableHeaderElements['AMBIENTTEMPERATURE'] = fitsHDU[0].header[runTimeConfig.value('AMBIENTTEMPERATURE')]
+        except:
+            self.isValid= True
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the header elements: EXPOSURE, JD, CCD_TEMP or HIERARCH MET_AAG.TEMP_IRS not found')
+
+        try:
+            self.variableHeaderElements['FOC_POS']= fitsHDU[0].header[runTimeConfig.value('FOC_POS')]
+            self.staticHeaderElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
+            self.staticHeaderElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
         except:
             self.isValid= False
             logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
@@ -1401,7 +1425,7 @@ class FitsHDU():
             return False
         # match the header elements with reference HDU
         if( self.referenceFitsHDU != None):
-            if( self.matchHeaderElements(fitsHDU)):
+            if( self.matchStaticHeaderElements(fitsHDU)):
                 self.isValid= True
                 return True
             else:
@@ -1411,21 +1435,21 @@ class FitsHDU():
             self.isValid= True
             return True
             
-    def matchHeaderElements(self, fitsHDU):
-        keys= self.referenceFitsHDU.headerElements.keys()
+    def matchStaticHeaderElements(self, fitsHDU):
+        keys= self.referenceFitsHDU.staticHeaderElements.keys()
         i= 0
         for key in keys:
-            if(key == 'FOC_POS'):
-                self.headerElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
-                continue
+#            if(key == 'FOC_POS'):
+#                self.staticHeaderElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
+#                continue
             if( self.assumedBinning):
                 if(key == 'BINNING'):
                     continue
-            if(self.referenceFitsHDU.headerElements[key]!= fitsHDU[0].header[key]):
-##wildi                logging.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.headerElements[key] + " " + fitsHDU[0].header[key])
+            if(self.referenceFitsHDU.staticHeaderElements[key]!= fitsHDU[0].header[key]):
+##wildi                logging.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.staticHeaderElements[key] + " " + fitsHDU[0].header[key])
                 break
             else:
-                self.headerElements[key] = fitsHDU[0].header[key]
+                self.staticHeaderElements[key] = fitsHDU[0].header[key]
 
         else: # exhausted
             self.isValid= True
@@ -1440,9 +1464,9 @@ class FitsHDU():
     def extractBinning(self):
         #ToDo: clumsy
         pbinning1x1 = re.compile( r'1x1')
-        binning1x1 = pbinning1x1.match(self.headerElements['BINNING'])
+        binning1x1 = pbinning1x1.match(self.staticHeaderElements['BINNING'])
         pbinning2x2 = re.compile( r'2x2')
-        binning2x2 = pbinning2x2.match(self.headerElements['BINNING'])
+        binning2x2 = pbinning2x2.match(self.staticHeaderElements['BINNING'])
 
         if( binning1x1):
             self.binning= 1
@@ -1479,9 +1503,9 @@ class FitsHDUs():
         filter=  runTimeConfig.filterByName(name)
 #        for hdu in sorted(self.fitsHDUsList):
         for hdu in sorted(self.fitsHDUsList):
-            if( filter.OffsetToClearPath < hdu.headerElements['FOC_POS']):
+            if( filter.OffsetToClearPath < hdu.variableHeaderElements['FOC_POS']):
                 if(verbose):
-                    print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.headerElements['FOC_POS']
+                    print "FOUND reference by foc pos ==============" + hdu.fitsFileName + "======== %d" % hdu.variableHeaderElements['FOC_POS']
                 return hdu
         return False
 
@@ -1494,15 +1518,11 @@ class FitsHDUs():
                     print "Nothing found in findReference and findReferenceByFocPos"
                 return self.isValid
 
-        keys= hdur.headerElements.keys()
-        i= 0
-        differentFocuserPositions={}
+        # static header elements
+        keys= hdur.staticHeaderElements.keys()
         for hdu in self.fitsHDUsList:
             for key in keys:
-                if(key == 'FOC_POS'):
-                    differentFocuserPositions[str(hdu.headerElements['FOC_POS'])]= 1 # means nothing
-                    continue
-                if( hdur.headerElements[key]!= hdu.headerElements[key]):
+                if( hdur.staticHeaderElements[key]!= hdu.staticHeaderElements[key]):
                     try:
                         del self.fitsHDUsList[hdu]
                     except:
@@ -1512,6 +1532,19 @@ class FitsHDUs():
                     break # really break out the keys loop 
             else: # exhausted
                 hdu.isValid= True
+                if( verbose):
+                    print 'FitsHDUs.validate: valid hdu: ' + hdu.fitsFileName
+
+        # variable header elements
+        keys= hdur.variableHeaderElements.keys()
+        differentFocuserPositions={}
+        for hdu in self.fitsHDUsList:
+            for key in keys:
+                if(key == 'FOC_POS'):
+                    differentFocuserPositions[str(hdu.variableHeaderElements['FOC_POS'])]= 1 # means nothing
+                    continue
+            else: # exhausted
+                hdu.isValid = hdu.isValid and True # 
                 if( verbose):
                     print 'FitsHDUs.validate: valid hdu: ' + hdu.fitsFileName
 
@@ -1528,10 +1561,47 @@ class FitsHDUs():
     def countFocuserPositions(self):
         differentFocuserPositions={}
         for hdu in self.fitsHDUsList:
-            differentFocuserPositions(hdu.headerElements['FOC_POS'])
-            
-        
+            differentFocuserPositions(hdu.variableHeaderElements['FOC_POS'])
+
         return len(differentFocuserPositions)
+
+class Telescope():
+    """Class holding telescope properties"""
+    # ToDo: as soon as a sensible model is available for FLUX max, implement it
+    # source: parameters of the fitted flux data
+    # a complete compensation is not necessary/desirable
+    #                                                                        
+# does not work    def __init__(self, radius=runTimeConfig.value('TEL_RADIUS'), focalLength=runTimeConfig.value('TEL_FOCALLENGTH')): # units [meter]
+    def __init__(self, radius=None, focalLength=None): # units [meter]
+
+        if( not radius):
+            self.radius= runTimeConfig.value('TEL_RADIUS')
+        else:
+            self.radius= radius
+
+        if( not focalLength):
+            self.focalLength= runTimeConfig.value('TEL_FOCALLENGTH')
+        else:
+            self.focalLength= focalLength
+
+        try:
+            self.focalratio = self.radius/self.focalLength
+        except:
+            logging.error( 'Telescope: no sensible focalLength: {0} given, exiting'.format(self.focalLength))
+            sys.exit(1)
+
+        self.pixelsize= 1.27e-6 #[meter]
+        self.seeing= 27.0e-6 #[meter]
+
+        self.fudgeFactor= 0.5 # [1...0]
+    def quadraticExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
+        return self.fudgeFactor *( math.pow( self.starImageRadius(differencefoc_pos), 2) * exposureTimeZero)
+
+    def linearExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
+        return self.fudgeFactor * self.starImageRadius( differencefoc_pos) * exposureTimeZero
+
+    def starImageRadius(self, differencefoc_pos=0):
+        return (( abs(differencefoc_pos) * self.pixelsize * self.focalratio) + self.seeing)/self.seeing
 
 import time
 import datetime
@@ -1582,7 +1652,7 @@ class ServiceFileOperations():
         
         items= runTimeConfig.value('SEXSKY_LIST').split('.')
         try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' +   self.now + '.' + items[1])
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' +   self.now + '.' + items[1])
         except:
             fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
             
@@ -1595,7 +1665,7 @@ class ServiceFileOperations():
         if( fitsHDU==None):
             logging.error('ServiceFileOperations.expandToCat: no hdu given')
         try:
-            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.cat')
+            fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '.cat')
         except:
             fileName= self.prefix( self.notFits(fitsHDU.fitsFileName) + '-' + self.now + '.cat')
 
@@ -1606,7 +1676,7 @@ class ServiceFileOperations():
         if((fitsHDU==None) or ( element==None)):
             logging.error('ServiceFileOperations.expandToFitInput: no hdu or elementgiven')
 
-        fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
+        fileName= items[0] + "-" + fitsHDU.staticHeaderElements['FILTER'] + "-" + self.now +  "-" + element + "." + items[1]
         return self.expandToTmp(self.prefix(fileName))
 
     def expandToFitImage(self, fitsHDU=None):
@@ -1615,7 +1685,7 @@ class ServiceFileOperations():
 
         items= runTimeConfig.value('FIT_RESULT_FILE').split('.') 
 # ToDo png
-        fileName= items[0] + "-" + fitsHDU.headerElements['FILTER'] + "-" + self.now + ".png"
+        fileName= items[0] + "-" + fitsHDU.staticHeaderElements['FILTER'] + "-" + self.now + ".png"
         return self.expandToTmp(self.prefix(fileName))
 
     def expandToRunTimePath(self, fileName=None):
@@ -1633,7 +1703,7 @@ class ServiceFileOperations():
         # not nice
         names= fitsHDU.fitsFileName.split('/')
         try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '-' + names[-1] + '-' + str(fitsHDU.headerElements['FOC_POS']) + '.' + items[1])
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '-' + names[-1] + '-' + str(fitsHDU.variableHeaderElements['FOC_POS']) + '.' + items[1])
         except:
             fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1])
             
@@ -1648,7 +1718,7 @@ class ServiceFileOperations():
         
         items= runTimeConfig.value('DS9_REGION_FILE').split('.')
         try:
-            fileName= self.prefix( items[0] +  '-' + fitsHDU.headerElements['FILTER'] + '-' + self.now + '.' + items[1] + '.sh')
+            fileName= self.prefix( items[0] +  '-' + fitsHDU.staticHeaderElements['FILTER'] + '-' + self.now + '.' + items[1] + '.sh')
         except:
             fileName= self.prefix( items[0] + '-' +   self.now + '.' + items[1]+ '.sh')
             
@@ -1671,13 +1741,11 @@ class ServiceFileOperations():
         fileName= fileName + self.now + '.cfg'
         return self.expandToTmp(fileName)
 
-
     def expandToFitResultPath(self, fileName=None):
         if( fileName==None):
             logging.error('ServiceFileOperations.expandToFitResultPath: no filename given')
 
         return self.expandToTmp(fileName + self.now + '.fit')
-
 
     def reconstructFitResultPath(self, configFileName):
         # If the configuration file name of the present process has a time stamp, like
@@ -1696,7 +1764,6 @@ class ServiceFileOperations():
 
     def createAcquisitionBasePath(self, filter=None):
         os.makedirs( self.expandToAcquisitionBasePath( filter))
-
         
     def defineRunTimePath(self, fileName=None):
         if( self.absolutePath(fileName)):
@@ -1707,9 +1774,7 @@ class ServiceFileOperations():
                 self.runTimePath= root
                 return True
         return False
-        
-
-    
+            
     def setModeExecutable(self, path):
         #mode = os.stat(path)
         os.chmod(path, 0744)

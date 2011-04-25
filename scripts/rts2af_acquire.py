@@ -76,7 +76,7 @@ class Acquire(rts2af.AFScript):
             sys.stdout.flush()
             self.testFiltersInUse= sys.stdin.readline().split()            
             r2c.log('I','rts2af_acquire.py: being in test mode')
-            
+
 
     def acquireImage(self, focToff=None, exposure=None, filter=None, analysis=None):
         r2c.setValue('exposure', exposure)
@@ -125,6 +125,9 @@ class Acquire(rts2af.AFScript):
         return
 
     def run(self):
+        # telescope parameter
+        telescope=rts2af.Telescope() # take the defaults from the config file or overwrite them here
+
         # start analysis process
         analysis={}
         nofilter= self.runTimeConfig.filterByName( 'NOFILTER')
@@ -177,6 +180,7 @@ class Acquire(rts2af.AFScript):
             self.acquireImage( 0, filter.exposure, filter, analysis[filter.name]) # exposure will later depend on position
 
             if(self.test):
+                exposure=  telescope.linearExposureTimeAtFocPos(10, 10)
                 while( True):
                     r2c.log('I','rts2af_acquire: Filter {0} offset {1} exposure {2}'.format('see file', 0, 0))
                     if( not self.acquireImage( 0, 0, filter, analysis[filter.name])):
@@ -184,8 +188,9 @@ class Acquire(rts2af.AFScript):
             else:
                 # loop over the focuser steps
                 for setting in filter.settings:
-                    r2c.log('I','rts2af_acquire: Filter {0} offset {1} exposure {2}'.format(filter.name, setting.offset, setting.exposure))
-                    self.acquireImage( setting.offset, setting.exposure, filter, analysis[filter.name])
+                    exposure=  telescope.linearExposureTimeAtFocPos(setting.exposure, setting.offset)
+                    r2c.log('I','rts2af_acquire: Filter {0} offset {1} exposure {2}, true exposure: {3}'.format(filter.name, setting.offset, setting.exposure, exposure))
+                    self.acquireImage( setting.offset, exposure, filter, analysis[filter.name])
                 
             if( not self.test):
                 # signal rts2af_analysis.py to continue with fitting
