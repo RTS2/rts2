@@ -6,11 +6,14 @@
 #include <algorithm>
 #include <functional>
 
-#include "rts2image.h"
+#include "image.h"
 
 #define APP_SIZE        3
 
 using namespace std;
+
+namespace rts2image
+{
 
 struct pint
 {
@@ -21,7 +24,7 @@ struct pint
 class comparePixel
 {
 	public:
-		bool operator     () (struct pixel x, struct pixel y) const
+		bool operator () (struct pixel x, struct pixel y) const
 		{
 			return x.value > y.value;
 		}
@@ -36,6 +39,10 @@ class comparePint
 		}
 };
 
+}
+
+using namespace rts2image;
+
 static int cmpdouble (const void *a, const void *b)
 {
 	if (*((double *) a) > *((double *) b))
@@ -45,7 +52,7 @@ static int cmpdouble (const void *a, const void *b)
 	return 0;
 }
 
-double Rts2Image::classicMedian (double *q, int n, double *retsigma)
+double Image::classicMedian (double *q, int n, double *retsigma)
 {
 	int i;
 	double *f, M, S;
@@ -79,7 +86,7 @@ double Rts2Image::classicMedian (double *q, int n, double *retsigma)
 	return M;
 }
 
-int Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
+int Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 {
 	int x, y, max_x, max_y, pix = 0;
 
@@ -101,12 +108,12 @@ int Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 	return 0;
 }
 
-unsigned short Rts2Image::getPixel (unsigned short *in_data, int x, int y)
+unsigned short Image::getPixel (unsigned short *in_data, int x, int y)
 {
 	return in_data[x + (getChannelWidth (0) * y)];
 }
 
-int Rts2Image::findStar (unsigned short *in_data)
+int Image::findStar (unsigned short *in_data)
 {
 	float cols_sum[APP_SIZE];
 	unsigned short *row_start_ptr, *data_ptr;
@@ -198,7 +205,7 @@ int Rts2Image::findStar (unsigned short *in_data)
 	return 0;
 }
 
-int Rts2Image::aperture (unsigned short *in_data, struct pixel pix, struct pixel *ret)
+int Image::aperture (unsigned short *in_data, struct pixel pix, struct pixel *ret)
 {
 	int i, j;
 	struct pixel tmp;
@@ -232,7 +239,7 @@ int Rts2Image::aperture (unsigned short *in_data, struct pixel pix, struct pixel
 	return 0;
 }
 
-int Rts2Image::centroid (unsigned short *in_data, struct pixel pix, float *px, float *py)
+int Image::centroid (unsigned short *in_data, struct pixel pix, float *px, float *py)
 {
 	int i, j;
 	float cmean, total, subtotal;
@@ -264,7 +271,7 @@ int Rts2Image::centroid (unsigned short *in_data, struct pixel pix, float *px, f
 	return 0;
 }
 
-int Rts2Image::radius (unsigned short *in_data, double px, double py, int rmax)
+int Image::radius (unsigned short *in_data, double px, double py, int rmax)
 {
 	int i, j, r, inrr, outrr, xyrr, yrr, np;
 	double sum, cmean;
@@ -302,7 +309,7 @@ int Rts2Image::radius (unsigned short *in_data, double px, double py, int rmax)
 	return (r);
 }
 
-int Rts2Image::integrate (unsigned short *in_data, double px, double py, int size, float *ret)
+int Image::integrate (unsigned short *in_data, double px, double py, int size, float *ret)
 {
 	int i, j;
 	float rad;
@@ -343,7 +350,7 @@ int Rts2Image::integrate (unsigned short *in_data, double px, double py, int siz
 	return 0;
 }
 
-int Rts2Image::evalAF (float *result, float *error)
+int Image::evalAF (float *result, float *error)
 {
 	int i, r;
 	long npixels = getChannelWidth (0) * getChannelHeight (0);

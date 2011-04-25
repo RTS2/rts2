@@ -31,7 +31,7 @@
 #define OPT_NOSYNC          OPT_LOCAL + 53
 #define OPT_DARK            OPT_LOCAL + 54
 
-Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
+Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
 
@@ -63,7 +63,7 @@ void Rts2GenFocCamera::exposureStarted ()
 	{
 		queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
 	}
-	Rts2DevClientCameraFoc::exposureStarted ();
+	rts2image::DevClientCameraFoc::exposureStarted ();
 }
 
 void Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
@@ -72,15 +72,15 @@ void Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 		<< " value:" << getConnection()->getStateString ()
 		<< " (" << state->getValue () << ")"
 		<< std::endl;
-	Rts2DevClientCameraFoc::stateChanged (state);
+	rts2image::DevClientCameraFoc::stateChanged (state);
 }
 
-Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
+rts2image::Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 {
-	Rts2Image *image;
+	rts2image::Image *image;
 	if (autoSave)
 	{
-		image = Rts2DevClientCameraFoc::createImage (expStart);
+		image = rts2image::DevClientCameraFoc::createImage (expStart);
 		image->keepImage ();
 		return image;
 	}
@@ -88,7 +88,7 @@ Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	{
 	  	std::ostringstream _os;
 		_os << "!/tmp/" << connection->getName () << "_" << getpid () << ".fits";
-		image = new Rts2Image ();
+		image = new rts2image::Image ();
 		image->openImage (_os.str ().c_str (), expStart);
 		image->keepImage ();
 		return image;
@@ -98,16 +98,16 @@ Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	return image;
 }
 
-imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
+rts2image::imageProceRes Rts2GenFocCamera::processImage (rts2image::Image * image)
 {
-	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
+	rts2image::imageProceRes res = rts2image::DevClientCameraFoc::processImage (image);
 	std::cout << "Camera " << getName () << " image_type:";
 	switch (image->getShutter ())
 	{
-		case SHUT_CLOSED:
+		case rts2image::SHUT_CLOSED:
 			std::cout << "dark";
 			break;
-		case SHUT_OPENED:
+		case rts2image::SHUT_OPENED:
 			std::cout << "object";
 			break;
 		default:
@@ -182,7 +182,7 @@ void Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 			std::cout << "Will change by: " << change << std::endl;
 		}
 	}
-	Rts2DevClientCameraFoc::focusChange (focus);
+	rts2image::DevClientCameraFoc::focusChange (focus);
 	queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
 }
 
@@ -364,15 +364,15 @@ rts2core::Rts2DevClient *Rts2GenFocClient::createOtherType (Rts2Conn * conn, int
 			cam = createFocCamera (conn);
 			return initFocCamera (cam);
 		case DEVICE_TYPE_MOUNT:
-			return new Rts2DevClientTelescopeImage (conn);
+			return new rts2image::DevClientTelescopeImage (conn);
 		case DEVICE_TYPE_FOCUS:
-			return new Rts2DevClientFocusFoc (conn);
+			return new rts2image::DevClientFocusFoc (conn);
 		case DEVICE_TYPE_PHOT:
-			return new Rts2DevClientPhotFoc (conn, photometerFile, photometerTime, photometerFilterChange, skipFilters);
+			return new rts2image::DevClientPhotFoc (conn, photometerFile, photometerTime, photometerFilterChange, skipFilters);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_MIRROR:
 		case DEVICE_TYPE_SENSOR:
-			return new Rts2DevClientWriteImage (conn);
+			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return Rts2Client::createOtherType (conn, other_device_type);
 	}

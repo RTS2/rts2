@@ -19,7 +19,7 @@
 
 #include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2appdb.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 
 #include <iostream>
 #include <list>
@@ -52,7 +52,7 @@ int Rts2DeleteApp::findImages ()
 int Rts2DeleteApp::deleteImage (const char *in_name)
 {
 	int ret;
-	Rts2ImageDb *image;
+	rts2image::ImageDb *image;
 	std::cout << "Delete image " << in_name << "..";
 	if (dont_delete)
 	{
@@ -60,7 +60,7 @@ int Rts2DeleteApp::deleteImage (const char *in_name)
 	}
 	else
 	{
-		image = new Rts2ImageDb ();
+		image = new rts2image::ImageDb ();
 		image->openImage (in_name);
 		ret = image->deleteImage ();
 		delete image;

@@ -22,6 +22,7 @@
 #include "script.h"
 
 using namespace rts2script;
+using namespace rts2image;
 
 ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, const char *_exec):ConnExe (_master, _exec, true)
 {
@@ -37,7 +38,7 @@ ConnExecute::~ConnExecute ()
 		masterElement->deleteExecConn ();
 	}
 
-	for (std::list <Rts2Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
+	for (std::list <Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		(*iter)->deleteImage ();
 		delete *iter;
@@ -93,7 +94,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->toDark ();
@@ -107,7 +108,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->toFlat ();
@@ -121,7 +122,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->toArchive ();
@@ -134,7 +135,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->toTrash ();
@@ -147,7 +148,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename) || paramNextString (&expandPath))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->renameImageExpand (expandPath);
@@ -160,7 +161,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename) || paramNextString (&expandPath))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->renameImageExpand (expandPath);
@@ -174,7 +175,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename) || paramNextString (&expandPath))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->copyImageExpand (expandPath);
@@ -185,7 +186,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename))
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			(*iter)->deleteImage ();
@@ -197,7 +198,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename) || masterElement == NULL || masterElement->getClient () == NULL)
 			return;
-		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		std::list <Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
 		{
 			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
@@ -267,7 +268,7 @@ void ConnExecute::exposureEnd ()
 	writeToProcess ("exposure_end");
 }
 
-int ConnExecute::processImage (Rts2Image *image)
+int ConnExecute::processImage (Image *image)
 {
 	images.push_back (image);
 	image->saveImage ();
@@ -275,9 +276,9 @@ int ConnExecute::processImage (Rts2Image *image)
 	return 1;
 }
 
-std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
+std::list <Image *>::iterator ConnExecute::findImage (const char *path)
 {
-	std::list <Rts2Image *>::iterator iter;
+	std::list <Image *>::iterator iter;
 	for (iter = images.begin (); iter != images.end (); iter++)
 	{
 		if (!strcmp (path, (*iter)->getAbsoluteFileName ()))
@@ -316,7 +317,7 @@ void Execute::exposureEnd ()
 	Element::exposureEnd ();
 }
 
-int Execute::processImage (Rts2Image *image)
+int Execute::processImage (Image *image)
 {
 	if (connExecute)
 		return connExecute->processImage (image);

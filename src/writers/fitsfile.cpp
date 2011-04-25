@@ -1,5 +1,6 @@
 /* 
  * Class representing FITS file.
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,14 +18,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2fitsfile.h"
+#include "fitsfile.h"
 
 #include "../utils/app.h"
 #include "../utils/utilsfunc.h"
 
 #include "config.h"
 
+#include <errno.h>
 #include <string.h>
+#include <iomanip>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace rts2image;
 
@@ -70,7 +77,7 @@ ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoole
 		*tp = *iter;
 }
 
-std::string Rts2FitsFile::getFitsErrors ()
+std::string FitsFile::getFitsErrors ()
 {
 	std::ostringstream os;
 	char buf[200];
@@ -82,7 +89,7 @@ std::string Rts2FitsFile::getFitsErrors ()
 	return os.str ();
 }
 
-void Rts2FitsFile::setFileName (const char *_fileName)
+void FitsFile::setFileName (const char *_fileName)
 {
 	if (fileName != absoluteFileName)
 		delete[] absoluteFileName;
@@ -130,7 +137,7 @@ void Rts2FitsFile::setFileName (const char *_fileName)
 	}
 }
 
-int Rts2FitsFile::createFile ()
+int FitsFile::createFile ()
 {
 	fits_status = 0;
 	ffile = NULL;
@@ -145,26 +152,26 @@ int Rts2FitsFile::createFile ()
 
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2FitsFile::createImage " << getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "FitsFile::createImage " << getFitsErrors () << sendLog;
 		return -1;
 	}
 
 	return 0;
 }
 
-int Rts2FitsFile::createFile (const char *_fileName)
+int FitsFile::createFile (const char *_fileName)
 {
 	setFileName (_fileName);
 	return createFile ();
 }
 
-int Rts2FitsFile::createFile (std::string _fileName)
+int FitsFile::createFile (std::string _fileName)
 {
 	setFileName (_fileName.c_str ());
 	return createFile ();
 }
 
-void Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
+void FitsFile::openFile (const char *_fileName, bool readOnly)
 {
 	closeFile ();
 
@@ -192,7 +199,7 @@ void Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 	}
 }
 
-int Rts2FitsFile::closeFile ()
+int FitsFile::closeFile ()
 {
 	if (getFitsFile ())
 	{
@@ -203,7 +210,31 @@ int Rts2FitsFile::closeFile ()
 	return 0;
 }
 
-void Rts2FitsFile::moveHDU (int hdu, int *hdutype)
+std::string FitsFile::expandPath (std::string pathEx)
+{
+	std::string ret = expand (pathEx);
+	if (num_pos >= 0)
+	{
+		for (int n = 1; n < INT_MAX; n++)
+		{
+			std::ostringstream os;
+			// construct new path..
+			os.fill (num_fill);
+			os << ret.substr (0, num_pos) << std::setw (num_lenght) << n << ret.substr (num_pos);
+			struct stat s;
+			if (stat (os.str ().c_str (), &s))
+			{
+				if (errno == ENOENT)
+					return os.str ();
+				throw rts2core::Error (std::string ("error when checking for ") + os.str() + ":" + strerror (errno));
+			}
+		}
+		throw rts2core::Error ("too many files with name matching " + ret);
+	}
+	return ret;
+}
+
+void FitsFile::moveHDU (int hdu, int *hdutype)
 {
 	fits_movabs_hdu (getFitsFile (), hdu, hdutype, &fits_status);
 	if (fits_status)
@@ -212,7 +243,7 @@ void Rts2FitsFile::moveHDU (int hdu, int *hdutype)
 	}
 }
 
-int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation)
+int FitsFile::fitsStatusValue (const char *valname, const char *operation)
 {
 	int ret = 0;
 	if (fits_status)
@@ -223,21 +254,21 @@ int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation)
 	return ret;
 }
 
-void Rts2FitsFile::fitsStatusSetValue (const char *valname, bool required)
+void FitsFile::fitsStatusSetValue (const char *valname, bool required)
 {
 	int ret = fitsStatusValue (valname, "SetValue");
 	if (ret && required)
 		throw ErrorSettingKey (this, valname);
 }
 
-void Rts2FitsFile::fitsStatusGetValue (const char *valname, bool required)
+void FitsFile::fitsStatusGetValue (const char *valname, bool required)
 {
 	int ret = fitsStatusValue (valname, "GetValue");
 	if (ret && required)
 		throw KeyNotFound (this, valname);
 }
 
-Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
+FitsFile::FitsFile ():rts2core::Expander ()
 {
 	ffile = NULL;
 	fileName = NULL;
@@ -246,7 +277,7 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 	templateFile = NULL;
 }
 
-Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
+FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -260,7 +291,7 @@ Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsf
 	templateFile = NULL;
 }
 
-Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
+FitsFile::FitsFile (const char *_fileName):rts2core::Expander ()
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -271,7 +302,7 @@ Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 	createFile (_fileName);
 }
 
-Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
+FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	ffile = NULL;
 	fileName = NULL;
@@ -280,7 +311,7 @@ Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 	templateFile = NULL;
 }
 
-Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
+FitsFile::FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -290,7 +321,7 @@ Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):
 	createFile (expandPath (_expression));
 }
 
-Rts2FitsFile::~Rts2FitsFile (void)
+FitsFile::~FitsFile (void)
 {
 	closeFile ();
 
@@ -299,7 +330,7 @@ Rts2FitsFile::~Rts2FitsFile (void)
 	delete[] fileName;
 }
 
-void Rts2FitsFile::loadTemlate (const char *fn)
+void FitsFile::loadTemlate (const char *fn)
 {
 	templateFile = new Rts2ConfigRaw ();
 
@@ -312,19 +343,19 @@ void Rts2FitsFile::loadTemlate (const char *fn)
 	}
 }
 
-void Rts2FitsFile::writeHistory (const char *history)
+void FitsFile::writeHistory (const char *history)
 {
 	fits_write_history (ffile, (char *) history, &fits_status);
 	fitsStatusSetValue ("history", true);
 }
 
-void Rts2FitsFile::writeComment (const char *comment)
+void FitsFile::writeComment (const char *comment)
 {
 	fits_write_comment (ffile, (char *) comment, &fits_status);
 	fitsStatusSetValue ("comment", true);
 }
 
-int Rts2FitsFile::writeArray (const char *extname, TableData *values)
+int FitsFile::writeArray (const char *extname, TableData *values)
 {
 	char *cols[values->size ()];
 	const char *types[values->size ()];
@@ -353,7 +384,7 @@ int Rts2FitsFile::writeArray (const char *extname, TableData *values)
 
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2FitsFile::writeArray creating table " << getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "FitsFile::writeArray creating table " << getFitsErrors () << sendLog;
 		return -1;
 	}
 
@@ -370,7 +401,7 @@ int Rts2FitsFile::writeArray (const char *extname, TableData *values)
 
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2FitsFile::writeArray " << getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "FitsFile::writeArray " << getFitsErrors () << sendLog;
 		return -1;
 	}
 	return 0;

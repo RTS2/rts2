@@ -22,7 +22,7 @@
 
 #include "operands.h"
 #include "rts2spiral.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 #include "../utils/rts2object.h"
 #include "../utils/block.h"
 #include "../utilsdb/scriptcommands.h"
@@ -113,7 +113,7 @@ class Element:public Rts2Object
 		 *
 		 * @return -1 if not handled, 0 if basic image processing should be performed, > 0 if image should not be deleted (deletion must be handled Element).
 		 */
-		virtual int processImage (Rts2Image * image);
+		virtual int processImage (rts2image::Image * image);
 
 		/**
 		 * Returns 1 if we are waiting for that signal.

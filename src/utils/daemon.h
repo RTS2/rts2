@@ -317,6 +317,15 @@ class Daemon:public rts2core::Block
 		virtual int setValue (Value * old_value, Value * new_value);
 
 		/**
+		 * Sets value from the program. Should be called if the code
+		 * needs to change value and cannot gurantee change to happen at
+		 * correct time.
+		 */
+		void changeValue (Value * value, int nval);
+		void changeValue (Value * value, bool nval);
+		void changeValue (Value * value, double nval);
+
+		/**
 		 * Perform value changes. Check if value can be changed before performing change.
 		 *
 		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
@@ -324,7 +333,7 @@ class Daemon:public rts2core::Block
 		int setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value);
 
 		/**
-		 * Really perform value change.
+		 * Perform value change.
 		 *
 		 * @param old_cond_value
 		 * @param op Operation string. Permited values depends on value type

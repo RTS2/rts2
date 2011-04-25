@@ -84,27 +84,27 @@ class AppImage:public rts2image::AppImageCore
 	#ifdef HAVE_PGSQL
 		virtual bool doInitDB ();
 
-		virtual int processImage (Rts2ImageDb * image);
+		virtual int processImage (rts2image::ImageDb * image);
 	#else
-		virtual int processImage (Rts2Image * image);
+		virtual int processImage (rts2image::Image * image);
 	#endif						 /* HAVE_PGSQL */
 
 		virtual void usage ();
 	private:
 		int operation;
 
-		void printOffset (double x, double y, Rts2Image * image);
+		void printOffset (double x, double y, rts2image::Image * image);
 
-		int addDate (Rts2Image * image);
+		int addDate (rts2image::Image * image);
 	#ifdef HAVE_PGSQL
-		int insert (Rts2ImageDb * image);
+		int insert (rts2image::ImageDb * image);
 	#endif
-		void testImage (Rts2Image * image);
-		void pointDistance (Rts2Image * image);
-		void testEval (Rts2Image * image);
-		void createWCS (Rts2Image * image);
-		void printModel (Rts2Image * image);
-		void printStat (Rts2Image * image);
+		void testImage (rts2image::Image * image);
+		void pointDistance (rts2image::Image * image);
+		void testEval (rts2image::Image * image);
+		void createWCS (rts2image::Image * image);
+		void printModel (rts2image::Image * image);
+		void printStat (rts2image::Image * image);
 
 		double off_x, off_y;
 		double d_x1, d_y1, d_x2, d_y2;
@@ -130,7 +130,7 @@ class AppImage:public rts2image::AppImageCore
 
 using namespace rts2image;
 
-void AppImage::printOffset (double x, double y, Rts2Image * image)
+void AppImage::printOffset (double x, double y, Image * image)
 {
 	double sep;
 	double x_out;
@@ -145,7 +145,7 @@ void AppImage::printOffset (double x, double y, Rts2Image * image)
 
 	int old_p = std::cout.precision (2);
 
-	std::cout << "Rts2Image::getOffset ("
+	std::cout << "Image::getOffset ("
 		<< std::setw (10) << x << ", "
 		<< std::setw (10) << y << "): "
 		<< "RA " << LibnovaRa (ra) << " "
@@ -158,7 +158,7 @@ void AppImage::printOffset (double x, double y, Rts2Image * image)
 	std::cout.setf (old_settings);
 }
 
-int AppImage::addDate (Rts2Image * image)
+int AppImage::addDate (Image * image)
 {
 	int ret;
 	time_t t;
@@ -171,7 +171,7 @@ int AppImage::addDate (Rts2Image * image)
 }
 
 #ifdef HAVE_PGSQL
-int AppImage::insert (Rts2ImageDb * image)
+int AppImage::insert (ImageDb * image)
 {
   	if (obsid > 0)
 	  	image->setObsId (obsid);
@@ -186,7 +186,7 @@ int AppImage::insert (Rts2ImageDb * image)
 }
 #endif							 /* HAVE_PGSQL */
 
-void AppImage::testImage (Rts2Image * image)
+void AppImage::testImage (Image * image)
 {
 	double ra, dec; //, x, y;
 	std::cout
@@ -208,7 +208,7 @@ void AppImage::testImage (Rts2Image * image)
 		<< image->getRaDec (image->getChannelWidth (0), 0, ra, dec) << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
 		<< image->getRaDec (0, image->getChannelHeight (0), ra, dec) << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
 		<< image->getRaDec (image->getChannelWidth (0), image->getChannelHeight (0), ra, dec) << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
-		// << "Rts2Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x << ":" << y << std::endl
+		// << "Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x << ":" << y << std::endl
 		<< "Expression %b/%t/%i/%c/%f '" << image->expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl
 		<< "Expression $DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '" << image->expandPath (std::string ("$DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits")) << '\'' << std::endl
 		<< "Target Type " << image->getTargetType () << std::endl;
@@ -221,7 +221,7 @@ void AppImage::testImage (Rts2Image * image)
 	printOffset (152, 150, image);
 }
 
-void AppImage::pointDistance (Rts2Image * image)
+void AppImage::pointDistance (Image * image)
 {
 	double ra, dec, sep;
 	int ret;
@@ -232,7 +232,7 @@ void AppImage::pointDistance (Rts2Image * image)
 	std::cout << LibnovaDegArcMin (ra) << " " << LibnovaDegArcMin (dec) << std::endl;
 }
 
-void AppImage::testEval (Rts2Image * image)
+void AppImage::testEval (Image * image)
 {
 	float value, error;
 
@@ -241,7 +241,7 @@ void AppImage::testEval (Rts2Image * image)
 	std::cout << "value: " << value << " error: " << error << std::endl;
 }
 
-void AppImage::createWCS (Rts2Image * image)
+void AppImage::createWCS (Image * image)
 {
 	int ret = image->createWCS (off_x, off_y);
 
@@ -249,7 +249,7 @@ void AppImage::createWCS (Rts2Image * image)
 		std::cerr << "create WCS returned with error " << ret << std::endl;
 }
 
-void AppImage::printModel (Rts2Image *image)
+void AppImage::printModel (Image *image)
 {
 	try
 	{
@@ -267,7 +267,7 @@ void AppImage::printModel (Rts2Image *image)
 	}
 }
 
-void AppImage::printStat (Rts2Image *image)
+void AppImage::printStat (Image *image)
 {
 	image->computeStatistics ();
 	std::cout << image->getFileName ()
@@ -425,9 +425,9 @@ bool AppImage::doInitDB ()
 #endif
 
 #ifdef HAVE_PGSQL
-int AppImage::processImage (Rts2ImageDb * image)
+int AppImage::processImage (ImageDb * image)
 #else
-int AppImage::processImage (Rts2Image * image)
+int AppImage::processImage (Image * image)
 #endif							 /* HAVE_PGSQL */
 {
 	if (operation == IMAGEOP_NOOP)

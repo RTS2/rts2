@@ -2044,7 +2044,7 @@ TargetSet * Target::getCalTargets (double JD, double minaird)
 	return ret;
 }
 
-void Target::writeToImage (Rts2Image * image, double JD)
+void Target::writeToImage (rts2image::Image * image, double JD)
 {
 	// write lunar distance
 	struct ln_equ_posn moon;

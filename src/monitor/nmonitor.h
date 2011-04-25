@@ -28,8 +28,7 @@
 #include "../utils/rts2client.h"
 #include "../utils/rts2command.h"
 
-#include "../writers/rts2image.h"
-#include "../writers/rts2devcliimg.h"
+#include "../writers/devcliimg.h"
 
 #ifdef HAVE_PGSQL
 #include "../db/simbad/simbadtarget.h"

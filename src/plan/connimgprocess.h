@@ -22,7 +22,7 @@
 #define __RTS2CONNIMGPROCESS__
 
 #include "connexe.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 #include "../utilsdb/observation.h"
 
 namespace rts2plan

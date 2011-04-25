@@ -64,7 +64,10 @@
 #define CONSTRAINTS_GROUP    0x0002
 #define CONSTRAINTS_TARGET   0x0004
 
-class Rts2Image;
+namespace rts2image
+{
+class Image;
+}
 
 namespace rts2db {
 
@@ -635,7 +638,7 @@ class Target:public Rts2Target
 		 * @param image Image which will receive target metadata.
 		 * @param JD    Date for which metadata will be written.
 		 */
-		virtual void writeToImage (Rts2Image * image, double JD);
+		virtual void writeToImage (rts2image::Image * image, double JD);
 
 
 		/**

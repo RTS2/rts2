@@ -69,7 +69,7 @@ class TargetAuger:public rts2db::ConstTarget
 
 		virtual void printHTMLRow (std::ostringstream &_os, double JD);
 
-		virtual void writeToImage (Rts2Image * image, double JD);
+		virtual void writeToImage (rts2image::Image * image, double JD);
 
 		/**
 		 * Return fiels for observations.

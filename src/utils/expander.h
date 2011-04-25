@@ -84,10 +84,20 @@ class Expander
 		 * ID of current epoch.
 		 */
 		int epochId;
-		virtual std::string expandVariable (char var);
+		
+		// (unique) number - position, formatting;
+		int num_pos;
+		int num_pos_end;
+		int num_lenght;
+		char num_fill;
+
+		virtual std::string expandVariable (char var, size_t beg);
 		virtual std::string expandVariable (std::string expression);
 
 	private:
+		// formating parameters - length, fill
+		int length;
+		char fill;
 		struct tm localDate;
 		struct tm utDate;
 		struct tm nightDate;

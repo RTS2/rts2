@@ -67,7 +67,7 @@ Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_ty
 
 Observation::~Observation (void)
 {
-	std::vector <Rts2Image *>::iterator img_iter;
+	std::vector <rts2image::Image *>::iterator img_iter;
 	if (imgset)
 	{
 		for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
@@ -484,7 +484,7 @@ int Observation::getNumberOfGoodImages ()
 	loadImages ();
 	if (!imgset)
 		return 0;
-	std::vector <Rts2Image *>::iterator img_iter;
+	std::vector <rts2image::Image *>::iterator img_iter;
 	int ret = 0;
 	for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
 	{
@@ -500,7 +500,7 @@ int Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
 	if (!imgset)
 		return -1;
 
-	std::vector <Rts2Image *>::iterator img_iter;
+	std::vector <rts2image::Image *>::iterator img_iter;
 	for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
 	{
 		if (((*img_iter)->getError (eRa, eDec, eRad)) == 0)

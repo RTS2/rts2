@@ -21,7 +21,7 @@
 
 #include "../utils/infoval.h"
 #include "../utils/libnova_cpp.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 using namespace rts2db;
 
@@ -119,7 +119,7 @@ void EllTarget::printExtra (Rts2InfoValStream & _os, double JD)
 	Target::printExtra (_os, JD);
 }
 
-void EllTarget::writeToImage (Rts2Image * image, double JD)
+void EllTarget::writeToImage (rts2image::Image * image, double JD)
 {
 	Target::writeToImage (image, JD);
 	image->setValue ("ELL_EPO", orbit.JD, "epoch of the orbit");

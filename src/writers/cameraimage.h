@@ -20,7 +20,7 @@
 #ifndef __RTS2_CAMERA_IMAGE__
 #define __RTS2_CAMERA_IMAGE__
 
-#include "rts2image.h"
+#include "image.h"
 #include <map>
 #include <vector>
 
@@ -29,7 +29,12 @@ namespace rts2core
 class Rts2DevClient;
 }
 
-class Rts2DevClientCameraImage;
+namespace rts2image
+{
+
+class DevClientCameraImage;
+
+
 
 /**
  * Holds informations about which device waits for which info time.
@@ -61,9 +66,9 @@ class CameraImage
 		double exStart;
 		double exEnd;
 		bool dataWriten;
-		Rts2Image *image;
+		Image *image;
 
-		CameraImage (Rts2Image * in_image, double in_exStart, std::vector < rts2core::Rts2DevClient * > &_prematurelyReceived)
+		CameraImage (Image * in_image, double in_exStart, std::vector < rts2core::Rts2DevClient * > &_prematurelyReceived)
 		{
 			image = in_image;
 			exStart = in_exStart;
@@ -109,8 +114,10 @@ class CameraImages:public std::map <int, CameraImage * >
 
 		void deleteOld ();
 
-		void infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
-		void infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
-		bool wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		void infoOK (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		void infoFailed (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		bool wasTriggered (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 };
+
+}
 #endif							 /* !__RTS2_CAMERA_IMAGE__ */

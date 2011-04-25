@@ -20,11 +20,12 @@
 #include "connimgprocess.h"
 #include "elementacquire.h"
 
-#include "../writers/rts2devclifoc.h"
+#include "../writers/devclifoc.h"
 #include "../utils/rts2config.h"
 
 using namespace rts2plan;
 using namespace rts2script;
+using namespace rts2image;
 
 ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn *in_center_pos):Element (in_script)
 {
@@ -43,12 +44,12 @@ ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float i
 
 void ElementAcquire::postEvent (Rts2Event * event)
 {
-	Rts2Image *image;
+	Image *image;
 	AcquireQuery *ac;
 	switch (event->getType ())
 	{
 		case EVENT_OK_ASTROMETRY:
-			image = (Rts2Image *) event->getArg ();
+			image = (Image *) event->getArg ();
 			if (image->getObsId () == obsId && image->getImgId () == imgId)
 			{
 				// we get bellow required errror?
@@ -85,7 +86,7 @@ void ElementAcquire::postEvent (Rts2Event * event)
 			}
 			break;
 		case EVENT_NOT_ASTROMETRY:
-			image = (Rts2Image *) event->getArg ();
+			image = (Image *) event->getArg ();
 			if (image->getObsId () == obsId && image->getImgId () == imgId)
 			{
 				processingState = FAILED;
@@ -153,7 +154,7 @@ int ElementAcquire::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** ne
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementAcquire::processImage (Rts2Image * image)
+int ElementAcquire::processImage (Image * image)
 {
 	int ret;
 	ConnImgProcess *processor;
@@ -215,15 +216,15 @@ ElementAcquireStar::~ElementAcquireStar (void)
 
 void ElementAcquireStar::postEvent (Rts2Event * event)
 {
-	Rts2ConnFocus *focConn;
-	Rts2Image *image;
+	ConnFocus *focConn;
+	Image *image;
 	struct ln_equ_posn offset;
 	int ret;
 	short next_x, next_y;
 	switch (event->getType ())
 	{
 		case EVENT_STAR_DATA:
-			focConn = (Rts2ConnFocus *) event->getArg ();
+			focConn = (ConnFocus *) event->getArg ();
 			image = focConn->getImage ();
 			// that was our image
 			if (image->getObsId () == obsId && image->getImgId () == imgId)
@@ -289,10 +290,10 @@ void ElementAcquireStar::postEvent (Rts2Event * event)
 	ElementAcquire::postEvent (event);
 }
 
-int ElementAcquireStar::processImage (Rts2Image * image)
+int ElementAcquireStar::processImage (Image * image)
 {
 	int ret;
-	Rts2ConnFocus *processor;
+	ConnFocus *processor;
 	if (processingState != WAITING_IMAGE)
 	{
 		logStream (MESSAGE_ERROR)
@@ -304,9 +305,7 @@ int ElementAcquireStar::processImage (Rts2Image * image)
 	}
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
-	processor =
-		new Rts2ConnFocus (script->getMaster (), image,
-		defaultImgProccess.c_str (), EVENT_STAR_DATA);
+	processor = new ConnFocus (script->getMaster (), image, defaultImgProccess.c_str (), EVENT_STAR_DATA);
 	// save image before processing
 	image->saveImage ();
 	ret = processor->init ();
@@ -326,7 +325,7 @@ int ElementAcquireStar::processImage (Rts2Image * image)
 	}
 }
 
-int ElementAcquireStar::getSource (Rts2Image * image, double &ra_offset, double &dec_offset)
+int ElementAcquireStar::getSource (Image * image, double &ra_offset, double &dec_offset)
 {
 	int ret;
 	double off_x, off_y;
@@ -357,7 +356,7 @@ ElementAcquireHam::~ElementAcquireHam (void)
 {
 }
 
-int ElementAcquireHam::getSource (Rts2Image * image, double &ra_off, double &dec_off)
+int ElementAcquireHam::getSource (Image * image, double &ra_off, double &dec_off)
 {
 	double ham_x, ham_y;
 	double sep;

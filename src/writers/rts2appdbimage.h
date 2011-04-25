@@ -2,7 +2,7 @@
 #define __RTS2_APP_DB_IMAGE__
 
 #include "../utilsdb/rts2appdb.h"
-#include "rts2imagedb.h"
+#include "imagedb.h"
 
 #include <list>
 
@@ -11,7 +11,7 @@ class Rts2AppDbImage:public Rts2AppDb
 	protected:
 		std::list < const char *>imageNames;
 		bool readOnly;
-		virtual int processImage (Rts2ImageDb * image)
+		virtual int processImage (rts2image::ImageDb * image)
 		{
 			return 0;
 		}
@@ -38,10 +38,10 @@ class Rts2AppDbImage:public Rts2AppDb
 				img_iter++)
 			{
 				const char *an_name = *img_iter;
-				Rts2ImageDb *image;
+				rts2image::ImageDb *image;
 				try
 				{
-					Rts2ImageDb *imagedb = new Rts2ImageDb ();
+					rts2image::ImageDb *imagedb = new rts2image::ImageDb ();
 					imagedb->openImage (an_name, false, readOnly);
 					image = getValueImageType (imagedb);
 				}

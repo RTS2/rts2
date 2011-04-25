@@ -30,7 +30,7 @@
 #include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 class TPM:public Rts2CliApp
 {
@@ -50,8 +50,8 @@ class TPM:public Rts2CliApp
 
 	private:
 		std::vector < std::string > filenames;
-		int headline (Rts2Image * image, std::ostream & _os);
-		int printImage (Rts2Image * image, std::ostream & _os);
+		int headline (rts2image::Image * image, std::ostream & _os);
+		int printImage (rts2image::Image * image, std::ostream & _os);
 		// select images with given flip; -1 for all flip, 0 or 1 for given flip
 		int selFlip;
 
@@ -163,7 +163,7 @@ int TPM::doProcessing ()
 	bool firstLine = false;
 	for (std::vector < std::string >::iterator iter = filenames.begin (); iter != filenames.end (); iter++)
 	{
-		Rts2Image *image = new Rts2Image ();
+		rts2image::Image *image = new rts2image::Image ();
 		image->openImage (iter->c_str (), true, true);
 		if (!firstLine)
 		{
@@ -191,7 +191,7 @@ void TPM::usage ()
 	std::cout << "\t" << getAppName () << " *.fits > model.in" << std::endl;
 }
 
-int TPM::headline (Rts2Image * image, std::ostream & _os)
+int TPM::headline (rts2image::Image * image, std::ostream & _os)
 {
 	obs.lat = Rts2Config::instance ()->getObserver ()->lat;
 	obs.lng = Rts2Config::instance ()->getObserver ()->lng;
@@ -229,7 +229,7 @@ int TPM::headline (Rts2Image * image, std::ostream & _os)
 	return 0;
 }
 
-int TPM::printImage (Rts2Image * image, std::ostream & _os)
+int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 {
 	LibnovaRaDec actual;
 	LibnovaRaDec target;

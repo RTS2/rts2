@@ -28,6 +28,7 @@
 #include <vector>
 
 using namespace rts2plan;
+using namespace rts2image;
 
 // ScriptExec class
 
@@ -35,10 +36,10 @@ class ClientCameraScript:public Rts2DevClientCameraExec
 {
 	public:
 		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath):Rts2DevClientCameraExec (conn, _expandPath) {};
-		virtual imageProceRes processImage (Rts2Image * image);
+		virtual imageProceRes processImage (Image * image);
 };
 
-imageProceRes ClientCameraScript::processImage (Rts2Image * image)
+imageProceRes ClientCameraScript::processImage (Image * image)
 {
 	image->saveImage ();
 	std::cout << image->getFileName () << std::endl;
@@ -234,14 +235,14 @@ rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other
 			cli = new ClientCameraScript (conn, expandPath);
 			break;
 		case DEVICE_TYPE_FOCUS:
-			cli = new Rts2DevClientFocusImage (conn);
+			cli = new rts2image::DevClientFocusImage (conn);
 			break;
 			/*    case DEVICE_TYPE_PHOT:
 				  cli = new Rts2DevClientPhotExec (conn);
 				  break; */
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
-			cli = new Rts2DevClientWriteImage (conn);
+			cli = new rts2image::DevClientWriteImage (conn);
 			break;
 		default:
 			cli = Rts2Client::createOtherType (conn, other_device_type);

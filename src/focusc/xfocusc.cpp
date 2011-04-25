@@ -129,7 +129,7 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		// process possible change requests
 		virtual void idle ();
 	protected:
-		virtual void cameraImageReady (Rts2Image * image);
+		virtual void cameraImageReady (rts2image::Image * image);
 
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 		virtual void printFWHMTable ();
@@ -157,7 +157,7 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		void drawCross1 ();
 		void drawCross2 ();
 		void drawCross3 ();
-		void drawStars (Rts2Image * image);
+		void drawStars (rts2image::Image * image);
 		void printInfo ();
 		void printMouse ();
 		void redrawMouse ();
@@ -463,9 +463,9 @@ void Rts2xfocusCamera::drawCross3 ()
 	XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15, xc, yc + pixmapHeight / 15);
 }
 
-void Rts2xfocusCamera::drawStars (Rts2Image * image)
+void Rts2xfocusCamera::drawStars (rts2image::Image * image)
 {
-	struct stardata *sr;
+	struct rts2image::stardata *sr;
 	if (!image)
 		return;
 	sr = image->sexResults;
@@ -728,7 +728,7 @@ void Rts2xfocusCamera::idle ()
 	Rts2GenFocCamera::idle ();
 }
 
-void Rts2xfocusCamera::cameraImageReady (Rts2Image * image)
+void Rts2xfocusCamera::cameraImageReady (rts2image::Image * image)
 {
 	int i, j;
 

@@ -36,6 +36,7 @@
 #include <ctype.h>
 
 using namespace rts2script;
+using namespace rts2image;
 
 // test if next element is one that is given
 bool Script::isNext (const char *element)
@@ -800,7 +801,7 @@ void Script::exposureEnd ()
 	return (*el_iter)->exposureEnd ();
 }
 
-int Script::processImage (Rts2Image * image)
+int Script::processImage (Image * image)
 {
 	if (executedCount < 0 || el_iter == end ())
 		return -1;

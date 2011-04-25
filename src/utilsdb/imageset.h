@@ -20,7 +20,7 @@
 #ifndef __RTS2_IMGSET__
 #define __RTS2_IMGSET__
 
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 #include <iostream>
 #include <iomanip>
@@ -40,7 +40,7 @@ class Observation;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ImageSet:public std::vector <Rts2Image * >
+class ImageSet:public std::vector <rts2image::Image * >
 {
 	public:
 		ImageSet ();

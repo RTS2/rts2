@@ -34,7 +34,7 @@
 #include "../utilsdb/user.h"
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 #else
 #include "../utils/rts2config.h"
 #include "../utils/device.h"
@@ -831,7 +831,7 @@ void ListImages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	{
 		double eRa, eDec, eRad;
 		eRa = eDec = eRad = rts2_nan ("f");
-		Rts2Image *image = *img_iter;
+		rts2image::Image *image = *img_iter;
 		retVar["filename"] = image->getFileName ();
 		retVar["start"] = image->getExposureStart ();
 		retVar["exposure"] = image->getExposureLength ();

@@ -21,7 +21,7 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2format.h"
 #include "../utils/rts2cliapp.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 
 #include <iostream>
 #include <fstream>
@@ -205,7 +205,7 @@ void TelModelTest::runOnFile (std::string filename, std::ostream & os)
 void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 {
 	// load image data, open them read-only
-	Rts2ImageDb img;
+	rts2image::ImageDb img;
 	img.openImage (filename.c_str (), true, true);
 	struct ln_equ_posn posObj;
 	struct ln_equ_posn posTar;

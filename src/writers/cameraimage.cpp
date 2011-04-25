@@ -18,8 +18,10 @@
  */
 
 #include "cameraimage.h"
-#include "rts2devcliimg.h"
+#include "devcliimg.h"
 #include "../utils/timestamp.h"
+
+using namespace rts2image;
 
 CameraImage::~CameraImage (void)
 {
@@ -128,7 +130,7 @@ CameraImages::deleteOld ()
 	}
 }
 
-void CameraImages::infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+void CameraImages::infoOK (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
@@ -151,7 +153,7 @@ void CameraImages::infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevC
 	}
 }
 
-void CameraImages::infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+void CameraImages::infoFailed (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
@@ -174,7 +176,7 @@ void CameraImages::infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2
 	}
 }
 
-bool CameraImages::wasTriggered (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+bool CameraImages::wasTriggered (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
 	bool ret = false;
 

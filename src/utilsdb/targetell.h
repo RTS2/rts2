@@ -57,7 +57,7 @@ class EllTarget:public Target
 
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
-		virtual void writeToImage (Rts2Image * image, double JD);
+		virtual void writeToImage (rts2image::Image * image, double JD);
 
 		double getEarthDistance (double JD);
 		double getSolarDistance (double JD);

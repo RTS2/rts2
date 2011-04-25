@@ -22,7 +22,7 @@
 
 using namespace rts2image;
 
-MemImage::MemImage (const struct timeval *_exposureStart): Rts2Image ()
+MemImage::MemImage (const struct timeval *_exposureStart): Image ()
 {
 	createImage ();
 	setExposureStart (_exposureStart);

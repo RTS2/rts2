@@ -47,19 +47,15 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      <arg choice="opt"><option>-d</option> <replaceable>device name</replaceable></arg>
+      <arg choice="opt">
+        <arg choice="plain">
+	   <option>-s</option> <replaceable>script</replaceable>
+           <option>-S</option> <replaceable>script</replaceable>
+	</arg>
+      </arg>
+      <arg choice="opt"><option>-e</option> <replaceable>expand string</replaceable></arg>
       &configapp;
-      <arg choice="opt">
-        <arg choice="plain"><option>-d</option> <replaceable>device name</replaceable></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-s</option> <replaceable>script</replaceable></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-S</option> <replaceable>script</replaceable></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-e</option> <replaceable>expand string</replaceable></arg>
-      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -85,11 +81,8 @@
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>
-
     &optiongnu;
-
     <variablelist>
-      &configapplist;
       <varlistentry>
         <term><option>-d <replaceable class="parameter">device name</replaceable></option></term>
         <listitem>
@@ -130,6 +123,7 @@
 	  </para>
         </listitem>
       </varlistentry>
+      &configapplist;
     </variablelist>
   </refsect1>
   <refsect1>

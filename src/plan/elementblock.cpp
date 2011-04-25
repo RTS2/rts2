@@ -21,6 +21,7 @@
 #include "elementblock.h"
 
 using namespace rts2script;
+using namespace rts2image;
 
 ElementBlock::ElementBlock (Script * in_script):Element (in_script)
 {
@@ -169,7 +170,7 @@ void ElementBlock::exposureEnd ()
 		(*curr_element)->exposureEnd ();
 }
 
-int ElementBlock::processImage (Rts2Image * image)
+int ElementBlock::processImage (Image * image)
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->processImage (image);
@@ -377,7 +378,7 @@ int ElementAcquired::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementAcquired::processImage (Rts2Image * image)
+int ElementAcquired::processImage (Image * image)
 {
 	switch (state)
 	{

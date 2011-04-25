@@ -29,18 +29,24 @@ using namespace rts2core;
 Expander::Expander ()
 {
 	epochId = -1;
+	num_pos = -1;
 	setExpandDate ();
 }
 
 Expander::Expander (const struct timeval *tv)
 {
 	epochId = -1;
+	num_pos = -1;
 	setExpandDate (tv);
 }
 
 Expander::Expander (Expander * in_expander)
 {
 	epochId = in_expander->epochId;
+	num_pos = in_expander->num_pos;
+	num_pos_end = in_expander->num_pos_end;
+	num_lenght = in_expander->num_lenght;
+	num_fill = in_expander->num_fill;
 	setExpandDate (in_expander->getExpandDate ());
 }
 
@@ -146,7 +152,7 @@ std::string Expander::getNightString ()
 }
 
 
-std::string Expander::expandVariable (char var)
+std::string Expander::expandVariable (char var, size_t beg)
 {
 	std::string ret = "";
 	switch (var)
@@ -208,6 +214,13 @@ std::string Expander::expandVariable (char var)
 		case 'D':
 			ret += getDayString (getNightDay ());
                         break;
+		case 'u':
+			if (num_pos >= 0)
+				throw rts2core::Error ("you cannot use multiple n strings");
+			num_pos = beg;
+			num_lenght = length;
+			num_fill = fill;
+			break;
 		default:
 			ret += '%';
 			ret += var;
@@ -226,11 +239,12 @@ std::string Expander::expandVariable (std::string expression)
 
 void Expander::getFormating (const std::string &expression, std::string::iterator &iter, std::ostringstream &ret)
 {
-	int length = 0;
+	length = 0;
 	if (*iter == '0')
-		ret.fill ('0');
+		fill = '0';
 	else
-	  	ret.fill (' ');
+		fill = ' ';
+	ret.fill (fill);
 	// pass numbers and decimal points..
 	while (iter != expression.end () && isdigit (*iter))
 	{
@@ -244,19 +258,24 @@ void Expander::getFormating (const std::string &expression, std::string::iterato
 std::string Expander::expand (std::string expression)
 {
 	std::ostringstream ret;
-	int length;
 	std::string exp;
 	for (std::string::iterator iter = expression.begin (); iter != expression.end (); iter++)
 	{
-		length = 0;
 		switch (*iter)
 		{
 			case '%':
-				iter++;
-				getFormating (expression, iter, ret);
-				if (iter != expression.end ())
 				{
-					ret << expandVariable (*iter);
+					size_t beg = iter - expression.begin ();
+					iter++;
+					getFormating (expression, iter, ret);
+					if (iter != expression.end ())
+					{
+						std::string ex = expandVariable (*iter, beg);
+						if (ex.length () > 0)
+							ret << ex;
+						else
+							ret << std::setw (0);
+					}
 				}
 				break;
 				// that one enables to copy values from image header to expr

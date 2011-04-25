@@ -1,5 +1,5 @@
 #include "../writers/rts2appdbimage.h"
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 #include "../utils/rts2config.h"
 
 #include <iostream>
@@ -9,7 +9,7 @@
 class Rts2MoveArchive:public Rts2AppDbImage
 {
 	protected:
-		virtual int processImage (Rts2ImageDb * image)
+		virtual int processImage (rts2image::ImageDb * image)
 		{
 			double val;
 			int ret;

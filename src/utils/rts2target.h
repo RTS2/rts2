@@ -102,7 +102,10 @@ const char *getEventMaskName (int eventMask);
  */
 void printEventMask (int eventMask, std::ostream & _os);
 
-class Rts2Image;
+namespace rts2image
+{
+class Image;
+}
 
 typedef enum
 {
@@ -267,7 +270,7 @@ class Rts2Target
 			acquired = -1;
 		}
 
-		virtual void writeToImage (Rts2Image * image, double JD) = 0;
+		virtual void writeToImage (rts2image::Image * image, double JD) = 0;
 
 		int getEpoch () { return epochId; }
 

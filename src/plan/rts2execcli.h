@@ -23,7 +23,7 @@
 #include "script.h"
 #include "devscript.h"
 
-#include "../writers/rts2devcliimg.h"
+#include "../writers/devcliimg.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2target.h"
 
@@ -70,28 +70,28 @@ class GuidingParams
 
 using namespace rts2script;
 
-class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
+class Rts2DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
 {
 	public:
 		Rts2DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL);
 		virtual ~ Rts2DevClientCameraExec (void);
-		virtual Rts2Image *createImage (const struct timeval *expStart);
+		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);
 		virtual void nextCommand ();
-		void queImage (Rts2Image * image);
-		virtual imageProceRes processImage (Rts2Image * image);
+		void queImage (rts2image::Image * image);
+		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual void exposureFailed (int status);
 	protected:
 		ScriptPtr exposureScript;
-		virtual void unblockWait () { Rts2DevClientCameraImage::unblockWait (); }
-		virtual void unsetWait () { Rts2DevClientCameraImage::unsetWait (); }
+		virtual void unblockWait () { rts2image::DevClientCameraImage::unblockWait (); }
+		virtual void unsetWait () { rts2image::DevClientCameraImage::unsetWait (); }
 
-		virtual void clearWait () { Rts2DevClientCameraImage::clearWait (); }
+		virtual void clearWait () { rts2image::DevClientCameraImage::clearWait (); }
 
-		virtual int isWaitMove () { return Rts2DevClientCameraImage::isWaitMove (); }
+		virtual int isWaitMove () { return rts2image::DevClientCameraImage::isWaitMove (); }
 
-		virtual void setWaitMove () { Rts2DevClientCameraImage::setWaitMove (); }
+		virtual void setWaitMove () { rts2image::DevClientCameraImage::setWaitMove (); }
 
 		virtual void queCommandFromScript (Rts2Command * com) { queCommand (com); }
 
@@ -118,7 +118,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 		bool waitMetaData;
 };
 
-class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
+class Rts2DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 {
 	private:
 		Rts2Target * currentTarget;

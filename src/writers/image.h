@@ -28,7 +28,7 @@
 
 #include "imghdr.h"
 
-#include "rts2fitsfile.h"
+#include "fitsfile.h"
 #include "channel.h"
 
 #include "../utils/libnova_cpp.h"
@@ -44,6 +44,9 @@
 #if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
 double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object);
 #endif
+
+namespace rts2image
+{
 
 /**
  * One pixel at the image, with coordinates and a value.
@@ -83,7 +86,7 @@ imageWriteWhich_t;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Image:public Rts2FitsFile
+class Image:public FitsFile
 {
 	public:
 		// list of sex results..
@@ -91,16 +94,16 @@ class Rts2Image:public Rts2FitsFile
 		int sexResultNum;
 
 		// memory-only image..
-		Rts2Image ();
+		Image ();
 		// copy constructor
-		Rts2Image (Rts2Image * in_image);
+		Image (Image * in_image);
 		// memory-only with exposure time
-		Rts2Image (const struct timeval *in_exposureStart);
-		Rts2Image (const struct timeval *in_exposureS, float in_img_exposure);
+		Image (const struct timeval *in_exposureStart);
+		Image (const struct timeval *in_exposureS, float in_img_exposure);
 		// skeleton for DB image
-		Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
+		Image (long in_img_date, int in_img_usec, float in_img_exposure);
 		// create image
-		Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
+		Image (char *in_filename, const struct timeval *in_exposureStart);
 		/**
 		 * Create image from expand path.
 		 *
@@ -109,10 +112,10 @@ class Rts2Image:public Rts2FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
+		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
 		// create image in que
-		Rts2Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
-		virtual ~ Rts2Image (void);
+		Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
+		virtual ~ Image (void);
 
 		virtual int closeFile ();
 
@@ -435,7 +438,7 @@ class Rts2Image:public Rts2FitsFile
 
 		//void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
 
-		//int substractDark (Rts2Image * darkImage);
+		//int substractDark (Image * darkImage);
 
 		int setAstroResults (double ra, double dec, double ra_err, double dec_err);
 
@@ -656,7 +659,12 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		int createWCS (double x_off = 0, double y_off = 0);
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+		friend std::ostream & operator << (std::ostream & _os, Image & image)
+		{
+			return image.printImage (_os);
+		}
+
+		std::ostream & printImage (std::ostream & _os);
 
 		double getLongtitude ();
 
@@ -706,7 +714,7 @@ class Rts2Image:public Rts2FitsFile
 		char *getImageBase (void);
 
 		// expand expression to image path
-		virtual std::string expandVariable (char expression);
+		virtual std::string expandVariable (char expression, size_t beg);
 		virtual std::string expandVariable (std::string expression);
 
 	private:
@@ -785,10 +793,10 @@ class Rts2Image:public Rts2FitsFile
 		void recordChange (Rts2Conn *conn, rts2core::Value *val);
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+}
 
-//Rts2Image & operator - (Rts2Image & img_1, Rts2Image & img_2);
-//Rts2Image & operator + (Rts2Image & img_, Rts2Image & img_2);
-//Rts2Image & operator -= (Rts2Image & img_2);
-//Rts2Image & operator += (Rts2Image & img_2);
+//Image & operator - (Image & img_1, Image & img_2);
+//Image & operator + (Image & img_, Image & img_2);
+//Image & operator -= (Image & img_2);
+//Image & operator += (Image & img_2);
 #endif							 /* !__RTS2_IMAGE__ */

@@ -21,7 +21,7 @@
 #include "target_auger.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 using namespace rts2db;
 
@@ -763,7 +763,7 @@ void TargetAuger::printHTMLRow (std::ostringstream &_os, double JD)
 		<< cor.z + 1422 << "</td></tr>";
 }
 
-void TargetAuger::writeToImage (Rts2Image * image, double JD)
+void TargetAuger::writeToImage (rts2image::Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("AGR_T3ID", t3id, "Auger target id");

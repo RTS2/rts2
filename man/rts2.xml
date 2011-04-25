@@ -528,7 +528,7 @@
 	  <option>n</option>
         </term>
         <listitem>
-          <para>Exposure number.</para>
+          <para>Exposure number. Counted from 1 when script starts. If you are looking for unique number, please look for <option>u</option> option.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -597,6 +597,18 @@
         <listitem>
           <para>Switch all next printed dates to UT time.</para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>u</option>
+	</term>
+	<listitem>
+	  <para>
+	    Unique number incorporated into filename. Start number on 1, and
+	    increase it as long as file with given name exists. Should be used
+	    to create uninterupted ascension of filenames.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term>

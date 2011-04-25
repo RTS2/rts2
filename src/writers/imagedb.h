@@ -20,7 +20,7 @@
 /*!file
  * Used for Image-DB interaction.
  *
- * Build on Rts2Image, persistently update image information in
+ * Build on Image, persistently update image information in
  * database.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -29,7 +29,7 @@
 #ifndef __RTS2_IMAGEDB__
 #define __RTS2_IMAGEDB__
 
-#include "rts2image.h"
+#include "image.h"
 #include "../utils/rts2target.h"
 #include "../utilsdb/rts2taruser.h"
 
@@ -43,22 +43,25 @@
 // some error durring image operations occured, information in DB is unrealiable
 #define IMG_ERR         0x8000
 
+namespace rts2image
+{
+
 /**
  * Abstract class, representing image in DB.
  *
- * Rts2ImageSkyDb inherits from this class. This class is used to store any
+ * ImageSkyDb inherits from this class. This class is used to store any
  * non-sky images (mostly darks, flats and other callibration images).
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ImageDb:public Rts2Image
+class ImageDb:public Image
 {
 	public:
-		Rts2ImageDb ();
-		Rts2ImageDb (Rts2Image * in_image);
-		Rts2ImageDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart);
-		Rts2ImageDb (int in_obs_id, int in_img_id);
-		Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
+		ImageDb ();
+		ImageDb (Image * in_image);
+		ImageDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart);
+		ImageDb (int in_obs_id, int in_img_id);
+		ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
 
 		int getOKCount ();
 
@@ -66,7 +69,7 @@ class Rts2ImageDb:public Rts2Image
 
 		virtual int renameImage (const char *new_filename);
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);
+		friend std::ostream & operator << (std::ostream & _os, ImageDb & img_db);
 
 	protected:
 		virtual void initDbImage ();
@@ -78,16 +81,16 @@ class Rts2ImageDb:public Rts2Image
 		void getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
 };
 
-class Rts2ImageSkyDb:public Rts2ImageDb
+class ImageSkyDb:public ImageDb
 {
 	public:
-		Rts2ImageSkyDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStartd);
-		//! Construct image from already existed Rts2ImageDb instance
-		Rts2ImageSkyDb (Rts2Image * in_image);
+		ImageSkyDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStartd);
+		//! Construct image from already existed ImageDb instance
+		ImageSkyDb (Image * in_image);
 		//! Construct image directly from DB (eg. retrieve all missing parameters)
-		Rts2ImageSkyDb (int in_obs_id, int in_img_id);
+		ImageSkyDb (int in_obs_id, int in_img_id);
 		//! Construcy image from one database row..
-		Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id,
+		ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id,
 			char in_obs_subtype, long in_img_date, int in_img_usec,
 			float in_img_exposure, float in_img_temperature,
 			const char *in_img_filter, float in_img_alt,
@@ -95,7 +98,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 			const char *in_mount_name, bool in_delete_flag,
 			int in_process_bitfield, double in_img_err_ra,
 			double in_img_err_dec, double in_img_err, const char *_img_path);
-		virtual ~ Rts2ImageSkyDb (void);
+		virtual ~ ImageSkyDb (void);
 
 		virtual int toArchive ();
 		virtual int toTrash ();
@@ -144,7 +147,7 @@ template < class img > img * setValueImageType (img * in_image)
 	}
 	else
 	{
-		ret_i = new Rts2ImageSkyDb (in_image);
+		ret_i = new ImageSkyDb (in_image);
 		delete in_image;
 		imgTypeText = "object";
 	}
@@ -175,11 +178,13 @@ template < class img > img * getValueImageType (img * in_image)
 	}
 	else if (!strcasecmp (value, "object"))
 	{
-		Rts2ImageSkyDb *skyI = new Rts2ImageSkyDb (in_image);
+		ImageSkyDb *skyI = new ImageSkyDb (in_image);
 		delete in_image;
 		return skyI;
 	}
 	// "zero" and "comp" are not used
 	return in_image;
+}
+
 }
 #endif							 /* ! __RTS2_IMAGEDB__ */

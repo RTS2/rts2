@@ -20,10 +20,11 @@
 #include "elementguiding.h"
 #include "rts2execcli.h"
 #include "../utils/rts2config.h"
-#include "../writers/rts2image.h"
-#include "../writers/rts2devclifoc.h"
+#include "../writers/image.h"
+#include "../writers/devclifoc.h"
 
 using namespace rts2script;
+using namespace rts2image;
 
 ElementGuiding::ElementGuiding (Script * in_script, float init_exposure, int in_endSignal):Element (in_script)
 {
@@ -82,8 +83,8 @@ void ElementGuiding::checkGuidingSign (double &last, double &mult, double act)
 
 void ElementGuiding::postEvent (Rts2Event * event)
 {
-	Rts2ConnFocus *focConn;
-	Rts2Image *image;
+	ConnFocus *focConn;
+	Image *image;
 	double star_x, star_y;
 	double star_ra, star_dec, star_sep;
 	float flux;
@@ -91,7 +92,7 @@ void ElementGuiding::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_GUIDING_DATA:
-			focConn = (Rts2ConnFocus *) event->getArg ();
+			focConn = (ConnFocus *) event->getArg ();
 			image = focConn->getImage ();
 			if (image->getObsId () == obsId && image->getImgId () == imgId)
 			{
@@ -189,10 +190,10 @@ int ElementGuiding::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** ne
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementGuiding::processImage (Rts2Image * image)
+int ElementGuiding::processImage (Image * image)
 {
 	int ret;
-	Rts2ConnFocus *processor;
+	ConnFocus *processor;
 	logStream (MESSAGE_DEBUG) <<
 		"ElementGuiding::processImage state: " << (int) processingState
 		<< sendLog;
@@ -209,9 +210,7 @@ int ElementGuiding::processImage (Rts2Image * image)
 	logStream (MESSAGE_DEBUG)
 		<< "ElementGuiding::processImage defaultImgProccess: "
 		<< defaultImgProccess << sendLog;
-	processor =
-		new Rts2ConnFocus (script->getMaster (), image,
-		defaultImgProccess.c_str (), EVENT_GUIDING_DATA);
+	processor = new ConnFocus (script->getMaster (), image, defaultImgProccess.c_str (), EVENT_GUIDING_DATA);
 	image->saveImage ();
 	ret = processor->init ();
 	if (ret < 0)
@@ -226,8 +225,7 @@ int ElementGuiding::processImage (Rts2Image * image)
 		script->getMaster ()->addConnection (processor);
 		processingState = NEED_IMAGE;
 	}
-	logStream (MESSAGE_DEBUG)
-		<< "Rts2ConnImgProcess::processImage executed processor " << ret
+	logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::processImage executed processor " << ret
 		<< " processor " << processor << sendLog;
 	return 1;
 }

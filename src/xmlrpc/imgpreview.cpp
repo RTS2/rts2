@@ -21,7 +21,7 @@
 #define	_FILE_OFFSET_BITS 64
 #endif
 
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 #include "bsc.h"
 #include "dirsupport.h"
 #ifdef HAVE_LIBARCHIVE
@@ -138,7 +138,7 @@ using namespace Magick;
 void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
-	Rts2Image image;
+	rts2image::Image image;
 	image.openImage (path.c_str (), false, true);
 	Blob blob;
 
@@ -181,7 +181,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	{
 		response_type = "image/jpeg";
 
-		Rts2Image image;
+		rts2image::Image image;
 		image.openImage (absPath, false, true);
 		Blob blob;
 

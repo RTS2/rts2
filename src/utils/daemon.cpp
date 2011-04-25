@@ -630,6 +630,30 @@ int Daemon::setValue (Value * old_value, Value * newValue)
 	return -2;
 }
 
+void Daemon::changeValue (Value * value, int nval)
+{
+	Rts2CondValue *cv = getCondValue (value);
+	Value *nv = duplicateValue (value, false);
+	nv->setValueInteger (nval);
+	doSetValue (cv, '=', nv);
+}
+
+void Daemon::changeValue (Value * value, bool nval)
+{
+	Rts2CondValue *cv = getCondValue (value);
+	Value *nv = duplicateValue (value, false);
+	((ValueBool *) nv)->setValueBool (nval);
+	doSetValue (cv, '=', nv);
+}
+
+void Daemon::changeValue (Value * value, double nval)
+{
+	Rts2CondValue *cv = getCondValue (value);
+	Value *nv = duplicateValue (value, false);
+	((ValueDoubleStat *) nv)->setValueDouble (nval);
+	doSetValue (cv, '=', nv);
+}
+
 int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value)
 {
 	// que change if that's necessary
@@ -868,7 +892,7 @@ int Daemon::setValue (Rts2Conn * conn)
 		}
 		v_name[l - 1] = '\0';
 	}
-	// try to search for _ - compatibility with old versiona
+	// try to search for _ - compatibility with old version
 	else
 	{
 		old_value_cond = getCondValue (v_name);

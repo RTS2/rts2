@@ -1,5 +1,5 @@
 /*
- * Provides Rts2Image astrometry (position of pixels on image) functions.
+ * Provides Image astrometry (position of pixels on image) functions.
  * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -20,11 +20,11 @@
 #include <math.h>
 #include <libnova/libnova.h>
 
-#include "rts2image.h"
+#include "image.h"
 
 using namespace rts2image;
 
-int Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
+int Image::getRaDec (double x, double y, double &ra, double &dec)
 {
 	double ra_t, dec_t;
 	double rotang;
@@ -53,12 +53,12 @@ int Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 	return 0;
 }
 
-int Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle)
+int Image::getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle)
 {
 	return getOffset (x, y, getXoA (), getYoA (), chng_ra, chng_dec, sep_angle);
 }
 
-int Rts2Image::getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle)
+int Image::getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle)
 {
 	int ret;
 	struct ln_equ_posn pos1, pos2;
@@ -74,29 +74,29 @@ int Rts2Image::getOffset (double x1, double y1, double x2, double y2, double &ch
 	return ret;
 }
 
-double Rts2Image::getXoA ()
+double Image::getXoA ()
 {
 	return xoa;
 }
 
-double Rts2Image::getYoA ()
+double Image::getYoA ()
 {
 	return yoa;
 }
 
-void Rts2Image::setXoA (double in_xoa)
+void Image::setXoA (double in_xoa)
 {
 	xoa = in_xoa;
 	setValue ("CAM_XOA", in_xoa, "center in X axis (divide by binning (BIN_H)!)");
 }
 
-void Rts2Image::setYoA (double in_yoa)
+void Image::setYoA (double in_yoa)
 {
 	yoa = in_yoa;
 	setValue ("CAM_YOA", in_yoa, "center in Y axis (divide by binning (BIN_V)!)");
 }
 
-double Rts2Image::getRotang ()
+double Image::getRotang ()
 {
 	//  return rotang;
 	double val = 0;
@@ -111,7 +111,7 @@ double Rts2Image::getRotang ()
 	return ln_deg_to_rad (val);
 }
 
-double Rts2Image::getCenterRa ()
+double Image::getCenterRa ()
 {
 	double val = 0;
 	try
@@ -125,7 +125,7 @@ double Rts2Image::getCenterRa ()
 	return val;
 }
 
-double Rts2Image::getCenterDec ()
+double Image::getCenterDec ()
 {
 	double val = 0;
 	try
@@ -139,7 +139,7 @@ double Rts2Image::getCenterDec ()
 	return val;
 }
 
-double Rts2Image::getXPlate ()
+double Image::getXPlate ()
 {
 	double val = 0;
 	try
@@ -153,7 +153,7 @@ double Rts2Image::getXPlate ()
 	return val / 3600.0;
 }
 
-double Rts2Image::getYPlate ()
+double Image::getYPlate ()
 {
 	double val = 0;
 	try 
@@ -167,12 +167,12 @@ double Rts2Image::getYPlate ()
 	return val / 3600.0;
 }
 
-int Rts2Image::getMountFlip ()
+int Image::getMountFlip ()
 {
 	return mnt_flip;
 }
 
-int Rts2Image::getFlip ()
+int Image::getFlip ()
 {
 	int val;
 	try
@@ -186,14 +186,14 @@ int Rts2Image::getFlip ()
 	return val;
 }
 
-void Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
+void Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
  	
 	getValue (ra_name, radec.ra, true);
 	getValue (dec_name, radec.dec, true);
 }
 
-LibnovaRaDec Rts2Image::getCoord (const char *prefix)
+LibnovaRaDec Image::getCoord (const char *prefix)
 {
 	struct ln_equ_posn pos;
 	std::string p = std::string (prefix) + "RA";
@@ -203,27 +203,27 @@ LibnovaRaDec Rts2Image::getCoord (const char *prefix)
 	return LibnovaRaDec (pos.ra, pos.dec);
 }
 
-void Rts2Image::getCoordObject (struct ln_equ_posn &radec)
+void Image::getCoordObject (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "OBJRA", "OBJDEC");
 }
 
-void Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
+void Image::getCoordTarget (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "TARRA", "TARDEC");
 }
 
-void Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
+void Image::getCoordAstrometry (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "CRVAL1", "CRVAL2");
 }
 
-void Rts2Image::getCoordMount (struct ln_equ_posn &radec)
+void Image::getCoordMount (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "TELRA", "TELDEC");
 }
 
-void Rts2Image::getCoordBest (struct ln_equ_posn &radec)
+void Image::getCoordBest (struct ln_equ_posn &radec)
 {
 	try
 	{
@@ -235,37 +235,37 @@ void Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 	}
 }
 
-void Rts2Image::getCoordBestAltAz (struct ln_hrz_posn &hrz, struct ln_lnlat_posn *observer)
+void Image::getCoordBestAltAz (struct ln_hrz_posn &hrz, struct ln_lnlat_posn *observer)
 {
 	struct ln_equ_posn equ;
 	getCoordBest (equ);
 	ln_get_hrz_from_equ (&equ, observer, getMidExposureJD (), &hrz);
 }
 
-void Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
+void Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
 {
 	struct ln_equ_posn pos;
 	getCoord (pos, ra_name, dec_name);
 	radec.setPos (&pos);
 }
 
-void Rts2Image::getCoordTarget (LibnovaRaDec & radec)
+void Image::getCoordTarget (LibnovaRaDec & radec)
 {
 	getCoord (radec, "TARRA", "TARDEC");
 }
 
-void Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
+void Image::getCoordAstrometry (LibnovaRaDec & radec)
 {
 	getCoord (radec, "CRVAL1", "CRVAL2");
 }
 
 
-void Rts2Image::getCoordMount (LibnovaRaDec & radec)
+void Image::getCoordMount (LibnovaRaDec & radec)
 {
 	getCoord (radec, "TELRA", "TELDEC");
 }
 
-void Rts2Image::getCoordBest (LibnovaRaDec & radec)
+void Image::getCoordBest (LibnovaRaDec & radec)
 {
 	try
 	{
@@ -277,7 +277,7 @@ void Rts2Image::getCoordBest (LibnovaRaDec & radec)
 	}
 }
 
-int Rts2Image::createWCS (double x_off, double y_off)
+int Image::createWCS (double x_off, double y_off)
 {
 	LibnovaRaDec radec;
 

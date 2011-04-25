@@ -29,7 +29,7 @@ class Rts2DevClientCameraExecDb:public Rts2DevClientCameraExec
 	public:
 		Rts2DevClientCameraExecDb (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClientCameraExecDb (void);
-		virtual Rts2Image *createImage (const struct timeval *expStart);
-		virtual void beforeProcess (Rts2Image * image);
+		virtual rts2image::Image *createImage (const struct timeval *expStart);
+		virtual void beforeProcess (rts2image::Image * image);
 };
 #endif							 /* !__RTS2_EXECCLIDB__ */

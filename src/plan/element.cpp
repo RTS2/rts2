@@ -23,10 +23,11 @@
 
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
-#include "../writers/rts2image.h"
-#include "../writers/rts2devclifoc.h"
+#include "../writers/image.h"
+#include "../writers/devclifoc.h"
 
 using namespace rts2script;
+using namespace rts2image;
 
 Element::Element (Script * _script)
 {
@@ -45,7 +46,7 @@ void Element::getDevice (char new_device[DEVICE_NAME_SIZE])
 	script->getDefaultDevice (new_device);
 }
 
-int Element::processImage (Rts2Image * image)
+int Element::processImage (Image * image)
 {
 	return -1;
 }

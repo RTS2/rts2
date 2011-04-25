@@ -34,6 +34,7 @@
 #include <sstream>
 
 using namespace rts2plan;
+using namespace rts2image;
 
 ConnProcess::ConnProcess (rts2core::Block * in_master, const char *in_exe, int in_timeout):rts2script::ConnExe (in_master, in_exe, false, in_timeout)
 {
@@ -114,7 +115,7 @@ int ConnImgProcess::init ()
 {
 	try
 	{
-		Rts2Image image;
+		Image image;
 		image.openImage (imgPath.c_str (), false, true);
 		if (image.getShutter () == SHUT_CLOSED)
 		{
@@ -154,10 +155,10 @@ void ConnImgProcess::connectionError (int last_data_size)
 	}
 
 #ifdef HAVE_PGSQL
-	Rts2ImageDb *image;
+	ImageDb *image;
 	try
 	{
-	  	Rts2ImageDb *imagedb = new Rts2ImageDb ();
+	  	ImageDb *imagedb = new ImageDb ();
 		imagedb->openImage (imgPath.c_str ());
 		image = getValueImageType (imagedb);
 #else

@@ -71,7 +71,7 @@ class TargetGRB:public ConstTarget
 
 		void printGrbList (std::ostream & _os);
 
-		virtual void writeToImage (Rts2Image * image, double JD);
+		virtual void writeToImage (rts2image::Image * image, double JD);
 
 	protected:
 		virtual void getDBScript (const char *camera_name, std::string & script);

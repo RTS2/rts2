@@ -44,7 +44,7 @@ class ConnExecute:public ConnExe
 
 		virtual void exposureEnd ();
 
-		virtual int processImage (Rts2Image *image);
+		virtual int processImage (rts2image::Image *image);
 
 	protected:
 		virtual void processCommand (char *cmd);
@@ -55,9 +55,9 @@ class ConnExecute:public ConnExe
 		Execute *masterElement;
 
 		// hold images..
-		std::list <Rts2Image *> images;
+		std::list <rts2image::Image *> images;
 
-		std::list <Rts2Image *>::iterator findImage (const char *path);
+		std::list <rts2image::Image *>::iterator findImage (const char *path);
 };
 
 /**
@@ -79,7 +79,7 @@ class Execute:public Element
 
 		virtual void exposureEnd ();
 
-		virtual int processImage (Rts2Image *image);
+		virtual int processImage (rts2image::Image *image);
 
 		void deleteExecConn () { connExecute = NULL; }
 

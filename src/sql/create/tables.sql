@@ -188,6 +188,7 @@ CREATE TABLE images (
 	-- bit 0 - astrometry not/OK
 	-- bit 1 - dark image substracted
 	-- bit 2 - flatfield correction
+	-- bit 3 - image OK/not OK
 CONSTRAINT images_prim_key PRIMARY KEY (obs_id, img_id)
 );
 

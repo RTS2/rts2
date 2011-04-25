@@ -22,7 +22,7 @@
 
 #include "rts2scriptinterface.h"
 #include "../utils/rts2target.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 class Rts2ScriptExec;
 
@@ -52,6 +52,6 @@ class Rts2TargetScr:public Rts2Target
 
 		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
 		virtual int startObservation ();
-		virtual void writeToImage (Rts2Image * image, double JD);
+		virtual void writeToImage (rts2image::Image * image, double JD);
 };
 #endif							 /* !__RTS2_TARGESCR__ */

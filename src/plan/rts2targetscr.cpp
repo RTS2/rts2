@@ -75,6 +75,6 @@ int Rts2TargetScr::startObservation ()
 	return -1;
 }
 
-void Rts2TargetScr::writeToImage (Rts2Image * image, double JD)
+void Rts2TargetScr::writeToImage (rts2image::Image * image, double JD)
 {
 }

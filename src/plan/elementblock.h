@@ -50,7 +50,7 @@ class ElementBlock:public Element
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void exposureEnd ();
-		virtual int processImage (Rts2Image * image);
+		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();
 		virtual void beforeExecuting ();
@@ -131,7 +131,7 @@ class ElementAcquired:public ElementBlock
 		virtual int nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
-		virtual int processImage (Rts2Image * image);
+		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();
 

@@ -47,7 +47,7 @@ class ElementGuiding:public Element
 			Rts2Command ** new_command,
 			char new_device[DEVICE_NAME_SIZE]);
 
-		virtual int processImage (Rts2Image * image);
+		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int in_sig);
 		virtual void cancelCommands ();
 

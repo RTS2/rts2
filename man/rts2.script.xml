@@ -759,11 +759,11 @@ G W0 filter
 	</para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>double {variable name} {variable description} {value}</option></term>
+        <term><option>double {variable name} {variable description} {value} [{rts2 type}]</option></term>
 	<listitem><para>
 	  Creates or update device double value. If variable with given name
 	  and double type is not in the device, it is created, populated with
-	  description and value. If the variable is found and is of double
+	  description, value type and value. If the variable is found and is of double
 	  type, its value is updated.
 	</para><para>
 	  This way, the script can permanently inform users about values it
@@ -772,6 +772,44 @@ G W0 filter
 double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
           </literallayout>
 	  will create <emphasis>fwhm</emphasis>, with given description and value equals to 6.32.
+	</para>
+	<para>
+	  The following constants can be specified as <emphasis>type</emphasis>:
+	<variablelist>
+	  <varlistentry>
+	    <term><option>DT_RA</option></term>
+	  </varlistentry>  
+          <varlistentry>
+	    <term><option>DT_DEC</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_DEGREES</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_DEG_DIST</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_PERCENTS</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_ROTANG</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_HEX</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_BYTESIZE</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_KMG</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_INTERVAL</option></term>
+	  </varlistentry>
+          <varlistentry>
+	    <term><option>DT_ONOFF</option></term>
+	  </varlistentry>
+	</variablelist>
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -901,7 +939,7 @@ echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
 for x in 1 2; do
 	echo $x
 	echo "exposure"
-        read exp_end
+	read exp_end
 	echo "V W0 filter += 1"
 	echo "V T0 WOFFS += 0.01 0.01"
 	read x y

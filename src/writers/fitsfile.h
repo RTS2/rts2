@@ -34,6 +34,9 @@
 #define IMAGE_DONT_DELETE_DATA  0x08
 #define IMAGE_CANNOT_LOAD       0x10
 
+namespace rts2image
+{
+
 /**
  * Class with table column informations. Used to temorary store
  * table data.
@@ -93,36 +96,36 @@ class TableData:public std::list <ColumnData *>
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2FitsFile: public rts2core::Expander
+class FitsFile: public rts2core::Expander
 {
 	public:
 		/**
 		 * Creates file only in memory, do not write anything on disk.
 		 */
-		Rts2FitsFile ();
+		FitsFile ();
 
 		/**
 		 * Copy constructor.
 		 *
-		 * @param in_file  Rts2FitsFile to copy to this structure.
+		 * @param in_file  FitsFile to copy to this structure.
 		 * Reference to fits file in original file will be deleted
 		 * (NULLed).
 		 */
-		Rts2FitsFile (Rts2FitsFile * in_fitsfile);
+		FitsFile (FitsFile * in_fitsfile);
 
 		/**
 		 * Create FITS file from filename.
 		 *
 		 * @param _filename Filename of the image.
 		 */
-		Rts2FitsFile (const char *_filename);
+		FitsFile (const char *_filename);
 
 		/**
 		 * Set only expansion date.
 		 *
 		 * @param _tv
 		 */
-		Rts2FitsFile (const struct timeval *_tv);
+		FitsFile (const struct timeval *_tv);
 		
 		/**
 		 * Create FITS file from expand path. Uses given date for date related file expansion.
@@ -131,9 +134,9 @@ class Rts2FitsFile: public rts2core::Expander
 		 * @param _expression Input expression.
 		 * @param _tv Timeval used for expansio of time-related keywords in expression.
 		 */
-		Rts2FitsFile (const char *_expression, const struct timeval *_tv);
+		FitsFile (const char *_expression, const struct timeval *_tv);
 
-		virtual ~Rts2FitsFile (void);
+		virtual ~FitsFile (void);
 
 		/**
 		 * Load given template file. Template file specifies values
@@ -175,7 +178,7 @@ class Rts2FitsFile: public rts2core::Expander
 		 *
 		 * @return Expanded path.
 		 */
-		std::string expandPath (std::string pathEx) { return expand (pathEx); }
+		std::string expandPath (std::string pathEx);
 
 		/**
 		 * Move current HDU.
@@ -260,9 +263,6 @@ class Rts2FitsFile: public rts2core::Expander
 		char *absoluteFileName;
 };
 
-namespace rts2image
-{
-
 /**
  * Thrown where we cannot find header in the image.
  *
@@ -271,7 +271,7 @@ namespace rts2image
 class KeyNotFound:public rts2core::Error
 {
 	public:
-		KeyNotFound (Rts2FitsFile *_image, const char *_header):rts2core::Error ()
+		KeyNotFound (FitsFile *_image, const char *_header):rts2core::Error ()
 		{
 			std::ostringstream _os;
 			_os << "keyword " << _header <<  " missing in file " << _image->getFileName () << ":" << _image->getFitsErrors ();
@@ -297,7 +297,7 @@ class ErrorOpeningFitsFile: public rts2core::Error
 class ErrorSettingKey: public rts2core::Error
 {
 	public:
-		ErrorSettingKey (Rts2FitsFile *ff, const char *valname):rts2core::Error ()
+		ErrorSettingKey (FitsFile *ff, const char *valname):rts2core::Error ()
 		{
 			setMsg (std::string ("Cannot set key ") + valname + std::string (":") + ff->getFitsErrors ());
 		}

@@ -259,12 +259,12 @@ Rts2DevClient * Executor::createOtherType (Rts2Conn * conn, int other_device_typ
 		case DEVICE_TYPE_CCD:
 			return new Rts2DevClientCameraExecDb (conn);
 		case DEVICE_TYPE_FOCUS:
-			return new Rts2DevClientFocusImage (conn);
+			return new rts2image::DevClientFocusImage (conn);
 		case DEVICE_TYPE_PHOT:
 			return new Rts2DevClientPhotExec (conn);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
-			return new Rts2DevClientWriteImage (conn);
+			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return Rts2DeviceDb::createOtherType (conn, other_device_type);
 	}

@@ -18,7 +18,7 @@
  */
 
 #include "imgdisplay.h"
-#include "rts2imagedb.h"
+#include "imagedb.h"
 #include "../utils/timestamp.h"
 #include "../utils/libnova_cpp.h"
 
@@ -28,17 +28,19 @@
 
 EXEC SQL include sqlca;
 
-void Rts2ImageDb::initDbImage ()
+using namespace rts2image;
+
+void ImageDb::initDbImage ()
 {
 }
 
-void Rts2ImageDb::reportSqlError (const char *msg)
+void ImageDb::reportSqlError (const char *msg)
 {
 	logStream (MESSAGE_ERROR) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
 		msg << ")" << sendLog;
 }
 
-void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
+void ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
 {
 	try
 	{
@@ -52,7 +54,7 @@ void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *
 	}
 }
 
-void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
+void ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
 {
 	try
 	{
@@ -66,22 +68,22 @@ void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *c
 	}
 }
 
-Rts2ImageDb::Rts2ImageDb (): Rts2Image ()
+ImageDb::ImageDb (): Image ()
 {
 	initDbImage ();
 }
 
-Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
+ImageDb::ImageDb (Image * in_image): Image (in_image)
 {
 }
 
-Rts2ImageDb::Rts2ImageDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
-Rts2Image (currTarget, camera, expStart)
+ImageDb::ImageDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
+Image (currTarget, camera, expStart)
 {
 	initDbImage ();
 }
 
-Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
+ImageDb::ImageDb (int in_obs_id, int in_img_id) : Image ()
 {
 	initDbImage ();
 	// fill in filter
@@ -100,11 +102,11 @@ Rts2ImageDb::Rts2ImageDb (int in_obs_id, int in_img_id) : Rts2Image ()
 	// fill in imageName
 }
 
-Rts2ImageDb::Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Rts2Image (in_img_date, in_img_usec, in_img_exposure)
+ImageDb::ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Image (in_img_date, in_img_usec, in_img_exposure)
 {
 }
 
-int Rts2ImageDb::getOKCount ()
+int ImageDb::getOKCount ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = getObsId ();
@@ -126,13 +128,13 @@ int Rts2ImageDb::getOKCount ()
 	return db_count;
 }
 
-int Rts2ImageDb::saveImage ()
+int ImageDb::saveImage ()
 {
 	updateDB ();
-	return Rts2Image::saveImage ();
+	return Image::saveImage ();
 }
 
-int Rts2ImageDb::renameImage (const char *new_filename)
+int ImageDb::renameImage (const char *new_filename)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
@@ -140,7 +142,7 @@ int Rts2ImageDb::renameImage (const char *new_filename)
 	int d_obs_id = getObsId ();
 	EXEC SQL END DECLARE SECTION;
 
-	int ret = Rts2Image::renameImage (new_filename);
+	int ret = Image::renameImage (new_filename);
 	if (ret)
 		return ret;
 
@@ -167,7 +169,7 @@ int Rts2ImageDb::renameImage (const char *new_filename)
 	return 0;
 }
 
-std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
+std::ostream & operator << (std::ostream &_os, ImageDb &img_db)
 {
 	img_db.print (_os);
 	return _os;
@@ -175,10 +177,10 @@ std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 
 /*********************************************************************
  *
- * Rts2ImageSkyDb class
+ * ImageSkyDb class
  *
  ********************************************************************/
-int Rts2ImageSkyDb::updateDB ()
+int ImageSkyDb::updateDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
@@ -306,7 +308,7 @@ int Rts2ImageSkyDb::updateDB ()
 	return updateAstrometry ();
 }
 
-int Rts2ImageSkyDb::updateAstrometry ()
+int ImageSkyDb::updateAstrometry ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
@@ -377,19 +379,19 @@ int Rts2ImageSkyDb::updateAstrometry ()
 	return 0;
 }
 
-void Rts2ImageSkyDb::initDbImage ()
+void ImageSkyDb::initDbImage ()
 {
 	processBitfiedl = 0;
 	getValue ("PROC", processBitfiedl);
 }
 
-int Rts2ImageSkyDb::isCalibrationImage ()
+int ImageSkyDb::isCalibrationImage ()
 {
 	return (getTargetType () == TYPE_CALIBRATION
 		|| getTargetType () == TYPE_PHOTOMETRIC);
 }
 
-void Rts2ImageSkyDb::updateCalibrationDb ()
+void ImageSkyDb::updateCalibrationDb ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_air_last_image;
@@ -422,7 +424,7 @@ void Rts2ImageSkyDb::updateCalibrationDb ()
 
 			if (sqlca.sqlcode && sqlca.sqlcode != ECPG_NOT_FOUND)
 			{
-				reportSqlError ("Rts2Image::updateCalibrationDb unseting airmass_cal_images");
+				reportSqlError ("Image::updateCalibrationDb unseting airmass_cal_images");
 				EXEC SQL ROLLBACK;
 			}
 			else
@@ -447,7 +449,7 @@ void Rts2ImageSkyDb::updateCalibrationDb ()
 
 				if (sqlca.sqlcode)
 				{
-					reportSqlError ("Rts2Image::toArchive updating airmass_cal_images");
+					reportSqlError ("Image::toArchive updating airmass_cal_images");
 					EXEC SQL ROLLBACK;
 				}
 				else
@@ -463,22 +465,22 @@ void Rts2ImageSkyDb::updateCalibrationDb ()
 	}
 }
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart):Rts2ImageDb (currTarget, camera, expStart)
+ImageSkyDb::ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart):ImageDb (currTarget, camera, expStart)
 {
 	initDbImage ();
 }
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Image * in_image): Rts2ImageDb (in_image)
+ImageSkyDb::ImageSkyDb (Image * in_image): ImageDb (in_image)
 {
 	initDbImage ();
 }
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_obs_id, in_img_id)
+ImageSkyDb::ImageSkyDb (int in_obs_id, int in_img_id) : ImageDb (in_obs_id, in_img_id)
 {
 	initDbImage ();
 }
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name, const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec, double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
+ImageSkyDb::ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name, const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec, double in_img_err, const char *_img_path) : ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
 	setTargetHeaders (in_tar_id, in_obs_id, in_img_id, in_obs_subtype);
 	setCameraName (in_camera_name);
@@ -499,17 +501,17 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, cha
 	setFileName (_img_path);
 }
 
-Rts2ImageSkyDb::~Rts2ImageSkyDb ()
+ImageSkyDb::~ImageSkyDb ()
 {
 }
 
-int Rts2ImageSkyDb::toArchive ()
+int ImageSkyDb::toArchive ()
 {
 	int ret;
 
 	processBitfiedl |= ASTROMETRY_OK | ASTROMETRY_PROC;
 
-	ret = Rts2Image::toArchive ();
+	ret = Image::toArchive ();
 	if (ret)
 	{
 		processBitfiedl |= IMG_ERR;
@@ -519,14 +521,14 @@ int Rts2ImageSkyDb::toArchive ()
 	return 0;
 }
 
-int Rts2ImageSkyDb::toTrash ()
+int ImageSkyDb::toTrash ()
 {
 	int ret;
 
 	processBitfiedl &= (~ASTROMETRY_OK);
 	processBitfiedl |= ASTROMETRY_PROC;
 
-	ret = Rts2Image::toTrash ();
+	ret = Image::toTrash ();
 	if (ret)
 		return ret;
 
@@ -534,14 +536,14 @@ int Rts2ImageSkyDb::toTrash ()
 }
 
 // write changes of image to DB..
-int Rts2ImageSkyDb::saveImage ()
+int ImageSkyDb::saveImage ()
 {
 	updateCalibrationDb ();
 	setValue ("PROC", processBitfiedl, "procesing status; info in DB");
-	return Rts2ImageDb::saveImage ();
+	return ImageDb::saveImage ();
 }
 
-int Rts2ImageSkyDb::deleteFormDB ()
+int ImageSkyDb::deleteFormDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_img_id = getImgId ();
@@ -559,7 +561,7 @@ int Rts2ImageSkyDb::deleteFormDB ()
 	}
 	if (sqlca.sqlcode)
 	{
-		reportSqlError ("Rts2ImageSkyDb::deleteImage");
+		reportSqlError ("ImageSkyDb::deleteImage");
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -567,13 +569,13 @@ int Rts2ImageSkyDb::deleteFormDB ()
 	return 0;
 }
 
-int Rts2ImageSkyDb::deleteImage ()
+int ImageSkyDb::deleteImage ()
 {
 	deleteFromDB ();
-	return Rts2Image::deleteImage ();
+	return Image::deleteImage ();
 }
 
-std::string Rts2ImageSkyDb::getFileNameString ()
+std::string ImageSkyDb::getFileNameString ()
 {
 	std::ostringstream out;
 	printFileName (out);

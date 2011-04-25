@@ -29,7 +29,7 @@
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2target.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 #include <list>
 
@@ -136,7 +136,7 @@ class Script:public Rts2Object, public std::list <Element *>
 		
 		void exposureEnd ();
 
-		int processImage (Rts2Image * image);
+		int processImage (rts2image::Image * image);
 
 		rts2core::Block *getMaster ()	{ return master; }
 

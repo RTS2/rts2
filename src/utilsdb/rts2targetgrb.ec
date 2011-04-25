@@ -23,7 +23,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/infoval.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 using namespace rts2db;
 
@@ -511,7 +511,7 @@ void TargetGRB::printGrbList (std::ostream & _os)
 		<< std::endl;
 }
 
-void TargetGRB::writeToImage (Rts2Image * image, double JD)
+void TargetGRB::writeToImage (rts2image::Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("GRB_RA", grb.ra, "GRB RA know at time of exposure");

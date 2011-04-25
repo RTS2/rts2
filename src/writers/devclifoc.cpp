@@ -2,14 +2,16 @@
 #define _GNU_SOURCE
 #endif
 
-#include "rts2devclifoc.h"
+#include "devclifoc.h"
 #include "../utils/timestamp.h"
 
 #include <errno.h>
 #include <algorithm>
 #include <unistd.h>
 
-Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection, const char *in_exe):Rts2DevClientCameraImage (in_connection)
+using namespace rts2image;
+
+DevClientCameraFoc::DevClientCameraFoc (Rts2Conn * in_connection, const char *in_exe):DevClientCameraImage (in_connection)
 {
 	if (in_exe)
 	{
@@ -24,27 +26,25 @@ Rts2DevClientCameraFoc::Rts2DevClientCameraFoc (Rts2Conn * in_connection, const 
 	focConn = NULL;
 }
 
-Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
+DevClientCameraFoc::~DevClientCameraFoc (void)
 {
 	delete[]exe;
 	if (focConn)
 		focConn->nullCamera ();
 }
 
-void Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
+void DevClientCameraFoc::postEvent (Rts2Event * event)
 {
 	Rts2Conn *focus;
-	Rts2DevClientFocusFoc *focuser;
-	Rts2ConnFocus *eventConn;
+	DevClientFocusFoc *focuser;
+	ConnFocus *eventConn;
 	const char *focName;
 	const char *cameraFoc;
 	switch (event->getType ())
 	{
 		case EVENT_CHANGE_FOCUS:
-			eventConn = (Rts2ConnFocus *) event->getArg ();
-			focus =
-				connection->getMaster ()->
-				getOpenConnection (getConnection ()->getValueChar ("focuser"));
+			eventConn = (ConnFocus *) event->getArg ();
+			focus = connection->getMaster ()->getOpenConnection (getConnection ()->getValueChar ("focuser"));
 			if (eventConn && eventConn == focConn)
 			{
 				focusChange (focus);
@@ -54,7 +54,7 @@ void Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 		case EVENT_FOCUSING_END:
 			if (!exe)			 // don't care about messages from focuser when we don't have focusing script
 				break;
-			focuser = (Rts2DevClientFocusFoc *) event->getArg ();
+			focuser = (DevClientFocusFoc *) event->getArg ();
 			focName = focuser->getName ();
 			cameraFoc = getConnection ()->getValueChar ("focuser");
 			if (focName && cameraFoc
@@ -65,23 +65,22 @@ void Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 			}
 			break;
 	}
-	Rts2DevClientCameraImage::postEvent (event);
+	DevClientCameraImage::postEvent (event);
 }
 
-imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
+imageProceRes DevClientCameraFoc::processImage (Image * image)
 {
 	// create focus connection
 	int ret;
 
-	imageProceRes res = Rts2DevClientCameraImage::processImage (image);
+	imageProceRes res = DevClientCameraImage::processImage (image);
 
 	//else if (darkImage)
 	//	image->substractDark (darkImage);
 	if ((image->getShutter () == SHUT_OPENED)
 		&& exe)
 	{
-		focConn =
-			new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
+		focConn = new ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
 		ret = focConn->init ();
 		if (ret)
 		{
@@ -95,7 +94,7 @@ imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 	return res;
 }
 
-void Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus)
+void DevClientCameraFoc::focusChange (Rts2Conn * focus)
 {
 	int change = focConn->getChange ();
 	if (change == INT_MAX || !focus)
@@ -106,11 +105,11 @@ void Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus)
 	isFocusing = 1;
 }
 
-Rts2DevClientFocusFoc::Rts2DevClientFocusFoc (Rts2Conn * in_connection):Rts2DevClientFocusImage (in_connection)
+DevClientFocusFoc::DevClientFocusFoc (Rts2Conn * in_connection):DevClientFocusImage (in_connection)
 {
 }
 
-void Rts2DevClientFocusFoc::postEvent (Rts2Event * event)
+void DevClientFocusFoc::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -118,17 +117,16 @@ void Rts2DevClientFocusFoc::postEvent (Rts2Event * event)
 			connection->queCommand (new rts2core::Rts2CommandChangeFocus (this, *((int *) event->getArg ())));
 			break;
 	}
-	Rts2DevClientFocusImage::postEvent (event);
+	DevClientFocusImage::postEvent (event);
 }
 
-void Rts2DevClientFocusFoc::focusingEnd ()
+void DevClientFocusFoc::focusingEnd ()
 {
 	rts2core::Rts2DevClientFocus::focusingEnd ();
 	connection->getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSING_END, (void *) this));
 }
 
-
-Rts2ConnFocus::Rts2ConnFocus (rts2core::Block * in_master, Rts2Image * in_image, const char *in_exe, int in_endEvent):rts2core::ConnFork (in_master, in_exe, false, false)
+ConnFocus::ConnFocus (rts2core::Block * in_master, Image * in_image, const char *in_exe, int in_endEvent):rts2core::ConnFork (in_master, in_exe, false, false)
 {
 	change = INT_MAX;
 	img_path = new char[strlen (in_image->getFileName ()) + 1];
@@ -137,7 +135,7 @@ Rts2ConnFocus::Rts2ConnFocus (rts2core::Block * in_master, Rts2Image * in_image,
 	endEvent = in_endEvent;
 }
 
-Rts2ConnFocus::~Rts2ConnFocus (void)
+ConnFocus::~ConnFocus (void)
 {
 	if (change == INT_MAX)		 // we don't get focus change, let's try next image..
 		getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
@@ -145,12 +143,12 @@ Rts2ConnFocus::~Rts2ConnFocus (void)
 	delete image;
 }
 
-void Rts2ConnFocus::initFailed ()
+void ConnFocus::initFailed ()
 {
 	image = NULL;
 }
 
-void Rts2ConnFocus::beforeFork ()
+void ConnFocus::beforeFork ()
 {
 	if (exePath)
 	{
@@ -160,19 +158,19 @@ void Rts2ConnFocus::beforeFork ()
 	}
 }
 
-int Rts2ConnFocus::newProcess ()
+int ConnFocus::newProcess ()
 {
 	if (exePath)
 	{
 		execl (exePath, exePath, img_path, (char *) NULL);
 		// when execl fails..
-		logStream (MESSAGE_ERROR) << "Rts2ConnFocus::newProcess: " <<
+		logStream (MESSAGE_ERROR) << "ConnFocus::newProcess: " <<
 			strerror (errno) << " exePath: '" << exePath << "'" << sendLog;
 	}
 	return -2;
 }
 
-void Rts2ConnFocus::processLine ()
+void ConnFocus::processLine ()
 {
 	int ret;
 	int id;
@@ -209,7 +207,7 @@ void Rts2ConnFocus::processLine ()
 	return;
 }
 
-Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters):rts2core::Rts2DevClientPhot (in_conn)
+DevClientPhotFoc::DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters):rts2core::Rts2DevClientPhot (in_conn)
 {
 	photometerFile = in_photometerFile;
 	photometerTime = in_photometerTime;
@@ -230,13 +228,12 @@ Rts2DevClientPhotFoc::Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photome
 	newFilter = 0;
 }
 
-
-Rts2DevClientPhotFoc::~Rts2DevClientPhotFoc (void)
+DevClientPhotFoc::~DevClientPhotFoc (void)
 {
 	os.close ();
 }
 
-void Rts2DevClientPhotFoc::addCount (int count, float exp, bool is_ov)
+void DevClientPhotFoc::addCount (int count, float exp, bool is_ov)
 {
 	int currFilter = getConnection ()->getValueInteger ("filter");
 	connection->getMaster ()->

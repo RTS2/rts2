@@ -23,7 +23,7 @@
 
 #include <sstream>
 
-#include "../writers/rts2imagedb.h"
+#include "../writers/imagedb.h"
 
 using namespace rts2db;
 
@@ -33,7 +33,7 @@ ImageSet::ImageSet ()
 
 ImageSet::~ImageSet (void)
 {
-	std::vector <Rts2Image *>::iterator img_iter;
+	std::vector <rts2image::Image *>::iterator img_iter;
 	for (img_iter = begin (); img_iter != end (); img_iter++)
 	{
 		delete *img_iter;
@@ -185,7 +185,7 @@ int ImageSet::load (std::string in_where)
 		else
 			d_img_path.arr[d_img_path.len] = '\0';
 
-		push_back (new Rts2ImageSkyDb (d_tar_id, d_obs_id, d_img_id, d_obs_subtype,
+		push_back (new rts2image::ImageSkyDb (d_tar_id, d_obs_id, d_img_id, d_obs_subtype,
 			d_img_date, d_img_usec, d_img_exposure, d_img_temperature, d_img_filter.arr, d_img_alt, d_img_az,
 			d_camera_name.arr, d_mount_name.arr, d_delete_flag, d_process_bitfield, d_img_err_ra,
 			d_img_err_dec, d_img_err, d_img_path.arr));
@@ -221,7 +221,7 @@ void ImageSet::print (std::ostream &_os, int printImages)
 {
 	if ((printImages & DISPLAY_ALL) || (printImages & DISPLAY_FILENAME))
 	{
-		std::vector <Rts2Image *>::iterator img_iter;
+		std::vector <rts2image::Image *>::iterator img_iter;
 		if (empty () && !(printImages & DISPLAY_SHORT))
 		{
 			_os << "      " << "--- no images ---" << std::endl;
@@ -229,7 +229,7 @@ void ImageSet::print (std::ostream &_os, int printImages)
 		}
 		for (img_iter = begin (); img_iter != end (); img_iter++)
 		{
-			Rts2Image *image = (*img_iter);
+			rts2image::Image *image = (*img_iter);
 			if ((printImages & DISPLAY_ASTR_OK) && !image->haveOKAstrometry ())
 				continue;
 			if ((printImages & DISPLAY_ASTR_TRASH) && (image->haveOKAstrometry () || !image->isProcessed ()))
@@ -257,7 +257,7 @@ int ImageSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 
 	int aNum = 0;
 
-	std::vector <Rts2Image *>::iterator img_iter;
+	std::vector <rts2image::Image *>::iterator img_iter;
 	for (img_iter = begin (); img_iter != end (); img_iter++)
 	{
 		if (((*img_iter)->getError (tRa, tDec, tRad)) == 0)

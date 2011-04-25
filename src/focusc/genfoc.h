@@ -20,7 +20,7 @@
 #ifndef __RTS2_GENFOC__
 #define __RTS2_GENFOC__
 #include "../utils/rts2client.h"
-#include "../writers/rts2devclifoc.h"
+#include "../writers/devclifoc.h"
 
 #include <vector>
 
@@ -101,15 +101,15 @@ class fwhmData
 		}
 };
 
-class Rts2GenFocCamera:public Rts2DevClientCameraFoc
+class Rts2GenFocCamera:public rts2image::DevClientCameraFoc
 {
 	public:
 		Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master);
 		virtual ~ Rts2GenFocCamera (void);
 
 		virtual void stateChanged (Rts2ServerState * state);
-		virtual Rts2Image *createImage (const struct timeval *expStart);
-		virtual imageProceRes processImage (Rts2Image * image);
+		virtual rts2image::Image *createImage (const struct timeval *expStart);
+		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 		virtual void focusChange (Rts2Conn * focus);
 		void center (int centerWidth, int centerHeight);
 

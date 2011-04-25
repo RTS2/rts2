@@ -6,9 +6,11 @@
  * @author Petr Kubanek <pkubanek@asu.cas.cz>
  */
 
-#include "rts2image.h"
+#include "image.h"
 
 #include <math.h>
+
+using namespace rts2image;
 
 static int
 sdFluxCompare (const void *sr1, const void *sr2)
@@ -19,7 +21,7 @@ sdFluxCompare (const void *sr1, const void *sr2)
 
 
 int
-Rts2Image::getHam (double &x, double &y)
+Image::getHam (double &x, double &y)
 {
 	if (sexResultNum == 0)
 	{
@@ -27,7 +29,7 @@ Rts2Image::getHam (double &x, double &y)
 	}
 	qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
 	// we think that first source is HAM
-	logStream (MESSAGE_DEBUG) << "Rts2Image::getHam flux0: " << sexResults[0].
+	logStream (MESSAGE_DEBUG) << "Image::getHam flux0: " << sexResults[0].
 		F << sendLog;
 	if (sexResults[0].F > 100000)
 	{
@@ -53,7 +55,7 @@ Rts2Image::getHam (double &x, double &y)
 			return 0;
 		}
 		else
-			logStream (MESSAGE_WARNING) << "Rts2Image::getHam big sidt: " << dist
+			logStream (MESSAGE_WARNING) << "Image::getHam big sidt: " << dist
 				<< sendLog;
 	}
 	// HAM not found..
@@ -62,7 +64,7 @@ Rts2Image::getHam (double &x, double &y)
 
 
 int
-Rts2Image::getBrightestOffset (double &x, double &y, float &flux)
+Image::getBrightestOffset (double &x, double &y, float &flux)
 {
 	if (sexResultNum == 0)
 	{
@@ -70,7 +72,7 @@ Rts2Image::getBrightestOffset (double &x, double &y, float &flux)
 	}
 	qsort (sexResults, sexResultNum, sizeof (struct stardata), sdFluxCompare);
 	// returns coordinates of brightest source
-	logStream (MESSAGE_INFO) << "Rts2Image::getBrightestOffset flux0: "
+	logStream (MESSAGE_INFO) << "Image::getBrightestOffset flux0: "
 		<< sexResults[0].F << " flags " << sexResults[0].flags << sendLog;
 	x = sexResults[0].X;
 	y = sexResults[0].Y;

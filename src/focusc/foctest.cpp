@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 
 #include <unistd.h>
 #include <iostream>
@@ -29,9 +29,9 @@ int main (int argc, char **argv)
 		std::cout << "Don't get image!" << std::endl;
 		return 1;
 	}
-	Rts2Image *image;
+	rts2image::Image *image;
 	long naxes[2];
-	image = new Rts2Image ();
+	image = new rts2image::Image ();
 	image->openImage (argv[1]);
 	std::cout << "average: " << image->getAverage () << std::endl;
 	image->getValues ("NAXIS", naxes, 2);

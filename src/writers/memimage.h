@@ -20,7 +20,7 @@
 #ifndef __RTS2_MEMIMAGE__
 #define __RTS2_MEMIMAGE__
 
-#include "rts2image.h"
+#include "image.h"
 
 namespace rts2image
 {
@@ -30,7 +30,7 @@ namespace rts2image
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class MemImage:public Rts2Image
+class MemImage:public Image
 {
 	public:
 		/**

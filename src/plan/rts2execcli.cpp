@@ -22,12 +22,14 @@
 
 #include "connimgprocess.h"
 #include "rts2execcli.h"
-#include "../writers/rts2image.h"
+#include "../writers/image.h"
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"
 
-Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath):Rts2DevClientCameraImage (_connection), DevScript (_connection)
+using namespace rts2image;
+
+Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath):DevClientCameraImage (_connection), DevScript (_connection)
 {
 	expandPath = _expandPath;
 	waitForExposure = false;
@@ -40,17 +42,17 @@ Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 	deleteScript ();
 }
 
-Rts2Image * Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
+Image * Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
 	exposureScript = getScript ();
 	if (expandPath)
-		return new Rts2Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
-	return Rts2DevClientCameraImage::createImage (expStart);
+		return new Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
+	return DevClientCameraImage::createImage (expStart);
 }
 
 void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
-	Rts2Image *image;
+	Image *image;
 	int type = event->getType ();
 	switch (type)
 	{
@@ -59,7 +61,7 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 			break;
 		case EVENT_QUE_IMAGE:
 		case EVENT_AFTER_COMMAND_FINISHED:
-			image = (Rts2Image *) event->getArg ();
+			image = (Image *) event->getArg ();
 			if (!strcmp (image->getCameraName (), getName ()))
 				queImage (image);
 			break;
@@ -72,7 +74,7 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 			break;
 	}
 	DevScript::postEvent (event);
-	Rts2DevClientCameraImage::postEvent (event);
+	DevClientCameraImage::postEvent (event);
 	// must be done after processing trigger in parent
 	if (type == EVENT_TRIGGERED && !waitForExposure)
 		nextCommand ();
@@ -240,7 +242,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		setTriggered ();
 }
 
-void Rts2DevClientCameraExec::queImage (Rts2Image * image)
+void Rts2DevClientCameraExec::queImage (Image * image)
 {
 	// find image processor with lowest que number..
 	Rts2Conn *minConn = getMaster ()->getMinConn ("queue_size");
@@ -285,7 +287,7 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 	}
 }
 
-imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraExec::processImage (Image * image)
 {
 	int ret;
 	// make sure script continues if it is waiting for metadata
@@ -312,7 +314,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 void Rts2DevClientCameraExec::idle ()
 {
 	DevScript::idle ();
-	Rts2DevClientCameraImage::idle ();
+	DevClientCameraImage::idle ();
 	// when it is the first command in the script..
 	if (getScript ().get () && getScript ()->getExecutedCount () == 0)
 		nextCommand ();
@@ -330,7 +332,7 @@ void Rts2DevClientCameraExec::exposureStarted ()
 			nextCommand ();
 	}
 
-	Rts2DevClientCameraImage::exposureStarted ();
+	DevClientCameraImage::exposureStarted ();
 }
 
 void Rts2DevClientCameraExec::exposureEnd ()
@@ -360,12 +362,12 @@ void Rts2DevClientCameraExec::exposureEnd ()
 		nextCommand ();
 
 	// send readout after we deal with next command - which can be filter move
-	Rts2DevClientCameraImage::exposureEnd ();
+	DevClientCameraImage::exposureEnd ();
 }
 
 void Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
 {
-	Rts2DevClientCameraImage::stateChanged (state);
+	DevClientCameraImage::stateChanged (state);
 	if (nextComd && cmdConn && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
 		nextCommand ();
 }
@@ -373,18 +375,18 @@ void Rts2DevClientCameraExec::stateChanged (Rts2ServerState * state)
 void Rts2DevClientCameraExec::exposureFailed (int status)
 {
 	// in case of an error..
-	Rts2DevClientCameraImage::exposureFailed (status);
+	DevClientCameraImage::exposureFailed (status);
 	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script" << sendLog;
 	nextCommand ();
 }
 
 void Rts2DevClientCameraExec::readoutEnd ()
 {
-	Rts2DevClientCameraImage::readoutEnd ();
+	DevClientCameraImage::readoutEnd ();
 	nextCommand ();
 }
 
-Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * _connection):Rts2DevClientTelescopeImage (_connection)
+Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * _connection):DevClientTelescopeImage (_connection)
 {
 	currentTarget = NULL;
 	cmdChng = NULL;
@@ -484,7 +486,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			queCommand (new Rts2CommandStopGuideAll (getMaster ()));
 			break;
 	}
-	Rts2DevClientTelescopeImage::postEvent (event);
+	DevClientTelescopeImage::postEvent (event);
 }
 
 int Rts2DevClientTelescopeExec::syncTarget (bool now)
@@ -557,7 +559,7 @@ void Rts2DevClientTelescopeExec::moveEnd ()
 			currentTarget->moveEnded ();
 		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
 	}
-	Rts2DevClientTelescopeImage::moveEnd ();
+	DevClientTelescopeImage::moveEnd ();
 }
 
 void Rts2DevClientTelescopeExec::moveFailed (int status)
@@ -569,6 +571,6 @@ void Rts2DevClientTelescopeExec::moveFailed (int status)
 	}
 	if (currentTarget && currentTarget->moveWasStarted ())
 		currentTarget->moveFailed ();
-	Rts2DevClientTelescopeImage::moveFailed (status);
+	DevClientTelescopeImage::moveFailed (status);
 	getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }
