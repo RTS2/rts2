@@ -25,6 +25,7 @@
 
 #define OPT_NOTIMEOUT  OPT_LOCAL + 73
 #define OPT_NOWRITE    OPT_LOCAL + 74
+#define OPT_SIGNALFILE OPT_LOCAL + 75
 
 /*
  * Depends on libedtsao.a, which is build from edtsao directory. This
@@ -1183,6 +1184,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('s', "sdelay", 1, "serial delay");
 	addOption ('v', "verbose", 0, "verbose report");
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
+	addOption (OPT_SIGNALFILE, "signalfile", 1, "default signal file");
 
 	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	edtGain->addSelVal ("HIGH");
@@ -1286,6 +1288,9 @@ int EdtSao::processOption (int in_opt)
 		case '6':
 			controllerType = CHANNEL_16;
 			totalChannels = 16;
+			break;
+		case OPT_SIGNALFILE:
+			signalFile->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -1449,7 +1454,7 @@ int EdtSao::initValues ()
 	{
 		case CHANNEL_4:
 			dd->initEdt (0xA0380, C, controllerType);
-			break
+			break;
 		case CHANNEL_16:
 			dd->initEdt (0xA0380, D, controllerType);
 			break;
