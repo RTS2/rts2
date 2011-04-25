@@ -45,6 +45,7 @@
       <xs:element name="lunarPhase" type="doubleInterval" minOccurs="0"/>
       <xs:element name="solarDistance" type="doubleInterval" minOccurs="0"/>
       <xs:element name="sunAltitude" type="doubleInterval" minOccurs="0"/>
+      <xs:element name="maxRepeats" type="xs:integer" minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
   </xs:complexType>
 
