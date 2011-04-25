@@ -384,6 +384,12 @@ int Zelio::startClose ()
 		// update automode status..
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 		automode->setValueBool (reg & ZS_SW_AUTO);
+		// reset ignore rain value
+		if (ignoreRain->getValueBool ())
+		{
+	  		setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, false);
+			ignoreRain->setValueBool (false);
+		}
 		if (automode->getValueBool () == false)
 		{
 			return 0;
