@@ -180,7 +180,6 @@ class Acquire(rts2af.AFScript):
             self.acquireImage( 0, filter.exposure, filter, analysis[filter.name]) # exposure will later depend on position
 
             if(self.test):
-                exposure=  telescope.linearExposureTimeAtFocPos(10, 10)
                 while( True):
                     r2c.log('I','rts2af_acquire: Filter {0} offset {1} exposure {2}'.format('see file', 0, 0))
                     if( not self.acquireImage( 0, 0, filter, analysis[filter.name])):
