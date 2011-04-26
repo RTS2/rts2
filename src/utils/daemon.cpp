@@ -74,7 +74,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	state = _init_state;
 
-	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
+	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time of last update", false);
 
 	idleInfoInterval = -1;
 
