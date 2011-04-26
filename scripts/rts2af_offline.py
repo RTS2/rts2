@@ -121,7 +121,7 @@ class main(rts2af.AFScript):
 # loop over hdus, create the catalogues
         for hdu  in HDUs.fitsHDUsList:
             if( rts2af.verbose):
-                print '=======' + hdu.headerElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.headerElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
+                print '=======' + hdu.variableHeaderElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.variableHeaderElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
             
             cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
             cat.runSExtractor()
@@ -130,10 +130,10 @@ class main(rts2af.AFScript):
 
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             if( cat.matching()):
-                #print "Added catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName
+                #print "Added catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName
                 cats.CataloguesList.append(cat)
             else:
-                logging.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
+                logging.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName)
 
         if(not cats.validate()):
             logging.error("rts2af_offline.py: catalogues are invalid, exiting")
@@ -157,9 +157,9 @@ class main(rts2af.AFScript):
         #
         # Check properties of the various data sets
         #
-        #for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.headerElements['FOC_POS']):
+        #for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.variableHeaderElements['FOC_POS']):
         #    if(rts2af.verbose):
-        #        print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.headerElements['FOC_POS'] 
+        #        print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.variableHeaderElements['FOC_POS'] 
         #    cat.average('FWHM_IMAGE')
         #    cat.averageFWHM("selected")
         #    cat.averageFWHM("matched")

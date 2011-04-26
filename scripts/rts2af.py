@@ -282,7 +282,6 @@ class Configuration:
 
             self.config.set(section, identifier, value)
 
-
         with open( fileName, 'w') as configfile:
             configfile.write('# 2011-04-19, Markus Wildi\n')
             configfile.write('# default configuration for rts2af-autofocus.py\n')
@@ -291,7 +290,6 @@ class Configuration:
             configfile.write('#\n')
             configfile.write('#\n')
             self.config.write(configfile)
-
 
     def readConfiguration( self, configFileName):
         verbose=False
@@ -354,7 +352,6 @@ class Configuration:
                         if(verbose):
                             print 'filterInUse---------:>' + item + '<'
                         self.filtersInUse.append(item)
-
                     
         if(verbose):
             for (identifier), value in self.defaultsIdentifiers():
@@ -455,7 +452,7 @@ class Setting:
 class Filter:
     """Class for filter properties"""
 
-    def __init__(self, name, OffsetToClearPath, lowerLimit, upperLimit, resolution, exposure):
+    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, resolution=None, exposure=None):
         self.name= name
         self.OffsetToClearPath    = OffsetToClearPath
         self.lowerLimit= lowerLimit
@@ -465,6 +462,47 @@ class Filter:
         self.settings=[]
         for offset in range (self.lowerLimit, self.upperLimit +  self.stepSize,  self.stepSize):
             self.settings.append(Setting( offset, self.exposure))
+
+        self.relativeLowerLimit= self.OffsetToClearPath + self.lowerLimit
+        self.relativeUpperLimit= self.OffsetToClearPath + self.upperLimit
+
+class Telescope():
+    """Class holding telescope properties"""
+    # ToDo: as soon as a sensible model is available for FLUX max, implement it
+    # source: parameters of the fitted flux data
+    # a complete compensation is not necessary/desirable
+    #                                                                        
+# does not work    def __init__(self, radius=runTimeConfig.value('TEL_RADIUS'), focalLength=runTimeConfig.value('TEL_FOCALLENGTH')): # units [meter]
+    def __init__(self, radius=None, focalLength=None): # units [meter]
+
+        if( not radius):
+            self.radius= runTimeConfig.value('TEL_RADIUS')
+        else:
+            self.radius= radius
+
+        if( not focalLength):
+            self.focalLength= runTimeConfig.value('TEL_FOCALLENGTH')
+        else:
+            self.focalLength= focalLength
+
+        try:
+            self.focalratio = self.radius/self.focalLength
+        except:
+            logging.error( 'Telescope: no sensible focalLength: {0} given, exiting'.format(self.focalLength))
+            sys.exit(1)
+
+        self.pixelsize= 1.27e-6 #[meter]
+        self.seeing= 27.0e-6 #[meter]
+
+        self.fudgeFactor= 0.25 # [1...0]
+    def quadraticExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
+        return ( math.pow( self.starImageRadius(differencefoc_pos), 2) * exposureTimeZero)
+
+    def linearExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
+        return  self.starImageRadius( differencefoc_pos) * exposureTimeZero
+
+    def starImageRadius(self, differencefoc_pos=0):
+        return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelsize * self.focalratio) + self.seeing)/self.seeing
 
         
 class SXObject():
@@ -1380,13 +1418,13 @@ class FitsHDU():
 
         fitsHDU.close()
 
+        # static header elements, must not vary within a focus run
         try:
             self.staticHeaderElements['FILTER']= fitsHDU[0].header['FILTER']
         except:
             self.isValid= True
             self.staticHeaderElements['FILTER']= 'NOFILTER' 
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
-
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
         except:
@@ -1403,15 +1441,6 @@ class FitsHDU():
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
 
         try:
-            self.variableHeaderElements['EXPOSURE'] = fitsHDU[0].header[runTimeConfig.value('EXPOSURE')]
-            self.variableHeaderElements['DATETIME'] = fitsHDU[0].header[runTimeConfig.value('DATETIME')]
-            self.variableHeaderElements['CCD_TEMP'] = fitsHDU[0].header[runTimeConfig.value('CCD_TEMP')]
-            self.variableHeaderElements['AMBIENTTEMPERATURE'] = fitsHDU[0].header[runTimeConfig.value('AMBIENTTEMPERATURE')]
-        except:
-            self.isValid= True
-            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the header elements: EXPOSURE, JD, CCD_TEMP or HIERARCH MET_AAG.TEMP_IRS not found')
-
-        try:
             self.variableHeaderElements['FOC_POS']= fitsHDU[0].header[runTimeConfig.value('FOC_POS')]
             self.staticHeaderElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
             self.staticHeaderElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
@@ -1420,6 +1449,17 @@ class FitsHDU():
             logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
             return False
         
+        # variable header elements, may vary within a focus run
+        try:
+            self.variableHeaderElements['EXPOSURE'] = fitsHDU[0].header[runTimeConfig.value('EXPOSURE')]
+            self.variableHeaderElements['DATETIME'] = fitsHDU[0].header[runTimeConfig.value('DATETIME')]
+            self.variableHeaderElements['CCD_TEMP'] = fitsHDU[0].header[runTimeConfig.value('CCD_TEMP')]
+            self.variableHeaderElements['AMBIENTTEMPERATURE'] = fitsHDU[0].header[runTimeConfig.value('AMBIENTTEMPERATURE')]
+        except:
+            self.isValid= True
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the header elements: EXPOSURE, JD, CCD_TEMP or HIERARCH MET_AAG.TEMP_IRS not found')
+
+
         if( not self.extractBinning()):
             self.isValid= False
             return False
@@ -1564,44 +1604,6 @@ class FitsHDUs():
             differentFocuserPositions(hdu.variableHeaderElements['FOC_POS'])
 
         return len(differentFocuserPositions)
-
-class Telescope():
-    """Class holding telescope properties"""
-    # ToDo: as soon as a sensible model is available for FLUX max, implement it
-    # source: parameters of the fitted flux data
-    # a complete compensation is not necessary/desirable
-    #                                                                        
-# does not work    def __init__(self, radius=runTimeConfig.value('TEL_RADIUS'), focalLength=runTimeConfig.value('TEL_FOCALLENGTH')): # units [meter]
-    def __init__(self, radius=None, focalLength=None): # units [meter]
-
-        if( not radius):
-            self.radius= runTimeConfig.value('TEL_RADIUS')
-        else:
-            self.radius= radius
-
-        if( not focalLength):
-            self.focalLength= runTimeConfig.value('TEL_FOCALLENGTH')
-        else:
-            self.focalLength= focalLength
-
-        try:
-            self.focalratio = self.radius/self.focalLength
-        except:
-            logging.error( 'Telescope: no sensible focalLength: {0} given, exiting'.format(self.focalLength))
-            sys.exit(1)
-
-        self.pixelsize= 1.27e-6 #[meter]
-        self.seeing= 27.0e-6 #[meter]
-
-        self.fudgeFactor= 0.5 # [1...0]
-    def quadraticExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
-        return self.fudgeFactor *( math.pow( self.starImageRadius(differencefoc_pos), 2) * exposureTimeZero)
-
-    def linearExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
-        return self.fudgeFactor * self.starImageRadius( differencefoc_pos) * exposureTimeZero
-
-    def starImageRadius(self, differencefoc_pos=0):
-        return (( abs(differencefoc_pos) * self.pixelsize * self.focalratio) + self.seeing)/self.seeing
 
 import time
 import datetime

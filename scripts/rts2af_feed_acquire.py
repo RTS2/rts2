@@ -60,17 +60,17 @@ class main():
         self.scriptPath= '/home/wildi/workspace/rts2-head/scripts/'
 
         self.storePath=[]
-        self.storePath.append('/home/wildi/Vermes/Martin-Jelinek/samples/03') # NOFILTER
-#        self.storePath.append('/scratch/focus/2011-04-15-T23:58:06/X') # X
-#        self.storePath.append('/scratch/focus/2011-04-23T00:33:19.510523/H') # H
+#        self.storePath.append('/home/wildi/Vermes/Martin-Jelinek/samples/03') # NOFILTER
+        self.storePath.append('/scratch/focus/2011-04-15-T23:58:06/X') # X
+        self.storePath.append('/scratch/focus/2011-04-23T00:33:19.510523/H') # H
         self.referenceFile=[]
-        self.referenceFile.append('20071205025927-674-RA.fits') # NOFILTER
-#        self.referenceFile.append('20110415235822-154-RA.fits') # X
-#        self.referenceFile.append('20110422224736-422-RA.fits') # H
+#        self.referenceFile.append('20071205025927-674-RA.fits') # NOFILTER
+        self.referenceFile.append('20110415235822-154-RA.fits') # X
+        self.referenceFile.append('20110422224736-422-RA.fits') # H
 #        self.cmd= self.scriptPath + 'rts2af_acquire.py'
-        self.cmd= self.scriptPath + 'rts2af_acquire.py'
+        self.cmd= 'rts2af_acquire.py'
         self.focuser = 'FOC_DMY'  
-        self.verbose= False
+        self.verbose= True
         #
         self.pexposure= re.compile( r'exposure')
         self.fitsHDUs=[]
@@ -79,10 +79,10 @@ class main():
         for storePath in self.storePath:
             self.fitsHDUs.append( rts2af.FitsHDU( storePath + '/' + self.referenceFile[i]))
             self.fitsHDUs[i].headerProperties()
-            if(self.fitsHDUs[i].headerElements['FILTER']== 'UNK'):
+            if(self.fitsHDUs[i].staticHeaderElements['FILTER']== 'UNK'):
                 self.filtersInUse.append('NOFILTER')
             else:
-                self.filtersInUse.append(self.fitsHDUs[i].headerElements['FILTER'])
+                self.filtersInUse.append(self.fitsHDUs[i].staticHeaderElements['FILTER'])
                 i += 1
                 
 

@@ -144,7 +144,7 @@ class main(rts2af.AFScript):
                     if( cat.matching()):
                         cats.CataloguesList.append(cat)
                     else:
-                        logging.error("rts2af_analysis.py: discarded catalogue at FOC_POS=%d" % hdu.headerElements['FOC_POS'] + " file "+ hdu.fitsFileName)
+                        logging.error("rts2af_analysis.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName)
                 else:
                     logging.error("rts2af_analysis.py: could not analyze >>{0}<<".format(fits))
 

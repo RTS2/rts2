@@ -65,7 +65,7 @@ class main(rts2af.AFScript):
 
             referenceFitsFileName = args.referenceFitsFileName[0]
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logger.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                logging.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
                 sys.exit(1)
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
