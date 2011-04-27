@@ -113,10 +113,33 @@ class Acquire(rts2af.AFScript):
                     r2c.log('E','rts2af_acquire.py: foc pos lower than lowerLimit ({0}), setting focToff to: {1}'.format(self.lowerLimit, focToff))
         return focToff
 
+    def beReallyThere(self, focPos=None):
+        if(not focPos==None):
+            i= 0
+            while(True):
+                # let the focuser move
+                time.sleep(2)
+                i += 1
+                if(self.test):
+                    r2c.log('I','rts2af_acquire: test mode current foc_pos: {0}'.format(focPos))
+                    break
+                else:
+                    cur_foc_pos= r2c.getValueFloat('FOC_POS',self.focuser)
+                    if( abs(float(cur_foc_pos-focPos) < self.runTimeConfig.value('FOCUSER_RESOLUTION'))):
+                        r2c.log('I','rts2af_acquire: current foc_pos: {0}'.format(cur_foc_pos))
+                        break
+                    elif( i > 20):
+                        r2c.log('E','rts2af_acquire: breaking, could not set {0}, current foc_pos: {1}'.format(focPos, cur_foc_pos))
+                        break
+        else:
+            r2c.log('E','rts2af_acquire: no focuser position given')
+
     def acquireImage(self, focDef=None, focToff=None, exposure=None, filter=None, analysis=None):
 
         focToff= self.focPosWithinLimits( focDef, focToff, filter)
         r2c.setValue('FOC_TOFF', focToff, self.focuser)
+
+        self.beReallyThere( focDef + focToff + filter.OffsetToClearPath)
         r2c.setValue('exposure', exposure)
         acquisitionPath = r2c.exposure()
 
@@ -151,10 +174,12 @@ class Acquire(rts2af.AFScript):
         return False
 
     def prepareAcquisition(self, focDef, filter):
-        
+        # ToDo: verify with limits
         r2c.setValue('FOC_FOFF', filter.OffsetToClearPath, self.focuser)
         r2c.setValue('FOC_TOFF', 0, self.focuser)
         r2c.setValue('FOC_DEF' , focDef, self.focuser)
+        self.beReallyThere(focDef + filter.OffsetToClearPath)
+
         r2c.setValue('SHUTTER','LIGHT')
         r2c.setValue('filter' , filter.name)
 
@@ -245,27 +270,15 @@ class Acquire(rts2af.AFScript):
                     if( not fwhm_foc_pos_match == None):
                         fwhm_foc_pos_cp= int(fwhm_foc_pos_match.group(1))
                         r2c.log('I','rts2af_acquire: got fitted focuser position at: {0}'.format(fwhm_foc_pos_cp))
-
-                        self.focDefWithinLimits( fwhm_foc_pos_cp, filter)
-                        r2c.setValue('FOC_DEF', fwhm_foc_pos_cp, self.focuser)
+                        # ToDo: create a method wich verifies FOC_POS
+                        fwhm_foc_pos_set= self.focDefWithinLimits( fwhm_foc_pos_cp, filter)
+                        r2c.setValue('FOC_DEF', fwhm_foc_pos_set, self.focuser)
                         time.sleep(2)
                         r2c.setValue('FOC_FOFF', 0, self.focuser)
                         time.sleep(2)
                         r2c.setValue('FOC_TOFF', 0, self.focuser)
-                        i= 0
-                        while(True):
-                            time.sleep(2)
-                            i += 1
-                            if(self.test):
-                                break
-                            else:
-                                cur_foc_pos= r2c.getValueFloat('FOC_POS',self.focuser)
-                                if( abs(float(cur_foc_pos-fwhm_foc_pos_cp) < self.runTimeConfig.value('FOCUSER_RESOLUTION'))):
-                                    r2c.log('I','rts2af_acquire: current foc_pos: {0}'.format(cur_foc_pos))
-                                    break
-                                elif( i > 20):
-                                    r2c.log('E','rts2af_acquire: breaking, could not set {0}, current foc_pos: {1}'.format(fwhm_foc_pos_cp, cur_foc_pos))
-                                    break
+
+                        self.beReallyThere(fwhm_foc_pos_cp)
                     else:
                         r2c.log('E','rts2af_acquire: no match of string FOCUS: ([0-9]+) on {0}, doing nothing'.format(fwhm_foc_pos_str))
                 else:
