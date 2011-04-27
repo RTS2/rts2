@@ -111,7 +111,7 @@ void FLWO::changeMasterState (int old_state, int new_state)
 
 bool FLWO::getIgnoreMeteo ()
 {
-	if (closeOnBadWeather->getValueBool () == true)
+	if (closeOnBadWeather->getValueBool () == false)
 		return true;
 	return Dome::getIgnoreMeteo ();
 }
