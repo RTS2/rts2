@@ -125,8 +125,6 @@ void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, Plot
 
 	plotYDegrees ();
 	plotXDate ();
-
-
 }
 
 void AltPlot::plotTarget (rts2db::Target *tar, Magick::Color col, int linewidth, int shadow)

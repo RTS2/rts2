@@ -34,7 +34,7 @@ ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h):Plot (w, h)
 	valueType = _valType;
 }
 
-Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
+Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow, bool plotSun)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
@@ -74,6 +74,9 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 
 	image->font("helvetica");
 	image->strokeAntiAlias (true);
+
+	if (plotSun)
+		plotXSunAlt ();
 
 	switch (valueType & RTS2_BASE_TYPE)
 	{
