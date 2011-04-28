@@ -34,6 +34,18 @@ namespace XmlRpc
 		return def_val;
 	}
 
+	bool HttpParams::getBoolean (const char *_name, bool def_val)
+	{
+		const char *v = getString (_name, NULL);
+		if (v == NULL)
+			return def_val;
+		if (*v == '1' || *v == 'T' || *v == 't')
+			return true;
+		if (*v == '0' || *v == 'F' || *v == 'f')
+			return false;
+		return def_val;
+	}
+
 	double HttpParams::getDouble (const char *_name, double def_val)
 	{
 		const char *v = getString (_name, NULL);

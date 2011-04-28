@@ -4,6 +4,7 @@
 //
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
 //          Copyright (c) 2009-2010 by Petr Kubanek
+//          Copyright (c) 2011 by Petr Kubanek, Institute of Physics
 //
 #if defined(_MSC_VER)
 # pragma warning(disable:4786)	 // identifier was truncated in debug info
@@ -52,6 +53,7 @@ namespace XmlRpc
 			std::string getValue (const char *_name, const char *dev_val);
 			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
+			bool getBoolean (const char *_name, bool def_val);
 			double getDouble (const char *_name, double def_val);
 
 			/** 
