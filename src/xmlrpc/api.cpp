@@ -149,6 +149,20 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		memcpy (response, os.str().c_str (), response_length);
 		return;
 	}
+	else if (vals.size () == 1 && vals[0] == "consts")
+	{
+		int tid = params->getInteger ("id", -1);
+		if (tid <= 0)
+			throw XmlRpcException ("empty target ID");
+		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver ());
+		target->getConstraints ()->print (os);
+
+		response_type = "application/xml";
+		response_length = os.str ().length ();
+		response = new char[response_length];
+		memcpy (response, os.str().c_str (), response_length);
+		return;
+	}
 	else if (vals.size () == 1)
 	{
 		os << "{";
