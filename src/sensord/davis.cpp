@@ -66,11 +66,11 @@ int Davis::init ()
 
 int Davis::idle ()
 {
-	if (getLastInfoTime () > 180)
+	if (getLastInfoTime () > connTimeout->getValueInteger ())
 	{
 		if (isGoodWeather ())
 		{
-			logStream (MESSAGE_ERROR) << "Weather station did not send any data for 180 seconds, switching to bad weather" << sendLog;
+			logStream (MESSAGE_ERROR) << "Weather station did not send any data for " << connTimeout->getValueInteger () << " seconds, switching to bad weather" << sendLog;
 		}
 		setWeatherTimeout (300, "cannot retrieve information from Davis sensor within last 3 minutes");
 	}
