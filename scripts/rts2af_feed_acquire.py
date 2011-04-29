@@ -75,6 +75,9 @@ class main():
         self.pexposure= re.compile( r'exposure')
         self.fitsHDUs=[]
         self.filtersInUse=[]
+        self.runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
+        self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has no options
+
         i= 0 # ugly
         for storePath in self.storePath:
             self.fitsHDUs.append( rts2af.FitsHDU( storePath + '/' + self.referenceFile[i]))
@@ -125,7 +128,6 @@ class main():
         for storePath in  self.storePath:
             
             fitsFiles= glob.glob( storePath + '/' + '*fits')
- 
             # first file is the reference catalogue
             self.ignoreOutput(acquire)
             #time.sleep(.1)

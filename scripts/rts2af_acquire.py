@@ -18,7 +18,7 @@
 #
 #   It sets the FOC_DEF value for the clear optical path if it is configured.
 #   Clear optical path is defined as being filter named NOFILTER or if the
-#   offset in the section [filter properties] is 0 (third element in the 
+#   offset in the section [filter properties] is 0 (second element in the 
 #   array)
 #  
 #   Planned: It spawns a subprocess to deal with the setting of the focuse.
@@ -75,45 +75,26 @@ class Acquire(rts2af.AFScript):
             print 'filtersInUse'
             sys.stdout.flush()
             self.testFiltersInUse= sys.stdin.readline().split()            
-            r2c.log('I','rts2af_acquire.py: being in test mode')
+            r2c.log('I','rts2af_acquire.py: being in test mode, filters {0}'.format(self.testFiltersInUse))
 
         self.lowerLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
         self.upperLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
 
-    def focDefMax( self, focDef=None, filter= None):
 
-        if(( focDef + filter.relativeUpperLimit) > self.upperLimit):
-            r2c.log('I','rts2af_acquire: focDef above maximum: {0}, setting it to {1}'.format((focDef + filter.relativeUpperLimit), self.upperLimit))
-            return self.upperLimit
+    def focPosWithinLimits(self, focPos=None):
 
-        return focDef 
+        if( focPos < self.lowerLimit):
+            r2c.log('E','rts2af_acquire: focDef below minimum: {0}, setting it to {1}'.format((focPos), self.lowerLimit)) 
+            return False
 
-    def focDefMin( self, focDef=None, filter= None):
+        if( focPos > self.upperLimit):
+            r2c.log('E','rts2af_acquire: focDef above maximum: {0}, setting it to {1}'.format((focPos), self.upperLimit))
+            return False
 
-        if( (focDef + filter.relativeLowerLimit) < self.lowerLimit):
-            r2c.log('I','rts2af_acquire: focDef below minimum: {0}, setting it to {1}'.format((focDef + filter.relativeLowerLimit), self.lowerLimit)) 
-            return self.lowerLimit
+        return True
 
-        return focDef
-
-    def focDefWithinLimits(self, focDef=None, filter=None):
-        return self.focDefMin( self.focDefMax( focDef, filter), filter)
-
-    # ToDo: really? strictly speaking not necessary
-    def focPosWithinLimits(self, focDef=None, focToff=None, filter=None ):
-
-        focSet= focDef + focToff + filter.OffsetToClearPath
-        if(not self.test):
-            if(focSet > self.upperLimit):
-                focToff= self.upperLimit -focDef -filter.OffsetToClearPath
-                r2c.log('E','rts2af_acquire.py: foc pos greater than upperLimit ({0}), setting focToff to: {1}'.format(self.upperLimit, focToff))
-
-                if(focSet < self.lowerLimit):
-                    focToff= self.lowerLimit -focDef -filter.OffsetToClearPath
-                    r2c.log('E','rts2af_acquire.py: foc pos lower than lowerLimit ({0}), setting focToff to: {1}'.format(self.lowerLimit, focToff))
-        return focToff
-
-    def beReallyThere(self, focPos=None):
+    def focPosReached(self, focPos=None):
+        """Sometimes the FLI focuser does not react, log that ToDo: later apply correction"""
         if(not focPos==None):
             i= 0
             while(True):
@@ -136,11 +117,13 @@ class Acquire(rts2af.AFScript):
 
     def acquireImage(self, focDef=None, focToff=None, exposure=None, filter=None, analysis=None):
 
-        focToff= self.focPosWithinLimits( focDef, focToff, filter)
-        r2c.setValue('FOC_TOFF', focToff, self.focuser)
+        if( not self.focPosWithinLimits( focDef + focToff + filter.OffsetToClearPath)):
+            return False
 
-        self.beReallyThere( focDef + focToff + filter.OffsetToClearPath)
         r2c.setValue('exposure', exposure)
+        r2c.setValue('FOC_TOFF', focToff, self.focuser)
+        self.focPosReached( focDef + focToff + filter.OffsetToClearPath)
+
         acquisitionPath = r2c.exposure()
 
         # move all fits files of a given filter focus run into a separate directory 
@@ -174,14 +157,16 @@ class Acquire(rts2af.AFScript):
         return False
 
     def prepareAcquisition(self, focDef, filter):
+        r2c.setValue('SHUTTER','LIGHT')
+
+        if( filter.name != 'NOFILTER'):
+            r2c.setValue('filter' , filter.name)
         # ToDo: verify with limits
         r2c.setValue('FOC_FOFF', filter.OffsetToClearPath, self.focuser)
         r2c.setValue('FOC_TOFF', 0, self.focuser)
         r2c.setValue('FOC_DEF' , focDef, self.focuser)
-        self.beReallyThere(focDef + filter.OffsetToClearPath)
+        self.focPosReached(focDef + filter.OffsetToClearPath)
 
-        r2c.setValue('SHUTTER','LIGHT')
-        r2c.setValue('filter' , filter.name)
 
     def saveState(self):
         return
@@ -217,6 +202,7 @@ class Acquire(rts2af.AFScript):
                 self.prepareAcquisition( focDef, filter) # a previous run was successful
                 r2c.log('I','Initial setting: filter {0}, offset {1}, expousre {2} (setting from clear path run)'.format( filter.name, fwhm_foc_pos_cp, filter.exposure))
             else:
+                # depends on what one wants
                 focDef= nofilter.OffsetToClearPath
                 self.prepareAcquisition( focDef, filter) # use the config file value
                 r2c.log('I','Initial setting: filter {0}, offset {1}, expousre {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
@@ -229,6 +215,7 @@ class Acquire(rts2af.AFScript):
             cmd= [ 'rts2af_analysis.py',
                    '--config', configFileName
                    ]
+
             
             r2c.log('I','COMMAND {0} {1}'.format(cmd, filter.name))
             # open the analysis suprocess
@@ -238,14 +225,14 @@ class Acquire(rts2af.AFScript):
             except:
                 r2c.log('E','rts2af_acquire: exiting, could not start {0}: Filter {1}, position {2}, exposure {3}'.format( cmd, filter.name, filter.OffsetToClearPath, filter.exposure))
                 sys.exit(1)
-            
+
             # create the reference catalogue
             self.acquireImage( focDef, 0, filter.exposure, filter, analysis[filter.name]) # exposure will later depend on position
 
             if(self.test):
                 while( True):
-                    r2c.log('I','rts2af_acquire: Filter {0} offset {1} exposure {2}'.format('see file', 0, 0))
-                    if( not self.acquireImage( 0, 0, 0, filter, analysis[filter.name])):
+                    r2c.log('I','rts2af_acquire: being in test mode Filter {0} offset {1} exposure {2}'.format(focDef, 1443, 11))
+                    if( not self.acquireImage( focDef, 1443, 11, filter, analysis[filter.name])):
                         break
             else:
                 # loop over the focuser steps
@@ -264,23 +251,26 @@ class Acquire(rts2af.AFScript):
             if( self.runTimeConfig.value('SET_FOCUS')):
                 if((filter.OffsetToClearPath== 0) or ( filter.name=='NOFILTER')):
                     r2c.log('I','rts2af_acquire: waiting for fitted focus position')
-                    fwhm_foc_pos_str= analysis[filter.name].stdout.readline()
-                    fwhm_foc_pos_match= re.search( r'FOCUS: ([0-9]+)', fwhm_foc_pos_str)
+                    fwhmFocPosStr= analysis[filter.name].stdout.readline()
+                    fwhmFocPosMatch= re.search( r'FOCUS: ([0-9]+)', fwhmFocPosStr)
 
-                    if( not fwhm_foc_pos_match == None):
-                        fwhm_foc_pos_cp= int(fwhm_foc_pos_match.group(1))
-                        r2c.log('I','rts2af_acquire: got fitted focuser position at: {0}'.format(fwhm_foc_pos_cp))
+                    if( not fwhmFocPosMatch == None):
+                        fwhmFocPos= int(fwhmFocPosMatch.group(1))
+                        r2c.log('I','rts2af_acquire: got fitted focuser position at: {0}'.format(fwhmFocPos))
                         # ToDo: create a method wich verifies FOC_POS
-                        fwhm_foc_pos_set= self.focDefWithinLimits( fwhm_foc_pos_cp, filter)
-                        r2c.setValue('FOC_DEF', fwhm_foc_pos_set, self.focuser)
-                        time.sleep(2)
-                        r2c.setValue('FOC_FOFF', 0, self.focuser)
-                        time.sleep(2)
-                        r2c.setValue('FOC_TOFF', 0, self.focuser)
+                        if( self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath)):
 
-                        self.beReallyThere(fwhm_foc_pos_cp)
+                            r2c.setValue('FOC_FOFF', 0, self.focuser)
+                            time.sleep(2)
+                            r2c.setValue('FOC_TOFF', 0, self.focuser)
+                            time.sleep(2)
+                            r2c.setValue('FOC_DEF', fwhmFocPos, self.focuser)
+
+                            self.focPosReached(fwhmFocPos)
+                        else:
+                            r2c.log('E','rts2af_acquire: can not set FOC_DEF, out of limits'.format(fwhmFocPos))
                     else:
-                        r2c.log('E','rts2af_acquire: no match of string FOCUS: ([0-9]+) on {0}, doing nothing'.format(fwhm_foc_pos_str))
+                        r2c.log('E','rts2af_acquire: no match of string FOCUS: ([0-9]+) on {0}, doing nothing'.format(fwhmFocPos))
                 else:
                     r2c.log('I','rts2af_acquire: not waiting for fit results for filter {0}'.format(filter.name))
             else:

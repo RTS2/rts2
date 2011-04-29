@@ -44,7 +44,7 @@ class AFScript:
     def arguments( self): 
         
 
-        parser = argparse.ArgumentParser(description='RTS2 autofocus', epilog="See man 1 rts2-autofocus.py for mor information")
+        parser = argparse.ArgumentParser(description='RTS2 autofocus', epilog="See man 1 rts2af.py for mor information")
 #        parser.add_argument(
 #            '--write', action='store', metavar='FILE NAME', 
 #            type=argparse.FileType('w'), 
@@ -214,7 +214,6 @@ class Configuration:
     def configurationFileName(self):
         return  self.defaults['CONFIGURATION_FILE']
 
-    
     def configIdentifiers(self):
         return sorted(self.cp.iteritems())
 
@@ -265,9 +264,9 @@ class Configuration:
 
         with open( self.configFileName, 'w') as configfile:
             configfile.write('# 2010-07-10, Markus Wildi\n')
-            configfile.write('# default configuration for rts2af-autofocus.py\n')
-            configfile.write('# generated with rts2-autofous.py -p\n')
-            configfile.write('# see man rts2af-autofocus.py for details\n')
+            configfile.write('# default configuration for rts2af.py\n')
+            configfile.write('# generated with rts2af.py -p\n')
+            configfile.write('# see man rts2af.py for details\n')
             configfile.write('#\n')
             configfile.write('#\n')
             self.config.write(configfile)
@@ -284,9 +283,9 @@ class Configuration:
 
         with open( fileName, 'w') as configfile:
             configfile.write('# 2011-04-19, Markus Wildi\n')
-            configfile.write('# default configuration for rts2af-autofocus.py\n')
-            configfile.write('# generated with rts2-autofous.py -p\n')
-            configfile.write('# see man rts2af-autofocus.py for details\n')
+            configfile.write('# default configuration for rts2af.py\n')
+            configfile.write('# generated with rts2af.py -p\n')
+            configfile.write('# see man rts2af.py for details\n')
             configfile.write('#\n')
             configfile.write('#\n')
             self.config.write(configfile)
@@ -1389,6 +1388,7 @@ class FitsHDU():
     """Class holding fits file name and its properties"""
     def __init__(self, fitsFileName=None, referenceFitsHDU=None):
         if(referenceFitsHDU==None):
+            
             self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName)
         else:
             self.fitsFileName= fitsFileName
@@ -1417,7 +1417,7 @@ class FitsHDU():
             return False
 
         fitsHDU.close()
-
+        #
         # static header elements, must not vary within a focus run
         try:
             self.staticHeaderElements['FILTER']= fitsHDU[0].header['FILTER']
@@ -1425,6 +1425,7 @@ class FitsHDU():
             self.isValid= True
             self.staticHeaderElements['FILTER']= 'NOFILTER' 
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
+
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
         except:
@@ -1432,7 +1433,7 @@ class FitsHDU():
             self.assumedBinning=True
             self.staticHeaderElements['BINNING']= '1x1'
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the binning header element not found, assuming 1x1 binning')
-
+            # ToDo return False
         try:
             self.staticHeaderElements['ORIRA']  = fitsHDU[0].header['ORIRA']
             self.staticHeaderElements['ORIDEC'] = fitsHDU[0].header['ORIDEC']
@@ -1441,15 +1442,21 @@ class FitsHDU():
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the coordinates header elements: ORIRA, ORIDEC not found ')
 
         try:
-            self.variableHeaderElements['FOC_POS']= fitsHDU[0].header[runTimeConfig.value('FOC_POS')]
             self.staticHeaderElements['NAXIS1'] = fitsHDU[0].header['NAXIS1']
             self.staticHeaderElements['NAXIS2'] = fitsHDU[0].header['NAXIS2']
         except:
             self.isValid= False
-            logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements not found')
+            logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements NAXIS1 or NAXIS2 not found')
             return False
-        
+
         # variable header elements, may vary within a focus run
+        try:
+            self.variableHeaderElements['FOC_POS']= fitsHDU[0].header[runTimeConfig.value('FOC_POS')]
+        except:
+            self.isValid= False
+            logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements FOC_POS not found')
+            return False
+
         try:
             self.variableHeaderElements['EXPOSURE'] = fitsHDU[0].header[runTimeConfig.value('EXPOSURE')]
             self.variableHeaderElements['DATETIME'] = fitsHDU[0].header[runTimeConfig.value('DATETIME')]
@@ -1458,7 +1465,6 @@ class FitsHDU():
         except:
             self.isValid= True
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the header elements: EXPOSURE, JD, CCD_TEMP or HIERARCH MET_AAG.TEMP_IRS not found')
-
 
         if( not self.extractBinning()):
             self.isValid= False
