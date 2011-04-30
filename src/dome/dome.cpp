@@ -86,10 +86,10 @@ Dome::Dome (int in_argc, char **in_argv, int in_device_type):Device (in_argc, in
 {
 	stateMaster = NULL;
 
-	createValue (weatherOpensDome, "weather_open", "if weather information is enought to open dome", false, RTS2_VALUE_WRITABLE);
+	createValue (weatherOpensDome, "weather_open", "is weather acceptable to open dome", false, RTS2_VALUE_WRITABLE);
 	weatherOpensDome->setValueBool (false);
 
-	createValue (ignoreTimeout, "ignore_time", "date and time for which meteo information will be ignored", false, RTS2_VALUE_WRITABLE);
+	createValue (ignoreTimeout, "ignore_time", "ignore weather input until specified instant", false, RTS2_VALUE_WRITABLE);
 	ignoreTimeout->setValueDouble (0);
 
 	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again", false);

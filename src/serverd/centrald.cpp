@@ -378,8 +378,8 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_H
 	logFileSource = LOGFILE_DEF;
 	fileLog = NULL;
 
-	createValue (morning_off, "morning_off", "switch to off at the morning", false, RTS2_VALUE_WRITABLE);
-	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false, RTS2_VALUE_WRITABLE);
+	createValue (morning_off, "morning_off", "switch to off in the morning", false, RTS2_VALUE_WRITABLE);
+	createValue (morning_standby, "morning_standby", "switch to standby in the morning", false, RTS2_VALUE_WRITABLE);
 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
 	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
@@ -404,8 +404,8 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Daemon (argc, argv, SERVERD_H
 	createValue (eveningTime, "evening_time", "time needed to cool down cameras", false, RTS2_VALUE_WRITABLE);
 	createValue (morningTime, "morning_time", "time needed to heat up cameras", false, RTS2_VALUE_WRITABLE);
 
-	createValue (nightStart, "night_start", "Beginnign of current or next night", false);
-	createValue (nightStop, "night_stop", "End of current or next night", false);
+	createValue (nightStart, "night_start", "beginning of current or next night", false);
+	createValue (nightStop, "night_stop", "end of current or next night", false);
 
 	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
 	createValue (sunAz, "sun_az", "Sun azimuth", false, RTS2_DT_DEGREES);
