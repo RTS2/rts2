@@ -79,7 +79,12 @@ class Acquire(rts2af.AFScript):
 
         self.lowerLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
         self.upperLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
-
+    
+        self.binning= self.runTimeConfig.value(self.runTimeConfig.ccd.binning)
+        self.windowOffsetX= self.runTimeConfig.ccd.windowOffsetX
+        self.windowOffsetY= self.runTimeConfig.ccd.windowOffsetY
+        self.windowWidth= self.runTimeConfig.ccd.windowWidth
+        self.windowHeight= self.runTimeConfig.ccd.windowHeight
 
     def focPosWithinLimits(self, focPos=None):
 
@@ -157,7 +162,9 @@ class Acquire(rts2af.AFScript):
         return False
 
     def prepareAcquisition(self, focDef, filter):
-        r2c.setValue('SHUTTER','LIGHT')
+        r2c.setValue('SHUTTER', 'LIGHT')
+        r2c.setValue('binning', self.binning)
+        r2c.setValue('WINDOW','%d %d %d %d' % (self.windowOffsetX, self.windowOffsetY, self.windowWidth, self.windowHeight))
 
         if( filter.name != 'NOFILTER'):
             r2c.setValue('filter' , filter.name)
@@ -166,7 +173,7 @@ class Acquire(rts2af.AFScript):
         r2c.setValue('FOC_TOFF', 0, self.focuser)
         r2c.setValue('FOC_DEF' , focDef, self.focuser)
         self.focPosReached(focDef + filter.OffsetToClearPath)
-
+        
 
     def saveState(self):
         return

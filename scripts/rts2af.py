@@ -115,18 +115,16 @@ class Configuration:
         self.values={}
         self.filters=[]
         self.filtersInUse=[]
-
+        # If there is none, we have a serious problem anyway
+        self.ccd= CCD( name='CD', binning='1x1', windowOffsetX=-1, windowOffsetY=-1, windowHeight=-1, windowWidth=-1)
         self.cp={}
-
         self.config = ConfigParser.RawConfigParser()
         
         self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2af/rts2af-acquire.cfg'
-        
         self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
-        self.cp[('basic', 'CCD_CAMERA')]= 'CD'
         #                                        name
         #                                           offset to clear path
         #                                                 relative lower acquisition limit [tick]
@@ -189,11 +187,18 @@ class Configuration:
         self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex-autofocus.cat'
         self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
-        
+        # ToDo so far that is good for FLI CCD
+        # These factors are used for the fitting
+        self.cp[('ccd binning mapping', '1x1')] = 0
+        self.cp[('ccd binning mapping', '2x2')] = 1
+        self.cp[('ccd binning mapping', '4x4')] = 2
+
+        self.cp[('ccd', 'NAME')]= 'CD'
+        self.cp[('ccd', 'BINNING')]= '1x1'
+        self.cp[('ccd', 'WINDOW')]= '-1 -1 -1 -1'
+
         self.cp[('mode', 'SET_FOCUS')]= True
-        self.cp[('mode', 'CCD_BINNING')]= 0
-        self.cp[('mode', 'AUTO_FOCUS')]= False
-        self.cp[('mode', 'NUMBER_OF_AUTO_FOCUS_IMAGES')]= 10
+
         # mapping of fits header elements to canonical
         self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_AAG.TEMP_IRS'
         self.cp[('fits header mapping', 'DATETIME')]= 'JD'
@@ -204,7 +209,6 @@ class Configuration:
         self.cp[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.cp[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
 
-        
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
             self.defaults[(identifier)]= value
@@ -323,7 +327,7 @@ class Configuration:
                 try:
                     self.values[identifier]= int(value)
                 except:
-                    logging.error('Configuration.readConfiguration: no int '+ value+ 'in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
+                    logging.error('Configuration.readConfiguration: no int '+ value+ ' in section ' +  section + ', identifier ' +  identifier + ' in file ' + configFileName)
                     
             elif(isinstance(self.values[identifier], float)):
                 try:
@@ -342,7 +346,7 @@ class Configuration:
 
                     items[0]= string.replace( items[0], ' ', '')
                     if(verbose):
-                        print '-----------filterInUse---------:>' + items[0] + '<'
+                        print '-----------filter properties---------:>' + items[0] + '<'
                     self.filters.append( Filter( items[0], string.atoi(items[1]), string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5])))
                 elif( section == 'filters'):
                     items= value.split(':')
@@ -351,7 +355,31 @@ class Configuration:
                         if(verbose):
                             print 'filterInUse---------:>' + item + '<'
                         self.filtersInUse.append(item)
-                    
+
+                elif( section == 'ccd'):
+
+                    if(identifier=='NAME'):
+                        self.ccd.name= value
+
+                    elif(identifier=='WINDOW'):
+                        items= re.split('[ ]+', value)
+                        if( len(items) < 4):
+                            logging.warn( 'Configuration.readConfiguration: too few ccd window items {0} {1}, using the whole CCD area'.format(len(items), value))
+                            items= [ '-1', '-1', '-1', '-1']
+
+                        for item in items:
+                            item.replace(' ', '')
+                            if(verbose):
+                                print 'ccd window  item {0}'.format(item)
+                
+                        self.ccd.windowOffsetX=string.atoi(items[0])
+                        self.ccd.windowOffsetY=string.atoi(items[1]) 
+                        self.ccd.windowWidth  =string.atoi(items[2]) 
+                        self.ccd.windowHeight =string.atoi(items[3])
+
+                    elif(identifier=='BINNING'):
+                        self.ccd.binning= value
+
         if(verbose):
             for (identifier), value in self.defaultsIdentifiers():
                 print "over ", identifier, self.values[(identifier)]
@@ -442,13 +470,24 @@ class SExtractorParams():
                 print "Reference element : >"+ element+"<"
             for element in  self.assoc:
                 print "Association element : >" + element+"<"
-class Setting:
+class Setting():
     """Class holding settings for a given position, offset and exposure time"""
     def __init__(self, offset=0, exposure=0):
         self.offset= offset
         self.exposure = exposure
-                
-class Filter:
+
+class CCD():
+    """Class for CCD properties"""
+    def __init__(self, name, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None):
+        
+        self.name= name
+        self.binning=binning
+        self.windowOffsetX=windowOffsetX
+        self.windowOffsetY=windowOffsetY
+        self.windowHeight=windowHeight
+        self.windowWidth=windowWidth
+
+class Filter():
     """Class for filter properties"""
 
     def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, resolution=None, exposure=None):
@@ -1176,6 +1215,8 @@ class Catalogues():
             self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
             self.imageFilename= serviceFileOp.expandToFitImage( self.referenceCatalogue.fitsHDU)
             self.ds9CommandFileName= serviceFileOp.expandToDs9CommandFileName(self.referenceCatalogue.fitsHDU)
+        # ToDo '1' might not be the appropriate summand
+        self.binning= 1 + runTimeConfig.value(runTimeConfig.ccd.binning)
         self.maxFwhm= 0.
         self.minFwhm= 0.
         self.maxFlux= 0.
@@ -1229,7 +1270,7 @@ class Catalogues():
     def writeFitInputValues(self):
         fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
-            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos])
+            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos] * self.binning)
             fitInput.write(line)
 
         fitInput.close()
@@ -1513,11 +1554,15 @@ class FitsHDU():
         binning1x1 = pbinning1x1.match(self.staticHeaderElements['BINNING'])
         pbinning2x2 = re.compile( r'2x2')
         binning2x2 = pbinning2x2.match(self.staticHeaderElements['BINNING'])
+        pbinning4x4 = re.compile( r'4x4')
+        binning4x4 = pbinning2x2.match(self.staticHeaderElements['BINNING'])
 
         if( binning1x1):
             self.binning= 1
         elif(binning2x2):
             self.binning= 2
+        elif(binning4x4):
+            self.binning= 4
         else:
             logging.error('headerProperties: fits file ' + self.fitsFileName +  ' binning: {0} not supported, exiting'.format(fitsHDU[0].header['BINNING']))
             return False
