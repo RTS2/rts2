@@ -125,28 +125,31 @@ class Configuration:
         self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
         self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
+        self.cp[('basic', 'DEFAULT_FOC_POS')]= 3500
+        self.cp[('basic', 'DEFAULT_EXPOSURE')]= 10
         #                                        name
         #                                           offset to clear path
         #                                                 relative lower acquisition limit [tick]
         #                                                        relative upper acquisition limit [tick]
         #                                                              stepsize [tick]
         #                                                                   exposure time [sec]
-        self.cp[('filter properties', 'f01')]= '[U, 5074, -1500, 1500, 100, 40]'
-        self.cp[('filter properties', 'f02')]= '[B, 4712, -1500, 1500, 100, 30]'
-        self.cp[('filter properties', 'f03')]= '[V, 4678, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f04')]= '[R, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f05')]= '[I, 4700, -1500, 1500, 100, 20]'
-        self.cp[('filter properties', 'f06')]= '[X, 3275, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f07')]= '[H, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f08')]= '[b, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f09')]= '[c, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0a')]= '[d, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0b')]= '[e, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0c')]= '[f, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0d')]= '[g, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'f0e')]= '[h, 3446, -1500, 1500, 100, 10]'
-        self.cp[('filter properties', 'nofilter')]= '[NOFILTER, 3446, -1500, 1500, 109, 19]'
+        self.cp[('filter properties', 'f01')]= '[U, 2074, -1500, 1500, 100, 11.1]'
+        self.cp[('filter properties', 'f02')]= '[B, 1712, -1500, 1500, 100, 2.5]'
+        self.cp[('filter properties', 'f03')]= '[V, 1678, -1500, 1500, 100, 2.5]'
+        self.cp[('filter properties', 'f04')]= '[R, 1700, -1500, 1500, 100, 2.5]'
+        self.cp[('filter properties', 'f05')]= '[I, 1700, -1500, 1500, 100, 3.5]'
+        self.cp[('filter properties', 'f06')]= '[X, 0, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f07')]= '[H, 1446, -1500, 1500, 100, 13.1]'
+        self.cp[('filter properties', 'f08')]= '[b, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f09')]= '[c, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f0a')]= '[d, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f0b')]= '[e, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f0c')]= '[f, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f0d')]= '[g, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'f0e')]= '[h, 1446, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'nofilter')]= '[NOFILTER, 0, -1500, 1500, 100, 1.]'
         
+
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
@@ -347,7 +350,7 @@ class Configuration:
                     items[0]= string.replace( items[0], ' ', '')
                     if(verbose):
                         print '-----------filter properties---------:>' + items[0] + '<'
-                    self.filters.append( Filter( items[0], string.atoi(items[1]), string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atoi(items[5])))
+                    self.filters.append( Filter( items[0], string.atoi(items[1]), string.atoi(items[2]), string.atoi(items[3]), string.atoi(items[4]), string.atof(items[5])))
                 elif( section == 'filters'):
                     items= value.split(':')
                     for item in items:
@@ -490,13 +493,14 @@ class CCD():
 class Filter():
     """Class for filter properties"""
 
-    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, resolution=None, exposure=None):
+    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, resolution=None, exposureFactor=None):
         self.name= name
         self.OffsetToClearPath    = OffsetToClearPath
         self.lowerLimit= lowerLimit
         self.upperLimit= upperLimit
         self.stepSize  = resolution # [tick]
-        self.exposure  = exposure
+        self.exposureFactor  = exposureFactor 
+        self.exposure= self.exposureFactor * runTimeConfig.value('DEFAULT_EXPOSURE')
         self.settings=[]
         for offset in range (self.lowerLimit, self.upperLimit +  self.stepSize,  self.stepSize):
             self.settings.append(Setting( offset, self.exposure))

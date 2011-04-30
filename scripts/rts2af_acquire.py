@@ -17,9 +17,8 @@
 #   in order rts2-executor can immediately continue with the next target.
 #
 #   It sets the FOC_DEF value for the clear optical path if it is configured.
-#   Clear optical path is defined as being filter named NOFILTER or if the
-#   offset in the section [filter properties] is 0 (second element in the 
-#   array)
+#   Clear optical path is defined in section [filter properties] is 0 
+#   (second element in the array)
 #  
 #   Planned: It spawns a subprocess to deal with the setting of the focuse.
 #
@@ -184,7 +183,6 @@ class Acquire(rts2af.AFScript):
 
         # start analysis process
         analysis={}
-        nofilter= self.runTimeConfig.filterByName( 'NOFILTER')
 
         # create the result file for the fitted values, read by rts2af_set_fit_focus.py
         fitResultFileName= self.serviceFileOp.expandToFitResultPath( 'rts2af-acquire-')
@@ -210,7 +208,7 @@ class Acquire(rts2af.AFScript):
                 r2c.log('I','Initial setting: filter {0}, offset {1}, expousre {2} (setting from clear path run)'.format( filter.name, fwhm_foc_pos_cp, filter.exposure))
             else:
                 # depends on what one wants
-                focDef= nofilter.OffsetToClearPath
+                focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
                 self.prepareAcquisition( focDef, filter) # use the config file value
                 r2c.log('I','Initial setting: filter {0}, offset {1}, expousre {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
 
@@ -222,24 +220,22 @@ class Acquire(rts2af.AFScript):
             cmd= [ 'rts2af_analysis.py',
                    '--config', configFileName
                    ]
-
             
             r2c.log('I','COMMAND {0} {1}'.format(cmd, filter.name))
             # open the analysis suprocess
             try:
                 analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                #r2c.log('I','Reference catalogue: Filter {0}, position {1}, exposure {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
             except:
                 r2c.log('E','rts2af_acquire: exiting, could not start {0}: Filter {1}, position {2}, exposure {3}'.format( cmd, filter.name, filter.OffsetToClearPath, filter.exposure))
                 sys.exit(1)
 
             # create the reference catalogue
-            self.acquireImage( focDef, 0, filter.exposure, filter, analysis[filter.name]) # exposure will later depend on position
+            self.acquireImage( focDef, 0, filter.exposure, filter, analysis[filter.name]) # exposure depends on position
 
             if(self.test):
                 while( True):
-                    r2c.log('I','rts2af_acquire: being in test mode Filter {0} offset {1} exposure {2}'.format(focDef, 1443, 11))
-                    if( not self.acquireImage( focDef, 1443, 11, filter, analysis[filter.name])):
+                    r2c.log('I','rts2af_acquire: being in test mode Filter {0} offset {1} exposure {2}'.format(focDef, filter.OffsetToClearPath, filter.exposure))
+                    if( not self.acquireImage( focDef, filter.OffsetToClearPath, filter.exposure, filter, analysis[filter.name])):
                         break
             else:
                 # loop over the focuser steps
@@ -256,7 +252,7 @@ class Acquire(rts2af.AFScript):
 
             # set the FOC_DEF for the clear optical path
             if( self.runTimeConfig.value('SET_FOCUS')):
-                if((filter.OffsetToClearPath== 0) or ( filter.name=='NOFILTER')):
+                if(filter.OffsetToClearPath== 0):
                     r2c.log('I','rts2af_acquire: waiting for fitted focus position')
                     fwhmFocPosStr= analysis[filter.name].stdout.readline()
                     fwhmFocPosMatch= re.search( r'FOCUS: ([0-9]+)', fwhmFocPosStr)
@@ -267,10 +263,8 @@ class Acquire(rts2af.AFScript):
                         # ToDo: create a method wich verifies FOC_POS
                         if( self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath)):
 
-                            r2c.setValue('FOC_FOFF', 0, self.focuser)
-                            time.sleep(2)
-                            r2c.setValue('FOC_TOFF', 0, self.focuser)
-                            time.sleep(2)
+# not necessary                            r2c.setValue('FOC_FOFF', 0, self.focuser)
+# not necessary                            r2c.setValue('FOC_TOFF', 0, self.focuser)
                             r2c.setValue('FOC_DEF', fwhmFocPos, self.focuser)
 
                             self.focPosReached(fwhmFocPos)
