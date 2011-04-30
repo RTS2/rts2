@@ -60,7 +60,10 @@ class Rts2Queue:
 			raise ec
 
 	def getTarget(self,name):
-		return self.loadJson('/api/tbyname',{'n':name})['d']
+		try:
+			return self.loadJson('/api/tbyid',{'id':int(name)})['d']
+		except ValueError:
+			return self.loadJson('/api/tbyname',{'n':name})['d']
 			
 	def queueTargets(self,ids):
 		return self.loadJson('/api/cmd',{'d':'SEL','c':"queue {0} {1}".format(self.queue, string.join(map(str,ids),' '))})
@@ -92,7 +95,7 @@ if __name__ == '__main__':
 		print "cleared queue {0}: {1}".format(options.queue, resp['d']['plan_ids'][1])
 
 	for x in args:
-	  	tars = q.getTarget(x)
+		tars = q.getTarget(x)
 		if len(tars) == 0:
 			print >> sys.stderr, "cannot find target with name {0}".format(x)
 			sys.exit(1)
