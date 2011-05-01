@@ -45,6 +45,8 @@ namespace rts2db
 
 class Target;
 
+typedef std::vector < std::pair < time_t, time_t > > interval_arr_t;
+
 /**
  * Abstract class for constraint.
  *
@@ -58,7 +60,7 @@ class Constraint
 		virtual void load (xmlNodePtr cons) = 0;
 		virtual bool satisfy (Target *tar, double JD) = 0;
 
-		Constraint *th (){ return this; }
+		Constraint *th () { return this; }
 
 		/**
 		 * Add constraint from string.
@@ -70,6 +72,17 @@ class Constraint
 		virtual void print (std::ostream &os) = 0;
 
 		virtual const char* getName () = 0;
+
+		/**
+		 * Return array with intervals when constraint for given target is violated.
+		 *
+		 * @param tar
+		 * @param from
+		 * @param to
+		 * @param step
+		 * @param ret   returned array of violated time intervals
+		 */
+		virtual void getViolatedIntervals (Target *tar, double from, double to, double step, interval_arr_t &ret);
 };
 
 /**

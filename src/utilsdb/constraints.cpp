@@ -145,6 +145,42 @@ bool ConstraintInterval::isBetween (double val)
 	return false;
 }
 
+void Constraint::getViolatedIntervals (Target *tar, double from, double to, double step, interval_arr_t &ret)
+{
+	double vf = rts2_nan ("f");
+
+	time_t fti = (time_t) to;
+
+	double to_JD = ln_get_julian_from_timet (&fti);
+	fti = (time_t) from;
+	
+	time_t fti_to;
+
+	double t;
+	for (t = ln_get_julian_from_timet (&fti); t < to_JD; t += step / 86400.0)
+	{
+		if (!satisfy (tar, t))
+		{
+			if (isnan (vf))
+				vf = t;
+		}
+		else if (!isnan (vf))
+		{
+			ln_get_timet_from_julian (vf, &fti);
+			ln_get_timet_from_julian (t, &fti_to);
+			ret.push_back (std::pair <time_t, time_t> (fti, fti_to));
+			vf = rts2_nan ("f");
+		}
+	}
+	if (!isnan (vf))
+	{
+		ln_get_timet_from_julian (vf, &fti);
+		ln_get_timet_from_julian (t, &fti_to);
+		ret.push_back (std::pair <time_t, time_t> (fti, fti_to));
+		vf = rts2_nan ("f");
+	}
+}
+
 void ConstraintTime::load (xmlNodePtr cons)
 {
 	clearIntervals ();

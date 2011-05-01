@@ -304,7 +304,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			double from = params->getDouble ("from", master->getNow ());
 			double to = params->getDouble ("to", master->getNow () + 86400);
 			// 60 sec = 1 minute step (by default)
-			double steps = params->getDouble ("step", 60);
+			double step = params->getDouble ("step", 60);
 
 			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
 			rts2db::Constraints *cons = tar->getConstraints ();
@@ -314,37 +314,17 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (cons->find (std::string (cn)) != cons->end ())
 			{
 				rts2db::ConstraintPtr cptr = (*cons)[std::string (cn)];
-				double vf = rts2_nan ("f");
-				time_t fti = (time_t) to;
-				double to_JD = ln_get_julian_from_timet (&fti);
-				fti = (time_t) from;
 				bool first_it = true;
-				for (double t = ln_get_julian_from_timet (&fti); t < to_JD; t += steps / 86400.0)
+
+				rts2db::interval_arr_t intervals;
+				cptr->getViolatedIntervals (tar, from, to, step, intervals);
+				for (rts2db::interval_arr_t::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
 				{
-					if (tar->isViolated (cptr.get (), t))
-					{
-						if (isnan (vf))
-							vf = t;
-					}
-					else if (!isnan (vf))
-					{
-						if (first_it)
-							first_it = false;
-						else
-							os << ",";
-						ln_get_timet_from_julian (vf, &fti);
-						os << "[" << fti;
-						ln_get_timet_from_julian (t, &fti);
-						os << "," << fti << "]";
-						vf = rts2_nan ("f");
-					}
-				}
-				if (!isnan (vf))
-				{
-					if (!first_it)
+					if (first_it)
+						first_it = false;
+					else
 						os << ",";
-					ln_get_timet_from_julian (vf, &fti);
-					os << "[" << fti << "," << to << "]";
+					os << "[" << iter->first << "," << iter->second << "]";
 				}
 			}
 			os << "]";
