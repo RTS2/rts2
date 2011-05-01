@@ -203,6 +203,12 @@ class TargetSet:public std::map <int, Target * >
 
 		std::ostream &printBonusList (std::ostream & _os, double JD);
 
+		friend std::ostream & operator << (std::ostream & _os, rts2db::TargetSet & tar_set)
+		{
+			tar_set.print (_os, ln_get_julian_from_sys ());
+			return _os;
+		}
+
 	protected:
 		void printTypeWhere (std::ostream & _os, const char *target_type);
 
@@ -331,7 +337,4 @@ TargetSet::iterator const resolveAll (TargetSet *ts);
 TargetSet::iterator const consoleResolver (TargetSet *ts);
 
 }
-
-std::ostream & operator << (std::ostream & _os, rts2db::TargetSet & tar_set);
-
 #endif							 /* !__RTS2_TARGETSET__ */

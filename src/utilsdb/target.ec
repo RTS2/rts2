@@ -2025,6 +2025,11 @@ ConstraintsList Target::getViolatedConstraints (double JD)
 	return ret;
 }
 
+bool Target::isViolated (Constraint *cons, double JD)
+{
+	return !(cons->satisfy (this, JD));
+}
+
 size_t Target::getSatisfiedConstraints (double JD, ConstraintsList &satisfied)
 {
 	return getConstraints ()->getSatisfied (this, JD, satisfied);

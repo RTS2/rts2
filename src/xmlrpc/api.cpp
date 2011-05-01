@@ -292,6 +292,70 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			rts2db::Labels lb;
 			os << lb.getLabel (label, t);
 		}
+		// violated constrainsts..
+		else if (vals[0] == "violated")
+		{
+			const char *cn = params->getString ("consts", "");
+			if (cn[0] == '\0')
+				throw XmlRpcException ("unknow constraint name");
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw XmlRpcException ("unknown target ID");
+			double from = params->getDouble ("from", master->getNow ());
+			double to = params->getDouble ("to", master->getNow () + 86400);
+			// 60 sec = 1 minute step (by default)
+			double steps = params->getDouble ("step", 60);
+
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+			rts2db::Constraints *cons = tar->getConstraints ();
+
+			os << '"' << cn << "\":[";
+
+			if (cons->find (std::string (cn)) != cons->end ())
+			{
+				rts2db::ConstraintPtr cptr = (*cons)[std::string (cn)];
+				double vf = rts2_nan ("f");
+				time_t fti = (time_t) to;
+				double to_JD = ln_get_julian_from_timet (&fti);
+				fti = (time_t) from;
+				bool first_it = true;
+				for (double t = ln_get_julian_from_timet (&fti); t < to_JD; t += steps / 86400.0)
+				{
+					if (tar->isViolated (cptr.get (), t))
+					{
+						if (isnan (vf))
+							vf = t;
+					}
+					else
+					{
+						if (!isnan (vf))
+						{
+							if (first_it)
+								first_it = false;
+							else
+								os << ",";
+							ln_get_timet_from_julian (vf, &fti);
+							os << "[" << fti;
+							ln_get_timet_from_julian (t, &fti);
+							os << "," << fti << "]";
+							vf = rts2_nan ("f");
+						}
+						else
+						{
+							vf = t;
+						}
+					}
+				}
+				if (!isnan (vf))
+				{
+					if (!first_it)
+						os << ",";
+					ln_get_timet_from_julian (vf, &fti);
+					os << "[" << fti << "," << to << "]";
+				}
+			}
+			os << "]";
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));

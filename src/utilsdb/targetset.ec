@@ -542,12 +542,6 @@ void TargetSet::printTypeWhere (std::ostream & _os, const char *target_type)
 	_os << ")";
 }
 
-std::ostream & operator << (std::ostream &_os, TargetSet &tar_set)
-{
-	tar_set.print (_os, ln_get_julian_from_sys ());
-	return _os;
-}
-
 sortByAltitude::sortByAltitude (struct ln_lnlat_posn *_obs, double _jd)
 {
 	if (!_obs)

@@ -72,6 +72,7 @@ class Image;
 namespace rts2db {
 
 class TargetSet;
+class Constraint;
 class Constraints;
 class Observation;
 
@@ -597,6 +598,15 @@ class Target:public Rts2Target
 		size_t getViolatedConstraints (double JD, ConstraintsList &violated);
 
 		ConstraintsList getViolatedConstraints (double JD);
+
+		/**
+		 * Test if given constraint is violated by the target.
+		 *
+		 * @param cons     Constraint pointer
+		 * @param JD       Julian Day for which constraint will be tested
+		 * @return  true if constraint is violated for given target at given time
+		 */
+		bool isViolated (Constraint *cons, double JD);
 
 		/**
 		 * Return list and number of satisfied constraints.
