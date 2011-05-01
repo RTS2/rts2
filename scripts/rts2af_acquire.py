@@ -89,11 +89,11 @@ class Acquire(rts2af.AFScript):
     def focPosWithinLimits(self, focPos=None):
 
         if( focPos < self.lowerLimit):
-            r2c.log('E','rts2af_acquire: focDef below minimum: {0}, setting it to: {1}'.format((focPos), self.lowerLimit)) 
+            r2c.log('E','rts2af_acquire: focPos: {0} below minimum: {1}'.format((focPos), self.lowerLimit)) 
             return False
 
         if( focPos > self.upperLimit):
-            r2c.log('E','rts2af_acquire: focDef above maximum: {0}, setting it to:{1}'.format((focPos), self.upperLimit))
+            r2c.log('E','rts2af_acquire: focPos: {0} above maximum: {1}'.format((focPos), self.lowerLimit)) 
             return False
 
         return True
@@ -137,6 +137,8 @@ class Acquire(rts2af.AFScript):
     def acquireImage(self, focDef=None, focToff=None, exposure=None, filter=None, analysis=None):
 
         if( not self.focPosWithinLimits( focDef + focToff + filter.OffsetToClearPath)):
+            r2c.log('E','rts2af_acquire: acquireImage: can not set position: {0}, out of limits'.format(focDef + focToff + filter.OffsetToClearPath))
+
             return False
 
         r2c.setValue('exposure', exposure)
@@ -235,6 +237,7 @@ class Acquire(rts2af.AFScript):
             self.focPosReached(curFocPos, (focDef + filter.OffsetToClearPath), 0)
             return True
         else:
+            r2c.log('E','rts2af_acquire: prepareAcquisition: can not set position: lower: {0}, upper: {1}, out of limits: {2}, {3}'.format((focDef + filter.OffsetToClearPath + filter.lowerLimit), (focDef + filter.OffsetToClearPath + filter.upperLimit),self.lowerLimit , self.upperLimit))
             return False
 
     def saveState(self):
@@ -272,8 +275,12 @@ class Acquire(rts2af.AFScript):
             else:
                 # depends on what one wants
                 focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
-                self.prepareAcquisition( focDef, filter) # use the config file value
-                r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousr:e {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
+                if( self.prepareAcquisition( focDef, filter)): # use the config file value
+                    r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousr:e {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
+                else:
+                     r2c.log('I','rts2af_acquire: continue with next filter')
+                     continue # something went wrong
+
 
             configFileName= self.serviceFileOp.expandToTmpConfigurationPath( 'rts2af-acquire-' + filter.name + '-') 
 
