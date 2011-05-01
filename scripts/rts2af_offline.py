@@ -140,7 +140,8 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
         # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
-        cats.fitTheValues()
+        print '{0}'.format(cats.fitTheValues())
+
         # executed the latest /tmp/*.sh file ro see the results with DS9 
         cats.ds9WriteRegionFiles()
 

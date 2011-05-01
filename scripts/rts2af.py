@@ -153,6 +153,7 @@ class Configuration:
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
+        self.cp[('focuser properties', 'FOCUSER_SPEED')]= 100.0
 
         self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
@@ -492,13 +493,13 @@ class CCD():
 
 class Filter():
     """Class for filter properties"""
-
-    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, resolution=None, exposureFactor=None):
+    # ToDo: clarify how  this class is used
+    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=None):
         self.name= name
         self.OffsetToClearPath    = OffsetToClearPath
         self.lowerLimit= lowerLimit
         self.upperLimit= upperLimit
-        self.stepSize  = resolution # [tick]
+        self.stepSize  = stepSize # [tick]
         self.exposureFactor  = exposureFactor 
         self.exposure= self.exposureFactor * runTimeConfig.value('DEFAULT_EXPOSURE')
         self.settings=[]
@@ -508,8 +509,19 @@ class Filter():
         self.relativeLowerLimit= self.OffsetToClearPath + self.lowerLimit
         self.relativeUpperLimit= self.OffsetToClearPath + self.upperLimit
 
+class Focuser():
+    """Class for focuser properties"""
+    # ToDo: clarify how/when this class is instantiated
+    def __init__(self, name, lowerLimit=None, upperLimit=None, resolution=None, speed=None):
+        self.name= name
+        self.lowerLimit=lowerLimit 
+        self.upperLimit=upperLimit 
+        self.resolution=resolution 
+        self.speed=speed 
+
 class Telescope():
     """Class holding telescope properties"""
+    # ToDo: clarify how/when this class is instantiated
     # ToDo: as soon as a sensible model is available for FLUX max, implement it
     # source: parameters of the fitted flux data
     # a complete compensation is not necessary/desirable
@@ -1310,24 +1322,26 @@ class Catalogues():
 
             if( configFileName==None):
                 # offline mode
-                print 'FOCUS: {0}'.format(output[0].split()[1])
+                return 'FOCUS: {0}'.format(output[0].split()[1])
             else:
                 # acquire mode
                 fitResultFileName= serviceFileOp.reconstructFitResultPath(configFileName) 
                 if(fitResultFileName==None):
-                    # if something really wen wrong
-                    print 'FOCUS: {0}'.format(output[0].split()[1])
+                    # if something really went wrong
+                    return 'FOCUS: {0}'.format(output[0].split()[1])
                 else:
                     # ToDo: discuss with Petr
-                    print 'FOCUS: {0}'.format(output[0].split()[1])
                     with open( fitResultFileName, 'a') as frfn:
                         for item in output:
                             frfn.write(item)
 
                     frfn.close()
+                    return 'FOCUS: {0}'.format(output[0].split()[1])
 
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')
+
+        return 'FOCUS: -1'
 
     def __average__(self):
         numberOfObjects = 0
