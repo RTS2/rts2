@@ -326,24 +326,17 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 						if (isnan (vf))
 							vf = t;
 					}
-					else
+					else if (!isnan (vf))
 					{
-						if (!isnan (vf))
-						{
-							if (first_it)
-								first_it = false;
-							else
-								os << ",";
-							ln_get_timet_from_julian (vf, &fti);
-							os << "[" << fti;
-							ln_get_timet_from_julian (t, &fti);
-							os << "," << fti << "]";
-							vf = rts2_nan ("f");
-						}
+						if (first_it)
+							first_it = false;
 						else
-						{
-							vf = t;
-						}
+							os << ",";
+						ln_get_timet_from_julian (vf, &fti);
+						os << "[" << fti;
+						ln_get_timet_from_julian (t, &fti);
+						os << "," << fti << "]";
+						vf = rts2_nan ("f");
 					}
 				}
 				if (!isnan (vf))
