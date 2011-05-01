@@ -160,14 +160,14 @@ int main(int argc, char* argv[])
   // make fit results visible
   gStyle-> SetOptFit();
 
-  TCanvas *result = new TCanvas("rts2_autofocus","rts2_autofocus",200,10,800,640);
+  TCanvas *result = new TCanvas("rts2af","rts2af",200,10,800,640);
   result-> SetGrid();
 
   TPaveText* title = new TPaveText(.2,0.96,.8,.995);
   title-> SetBorderSize(0);
 
   char title_str[256] ;
-  strcpy( title_str, "rts2-autofocus, ") ;
+  strcpy( title_str, "rts2af, ") ;
   strcat( title_str, filter) ;
   strcat( title_str, ", ") ;
   strcat( title_str, date) ;
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
   
   // ToDo: how to deal with: Warning in <Minimize>: TLinearFitter failed in finding the solution
   //                          *** Break *** segmentation violation
-  TMultiGraph *mg = new TMultiGraph("rts2_autofocus","");
+  TMultiGraph *mg = new TMultiGraph("rts2af","");
   // create first graph: FWHM
   TGraph *gr1 = new TGraph(number_of_lines_fwhm,foc_pos_fwhm,fwhm);
   gr1-> SetMarkerColor(kBlue);
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
   mg-> Add(gr1);
 
   // read the results
-  // ToDo: integrate at least chi2 into rts2-autofocus
+  // ToDo: integrate at least chi2 into rts2af
   TF1 *fit_fwhm = gr1-> GetFunction("pol4");
   fit_fwhm_global = fit_fwhm ; // in root there is no method accepting a function pointer
  
