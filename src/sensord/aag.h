@@ -49,6 +49,7 @@ enum AAGC_SETTINGS { IMP_DELTA, IMP_MIN, IMP_DURATION_WET, IMP_DURATION_RAIN, IM
 #define NUMBER_ELECTRICAL_CONSTANTS 6
 
 /* Operation */
+#define REAL_RAIN_TIMEOUT    60 /* [sec] period after a weather is set to bad due to (real) rain*/
 #define MAX_RAIN_SENSOR_TEMPERATURE 40. /* deg C, above this rain sensor temperature no heating occurs */ 
 #define MAX_OPERATING_TEMPERATURE 30.   /* deg C, above this ambient temperature no heating occurs */ 
 #define HEAT  1.                        /* [0.,1.], the heat amount */

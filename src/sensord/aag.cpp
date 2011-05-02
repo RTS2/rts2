@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <sys/time.h>
+#include <time.h>
+
 #include "sensord.h"
 #include "../utils/connserial.h"
 #include "aag.h"
@@ -33,8 +36,8 @@ class AAG: public SensorWeather
 	private:
 		char *device_file;
 		rts2core::ConnSerial *aagConn;
-		rts2core::ValueDouble *tempSky;
-		rts2core::ValueDouble *tempIRSensor;
+                rts2core::ValueDoubleStat *tempSky;
+                rts2core::ValueDoubleStat *tempIRSensor;
 		rts2core::ValueDouble *tempSkyCorrected;
                 rts2core::ValueDouble *intVoltage ; 
                 rts2core::ValueDouble *ldrResistance ;
@@ -44,6 +47,7 @@ class AAG: public SensorWeather
 		rts2core::ValueDouble *triggerRain;
 		rts2core::ValueDouble *triggerSky;
 		rts2core::ValueDouble *triggerNoSnow;
+                rts2core::ValueInteger *numberOfMeasurements;
 		/*
 		 * Read sensor values and caculate.
 		 */
@@ -56,6 +60,7 @@ class AAG: public SensorWeather
                 int AAGSetPWMValue( double value) ;
                 int AAGRainState( double rain, double ambient, double rain_frequency, double polling_time) ;
                 double AAGduty_on_frequency( double rain_frequency, int heat_state, double polling_time) ;
+                time_t real_rain_timeout ;
      	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -251,7 +256,9 @@ AAG::AAGGetSkyIRTemperature ()
 				      << buf << "', sscanf " << x << sendLog;
 	    return -1 ;
 	}
-	tempSky->setValueDouble ((double) value/100.);
+	/*tempSky->setValueDouble ((double) value/100.);*/
+	tempSky->addValue ((double) value/100., numberOfMeasurements->getValueInteger());
+	tempSky->calculate ();
 
 	return 0;
 }
@@ -277,6 +284,9 @@ AAG::AAGGetIRSensorTemperature ()
 	    return -1 ;
 	}
 	tempIRSensor->setValueDouble ((double) value/100.);
+	/*tempIRSensor->setValueDouble ((double) value/100.);*/
+	tempIRSensor->addValue((double) value/100., numberOfMeasurements->getValueInteger());
+	tempIRSensor->calculate ();
 
 	return 0;
 }
@@ -447,7 +457,8 @@ AAG::init ()
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
-
+	
+	real_rain_timeout= 1 ;
 	aagConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 30);
 	ret = aagConn->init ();
 	if (ret)
@@ -519,6 +530,19 @@ AAG::info ()
 
 	return -1 ;
     }
+    static int count_bad_weather ;
+    if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) {
+	count_bad_weather++ ;
+    } else {
+	count_bad_weather= 0 ;
+    }
+    bool set_to_bad = true ;
+# define BAD_WEATHER_COUNT 8 
+    if( count_bad_weather > BAD_WEATHER_COUNT) {
+	set_to_bad = true ;
+    } else {
+	set_to_bad = false ;
+    }
     // check the state of the rain sensor
     if ( abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())< triggerNoSnow->getValueDouble() )
     {
@@ -535,11 +559,20 @@ AAG::info ()
     {
 	if (getWeatherState () == true) 
 	{
+	    if ( set_to_bad) {
 	    logStream (MESSAGE_DEBUG) << "setting weather to bad, rainFrequency: " << rainFrequency->getValueDouble ()
 				      << " trigger: " << triggerRain->getValueDouble ()
 				      << sendLog;
+	    } else {
+	    logStream (MESSAGE_DEBUG) << "NOT yet setting weather to bad, rainFrequency: " << rainFrequency->getValueDouble ()
+				      << " trigger: " << triggerRain->getValueDouble ()
+				      << " counter " << count_bad_weather
+				      << sendLog;
+	    }
 	}
+	if ( set_to_bad) {
 	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
+	}
     }
     // check the state of the cloud sensor
     else if ((tempSky->getValueDouble() > triggerSky->getValueDouble ()) && (tempSkyCorrected->getValueDouble() > triggerSky->getValueDouble ()))
@@ -579,6 +612,10 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (triggerRain,      "RAIN_TRIGGER", "if rain frequency gets above this value, weather is not bad [a.u.]", false, RTS2_VALUE_WRITABLE);
 	createValue (triggerSky,       "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
 	createValue (triggerNoSnow,    "NO_SNOW",      "difference (TEMP_SKY- TEMP_IRS), if larger, assume that there is no snow on sensor [abs deg C]", false, RTS2_VALUE_WRITABLE);
+
+	createValue (numberOfMeasurements, "numOfMeasurements", "number of measurements for weather statistic", false);
+	numberOfMeasurements->setValueInteger (20);
+
 	triggerRain->setValueDouble (THRESHOLD_DRY);
 	triggerSky->setValueDouble (THRESHOLD_CLOUDY);
 	triggerNoSnow->setValueDouble (THRESHOLD_NO_SNOW);
