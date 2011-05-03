@@ -58,8 +58,6 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	createValue (lastIntegral, "last_integral", "time of last INTEGRAL position", false);
 	createValue (lastIntegralRaDec, "last_integral_position", "INTEGRAL current position", false);
 
-	createValue (execConnection, "exec", "exec connection", false);
-
 	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
 	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
 	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
@@ -218,7 +216,6 @@ int Grbd::info ()
 	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
 	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
-	execConnection->setValueBool (getOpenConnection ("EXEC") != NULL);
 	return Rts2DeviceDb::info ();
 }
 

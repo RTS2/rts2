@@ -88,7 +88,6 @@ class Grbd:public Rts2DeviceDb
 		rts2core::ValueString *last_target;
 		rts2core::ValueTime *last_target_time;
 		rts2core::ValueRaDec *last_target_radec;
-		rts2core::ValueBool *execConnection;
 
 		rts2core::ValueTime *lastSwift;
 		rts2core::ValueRaDec *lastSwiftRaDec;
