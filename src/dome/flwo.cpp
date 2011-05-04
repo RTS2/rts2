@@ -82,7 +82,7 @@ FLWO::FLWO (int argc, char **argv):Dome (argc, argv)
 	coverfile = NULL;
 
 	createValue (coverOpened, "domeslit_open", "dome cover status", false);
-	createValue (coverTimeout, "domelist_timeout", "hard close cover after this time exprires", false);
+	createValue (coverTimeout, "domeslit_timeout", "close dome cover after this time passed. Used to hard close if telescope fails to park", false);
 	coverTimeout->setValueDouble (rts2_nan ("f"));
 
 	createValue (openInOn, "open_when_on", "open dome if state is on", false, RTS2_VALUE_WRITABLE);
