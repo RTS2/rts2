@@ -65,7 +65,7 @@ class main():
         self.storePath.append('/scratch/focus/2011-04-23T00:33:19.510523/H') # H
         self.referenceFile=[]
 #        self.referenceFile.append('20071205025927-674-RA.fits') # NOFILTER
-        self.referenceFile.append('20110415235822-154-RA.fits') # X
+        self.referenceFile.append('20110416000447-370-RA.fits') # X
         self.referenceFile.append('20110422224736-422-RA.fits') # H
 #        self.cmd= self.scriptPath + 'rts2af_acquire.py'
         self.cmd= 'rts2af_acquire.py'

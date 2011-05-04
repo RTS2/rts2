@@ -1292,7 +1292,7 @@ class Catalogues():
         fitInput.close()
         fitInput= open( self.dataFileNameFlux, 'w')
         for focPos in sorted(self.averageFlux):
-            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm)
+            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning)
             fitInput.write(line)
 
         fitInput.close()

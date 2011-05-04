@@ -121,14 +121,14 @@ class Acquire(rts2af.AFScript):
                 else:
                     curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
                     if( abs(float(curFocPos-focPos) < self.runTimeConfig.value('FOCUSER_RESOLUTION'))):
-                        r2c.log('I','rts2af_acquire: current foc_pos: {0}'.format(curFocPos))
+                        r2c.log('I','rts2af_acquire: target position reached, current foc_pos: {0}, target position: {1}, resolution: {2} '.format(curFocPos, focPos, self.runTimeConfig.value('FOCUSER_RESOLUTION')))
                         break
                     elif( i > 20):
-                        r2c.log('E','rts2af_acquire: breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
+                        r2c.log('E','rts2af_acquire: target position, breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
                         break
                     elif( i == 5):
                         r2c.setValue('FOC_TOFF', focToff, self.focuser)
-                        r2c.log('W','rts2af_acquire: try again, setting: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
+                        r2c.log('W','rts2af_acquire: target position, try again, setting: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
 
                 time.sleep(1)
         else:

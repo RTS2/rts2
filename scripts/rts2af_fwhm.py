@@ -52,12 +52,12 @@ class main(rts2af.AFScript):
         args      = self.arguments()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
 
-        configFileName=''
+        configFileName='/etc/rts2/rts2af/rts2af-fwhm.cfg'
         if( args.fileName):
             configFileName= args.fileName[0]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            logging.info('rts2af_fwhm.py: no config file specified, taking default ' + configFileName)
+            logging.info('rts2af_fwhm.py: no config file specified, taking default: ' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
 
@@ -65,7 +65,7 @@ class main(rts2af.AFScript):
 
             referenceFitsFileName = args.referenceFitsFileName[0]
             if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logging.error('main: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
+                logging.error('rts2af_fwhm.py: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
                 sys.exit(1)
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
@@ -76,7 +76,11 @@ class main(rts2af.AFScript):
             print "exiting"
             sys.exit(1)
 
-        hdu= rts2af.FitsHDU( referenceFitsFileName)
+        try:
+            hdu= rts2af.FitsHDU( referenceFitsFileName)
+        except:
+            logging.error('rts2af_fwhm.py: exiting, no reference file given')
+            sys.exit(1)
 
         if(hdu.headerProperties()):
             print "append "+ hdu.fitsFileName

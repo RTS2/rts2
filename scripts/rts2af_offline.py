@@ -61,7 +61,7 @@ class main(rts2af.AFScript):
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
         args         = self.arguments()
 
-        configFileName=''
+        configFileName='/etc/rts2/rts2af/rts2af-offline.cfg'
         if( args.fileName):
             configFileName= args.fileName[0]  
         else:
