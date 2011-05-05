@@ -65,11 +65,11 @@ int mkpath (const char *path, mode_t mode);
  *
  * @return -1 on error, 0 on succes
  */
-int parseDate (const char *in_date, struct ln_date *out_time);
+int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT = false);
 
-int parseDate (const char *in_date, double &JD);
+int parseDate (const char *in_date, double &JD, bool forceUT = false);
 
-int parseDate (const char *in_date, time_t *out_time);
+int parseDate (const char *in_date, time_t *out_time, bool forceUT = false);
 
 /**
  * Split std::string to vector of strings.

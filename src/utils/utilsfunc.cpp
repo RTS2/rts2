@@ -64,7 +64,7 @@ int mkpath (const char *path, mode_t mode)
 	return ret;
 }
 
-int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
+int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 {
 	int ret;
 	int ret2;
@@ -118,11 +118,11 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool &islocal)
 	return -1;
 }
 
-int parseDate (const char *in_date, struct ln_date *out_time)
+int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT)
 {
 	bool islocal;
-	int ret = parseDate (in_date, out_time, islocal);
-	if (islocal)
+	int ret = parseLocalDate (in_date, out_time, islocal);
+	if (forceUT == false && islocal)
 	{
 		double JD = ln_get_julian_day (out_time);
 		JD += timezone / 86400.0;
@@ -134,7 +134,7 @@ int parseDate (const char *in_date, struct ln_date *out_time)
 }
 
 
-int parseDate (const char *in_date, double &JD)
+int parseDate (const char *in_date, double &JD, bool forceUT)
 {
 	struct ln_date l_date;
 	int ret;
@@ -145,7 +145,7 @@ int parseDate (const char *in_date, double &JD)
 	return 0;
 }
 
-int parseDate (const char *in_date, time_t *out_time)
+int parseDate (const char *in_date, time_t *out_time, bool forceUT)
 {
 	int ret;
 	struct ln_date l_date;
