@@ -423,7 +423,7 @@ void Image::getHeaders ()
 	{
 		char daobs[100];
 		getValue ("DATE-OBS", daobs, 100, NULL, verbose);
-		parseDate (daobs, &tv.tv_sec, false);
+		parseDate (daobs, &tv.tv_sec, true);
 		tv.tv_usec = 0;
 	}
 	setExposureStart (&tv);
