@@ -149,13 +149,13 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
 
-	createValue (goodImages, "good_images", "number of good images", false);
+	createValue (goodImages, "good_astrom", "number of images with astrometry", false);
 	goodImages->setValueInteger (0);
 
-	createValue (trashImages, "trash_images", "number of images which ended in trash (bad images)", false);
+	createValue (trashImages, "no_astrom", "number of images without astrometry", false);
 	trashImages->setValueInteger (0);
 
-	createValue (badImages, "bad_images", "number of bad images (in queue under bad directory)", false);
+	createValue (badImages, "failed_images", "number of images with failed processing", false);
 	badImages->setValueInteger (0);
 
 	createValue (darkImages, "dark_images", "number of darks", false);
@@ -166,13 +166,13 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (queSize, "queue_size", "number of images waiting for processing", false);
 	queSize->setValueInteger (0);
 
-	createValue (lastGood, "last_good", "last good image (with correct astrometry)", false);
-	createValue (lastTrash, "last_trash", "last trash image (processed, but without correct astrometry)", false);
-	createValue (lastBad, "last_bad", "last bad image (either process crashed during processing or not fully processed)", false);
+	createValue (lastGood, "last_astrom", "last image with correct astrometry", false);
+	createValue (lastTrash, "last_noastrom", "last image without astrometry", false);
+	createValue (lastBad, "last_failed", "last image with failed processing", false);
 
-	createValue (nightGoodImages, "night_good", "number of good images taken during night", false);
-	createValue (nightTrashImages, "night_trash", "number of trash images taken during current night", false);
-	createValue (nightBadImages, "night_bad", "number of bad images taken during current night", false);
+	createValue (nightGoodImages, "night_astrom", "number of images with astrometry taken during night", false);
+	createValue (nightTrashImages, "night_noastrom", "number of images without astrometry taken during current night", false);
+	createValue (nightBadImages, "night_failed", "number of images with failed processing taken during current night", false);
 
 	createValue (nightDarks, "night_darks", "number of dark images taken during night", false);
 	createValue (nightFlats, "night_flats", "number of flat images taken during night", false);
