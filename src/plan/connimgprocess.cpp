@@ -59,6 +59,28 @@ ConnImgOnlyProcess::ConnImgOnlyProcess (rts2core::Block *_master, const char *_e
 	addArg (imgPath);
 }
 
+int ConnImgOnlyProcess::init ()
+{
+	try
+	{
+		Image image;
+		image.openImage (imgPath.c_str (), false, true);
+		if (image.getShutter () == SHUT_CLOSED)
+		{
+			astrometryStat = DARK;
+			return 0;
+		}
+
+		expDate = image.getExposureStart () + image.getExposureLength ();
+	}
+	catch (rts2core::Error &e)
+	{
+		logStream (MESSAGE_ERROR) << "error processing " << imgPath.c_str () << " :" << e << sendLog;
+		return -2;
+	}
+	return ConnProcess::init ();
+}
+
 void ConnImgOnlyProcess::processCommand (char *cmd)
 {
 	if (!strcasecmp (cmd, "correct"))
@@ -109,28 +131,6 @@ void ConnImgOnlyProcess::connectionError (int last_data_size)
 ConnImgProcess::ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnImgOnlyProcess (_master, _exe, _path, _timeout)
 {
 	end_event = _end_event;
-}
-
-int ConnImgProcess::init ()
-{
-	try
-	{
-		Image image;
-		image.openImage (imgPath.c_str (), false, true);
-		if (image.getShutter () == SHUT_CLOSED)
-		{
-			astrometryStat = DARK;
-			return 0;
-		}
-
-		expDate = image.getExposureStart () + image.getExposureLength ();
-	}
-	catch (rts2core::Error &e)
-	{
-		logStream (MESSAGE_ERROR) << "error processing " << imgPath.c_str () << " :" << e << sendLog;
-		return -2;
-	}
-	return ConnProcess::init ();
 }
 
 int ConnImgProcess::newProcess ()

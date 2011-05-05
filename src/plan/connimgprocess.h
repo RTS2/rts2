@@ -72,6 +72,8 @@ class ConnImgOnlyProcess:public ConnProcess
 		 */
 		ConnImgOnlyProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout);
 
+		virtual int init ();
+
 		virtual void processLine ();
 
 	protected:
@@ -106,8 +108,6 @@ class ConnImgProcess:public ConnImgOnlyProcess
 		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
 		 */
 		ConnImgProcess (rts2core::Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
-
-		virtual int init ();
 
 		virtual int newProcess ();
 
