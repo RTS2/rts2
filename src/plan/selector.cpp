@@ -267,7 +267,7 @@ int SelectorDev::init ()
 	{
 		createValue (selQueNames, "queue_names", "selector queue names", false);
 		createValue (lastQueue, "last_queue", "queue used for last selection", false);
-		lastQueue->addSelVal ("-");
+		lastQueue->addSelVal ("automatic");
 	}
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
