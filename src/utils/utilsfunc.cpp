@@ -138,7 +138,7 @@ int parseDate (const char *in_date, double &JD, bool forceUT)
 {
 	struct ln_date l_date;
 	int ret;
-	ret = parseDate (in_date, &l_date);
+	ret = parseDate (in_date, &l_date, forceUT);
 	if (ret)
 		return ret;
 	JD = ln_get_julian_day (&l_date);
@@ -149,7 +149,7 @@ int parseDate (const char *in_date, time_t *out_time, bool forceUT)
 {
 	int ret;
 	struct ln_date l_date;
-	ret = parseDate (in_date, &l_date);
+	ret = parseDate (in_date, &l_date, forceUT);
 	if (ret)
 		return ret;
 	ln_get_timet_from_julian (ln_get_julian_day (&l_date), out_time);
