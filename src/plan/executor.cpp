@@ -651,6 +651,11 @@ int Executor::setGrb (int grbId)
 	}
 	try
 	{
+		if (Rts2Config::instance ()->grbdValidity () == 0)
+		{
+			logStream (MESSAGE_INFO) << "GRB event with target id " << grbId << " ignored, will be scheduled from selector" << sendLog;
+			return 0;
+		}
 		grbTarget = createTarget (grbId, observer);
 
 		if (!grbTarget)
@@ -658,7 +663,7 @@ int Executor::setGrb (int grbId)
 		grbTarget->getAltAz (&grbHrz);
 		if (grbHrz.alt < 0)
 		{
-			logStream (MESSAGE_DEBUG) << "GRB is bellow horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
+			logStream (MESSAGE_DEBUG) << "GRB is below horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
 			delete grbTarget;
 			return -2;
 		}

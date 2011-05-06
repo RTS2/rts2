@@ -676,10 +676,14 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Time for which GRB observing request will be valid. After that
-	      time, GRB will not be observed by automatic update. If zero, then
-	      GRB observing request will never expires, but will be observed
-	      governed by GRB merit function. Defaults to 86400 seconds = 1 day.
+	      Time for which immediate GRB observing request will be valid.
+	      After that time, GRB will be disabled, and its autodisable field
+	      will be set to true. If zero, then GRB observing request will
+	      never expires, but will be observed governed by GRB merit
+	      function. Defaults to 86400 seconds = 1 day. If negative,
+	      automatic GRB disabling will not happen, but the event will still
+	      be observed with now command issues to executor (if the event is
+	      observable when trigger occured).
 	    </para>
 	  </listitem>
 	</varlistentry>
