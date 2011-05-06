@@ -198,7 +198,7 @@ int Rts2NewTarget::saveTarget ()
 	}
 
 	if (n_tar_id != INT_MIN)
-		ret = target->save (false, n_tar_id);
+		ret = target->saveWithID (false, n_tar_id);
 	else
 		ret = target->save (false);
 
@@ -207,7 +207,7 @@ int Rts2NewTarget::saveTarget ()
 		if (askForBoolean ("Target with given ID already exists. Do you want to overwrite it?", false))
 		{
 			if (n_tar_id != INT_MIN)
-				ret = target->save (true, n_tar_id);
+				ret = target->saveWithID (true, n_tar_id);
 			else
 				ret = target->save (true);
 		}

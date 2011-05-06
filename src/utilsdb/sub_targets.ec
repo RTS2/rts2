@@ -88,7 +88,7 @@ void ConstTarget::load ()
 	Target::load ();
 }
 
-int ConstTarget::save (bool overwrite, int tar_id)
+int ConstTarget::saveWithID (bool overwrite, int tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_tar_ra;
@@ -98,7 +98,7 @@ int ConstTarget::save (bool overwrite, int tar_id)
 
 	int ret;
 
-	ret = Target::save (overwrite, tar_id);
+	ret = Target::saveWithID (overwrite, tar_id);
 	if (ret)
 		return ret;
 
@@ -118,7 +118,7 @@ int ConstTarget::save (bool overwrite, int tar_id)
 
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("ConstTarget::save", MESSAGE_ERROR);
+		logMsgDb ("ConstTarget::saveWithID", MESSAGE_ERROR);
 		EXEC SQL ROLLBACK;
 		return -1;
 	}

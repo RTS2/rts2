@@ -434,7 +434,7 @@ int Target::save (bool overwrite)
 		}
 	}
 
-	return save (overwrite, db_new_id);
+	return saveWithID (overwrite, db_new_id);
 }
 
 void Target::deleteTarget ()
@@ -452,7 +452,7 @@ void Target::deleteTarget ()
 	EXEC SQL COMMIT;
 }
 
-int Target::save (bool overwrite, int tar_id)
+int Target::saveWithID (bool overwrite, int tar_id)
 {
 	// first, try an update..
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -582,7 +582,7 @@ int Target::save (bool overwrite, int tar_id)
 
 		if (sqlca.sqlcode)
 		{
-			logMsgDb ("Target::save", MESSAGE_ERROR);
+			logMsgDb ("Target::saveWithID", MESSAGE_ERROR);
 			EXEC SQL ROLLBACK;
 			return -1;
 		}

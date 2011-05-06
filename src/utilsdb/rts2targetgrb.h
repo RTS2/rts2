@@ -92,6 +92,7 @@ class TargetGRB:public ConstTarget
 
 		struct ln_equ_posn grb;
 		double errorbox;
+		bool autodisabled;
 
 		const char *getSatelite ();
 };

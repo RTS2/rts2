@@ -25,3 +25,4 @@ DELETE FROM targets WHERE tar_id = $1;
 SELECT 1;
 ' LANGUAGE 'SQL';
 
+alter table grb add column grb_autodisabled boolean not null default false;

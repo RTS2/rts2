@@ -15,6 +15,8 @@
 #define NO_MEMBER_TEMPLATES
 #endif // sun
 
+#define NO_MEMBER_TEMPLATES
+
 template <class X> class counted_ptr
 {
 public:

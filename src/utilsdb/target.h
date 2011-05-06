@@ -161,7 +161,7 @@ class Target:public Rts2Target
 		void loadTarget (int in_tar_id);
 
 		virtual int save (bool overwrite);
-		virtual int save (bool overwrite, int tar_id);
+		virtual int saveWithID (bool overwrite, int tar_id);
 
 		/**
 		 * Delete target and all associated entries from database.
@@ -739,7 +739,7 @@ class ConstTarget:public Target
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos);
 		virtual void load ();
-		virtual int save (bool overwrite, int tar_id);
+		virtual int saveWithID (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);

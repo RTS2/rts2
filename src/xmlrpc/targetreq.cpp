@@ -1130,7 +1130,7 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 	int ret;
 
 	if (tarid != INT_MAX)
-		ret = constTarget->save (false, tarid);
+		ret = constTarget->saveWithID (false, tarid);
 	else
 		ret = ((rts2db::Target *) constTarget)->save (false);
 	

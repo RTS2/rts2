@@ -48,7 +48,7 @@ class Rts2TargetScr:public Rts2Target
 		virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL);
 
 		virtual int save (bool overwrite);
-		virtual int save (bool overwrite, int tar_id);
+		virtual int saveWithID (bool overwrite, int tar_id);
 
 		virtual moveType startSlew (struct ln_equ_posn *position, bool update_position = true);
 		virtual int startObservation ();

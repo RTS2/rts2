@@ -59,7 +59,7 @@ int Rts2TargetScr::save (bool overwrite)
 	return 0;
 }
 
-int Rts2TargetScr::save (bool overwrite, int tar_id)
+int Rts2TargetScr::saveWithID (bool overwrite, int tar_id)
 {
 	return 0;
 }

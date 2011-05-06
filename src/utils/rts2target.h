@@ -210,7 +210,7 @@ class Rts2Target
 		virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL) = 0;
 
 		virtual int save (bool overwrite) = 0;
-		virtual int save (bool overwrite, int tar_id) = 0;
+		virtual int saveWithID (bool overwrite, int tar_id) = 0;
 
 		const int getTargetID () { return target_id; }
 		virtual int getObsTargetID ()

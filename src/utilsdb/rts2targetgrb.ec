@@ -39,6 +39,7 @@ TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBon
 	grb.ra = rts2_nan("f");
 	grb.dec = rts2_nan("f");
 	errorbox = rts2_nan("f");
+	autodisabled = false;
 }
 
 void TargetGRB::load ()
@@ -54,6 +55,7 @@ void TargetGRB::load ()
 	double db_grb_dec;
 	double db_grb_errorbox;
 	int db_grb_errorbox_ind;
+	bool db_grb_autodisabled;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
@@ -65,7 +67,8 @@ void TargetGRB::load ()
 		grb_is_grb,
 		grb_ra,
 		grb_dec,
-		grb_errorbox
+		grb_errorbox,
+		grb_autodisabled
 	INTO
 		:db_grb_date,
 		:db_grb_last_update,
@@ -74,7 +77,8 @@ void TargetGRB::load ()
 		:db_grb_is_grb,
 		:db_grb_ra,
 		:db_grb_dec,
-		:db_grb_errorbox :db_grb_errorbox_ind
+		:db_grb_errorbox :db_grb_errorbox_ind,
+		:db_grb_autodisabled
 	FROM
 		grb
 	WHERE
@@ -137,6 +141,7 @@ void TargetGRB::load ()
 	else
 		errorbox = db_grb_errorbox;
 	shouldUpdate = 0;
+	autodisabled = db_grb_autodisabled;
 
 	// check if we are still valid target
 	checkValidity ();
@@ -183,12 +188,20 @@ double TargetGRB::getPostSec ()
 
 void TargetGRB::checkValidity ()
 {
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_tar_id = getTargetID ();
+	EXEC SQL END DECLARE SECTION;
+	// do not auto disable already disabled targets
+	if (autodisabled == true)
+		return;
+
+	bool autodisable = false;
 	if (isGrb () == false && Rts2Config::instance()->grbdFollowTransients () == false)
 	{
 		if (getTargetEnabled () == true)
 		{
  			logStream (MESSAGE_INFO) << "disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB." << sendLog;
-			setTargetEnabled (false);
+			autodisable = true;
 		}
 	}
 	if (Rts2Config::instance()->grbdValidity () > 0 && getPostSec () > Rts2Config::instance()->grbdValidity ())
@@ -196,8 +209,17 @@ void TargetGRB::checkValidity ()
 		if (getTargetEnabled () == true)
 		{
 			logStream (MESSAGE_INFO) << "disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is too late after GRB." << sendLog;
-			setTargetEnabled (false);
+			autodisable = true;
 		}
+	}
+
+	if (autodisable)
+	{
+		setTargetEnabled (false);
+		EXEC SQL UPDATE targets SET tar_enabled = false WHERE tar_id = :db_tar_id;
+		EXEC SQL UPDATE grb SET grb_autodisabled = true WHERE tar_id = :db_tar_id;
+		if (sqlca.sqlcode)
+			throw SqlError ();
 	}
 }
 
@@ -355,9 +377,9 @@ float TargetGRB::getBonus (double JD)
 int TargetGRB::isContinues ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = getTargetID ();
-		double db_tar_ra;
-		double db_tar_dec;
+	int db_tar_id = getTargetID ();
+	double db_tar_ra;
+	double db_tar_dec;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_equ_posn pos;
@@ -472,6 +494,7 @@ void TargetGRB::printExtra (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaRaJ2000> ("GRB RA", LibnovaRaJ2000 (grb.ra))
 		<< InfoVal<LibnovaDecJ2000> ("GRB DEC", LibnovaDecJ2000 (grb.dec))
 		<< InfoVal<LibnovaDegDist> ("GRB ERR", LibnovaDegDist (errorbox))
+		<< InfoVal<bool> ("AUTODISABLED", autodisabled)
 		<< std::endl;
 	// get information about obsering time..
 	if (isnan (firstObs))
