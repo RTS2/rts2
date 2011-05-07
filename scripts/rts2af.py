@@ -115,7 +115,7 @@ class Configuration:
         self.values={}
         self.filters=[]
         self.filtersInUse=[]
-        # If there is none, we have a serious problem anyway
+        # If there is none, we have a serious problems anyway
         self.ccd= CCD( name='CD', binning='1x1', windowOffsetX=-1, windowOffsetY=-1, windowHeight=-1, windowWidth=-1)
         self.cp={}
         self.config = ConfigParser.RawConfigParser()
@@ -177,7 +177,7 @@ class Configuration:
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         
-        self.cp[('fitting', 'FOCROOT')]= 'rts2-fit-focus'
+        self.cp[('fitting', 'FOCROOT')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
@@ -380,7 +380,7 @@ class Configuration:
                         self.ccd.windowOffsetY=string.atoi(items[1]) 
                         self.ccd.windowWidth  =string.atoi(items[2]) 
                         self.ccd.windowHeight =string.atoi(items[3])
-
+                    
                     elif(identifier=='BINNING'):
                         self.ccd.binning= value
 
@@ -561,13 +561,14 @@ class Telescope():
         
 class SXObject():
     """Class holding the used properties of SExtractor object"""
-    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
+    def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, fluxError=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
         self.objectNumber= objectNumber
         self.focusPosition= focusPosition
         self.position= position # is a list (x,y)
         self.matched= False
         self.fwhm= fwhm
         self.flux= flux
+        self.fluxError= fluxError
         self.associatedSXobject= associatedSXobject
         self.separationOK= separationOK
         self.propertiesOK= propertiesOK
@@ -689,6 +690,8 @@ class Catalogue():
         itemNrY_IMAGE     = self.SExtractorParams.assoc.index('Y_IMAGE')
         itemNrFWHM_IMAGE  = self.SExtractorParams.assoc.index('FWHM_IMAGE')
         itemNrFLUX_MAX    = self.SExtractorParams.assoc.index('FLUX_MAX')
+        itemNrFLUX_APER    = self.SExtractorParams.assoc.index('FLUX_APER') 
+        itemNrFLUXERR_APER= self.SExtractorParams.assoc.index('FLUXERR_APER') 
         itemNrASSOC_NUMBER= self.SExtractorParams.assoc.index('ASSOC_NUMBER')
 
         for (lineNumber, line) in enumerate(self.lines):
@@ -713,11 +716,14 @@ class Catalogue():
                     self.catalogue[(sxObjectNumber, self.SExtractorParams.assoc[j])]=  float(item)
 
                 if( self.fitsHDU.variableHeaderElements['EXPOSURE'] != 0):
+                    # ToDo: FLUX_MAX, candidate: FLUX_APER
                     normalizedFlux= float(items[itemNrFLUX_MAX])/float(self.fitsHDU.variableHeaderElements['EXPOSURE'])
+                    normalizedFluxError= float(items[ itemNrFLUXERR_APER])/float(self.fitsHDU.variableHeaderElements['EXPOSURE'])
                 else:
                     normalizedFlux= float(items[itemNrFLUX_MAX])
+                    normalizedFluxError= float(items[ itemNrFLUXERR_APER])
  
-                self.sxObjects[sxObjectNumber]= SXObject(sxObjectNumber, self.fitsHDU.variableHeaderElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), normalizedFlux, items[itemNrASSOC_NUMBER]) # position, bool is used for clean up (default True, True)
+                self.sxObjects[sxObjectNumber]= SXObject(sxObjectNumber, self.fitsHDU.variableHeaderElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), normalizedFlux, normalizedFluxError, items[itemNrASSOC_NUMBER]) # position, bool is used for clean up (default True, True)
                 if( sxObjectNumberASSOC in self.multiplicity): # interesting
                     self.multiplicity[sxObjectNumberASSOC] += 1
                 else:
@@ -1224,15 +1230,16 @@ class Catalogues():
         self.CataloguesList= []
         self.isValid= False
         self.averageFwhm= {}
+        self.stdFwhm= {}
         self.averageFlux={}
+        self.stdFlux={}
         self.referenceCatalogue= referenceCatalogue
         if( self.referenceCatalogue != None):
             self.dataFileNameFwhm= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FWHM_IMAGE')
             self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
             self.imageFilename= serviceFileOp.expandToFitImage( self.referenceCatalogue.fitsHDU)
             self.ds9CommandFileName= serviceFileOp.expandToDs9CommandFileName(self.referenceCatalogue.fitsHDU)
-        # ToDo '1' might not be the appropriate summand
-        self.binning= 1 + runTimeConfig.value(runTimeConfig.ccd.binning)
+
         self.maxFwhm= 0.
         self.minFwhm= 0.
         self.maxFlux= 0.
@@ -1284,15 +1291,16 @@ class Catalogues():
             return True
 
     def writeFitInputValues(self):
+        binning= 1+ runTimeConfig.value(runTimeConfig.ccd.binning)
         fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
-            line= "%04d %f\n" % ( focPos, self.averageFwhm[focPos] * self.binning)
+            line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * binning )
             fitInput.write(line)
 
         fitInput.close()
         fitInput= open( self.dataFileNameFlux, 'w')
         for focPos in sorted(self.averageFlux):
-            line= "%04d %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning)
+            line= "%06d %f %f %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFlux[focPos]/self.maxFlux * self.maxFwhm * binning)
             fitInput.write(line)
 
         fitInput.close()
@@ -1352,24 +1360,49 @@ class Catalogues():
             
         fwhm= defaultdict(list)
         flux= defaultdict(list)
+        fluxError= defaultdict(list)
         for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
             if(sxReferenceObject.numberOfMatches== len(self.CataloguesList)):
+                sxReferenceObject.foundInAll= True
                 numberOfObjects += 1
+                i=0
+                # check your input imhead *fits | grep FOC_POS
                 for sxObject in sxReferenceObject.matchedsxObjects:
                     fwhm[sxObject.focusPosition].append(sxObject.fwhm)
                     flux[sxObject.focusPosition].append(sxObject.flux)
-                    sxReferenceObject.foundInAll= True
 
+                    fluxError[sxObject.focusPosition].append(sxObject.fluxError/sxObject.flux)
+                    i += 1
 
         fwhmList=[]
         fluxList=[]
         for focPos in fwhm:
             self.averageFwhm[focPos] = numpy.mean(fwhm[focPos], axis=0)
+            self.stdFwhm[focPos] = numpy.std(fwhm[focPos], axis=0)
             fwhmList.append(self.averageFwhm[focPos])
+                
             
         for focPos in flux:
             self.averageFlux[focPos] = numpy.mean(flux[focPos], axis=0)
+            self.stdFlux[focPos] = numpy.std(fluxError[focPos], axis=0)
+#
+# ToDo: FLUX_MAX, FLUX_APER
+# The standard deviation as above is meaningless
+# Try to find a better error estimator
+#            sumFlux= 0
+#            for val in flux[focPos]:
+#                sumFlux += val
+#
+#            self.averageFlux[focPos]=sumFlux
+#
+#            sumFluxError= 0
+#            for val in fluxError[focPos]:
+#                sumFluxError += math.pow(val, 2)
+#
+#            self.stdFlux[focPos] = math.sqrt(sumFluxError)
+# 
             fluxList.append(self.averageFlux[focPos])
+
 
         try:
             self.maxFwhm= numpy.amax(fwhmList)
@@ -1487,6 +1520,9 @@ class FitsHDU():
 
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
+            if( self.staticHeaderElements['BINNING'] != runTimeConfig.value('BINNING')):
+                logging.warn('headerProperties: fits file {0} the binning is different than in the configuration file'.format( self.fitsFileName))
+                
         except:
             self.isValid= True
             self.assumedBinning=True
@@ -1528,6 +1564,7 @@ class FitsHDU():
         if( not self.extractBinning()):
             self.isValid= False
             return False
+        
         # match the header elements with reference HDU
         if( self.referenceFitsHDU != None):
             if( self.matchStaticHeaderElements(fitsHDU)):
@@ -1567,7 +1604,8 @@ class FitsHDU():
         return False
 
     def extractBinning(self):
-        #ToDo: clumsy
+        #ToDo: clumsy, try ==
+
         pbinning1x1 = re.compile( r'1x1')
         binning1x1 = pbinning1x1.match(self.staticHeaderElements['BINNING'])
         pbinning2x2 = re.compile( r'2x2')
@@ -1665,6 +1703,15 @@ class FitsHDUs():
                 self.isValid= True
         else:
             logging.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+
+        # everything is valid up to now, take any HDU
+        # make sure the the binning is set according to the fits files
+        for hdu in self.fitsHDUsList:
+            if( runTimeConfig.ccd.binning != hdu.staticHeaderElements['BINNING']):
+                runTimeConfig.ccd.binning= hdu.staticHeaderElements['BINNING']
+                logging.warn('headerProperties: setting binning to {0}'.format( runTimeConfig.ccd.binning))
+
+            break
 
         return self.isValid
     def countFocuserPositions(self):

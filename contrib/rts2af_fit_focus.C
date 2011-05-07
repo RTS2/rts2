@@ -33,6 +33,7 @@
 #include <TH2.h>
 #include <TMath.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TMultiGraph.h>
 #include "TStyle.h" //gStyle
 #include <TCanvas.h>
@@ -99,18 +100,18 @@ Double_t one_over_fwhm_temp(Double_t *v, Double_t *par)
   return fitval;
 }
 // read the FWHM, FLUX_MAX files 
-int read_file( char *file, Float_t *foc_pos, Float_t *fv)
+int read_file( char *file, Float_t *foc_pos, Float_t *fv, Float_t *ex, Float_t *ey)
 {
   char line[255];
   FILE *fp ;
   int   number_of_lines=0 ;
-  Float_t foc_pos_i, f_i ;
+  Float_t foc_pos_i, f_i, ex_i, ey_i ;
 
   fp  = fopen( file,"r") ;
  NEXTLINE:    while (fgets( line, 80, fp)) 
     {
-      int ret=sscanf( line, "%e %e ", &foc_pos_i, &f_i) ;
-      if( ret < 2) 
+      int ret=sscanf( line, "%e %e %e %e", &foc_pos_i, &f_i, &ex_i, &ey_i) ;
+      if( ret < 4) 
 	{
 	  printf( "rts2_fit_foc: too few elements on line %d\n", number_of_lines+1) ; 
 	  goto NEXTLINE ;
@@ -119,6 +120,8 @@ int read_file( char *file, Float_t *foc_pos, Float_t *fv)
 	{
 	  foc_pos[number_of_lines]= foc_pos_i;
 	  fv[number_of_lines]= f_i ;
+	  ex[number_of_lines]= ex_i ;
+	  ey[number_of_lines]= ey_i ;
 	  number_of_lines++ ;
 	}
     }
@@ -133,6 +136,8 @@ int main(int argc, char* argv[])
   int   number_of_lines_flux=0 ;
   Float_t foc_pos_fwhm[1000], foc_pos_flux[1000] ;
   Float_t fwhm[1000], flux[1000] ;
+  Float_t fwhm_errx[1000], fwhm_erry[1000] ;
+  Float_t flux_errx[1000], flux_erry[1000] ;
   char *mode            = argv[1] ;
   char *filter          = argv[2] ;
   char *date            = argv[3] ;
@@ -147,12 +152,12 @@ int main(int argc, char* argv[])
     {
       rootapp = new TApplication("fit_focus",&argc, argv);
     }
-  if(( number_of_lines_fwhm= read_file( fwhm_file, &foc_pos_fwhm[0], &fwhm[0])) == 0)
+  if(( number_of_lines_fwhm= read_file( fwhm_file, &foc_pos_fwhm[0], &fwhm[0], &fwhm_errx[0], &fwhm_erry[0])) == 0)
     {
       printf( "no data found in %s, exiting\n", fwhm_file) ;
       return 1 ;
     }
-  if(( number_of_lines_flux= read_file( flux_file, &foc_pos_flux[0], &flux[0])) == 0)
+  if(( number_of_lines_flux= read_file( flux_file, &foc_pos_flux[0], &flux[0], &flux_errx[0], &flux_erry[0])) == 0)
     {
       printf( "no data found in %s, exiting\n", flux_file) ;
       return 1 ;
@@ -181,7 +186,8 @@ int main(int argc, char* argv[])
   //                          *** Break *** segmentation violation
   TMultiGraph *mg = new TMultiGraph("rts2af","");
   // create first graph: FWHM
-  TGraph *gr1 = new TGraph(number_of_lines_fwhm,foc_pos_fwhm,fwhm);
+  
+  TGraphErrors *gr1 = new TGraphErrors(number_of_lines_fwhm,foc_pos_fwhm,fwhm, fwhm_errx, fwhm_erry);
   gr1-> SetMarkerColor(kBlue);
   gr1-> SetMarkerStyle(21);
   //NO: data is asymmetric! TF1 *fit_fwhm = new TF1("y_symmetric_pol4", y_symmetric_pol4, 0., 10000., 3);
@@ -222,7 +228,11 @@ int main(int argc, char* argv[])
   
   // create second graph: FLUX
   // assuming constant flux, the (absolute) value of the maximum of the gaussian is solely a function of FWHM
+  // ToDO: FLUX_MAX, FLUX_APER see rts2af.py 
+  // used if errors will be availabe
+  //  TGraphErrors *gr2 = new TGraphErrors(number_of_lines_flux,foc_pos_flux,flux, flux_errx, flux_erry);
   TGraph *gr2 = new TGraph(number_of_lines_flux,foc_pos_flux,flux);
+
   gr2-> SetMarkerColor(kRed);
   gr2-> SetMarkerStyle(20);
   TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 5);

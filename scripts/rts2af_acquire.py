@@ -211,7 +211,7 @@ class Acquire(rts2af.AFScript):
                         r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, out of limits'.format(fwhmFocPos))
                 else:
                     strings= re.split('\n', fwhmFocPosStr)
-                    r2c.log('E','rts2af_acquire: no match of string FOCUS: ([0-9]+) on string:>>{0}<<:, doing nothing'.format(string[0]))
+                    r2c.log('E','rts2af_acquire: no match of string FOCUS: ([0-9]+) on string:>>{0}<<:, doing nothing'.format(strings[0]))
             else:
                 r2c.log('I','rts2af_acquire: not waiting for fit results for filter: {0}'.format(filter.name))
         else:
