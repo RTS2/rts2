@@ -171,12 +171,12 @@ class main(rts2af.AFScript):
                 else:
                     logging.error("rts2af_analysis.py: could not analyze file: {0}".format(fits))
 
-        # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
+        # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
         if( self.test== True):
             logging.error("rts2af_analysis.py: would fit now: {0}".format(referenceFitsFileName))
         else:
             print '{0}'.format(cats.fitTheValues(configFileName)) # ToDo: not nice
-            sys.stdout.flush()
+# already gone?            sys.stdout.flush()
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()
