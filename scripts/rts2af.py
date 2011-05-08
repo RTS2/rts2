@@ -177,7 +177,7 @@ class Configuration:
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         
-        self.cp[('fitting', 'FOCROOT')]= 'rts2af-fit-focus'
+        self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
@@ -1316,11 +1316,12 @@ class Catalogues():
                 display= '1'
             else:
                 display= '0'
-            cmd= [ runTimeConfig.value('FOCROOT'),
+
+            cmd= [ runTimeConfig.value('FITPRG'),
                    display, 
-#                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
-                   '{0}, T={1}C'.format(self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'], self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
-                   serviceFileOp.now,
+                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                   '{0}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
+                   serviceFileOp.runDateTime,
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
@@ -1521,7 +1522,7 @@ class FitsHDU():
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
             if( self.staticHeaderElements['BINNING'] != runTimeConfig.value('BINNING')):
-                logging.warn('headerProperties: fits file {0} the binning is different than in the configuration file'.format( self.fitsFileName))
+                logging.warn('headerProperties: fits file {0} the binning is different than in the run time configuration'.format( self.fitsFileName))
                 
         except:
             self.isValid= True
@@ -1709,7 +1710,7 @@ class FitsHDUs():
         for hdu in self.fitsHDUsList:
             if( runTimeConfig.ccd.binning != hdu.staticHeaderElements['BINNING']):
                 runTimeConfig.ccd.binning= hdu.staticHeaderElements['BINNING']
-                logging.warn('headerProperties: setting binning to {0}'.format( runTimeConfig.ccd.binning))
+                logging.warn('FitsHDUs.validate: setting binning to {0}'.format( runTimeConfig.ccd.binning))
 
             break
 
@@ -1734,6 +1735,7 @@ class ServiceFileOperations():
             self.runTimePath='/'
         else:
             self.runTimePath= runTimePath
+
     def prefix( self, fileName):
         return 'rts2af-' +fileName
 
@@ -1889,6 +1891,9 @@ class ServiceFileOperations():
 
         for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
             if( fileName in names):
+                if(self.runTimePath == '/'):
+                    self.runDateTime= root.split('/')[-2]
+                    
                 self.runTimePath= root
                 return True
         return False

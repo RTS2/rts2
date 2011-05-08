@@ -134,17 +134,19 @@ int main(int argc, char* argv[])
 {
   int   number_of_lines_fwhm=0 ;
   int   number_of_lines_flux=0 ;
+  char  focStr[32] ;
   Float_t foc_pos_fwhm[1000], foc_pos_flux[1000] ;
   Float_t fwhm[1000], flux[1000] ;
   Float_t fwhm_errx[1000], fwhm_erry[1000] ;
   Float_t flux_errx[1000], flux_erry[1000] ;
   char *mode            = argv[1] ;
   char *filter          = argv[2] ;
-  char *date            = argv[3] ;
-  char *objects         = argv[4] ;
-  char *fwhm_file       = argv[5] ;
-  char *flux_file       = argv[6] ;
-  char *output_file_name= argv[7] ;
+  char *temperature     = argv[3] ;
+  char *date            = argv[4] ;
+  char *objects         = argv[5] ;
+  char *fwhm_file       = argv[6] ;
+  char *flux_file       = argv[7] ;
+  char *output_file_name= argv[8] ;
   TApplication* rootapp ;
   // (non-)interactive mode
   // After the call of this costructor: argc=1, argv=NULL 
@@ -162,6 +164,9 @@ int main(int argc, char* argv[])
       printf( "no data found in %s, exiting\n", flux_file) ;
       return 1 ;
     }
+  // date and temperature of the run
+  fprintf( stderr, "rts2_fit_focus.C: date: %s\n", date);
+  fprintf( stderr, "rts2_fit_focus.C: temperature: %s\n", temperature);
   // make fit results visible
   gStyle-> SetOptFit();
 
@@ -175,12 +180,14 @@ int main(int argc, char* argv[])
   strcpy( title_str, "rts2af, ") ;
   strcat( title_str, filter) ;
   strcat( title_str, ", ") ;
+  strcat( title_str, temperature) ;
+  strcat( title_str, ", ") ;
   strcat( title_str, date) ;
-  strcat( title_str, ", objects ") ;
+  strcat( title_str, ", ob ") ;
   strcat( title_str, objects) ;
 
-  title-> AddText( title_str);
-  title-> Draw();
+  //title-> AddText( title_str);
+  //title-> Draw();
   
   // ToDo: how to deal with: Warning in <Minimize>: TLinearFitter failed in finding the solution
   //                          *** Break *** segmentation violation
@@ -226,6 +233,11 @@ int main(int argc, char* argv[])
   printf( "FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
   printf( "FWHM parameters: chi2 %e, p0...p2 %e %e %e\n", fwhm_chi2, fwhm_p0, fwhm_p1, fwhm_p2) ; 
   
+  sprintf(focStr, "%5d", (int)fwhm_MinimumX) ;
+  strcat( title_str, ", fw ") ;
+  strcat( title_str, focStr) ;
+
+
   // create second graph: FLUX
   // assuming constant flux, the (absolute) value of the maximum of the gaussian is solely a function of FWHM
   // ToDO: FLUX_MAX, FLUX_APER see rts2af.py 
@@ -240,8 +252,6 @@ int main(int argc, char* argv[])
   fit_flux-> SetParNames(  "constant","offset",      "exponent", "tan(alpha)", "fwhm_at_minimum");
   gr2-> Fit(fit_flux,"q");
 
-  mg-> Add(gr2);
-  mg-> Draw("ap");
 
   Double_t flux_chi2   = fit_flux-> GetChisquare();
   Double_t flux_p0     = fit_flux-> GetParameter(0); //constant
@@ -266,6 +276,16 @@ int main(int argc, char* argv[])
   printf( "FLUX_FOCUS %f\n", flux_p1) ; 
   
   printf( "FLUX parameters: chi2 %e, p0...p2 %e %e %e\n", flux_chi2, flux_p0, flux_p1, flux_p2) ; 
+
+  sprintf(focStr, "%5d", (int)flux_p1) ;
+  strcat( title_str, ", fl ") ;
+  strcat( title_str, focStr) ;
+
+  title-> AddText( title_str);
+  title-> Draw();
+
+  mg-> Add(gr2);
+  mg-> Draw("ap");
 
   // make the plot nicer
   // must follow mg-> Draw
