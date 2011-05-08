@@ -72,7 +72,9 @@ int Davis::idle ()
 		{
 			logStream (MESSAGE_ERROR) << "Weather station did not send any data for " << connTimeout->getValueInteger () << " seconds, switching to bad weather" << sendLog;
 		}
-		setWeatherTimeout (300, "cannot retrieve information from Davis sensor within last 3 minutes");
+		std::ostringstream os;
+		os << "cannot retrieve information from Davis sensor within last " << connTimeout->getValueInteger () << " seconds";
+		setWeatherTimeout (300, os.str ().c_str ());
 	}
 	return SensorWeather::idle ();
 }
