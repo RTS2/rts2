@@ -83,9 +83,9 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
         if(hdu.headerProperties()):
-            print "append "+ hdu.fitsFileName
+            logging.info('rts2af_fwhm.py: appending: {0}'.format(hdu.fitsFileName))
         else:
-            print "append not "
+            logging.info('rts2af_fwhm.py: exiting due to invalid header properties inf file:{0}'.format(hdu.fitsFileName))
 
         cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
 
@@ -93,10 +93,11 @@ class main(rts2af.AFScript):
         cat.createCatalogue()
         cat.cleanUpReference()
 
-        cat.average('FWHM_IMAGE')
+        fwhm= cat.average('FWHM_IMAGE')
+        logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
+
         # does not work yet cat.ds9WriteRegionFile(writeSelected=True)
         #cat.displayCatalogue()
-
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

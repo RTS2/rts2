@@ -316,7 +316,8 @@ class Configuration:
             try:
                 value = config.get( section, identifier)
             except:
-                logging.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
+                pass
+                #logging.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
             # overwrite the default configuration (if needed)
             self.cp[( section,  identifier)]= value
 
@@ -915,11 +916,11 @@ class Catalogue():
 
         #if(verbose):
         if( i != 0):
-            print 'average at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
+            #print 'average at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
             return (sum/ float(i))
         else:
             print 'Error in average i=0'
-            return False
+            return None
     def averageFWHM(self, selection="all"):
         sum= 0
         i= 0
