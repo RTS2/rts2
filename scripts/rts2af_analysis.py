@@ -60,15 +60,6 @@ class main(rts2af.AFScript):
 
         runTimeConfig.readConfiguration(configFileName)
 
-        if( args.referenceFitsFileName):
-            referenceFitsFileName = args.referenceFitsFileName[0]
-            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                print 'FOCUS: -1'
-                sys.stdout.flush()
-
-                logging.error('rts2af_analysis.py: reference file: '+ referenceFitsFileName + ' not found in base directory: ' + runTimeConfig.value('BASE_DIRECTORY' + ', exiting'))
-                sys.exit(1)
-
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
@@ -82,6 +73,14 @@ class main(rts2af.AFScript):
 
 # create the reference catalogue
         referenceFitsFileName = sys.stdin.readline()
+
+        if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
+            print 'FOCUS: -1'
+            sys.stdout.flush()
+
+            logging.error('rts2af_analysis.py: reference file: '+ referenceFitsFileName + ' not found in base directory: ' + runTimeConfig.value('BASE_DIRECTORY' + ', exiting'))
+            sys.exit(1)
+
 
         if( self.test== True):
             logging.info("rts2af_analysis.py: got reference file: {0}".format(referenceFitsFileName))
@@ -175,7 +174,7 @@ class main(rts2af.AFScript):
         if( self.test== True):
             logging.error("rts2af_analysis.py: would fit now: {0}".format(referenceFitsFileName))
         else:
-            print '{0}'.format(cats.fitTheValues(configFileName)) # ToDo: not nice
+            print '{0}'.format(cats.fitTheValues()) # ToDo: not nice
 # already gone?            sys.stdout.flush()
 
 if __name__ == '__main__':

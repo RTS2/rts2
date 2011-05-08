@@ -96,6 +96,13 @@ class main(rts2af.AFScript):
         fwhm= cat.average('FWHM_IMAGE')
         logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
 
+        threshFwhm= 4.
+        if( fwhm > threshFwhm):
+            r2c.setValue('next', 5, 'EXEC')
+            logging.info('rts2af_fwhm.py: queueing a focus run at EXEC next, fwhm :{0}, threshold: {1}'.format(fwhm, threshFwhm))
+        else:
+            logging.info('rts2af_fwhm.py: no focus run necessary, fwhm :{0}, threshold: {1}'.format(fwhm, threshFwhm))
+
         # does not work yet cat.ds9WriteRegionFile(writeSelected=True)
         #cat.displayCatalogue()
 

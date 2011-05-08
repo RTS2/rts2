@@ -164,9 +164,6 @@ int main(int argc, char* argv[])
       printf( "no data found in %s, exiting\n", flux_file) ;
       return 1 ;
     }
-  // date and temperature of the run
-  fprintf( stderr, "rts2_fit_focus.C: date: %s\n", date);
-  fprintf( stderr, "rts2_fit_focus.C: temperature: %s\n", temperature);
   // make fit results visible
   gStyle-> SetOptFit();
 
@@ -222,6 +219,11 @@ int main(int argc, char* argv[])
   Double_t fwhm_p3_err = fit_fwhm-> GetParError(4);
   Double_t fwhm_p4     = fit_fwhm-> GetParameter(4);
   Double_t fwhm_p4_err = fit_fwhm-> GetParError(4);
+
+  // date and temperature of the run
+  fprintf( stderr, "rts2_fit_focus.C: date: %s\n", date);
+  fprintf( stderr, "rts2_fit_focus.C: temperature: %s\n", temperature);
+
   fprintf( stderr, "rts2_fit_focus.C: result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
 
   Double_t fwhm_MinimumX = fit_fwhm-> GetMinimumX() ;

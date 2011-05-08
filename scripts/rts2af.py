@@ -1,11 +1,8 @@
 """Class definitions for rts2_autofocus"""
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
-#   usage 
-#   rts_autofocus.py --help
 #   
-#   see man 1 rts2_autofocus.py
-#   see rts2_autofocus_unittest.py for unit tests
+#   see man 1 rts2af.py
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -1306,7 +1303,7 @@ class Catalogues():
 
         fitInput.close()
 
-    def fitTheValues(self, configFileName=None):
+    def fitTheValues(self):
 # ToDo: think about a better solution for  configFileName
 
         if( self.countObjectsFoundInAllFiles()):
@@ -1327,26 +1324,21 @@ class Catalogues():
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
                    self.imageFilename]
-        
+
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-            if( configFileName==None):
-                # offline mode
+            fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
+            if(fitResultFileName==None):
+                # if something really went wrong
                 return 'FOCUS: {0}'.format(output[0].split()[1])
             else:
-                # acquire mode
-                fitResultFileName= serviceFileOp.reconstructFitResultPath(configFileName) 
-                if(fitResultFileName==None):
-                    # if something really went wrong
-                    return 'FOCUS: {0}'.format(output[0].split()[1])
-                else:
-                    # ToDo: discuss with Petr
-                    with open( fitResultFileName, 'a') as frfn:
-                        for item in output:
-                            frfn.write(item)
+                # ToDo: discuss with Petr
+                with open( fitResultFileName, 'a') as frfn:
+                    for item in output:
+                        frfn.write(item)
 
                     frfn.close()
-                    return 'FOCUS: {0}'.format(output[0].split()[1])
+            return 'FOCUS: {0}'.format(output[0].split()[1])
 
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')
@@ -1737,6 +1729,8 @@ class ServiceFileOperations():
         else:
             self.runTimePath= runTimePath
 
+        self.runDateTime=None
+
     def prefix( self, fileName):
         return 'rts2af-' +fileName
 
@@ -1868,26 +1862,12 @@ class ServiceFileOperations():
 
         return self.expandToTmp(fileName + self.now + '.fit')
 
-    def reconstructFitResultPath(self, configFileName):
-        # If the configuration file name of the present process has a time stamp, like
-        # /tmp/rts2af-acquire-V-2011-04-22T11:32:20.061022.cfg
-        # then it was created by rts2af_acquire.py
-        # This timestamp is used to identify an existing file which contains the results
-        # of a given focus run, e.g. the filters U:B:V:...
-        # this is appropriate but not real good idea.
-        date= re.search( r'([0-9]{1,4}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}\.[0-9]{1,6})\.cfg', configFileName)
-        originator= re.search(r'rts2af-(\w+)-', configFileName)
-
-        if(date==None or originator==None):
-            return None
-        else:
-            return self.expandToTmp( '{0}{1}.fit'.format(originator.group(0), date.group(1)))
-
     def createAcquisitionBasePath(self, filter=None):
         os.makedirs( self.expandToAcquisitionBasePath( filter))
         
     def defineRunTimePath(self, fileName=None):
         if( self.absolutePath(fileName)):
+            self.runDateTime= fileName.split('/')[-3]
             return fileName
 
         for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
