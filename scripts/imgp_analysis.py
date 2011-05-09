@@ -36,6 +36,8 @@ import subprocess
 import re
 import logging
 
+logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
 class ImgpAnalysis():
     """called by IMGP to to astrometric calibration, and fwhm determination"""
 
@@ -68,6 +70,7 @@ class ImgpAnalysis():
         return subpr
 
     def run(self):
+        logging.info( 'imgp_analysis.py: starting')
 
         cmd= [  self.fwhmCmd,
                 '--config',
@@ -87,12 +90,13 @@ class ImgpAnalysis():
         astrometryLine= astrometryLine[0].split('\n')
 # tell the result IMGP
         print '{0}'.format(astrometryLine[0])
+        logging.info( 'imgp_analysis.py: ending')
 
 if __name__ == "__main__":
     if( len(sys.argv)== 2):
         imgp_analysis= ImgpAnalysis(scriptName=sys.argv[0], fitsFileName=sys.argv[1])
     else:
-        print 'exiting, no fits file name given'
+        print 'imgp_analysis.py: exiting, no fits file name given'
         sys.exit(1)
 
     imgp_analysis.run()

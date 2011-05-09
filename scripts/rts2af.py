@@ -84,7 +84,7 @@ class AFScript:
         self.logformat= '%(asctime)s %(levelname)s %(message)s'
 
         if(self.args.logTo[0] == '-'):
-            logging.basicConfig(level=logging.WARN, format='%(asctime)s %(levelname)s %(message)s')
+            logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
         else:
             logging.basicConfig(filename=self.args.logTo[0], level=logging.INFO, format= self.logformat)
 

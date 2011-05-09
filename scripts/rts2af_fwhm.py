@@ -2,7 +2,7 @@
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   find /pathe/to/fits -name "*fits" -exec rts2af_fwhm.py  --config rts2-autofocus-offline.cfg --reference {} \; 
+#   find /path/to/fits -name "*fits" -exec rts2af_fwhm.py  --config rts2-autofocus-offline.cfg --reference {} \; 
 #   
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ import string
 import sys
 import time
 import logging
+import subprocess
 from operator import itemgetter, attrgetter
 
 
@@ -41,6 +42,10 @@ import numpy
 import pyfits
 import rts2comm 
 import rts2af 
+
+
+r2c= rts2comm.Rts2Comm()
+
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
@@ -57,7 +62,7 @@ class main(rts2af.AFScript):
             configFileName= args.fileName[0]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            logging.info('rts2af_fwhm.py: no config file specified, taking default: ' + configFileName)
+            logging.debug('rts2af_fwhm.py: no config file specified, taking default: ' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
 
@@ -83,9 +88,10 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
         if(hdu.headerProperties()):
-            logging.info('rts2af_fwhm.py: appending: {0}'.format(hdu.fitsFileName))
+            logging.debug('rts2af_fwhm.py: appending: {0}'.format(hdu.fitsFileName))
         else:
-            logging.info('rts2af_fwhm.py: exiting due to invalid header properties inf file:{0}'.format(hdu.fitsFileName))
+            logging.error('rts2af_fwhm.py: exiting due to invalid header properties inf file:{0}'.format(hdu.fitsFileName))
+            sys.exit(1)
 
         cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
 
@@ -95,19 +101,36 @@ class main(rts2af.AFScript):
 
         fwhm= cat.average('FWHM_IMAGE')
         logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
+        # no need
+        #print 'rts2af_fwhm.py, FWHM:{0}'.format(fwhm)
+        #sys.stdout.flush()
 
-        threshFwhm= 4.
-        if( fwhm > threshFwhm):
-            r2c.setValue('next', 5, 'EXEC')
-            logging.info('rts2af_fwhm.py: queueing a focus run at EXEC next, fwhm :{0}, threshold: {1}'.format(fwhm, threshFwhm))
+        if( hdu.staticHeaderElements['FILTER']=='X'): #ToDo search for a more general solution, e.g. via filter object
+            threshFwhm= 3.4
+            if( fwhm > threshFwhm):
+                #r2c.setValue('next', 5, 'EXEC')
+                # plain wrong were are not talking to rts2, use rts2-scriptexec
+                cmd= [ 'rts2-scriptexec',
+                       '-d',
+                       'CCD_FLI', # ToDo it is not CCD_FLI
+                       '-s',
+                       ' exe /usr/local/src/rts-2-head/scripts/rts2af_exec.py  '
+                   ]
+                # do not wait, this process lives until, e.g. the focus run has terminated.
+                # supress output from this process
+                fnull = open(os.devnull, 'w')
+                proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
+                # let rts2-scriptexec do its inital job
+                # it waits until the with the target associated script has been completed 
+                time.sleep(10) 
+                logging.info('rts2af_fwhm.py: queued a focus run at EXEC next, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
+            else:
+                logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
         else:
-            logging.info('rts2af_fwhm.py: no focus run necessary, fwhm :{0}, threshold: {1}'.format(fwhm, threshFwhm))
+            logging.info('rts2af_fwhm.py: queueing focus run only for filter: X: not for {0}'.format(hdu.staticHeaderElements['FILTER']))
 
-        # does not work yet cat.ds9WriteRegionFile(writeSelected=True)
+        #ToDo does not work yet cat.ds9WriteRegionFile(writeSelected=True)
         #cat.displayCatalogue()
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()
-
-
-
