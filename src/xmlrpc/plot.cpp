@@ -74,7 +74,8 @@ void Plot::plotYDegrees ()
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);
-	image->strokeColor ("red");
+	image->fillColor ("red");
+	image->strokeColor ("white");
 
 	bool crossed0 = false;
 
@@ -87,7 +88,7 @@ void Plot::plotYDegrees ()
 		_os << LibnovaDegDist (y + min);
 		if (!crossed0 && y + min > 0)
 		{
-			image->strokeColor ("blue");
+			image->fillColor ("blue");
 			crossed0 = true;
 		}
 		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
@@ -134,7 +135,8 @@ void Plot::plotYDouble ()
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);
-	image->strokeColor ("red");
+	image->fillColor ("red");
+	image->strokeColor ("white");
 
 	bool crossed0 = false;
 
@@ -148,7 +150,7 @@ void Plot::plotYDouble ()
 		_os << y + min;
 		if (!crossed0 && y + min > 0)
 		{
-			image->strokeColor ("blue");
+			image->fillColor ("blue");
 			crossed0 = true;
 		}
 		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
@@ -182,12 +184,12 @@ void Plot::plotYBoolean ()
 	// 0 label..
 	pat.pixelColor (1,0, "red");
 	image->strokePattern (pat);
-	image->strokeColor ("red");
+	image->fillColor ("red");
 
 	plotYGrid (size.height () + min * scaleY);
 
 	// true label..
-	image->strokeColor ("green");
+	image->fillColor ("green");
 	pat.pixelColor (1,0, "green");
 	image->strokePattern (pat);
 
@@ -218,12 +220,12 @@ void Plot::plotXSunAlt ()
 		{
 			if (hrz.alt < nh)
 			{
-				image->strokeColor ("black");
+				image->fillColor ("black");
 			}
 			else
 			{
 				double p = (hrz.alt - nh) / (dh - nh);
-				image->strokeColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p, 0));
+				image->fillColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p, 0));
 			}
 			image->draw (Magick::DrawableLine (x, 0, x, size.height () - 22));
 		}
@@ -290,7 +292,8 @@ void Plot::plotXDate (bool shadowSun)
 	image->strokePattern (pat1);
 	image->strokeWidth (1);
 	image->fontPointsize (12);
-	image->strokeColor ("black");
+	image->fillColor ("black");
+	image->strokeColor ("white");
 
 	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
 	{
