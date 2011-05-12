@@ -28,6 +28,8 @@ namespace rts2sensord
 /**
  * Class for Phytron stepper motor controllers.
  *
+ * MiniLog is documented in: ftp://ftp.phytron.de/manuals/ixe-sls/minilog-ixe-sam-gb.pdf
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class Phytron:public Sensor
@@ -54,10 +56,12 @@ class Phytron:public Sensor
 		rts2core::ValueInteger* axis0;
 		rts2core::ValueInteger* runFreq;
 		rts2core::ValueSelection* phytronParams[47];
+		rts2core::ValueBool* power;
 
 		int readValue (int ax, int reg, rts2core::ValueInteger *val);
 		int readAxis ();
 		int setValue (int ax, int reg, rts2core::ValueInteger *val);
+		int setPower (bool on);
 		int setAxis (int new_val);
 		const char *dev;
 };
@@ -146,6 +150,16 @@ int Phytron::setValue (int ax, int reg, rts2core::ValueInteger *val)
 	return ret;
 }
 
+int Phytron::setPower (bool on)
+{
+	int ret = writePort (on ? "0XMA" : "0XMD");
+	//if (ret < 0)
+	//	return ret;
+	//ret = writePort ("XMAR");
+	//ret = readPort ();
+	return ret;
+}
+
 int Phytron::setAxis (int new_val)
 {
 	int ret;
@@ -174,6 +188,8 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 	createValue (runFreq, "RUNFREQ", "current run frequency", true, RTS2_VALUE_WRITABLE);
 	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0);
 
+	createValue (power, "power", "axis power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
 		((rts2core::ValueSelection *) phytronParams[0])->addSelVal ("rotational");
@@ -199,6 +215,8 @@ int Phytron::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		return setAxis (new_value->getValueInteger ());
 	if (old_value == runFreq)
 		return setValue (1, 14, (rts2core::ValueInteger *)new_value);
+	if (old_value == power)
+		return setPower (((rts2core::ValueBool *) new_value)->getValueBool ()) < 0 ? -2 : 0;
 	return Sensor::setValue (old_value, new_value);
 }
 
