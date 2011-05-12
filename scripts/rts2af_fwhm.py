@@ -101,12 +101,10 @@ class main(rts2af.AFScript):
 
         fwhm= cat.average('FWHM_IMAGE')
         logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
-        # no need
-        #print 'rts2af_fwhm.py, FWHM:{0}'.format(fwhm)
-        #sys.stdout.flush()
 
-        if( hdu.staticHeaderElements['FILTER']=='X'): #ToDo search for a more general solution, e.g. via filter object
-            threshFwhm= 3.4
+        filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
+        if( filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOFILTER or X
+            threshFwhm= 13.4
             if( fwhm > threshFwhm):
                 #r2c.setValue('next', 5, 'EXEC')
                 # plain wrong were are not talking to rts2, use rts2-scriptexec
@@ -127,7 +125,8 @@ class main(rts2af.AFScript):
             else:
                 logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
         else:
-            logging.info('rts2af_fwhm.py: queueing focus run only for filter: X: not for {0}'.format(hdu.staticHeaderElements['FILTER']))
+            # a focus run sets FOC_DEF and that is without filter
+            logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), used filter {0}'.format(filter.name))
 
         #ToDo does not work yet cat.ds9WriteRegionFile(writeSelected=True)
         #cat.displayCatalogue()

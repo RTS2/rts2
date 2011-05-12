@@ -81,16 +81,24 @@ class ImgpAnalysis():
                 self.fitsFileName,
                 ]
 # no time to waste, the decision if a focus run is triggered is done elsewhere
-        fwhmLine= self.spawnProcess(cmd, False)
+        try:
+            fwhmLine= self.spawnProcess(cmd, False)
+        except:
+            logging.error( 'imgp_analysis.py: starting suprocess: {0} failed, continuing with astrometrical calibration'.format(cmd))
+
         cmd= [  self.astrometryCmd,
                 self.fitsFileName,
                 ]
 # this process is hopefully started in parallel on the second core if any.
-        astrometryLine= self.spawnProcess(cmd, True).communicate()
-        astrometryLine= astrometryLine[0].split('\n')
-# tell the result IMGP
-        print '{0}'.format(astrometryLine[0])
-        logging.info( 'imgp_analysis.py: ending')
+        try:
+            astrometryLine= self.spawnProcess(cmd, True).communicate()
+            astrometryLine= astrometryLine[0].split('\n')
+            # tell the result IMGP
+            print '{0}'.format(astrometryLine[0])
+            logging.info( 'imgp_analysis.py: ending, result: {0}'.format(astrometryLine[0]))
+        except:
+            logging.error( 'imgp_analysis.py: ending, reading from astrometry pipe failed')
+            
 
 if __name__ == "__main__":
     if( len(sys.argv)== 2):

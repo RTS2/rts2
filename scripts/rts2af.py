@@ -118,8 +118,8 @@ class Configuration:
         self.config = ConfigParser.RawConfigParser()
         
         self.cp[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2af/rts2af-acquire.cfg'
-        self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp'
-        self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp'
+        self.cp[('basic', 'BASE_DIRECTORY')]= '/tmp/focus'
+        self.cp[('basic', 'TEMP_DIRECTORY')]= '/tmp/focus/tmp'
         self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.cp[('basic', 'DEFAULT_FOC_POS')]= 3500
@@ -177,10 +177,10 @@ class Configuration:
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
         
-        self.cp[('SExtractor', 'SEXPRG')]= 'sex 2>/dev/null'
-        self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/autofocus/sex-autofocus.cfg'
-        self.cp[('SExtractor', 'SEXPARAM')]= '/etc/rts2/autofocus/sex-autofocus.param'
-        self.cp[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/autofocus/sex-autofocus-reference.param'
+        self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
+        self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2af/sex/rts2af-sex.cfg'
+        self.cp[('SExtractor', 'SEXPARAM')]= '/etc/rts2/rts2af/sex/rts2af-sex.param'
+        self.cp[('SExtractor', 'SEXREFERENCE_PARAM')]= '/etc/rts2/rts2af/sex/rts2af-sex.param'
         self.cp[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
         self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3

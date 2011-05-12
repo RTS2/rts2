@@ -68,7 +68,7 @@ class main(rts2af.AFScript):
             print 'FOCUS: -1'
             sys.stdout.flush()
             
-            logging.error( "rts2af_analysis.py: no paramsSexctractor found, exiting")
+            logging.error( 'rts2af_analysis.py: no paramsSexctractor found, exiting')
             sys.exit(1)
 
 # create the reference catalogue
@@ -83,7 +83,7 @@ class main(rts2af.AFScript):
 
 
         if( self.test== True):
-            logging.info("rts2af_analysis.py: got reference file: {0}".format(referenceFitsFileName))
+            logging.info('rts2af_analysis.py: got reference file: {0}'.format(referenceFitsFileName))
         else:
             hdur= rts2af.FitsHDU(referenceFitsFileName)
 
@@ -132,29 +132,29 @@ class main(rts2af.AFScript):
             try:
                 fits= sys.stdin.readline()
             except:
-                logging.info("rts2af_analysis.py: got EOF, breaking")
+                logging.info('rts2af_analysis.py: got EOF, breaking')
                 break
 
             if( fits==None):
-                logging.info("rts2af_analysis.py: got None, breaking")
+                logging.info('rts2af_analysis.py: got None, breaking')
                 break
             
             quit_match= re.search( r'^Q', fits)
             if( not quit_match==None): 
-                logging.info("rts2af_analysis.py: got Q, breaking")
+                logging.info('rts2af_analysis.py: got Q, breaking')
                 break
 
             if(len(fits) < 10):
-                logging.info("rts2af_analysis.py: got short, breaking")
+                logging.info('rts2af_analysis.py: got short, breaking')
                 break
 
             if( self.test== True):
-                logging.error("rts2af_analysis.py: got file >>{0}<<".format(fits))
+                logging.error('rts2af_analysis.py: got file >>{0}<<'.format(fits))
             else:
                 hdu= rts2af.FitsHDU( fits, hdur)
                 if(hdu.headerProperties()):
                     if(rts2af.verbose):
-                        logging.error("rts2af_analysis.py: append "+ hdu.fitsFileName)
+                        logging.error('rts2af_analysis.py: append '+ hdu.fitsFileName)
                     HDUs.fitsHDUsList.append(hdu)
 
                     cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
@@ -166,15 +166,17 @@ class main(rts2af.AFScript):
                     if( cat.matching()):
                         cats.CataloguesList.append(cat)
                     else:
-                        logging.error("rts2af_analysis.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file: "+ hdu.fitsFileName)
+                        logging.error('rts2af_analysis.py: discarded catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
                 else:
-                    logging.error("rts2af_analysis.py: could not analyze file: {0}".format(fits))
+                    logging.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
 
         # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
         if( self.test== True):
-            logging.error("rts2af_analysis.py: would fit now: {0}".format(referenceFitsFileName))
+            logging.error('rts2af_analysis.py: would fit now: {0}'.format(referenceFitsFileName))
         else:
-            print '{0}'.format(cats.fitTheValues()) # ToDo: not nice
+            focusPosition= cats.fitTheValues()
+            print '{0}'.format(focusPosition)
+            logging.info('rts2af_analysis.py: fit result {0}'.format(focusPosition))
 # already gone?            sys.stdout.flush()
 
 if __name__ == '__main__':
