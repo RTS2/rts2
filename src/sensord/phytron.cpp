@@ -41,6 +41,8 @@ class Phytron:public Sensor
 		virtual int init ();
 		virtual int info ();
 
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
@@ -56,6 +58,7 @@ class Phytron:public Sensor
 		rts2core::ValueInteger* axis0;
 		rts2core::ValueInteger* runFreq;
 		rts2core::ValueInteger* systemStatus;
+		rts2core::ValueInteger* systemStatusExtended;
 		rts2core::ValueSelection* phytronParams[47];
 		rts2core::ValueBool* power;
 
@@ -197,6 +200,7 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 	createValue (runFreq, "RUNFREQ", "current run frequency", true, RTS2_VALUE_WRITABLE);
 	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0);
 	createValue (systemStatus, "SB", "system status", false, RTS2_DT_HEX);
+	createValue (systemStatusExtended, "SE", "system status extended", false, RTS2_DT_HEX);
 
 	createValue (power, "power", "axis power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
@@ -252,7 +256,6 @@ int Phytron::init ()
 		return ret;
 
 	phytronDev = new rts2core::ConnSerial (dev, this, rts2core::BS57600, rts2core::C8, rts2core::NONE, 200);
-	phytronDev->setDebug (true);
 	ret = phytronDev->init ();
 	if (ret)
 		return ret;
@@ -277,7 +280,27 @@ int Phytron::info ()
 	if (ret)
 		return ret;
 	systemStatus->setValueInteger (strtol (cmdbuf + 2, NULL, 2));
+
+	ret = readValue ("0SE");
+	if (ret)
+		return ret;
+	cmdbuf[6] = '\0';
+	systemStatusExtended->setValueInteger (strtol (cmdbuf + 2, NULL, 16));
 	return Sensor::info ();
+}
+
+int Phytron::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		if (readValue ("0XC"))
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "hardware error - cannot reset X axe");
+			return -1;
+		}
+		return 0;
+	}
+	return Sensor::commandAuthorized (conn);
 }
 
 int main (int argc, char **argv)
