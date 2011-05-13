@@ -199,6 +199,9 @@ class Paramount:public GEM
 
 		rts2core::ValueBool *tracking;
 
+		rts2core::ValueBool *motorRa;
+		rts2core::ValueBool *motorDec;
+
 		CWORD32 park_axis[2];
 
 		int checkRetAxis (const MKS3Id & axis, int reta);
@@ -497,6 +500,9 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 
 	createValue (relDec, "REL_DEC", "[???] DEC relative position", false, RTS2_VALUE_WRITABLE);
 	relDec->setValueLong (0);
+
+	createValue (motorRa, "motor_RA", "RA motor state", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	createValue (motorDec, "motor_DEC", "DEC motor state", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -853,7 +859,6 @@ int Paramount::info ()
 	axRa->setValueLong (ac);
 	axDec->setValueLong (dc);
 
-
 	ret = getHomeOffsetAxis (axis0, ac);
 	if (ret)
 		return ret;
@@ -878,6 +883,12 @@ int Paramount::info ()
 	ret = getParamountValue32 (CMD_VAL32_CREEP_VEL, creepRa, creepDec);
 	if (ret)
 		return ret;
+
+	ret = updateStatus ();
+	if (ret)
+		return ret;
+	motorRa->setValueBool (!(status0 && MOTOR_OFF));
+	motorDec->setValueBool (!(status1 && MOTOR_OFF));
 
 	return GEM::info ();
 }
@@ -1173,6 +1184,10 @@ int Paramount::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return setParamountValue32 (CMD_VAL32_RELPOS, newValue, relDec) ? -2 : 0;
 	if (oldValue == relDec)
 		return setParamountValue32 (CMD_VAL32_RELPOS, relRa, newValue) ? -2 : 0;
+	if (oldValue == motorRa)
+		return (((rts2core::ValueBool *) newValue)->getValueBool () ? MKS3MotorOn (axis0) : MKS3MotorOff (axis0)) == MKS_OK ? 0 : -2;
+	if (oldValue == motorDec)
+		return (((rts2core::ValueBool *) newValue)->getValueBool () ? MKS3MotorOn (axis1) : MKS3MotorOff (axis1)) == MKS_OK ? 0 : -2;
 
 	return Telescope::setValue (oldValue, newValue);
 }
