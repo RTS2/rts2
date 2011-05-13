@@ -55,9 +55,11 @@ class Phytron:public Sensor
 
 		rts2core::ValueInteger* axis0;
 		rts2core::ValueInteger* runFreq;
+		rts2core::ValueInteger* systemStatus;
 		rts2core::ValueSelection* phytronParams[47];
 		rts2core::ValueBool* power;
 
+		int readValue (const char *cmd);
 		int readValue (int ax, int reg, rts2core::ValueInteger *val);
 		int readAxis ();
 		int setValue (int ax, int reg, rts2core::ValueInteger *val);
@@ -102,11 +104,9 @@ int Phytron::readPort ()
 	return phytronDev->readPort (cmdbuf, CMDBUF_LEN, '\003') > 0 ? 0 : -1;
 }
 
-int Phytron::readValue (int ax, int reg, rts2core::ValueInteger *val)
+int Phytron::readValue (const char *cmd)
 {
-	char buf[50];
-	snprintf (buf, 50, "%02iP%2iR", ax, reg);
-	int ret = writePort (buf);
+	int ret = writePort (cmd);
 	if (ret < 0)
 		return ret;
 
@@ -122,6 +122,16 @@ int Phytron::readValue (int ax, int reg, rts2core::ValueInteger *val)
 		logStream (MESSAGE_ERROR) << "Invalid header" << sendLog;
 		return -1;
 	}
+	return 0;
+}
+
+int Phytron::readValue (int ax, int reg, rts2core::ValueInteger *val)
+{
+	char buf[50];
+	snprintf (buf, 50, "%02iP%2iR", ax, reg);
+	int ret = readValue (buf);
+	if (ret)
+		return ret;
 	int ival = atoi (cmdbuf + 2);
 	val->setValueInteger (ival);
 	return 0;
@@ -153,10 +163,9 @@ int Phytron::setValue (int ax, int reg, rts2core::ValueInteger *val)
 int Phytron::setPower (bool on)
 {
 	int ret = writePort (on ? "0XMA" : "0XMD");
-	//if (ret < 0)
-	//	return ret;
-	//ret = writePort ("XMAR");
-	//ret = readPort ();
+	if (ret < 0)
+		return ret;
+	ret = readPort ();
 	return ret;
 }
 
@@ -187,6 +196,7 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 
 	createValue (runFreq, "RUNFREQ", "current run frequency", true, RTS2_VALUE_WRITABLE);
 	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0);
+	createValue (systemStatus, "SB", "system status", false, RTS2_DT_HEX);
 
 	createValue (power, "power", "axis power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
@@ -242,6 +252,7 @@ int Phytron::init ()
 		return ret;
 
 	phytronDev = new rts2core::ConnSerial (dev, this, rts2core::BS57600, rts2core::C8, rts2core::NONE, 200);
+	phytronDev->setDebug (true);
 	ret = phytronDev->init ();
 	if (ret)
 		return ret;
@@ -262,6 +273,10 @@ int Phytron::info ()
 	ret = readAxis ();
 	if (ret)
 		return ret;
+	ret = readValue ("0SB");
+	if (ret)
+		return ret;
+	systemStatus->setValueInteger (strtol (cmdbuf + 2, NULL, 2));
 	return Sensor::info ();
 }
 
