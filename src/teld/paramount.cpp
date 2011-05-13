@@ -887,8 +887,8 @@ int Paramount::info ()
 	ret = updateStatus ();
 	if (ret)
 		return ret;
-	motorRa->setValueBool (!(status0 && MOTOR_OFF));
-	motorDec->setValueBool (!(status1 && MOTOR_OFF));
+	motorRa->setValueBool (!(status0 & MOTOR_OFF));
+	motorDec->setValueBool (!(status1 & MOTOR_OFF));
 
 	return GEM::info ();
 }
