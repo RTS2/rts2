@@ -1,6 +1,7 @@
 /* 
  * Driver for Phytron stepper motor controlers.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -68,6 +69,8 @@ class Phytron:public Sensor
 		int setValue (int ax, int reg, rts2core::ValueInteger *val);
 		int setPower (bool on);
 		int setAxis (int new_val);
+		int updateStatus (bool sendValues);
+		int sendReset ();
 		const char *dev;
 };
 
@@ -169,6 +172,10 @@ int Phytron::setPower (bool on)
 	if (ret < 0)
 		return ret;
 	ret = readPort ();
+	// if updated to on..
+	if (on)
+		ret = sendReset ();
+	updateStatus (true);
 	return ret;
 }
 
@@ -189,6 +196,31 @@ int Phytron::setAxis (int new_val)
 	}
 	while (axis0->getValueInteger () != new_val);
 	logStream (MESSAGE_DEBUG) << "axis reached " << new_val << sendLog;
+	return 0;
+}
+
+int Phytron::sendReset ()
+{
+	return readValue ("0XC");
+}
+
+int Phytron::updateStatus (bool sendValues)
+{
+	int ret = readValue ("0SB");
+	if (ret)
+		return ret;
+	systemStatus->setValueInteger (strtol (cmdbuf + 2, NULL, 2));
+
+	ret = readValue ("0SE");
+	if (ret)
+		return ret;
+	cmdbuf[6] = '\0';
+	systemStatusExtended->setValueInteger (strtol (cmdbuf + 2, NULL, 16));
+	if (sendValues)
+	{
+		sendValueAll (systemStatus);
+		sendValueAll (systemStatusExtended);
+	}
 	return 0;
 }
 
@@ -276,16 +308,9 @@ int Phytron::info ()
 	ret = readAxis ();
 	if (ret)
 		return ret;
-	ret = readValue ("0SB");
+	ret = updateStatus (false);
 	if (ret)
 		return ret;
-	systemStatus->setValueInteger (strtol (cmdbuf + 2, NULL, 2));
-
-	ret = readValue ("0SE");
-	if (ret)
-		return ret;
-	cmdbuf[6] = '\0';
-	systemStatusExtended->setValueInteger (strtol (cmdbuf + 2, NULL, 16));
 	return Sensor::info ();
 }
 
@@ -293,7 +318,7 @@ int Phytron::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("reset"))
 	{
-		if (readValue ("0XC"))
+		if (sendReset ())
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "hardware error - cannot reset X axe");
 			return -1;
