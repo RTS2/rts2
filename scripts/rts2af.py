@@ -144,7 +144,7 @@ class Configuration:
         self.cp[('filter properties', 'f0c')]= '[f, 1446, -1500, 1500, 100, 1.]'
         self.cp[('filter properties', 'f0d')]= '[g, 1446, -1500, 1500, 100, 1.]'
         self.cp[('filter properties', 'f0e')]= '[h, 1446, -1500, 1500, 100, 1.]'
-        self.cp[('filter properties', 'nofilter')]= '[NOFILTER, 0, -1500, 1500, 100, 1.]'
+        self.cp[('filter properties', 'nof')]= '[NOF, 0, -1500, 1500, 100, 1.]'
         
 
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
@@ -171,7 +171,7 @@ class Configuration:
         self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
         self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
         self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
-        self.cp[('analysis', 'FIT_RESULT_FILE')]= 'fit-autofocus.dat'
+        self.cp[('analysis', 'FIT_RESULT_FILE')]= 'rts2af-fit.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
@@ -184,9 +184,9 @@ class Configuration:
         self.cp[('SExtractor', 'OBJECT_SEPARATION')]= 10.
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
         self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
-        self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-autofocus-assoc-sky.list'
-        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex-autofocus.cat'
-        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-autofocus-tmp.cat'
+        self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-assoc-sky.list'
+        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex.cat'
+        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
@@ -638,7 +638,10 @@ class Catalogue():
             print 'sextractor  ' + runTimeConfig.value('SEXREFERENCE_PARAM')
 
         # 2>/dev/null swallowed by PIPE
-        (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
+        try:
+            (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
+        except:
+            prg= runTimeConfig.value('SEXPRG')
 
         cmd= [  prg,
                 self.fitsHDU.fitsFileName, 
@@ -727,12 +730,12 @@ class Catalogue():
                 else:
                     self.multiplicity[sxObjectNumberASSOC]= 1
             else:
-                logging.error( 'Catalogue.readCatalogue: no match on line %d' % lineNumber)
-                logging.error( 'Catalogue.readCatalogue: ' + line)
+                logging.error( 'Catalogue.createCatalogue: no match on line %d' % lineNumber)
+                logging.error( 'Catalogue.createCatalogue: ' + line)
                 break
 
         else: # exhausted 
-            logging.info( 'Catalogue.readCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
+            logging.info( 'Catalogue.createCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
             self.isValid= True
 
         return self.isValid
@@ -916,7 +919,7 @@ class Catalogue():
             #print 'average at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' '+ variable + ' %f ' % (sum/ float(i)) 
             return (sum/ float(i))
         else:
-            print 'Error in average i=0'
+            print 'average: Error in average i=0'
             return None
     def averageFWHM(self, selection="all"):
         sum= 0
@@ -942,7 +945,7 @@ class Catalogue():
             print 'average %8s' %(selection) + ' at FOC_POS: ' + str(self.fitsHDU.variableHeaderElements['FOC_POS']) + ' FWHM  %5.2f ' % (sum/ float(i))  + ' number of objects %5d' % (i)
             return (sum/ float(i))
         else:
-            print 'Error in average i=0'
+            print 'averageFWHM: Error in average i=0'
             return False
 
 class ReferenceCatalogue(Catalogue):
@@ -998,7 +1001,10 @@ class ReferenceCatalogue(Catalogue):
             print 'sextractor  ' + runTimeConfig.value('SEXREFERENCE_PARAM')
 
         # 2>/dev/null swallowed by PIPE
-        (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
+        try:
+            (prg, arg)= runTimeConfig.value('SEXPRG').split(' ')
+        except:
+            prg= runTimeConfig.value('SEXPRG')
 
         self.isReference = True 
         cmd= [  prg,
@@ -1074,16 +1080,16 @@ class ReferenceCatalogue(Catalogue):
 
                 self.sxObjects[sxObjectNumber]= SXReferenceObject(sxObjectNumber, self.fitsHDU.variableHeaderElements['FOC_POS'], (float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE])), float(items[itemNrFWHM_IMAGE]), normalizedFlux) # position, bool is used for clean up (default True, True)
             else:
-                logging.error( 'ReferenceCatalogue.readCatalogue: no match on line %d' % lineNumber)
-                logging.error( 'ReferenceCatalogue.readCatalogue: ' + line)
+                logging.error( 'ReferenceCatalogue.createCatalogue: no match on line %d' % lineNumber)
+                logging.error( 'ReferenceCatalogue.createCatalogue: ' + line)
                 break
 
         else: # exhausted 
             if( self.numberReferenceObjects() > 0):
-                logging.info( 'ReferenceCatalogue.readCatalogue: catalogue created {0} number of objects {1}'.format( self.fitsHDU.fitsFileName, self.numberReferenceObjects()))
+                logging.info( 'ReferenceCatalogue.createCatalogue: catalogue created {0} number of objects {1}'.format( self.fitsHDU.fitsFileName, self.numberReferenceObjects()))
                 self.isValid= True
             else:
-                logging.error( 'ReferenceCatalogue.readCatalogue: catalogue created {0} no objects found'.format( self.fitsHDU.fitsFileName))
+                logging.error( 'ReferenceCatalogue.createCatalogue: catalogue created {0} no objects found'.format( self.fitsHDU.fitsFileName))
                 self.isValid= False
 
         return self.isValid
@@ -1159,11 +1165,16 @@ class ReferenceCatalogue(Catalogue):
                 return True
 
     def cleanUpReference(self):
+
+        if(not runTimeConfig.value('CLEANUP_REFERENCE_CATALOGUE')):
+            logging.warn( 'ReferenceCatalogue.cleanUpReference: do NOT clean up as set in the configuration: {0}'.format(runTimeConfig.value('CLEANUP_REFERENCE_CATALOGUE'))) 
+            return False
+
         if( not  self.isReference):
-            logging.debug( 'ReferenceCatalogue.cleanUpReference: clean up only for a reference catalogue, I am : ' + self.fitsHDU.fitsFileName) 
+            logging.debug( 'ReferenceCatalogue.cleanUpReference: clean up only for a reference catalogue, I am: {0}'.format(self.fitsHDU.fitsFileName)) 
             return False
         else:
-            logging.debug( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am : ' + self.fitsHDU.fitsFileName)
+            logging.debug( 'ReferenceCatalogue.cleanUpReference: reference catalogue, I am: {0}'.format(self.fitsHDU.fitsFileName))
         flaggedSeparation= 0
         flaggedProperties= 0
         flaggedAcceptance= 0
@@ -1191,6 +1202,8 @@ class ReferenceCatalogue(Catalogue):
                 discardedObjects += 1
 
         logging.info("ReferenceCatalogue.cleanUpReference: Number of objects discarded %d  (%d, %d, %d)" % (discardedObjects, flaggedSeparation, flaggedProperties, flaggedAcceptance)) 
+
+        return self.numberReferenceObjects() 
 
 class AcceptanceRegion():
     """Class holding the properties of the acceptance circle, units are (binned) pixel"""
@@ -1315,15 +1328,27 @@ class Catalogues():
             else:
                 display= '0'
 
-            cmd= [ runTimeConfig.value('FITPRG'),
-                   display, 
-                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
-                   '{0}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
-                   serviceFileOp.runDateTime,
-                   str(self.numberOfObjectsFoundInAllFiles),
-                   self.dataFileNameFwhm,
-                   self.dataFileNameFlux,
-                   self.imageFilename]
+            try:
+
+                cmd= [ runTimeConfig.value('FITPRG'),
+                       display,
+                       self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                       '{0}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
+                       serviceFileOp.runDateTime,
+                       str(self.numberOfObjectsFoundInAllFiles),
+                       self.dataFileNameFwhm,
+                       self.dataFileNameFlux,
+                       self.imageFilename]
+            except:
+                cmd= [ runTimeConfig.value('FITPRG'),
+                       display,
+                       self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                       'NoTemp',
+                       serviceFileOp.runDateTime,
+                       str(self.numberOfObjectsFoundInAllFiles),
+                       self.dataFileNameFwhm,
+                       self.dataFileNameFlux,
+                       self.imageFilename]
 
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
@@ -1509,8 +1534,8 @@ class FitsHDU():
             self.staticHeaderElements['FILTER']= fitsHDU[0].header['FILTER']
         except:
             self.isValid= True
-            self.staticHeaderElements['FILTER']= 'NOFILTER' 
-            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOFILTER')
+            self.staticHeaderElements['FILTER']= 'NOF' 
+            logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOF (no filter)')
 
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']

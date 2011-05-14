@@ -60,12 +60,12 @@ class ImgpAnalysis():
                 subpr  = subprocess.Popen( cmd)
 
         except OSError as (errno, strerror):
-            logging.error( 'imgp_analysis.py: I/O error({0}): {1}'.format(errno, strerror))
-            sys.exit(1)
+            logging.error('imgp_analysis.py: returning due to I/O error({0}): {1}'.format(errno, strerror))
+            return None
 
         except:
-            logging.error('imgp_analysis.py: '+ repr(cmd) + ' died')
-            sys.exit(1)
+            logging.error('imgp_analysis.py: returning due to: {0} died'.format( repr(cmd)))
+            return None
 
         return subpr
 

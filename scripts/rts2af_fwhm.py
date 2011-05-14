@@ -96,14 +96,19 @@ class main(rts2af.AFScript):
         cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
 
         cat.runSExtractor()
-        cat.createCatalogue()
-        cat.cleanUpReference()
-
+        if( not cat.createCatalogue()):
+            logging.error('rts2af_fwhm.py: returning due to invalid catalogue')
+            return
+        if(cat.cleanUpReference()==0):
+            logging.error('rts2af_fwhm.py: returning due to no objects found')
+            return
+                
         fwhm= cat.average('FWHM_IMAGE')
         logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
-
+        
         filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
-        if( filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOFILTER or X
+        
+        if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOF or X
             threshFwhm= 4.1
             if( fwhm > threshFwhm):
                 #r2c.setValue('next', 5, 'EXEC')
@@ -126,7 +131,10 @@ class main(rts2af.AFScript):
                 logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
         else:
             # a focus run sets FOC_DEF and that is without filter
-            logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), used filter {0}'.format(filter.name))
+            if( filter):
+                logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), used filter: {0}, offset: {1}'.format(filter.name, filter.OffsetToClearPath))
+            else:
+                logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), no known filter found in headers')
 
         #ToDo does not work yet cat.ds9WriteRegionFile(writeSelected=True)
         #cat.displayCatalogue()

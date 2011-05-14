@@ -96,7 +96,13 @@ class main(rts2af.AFScript):
                 catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
                 catr.runSExtractor()
                 if(catr.createCatalogue()):
-                    catr.cleanUpReference()
+
+                    if(catr.cleanUpReference()==0):
+                        logging.error('rts2af_analysis.py: exitinging due to no objects found')
+                        print 'FOCUS: -1'
+                        sys.stdout.flush()
+                        sys.exit(1)
+
                     catr.writeCatalogue()
                     cats= rts2af.Catalogues(catr)
                 else:
