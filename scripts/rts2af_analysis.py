@@ -121,7 +121,7 @@ class main(rts2af.AFScript):
                 logging.error('rts2af_analysis.py: exiting due to too few sxObjects found: {0} of {1}'.format(catr.numberReferenceObjects(), runTimeConfig.value('MINIMUM_OBJECTS')))
                 sys.exit(1)
             else:
-                logging.error('rts2af_analysis.py: reference catalogue created with: {0} objects'.format(catr.numberReferenceObjects()))
+                logging.info('rts2af_analysis.py: reference catalogue created with: {0} objects'.format(catr.numberReferenceObjects()))
             print 'info: reference catalogue created'
             sys.stdout.flush()
 

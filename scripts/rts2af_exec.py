@@ -26,13 +26,13 @@ import logging
 import time
 
 logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-logging.info('exec.py: setting next target 5 via EXEC next')
+logging.info('rts2af_exec.py: setting next target 5 via EXEC next')
 r2c= rts2comm.Rts2Comm()
 r2c.setValue('next', 5, 'EXEC')
 # ToDo log later if it works
 time.sleep(2)
 id= r2c.getValueInteger('next','EXEC')
-logging.info('exec.py: setting next target via EXEC retrieved id={0}, should be 5'.format(id))
+logging.info('rts2af_exec.py: setting next target via EXEC retrieved id={0}, should be 5'.format(id))
 
 # one normally does not see the second log message
 # often (always?) rts2-scriptexec dies with

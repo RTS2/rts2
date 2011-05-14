@@ -4,8 +4,7 @@
 #   usage 
 #   rtsaf_offline.py --help
 #   
-#   not yet see man 1 rts2_catalogue.py
-#   not yet see rts2_autofocus_unittest.py for unit tests
+#   not yet see man 1 rts2_/offline.py
 #
 #   Basic usage:
 #   Create a set of focusing images and define the reference file. The
@@ -18,7 +17,6 @@
 #   Then run, e.g.
 #   rts2af_offline.py  --config ./rts2af-offline.cfg --reference 20091106180858-517-RA.fits
 #
-#   The output is mostly written to /var/log/rts2-autofocus
 #
 #   In the /tmp directory is a lot of output for inspection. Or more
 #   conveniently, execute the file with the ending .sh, wich looks like, e.g.

@@ -104,7 +104,7 @@ class main(rts2af.AFScript):
 
         filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
         if( filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOFILTER or X
-            threshFwhm= 13.4
+            threshFwhm= 4.1
             if( fwhm > threshFwhm):
                 #r2c.setValue('next', 5, 'EXEC')
                 # plain wrong were are not talking to rts2, use rts2-scriptexec
