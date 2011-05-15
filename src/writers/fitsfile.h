@@ -90,7 +90,7 @@ class TableData:public std::list <ColumnData *>
 
 /**
  * Class representing FITS file. This class represents FITS file. Usually you
- * will be looking for Rts2Image class for Rts2Image, or for Rts2FitsTable for
+ * will be looking for rts2image::Image class for image, or for Rts2FitsTable for
  * FITS table. This class only creates FITS file and manage keywords at primary
  * extension.
  *
