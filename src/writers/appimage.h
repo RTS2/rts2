@@ -14,7 +14,7 @@ class AppImageCore:public Rts2CliApp
 	protected:
 		std::list < const char *>imageNames;
 		bool readOnly;
-		virtual int processImage (Rts2Image * image) { return 0; }
+		virtual int processImage (Image * image) { return 0; }
 	public:
 		AppImageCore (int in_argc, char **in_argv, bool in_readOnly):Rts2CliApp (in_argc, in_argv)
 		{
@@ -37,7 +37,7 @@ class AppImageCore:public Rts2CliApp
 			for (img_iter = imageNames.begin (); img_iter != imageNames.end (); img_iter++)
 			{
 				const char *an_name = *img_iter;
-				Rts2Image *image = new Rts2Image ();
+				Image *image = new Image ();
 				image->openImage (an_name, false, readOnly);
 				ret = processImage (image);
 				delete image;
