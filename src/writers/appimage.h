@@ -2,7 +2,7 @@
 #define __RTS2_APP_IMAGE__
 
 #include "../utils/rts2cliapp.h"
-#include "rts2image.h"
+#include "image.h"
 
 #include <list>
 
