@@ -101,7 +101,7 @@ void FLWO::changeMasterState (int old_state, int new_state)
 {
 	// do not open dome if open
 	// close dome if not switching to night
-	if (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
+	if (closeOnBadWeather->getValueBool () == false || (openInOn->getValueBool () == false && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY && ((new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN)))
 	{
 		rts2core::Device::changeMasterState (old_state, new_state);
 		return;
