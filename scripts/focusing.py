@@ -63,7 +63,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.attempts = 20 #30 # 20
 		self.focuser = self.getValue('focuser')
 		# if |offset| is above this value, try linear fit
-		self.linear_fit = 2 * self.step * self.attempts
+		self.linear_fit = self.step * self.attempts / 2.0
 		# target FWHM for linear fit
 		self.linear_fit_fwhm = 3.5
 
@@ -149,7 +149,7 @@ class Focusing (rts2comm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,rename_images=False,default_fit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
+	def findBestFWHM(self,tries,rename_images=False,defaultFit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
