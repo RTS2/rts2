@@ -162,10 +162,10 @@ void ConnImgProcess::connectionError (int last_data_size)
 		imagedb->openImage (imgPath.c_str ());
 		image = getValueImageType (imagedb);
 #else
-	Rts2Image *image = NULL;
+	Image *image = NULL;
 	try
 	{
-		image = new Rts2Image ();
+		image = new Image ();
 		image->openImage (imgPath.c_str ());
 #endif
 		if (image->getImageType () == IMGTYPE_FLAT || image->getImageType () == IMGTYPE_DARK)
