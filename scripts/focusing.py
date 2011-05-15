@@ -121,8 +121,33 @@ class Focusing (rts2comm.Rts2Comm):
 			self.log('I', 'found minimum FWHM: {0}'.format(abs(self.fwhm_poly[0])))
 		else:
 			b = optimize.fmin(fitfunc_r,self.fwhm_MinimumX,args=(self.fwhm_poly), disp=0)[0]
-		self.log('I', 'found FHWM minimum at offset {0}'.format(b))
+		self.log('I', 'found FWHM minimum at offset {0}'.format(b))
 		return b
+
+	def tryFit(self,defaultFit):
+		"""Try fit, change to linear fit if outside allowed range."""
+		b = self.doFit(defaultFit)
+		if (abs(b - numpy.average(self.focpos)) >= self.linear_fit):
+			self.log('W','cannot do find best FWHM inside limits, trying H2 fit - best fit is {0}, average focuser position is {1}'.format(b, numpy.average(self.focpos)))
+			b = self.doFit(H2)
+			if (abs(b - numpy.average(self.focpos)) >= self.linear_fit):
+				self.log('W','cannot do find best FWHM inside limits, trying linear fit - best fit is {0}, average focuser position is {1}'.format(b, numpy.average(self.focpos)))
+				b = self.doFit(LINEAR)
+				return b,LINEAR
+			return b,H2
+		return b,defaultFit
+
+
+	def doFitOnArrays(self,fwhm,focpos,defaultFit):
+		self.fwhm = array(fwhm)
+		self.focpos = array(focpos)
+		self.fwhm_MinimumX = 0
+		min_fwhm=fwhm[0]
+		for x in range(0,len(fwhm)):
+			if fwhm[x] < min_fwhm:
+				self.fwhm_MinimumX = x
+				min_fwhm = fwhm[x]
+		return self.tryFit(defaultFit)
 
 	def findBestFWHM(self,tries,rename_images=False,default_fit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
@@ -150,17 +175,7 @@ class Focusing (rts2comm.Rts2Comm):
 		self.focpos = array(self.focpos)
 		self.fwhm = array(self.fwhm)
 
-		b = self.doFit (default_fit)
-		if (abs(b - numpy.average(self.focpos)) >= self.linear_fit):
-			self.log('W','cannot do find best FWHM inside limits, trying H2 fit - best fit is {0}, average focuser position is {1}'.format(b, numpy.average(self.focpos)))
-			b = self.doFit(H2)
-			if (abs(b - numpy.average(self.focpos)) >= self.linear_fit):
-				self.log('W','cannot do find best FWHM inside limits, trying linear fit - best fit is {0}, average focuser position is {1}'.format(b, numpy.average(self.focpos)))
-				b = self.doFit(LINEAR)
-				return b,LINEAR
-			return b,H2
-
-		return b,default_fit
+		return self.tryFit(defaultFit)
 
 	def beforeReadout(self):
 		self.current_focus = self.getValueFloat('FOC_POS',self.focuser)
@@ -199,6 +214,29 @@ class Focusing (rts2comm.Rts2Comm):
 
 		self.setValue('FOC_DEF',b,self.focuser)
 
+	def plotFit(self,b,ftype):
+		"""Plot fit graph."""
+		fitfunc = None
+
+		if ftype == LINEAR:
+			fitfunc = lambda p, x: p[0] + p[1] * x 
+		elif ftype == P2:
+			fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2)
+		elif ftype == P4:
+			fitfunc = lambda p, x: p[0] + p[1] * x + p[2] * (x ** 2) + p[3] * (x ** 3) + p[4] * (x ** 4)
+		elif ftype == H3:
+			fitfunc = lambda p, x: sqrt(p[0] ** 2 + p[1] ** 2 * (x - p[2]) ** 2)
+		elif ftype == H2:
+			fitfunc = lambda p, x: sqrt(p[0] ** 2 + 3.46407715307 ** 2 * (x - p[1]) ** 2) # 3.46 based on HYPERBOLA fits
+		else:
+			raise Exception('Unknow fit type {0}'.format(ftype))
+
+		x = linspace(self.focpos.min() - 1, self.focpos.max() + 1)
+
+		plot (self.focpos, self.fwhm, "ro", x, fitfunc(self.fwhm_poly, x), "r-")
+
+		show()
+
 if __name__ == "__main__":
 	a = Focusing()
-	a.run ()
+	a.run()

@@ -33,6 +33,9 @@
 
 import sextractor
 import sys
+import focusing
+import numpy
+from scipy import array
 
 class ShiftStore:
 	def __init__(self):
@@ -40,6 +43,7 @@ class ShiftStore:
 		self.sequences = []
 		self.xsep = self.ysep = 5
 		self.shifts = [100,50,50,50,50,50,50,50,50]
+		self.focpos = range(0,len(self.shifts))
 
 	def testObjects(self,x,can,i):
 		"""Test if there is sequence among candidates matching expected shifts."""
@@ -101,14 +105,14 @@ class ShiftStore:
 		# cannot found set..
 		return None
 
-	def runOnImage(self,fn):
-		c = sextractor.Sextractor(fn,['NUMBER','X_IMAGE','Y_IMAGE','FLUX_AUTO','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+	def runOnImage(self,fn,interactive=False):
+		c = sextractor.Sextractor(fn,['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
 		c.runSExtractor()
 
 
 		self.objects = c.objects
 		# sort by flux
-		self.objects.sort(cmp=lambda x,y:cmp(y[3],x[3]))
+		self.objects.sort(cmp=lambda x,y:cmp(x[3],y[3]))
 
 		print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
 
@@ -139,15 +143,33 @@ class ShiftStore:
 				usednum.append(obj[0])
 				d.set('regions','image; circle {0} {1} 15 # color=blue tag = sel'.format(obj[1],obj[2]))
 			print 'best mag: ',x[3]
-			sys.stdin.readline()
 			d.set('regions select group sel')
 			d.set('regions delete select')
 			for obj in b:
 				d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
+			if len(sequences) > 15:
+				break
+		if len(sequences) > 10:
+			# get FWHM by image..
+			fwhm=[]
+			for x in range(0,len(self.shifts)):
+				fa = []
+				for o in sequences:
+					fa.append(o[x][6])
+				m = numpy.median(fa)
+				fwhm.append(m)
+			# fit it..
+			foc = focusing.Focusing()
+
+			res,ftype = foc.doFitOnArrays(fwhm,self.focpos,focusing.H2)
+			print res,ftype
+
+			if interactive:
+				foc.plotFit(res,ftype)
 
 if __name__ == "__main__":
   	# test method
 	from ds9 import *
 	sc = ShiftStore()
   	for fn in sys.argv[1:]:
-		sc.runOnImage(fn)
+		sc.runOnImage(fn,True)
