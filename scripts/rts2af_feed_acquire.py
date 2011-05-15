@@ -83,7 +83,7 @@ class main():
             self.fitsHDUs.append( rts2af.FitsHDU( storePath + '/' + self.referenceFile[i]))
             self.fitsHDUs[i].headerProperties()
             if(self.fitsHDUs[i].staticHeaderElements['FILTER']== 'UNK'):
-                self.filtersInUse.append('NOFILTER')
+                self.filtersInUse.append('NOF')
             else:
                 self.filtersInUse.append(self.fitsHDUs[i].staticHeaderElements['FILTER'])
                 i += 1
