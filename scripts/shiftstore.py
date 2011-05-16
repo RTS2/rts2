@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Shift-store focusing
+# Shift-store focusing.
 #
 # You will need: scipy matplotlib sextractor
 # This should work on Debian/ubuntu:
@@ -11,11 +11,11 @@
 # http://hea-www.harvard.edu/saord/ds9/
 #
 # Please be aware that current sextractor Ubuntu packages does not work
-# properly. The best workaround is to install package, and the overwrite
+# properly. The best workaround is to install package, and then overwrite
 # sextractor binary with one compiled from sources (so you will have access
 # to sextractor configuration files, which program assumes).
 #
-# (C) 2010  Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2011  Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,18 @@ import numpy
 from scipy import array
 
 class ShiftStore:
+	"""
+	Shift-store focusing. Works in the following steps
+	    - extract sources (with sextractor)
+	    - order sources by magnitude/flux
+	    - try to find row for the brightests source
+	      - filter all sources too far away in X
+	      - try to find sequence, assuming selected source can be any in
+		the sequence
+	    - run standard fit on images (from focusing.py) Parameters
+	      governing the algorithm are specified in ShiftStore constructor.
+	"""
+
 	def __init__(self):
 		self.objects = None
 		self.sequences = []
@@ -46,72 +58,97 @@ class ShiftStore:
 		self.focpos = range(0,len(self.shifts))
 
 	def testObjects(self,x,can,i):
-		"""Test if there is sequence among candidates matching expected shifts."""
+		"""
+		Test if there is sequence among candidates matching expected
+		shifts.  Candidates are stars not far in X coordinate from
+		source (here we assume we are looking for vertical lines on
+		image). Those are ordered by y and searched for stars at
+		expected positions. If multiple stars falls inside this box,
+		then the one closest in magnitude/brightness estimate is
+		selected.
+		"""
 		ret = []
-		yi = x[2]
-		xb = x[3]
+		# here we assume y is third, and some brightnest estimate fourth member in x
+		yi = x[2]  # expected y position
+		xb = x[3]  # expected brightness
 		# calculate first expected shift..
 		for j in range(0,i):
 			yi -= self.shifts[j]
 		# go through list, check for candidate stars..
 		cs = None
 		sh = 0
-		if i == 0:
-			yi += self.shifts[0]
-			sh = 1
-			ret.append(x)
+		# now interate through candidates
 		for j in range(0,len(can)):
+		  	# if the current shift index is equal to expected source position...
+			if sh == i:
+				# append x to sequence, and increase sh (and expected Y position)
+				yi += self.shifts[sh]
+				sh += 1
+				ret.append(x)
+		  	# get close enough..
+			# please note that this algorithm is not looking for partial 
 			if abs(can[j][2] - yi) < self.ysep:
 				# find all other sources in vicinity..
 		  		k = None
-				cs = can[j]
+				cs = can[j] # _c_andidate _s_tar
 				for k in range(j+1,len(can)):
+				  	# something close enough..
 					if abs(can[k][2] - yi) < self.ysep:
 						if abs(can[k][3] - xb) < abs (cs[3] - xb):
 							cs = can[k]
 					else:
+						# otherwise don't care..
 						break
+				# append candidate star
 				ret.append(cs)
 				if k is not None:
 					j = k
+				# don't exit if the algorithm make it to end of shifts
 				try:
 					yi += self.shifts[sh]
 				except IndexError,ie:
 					return ret
 				sh += 1
-				if sh == i:
-					yi += self.shifts[sh]
-					sh += 1
-					ret.append(x)
 		return ret
 
 
 	def findRowObjects(self,x):
-		"""Find objects in row."""
-		xid = x[0]
-		xcor = x[1]
-		# candidates
-		can = []
+		"""
+		Find objects in row. Search for sequence of stars, where x fit
+		as one member. Return the sequence, or None if the sequence
+		cannot be found."""
+
+		xid = x[0]   # running number
+		xcor = x[1]  # X coordinate
+		can = []     # canditate stars
 		for y in self.objects:
 			if xid != y[0] and abs(xcor - y[1]) < self.xsep:
 				can.append(y)
 		# sort by Y axis..
 		can.sort(cmp=lambda x,y: cmp(x[2],y[2]))
-		# assume selected object is one in shift sequence..
+		# assume selected object is one in shift sequence
+		# place it at any possible position in shift sequence, and test if the sequence can be found
 		for i in range(0,len(self.shifts)):
+			# test if sequence can be found..
 			ret = self.testObjects(x,can,i)
+			# and if it is found, return it
 			if len(ret) == len(self.shifts):
 				return ret
-		# cannot found set..
+		# cannot found sequnce, so return None
 		return None
 
 	def runOnImage(self,fn,interactive=False):
+		"""
+		Run algorithm on image. Extract sources with sextractor, and
+		pass them through sequence finding algorithm, and fit focusing position.
+		"""
+
 		c = sextractor.Sextractor(fn,['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
 		c.runSExtractor()
 
 
 		self.objects = c.objects
-		# sort by flux
+		# sort by flux/brightness
 		self.objects.sort(cmp=lambda x,y:cmp(x[3],y[3]))
 
 		print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
@@ -149,8 +186,9 @@ class ShiftStore:
 				d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
 			if len(sequences) > 15:
 				break
+		# if enough sequences were found, process them and try to fit results
 		if len(sequences) > 10:
-			# get FWHM by image..
+			# get median of FWHM from each sequence
 			fwhm=[]
 			for x in range(0,len(self.shifts)):
 				fa = []
@@ -158,7 +196,7 @@ class ShiftStore:
 					fa.append(o[x][6])
 				m = numpy.median(fa)
 				fwhm.append(m)
-			# fit it..
+			# fit it
 			foc = focusing.Focusing()
 
 			res,ftype = foc.doFitOnArrays(fwhm,self.focpos,focusing.H2)
