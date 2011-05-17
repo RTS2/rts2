@@ -990,7 +990,14 @@ void Target::getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn 
 
 	getPosition (&object, JD);
 
-	ln_get_hrz_from_equ (&object, obs, JD, hrz);
+	if (isnan (object.ra) || isnan (object.dec))
+	{
+		hrz->alt = hrz->az = rts2_nan ("f");
+	}
+	else
+	{
+		ln_get_hrz_from_equ (&object, obs, JD, hrz);
+	}
 }
 
 void Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
@@ -1215,8 +1222,11 @@ bool Target::isGood (double JD)
 
 bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 {
+	// assume that undefined objects are always above horizon
+	if (isnan (hrz->alt))
+		return true;
 	if (hrz->alt < getMinObsAlt ())
-		return 0;
+		return false;
 	return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
 }
 
