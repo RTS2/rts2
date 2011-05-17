@@ -1,3 +1,6 @@
+2011-05-17
+ * getNextParamDoubleTime (for timeoffsets specified with +)
+
 2011-02-08
  * added loopcount command to script stdin/out
  * single script command

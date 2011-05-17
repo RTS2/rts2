@@ -443,6 +443,11 @@ class Rts2Conn:public Rts2Object
 		int paramNextLong (long int *num);
 		int paramNextSizeT (size_t * num);
 		int paramNextDouble (double *num);
+		/**
+		 * Retrieve next parameter as time. String starting with + is
+		 * considered as second offset from now, without + is absolute time.
+		 */
+		int paramNextDoubleTime (double *num);
 
 		int paramNextFloat (float *num);
 

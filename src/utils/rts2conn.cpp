@@ -1721,6 +1721,25 @@ int Rts2Conn::paramNextDouble (double *num)
 	return 0;
 }
 
+int Rts2Conn::paramNextDoubleTime (double *num)
+{
+	char *str_num;
+	int ret;
+	if (paramNextString (&str_num, ","))
+		return -1;
+	if (!strcmp (str_num, "nan"))
+	{
+		*num = rts2_nan ("f");
+		return 0;
+	}
+	ret = sscanf (str_num, "%lf", num);
+	if (ret != 1)
+		return -1;
+	if (str_num[0] == '+')
+		*num += getMaster ()->getNow ();
+	return 0;
+}
+
 int Rts2Conn::paramNextFloat (float *num)
 {
 	char *str_num;

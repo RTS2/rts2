@@ -323,7 +323,7 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
 		}
 		if (withTimes)
 		{
-			if (conn->paramNextDouble (&t_start) || conn->paramNextDouble (&t_end))
+			if (conn->paramNextDoubleTime (&t_start) || conn->paramNextDoubleTime (&t_end))
 			{
 				failed++;
 				continue;
