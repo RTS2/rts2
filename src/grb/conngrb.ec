@@ -803,7 +803,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				grb_is_grb,
 				grb_date,
 				grb_last_update,
-				grb_errorbox
+				grb_errorbox,
+				grb_autodisabled
 			)
 			VALUES
 			(
@@ -816,7 +817,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				:d_grb_is_grb,
 				to_timestamp (:d_grb_date),
 				to_timestamp (:d_grb_update),
-				:d_grb_errorbox :d_grb_errorbox_ind
+				:d_grb_errorbox :d_grb_errorbox_ind,
+				false
 			);
 		if (sqlca.sqlcode)
 		{
