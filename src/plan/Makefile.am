@@ -80,6 +80,6 @@ rts2_imgproc_SOURCES = imgproc.cpp
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_imgproc_LDADD = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
-EXTRA_DIST += excutor.cpp executorque.cpp selector.cpp seltest.cpp targetinfo.cpp marchive.cpp queue-selector.cpp
+EXTRA_DIST += executor.cpp executorque.cpp selector.cpp seltest.cpp targetinfo.cpp marchive.cpp
 
 endif
