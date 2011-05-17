@@ -109,24 +109,35 @@ class main(rts2af.AFScript):
         filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
         
         if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOF or X
-            threshFwhm= 4.1
+            threshFwhm=runTimeConfig.value('THRESHOLD')
             if( fwhm > threshFwhm):
-                #r2c.setValue('next', 5, 'EXEC')
-                # plain wrong were are not talking to rts2, use rts2-scriptexec
-                cmd= [ 'rts2-scriptexec',
-                       '-d',
-                       'CCD_FLI', # ToDo it is not CCD_FLI
-                       '-s',
-                       ' exe /usr/local/src/rts-2-head/scripts/rts2af_exec.py  '
+                ##r2c.setValue('next', 5, 'EXEC')
+                ## plain wrong were are not talking to rts2, use rts2-scriptexec
+                #cmd= [ 'rts2-scriptexec',
+                #       '-d',
+                #       'CCD_FLI', # ToDo it is not CCD_FLI
+                #       '-s',
+                #       ' exe /usr/local/src/rts-2-head/scripts/rts2af_exec.py  '
+                #   ]
+                ## do not wait, this process lives until, e.g. the focus run has terminated.
+                ## supress output from this process
+                #fnull = open(os.devnull, 'w')
+                #proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
+
+                cmd= [ 'rts2af-queue',
+                       '--user={0}'.format(runTimeConfig.value('USERNAME')),
+                       '--password={0}'.format(runTimeConfig.value('PASSWORD')),
+                       '--clear',
+                       '--queue={0}'.format(runTimeConfig.value('QUEUENAME')),
+                       '{0}'.format(runTimeConfig.value('TARGETID'))
                    ]
-                # do not wait, this process lives until, e.g. the focus run has terminated.
-                # supress output from this process
                 fnull = open(os.devnull, 'w')
                 proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
+
                 # let rts2-scriptexec do its inital job
                 # it waits until the with the target associated script has been completed 
                 time.sleep(10) 
-                logging.info('rts2af_fwhm.py: queued a focus run at EXEC next, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
+                logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm))
             else:
                 logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
         else:

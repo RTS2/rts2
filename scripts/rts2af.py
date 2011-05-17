@@ -112,7 +112,7 @@ class Configuration:
         self.values={}
         self.filters=[]
         self.filtersInUse=[]
-        # If there is none, we have a serious problems anyway
+        # If there is none, we have a serious problems anyway, properties will be overwritten
         self.ccd= CCD( name='CD', binning='1x1', windowOffsetX=-1, windowOffsetY=-1, windowHeight=-1, windowWidth=-1)
         self.cp={}
         self.config = ConfigParser.RawConfigParser()
@@ -197,6 +197,9 @@ class Configuration:
         self.cp[('ccd', 'NAME')]= 'CD'
         self.cp[('ccd', 'BINNING')]= '1x1'
         self.cp[('ccd', 'WINDOW')]= '-1 -1 -1 -1'
+        self.cp[('ccd', 'PIXELSIZE')]= 9.e-6 # unit meter
+        #ToDo: incorrect unit unit, use arcsec
+        self.cp[('sky', 'SEEING')]= 27.e-6 # unit meter
 
         self.cp[('mode', 'SET_FOCUS')]= True
 
@@ -209,6 +212,13 @@ class Configuration:
 
         self.cp[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.cp[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
+        
+
+        self.cp[('queuing', 'USERNAME')] = 'preview' # username password for rts2af-queue command, see postgres db
+        self.cp[('queuing', 'PASSWORD')] = 'vaog2x'
+        self.cp[('queuing', 'QUEUENAME')]= 'focusing'
+        self.cp[('queuing', 'TARGETID')] = '5'
+        self.cp[('queuing', 'THRESHOLD')] = 2.12
 
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -382,6 +392,9 @@ class Configuration:
                     elif(identifier=='BINNING'):
                         self.ccd.binning= value
 
+                    elif(identifier=='PIXELSIZE'): # unit meter
+                        self.ccd.pixelSize= value
+
         if(verbose):
             for (identifier), value in self.defaultsIdentifiers():
                 print "over ", identifier, self.values[(identifier)]
@@ -480,7 +493,7 @@ class Setting():
 
 class CCD():
     """Class for CCD properties"""
-    def __init__(self, name, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None):
+    def __init__(self, name, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None):
         
         self.name= name
         self.binning=binning
@@ -488,6 +501,7 @@ class CCD():
         self.windowOffsetY=windowOffsetY
         self.windowHeight=windowHeight
         self.windowWidth=windowWidth
+        self.pixelSize= pixelSize
 
 class Filter():
     """Class for filter properties"""
@@ -540,13 +554,20 @@ class Telescope():
         try:
             self.focalratio = self.radius/self.focalLength
         except:
-            logging.error( 'Telescope: no sensible focalLength: {0} given, exiting'.format(self.focalLength))
-            sys.exit(1)
+            logging.error( 'Telescope: no sensible focalLength: {0} given, assuming 1 meter'.format(self.focalLength))
+            self.focalratio = self.radius/1000.
 
-        self.pixelsize= 1.27e-6 #[meter]
-        self.seeing= 27.0e-6 #[meter]
+        #ToDo: fetch that from RTS2 CCD device
+        #ToDo: dirty
+        self.pixelSize= runTimeConfig.value('PIXELSIZE') # 9.e-6 #[meter]
+        # self.pixelSize= pixelSize 
+        
+        #self.seeing= 27.0e-6 #[meter!]
+        self.seeing= runTimeConfig.value('SEEING') # [meter]
 
-        self.fudgeFactor= 0.25 # [1...0]
+
+        self.fudgeFactor= 0.12 # [1...0]
+
     def quadraticExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
         return ( math.pow( self.starImageRadius(differencefoc_pos), 2) * exposureTimeZero)
 
@@ -554,7 +575,7 @@ class Telescope():
         return  self.starImageRadius( differencefoc_pos) * exposureTimeZero
 
     def starImageRadius(self, differencefoc_pos=0):
-        return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelsize * self.focalratio) + self.seeing)/self.seeing
+        return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelSize * self.focalratio) + self.seeing)/self.seeing
 
         
 class SXObject():
