@@ -33,6 +33,7 @@
 #include "../utils/objectcheck.h"
 #include "../utils/device.h"
 #include "../utils/rts2target.h"
+#include "../utils/connnotify.h"
 
 #include "targetset.h"
 #include "labels.h"
@@ -139,12 +140,21 @@ class CameraMissingExcetion:public rts2core::Error
  * After all images are processed, new priority can be computed, some results
  * (e.g. light curves) can be put to the database.
  *
- * Target is backed by observation entry in the DB.
+ * Target is connected to observation entry in the DB.
+ *
+ * All files loaded in constraints are added to inotify watch descriptor, and
+ * their watch ID is appended to array of watch ID. Please see
+ * revalideConstraints(int) method for futher discussion.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  */
 class Target:public Rts2Target
 {
 	public:
-		Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		/**
+		 * @param watchConn connection for watch events (inotify)
+		 */
+		Target (int in_tar_id, struct ln_lnlat_posn *in_obs, rts2core::ConnNotify *_watchConn = NULL);
 		// create new target. Save will save it to the database..
 		Target ();
 		virtual ~ Target (void);
@@ -673,6 +683,16 @@ class Target:public Rts2Target
 		virtual bool checkConstraints (double JD);
 
 		/**
+		 * Check if given ID is among watches for constraints
+		 * associated to the target. Delete constrainst if it is
+		 * associated. getConstraints method then load again
+		 * constraints, if they are needed.
+		 *
+		 * @param watchID   ID of watch which was changed
+		 */
+		void revalidateConstraints (int watchID);
+
+		/**
 		 * Retrieve list of target labels.
 		 */
 		std::vector <std::pair <int, std::string> > getLabels () { return labels.getTargetLabels (getTargetID ()); }
@@ -698,10 +718,15 @@ class Target:public Rts2Target
 		// holds current target observation
 		Observation * observation;
 
-		int type;				 // light, dark, flat, flat_dark
+		rts2core::ConnNotify *watchConn;
+		std::vector <int> watchIDs;		// 
+
+		void addWatch (const char *filename);
+
+		int type;				// light, dark, flat, flat_dark
 		std::string tar_info;
 
-		int startCalledNum;		 // how many times startObservation was called - good to know for targets
+		int startCalledNum;			// how many times startObservation was called - good to know for targets
 		double airmassScale;
 
 		time_t observationStart;

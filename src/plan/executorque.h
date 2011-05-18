@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_EXECUTORQUEUE__
+#define __RTS2_EXECUTORQUEUE__
+
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 
@@ -77,6 +80,13 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
 		virtual ~ExecutorQueue ();
 
+		/**
+		 * Set time for which queue will be tested.
+		 *
+		 * @param _now  new time value (in ctime - sec from 1/1/1970)
+		 */
+		void setNow (double _now) { now = _now; }
+
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1);
 
@@ -129,6 +139,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		const rts2core::ValueBool * getEnabledValue () { return queueEnabled; }
 
+		void revalidateConstraints (int watch_id);
+
 	private:
 		Rts2DeviceDb *master;
 
@@ -145,6 +157,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::ValueBool *queueEnabled;
 
 		struct ln_lnlat_posn **observer;
+
+		double now;
+		double getNow () { return now; }
 
 		// update values from the target list
 		void updateVals ();
@@ -171,3 +186,5 @@ class ExecutorQueue:public std::list <QueuedTarget>
 };
 
 }
+
+#endif // !__RTS2_EXECUTORQUEUE__

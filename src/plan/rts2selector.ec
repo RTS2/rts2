@@ -438,3 +438,12 @@ void Selector::saveTargets ()
 		(*iter)->target->save (false);
 	}
 }
+
+void Selector::revalidateConstraints (int watch_id)
+{
+	std::vector <TargetEntry *>::iterator iter = possibleTargets.begin ();
+	for (; iter != possibleTargets.end (); iter++)
+	{
+		(*iter)->target->revalidateConstraints (watch_id);
+	}
+}

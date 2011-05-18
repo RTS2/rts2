@@ -37,6 +37,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -58,6 +59,16 @@ void Target::getTargetSubject (std::string &subj)
 		<< " #" << getObsTargetID () << " (" << getTargetID () << ")"
 		<< " " << getTargetType ();
 	subj = _os.str();
+}
+
+void Target::addWatch (const char *filename)
+{
+	if (watchConn == NULL)
+		return;
+	int ret = watchConn->addWatch (filename);
+	if (ret < 0)
+		logStream (MESSAGE_ERROR) << "cannot add " << filename << " to watched files: " << strerror (errno) << sendLog;
+	watchIDs.push_back (ret);
 }
 
 void Target::writeAirmass (std::ostream & _os, double jd)
@@ -238,10 +249,12 @@ void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double
 	printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
-Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
+Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs, rts2core::ConnNotify *_watchConn):Rts2Target ()
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
+
+	watchConn = _watchConn;
 
 	observer = in_obs;
 
@@ -2100,8 +2113,12 @@ const char *Target::getGroupConstraintFile ()
 
 Constraints * Target::getConstraints ()
 {
+	// if constraints were modified, reload them..
 	if (constraints)
 		return constraints;
+
+	constraintsLoaded = CONSTRAINTS_NONE;
+	watchIDs.clear ();
 
 	struct stat fs;
 	// check for system level constraints
@@ -2109,6 +2126,7 @@ Constraints * Target::getConstraints ()
 	{
 		constraints = new Constraints (MasterConstraints::getConstraint ());
 		constraintsLoaded |= CONSTRAINTS_SYSTEM;
+		addWatch (Rts2Config::instance ()->getMasterConstraintFile ());
 	}
 	catch (XmlError er)
 	{
@@ -2118,7 +2136,6 @@ Constraints * Target::getConstraints ()
 	if (stat (getGroupConstraintFile (), &fs))
 	{
 		logStream (errno == ENOENT ? MESSAGE_DEBUG : MESSAGE_WARNING) << "cannot open " << getGroupConstraintFile () << ":" << strerror(errno) << sendLog;
-		constraintsLoaded |= CONSTRAINTS_GROUP;
 	}
 	else
 	{
@@ -2127,6 +2144,7 @@ Constraints * Target::getConstraints ()
 		{
 			constraints->load (getGroupConstraintFile ());
 			constraintsLoaded |= CONSTRAINTS_GROUP;
+			addWatch (getGroupConstraintFile ());
 		}
 		catch (XmlError er)
 		{
@@ -2138,6 +2156,7 @@ Constraints * Target::getConstraints ()
 	{
 		constraints->load (getConstraintFile ());
 		constraintsLoaded |= CONSTRAINTS_TARGET;
+		addWatch (getConstraintFile ());
 	}
 	catch (XmlError er)
 	{
@@ -2149,6 +2168,19 @@ Constraints * Target::getConstraints ()
 bool Target::checkConstraints (double JD)
 {
 	return getConstraints ()->satisfy (this, JD);
+}
+
+void Target::revalidateConstraints (int watchID)
+{
+	for (std::vector <int>::iterator iter = watchIDs.begin (); iter != watchIDs.end (); iter++)
+	{
+		if (*iter == watchID)
+		{
+			delete constraints;
+			constraints = NULL;
+			return;
+		}
+	}
 }
 
 std::ostream & operator << (std::ostream &_os, Target &target)

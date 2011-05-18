@@ -131,6 +131,13 @@ class Selector
 
 		void saveTargets ();
 
+		/**
+		 * Check after some constraint file was modified.
+		 *
+		 * @param watch_id  ID of watch which was modified. Retrieved from notifi FD via read call.
+		 */
+		void revalidateConstraints (int watch_id);
+
 	private:
 		std::vector < TargetEntry* > possibleTargets;
 		void considerTarget (int consider_tar_id, double JD);

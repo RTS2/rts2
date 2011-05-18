@@ -1,3 +1,6 @@
+2011-05-18
+ * inotify for constraints
+
 2011-05-17
  * getNextParamDoubleTime (for timeoffsets specified with +)
 

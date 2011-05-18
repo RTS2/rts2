@@ -33,6 +33,7 @@
 #include "status.h"
 
 #include <sstream>
+#include <sys/inotify.h>
 
 #include "rts2event.h"
 #include "rts2object.h"
@@ -629,6 +630,11 @@ class Block: public rts2core::App
 		 * Return vector of failed values.
 		 */
 		std::map <Rts2Conn *, std::vector <Value *> > failedValues ();
+
+		/**
+		 * Called when modified file entry is read from inotify file descriptor.
+		 */
+		 virtual void fileModified (struct inotify_event *event) {};
 
 	protected:
 

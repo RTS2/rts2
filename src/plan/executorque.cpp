@@ -280,16 +280,17 @@ int ExecutorQueue::selectNextObservation (int &pid)
 		return -1;
 	if (size () > 0)
 	{
+		setNow (master->getNow ());
 		struct ln_hrz_posn hrz;
 		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
-		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (master->getNow ()))
+		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (getNow ()))
 		{
 			pid = front ().planid;
 			return front ().target->getTargetID ();
 		}
 		else
 		{
-			double t = master->getNow ();
+			double t = getNow ();
 			// add timers..
 			double t_start = front ().t_start;
 			if (!isnan (t_start) && t_start > t)
@@ -339,6 +340,12 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
 	}
 	beforeChange ();
 	return failed;
+}
+
+void ExecutorQueue::revalidateConstraints (int watch_id)
+{
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+		iter->target->revalidateConstraints (watch_id);
 }
 
 void ExecutorQueue::updateVals ()
@@ -419,13 +426,14 @@ void ExecutorQueue::filterExpired ()
 {
 	if (empty ())
 		return;
+	setNow (master->getNow ());
 	ExecutorQueue::iterator iter;
 	ExecutorQueue::iterator iter2 = begin ();
 	for (;iter2 != end ();)
 	{
 		double t_start = iter2->t_start;
 		double t_end = iter2->t_end;
-		if (!isnan (t_start) && t_start <= master->getNow () && !isnan (t_end) && t_end <= master->getNow ())
+		if (!isnan (t_start) && t_start <= getNow () && !isnan (t_end) && t_end <= getNow ())
 			iter2 = removeEntry (iter2, "both start and end times expired");
 		else if (iter2->target->observationStarted () && removeAfterExecution->getValueBool () == true)
 		  	iter2 = removeEntry (iter2, "its observations started and removeAfterExecution was set to true");
@@ -444,10 +452,10 @@ void ExecutorQueue::filterExpired ()
 		{
 			case QUEUE_FIFO:
 			case QUEUE_CIRCULAR:
-				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= master->getNow ()));
+				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= getNow ()));
 				break;
 			default:
-				do_erase = (!isnan (t_start) && t_start <= master->getNow ());
+				do_erase = (!isnan (t_start) && t_start <= getNow ());
 				break;
 		}
 
@@ -473,7 +481,7 @@ bool ExecutorQueue::frontTimeExpires ()
 	iter++;
 	if (iter == end ())
 		return false;
-	return !iter->notExpired (master->getNow ());
+	return !iter->notExpired (getNow ());
 }
 
 void ExecutorQueue::removeTimers ()
