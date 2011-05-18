@@ -1,6 +1,6 @@
 sqldatadir = ${datadir}/doc/@PACKAGE@/sql
 
-SUBDIRS = auger data create drop update telma
+SUBDIRS = auger data create drop update telma phot
 
 dist_sqldata_DATA =     grant.sql		\
 			README

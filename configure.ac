@@ -760,6 +760,7 @@ AC_OUTPUT([Makefile
 	   src/sql/drop/Makefile
 	   src/sql/update/Makefile
 	   src/sql/telma/Makefile
+	   src/sql/phot/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
