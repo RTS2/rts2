@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
   gr2-> SetMarkerColor(kRed);
   gr2-> SetMarkerStyle(20);
   TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 5);
-  fit_flux-> SetParameters(100.,      fwhm_MinimumX, 2.5,        0.072,         100. * fwhm_at_minimum); // a little bit of magic here
+  fit_flux-> SetParameters(100.,      fwhm_MinimumX, 2.5,        0.072,         1000. * fwhm_at_minimum); // a little bit of magic here
   fit_flux-> SetParNames(  "constant","offset",      "exponent", "tan(alpha)", "fwhm_at_minimum");
   gr2-> Fit(fit_flux,"q");
 
