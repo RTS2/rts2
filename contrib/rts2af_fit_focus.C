@@ -99,6 +99,14 @@ Double_t one_over_fwhm_temp(Double_t *v, Double_t *par)
   Double_t fitval = par[0] * fwhm_at_minimum / ( fwhm_at_minimum + par[3] * TMath::Power(  TMath::Abs((v[0]- par[1])), par[2]) ) ;
   return fitval;
 }
+Double_t pol3(Double_t *v, Double_t *par)
+{
+
+  Double_t fitval = par[0] + par[1] * v[0] + par[2] * v[0] * v[0] + par[3]  * v[0] * v[0] * v[0];
+  return fitval;
+}
+
+
 // read the FWHM, FLUX_MAX files 
 int read_file( char *file, Float_t *foc_pos, Float_t *fv, Float_t *ex, Float_t *ey)
 {
@@ -199,13 +207,21 @@ int main(int argc, char* argv[])
   //fit_fwhm-> SetParameters(0., 1., 1.);
   //fit_fwhm-> SetParNames("p0","p1", "p2");
   //gr1-> Fit(fit_fwhm,"q") ;
-  gr1-> Fit("pol4","q");
+  //  gr1-> Fit("pol2","q");
 
+  TF1 *func = new TF1("fit",pol3,0,100000,4);
+  //   1  p0           1.85925e+03   9.55633e+02   4.57281e-04  -7.14746e-04
+  //   2  p1          -6.80267e-01   3.50029e-01  -1.67476e-07  -3.80031e+00
+  //   3  p2           6.14710e-05   3.16327e-05   1.51334e-11  -2.02273e+04
+  //   4  p3           1.50936e-10   7.60539e-11   3.63948e-17  -1.05825e+08
+  func->SetParameters( 1.85925e+03, -6.80267e-01, 6.14710e-05, 1.50936e-10);
+
+  gr1->Fit("fit");
   mg-> Add(gr1);
 
   // read the results
   // ToDo: integrate at least chi2 into rts2af
-  TF1 *fit_fwhm = gr1-> GetFunction("pol4");
+  TF1 *fit_fwhm = gr1-> GetFunction("fit");
   fit_fwhm_global = fit_fwhm ; // in root there is no method accepting a function pointer
  
   Double_t fwhm_chi2   = fit_fwhm-> GetChisquare();
@@ -253,7 +269,6 @@ int main(int argc, char* argv[])
   fit_flux-> SetParameters(100.,      fwhm_MinimumX, 2.5,        0.072,         100. * fwhm_at_minimum); // a little bit of magic here
   fit_flux-> SetParNames(  "constant","offset",      "exponent", "tan(alpha)", "fwhm_at_minimum");
   gr2-> Fit(fit_flux,"q");
-
 
   Double_t flux_chi2   = fit_flux-> GetChisquare();
   Double_t flux_p0     = fit_flux-> GetParameter(0); //constant
