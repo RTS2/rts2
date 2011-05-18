@@ -18,6 +18,7 @@
  */
 
 #include "connnotify.h"
+#include <sys/ioctl.h>
 
 using namespace rts2core;
 
@@ -38,5 +39,43 @@ int ConnNotify::init ()
 
 int ConnNotify::receive (fd_set * readset)
 {
-
+	if (sock >= 0 && FD_ISSET (sock, readset))
+	{
+		int len;
+		if (ioctl (sock, FIONREAD, &len))
+		{
+			throw Error ("cannot get next read size");
+		}
+		if (len > 0)
+		{
+			struct inotify_event *event = (struct inotify_event*) (malloc (len));
+			ssize_t ret = read (sock, &event, len);
+			if (ret != len)
+			{
+				logStream (MESSAGE_ERROR) << "invalid return while reading from notify stream: " << ret << " " << strerror (errno) << sendLog;
+				return 0;
+			}
+			// handle multiple events
+			struct inotify_event *ep = event;
+			while (ep < (event + len))
+			{
+				getMaster ()->fileModified (ep);
+				if (getDebug ())
+				{
+					if (ep->len > 0)
+					{
+						logStream (MESSAGE_DEBUG) << "notified update of file " << ep->name << sendLog;
+					}
+					else
+					{
+						logStream (MESSAGE_DEBUG) << "notified update of null file" << sendLog;
+					}
+				}
+				ep += sizeof (struct inotify_event) + ep->len;
+			}
+			free (event);
+		}
+		return len;
+	}
+	return 0;
 }

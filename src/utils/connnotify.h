@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONNNOTIFY__
+#define __RTS2_CONNNOTIFY__
+
 #include "rts2connnosend.h"
 
 #include <sys/inotify.h>
@@ -75,3 +78,5 @@ class ConnNotify:public Rts2ConnNoSend
 };
 
 };
+
+#endif // !__RTS2_CONNNOTIFY__

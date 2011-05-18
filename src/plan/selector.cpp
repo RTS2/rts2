@@ -21,7 +21,9 @@
 #include "rts2selector.h"
 #include "connselector.h"
 #include "executorque.h"
+#include "simulationque.h"
 
+#include "../utils/connnotify.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
@@ -74,6 +76,8 @@ class SelectorDev:public Rts2DeviceDb
 		virtual void postEvent (Rts2Event * event);
 		virtual void changeMasterState (int old_state, int new_state);
 
+		virtual void fileModified (struct inotify_event *event);
+
 		int selectNext ();		 // return next observation..
 
 		/**
@@ -124,11 +128,17 @@ class SelectorDev:public Rts2DeviceDb
 		rts2core::ValueSelection *lastQueue;
 
 		std::deque <rts2plan::ExecutorQueue> queues;
+
+		// queue entry for simulation
+		rts2plan::ExecutorQueue *simulationQueue;
+
 		std::deque <const char *> queueNames;
 
 		std::list <const char *> filterOptions;
 		std::list <const char *> filterFileOptions;
 		std::list <const char *> aliasFiles;
+
+		rts2core::ConnNotify notifyConn;
 
 		// load plan to queue
 		void queuePlan (rts2plan::ExecutorQueue *, double t);
@@ -138,7 +148,7 @@ class SelectorDev:public Rts2DeviceDb
 
 using namespace rts2selector;
 
-SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
+SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL"), notifyConn (this)
 {
 	sel = NULL;
 	observer = NULL;
@@ -189,6 +199,7 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 SelectorDev::~SelectorDev (void)
 {
 	delete sel;
+	delete simulationQueue;
 }
 
 int SelectorDev::processOption (int in_opt)
@@ -277,6 +288,13 @@ int SelectorDev::init ()
 
 		selQueNames->addValue (std::string (*iter));
 	}
+
+	simulationQueue = new rts2plan::SimulationQueue (this, &observer);
+
+	notifyConn.setDebug (true);
+
+	addConnection (&notifyConn);
+
 	return 0;
 }
 
@@ -548,6 +566,16 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 	}
 	updateNext ();
 	Rts2DeviceDb::changeMasterState (old_state, new_state);
+}
+
+void SelectorDev::fileModified (struct inotify_event *event)
+{
+	sel->revalidateConstraints (event->wd);
+	for (std::deque <rts2plan::ExecutorQueue>::iterator iter = queues.begin (); iter != queues.end (); iter++)
+	{
+		iter->revalidateConstraints (event->wd);
+		updateNext ();
+	}
 }
 
 void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
