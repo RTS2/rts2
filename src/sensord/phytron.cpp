@@ -60,6 +60,7 @@ class Phytron:public Sensor
 		rts2core::ValueInteger* runFreq;
 		rts2core::ValueInteger* systemStatus;
 		rts2core::ValueInteger* systemStatusExtended;
+		rts2core::ValueBool* powerOffIdle;
 		rts2core::ValueSelection* phytronParams[47];
 		rts2core::ValueBool* power;
 
@@ -183,6 +184,12 @@ int Phytron::setAxis (int new_val)
 {
 	int ret;
 	sprintf (cmdbuf, "01A%i", new_val);
+	if (powerOffIdle->getValueBool () == true)
+	{
+		setPower (true);
+		power->setValueBool (true);
+		sendValueAll (power);
+	}
 	logStream (MESSAGE_DEBUG) << "commanding axis to " << new_val << sendLog;
 	ret = writePort (cmdbuf);
 	if (ret)
@@ -196,6 +203,12 @@ int Phytron::setAxis (int new_val)
 	}
 	while (axis0->getValueInteger () != new_val);
 	logStream (MESSAGE_DEBUG) << "axis reached " << new_val << sendLog;
+	if (powerOffIdle->getValueBool () == true)
+	{
+		setPower (false);
+		power->setValueBool (false);
+		sendValueAll (power);
+	}
 	return 0;
 }
 
@@ -235,6 +248,8 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 	createValue (systemStatusExtended, "SE", "system status extended", false, RTS2_DT_HEX);
 
 	createValue (power, "power", "axis power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (powerOffIdle, "power_off_idle", "power off motor if its not moving", false);
+	powerOffIdle->setValueBool (true);
 
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
