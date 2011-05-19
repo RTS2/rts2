@@ -21,7 +21,6 @@
 #include "rts2selector.h"
 #include "connselector.h"
 #include "executorque.h"
-#include "simulationque.h"
 
 #include "../utils/connnotify.h"
 #include "../utils/rts2devclient.h"
@@ -129,9 +128,6 @@ class SelectorDev:public Rts2DeviceDb
 
 		std::deque <rts2plan::ExecutorQueue> queues;
 
-		// queue entry for simulation
-		rts2plan::ExecutorQueue *simulationQueue;
-
 		std::deque <const char *> queueNames;
 
 		std::list <const char *> filterOptions;
@@ -199,7 +195,6 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 SelectorDev::~SelectorDev (void)
 {
 	delete sel;
-	delete simulationQueue;
 }
 
 int SelectorDev::processOption (int in_opt)
@@ -288,8 +283,6 @@ int SelectorDev::init ()
 
 		selQueNames->addValue (std::string (*iter));
 	}
-
-	simulationQueue = new rts2plan::SimulationQueue (this, &observer);
 
 	notifyConn.setDebug (true);
 
