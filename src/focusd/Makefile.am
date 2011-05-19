@@ -1,6 +1,6 @@
 SUBDIRS = 
 
-bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2
+bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser
 
 noinst_HEADERS = focusd.h
 
@@ -20,6 +20,8 @@ rts2_focusd_dummy_SOURCES = dummy.cpp
 rts2_focusd_opentpl_SOURCES = opentpl.cpp
 
 rts2_focusd_atc2_SOURCES = atc2.cpp
+
+rts2_focusd_microfocuser_SOURCES = microfocuser.cpp
 
 EXTRA_DIST = 
 
