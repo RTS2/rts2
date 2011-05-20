@@ -129,6 +129,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			throw XmlRpcException ("variable is not selection");
 		sendSelection (os, (rts2core::ValueSelection *) rts2v);
 	}
+#ifdef HAVE_PGSQL
 	else if (vals.size () == 1 && vals[0] == "script")
 	{
 		int id = params->getInteger ("id", -1);
@@ -163,6 +164,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		memcpy (response, os.str().c_str (), response_length);
 		return;
 	}
+#endif // HAVE_PGSQL
 	else if (vals.size () == 1)
 	{
 		os << "{";
