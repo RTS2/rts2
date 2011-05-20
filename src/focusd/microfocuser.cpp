@@ -107,8 +107,8 @@ int Microfocuser::init ()
 	if (ret)
 		return ret;
 
-	MConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
-
+	MConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 100);
+	MConn->setDebug (true);
 	ret = MConn->init ();
 	if (ret)
 		return ret;
@@ -121,6 +121,10 @@ int Microfocuser::init ()
 		logStream (MESSAGE_ERROR) << "cannot switch focuser to PC mode" << sendLog;
 		return -1;
 	}
+
+	ret = info ();
+	if (ret)
+		return ret;
 
 	setIdleInfoInterval (40);
 
@@ -140,7 +144,7 @@ int Microfocuser::info ()
 	if (ret != 7)
 		return ret;
 
-	setPosition (atoi (buf + 2));
+	position->setValueFloat (atoi (buf + 2));
 
 	return Focusd::info ();
 }
@@ -163,7 +167,7 @@ int Microfocuser::setTo (float num)
 		return 0;
 
 	// compare as well strings we will send..
-	snprintf (buf, 7, "F%c%05d", (diff > 0) ? 'O' : 'I', (int) diff);
+	snprintf (buf, 8, "F%c%05d", (diff > 0) ? 'O' : 'I', (int) (fabs (diff)));
 
 	if (MConn->writePort (buf, 7))
 		return -1;
@@ -176,7 +180,13 @@ int Microfocuser::setTo (float num)
 
 int Microfocuser::isFocusing ()
 {
-	return -2;
+	int ret = info ();
+	if (ret)
+		return -1;
+	if (target->getValueInteger () - position->getValueInteger () == 0)
+		return -2;
+	sendValueAll (position);
+	return USEC_SEC;
 }
 
 int main (int argc, char **argv)
