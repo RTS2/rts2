@@ -2,12 +2,14 @@
 #define _GNU_SOURCE
 #endif
 /*!
- * @file Driver for generic LX200 protocol based telescope.
+ * @file Driver for Meade LX200 protocol based telescope. Implements
+ * move to HOME before movements. This is for old fork Meade mount. Please see
+ * lx200.cpp for GENERIC LX200 driver, which does not have this feature.
  *
- * LX200 was based on original c library for XEphem writen by Ken
- * Shouse <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
- * <cguirao@eso.org>. But most of the code was completly
- * rewriten and you will barely find any piece from XEphem.
+ * LX200 was based on original c library for XEphem writen by Ken Shouse
+ * <ken@kshouse.engine.swri.edu> and modified by Carlos Guirao
+ * <cguirao@eso.org>. But most of the code was completly rewriten and you will
+ * barely find any piece from XEphem.
  *
  * @author john,petr
  */
@@ -63,6 +65,11 @@ class LX200:public Telescope
 		int tel_desc;
 		int motors;
 
+		double lastMoveRa, lastMoveDec;
+
+		enum
+		{ NOTMOVE, MOVE_HOME, MOVE_REAL }
+		move_state;
 		time_t move_timeout;
 
 		// low-level functions..
@@ -474,6 +481,8 @@ in_argv)
 
 	motors = 0;
 	tel_desc = -1;
+
+	move_state = NOTMOVE;
 }
 
 
@@ -750,9 +759,18 @@ LX200::startResync ()
 {
 	int ret;
 
-	ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
+	ret = tel_slew_to (HOME_RA, HOME_DEC);
 
+	if (ret)
+	{
+		move_state = NOTMOVE;
+		return -1;
+	}
+
+	move_state = MOVE_HOME;
 	set_move_timeout (100);
+	lastMoveRa = getTelTargetRa ();
+	lastMoveDec = getTelTargetDec ();
 	return 0;
 }
 
@@ -762,16 +780,40 @@ LX200::isMoving ()
 {
 	int ret;
 
-	ret = tel_check_coords (getTelTargetRa (), getTelTargetDec ());
-	switch (ret)
+	switch (move_state)
 	{
-		case -1:
-			return -1;
-		case 0:
-			return USEC_SEC / 10;
-		case 1:
-		case 2:
-			return -2;
+		case MOVE_HOME:
+			ret = tel_check_coords (HOME_RA, HOME_DEC);
+			switch (ret)
+			{
+				case -1:
+					return -1;
+				case 0:
+					return USEC_SEC / 10;
+				case 1:
+				case 2:
+					stopMove ();
+					ret = tel_slew_to (lastMoveRa, lastMoveDec);
+					if (ret)
+						return -1;
+					move_state = MOVE_REAL;
+					set_move_timeout (100);
+					return USEC_SEC / 10;
+			}
+			break;
+		case MOVE_REAL:
+			ret = tel_check_coords (lastMoveRa, lastMoveDec);
+			switch (ret)
+			{
+				case -1:
+					return -1;
+				case 0:
+					return USEC_SEC / 10;
+				case 1:
+				case 2:
+					move_state = NOTMOVE;
+					return -2;
+			}
 			break;
 		default:
 			break;

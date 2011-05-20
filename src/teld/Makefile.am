@@ -10,7 +10,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
-	rts2-teld-lx200gps
+	rts2-teld-lx200gps rts2-teld-meade
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -32,6 +32,8 @@ rts2_teld_dummy_SOURCES = dummy.cpp
 rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
+
+rts2_teld_meade_SOURCES = meade.cpp hms.c
 
 rts2_teld_lx200gps_SOURCES = lx200gps.cpp hms.c
 
