@@ -32,6 +32,7 @@ rts2_teld_dummy_SOURCES = dummy.cpp
 rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
+rts2_teld_lx200_LDADD = librts2tellx200.a ${LDADD}
 
 rts2_teld_meade_SOURCES = meade.cpp hms.c
 
