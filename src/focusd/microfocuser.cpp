@@ -146,6 +146,8 @@ int Microfocuser::info ()
 
 	position->setValueFloat (atoi (buf + 2));
 
+	usleep (USEC_SEC);
+
 	return Focusd::info ();
 }
 
