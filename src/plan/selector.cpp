@@ -384,7 +384,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		// see what was selected from the queue..
 		interrupt->setValueBool (false);
 		sendValueAll (interrupt);
-		if (lastQueue->getValueInteger () > 0)
+		if (lastQueue && lastQueue->getValueInteger () > 0)
 		{
 			rts2plan::ExecutorQueue *eq = &(queues[lastQueue->getValueInteger () - 1]);
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
