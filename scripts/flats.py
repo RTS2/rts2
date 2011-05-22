@@ -208,7 +208,7 @@ class FlatScript (rts2comm.Rts2Comm):
 				 # skyflat at long eposure time
 		  		return self.expTimes[0]
 			# the caller decides on exptime whether to continue or to stop
-			return self.exptime
+			return exptime
 
 		# extreme cases, e.g. estimated exposure time laying outside of
 		# allowed exposure range, were sorted above. The algorithm now
