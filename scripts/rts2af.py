@@ -202,6 +202,7 @@ class Configuration:
         self.cp[('sky', 'SEEING')]= 27.e-6 # unit meter
 
         self.cp[('mode', 'SET_FOCUS')]= True
+        self.cp[('mode', 'SET_INIIAL_FOC_DEF')]= False
 
         # mapping of fits header elements to canonical
         self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_AAG.TEMP_IRS'
@@ -214,8 +215,8 @@ class Configuration:
         self.cp[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
         
 
-        self.cp[('queuing', 'USERNAME')] = 'preview' # username password for rts2af-queue command, see postgres db
-        self.cp[('queuing', 'PASSWORD')] = 'vaog2x'
+        self.cp[('queuing', 'USERNAME')] = 'rts2' # username password for rts2af-queue command, see postgres db
+        self.cp[('queuing', 'PASSWORD')] = 'rts2'
         self.cp[('queuing', 'QUEUENAME')]= 'focusing'
         self.cp[('queuing', 'TARGETID')] = '5'
         self.cp[('queuing', 'THRESHOLD')] = 2.12

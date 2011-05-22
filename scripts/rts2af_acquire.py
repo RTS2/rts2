@@ -241,7 +241,9 @@ class Acquire(rts2af.AFScript):
             # triggers setting of filter offset as FOC_FOFF as defined in the rts2 devices file
             r2c.setValue('FOC_FOFF' , 0, self.focuser)
             r2c.setValue('filter', filter.name)
-            r2c.setValue('FOC_DEF', focDef, self.focuser)
+            if(self.runTimeConfig.value('SET_INIIAL_FOC_DEF')):
+                r2c.setValue('FOC_DEF', focDef, self.focuser)
+
             # undo r2c.setValue('filter', filter.name)
             r2c.setValue('FOC_TOFF', filter.OffsetToClearPath, self.focuser)
             self.focPosReached(curFocPos, (focDef + filter.OffsetToClearPath), 0)
@@ -287,8 +289,9 @@ class Acquire(rts2af.AFScript):
                 self.prepareAcquisition( focDef, filter) # a previous run was successful
                 r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousre: {2} (setting from clear path run)'.format( filter.name, fwhm_foc_pos_fit, filter.exposure))
             else:
-                # depends on what one wants
+                # foc_def is set in prepareAcquisition if it is configured to do so
                 focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
+
                 if( self.prepareAcquisition( focDef, filter)): # use the config file value
                     r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousre: {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
                 else:
@@ -300,7 +303,7 @@ class Acquire(rts2af.AFScript):
             self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
             self.serviceFileOp.createAcquisitionBasePath( filter)
 
-            cmd= [ 'rts2af_analysis.py',
+            cmd= [ '/usr/local/src/rts2-head/scripts/rts2af_analysis.py',
                    '--config', configFileName
                    ]
             
@@ -349,7 +352,7 @@ class Acquire(rts2af.AFScript):
                     fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
 
         # completed
-        r2c.log('I','rts2af_acquire: focuser exposures finished for all filters, spawning rts2af_set_fit_focus.py')
+        r2c.log('I','rts2af_acquire: focuser exposures finished for all filters')
         # rts2af_set_fit_focus.py sets FOC_DEF and writes the filter offsets
         # will use that after Petr took a look at exe ... with arguments
         #cmd= [ '/usr/local/src/rts-2-head/scripts/rts2af_set_fit_focus.py',
