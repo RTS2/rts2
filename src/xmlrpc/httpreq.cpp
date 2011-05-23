@@ -181,7 +181,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 		val = conn->getValue ("current");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
+			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);
@@ -192,7 +192,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 		val = conn->getValue ("next");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
+			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);

@@ -65,7 +65,7 @@ struct bonusSort: public std::binary_function <TargetEntry *, TargetEntry *, boo
 class Selector
 {
 	public:
-		Selector ();
+		Selector (rts2core::ConnNotify *_notifyConn = NULL);
 		virtual ~ Selector (void);
 
 		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
@@ -166,6 +166,8 @@ class Selector
 		{
 			return (std::find (nightDisabledTypes.begin (), nightDisabledTypes.end (), target_type) != nightDisabledTypes.end ());
 		}
+
+		rts2core::ConnNotify *notifyConn;
 };
 
 template <class Predicate> void Selector::printPossible (std::ostream &os, Predicate pred)

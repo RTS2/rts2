@@ -236,7 +236,7 @@ int SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new rts2plan::Selector ();
+	sel = new rts2plan::Selector (&notifyConn);
 
 	sel->setObserver (observer);
 	sel->init ();
@@ -268,7 +268,11 @@ int SelectorDev::init ()
 	int ret = Rts2DeviceDb::init ();
 	if (ret)
 		return ret;
-	
+
+	ret = notifyConn.init ();
+	if (ret)
+		return ret;
+
 	if (!queueNames.empty ())
 	{
 		createValue (selQueNames, "queue_names", "selector queue names", false);
@@ -520,7 +524,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		}
 		try
 		{
-			if (q->queueFromConn (conn, withTimes))
+			if (q->queueFromConn (conn, withTimes, &notifyConn))
 				return -2;
 		}
 		catch (rts2core::Error &er)

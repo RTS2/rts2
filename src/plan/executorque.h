@@ -119,7 +119,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 */
 		int selectNextObservation (int &pid);
 
-		int queueFromConn (Rts2Conn *conn, bool withTimes = false);
+		int queueFromConn (Rts2Conn *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 

@@ -249,12 +249,12 @@ void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double
 	printAltTable (_os, jd_start, i, i+step, step * 2.0, false);
 }
 
-Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs, rts2core::ConnNotify *_watchConn):Rts2Target ()
+Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
 
-	watchConn = _watchConn;
+	watchConn = NULL;
 
 	observer = in_obs;
 
@@ -286,6 +286,8 @@ Target::Target ()
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
+
+	watchConn = NULL;
 
 	observer = config->getObserver ();
 
@@ -1720,7 +1722,7 @@ int Target::printImages (double JD, std::ostream &_os, int flags)
 	return img_set.size ();
 }
 
-Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, rts2core::ConnNotify *watchConn)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_tar_id = _tar_id;
@@ -1802,6 +1804,9 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 			retTarget = new ConstTarget (_tar_id, _obs);
 			break;
 	}
+
+	if (watchConn)
+		retTarget->setWatchConnection (watchConn);
 
 	retTarget->setTargetType (db_type_id);
 	retTarget->load ();

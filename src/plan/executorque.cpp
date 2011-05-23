@@ -239,10 +239,11 @@ void ExecutorQueue::beforeChange ()
 		case QUEUE_FIFO:
 			break;
 		case QUEUE_CIRCULAR:
-			// shift only if queue is not empty and time for first observation already expires..
-			if (!empty () && frontTimeExpires ())
+			// shift only if queue is not empty and time for first observation already expires or its start and end time is not specified..
+			if (!empty () && (frontTimeExpires () || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
 			{
-				push_back (createTarget (front ().target->getTargetID (), *observer));
+				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
+				delete front ().target;
 				pop_front ();
 			}
 			break;
@@ -309,7 +310,7 @@ int ExecutorQueue::selectNextObservation (int &pid)
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
+int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes, rts2core::ConnNotify *watchConn)
 {
 	double t_start = rts2_nan ("f");
 	double t_end = rts2_nan ("f");
@@ -330,7 +331,7 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes)
 				continue;
 			}
 		}
-		rts2db::Target *nt = createTarget (tar_id, *observer);
+		rts2db::Target *nt = createTarget (tar_id, *observer, watchConn);
 		if (!nt)
 		{
 			failed++;
@@ -451,7 +452,6 @@ void ExecutorQueue::filterExpired ()
 		switch (queueType->getValueInteger ())
 		{
 			case QUEUE_FIFO:
-			case QUEUE_CIRCULAR:
 				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= getNow ()));
 				break;
 			default:
@@ -493,5 +493,6 @@ void ExecutorQueue::removeTimers ()
 ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const char *reason)
 {
 	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") because " << reason << sendLog;
+	delete iter->target;
 	return erase (iter);
 }

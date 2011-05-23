@@ -735,7 +735,7 @@ void TargetAltitude::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		throw XmlRpcException ("Invalid number of parameters");
 	if (((int) params[0]) < 0)
 		throw XmlRpcException ("Target id < 0");
-	rts2db::Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
+	rts2db::Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 	if (tar == NULL)
 	{
 		throw XmlRpcException ("Cannot create target");

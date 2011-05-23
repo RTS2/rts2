@@ -139,6 +139,12 @@ int XmlRpcd::init ()
 	if (ret)
 		return ret;
 
+	ret = notifyConn.init ();
+	if (ret)
+		return ret;
+
+	addConnection (&notifyConn);
+
 	if (printDebug ())
 		XmlRpc::setVerbosity (5);
 
@@ -326,8 +332,8 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   plan ("/plan", this),
 #endif // HAVE_PGSQL
   switchState ("/switchstate", this),
-  devices ("/devices", this)
-
+  devices ("/devices", this),
+  notifyConn (this)
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;

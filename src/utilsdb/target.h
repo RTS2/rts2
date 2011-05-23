@@ -154,7 +154,7 @@ class Target:public Rts2Target
 		/**
 		 * @param watchConn connection for watch events (inotify)
 		 */
-		Target (int in_tar_id, struct ln_lnlat_posn *in_obs, rts2core::ConnNotify *_watchConn = NULL);
+		Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		// create new target. Save will save it to the database..
 		Target ();
 		virtual ~ Target (void);
@@ -682,6 +682,10 @@ class Target:public Rts2Target
 		 */
 		virtual bool checkConstraints (double JD);
 
+		void setWatchConnection (rts2core::ConnNotify *watchC) { watchConn = watchC; }
+
+		rts2core::ConnNotify *getWatchConnection () { return watchConn; }
+
 		/**
 		 * Check if given ID is among watches for constraints
 		 * associated to the target. Delete constrainst if it is
@@ -1064,7 +1068,7 @@ Rts2InfoValStream & operator << (Rts2InfoValStream & _os, rts2db::Target & targe
  *
  * @return New target if it can be found. Otherwise will return NULL.
  */
-rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs);
+rts2db::Target *createTarget (int tar_id, struct ln_lnlat_posn *obs, rts2core::ConnNotify *watchConn = NULL);
 
 /**
  * Create target by name.

@@ -53,6 +53,7 @@
 #include "libcss.h"
 #include "api.h"
 #include "images.h"
+#include "../utils/connnotify.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 
@@ -174,6 +175,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		const char *getDefaultImageLabel ();
 
+		rts2core::ConnNotify * getNotifyConnection () { return &notifyConn; }
+
 		/**
 		 * Register asynchronous API call.
 		 */
@@ -284,6 +287,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 #endif // HAVE_PGSQL
 		SwitchState switchState;
 		Devices devices;
+
+		rts2core::ConnNotify notifyConn;
 };
 
 };

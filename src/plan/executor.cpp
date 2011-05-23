@@ -64,6 +64,7 @@ class Executor:public Rts2DeviceDb
 
 	protected:
 		virtual int processOption (int in_opt);
+		virtual int init ();
 		virtual int reloadConfig ();
 
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
@@ -130,13 +131,15 @@ class Executor:public Rts2DeviceDb
 		rts2core::ValueBool *ignoreDay;
 
 		rts2core::ValueInteger *img_id;
+
+		rts2core::ConnNotify notifyConn;
 };
 
 }
 
 using namespace rts2plan;
 
-Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
+Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC"),notifyConn (this)
 {
 	currentTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts", false);
@@ -213,6 +216,18 @@ int Executor::processOption (int in_opt)
 			return Rts2DeviceDb::processOption (in_opt);
 	}
 	return 0;
+}
+
+int Executor::init ()
+{
+	int ret = Rts2DeviceDb::init ();
+	if (ret)
+		return ret;
+	ret = notifyConn.init ();
+	if (ret)
+		return ret;
+	
+	addConnection (&notifyConn);
 }
 
 int Executor::reloadConfig ()
@@ -505,7 +520,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 			{
 			  	try
 				{
-					getActiveQueue ()->addFront (createTarget (1, observer));
+					getActiveQueue ()->addFront (createTarget (1, observer, &notifyConn));
 					if (!currentTarget)
 						switchTarget ();
 				}
@@ -542,7 +557,7 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 {
 	try
 	{
-		rts2db::Target *nt = createTarget (tarId, observer);
+		rts2db::Target *nt = createTarget (tarId, observer, &notifyConn);
 		if (!nt)
 			return -2;
 		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
@@ -595,7 +610,7 @@ int Executor::setNow (int nextId)
 
 	try
 	{
-		newTarget = createTarget (nextId, observer);
+		newTarget = createTarget (nextId, observer, &notifyConn);
 		if (!newTarget)
 			// error..
 			return -2;
@@ -656,7 +671,7 @@ int Executor::setGrb (int grbId)
 			logStream (MESSAGE_INFO) << "GRB event with target id " << grbId << " ignored, will be scheduled from selector" << sendLog;
 			return 0;
 		}
-		grbTarget = createTarget (grbId, observer);
+		grbTarget = createTarget (grbId, observer, &notifyConn);
 
 		if (!grbTarget)
 			return -2;
@@ -776,7 +791,7 @@ void Executor::doSwitch ()
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{
 		// create again our target..since conditions changed, we will get different target id
-		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer));
+		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer, &notifyConn));
 	}
 	// check dark and flat processing
 	beforeChange ();

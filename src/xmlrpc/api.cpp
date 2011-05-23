@@ -139,7 +139,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		if (cname[0] == '\0')
 			throw XmlRpcException ("empty camera name");
 		
-		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver ());
+		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		rts2script::Script script = rts2script::Script ();
 		script.setTarget (cname, target);
 		script.prettyPrint (os, rts2script::PRINT_XML);
@@ -155,7 +155,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		int tid = params->getInteger ("id", -1);
 		if (tid <= 0)
 			throw XmlRpcException ("empty target ID");
-		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver ());
+		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		target->getConstraints ()->print (os);
 
 		response_type = "application/xml";
@@ -308,7 +308,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			// 60 sec = 1 minute step (by default)
 			double step = params->getDouble ("step", 60);
 
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			rts2db::Constraints *cons = tar->getConstraints ();
 
 			os << '"' << cn << "\":[";

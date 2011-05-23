@@ -49,7 +49,7 @@ int ConnNotify::receive (fd_set * readset)
 		if (len > 0)
 		{
 			struct inotify_event *event = (struct inotify_event*) (malloc (len));
-			ssize_t ret = read (sock, &event, len);
+			ssize_t ret = read (sock, event, len);
 			if (ret != len)
 			{
 				logStream (MESSAGE_ERROR) << "invalid return while reading from notify stream: " << ret << " " << strerror (errno) << sendLog;
@@ -62,13 +62,13 @@ int ConnNotify::receive (fd_set * readset)
 				getMaster ()->fileModified (ep);
 				if (getDebug ())
 				{
-					if (ep->len > 0)
+					if (ep->len > 1)
 					{
 						logStream (MESSAGE_DEBUG) << "notified update of file " << ep->name << sendLog;
 					}
 					else
 					{
-						logStream (MESSAGE_DEBUG) << "notified update of null file" << sendLog;
+						logStream (MESSAGE_DEBUG) << "notified update of file with ID " << ep->wd << sendLog;
 					}
 				}
 				ep += sizeof (struct inotify_event) + ep->len;

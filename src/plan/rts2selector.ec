@@ -28,9 +28,10 @@
 
 using namespace rts2plan;
 
-Selector::Selector ()
+Selector::Selector (rts2core::ConnNotify *_notifyConn)
 {
 	observer = NULL;
+	notifyConn = _notifyConn;
 }
 
 Selector::~Selector (void)
@@ -127,7 +128,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		return;
 
 	// add us..
-	newTar = createTarget (consider_tar_id, observer);
+	newTar = createTarget (consider_tar_id, observer, notifyConn);
 	if (!newTar)
 		return;
 	ret = newTar->considerForObserving (JD);
@@ -201,8 +202,8 @@ void Selector::checkTargetBonus ()
 void Selector::findNewTargets ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int consider_tar_id;
-		char consider_type_id;
+	int consider_tar_id;
+	char consider_type_id;
 	EXEC SQL END DECLARE SECTION;
 
 	double JD;
