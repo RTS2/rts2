@@ -137,7 +137,7 @@ class main(rts2af.AFScript):
                 # let rts2-scriptexec do its inital job
                 # it waits until the with the target associated script has been completed 
                 time.sleep(10) 
-                logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm))
+                logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd))
             else:
                 logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}'.format(fwhm, threshFwhm))
         else:

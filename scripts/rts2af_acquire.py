@@ -302,8 +302,8 @@ class Acquire(rts2af.AFScript):
 
             self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
             self.serviceFileOp.createAcquisitionBasePath( filter)
-
-            cmd= [ '/usr/local/src/rts2-head/scripts/rts2af_analysis.py',
+# ToDo wildi
+            cmd= [ 'rts2af_analysis.py',
                    '--config', configFileName
                    ]
             
