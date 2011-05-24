@@ -228,6 +228,8 @@ int Executor::init ()
 		return ret;
 	
 	addConnection (&notifyConn);
+
+	return ret;
 }
 
 int Executor::reloadConfig ()
