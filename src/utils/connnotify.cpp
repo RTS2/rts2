@@ -19,6 +19,9 @@
 
 #include "connnotify.h"
 #include <sys/ioctl.h>
+#ifndef HAVE_INOTIFY_INIT1
+#include <fcntl.h>
+#endif
 
 using namespace rts2core;
 
@@ -29,7 +32,12 @@ ConnNotify::ConnNotify (rts2core::Block *_master):Rts2ConnNoSend (_master)
 
 int ConnNotify::init ()
 {
+#ifdef HAVE_INOTIFY_INIT1
 	sock = inotify_init1 (IN_NONBLOCK);
+#else
+	sock = inotify_init ();
+	fcntl (sock, O_NONBLOCK);
+#endif
         if (sock == -1)
         {
 		throw Error ("cannot initialize notify FD");
