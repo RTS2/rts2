@@ -153,6 +153,22 @@ class ConnTCP:public Rts2ConnNoSend
 		 */
 		void receiveData (std::istringstream **_is, int wtime, char end_char);
 
+		/**
+		 * Send data, wait for reply.
+		 *
+		 * @param wbuf    buffer with data to write
+		 * @param wlne    length of the write buffer
+		 * @param rbuf    buffer where readed data will be stored
+		 * @param rlen    length of the read buffer
+		 * @param endChar end character
+		 * @param wtime   connection timeout
+		 *
+		 * @return size of data readed on success.
+		 *
+		 * @throw ConnError on error.
+		 */
+		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime = 5);
+
 		virtual void postEvent (Rts2Event * event);
 
 	protected:

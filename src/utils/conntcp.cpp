@@ -218,7 +218,16 @@ void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 		if (checkBufferForChar (_is, end_char))
 			return;
 	}
+}
 
+int ConnTCP::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime)
+{
+	std::istringstream is;
+	sendData (wbuf, wlen);
+	receiveData (is, endChar, wtime);
+	strncpy (rbuf, is.str ().c_str (), rlen);
+	rbuf[rlen] = '\0';
+	return is.str ().length ();
 }
 
 void ConnTCP::postEvent (Rts2Event *event)
