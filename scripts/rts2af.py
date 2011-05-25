@@ -219,7 +219,7 @@ class Configuration:
         self.cp[('queuing', 'PASSWORD')] = 'rts2'
         self.cp[('queuing', 'QUEUENAME')]= 'focusing'
         self.cp[('queuing', 'TARGETID')] = '5'
-        self.cp[('queuing', 'THRESHOLD')] = 2.12
+        self.cp[('queuing', 'THRESHOLD')] = 3.12
 
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -1918,12 +1918,16 @@ class ServiceFileOperations():
             return fileName
 
         for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
-            if( fileName in names):
+            if( fileName.rstrip() in names):
                 if(self.runTimePath == '/'):
                     self.runDateTime= root.split('/')[-2]
-                    
+                else:
+                    self.runDateTime= 'NO DATE'
                 self.runTimePath= root
                 return True
+        else:
+            logging.error('ServiceFileOperations.defineRunTimePath: something is wrong')
+
         return False
             
     def setModeExecutable(self, path):

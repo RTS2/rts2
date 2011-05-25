@@ -59,7 +59,6 @@ class main(rts2af.AFScript):
             logging.info('rts2af_analysis.py: logger no config file specified, taking default' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
-
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
@@ -78,7 +77,7 @@ class main(rts2af.AFScript):
             print 'FOCUS: -1'
             sys.stdout.flush()
 
-            logging.error('rts2af_analysis.py: reference file: '+ referenceFitsFileName + ' not found in base directory: ' + runTimeConfig.value('BASE_DIRECTORY' + ', exiting'))
+            logging.error('rts2af_analysis.py: reference file: {0} not found in base directory: {1}, exiting'.format(referenceFitsFileName, runTimeConfig.value('BASE_DIRECTORY')))
             sys.exit(1)
 
 
