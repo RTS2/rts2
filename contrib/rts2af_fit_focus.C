@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
   //   4  p3           1.50936e-10   7.60539e-11   3.63948e-17  -1.05825e+08
   func->SetParameters( 1.85925e+03, -6.80267e-01, 6.14710e-05, 1.50936e-10);
 
-  gr1->Fit("fit");
+  gr1->Fit("fit", "bq");
   mg-> Add(gr1);
 
   // read the results
