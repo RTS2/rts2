@@ -510,7 +510,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		{
 			if (!conn->paramEnd ())
 				return -2;
-			q->clearNext (NULL);
+			q->clearNext ();
 			return 0;
 		}
 		else if (conn->isCommand ("queue_plan"))
@@ -577,7 +577,7 @@ void SelectorDev::fileModified (struct inotify_event *event)
 
 void SelectorDev::queuePlan (rts2plan::ExecutorQueue *q, double t)
 {
-	q->clearNext (NULL);
+	q->clearNext ();
 	q->setSkipBelowHorizon (true);
 	rts2db::PlanSet p (getNow (), getNow () + t);
 	p.load ();

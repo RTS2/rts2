@@ -752,7 +752,8 @@ int Executor::stop ()
 
 void Executor::clearNextTargets ()
 {
-  	getActiveQueue ()->clearNext (currentTarget);
+	getActiveQueue ()->setCurrentTarget (currentTarget);
+  	getActiveQueue ()->clearNext ();
 	sendValueAll (next_id);
 	sendValueAll (next_name);
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
@@ -788,6 +789,7 @@ void Executor::doSwitch ()
 	int ret;
 	int nextId;
 	// make sure queue is configured for target change
+	getActiveQueue ()->setCurrentTarget (currentTarget);
 	getActiveQueue ()->beforeChange ();
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))

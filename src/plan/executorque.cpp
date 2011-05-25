@@ -81,6 +81,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
   	master = _master;
 	std::string sn (name);
 	observer = _observer;
+	currentTarget = NULL;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false);
@@ -108,7 +109,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 
 ExecutorQueue::~ExecutorQueue ()
 {
-	clearNext (NULL);
+	clearNext ();
 }
 
 int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
@@ -260,7 +261,7 @@ void ExecutorQueue::beforeChange ()
 	filter ();
 }
 
-void ExecutorQueue::clearNext (rts2db::Target *currentTarget)
+void ExecutorQueue::clearNext ()
 {
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
@@ -493,6 +494,9 @@ void ExecutorQueue::removeTimers ()
 ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const char *reason)
 {
 	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") because " << reason << sendLog;
-	delete iter->target;
+	if (iter->target != currentTarget)
+		delete iter->target;
+	else
+		currentTarget = NULL;
 	return erase (iter);
 }

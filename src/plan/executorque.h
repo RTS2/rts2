@@ -103,13 +103,18 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		void filter ();
 
 		void sortWestEastMeridian ();
+
+		/**
+		 * Do not delete pointer to this target, as it is used somewhere else.
+		 */
+		void setCurrentTarget (rts2db::Target *ct) { currentTarget = ct; }
 		
 		/**
 		 * Put next target on front of the queue.
 		 */
 		void beforeChange ();
 
-		void clearNext (rts2db::Target *currentTarget);
+		void clearNext ();
 
 		/**
 		 * Select next valid observation target. As queues might hold targets which are invalid (e.g. start date of observation
@@ -183,6 +188,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		// remove target with debug entry why it was removed from the queue
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const char *reason);
+
+		rts2db::Target *currentTarget;
 };
 
 }
