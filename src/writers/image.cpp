@@ -1085,8 +1085,7 @@ void Image::getValues (const char *name, char **values, int num, bool required, 
 		throw ErrorOpeningFitsFile (getFileName ());
 	
 	int nfound;
-	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
+	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
 	fitsStatusGetValue (name, required);
 }
 
