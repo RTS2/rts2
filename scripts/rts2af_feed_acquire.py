@@ -60,12 +60,14 @@ class main():
         self.scriptPath= '/home/wildi/workspace/rts2-head/scripts/'
 
         self.storePath=[]
-        self.storePath.append('/usr/local/src/rts2af-data/samples/03/') # NOFILTER (AOSTA)
+#        self.storePath.append('/usr/local/src/rts2af-data/samples/03/') # NOFILTER (AOSTA)
 #        self.storePath.append('/scratch/focus/2011-04-15-T23:58:06/X') # X
+        self.storePath.append('/scratch/focus/2011-05-25T03:58:48.524330/X') # X
 #        self.storePath.append('/scratch/focus/2011-04-23T00:33:19.510523/H') # H
         self.referenceFile=[]
-        self.referenceFile.append('20071205025927-674-RA.fits') # NOFILTER (AOSTA)
+#        self.referenceFile.append('20071205025927-674-RA.fits') # NOFILTER (AOSTA)
 #        self.referenceFile.append('20110416000447-370-RA.fits') # X
+        self.referenceFile.append('20110525015935-511-RA-reference.fits') # X
 #        self.referenceFile.append('20110422224736-422-RA.fits') # H
 #        self.cmd= self.scriptPath + 'rts2af_acquire.py'
         self.cmd= 'rts2af_acquire.py'
@@ -92,7 +94,7 @@ class main():
     def ignoreOutput(self, acq):
         while(True):
             time.sleep(.1)
-            output= acq.stdout.readline()
+            output= acq.stdout.readline().strip()
             if( self.pexposure.match(output)):
                 if( self.verbose):
                     print 'rts2af_feed_acquire, breaking on exposure output >>{0}<<'.format(output)
@@ -111,13 +113,13 @@ class main():
         acquire= subprocess.Popen( acquire_cmd, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 
         # focuser dialog
-        output= acquire.stdout.readline()
+        output= acquire.stdout.readline().strip()
         if( self.verbose):
             print 'rts2af_feed_acquire, output: >>{0}<<, focuser'.format(output, self.focuser)
         acquire.stdin.write('{0}\n'.format(self.focuser))
 
         # filtersInUse dialog
-        output= acquire.stdout.readline()
+        output= acquire.stdout.readline().strip()
         #print 'rts2af_feed_acquire, filter request {0}'.format(output)
         for filter in self.filtersInUse:
             acquire.stdin.write('{0} '.format(filter))
@@ -167,7 +169,7 @@ class main():
         print 'rts2af_feed_acquire ending, reading stdin for ever'
         while(True):
             try:
-                print 'rts2af_feed_acquire.py: from rts2af_acquire.py: {0}'.format( acquire.stdout.readline())
+                print 'rts2af_feed_acquire.py: from rts2af_acquire.py: {0}'.format( acquire.stdout.readline().strip())
             except:
                 print 'rts2af_feed_acquire.py: cought exception, breaking'
                 break

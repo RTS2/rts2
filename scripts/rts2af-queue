@@ -73,7 +73,7 @@ class Rts2Queue:
 			
 	def queueTargets(self,ids):
 
-		logging.info('rts2af-queue: queuing  for options:{0} '.format(options))
+		logging.debug('rts2af-queue: queuing  for options:{0} '.format(options))
 		now= time.time()
 		return self.loadJson('/api/cmd',{'d':'SEL','c':"queue_at {0} {1} {2} {3}".format(  self.queue, string.join(map(str,ids),' '), now, now + 1800)})
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
         logformat= '%(asctime)s %(levelname)s %(message)s'
 	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format= logformat)
 
-	logging.info('rts2af-queue: staring with options:{0} '.format(options))
+	logging.debug('rts2af-queue: staring with options:{0} '.format(options))
 
 	q = Rts2Queue(options.queue,options.server,options.username,options.password)
 
@@ -124,4 +124,4 @@ if __name__ == '__main__':
 		resp = q.queueTargets(tids)
 		print resp['d']['plan_ids'][1]
 
-	logging.info('rts2af-queue: end      for options:{0} '.format(options))
+	logging.debug('rts2af-queue: end      for options:{0} '.format(options))

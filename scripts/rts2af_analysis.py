@@ -37,6 +37,7 @@ __author__ = 'markus.wildi@one-arcsec.org'
 
 import sys
 import re
+import os
 import logging
 import rts2af 
 
@@ -45,8 +46,12 @@ class main(rts2af.AFScript):
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
         self.test = False
+        self.pid= os.getpid()
 
     def main(self):
+        logformat= '%(asctime)s %(levelname)s %(message)s'
+	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format= logformat)
+
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         args      = self.arguments()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
@@ -71,7 +76,7 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
 # create the reference catalogue
-        referenceFitsFileName = sys.stdin.readline()
+        referenceFitsFileName = sys.stdin.readline().strip()
 
         if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
             print 'FOCUS: -1'
@@ -84,6 +89,8 @@ class main(rts2af.AFScript):
         if( self.test== True):
             logging.info('rts2af_analysis.py: got reference file: {0}'.format(referenceFitsFileName))
         else:
+            logging.info('rts2af_analysis.py: pid: {0}, starting, refernece file: {1}'.format(self.pid, referenceFitsFileName))
+
             hdur= rts2af.FitsHDU(referenceFitsFileName)
 
             HDUs= None
@@ -135,7 +142,7 @@ class main(rts2af.AFScript):
 
             fits=None
             try:
-                fits= sys.stdin.readline()
+                fits= sys.stdin.readline().strip()
             except:
                 logging.info('rts2af_analysis.py: got EOF, breaking')
                 break
@@ -182,7 +189,8 @@ class main(rts2af.AFScript):
             focusPosition= cats.fitTheValues()
             print '{0}'.format(focusPosition)
             logging.info('rts2af_analysis.py: fit result {0}'.format(focusPosition))
-# already gone?            sys.stdout.flush()
+
+        logging.info('rts2af_analysis.py: pid: {0}, ending, refernece file: {1}'.format(self.pid, referenceFitsFileName))
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

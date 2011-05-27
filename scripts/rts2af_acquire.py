@@ -50,6 +50,7 @@ __author__ = 'markus.wildi@one-arcsec.org'
 import sys
 import time
 import re
+import os
 import subprocess
 
 import rts2comm
@@ -85,6 +86,8 @@ class Acquire(rts2af.AFScript):
         self.windowOffsetY= self.runTimeConfig.ccd.windowOffsetY
         self.windowWidth= self.runTimeConfig.ccd.windowWidth
         self.windowHeight= self.runTimeConfig.ccd.windowHeight
+        self.pid= os.getpid()
+
 
     def focPosWithinLimits(self, focPos=None):
 
@@ -202,7 +205,6 @@ class Acquire(rts2af.AFScript):
 
                     if( self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath)):
                         
-
                         curFocPos=-1
                         if( not self.test):
                             curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
@@ -235,12 +237,14 @@ class Acquire(rts2af.AFScript):
         curFocPos=-1
         if( not self.test):
             curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
-        
+            r2c.log('I','rts2af_acquire: prepareAcquisition: current focuser position: {0}'.format(curFocPos))
+
         if(( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.lowerLimit)) and( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.upperLimit))):
             # the order is important
-            # triggers setting of filter offset as FOC_FOFF as defined in the rts2 devices file
             r2c.setValue('FOC_FOFF' , 0, self.focuser)
+            # triggers setting of filter offset as FOC_TOFF as defined in the rts2 devices file
             r2c.setValue('filter', filter.name)
+            # take last position if not True, meaning: use configured value
             if(self.runTimeConfig.value('SET_INIIAL_FOC_DEF')):
                 r2c.setValue('FOC_DEF', focDef, self.focuser)
 
@@ -260,6 +264,7 @@ class Acquire(rts2af.AFScript):
         return
 
     def run(self):
+
         # telescope parameter
         telescope=rts2af.Telescope() # take the defaults from the config file or overwrite them here
 
@@ -280,6 +285,7 @@ class Acquire(rts2af.AFScript):
             filtersInUse= self.runTimeConfig.filtersInUse
 
         fwhm_foc_pos_fit= -1
+        focDef= -1
         for fltName in filtersInUse:
 
             filter= self.runTimeConfig.filterByName( fltName)
@@ -289,8 +295,15 @@ class Acquire(rts2af.AFScript):
                 self.prepareAcquisition( focDef, filter) # a previous run was successful
                 r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousre: {2} (setting from clear path run)'.format( filter.name, fwhm_foc_pos_fit, filter.exposure))
             else:
-                # foc_def is set in prepareAcquisition if it is configured to do so
-                focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
+
+                if( not self.runTimeConfig.value('SET_INIIAL_FOC_DEF')):
+                    if( not self.test):
+                        focDef= r2c.getValueFloat('FOC_DEF',self.focuser)
+                    else:
+                        focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
+
+                else:
+                    focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
 
                 if( self.prepareAcquisition( focDef, filter)): # use the config file value
                     r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousre: {2}'.format( filter.name, filter.OffsetToClearPath, filter.exposure))
@@ -307,7 +320,7 @@ class Acquire(rts2af.AFScript):
                    '--config', configFileName
                    ]
             
-            r2c.log('I','rts2af_acquire: COMMAND: {0}, filter: {1}'.format(cmd, filter.name))
+            r2c.log('I','rts2af_acquire: pid: {0}, COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
             try:
                 analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -350,6 +363,10 @@ class Acquire(rts2af.AFScript):
                     analysis[filter.name].stdin.write('Q\n')
                     r2c.log('I','rts2af_acquire: focuser exposures finished for filter: {0}'.format(filter.name))
                     fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
+
+
+            r2c.log('I','rts2af_acquire: pid: {0}, ended for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
+
 
         # completed
         r2c.log('I','rts2af_acquire: focuser exposures finished for all filters')
