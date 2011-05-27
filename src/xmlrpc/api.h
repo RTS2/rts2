@@ -65,10 +65,12 @@ class AsyncAPI:public Rts2Object
 		bool isForSource (XmlRpcServerConnection *_source) { return source == _source; }
 		bool isForConnection (Rts2Conn *_conn) { return conn == _conn; }
 
-	private:
+	protected:
 		API *req;
-		Rts2Conn *conn;
 		XmlRpcServerConnection *source;
+
+	private:
+		Rts2Conn *conn;
 };
 
 /**

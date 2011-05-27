@@ -54,26 +54,33 @@ using namespace XmlRpc;
 
 using namespace rts2xmlrpc;
 
-void XmlDevClient::stateChanged (Rts2ServerState * state)
+void XmlDevInterface::stateChanged (Rts2ServerState * state)
 {
-	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
-	rts2core::Rts2DevClient::stateChanged (state);
+	(getMaster ())->stateChangedEvent (getConnection (), state);
 }
 
-void XmlDevClient::valueChanged (rts2core::Value * value)
+void XmlDevInterface::valueChanged (rts2core::Value * value)
 {
 	changedTimes[value] = getMaster()->getNow ();
-	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
-	// record change time..
-	rts2core::Rts2DevClient::valueChanged (value);
+	(getMaster ())->valueChangedEvent (getConnection (), value);
 }
 
-double XmlDevClient::getValueChangedTime (rts2core::Value *value)
+double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 {
 	std::map <rts2core::Value *, double>::iterator iter = changedTimes.find (value);
 	if (iter == changedTimes.end ())
 		return rts2_nan ("f");
 	return iter->second;
+}
+
+rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
+{
+	return new rts2image::Image ("/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
+}
+
+rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)
+{
+	return rts2image::IMAGE_DO_BASIC_PROCESSING;
 }
 
 int XmlRpcd::idle ()
@@ -139,11 +146,11 @@ int XmlRpcd::init ()
 	if (ret)
 		return ret;
 
-	ret = notifyConn.init ();
+	ret = notifyConn->init ();
 	if (ret)
 		return ret;
 
-	addConnection (&notifyConn);
+	addConnection (notifyConn);
 
 	if (printDebug ())
 		XmlRpc::setVerbosity (5);
@@ -332,14 +339,15 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   plan ("/plan", this),
 #endif // HAVE_PGSQL
   switchState ("/switchstate", this),
-  devices ("/devices", this),
-  notifyConn (this)
+  devices ("/devices", this)
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
 	defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
 
 	auth_localhost = true;
+
+	notifyConn = new rts2core::ConnNotify (this);
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
@@ -376,6 +384,8 @@ XmlRpcd::~XmlRpcd ()
 
 rts2core::Rts2DevClient * XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
+	if (other_device_type == DEVICE_TYPE_CCD)
+		return new XmlDevCameraClient (conn);
 	return new XmlDevClient (conn);
 }
 
@@ -526,6 +536,6 @@ void XmlRpcd::reloadEventsFile ()
 
 int main (int argc, char **argv)
 {
-	XmlRpcd device = XmlRpcd (argc, argv);
+	XmlRpcd device (argc, argv);
 	return device.run ();
 }

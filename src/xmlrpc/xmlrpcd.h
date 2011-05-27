@@ -54,6 +54,7 @@
 #include "api.h"
 #include "images.h"
 #include "../utils/connnotify.h"
+#include "../writers/devcliimg.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 
@@ -74,6 +75,30 @@ namespace rts2xmlrpc
 class Directory;
 
 /**
+ * Support class/interface for operations needed by XmlDevClient and XmlDevClientCamera.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlDevInterface
+{
+	public:
+		
+		void stateChanged (Rts2ServerState * state);
+
+		void valueChanged (rts2core::Value * value);
+
+		double getValueChangedTime (rts2core::Value *value);
+
+	protected:
+		virtual XmlRpcd *getMaster () = 0;
+		virtual Rts2Conn *getConnection () = 0;
+
+	private:
+		// value change times
+		std::map <rts2core::Value *, double> changedTimes;
+};
+
+/**
  * XML-RPC client class. Provides functions for XML-RPCd to react on state
  * and value changes.
  *
@@ -81,21 +106,60 @@ class Directory;
  *
  * @addgroup XMLRPC
  */
-class XmlDevClient:public rts2core::Rts2DevClient
+class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
 {
 	public:
-		XmlDevClient (Rts2Conn *conn):rts2core::Rts2DevClient (conn) {}
+		XmlDevClient (Rts2Conn *conn):rts2core::Rts2DevClient (conn), XmlDevInterface () {}
 
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (Rts2ServerState * state)
+		{
+			XmlDevInterface::stateChanged (state);
+			rts2core::Rts2DevClient::stateChanged (state);
+		}
 
-		virtual void valueChanged (rts2core::Value * value);
+		virtual void valueChanged (rts2core::Value * value)
+		{
+			XmlDevInterface::valueChanged (value);
+			rts2core::Rts2DevClient::valueChanged (value);
+		}
 
-		double getValueChangedTime (rts2core::Value *value);
-	
+	protected:
+		virtual XmlRpcd *getMaster ()
+		{
+			return (XmlRpcd *) rts2core::Rts2DevClient::getMaster ();
+		}
 
-	private:
-		// value change times
-		std::map <rts2core::Value *, double> changedTimes;
+		virtual Rts2Conn *getConnection () { return rts2core::Rts2DevClient::getConnection (); }
+};
+
+class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
+{
+	public:
+		XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface () {}
+
+		virtual void stateChanged (Rts2ServerState * state)
+		{
+			XmlDevInterface::stateChanged (state);
+			rts2image::DevClientCameraImage::stateChanged (state);
+		}
+
+		virtual void valueChanged (rts2core::Value * value)
+		{
+			XmlDevInterface::valueChanged (value);
+			rts2image::DevClientCameraImage::valueChanged (value);
+		}
+		
+		virtual rts2image::Image *createImage (const struct timeval *expStart);
+
+	protected:
+		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
+
+		virtual XmlRpcd *getMaster ()
+		{
+			return (XmlRpcd *) rts2image::DevClientCameraImage::getMaster ();
+		}
+
+		virtual Rts2Conn *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
 };
 
 /**
@@ -175,7 +239,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		const char *getDefaultImageLabel ();
 
-		rts2core::ConnNotify * getNotifyConnection () { return &notifyConn; }
+		rts2core::ConnNotify * getNotifyConnection () { return notifyConn; }
 
 		/**
 		 * Register asynchronous API call.
@@ -288,7 +352,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		SwitchState switchState;
 		Devices devices;
 
-		rts2core::ConnNotify notifyConn;
+		rts2core::ConnNotify *notifyConn;
 };
 
 };

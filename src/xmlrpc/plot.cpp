@@ -72,7 +72,7 @@ void Plot::plotYDegrees ()
 	else
 		grid_y_step = 50;
 	
-	image->strokeWidth (1);
+	image->strokeWidth (10);
 	image->fontPointsize (12);
 	image->fillColor ("red");
 	image->strokeColor ("white");

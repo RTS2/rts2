@@ -58,6 +58,41 @@ void AsyncAPI::postEvent (Rts2Event *event)
 	Rts2Object::postEvent (event);
 }
 
+class AsyncAPIExpose:public AsyncAPI
+{
+	public:
+		AsyncAPIExpose (API *_req, Rts2Conn *conn, XmlRpcServerConnection *_source);
+
+		virtual void postEvent (Rts2Event *event);
+	private:
+		enum {waitForExpReturn, waitForImage} callState;
+};
+
+AsyncAPIExpose::AsyncAPIExpose (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):AsyncAPI (_req, _conn, _source)
+{
+	callState = waitForExpReturn;
+}
+
+void AsyncAPIExpose::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_COMMAND_OK:
+			if (callState == waitForExpReturn)
+				callState = waitForImage;
+			break;
+		case EVENT_COMMAND_FAILED:
+			if (callState == waitForExpReturn)
+			{
+				std::ostringstream os;
+				os << "{\"failed\"}";
+				req->sendAsyncJSON (os, source);
+			}
+			break;
+	}
+	Rts2Object::postEvent (event);
+}
+
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
 }
@@ -241,6 +276,18 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				conn->queCommand (new rts2core::Rts2Command (master, cmd), 0, aa);
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
+		}
+		else if (vals[0] == "expose")
+		{
+			const char *camera = params->getString ("ccd","");
+			conn = master->getOpenConnection (camera);
+			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
+				throw XmlRpcException ("empty camera name");
+			AsyncAPIExpose *aa = new AsyncAPIExpose (this, conn, connection);
+			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+			conn->queCommand (new rts2core::Rts2CommandExposure (master, (Rts2DevClientCamera *) (conn->getOtherDevClient ()), 0), 0, aa);
+			throw XmlRpc::XmlRpcAsynchronous ();
 		}
 #ifdef HAVE_PGSQL
 		else if (vals[0] == "tbyname")
@@ -496,7 +543,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 	{
 		if (conn->getOtherDevClient ())
 		{
-			double ch = ((XmlDevClient *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
+			double ch = ((XmlDevInterface *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
 			if (isnan (mfrom) || ch > mfrom)
 				mfrom = ch;
 			if (!isnan (from) && !isnan (ch) && ch < from)
