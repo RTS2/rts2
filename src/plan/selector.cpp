@@ -134,7 +134,7 @@ class SelectorDev:public Rts2DeviceDb
 		std::list <const char *> filterFileOptions;
 		std::list <const char *> aliasFiles;
 
-		rts2core::ConnNotify notifyConn;
+		rts2core::ConnNotify *notifyConn;
 
 		// load plan to queue
 		void queuePlan (rts2plan::ExecutorQueue *, double t);
@@ -144,12 +144,15 @@ class SelectorDev:public Rts2DeviceDb
 
 using namespace rts2selector;
 
-SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL"), notifyConn (this)
+SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
 	sel = NULL;
 	observer = NULL;
 
 	lastQueue = NULL;
+
+	notifyConn = new rts2core::ConnNotify (this);
+	addConnection (notifyConn);
 
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
@@ -236,7 +239,7 @@ int SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new rts2plan::Selector (&notifyConn);
+	sel = new rts2plan::Selector (notifyConn);
 
 	sel->setObserver (observer);
 	sel->init ();
@@ -269,7 +272,7 @@ int SelectorDev::init ()
 	if (ret)
 		return ret;
 
-	ret = notifyConn.init ();
+	ret = notifyConn->init ();
 	if (ret)
 		return ret;
 
@@ -288,9 +291,7 @@ int SelectorDev::init ()
 		selQueNames->addValue (std::string (*iter));
 	}
 
-	notifyConn.setDebug (true);
-
-	addConnection (&notifyConn);
+	notifyConn->setDebug (true);
 
 	return 0;
 }
@@ -524,7 +525,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		}
 		try
 		{
-			if (q->queueFromConn (conn, withTimes, &notifyConn))
+			if (q->queueFromConn (conn, withTimes, notifyConn))
 				return -2;
 		}
 		catch (rts2core::Error &er)
