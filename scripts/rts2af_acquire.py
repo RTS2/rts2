@@ -101,19 +101,31 @@ class Acquire(rts2af.AFScript):
 
         return True
 
-    def focPosReached(self, focPosNow=None, focPos=None, focFoff=None):
+    def sleepWhileFocusTravel(self, fcPos=None):
+        if(not self.test):
+            curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
+            # let the focuser move, [speed] tick/second
+            if( self.speed > 0):
+                slt= abs(fcPos- curFocPos) / self.speed
+                r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
+                time.sleep( slt)
+            else:
+                r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
+
+    def focuserVaules(self):
+        curFocPos =r2c.getValueFloat('FOC_POS', self.focuser)
+        curFocTar =r2c.getValueFloat('FOC_TAR', self.focuser)
+        curFocDef =r2c.getValueFloat('FOC_DEF', self.focuser)
+        curFocFoff=r2c.getValueFloat('FOC_FOFF',self.focuser)
+        curFocToff=r2c.getValueFloat('FOC_TOFF',self.focuser)
+
+        return (curFocPos, curFocTar, curFocDef, curFocFoff, curFocToff)
+
+    def focPosReached(self, focPos=None, focFoff=None):
         """Sometimes the FLI focuser does not react, log that ToDo: later apply correction"""
 
-        if((not focPosNow==None) and ( not focPos==None)):
-
-            if(not self.test):
-                # let the focuser move, [speed] tick/second
-                if( self.speed > 0):
-                    slt= abs(focPos- focPosNow) / self.speed
-                    r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} now={2}'.format(slt, focPos, focPosNow))
-                    time.sleep( slt)
-                else:
-                    r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
+        if(not focPos==None):
+            self.sleepWhileFocusTravel(fcPos=focPos)
             i= 0
             while(True):
                 
@@ -128,8 +140,11 @@ class Acquire(rts2af.AFScript):
                         break
                     elif( i > 20):
                         r2c.log('E','rts2af_acquire: target position, breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
+                        r2c.log('E','rts2af_acquire: target position, breaking, focuser values: {0}'.format(self.focuserVaules()))
                         break
                     elif( i == 5):
+                        r2c.log('E','rts2af_acquire: target position, try again, focuser values: {0}'.format(self.focuserVaules()))
+                        # set value again
                         r2c.setValue('FOC_FOFF', focFoff, self.focuser)
                         r2c.log('W','rts2af_acquire: target position, try again, setting: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
 
@@ -146,12 +161,8 @@ class Acquire(rts2af.AFScript):
 
         r2c.setValue('exposure', exposure)
 
-        curFocPos= -1
-        if( not self.test):
-            curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
-
         r2c.setValue('FOC_FOFF', focFoff, self.focuser)
-        self.focPosReached( curFocPos, (focDef + focFoff + filter.OffsetToClearPath), focFoff)
+        self.focPosReached((focDef + focFoff + filter.OffsetToClearPath), focFoff)
 
         acquisitionPath = r2c.exposure()
 
@@ -205,17 +216,14 @@ class Acquire(rts2af.AFScript):
 
                     if( self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath)):
                         
-                        curFocPos=-1
-                        if( not self.test):
-                            curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
                         # not necessary but for run time safety, 
                         # loosing time in prepareAcquisition, because travelling needs: filter.OffsetToClearPath/(focuser speed) seconds
                         # this are typically 15 seconds!
                         r2c.setValue('FOC_TOFF', 0, self.focuser)
                         r2c.setValue('FOC_FOFF', 0, self.focuser)
-                        
                         r2c.setValue('FOC_DEF', fwhmFocPos, self.focuser)
-                        self.focPosReached(curFocPos, fwhmFocPos, 0)
+
+                        self.focPosReached(fwhmFocPos, 0)
                         return fwhmFocPos
                     else:
                         r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, due the sum FOC_DEF + filter.OffsetToClearPath= {1}, out of limits'.format(fwhmFocPos, fwhmFocPos + filter.OffsetToClearPath))
@@ -242,15 +250,16 @@ class Acquire(rts2af.AFScript):
         if(( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.lowerLimit)) and( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.upperLimit))):
             # the order is important
             r2c.setValue('FOC_FOFF' , 0, self.focuser)
-            # triggers setting of filter offset as FOC_TOFF as defined in the rts2 devices file
+            # ToDo: verify: triggers setting of filter offset as FOC_TOFF as defined in the rts2 devices file
+            # 2011-05-28: a manual filter wheel setting does not trigger the offset.
             r2c.setValue('filter', filter.name)
-            # take last position if not True, meaning: use configured value
+            #ToDo: remove if above is true
+            r2c.setValue('FOC_TOFF', filter.OffsetToClearPath, self.focuser)
+            # if True, meaning: use configured value
             if(self.runTimeConfig.value('SET_INIIAL_FOC_DEF')):
                 r2c.setValue('FOC_DEF', focDef, self.focuser)
 
-            # undo r2c.setValue('filter', filter.name)
-            r2c.setValue('FOC_TOFF', filter.OffsetToClearPath, self.focuser)
-            self.focPosReached(curFocPos, (focDef + filter.OffsetToClearPath), 0)
+            self.focPosReached((focDef + filter.OffsetToClearPath), 0)
             return True
         else:
             r2c.log('E','rts2af_acquire: prepareAcquisition: can not set position: lower: {0}, upper: {1}, out of limits: {2}, {3}'.format((focDef + filter.OffsetToClearPath + filter.lowerLimit), (focDef + filter.OffsetToClearPath + filter.upperLimit),self.lowerLimit , self.upperLimit))
@@ -265,6 +274,8 @@ class Acquire(rts2af.AFScript):
 
     def run(self):
 
+        exposureTime= 0
+        startTime= time.time()
         # telescope parameter
         telescope=rts2af.Telescope() # take the defaults from the config file or overwrite them here
 
@@ -288,6 +299,8 @@ class Acquire(rts2af.AFScript):
         focDef= -1
         for fltName in filtersInUse:
 
+            filterExposureTime= 0
+            filterStartTime=time.time()
             filter= self.runTimeConfig.filterByName( fltName)
 
             if( fwhm_foc_pos_fit > 0):
@@ -320,7 +333,7 @@ class Acquire(rts2af.AFScript):
                    '--config', configFileName
                    ]
             
-            r2c.log('I','rts2af_acquire: pid: {0}, COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
+            r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
             try:
                 analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -336,6 +349,7 @@ class Acquire(rts2af.AFScript):
                 continue # something went wrong
 
             else:
+                filterExposureTime += filter.exposure
                 msgRaw= analysis[filter.name].stdout.readline()
                 msg= re.split('\n', msgRaw)
                 r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg[0]))
@@ -345,8 +359,10 @@ class Acquire(rts2af.AFScript):
             if(self.test):
                 while( True):
                     r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, exposure: {2}'.format(focDef, filter.OffsetToClearPath, filter.exposure))
+                    filterExposureTime += filter.exposure
                     if( not self.acquireImage( focDef, filter.OffsetToClearPath, filter.exposure, filter, analysis[filter.name], True)):
                         break # exhausted
+
                 r2c.log('I','rts2af_acquire: focuser exposures finished for filter: {0}'.format(filter.name))
                 fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
             else:
@@ -355,6 +371,7 @@ class Acquire(rts2af.AFScript):
                     if(( abs(setting.offset) < 410) or ( abs(setting.offset)==720)): # to reduce the time, ToDo: a true general solution
                         exposure=  telescope.linearExposureTimeAtFocPos(setting.exposure, setting.offset)
                         r2c.log('I','rts2af_acquire: filter: {0}, offset: {1}, exposure: {2}, true exposure: {3}'.format(filter.name, setting.offset, setting.exposure, exposure))
+                        filterExposureTime += exposure
                         if( not self.acquireImage( focDef, setting.offset, exposure, filter, analysis[filter.name], False)):
                             r2c.log('E','rts2af_acquire: breaking for filter: {0}'.format(filter.name))
                             break # could not write to pipe (analysis process died)
@@ -364,12 +381,13 @@ class Acquire(rts2af.AFScript):
                     r2c.log('I','rts2af_acquire: focuser exposures finished for filter: {0}'.format(filter.name))
                     fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
 
-
-            r2c.log('I','rts2af_acquire: pid: {0}, ended for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
-
+            exposureTime += filterExposureTime 
+            filterEndTime=time.time()
+            r2c.log('I','rts2af_acquire: pid: {0}, ended within: {1} seconds, accumulated exposure time: {2}, for COMMAND: {3}, filter: {4}'.format(self.pid, (filterEndTime-filterStartTime), filterExposureTime, cmd, filter.name))
 
         # completed
-        r2c.log('I','rts2af_acquire: focuser exposures finished for all filters')
+        endTime= time.time()
+        r2c.log('I','rts2af_acquire: focuser exposures finished for all filters within: {0} seconds, accumulated exposure time: {1}'.format((endTime- startTime), exposureTime))
         # rts2af_set_fit_focus.py sets FOC_DEF and writes the filter offsets
         # will use that after Petr took a look at exe ... with arguments
         #cmd= [ '/usr/local/src/rts-2-head/scripts/rts2af_set_fit_focus.py',

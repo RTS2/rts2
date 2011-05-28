@@ -188,9 +188,9 @@ class main(rts2af.AFScript):
         else:
             focusPosition= cats.fitTheValues()
             print '{0}'.format(focusPosition)
-            logging.info('rts2af_analysis.py: fit result {0}'.format(focusPosition))
+            logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(focusPosition, referenceFitsFileName))
 
-        logging.info('rts2af_analysis.py: pid: {0}, ending, refernece file: {1}'.format(self.pid, referenceFitsFileName))
+        logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

@@ -893,7 +893,7 @@ class Catalogue():
         sxObjectNumbers= self.sxObjects.keys()
         for sxObjectNumber in sxObjectNumbers:
             if( not self.checkProperties(sxObjectNumber)):
-#                self.removeSXObject( sxObjectNumber)
+                self.removeSXObject( sxObjectNumber)
                 discardedObjects += 1
 
         logging.info("Catalogue.cleanUp: Number of objects discarded %d " % discardedObjects) 
@@ -1324,11 +1324,16 @@ class Catalogues():
             return True
 
     def writeFitInputValues(self):
+        discardedPositions= 0
         binning= 1+ runTimeConfig.value(runTimeConfig.ccd.binning)
         fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
-            line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * binning )
-            fitInput.write(line)
+            if(self.stdFwhm[focPos]> 0):
+                line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * binning )
+                fitInput.write(line)
+            else:
+                logging.error('writeFitInputValues: dropped focPos: {0}, due to standard deviation equals zero'.format(focPos))
+
 
         fitInput.close()
         fitInput= open( self.dataFileNameFlux, 'w')
@@ -1337,13 +1342,48 @@ class Catalogues():
             fitInput.write(line)
 
         fitInput.close()
+        return discardedPositions
+
+    def findExtrema(self):
+        binning= 1+ runTimeConfig.value(runTimeConfig.ccd.binning)
+
+        b = dict(map(lambda item: (item[1],item[0]),self.averageFwhm.items()))
+        try:
+            minFocPos = b[min(b.keys())]
+        except:
+            logging.error('Catalogues.findExtrema: something wrong with self.averageFwhm, length: {0}, returning -1'.format(len(self.averageFwhm)))
+            return -1
+
+        # (inverse) weighted mean
+        focPosS= self.averageFwhm.keys()
+        tmpWeightS= self.averageFwhm.values()
+        weightS=[]
+        for val in tmpWeightS:
+            if( val > 0.):
+                weightS.append(1./val)
+            else:
+                break
+        else:
+            weightedMean= numpy.average(a=focPosS, axis=0, weights=weightS) 
+            logging.info('Catalogues.findExtrema: minimum position: {0}, FWHM: {1}, weighted mean: {2}'.format(minFocPos, self.averageFwhm[minFocPos]* binning, weightedMean))
+
+            return weightedMean
+
+        logging.info('Catalogues.findExtrema: weighted mean failed, using minimum position: {0}, FWHM: {1}'.format(minFocPos, self.averageFwhm[minFocPos]* binning))
+
+        return minFocPos
+
 
     def fitTheValues(self):
-# ToDo: think about a better solution for  configFileName
 
         if( self.countObjectsFoundInAllFiles()):
             self.__average__()
-            self.writeFitInputValues()
+            discardedPositions= self.writeFitInputValues()
+            
+            if((len(self.averageFwhm) + len(self.averageFlux)- discardedPositions)< 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
+                logging.warning('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+            else:
+                pass
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
             if(runTimeConfig.value('DISPLAYFIT')):
                 display= '1'
@@ -1375,17 +1415,21 @@ class Catalogues():
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
             fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
-            if(fitResultFileName==None):
-                # if something really went wrong
-                return 'FOCUS: {0}'.format(output[0].split()[1])
-            else:
-                # ToDo: discuss with Petr
-                with open( fitResultFileName, 'a') as frfn:
-                    for item in output:
-                        frfn.write(item)
 
-                    frfn.close()
-            return 'FOCUS: {0}'.format(output[0].split()[1])
+            with open( fitResultFileName, 'a') as frfn:
+                for item in output:
+                    frfn.write(item)
+
+                frfn.close()
+
+            # in case the fit fails
+            try:
+                fitValue= float(output[0].split()[1]) 
+                return 'FOCUS: {0}'.format(fitValue)
+            except ValueError:
+                weightedMean= self.findExtrema()
+                logging.warning('Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), weightedMean))
+                return 'FOCUS: {0}'.format(weightedMean)
 
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')
