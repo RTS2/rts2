@@ -74,7 +74,6 @@ class Executor:public Rts2DeviceDb
 
 		void clearNextTargets ();
 
-		void queDarks ();
 		void beforeChange ();
 		void doSwitch ();
 		int switchTarget ();
@@ -759,14 +758,6 @@ void Executor::clearNextTargets ()
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
 }
 
-void Executor::queDarks ()
-{
-	Rts2Conn *minConn = getMinConn ("queue_size");
-	if (!minConn)
-		return;
-	minConn->queCommand (new Rts2Command (this, "que_darks"));
-}
-
 void Executor::beforeChange ()
 {
 	// both currentTarget and nextTarget are defined
@@ -780,8 +771,6 @@ void Executor::beforeChange ()
 		nextType = getActiveQueue ()->front ().target->getTargetType ();
 	else
 		nextType = currType;
-	if (currType == TYPE_DARK && nextType != TYPE_DARK)
-		queDarks ();
 }
 
 void Executor::doSwitch ()

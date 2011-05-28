@@ -816,28 +816,6 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>darkprocess</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Dark images processing script. Script is run without any
-	      parameter at the end of dark images acqusition.
-            </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>flatprocess</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Flat images processing script. Script is run without any
-	      parameter at the end of flat image acqusition.
-            </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
 	    <option>astrometry_devices</option>
 	  </term>
 	  <listitem>

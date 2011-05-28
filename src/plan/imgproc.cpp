@@ -123,8 +123,6 @@ class ImageProc:public rts2core::Device
 
 		std::string defaultImgProcess;
 		std::string defaultObsProcess;
-		std::string defaultDarkProcess;
-		std::string defaultFlatProcess;
 		glob_t imageGlob;
 		unsigned int globC;
 		int reprocessingPossible;
@@ -224,18 +222,6 @@ int ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get obs process script, exiting" << sendLog;
-	}
-
-	ret = config->getString ("imgproc", "darkprocess", defaultDarkProcess);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get dark process script, exiting" << sendLog;
-	}
-
-	ret = config->getString ("imgproc", "flatprocess", defaultFlatProcess);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "ImageProc::init cannot get flat process script, exiting" << sendLog;
 	}
 
 	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
@@ -544,40 +530,11 @@ int ImageProc::doImage (const char *_path)
 	return 0;
 }
 
-int ImageProc::queDark (const char *_path)
-{
-	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultDarkProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
-	return que (newImageConn);
-}
-
-int ImageProc::queFlat (const char *_path)
-{
-	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultFlatProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
-	return que (newImageConn);
-}
-
 int ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
 	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, Rts2Config::instance ()->getObsProcessTimeout ());
 	return que (newObsConn);
-}
-
-int ImageProc::queDarks ()
-{
-	ConnDarkProcess *newDarkConn;
-	newDarkConn = new ConnDarkProcess (this, defaultDarkProcess.c_str (), Rts2Config::instance ()->getDarkProcessTimeout ());
-	return que (newDarkConn);
-}
-
-int ImageProc::queFlats ()
-{
-	ConnFlatProcess *newFlatConn;
-	newFlatConn = new ConnFlatProcess (this, defaultFlatProcess.c_str (),
-		Rts2Config::instance ()->getFlatProcessTimeout ());
-	return que (newFlatConn);
 }
 
 int ImageProc::checkNotProcessed ()
@@ -631,38 +588,12 @@ int ImageProc::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return doImage (in_imageName);
 	}
-	else if (conn->isCommand ("que_dark"))
-	{
-		char *in_imageName;
-		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
-			return -2;
-		return queDark (in_imageName);
-	}
-	else if (conn->isCommand ("que_flat"))
-	{
-		char *in_imageName;
-		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
-			return -2;
-		return queFlat (in_imageName);
-	}
 	else if (conn->isCommand ("que_obs"))
 	{
 		int obsId;
 		if (conn->paramNextInteger (&obsId) || !conn->paramEnd ())
 			return -2;
 		return queObs (obsId);
-	}
-	else if (conn->isCommand ("que_darks"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		return queDarks ();
-	}
-	else if (conn->isCommand ("que_flats"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		return queFlats ();
 	}
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::commandAuthorized (conn);
