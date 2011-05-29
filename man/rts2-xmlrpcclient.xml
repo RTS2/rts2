@@ -58,6 +58,8 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <group choice='req'>
+        <arg choice='plain'><option>-v</option></arg>
+        <arg choice='plain'><option>--quiet</option></arg>
         <arg choice='plain'><option>-g</option> &devvar;</arg>
         <arg choice='plain'><option>-G</option> &devvar;</arg>
         <arg choice='plain'><option>-s</option> <arg choice='plain' rep='repeat'><arg choice='req'><replaceable class='parameter'>device</replaceable>.<replaceable class='parameter'>variable</replaceable> <replaceable>value</replaceable></arg></arg></arg>
@@ -130,6 +132,25 @@ authorization = "user:password"
     &optiongnu;
 
     <variablelist>
+      <varlistentry>
+        <term><option>-v</option></term>
+	<listitem>
+	  <para>
+	    Increase verbosity. Multiple <option>-v</option> are possible.
+	    Usefull to debug output of XML-RPC commands.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--quiet</option></term>
+	<listitem>
+	  <para>
+	    Run quiet, don't report errors on stderr. Usefull in scripts,
+	    dangerous when running from terminal, as it will suppress possibly
+	    usefull messages.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>-g</option></term>
         <listitem>

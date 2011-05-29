@@ -37,6 +37,7 @@ using namespace XmlRpc;
 #define OPT_TEST                     OPT_LOCAL + 4
 #define OPT_MASTER_STATE             OPT_LOCAL + 5
 #define OPT_TARGET_LIST              OPT_LOCAL + 6
+#define OPT_QUIET                    OPT_LOCAL + 7
 
 namespace rts2xmlrpc
 {
@@ -253,7 +254,8 @@ int Client::doTests ()
 
 	} catch (XmlRpcException e)
 	{
-		std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
+		if (xmlVerbosity >= 0)
+			std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
 	}
 
 	for (int i = 0; i < result.size (); i++)
@@ -320,7 +322,8 @@ int Client::doHttpGet ()
 		}
 		catch (XmlRpcException e)
 		{
-			std::cerr << "Cannot retrieve document " << *iter << std::endl;
+			if (xmlVerbosity >= 0)
+				std::cerr << "Cannot retrieve document " << *iter << std::endl;
 			return -1;
 		}
 	}
@@ -336,7 +339,8 @@ int Client::testConnect ()
 		runXmlMethod (R2X_DEVICES_LIST, nullArg, result);
 	} catch (XmlRpcException e)
 	{
-		std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
+		if (xmlVerbosity >= 0)
+			std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
 		return -1;
 	}
 
@@ -458,7 +462,8 @@ int Client::getVariables ()
 		if (dot == NULL)
 		{
 			e++;
-			std::cerr << "Cannot parse " << arg << " - cannot find a dot separating devices" << std::endl;
+			if (xmlVerbosity >= 0)
+				std::cerr << "Cannot parse " << arg << " - cannot find a dot separating devices" << std::endl;
 			continue;
 		}
 		*dot = '\0';
@@ -505,7 +510,8 @@ int Client::getVariables ()
 		}
 		if (j == (*riter).second.size ())
 		{
-			std::cerr << "Cannot find " << a << "." << dot << std::endl;
+			if (xmlVerbosity >= 0)
+				std::cerr << "Cannot find " << a << "." << dot << std::endl;
 			e++;
 		}
   	}
@@ -588,7 +594,8 @@ int Client::getTargets ()
 	}
 	if (tot == 0)
 	{
-		std::cerr << "cannot find any targets" << std::endl;
+		if (xmlVerbosity >= 0)
+			std::cerr << "cannot find any targets" << std::endl;
 		return -1;
 	}
 
@@ -633,6 +640,9 @@ int Client::processOption (int opt)
 		case OPT_CONFIG:
 			configFile = new char[strlen(optarg) + 1];
 			strcpy (configFile, optarg);
+			break;
+		case OPT_QUIET:
+			xmlVerbosity = -1;
 			break;
 		case 'v':
 			xmlVerbosity++;
@@ -778,7 +788,8 @@ int Client::init ()
 		ret = config.getString ("xmlrpc", "authorization", xmlAuthorization);
 		if ((ret || xmlAuthorization.length()) == 0 && xmlOp != HTTP_GET)
 		{
-			std::cerr << "You don't specify authorization string in XML-RPC config file, nor on command line." << std::endl;
+			if (xmlVerbosity >= 0)
+				std::cerr << "You don't specify authorization string in XML-RPC config file, nor on command line." << std::endl;
 			return -1;
 		}
 	}
@@ -816,6 +827,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	masterStateQuery = NULL;
 
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
+	addOption (OPT_QUIET, "quiet", 0, "don't report errors on stderr");
 	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
 	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
