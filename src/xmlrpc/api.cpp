@@ -691,7 +691,8 @@ void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpP
 		"{\"n\":\"Image\",\"t\":\"ccdi\",\"c\":0},"
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":1},"
 		"{\"n\":\"Exptime\",\"t\":\"dur\",\"c\":2},"
-		"{\"n\":\"Filter\",\"t\":\"s\",\"c\":3}"
+		"{\"n\":\"Filter\",\"t\":\"s\",\"c\":3},"
+		"{\"n\":\"Path\",\"t\":\"ip\",\"c\":4}"
 	"],\"d\":[" << std::fixed;
 
 	for (rts2db::ImageSet::iterator iter = img_set->begin (); iter != img_set->end (); iter++)
@@ -701,7 +702,8 @@ void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpP
 		os << "[\"" << (*iter)->getFileName () << "\","
 			<< JsonDouble ((*iter)->getExposureSec () + (*iter)->getExposureUsec () / USEC_SEC) << ","
 			<< JsonDouble ((*iter)->getExposureLength ()) << ",\""
-			<< (*iter)->getFilter () << "\"]";
+			<< (*iter)->getFilter () << "\",\""
+			<< (*iter)->getAbsoluteFileName () << "\"]";
 	}
 
 	os << "]";
