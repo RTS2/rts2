@@ -519,20 +519,6 @@ Rts2CommandQueImage::Rts2CommandQueImage (rts2core::Block * in_owner, Image * im
 	setCommand (_os);
 }
 
-Rts2CommandQueDark::Rts2CommandQueDark (rts2core::Block * in_owner, Image * image):rts2core::Rts2Command (in_owner)
-{
-  	std::ostringstream _os;
-	_os << "que_dark " << image->getFileName ();
-	setCommand (_os);
-}
-
-Rts2CommandQueFlat::Rts2CommandQueFlat (rts2core::Block * in_owner, Image * image):rts2core::Rts2Command (in_owner)
-{
-  	std::ostringstream _os;
-	_os << "que_flat " << image->getFileName ();
-	setCommand (_os);
-}
-
 Rts2CommandQueObs::Rts2CommandQueObs (rts2core::Block * in_owner, int in_obsId):rts2core::Rts2Command (in_owner)
 {
 	std::ostringstream _os;

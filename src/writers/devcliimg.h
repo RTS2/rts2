@@ -174,18 +174,6 @@ class Rts2CommandQueImage:public rts2core::Rts2Command
 		Rts2CommandQueImage (rts2core::Block * in_owner, Image * image);
 };
 
-class Rts2CommandQueDark:public rts2core::Rts2Command
-{
-	public:
-		Rts2CommandQueDark (rts2core::Block * in_owner, Image * image);
-};
-
-class Rts2CommandQueFlat:public rts2core::Rts2Command
-{
-	public:
-		Rts2CommandQueFlat (rts2core::Block * in_owner, Image * image);
-};
-
 class Rts2CommandQueObs:public rts2core::Rts2Command
 {
 	public:

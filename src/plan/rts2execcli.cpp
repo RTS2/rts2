@@ -249,13 +249,6 @@ void Rts2DevClientCameraExec::queImage (Image * image)
 	if (!minConn)
 		return;
 
-	// if it is dark image..
-	if (image->getShutter () != SHUT_OPENED || image->getImageType () == IMGTYPE_DARK)
-	{
-		minConn->queCommand (new Rts2CommandQueDark (getMaster (), image));
-		return;
-	}
-
 	// try immediately processing..
 	std::string after_command;
 	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
@@ -277,11 +270,7 @@ void Rts2DevClientCameraExec::queImage (Image * image)
 		}
 	}
 
-	if (image->getImageType () == IMGTYPE_FLAT)
-	{
-		minConn->queCommand (new Rts2CommandQueFlat (getMaster (), image));	
-	}
-	else
+	if (image->getImageType () != IMGTYPE_FLAT && image->getImageType () != IMGTYPE_DARK)
 	{
 		minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 	}
