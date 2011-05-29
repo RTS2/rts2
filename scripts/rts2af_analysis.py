@@ -186,9 +186,9 @@ class main(rts2af.AFScript):
         if( self.test== True):
             logging.error('rts2af_analysis.py: would fit now: {0}'.format(referenceFitsFileName))
         else:
-            focusPosition= cats.fitTheValues()
-            print '{0}'.format(focusPosition)
-            logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(focusPosition, referenceFitsFileName))
+            fitsResults= cats.fitTheValues()
+            print 'FOCUS: {0}'.format(fitsResults.minimumFocPos)
+            logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(fitsResults.minimumFocPos, referenceFitsFileName))
 
         logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
 

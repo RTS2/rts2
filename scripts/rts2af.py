@@ -176,6 +176,8 @@ class Configuration:
         
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
+        self.cp[('fitting', 'ACCEPTABLE_CHI2')]= 80.
+        self.cp[('fitting', 'WRITE_SUMMARY_FILE')]= False
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
         self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2af/sex/rts2af-sex.cfg'
@@ -219,7 +221,7 @@ class Configuration:
         self.cp[('queuing', 'PASSWORD')] = 'rts2'
         self.cp[('queuing', 'QUEUENAME')]= 'focusing'
         self.cp[('queuing', 'TARGETID')] = '5'
-        self.cp[('queuing', 'THRESHOLD')] = 3.12
+        self.cp[('queuing', 'THRESHOLD')] = 5.12
 
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
@@ -578,7 +580,93 @@ class Telescope():
     def starImageRadius(self, differencefoc_pos=0):
         return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelSize * self.focalratio) + self.seeing)/self.seeing
 
-        
+class FitResults():
+    """Class holding fit results"""
+    def __init__(self):
+
+        self.date=None
+        self.dateEpoch=None
+        self.temperature=None
+        self.chi2=None
+        self.constants=[]
+        self.minimumFocPos=None
+        self.minimumFwhm=None
+#FWHM_FOCUS 3583.601214
+#FWHM parameters: chi2 6.421956e+02, p0...p2 1.386810e+03 -7.045635e-01 7.027618e-05
+#FLUX_FOCUS 3578.484908
+#FLUX parameters: chi2 9.697909e+00, p0...p2 1.205812e+01 3.578485e+03 1.109056e+00
+#rts2af_fit_focus.C: date: 2011-05-24T02:31:04.037498
+#rts2af_fit_focus.C: temperature: 10.242C
+#rts2af_fit_focus.C: result fwhm: chi2 6.421956e+02,  p(0...4)=(1.386810e+03 +/- 1.000000e+00), (-7.045635e-01 +/- 2.920952e+00), (7.027618e-05 +/- 2.920952e+00), (5.214057e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
+#rts2af_fit_focus.C: FWHM_FOCUS 3583.601214, FWHM at Minimum 4.393394
+#rts2af_fit_focus.C: result flux: chi2 9.697909e+00,  p(0...5)=(1.205812e+01 +/- 3.572544e+07), (3.578485e+03 +/- 3.572544e+07), (1.109056e+00 +/- 3.572544e+07), (2.129218e+05 +/- 7.454619e+09), (8.944915e+07 +/- 7.454619e+09), (0.000000e+00 +/- 0.000000e+00)
+#rts2af_fit_focus.C: FLUX_FOCUS 3578.484908
+        fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
+        with open( fitResultFileName, 'r') as frfn:
+            for line in frfn:
+                line.strip()
+                fitPrgMatch= re.search( r'rts2af_fit_focus.C', line)
+                if( fitPrgMatch==None):
+                    continue
+                
+                dateMatch= re.search( r'rts2af_fit_focus.C: date: (.+)', line)
+                if( not dateMatch==None):
+                    self.date= dateMatch.group(1)
+                    try:
+                        self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S.%f'))
+                    except ValueError:
+                        try:
+                            self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S'))
+                        except:
+                            logging.error('fitResults: problems reading date: {0}'.format(self.date))
+                    except:
+                        logging.error('fitResults: problems reading date: {0} (hint: not a value error)'.format(self.date))
+                    
+                    continue
+
+                temperatureMatch= re.search( r'rts2af_fit_focus.C: temperature: (.+)', line)
+                if( not temperatureMatch==None):
+                    self.temperature= temperatureMatch.group(1)
+                    continue
+
+                parametersMatch= re.search( r'rts2af_fit_focus.C: result fwhm: (.+)', line)
+                if( not parametersMatch==None):
+                    parameters= parametersMatch.group(1)
+#chi2 2.445347e+00,  p(0...4)=(7.277240e+01 +/- 1.160489e+00), (8.826737e-03 +/- 4.871031e-04), (-2.223469e-05 +/- 1.425056e-07), (3.992524e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
+
+                    chi2Match= re.search( r'chi2 ([\.0-9e+]+),  p\(0...4\)=(.+)', parameters)
+                    if( not chi2Match==None):
+                        chi2Str= chi2Match.group(1)
+                        try:
+                            self.chi2= float(chi2Str)
+                        except:
+                            logging.error('fitResults: problems reading chi2: {0}'.format(chi2Str))
+
+                        constStr= chi2Match.group(2)
+                        #print 'const----{0}'.format(constStr)
+                        constStr= constStr.replace('(','')
+                        constStr= constStr.replace(')','')
+                        constStr= constStr.replace(',','')
+                        constStr= constStr.replace('+/-','')
+                        items= constStr.split()
+#http://desk.stinkpot.org:8080/tricks/index.php/2007/10/extract-odd-or-even-elements-from-a-python-list/                        
+                        values= items[::2]
+                        errors= items[1::2]
+                        # keep the order
+                        i= 0
+                        for value in values:
+                            self.constants.append((value, errors[i]))
+                            i += 1
+                        continue
+#rts2af_fit_focus.C: FWHM_FOCUS 3502.305998, FWHM at Minimum 2.470353 
+                fwhmMatch= re.search( r'rts2af_fit_focus.C: FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
+                if( not fwhmMatch==None):
+                    self.minimumFocPos= fwhmMatch.group(1)
+                    self.minimumFwhm= fwhmMatch.group(2)
+                    continue
+
+            frfn.close()
+       
 class SXObject():
     """Class holding the used properties of SExtractor object"""
     def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, fluxError=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
@@ -1391,7 +1479,6 @@ class Catalogues():
                 display= '0'
 
             try:
-
                 cmd= [ runTimeConfig.value('FITPRG'),
                        display,
                        self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
@@ -1422,19 +1509,20 @@ class Catalogues():
 
                 frfn.close()
 
-            # in case the fit fails
-            try:
-                fitValue= float(output[0].split()[1]) 
-                return 'FOCUS: {0}'.format(fitValue)
-            except ValueError:
-                weightedMean= self.findExtrema()
-                logging.warning('Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), weightedMean))
-                return 'FOCUS: {0}'.format(weightedMean)
+            # parse the fit results
+            fitResults= FitResults()
 
+            if((fitResults.chi2 < runTimeConfig.value('ACCEPTABLE_CHI2')) and(fitResults.minimumFwhm > 0) and (fitResults.minimumFwhm < runTimeConfig.value('THRESHOLD'))):
+                logging.info('rts2af_offline.py: {0} {1} {2} {3} {4} {5}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2))
+                return fitResults
+            else:
+                fitResults.minimumFocPos= self.findExtrema()
+                logging.warning('Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), fitResults.minimumFocPos))
+                return fitResults
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')
 
-        return 'FOCUS: -1'
+        return None
 
     def __average__(self):
         numberOfObjects = 0

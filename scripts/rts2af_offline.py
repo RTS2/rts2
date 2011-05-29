@@ -55,6 +55,9 @@ class main(rts2af.AFScript):
         self.scriptName= scriptName
 
     def main(self):
+        logformat= '%(asctime)s %(levelname)s %(message)s'
+	logging.basicConfig(filename='/tmp/rts2af-model.log', level=logging.INFO, format= logformat)
+
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
         args         = self.arguments()
@@ -138,7 +141,24 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
         # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
-        print '{0}'.format(cats.fitTheValues())
+        fitsResults= cats.fitTheValues()
+        print 'FOCPOS: {0}'.format(fitsResults.minimumFocPos)
+
+
+#        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
+#        fitResultSummaryFileName= '/tmp/result-xx.log'
+#        if(not fitsResults==None):
+#            with open( fitResultSummaryFileName, 'a') as frs:
+#                frs.write('{0} {1} {2} {3} {4} {5} {6}\n'.format(fitsResults.date, fitsResults.dateEpoch, fitsResults.temperature, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.chi2, fitsResults.constants))
+#            frs.close()
+
+        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
+            fitResultSummaryFileName= '/tmp/result.log'
+            if(not fitsResults==None):
+                with open( fitResultSummaryFileName, 'a') as frs:
+                    frs.write('{0} {1} {2} {3} {4}\n'.format(fitsResults.chi2, fitsResults.temperature, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.dateEpoch))
+                frs.close()
+
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
         cats.ds9WriteRegionFiles()
@@ -163,6 +183,11 @@ class main(rts2af.AFScript):
         #    cat.averageFWHM("selected")
         #    cat.averageFWHM("matched")
         #    cat.averageFWHM()
+
+        
+
+
+
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

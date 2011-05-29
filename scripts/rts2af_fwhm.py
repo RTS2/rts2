@@ -134,8 +134,8 @@ class main(rts2af.AFScript):
                 fnull = open(os.devnull, 'w')
                 proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
 
-                # let rts2-scriptexec do its inital job
-                # it waits until the with the target associated script has been completed 
+                # let rts2-queue do its job
+                # ToDo: something more intelligent
                 time.sleep(10) 
                 logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd, referenceFitsFileName))
             else:

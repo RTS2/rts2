@@ -19,8 +19,6 @@
 #   It sets the FOC_DEF value for the clear optical path if it is configured.
 #   Clear optical path is defined in section [filter properties] is 0 
 #   (second element in the array)
-#  
-#   Planned: It spawns a subprocess to deal with the setting of the focuse.
 #
 #   rts2af_acquire.py's stdin, stdout and stderr are read by rts2-executor. Hence
 #   logging is done via rts2comm.py.
