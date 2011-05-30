@@ -859,6 +859,7 @@ class CalibrationTarget:public ConstTarget
 		virtual int considerForObserving (double JD);
 		virtual int changePriority (int pri_change, time_t * time_ch) { return 0; }
 		virtual float getBonus (double JD);
+		virtual int isContinues () { return 2; }
 	private:
 		struct ln_equ_posn airmassPosition;
 		time_t lastImage;
@@ -918,10 +919,7 @@ class OportunityTarget:public ConstTarget
 	public:
 		OportunityTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
 		virtual float getBonus (double JD);
-		virtual int isContinues ()
-		{
-			return 1;
-		}
+		virtual int isContinues () { return 1; }
 };
 
 class LunarTarget:public Target
