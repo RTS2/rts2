@@ -332,10 +332,12 @@ int ImageSkyDb::updateAstrometry ()
 	ctype[0] = (char *) malloc (10);
 	ctype[1] = (char *) malloc (10);
 
+	ctype[0][0] = ctype[1][0] = '\0';
+
 	try
 	{
 		getValues ("NAXIS", a_naxis, 2);
-		getValues ("CTYPE", (char **) &ctype, 2);
+		getValues ("CTYPE", ctype, 2);
 		getValues ("CRPIX", crpix, 2);
 		getValues ("CRVAL", crval, 2);
 		getValues ("CDELT", cdelt, 2);
@@ -346,6 +348,8 @@ int ImageSkyDb::updateAstrometry ()
 	{
 		return -1;
 	}
+
+	logStream (MESSAGE_DEBUG) << "update astrometry " << getAbsoluteFileName () << ": " << ctype[0] << " " << ctype[1] << sendLog;
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
