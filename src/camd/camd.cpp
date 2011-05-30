@@ -516,13 +516,6 @@ int Camera::scriptEnds ()
 	dataType->setValueInteger (0);
 	sendValueAll (dataType);
 
-	// set exposure to light
-	if (expType)
-	{
-		expType->setValueInteger (0);
-		sendValueAll (expType);
-	}
-
 	return rts2core::ScriptDevice::scriptEnds ();
 }
 
