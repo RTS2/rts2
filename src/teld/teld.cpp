@@ -833,8 +833,6 @@ void Telescope::changeMasterState (int old_state, int new_state)
 		  || (new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
 		  || (new_state & SERVERD_STANDBY_MASK))
 			blockMove->setValueBool (true);
-		else
-			blockMove->setValueBool (false);
 	}
 
 	rts2core::Device::changeMasterState (old_state, new_state);
