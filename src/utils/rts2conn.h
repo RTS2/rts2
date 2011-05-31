@@ -155,6 +155,11 @@ class Rts2Conn:public Rts2Object
 		bool isGoodWeather () { return (getState () & WEATHER_MASK) == GOOD_WEATHER; }
 
 		/**
+		 * Return whenewer device is in idle state.
+		 */
+		bool isIdle () { return (getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE; }
+
+		/**
 		 * Retrieved move allowed state.
 		 *
 		 * @return True if connection is reporting that moves are allowed.

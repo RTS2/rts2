@@ -237,7 +237,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
 			sendConnectionValues (os, conn, params);
 		}
-		else if (vals[0] == "get")
+		else if (vals[0] == "get" || vals[0] == "status")
 		{
 			const char *device = params->getString ("d","");
 			if (isCentraldName (device))
@@ -282,7 +282,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *camera = params->getString ("ccd","");
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
-				throw XmlRpcException ("empty camera name");
+				throw XmlRpcException ("cannot find camera with given name");
 			AsyncAPIExpose *aa = new AsyncAPIExpose (this, conn, connection);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
@@ -567,7 +567,7 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		if (extended)
 			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
 	}
-	os << "},\"f\":" << JsonDouble (mfrom);
+	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"f\":" << JsonDouble (mfrom);
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
