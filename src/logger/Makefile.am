@@ -6,7 +6,7 @@ EXTRA_DIST = rts2loggerbase.cpp
 
 AM_CXXFLAGS=@NOVA_CFLAGS@
 
-LDADD = rts2loggerbase.o @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a
+LDADD = rts2loggerbase.o ../utils/librts2block.a @LIB_NOVA@ @LIB_M@
 
 rts2_logger_SOURCES = logger.cpp
 
