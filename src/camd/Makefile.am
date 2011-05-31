@@ -23,7 +23,7 @@ rts2_camd_sidecar_SOURCES = sidecar.cpp
 
 EXTRA_DIST = 
 
-if SUNOS
+if SUNCYG
 EXTRA_DIST += urvc2.cpp apogee.cpp v4l.cpp
 else
 bin_PROGRAMS += rts2-camd-urvc2 rts2-camd-apogee rts2-camd-v4l
