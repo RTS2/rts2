@@ -41,7 +41,7 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 rts2_dome_flwo_SOURCES = flwo.cpp
 
-if SUNOS
+if SUNCYG
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c watcher.cpp
 else
 bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-watcher

@@ -725,6 +725,8 @@ AC_CONFIG_HEADER(include/config.h)
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 AM_CONDITIONAL(SUNOS, test x${target_os} = xsolaris2.8)
+AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
+AM_CONDITIONAL(SUNCYG, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8)
 
 AC_OUTPUT([Makefile
 	   man/Makefile
