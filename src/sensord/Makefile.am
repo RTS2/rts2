@@ -72,7 +72,7 @@ rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
 
 rts2_sensor_fram_SOURCES = fram.cpp
 
-if SUNOS
+if SUNCYG
 EXTRA_DIST += tps534.cpp tps534-oak.c
 else
 bin_PROGRAMS += rts2-sensor-tps534
