@@ -65,6 +65,12 @@ class Arc:public Camera
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
+#ifdef ARC_API_1_7
+
+#else
+		virtual int setCoolTemp (float new_temp);
+#endif
+
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int doReadout ();
@@ -114,6 +120,8 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	num_util_tests = 10;
 #else
 	lDeviceNumber = 0;
+
+	createTempSet ();
 #endif
 
 	createExpType ();
@@ -265,6 +273,16 @@ int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 #endif
 	return Camera::setValue (old_value, new_value);
 }
+
+#ifdef ARC_API_1_7
+
+#else
+int Arc::setCoolTemp (float new_temp)
+{
+	controller.SetArrayTemperature (new_temp);
+	return Camera::setCoolTemp (new_temp);
+}
+#endif
 
 int Arc::startExposure ()
 {
