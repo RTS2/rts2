@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <status.h>
+#include <time.h>
 
 /**
  * Server state class. Holds information about current server state.

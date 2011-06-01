@@ -37,7 +37,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

@@ -20,9 +20,13 @@
 #ifndef __RTS2_CONNNOTIFY__
 #define __RTS2_CONNNOTIFY__
 
+#include "config.h"
+
 #include "rts2connnosend.h"
 
+#ifdef HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
+#endif
 
 namespace rts2core
 {
@@ -70,7 +74,11 @@ class ConnNotify:public Rts2ConnNoSend
 
 		bool getDebug () { return debug; }
 
+#ifdef HAVE_SYS_INOTIFY_H
 		int addWatch (const char *filename, uint32_t mask = IN_MODIFY) { return inotify_add_watch (sock, filename, mask); }
+#else
+		int addWatch (const char *filename, uint32_t mask = 0) { return -1; }
+#endif
 
 	private:
 		const char *hostname;

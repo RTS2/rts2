@@ -18,6 +18,7 @@
  */
 
 #include "connnotify.h"
+
 #include <sys/ioctl.h>
 #ifndef HAVE_INOTIFY_INIT1
 #include <fcntl.h>
@@ -34,9 +35,11 @@ int ConnNotify::init ()
 {
 #ifdef HAVE_INOTIFY_INIT1
 	sock = inotify_init1 (IN_NONBLOCK);
-#else
+#elseif HAVE_SYS_INOTIFY_H
 	sock = inotify_init ();
 	fcntl (sock, O_NONBLOCK);
+#else
+	sock = -1;
 #endif
         if (sock == -1)
         {
@@ -56,6 +59,7 @@ int ConnNotify::receive (fd_set * readset)
 		}
 		if (len > 0)
 		{
+#ifdef HAVE_SYS_INOTIFY_H
 			struct inotify_event *event = (struct inotify_event*) (malloc (len));
 			ssize_t ret = read (sock, event, len);
 			if (ret != len)
@@ -82,6 +86,7 @@ int ConnNotify::receive (fd_set * readset)
 				ep += sizeof (struct inotify_event) + ep->len;
 			}
 			free (event);
+#endif
 		}
 		return len;
 	}
