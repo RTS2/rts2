@@ -223,6 +223,8 @@ int Arc::init ()
 	                                     h,      // Image row size
 	                                     w,      // Image col size
 	                                     timFile->getValue ());    // DSP timing file
+		if (utilFile->getValue ())
+			controller.LoadControllerFile (utilFile->getValue ());
 		setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
 	}
 	catch (std::runtime_error &ex)
@@ -324,6 +326,14 @@ int Arc::startExposure ()
 #else
 	try
 	{
+		long lReply;
+		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
+		controller.CheckReply (lReply);
+		controller.SetOpenShutter (getExpType () == 0);
+		// start exposure..
+		lReply = controller.Command (arc::TIM_ID, SEX);
+		controller.CheckReply (lReply);
+			
 		return 0;
 	}
 	catch (std::runtime_error &er)
@@ -343,7 +353,13 @@ long Arc::isExposing ()
 
 	return 0;
 #else
-	return Camera::isExposing ();
+	long lPixCnt = controller.GetPixelCount ();
+	if (!controller.IsReadout () && lPixCnt == 0)
+	{
+		long lReply = controller.Command (arc::TIM_ID, RET);
+		return USEC_SEC * (getExposure () - lReply / 1000.0);
+	} 
+	return 0;
 #endif
 }
 
@@ -362,6 +378,12 @@ int Arc::doReadout ()
 	}
 	return USEC_SEC / 8.0;
 #else
+	if (controller.IsReadout ())
+		return USEC_SEC / 1000.0;
+	if (controller.GetPixelCount () != chipUsedSize ())
+		return USEC_SEC / 1000.0;
+	logStream (MESSAGE_DEBUG) << "sending readout data" << sendLog;
+	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
 	return -2;
 #endif
 }
