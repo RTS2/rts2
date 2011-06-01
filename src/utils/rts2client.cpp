@@ -227,7 +227,7 @@ Rts2ConnCentraldClient::Rts2ConnCentraldClient (rts2core::Block * in_master, con
 int Rts2ConnCentraldClient::init ()
 {
 	int ret;
-	struct addrinfo hints;
+	struct addrinfo hints = {0};
 	struct addrinfo *master_addr;
 
 	hints.ai_flags = 0;
@@ -237,7 +237,7 @@ int Rts2ConnCentraldClient::init ()
 	ret = getaddrinfo (master_host, master_port, &hints, &master_addr);
 	if (ret)
 	{
-		std::cerr << gai_strerror (ret) << "\n";
+		std::cerr << gai_strerror (ret) << " for " << master_host << ":" << master_port << std::endl;
 		return ret;
 	}
 	sock = socket (master_addr->ai_family, master_addr->ai_socktype, master_addr->ai_protocol);

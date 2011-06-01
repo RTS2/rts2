@@ -64,7 +64,7 @@ int
 Rts2Address::getSockaddr (struct addrinfo **info)
 {
 	char s_port[10];
-	struct addrinfo hints;
+	struct addrinfo hints = {0};
 	hints.ai_flags = 0;
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
