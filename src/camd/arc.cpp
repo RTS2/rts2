@@ -34,6 +34,7 @@
 
 #else
 #include "CController/CController.h"
+#include "CDeinterlace/CDeinterlace.h"
 #endif
 
 #define OPT_TIM     OPT_LOCAL + 42
@@ -61,6 +62,8 @@ class Arc:public Camera
 	protected:
 		int processOption (int opt);
 		int init ();
+
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		virtual int startExposure ();
 		virtual long isExposing ();
@@ -95,6 +98,7 @@ class Arc:public Camera
 #else
 		arc::CController controller;
 		long lDeviceNumber;
+		rts2core::ValueBool *synthetic;
 #endif
 };
 
@@ -120,6 +124,12 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (biasPosition, "bias_position", "Position of bias", true, RTS2_VALUE_WRITABLE);
 	biasPosition->setValueInteger (0);
 
+#ifdef ARC_API_1_7
+
+#else
+	createValue (synthetic, "synthetic", "use synthetic image", true, RTS2_VALUE_WRITABLE);
+	synthetic->setValueBool (false);
+#endif
 	createValue (timFile, "time-file", "DSP timing file", false);
         createValue (utilFile, "util-file", "utility file", false);
 
@@ -240,6 +250,20 @@ int Arc::init ()
 	}
 	return 0;
 #endif
+}
+
+int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+#ifdef ARC_API_1_7
+
+#else
+	if (old_value == synthetic)
+	{
+		controller.SetSyntheticImageMode (((rts2core::ValueBool *) new_value)->getValueBool ());
+		return 0;
+	}
+#endif
+	return Camera::setValue (old_value, new_value);
 }
 
 int Arc::startExposure ()
@@ -382,7 +406,8 @@ int Arc::doReadout ()
 		return USEC_SEC / 1000.0;
 	if (controller.GetPixelCount () != chipUsedSize ())
 		return USEC_SEC / 1000.0;
-	logStream (MESSAGE_DEBUG) << "sending readout data" << sendLog;
+	arc::CDeinterlace deint;
+	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
 	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
 	return -2;
 #endif
