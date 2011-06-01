@@ -240,8 +240,13 @@ AC_SUBST(INC_EDTPDV)
 AC_ARG_WITH(arc,
 [  --with-arc              path to Astronomical Research Cameras headers, version 2.0. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
 ARC="${withval}";
-LIB_ARC="-L${ARC}/Release -lCController";
-INC_ARC="-I${ARC}",
+if test x${target_os} == xcygwin; then
+	LIB_ARC="${ARC}/CController/CController.a /lib/w32api/libsetupapi.a";
+	INC_ARC="-I${ARC}"
+else
+	LIB_ARC="-L${ARC}/Release -lCController";
+	INC_ARC="-I${ARC}"
+fi,
 [ARC=no])
 
 AH_TEMPLATE([ARC_API_1_7],[If ARC version 1.7 is used])

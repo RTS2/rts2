@@ -16,3 +16,16 @@ During ./configure step, you will need to provide path for ARC library using
 
 user@host:$ cd ~/rts2
 user@host:~/rts2$ ./configure --with-arc=/usr/src/arcapi/ARC_API/
+
+This is Makefile for CController, if you are compiling CController on Windows.
+
+all:CController.a
+
+CXXFLAGS=-DWIN32
+
+CController.a:CController.o CTools.o TempCtrl.o CLog.o
+	ar -r $@ $?
+
+clean:
+	rm -rf *.o
+	rm -rf CController.a
