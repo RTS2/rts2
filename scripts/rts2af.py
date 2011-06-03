@@ -223,6 +223,12 @@ class Configuration:
         self.cp[('queuing', 'TARGETID')] = '5'
         self.cp[('queuing', 'THRESHOLD')] = 5.12
 
+        self.cp[('meteodb', 'METEODB_HOSTNAME')] = '192.168.2.67'
+        self.cp[('meteodb', 'METEODB_USERNAME')] = 'miyo'
+        self.cp[('meteodb', 'METEODB_PASSWORD')] = 'a00g2x'
+        self.cp[('meteodb', 'METEODB')] = 'meteo'
+
+
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
             self.defaults[(identifier)]= value
@@ -587,10 +593,13 @@ class FitResults():
         self.date=None
         self.dateEpoch=None
         self.temperature=None
+        self.objects=None
         self.chi2=None
         self.constants=[]
         self.minimumFocPos=None
         self.minimumFwhm=None
+        self.referenceFileName=None
+        self.error=False
 #FWHM_FOCUS 3583.601214
 #FWHM parameters: chi2 6.421956e+02, p0...p2 1.386810e+03 -7.045635e-01 7.027618e-05
 #FLUX_FOCUS 3578.484908
@@ -605,43 +614,56 @@ class FitResults():
         with open( fitResultFileName, 'r') as frfn:
             for line in frfn:
                 line.strip()
-                fitPrgMatch= re.search( r'rts2af_fit_focus.C', line)
+                fitPrgMatch= re.search( runTimeConfig.value('FITPRG') + ':', line)
                 if( fitPrgMatch==None):
                     continue
+                # error handling
+                # rts2af-fit-focus: no data found in 
+                errorMatch= re.search( runTimeConfig.value('FITPRG') + ': no data found in', line)
+                if( not errorMatch==None):
+                    logging.warning('fitResults: error received from: {0}: {1}'.format(runTimeConfig.value('FITPRG'), line))
+                    self.error=True
+                    break
                 
-                dateMatch= re.search( r'rts2af_fit_focus.C: date: (.+)', line)
+                dateMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' date: (.+)', line)
                 if( not dateMatch==None):
                     self.date= dateMatch.group(1)
                     try:
                         self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S.%f'))
                     except ValueError:
                         try:
-                            self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S'))
+                            logging.info('DATE           {0}'.format(self.date))
+                            # 2011-04-16-T19:26:36
+                            self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%d-T%H:%M:%S'))
                         except:
-                            logging.error('fitResults: problems reading date: {0}'.format(self.date))
+                            logging.error('fitResults: problems reading date: {0} %Y-%m-%dT%H:%M:%S'.format(self.date))
                     except:
                         logging.error('fitResults: problems reading date: {0} (hint: not a value error)'.format(self.date))
                     
                     continue
 
-                temperatureMatch= re.search( r'rts2af_fit_focus.C: temperature: (.+)', line)
+                temperatureMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' temperature: (.+)', line)
                 if( not temperatureMatch==None):
                     self.temperature= temperatureMatch.group(1)
                     continue
 
-                parametersMatch= re.search( r'rts2af_fit_focus.C: result fwhm: (.+)', line)
+                objectsMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' objects: (.+)', line)
+                if( not objectsMatch==None):
+                    self.objects= objectsMatch.group(1)
+                    continue
+
+                parametersMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' result fwhm: (.+)', line)
                 if( not parametersMatch==None):
                     parameters= parametersMatch.group(1)
 #chi2 2.445347e+00,  p(0...4)=(7.277240e+01 +/- 1.160489e+00), (8.826737e-03 +/- 4.871031e-04), (-2.223469e-05 +/- 1.425056e-07), (3.992524e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
-
-                    chi2Match= re.search( r'chi2 ([\.0-9e+]+),  p\(0...4\)=(.+)', parameters)
+#chi2 7.463648e-01,  p(0...4)
+                    chi2Match= re.search( r'chi2 ([\-\.0-9e+]+),  p\(0...4\)=(.+)', parameters)
                     if( not chi2Match==None):
                         chi2Str= chi2Match.group(1)
                         try:
                             self.chi2= float(chi2Str)
                         except:
                             logging.error('fitResults: problems reading chi2: {0}'.format(chi2Str))
-
                         constStr= chi2Match.group(2)
                         #print 'const----{0}'.format(constStr)
                         constStr= constStr.replace('(','')
@@ -659,10 +681,10 @@ class FitResults():
                             i += 1
                         continue
 #rts2af_fit_focus.C: FWHM_FOCUS 3502.305998, FWHM at Minimum 2.470353 
-                fwhmMatch= re.search( r'rts2af_fit_focus.C: FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
+                fwhmMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
                 if( not fwhmMatch==None):
-                    self.minimumFocPos= fwhmMatch.group(1)
-                    self.minimumFwhm= fwhmMatch.group(2)
+                    self.minimumFocPos= float(fwhmMatch.group(1))
+                    self.minimumFwhm= float(fwhmMatch.group(2))
                     continue
 
             frfn.close()
@@ -1510,14 +1532,24 @@ class Catalogues():
                 frfn.close()
 
             # parse the fit results
+            # 2.682403 11.429C 2.926316
             fitResults= FitResults()
+            fitResults.referenceFileName=self.referenceCatalogue.fitsHDU.fitsFileName
+            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, fitResults.referenceFileName))
+#            print 'Catalogues.fitTheValues: {0} {1} {2} --{3} --{4} {5} {6} {7}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, runTimeConfig.value('ACCEPTABLE_CHI2'), runTimeConfig.value('THRESHOLD'))
 
-            if((fitResults.chi2 < runTimeConfig.value('ACCEPTABLE_CHI2')) and(fitResults.minimumFwhm > 0) and (fitResults.minimumFwhm < runTimeConfig.value('THRESHOLD'))):
-                logging.info('rts2af_offline.py: {0} {1} {2} {3} {4} {5}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2))
+#            print '{0} < {1}'.format(fitResults.chi2 , runTimeConfig.value('ACCEPTABLE_CHI2'))
+#            print '{0} > {1}'.format(fitResults.minimumFwhm , 0)
+#            print '{0} < {1}'.format(fitResults.minimumFwhm , runTimeConfig.value('THRESHOLD'))
+
+            if((fitResults.chi2 < runTimeConfig.value('ACCEPTABLE_CHI2')) and (fitResults.minimumFwhm > 0) and (fitResults.minimumFwhm < runTimeConfig.value('THRESHOLD'))):
+                logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2))
+#                print 'GOOD'
                 return fitResults
             else:
                 fitResults.minimumFocPos= self.findExtrema()
                 logging.warning('Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), fitResults.minimumFocPos))
+#                print 'Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), fitResults.minimumFocPos)
                 return fitResults
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')

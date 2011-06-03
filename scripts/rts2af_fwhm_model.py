@@ -2,8 +2,8 @@
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   find /path/to/fits -name "*fits" -exec rts2af_fwhm.py  --config rts2-autofocus-offline.cfg --reference {} \; 
-#   
+#   rts2af_fwhm_model.py
+#   do not use it interactively, it is called by rts2af_model_extract.py   
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -78,19 +78,21 @@ class main(rts2af.AFScript):
 
 
         if( paramsSexctractor==None):
-            logging.error('rts2af_fwhm.py: exiting, no paramsSexctractor file given')
+            print "exiting"
             sys.exit(1)
 
         try:
             hdu= rts2af.FitsHDU( referenceFitsFileName)
         except:
             logging.error('rts2af_fwhm.py: exiting, no reference file given')
+            print 'FWHM:{0}'.format(-1)
             sys.exit(1)
 
         if(hdu.headerProperties()):
             logging.debug('rts2af_fwhm.py: appending: {0}'.format(hdu.fitsFileName))
         else:
             logging.error('rts2af_fwhm.py: exiting due to invalid header properties inf file:{0}'.format(hdu.fitsFileName))
+            print 'FWHM:{0}'.format(-1)
             sys.exit(1)
 
         cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
@@ -105,50 +107,8 @@ class main(rts2af.AFScript):
                 
         fwhm= cat.average('FWHM_IMAGE')
         logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
+        print 'FWHM:{0}'.format(fwhm)
         
-        filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
-        
-        if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOF or X
-            threshFwhm=runTimeConfig.value('THRESHOLD')
-            if( fwhm > threshFwhm):
-                ##r2c.setValue('next', 5, 'EXEC')
-                ## plain wrong were are not talking to rts2, use rts2-scriptexec
-                #cmd= [ 'rts2-scriptexec',
-                #       '-d',
-                #       'CCD_FLI', # ToDo it is not CCD_FLI
-                #       '-s',
-                #       ' exe /usr/local/src/rts-2-head/scripts/rts2af_exec.py  '
-                #   ]
-                ## do not wait, this process lives until, e.g. the focus run has terminated.
-                ## supress output from this process
-                #fnull = open(os.devnull, 'w')
-                #proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
-
-                cmd= [ 'rts2af-queue',
-                       '--user={0}'.format(runTimeConfig.value('USERNAME')),
-                       '--password={0}'.format(runTimeConfig.value('PASSWORD')),
-                       '--clear',
-                       '--queue={0}'.format(runTimeConfig.value('QUEUENAME')),
-                       '{0}'.format(runTimeConfig.value('TARGETID'))
-                   ]
-                fnull = open(os.devnull, 'w')
-                proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
-
-                # let rts2-queue do its job
-                # ToDo: something more intelligent
-                time.sleep(10) 
-                logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd, referenceFitsFileName))
-            else:
-                logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}, reference file: {2}'.format(fwhm, threshFwhm, referenceFitsFileName))
-        else:
-            # a focus run sets FOC_DEF and that is without filter
-            if( filter):
-                logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), used filter: {0}, offset: {1}'.format(filter.name, filter.OffsetToClearPath))
-            else:
-                logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), no known filter found in headers')
-
-        #ToDo does not work yet cat.ds9WriteRegionFile(writeSelected=True)
-        #cat.displayCatalogue()
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

@@ -5,7 +5,7 @@
 // needs root above and version 5.0.25:  http://root.cern.ch/
 // 
 // 
-// g++ -Wall -I `root-config --incdir` -o rts2_fit_focus rts2_fit_focus.C `root-config --libs`
+// g++ -Wall -I `root-config --incdir` -o rts2_fit_focus rts2af_fit_focus.C `root-config --libs`
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License as published by
@@ -99,7 +99,13 @@ Double_t one_over_fwhm_temp(Double_t *v, Double_t *par)
   Double_t fitval = par[0] * fwhm_at_minimum / ( fwhm_at_minimum + par[3] * TMath::Power(  TMath::Abs((v[0]- par[1])), par[2]) ) ;
   return fitval;
 }
-Double_t pol3(Double_t *v, Double_t *par)
+Double_t pol2a(Double_t *v, Double_t *par)
+{
+
+  Double_t fitval = par[0] + par[1] * v[0] + par[2] * v[0] * v[0] ;
+  return fitval;
+}
+Double_t pol3a(Double_t *v, Double_t *par)
 {
 
   Double_t fitval = par[0] + par[1] * v[0] + par[2] * v[0] * v[0] + par[3]  * v[0] * v[0] * v[0];
@@ -164,12 +170,12 @@ int main(int argc, char* argv[])
     }
   if(( number_of_lines_fwhm= read_file( fwhm_file, &foc_pos_fwhm[0], &fwhm[0], &fwhm_errx[0], &fwhm_erry[0])) == 0)
     {
-      printf( "no data found in %s, exiting\n", fwhm_file) ;
+      printf( "rts2af-fit-focus: no data found in %s, exiting\n", fwhm_file) ;
       return 1 ;
     }
   if(( number_of_lines_flux= read_file( flux_file, &foc_pos_flux[0], &flux[0], &flux_errx[0], &flux_erry[0])) == 0)
     {
-      printf( "no data found in %s, exiting\n", flux_file) ;
+      printf( "rts2af-fit-focus: no data found in %s, exiting\n", flux_file) ;
       return 1 ;
     }
   // make fit results visible
@@ -200,6 +206,7 @@ int main(int argc, char* argv[])
   // create first graph: FWHM
   
   TGraphErrors *gr1 = new TGraphErrors(number_of_lines_fwhm,foc_pos_fwhm,fwhm, fwhm_errx, fwhm_erry);
+  //TGraph *gr1 = new TGraph(number_of_lines_fwhm,foc_pos_fwhm,fwhm);
   gr1-> SetMarkerColor(kBlue);
   gr1-> SetMarkerStyle(21);
   //NO: data is asymmetric! TF1 *fit_fwhm = new TF1("y_symmetric_pol4", y_symmetric_pol4, 0., 10000., 3);
@@ -207,20 +214,26 @@ int main(int argc, char* argv[])
   //fit_fwhm-> SetParameters(0., 1., 1.);
   //fit_fwhm-> SetParNames("p0","p1", "p2");
   //gr1-> Fit(fit_fwhm,"q") ;
-  //  gr1-> Fit("pol2","q");
+  //  gr1-> Fit("pol2a","q");
 
-  TF1 *func = new TF1("fit",pol3,0,100000,4);
+  //TF1 *func = new TF1("fit",pol3a,0,100000,4);
   //   1  p0           1.85925e+03   9.55633e+02   4.57281e-04  -7.14746e-04
   //   2  p1          -6.80267e-01   3.50029e-01  -1.67476e-07  -3.80031e+00
   //   3  p2           6.14710e-05   3.16327e-05   1.51334e-11  -2.02273e+04
   //   4  p3           1.50936e-10   7.60539e-11   3.63948e-17  -1.05825e+08
-  func->SetParameters( 1.85925e+03, -6.80267e-01, 6.14710e-05, 1.50936e-10);
+  //  func->SetParameters( 1.85925e+03, -6.80267e-01, 6.14710e-05, 1.50936e-10);
+  //func->SetParameters( 1.85925e+04, 0.80267e-02, 0., 0.);
 
-  gr1->Fit("fit", "bq");
+  TF1 *func = new TF1("fit",pol3a,0,100000,4);
+  func->SetParameters( 180., -9.0e-02, 1.0e-05, 0.);
+  gr1->Fit("fit", "qWEM");
+
+  func->SetParameters( gr1-> GetFunction("fit")->GetParameter(0), gr1-> GetFunction("fit")->GetParameter(1), gr1-> GetFunction("fit")->GetParameter(2), gr1-> GetFunction("fit")->GetParameter(3));
+  gr1->Fit("fit", "q");
+
   mg-> Add(gr1);
 
   // read the results
-  // ToDo: integrate at least chi2 into rts2af
   TF1 *fit_fwhm = gr1-> GetFunction("fit");
   fit_fwhm_global = fit_fwhm ; // in root there is no method accepting a function pointer
  
@@ -237,17 +250,18 @@ int main(int argc, char* argv[])
   Double_t fwhm_p4_err = fit_fwhm-> GetParError(4);
 
   // date and temperature of the run
-  fprintf( stderr, "rts2_fit_focus.C: date: %s\n", date);
-  fprintf( stderr, "rts2_fit_focus.C: temperature: %s\n", temperature);
+  fprintf( stderr, "rts2af-fit-focus: date: %s\n", date);
+  fprintf( stderr, "rts2af-fit-focus: temperature: %s\n", temperature);
+  fprintf( stderr, "rts2af-fit-focus: objects: %s\n", objects);
 
-  fprintf( stderr, "rts2_fit_focus.C: result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
+  fprintf( stderr, "rts2af-fit-focus: result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
 
   Double_t fwhm_MinimumX = fit_fwhm-> GetMinimumX() ;
 
   
   fwhm_at_minimum= fit_fwhm-> GetMinimum() ; 
 
-  fprintf( stderr, "rts2_fit_focus.C FWHM_FOCUS %f, FWHM at Minimum %f\n",fwhm_MinimumX, fwhm_at_minimum) ; 
+  fprintf( stderr, "rts2af-fit-focus: FWHM_FOCUS %f, FWHM at Minimum %f\n",fwhm_MinimumX, fwhm_at_minimum) ; 
   printf( "FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
   printf( "FWHM parameters: chi2 %e, p0...p2 %e %e %e\n", fwhm_chi2, fwhm_p0, fwhm_p1, fwhm_p2) ; 
   
@@ -283,13 +297,13 @@ int main(int argc, char* argv[])
   Double_t flux_p4_err = fit_flux-> GetParError(4);
   Double_t flux_p5     = fit_flux-> GetParameter(5);
   Double_t flux_p5_err = fit_flux-> GetParError(5);
-  fprintf(stderr,  "rts2_fit_focus.C: result flux: chi2 %e,  p(0...5)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", flux_chi2, flux_p0, flux_p0_err, flux_p1, flux_p1_err, flux_p2, flux_p2_err, flux_p3, flux_p3_err, flux_p4, flux_p4_err, flux_p5, flux_p5_err) ;
+  fprintf(stderr,  "rts2af-fit-focus: result flux: chi2 %e,  p(0...5)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", flux_chi2, flux_p0, flux_p0_err, flux_p1, flux_p1_err, flux_p2, flux_p2_err, flux_p3, flux_p3_err, flux_p4, flux_p4_err, flux_p5, flux_p5_err) ;
 
   // ToDo: this does not provide the correct result (its the minimum of the fwhm function !)
   // Double_t flux_MaximumX = flux-> GetMaximumX( fwhm_MinimumX-1000., fwhm_MinimumX+1000.) ; 
   // printf( "FLUX_FOCUS %f\n", flux_MaximumX ) ; 
   // using instead:
-  fprintf( stderr, "rts2_fit_focus.C: FLUX_FOCUS %f\n", flux_p1) ; 
+  fprintf( stderr, "rts2af-fit-focus: FLUX_FOCUS %f\n", flux_p1) ; 
   printf( "FLUX_FOCUS %f\n", flux_p1) ; 
   
   printf( "FLUX parameters: chi2 %e, p0...p2 %e %e %e\n", flux_chi2, flux_p0, flux_p1, flux_p2) ; 
@@ -328,5 +342,7 @@ int main(int argc, char* argv[])
     {
       rootapp-> Run();
     }
+  fprintf( stderr, "rts2af-fit-focus: parameters mode: %s, filter: %s, temperature: %s, date: %s, objects: %s, %s, %s, %s\n", mode, filter, temperature, date, objects, fwhm_file, flux_file, output_file_name) ; 
+
   return 0;
 }

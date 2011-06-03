@@ -48,6 +48,7 @@ import sys
 import logging
 
 import rts2af 
+import rts2af_meteodb
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
@@ -79,6 +80,7 @@ class main(rts2af.AFScript):
 # get the list of fits files
         FitsList=[]
         FitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
+#        print '{0}'.format(FitsList)
 
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
@@ -142,7 +144,9 @@ class main(rts2af.AFScript):
 
         # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
         fitsResults= cats.fitTheValues()
-        print 'FOCPOS: {0}'.format(fitsResults.minimumFocPos)
+        if(not fitsResults==None):
+            if( not fitsResults.error):
+                print 'FOCPOS: {0}'.format(fitsResults.minimumFocPos)
 
 
 #        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
@@ -155,9 +159,12 @@ class main(rts2af.AFScript):
         if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
             fitResultSummaryFileName= '/tmp/result.log'
             if(not fitsResults==None):
-                with open( fitResultSummaryFileName, 'a') as frs:
-                    frs.write('{0} {1} {2} {3} {4}\n'.format(fitsResults.chi2, fitsResults.temperature, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.dateEpoch))
-                frs.close()
+                if( not fitsResults.error):
+                    dc= rts2af_meteodb.ReadMeteoDB()
+                    (temperatureConsole, temperatureIss)= dc.queryMeteoDb(fitsResults.dateEpoch)
+                    with open( fitResultSummaryFileName, 'a') as frs:
+                        frs.write('{0} {1} {2} {3} {4} {5} {6} {7} {8}\n'.format(fitsResults.chi2, fitsResults.temperature, temperatureConsole, temperatureIss, fitsResults.objects, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.dateEpoch, fitsResults.referenceFileName))
+                    frs.close()
 
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
@@ -183,12 +190,6 @@ class main(rts2af.AFScript):
         #    cat.averageFWHM("selected")
         #    cat.averageFWHM("matched")
         #    cat.averageFWHM()
-
-        
-
-
-
-
 if __name__ == '__main__':
     main(sys.argv[0]).main()
 
