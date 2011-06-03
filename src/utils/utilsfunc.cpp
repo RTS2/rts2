@@ -20,6 +20,7 @@
 #include "utilsfunc.h"
 
 #include <errno.h>
+#include <ftw.h>
 #include <malloc.h>
 #include <iostream>
 #include <string.h>
@@ -62,6 +63,27 @@ int mkpath (const char *path, mode_t mode)
 	}
 	free (cp_path);
 	return ret;
+}
+
+// remove file or directory
+int rmfiledir (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+	switch (typeflag)
+	{
+		case FTW_D:
+		case FTW_DP:
+			return rmdir (fpath);
+		case FTW_F:
+			return unlink (fpath);
+		default:
+			errno = ENOTSUP;
+			return -1;
+	}
+}
+
+int rmdir_r (const char *dir)
+{
+	return nftw (dir, rmfiledir, 50, FTW_DEPTH | FTW_MOUNT);
 }
 
 int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal)

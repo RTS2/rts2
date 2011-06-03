@@ -388,6 +388,7 @@ int ConnFork::idle ()
 		time (&now);
 		if (now > forkedTimeout)
 		{
+			logStream (MESSAGE_WARNING) << "killing " << exePath << ", as it reached timeout" << sendLog;
 			term ();
 			endConnection ();
 		}

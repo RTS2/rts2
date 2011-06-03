@@ -1,6 +1,7 @@
 /* 
  * Various utility functions.
  * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Insitute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -56,6 +57,15 @@ double random_num ();
  * @return 0 on success, otherwise error code.
  */
 int mkpath (const char *path, mode_t mode);
+
+/**
+ * Remove recursively directory.
+ *
+ * @param dir directory to remove.
+ *
+ * @return 0 on success, -1 and sets errno on error.
+ */
+int rmdir_r (const char *dir);
 
 /**
  * Parses and initialize tm structure from char.
