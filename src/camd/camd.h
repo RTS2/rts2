@@ -254,6 +254,9 @@ class Camera:public rts2core::ScriptDevice
 		char* dataBuffer;
 		long dataBufferSize;
 
+		rts2core::ValueSelection *camFilterVal;
+		rts2core::DoubleArray *camFilterOffsets;
+
 		/**
 		 * Return exected exposure end.
 		 *
@@ -313,21 +316,6 @@ class Camera:public rts2core::ScriptDevice
 			flip->setValueInteger (_flip);
 			defaultFlip = _flip;
 		}
-
-		/**
-		 * Change state of camera chip.
-		 *
-		 * This function changes state of chip. chip_state_mask and chip_new_state are
-		 * shifted according to chip_num value, so they should contain common state
-		 * mask and values, as defined in status.h. state_mask and new_state are not shifted.
-		 *
-		 * @param chip_state_mask  Chip state mask.
-		 * @param chip_new_state New chip state.
-		 * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
-		 * @param new_state New state for whole device.
-		 * @param description Text describing operation which is performed.
-		 */
-		void maskStateChip (int chip, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description, double start = rts2_nan ("f"), double end = rts2_nan ("f"));
 
 		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.
@@ -759,7 +747,7 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Set exposure time.
 		 */
-		void setExposure (float in_exp) { exposure->setValueFloat (in_exp); }
+		virtual void setExposure (float in_exp) { exposure->setValueFloat (in_exp); }
 
 		/**
 		 * Returns exposure type.
@@ -786,6 +774,8 @@ class Camera:public rts2core::ScriptDevice
 
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
+
+		rts2core::ValueFloat *exposure;
 
 		// shared memory identifier
 		int sharedMemId;
@@ -845,7 +835,6 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 								 // DARK of LIGHT frames
-		rts2core::ValueFloat *exposure;
 		rts2core::ValueInteger *flip;
 		bool defaultFlip;
 
@@ -862,11 +851,6 @@ class Camera:public rts2core::ScriptDevice
 		int camStartExposure ();
 		int camStartExposureWithoutCheck ();
 
-	protected:
-		rts2core::ValueSelection *camFilterVal;
-		rts2core::DoubleArray *camFilterOffsets;
-	
-	private:
 		rts2core::ValueInteger *camFocVal;
 		rts2core::ValueDouble *rotang;
 

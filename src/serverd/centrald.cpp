@@ -597,9 +597,9 @@ void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 	}
 }
 
-void Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
+void Rts2Centrald::stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn)
 {
-	Daemon::stateChanged (new_state, old_state, description);
+	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
 	{
 		logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)

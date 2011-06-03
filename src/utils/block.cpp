@@ -193,6 +193,18 @@ int Block::sendAll (const char *msg)
 	return 0;
 }
 
+int Block::sendAllExcept (const char *msg, Rts2Conn *exceptConn)
+{
+	connections_t::iterator iter;
+	for (iter = connections.begin (); iter != connections.end (); iter++)
+		if ((*iter) != exceptConn)
+			(*iter)->sendMsg (msg);
+	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+	  	if ((*iter) != exceptConn)
+			(*iter)->sendMsg (msg);
+	return 0;
+}
+
 void Block::sendValueAll (char *val_name, char *value)
 {
 	connections_t::iterator iter;
@@ -211,16 +223,24 @@ void Block::sendMessageAll (Rts2Message & msg)
 		(*iter)->sendMessage (msg);
 }
 
-void Block::sendStatusMessage (int state, const char * msg)
+void Block::sendStatusMessage (int state, const char * msg, Rts2Conn *commandedConn)
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
 	if (msg != NULL)
 		_os << " \"" << msg << "\"";
-	sendAll (_os);
+	if (commandedConn)
+	{
+		sendStatusMessageConn (state | DEVICE_SC_CURR, commandedConn);
+		sendAllExcept (_os, commandedConn);
+	}
+	else
+	{
+		sendAll (_os);
+	}
 }
 
-void Block::sendStatusMessage (int state, Rts2Conn * conn)
+void Block::sendStatusMessageConn (int state, Rts2Conn * conn)
 {
  	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;

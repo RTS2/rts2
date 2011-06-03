@@ -1,6 +1,7 @@
 /* 
  * Basic constants.
- * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2001-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -133,6 +134,13 @@
  * @ingroup RTS2Block
  */
 #define DEVICE_MISC_MASK    0x0000f000
+
+/**
+ * State change was caused by command being run on current connection.
+ * Currently only used to signal that the exposure was caused
+ * by the connection.
+ */
+#define DEVICE_SC_CURR      0x00001000
 
 #define DEVICE_IDLE         0x00000000
 

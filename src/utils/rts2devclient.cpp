@@ -158,6 +158,8 @@ void Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 		switch (state->getValue () & CAM_MASK_EXPOSE)
 		{
 			case CAM_EXPOSING:
+				if (!(state->getValue () & DEVICE_SC_CURR))
+					break;
 				if (connection->getErrorState () == DEVICE_NO_ERROR)
 					exposureStarted ();
 				else
@@ -180,6 +182,8 @@ void Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 				exposureEnd ();
 				break;
 			case CAM_NOFT:
+				if (!(state->getValue () & DEVICE_SC_CURR))
+					break;
 				exposureStarted ();
 				break;
 		}

@@ -253,7 +253,7 @@ int Vermes::info ()
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   ssd650v_current->setValueDouble(current_percentage) ;
   // Yes, we are open, always
-  setState (DOME_OPENED, "Dome is opened");
+  maskState (DOME_DOME_MASK, DOME_OPENED, "Dome is opened");
 
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 

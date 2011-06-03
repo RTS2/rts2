@@ -229,9 +229,9 @@ int Bart::init ()
 		return -1;
 
 	if (isOn (KONCAK_OTEVRENI_JIH) && !isOn (KONCAK_ZAVRENI_JIH))
-		setState (DOME_CLOSED, "dome is closed");
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome is closed");
 	else if (!isOn (KONCAK_OTEVRENI_JIH) && isOn (KONCAK_ZAVRENI_JIH))
-		setState (DOME_OPENED, "dome is opened");
+		maskState (DOME_DOME_MASK, DOME_OPENED, "dome is opened");
 
 	return 0;
 }

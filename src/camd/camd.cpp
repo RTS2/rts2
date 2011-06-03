@@ -164,7 +164,7 @@ int Camera::endExposure ()
 
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, BOP_TEL_MOVE | BOP_WILL_EXPOSE, 0, "chip exposure interrupted");
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "chip exposure interrupted", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 	return 0;
 }
 
@@ -172,7 +172,7 @@ int Camera::stopExposure ()
 {
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, BOP_TEL_MOVE | BOP_WILL_EXPOSE, 0, "chip exposure interrupted");
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "exposure interrupted", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 	return 0;
 }
 
@@ -776,22 +776,14 @@ void Camera::checkExposures ()
 					endExposure ();
 					// if new exposure does not start during endExposure (camReadout) call, drop exposure state
 					if (expNum == getExposureNumber ())
-						maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
-							CAM_NOEXPOSURE | CAM_NOFT,
-							BOP_TEL_MOVE, 0,
-							"exposure chip finished");
+						maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 
 					// drop FT flag
 					else
-						maskStateChip (0, CAM_MASK_FT, CAM_NOFT,
-							0, 0, "ft exposure chip finished");
+						maskState (CAM_MASK_FT, CAM_NOFT, "ft exposure chip finished", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 					break;
 				case -1:
-					maskStateChip (0,
-						DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING,
-						DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING,
-						BOP_TEL_MOVE, 0,
-						"exposure chip finished with error");
+					maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING, "exposure finished with error", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 					stopExposure ();
 					if (quedExpNumber->getValueInteger () > 0)
 					{
@@ -819,12 +811,9 @@ void Camera::checkReadouts ()
 		endReadout ();
 		afterReadout ();
 		if (ret == -2)
-			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING,
-				0, 0, "chip readout ended");
+			maskState (CAM_MASK_READING, CAM_NOTREADING, "readout ended", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 		else
-			maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
-				DEVICE_ERROR_HW | CAM_NOTREADING,
-				0, 0, "chip readout ended with error");
+			maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 	}
 }
 
@@ -979,7 +968,7 @@ int Camera::camStartExposure ()
 		}
 
 		if (!((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)) && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
-			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 
 		return 0;
 	}
@@ -1019,7 +1008,7 @@ int Camera::camStartExposureWithoutCheck ()
 	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
 	infoAll ();
 
-	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE | BOP_WILL_EXPOSE, BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble ());
+	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_EXPOSING | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
 
 	logStream (MESSAGE_INFO) << "starting " << exposure->getValueFloat () << "s exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
@@ -1140,7 +1129,7 @@ int Camera::camReadout (Rts2Conn * conn)
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
 		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
-		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, 0, 0, "starting frame transfer");
+		maskState (CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, "starting frame transfer", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;
 		else
@@ -1154,7 +1143,7 @@ int Camera::camReadout (Rts2Conn * conn)
 		// open data connection - wait socket
 		// end exposure as well..
 		// do not signal BOP_TEL_MOVE down if there are exposures in que
-		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip readout started");
+		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_READING, "readout started", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)	
 			currentImageData = -1;
 		else
@@ -1170,7 +1159,7 @@ int Camera::camReadout (Rts2Conn * conn)
 		timeReadoutStart = getNow ();
 		return readoutStart ();
 	}
-	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0, "chip readout failed");
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
 	return -1;
 }
@@ -1223,11 +1212,6 @@ void Camera::offsetForFilter (int new_filter)
 int Camera::getStateChip (int chip)
 {
 	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
-}
-
-void Camera::maskStateChip (int chip_num, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description, double start, double end)
-{
-	maskState (state_mask | (chip_state_mask << (4 * chip_num)), new_state | (chip_new_state << (4 * chip_num)), description, start, end);
 }
 
 int Camera::getFilterNum ()
@@ -1365,7 +1349,7 @@ void Camera::setFullBopState (int new_state)
 		if ((new_state & BOP_TRIG_EXPOSE) && !(getState () & BOP_WILL_EXPOSE))
 		{
 			// this will trigger device transition from BOP_TRIG_EXPOSE to not BOP_TRIG_EXPOSE, which will trigger this code again..
-			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon");
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 		}
 		else
 		{

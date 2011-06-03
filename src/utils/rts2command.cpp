@@ -166,6 +166,12 @@ Rts2CommandExposure::Rts2CommandExposure (rts2core::Block * _master, Rts2DevClie
 	setBopMask (_bopMask);
 }
 
+int Rts2CommandExposure::commandReturnOK (Rts2Conn *conn)
+{
+	camera->exposureCommandOK ();
+	return Rts2Command::commandReturnOK (conn);
+}
+
 int Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	camera->exposureFailed (status);

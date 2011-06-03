@@ -973,19 +973,19 @@ err:
 	return ret;
 }
 
-void Daemon::setState (int new_state, const char *description)
+void Daemon::setState (int new_state, const char *description, Rts2Conn *commandedConn)
 {
 	if (state == new_state)
 		return;
-	stateChanged (new_state, state, description);
+	stateChanged (new_state, state, description, commandedConn);
 }
 
-void Daemon::stateChanged (int new_state, int old_state, const char *description)
+void Daemon::stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn)
 {
 	state = new_state;
 }
 
-void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end)
+void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end, Rts2Conn *commandedConn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
@@ -1000,7 +1000,7 @@ void Daemon::maskState (int state_mask, int new_state, const char *description, 
 	// null from state all errors..
 	masked_state &= ~(DEVICE_ERROR_MASK | state_mask);
 	masked_state |= new_state;
-	setState (masked_state, description);
+	setState (masked_state, description, commandedConn);
 
 	if (!(isnan (start) && isnan(end)))
 		sendProgressAll (start, end);

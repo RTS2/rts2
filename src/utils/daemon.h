@@ -401,7 +401,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Called to set new state value
 		 */
-		void setState (int new_state, const char *description);
+		void setState (int new_state, const char *description, Rts2Conn *commandedConn);
 
 		/**
 		 * Called when state of the device is changed.
@@ -410,7 +410,7 @@ class Daemon:public rts2core::Block
 		 * @param old_state   Old device state.
 		 * @param description Text description of state change.
 		 */
-		virtual void stateChanged (int new_state, int old_state, const char *description);
+		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
 
 		/**
 		 * Called from idle loop after HUP signal occured.
@@ -423,9 +423,9 @@ class Daemon:public rts2core::Block
 		virtual void signaledHUP ();
 
 		/**
-		 * Called when state is changed.
+		 * Send state change to all connection.
 		 */
-		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"));
+		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"), Rts2Conn *commandedConn = NULL);
 
 		/**
 		 * Return daemon state without ERROR information.

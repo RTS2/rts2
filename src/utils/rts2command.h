@@ -311,8 +311,6 @@ class Rts2CommandCameraSettings:public Rts2Command
  */
 class Rts2CommandExposure:public Rts2Command
 {
-	private:
-		Rts2DevClientCamera * camera;
 	public:
 		/**
 		 * Send exposure command to device.
@@ -323,7 +321,10 @@ class Rts2CommandExposure:public Rts2Command
 		 */
 		Rts2CommandExposure (rts2core::Block * _master, Rts2DevClientCamera * _camera, int _bopMask);
 
+		virtual int commandReturnOK (Rts2Conn *conn);
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+	private:
+		Rts2DevClientCamera * camera;
 };
 
 /**

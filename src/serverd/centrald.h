@@ -213,7 +213,7 @@ class Rts2Centrald:public Daemon
 
 		virtual void connectionRemoved (Rts2Conn * conn);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description);
+		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
 
 		virtual void signaledHUP ();
 
@@ -324,9 +324,9 @@ class Rts2ConnCentrald:public Rts2Conn
 
 	protected:
 		virtual void setState (int in_value, char * msg);
+
 	public:
-		Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
-			int in_centrald_id);
+		Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master, int in_centrald_id);
 		/**
 		 * Called on connection exit.
 		 *

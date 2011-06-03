@@ -784,12 +784,12 @@ void Device::checkQueChanges (int fakeState)
 	}
 }
 
-void Device::stateChanged (int new_state, int old_state, const char *description)
+void Device::stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn)
 {
-	Daemon::stateChanged (new_state, old_state, description);
+	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	// try to wake-up queued changes..
 	checkQueChanges (new_state);
-	sendStatusMessage (getState (), description);
+	sendStatusMessage (getState (), description, commandedConn);
 }
 
 void Device::sendFullStateInfo (Rts2Conn * conn)
@@ -917,7 +917,7 @@ int Device::scriptEnds ()
 
 int Device::statusInfo (Rts2Conn * conn)
 {
-	sendStatusMessage (getState (), conn);
+	sendStatusMessageConn (getState (), conn);
 	return 0;
 }
 

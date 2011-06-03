@@ -204,10 +204,10 @@ int Bootes1B::init ()
 	// set dome state..
 	if (getPortState (CLOSE_END_1) && getPortState (CLOSE_END_2))
 	{
-		setState (DOME_CLOSED, "Init state is closed");
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "Init state is closed");
 	} else if (getPortState (OPEN_END_1) && getPortState (OPEN_END_2))
 	{
-		setState (DOME_OPENED, "Init state is opened");
+		maskState (DOME_DOME_MASK, DOME_OPENED, "Init state is opened");
 	} else
 	{
 		// not opened, not closed..

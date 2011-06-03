@@ -134,14 +134,14 @@ Bootes1A::init ()
 	if (getPortState (CLOSE_END_1) && getPortState (CLOSE_END_2))
 	{
 		logStream (MESSAGE_DEBUG) << "dome1a: found dome closed on startup" << sendLog;
-		setState (DOME_CLOSED, "Init state is closed");
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "Init state is closed");
 		return 0;
 	} 
 	
 	if (getPortState (OPEN_END_1) && getPortState (OPEN_END_2))
 	{
 		logStream (MESSAGE_DEBUG) << "dome1a: found dome open on startup" << sendLog;
-		setState (DOME_OPENED, "Init state is opened");
+		maskState (DOME_DOME_MASK, DOME_OPENED, "Init state is opened");
 		return 0;
 	} 
 

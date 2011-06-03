@@ -162,12 +162,13 @@ class Rts2DevClient:public Rts2Object
  */
 class Rts2DevClientCamera:public Rts2DevClient
 {
-	protected:
-		virtual void exposureStarted ();
-		virtual void exposureEnd ();
-		virtual void readoutEnd ();
 	public:
 		Rts2DevClientCamera (Rts2Conn * in_connection);
+
+		/**
+		 * Called when exposure (dark of light) command finished without error.
+		 */
+		virtual void exposureCommandOK () {};
 
 		/**
 		 * ExposureFailed will get called even when we faild during readout
@@ -175,21 +176,17 @@ class Rts2DevClientCamera:public Rts2DevClient
 		virtual void exposureFailed (int status);
 		virtual void stateChanged (Rts2ServerState * state);
 
-		virtual void filterOK ()
-		{
-		}
-		virtual void filterFailed (int status)
-		{
-		}
-		virtual void focuserOK ()
-		{
-		}
-		virtual void focuserFailed (int status)
-		{
-		}
+		virtual void filterOK () {}
+		virtual void filterFailed (int status) {}
+		virtual void focuserOK () {}
+		virtual void focuserFailed (int status) {}
 
 		bool isIdle ();
 		bool isExposing ();
+	protected:
+		virtual void exposureStarted ();
+		virtual void exposureEnd ();
+		virtual void readoutEnd ();
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient

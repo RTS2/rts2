@@ -224,7 +224,7 @@ class Block: public rts2core::App
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessage (int state, const char * msg = NULL);
+		void sendStatusMessage (int state, const char * msg = NULL, Rts2Conn *commandedConn = NULL);
 
 		/**
 		 * Send status message to one connection.
@@ -236,7 +236,7 @@ class Block: public rts2core::App
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessage (int state, Rts2Conn *conn);
+		void sendStatusMessageConn (int state, Rts2Conn *conn);
 
 		/**
 		 * Send BOP state to all connections.
@@ -270,6 +270,8 @@ class Block: public rts2core::App
 		 */
 		int sendAll (const char *msg);
 
+		int sendAllExcept (const char *msg, Rts2Conn *exceptConn);
+
 		/**
 		 * Send message to all connections.
 		 *
@@ -280,6 +282,11 @@ class Block: public rts2core::App
 		int sendAll (std::ostringstream &_os)
 		{
 			return sendAll (_os.str ().c_str ());
+		}
+
+		int sendAllExcept (std::ostringstream &_os, Rts2Conn *exceptConn)
+		{
+			return sendAllExcept (_os.str ().c_str (), exceptConn);
 		}
 
 		/**

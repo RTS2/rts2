@@ -354,7 +354,7 @@ class Device:public Daemon
 		 */
 		virtual void checkQueChanges (int fakeState);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description);
+		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
