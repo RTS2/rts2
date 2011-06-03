@@ -484,7 +484,7 @@ void Zelio::postEvent (Rts2Event *event)
 				{
 					logStream (MESSAGE_ERROR) << err << sendLog;
 				}
-				deadManNum = (++deadManNum) % 2;
+				deadManNum = (deadManNum + 1) % 2;
 				addTimer (deadTimeout->getValueInteger () / 5.0, event);
 				return;
 			}
