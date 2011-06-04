@@ -177,6 +177,9 @@ bool FLWO::isGoodWeather ()
 	// if system is waiting for cover closure, recheck dome state  
 	if (!isnan (coverTimeout->getValueDouble ()))
 		return true;
+	// if in OFF, it is always good weather
+	if ((getMasterState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+		return true;
 	return Dome::isGoodWeather ();
 }
 
