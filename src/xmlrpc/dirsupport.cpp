@@ -65,7 +65,7 @@ int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const st
 /**
  * Sort two file structure entries by cdate.
  */
-#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
+#if (not (defined(_POSIX_C_SOURCE)) || _POSIX_C_SOURCE > 200200L) && defined(HAVE_SCANDIR)
 int cdatesort(const struct dirent **a, const struct dirent **b)
 {
 	struct stat s_a, s_b;
