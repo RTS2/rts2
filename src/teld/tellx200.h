@@ -157,6 +157,7 @@ class TelLX200:public Telescope
 
 	private:
 		const char *device_file;
+		bool connDebug;
 };
 
 }

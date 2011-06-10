@@ -21,15 +21,19 @@
 #include "tellx200.h"
 #include "hms.h"
 
+#define OPT_CONN_DEBUG     OPT_LOCAL + 2000
+
 using namespace rts2teld;
 
 TelLX200::TelLX200 (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 {
 	device_file = "/dev/ttyS0";
+	connDebug = false;
 
 	createValue (localTime, "LOCATIME", "telescope local time", true, RTS2_DT_RA);
 
 	addOption ('f', NULL, 1, "serial device file (default to /dev/ttyS0");
+	addOption (OPT_CONN_DEBUG, "conndebug", 0, "record debug log of messages on connections");
 }
 
 TelLX200::~TelLX200 (void)
@@ -43,6 +47,9 @@ int TelLX200::processOption (int in_opt)
 	{
 		case 'f':
 			device_file = optarg;
+			break;
+		case OPT_CONN_DEBUG:
+			connDebug = true;
 			break;
 		default:
 			return Telescope::processOption (in_opt);
@@ -59,7 +66,8 @@ int TelLX200::init ()
 		return ret;
 
 	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5);
-	//serConn->setDebug (true);
+	if (connDebug == true)
+		serConn->setDebug (true);
 	ret = serConn->init ();
 	if (ret)
 		return -1;
