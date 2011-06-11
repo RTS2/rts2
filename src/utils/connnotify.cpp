@@ -38,19 +38,22 @@ int ConnNotify::init ()
 #elif HAVE_SYS_INOTIFY_H
 	sock = inotify_init ();
 	fcntl (sock, O_NONBLOCK);
-#else
-	sock = -1;
 #endif
+
+#if defined(HAVE_INOTIFY_INIT1) || defined(HAVE_SYS_INOTIFY_H)
         if (sock == -1)
         {
 		throw Error ("cannot initialize notify FD");
         }
         return 0;
+#else
+	sock = -1;
+	return 0;
+#endif
 }
 
 int ConnNotify::receive (fd_set * readset)
 {
-#ifdef HAVE_SYS_INOTIFY_H
 	if (sock >= 0 && FD_ISSET (sock, readset))
 	{
 		int len;
@@ -60,6 +63,7 @@ int ConnNotify::receive (fd_set * readset)
 		}
 		if (len > 0)
 		{
+#ifdef HAVE_SYS_INOTIFY_H
 			struct inotify_event *event = (struct inotify_event*) (malloc (len));
 			ssize_t ret = read (sock, event, len);
 			if (ret != len)
@@ -86,9 +90,9 @@ int ConnNotify::receive (fd_set * readset)
 				ep += sizeof (struct inotify_event) + ep->len;
 			}
 			free (event);
+#endif
 		}
 		return len;
 	}
-#endif
 	return 0;
 }
