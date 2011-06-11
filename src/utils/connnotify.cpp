@@ -56,6 +56,7 @@ int ConnNotify::receive (fd_set * readset)
 {
 	if (sock >= 0 && FD_ISSET (sock, readset))
 	{
+#ifdef HAVE_SYS_INOTIFY_H
 		int len;
 		if (ioctl (sock, FIONREAD, &len))
 		{
@@ -63,7 +64,6 @@ int ConnNotify::receive (fd_set * readset)
 		}
 		if (len > 0)
 		{
-#ifdef HAVE_SYS_INOTIFY_H
 			struct inotify_event *event = (struct inotify_event*) (malloc (len));
 			ssize_t ret = read (sock, event, len);
 			if (ret != len)
@@ -90,9 +90,9 @@ int ConnNotify::receive (fd_set * readset)
 				ep += sizeof (struct inotify_event) + ep->len;
 			}
 			free (event);
-#endif
 		}
 		return len;
+#endif
 	}
 	return 0;
 }
