@@ -94,6 +94,7 @@ int ScriptExec::processOption (int in_opt)
 		case OPT_CONFIG:
 			configFile = optarg;
 			break;
+		case 'c':
 		case 'd':
 			deviceName = optarg;
 			break;
@@ -156,6 +157,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_arg
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
+	addOption ('c', NULL, 1, "name of next script camera");
 	addOption ('d', NULL, 1, "name of next script device");
 	addOption ('s', NULL, 1, "device script (for device specified with d)");
 	addOption ('S', NULL, 1, "device script called without explicit script_ends (without device reset)");

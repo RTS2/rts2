@@ -47,6 +47,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
+      <arg choice="opt"><option>-c</option> <replaceable>camera name</replaceable></arg>
       <arg choice="opt"><option>-d</option> <replaceable>device name</replaceable></arg>
       <arg choice="opt">
         <arg choice="plain">
@@ -84,6 +85,7 @@
     &optiongnu;
     <variablelist>
       <varlistentry>
+        <term><option>-c <replaceable class="parameter">camera name</replaceable></option></term>
         <term><option>-d <replaceable class="parameter">device name</replaceable></option></term>
         <listitem>
           <para>
