@@ -29,6 +29,11 @@ ConnExe::ConnExe (rts2core::Block *_master, const char *_exec, bool fillConnEnv,
 
 ConnExe::~ConnExe ()
 {
+	for (std::vector <std::string>::iterator iter = tempentries.begin (); iter != tempentries.end (); iter++)
+	{
+		logStream (MESSAGE_DEBUG) << "removing /tmp/" << (*iter) << sendLog;
+		rmdir_r (("/tmp/" + (*iter)).c_str ());
+	}
 }
 
 int32_t typeFromString (const char *dt_string)
@@ -124,6 +129,12 @@ void ConnExe::processCommand (char *cmd)
 				break;
 		}
 		logStream (logLevel) << value << sendLog;
+	}
+	else if (!strcasecmp (cmd, "tempentry"))
+	{
+	 	if (paramNextString (&value))
+			return;
+		tempentries.push_back (std::string (value));
 	}
 	else if (!strcasecmp (cmd, "double"))
 	{

@@ -759,6 +759,13 @@ G W0 filter
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>tempentry {file/directory}</option></term>
+	<listitem><para>
+	  Add entry to list of files/directories, which will be deleted when
+	  script terminates.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>double {variable name} {variable description} {value} [{rts2 type}]</option></term>
 	<listitem><para>
 	  Creates or update device double value. If variable with given name

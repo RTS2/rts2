@@ -45,6 +45,9 @@ class ConnExe:public rts2core::ConnFork
 
 		Rts2Conn *getConnectionForScript (const char *name);
 		int getDeviceType (const char *name);
+	
+	private:
+		std::vector <std::string> tempentries;
 };
 
 }
