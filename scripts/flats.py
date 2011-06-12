@@ -89,10 +89,11 @@ class FlatScript (rts2comm.Rts2Comm):
 	:param eveningFlats: flats for evening. An array of Flat classes.
 	:param morningFlats: flats for morning. An arra of Flat class. If it is None, reveresed :param:`eveningFlats`
 	    is used
-	:param doDarks: whenever dark images should be taken
+	:param maxBias: maximal number of bias (0 sec) frames
+	:param maxDarks: maximal number of dark frames. Dark exposures are the same as used for skyflats
 	:param expTimes: exposure times for flats attempts"""
 
-	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,doDarks=True,expTimes=range(1,20)):
+	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,maxBias=0,maxDarks=0,expTimes=range(1,20)):
 		# Configuration (filters, binning, ..) for evening, we will use
 		# reverse for morning. You fill array with Flat objects, which
 		# describes configuration. If you do not have filters, use None
@@ -106,9 +107,12 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.morningFlats.reverse ()
 		else:
 		  	self.morningFlats = morningFlats
-		
-		# If dark exposures for acquired filters should be taken.
-		self.doDarks = doDarks
+	
+		# maximal number of bias frames
+		self.maxBias = maxBias
+
+		# maximal number of dark frames
+		self.maxDarks = maxDarks
 
 		# rename images which are useless for skyflats to this path.
 		# Fill in something (preferably with %f at the end - see man
@@ -135,7 +139,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		# dark filter
 		self.df = None
 
-	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,maxDarkCycles=None,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
+	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
 
 		:param optimalFlat:  optimal (target) flat value. You would like to see something like 20k for ussual 16bit CCDs.
@@ -144,7 +148,6 @@ class FlatScript (rts2comm.Rts2Comm):
 		:param biasLevel: image bias level. It is substracted from the image. Default to 0.
 		:param defaultNumberFlats: number of target flat images. Default to 9. After :param:`defaultNumberFlats` flat images are acquired in given filter, next flat target is used.
 		:param sleepTime: time in seconds to sleep between attempt exposures. The algorithm does not sleep if good flats are acquired.
-		:param maxDarkCycles: maximal numer of darks acquired after flats for flat processing
 		:param eveningMultiply: multiplication factor for evening exposure times
 		:param morningMultiply: multiplication factor for morning exposure times
 		:param shiftRa: shift in RA after exposure, to prevent stars occuring at the same spot
@@ -156,8 +159,6 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.biasLevel = biasLevel
 		self.defaultNumberFlats = defaultNumberFlats
 		self.sleepTime = sleepTime
-
-		self.maxDarkCycles = maxDarkCycles
 
 		self.eveningMultiply = eveningMultiply
 		self.morningMultiply = morningMultiply
@@ -353,6 +354,14 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.setConfiguration()
 			self.execute(evening)
 
+	def takeBias(self):
+		self.setValue('SHUTTER','DARK')
+		self.setValue('exposure',0)
+		i = 0
+		while i < self.maxBias:
+			bias = self.exposure()
+			self.toDark(bias)
+
 	def takeDarks(self):
 		"""Take flats dark images in spare time."""
 		self.setValue('SHUTTER','DARK')
@@ -361,9 +370,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		i = 0
 		if (len(self.usedExpTimes) == 0):
 			self.usedExpTimes = [self.expTimes[0],self.expTimes[-1]]
-		while (True):
-			if (self.maxDarkCycles is not None and i >= self.maxDarkCycles):
-				return
+		while i < seld.maxDarks:
 			i += 1
 			for exp in self.usedExpTimes:
 				sun_alt = self.getValueFloat('sun_alt','centrald')
@@ -407,14 +414,19 @@ class FlatScript (rts2comm.Rts2Comm):
 		if (self.isEvening()):
 		  	self.usedFlats = self.eveningFlats
 			self.takeFlats(True)
+			self.log('I','finished skyflats')
 		else:
 		  	self.usedFlats = self.morningFlats
 			self.takeFlats(False)
 			self.log('I','finished skyflats, closing dome')
 			self.sendCommand('close',domeDevice)
 
-		if (self.doDarks):
-			self.log('I','finished flats, taking calibration darks')
+		if self.maxBias > 0:
+		  	self.log('I','taking calibration bias')
+			self.takeBias()
+
+		if self.maxDarks > 0:
+			self.log('I','taking calibration darks')
 			self.takeDarks()
 
 		self.log('I','producing master flats')
