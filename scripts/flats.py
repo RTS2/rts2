@@ -311,13 +311,13 @@ class FlatScript (rts2comm.Rts2Comm):
 		return ret
 
 	def setConfiguration(self):
-		if (self.flat.filter != None):
+		if (self.flat.filter is not None):
 			self.setValue('filter',self.flat.filter)
-		if (self.flat.binning != None):
+		if (self.flat.binning is not None):
 			self.setValue('binning',self.flat.binning)
 		else:
 			self.setValue('binning',0)
-		if (self.flat.ngood != None):
+		if (self.flat.ngood is not None):
 			self.numberFlats = self.flat.ngood
 		else:
 			self.numberFlats = self.defaultNumberFlats
@@ -354,15 +354,24 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.setConfiguration()
 			self.execute(evening)
 
-	def takeBias(self):
+	def takeBias(self,usedConfigs):
 		self.setValue('SHUTTER','DARK')
 		self.setValue('exposure',0)
 		i = 0
 		while i < self.maxBias:
-			bias = self.exposure()
-			self.toDark(bias)
+		  	for x in usedConfigs:
+			  	if x[0] is None:
+					self.setValue('binning',0)
+				else:
+					self.setValue('binning',x[0])
+				if x[1] is None:
+					self.setValue('WINDOW','-1 -1 -1 -1')
+				else:
+					self.setValue('WINDOW',x[1])
+				bias = self.exposure()
+				self.toDark(bias)
 
-	def takeDarks(self):
+	def takeDarks(self,usedConfigs):
 		"""Take flats dark images in spare time."""
 		self.setValue('SHUTTER','DARK')
 		if not (self.df is None):
@@ -421,13 +430,23 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.log('I','finished skyflats, closing dome')
 			self.sendCommand('close',domeDevice)
 
+		# configurations which were used..
+		usedConfigs = []
+		for i in range(0,len(self.flatImages)):
+			if len(self.flatImages[i]) >= 3:
+			  	conf = [self.usedFlats[i].binning,self.usedFlats[i].window]
+				try:
+					i = usedConfigs.index(conf)
+				except ValueError,v:
+					usedConfigs.append(conf)
+		
 		if self.maxBias > 0:
 		  	self.log('I','taking calibration bias')
-			self.takeBias()
+			self.takeBias(usedConfigs)
 
 		if self.maxDarks > 0:
 			self.log('I','taking calibration darks')
-			self.takeDarks()
+			self.takeDarks(usedConfigs)
 
 		self.log('I','producing master flats')
 
@@ -436,7 +455,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.badFlats = []
 		for i in range(0,len(self.flatImages)):
 		  	sig = self.usedFlats[i].signature()
-		  	if (len(self.flatImages[i]) >= 3):
+		  	if len(self.flatImages[i]) >= 3:
 			  	self.log('I',"creating master flat for %s" % (sig))
 				self.createMasterFits(tmpDirectory + '/master_%s.fits' % (sig), self.flatImages[i])
 				self.goodFlats.append(self.usedFlats[i])
