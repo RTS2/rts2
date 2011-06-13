@@ -359,6 +359,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.setValue('exposure',0)
 		i = 0
 		while i < self.maxBias:
+		  	i += 1
 		  	for x in usedConfigs:
 			  	if x[0] is None:
 					self.setValue('binning',0)
