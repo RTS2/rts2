@@ -370,10 +370,11 @@ int SelectorDev::selectNext ()
 					return id;
 				}
 			}
-			// use selector ass fall-back, if queues are empty
+			// use selector as fall-back, if queues are empty
 			lastQueue->setValueInteger (0);
 		}
-		if (queueOnly->getValueBool () == false)
+		// select calibration frames even if in queue mode
+		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
 			return sel->selectNext (getMasterState (), az1, az2);
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
