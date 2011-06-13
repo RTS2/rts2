@@ -380,7 +380,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		i = 0
 		if (len(self.usedExpTimes) == 0):
 			self.usedExpTimes = [self.expTimes[0],self.expTimes[-1]]
-		while i < seld.maxDarks:
+		while i < self.maxDarks:
 			i += 1
 			for exp in self.usedExpTimes:
 				sun_alt = self.getValueFloat('sun_alt','centrald')
