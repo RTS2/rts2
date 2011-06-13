@@ -44,16 +44,6 @@ int Dome::domeOpenStart ()
 	return 0;
 }
 
-int Dome::domeOpenEnd ()
-{
-	if (endOpen ())
-	{
-		logStream (MESSAGE_ERROR) << "end open operation failed" << sendLog;
-	}
-	maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
-	return 0;
-};
-
 int Dome::domeCloseStart ()
 {
 	if (isClosed () == -2)
@@ -69,16 +59,6 @@ int Dome::domeCloseStart ()
 		logStream (MESSAGE_REPORTIT | MESSAGE_INFO) << "closing dome" << sendLog;
 	}
 	maskState (DOME_DOME_MASK | BOP_EXPOSURE, DOME_CLOSING, "closing dome");
-	return 0;
-};
-
-int Dome::domeCloseEnd ()
-{
- 	if (endClose ())
-	{
-		logStream (MESSAGE_REPORTIT | MESSAGE_ERROR) << "cannot end closing of the dome" << sendLog;
-	}
-	maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
 	return 0;
 };
 
@@ -212,6 +192,7 @@ int Dome::checkOpening ()
 			endClose ();
 			infoAll ();
 			maskState (DOME_DOME_MASK, DOME_CLOSED, "closing finished with error");
+			logStream (MESSAGE_ERROR) << "dome closing finished with error" << sendLog;
 		}
 		if (ret == -2)
 		{
@@ -220,10 +201,12 @@ int Dome::checkOpening ()
 			if (ret)
 			{
 				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed with error");
+				logStream (MESSAGE_ERROR) << "dome closing finished with error from endClose" << sendLog;
 			}
 			else
 			{
 				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
+				logStream (MESSAGE_INFO) << "dome closed" << sendLog;
 			}
 		}
 	}

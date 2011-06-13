@@ -76,10 +76,8 @@ class Dome:public rts2core::Device
 		// functions to operate dome
 		// they call protected functions, which does the job
 		int domeOpenStart ();
-		int domeOpenEnd ();
 
 		int domeCloseStart ();
-		int domeCloseEnd ();
 
 		/**
 		 * Checks if weather is acceptable for observing.

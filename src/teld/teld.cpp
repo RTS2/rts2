@@ -746,14 +746,12 @@ void Telescope::checkMoves ()
 		else if (ret == -2)
 		{
 			infoAll ();
+			logStream (MESSAGE_INFO) << "parking of telescope finished" << sendLog;
 			ret = endPark ();
 			if (ret)
-				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
-					DEVICE_ERROR_HW | TEL_PARKED,
-					"park command finished with error");
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE, DEVICE_ERROR_HW | TEL_PARKED, "park command finished with error");
 			else
-				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED,
-					"park command finished without error");
+				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED, "park command finished without error");
 			if (move_connection)
 			{
 				sendInfo (move_connection);
@@ -1137,9 +1135,11 @@ int Telescope::startPark (Rts2Conn * conn)
 	{
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
+		logStream (MESSAGE_ERROR) << "parking failed" << sendLog;
 	}
 	else
 	{
+	  	logStream (MESSAGE_INFO) << "parking telescope" << sendLog;
 		if (ret == 0)
 		{
 			tarRaDec->setValueRaDec (rts2_nan("f"), rts2_nan("f"));
