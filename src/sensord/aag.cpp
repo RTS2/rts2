@@ -283,7 +283,6 @@ AAG::AAGGetIRSensorTemperature ()
 				      << buf << "', sscanf " << x << sendLog;
 	    return -1 ;
 	}
-	tempIRSensor->setValueDouble ((double) value/100.);
 	/*tempIRSensor->setValueDouble ((double) value/100.);*/
 	tempIRSensor->addValue((double) value/100., numberOfMeasurements->getValueInteger());
 	tempIRSensor->calculate ();
@@ -613,7 +612,7 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (triggerSky,       "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
 	createValue (triggerNoSnow,    "NO_SNOW",      "difference (TEMP_SKY- TEMP_IRS), if larger, assume that there is no snow on sensor [abs deg C]", false, RTS2_VALUE_WRITABLE);
 
-	createValue (numberOfMeasurements, "numOfMeasurements", "number of measurements for weather statistic", false);
+	createValue (numberOfMeasurements, "numOfMeasurements", "number of measurements for weather statistic", false, RTS2_VALUE_WRITABLE);
 	numberOfMeasurements->setValueInteger (20);
 
 	triggerRain->setValueDouble (THRESHOLD_DRY);
