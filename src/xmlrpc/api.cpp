@@ -351,7 +351,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			if (tar_id < 0)
 				throw XmlRpcException ("unknown target ID");
 			double from = params->getDouble ("from", master->getNow ());
-			double to = params->getDouble ("to", master->getNow () + 86400);
+			double to = params->getDouble ("to", from + 86400);
 			// 60 sec = 1 minute step (by default)
 			double step = params->getDouble ("step", 60);
 
@@ -377,6 +377,32 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				}
 			}
 			os << "]";
+		}
+		// find unviolated time interval..
+		else if (vals[0] == "satisfied")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw XmlRpcException ("unknow target ID");
+			double from = params->getDouble ("from", master->getNow ());
+			double to = params->getDouble ("to", from + 86400);
+			double length = params->getDouble ("length", rts2_nan ("f"));
+			double step = params->getDouble ("step", 60);
+
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (isnan (length))
+				length = 1800;
+			rts2db::interval_arr_t si;
+			tar->getSatisfiedIntervals (from, to, length, step, si);
+			os << "\"id\":" << tar_id << ",\"satisfied\":[[";
+			for (rts2db::interval_arr_t::iterator sat = si.begin (); ; sat++)
+			{
+				os << sat->first << "," << sat->second;
+				if (sat == si.end ())
+					break;
+				os << "],[";
+			}
+			os << "]]";
 		}
 		else if (vals[0] == "plan")
 		{
