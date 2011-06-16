@@ -79,6 +79,8 @@ class Observation;
 
 class ConstraintsList;
 
+typedef std::vector < std::pair < time_t, time_t > > interval_arr_t;
+
 /**
  * Execption raised when target name cannot be resolved.
  *
@@ -624,6 +626,11 @@ class Target:public Rts2Target
 		size_t getSatisfiedConstraints (double JD, ConstraintsList &satisfied);
 
 		ConstraintsList getSatisfiedConstraints (double JD);
+
+		/**
+		 * Calculate constraint satifaction.
+		 */
+		void getSatisfiedIntervals (double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
 
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 

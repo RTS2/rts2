@@ -361,6 +361,54 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 	return satisfied.size ();
 }
 
+// find first satisifing interval ending after first violation..
+void findFirst (interval_arr_t::iterator si, const interval_arr_t::iterator &end, double t)
+{
+	while (si->second > t && si != end)
+		si++;
+}
+
+void Constraints::getSatisfiedIntervals (Target *tar, double from, double to, double length, double step, interval_arr_t &satisfiedIntervals)
+{
+	satisfiedIntervals.clear ();
+	// at beginning, full interval is satisfied
+	satisfiedIntervals.push_back (std::pair <time_t, time_t> (from, to));
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		interval_arr_t intervals;
+		iter->second->getViolatedIntervals (tar, from, to, step, intervals);
+		// now look for join with current intervals..
+		interval_arr_t::iterator si = satisfiedIntervals.begin ();
+		for (interval_arr_t::iterator vi = intervals.begin (); vi != intervals.end (); vi++)
+		{
+			findFirst (si, satisfiedIntervals.end (), vi->first);
+			if (si == satisfiedIntervals.end ())
+				break;
+			si->second = vi->first;
+			// remove empty interval
+			if (si->second == si->first)
+				si = satisfiedIntervals.erase (si);
+			else	
+				si++;
+			if (si == satisfiedIntervals.end ())
+			{
+				for (interval_arr_t::iterator vi2 = vi + 1; vi2 != intervals.end (); vi++, vi2++)
+					satisfiedIntervals.push_back (std::pair <time_t, time_t> (vi->second, vi2->first));
+				if (vi->second < to)
+					satisfiedIntervals.push_back (std::pair <time_t, time_t> (vi->second, to));
+				break;
+			}
+			// now found all intervals inside violation, and remove them..
+			while (si->second < vi->second && si != satisfiedIntervals.end ())
+				si = satisfiedIntervals.erase (si);
+			if (si == satisfiedIntervals.end ())
+				break;
+			// si now holds something, which has end after end of violation, and begin before end of violation
+			si->first = vi->second;
+		}
+	}
+}
+
 void Constraints::load (xmlNodePtr _node, bool overwrite)
 {
 	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)

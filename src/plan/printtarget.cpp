@@ -28,6 +28,7 @@
 #define OPT_CHECK_CONSTRAINTS     OPT_LOCAL + 205
 #define OPT_AIRMASS               OPT_LOCAL + 206
 #define OPT_TARGETID              OPT_LOCAL + 207
+#define OPT_SATISFIED             OPT_LOCAL + 208
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -67,6 +68,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	printExtended = 0;
 	printCalTargets = false;
 	printObservations = false;
+	printSatisfied = false;
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
@@ -105,6 +107,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
+	addOption (OPT_SATISFIED, "satisfied", 0, "print targets satisfied intervals");
 }
 
 PrintTarget::~PrintTarget ()
@@ -224,6 +227,9 @@ int PrintTarget::processOption (int in_opt)
 			break;
 		case OPT_CHECK_CONSTRAINTS:
 			constraintFile = optarg;
+			break;
+		case OPT_SATISFIED:
+			printSatisfied = true;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -375,6 +381,16 @@ void PrintTarget::printTarget (rts2db::Target *target)
 				"Calibration targets" << std::endl;
 			cal->print (std::cout, JD);
 			delete cal;
+		}
+		// print constraint satifaction
+		if (printSatisfied)
+		{
+			rts2db::interval_arr_t si;
+			time_t now;
+			time (&now);
+			target->getSatisfiedIntervals (now, now + 86400, 1800, 60, si);
+			for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
+				std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
 		}
 		// print observations..
 		if (printObservations)

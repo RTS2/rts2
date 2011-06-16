@@ -45,8 +45,6 @@ namespace rts2db
 
 class Target;
 
-typedef std::vector < std::pair < time_t, time_t > > interval_arr_t;
-
 /**
  * Abstract class for constraint.
  *
@@ -279,6 +277,11 @@ class ConstraintsList:public std::list <ConstraintPtr>
 		void printJSON (std::ostream &os);
 };
 
+/**
+ * Set of constraints.
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
 class Constraints:public std::map <std::string, ConstraintPtr >
 {
 	public:
@@ -308,13 +311,25 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		size_t getViolated (Target *tar, double JD, ConstraintsList &violated);
 
 		/**
-		 * Return number of satisfied constainst.
+		 * Return number of satisfied intervals.
 		 *
 		 * @param tar       target for which violated constrains will be calculated
 		 * @param JD        Julian date of constraints check
 		 * @param satisfied list of the satisifed constraints
 		 */
 		size_t getSatisfied (Target *tar, double JD, ConstraintsList &satisfied);
+
+		/**
+		 * Get intervals satisfing conditions in given time range.
+		 *
+		 * @param tar       target for which satisfied constraints will be calculated
+		 * @param from      JD from which constrainst will be checked
+		 * @param to        JD to which constraints will be checked
+		 * @param length    length (in seconds) of interval which should be checked
+		 * @param step      step to take when verifing constraints (in seconds)
+		 * @param satisfiedIntervals  pair of double values (JD from - to) of satisfied constraints
+		 */
+		void getSatisfiedIntervals (Target *tar, double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
 
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.

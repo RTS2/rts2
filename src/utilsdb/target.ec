@@ -2069,6 +2069,11 @@ ConstraintsList Target::getSatisfiedConstraints (double JD)
 	return ret;
 }
 
+void Target::getSatisfiedIntervals (double from, double to, double length, double step, interval_arr_t &satisfiedIntervals)
+{
+	getConstraints ()->getSatisfiedIntervals (this, from, to, length, step, satisfiedIntervals);
+}
+
 TargetSet * Target::getCalTargets (double JD, double minaird)
 {
 	TargetSetCalibration *ret = new TargetSetCalibration (this, JD, minaird);

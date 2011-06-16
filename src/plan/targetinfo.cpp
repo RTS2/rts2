@@ -26,7 +26,6 @@
 #define OPT_ID_ONLY               OPT_LOCAL + 502
 #define OPT_NAME_ONLY             OPT_LOCAL + 503
 
-
 namespace rts2plan
 {
 
