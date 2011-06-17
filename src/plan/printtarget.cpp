@@ -388,7 +388,10 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			rts2db::interval_arr_t si;
 			time_t now;
 			time (&now);
-			target->getSatisfiedIntervals (now, now + 86400, 1800, 60, si);
+			now -= now % 60;
+			time_t to = now + 86400;
+			to += 60 - (to % 60);
+			target->getSatisfiedIntervals (now, to, 1800, 60, si);
 			for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
 				std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
 		}
