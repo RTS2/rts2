@@ -211,6 +211,19 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			 	throw XmlRpcException ("executor is not connected");
 			sendConnectionValues (os, *iter, params);
 		}
+		// device information
+		else if (vals[0] == "deviceinfo")
+		{
+			const char *device = params->getString ("d","");
+			if (isCentraldName (device))
+				conn = master->getSingleCentralConn ();
+			else
+				conn = master->getOpenConnection (device);
+			if (conn == NULL)
+				throw XmlRpcException ("cannot find device with given name");
+			os << "\"type\":" << conn->getOtherType ();
+		}
+		// set or increment variable
 		else if (vals[0] == "set" || vals[0] == "inc")
 		{
 			const char *device = params->getString ("d","");
@@ -237,6 +250,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
 			sendConnectionValues (os, conn, params);
 		}
+		// get variable
 		else if (vals[0] == "get" || vals[0] == "status")
 		{
 			const char *device = params->getString ("d","");
@@ -249,6 +263,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			double from = params->getDouble ("from", 0);
 			sendConnectionValues (os, conn, params, from);
 		}
+		// execute command on server
 		else if (vals[0] == "cmd")
 		{
 			const char *device = params->getString ("d", "");
@@ -277,6 +292,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
 		}
+		// start exposure, return from server image
 		else if (vals[0] == "expose")
 		{
 			const char *camera = params->getString ("ccd","");
@@ -290,6 +306,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			throw XmlRpc::XmlRpcAsynchronous ();
 		}
 #ifdef HAVE_PGSQL
+		// returns target information specified by target name
 		else if (vals[0] == "tbyname")
 		{
 			rts2db::TargetSet tar_set;
@@ -301,6 +318,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.loadByName (name, pm, ic);
 			jsonTargets (tar_set, os, params);
 		}
+		// returns target specified by target ID
 		else if (vals[0] == "tbyid")
 		{
 			rts2db::TargetSet tar_set;
@@ -310,6 +328,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.load (id);
 			jsonTargets (tar_set, os, params);
 		}
+		// returns target with given label
 		else if (vals[0] == "tbylabel")
 		{
 			rts2db::TargetSet tar_set;
@@ -384,15 +403,17 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw XmlRpcException ("unknow target ID");
-			double from = params->getDouble ("from", master->getNow ());
-			double to = params->getDouble ("to", from + 86400);
+			int from = params->getInteger ("from", (int) floor (master->getNow ()));
+			int to = params->getInteger ("to", from + 86400);
 			double length = params->getDouble ("length", rts2_nan ("f"));
-			double step = params->getDouble ("step", 60);
+			int step = params->getInteger ("step", 60);
 
 			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (isnan (length))
 				length = 1800;
 			rts2db::interval_arr_t si;
+			from -= from % step;
+			to += step - (to % step);
 			tar->getSatisfiedIntervals (from, to, length, step, si);
 			os << "\"id\":" << tar_id << ",\"satisfied\":[[";
 			for (rts2db::interval_arr_t::iterator sat = si.begin (); ; sat++)
@@ -625,7 +646,8 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 #ifdef HAVE_PGSQL
 void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params)
 {
-	bool extended = params->getInteger ("e", false);  
+	bool extended = params->getInteger ("e", false);
+	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
 	os << "\"h\":["
 		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
@@ -640,7 +662,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":9}";
 	os << "],\"d\":[" << std::fixed;
 
-	double JD = params->getDouble ("jd", ln_get_julian_from_sys ());
+	double JD = ln_get_julian_from_timet (&from);
 	os.precision (8);
 	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
 	{
