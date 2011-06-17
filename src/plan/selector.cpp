@@ -114,9 +114,6 @@ class SelectorDev:public Rts2DeviceDb
 		rts2core::ValueBool *selEnabled;
 		rts2core::ValueBool *queueOnly;
 
-		rts2core::ValueDouble *azLimit1;
-		rts2core::ValueDouble *azLimit2;
-
 		rts2core::ValueDouble *flatSunMin;
 		rts2core::ValueDouble *flatSunMax;
 
@@ -177,11 +174,6 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (queueOnly, "queue_only", "select targets only from queue", false, RTS2_VALUE_WRITABLE);
 	queueOnly->setValueBool (false);
-
-	createValue (azLimit1, "azlimit_1", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
-	createValue (azLimit2, "azlimit_2", "azimuth limit for target selection", false, RTS2_VALUE_WRITABLE);
-	azLimit1->setValueDouble (-1);
-	azLimit2->setValueDouble (-1);
 
 	createValue (flatSunMin, "flat_sun_min", "minimal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
@@ -347,12 +339,6 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
-		double az1 = azLimit1->getValueDouble ();
-		double az2 = azLimit2->getValueDouble ();
-		if (az1 < 0 || az2 < 0)
-		{
-			az1 = az2 = rts2_nan ("f");
-		}
 	 	if (getMasterState () == SERVERD_NIGHT && lastQueue != NULL)
 		{
 			int id = -1;
@@ -375,7 +361,7 @@ int SelectorDev::selectNext ()
 		}
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
-			return sel->selectNext (getMasterState (), az1, az2);
+			return sel->selectNext (getMasterState ());
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
 	catch (rts2core::Error er)
