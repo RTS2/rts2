@@ -29,9 +29,10 @@
 #include "libfli.h"
 #define  OPT_FLI_METEO_DEVICE      OPT_LOCAL + 135
 #define  OPT_FLI_METEO_TEMPERATURE OPT_LOCAL + 136
-#define  OPT_FLI_TC_OFFSET         OPT_LOCAL + 137
-#define  OPT_FLI_TC_SLOPE          OPT_LOCAL + 138
-#define  OPT_FLI_TC_MODE           OPT_LOCAL + 139
+#define  OPT_FLI_TC_TEMP_REF       OPT_LOCAL + 137
+#define  OPT_FLI_TC_OFFSET         OPT_LOCAL + 138
+#define  OPT_FLI_TC_SLOPE          OPT_LOCAL + 139
+#define  OPT_FLI_TC_MODE           OPT_LOCAL + 140
 #define  ABSOLUTE_TC 0
 #define  RELATIVE_TC 1
 #define  NO_TC 2
@@ -55,7 +56,7 @@ class Fli:public Focusd
 		int fliDebug;
                 char *meteoDevice;
                 char *meteoVariable;
-                rts2core::ValueDouble *temperatureReference;
+                rts2core::ValueDouble *TCtemperatureRef;
                 rts2core::ValueDouble *TCoffset;
                 rts2core::ValueDouble *TCslope;
                 rts2core::ValueSelection *TCmode;
@@ -99,7 +100,7 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	createValue (TCFocOffset, "FOC_TC", "absolute position or offset calculated by temperature compensation", false);
 	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
 	createValue (temperatureMeteo, "TEMP_METEO", "temperature from the meteo device", true); //go to FITS
-	createValue (temperatureReference, "TEMP_REF", "temperature at the time when FOC_DEF was set", false, RTS2_VALUE_WRITABLE);
+	createValue (TCtemperatureRef, "TC_TEMP_REF", "temperature at the time when FOC_DEF was set", false, RTS2_VALUE_WRITABLE);
 	createValue (TCoffset, "TCP0", "y-axis offset of the linear temperature model", false);
 	createValue (TCslope, "TCP1", "slope of the linear temperature model", false);
 	createValue (TCmode, "TCMODE", "temperature compensation absolute, relative to FOC_DEF, no tc", false, RTS2_VALUE_WRITABLE);
@@ -111,12 +112,13 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 
 	addOption (OPT_FLI_METEO_DEVICE, "meteoDevice",  1, "meteo device name to monitor its temperature");
 	addOption (OPT_FLI_METEO_TEMPERATURE, "meteoVariable",  1, "meteo device temperature variable name");
+	addOption (OPT_FLI_TC_TEMP_REF, "TCtempRef",  1, "temperature compensation reference temperature (when FOC_DEF was set)");
 	addOption (OPT_FLI_TC_OFFSET, "TCoffset",  1, "temperature compensation y-axis offset");
 	addOption (OPT_FLI_TC_SLOPE, "TCslope",  1, "temperature compensation slope");
 	addOption (OPT_FLI_TC_MODE, "TCmode",  1, "temperature compensation absolute, relative, default: none");
 
 
-	temperatureReference->setValueDouble( 10.) ; 
+	TCtemperatureRef->setValueDouble( 10.) ; 
 	TCoffset->setValueDouble( 0.) ;  
 	TCslope->setValueDouble(  1.) ; 
 	
@@ -174,6 +176,9 @@ int Fli::processOption (int in_opt)
                         meteoVariable = optarg;
                         break;
 
+	        case OPT_FLI_TC_TEMP_REF:
+		        TCtemperatureRef->setValueDouble(atof(optarg)) ;
+                        break;
 	        case OPT_FLI_TC_OFFSET:
 		        TCoffset->setValueDouble(atof(optarg)) ;
                         break;
@@ -248,12 +253,12 @@ int Fli::init ()
 	focExtent->setValueInteger (extent);
 
 	// calibrate by moving to home position, then move to default position
-	//ret = FLIHomeFocuser (dev);
-	//if (ret)
-	//{
-	//	logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-	//	return -1;
-	//}
+	ret = FLIHomeFocuser (dev);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+		return -1;
+	}
 	setPosition (defaultPosition->getValueInteger ());
 	// connect to the meteo device to retrieve the temperature
 	addConstValue (meteoDevice, meteoDevice, "meteo device name to monitor its temperature");
@@ -327,7 +332,7 @@ int Fli::setTo (float num)
 	  meteo();
 
 	  if( !( isnan(temperatureMeteo->getValueDouble()) || 
-		 isnan(temperatureReference->getValueDouble()) ||
+		 isnan(TCtemperatureRef->getValueDouble()) ||
 		 isnan(TCoffset->getValueDouble()) ||
 		 isnan(TCslope->getValueDouble()) ||
 		 TCslope->getValueDouble()==0.))
@@ -339,7 +344,7 @@ int Fli::setTo (float num)
 	      focuserPosition= tcFocOffset;
 	    } else {
 
-	      tcFocOffset=  (temperatureMeteo->getValueDouble()- temperatureReference->getValueDouble())/TCslope->getValueDouble() ; 
+	      tcFocOffset=  (temperatureMeteo->getValueDouble()- TCtemperatureRef->getValueDouble())/TCslope->getValueDouble() ; 
 	      focuserPosition= num + tcFocOffset;
 	    }
 
@@ -399,7 +404,6 @@ void Fli::valueChanged (rts2core::Value *changed_value)
 
 	    logStream (MESSAGE_ERROR) << "Fli::valueChanged: error: "<< ret << ", retrieving position: " << sendLog;
 	  } else {
-	    logStream (MESSAGE_ERROR) << "Fli::valueChanged: STEPSSSSSSSSSS: "<< steps << sendLog;
 	    ret= setTo( steps) ;
 	    if( ! ret){
 	      position->setValueInteger ((int) steps);
