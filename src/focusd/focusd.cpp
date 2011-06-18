@@ -27,7 +27,7 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 {
 	temperature = NULL;
 
-	createValue (position, "FOC_POS", "focuser position", true, RTS2_VALUE_WRITABLE);
+	createValue (position, "FOC_POS", "focuser position", true); // reported by focuser, use FOC_TAR to set the target position
 	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
 
 	createValue (defaultPosition, "FOC_DEF", "default target value", true, RTS2_VALUE_WRITABLE);
@@ -155,7 +155,7 @@ int Focusd::endFocusing ()
 
 int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-	if (old_value == position || old_value == target)
+	if (old_value == target)
 	{
 		return setPosition (new_value->getValueFloat ())? -2 : 0;
 	}
