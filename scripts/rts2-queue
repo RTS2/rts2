@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
 	if options.clear:
 		resp = q.clearQueue()
-		print "cleared queue {0}: {1}".format(options.queue, resp['d']['plan_ids'][1])
+		print "cleared queue {0}: {1}".format(options.queue, resp['d'][options.queue + '_ids'][1])
 
 	for x in args:
 		tars = q.getTarget(x)
@@ -108,4 +108,4 @@ if __name__ == '__main__':
 		  	tids.append(t[0])
 			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
 		resp = q.queueTargets(tids)
-		print resp['d']['plan_ids'][1]
+		print resp['d'][options.queue + '_ids'][1]
