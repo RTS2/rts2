@@ -8,9 +8,9 @@ EXTRA_DIST =
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
-	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
+	rts2-teld-opentpl rts2-opentpl-errors \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
-	rts2-teld-lx200gps rts2-teld-meade
+	rts2-teld-lx200gps rts2-teld-meade rts2-teld-bait
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -58,13 +58,11 @@ rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 rts2_teld_opentpl_SOURCES = opentpl.cpp 
 rts2_opentpl_errors_SOURCES = opentpl-errors.cpp
 
-rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
-rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
-rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
-
 rts2_teld_trencin_SOURCES = trencin.cpp
 
 rts2_teld_nexstar_SOURCES = nexstar.cpp
+
+rts2_teld_bait_SOURCES = bait.cpp
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest

@@ -20,7 +20,7 @@ librts2block_a_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp 
 	rts2cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp rts2data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
-	connopentpl.cpp connford.cpp expression.cpp nan.c
+	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp
 
 EXTRA_DIST =
 
@@ -44,7 +44,8 @@ noinst_HEADERS = hoststring.h utilsfunc.h app.h block.h daemon.h device.h rts2op
 	rts2message.h conntcp.h connnotify.h connudp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h valuelist.h \
 	rts2displayvalue.h scriptdevice.h rts2cliapp.h getaddrinfo.h valueminmax.h expander.h \
 	riseset.h valuerectangle.h rts2data.h radecparser.h connserial.h connmodbus.h rts2format.h \
-	valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h counted_ptr.h expression.h nan.h nimotion.h
+	valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h counted_ptr.h expression.h nan.h nimotion.h \
+	connbait.h
 
 if EPICS
 noinst_LIBRARIES += librts2epics.a
