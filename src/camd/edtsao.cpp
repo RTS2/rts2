@@ -154,7 +154,15 @@ long ValueEdt::getHexValue (float in_v, t_controllerType controllerType)
 			val = (long) (fabs (in_v) * 409.5);
 			break;
 		case B:
-			val = (long) ((getMax () - in_v) * 409.5);
+			switch (controllerType)
+			{
+				case CHANNEL_4:
+					val = (long) ((5 - in_v) * 409.5);
+					break;
+				case CHANNEL_16:
+					val = (long) ((6 - in_v) * 409.5);
+					break;
+			}
 			break;
 		case C:
 			switch (controllerType)
