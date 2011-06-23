@@ -68,7 +68,7 @@ class Rts2Comm:
 			print "V",device,name,'+=',new_value
 		sys.stdout.flush()
 	
-	def incrementValueType(self,device,new_value):
+	def incrementValueType(self,device,name,new_value):
 		print "VT",device,name,'+=',new_value
 		sys.stdout.flush()
 
