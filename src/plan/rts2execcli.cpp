@@ -133,9 +133,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 {
 	int ret;
 	ret = haveNextCommand (this);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraExec::nextComd " << ret << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+#ifdef DEBUG_EXTRA
+	std::cout << "Rts2DevClientCameraExec::nextComd " << ret << std::endl;
+#endif						 /* DEBUG_EXTRA */
 	if (!ret)
 		return;
 
@@ -157,7 +157,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 	rts2core::Value *val;
 
-	//std::cout << "bopMask " << std::hex << nextComd->getBopMask () << std::endl;
+#ifdef DEBUG_EXTRA
+	std::cout << "bopMask " << std::hex << nextComd->getBopMask () << std::endl;
+#endif
 
 	if (nextComd->getBopMask () & BOP_WHILE_STATE)
 	{
@@ -165,13 +167,17 @@ void Rts2DevClientCameraExec::nextCommand ()
 		val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
 		{
-			//std::cout << "val > 0" << std::endl;
+#ifdef DEBUG_EXTRA
+			std::cout << "val > 0" << std::endl;
+#endif
 			return;
 		}
 		// if there are commands in queue, do not execute command
 		if (!connection->queEmptyForOriginator (this))
 		{
-			//std::cout << "not empty " << std::endl;
+#ifdef DEBUG_EXTRA
+			std::cout << "not empty " << std::endl;
+#endif
 			return;
 		}
 	}
@@ -181,12 +187,16 @@ void Rts2DevClientCameraExec::nextCommand ()
 		val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
 		{
-			//std::cout << "TEL_MOVE val > 0" << std::endl;
+#ifdef DEBUG_EXTRA
+			std::cout << "TEL_MOVE val > 0" << std::endl;
+#endif
 			return;
 		}
 		if (waitForExposure)
 		{
-			//std::cout << "wait for exposure" << std::endl;
+#ifdef DEBUG_EXTRA
+			std::cout << "wait for exposure" << std::endl;
+#endif
 			return;
 		}
 	}
@@ -204,7 +214,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 			// if there are some commands in que, do not proceed, as they might change state of the device
 			if (!connection->queEmptyForOriginator (this))
 			{
-				//std::cout << "queue not empty" << std::endl;
+#ifdef DEBUG_EXTRA
+				std::cout << "queue not empty" << std::endl;
+#endif
 				return;
 			}
 
@@ -217,7 +229,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 			if ((getConnection ()->getState () & CAM_EXPOSING) || (getConnection ()->getBopState () & BOP_TEL_MOVE) || (getConnection ()->getFullBopState () & BOP_TEL_MOVE))
 			{
-				//std::cout << "wrong state" << std::endl;
+#ifdef DEBUG_EXTRA
+				std::cout << "wrong state" << std::endl;
+#endif
 				return;
 			}
 
@@ -232,9 +246,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 		return;
 	}
 
-	//#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " << nextComd->getText () << sendLog;
-	//#endif						 /* DEBUG_EXTRA */
+#ifdef DEBUG_EXTRA
+	std::cout << "For " << getName () << " queueing " << nextComd->getText () << std::endl;
+#endif						 /* DEBUG_EXTRA */
 	waitForExposure = nextComd->getBopMask () & BOP_EXPOSURE;
 	queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted

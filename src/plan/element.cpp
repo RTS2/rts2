@@ -117,6 +117,13 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 	getDevice (new_device);
 	if (callProgress == first)
 	{
+		if (camera->getConnection ()->getValue ("que_exp_num") != NULL && camera->getConnection ()->getValueInteger ("que_exp_num") != 0)
+		{
+#ifdef DEBUG_EXTRA
+			std::cout << "do not set values, as que_exp_num is not 0" << std::endl;
+#endif
+			return NEXT_COMMAND_KEEP;
+		}
 		callProgress = SHUTTER;
 		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
 		{
@@ -134,6 +141,8 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 		return NEXT_COMMAND_KEEP;
 	}
 	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+	// prepare for next exposure in loop..
+	callProgress = first;
 	return 0;
 }
 
@@ -229,11 +238,11 @@ int ElementWaitAcquire::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
 	script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
-	//#ifdef DEBUG_EXTRA
+#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
 		<< "ElementWaitAcquire::defnextCommand " << ac.count
 		<< " (" << script->getDefaultDevice () << ") " << tar_id << sendLog;
-	//#endif
+#endif
 	if (ac.count)
 		return NEXT_COMMAND_WAIT_ACQUSITION;
 	return NEXT_COMMAND_NEXT;
@@ -307,9 +316,9 @@ int ElementWaitSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** ne
 	// nobody will send us a signal..end script
 	ret = sig;
 	script->getMaster ()->postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
-	#ifdef DEBUG_EXTRA
+#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "ElementWaitSignal::defnextCommand " << ret << " (" << script->getDefaultDevice () << ")" << sendLog;
-	#endif
+#endif
 	if (ret != -1)
 		return NEXT_COMMAND_NEXT;
 	return NEXT_COMMAND_WAIT_SIGNAL;
