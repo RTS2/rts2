@@ -26,7 +26,11 @@ if i > 9:
 	import math
 	ff = pyfits.fitsopen(fn)
 	fwhm /= i
-	suffix = '_' + ff[0].header['CCD_NAME']
+	suffix = '_unknown'
+	try:
+		suffix = '_' + ff[0].header['CCD_NAME']
+	except KeyError,er:
+		pass
 	print 'double fwhm{0} "calculated FWHM" {1}'.format(suffix,fwhm)
 	zd = 90 - ff[0].header['TEL_ALT']
 	print 'double fwhm_zenith{0} "estimated zenith FWHM" {1}'.format(suffix,fwhm * (math.cos(math.radians(zd)) ** 0.6))
