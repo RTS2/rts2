@@ -230,7 +230,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		if (self.isSubWindow == True):
 			return
 		if (self.shiftRa != 0 or self.shiftDec != 0):
-			self.incrementValue("OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__(), self.mountDevice)
+			self.incrementValueType(rts2comm.DEVICE_TELESCOPE,"OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__())
 
 	def fullWindow(self):
 		if (self.flat.window is None):
@@ -282,8 +282,8 @@ class FlatScript (rts2comm.Rts2Comm):
 			if (self.isSubWindow):
 				self.fullWindow()
 			self.unusableImage(img)
-			# we believe that the next image will be good one..
-			ret = 0
+			# we believe that the next image will be good .. but it still must fit inside range
+			ret = 2
 		else:
 			self.unusableImage(img) #otherwise it is not useful and we get rid of it
 			if (ratio > 1.0):
@@ -298,6 +298,18 @@ class FlatScript (rts2comm.Rts2Comm):
 			if (self.isSubWindow):
 				self.fullWindow()
 			# do not overide status here 
+
+		# test if "next good" does fit inside range
+		if ret == 2:
+			if self.exptime > self.expTimes[-1]:
+				ret = -1
+				self.log('I','next image should be good, but it has too long exposure')
+			elif self.exptime < self.expTimes[0]:
+				ret = 1
+				self.log('I','next image should be good, but it has too short exposure')
+			else:
+				ret = 0
+				self.log('I','next image should be good one')
 
 		# from ret to brightness
 		brightness = 'OK'
@@ -332,18 +344,18 @@ class FlatScript (rts2comm.Rts2Comm):
 		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (evening):
-				if (imgstatus == -1 and self.exptime >= self.expTimes[-1]):
+				if imgstatus == -1 or self.exptime >= self.expTimes[-1]:
 					# too dim image and exposure time change cannot correct it
 					return
-				elif (imgstatus == 1):
+				elif imgstatus == 1:
 					time.sleep(self.sleepTime)
 				# 0 mean good image, just continue..
 			else:
 				# morning
-				if (imgstatus == 1 and self.exptime <= self.expTimes[0]):
+				if imgstatus == 1 or self.exptime < self.expTimes[0]:
 					# too bright image and exposure time change cannot correct it
 					return
-				elif (imgstatus == -1):
+				elif imgstatus == -1:
 					time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
 				# good image, just continue as usuall
 	
@@ -416,8 +428,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
-	def run(self, domeDevice='DOME', tmpDirectory='/tmp/', mountDevice='T0'):
-		self.mountDevice= mountDevice
+	def run(self, domeDevice='DOME', tmpDirectory='/tmp/'):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
