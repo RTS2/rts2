@@ -75,7 +75,6 @@ if __name__ == '__main__':
 	server = 'localhost:8889'
 	username = 'username'
 	password = 'password'
-	unique = False
 
   	parser = OptionParser()
 
@@ -99,7 +98,7 @@ if __name__ == '__main__':
 		if len(tars) == 0:
 			print >> sys.stderr, "cannot find target with name {0}".format(x)
 			sys.exit(1)
-		if unique and len(tars) != 1:
+		if options.unique and len(tars) != 1:
 		  	print >> sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x,'TBD')
 			sys.exit(2)
 
