@@ -344,7 +344,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (evening):
-				if imgstatus == -1 or self.exptime >= self.expTimes[-1]:
+				if (imgstatus == -1 and self.exptime >= self.expTimes[-1]) or self.exptime >= self.expTimes[-1]:
 					# too dim image and exposure time change cannot correct it
 					return
 				elif imgstatus == 1:
@@ -352,7 +352,7 @@ class FlatScript (rts2comm.Rts2Comm):
 				# 0 mean good image, just continue..
 			else:
 				# morning
-				if imgstatus == 1 or self.exptime < self.expTimes[0]:
+				if (imgstatus == 1 and self.exptime <= self.expTimes[0]) or self.exptime < self.expTimes[0]:
 					# too bright image and exposure time change cannot correct it
 					return
 				elif imgstatus == -1:
