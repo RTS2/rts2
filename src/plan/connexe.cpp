@@ -68,6 +68,14 @@ void ConnExe::processCommand (char *cmd)
 			conn->queCommand (new Rts2Command (getMaster (), comm));
 		}
 	}
+	else if (!strcmp (cmd, "CT"))
+	{
+		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
+			return;
+		int deviceTypeNum = getDeviceType (device);
+		Rts2Command comd (getMaster (), comm);
+		getMaster ()->queueCommandForType (deviceTypeNum, comd);
+	}
 	else if (!strcmp (cmd, "V"))
 	{
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)

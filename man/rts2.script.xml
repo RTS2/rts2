@@ -746,10 +746,17 @@ G W0 filter
       <varlistentry>
         <term><option>C {device name} {command..}</option></term>
 	<listitem><para>
-	  Allows execution of arbitary command on device. Please see device
+	  Executes an arbitary command on device. Please see device
 	  drivers source code for allowed commands - they are called from
 	  commandAuthorize call.
 	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>CT {device_type} {command..}</option></term>
+        <listitem><para>
+	  Executes an arbitary command on all device of given type. Please see
+          <emphasis>VT</emphasis> command for list of allowed device type strings.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>command {command..}</option></term>
