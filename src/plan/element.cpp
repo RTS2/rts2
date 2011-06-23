@@ -157,6 +157,13 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 	getDevice (new_device);
 	if (callProgress == first)
 	{
+		if (camera->getConnection ()->getValue ("que_exp_num") != NULL && camera->getConnection ()->getValueInteger ("que_exp_num") != 0)
+		{
+#ifdef DEBUG_EXTRA
+			std::cout << "do not set values, as que_exp_num is not 0" << std::endl;
+#endif
+			return NEXT_COMMAND_KEEP;
+		}
 		callProgress = SHUTTER;
 		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 1)
 		{
@@ -174,6 +181,7 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 		return NEXT_COMMAND_KEEP;
 	}
 	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
+	callProgress = first;
 	return 0;
 }
 
