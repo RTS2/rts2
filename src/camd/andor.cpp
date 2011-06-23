@@ -198,7 +198,7 @@ long Andor::isExposing ()
 		logStream (MESSAGE_DEBUG) << "new image " << status << sendLog;
 
 		// signal that we have data
-		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
+		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_READING, "chip extended readout started");
 		// get the data
 		at_32 lAcquired = 0;
 		status = GetTotalNumberImagesAcquired (&lAcquired);
@@ -235,10 +235,10 @@ long Andor::isExposing ()
 			AbortAcquisition ();
 			FreeInternalMemory ();
 			logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
-			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
+			maskState (CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOTREADING, "chip extended readout finished");
 			return -3;
 		}
-		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
+		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_EXPOSING | CAM_NOTREADING, "chip extended readout finished");
 		quedExpNumber->dec ();
 		sendValueAll (quedExpNumber);
 		incExposureNumber ();
