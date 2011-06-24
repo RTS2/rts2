@@ -160,7 +160,7 @@ int Cloud4::readSensor (bool update)
 	else
 	{
 		baseTemp->setValueInteger (0);
-		tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - tempamb, 20);
+		tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb / 100.0 - temp1, 20);
 	}
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
