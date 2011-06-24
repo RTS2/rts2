@@ -12,26 +12,8 @@
  * @author john,petr
  */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdio.h>
-#include <math.h>
-#include <libnova/libnova.h>
-#include <sys/ioctl.h>
-
 #include "tellx200.h"
-#include "hms.h"
-#include "status.h"
 #include "../utils/rts2config.h"
-
-#include <termios.h>
 
 #define RATE_FIND 'M'
 #define DIR_NORTH 'n'
@@ -104,7 +86,7 @@ int LX200::init ()
 	if (serConn->writeRead ("#:Gr#", 5, rbuf, 9, '#') < 0)
 		return -1;
 
-	if (rbuf[7] == '\0')
+	if (rbuf[7] == '\0' || rbuf[7] == '#')
 	{
 		// that could be used to distinguish between long
 		// short mode
