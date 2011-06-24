@@ -220,12 +220,12 @@ void Plot::plotXSunAlt ()
 		{
 			if (hrz.alt < nh)
 			{
-				image->fillColor ("black");
+				image->strokeColor ("black");
 			}
 			else
 			{
 				double p = (hrz.alt - nh) / (dh - nh);
-				image->fillColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p, 0));
+				image->strokeColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p));
 			}
 			image->draw (Magick::DrawableLine (x, 0, x, size.height () - 22));
 		}
