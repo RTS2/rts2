@@ -63,6 +63,7 @@
 #define OPT_CAMNAME   OPT_LOCAL + 9
 #define OPT_MOUNTNAME OPT_LOCAL + 10
 #define OPT_LABEL     OPT_LOCAL + 11
+#define OPT_ZOOM      OPT_LOCAL + 12
 
 namespace rts2image
 {
@@ -117,6 +118,7 @@ class AppImage:public rts2image::AppImageCore
 #ifdef HAVE_LIBJPEG
 		const char* jpeg_expr;
 		const char* label;
+		double zoom;
 #endif
 
 		int obsid;
@@ -390,6 +392,9 @@ int AppImage::processOption (int in_opt)
 		case OPT_LABEL:
 			label = optarg;
 			break;
+		case OPT_ZOOM:
+			zoom = atof (optarg);
+			break;
 		#endif /* HAVE_LIBJPEG */
 		default:
 
@@ -469,7 +474,7 @@ int AppImage::processImage (Image * image)
 		createWCS (image);
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
-	  	image->writeAsJPEG (jpeg_expr, label);
+	  	image->writeAsJPEG (jpeg_expr, zoom, label);
 #endif /* HAVE_LIBJPEG */
 	return 0;
 }
@@ -480,7 +485,8 @@ void AppImage::usage ()
 		<< "  rts2-image -w 123.fits                     .. write WCS to file 123, based on information stored by RTS2 in the file"	<< std::endl
 		<< "  rts2-image -w -o 20.12:10.56 123.fits      .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS" << std::endl
 		<< "  rts2-image -P @DATE_OBS/@POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl
-		<< "  rts2-image -d 10:15-20:25 123.fits         .. prints RA DEC distance between pixel (10,15) and (20,25)" << std::endl;
+		<< "  rts2-image -d 10:15-20:25 123.fits         .. prints RA DEC distance between pixel (10,15) and (20,25)" << std::endl
+		<< "  rts2-image --label '%H:%M' -j out.jpeg 123.fits  .. creates out.jpeg, add label consisting of exposure hour and minute" << std::endl;
 }
 
 AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
@@ -503,6 +509,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 #ifdef HAVE_LIBJPEG
 	jpeg_expr = NULL;
 	label = NULL;
+	zoom = 1;
 #endif
 
 	obsid = -1;
@@ -534,6 +541,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
+	addOption (OPT_ZOOM, "zoom", 1, "zoom the image before writing its label");
 #endif /* HAVE_LIBJPEG */
 }
 

@@ -297,12 +297,13 @@ class Image:public FitsFile
 		 * be free afterwards.
 		 *
 		 * @param expand_str    Expand string for image name
+		 * @param zoom          zoom image (before writing its label)
 		 * @param label         label added to image box (expand character).
 		 * @param quantiles     Quantiles in 0-1 range for image scaling.
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, const char * label = NULL, float quantiles=0.005);
+		void writeAsJPEG (std::string expand_str, double zoom = 1.0, const char * label = NULL, float quantiles=0.005);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..

@@ -1566,7 +1566,7 @@ void Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, co
 	mimage.draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
-void Image::writeAsJPEG (std::string expand_str, const char *label, float quantiles)
+void Image::writeAsJPEG (std::string expand_str, double zoom, const char *label, float quantiles)
 {
 	std::string new_filename = expandPath (expand_str);
 	
@@ -1578,7 +1578,10 @@ void Image::writeAsJPEG (std::string expand_str, const char *label, float quanti
 	}
 
 	try {
-		Magick::Image image = getMagickImage (label, quantiles);
+		Magick::Image image = getMagickImage (NULL, quantiles);
+		if (zoom != 1.0)
+			image.zoom (Magick::Geometry (image.size ().height () * zoom, image.size ().width () * zoom));
+		writeLabel (image, 2, image.size ().height () - 2, 20, label);
 		image.write (new_filename.c_str ());
 	}
 	catch (Magick::Exception &ex)

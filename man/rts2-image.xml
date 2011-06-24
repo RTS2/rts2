@@ -80,10 +80,16 @@
 	    <option>-i</option>
 	  </arg>
 	  <arg choice="plain">
+	    <option>-j <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
 	    <option>-m <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
 	    <option>-l <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>--label <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
 	    <option>-e</option>
@@ -98,6 +104,9 @@
 	  </arg>
 	  <arg choice="plain">
 	    <option>-j <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>--zoom <replaceable>zoom level</replaceable></option>
 	  </arg>
 	</group>
       </arg>
@@ -217,6 +226,19 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-j <replaceable>RTS2 expression</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Write image as JPEG file. JPEG file name is specified as RTS2
+	    expression. Please see
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    for expresion descrition. JPEG image can be zoomed as specified
+	    with <option>--zoom</option>, and labeled with label expanded from
+	    content of the <option>--label</option> option.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-m <replaceable>RTS2 expression</replaceable></option></term>
         <listitem>
           <para>
@@ -230,6 +252,15 @@
           <para>
 	    Soft link image to new location. New location is formed from RTS2
 	    expression. Directories will be created as needed.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--label <replaceable>RTS2 expression</replaceable></option></term>
+        <listitem>
+          <para>
+	    Add to output image label with given expanded expresion. Usefull
+	    only with <option>-j</option> option.
 	  </para>
         </listitem>
       </varlistentry>
