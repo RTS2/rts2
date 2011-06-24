@@ -186,7 +186,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			case TRASH:
 #ifdef HAVE_LIBJPEG
 				if (last_trash_jpeg)
-					image->writeAsJPEG (last_trash_jpeg, "%Y-%m-%d %H:%M:%S @OBJECT");
+					image->writeAsJPEG (last_trash_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 				astrometryStat = TRASH;
 				if (end_event <= 0)
@@ -195,7 +195,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			case GET:
 #ifdef HAVE_LIBJPEG
 				if (last_good_jpeg)
-					image->writeAsJPEG (last_good_jpeg, "%Y-%m-%d %H:%M:%S @OBJECT");
+					image->writeAsJPEG (last_good_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
 
 				image->setAstroResults (ra, dec, ra_err, dec_err);
