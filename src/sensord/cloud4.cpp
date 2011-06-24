@@ -29,6 +29,7 @@
 #define OPT_HEAT_ON             OPT_LOCAL + 343
 #define OPT_HEAT_DUR            OPT_LOCAL + 344
 #define OPT_TEMP_IN_COEFF       OPT_LOCAL + 345
+#define OPT_USE_AMB             OPT_LOCAL + 346
 
 namespace rts2sensord
 {
@@ -84,6 +85,8 @@ class Cloud4: public SensorWeather
 		rts2core::ValueTime *heatStateChangeTime;
 		rts2core::ValueInteger *heatInterval;
 		rts2core::ValueInteger *heatDuration;
+
+		rts2core::ValueSelection *baseTemp;
 
 		/**
 		 * Read sensor values.
@@ -150,7 +153,15 @@ int Cloud4::readSensor (bool update)
 	temp0 /= 100.0;
 	temp1 /= 100.0;
 
-	tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
+	if (tempAmb && baseTemp->getValueInteger () == 1 && !isnan (tempamb))
+	{
+		tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
+	}
+	else
+	{
+		baseTemp->setValueInteger (0);
+		tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - tempamb, 20);
+	}
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
 	if (!isnan (temp2))
@@ -223,6 +234,10 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
+	createValue (baseTemp, "outside_temp", "outside temperature selection", false, RTS2_VALUE_WRITABLE);
+	baseTemp->addSelVal ("OUT");
+	baseTemp->addSelVal ("AMB");
+
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
@@ -230,6 +245,7 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
 	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
 	addOption (OPT_TEMP_IN_COEFF, "temp-in-coeff", 1, "temperature coefficient");
+	addOption (OPT_USE_AMB, "use-ambient", 0, "use ambient temperature instead of outside temperature");
 
 	setIdleInfoInterval (20);
 }
@@ -313,6 +329,9 @@ int Cloud4::processOption (int in_opt)
 			break;
 		case OPT_TEMP_IN_COEFF:
 			tempInCoeff->setValueCharArr (optarg);
+			break;
+		case OPT_USE_AMB:
+			baseTemp->setValueInteger (1);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
