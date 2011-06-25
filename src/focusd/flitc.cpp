@@ -306,7 +306,7 @@ void Fli::meteo()
 	  if( meteoDeviceTemperature) {
 	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_DOUBLE) {
 
-	      logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValue() << sendLog;
+	      //logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValue() << sendLog;
 	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueDouble());
 	    }  
 	  } else {
@@ -327,6 +327,7 @@ int Fli::setTo (float num)
 
 	if( TCmode->getValueInteger () == NO_TC) {
 	  focuserPosition= num;
+	  logStream (MESSAGE_DEBUG) << "Fli::setTo: no tcFocOffset: "<< focuserPosition  << " was: " << num << sendLog;
 	} else {
 
 	  meteo();
@@ -380,11 +381,14 @@ int Fli::setTo (float num)
 }
 void Fli::valueChanged (rts2core::Value *changed_value)
 {
+        bool set=false ;
+        long currentOffset=0 ; // in case TC_TEMP_REF is set, it will be calculated in setTo
+        long steps;
+        int ret ;
 
         if (changed_value == TCmode) {
-	  
-	  long steps;
-	  int ret ;
+	  set=true ;
+
 	  switch (TCmode->getValueInteger())
 	  {
 
@@ -395,21 +399,29 @@ void Fli::valueChanged (rts2core::Value *changed_value)
 		case NO_TC:
 		default:
 		{
+		  currentOffset= (long) TCFocOffset->getValueFloat() ;
 		  TCFocOffset->setValueFloat(0.) ;
 		  sendValueAll (TCFocOffset);
 		}
 	  }
+
+	}  else if(changed_value ==TCtemperatureRef) {
+	  set=true ;
+	}
+
+	if( set) {
+
 	  ret = FLIGetStepperPosition (dev, &steps);
 	  if (ret) {
 
 	    logStream (MESSAGE_ERROR) << "Fli::valueChanged: error: "<< ret << ", retrieving position: " << sendLog;
 	  } else {
-	    ret= setTo( steps) ;
+	    ret= setTo( steps- currentOffset) ;
 	    if( ! ret){
 	      position->setValueInteger ((int) steps);
 	    }
 	  }
-        }
+	}
 	Focusd::valueChanged (changed_value);
 
 }
