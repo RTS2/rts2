@@ -152,6 +152,8 @@ int Cloud4::readSensor (bool update)
 
 	temp0 /= 100.0;
 	temp1 /= 100.0;
+	if (!isnan (tempamb))
+		tempamb /= 100.0;
 
 	if (tempAmb && baseTemp->getValueInteger () == 1 && !isnan (tempamb))
 	{
@@ -160,7 +162,7 @@ int Cloud4::readSensor (bool update)
 	else
 	{
 		baseTemp->setValueInteger (0);
-		tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb / 100.0 - temp1, 20);
+		tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb - temp1, 20);
 	}
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
