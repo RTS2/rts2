@@ -182,7 +182,7 @@ int Cloud4::readSensor (bool update)
 		 	createValue (tempAmb, "TEMP_AMB", "ambient temperature (outside sensor)", true);
 			updateMetaInformations (tempAmb);
 		}
-		tempAmb->addValue (tempamb / 100.0, 20);
+		tempAmb->addValue (tempamb, 20);
 	}
 
 
