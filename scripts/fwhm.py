@@ -4,28 +4,48 @@ import sextractor
 import sys
 from optparse import OptionParser
 
-def processImage(fn,d):
+def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None):
+	"""Process image, print its FWHM. Works with multi extension images.
+	"""
 	if d:
 		d.set('file ' + fn)
 
-	c = sextractor.Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
+	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER']
+
+	c = sextractor.Sextractor(fn,sexcols,threshold=threshold)
 	c.runSExtractor()
 	c.sortObjects(2)
+
+	# dump Sextractor to DS9 catalogue
+	if ds9cat:
+		cat = open(ds9cat,'w')
+		cat.write('\t'.join(sexcols) + '\n')
+		for x in c.objects:
+			cat.write('\t'.join(map(lambda y:str(y),x)) + '\n')
+		cat.close()
 
 	i = 0
 	fwhm = 0
 	a = 0
 	b = 0
+	mef = False
 	for x in c.objects:
-		if (x[3] == 0 and x[4] != 0):
+		if pr:
+			print '\t'.join(map(lambda y:str(y),x))
+		if x[8] > 1 and mef == False:
+			mef = True
 			if d:
-				d.set('regions','image; circle {0} {1} 10 # color=green'.format(x[0],x[1]))
+				d.set('file mosaicimage iraf ' + fn)
+
+		if x[3] == 0 and x[4] != 0:
+			if d:
+				d.set('regions','tile {0}\nimage; circle {1} {2} 10 # color=green'.format(int(x[8]),x[0],x[1]))
 			fwhm += x[5]
 			a += x[6]
 			b += x[7]
 			i += 1
 		elif d:
-			d.set('regions','image; point {0} {1} # point = x 5 color=red'.format(x[0],x[1]))
+			d.set('regions','# tile {0}\nphysical; point {1} {2} # point = x 5 color=red'.format(int(x[8]),x[0],x[1]))
 
 	if i > 9:
 		import pyfits
@@ -53,6 +73,10 @@ def processImage(fn,d):
 if __name__ == '__main__':
 	parser = OptionParser()
 	parser.add_option('-d',help='display image and detected stars in DS9',action='store_true',dest='show_ds9',default=False)
+	parser.add_option('--threshold',help='threshold for start detection',action='store',dest='threshold',default=3.0)
+	parser.add_option('--print',help='print sextractor results',action='store_true',dest='pr',default=False)
+	parser.add_option('--ds9cat',help='write DS9 catalogue file',action='store',dest='ds9cat')
+
 	(options,args)=parser.parse_args()
 
 	d = None
@@ -61,4 +85,4 @@ if __name__ == '__main__':
 		d = ds9.ds9()
 
 	for fn in args:
-		processImage(fn,d)
+		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat)
