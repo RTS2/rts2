@@ -10,7 +10,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
-	rts2-teld-lx200gps rts2-teld-meade rts2-teld-bait
+	rts2-teld-lx200gps rts2-teld-meade
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -62,8 +62,6 @@ rts2_teld_trencin_SOURCES = trencin.cpp
 
 rts2_teld_nexstar_SOURCES = nexstar.cpp
 
-rts2_teld_bait_SOURCES = bait.cpp
-
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
@@ -85,10 +83,15 @@ EXTRA_DIST += paramount.cpp
 endif
 
 if MDMTCS
-bin_PROGRAMS += rts2-teld-mdm
+bin_PROGRAMS += rts2-teld-mdm rts2-teld-bait
+
 rts2_teld_mdm_SOURCES = mdm.cpp
 rts2_teld_mdm_LDFLAGS = @LIB_MDMTCS@
 rts2_teld_mdm_CPPFLAGS = @INC_MDMTCS@
+
+rts2_teld_bait_SOURCES = bait.cpp
+rts2_teld_bait_LDFLAGS = @LIB_MDMTCS@
+rts2_teld_bait_CPPFLAGS = @INC_MDMTCS@
 else
-EXTRA_DIST += mdm.cpp
+EXTRA_DIST += mdm.cpp bait.cpp
 endif
