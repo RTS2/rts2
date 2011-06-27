@@ -57,9 +57,17 @@ class MDM:public Telescope
 		virtual int isMoving ();
 		virtual int isMovingFixed ();
 		virtual int isParking ();
+
+		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
 		int tcssock;
+		int missock;
 		const char *tcshost;
+
+		rts2core::ValueInteger *probeX;
+		rts2core::ValueInteger *probeY;
+
+		int setGP (int x, int y);
 };
 
 }
@@ -69,13 +77,19 @@ using namespace rts2teld;
 MDM::MDM (int argc, char **argv):Telescope (argc, argv)
 {
 	tcssock = -1;
+	missock = -1;
+
 	tcshost = "localhost";
+
+	createValue (probeX, "GP_X", "guider probe X position", true, RTS2_VALUE_WRITABLE);
+	createValue (probeY, "GP_Y", "guider probe Y position", true, RTS2_VALUE_WRITABLE);
 
 	addOption (OPT_TCSHOST, "tcshost", 1, "TCS host name at MDM (default to localhost)");
 }
 
 MDM::~MDM ()
 {
+	close (missock);
 	close (tcssock);
 }
 
@@ -90,14 +104,14 @@ int MDM::startResync ()
 	snprintf (buf, 255, "SETCOORDS %lf %lf 2000.0", pos.ra, pos.dec);
 
 	int i;
-/*	i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQSENDCOORD, TCS_MSG_SENDCOORD);
+	i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQSENDCOORD, TCS_MSG_SENDCOORD);
 	if (i < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot set telescope coordinates" << sendLog;
 		return -1;
-	} */
+	}
 
-	snprintf (buf, 255, "OFFSET %lf %lf", getCorrRa () / 15.0, getCorrDec ());
+	snprintf (buf, 255, "OFFSET %lf %lf", getCorrRa () * 3600.0, getCorrDec () * 3600.0);
 
 	i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQOFFSET, TCS_MSG_OFFSET);
 	if (i < 0)
@@ -175,6 +189,14 @@ int MDM::init ()
 		logStream (MESSAGE_ERROR) << "Cannot open connection to MDM TCS at " << tcshost << ", error " << strerror (errno) << sendLog;
 		return -1;
 	}
+
+	missock = miss_opensock_clnt  ((char *) tcshost);
+	if (missock < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot open connection to MDM MIS at " << tcshost << ", error " << strerror (errno) << sendLog;
+		return -1;
+	}
+
 	return info ();
 }
 
@@ -187,6 +209,14 @@ int MDM::info ()
 		return ret;
 
 	setTelRaDec (tcsi.ra * 15.0, tcsi.dec);
+
+	misinfo_t misi;
+	ret = miss_reqinfo (missock, &misi, 0, 1);
+	if (ret < 0)
+		return ret;
+
+	probeX->setValueInteger (misi.guidex);
+	probeY->setValueInteger (misi.guidey);
 
 	return Telescope::info ();
 }
@@ -206,9 +236,30 @@ int MDM::isParking ()
 	return isMoving ();
 }
 
-int
-main (int argc, char **argv)
+int MDM::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-	MDM device = MDM (argc, argv);
+	if (old_value == probeX)
+		return setGP (new_value->getValueInteger (), probeY->getValueInteger ()) < 0 ? -2 : 0;
+	else if (old_value == probeY)
+		return setGP (probeX->getValueInteger (), new_value->getValueInteger ()) < 0 ? -2 : 0;
+
+	return Telescope::setValue (old_value, new_value);
+}
+
+int MDM::setGP (int x, int y)
+{
+	char pos[256];
+	if (x < 0 || x > 25000 || y < 0 || y > 25000)
+	{
+		logStream (MESSAGE_ERROR) << "invalid probe position " << x << " " << y << sendLog;
+		return -1;
+	}
+	snprintf (pos, 255, "PMOVE %#3.1f %#3.1f", (float) x, (float) y);
+	return miss_makereq (missock, pos, MIS_MSG_REQPMOVE, MIS_MSG_PMOVE);
+}
+
+int main (int argc, char **argv)
+{
+	MDM device (argc, argv);
 	return device.run ();
 }
