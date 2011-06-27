@@ -390,6 +390,12 @@ class Telescope:public rts2core::Device
 			_ori.ra = oriRaDec->getRa ();
 			_ori.dec = oriRaDec->getDec ();
 		}
+	
+		void setOrigin (double ra, double dec)
+		{
+			oriRaDec->setRa (ra);
+			oriRaDec->setDec (dec);
+		}
 
 		/**
 		 * Sets new movement target.
