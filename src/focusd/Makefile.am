@@ -1,6 +1,6 @@
 SUBDIRS = 
 
-bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser rts2-focusd-mdm-bait
+bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser
 
 noinst_HEADERS = focusd.h
 
@@ -23,8 +23,6 @@ rts2_focusd_atc2_SOURCES = atc2.cpp
 
 rts2_focusd_microfocuser_SOURCES = microfocuser.cpp
 
-rts2_focusd_mdm_bait_SOURCES = mdm_bait.cpp
-
 EXTRA_DIST = 
 
 if FLI
@@ -37,10 +35,16 @@ EXTRA_DIST += fli.cpp
 endif
 
 if MDMTCS
-bin_PROGRAMS += rts2-focusd-mdm
+bin_PROGRAMS += rts2-focusd-mdm rts2-focusd-mdm-bait
+
 rts2_focusd_mdm_SOURCES = mdm.cpp
 rts2_focusd_mdm_LDFLAGS = @LIB_MDMTCS@
 rts2_focusd_mdm_CPPFLAGS = @INC_MDMTCS@
+
+rts2_focusd_mdm_bait_SOURCES = mdm_bait.cpp
+rts2_focusd_mdm_bait_LDFLAGS = @LIB_MDMTCS@
+rts2_focusd_mdm_bait_CPPFLAGS = @INC_MDMTCS@
+
 else
-EXTRA_DIST += mdm.cpp
+EXTRA_DIST += mdm.cpp mdm_bait.cpp
 endif

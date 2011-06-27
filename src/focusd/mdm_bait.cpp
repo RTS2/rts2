@@ -19,7 +19,9 @@
 
 #include "focusd.h"
 #include "../utils/connbait.h"
+#include "tcsutils.h"
 
+#define OPT_TCSHOST     OPT_LOCAL + 520
 #define OPT_BAITHOST    OPT_LOCAL + 600
 
 namespace rts2focusd
@@ -34,6 +36,7 @@ class BAIT:public Focusd
 {
 	public:
 		BAIT (int argc, char **argv);
+		virtual ~BAIT ();
 
 	protected:
 		virtual bool isAtStartPosition ();
@@ -49,6 +52,9 @@ class BAIT:public Focusd
 		
 		HostString *baitServer;
 		rts2core::BAIT *connBait;
+
+		int tcssock;
+		const char *tcshost;
 };
 
 }
@@ -60,6 +66,9 @@ BAIT::BAIT (int argc, char **argv):Focusd (argc, argv)
 	baitServer = NULL;
 	connBait = NULL;
 
+	tcssock = -1;
+	tcshost = "localhost";
+
 	createValue (t_tcs, "tem_tcs", "[C] TCS temperature", true);
 	createValue (t_west, "tem_west", "[C] west temperature", true);
 	createValue (t_frame, "tem_fram", "[C] frame temperature", true);
@@ -67,6 +76,12 @@ BAIT::BAIT (int argc, char **argv):Focusd (argc, argv)
 	createValue (t_secondary, "tem_sec", "[C] secondary mirror temperature", true);
 
 	addOption (OPT_BAITHOST, "bait-server", 1, "BAIT server hostname (and port)");
+	addOption (OPT_TCSHOST, "tcshost", 1, "TCS host name at MDM (default to localhost)");
+}
+
+BAIT::~BAIT ()
+{
+	close (tcssock);
 }
 
 bool BAIT::isAtStartPosition ()
@@ -80,6 +95,9 @@ int BAIT::processOption (int opt)
 	{
 		case OPT_BAITHOST:
 			baitServer = new HostString (optarg, "4928");
+			break;
+		case OPT_TCSHOST:
+			tcshost = optarg;
 			break;
 		default:
 			return Focusd::processOption (opt);
@@ -110,24 +128,31 @@ int BAIT::init ()
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
+
+	tcssock = tcss_opensock_clnt ((char *) tcshost);	
+	if (tcssock < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot open connection to MDM TCS at " << tcshost << ", error " << strerror (errno) << sendLog;
+		return -1;
+	}
 	
 	return info ();
 }
 
 int BAIT::info ()
 {
-	float t_t, t_w, t_f, t_m, t_s, mils;
+	float t_t, t_w, t_f, t_m, t_s;
 	static char buf[500];
 
-	connBait->writeRead ("focus", buf, 500);
-
-	int ret = sscanf (buf, "done focus mils=%f", &mils);
-	if (ret != 1)
+	tcsinfo_t tcsi;
+	int ret = tcss_reqcoords (tcssock, &tcsi, 0, 1);
+	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse server output: " << buf << " " << ret << sendLog;
-		return -1;
+		logStream (MESSAGE_ERROR) << "While calling tcss_reqcoords: " << ret << sendLog;
+		return ret;
 	}
-	position->setValueFloat (mils);
+
+	position->setValueInteger (tcsi.focus);
 
 	connBait->writeRead ("temps", buf, 500);
 
@@ -148,19 +173,14 @@ int BAIT::info ()
 
 int BAIT::setTo (float num)
 {
-	char buf[500];
-	snprintf (buf, 500, "focus mils=%f", num);
-	float mils;
-
-	connBait->writeRead (buf, buf, 500);
-	
-	int ret = sscanf (buf, "done focus mils=%f", &mils);
-	if (ret != 1)
+	char buf[255];
+	snprintf (buf, 255, "FOCUSABS %d", (int) num);
+	int ret = tcss_reqnodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
+	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse server output: " << buf << " " << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "Cannot set focuser " << ret << " " << tcssock << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_INFO) << "set telescope to " << num << ", current mils " << mils << sendLog;
 	return 0;
 }
 
