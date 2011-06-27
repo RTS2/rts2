@@ -732,7 +732,10 @@ int Rts2Centrald::idle ()
 
 		time_t nt = curr_time;
 
-		while (nt < (curr_time + 86400))
+		bool nsta = true;
+		bool nsto = true;
+
+		while (nt < (curr_time + 86400) && (nsta || nsto))
 		{
 			time_t t_start_t = nt + 1;
 			int net;
@@ -741,9 +744,15 @@ int Rts2Centrald::idle ()
 				dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 				morningTime->getValueInteger ());
 			if (call_state == SERVERD_DUSK)
+			{
 				nightStart->setValueTime (nt);
+				nsta = false;
+			}
 			if (call_state == SERVERD_NIGHT)
+			{
 				nightStop->setValueTime (nt);
+				nsto = false;
+			}
 		}
 
 		// send update about next state transits..
