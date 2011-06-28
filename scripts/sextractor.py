@@ -59,8 +59,11 @@ class Sextractor:
 	pfi.flush()
 
 	cmd = [self.sexpath, self.filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
-	proc = subprocess.Popen(cmd)
-	proc.wait()
+	try:
+		proc = subprocess.Popen(cmd)
+		proc.wait()
+	except OSError,err:
+		print >> sys.stderr, 'canot run command: "', ' '.join(cmd), '", error ',err
 
 	# parse output
 	of = os.fdopen(ofd,'r')
