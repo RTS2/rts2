@@ -349,7 +349,7 @@ int Fli::setTo (float num)
 	      focuserPosition= num + tcFocOffset;
 	    }
 
-	    logStream (MESSAGE_DEBUG) << "Fli::setTo: tcFocOffset: "<< focuserPosition  << " instead of: " << num << sendLog;
+	    logStream (MESSAGE_DEBUG) << "Fli::setTo: tcFocOffset: "<< focuserPosition  << " instead of: " << num << ", TEMP_METEO: " << temperatureMeteo->getValueDouble() << ", TC_TEMP_REF:" << TCoffset->getValueDouble()<< sendLog;
 	  } else {
 	  
 	    focuserPosition= num;
@@ -372,6 +372,7 @@ int Fli::setTo (float num)
 		return -1;
 	} else{
 	  
+	  logStream (MESSAGE_DEBUG) << "Fli::setTo: FLIStepMotorAsync successful setting position: " << focuserPosition << sendLog;
 	  target->setValueFloat(focuserPosition) ;
 	  sendValueAll (target);
 	  TCFocOffset->setValueFloat(tcFocOffset) ;
