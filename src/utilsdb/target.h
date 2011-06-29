@@ -632,6 +632,8 @@ class Target:public Rts2Target
 		 */
 		void getSatisfiedIntervals (double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
 
+		double getSatisfiedDuration (double from, double to, double length, double step);
+
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
 		/**

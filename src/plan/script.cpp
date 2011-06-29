@@ -866,3 +866,19 @@ double Script::getExpectedDuration ()
 		ret += (*iter)->getExpectedDuration ();
 	return ret;
 }
+
+double getMaximalDuration (Rts2Target *tar, Rts2CamList &cameras)
+{
+  	double md = rts2_nan ("f");
+	for (Rts2CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
+	{
+		std::string script_buf;
+		rts2script::Script script;
+		tar->getScript (cam->c_str(), script_buf);
+		script.setTarget (cam->c_str (), tar);
+		double d = script.getExpectedDuration ();
+		if (d > md)
+			md = d;  
+	}
+	return md;
+}

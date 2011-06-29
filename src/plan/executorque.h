@@ -67,6 +67,8 @@ class QueuedTarget
 		int planid;
 };
 
+class SimulQueueTargets;
+
 /**
  * Executor queue. Used to freely create queue inside executor
  * for queue execution. Allow users to define rules how the queue
@@ -124,6 +126,12 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		 */
 		int selectNextObservation (int &pid);
 
+		/**
+		 * Simulate selection of next observation from the queue. Adjust sq list if 
+		 * observation is selected and will not be repeated.
+		 */
+		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end);
+
 		int queueFromConn (Rts2Conn *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
@@ -146,6 +154,8 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		void revalidateConstraints (int watch_id);
 
+		struct ln_lnlat_posn **observer;
+
 	private:
 		Rts2DeviceDb *master;
 
@@ -160,8 +170,6 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *queueEnabled;
-
-		struct ln_lnlat_posn **observer;
 
 		double now;
 		double getNow () { return now; }
@@ -190,6 +198,12 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const char *reason);
 
 		rts2db::Target *currentTarget;
+};
+
+class Queues: public std::deque <ExecutorQueue>
+{
+	public:
+		Queues ():std::deque <ExecutorQueue> () {}
 };
 
 }

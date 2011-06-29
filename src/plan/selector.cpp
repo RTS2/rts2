@@ -21,6 +21,7 @@
 #include "rts2selector.h"
 #include "connselector.h"
 #include "executorque.h"
+#include "simulque.h"
 
 #include "../utils/connnotify.h"
 #include "../utils/rts2devclient.h"
@@ -125,7 +126,9 @@ class SelectorDev:public Rts2DeviceDb
 
 		rts2core::ValueSelection *lastQueue;
 
-		std::deque <rts2plan::ExecutorQueue> queues;
+		rts2plan::Queues queues;
+
+		rts2plan::SimulQueue *simulQueue;
 
 		std::deque <const char *> queueNames;
 
@@ -149,6 +152,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	observer = NULL;
 
 	lastQueue = NULL;
+
+	simulQueue = NULL;
 
 	notifyConn = new rts2core::ConnNotify (this);
 	addConnection (notifyConn);
@@ -192,6 +197,7 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 SelectorDev::~SelectorDev (void)
 {
 	delete sel;
+	delete simulQueue;
 }
 
 int SelectorDev::processOption (int in_opt)
@@ -287,6 +293,8 @@ int SelectorDev::init ()
 
 	notifyConn->setDebug (true);
 
+	simulQueue = new rts2plan::SimulQueue (this, "simul", &observer, &queues);
+
 	return 0;
 }
 
@@ -344,7 +352,7 @@ int SelectorDev::selectNext ()
 			int id = -1;
 			int q = 1;
 			int next_pid = -1;
-			std::deque <rts2plan::ExecutorQueue>::iterator iter;
+			rts2plan::Queues::iterator iter;
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
 				iter->filter ();
@@ -450,7 +458,7 @@ void SelectorDev::valueChanged (rts2core::Value *value)
 		updateNext ();
 	else
 	{
-		for (std::deque <rts2plan::ExecutorQueue>::iterator qi = queues.begin (); qi != queues.end (); qi++)
+		for (rts2plan::Queues::iterator qi = queues.begin (); qi != queues.end (); qi++)
 		{
 			if (qi->getEnabledValue () == value)
 			{
@@ -486,7 +494,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
-		std::deque <rts2plan::ExecutorQueue>::iterator qi = queues.begin ();
+		rts2plan::Queues::iterator qi = queues.begin ();
 		std::deque <const char *>::iterator iter;
 		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, qi++)
 		{
@@ -525,6 +533,11 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		updateNext ();
 		return 0;
 	}
+	else if (conn->isCommand ("simulate"))
+	{
+		simulQueue->simulate (getNow (), getNow () + 86400);
+		return 0;
+	}
 	else
 	{
 		return Rts2DeviceDb::commandAuthorized (conn);
@@ -559,7 +572,7 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 void SelectorDev::fileModified (struct inotify_event *event)
 {
 	sel->revalidateConstraints (event->wd);
-	for (std::deque <rts2plan::ExecutorQueue>::iterator iter = queues.begin (); iter != queues.end (); iter++)
+	for (rts2plan::Queues::iterator iter = queues.begin (); iter != queues.end (); iter++)
 	{
 		iter->revalidateConstraints (event->wd);
 		updateNext ();

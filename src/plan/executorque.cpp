@@ -18,6 +18,7 @@
  */
 
 #include "executorque.h"
+#include "simulque.h"
 #include "script.h"
 #include "../utilsdb/constraints.h"
 
@@ -82,7 +83,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	std::string sn (name);
 	observer = _observer;
 	currentTarget = NULL;
-	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false, RTS2_VALUE_WRITABLE);
+	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false);
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
@@ -306,6 +307,44 @@ int ExecutorQueue::selectNextObservation (int &pid)
 					master->addTimer (t_end - t, new Rts2Event (EVENT_NEXT_END));
 			}
 
+		}
+	}
+	return -1;
+}
+
+int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end)
+{
+	if (queueEnabled->getValueBool () == false)
+		return -1;
+	if (sq.size () > 0)
+	{
+		setNow (from);
+		struct ln_hrz_posn hrz;
+		time_t tn = getNow ();
+		sq.front ()->target->getAltAz (&hrz, ln_get_julian_from_timet (&tn), *observer);
+		if (sq.front ()->target->isAboveHorizon (&hrz) && sq.front ()->notExpired (getNow ()))
+		{
+		  	// single execution?
+			if (removeAfterExecution->getValueBool ())
+			{
+				e_end = from + getMaximalDuration (sq.front ()->target);
+			}
+			// otherwise, put end to either time_end, 
+			else
+			{
+				if (!isnan (sq.front ()->t_end))
+				{
+				  	e_end = sq.front ()->t_end;
+				}
+				// or to time when target will become unacessible
+				else
+				{
+					e_end = sq.front ()->target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ()->target), 60);
+					if (isnan (e_end))
+						e_end = to;
+				}
+			}
+			return sq.front ()->target->getTargetID ();
 		}
 	}
 	return -1;

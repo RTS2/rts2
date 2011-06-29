@@ -29,6 +29,7 @@
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2target.h"
+#include "../utilsdb/rts2camlist.h"
 #include "../writers/image.h"
 
 #include <list>
@@ -277,6 +278,15 @@ template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_
 };
 
 typedef counted_ptr <Script> ScriptPtr;
+
+/**
+ * Return maximal script duration. Computes script's length for
+ * all cameras, and return maximal duration.
+ *
+ * @param tar     target for which scripts will be retrieved
+ * @param cameras list of cameras for which to retrieve scripts.
+ */
+double getMaximalDuration (Rts2Target *tar, Rts2CamList &cameras);
 
 }
 #endif							 /* ! __RTS2_SCRIPT__ */

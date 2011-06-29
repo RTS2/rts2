@@ -409,6 +409,30 @@ void Constraints::getSatisfiedIntervals (Target *tar, double from, double to, do
 	}
 }
 
+double Constraints::getSatisfiedDuration (Target *tar, double from, double to, double length, double step)
+{
+	double vf = rts2_nan ("f");
+
+	time_t fti = (time_t) to;
+
+	double to_JD = ln_get_julian_from_timet (&fti);
+	fti = (time_t) (from + length);
+	
+	time_t fti_to;
+
+	double t;
+	for (t = ln_get_julian_from_timet (&fti); t < to_JD; t += step / 86400.0)
+	{
+		if (!satisfy (tar, t))
+		{
+			time_t ret;  
+		  	ln_get_timet_from_julian (t, &ret);
+			return ret;
+		}
+	}
+	return rts2_nan ("f");
+}
+
 void Constraints::load (xmlNodePtr _node, bool overwrite)
 {
 	for (xmlNodePtr cons = _node->children; cons != NULL; cons = cons->next)

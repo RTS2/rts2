@@ -331,6 +331,14 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 */
 		void getSatisfiedIntervals (Target *tar, double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
 
+
+		/**
+		 * Return time until when constraints are satisfied.
+		 *
+		 * @return   time when constraints will not be satisfied
+		 */
+		double getSatisfiedDuration (Target *tar, double from, double to, double length, double step);
+
 		/**
 		 * Load constraints from XML constraint node. Please see constraints.xsd for details.
 		 *
