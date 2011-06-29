@@ -321,30 +321,30 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 		setNow (from);
 		struct ln_hrz_posn hrz;
 		time_t tn = getNow ();
-		sq.front ()->target->getAltAz (&hrz, ln_get_julian_from_timet (&tn), *observer);
-		if (sq.front ()->target->isAboveHorizon (&hrz) && sq.front ()->notExpired (getNow ()))
+		sq.front ().target->getAltAz (&hrz, ln_get_julian_from_timet (&tn), *observer);
+		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (getNow ()))
 		{
 		  	// single execution?
 			if (removeAfterExecution->getValueBool ())
 			{
-				e_end = from + getMaximalDuration (sq.front ()->target);
+				e_end = from + getMaximalDuration (sq.front ().target);
 			}
 			// otherwise, put end to either time_end, 
 			else
 			{
-				if (!isnan (sq.front ()->t_end))
+				if (!isnan (sq.front ().t_end))
 				{
-				  	e_end = sq.front ()->t_end;
+				  	e_end = sq.front ().t_end;
 				}
 				// or to time when target will become unacessible
 				else
 				{
-					e_end = sq.front ()->target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ()->target), 60);
+					e_end = sq.front ().target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ().target), 60);
 					if (isnan (e_end))
 						e_end = to;
 				}
 			}
-			return sq.front ()->target->getTargetID ();
+			return sq.front ().target->getTargetID ();
 		}
 	}
 	return -1;

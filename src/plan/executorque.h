@@ -54,6 +54,17 @@ class QueuedTarget
 			planid = _plan_id;
 		}
 
+		/**
+		 * Copy constructor. Used in simulation queue to create copy of QueuedTarget.
+		 */
+		QueuedTarget (const QueuedTarget &qt)
+		{
+			target = qt.target;
+			t_start = qt.t_start;
+			t_end = qt.t_end;
+			planid = qt.planid;
+		}
+
 		~QueuedTarget () {}
 
 		/**
@@ -156,6 +167,11 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		struct ln_lnlat_posn **observer;
 
+		/**
+		 * Update values from the target list. Must be called after queue content changed.
+		 */
+		void updateVals ();
+
 	private:
 		Rts2DeviceDb *master;
 
@@ -173,9 +189,6 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		double now;
 		double getNow () { return now; }
-
-		// update values from the target list
-		void updateVals ();
 
 		bool isAboveHorizon (QueuedTarget &tar, double &JD);
 

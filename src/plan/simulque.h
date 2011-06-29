@@ -28,7 +28,7 @@ namespace rts2plan
  * Hold queue entries for simulation. As the code cannot remove observed
  * targets from real queues, it must create and fill queues for simulation.
  */
-class SimulQueueTargets:public std::deque <QueuedTarget*>
+class SimulQueueTargets:public std::deque <QueuedTarget>
 {
 	public:
 		SimulQueueTargets (ExecutorQueue &eq);

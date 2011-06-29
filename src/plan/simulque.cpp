@@ -21,10 +21,10 @@
 
 using namespace rts2plan;
 
-SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):std::deque <QueuedTarget*> ()
+SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):std::deque <QueuedTarget> ()
 {
 	for (ExecutorQueue::iterator qi = eq.begin (); qi != eq.end (); qi++)
-		push_back (&(*qi));
+		push_back ( QueuedTarget (*qi) );
 }
 
 SimulQueue::SimulQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues):ExecutorQueue (_master, name, _observer)
@@ -45,6 +45,8 @@ void SimulQueue::simulate (double from, double to)
 
 	for (qi = queues->begin (); qi != queues->end (); qi++)
 		sqs.push_back (SimulQueueTargets (*qi));
+
+	clear ();
 
 	while (t < to)
 	{
@@ -67,4 +69,5 @@ void SimulQueue::simulate (double from, double to)
 			t += 60;
 		from = t;	
 	}
+	updateVals ();
 }

@@ -293,7 +293,12 @@ int SelectorDev::init ()
 
 	notifyConn->setDebug (true);
 
+	// create and add simulation queue
+
 	simulQueue = new rts2plan::SimulQueue (this, "simul", &observer, &queues);
+
+	lastQueue->addSelVal ("simul");
+	selQueNames->addValue ("simul");
 
 	return 0;
 }
