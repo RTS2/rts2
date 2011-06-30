@@ -222,22 +222,34 @@ bool ConstraintTime::satisfy (Target *target, double JD)
 
 bool ConstraintAirmass::satisfy (Target *tar, double JD)
 {
-	return isBetween (tar->getAirmass (JD));
+	double am = tar->getAirmass (JD);
+	if (isnan (am))
+		return true;
+	return isBetween (am);
 }
 
 bool ConstraintZenithDistance::satisfy (Target *tar, double JD)
 {
-	return isBetween(tar->getZenitDistance (JD));
+	double zd = tar->getZenitDistance (JD);
+	if (isnan (zd))
+		return true;
+	return isBetween(zd);
 }
 
 bool ConstraintHA::satisfy (Target *tar, double JD)
 {
-	return isBetween (tar->getHourAngle (JD));
+	double ha = tar->getHourAngle (JD);
+	if (isnan (ha))
+		return true;
+	return isBetween (ha);
 }
 
 bool ConstraintLunarDistance::satisfy (Target *tar, double JD)
 {
-	return isBetween (tar->getLunarDistance (JD));
+	double ld = tar->getLunarDistance (JD);
+	if (isnan (ld))
+		return true;
+	return isBetween (ld);
 }
 
 bool ConstraintLunarAltitude::satisfy (Target *tar, double JD)
@@ -256,7 +268,10 @@ bool ConstraintLunarPhase::satisfy (Target *tar, double JD)
 
 bool ConstraintSolarDistance::satisfy (Target *tar, double JD)
 {
-	return isBetween (tar->getSolarDistance (JD));
+	double sd = tar->getSolarDistance (JD);
+	if (isnan (sd))
+		return true;
+	return isBetween (sd);
 }
 
 bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
@@ -411,15 +426,11 @@ void Constraints::getSatisfiedIntervals (Target *tar, double from, double to, do
 
 double Constraints::getSatisfiedDuration (Target *tar, double from, double to, double length, double step)
 {
-	double vf = rts2_nan ("f");
-
 	time_t fti = (time_t) to;
 
 	double to_JD = ln_get_julian_from_timet (&fti);
 	fti = (time_t) (from + length);
 	
-	time_t fti_to;
-
 	double t;
 	for (t = ln_get_julian_from_timet (&fti); t < to_JD; t += step / 86400.0)
 	{
