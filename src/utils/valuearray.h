@@ -269,6 +269,14 @@ class BoolArray: public IntegerArray
 		virtual void setFromValue (rts2core::Value *newValue);
 		virtual bool isEqual (rts2core::Value *other_val);
 
+		void setValueArray (std::vector <bool> _arr)
+		{
+			value.clear ();
+			for (std::vector <bool>::iterator iter = _arr.begin (); iter != _arr.end (); iter++)
+				value.push_back (*iter);
+			changed ();
+		}
+
 		bool operator[] (int i) { return value[i] ? true : false; }
 };
 
