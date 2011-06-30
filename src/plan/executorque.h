@@ -46,12 +46,13 @@ namespace rts2plan
 class QueuedTarget
 {
 	public:
-		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1)
+		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1, bool _hard = false)
 		{
 			target = _target;
 			t_start = _t_start;
 			t_end = _t_end;
 			planid = _plan_id;
+			hard = _hard;
 		}
 
 		/**
@@ -76,6 +77,7 @@ class QueuedTarget
 		double t_start;
 		double t_end;
 		int planid;
+		bool hard;
 };
 
 /**
@@ -138,7 +140,7 @@ class ExecutorQueue:public TargetQueue
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
-		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1);
+		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
 
 		double getMaximalDuration (rts2db::Target *tar);
 
@@ -172,7 +174,7 @@ class ExecutorQueue:public TargetQueue
 		 *
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
-		int selectNextObservation (int &pid);
+		int selectNextObservation (int &pid, bool &hard);
 
 		/**
 		 * Simulate selection of next observation from the queue. Adjust sq list if 
@@ -221,6 +223,7 @@ class ExecutorQueue:public TargetQueue
 		rts2core::TimeArray *nextStartTimes;
 		rts2core::TimeArray *nextEndTimes;
 		rts2core::IntegerArray *nextPlanIds;
+		rts2core::BoolArray *nextHard;
 
 		rts2core::ValueSelection *queueType;
 		rts2core::ValueBool *skipBelowHorizon;

@@ -361,11 +361,13 @@ int SelectorDev::selectNext ()
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
 				iter->filter ();
-				id = iter->selectNextObservation (next_pid);
+				bool hard;
+				id = iter->selectNextObservation (next_pid, hard);
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);
 					next_plan_id->setValueInteger (next_pid);
+					interrupt->setValueBool (hard);
 					return id;
 				}
 			}
@@ -428,7 +430,15 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iexec);
 		if (iexec != getConnections ()->end () && selEnabled->getValueBool ())
 		{
-			(*iexec)->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
+			if (interrupt->getValueBool () == true)
+			{
+				(*iexec)->queCommand (new rts2core::Rts2CommandExecNow (this, next_id->getValueInteger ()));
+				interrupt->setValueBool (false);
+			}
+			else
+			{
+				(*iexec)->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
+			}
 		}
 		return 0;
 	}
@@ -529,13 +539,16 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		{
 			if (q->queueFromConn (conn, withTimes, notifyConn))
 				return -2;
+			if (getMasterState () == SERVERD_NIGHT)
+				q->beforeChange (getNow ());
 		}
 		catch (rts2core::Error &er)
 		{
 			logStream (MESSAGE_ERROR) << er << sendLog;
 			return -2;
 		}
-		updateNext ();
+		if (getMasterState () == SERVERD_NIGHT)
+			updateNext ();
 		return 0;
 	}
 	else if (conn->isCommand ("simulate"))

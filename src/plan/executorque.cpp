@@ -183,6 +183,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false);
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
+	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (true);
@@ -215,9 +216,9 @@ int ExecutorQueue::addFront (rts2db::Target *nt, double t_start, double t_end)
 	return 0;
 }
 
-int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int plan_id)
+int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, int plan_id, bool hard)
 {
-	push_back (QueuedTarget (nt, t_start, t_end, plan_id));
+	push_back (QueuedTarget (nt, t_start, t_end, plan_id, hard));
 	updateVals ();
 	return 0;
 }
@@ -371,7 +372,7 @@ void ExecutorQueue::clearNext ()
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation (int &pid)
+int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
 {
 	removeTimers ();
 	if (queueEnabled->getValueBool () == false)
@@ -384,6 +385,16 @@ int ExecutorQueue::selectNextObservation (int &pid)
 		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (now))
 		{
 			pid = front ().planid;
+			if (isnan (front().t_start))
+			{
+				hard = false;
+			}
+			else
+			{
+				// setting hard to false signalized the program asked for execution, so next call will not issue hard interruption targets
+				hard = front ().hard;
+				front ().hard = false;
+			}
 			return front ().target->getTargetID ();
 		}
 		else
@@ -473,7 +484,6 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes, rts2core::Conn
 		}
 		addTarget (nt, t_start, t_end);
 	}
-	beforeChange (master->getNow ());
 	return failed;
 }
 
@@ -490,6 +500,7 @@ void ExecutorQueue::updateVals ()
 	std::vector <double> _start_arr;
 	std::vector <double> _end_arr;
 	std::vector <int> _plan_arr;
+	std::vector <bool> _hard_arr;
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
@@ -497,18 +508,21 @@ void ExecutorQueue::updateVals ()
 		_start_arr.push_back (iter->t_start);
 		_end_arr.push_back (iter->t_end);
 		_plan_arr.push_back (iter->planid);
+		_hard_arr.push_back (iter->hard);
 	}
 	nextIds->setValueArray (_id_arr);
 	nextNames->setValueArray (_name_arr);
 	nextStartTimes->setValueArray (_start_arr);
 	nextEndTimes->setValueArray (_end_arr);
 	nextPlanIds->setValueArray (_plan_arr);
+	nextHard->setValueArray (_hard_arr);
 
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
 	master->sendValueAll (nextStartTimes);
 	master->sendValueAll (nextEndTimes);
 	master->sendValueAll (nextPlanIds);
+	master->sendValueAll (nextHard);
 }
 
 bool ExecutorQueue::frontTimeExpires (double now)
