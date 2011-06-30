@@ -409,7 +409,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 					next_plan_id->setValueInteger (-1);
 					sendValueAll (next_plan_id);
 				}
-				eq->beforeChange ();
+				eq->beforeChange (getNow ());
 			}
 		}
 	}
@@ -540,7 +540,11 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("simulate"))
 	{
-		simulQueue->simulate (getNow (), getNow () + 86400);
+	  	double from;
+		double to;
+		if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
+			return -2;
+		simulQueue->simulate (from, to);
 		return 0;
 	}
 	else

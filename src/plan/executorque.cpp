@@ -77,11 +77,106 @@ bool QueuedTarget::notExpired (double now)
 	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
 }
 
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer)
+void TargetQueue::filterExpired (double now)
+{
+	if (empty ())
+		return;
+	TargetQueue::iterator iter;
+	TargetQueue::iterator iter2 = begin ();
+	for (;iter2 != end ();)
+	{
+		double t_start = iter2->t_start;
+		double t_end = iter2->t_end;
+		if (!isnan (t_start) && t_start <= now && !isnan (t_end) && t_end <= now)
+			iter2 = removeEntry (iter2, "both start and end times expired");
+		else if (iter2->target->observationStarted () && getRemoveAfterExecution () == true)
+		  	iter2 = removeEntry (iter2, "its observations started and removeAfterExecution was set to true");
+		else  
+			iter2++;
+	}
+	if (empty ())
+		return;
+	iter = iter2 = begin ();
+	iter2++;
+	while (iter2 != end ())
+	{
+		double t_start = iter2->t_start;
+		bool do_erase = false;
+		switch (getQueueType ())
+		{
+			case QUEUE_FIFO:
+				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= now));
+				break;
+			default:
+				do_erase = (!isnan (t_start) && t_start <= now);
+				break;
+		}
+
+		if (do_erase)
+		{
+			iter = removeEntry (iter, "it was observed and next target start time passed");
+			iter2 = iter;
+			iter2++;
+		}
+		else
+		{
+			iter++;
+			iter2++;
+		}
+	}
+}
+
+void TargetQueue::filterBelowHorizon (double now)
+{
+	if (!empty ())
+	{
+		rts2db::Target *firsttar = NULL;
+		time_t n = now;
+		double JD = ln_get_julian_from_timet (&n);
+
+		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
+		{
+			// isAboveHorizon changes jd parameter - we would like to keep the current time
+		  	double tjd = JD;
+			if (isAboveHorizon (*iter, tjd))
+				return;
+
+			if (getSkipBelowHorizon ())
+			{
+				if (firsttar == NULL)
+					firsttar = iter->target;
+
+				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
+
+				push_back (*iter);
+				iter = erase (iter);
+			}
+			else
+			{
+				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
+				iter = erase (iter);
+			}
+		}
+	}
+}
+
+bool TargetQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
+{
+	struct ln_hrz_posn hrz;
+	if (!isnan (qt.t_start))
+	{
+		time_t t = qt.t_start;
+		JD = ln_get_julian_from_timet (&t);
+	}
+	qt.target->getAltAz (&hrz, JD, *observer);
+	rts2db::ConstraintsList violated;
+	return (qt.target->isAboveHorizon (&hrz) && (!getTestConstraints () || qt.target->getViolatedConstraints (JD, violated) == 0));
+}
+
+ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer):TargetQueue (_observer)
 {
   	master = _master;
 	std::string sn (name);
-	observer = _observer;
 	currentTarget = NULL;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
@@ -177,8 +272,8 @@ void ExecutorQueue::orderByTargetList (std::list <rts2db::Target *> tl)
 
 void ExecutorQueue::filter ()
 {
-	filterExpired ();
-	filterBelowHorizon ();
+	filterExpired (master->getNow ());
+	filterBelowHorizon (master->getNow ());
 	updateVals ();
 }
 
@@ -234,7 +329,7 @@ void ExecutorQueue::sortWestEastMeridian ()
 	orderByTargetList (orderedTargets);
 }
 
-void ExecutorQueue::beforeChange ()
+void ExecutorQueue::beforeChange (double now)
 {
 	switch (queueType->getValueInteger ())
 	{
@@ -242,7 +337,7 @@ void ExecutorQueue::beforeChange ()
 			break;
 		case QUEUE_CIRCULAR:
 			// shift only if queue is not empty and time for first observation already expires or its start and end time is not specified..
-			if (!empty () && (frontTimeExpires () || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
+			if (!empty () && (frontTimeExpires (now) || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
 			{
 				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
 				delete front ().target;
@@ -283,17 +378,17 @@ int ExecutorQueue::selectNextObservation (int &pid)
 		return -1;
 	if (size () > 0)
 	{
-		setNow (master->getNow ());
 		struct ln_hrz_posn hrz;
+		double now = master->getNow ();
 		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
-		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (getNow ()))
+		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (now))
 		{
 			pid = front ().planid;
 			return front ().target->getTargetID ();
 		}
 		else
 		{
-			double t = getNow ();
+			double t = now;
 			// add timers..
 			double t_start = front ().t_start;
 			if (!isnan (t_start) && t_start > t)
@@ -318,11 +413,10 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 		return -1;
 	if (sq.size () > 0)
 	{
-		setNow (from);
 		struct ln_hrz_posn hrz;
-		time_t tn = getNow ();
+		time_t tn = from;
 		sq.front ().target->getAltAz (&hrz, ln_get_julian_from_timet (&tn), *observer);
-		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (getNow ()))
+		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (from))
 		{
 		  	// single execution?
 			if (removeAfterExecution->getValueBool ())
@@ -379,7 +473,7 @@ int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes, rts2core::Conn
 		}
 		addTarget (nt, t_start, t_end);
 	}
-	beforeChange ();
+	beforeChange (master->getNow ());
 	return failed;
 }
 
@@ -417,103 +511,7 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 }
 
-bool ExecutorQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
-{
-	struct ln_hrz_posn hrz;
-	if (!isnan (qt.t_start))
-	{
-		time_t t = qt.t_start;
-		JD = ln_get_julian_from_timet (&t);
-	}
-	qt.target->getAltAz (&hrz, JD, *observer);
-	rts2db::ConstraintsList violated;
-	return (qt.target->isAboveHorizon (&hrz) && (!testConstraints->getValueBool () || qt.target->getViolatedConstraints (JD, violated) == 0));
-}
-
-void ExecutorQueue::filterBelowHorizon ()
-{
-	if (!empty ())
-	{
-		rts2db::Target *firsttar = NULL;
-		double JD = ln_get_julian_from_sys ();
-
-		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
-		{
-			// isAboveHorizon changes jd parameter - we would like to keep the current time
-		  	double tjd = JD;
-			if (isAboveHorizon (*iter, tjd))
-				return;
-
-			if (skipBelowHorizon->getValueBool ())
-			{
-				if (firsttar == NULL)
-					firsttar = iter->target;
-
-				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
-
-				push_back (*iter);
-				iter = erase (iter);
-			}
-			else
-			{
-				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
-				iter = erase (iter);
-			}
-		}
-	}
-}
-
-void ExecutorQueue::filterExpired ()
-{
-	if (empty ())
-		return;
-	setNow (master->getNow ());
-	ExecutorQueue::iterator iter;
-	ExecutorQueue::iterator iter2 = begin ();
-	for (;iter2 != end ();)
-	{
-		double t_start = iter2->t_start;
-		double t_end = iter2->t_end;
-		if (!isnan (t_start) && t_start <= getNow () && !isnan (t_end) && t_end <= getNow ())
-			iter2 = removeEntry (iter2, "both start and end times expired");
-		else if (iter2->target->observationStarted () && removeAfterExecution->getValueBool () == true)
-		  	iter2 = removeEntry (iter2, "its observations started and removeAfterExecution was set to true");
-		else  
-			iter2++;
-	}
-	if (empty ())
-		return;
-	iter = iter2 = begin ();
-	iter2++;
-	while (iter2 != end ())
-	{
-		double t_start = iter2->t_start;
-		bool do_erase = false;
-		switch (queueType->getValueInteger ())
-		{
-			case QUEUE_FIFO:
-				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= getNow ()));
-				break;
-			default:
-				do_erase = (!isnan (t_start) && t_start <= getNow ());
-				break;
-		}
-
-		if (do_erase)
-		{
-			iter = removeEntry (iter, "it was observed and next target start time passed");
-			iter2 = iter;
-			iter2++;
-		}
-		else
-		{
-			iter++;
-			iter2++;
-		}
-	}
-}
-
-bool ExecutorQueue::frontTimeExpires ()
+bool ExecutorQueue::frontTimeExpires (double now)
 {
 	ExecutorQueue::iterator iter = begin ();
 	if (iter == end ())
@@ -521,7 +519,7 @@ bool ExecutorQueue::frontTimeExpires ()
 	iter++;
 	if (iter == end ())
 		return false;
-	return !iter->notExpired (getNow ());
+	return !iter->notExpired (now);
 }
 
 void ExecutorQueue::removeTimers ()

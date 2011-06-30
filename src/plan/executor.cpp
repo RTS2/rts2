@@ -779,7 +779,7 @@ void Executor::doSwitch ()
 	int nextId;
 	// make sure queue is configured for target change
 	getActiveQueue ()->setCurrentTarget (currentTarget);
-	getActiveQueue ()->beforeChange ();
+	getActiveQueue ()->beforeChange (getNow ());
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2 && (getActiveQueue ()->size () == 0 || getActiveQueue ()->front ().target->getTargetID () == currentTarget->getTargetID ()))
 	{

@@ -78,6 +78,50 @@ class QueuedTarget
 		int planid;
 };
 
+/**
+ * Queue of QueuedTarget entries. Abstarct class, provides generic method to 
+ * filter already observed/expired targets,..
+ *
+ * Parent of ExecutorQueue and SimulQueueTargets.
+ *
+ * @see ExecutorQueue
+ * @see SimulQueueTargets
+ *
+ * @author Petr Kubanek <kubanek@fzu.cz>
+ */
+class TargetQueue:public std::list <QueuedTarget>
+{
+	public:  
+		TargetQueue (struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
+		{
+			observer = _observer;
+		}
+
+	protected:
+		struct ln_lnlat_posn **observer;
+
+		virtual int getQueueType () = 0;
+		virtual bool getRemoveAfterExecution () = 0;
+		virtual bool getSkipBelowHorizon () = 0;
+		virtual bool getTestConstraints () = 0;
+		/**
+		 * Remove observations which observing time expired.
+		 */
+		void filterExpired (double now);
+
+		// filter or skip observations bellow horizon
+		// if skipBelowHorizon is set to false (default), remove observations which are currently
+		// bellow horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		void filterBelowHorizon (double now);
+
+		/**
+		 * Remove target from queue.
+		 */
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const char *reason) = 0;
+
+		bool isAboveHorizon (QueuedTarget &tar, double &JD);
+};
+
 class SimulQueueTargets;
 
 /**
@@ -87,18 +131,11 @@ class SimulQueueTargets;
  * 
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
-class ExecutorQueue:public std::list <QueuedTarget>
+class ExecutorQueue:public TargetQueue
 {
 	public:
 		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
 		virtual ~ExecutorQueue ();
-
-		/**
-		 * Set time for which queue will be tested.
-		 *
-		 * @param _now  new time value (in ctime - sec from 1/1/1970)
-		 */
-		void setNow (double _now) { now = _now; }
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1);
@@ -125,7 +162,7 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		/**
 		 * Put next target on front of the queue.
 		 */
-		void beforeChange ();
+		void beforeChange (double now);
 
 		void clearNext ();
 
@@ -165,12 +202,16 @@ class ExecutorQueue:public std::list <QueuedTarget>
 
 		void revalidateConstraints (int watch_id);
 
-		struct ln_lnlat_posn **observer;
-
 		/**
 		 * Update values from the target list. Must be called after queue content changed.
 		 */
 		void updateVals ();
+
+	protected:
+		virtual int getQueueType () { return queueType->getValueInteger (); }
+		virtual bool getRemoveAfterExecution () { return removeAfterExecution->getValueBool (); }
+		virtual bool getSkipBelowHorizon () { return skipBelowHorizon->getValueBool (); }
+		virtual bool getTestConstraints () { return testConstraints->getValueBool (); }
 
 	private:
 		Rts2DeviceDb *master;
@@ -187,22 +228,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *queueEnabled;
 
-		double now;
-		double getNow () { return now; }
-
-		bool isAboveHorizon (QueuedTarget &tar, double &JD);
-
-		// filter or skip observations bellow horizon
-		// if skipBelowHorizon is set to false (default), remove observations which are currently
-		// bellow horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
-		void filterBelowHorizon ();
-
-		// remove observations which observing time expired
-		void filterExpired ();
-
 		// return true if its't time to remove first element from the queue. This is usaully when the
 		// second observation next time is before the current time
-		bool frontTimeExpires ();
+		bool frontTimeExpires (double now);
 
 		// remove timers set by targets in queue
 		void removeTimers ();
@@ -211,6 +239,9 @@ class ExecutorQueue:public std::list <QueuedTarget>
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const char *reason);
 
 		rts2db::Target *currentTarget;
+
+		// to allow SimulQueueTargets access to protected methods
+		friend class SimulQueueTargets;
 };
 
 class Queues: public std::deque <ExecutorQueue>

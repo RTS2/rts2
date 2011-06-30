@@ -28,10 +28,23 @@ namespace rts2plan
  * Hold queue entries for simulation. As the code cannot remove observed
  * targets from real queues, it must create and fill queues for simulation.
  */
-class SimulQueueTargets:public std::deque <QueuedTarget>
+class SimulQueueTargets:public TargetQueue
 {
 	public:
 		SimulQueueTargets (ExecutorQueue &eq);
+
+	protected:
+		virtual int getQueueType () { return queueType; }
+		virtual bool getRemoveAfterExecution () { return removeAfterExecution; };
+		virtual bool getSkipBelowHorizon () { return skipBelowHorizon; }
+		virtual bool getTestConstraints () { return testConstraints; }
+
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const char *reason);
+	private:
+		int queueType;
+		bool removeAfterExecution;
+		bool skipBelowHorizon;
+		bool testConstraints;
 };
 
 /**
