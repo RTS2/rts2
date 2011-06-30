@@ -48,17 +48,25 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
-        set cname=`$xmlrpc -G IMGP.object`
-	set ora=`$xmlrpc -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
-	set odec=`$xmlrpc -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
+        set cname=`$xmlrpc --quiet -G IMGP.object`
+	set ora=`$xmlrpc --quiet -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
+	set odec=`$xmlrpc --quiet -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
 	if ( $cname == $name ) then
 		if ( ${%ora} > 0 &amp;&amp; ${%odec} > 0 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &lt; 500 ) then
 		  	set rra=`expr $ora - $lastra`
 			set rdec=`expr $odec - $lastdec`
+			if ( $rra &gt; -5 &amp;&amp; $rra &lt; 5 ) then
+				set rra = 0
+			endif
+			if ( $rdec &gt; -5 &amp;&amp; $rdec &lt; 5 ) then
+				set rdec = 0
+			endif
 			echo `date` "offseting $rra $rdec ($ora $odec; $lastra $lastdec)"
-			tele offset $rra $rdec
-			set lastra=$ora
-			set lastdec=$odec
+			if ( $rra != 0 || $rdec != 0 ) then
+				tele offset $rra $rdec
+				set lastra=$ora
+				set lastdec=$odec
+			endif	
 		else
 			echo `date` too big offset $ora $odec
 		endif	  	
@@ -88,7 +96,7 @@ endif
 
 <xsl:template match='exe'>
 if ( $continue == 1 ) then
-	if ( '<xsl:value-of select='@path'/>' == '-' ) then
+<!--	if ( '<xsl:value-of select='@path'/>' == '-' ) then
 		set go = 0
 		while ( $go == 0 )
 			echo -n 'Command (or go to continue with the robot): '
@@ -99,10 +107,10 @@ if ( $continue == 1 ) then
 				eval $x
 			endif
 		end
-	else
+	else  -->
 		echo `date` 'executing script <xsl:value-of select='@path'/>'
 		source <xsl:value-of select='@path'/>
-	fi
+<!--	fi -->
 endif
 </xsl:template>
 
