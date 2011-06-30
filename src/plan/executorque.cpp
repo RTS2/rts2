@@ -77,6 +77,141 @@ bool QueuedTarget::notExpired (double now)
 	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
 }
 
+double TargetQueue::getMaximalDuration (rts2db::Target *tar)
+{
+	double md = 0;
+	for (Rts2CamList::iterator cam = master->cameras.begin (); cam != master->cameras.end (); cam++)
+	{
+		try
+		{
+			std::string script_buf;
+			rts2script::Script script;
+			tar->getScript (cam->c_str(), script_buf);
+			script.setTarget (cam->c_str (), tar);
+			double d = script.getExpectedDuration ();
+			if (d > md)
+				md = d;  
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
+		}
+	}
+	return md;
+}
+
+void TargetQueue::beforeChange (double now)
+{
+	switch (getQueueType ())
+	{
+		case QUEUE_FIFO:
+			break;
+		case QUEUE_CIRCULAR:
+			// shift only if queue is not empty and time for first observation already expires or its start and end time is not specified..
+			if (!empty () && (frontTimeExpires (now) || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
+			{
+				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
+				delete front ().target;
+				pop_front ();
+			}
+			break;
+		case QUEUE_HIGHEST:
+			sort (sortQuedTargetByAltitude (*observer));
+			break;
+		case QUEUE_WESTEAST:
+			sort (sortQuedTargetWestEast (*observer));
+			break;
+		case QUEUE_WESTEAST_MERIDIAN:
+			sortWestEastMeridian ();
+			break;
+	}
+	filter (now);
+}
+
+void TargetQueue::filter (double now)
+{
+	filterExpired (now);
+	filterBelowHorizon (now);
+	updateVals ();
+}
+
+const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)
+{
+	for (TargetQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->target == tar)
+			return iter;  
+	}
+	return end ();
+}
+
+void TargetQueue::orderByTargetList (std::list <rts2db::Target *> tl)
+{
+	TargetQueue::iterator fi = begin ();
+	for (std::list <rts2db::Target *>::iterator iter = tl.begin (); iter != tl.end (); iter++)
+	{
+		const TargetQueue::iterator qi = findTarget (*iter);
+		if (qi != end ())
+		{
+			fi = insert (fi, *qi);
+			erase (qi);
+			fi++;
+		}
+	}
+}
+
+void TargetQueue::sortWestEastMeridian ()
+{
+	std::list < rts2db::Target *> preparedTargets;  
+	std::list < rts2db::Target *> orderedTargets;
+	double jd = ln_get_julian_from_sys ();
+	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
+	{
+		preparedTargets.push_back (ti->target);
+	}
+	while (!preparedTargets.empty ())
+	{
+		// find maximal priority in targets, and order by HA..
+		preparedTargets.sort (sortByMeridianPriority (*observer, jd));
+		// now find the first target which is on west (for HA + its duration).
+		std::list < rts2db::Target *>::iterator iter;
+
+		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
+		{
+		  	std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+			// skip target if it's not above horizon
+			ExecutorQueue::iterator qi = findTarget (*iter);
+			double tjd = jd;
+			if (!isAboveHorizon (*qi, tjd))
+			{
+				std::cout << "target not met constraints: " << (*iter)->getTargetName () << std::endl;
+				continue;
+			}
+
+			jd = tjd;	
+			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
+				break;  
+		}
+		// If such target does not exists, select front..
+		if (iter == preparedTargets.end ())
+		{
+			std::cout << "end reached, takes from beginning" << std::endl;  
+			iter = preparedTargets.begin ();
+		}
+
+		jd += getMaximalDuration (*iter) / 86400.0;  
+		orderedTargets.push_back ((*iter));
+		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
+		preparedTargets.erase (iter);
+	}
+	std::cout << "ordering.." << std::endl;
+	for (std::list < rts2db::Target *>::iterator i = orderedTargets.begin (); i != orderedTargets.end (); i++)
+	{
+		std::cout << (*i)->getTargetName () << " " << (*i)->getTargetID () << std::endl;
+	}
+	orderByTargetList (orderedTargets);
+}
+
 void TargetQueue::filterExpired (double now)
 {
 	if (empty ())
@@ -173,9 +308,19 @@ bool TargetQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
 	return (qt.target->isAboveHorizon (&hrz) && (!getTestConstraints () || qt.target->getViolatedConstraints (JD, violated) == 0));
 }
 
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer):TargetQueue (_observer)
+bool TargetQueue::frontTimeExpires (double now)
 {
-  	master = _master;
+	TargetQueue::iterator iter = begin ();
+	if (iter == end ())
+		return false;
+	iter++;
+	if (iter == end ())
+		return false;
+	return !iter->notExpired (now);
+}
+
+ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer):TargetQueue (_master, _observer)
+{
 	std::string sn (name);
 	currentTarget = NULL;
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
@@ -221,141 +366,6 @@ int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, 
 	push_back (QueuedTarget (nt, t_start, t_end, plan_id, hard));
 	updateVals ();
 	return 0;
-}
-
-double ExecutorQueue::getMaximalDuration (rts2db::Target *tar)
-{
-	double md = 0;
-	for (Rts2CamList::iterator cam = master->cameras.begin (); cam != master->cameras.end (); cam++)
-	{
-		try
-		{
-			std::string script_buf;
-			rts2script::Script script;
-			tar->getScript (cam->c_str(), script_buf);
-			script.setTarget (cam->c_str (), tar);
-			double d = script.getExpectedDuration ();
-			if (d > md)
-				md = d;  
-		}
-		catch (rts2core::Error &er)
-		{
-			logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
-		}
-	}
-	return md;
-}
-
-const ExecutorQueue::iterator ExecutorQueue::findTarget (rts2db::Target *tar)
-{
-	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
-	{
-		if (iter->target == tar)
-			return iter;  
-	}
-	return end ();
-}
-
-void ExecutorQueue::orderByTargetList (std::list <rts2db::Target *> tl)
-{
-	ExecutorQueue::iterator fi = begin ();
-	for (std::list <rts2db::Target *>::iterator iter = tl.begin (); iter != tl.end (); iter++)
-	{
-		const ExecutorQueue::iterator qi = findTarget (*iter);
-		if (qi != end ())
-		{
-			fi = insert (fi, *qi);
-			erase (qi);
-			fi++;
-		}
-	}
-}
-
-void ExecutorQueue::filter ()
-{
-	filterExpired (master->getNow ());
-	filterBelowHorizon (master->getNow ());
-	updateVals ();
-}
-
-void ExecutorQueue::sortWestEastMeridian ()
-{
-	std::list < rts2db::Target *> preparedTargets;  
-	std::list < rts2db::Target *> orderedTargets;
-	double jd = ln_get_julian_from_sys ();
-	for (ExecutorQueue::iterator ti = begin (); ti != end (); ti++)
-	{
-		preparedTargets.push_back (ti->target);
-	}
-	while (!preparedTargets.empty ())
-	{
-		// find maximal priority in targets, and order by HA..
-		preparedTargets.sort (sortByMeridianPriority (*observer, jd));
-		// now find the first target which is on west (for HA + its duration).
-		std::list < rts2db::Target *>::iterator iter;
-
-		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
-		{
-		  	std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
-			// skip target if it's not above horizon
-			ExecutorQueue::iterator qi = findTarget (*iter);
-			double tjd = jd;
-			if (!isAboveHorizon (*qi, tjd))
-			{
-				std::cout << "target not met constraints: " << (*iter)->getTargetName () << std::endl;
-				continue;
-			}
-
-			jd = tjd;	
-			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
-				break;  
-		}
-		// If such target does not exists, select front..
-		if (iter == preparedTargets.end ())
-		{
-			std::cout << "end reached, takes from beginning" << std::endl;  
-			iter = preparedTargets.begin ();
-		}
-
-		jd += getMaximalDuration (*iter) / 86400.0;  
-		orderedTargets.push_back ((*iter));
-		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
-		preparedTargets.erase (iter);
-	}
-	std::cout << "ordering.." << std::endl;
-	for (std::list < rts2db::Target *>::iterator i = orderedTargets.begin (); i != orderedTargets.end (); i++)
-	{
-		std::cout << (*i)->getTargetName () << " " << (*i)->getTargetID () << std::endl;
-	}
-	orderByTargetList (orderedTargets);
-}
-
-void ExecutorQueue::beforeChange (double now)
-{
-	switch (queueType->getValueInteger ())
-	{
-		case QUEUE_FIFO:
-			break;
-		case QUEUE_CIRCULAR:
-			// shift only if queue is not empty and time for first observation already expires or its start and end time is not specified..
-			if (!empty () && (frontTimeExpires (now) || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
-			{
-				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
-				delete front ().target;
-				pop_front ();
-			}
-			break;
-		case QUEUE_HIGHEST:
-			sort (sortQuedTargetByAltitude (*observer));
-			break;
-		case QUEUE_WESTEAST:
-			sort (sortQuedTargetWestEast (*observer));
-			break;
-		case QUEUE_WESTEAST_MERIDIAN:
-			sortWestEastMeridian ();
-			break;
-	}
-	filter ();
 }
 
 void ExecutorQueue::clearNext ()
@@ -523,17 +533,6 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextEndTimes);
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
-}
-
-bool ExecutorQueue::frontTimeExpires (double now)
-{
-	ExecutorQueue::iterator iter = begin ();
-	if (iter == end ())
-		return false;
-	iter++;
-	if (iter == end ())
-		return false;
-	return !iter->notExpired (now);
 }
 
 void ExecutorQueue::removeTimers ()

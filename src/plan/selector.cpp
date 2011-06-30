@@ -294,7 +294,6 @@ int SelectorDev::init ()
 	notifyConn->setDebug (true);
 
 	// create and add simulation queue
-
 	simulQueue = new rts2plan::SimulQueue (this, "simul", &observer, &queues);
 
 	lastQueue->addSelVal ("simul");
@@ -360,7 +359,7 @@ int SelectorDev::selectNext ()
 			rts2plan::Queues::iterator iter;
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
-				iter->filter ();
+				iter->filter (getNow ());
 				bool hard;
 				id = iter->selectNextObservation (next_pid, hard);
 				if (id >= 0)

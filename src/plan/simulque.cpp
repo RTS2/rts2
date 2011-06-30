@@ -21,7 +21,7 @@
 
 using namespace rts2plan;
 
-SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.observer)
+SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.master, eq.observer)
 {
   	queueType = eq.getQueueType ();
 	removeAfterExecution = eq.getRemoveAfterExecution ();
@@ -29,11 +29,23 @@ SimulQueueTargets::SimulQueueTargets (ExecutorQueue &eq):TargetQueue (eq.observe
 	testConstraints = eq.getTestConstraints ();
 
 	for (ExecutorQueue::iterator qi = eq.begin (); qi != eq.end (); qi++)
-		push_back ( QueuedTarget (*qi) );
+		push_back ( QueuedTarget (*qi, createTarget (qi->target->getTargetID(), *observer, NULL) ) );
 }
+
+SimulQueueTargets::~SimulQueueTargets ()
+{
+}
+
+void SimulQueueTargets::clearNext ()
+{
+	for (SimulQueueTargets::iterator iter = begin (); iter != end (); iter = erase (iter))
+		delete iter->target;
+}
+
 
 TargetQueue::iterator SimulQueueTargets::removeEntry (TargetQueue::iterator &iter, const char *reason)
 {
+	delete iter->target;
 	return erase (iter);
 }
 
@@ -44,6 +56,7 @@ SimulQueue::SimulQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat
 
 SimulQueue::~SimulQueue ()
 {
+
 }
 
 void SimulQueue::simulate (double from, double to)
@@ -53,6 +66,8 @@ void SimulQueue::simulate (double from, double to)
 	std::vector <SimulQueueTargets> sqs;
 	Queues::iterator qi;
 
+	std::vector <SimulQueueTargets>::iterator sq;
+
 	for (qi = queues->begin (); qi != queues->end (); qi++)
 		sqs.push_back (SimulQueueTargets (*qi));
 
@@ -60,16 +75,18 @@ void SimulQueue::simulate (double from, double to)
 
 	while (t < to)
 	{
-	  	std::vector <SimulQueueTargets>::iterator sq = sqs.begin ();
+	  	sq = sqs.begin ();
 		bool found = false;
 		for (qi = queues->begin (); qi != queues->end (); qi++)
 		{
+			sq->filter (t);
 			int n_id = qi->selectNextSimulation (*sq, t, to, t);
 			// remove target from simulation..
 			if (n_id > 0)
 			{
 				addTarget (createTarget (n_id, *observer, NULL), from, t);
-				sq->pop_front ();
+				sq->front ().target->startObservation ();
+				sq->beforeChange (from + 5);
 				found = true;
 				break;
 			}
@@ -79,5 +96,9 @@ void SimulQueue::simulate (double from, double to)
 			t += 60;
 		from = t;	
 	}
+
+	for (sq = sqs.begin (); sq != sqs.end (); sq++)
+		sq->clearNext ();
+
 	updateVals ();
 }

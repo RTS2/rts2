@@ -32,6 +32,9 @@ class SimulQueueTargets:public TargetQueue
 {
 	public:
 		SimulQueueTargets (ExecutorQueue &eq);
+		~SimulQueueTargets ();
+
+		void clearNext ();
 
 	protected:
 		virtual int getQueueType () { return queueType; }

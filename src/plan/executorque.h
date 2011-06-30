@@ -66,6 +66,14 @@ class QueuedTarget
 			planid = qt.planid;
 		}
 
+		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target)
+		{
+			target = _target;
+			t_start = qt.t_start;
+			t_end = qt.t_end;
+			planid = qt.planid;
+		}
+
 		~QueuedTarget () {}
 
 		/**
@@ -94,18 +102,45 @@ class QueuedTarget
 class TargetQueue:public std::list <QueuedTarget>
 {
 	public:  
-		TargetQueue (struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
+		TargetQueue (Rts2DeviceDb *_master, struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
 		{
 			observer = _observer;
+			master = _master;
 		}
 
+		const TargetQueue::iterator findTarget (rts2db::Target *tar);
+
+		// order by given target list
+		void orderByTargetList (std::list <rts2db::Target *> tl);
+
+		double getMaximalDuration (rts2db::Target *tar);
+
+		/**
+		 * Put next target on front of the queue.
+		 */
+		void beforeChange (double now);
+
+		/**
+		 * Runs queue filter, remove expired observations.
+		 */
+		void filter (double now);
+
+		/**
+		 * Update values from the target list. Must be called after queue content changed.
+		 */
+		virtual void updateVals () {}
+
 	protected:
+		Rts2DeviceDb *master;
 		struct ln_lnlat_posn **observer;
 
 		virtual int getQueueType () = 0;
 		virtual bool getRemoveAfterExecution () = 0;
 		virtual bool getSkipBelowHorizon () = 0;
 		virtual bool getTestConstraints () = 0;
+
+		void sortWestEastMeridian ();
+
 		/**
 		 * Remove observations which observing time expired.
 		 */
@@ -122,6 +157,10 @@ class TargetQueue:public std::list <QueuedTarget>
 		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const char *reason) = 0;
 
 		bool isAboveHorizon (QueuedTarget &tar, double &JD);
+
+		// return true if its't time to remove first element from the queue. This is usaully when the
+		// second observation next time is before the current time
+		bool frontTimeExpires (double now);
 };
 
 class SimulQueueTargets;
@@ -142,30 +181,11 @@ class ExecutorQueue:public TargetQueue
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
 
-		double getMaximalDuration (rts2db::Target *tar);
-
-		const ExecutorQueue::iterator findTarget (rts2db::Target *tar);
-
-		// order by given target list
-		void orderByTargetList (std::list <rts2db::Target *> tl);
-
-		/**
-		 * Runs queue filter, remove expired observations.
-		 */
-		void filter ();
-
-		void sortWestEastMeridian ();
-
 		/**
 		 * Do not delete pointer to this target, as it is used somewhere else.
 		 */
 		void setCurrentTarget (rts2db::Target *ct) { currentTarget = ct; }
 		
-		/**
-		 * Put next target on front of the queue.
-		 */
-		void beforeChange (double now);
-
 		void clearNext ();
 
 		/**
@@ -207,7 +227,7 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * Update values from the target list. Must be called after queue content changed.
 		 */
-		void updateVals ();
+		virtual void updateVals ();
 
 	protected:
 		virtual int getQueueType () { return queueType->getValueInteger (); }
@@ -216,8 +236,6 @@ class ExecutorQueue:public TargetQueue
 		virtual bool getTestConstraints () { return testConstraints->getValueBool (); }
 
 	private:
-		Rts2DeviceDb *master;
-
 		rts2core::IntegerArray *nextIds;
 		rts2core::StringArray *nextNames;
 		rts2core::TimeArray *nextStartTimes;
@@ -230,10 +248,6 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *testConstraints;
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *queueEnabled;
-
-		// return true if its't time to remove first element from the queue. This is usaully when the
-		// second observation next time is before the current time
-		bool frontTimeExpires (double now);
 
 		// remove timers set by targets in queue
 		void removeTimers ();
