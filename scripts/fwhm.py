@@ -99,7 +99,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 		print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,seg_fwhms[x].i)
 
 	if d:
-		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header['TELFOCUS'],i) + '}')
+		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header['TELFOCUS'],seg_fwhms[0].i) + '}')
 
 if __name__ == '__main__':
 	parser = OptionParser()
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 	d = None
 	if options.show_ds9:
 		import ds9
-		d = ds9.ds9()
+		d = ds9.ds9('fwhm')
 
 	for fn in args:
 		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments)
