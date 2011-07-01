@@ -630,7 +630,7 @@ class Target:public Rts2Target
 		/**
 		 * Calculate constraint satifaction.
 		 */
-		void getSatisfiedIntervals (double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
+		void getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
 
 		double getSatisfiedDuration (double from, double to, double length, double step);
 

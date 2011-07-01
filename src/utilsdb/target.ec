@@ -2069,7 +2069,7 @@ ConstraintsList Target::getSatisfiedConstraints (double JD)
 	return ret;
 }
 
-void Target::getSatisfiedIntervals (double from, double to, double length, double step, interval_arr_t &satisfiedIntervals)
+void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	getConstraints ()->getSatisfiedIntervals (this, from, to, length, step, satisfiedIntervals);
 }

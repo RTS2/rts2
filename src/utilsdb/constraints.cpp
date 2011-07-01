@@ -145,19 +145,14 @@ bool ConstraintInterval::isBetween (double val)
 	return false;
 }
 
-void Constraint::getViolatedIntervals (Target *tar, double from, double to, double step, interval_arr_t &ret)
+void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
 {
 	double vf = rts2_nan ("f");
 
-	time_t fti = (time_t) to;
-
-	double to_JD = ln_get_julian_from_timet (&fti);
-	fti = (time_t) from;
-	
-	time_t fti_to;
+	double to_JD = ln_get_julian_from_timet (&to);
 
 	double t;
-	for (t = ln_get_julian_from_timet (&fti); t < to_JD; t += step / 86400.0)
+	for (t = ln_get_julian_from_timet (&from); t < to_JD; t += step / 86400.0)
 	{
 		if (!satisfy (tar, t))
 		{
@@ -166,18 +161,17 @@ void Constraint::getViolatedIntervals (Target *tar, double from, double to, doub
 		}
 		else if (!isnan (vf))
 		{
-			ln_get_timet_from_julian (vf, &fti);
-			ln_get_timet_from_julian (t, &fti_to);
-			ret.push_back (std::pair <time_t, time_t> (fti, fti_to));
+			ln_get_timet_from_julian (vf, &from);
+			ln_get_timet_from_julian (t, &to);
+			ret.push_back (std::pair <time_t, time_t> (from, to));
 			vf = rts2_nan ("f");
 		}
 	}
 	if (!isnan (vf))
 	{
-		ln_get_timet_from_julian (vf, &fti);
-		ln_get_timet_from_julian (t, &fti_to);
-		ret.push_back (std::pair <time_t, time_t> (fti, fti_to));
-		vf = rts2_nan ("f");
+		ln_get_timet_from_julian (vf, &from);
+		ln_get_timet_from_julian (t, &to);
+		ret.push_back (std::pair <time_t, time_t> (from, to));
 	}
 }
 
@@ -307,6 +301,13 @@ void ConstraintMaxRepeat::print (std::ostream &os)
 	os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
 }
 
+void ConstraintMaxRepeat::getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+{
+	if (maxRepeat > 0 && tar->getTotalNumberOfObservations () > maxRepeat)
+		ret.push_back ( std::pair <time_t, time_t> (from, to) );
+}
+
+
 Constraints::Constraints (Constraints &cs): std::map <std::string, ConstraintPtr > (cs)
 {
 	for (Constraints::iterator iter = cs.begin (); iter != cs.end (); iter++)
@@ -383,7 +384,7 @@ void findFirst (interval_arr_t::iterator si, const interval_arr_t::iterator &end
 		si++;
 }
 
-void Constraints::getSatisfiedIntervals (Target *tar, double from, double to, double length, double step, interval_arr_t &satisfiedIntervals)
+void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	satisfiedIntervals.clear ();
 	// at beginning, full interval is satisfied
@@ -401,7 +402,7 @@ void Constraints::getSatisfiedIntervals (Target *tar, double from, double to, do
 				break;
 			si->second = vi->first;
 			// remove empty interval
-			if (si->second == si->first)
+			if (si->second == si->first || (si->first >= vi->first && si->second <= vi->second) )
 				si = satisfiedIntervals.erase (si);
 			else	
 				si++;

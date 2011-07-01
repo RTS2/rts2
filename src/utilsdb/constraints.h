@@ -80,7 +80,7 @@ class Constraint
 		 * @param step
 		 * @param ret   returned array of violated time intervals
 		 */
-		virtual void getViolatedIntervals (Target *tar, double from, double to, double step, interval_arr_t &ret);
+		virtual void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 };
 
 /**
@@ -247,6 +247,8 @@ class ConstraintMaxRepeat:public Constraint
 		virtual const char* getName () { return CONSTRAINT_MAXREPEATS; }
 
 		void copyConstraint (ConstraintMaxRepeat *i) { maxRepeat = i->maxRepeat; }
+
+		virtual void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 	private:
 		int maxRepeat;
 };
@@ -329,7 +331,7 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param step      step to take when verifing constraints (in seconds)
 		 * @param satisfiedIntervals  pair of double values (JD from - to) of satisfied constraints
 		 */
-		void getSatisfiedIntervals (Target *tar, double from, double to, double length, double step, interval_arr_t &satisfiedIntervals);
+		void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
 
 
 		/**
