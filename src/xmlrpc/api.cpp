@@ -403,8 +403,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw XmlRpcException ("unknow target ID");
-			int from = params->getInteger ("from", (int) floor (master->getNow ()));
-			int to = params->getInteger ("to", from + 86400);
+			time_t from = params->getDate ("from", master->getNow ());
+			time_t to = params->getDate ("to", from + 86400);
 			double length = params->getDouble ("length", rts2_nan ("f"));
 			int step = params->getInteger ("step", 60);
 
