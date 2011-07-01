@@ -34,6 +34,18 @@ namespace XmlRpc
 		return def_val;
 	}
 
+	long HttpParams::getLong (const char *_name, long def_val)
+	{
+		const char *v = getString (_name, NULL);
+		char *err;
+		if (v == NULL)
+			return def_val;
+		long r = strtol (v, &err, 0);
+		if (*v != '\0' && *err == '\0')
+			return r;
+		return def_val;
+	}
+
 	bool HttpParams::getBoolean (const char *_name, bool def_val)
 	{
 		const char *v = getString (_name, NULL);

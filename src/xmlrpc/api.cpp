@@ -403,8 +403,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw XmlRpcException ("unknow target ID");
-			time_t from = params->getDate ("from", master->getNow ());
-			time_t to = params->getDate ("to", from + 86400);
+			time_t from = params->getDouble ("from", master->getNow ());
+			time_t to = params->getDouble ("to", from + 86400);
 			double length = params->getDouble ("length", rts2_nan ("f"));
 			int step = params->getInteger ("step", 60);
 
@@ -415,15 +415,14 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			from -= from % step;
 			to += step - (to % step);
 			tar->getSatisfiedIntervals (from, to, length, step, si);
-			os << "\"id\":" << tar_id << ",\"satisfied\":[[";
-			for (rts2db::interval_arr_t::iterator sat = si.begin (); ; sat++)
+			os << "\"id\":" << tar_id << ",\"satisfied\":[";
+			for (rts2db::interval_arr_t::iterator sat = si.begin (); sat != si.end (); sat++)
 			{
-				os << sat->first << "," << sat->second;
-				if (sat == si.end ())
-					break;
-				os << "],[";
+				if (sat != si.begin ())
+					os << ",";
+				os << "[" << sat->first << "," << sat->second << "]";
 			}
-			os << "]]";
+			os << "]";
 		}
 		else if (vals[0] == "plan")
 		{

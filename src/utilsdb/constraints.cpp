@@ -402,7 +402,7 @@ void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, in
 				break;
 			si->second = vi->first;
 			// remove empty interval
-			if (si->second == si->first || (si->first >= vi->first && si->second <= vi->second) )
+			if (si->second <= si->first || (si->first >= vi->first && si->second <= vi->second) )
 				si = satisfiedIntervals.erase (si);
 			else	
 				si++;
