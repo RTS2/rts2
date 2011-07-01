@@ -38,6 +38,9 @@ set dec=`echo $ti | awk '{ print $4 }'`
 echo "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
 echo "Observation ID is $obs_id"
 
+# for doauto script, to report in log file:
+setenv rts2obstarg $name
+
 $RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c "SEL.observation $tar_id $obs_id"
 
 if ( $notmove == 1 ) then
