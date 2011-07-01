@@ -951,7 +951,7 @@ echo altaz 20 30  # moves to 20 deg alttitude, 30 deg azimuth
 #!/bin/bash
 
 for x in 1 2; do
-	echo $x
+	echo "value exposure = $x"
 	echo "exposure"
 	read exp_end
 	echo "V W0 filter += 1"
