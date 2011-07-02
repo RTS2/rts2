@@ -329,15 +329,18 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
 	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	master->createValue (queueEntry, (sn + "_qid").c_str (), "private queue entry", false);
 
 	master->createValue (removedIds, (sn + "_removed_ids").c_str (), "removed observation IDS", false);
 	master->createValue (removedNames, (sn + "_removed_names").c_str (), "names of removed IDS", false);
 	master->createValue (removedTimes, (sn + "_removed_times").c_str (), "times when target was removed", false);
 	master->createValue (removedWhy, (sn + "_removed_why").c_str (), "why target was removed", false);
+	master->createValue (removedQueueEntry, (sn + "_removed_qid").c_str (), "queue entry of removed target", false);
 
 	master->createValue (executedIds, (sn + "_executed_ids").c_str (), "ID of executed targets", false);
 	master->createValue (executedNames, (sn + "_executed_names").c_str (), "executed targets names", false);
 	master->createValue (executedTimes, (sn + "_executed_times").c_str (), "time when target was executed", false);
+	master->createValue (executedQueueEntry, (sn + "_executed_qid").c_str (), "queue entry of executed target", false);
 
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);

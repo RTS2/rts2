@@ -574,7 +574,9 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		qi->filter (getNow ());
 		if (qi->front ().target == tar)
 		{
-			interrupt->setValueBool (true);\
+			if (getMasterState () == SERVERD_NIGHT)
+				updateNext ();
+			interrupt->setValueBool (true);
 			sendValueAll (interrupt);
 			logStream (MESSAGE_INFO) << "setting interrupt to true due to now queueing" << sendLog;
 		}

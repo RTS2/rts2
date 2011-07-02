@@ -247,15 +247,18 @@ class ExecutorQueue:public TargetQueue
 		rts2core::TimeArray *nextEndTimes;
 		rts2core::IntegerArray *nextPlanIds;
 		rts2core::BoolArray *nextHard;
+		rts2core::IntegerArray *queueEntry;
 
 		rts2core::IntegerArray *removedIds;
 		rts2core::StringArray *removedNames;
 		rts2core::TimeArray *removedTimes;
 		rts2core::IntegerArray *removedWhy;
+		rts2core::IntegerArray *removedQueueEntry;
 
 		rts2core::IntegerArray *executedIds;
 		rts2core::StringArray *executedNames;
 		rts2core::TimeArray *executedTimes;
+		rts2core::IntegerArray *executedQueueEntry;
 
 		rts2core::ValueSelection *queueType;
 		rts2core::ValueBool *skipBelowHorizon;
