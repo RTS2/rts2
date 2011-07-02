@@ -228,7 +228,7 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption (OPT_LAT, "latitude", 1, "set latitude (overwrites config file)");
 	addOption (OPT_LONG, "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
-	addOption ('c', NULL, 0,  "just print current state (one number) and exists");
+	addOption ('c', NULL, 0,  "print current state (one number) and exits");
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
 	addOption ('t', NULL, 1, "print for given time (int unix time)");
 	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
