@@ -24,6 +24,10 @@
 #include "../utilsdb/planset.h"
 #include "../plan/script.h"
 
+#ifdef HAVE_PGSQL
+#include "../utilsdb/labellist.h"
+#endif
+
 using namespace rts2xmlrpc;
 
 AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):Rts2Object ()
@@ -465,6 +469,27 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 
 			os << "]";
 		}
+		else if (vals[0] == "labellist")
+		{
+			rts2db::LabelList ll;
+			ll.load ();
+
+			os << "\"h\":["
+				"{\"n\":\"Label ID\",\"t\":\"n\",\"c\":0},"
+				"{\"n\":\"Label type\",\"t\":\"n\",\"c\":1},"
+				"{\"n\":\"Label text\",\"t\":\"s\",\"c\":2}],"
+				"\"d\":[";
+
+			for (rts2db::LabelList::iterator iter = ll.begin (); iter != ll.end (); iter++)
+			{
+				if (iter != ll.begin ())
+					os << ",";
+				os << "[" << iter->labid << ","
+					<< iter->tid << ",\""
+					<< iter->text << "\"]";
+			}
+			os << "]";
+		}	
 #endif
 		else
 		{
