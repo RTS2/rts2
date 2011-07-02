@@ -48,42 +48,18 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       &dbapp;
-      <arg choice="opt">
-	<arg choice="plain"><option>-i</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--local-port <replaceable>port number</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--localhost <replaceable>hostname</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--modefile <replaceable>filename</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>-d <replaceable>device name</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--gcn_host</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--gcn_port</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--test</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--forward <replaceable>port</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--add-exec <replaceable>command</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--exec_followups</option></arg>
-      </arg>
+      <arg choice="opt"><option>-i</option></arg>
+      <arg choice="opt"><option>--local-port <replaceable>port number</replaceable></option></arg>
+      <arg choice="opt"><option>--localhost <replaceable>hostname</replaceable></option></arg>
+      <arg choice="opt"><option>--modefile <replaceable>filename</replaceable></option></arg>
+      <arg choice="opt"><option>-d <replaceable>device name</replaceable></option></arg>
+      <arg choice="opt"><option>--gcn_host</option></arg>
+      <arg choice="opt"><option>--gcn_port</option></arg>
+      <arg choice="opt"><option>--test</option></arg>
+      <arg choice="opt"><option>--forward <replaceable>port</replaceable></option></arg>
+      <arg choice="opt"><option>--add-exec <replaceable>command</replaceable></option></arg>
+      <arg choice="opt"><option>--exec_followups</option></arg>
+      <arg choice="opt"><option>--queue-to <replaceable>queue name</replaceable></option></arg>
     </cmdsynopsis>
 
   </refsynopsisdiv>
@@ -104,6 +80,18 @@
 
     <variablelist>
       &dbapplist;
+      <varlistentry>
+        <term><option>--queue-to <replaceable class="parameter">queue name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Queue GRB target to queue. If
+	    <citerefentry><citerefentry>rts2-executor</citerefentry><manvolnum>1</manvolnum></citerefentry>
+	    is running, it will still be notified about GRB via its
+	    <emphasis>grb</emphasis> command. Then queue specified as argument
+	    will be notified through <emphasis>now</emphasis> command.
+	  </para>
+        </listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>--server <replaceable class="parameter">server-name[:port]</replaceable></option></term>
         <listitem>

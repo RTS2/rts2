@@ -574,6 +574,12 @@ class Rts2CommandExecGrb:public Rts2Command
 		Rts2CommandExecGrb (rts2core::Block * _master, int grb_id);
 };
 
+class Rts2CommandQueueNow:public Rts2Command
+{
+	public:
+		Rts2CommandQueueNow (rts2core::Block * _master, const char *queue, int tar_id);
+};
+
 class Rts2CommandExecShower:public Rts2Command
 {
 	public:

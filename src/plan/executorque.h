@@ -35,6 +35,11 @@
 #define EVENT_NEXT_START      RTS2_LOCAL_EVENT + 1400
 #define EVENT_NEXT_END        RTS2_LOCAL_EVENT + 1401
 
+// why target was removed from queueu
+#define REMOVED_TIMES_EXPIRED     -1
+#define REMOVED_STARTED            1
+#define REMOVED_NEXT_NEEDED        2
+
 namespace rts2plan
 {
 
@@ -154,7 +159,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		/**
 		 * Remove target from queue.
 		 */
-		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const char *reason) = 0;
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const int reason) = 0;
 
 		bool isAboveHorizon (QueuedTarget &tar, double &JD);
 
@@ -243,6 +248,15 @@ class ExecutorQueue:public TargetQueue
 		rts2core::IntegerArray *nextPlanIds;
 		rts2core::BoolArray *nextHard;
 
+		rts2core::IntegerArray *removedIds;
+		rts2core::StringArray *removedNames;
+		rts2core::TimeArray *removedTimes;
+		rts2core::IntegerArray *removedWhy;
+
+		rts2core::IntegerArray *executedIds;
+		rts2core::StringArray *executedNames;
+		rts2core::TimeArray *executedTimes;
+
 		rts2core::ValueSelection *queueType;
 		rts2core::ValueBool *skipBelowHorizon;
 		rts2core::ValueBool *testConstraints;
@@ -253,7 +267,7 @@ class ExecutorQueue:public TargetQueue
 		void removeTimers ();
 
 		// remove target with debug entry why it was removed from the queue
-		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const char *reason);
+		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const int reason);
 
 		rts2db::Target *currentTarget;
 

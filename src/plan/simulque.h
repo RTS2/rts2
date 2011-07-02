@@ -42,7 +42,7 @@ class SimulQueueTargets:public TargetQueue
 		virtual bool getSkipBelowHorizon () { return skipBelowHorizon; }
 		virtual bool getTestConstraints () { return testConstraints; }
 
-		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const char *reason);
+		virtual TargetQueue::iterator removeEntry (TargetQueue::iterator &iter, const int reason);
 	private:
 		int queueType;
 		bool removeAfterExecution;

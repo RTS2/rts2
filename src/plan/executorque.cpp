@@ -223,9 +223,9 @@ void TargetQueue::filterExpired (double now)
 		double t_start = iter2->t_start;
 		double t_end = iter2->t_end;
 		if (!isnan (t_start) && t_start <= now && !isnan (t_end) && t_end <= now)
-			iter2 = removeEntry (iter2, "both start and end times expired");
+			iter2 = removeEntry (iter2, REMOVED_TIMES_EXPIRED);
 		else if (iter2->target->observationStarted () && getRemoveAfterExecution () == true)
-		  	iter2 = removeEntry (iter2, "its observations started and removeAfterExecution was set to true");
+		  	iter2 = removeEntry (iter2, REMOVED_STARTED);
 		else  
 			iter2++;
 	}
@@ -249,7 +249,7 @@ void TargetQueue::filterExpired (double now)
 
 		if (do_erase)
 		{
-			iter = removeEntry (iter, "it was observed and next target start time passed");
+			iter = removeEntry (iter, REMOVED_NEXT_NEEDED);
 			iter2 = iter;
 			iter2++;
 		}
@@ -329,6 +329,16 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
 	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+
+	master->createValue (removedIds, (sn + "_removed_ids").c_str (), "removed observation IDS", false);
+	master->createValue (removedNames, (sn + "_removed_names").c_str (), "names of removed IDS", false);
+	master->createValue (removedTimes, (sn + "_removed_times").c_str (), "times when target was removed", false);
+	master->createValue (removedWhy, (sn + "_removed_why").c_str (), "why target was removed", false);
+
+	master->createValue (executedIds, (sn + "_executed_ids").c_str (), "ID of executed targets", false);
+	master->createValue (executedNames, (sn + "_executed_names").c_str (), "executed targets names", false);
+	master->createValue (executedTimes, (sn + "_executed_times").c_str (), "time when target was executed", false);
+
 	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
 	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
 	skipBelowHorizon->setValueBool (true);
@@ -541,9 +551,34 @@ void ExecutorQueue::removeTimers ()
 	master->deleteTimers (EVENT_NEXT_END);
 }
 
-ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const char *reason)
+ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const int reason)
 {
 	logStream (MESSAGE_WARNING) << "removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") because " << reason << sendLog;
+
+	// add why,..
+	if (reason < 0)
+	{
+		removedIds->addValue (iter->target->getTargetID ());
+		removedNames->addValue (iter->target->getTargetName ());
+		removedTimes->addValue (master->getNow ());
+		removedWhy->addValue (reason);
+
+		master->sendValueAll (removedIds);
+		master->sendValueAll (removedNames);
+		master->sendValueAll (removedTimes);
+		master->sendValueAll (removedWhy);
+	}
+	else
+	{
+		executedIds->addValue (iter->target->getTargetID ());
+		executedNames->addValue (iter->target->getTargetName ());
+		executedTimes->addValue (master->getNow ());
+
+		master->sendValueAll (executedIds);
+		master->sendValueAll (executedNames);
+		master->sendValueAll (executedTimes);
+	}
+
 	if (iter->target != currentTarget)
 		delete iter->target;
 	else

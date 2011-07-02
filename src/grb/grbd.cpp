@@ -29,6 +29,7 @@ using namespace rts2grbd;
 #define OPT_GCN_FORWARD         OPT_LOCAL + 53
 #define OPT_GCN_EXE             OPT_LOCAL + 54
 #define OPT_GCN_FOLLOUPS        OPT_LOCAL + 55
+#define OPT_QUEUE               OPT_LOCAL + 56
 
 Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
@@ -39,6 +40,7 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	forwardPort = -1;
 	addExe = NULL;
 	execFollowups = 0;
+	queueName = NULL;
 
 	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false, RTS2_VALUE_WRITABLE);
 	grb_enabled->setValueBool (true);
@@ -65,6 +67,7 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
 	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
 	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
+	addOption (OPT_QUEUE, "queue-to", 1, "queue GRBs to following queue (using now command)");
 }
 
 Grbd::~Grbd (void)
@@ -98,6 +101,9 @@ int Grbd::processOption (int in_opt)
 		case OPT_GCN_FOLLOUPS:
 			execFollowups = 1;
 			break;
+		case OPT_QUEUE:
+			queueName = optarg;
+			break;	
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
 	}
@@ -169,9 +175,7 @@ int Grbd::reloadConfig ()
 	return 0;
 }
 
-
-int
-Grbd::init ()
+int Grbd::init ()
 {
 	int ret;
 	ret = Rts2DeviceDb::init ();
@@ -251,10 +255,21 @@ int Grbd::newGcnGrb (int tar_id)
 	{
 		exec->queCommand (new rts2core::Rts2CommandExecGrb (this, tar_id));
 	}
-	else
+	else if (!queueName)
 	{
 		logStream (MESSAGE_ERROR) << "FATAL! No executor running to post grb ID " << tar_id << sendLog;
 		return -1;
+	}
+	if (queueName)
+	{
+		int num = 0;
+		rts2core::Rts2CommandQueueNow cmd (this, queueName, tar_id);
+		queueCommandForType (DEVICE_TYPE_SELECTOR, cmd, &num);
+		if (num == 0)
+		{
+			logStream (MESSAGE_ERROR) << "FATAL! Cannot find any running selector" << sendLog;
+			return -2;
+		}
 	}
 	return 0;
 }
@@ -289,6 +304,6 @@ void Grbd::updateIntegral (double lastTime, double ra, double dec)
 
 int main (int argc, char **argv)
 {
-	Grbd grb = Grbd (argc, argv);
+	Grbd grb (argc, argv);
 	return grb.run ();
 }

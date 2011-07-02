@@ -140,6 +140,9 @@ class SelectorDev:public Rts2DeviceDb
 
 		// load plan to queue
 		void queuePlan (rts2plan::ExecutorQueue *, double t);
+
+
+		rts2plan::Queues::iterator findQueue (const char *name);
 };
 
 }
@@ -484,8 +487,21 @@ void SelectorDev::valueChanged (rts2core::Value *value)
 	Rts2DeviceDb::valueChanged (value);
 }
 
+rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
+{
+	rts2plan::Queues::iterator qi = queues.begin ();
+	std::deque <const char *>::iterator iter;
+	for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, qi++)
+	{
+		if (strcmp (*iter, name) == 0)
+			break;
+	}
+	return qi;
+}
+
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
+	char *name;
 	if (conn->isCommand ("next"))
 	{
 		if (!conn->paramEnd ())
@@ -503,19 +519,12 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("queue") || conn->isCommand ("queue_at") || conn->isCommand ("clear") || conn->isCommand ("queue_plan"))
 	{
-		char *name;
 		bool withTimes = conn->isCommand ("queue_at");
 		if (conn->paramNextString (&name))
 			return -2;
 		// try to find queue with name..
-		rts2plan::Queues::iterator qi = queues.begin ();
-		std::deque <const char *>::iterator iter;
-		for (iter = queueNames.begin (); iter != queueNames.end () && qi != queues.end (); iter++, qi++)
-		{
-			if (strcmp (*iter, name) == 0)
-				break;
-		}
-		if (iter == queueNames.end ())
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
 			return -2;
 		rts2plan::ExecutorQueue * q = &(*qi);
 		if (conn->isCommand ("clear"))
@@ -548,6 +557,31 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		}
 		if (getMasterState () == SERVERD_NIGHT)
 			updateNext ();
+		return 0;
+	}
+	else if (conn->isCommand ("now"))
+	{
+		int tar_id;
+		if (conn->paramNextString (&name) || conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+			return -2;
+		rts2plan::Queues::iterator qi = findQueue (name);
+		if (qi == queues.end ())
+			return -2;
+		rts2db::Target *tar = createTarget (tar_id, observer, notifyConn);
+		if (tar == NULL)
+			return -2;
+		qi->addFront (tar);
+		qi->filter (getNow ());
+		if (qi->front ().target == tar)
+		{
+			interrupt->setValueBool (true);\
+			sendValueAll (interrupt);
+			logStream (MESSAGE_INFO) << "setting interrupt to true due to now queueing" << sendLog;
+		}
+		else
+		{
+			logStream (MESSAGE_WARNING) << "target " << tar->getTargetName () << "(#" << tar_id << ") was queued with now, but most probably is not visible" << sendLog;
+		}
 		return 0;
 	}
 	else if (conn->isCommand ("simulate"))

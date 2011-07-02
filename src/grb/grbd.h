@@ -81,6 +81,8 @@ class Grbd:public Rts2DeviceDb
 		char *addExe;
 		int execFollowups;
 
+		char *queueName;
+
 		rts2core::ValueBool *grb_enabled;
 
 		rts2core::ValueTime *last_packet;
