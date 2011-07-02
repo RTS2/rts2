@@ -24,6 +24,18 @@
 
 using namespace rts2plan;
 
+int qid_seq = 0;
+
+QueuedTarget::QueuedTarget (rts2db::Target * _target, double _t_start, double _t_end, int _plan_id, bool _hard)
+{
+	target = _target;
+	qid = ++qid_seq;
+	t_start = _t_start;
+	t_end = _t_end;
+	planid = _plan_id;
+	hard = _hard;
+}
+
 /**
  * Sorting based on altitude.
  */
@@ -520,6 +532,7 @@ void ExecutorQueue::updateVals ()
 {
 	std::vector <int> _id_arr;
 	std::vector <std::string> _name_arr;
+	std::vector <int> _qid_arr;
 	std::vector <double> _start_arr;
 	std::vector <double> _end_arr;
 	std::vector <int> _plan_arr;
@@ -528,6 +541,7 @@ void ExecutorQueue::updateVals ()
 	{
 		_id_arr.push_back (iter->target->getTargetID ());
 		_name_arr.push_back (iter->target->getTargetName ());
+		_qid_arr.push_back (iter->qid);
 		_start_arr.push_back (iter->t_start);
 		_end_arr.push_back (iter->t_end);
 		_plan_arr.push_back (iter->planid);
@@ -539,6 +553,7 @@ void ExecutorQueue::updateVals ()
 	nextEndTimes->setValueArray (_end_arr);
 	nextPlanIds->setValueArray (_plan_arr);
 	nextHard->setValueArray (_hard_arr);
+	queueEntry->setValueArray (_qid_arr);
 
 	master->sendValueAll (nextIds);
 	master->sendValueAll (nextNames);
@@ -546,6 +561,7 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextEndTimes);
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
+	master->sendValueAll (queueEntry);
 }
 
 void ExecutorQueue::removeTimers ()
@@ -565,21 +581,25 @@ ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &ite
 		removedNames->addValue (iter->target->getTargetName ());
 		removedTimes->addValue (master->getNow ());
 		removedWhy->addValue (reason);
+		removedQueueEntry->addValue (iter->qid);
 
 		master->sendValueAll (removedIds);
 		master->sendValueAll (removedNames);
 		master->sendValueAll (removedTimes);
 		master->sendValueAll (removedWhy);
+		master->sendValueAll (removedQueueEntry);
 	}
 	else
 	{
 		executedIds->addValue (iter->target->getTargetID ());
 		executedNames->addValue (iter->target->getTargetName ());
 		executedTimes->addValue (master->getNow ());
+		executedQueueEntry->addValue (iter->qid);
 
 		master->sendValueAll (executedIds);
 		master->sendValueAll (executedNames);
 		master->sendValueAll (executedTimes);
+		master->sendValueAll (executedQueueEntry);
 	}
 
 	if (iter->target != currentTarget)

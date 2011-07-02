@@ -51,14 +51,7 @@ namespace rts2plan
 class QueuedTarget
 {
 	public:
-		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1, bool _hard = false)
-		{
-			target = _target;
-			t_start = _t_start;
-			t_end = _t_end;
-			planid = _plan_id;
-			hard = _hard;
-		}
+		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1, bool _hard = false);
 
 		/**
 		 * Copy constructor. Used in simulation queue to create copy of QueuedTarget.
@@ -66,6 +59,7 @@ class QueuedTarget
 		QueuedTarget (const QueuedTarget &qt)
 		{
 			target = qt.target;
+			qid = qt.qid;
 			t_start = qt.t_start;
 			t_end = qt.t_end;
 			planid = qt.planid;
@@ -74,6 +68,7 @@ class QueuedTarget
 		QueuedTarget (const QueuedTarget &qt, rts2db::Target *_target)
 		{
 			target = _target;
+			qid = qt.qid;
 			t_start = qt.t_start;
 			t_end = qt.t_end;
 			planid = qt.planid;
@@ -87,6 +82,7 @@ class QueuedTarget
 		bool notExpired (double now);
 
 		rts2db::Target *target;
+		int qid;
 		double t_start;
 		double t_end;
 		int planid;
