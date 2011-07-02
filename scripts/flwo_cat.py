@@ -84,9 +84,6 @@ class FLWOCAT:
 				if prior <= 0:
 				  	prior = 1
 
-				repnum = int(a[7])
-				if repnum > 1:
-					script = 'for {0} {{ {1} }}'.format(repnum,script)
 				tempdis = a[8]
 				if tempdis != '-1':
 				  	if tempdis == '0':
@@ -102,11 +99,11 @@ class FLWOCAT:
 				script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
 		
 				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
-		
+
+	
 				if float(a[13]) > 0:
 					cmd.append ("--airmass")
 					cmd.append (":" + a[13])
-
 
 				if float(a[14]) > 0:
 					if float(a[14]) > 90:
@@ -115,6 +112,10 @@ class FLWOCAT:
 					else:
 						cmd.append ("--lunarDistance")
 						cmd.append (a[14] + ":")
+
+				if int(a[7]) > 1:
+				  	cmd.append ("--maxRepeats")
+					cmd.append (a[7])
 
 				if self.pi is not None:
 					cmd.append ('--pi')
