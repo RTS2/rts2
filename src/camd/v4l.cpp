@@ -52,6 +52,8 @@ class V4L:public Camera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual void initDataTypes ();	
+
+		virtual void setExposure (float in_exp);
 		virtual int setValue (rts2core::Value *oldValue, rts2core::Value *newValue);
 		virtual int startExposure ();
 		virtual int stopExposure ();
@@ -81,7 +83,7 @@ V4L::V4L (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	fd = 0;
 	buffers = NULL;
 
-	createValue (greyMode, "grey", "gray modes", true, RTS2_VALUE_WRITABLE);
+	createValue (greyMode, "grey", "grey modes", true, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "videodevice. Defaults to /dev/video0");
 }
@@ -180,7 +182,6 @@ int V4L::init ()
 
 	setSize (fmt.fmt.pix.width, fmt.fmt.pix.height, 0, 0);
 
-
 	if (ioctl (fd, VIDIOC_REQBUFS, &reqbuf) == -1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot request buffers" << sendLog;
@@ -212,6 +213,24 @@ int V4L::init ()
 		}
 	}
 
+	struct v4l2_queryctrl queryctrl;
+	memset (&queryctrl, 0, sizeof (queryctrl));
+	queryctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+	while (0 == ioctl (fd, VIDIOC_QUERYCTRL, &queryctrl))
+	{
+		if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+			continue;
+		switch (queryctrl.id)
+		{
+			case V4L2_CID_EXPOSURE_AUTO:
+				break;
+			case V4L2_CID_EXPOSURE_ABSOLUTE:
+				break;
+			default:
+				logStream (MESSAGE_DEBUG) << "unhandled option: " << queryctrl.name << " " << queryctrl.id << sendLog;
+		}
+	}
+
 	return 0;
 }
 
@@ -236,6 +255,27 @@ void V4L::initDataTypes ()
 	}
 }
 
+void V4L::setExposure (float in_exp)
+{
+	// set exposure time
+	struct v4l2_ext_control extc[2];
+	extc[0].id = V4L2_CID_EXPOSURE_AUTO;
+	extc[0].value = V4L2_EXPOSURE_MANUAL;
+
+	extc[1].id = V4L2_CID_EXPOSURE_ABSOLUTE;
+	extc[1].value64 = (int64_t) (getExposure () * 10000.0);
+
+	struct v4l2_ext_controls extcs;
+	extcs.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
+	extcs.count = 2;
+	extcs.controls = extc;
+
+	if (ioctl (fd, VIDIOC_S_EXT_CTRLS, &extcs) == -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set exposure time" << sendLog;
+	}
+}
+
 int V4L::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	if (oldValue == greyMode)
@@ -254,6 +294,7 @@ int V4L::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 
 int V4L::startExposure ()
 {
+
 	struct v4l2_buffer buffer;
 	buffer.type = reqbuf.type;
 	buffer.memory = V4L2_MEMORY_MMAP;
