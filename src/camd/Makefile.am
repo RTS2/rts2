@@ -59,7 +59,7 @@ rts2_camd_alta_SOURCES = alta.cpp
 rts2_camd_alta_LDADD = @LIB_ALTA_USB@ @LIB_M@ ${LDADD}
 rts2_camd_alta_CXXFLAGS = @INC_ALTA@
 rts2_camd_altanet_SOURCES = alta.cpp
-rts2_camd_altanet_LDADD = @LIB_ALTA_NET@ @LIB_M@ ${LDADD} -lcurl -ltcl
+rts2_camd_altanet_LDADD = @LIB_ALTA_NET@ @LIB_M@ ${LDADD} -lcurl
 rts2_camd_altanet_CXXFLAGS = @INC_ALTA@
 else
 EXTRA_DIST += alta.cpp
