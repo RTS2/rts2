@@ -153,8 +153,14 @@ int Daemon::checkNotNulls ()
 	int failed = 0;
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
+		int f = 0;
 		if ((*iter)->getValue ()->getFlags () & RTS2_VALUE_NOTNULL)
-			failed += (*iter)->getValue ()->checkNotNull ();
+			f += (*iter)->getValue ()->checkNotNull ();
+		if (f)
+		{
+			logStream (MESSAGE_ERROR) << "value " << (*iter)->getValue ()->getName () << " is not set" << sendLog;
+			failed += f;
+		}
 	}
 	return failed;
 }
