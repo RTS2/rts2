@@ -149,7 +149,7 @@ void TargetSet::loadByLabelId (int label_id)
 {
 	std::ostringstream os;
 	
-	os << "where EXISTS SELECT (*) FROM target_labels where target_labels.tar_id = targets.tar_id and label_id = " << label_id;
+	os << "EXISTS (SELECT * FROM target_labels where target_labels.tar_id = targets.tar_id and label_id = " << label_id << ")";
 
 	where = os.str ();
 	order_by = "tar_id asc";
