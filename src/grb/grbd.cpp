@@ -60,6 +60,9 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	createValue (lastIntegral, "last_integral", "time of last INTEGRAL position", false);
 	createValue (lastIntegralRaDec, "last_integral_position", "INTEGRAL current position", false);
 
+	createValue (recordNotVisible, "not_visible", "record GRBs not visible from current location", false, RTS2_VALUE_WRITABLE);
+	recordNotVisible->setValueBool (true);
+
 	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
 	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
 	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
@@ -120,6 +123,8 @@ int Grbd::reloadConfig ()
 
 	config = Rts2Config::instance ();
 
+	observer = config->getObserver ();
+
 	// get some default, if we cannot get them from command line
 	if (!gcn_host)
 	{
@@ -137,6 +142,8 @@ int Grbd::reloadConfig ()
 		if (ret)
 			return -1;
 	}
+
+	recordNotVisible->setValueBool (config->getBoolean ("grbd", "notvisible", recordNotVisible->getValueBool ()));
 
 	// try to get exe from config
 	if (!addExe)

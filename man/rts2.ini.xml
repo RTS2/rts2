@@ -562,6 +562,19 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>notvisible</option>
+	  </term>
+	  <listitem>
+	    <para>
+	       Whenever to record GRBs not visible from current location.
+	       Default to true, e.g. all GRBs will be recoreded. If set to
+	       false, only GRB with DEC > latitudea - 90 (for nothern
+	       hemisphere, e.g. latitude > 0) will be recorded to database.
+	    </para>
+	  </listitem>  
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>add_exe</option>
 	  </term>
 	  <listitem>

@@ -1,3 +1,6 @@
+2011-07-02
+ * Added notvisible option for GRBd (to control recording of targets never visible from observatory location)
+
 2011-07-01
  * API for selecting targets by labels
 

@@ -64,6 +64,10 @@ class Grbd:public Rts2DeviceDb
 
 		void updateSwift (double lastTime, double ra, double dec);
 		void updateIntegral (double lastTime, double ra, double dec);
+
+		bool getRecordNotVisble () { return recordNotVisible->getValueBool (); }
+
+		struct ln_lnlat_posn *observer;
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
@@ -96,6 +100,8 @@ class Grbd:public Rts2DeviceDb
 
 		rts2core::ValueTime *lastIntegral;
 		rts2core::ValueRaDec *lastIntegralRaDec;
+
+		rts2core::ValueBool *recordNotVisible;
 };
 
 }

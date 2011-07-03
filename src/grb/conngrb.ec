@@ -681,6 +681,16 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	int grb_isnew = 0;
 
+	if ((master->getRecordNotVisble () == false) && 
+		((master->observer->lat > 0 && grb_dec < (master->observer->lat - 90 ))
+		 || (master->observer->lat < 0 && grb_dec > (master->observer->lat + 90 ))
+	        )
+	)	
+	{
+		logStream (MESSAGE_DEBUG) << "not recording GRB at " << grb_ra << " " << grb_dec << ", as it is never visible from current location (latitude " << master->observer->lat << ")" << sendLog;
+		return 0;
+	}
+
 	struct tm grb_broken_time;
 
 	int ret = 0;
