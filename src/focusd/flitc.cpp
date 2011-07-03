@@ -341,12 +341,13 @@ int Fli::setTo (float num)
 
 	    if( TCmode->getValueInteger ()== ABSOLUTE_TC) {
 
-	      tcFocOffset=  (temperatureMeteo->getValueDouble()-  TCoffset->getValueDouble())/TCslope->getValueDouble() ; 
+	      //FOC_POS(T): 
+	      tcFocOffset=  temperatureMeteo->getValueDouble() * TCslope->getValueDouble() +  TCoffset->getValueDouble() ; 
 	      focuserPosition= tcFocOffset;
 	    } else {
-
-	      tcFocOffset=  (temperatureMeteo->getValueDouble()- TCtemperatureRef->getValueDouble())/TCslope->getValueDouble() ; 
-	      focuserPosition= num + tcFocOffset;
+	      // relative FOC_POS(T):
+	      tcFocOffset=  (temperatureMeteo->getValueDouble()- TCtemperatureRef->getValueDouble()) * TCslope->getValueDouble() ; 
+	      focuserPosition= defaultPosition->getValueFloat () + tcFocOffset;
 	    }
 
 	    logStream (MESSAGE_DEBUG) << "Fli::setTo: tcFocOffset: "<< focuserPosition  << " instead of: " << num << ", TEMP_METEO: " << temperatureMeteo->getValueDouble() << ", TC_TEMP_REF:" << TCoffset->getValueDouble()<< sendLog;
@@ -371,11 +372,16 @@ int Fli::setTo (float num)
 	        logStream (MESSAGE_ERROR) << "Fli::setTo: error: "<< ret <<", setting position: " << focuserPosition << sendLog;
 		return -1;
 	} else{
-	  
+	  // ToDo: this expressions belong to camd
 	  logStream (MESSAGE_DEBUG) << "Fli::setTo: FLIStepMotorAsync successful setting position: " << focuserPosition << sendLog;
 	  target->setValueFloat(focuserPosition) ;
 	  sendValueAll (target);
-	  TCFocOffset->setValueFloat(tcFocOffset) ;
+
+	  if( TCmode->getValueInteger()== ABSOLUTE_TC) {
+	    TCFocOffset->setValueFloat(target->getValueFloat() - defaultPosition->getValueFloat ()) ;
+	  }else{
+	    TCFocOffset->setValueFloat(tcFocOffset) ;
+	  }
 	  sendValueAll (TCFocOffset);
 	}
 	return 0;
