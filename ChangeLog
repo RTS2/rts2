@@ -1,3 +1,6 @@
+2011-07-06
+ * Added Tbalance BigNG Fan/Temp control module
+
 2011-07-02
  * Added notvisible option for GRBd (to control recording of targets never visible from observatory location)
 

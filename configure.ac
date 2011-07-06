@@ -408,6 +408,20 @@ AC_SUBST(BOLTWOOD)
 AC_SUBST(LIB_BOLTWOOD)
 AC_SUBST(INC_BOLTWOOD)
 
+
+# check for T-Balancer bigNG
+AC_ARG_WITH(bigng,
+[  --with-bigng            path for Tban SDK (libtan)],
+BIGNG="${withval}";
+LIB_BIGNG="${withval}/big_ng.o ${withval}/parser.o ${withval}/tban.o ${withval}/libtban.a";
+INC_BIGNG="-I${withval}", 
+[BIGNG=no])
+
+AM_CONDITIONAL(BIGNG, test x$BIGNG != xno)
+AC_SUBST(BIGNG)
+AC_SUBST(LIB_BIGNG)
+AC_SUBST(INC_BIGNG)
+
 # Define prefix variable
 
 AH_TEMPLATE([RTS2_PREFIX],[prefix])
@@ -824,6 +838,7 @@ DOME's:
 SENSOR's:
   A3200         ${A3200}
   BOLTWOOD      ${BOLTWOOD}
+  BIGNG         ${BIGNG}
 
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}

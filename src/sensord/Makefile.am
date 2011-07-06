@@ -159,3 +159,18 @@ else
 EXTRA_DIST += boltwood.cpp
 
 endif 
+
+if BIGNG
+
+bin_PROGRAMS += rts2-sensor-bigng
+
+rts2_sensor_bigng_SOURCES = bigng.cpp
+rts2_sensor_bigng_CXXFLAGS = @INC_BIGNG@ 
+rts2_sensor_bigng_LDADD = @LIB_BIGNG@ ${LDADD} 
+
+else
+
+EXTRA_DIST += bigng.cpp
+
+endif
+
