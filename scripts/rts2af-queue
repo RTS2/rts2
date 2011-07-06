@@ -21,6 +21,7 @@ import sys
 import string
 import time
 import logging
+import re
 
 class Rts2Queue:
 	def __init__(self,queue,url,login,password):
@@ -73,17 +74,28 @@ class Rts2Queue:
 			
 	def queueTargets(self,ids):
 
-		logging.debug('rts2af-queue: queuing  for options:{0} '.format(options))
 		now= time.time()
 		return self.loadJson('/api/cmd',{'d':'SEL','c':"queue_at {0} {1} {2} {3}".format(  self.queue, string.join(map(str,ids),' '), now, now + 1800)})
 
 	def clearQueue(self):
 		return self.loadJson('/api/cmd',{'d':'SEL','c':'clear {0}'.format(self.queue)})
 
+	def getStateEXEC(self):
+		rep0= self.loadJson('/api/get', {'d': 'EXEC', 'e' : 1})
+		rep1= rep0['d']
+		return rep1['current']
+	def getStateFocuser(self):
+		rep0= self.loadJson('/api/get', {'d': 'FOC_FLI', 'e' : 1})
+		rep1= rep0['d']
+		return rep1['TCMODE']
+
+
 if __name__ == '__main__':
 	server = 'localhost:8889'
 	username = 'username'
 	password = 'password'
+	aftarget= '5' # depending on your installation
+
 	unique = False
 
   	parser = OptionParser()
@@ -94,15 +106,52 @@ if __name__ == '__main__':
 	parser.add_option("--server", help="specify URL to RTS2 JSON api", action="store", dest='server', default=server)
 	parser.add_option("--user",help="user name",action="store",dest='username',default=username)
 	parser.add_option("--password",help="user password",action="store",dest='password',default=password)
+	parser.add_option("--aftarget",help="autofocus target ID",action="store",dest='aftarget',default=aftarget)
 
 	(options,args)=parser.parse_args()
 
         logformat= '%(asctime)s %(levelname)s %(message)s'
-	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format= logformat)
+	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.DEBUG, format= logformat)
 
 	logging.debug('rts2af-queue: staring with options:{0} '.format(options))
 
 	q = Rts2Queue(options.queue,options.server,options.username,options.password)
+
+	# Check if currently a focus run is in progress
+	current= str(q.getStateEXEC())
+	# [16778242, -1, 0, 0, u'ID of current target']
+        pTarget = re.compile( r'(\[[0-9]+,[ ]*)([0-9\-]+)')
+	targetID = pTarget.match(current)
+	if(targetID):
+		if( targetID.group(2)== aftarget): 
+			logging.info('rts2af-queue: a focus run is in progress, exiting ')
+			logging.debug('rts2af-queue: end      for options:{0} '.format(options))
+			sys.exit(0)
+		else:
+			logging.info('rts2af-queue: current target id: {0} '.format(targetID.group(2)))
+
+	else:
+		logging.error('rts2af-queue: could not match string: {0}, received via JSON'.format(current))
+
+
+	# Check if focuser is in absolute mode
+	mode= str(q.getStateFocuser())
+	# [50332679,1,0,0,"temperature compensation absolute, relative to FOC_DEF, no tc"]
+        pMode = re.compile( r'(\[[0-9]+,[ ]*)([0-9]+)')
+	modeVal = pMode.match(mode)
+	if(modeVal):
+		if( modeVal.group(2)== '0'): # 0 absolute, 1 relative, 2, no temperature compensation
+			logging.info('rts2af-queue: focuser is in absolute temperature compensation mode, exiting ')
+			logging.debug('rts2af-queue: end      for options:{0} '.format(options))
+			sys.exit(0)
+		else:
+			logging.info('rts2af-queue: current temperature compensation mode: {0} '.format(modeVal.group(2)))
+
+	else:
+		logging.error('rts2af-queue: could not match string: {0}, received via JSON'.format(current))
+
+
+	logging.info('rts2af-queue: queueing a focus run')
 
 	if options.clear:
 		resp = q.clearQueue()
