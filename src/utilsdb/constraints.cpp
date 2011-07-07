@@ -534,6 +534,8 @@ Constraint *Constraints::createConstraint (const char *name)
 		return new ConstraintTime ();
 	else if (!strcmp (name, CONSTRAINT_AIRMASS))
 		return new ConstraintAirmass ();
+	else if (!strcmp (name, CONSTRAINT_ZENITH_DIST))
+		return new ConstraintZenithDistance ();
 	else if (!strcmp (name, CONSTRAINT_HA))
 		return new ConstraintHA ();
 	else if (!strcmp (name, CONSTRAINT_LDISTANCE))
