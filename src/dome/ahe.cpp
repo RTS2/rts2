@@ -31,7 +31,7 @@ int AHE::openALeaf()
     {
         serial_write_byte(fd, CMD_A_OPEN);
         serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSend++;
+        cmdSent++;
     }
 
     if(cmdSent < MAX_COMMANDS)
@@ -52,7 +52,7 @@ int AHE::openBLeaf()
     {
         serial_write_byte(fd, CMD_B_OPEN);
         serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSend++;
+        cmdSent++;
     }
 
     if(cmdSent < MAX_COMMANDS)
@@ -73,7 +73,7 @@ int AHE::closeALeaf()
    {
         serial_write_byte(fd, CMD_A_CLOSE);
         serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSend++;
+        cmdSent++;
    }
 
    return 1;
@@ -96,7 +96,7 @@ int AHE::closeBLeaf()
    {
         serial_write_byte(fd, CMD_B_CLOSE);
         serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSend++;
+        cmdSent++;
    }
 
    return 1;
