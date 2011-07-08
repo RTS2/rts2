@@ -200,12 +200,12 @@ int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &
 	ret = xmlClient->execute (methodName, in, result);
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "Error calling '" << methodName << "'." << sendLog;
+		logStream (MESSAGE_ERROR) << "error calling '" << methodName << "' with arguments " << in << sendLog;
 		return -1;
 	}
 	if (printRes)
 	{
-		std::cout << "Output of method '" << methodName << "':" << std::endl << result << std::endl << std::endl;
+		std::cout << "output of method '" << methodName << "':" << std::endl << result << std::endl << std::endl;
 	}
 	return 0;
 }
@@ -358,7 +358,7 @@ int Client::executeCommands ()
 		char *sep = strchr (c, '.');
 		if (sep == NULL)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot find . separating device name and command in " << (*iter) << "." << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot find . separating device name and command in " << (*iter) << "." << sendLog;
 			return -1;
 		}
 		*sep = '\0';
