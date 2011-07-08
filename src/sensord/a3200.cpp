@@ -98,13 +98,13 @@ int A3200::moveEnable ()
 	eRc = AerMoveMEnable (hAerCtrl, mAxis);
 	if (eRc != AERERR_NOERR)
 	{
-		logErr ("home MoveMEnable", eRc);
+		logErr ("cannot enable axis", eRc);
 		return -1;
 	}
 	eRc = AerMoveMWaitDone (hAerCtrl, mAxis, 100, 0);
 	if (eRc != AERERR_NOERR)
 	{
-		logErr ("home MoveMWait for Enable", eRc);
+		logErr ("error waiting for axis", eRc);
 		return -1;
 	}
 	return 0;
@@ -149,6 +149,12 @@ int A3200::home ()
 	logStream (MESSAGE_DEBUG) << "All axis homed properly" << sendLog;
 	if (setIO (AXISINDEX_1, false) || setIO (AXISINDEX_2, false) || setIO (AXISINDEX_3, false))
 		return -1;
+
+	info ();
+	sendValueAll (ax1);
+	sendValueAll (ax2);
+	sendValueAll (ax3);
+
 	return 0;
 }
 
