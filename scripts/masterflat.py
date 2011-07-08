@@ -28,6 +28,74 @@ import string
 
 from optparse import OptionParser
 
+class Channel:
+	def __init__(self,name,data,headers):
+		self.name = name
+		self.data = data
+		self.headers = headers
+
+class Channels:
+	def __init__(self,headers=[],verbose=0):
+		"""Headers - list of headers name which will be copied to any produced file."""
+		self.channels = []
+		self.headers = headers
+		self.verbose = verbose
+
+	def findChannel(self,name):
+		"""Find channel with given name."""
+		for c in self.channels:
+			if c.name == name:
+				return c
+		raise KeyError('Cannot find key {0}'.format(name))
+
+	def names(self):
+		return map(lambda x:x.name,self.channels)
+
+	def addFile(self,fn,check_channles=True):
+		f = pyfits.open(fn)
+		if len(self.channels):
+			if self.verbose:
+				print 'reading channels ',
+			ok = self.names()
+			for x in self.names():
+				try:
+					self.findChannel(x).data.append(f[x].data)
+					ok.remove(x)
+					if self.verbose:
+						print x,
+				except KeyError,ke:
+					print >> sys.stderr, 'cannot find in file {0} extension with name {1}'.format(fn,x)
+					if check_channles:
+						raise ke
+			if len(ok):
+				raise Exception('file {0} miss channels {1}'.format(fn,' '.join(ok)))
+		else:
+			if self.verbose:
+				print 'reading channels',
+			for i in range(0,len(f)):
+				d = f[i]
+				if d.data is not None:
+					if self.verbose:
+						print d.header['EXTNAME'],
+					cp = {}
+					for h in self.headers:
+						cp[h] = d.header[h]
+					self.channels.append(Channel(d.header['EXTNAME'],[d.data],cp))
+		if self.verbose:
+			print
+
+
+	def median(self,axis=0):
+		if self.verbose:
+			print 'producing channel median'
+		for x in self.channels:
+			if self.verbose:
+				print '\t',x.name,
+			x.data = numpy.median(x.data,axis=axis)
+			if self.verbose:
+				print x.data[:10]
+
+
 def createMasterFits(of,files,debug=False,dpoint=None):
 	"""Process acquired flat images."""
 
@@ -84,12 +152,36 @@ if __name__ == "__main__":
 	dpoint = None
 
 	if options.dpoint:
-		try:
-			dpoint = string.split(options.dpoint,':')
-			dpoint = map(lambda x:int(x),dpoint)
-		except Exception,ex:
-			print ex
-			import sys
-			sys.exit(-1)
+		dpoint = string.split(options.dpoint,':')
+		dpoint = map(lambda x:int(x),dpoint)
+	
 
-	createMasterFits(options.outf,args,options.debug,dpoint)
+	c = Channels(headers=['DETSIZE','CCDSEC','AMPSEC','DATASEC','DETSEC','NAMPS','LTM1_1','LTM2_2','LTV1','LTV2','ATM1_1','ATM2_2','ATV1','ATV2','DTM1_1','DTM2_2','DTV1','DTV2'],verbose=1)
+	for a in args:
+		c.addFile(a)
+
+	c.median()
+
+	f = None
+	try:
+		import os
+		os.unlink('of.fits')
+	except OSError,ose:
+		pass
+
+	f = pyfits.open('of.fits',mode='append')
+
+	f.append(pyfits.PrimaryHDU())
+	
+	for i in c.channels:
+		h = pyfits.ImageHDU(data=i.data)
+		h.header.update('EXTNAME',i.name)
+		ak = i.headers.keys()
+		ak.sort()
+		for k in ak:
+			h.header.update(k,i.headers[k])
+		f.append(h)
+
+	f.close()
+
+	#createMasterFits(options.outf,args,options.debug,dpoint)
