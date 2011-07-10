@@ -40,22 +40,19 @@ AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source)
 
 void AsyncAPI::postEvent (Rts2Event *event)
 {
+	std::ostringstream os;
 	switch (event->getType ())
 	{
 		case EVENT_COMMAND_OK:
-			{
-				std::ostringstream os;
-				os << "{";
-				req->sendConnectionValues (os, conn, NULL);
-				os << "}";
-				req->sendAsyncJSON (os, source);
-			}
-			break;
-		case EVENT_COMMAND_FAILED:
-			std::ostringstream os;
 			os << "{";
 			req->sendConnectionValues (os, conn, NULL);
-			os << "}";
+			os << ",\"ret\":0 }";
+			req->sendAsyncJSON (os, source);
+			break;
+		case EVENT_COMMAND_FAILED:
+			os << "{";
+			req->sendConnectionValues (os, conn, NULL);
+			os << ", \"ret\":-1 }";
 			req->sendAsyncJSON (os, source);
 			break;
 	}
