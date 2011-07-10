@@ -2,15 +2,12 @@
 # (C) 2011, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
-#   rts2af_model.py --help
+#   rts2af_model_extract.py --help
 #   
-#   not yet see man 1 rts2af_model
+#   not yet see man 1 rts2af_model_extract
 #
-#   Basic usage: rts2af_model.py
+#   Basic usage: rts2af_model_extract.py
 #
-#
-#   rts2af_acquire.py's purpose is to acquire the images and then terminate
-#   in order rts2-executor can immediately continue with the next target.
 #
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -38,8 +35,10 @@ import re
 import os
 import subprocess
 import shutil
+import argparse
 
 import rts2af 
+
 
 class Model(rts2af.AFScript):
     """Script to extract minimum FWHM, date/time and temperature as input for a focuser temperature model"""
@@ -100,21 +99,33 @@ class Model(rts2af.AFScript):
         return targetDirectory
 
     def run(self):
+
+
+        args= self.arguments()
         filtersInUse= self.runTimeConfig.filtersInUse
 
         # ToDo: walk through the base directory and find all directories for a given filter
         # now: X hardcoded
         #
         filterX= 'X'
+        date1= '2011-07-04'
+        date2= '2011-07-05'
+        date3= '2011-07-09'
         for root, dirs, names in os.walk(self.runTimeConfig.value('BASE_DIRECTORY')):
+
+            if(not (re.search( date1, root) or re.search( date1, root) or re.search( date3, root))):
+                print '----------{0}'.format(root)
+                continue
+
             if(re.search( filterX, root)): #ToDo: make a configurable variable
                 if(len(names)<= self.runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
                     print 'rts2af_model.py: only {0} files, required: {1}, in: {2}'.format(len(names), self.runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS'), root)
                     (runDirectory, seperator, afterSeparator)= root.rpartition( '/' + filterX)
-                    print 'moving director: {0} to: {1}'.format( runDirectory, self.trashDirectory)
+                    print 'rts2af_model.py: moving director: {0} to: {1}'.format( runDirectory, self.trashDirectory)
                     shutil.move(runDirectory, self.trashDirectory)
                     continue
                 else:
+
 
                     #print '{0} {1} {2} {3}'.format(len(names), root, dirs, names)
                     # if found: find a file name with reference.fits ending or the fits file with the lowest FWHM 
@@ -128,13 +139,13 @@ class Model(rts2af.AFScript):
                             targetDirectory= root
                             referenceFileName= name
                             break
-                        if(re.search( r'reference.fits.bz2', name)):
-                            print 'rts2af_model.py: ------------------------'
-                            print 'rts2af_model.py: named reference file found: {0}'.format(name)
-                            referenceFileName= name.replace('.bz2', '')
-                            targetDirectory=self.bz2Prepare( root)
-                            print 'rts2af_model.py: bz2 target directory: {0}'.format(targetDirectory)
-                            break
+#                        if(re.search( r'reference.fits.bz2', name)):
+#                            print 'rts2af_model.py: ------------------------'
+#                            print 'rts2af_model.py: named reference file found: {0}'.format(name)
+#                            referenceFileName= name.replace('.bz2', '')
+#                            targetDirectory=self.bz2Prepare( root)
+#                            print 'rts2af_model.py: bz2 target directory: {0}'.format(targetDirectory)
+#                            break
                     else:
                         # find the one with the smallest FWHM
                         fitsNameFwhm={}
@@ -142,12 +153,13 @@ class Model(rts2af.AFScript):
                         canonicalName= ''
                         namesTmp=[]
                         for name in names:
-                            if(re.search( r'fits.bz2', name)):
-                                print 'rts2af_model.py: bz2 file found: {0}'.format(name)
-                                referenceFileName= name
-                                targetDirectory= self.bz2Prepare(root)
-                                namesTmp = os.listdir(targetDirectory)
-                                break
+                            pass
+#                            if(re.search( r'fits.bz2', name)):
+#                                print 'rts2af_model.py: bz2 file found: {0}'.format(name)
+#                                referenceFileName= name
+#                                targetDirectory= self.bz2Prepare(root)
+#                                namesTmp = os.listdir(targetDirectory)
+#                                break
                         else:
                             namesTmp= names
                             targetDirectory= root
@@ -219,7 +231,7 @@ class Model(rts2af.AFScript):
                     try:
                         analysis= subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                     except:
-                        print 'rts2af_model.py: spawning offline analysis, something went wrong: {0}'.format(cmd)
+                        print 'rts2af_model_extract.py: spawning offline analysis, something went wrong: {0}'.format(cmd)
                         sys.exit(1)
                     while True: 
                         try:

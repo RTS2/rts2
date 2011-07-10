@@ -130,7 +130,7 @@ class main(rts2af.AFScript):
             cat.runSExtractor()
             cat.createCatalogue()
             cat.cleanUp()
-
+#            cat.ds9DisplayCatalogue()
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             if( cat.matching()):
                 #print "Added catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName
@@ -146,15 +146,9 @@ class main(rts2af.AFScript):
         fitsResults= cats.fitTheValues()
         if(not fitsResults==None):
             if( not fitsResults.error):
-                print 'FOCPOS: {0}'.format(fitsResults.minimumFocPos)
+                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}'.format(fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.temperature)
 
 
-#        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
-#        fitResultSummaryFileName= '/tmp/result-xx.log'
-#        if(not fitsResults==None):
-#            with open( fitResultSummaryFileName, 'a') as frs:
-#                frs.write('{0} {1} {2} {3} {4} {5} {6}\n'.format(fitsResults.date, fitsResults.dateEpoch, fitsResults.temperature, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.chi2, fitsResults.constants))
-#            frs.close()
 
         if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
             fitResultSummaryFileName= '/tmp/result.log'
@@ -168,28 +162,8 @@ class main(rts2af.AFScript):
 
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
-        cats.ds9WriteRegionFiles()
+        #cats.ds9WriteRegionFiles()
 
-        # Various examples:
-        #cats.average()
-        #for focPos in sorted(fwhm):
-        #    print "average %d %f %f" % (focPos, self.averageFwhm[focPos], self.averageFlux[focPos])
-
-        # Print on terminal
-        #cats.printSelectedSXobjects()
-        # Live display can take a long time (it is not very useful):
-        #cats.ds9DisplayCatalogues()
-        #
-        #
-        # Check properties of the various data sets
-        #
-        #for cat in sorted(cats.CataloguesList, key=lambda cat: cat.fitsHDU.variableHeaderElements['FOC_POS']):
-        #    if(rts2af.verbose):
-        #        print "fits file: "+ cat.fitsHDU.fitsFileName + ", %d " % cat.fitsHDU.variableHeaderElements['FOC_POS'] 
-        #    cat.average('FWHM_IMAGE')
-        #    cat.averageFWHM("selected")
-        #    cat.averageFWHM("matched")
-        #    cat.averageFWHM()
 if __name__ == '__main__':
     main(sys.argv[0]).main()
 

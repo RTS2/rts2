@@ -150,7 +150,8 @@ class Configuration:
         self.cp[('focuser properties', 'FOCUSER_RESOLUTION')]= 20
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
-        self.cp[('focuser properties', 'FOCUSER_SPEED')]= 100.0
+        self.cp[('focuser properties', 'FOCUSER_SPEED')]= 100.
+        self.cp[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
 
         self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
@@ -207,7 +208,7 @@ class Configuration:
         self.cp[('mode', 'SET_INIIAL_FOC_DEF')]= False
 
         # mapping of fits header elements to canonical
-        self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_AAG.TEMP_IRS'
+        self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
         self.cp[('fits header mapping', 'DATETIME')]= 'JD'
         self.cp[('fits header mapping', 'EXPOSURE')]= 'EXPOSURE'
         self.cp[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
@@ -326,13 +327,14 @@ class Configuration:
 # read the defaults
         for (section, identifier), value in self.configIdentifiers():
             self.values[identifier]= value
+
 # over write the defaults
         for (section, identifier), value in self.configIdentifiers():
 
             try:
                 value = config.get( section, identifier)
             except:
-                pass
+                continue
                 #logging.info('Configuration.readConfiguration: no section ' +  section + ' or identifier ' +  identifier + ' in file ' + configFileName)
             # overwrite the default configuration (if needed)
             self.cp[( section,  identifier)]= value
@@ -1636,14 +1638,12 @@ class Catalogues():
         return True
 
     def ds9DisplayCatalogues(self):
-# deprecated        self.__average__()
 
         for cat in sorted(self.CataloguesList, key=lambda cat: cat.fitsHDU.variableHeaderElements['FOC_POS']):
             cat.ds9DisplayCatalogue("cyan")
             # if reference catr.ds9DisplayCatalogue("yellow", False)
 
     def ds9WriteRegionFiles(self):
-# deprecated         self.__average__()
         
         self.ds9Command= "ds9 -zoom to fit -scale mode zscale\\\n" 
 

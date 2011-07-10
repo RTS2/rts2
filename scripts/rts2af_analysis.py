@@ -4,10 +4,9 @@
 #   usage 
 #   rts2af_analysis.py --help
 #   
-#   not yet see man 1 rts2af_analysis.py
 #
-#   rts2af_analysis.py is mainly called by rts2af_acquire.py during an rts2
-#   initiated focus run.
+#   rts2af_analysis.py is called by rts2af_acquire.py during an rts2
+#   initiated focus run. It is not intended for interactive use.
 #   The first fits file is used as reference catalogue and its focuser 
 #   position must be as close as possible to the real focus.
 #   
@@ -182,13 +181,16 @@ class main(rts2af.AFScript):
                 else:
                     logging.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
 
-        # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
         if( self.test== True):
             logging.error('rts2af_analysis.py: would fit now: {0}'.format(referenceFitsFileName))
         else:
+            # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
             fitsResults= cats.fitTheValues()
-            print 'FOCUS: {0}'.format(fitsResults.minimumFocPos)
+            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}'.format(fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.temperature)
             logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(fitsResults.minimumFocPos, referenceFitsFileName))
+            # input format for rts2af_model_analyze.py
+            # uncomment that if you need it
+            logging.info('{0} {1} {2} {3} {4} {5} {6} rts2af_model_analyze.py\n'.format(fitsResults.chi2, fitsResults.temperature, fitsResults.objects, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.dateEpoch, fitsResults.referenceFileName))
 
         logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
 

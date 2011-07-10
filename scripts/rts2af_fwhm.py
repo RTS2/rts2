@@ -104,25 +104,18 @@ class main(rts2af.AFScript):
             return
                 
         fwhm= cat.average('FWHM_IMAGE')
-        logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
+        logging.info('rts2af_fwhm.py: FWHM:{0}, {1}'.format(fwhm, referenceFitsFileName))
         
+        # While a focus run is in progress there might still images 
+        # be analyzed.
+        # No new focus run is then scheduled in rts2af-queue.
         filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
         
-        if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filter NOF or X
+        if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filters NOF or X
             threshFwhm=runTimeConfig.value('THRESHOLD')
             if( fwhm > threshFwhm):
                 ##r2c.setValue('next', 5, 'EXEC')
                 ## plain wrong were are not talking to rts2, use rts2-scriptexec
-                #cmd= [ 'rts2-scriptexec',
-                #       '-d',
-                #       'CCD_FLI', # ToDo it is not CCD_FLI
-                #       '-s',
-                #       ' exe /usr/local/src/rts-2-head/scripts/rts2af_exec.py  '
-                #   ]
-                ## do not wait, this process lives until, e.g. the focus run has terminated.
-                ## supress output from this process
-                #fnull = open(os.devnull, 'w')
-                #proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
 
                 cmd= [ 'rts2af-queue',
                        '--user={0}'.format(runTimeConfig.value('USERNAME')),
@@ -130,14 +123,11 @@ class main(rts2af.AFScript):
                        '--clear',
                        '--queue={0}'.format(runTimeConfig.value('QUEUENAME')),
                        '{0}'.format(runTimeConfig.value('TARGETID'))
-                   ]
+                       ]
                 fnull = open(os.devnull, 'w')
                 proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
-
-                # let rts2-queue do its job
-                # ToDo: something more intelligent
-                time.sleep(10) 
-                logging.info('rts2af_fwhm.py: queued a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd, referenceFitsFileName))
+ 
+                logging.info('rts2af_fwhm.py: try to queue a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd, referenceFitsFileName))
             else:
                 logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}, reference file: {2}'.format(fwhm, threshFwhm, referenceFitsFileName))
         else:
@@ -147,8 +137,6 @@ class main(rts2af.AFScript):
             else:
                 logging.info('rts2af_fwhm.py: queueing focus run only for clear path (no filter), no known filter found in headers')
 
-        #ToDo does not work yet cat.ds9WriteRegionFile(writeSelected=True)
-        #cat.displayCatalogue()
 
 if __name__ == '__main__':
     main(sys.argv[0]).main()

@@ -103,7 +103,7 @@ class main():
                 if( self.verbose):
                     log_match= re.search( r'log', output)
                     if(log_match):
-                        print 'rts2af_feed_acquire ignore (only to the first <CR>): >>{0}<<>>'.format(output)
+                        print 'rts2af_feed_acquire ignore (only to the first <CR>): >>{0}<<'.format(output)
 
     def main(self):
 
@@ -128,7 +128,6 @@ class main():
 
         # loop over the different focus run directories
         for storePath in  self.storePath:
-            
             fitsFiles= glob.glob( storePath + '/' + '*fits')
             # first file is the reference catalogue
             self.ignoreOutput(acquire)
