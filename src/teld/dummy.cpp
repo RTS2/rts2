@@ -1,6 +1,7 @@
 /* 
  * Dummy telescope for tests.
  * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,19 +30,38 @@
 namespace rts2teld
 {
 
+/**
+ * Dummy telescope class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ * @author Markus Wildi
+ */
 class Dummy:public Telescope
 {
-	private:
-
-                struct ln_equ_posn dummyPos;
-                rts2core::ValueBool *move_fast;
 	public:
 	        Dummy (int argc, char **argv);
+
+	protected:
         	virtual int processOption (int in_opt);
-		virtual int startResync ()
+		virtual int initValues ()
 		{
-			return 0;
+			Rts2Config *config;
+			config = Rts2Config::instance ();
+			config->loadFile ();
+			telLatitude->setValueDouble (config->getObserver ()->lat);
+			telLongitude->setValueDouble (config->getObserver ()->lng);
+			telAltitude->setValueDouble (config->getObservatoryAltitude ());
+			strcpy (telType, "Dummy");
+			return Telescope::initValues ();
 		}
+
+		virtual int info ()
+		{
+			setTelRaDec (dummyPos.ra, dummyPos.dec);
+			return Telescope::info ();
+		}
+
+		virtual int startResync ();
 
 		virtual int startMoveFixed (double tar_az, double tar_alt)
 		{
@@ -65,51 +85,9 @@ class Dummy:public Telescope
 			return 0;
 		}
 
-	protected:
-		virtual int initValues ()
-		{
-			Rts2Config *config;
-			config = Rts2Config::instance ();
-			config->loadFile ();
-			telLatitude->setValueDouble (config->getObserver ()->lat);
-			telLongitude->setValueDouble (config->getObserver ()->lng);
-			telAltitude->setValueDouble (config->getObservatoryAltitude ());
-			strcpy (telType, "Dummy");
-			return Telescope::initValues ();
-		}
 
-		virtual int info ()
-		{
-			setTelRaDec (dummyPos.ra, dummyPos.dec);
-			return Telescope::info ();
-		}
 
-		virtual int isMoving ()
-		{
-		    if (move_fast->getValueBool ()) {
- 			struct ln_equ_posn tar;
-			getTelTargetRaDec (&tar);
-			dummyPos.ra= tar.ra ;
-			dummyPos.dec= tar.dec ;
-			return -2;
-
-		    } else {
-			if (getNow () > getTargetReached ())
-				return -2;
-			struct ln_equ_posn tar;
-			getTelTargetRaDec (&tar);
-			if (dummyPos.ra > tar.ra)
-				dummyPos.ra -= 0.5;
-			else
-				dummyPos.ra += 0.5;
-			if (dummyPos.dec > tar.dec)
-				dummyPos.dec -= 0.5;
-			else
-				dummyPos.dec += 0.5;
-			setTelRaDec (dummyPos.ra, dummyPos.dec);
-			return USEC_SEC;
-		    }
-		}
+		virtual int isMoving ();
 
 		virtual int isMovingFixed ()
 		{
@@ -126,6 +104,10 @@ class Dummy:public Telescope
 			return getTargetDistance () * 2.0;
 		}
 
+	private:
+
+                struct ln_equ_posn dummyPos;
+                rts2core::ValueBool *move_fast;
 };
 
 }
@@ -154,6 +136,54 @@ int Dummy::processOption (int in_opt)
 			return Telescope::processOption (in_opt);
 	}
 	return 0;
+}
+
+int Dummy::startResync ()
+{
+	// check if target is above/below horizon
+	struct ln_equ_posn tar;
+	struct ln_hrz_posn hrz;
+
+	getTarget (&tar);
+	ln_get_hrz_from_equ (&tar, Rts2Config::instance ()->getObserver (), ln_get_julian_from_sys (), &hrz);
+	if (hrz.alt < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot move to negative altitude (" << hrz.alt << ")" << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+int Dummy::isMoving ()
+{
+	if (move_fast->getValueBool () || getNow () > getTargetReached ())
+	{
+ 		struct ln_equ_posn tar;
+		getTelTargetRaDec (&tar);
+		dummyPos.ra = tar.ra ;
+		dummyPos.dec = tar.dec ;
+		return -2;
+	}
+	struct ln_equ_posn tar;
+	getTelTargetRaDec (&tar);
+	if (fabs (dummyPos.ra - tar.ra) < 0.5)
+		dummyPos.ra = tar.ra;
+	else if (dummyPos.ra > tar.ra)
+		dummyPos.ra -= 0.5;
+	else
+		dummyPos.ra += 0.5;
+
+	if (fabs (dummyPos.dec - tar.dec) < 0.5)
+		dummyPos.dec = tar.dec;
+	else if (dummyPos.dec > tar.dec)
+		dummyPos.dec -= 0.5;
+	else
+		dummyPos.dec += 0.5;
+	setTelRaDec (dummyPos.ra, dummyPos.dec);
+	// position reached
+	if (dummyPos.ra == tar.ra && dummyPos.dec == tar.dec)
+		return -2;
+	return USEC_SEC;
 }
 
 int main (int argc, char **argv)
