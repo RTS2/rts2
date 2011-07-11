@@ -36,11 +36,12 @@ class Channel:
 		self.headers = headers
 
 class Channels:
-	def __init__(self,headers=[],verbose=0):
+	def __init__(self,headers=[],verbose=0,dpoint=None):
 		"""Headers - list of headers name which will be copied to any produced file."""
 		self.channels = []
 		self.headers = headers
 		self.verbose = verbose
+		self.dpoint = dpoint
 
 	def findChannel(self,name):
 		"""Find channel with given name."""
@@ -67,6 +68,8 @@ class Channels:
 					ok.remove(x)
 					if self.verbose:
 						print x,
+					if self.dpoint:
+						print f[x].data[self.dpoint[0]][self.dpoint[1]],
 				except KeyError,ke:
 					print >> sys.stderr, 'cannot find in file {0} extension with name {1}'.format(fn,x)
 					if check_channels:
@@ -81,6 +84,8 @@ class Channels:
 				if d.data is not None and len(d.data.shape) == 2:
 					if self.verbose:
 						print d.name,
+					if self.dpoint:
+						print d.data[self.dpoint[0]][self.dpoint[1]],
 					cp = {}
 					for h in self.headers:
 						cp[h] = d.header[h]
@@ -93,9 +98,11 @@ class Channels:
 		import pylab
 		ch = self.findChannel(channel)
 		sp = int(math.ceil(math.sqrt(len(ch.data))))
+		pylab.ion()
 		for x in range(0,len(ch.data)):
 			pylab.subplot(sp,sp,x + 1)
 			pylab.hist(ch.data[x].flatten(),100)
+			pylab.draw()
 
 		pylab.show()
 
@@ -103,35 +110,41 @@ class Channels:
 		"""plot result histogram"""
 		import pylab
 		sp = int(math.ceil(math.sqrt(len(self.channels))))
+		pylab.ion()
 		for x in range(0,len(self.channels)):
 			pylab.subplot(sp,sp,x+1)
 			pylab.hist(self.channels[x].data.flatten(),100)
+			pylab.draw()
 
 		pylab.show()
 
-	def median(self,axis=0,dpoint=None):
+	def median(self,axis=0):
 		if self.verbose:
 			print 'producing channel median'
 		for x in self.channels:
-			if self.verbose or dpoint:
+			if self.verbose or self.dpoint:
 				print '\t',x.name,
-				if dpoint:
-					print ' '.join(map(lambda d:d[dpoint[0],dpoint[1]],x.data)),
+				if self.dpoint:
+					print ' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),x.data)),
 			x.data = numpy.median(x.data,axis=axis)
 			if self.verbose:
 				print x.data[:10]
-			if dpoint:
-				print x.data[dpoint[0],dpoint[1]]
+			if self.dpoint:
+				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
 
 	def mean(self,axis=0):
 		if self.verbose:
 			print 'producing channel mean'
 		for x in self.channels:
-			if self.verbose:
+			if self.verbose or self.dpoint:
 				print '\t',x.name
+				if self.dpoint:
+					print ' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),x.data)),
 			x.data = numpy.mean(x.data,axis=axis)
 			if self.verbose:
 				print x.data[:10]
+			if self.dpoint:
+				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
 
 	def writeto(self,fn):
 		"""Writes data as a single FITS file"""
@@ -173,7 +186,7 @@ if __name__ == "__main__":
 		dpoint = map(lambda x:int(x),dpoint)
 	#c = Channels(verbose=1)
 
-	c = Channels(headers=['DETSIZE','CCDSEC','AMPSEC','DATASEC','DETSEC','NAMPS','LTM1_1','LTM2_2','LTV1','LTV2','ATM1_1','ATM2_2','ATV1','ATV2','DTM1_1','DTM2_2','DTV1','DTV2'],verbose=1)
+	c = Channels(headers=['DETSIZE','CCDSEC','AMPSEC','DATASEC','DETSEC','NAMPS','LTM1_1','LTM2_2','LTV1','LTV2','ATM1_1','ATM2_2','ATV1','ATV2','DTM1_1','DTM2_2','DTV1','DTV2'],verbose=1,dpoint=dpoint)
 	for a in args:
 		c.addFile(a)
 
