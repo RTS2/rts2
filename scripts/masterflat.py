@@ -20,9 +20,12 @@
 
 from datetime import datetime
 import numpy
+import math
 import os
 import pyfits
 import string
+import sys
+import multiprocessing
 
 from optparse import OptionParser
 
@@ -49,11 +52,14 @@ class Channels:
 	def names(self):
 		return map(lambda x:x.name,self.channels)
 
-	def addFile(self,fn,check_channles=True):
+	def addFile(self,fn,check_channels=True):
+		"""Adds file to set of files for processing.
+		fn                 filename of file to process
+		check_channels     if True, will check to see that all channels were present in file. That's most probably what you want."""
 		f = pyfits.open(fn)
 		if len(self.channels):
 			if self.verbose:
-				print 'reading channels ',
+				print fn,'reading channels',
 			ok = self.names()
 			for x in self.names():
 				try:
@@ -63,35 +69,59 @@ class Channels:
 						print x,
 				except KeyError,ke:
 					print >> sys.stderr, 'cannot find in file {0} extension with name {1}'.format(fn,x)
-					if check_channles:
+					if check_channels:
 						raise ke
 			if len(ok):
 				raise Exception('file {0} miss channels {1}'.format(fn,' '.join(ok)))
 		else:
 			if self.verbose:
-				print 'reading channels',
+				print fn,'reading channels',
 			for i in range(0,len(f)):
 				d = f[i]
-				if d.data is not None:
+				if d.data is not None and len(d.data.shape) == 2:
 					if self.verbose:
-						print d.header['EXTNAME'],
+						print d.name,
 					cp = {}
 					for h in self.headers:
 						cp[h] = d.header[h]
-					print d.data,cp
-					self.channels.append(Channel(d.header['EXTNAME'],[d.data],cp))
+					self.channels.append(Channel(d.name,[d.data],cp))
 		if self.verbose:
 			print
 
-	def median(self,axis=0):
+	def plot_histogram(self,channel):
+		"""plot histograms for given channel"""
+		import pylab
+		ch = self.findChannel(channel)
+		sp = int(math.ceil(math.sqrt(len(ch.data))))
+		for x in range(0,len(ch.data)):
+			pylab.subplot(sp,sp,x + 1)
+			pylab.hist(ch.data[x].flatten(),100)
+
+		pylab.show()
+
+	def plot_result(self):
+		"""plot result histogram"""
+		import pylab
+		sp = int(math.ceil(math.sqrt(len(self.channels))))
+		for x in range(0,len(self.channels)):
+			pylab.subplot(sp,sp,x+1)
+			pylab.hist(self.channels[x].data.flatten(),100)
+
+		pylab.show()
+
+	def median(self,axis=0,dpoint=None):
 		if self.verbose:
 			print 'producing channel median'
 		for x in self.channels:
-			if self.verbose:
+			if self.verbose or dpoint:
 				print '\t',x.name,
+				if dpoint:
+					print ' '.join(map(lambda d:d[dpoint[0],dpoint[1]],x.data)),
 			x.data = numpy.median(x.data,axis=axis)
 			if self.verbose:
 				print x.data[:10]
+			if dpoint:
+				print x.data[dpoint[0],dpoint[1]]
 
 	def mean(self,axis=0):
 		if self.verbose:
@@ -122,57 +152,9 @@ class Channels:
 			ak.sort()
 			for k in ak:
 				h.header.update(k,i.headers[k])
-			h.header.update('OVRSCAN1',50)
-			h.header.update('OVRSCAN2',50)
-			h.header.update('PRESCAN1',50)
-			h.header.update('PRESCAN2',50)
 			f.append(h)
 
 		f.close()
-
-def createMasterFits(of,files,debug=False,dpoint=None):
-	"""Process acquired flat images."""
-
-	f = pyfits.fitsopen(files[0])
-	d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
-	if dpoint:
-		print "input ",f[0].data[dpoint[0]][dpoint[1]],numpy.median(f[0].data),
-	# normalize
-	d[0] = f[0].data / numpy.median(f[0].data)
-	for x in range(1,len(files)):
-	  	f = pyfits.fitsopen(files[x])
-		if dpoint:
-			print f[0].data[dpoint[0]][dpoint[1]],numpy.median(f[0].data),
-		d[x] = f[0].data / numpy.median(f[0].data)
-
-	if dpoint:
-		print
-
-	if (os.path.exists(of)):
-  		print "removing {0}".format(of)
-		os.unlink(of)
-	if debug:
-		for x in range(0,len(files)):
-			df = pyfits.open('{0}.median'.format(files[x]),mode='append')
-			df.append(pyfits.PrimaryHDU(data=d[x]))
-			df.close()
-	if dpoint:
-		print 'medians ',
-		for x in range(0,len(files)):
-			print d[x][dpoint[0]][dpoint[1]],
-		print
-	f = pyfits.open(of,mode='append')
-	m = numpy.median(d,axis=0)
-	if dpoint:
-		print 'master',m[dpoint[0]][dpoint[1]]
-	# normalize
-	m = m / numpy.max(m)
-	if dpoint:
-		print 'normalized master',m[dpoint[0]][dpoint[1]]
-	i = pyfits.PrimaryHDU(data=m)
-	f.append(i)
-	f.close()
-	print 'I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m)))
 
 if __name__ == "__main__":
 	parser = OptionParser()
@@ -180,6 +162,7 @@ if __name__ == "__main__":
 	parser.add_option('-o',help='name of output file',action='store',dest='outf',default='master.fits')
 	parser.add_option('--debug',help='write normalized files to disk',action='store_true',dest='debug',default=False)
 	parser.add_option('--dpoint',help='print values of medianed files and master at given point (x:y)',action='store',dest='dpoint')
+	parser.add_option('--histogram',help='plot histograms',action='append',dest='histogram',default=[])
 
 	(options,args) = parser.parse_args()
 
@@ -188,14 +171,21 @@ if __name__ == "__main__":
 	if options.dpoint:
 		dpoint = string.split(options.dpoint,':')
 		dpoint = map(lambda x:int(x),dpoint)
-	
+	#c = Channels(verbose=1)
 
 	c = Channels(headers=['DETSIZE','CCDSEC','AMPSEC','DATASEC','DETSEC','NAMPS','LTM1_1','LTM2_2','LTV1','LTV2','ATM1_1','ATM2_2','ATV1','ATV2','DTM1_1','DTM2_2','DTV1','DTV2'],verbose=1)
 	for a in args:
 		c.addFile(a)
 
+	for h in options.histogram:
+		print 'plotting histogram for channel',h
+		p = multiprocessing.Process(target=c.plot_histogram,args=(h,))
+		p.start()
+
 	c.median()
 
-	c.writeto(options.outf)
+	if options.histogram:
+		p = multiprocessing.Process(target=c.plot_result)
+		p.start()
 
-	#createMasterFits(options.outf,args,options.debug,dpoint)
+	c.writeto(options.outf)
