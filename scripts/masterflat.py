@@ -2,8 +2,6 @@
 
 # Process images, produce master flat.
 #
-# Work in following steps:
-#
 # (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -80,10 +78,10 @@ class Channels:
 					cp = {}
 					for h in self.headers:
 						cp[h] = d.header[h]
+					print d.data,cp
 					self.channels.append(Channel(d.header['EXTNAME'],[d.data],cp))
 		if self.verbose:
 			print
-
 
 	def median(self,axis=0):
 		if self.verbose:
@@ -95,6 +93,42 @@ class Channels:
 			if self.verbose:
 				print x.data[:10]
 
+	def mean(self,axis=0):
+		if self.verbose:
+			print 'producing channel mean'
+		for x in self.channels:
+			if self.verbose:
+				print '\t',x.name
+			x.data = numpy.mean(x.data,axis=axis)
+			if self.verbose:
+				print x.data[:10]
+
+	def writeto(self,fn):
+		"""Writes data as a single FITS file"""
+		f = None
+		try:
+			os.unlink(fn)
+		except OSError,ose:
+			pass
+
+		f = pyfits.open(fn,mode='append')
+
+		f.append(pyfits.PrimaryHDU())
+	
+		for i in c.channels:
+			h = pyfits.ImageHDU(data=i.data)
+			h.header.update('EXTNAME',i.name)
+			ak = i.headers.keys()
+			ak.sort()
+			for k in ak:
+				h.header.update(k,i.headers[k])
+			h.header.update('OVRSCAN1',50)
+			h.header.update('OVRSCAN2',50)
+			h.header.update('PRESCAN1',50)
+			h.header.update('PRESCAN2',50)
+			f.append(h)
+
+		f.close()
 
 def createMasterFits(of,files,debug=False,dpoint=None):
 	"""Process acquired flat images."""
@@ -162,26 +196,6 @@ if __name__ == "__main__":
 
 	c.median()
 
-	f = None
-	try:
-		import os
-		os.unlink('of.fits')
-	except OSError,ose:
-		pass
-
-	f = pyfits.open('of.fits',mode='append')
-
-	f.append(pyfits.PrimaryHDU())
-	
-	for i in c.channels:
-		h = pyfits.ImageHDU(data=i.data)
-		h.header.update('EXTNAME',i.name)
-		ak = i.headers.keys()
-		ak.sort()
-		for k in ak:
-			h.header.update(k,i.headers[k])
-		f.append(h)
-
-	f.close()
+	c.writeto(options.outf)
 
 	#createMasterFits(options.outf,args,options.debug,dpoint)
