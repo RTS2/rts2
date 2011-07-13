@@ -25,6 +25,7 @@ import os
 import pyfits
 import string
 import sys
+import re
 
 class Channel:
 	def __init__(self,name,data,headers):
@@ -33,12 +34,16 @@ class Channel:
 		self.headers = headers
 
 class Channels:
-	def __init__(self,headers=[],verbose=0,dpoint=None):
+	def __init__(self,headers=[],verbose=0,dpoint=None,keep_ch_headers=False,keep_phu=False):
 		"""Headers - list of headers name which will be copied to any produced file."""
 		self.channels = []
+		self.filenames = []
 		self.headers = headers
 		self.verbose = verbose
 		self.dpoint = dpoint
+		self.keep_ch_headers = keep_ch_headers
+		self.keep_phu = keep_phu
+		self.phu = {}
 
 	def findChannel(self,name):
 		"""Find channel with given name."""
@@ -63,10 +68,11 @@ class Channels:
 				try:
 					self.findChannel(x).data.append(f[x].data)
 					ok.remove(x)
-					if self.verbose:
+					if self.verbose or self.dpoint:
 						print x,
-					if self.dpoint:
-						print f[x].data[self.dpoint[0]][self.dpoint[1]],
+						if self.dpoint:
+							print f[x].data[self.dpoint[0]][self.dpoint[1]],
+						sys.stdout.flush()
 				except KeyError,ke:
 					print >> sys.stderr, 'cannot find in file {0} extension with name {1}'.format(fn,x)
 					if check_channels:
@@ -76,19 +82,27 @@ class Channels:
 		else:
 			if self.verbose:
 				print fn,'reading channels',
+			if self.keep_phu:
+				self.phu = f[0].header
 			for i in range(0,len(f)):
 				d = f[i]
 				if d.data is not None and len(d.data.shape) == 2:
-					if self.verbose:
+					if self.verbose or self.dpoint:
 						print d.name,
-					if self.dpoint:
-						print d.data[self.dpoint[0]][self.dpoint[1]],
+						if self.dpoint:
+							print d.data[self.dpoint[0]][self.dpoint[1]],
+						sys.stdout.flush()
 					cp = {}
-					for h in self.headers:
-						cp[h] = d.header[h]
+					if self.keep_ch_headers:
+						cp = d.header
+					else:
+						for h in self.headers:
+							cp[h] = d.header[h]
 					self.channels.append(Channel(d.name,[d.data],cp))
 		if self.verbose:
 			print
+		self.filenames.append(fn)
+		f.close()
 
 	def plot_histogram(self,channel):
 		"""plot histograms for given channel"""
@@ -161,6 +175,32 @@ class Channels:
 			if self.dpoint:
 				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
 
+	def subtract(self,fn):
+		"""Subtract file from channels set."""
+		f = pyfits.open(fn)
+		if self.verbose:
+			print 'sutracting {0}'.format(fn),
+		# subtract by channels..
+		for c in self.channels:
+			if self.verbose or self.dpoint:
+				print c.name,
+				sys.stdout.flush()
+			ar = f[c.name]
+			for di in range(0,len(c.data)):
+				d = c.data[di]
+				if not(ar.data.shape == d.shape):
+					raise Exception('invalid data shape for sutraction: {0} - {1}'.format(d.shape,ar.data.shape))
+				if self.dpoint:
+					print d[self.dpoint[0]][self.dpoint[1]],
+				c.data[di] = d - ar.data
+
+			if self.verbose or self.dpoint:
+				if self.dpoint:
+					print 'results',' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),c.data))
+		if self.verbose:
+			print
+				
+
 	def writeto(self,fn):
 		"""Writes data as a single FITS file"""
 		f = None
@@ -171,9 +211,13 @@ class Channels:
 
 		f = pyfits.open(fn,mode='append')
 
-		f.append(pyfits.PrimaryHDU())
+		ph = pyfits.PrimaryHDU()
+		for k in self.phu:
+			ph.header.update(k,self.phu[k])
+
+		f.append(ph)
 	
-		for i in c.channels:
+		for i in self.channels:
 			h = pyfits.ImageHDU(data=i.data)
 			h.header.update('EXTNAME',i.name)
 			ak = i.headers.keys()
@@ -183,6 +227,63 @@ class Channels:
 			f.append(h)
 
 		f.close()
+
+	def write_files(self,pat=None):
+		"""Write channels to files. Use pattern to rename file."""
+		rex = None
+		if pat:
+			rex = re.compile(r'(%[f])')
+			rex_a = re.compile(r'(@(?:{[^- @}.]+}|[^- @.{}]+))')
+
+		for i in range(0,len(self.filenames)):
+			fn = self.filenames[i]
+			if self.verbose:
+				print fn,
+			if rex:
+				class match_o:
+					def __init__(self,fn):
+						self.fn = fn
+						self.fp = None
+					def p_match(self,m):
+						if m.group(0)[1] == 'f':
+							return os.path.splitext(os.path.basename(self.fn))[0]
+					def a_match(self,m):
+						if not(self.fp):
+							self.fp = pyfits.open(self.fn)
+						return self.fp.header[m.group(0)[1:]]
+
+				ma = match_o(fn)
+
+				fn = rex.sub(ma.p_match,pat)
+				fn = rex_a.sub(ma.a_match,fn)
+ 
+			if self.verbose:
+				print '->',fn,
+				sys.stdout.flush()
+
+			try:
+				os.unlink(fn)
+			except OSError,ose:
+				pass
+			f = pyfits.open(fn,'append')
+
+			ph = pyfits.PrimaryHDU()
+			for k in self.phu:
+				ph.header.update(k,self.phu[k])
+
+			f.append(ph)
+
+			for c in self.channels:
+				h = pyfits.ImageHDU(data=c.data[i])
+				h.header.update('EXTNAME',c.name)
+				ak = c.headers.keys()
+				ak.sort()
+				for k in ak:
+					h.header.update(k,c.headers[k])
+				f.append(h)
+			f.close()
+			if self.verbose:
+				print
 
 if __name__ == "__main__":
 	from optparse import OptionParser
@@ -194,12 +295,29 @@ if __name__ == "__main__":
 	parser.add_option('--debug',help='write normalized files to disk',action='store_true',dest='debug',default=False)
 	parser.add_option('--dpoint',help='print values of medianed files and master at given point (x:y)',action='store',dest='dpoint')
 	parser.add_option('--histogram',help='plot histograms',action='append',dest='histogram',default=[])
-	parser.add_option('--square',help='produce histogram of channel squares',action='store',dest='square',default=None)
+	parser.add_option('--result-histogram',help='plot histogram of result (by channels)',action='store_true',dest='result_histogram',default=False)
+	parser.add_option('--square',help='plot histogram of channel squares',action='store',dest='square',default=None)
+	parser.add_option('--median',help='produce median of images - usefull for master dark procession',action='store_true',dest='median',default=False)
+	parser.add_option('--mean',help='produce mean (average) of images',action='store_true',dest='mean',default=False)
+	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as argument',action='store',dest='subtract')
 
 	(options,args) = parser.parse_args()
 
 	if len(args) == 0:
-		print 'you must provide at least single file as an argument'
+		print >> sys.stderr, 'you must provide at least single file as an argument'
+		sys.exit(1)
+	
+	# check how many operations user provide
+	op = 0
+	def plus_1(x):
+		if x:
+			global op
+			op += 1
+
+	map(plus_1,[options.median,options.mean,options.subtract])
+
+	if op > 1:
+		print >> sys.stderr, 'you cannot do median and/or mean and/or subtract in one call'
 		sys.exit(1)
 
 	dpoint = None
@@ -218,14 +336,21 @@ if __name__ == "__main__":
 		p = multiprocessing.Process(target=c.plot_histogram,args=(h,))
 		p.start()
 
-	c.median()
+	if options.subtract:
+		c.subtract(options.subtract)
+		c.write_files('%f-res.fits')
+	else:
+		if options.median:
+			c.median()
+		elif options.mean:
+			c.mean()
 
-	if options.histogram:
-		p = multiprocessing.Process(target=c.plot_result)
-		p.start()
+		if options.result_histogram:
+			p = multiprocessing.Process(target=c.plot_result)
+			p.start()
 
-	if options.square:
-		p = multiprocessing.Process(target=c.plot_square,args=(int(options.square),))
-		p.start()
+		if options.square:
+			p = multiprocessing.Process(target=c.plot_square,args=(int(options.square),))
+			p.start()
 
-	c.writeto(options.outf)
+		c.writeto(options.outf)
