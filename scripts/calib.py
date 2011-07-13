@@ -175,12 +175,19 @@ class Channels:
 			if self.dpoint:
 				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
 
-	def subtract(self,fn):
-		"""Subtract file from channels set."""
+	def op(self,fn,op):
+		"""Performs operaion. +, -, * and / are supported for operations."""
 		f = pyfits.open(fn)
 		if self.verbose:
-			print 'sutracting {0}'.format(fn),
-		# subtract by channels..
+			if op == '+':
+				print 'adding {0}'.format(fn),
+			if op == '-':
+				print 'sutracting {0}'.format(fn),
+			elif op == '*':
+				print 'multipling by {0}'.format(fn),
+			elif op == '/':
+				print 'dividing by {0}'.format(fn),
+		# work by channels..
 		for c in self.channels:
 			if self.verbose or self.dpoint:
 				print c.name,
@@ -189,17 +196,37 @@ class Channels:
 			for di in range(0,len(c.data)):
 				d = c.data[di]
 				if not(ar.data.shape == d.shape):
-					raise Exception('invalid data shape for sutraction: {0} - {1}'.format(d.shape,ar.data.shape))
+					raise Exception('invalid data shape for operation {0}: {1} {0} {2}'.format(op,d.shape,ar.data.shape))
 				if self.dpoint:
 					print d[self.dpoint[0]][self.dpoint[1]],
-				c.data[di] = d - ar.data
+				if op == '+':
+					c.data[di] = d + ar.data
+				elif op == '-':
+					c.data[di] = d - ar.data
+				elif op == '*':
+					c.data[di] = d * ar.data
+				elif op == '/':
+					c.data[di] = d / ar.data
+				else:
+					raise Exception('unknow operation {0}'.format(op))
 
 			if self.verbose or self.dpoint:
 				if self.dpoint:
 					print 'results',' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),c.data))
 		if self.verbose:
 			print
-				
+
+	def add(self,fn):
+		return self.op(fn,'+')
+
+	def subtract(self,fn):
+		return self.op(fn,'-')
+
+	def multiply(self,fn):
+		return self.op(fn,'*')
+
+	def divide(self,fn):
+		return self.op(fn,'/')
 
 	def writeto(self,fn):
 		"""Writes data as a single FITS file"""
@@ -299,7 +326,11 @@ if __name__ == "__main__":
 	parser.add_option('--square',help='plot histogram of channel squares',action='store',dest='square',default=None)
 	parser.add_option('--median',help='produce median of images - usefull for master dark procession',action='store_true',dest='median',default=False)
 	parser.add_option('--mean',help='produce mean (average) of images',action='store_true',dest='mean',default=False)
-	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as argument',action='store',dest='subtract')
+	# file operations, producing set of files
+	parser.add_option('--add',help='add to all images (arguments) image provided as option',action='store',dest='add')
+	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as option',action='store',dest='subtract')
+	parser.add_option('--multiply',help='multiply all images (arguments) by image provided as option',action='store',dest='multiple')
+	parser.add_option('--divide',help='divide all images (arguments) by image provided as option',action='store',dest='divide')
 
 	(options,args) = parser.parse_args()
 
@@ -314,7 +345,7 @@ if __name__ == "__main__":
 			global op
 			op += 1
 
-	map(plus_1,[options.median,options.mean,options.subtract])
+	map(plus_1,[options.median,options.mean,options.add,options.subtract,options.multiple,options.divide])
 
 	if op > 1:
 		print >> sys.stderr, 'you cannot do median and/or mean and/or subtract in one call'
@@ -336,8 +367,16 @@ if __name__ == "__main__":
 		p = multiprocessing.Process(target=c.plot_histogram,args=(h,))
 		p.start()
 
-	if options.subtract:
-		c.subtract(options.subtract)
+	if options.add or options.subtract or options.multiple or options.divide:
+		if options.add:
+			c.add(options.add)
+		elif options.subtract:
+			c.subtract(options.subtract)
+		elif options.multiple:
+			c.multiple(options.multiple)
+		else:
+			c.divide(options.divide)
+		
 		c.write_files('%f-res.fits')
 	else:
 		if options.median:
