@@ -34,6 +34,11 @@ class Channel:
 		self.headers = headers
 
 class Channels:
+	# operations codes
+	OP_MEDIAN_NORMALIZE = 1
+	OP_MEAN_NORMALIZE   = 2
+	OP_MAX_NORMALIZE    = 3
+	
 	def __init__(self,headers=[],verbose=0,dpoint=None,keep_ch_headers=False,keep_phu=False):
 		"""Headers - list of headers name which will be copied to any produced file."""
 		self.channels = []
@@ -175,8 +180,86 @@ class Channels:
 			if self.dpoint:
 				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
 
-	def op(self,fn,op):
-		"""Performs operaion. +, -, * and / are supported for operations."""
+	def __print_op(self,op):
+		if op == self.OP_MEDIAN_NORMALIZE:
+			print 'median normalize'
+		elif op == self.OP_MEAN_NORMALIZE:
+			print 'mean normalized'
+		elif op == self.OP_MAX_NORMALIZE:
+			print 'max normalize'
+
+
+	def op_channels(self,op):
+		"""Performs operaion on channel's data."""
+		if self.verbose:
+			self.__print_op(op)
+		# work by channels..
+		for c in self.channels:
+			if self.verbose or self.dpoint:
+				print c.name,
+				sys.stdout.flush()
+			for di in range(0,len(c.data)):
+				d = c.data[di]
+				if self.dpoint:
+					print d[self.dpoint[0]][self.dpoint[1]],
+				if op == self.OP_MEDIAN_NORMALIZE or op == self.OP_MEAN_NORMALIZE or op == self.OP_MAX_NORMALIZE:
+					arg = None
+
+					if op == self.OP_MEDIAN_NORMALIZE:
+						arg = numpy.median(d)
+					elif op == self.OP_MEAN_NORMALIZE:
+						arg = numpy.mean(d)
+					else:
+						arg = numpy.max(d)
+					c.data[di] = d / arg
+					if self.verbose:
+						print '/',arg,
+				else:
+					raise Exception('unknow operation {0}'.format(op))
+
+			if self.dpoint:
+				print
+				print 'results',' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),c.data))
+		if self.verbose:
+			print
+
+	def op_result(self,op):
+		"""Performs operaion on resulting data."""
+		if self.verbose:
+			self.__print_op(op)
+		# work by channels..
+		for c in self.channels:
+			if self.verbose or self.dpoint:
+				print c.name,
+				sys.stdout.flush()
+			d = c.data
+			if self.dpoint:
+				print d[self.dpoint[0]][self.dpoint[1]],
+
+			if op == self.OP_MEDIAN_NORMALIZE or op == self.OP_MEAN_NORMALIZE or op == self.OP_MAX_NORMALIZE:
+				arg = None
+
+				if op == self.OP_MEDIAN_NORMALIZE:
+					arg = numpy.median(d)
+				elif op == self.OP_MEAN_NORMALIZE:
+					arg = numpy.mean(d)
+				else:
+					arg = numpy.max(d)
+				c.data = d / arg
+				if self.verbose:
+					print '/',arg,
+			else:
+				raise Exception('unknow operation {0}'.format(op))
+
+			if self.dpoint:
+				print
+				print 'result',c.data[self.dpoint[0]][self.dpoint[1]]
+		if self.verbose:
+			print
+
+
+	def op_file(self,fn,op):
+		"""Performs operation with file. +, -, * and / are supported for operations."""
 		f = pyfits.open(fn)
 		if self.verbose:
 			if op == '+':
@@ -192,7 +275,6 @@ class Channels:
 			if self.verbose or self.dpoint:
 				print c.name,
 				sys.stdout.flush()
-			ar = f[c.name]
 			for di in range(0,len(c.data)):
 				d = c.data[di]
 				if not(ar.data.shape == d.shape):
@@ -210,23 +292,22 @@ class Channels:
 				else:
 					raise Exception('unknow operation {0}'.format(op))
 
-			if self.verbose or self.dpoint:
-				if self.dpoint:
-					print 'results',' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),c.data))
+			if self.dpoint:
+				print 'results',' '.join(map(lambda d:str(d[self.dpoint[0]][self.dpoint[1]]),c.data))
 		if self.verbose:
 			print
 
 	def add(self,fn):
-		return self.op(fn,'+')
+		return self.op_file(fn,'+')
 
 	def subtract(self,fn):
-		return self.op(fn,'-')
+		return self.op_file(fn,'-')
 
 	def multiply(self,fn):
-		return self.op(fn,'*')
+		return self.op_file(fn,'*')
 
 	def divide(self,fn):
-		return self.op(fn,'/')
+		return self.op_file(fn,'/')
 
 	def writeto(self,fn):
 		"""Writes data as a single FITS file"""
@@ -326,6 +407,9 @@ if __name__ == "__main__":
 	parser.add_option('--square',help='plot histogram of channel squares',action='store',dest='square',default=None)
 	parser.add_option('--median',help='produce median of images - usefull for master dark procession',action='store_true',dest='median',default=False)
 	parser.add_option('--mean',help='produce mean (average) of images',action='store_true',dest='mean',default=False)
+	# routines for master calibration frames
+	parser.add_option('--masterflat',help='produce master flat file',action='store_true',dest='masterflat',default=False)
+	parser.add_option('--masterdark',help='produce master dark file',action='store_true',dest='masterdark',default=False)
 	# file operations, producing set of files
 	parser.add_option('--add',help='add to all images (arguments) image provided as option',action='store',dest='add')
 	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as option',action='store',dest='subtract')
@@ -345,7 +429,7 @@ if __name__ == "__main__":
 			global op
 			op += 1
 
-	map(plus_1,[options.median,options.mean,options.add,options.subtract,options.multiple,options.divide])
+	map(plus_1,[options.median,options.mean,options.masterflat,options.masterdark,options.add,options.subtract,options.multiple,options.divide])
 
 	if op > 1:
 		print >> sys.stderr, 'you cannot do median and/or mean and/or subtract in one call'
@@ -379,10 +463,14 @@ if __name__ == "__main__":
 		
 		c.write_files('%f-res.fits')
 	else:
-		if options.median:
+		if options.median or options.masterdark:
 			c.median()
 		elif options.mean:
 			c.mean()
+		elif options.masterflat:
+			c.op_channels(Channels.OP_MEDIAN_NORMALIZE)
+			c.median()
+			c.op_result(Channels.OP_MEDIAN_NORMALIZE)
 
 		if options.result_histogram:
 			p = multiprocessing.Process(target=c.plot_result)
