@@ -43,6 +43,10 @@ class Channels:
 		"""Headers - list of headers name which will be copied to any produced file."""
 		self.channels = []
 		self.filenames = []
+		# 2D array - first index is file number, second is history number
+		self.history = []
+		# if output will be written to a single file, what should be written there
+		self.phu_history = []
 		self.headers = headers
 		self.verbose = verbose
 		self.dpoint = dpoint
@@ -65,6 +69,16 @@ class Channels:
 		fn                 filename of file to process
 		check_channels     if True, will check to see that all channels were present in file. That's most probably what you want."""
 		f = pyfits.open(fn)
+
+		self.filenames.append(fn)
+
+		# append history
+		hist = []
+		for cd in f[0].header.ascardlist():
+			if cd.key == 'HISTORY':
+				hist.append(cd.value)
+		self.history.append(hist)
+
 		if len(self.channels):
 			if self.verbose:
 				print fn,'reading channels',
@@ -106,7 +120,7 @@ class Channels:
 					self.channels.append(Channel(d.name,[d.data],cp))
 		if self.verbose:
 			print
-		self.filenames.append(fn)
+
 		f.close()
 
 	def plot_histogram(self,channel):
@@ -152,6 +166,10 @@ class Channels:
 				num += 1
 		pylab.show()
 
+	def add_files_to_history(self):
+		for f in self.filenames:
+			self.phu_history.append('  {0}'.format(f))
+
 	def median(self,axis=0):
 		if self.verbose:
 			print 'producing channel median'
@@ -165,6 +183,11 @@ class Channels:
 				print x.data[:10]
 			if self.dpoint:
 				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
+		self.phu_history = self.history[0]
+		self.phu_history.insert(0,'following history is from first file used for median ({0})'.format(self.filenames[0]))
+		self.phu_history.append('-- history of {0} ends'.format(self.filenames[0]))
+		self.phu_history.append('median with axis={0} from files:'.format(axis))
+		self.add_files_to_history()
 
 	def mean(self,axis=0):
 		if self.verbose:
@@ -179,21 +202,31 @@ class Channels:
 				print x.data[:10]
 			if self.dpoint:
 				print 'result',x.data[self.dpoint[0]][self.dpoint[1]]
+		self.phu_history = self.history[0]
+		self.phu_history.insert(0,'following history is from first file used for median ({0})'.format(self.filenames[0]))
+		self.phu_history.append('-- history of {0} ends'.format(self.filenames[0]))
+		self.phu_history.append('mean with axis={0} from files:'.format(axis))
+		self.add_files_to_history()
 
-	def __print_op(self,op):
+	def __op_string(self,op):
+		"""Write operations to FITS history, print it out."""
 		if op == self.OP_MEDIAN_NORMALIZE:
-			print 'median normalize'
+			return 'median normalized'
 		elif op == self.OP_MEAN_NORMALIZE:
-			print 'mean normalized'
+			return 'mean normalized'
 		elif op == self.OP_MAX_NORMALIZE:
-			print 'max normalize'
+			return 'max normalized'
+		return 'unknow operation {0}'.format(op)
 
 
 	def op_channels(self,op):
 		"""Performs operaion on channel's data."""
+		strop = self.__op_string(op)
 		if self.verbose:
-			self.__print_op(op)
+			print strop
 		# work by channels..
+		for h in self.history:
+			h.append(strop)
 		for c in self.channels:
 			if self.verbose or self.dpoint:
 				print c.name,
@@ -225,8 +258,10 @@ class Channels:
 
 	def op_result(self,op):
 		"""Performs operaion on resulting data."""
+		strop = self.__op_string(op)
 		if self.verbose:
-			self.__print_op(op)
+			print strop
+		self.phu_history.append(strop)
 		# work by channels..
 		for c in self.channels:
 			if self.verbose or self.dpoint:
@@ -257,19 +292,25 @@ class Channels:
 		if self.verbose:
 			print
 
+	def __opbin_string(self,op,fn):
+		if op == '+':
+			return 'adding {0}'.format(fn)
+		if op == '-':
+			return 'sutracting {0}'.format(fn)
+		elif op == '*':
+			return 'multipling by {0}'.format(fn)
+		elif op == '/':
+			return 'dividing by {0}'.format(fn)
+		return 'unknow op {0} with file {1}'.format(op,fn)
 
 	def op_file(self,fn,op):
 		"""Performs operation with file. +, -, * and / are supported for operations."""
 		f = pyfits.open(fn)
+		strop = self.__opbin_string(op,fn)
 		if self.verbose:
-			if op == '+':
-				print 'adding {0}'.format(fn),
-			if op == '-':
-				print 'sutracting {0}'.format(fn),
-			elif op == '*':
-				print 'multipling by {0}'.format(fn),
-			elif op == '/':
-				print 'dividing by {0}'.format(fn),
+			print strop,
+		for h in self.history:
+			h.append(strop)
 		# work by channels..
 		for c in self.channels:
 			if self.verbose or self.dpoint:
@@ -322,6 +363,9 @@ class Channels:
 		ph = pyfits.PrimaryHDU()
 		for k in self.phu:
 			ph.header.update(k,self.phu[k])
+
+		for h in self.phu_history:
+			ph.header.add_history(h)
 
 		f.append(ph)
 	
@@ -378,6 +422,9 @@ class Channels:
 			ph = pyfits.PrimaryHDU()
 			for k in self.phu:
 				ph.header.update(k,self.phu[k])
+
+			for h in self.history:
+				ph.header.add_history(h)
 
 			f.append(ph)
 
