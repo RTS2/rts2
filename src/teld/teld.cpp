@@ -1017,7 +1017,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		getTelTargetAltAz (&hrpos, JD);
 		if (!hardHorizon->is_good (&hrpos))
 		{
-			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;
+			logStream (MESSAGE_ERROR) << "target is below hard horizon: alt az" << LibnovaHrz (&hrpos) << sendLog;
 			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
