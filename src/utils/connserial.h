@@ -162,6 +162,11 @@ class ConnSerial: public Rts2ConnNoSend
 		int readPort (char *rbuf, int b_len);
 
 		/**
+		 * Read port, do not block if there aren't any data available.
+		 */
+		size_t readPortNoBlock (char *rbuf, size_t b_len); 
+
+		/**
 		 * Read data from serial port until end character is encountered.
 		 *
 		 * Read data until readed byte is not equal endChar and readed length is less then b_len.

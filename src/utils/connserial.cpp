@@ -316,6 +316,18 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 	return rlen;
 }
 
+size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
+{
+	int ret = recv (sock, rbuf, b_len, MSG_DONTWAIT);
+	if (ret < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return 0;
+		throw Error (strerror (errno));	
+	}
+	return ret;
+}
+
 int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 {
 	int rlen = 0;
