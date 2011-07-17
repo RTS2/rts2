@@ -187,6 +187,11 @@
 #define FOC_SLEEPING        0x00
 #define FOC_FOCUSING        0x01
 
+// rotator status
+#define ROT_MASK_ROTATING   0x01
+#define ROT_IDLE            0x00
+#define ROT_ROTATING        0x01
+
 // telescope status
 #define TEL_MASK_MOVING     0x07
 #define TEL_MASK_CUP_MOVING 0x0f
@@ -337,7 +342,7 @@
 #define DEVICE_TYPE_CCD        3
 #define DEVICE_TYPE_DOME       4
 #define DEVICE_TYPE_WEATHER    5
-#define DEVICE_TYPE_ARCH       6
+#define DEVICE_TYPE_ROTATOR    6
 #define DEVICE_TYPE_PHOT       7
 #define DEVICE_TYPE_PLAN       8
 #define DEVICE_TYPE_GRB        9

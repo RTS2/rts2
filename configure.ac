@@ -793,6 +793,7 @@ AC_OUTPUT([Makefile
 	   src/db/Makefile
 	   src/db/simbad/Makefile
 	   src/sensord/Makefile
+	   src/rotad/Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
 	   src/scheduler/Makefile]
