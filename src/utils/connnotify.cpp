@@ -35,7 +35,7 @@ int ConnNotify::init ()
 {
 #ifdef HAVE_INOTIFY_INIT1
 	sock = inotify_init1 (IN_NONBLOCK);
-#elif HAVE_SYS_INOTIFY_H
+#elif defined(HAVE_SYS_INOTIFY_H)
 	sock = inotify_init ();
 	fcntl (sock, O_NONBLOCK);
 #endif
