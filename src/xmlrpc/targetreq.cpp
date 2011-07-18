@@ -1025,8 +1025,10 @@ void AddTarget::askForTarget (const char* &response_type, char* &response, size_
 
 	printHeader (_os, "Add new target");
 
-	_os << "<p>Please provide anything which can be used to identify what you would like to observer. Valid inputs are:<ul>"
-		"<li>RA DEC in various formats. DEC must be divided with + or - sign. Those are valid inputs<ul><li>300 +24</li> <li>10:20 +33:12</li> <li>10:20:30 -12:34:59</li></ul></li>"
+	_os << "<p>Provide anything that can be used to identify what you would like to observe. These are valid formats:<ul>"
+		"<li>RA DEC in various formats. DEC must be separated with +/- sign. These are valid inputs:"
+		  "<ul><li>300 +24</li> <li>10:20 +33:12</li> <li>10:20:30 -12:34:59</li>"
+		"</ul></li>"
 		"<li>SIMBAD resolvable name</li>"
 		"<li>any target from RTS2 target database</li>"
 		"<li>any Minor planet name resolvable by MPEC</li>"
