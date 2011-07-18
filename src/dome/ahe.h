@@ -19,11 +19,6 @@
 #ifndef __ahe_h__
 #define __ahe_h__
 
-extern "C"
-{
-    #include "serial_ahe.h"
-}
-
 #define CMD_A_OPEN 'a'
 #define CMD_B_OPEN 'b'
 #define CMD_A_CLOSE 'A'
@@ -35,9 +30,11 @@ extern "C"
 #define MAX_COMMANDS 50 //think of this as a timeout
 #define SERIAL_TIMEOUT 300
 
+#include "../utils/connserial.h"
 enum DomeStatus
 {
-    OPENED, CLOSED, ERROR, OPENING, CLOSING
+     ERROR=-1, OPENED, CLOSED, OPENING, CLOSING
+
 };
 
 namespace rts2dome
@@ -48,7 +45,6 @@ class AHE:public Dome
     private:
         char * dev;
         int fd, cmdSent;
-        byte response;
         DomeStatus status;
 
         int openALeaf();
@@ -58,6 +54,12 @@ class AHE:public Dome
 
         rts2core::ValueString * domeStatus;
         rts2core::ValueBool * closeDome;
+        rts2core::ValueBool * leafA;
+        rts2core::ValueBool * leafB;
+
+        rts2core::ConnSerial *sconn;
+
+        char response, junk;
 
     protected:
         virtual int processOption(int opt);

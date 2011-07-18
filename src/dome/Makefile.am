@@ -14,7 +14,7 @@ noinst_HEADERS = dome.h cupola.h ford.h vermes.h door_vermes.h \
 	dome-target-az.h  barcodereader_vermes.h \
 	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h \
 	oak_comm_vermes.h move-door_vermes.h OakFeatureReports.h OakHidBase.h \
-	util_vermes.h serial_vermes.h serial_ahe.h 
+	util_vermes.h serial_vermes.h
 
 noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a
 
@@ -41,19 +41,18 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 rts2_dome_flwo_SOURCES = flwo.cpp
 
+rts2_dome_ahe_SOURCES = ahe.cpp 
 
 if SUNCYG
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c watcher.cpp serial_ahe.c
 else
 bin_PROGRAMS += rts2-cupola-vermes rts2-dome-door-vermes rts2-dome-watcher rts2-dome-ahe
 
-noinst_LIBRARIES += librts2vermes.a librts2oak.a librts2ahe.a
+noinst_LIBRARIES += librts2vermes.a librts2oak.a
 
 librts2oak_a_SOURCES =  OakFeatureReports.c OakHidBase.c
 
 librts2vermes_a_SOURCES = move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c
-
-librts2ahe_a_SOURCES = serial_ahe.c
 
 rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
 rts2_cupola_vermes_LDADD =  librts2vermes.a  librts2dome-target-az.a @LIB_PTHREAD@  ${LDADD} 
@@ -63,8 +62,6 @@ rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2oak.a librts2dome-target-a
 
 rts2_dome_watcher_SOURCES = watcher.cpp
 
-rts2_dome_ahe_SOURCES = ahe.cpp 
-rts2_dome_ahe_LDADD = librts2ahe.a  ${LDADD}
 
 endif
 

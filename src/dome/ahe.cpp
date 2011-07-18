@@ -26,12 +26,15 @@ using namespace rts2dome;
 int AHE::openALeaf()
 {
     cmdSent=0;
+    response = '\x00';
 
-    while(response != POLL_A_OPENED || cmdSent < MAX_COMMANDS)
+    while(response != POLL_A_OPENED && cmdSent < MAX_COMMANDS)
     {
-        serial_write_byte(fd, CMD_A_OPEN);
-        serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSent++;
+		sconn->writePort(CMD_A_OPEN);
+        sleep(1);
+		sconn->readPort(response);
+		cmdSent++;
+		
     }
 
     if(cmdSent < MAX_COMMANDS)
@@ -47,11 +50,13 @@ int AHE::openALeaf()
 int AHE::openBLeaf()
 {
     cmdSent=0;
+    response = '\x00';
 
-    while(response != POLL_B_OPENED || cmdSent < MAX_COMMANDS)
+    while(response != POLL_B_OPENED && cmdSent < MAX_COMMANDS)
     {
-        serial_write_byte(fd, CMD_B_OPEN);
-        serial_read_byte(fd, SERIAL_TIMEOUT, &response);
+        sconn->writePort(CMD_B_OPEN);
+        sleep(1);
+        sconn->readPort(response);
         cmdSent++;
     }
 
@@ -68,12 +73,14 @@ int AHE::openBLeaf()
 int AHE::closeALeaf()
 {
    cmdSent=0; 
+   response = '\x00';
 
-   while(response != POLL_A_CLOSED || cmdSent < MAX_COMMANDS)
+   while(response != POLL_A_CLOSED && cmdSent < MAX_COMMANDS)
    {
-        serial_write_byte(fd, CMD_A_CLOSE);
-        serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSent++;
+       sconn->writePort(CMD_A_CLOSE);
+       sleep(1);
+       sconn->readPort(response);
+       cmdSent++;
    }
 
    return 1;
@@ -92,11 +99,14 @@ int AHE::closeBLeaf()
 {
     
    cmdSent=0;
-   while(response != POLL_B_CLOSED || cmdSent < MAX_COMMANDS)
+   response = '\x00';
+
+   while(response != POLL_B_CLOSED && cmdSent < MAX_COMMANDS)
    {
-        serial_write_byte(fd, CMD_B_CLOSE);
-        serial_read_byte(fd, SERIAL_TIMEOUT, &response);
-        cmdSent++;
+       sconn->writePort(CMD_B_CLOSE);
+       sleep(1);
+       sconn->readPort(response);
+       cmdSent++;
    }
 
    return 1;
@@ -114,7 +124,12 @@ int AHE::closeBLeaf()
 
 int AHE::processOption(int opt)
 {
-   return 0; 
+    switch (opt)
+    {
+        default:
+            return Dome::processOption (opt);
+    }
+    return 0;
 }
 
 int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
@@ -123,13 +138,39 @@ int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
     {
         if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
         {
-            logStream(MESSAGE_DEBUG) << "Told to close dome" << sendLog;
-            startClose();
+            logStream(MESSAGE_DEBUG) << "Told to open dome" << sendLog;
+            startOpen();
         }
         else
         {
-            logStream(MESSAGE_DEBUG) << "Told to open dome" << sendLog;
-            startOpen();
+            logStream(MESSAGE_DEBUG) << "Told to close dome" << sendLog;
+            startClose();
+        }
+    }
+    else if(old_value == leafA)
+    {
+        if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
+        { 
+            logStream(MESSAGE_DEBUG) << "Told leaf A to open" << sendLog;
+            openALeaf();
+        }
+        else
+        {
+            logStream(MESSAGE_DEBUG) << "Told leaf A to close" << sendLog;
+            closeALeaf();
+        }
+    }
+    else if(old_value == leafB)
+    {
+        if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
+        { 
+            logStream(MESSAGE_DEBUG) << "Told leaf B to open" << sendLog;
+            openBLeaf();
+        }
+        else
+        {
+            logStream(MESSAGE_DEBUG) << "Told leaf B to close" << sendLog;
+            closeBLeaf();
         }
     }
 
@@ -140,8 +181,8 @@ int AHE::init()
 {
 
     logStream (MESSAGE_DEBUG) << "AHE Dome initing..." << sendLog;
-    //TODO add error checking code for fd
-    fd = serial_init(dev, 9600, 8, 0, 1);    
+    
+    sconn = new rts2core::ConnSerial(dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 10);
 
     int ret = Dome::init();
     if(ret)
@@ -166,11 +207,13 @@ int AHE::startOpen()
     {
         status = OPENED;
         domeStatus->setValueString("Opened");
+        return 0;
     }
     else
     {
         status = ERROR;
         domeStatus->setValueString("Error opening");
+        return 1;
     }
 
     return 1;
@@ -178,13 +221,24 @@ int AHE::startOpen()
 
 long AHE::isOpened()
 {
-    return status; 
+	if(status == ERROR)
+	{
+		return -1;
+	}
+    else if(status != OPENED)
+	{
+		return 5000;
+	}    
+	else
+	{
+		return -2;
+	}
 }
 
 int AHE::endOpen()
 {
    //do nothing
-   return 1;
+   return 0;
 }
 
 int AHE::startClose()
@@ -196,26 +250,39 @@ int AHE::startClose()
     {
         status = CLOSED;
         domeStatus->setValueString("Closed");
+        return 0;
     }
     else
     {
         status = ERROR;
         domeStatus->setValueString("Error closing");
+        return 1;
     }
 
-    return 1;
 }
 
 long AHE::isClosed()
 {
+
+	if(status == ERROR)
+	{
+		return -1;
+	}
+    else if(status != CLOSED)
+	{
+		return 5000;
+	}    
+	else
+	{
+		return -2;
+	}
     
-    return status; 
 }
 
 int AHE::endClose()
 {
    //do nothing
-   return 1;
+   return 0;
 }
 
 AHE::AHE(int argc, char **argv):Dome(argc, argv)
@@ -225,18 +292,21 @@ AHE::AHE(int argc, char **argv):Dome(argc, argv)
     response = '\x00';
 
     createValue(domeStatus, "DOME_STAT", "dome status", true);
-    createValue(closeDome, "DOME_CLOSE", "closing dome", false, RTS2_VALUE_WRITABLE);
-    closeDome->setValueBool(true);
+    createValue(closeDome, "DOME_OPEN", "Dome open?", false, RTS2_VALUE_WRITABLE);
+    createValue(leafA, "Leaf_A_Opn", "Leaf A open?", false, RTS2_VALUE_WRITABLE);
+    createValue(leafB, "Leaf_B_Opn", "Leaf B open?", false, RTS2_VALUE_WRITABLE);
 
+    closeDome->setValueBool(true);
+    leafA->setValueBool(false);
+    leafB->setValueBool(false);
 }
 
 AHE::~AHE()
 {
-    serial_shutdown(fd);    
 }
 
 int main(int argc, char **argv)
 {
-    AHE device = AHE(argc, argv);
+    AHE device(argc, argv);
     return device.run();
 }
