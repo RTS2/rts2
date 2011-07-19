@@ -272,16 +272,16 @@ int bigNG::info ()
 	tban_getdSensorTemp(&tban, 1, &temp, &rawTemp, &cal);
 	ds2->setValueInteger(temp/2);
 
-    tban_getaSensorTemp(&tban, 0, &temp, &rawTemp, &cal);
+    bigNG_getaSensorTemp(&tban, 0, &temp, &rawTemp, &cal,0);
     as1->setValueInteger(temp/2);
 
-    tban_getaSensorTemp(&tban, 1, &temp, &rawTemp, &cal);
+    bigNG_getaSensorTemp(&tban, 1, &temp, &rawTemp, &cal,0);
     as2->setValueInteger(temp/2);
 
-    tban_getaSensorTemp(&tban, 2, &temp, &rawTemp, &cal);
+    bigNG_getaSensorTemp(&tban, 2, &temp, &rawTemp, &cal,0);
     as3->setValueInteger(temp/2);
 
-    tban_getaSensorTemp(&tban, 3, &temp, &rawTemp, &cal);
+    bigNG_getaSensorTemp(&tban, 3, &temp, &rawTemp, &cal,0);
     as4->setValueInteger(temp/2);
 
 	return Sensor::info ();
