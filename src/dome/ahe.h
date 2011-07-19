@@ -43,7 +43,7 @@ namespace rts2dome
 class AHE:public Dome
 {
     private:
-        char * dev;
+        const char * dev;
         int fd, cmdSent;
         DomeStatus status;
 
