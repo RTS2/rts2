@@ -170,7 +170,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	{
 		int id = params->getInteger ("id", -1);
 		if (id <= 0)
-			throw JSONException ("empty id parameter");
+			throw JSONException ("invalid id parameter");
 		const char *cname = params->getString ("cn", "");
 		if (cname[0] == '\0')
 			throw JSONException ("empty camera name");
@@ -185,6 +185,32 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		response = new char[response_length];
 		memcpy (response, os.str().c_str (), response_length);
 		return;
+	}
+	// return altitude of target..
+	else if (vals.size () == 1 && vals[0] == "taltitudes")
+	{
+		int id = params->getInteger ("id", -1);
+		if (id <= 0)
+			throw JSONException ("invalid id parameter");
+		time_t from = params->getInteger ("from", master->getNow () - 86400);
+		time_t to = params->getInteger ("to", from + 86400);
+		const int steps = params->getInteger ("step", 1000);
+
+		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+		const double jd_from = ln_get_julian_from_timet (&from);
+		const double jd_to = ln_get_julian_from_timet (&to);
+
+		struct ln_hrz_posn hrz;
+
+		os << "[" << std::fixed;
+		for (double jd = jd_from; jd < jd_to; jd += fabs (jd_to - jd_from) / steps)
+		{
+			if (jd != jd_from)
+				os << ",";
+			target->getAltAz (&hrz, jd);
+			os << hrz.alt;
+		}
+		os << "]";
 	}
 	else if (vals.size () == 1 && vals[0] == "consts")
 	{
