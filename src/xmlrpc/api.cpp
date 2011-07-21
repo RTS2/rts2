@@ -165,6 +165,30 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			throw JSONException ("variable is not selection");
 		sendSelection (os, (rts2core::ValueSelection *) rts2v);
 	}
+	// return sun altitude
+	else if (vals.size () == 1 && vals[0] == "sunalt")
+	{
+		time_t from = params->getInteger ("from", master->getNow () - 86400);
+		time_t to = params->getInteger ("to", from + 86400);
+		const int steps = params->getInteger ("step", 1000);
+
+		const double jd_from = ln_get_julian_from_timet (&from);
+		const double jd_to = ln_get_julian_from_timet (&to);
+
+		struct ln_equ_posn equ;
+		struct ln_hrz_posn hrz;
+
+		os << "[" << std::fixed;
+		for (double jd = jd_from; jd < jd_to; jd += fabs (jd_to - jd_from) / steps)
+		{
+			if (jd != jd_from)
+				os << ",";
+			ln_get_solar_equ_coords (jd, &equ);
+			ln_get_hrz_from_equ (&equ, Rts2Config::instance ()->getObserver (), jd, &hrz);
+			os << "[" << hrz.alt << "," << hrz.az << "]";
+		}
+		os << "]";
+	}
 #ifdef HAVE_PGSQL
 	else if (vals.size () == 1 && vals[0] == "script")
 	{
