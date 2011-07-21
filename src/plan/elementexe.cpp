@@ -27,6 +27,7 @@ using namespace rts2image;
 ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, const char *_exec):ConnExe (_master, _exec, true)
 {
 	masterElement = _masterElement;
+	exposure_started = false;
 }
 
 ConnExecute::~ConnExecute ()
@@ -61,6 +62,7 @@ void ConnExecute::processCommand (char *cmd)
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
+		exposure_started = true;
 	}
 	else if (!strcasecmp (cmd, "radec"))
 	{
@@ -265,14 +267,26 @@ void ConnExecute::connectionError (int last_data_size)
 
 void ConnExecute::exposureEnd ()
 {
-	writeToProcess ("exposure_end");
+	if (exposure_started)  
+		writeToProcess ("exposure_end");
+	else
+		logStream (MESSAGE_WARNING) << "script received end-of-exposure without starting it. This probably signal out-of-sync communication between executor and camera" << sendLog;
 }
 
 int ConnExecute::processImage (Image *image)
 {
-	images.push_back (image);
-	image->saveImage ();
-	writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
+	if (exposure_started)
+	{
+		images.push_back (image);
+		image->saveImage ();
+		writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
+		exposure_started = false;
+	}
+	else
+	{
+		logStream (MESSAGE_WARNING) << "script executes method to start image processing without trigerring an exposure" << sendLog;
+		return -1;
+	} 
 	return 1;
 }
 
@@ -321,6 +335,7 @@ int Execute::processImage (Image *image)
 {
 	if (connExecute)
 		return connExecute->processImage (image);
+
 	return Element::processImage (image);
 }
 

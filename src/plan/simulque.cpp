@@ -49,7 +49,7 @@ TargetQueue::iterator SimulQueueTargets::removeEntry (TargetQueue::iterator &ite
 	return erase (iter);
 }
 
-SimulQueue::SimulQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues):ExecutorQueue (_master, name, _observer)
+SimulQueue::SimulQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues):ExecutorQueue (_master, name, _observer, true)
 {
 	queues = _queues;
 }

@@ -176,7 +176,10 @@ class SimulQueueTargets;
 class ExecutorQueue:public TargetQueue
 {
 	public:
-		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer);
+		/**
+		 * If read-only is set, queue cannot be changed.
+		 */
+		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));

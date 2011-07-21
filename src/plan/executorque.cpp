@@ -331,16 +331,19 @@ bool TargetQueue::frontTimeExpires (double now)
 	return !iter->notExpired (now);
 }
 
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer):TargetQueue (_master, _observer)
+ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, bool read_only):TargetQueue (_master, _observer)
 {
 	std::string sn (name);
 	currentTarget = NULL;
+
+	int read_only_fl = read_only ? 0 : RTS2_VALUE_WRITABLE;
+
 	master->createValue (nextIds, (sn + "_ids").c_str (), "next queue IDs", false);
 	master->createValue (nextNames, (sn + "_names").c_str (), "next queue names", false);
 	master->createValue (nextStartTimes, (sn + "_start").c_str (), "times of element execution", false);
 	master->createValue (nextEndTimes, (sn + "_end").c_str (), "times of element execution", false);
 	master->createValue (nextPlanIds, (sn + "_planid").c_str (), "plan ID's", false);
-	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+	master->createValue (nextHard, (sn + "_hard").c_str (), "hard/soft interruption", false, read_only_fl | RTS2_DT_ONOFF);
 	master->createValue (queueEntry, (sn + "_qid").c_str (), "private queue entry", false);
 
 	master->createValue (removedIds, (sn + "_removed_ids").c_str (), "removed observation IDS", false);
@@ -354,17 +357,17 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	master->createValue (executedTimes, (sn + "_executed_times").c_str (), "time when target was executed", false);
 	master->createValue (executedQueueEntry, (sn + "_executed_qid").c_str (), "queue entry of executed target", false);
 
-	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, RTS2_VALUE_WRITABLE);
-	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, RTS2_VALUE_WRITABLE);
+	master->createValue (queueType, (sn + "_queing").c_str (), "queing mode", false, read_only_fl);
+	master->createValue (skipBelowHorizon, (sn + "_skip_below").c_str (), "skip targets below horizon (otherwise remove them)", false, read_only_fl);
 	skipBelowHorizon->setValueBool (true);
 
-	master->createValue (testConstraints, (sn + "_test_constr").c_str (), "test target constraints (e.g. not only simple horizon)", false, RTS2_VALUE_WRITABLE);
+	master->createValue (testConstraints, (sn + "_test_constr").c_str (), "test target constraints (e.g. not only simple horizon)", false, read_only_fl);
 	testConstraints->setValueBool (true);
 
-	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, RTS2_VALUE_WRITABLE);
+	master->createValue (removeAfterExecution, (sn + "_remove_executed").c_str (), "remove observations once they are executed - run script only once", false, read_only_fl);
 	removeAfterExecution->setValueBool (true);
 
-	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queuei for selection", false, RTS2_VALUE_WRITABLE);
+	master->createValue (queueEnabled, (sn + "_enabled").c_str (), "enable queuei for selection", false, read_only_fl);
 	queueEnabled->setValueBool (true);
 
 	queueType->addSelVal ("FIFO");
