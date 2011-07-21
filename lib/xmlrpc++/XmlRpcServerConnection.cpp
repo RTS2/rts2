@@ -468,6 +468,14 @@ void XmlRpcServerConnection::executeGet()
 
 			request->execute (this, &_saddr, path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
+		catch (const JSONException& fault)
+		{
+			XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: JSON fault %s.", fault.getMessage().c_str());
+			_get_response = new char[200];
+			_get_response_length = snprintf (_get_response, 200, "{\"error\":\"%s\"}", fault.getMessage().c_str());
+			response_type = "text/json";
+			http_code = HTTP_BAD_REQUEST;
+		}
 		catch (const std::exception& ex)
 		{
 			_get_response = new char[501];
