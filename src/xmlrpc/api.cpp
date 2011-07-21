@@ -151,18 +151,18 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		const char *device = params->getString ("d","");
 		const char *variable = params->getString ("n", "");
 		if (variable[0] == '\0')
-			throw XmlRpcException ("variable name not set - missing or empty n parameter");
+			throw JSONException ("variable name not set - missing or empty n parameter");
 		if (isCentraldName (device))
 			conn = master->getSingleCentralConn ();
 		else
 			conn = master->getOpenConnection (device);
 		if (conn == NULL)
-			throw XmlRpcException ("cannot find device with given name");
+			throw JSONException ("cannot find device with given name");
 		rts2core::Value * rts2v = master->getValue (device, variable);
 		if (rts2v == NULL)
-			throw XmlRpcException ("cannot find variable");
+			throw JSONException ("cannot find variable");
 		if (rts2v->getValueBaseType () != RTS2_VALUE_SELECTION)
-			throw XmlRpcException ("variable is not selection");
+			throw JSONException ("variable is not selection");
 		sendSelection (os, (rts2core::ValueSelection *) rts2v);
 	}
 #ifdef HAVE_PGSQL
@@ -170,10 +170,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	{
 		int id = params->getInteger ("id", -1);
 		if (id <= 0)
-			throw XmlRpcException ("empty id parameter");
+			throw JSONException ("empty id parameter");
 		const char *cname = params->getString ("cn", "");
 		if (cname[0] == '\0')
-			throw XmlRpcException ("empty camera name");
+			throw JSONException ("empty camera name");
 		
 		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		rts2script::Script script = rts2script::Script ();
@@ -190,7 +190,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	{
 		int tid = params->getInteger ("id", -1);
 		if (tid <= 0)
-			throw XmlRpcException ("empty target ID");
+			throw JSONException ("empty target ID");
 		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		target->getConstraints ()->print (os);
 
@@ -209,7 +209,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			connections_t::iterator iter = master->getConnections ()->begin ();
 			master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 			if (iter == master->getConnections ()->end ())
-			 	throw XmlRpcException ("executor is not connected");
+			 	throw JSONException ("executor is not connected");
 			sendConnectionValues (os, *iter, params);
 		}
 		// device information
@@ -221,7 +221,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			else
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
-				throw XmlRpcException ("cannot find device with given name");
+				throw JSONException ("cannot find device with given name");
 			os << "\"type\":" << conn->getOtherType ();
 		}
 		// set or increment variable
@@ -231,18 +231,18 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *variable = params->getString ("n", "");
 			const char *value = params->getString ("v", "");
 			if (variable[0] == '\0')
-				throw XmlRpcException ("variable name not set - missing or empty n parameter");
+				throw JSONException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
-				throw XmlRpcException ("value not set - missing or empty v parameter");
+				throw JSONException ("value not set - missing or empty v parameter");
 			if (isCentraldName (device))
 				conn = master->getSingleCentralConn ();
 			else
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
-				throw XmlRpcException ("cannot find device with given name");
+				throw JSONException ("cannot find device with given name");
 			rts2core::Value * rts2v = master->getValue (device, variable);
 			if (rts2v == NULL)
-				throw XmlRpcException ("cannot find variable");
+				throw JSONException ("cannot find variable");
 			char op;
 			if (vals[0] == "inc")
 				op = '+';
@@ -260,7 +260,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			else
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
-				throw XmlRpcException ("cannot find device");
+				throw JSONException ("cannot find device");
 			double from = params->getDouble ("from", 0);
 			sendConnectionValues (os, conn, params, from);
 		}
@@ -271,13 +271,13 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *cmd = params->getString ("c", "");
 			int async = params->getInteger ("async", 0);
 			if (cmd[0] == '\0')
-				throw XmlRpcException ("empty command");
+				throw JSONException ("empty command");
 			if (isCentraldName (device))
 				conn = master->getSingleCentralConn ();
 			else
 				conn = master->getOpenConnection (device);
 			if (conn == NULL)
-				throw XmlRpcException ("cannot find device");
+				throw JSONException ("cannot find device");
 			if (async)
 			{
 				conn->queCommand (new rts2core::Rts2Command (master, cmd));
@@ -299,7 +299,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			const char *camera = params->getString ("ccd","");
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
-				throw XmlRpcException ("cannot find camera with given name");
+				throw JSONException ("cannot find camera with given name");
 			AsyncAPIExpose *aa = new AsyncAPIExpose (this, conn, connection);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
@@ -315,7 +315,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			bool ic = params->getInteger ("ic",1);
 			bool pm = params->getInteger ("pm",1);
 			if (name[0] == '\0')
-				throw XmlRpcException ("empty n parameter");
+				throw JSONException ("empty n parameter");
 			tar_set.loadByName (name, pm, ic);
 			jsonTargets (tar_set, os, params);
 		}
@@ -325,7 +325,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			rts2db::TargetSet tar_set;
 			int id = params->getInteger ("id", -1);
 			if (id <= 0)
-				throw XmlRpcException ("empty id parameter");
+				throw JSONException ("empty id parameter");
 			tar_set.load (id);
 			jsonTargets (tar_set, os, params);
 		}
@@ -335,7 +335,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			rts2db::TargetSet tar_set;
 			int label = params->getInteger ("l", -1);
 			if (label == -1)
-			  	throw XmlRpcException ("empty l parameter");
+			  	throw JSONException ("empty l parameter");
 			tar_set.loadByLabelId (label);
 			jsonTargets (tar_set, os, params);
 		}
@@ -343,10 +343,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			int obsid = params->getInteger ("oid", -1);
 			if (obsid == -1)
-				throw XmlRpcException ("empty oid parameter");
+				throw JSONException ("empty oid parameter");
 			rts2db::Observation obs (obsid);
 			if (obs.load ())
-				throw XmlRpcException ("Cannot load observation set");
+				throw JSONException ("Cannot load observation set");
 			obs.loadImages ();	
 			jsonImages (obs.getImageSet (), os, params);
 		}
@@ -354,10 +354,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			const char *label = params->getString ("l", "");
 			if (label[0] == '\0')
-				throw XmlRpcException ("empty l parameter");
+				throw JSONException ("empty l parameter");
 			int t = params->getInteger ("t", -1);
 			if (t < 0)
-				throw XmlRpcException ("invalid type parametr");
+				throw JSONException ("invalid type parametr");
 			rts2db::Labels lb;
 			os << lb.getLabel (label, t);
 		}
@@ -366,10 +366,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			const char *cn = params->getString ("consts", "");
 			if (cn[0] == '\0')
-				throw XmlRpcException ("unknow constraint name");
+				throw JSONException ("unknow constraint name");
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
-				throw XmlRpcException ("unknown target ID");
+				throw JSONException ("unknown target ID");
 			double from = params->getDouble ("from", master->getNow ());
 			double to = params->getDouble ("to", from + 86400);
 			// 60 sec = 1 minute step (by default)
@@ -403,7 +403,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		{
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
-				throw XmlRpcException ("unknow target ID");
+				throw JSONException ("unknow target ID");
 			time_t from = params->getDouble ("from", master->getNow ());
 			time_t to = params->getDouble ("to", from + 86400);
 			double length = params->getDouble ("length", rts2_nan ("f"));
@@ -490,7 +490,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 #endif
 		else
 		{
-			throw XmlRpcException ("invalid request " + path);
+			throw JSONException ("invalid request " + path);
 		}
 		os << "}";
 	}

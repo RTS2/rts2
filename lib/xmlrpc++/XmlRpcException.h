@@ -51,5 +51,18 @@ namespace XmlRpc
 			}
 	};
 
+	//! A class thrown to indicate problem in which should be thrown as JSON error message.
+	class JSONException:public std::exception
+	{
+		public:
+			explicit JSONException(const std::string& message) : std::exception (), _message(message) {}
+
+			virtual ~JSONException () throw () {}
+
+			//! Return the error message.
+			const std::string& getMessage() const { return _message; }
+		private:
+			std::string _message;
+	};
 }
 #endif							 // _XMLRPCEXCEPTION_H_

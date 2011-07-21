@@ -384,9 +384,13 @@ void XmlRpcServerConnection::executeRequest()
 	}
 	catch (const XmlRpcException& fault)
 	{
-		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: fault %s.",
-			fault.getMessage().c_str());
+		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: fault %s.", fault.getMessage().c_str());
 		generateFaultResponse(fault.getMessage(), fault.getCode());
+	}
+	catch (const JSONException& fault)
+	{
+		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: JSON fault %s.", fault.getMessage().c_str());
+		generateJSONFaultResponse(fault.getMessage());
 	}
 }
 
@@ -636,6 +640,26 @@ void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, 
 	faultStruct[FAULTSTRING] = errorMsg;
 	std::string body = RESPONSE_1 + faultStruct.toXml() + RESPONSE_2;
 	std::string header = generateHeader(body);
+
+	_response = header + body;
+}
+
+void XmlRpcServerConnection::generateJSONFaultResponse(std::string const& errorMsg)
+{
+	std::string body = "{\"error\":" + errorMsg + "\"}";
+	std::string header =
+		"HTTP/1.1 400 Error\r\n"
+		"Date: " + getHttpDate () +
+		"\r\nServer: ";
+	header += XMLRPC_VERSION;
+	header += "\r\n"
+		"Content-Type: text/json\r\n"
+		"Content-length: ";
+
+	char buffLen[40];
+	sprintf(buffLen,"%i\r\n\r\n", (int) body.size());
+
+	header += buffLen;
 
 	_response = header + body;
 }
