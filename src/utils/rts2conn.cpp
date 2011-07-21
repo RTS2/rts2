@@ -292,7 +292,7 @@ std::string Rts2Conn::getStateString ()
 				case ROT_ROTATING:
 					_os << "ROTATING";
 					break;
-				defualt:
+				default:
 					_os << "UNKNOWN";	
 			}
 			break;
