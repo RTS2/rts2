@@ -137,12 +137,22 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 
 	double x = scaleX * (iter->getRecTime () - from) + shadow;
 	double y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+	while (iter != rs.end () && (isnan (x) || isnan (y)))
+	{
+		iter++;
+		x = scaleX * (iter->getRecTime () - from) + shadow;
+		y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+	}
 
 	for (; iter != rs.end (); )
 	{
 		iter++;
 		double x_end = (iter == rs.end ()) ? size.width (): scaleX * (iter->getRecTime () - from) + shadow;
 		double y_end = (iter == rs.end ()) ? y : size.height () - scaleY * (iter->getValue () - min) + shadow;
+		// don't accept nan values
+		if (isnan (x_end) || isnan (y_end))
+			continue;
+
 		switch (plotType)
 		{
 			case PLOTTYPE_AUTO:
