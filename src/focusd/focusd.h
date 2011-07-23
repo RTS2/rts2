@@ -68,6 +68,7 @@ class Focusd:public rts2core::Device
 		virtual int processOption (int in_opt);
 
 		virtual int setTo (float num) = 0;
+		virtual float tcOffset () = 0;
 
 		virtual int isFocusing ();
 		virtual int endFocusing ();

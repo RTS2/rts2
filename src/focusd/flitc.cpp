@@ -77,6 +77,7 @@ class Fli:public Focusd
 		virtual int info ();
 		virtual void meteo ();
 		virtual int setTo (float num);
+                virtual float tcOffset () ;
 		rts2core::ValueLong *focExtent;
 		virtual void valueChanged (rts2core::Value *changed_value);
 	public:
@@ -97,10 +98,10 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 
-	createValue (TCFocOffset, "FOC_TC", "absolute position or offset calculated by temperature compensation", false);
 	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
 	createValue (temperatureMeteo, "TEMP_METEO", "temperature from the meteo device", true); //go to FITS
 	createValue (TCtemperatureRef, "TC_TEMP_REF", "temperature at the time when FOC_DEF was set", false, RTS2_VALUE_WRITABLE);
+	createValue (TCFocOffset, "FOC_TC", "absolute position or offset calculated by temperature compensation", false);
 	createValue (TCoffset, "TCP0", "y-axis offset of the linear temperature model", false);
 	createValue (TCslope, "TCP1", "slope of the linear temperature model", false);
 	createValue (TCmode, "TCMODE", "temperature compensation absolute, relative to FOC_DEF, no tc", false, RTS2_VALUE_WRITABLE);
@@ -116,16 +117,10 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	addOption (OPT_FLI_TC_OFFSET, "TCoffset",  1, "temperature compensation y-axis offset");
 	addOption (OPT_FLI_TC_SLOPE, "TCslope",  1, "temperature compensation slope");
 	addOption (OPT_FLI_TC_MODE, "TCmode",  1, "temperature compensation absolute, relative, default: none");
-
-
-	TCtemperatureRef->setValueDouble( 10.) ; 
-	TCoffset->setValueDouble( 0.) ;  
-	TCslope->setValueDouble(  1.) ; 
 	
 	TCmode->addSelVal("absolute") ;
 	TCmode->addSelVal("relative") ;
 	TCmode->addSelVal("none") ;
-	TCmode->setValueInteger( NO_TC)  ;
 
 }
 
@@ -259,11 +254,12 @@ int Fli::init ()
 		logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
 		return -1;
 	}
-	setPosition (defaultPosition->getValueInteger ());
 	// connect to the meteo device to retrieve the temperature
 	addConstValue (meteoDevice, meteoDevice, "meteo device name to monitor its temperature");
 	addConstValue (meteoVariable, meteoVariable, "meteo device temperature variable name");
 	meteo();
+
+	setPosition (defaultPosition->getValueInteger ());
 
 	return 0;
 }
@@ -318,18 +314,35 @@ void Fli::meteo()
 }
 int Fli::setTo (float num)
 {
-        float tcFocOffset= 0.;
-        float focuserPosition= -1. ; // better fail with "Desired..."
 	LIBFLIAPI ret;
 	ret = info ();
 	if (ret)
 		return ret;
 
-	if( TCmode->getValueInteger () == NO_TC) {
-	  focuserPosition= num;
-	  logStream (MESSAGE_DEBUG) << "Fli::setTo: no tcFocOffset: "<< focuserPosition  << " was: " << num << sendLog;
-	} else {
+	if (num < 0 || num > focExtent->getValueInteger())
+	{
+		logStream (MESSAGE_ERROR) << "Desired position not in focuser's extent: " << num << sendLog;
+		return -1;
+	}
 
+	num -= position->getValueInteger ();
+
+	ret = FLIStepMotorAsync (dev, (long) num);
+	if (ret)
+		return -1;
+	return 0;
+}
+float Fli::tcOffset(){
+
+        float tcFocOffset= 0.;
+	float tmpPosition= 0.;
+
+	if( TCmode->getValueInteger () == NO_TC) {
+	  
+	  logStream (MESSAGE_DEBUG) << "Fli::tcOffset: no tcFocOffset calculated (mode=NO_TC) "<< sendLog;
+	  return 0. ;
+	} else {
+	  // get the temperature from meteo device
 	  meteo();
 
 	  if( !( isnan(temperatureMeteo->getValueDouble()) || 
@@ -338,98 +351,65 @@ int Fli::setTo (float num)
 		 isnan(TCslope->getValueDouble()) ||
 		 TCslope->getValueDouble()==0.))
 	  {
-
 	    if( TCmode->getValueInteger ()== ABSOLUTE_TC) {
-
-	      //FOC_POS(T): 
+	      // absolute FOC_POS(T): 
 	      tcFocOffset=  temperatureMeteo->getValueDouble() * TCslope->getValueDouble() +  TCoffset->getValueDouble() ; 
-	      focuserPosition= tcFocOffset;
+	      // although it is an absolute position an offset is required in the caller method 
+	      tmpPosition= tcFocOffset - defaultPosition->getValueFloat();
+
+	      logStream (MESSAGE_DEBUG) << "Fli::tcOffset: tcFocOffset: absolute: " << tcFocOffset <<",  tmpPosition: " << tmpPosition << ", defaultPosition: "<< defaultPosition->getValueFloat () << ",  focusingOffset: " << focusingOffset->getValueFloat () << ", tempOffset: "<< tempOffset->getValueFloat () <<  sendLog;
+
 	    } else {
 	      // relative FOC_POS(T):
 	      tcFocOffset=  (temperatureMeteo->getValueDouble()- TCtemperatureRef->getValueDouble()) * TCslope->getValueDouble() ; 
-	      focuserPosition= defaultPosition->getValueFloat () + tcFocOffset;
+	      tmpPosition= tcFocOffset;
+
+	      logStream (MESSAGE_DEBUG) << "Fli::tcOffset: tcFocOffset: relative: "<< tmpPosition << ", defaultPosition: "<< defaultPosition->getValueFloat () << ",  focusingOffset: " << focusingOffset->getValueFloat () << ", tempOffset:"<< tempOffset->getValueFloat () <<  sendLog;
 	    }
 
-	    logStream (MESSAGE_DEBUG) << "Fli::setTo: tcFocOffset: "<< focuserPosition  << " instead of: " << num << ", TEMP_METEO: " << temperatureMeteo->getValueDouble() << ", TC_TEMP_REF:" << TCoffset->getValueDouble()<< sendLog;
+	    TCFocOffset->setValueFloat(tmpPosition) ;
+	    sendValueAll (TCFocOffset);
+	    return tmpPosition ;
 	  } else {
-	  
-	    focuserPosition= num;
-	    logStream (MESSAGE_DEBUG) << "Fli::setTo: tcFocOffset: one of the values was NaN or 0., setting focuser to: " << focuserPosition <<sendLog;
+	    //focuserPosition= num;
+	    logStream (MESSAGE_DEBUG) << "Fli::tcOffset: tcFocOffset: one of the values was NaN or 0., setting focuser to: " << 0. <<sendLog;
+	    return 0. ;
 	  }
 	}
 
-	if (focuserPosition < 0 || focuserPosition > focExtent->getValueInteger())
-	{
-		logStream (MESSAGE_ERROR) << "Desired position not in focuser's extent: " << focuserPosition << sendLog;
-		return -1;
-	}
+	  logStream (MESSAGE_DEBUG) << "Fli::tcOffset " << sendLog;
+	  return 0. ;
 
-	long focuserPositionOffset = focuserPosition - position->getValueInteger ();
-
-	ret = FLIStepMotorAsync (dev, focuserPositionOffset);
-	if (ret)
-	{
-	        logStream (MESSAGE_ERROR) << "Fli::setTo: error: "<< ret <<", setting position: " << focuserPosition << sendLog;
-		return -1;
-	} else{
-	  // ToDo: this expressions belong to camd
-	  logStream (MESSAGE_DEBUG) << "Fli::setTo: FLIStepMotorAsync successful setting position: " << focuserPosition << sendLog;
-	  target->setValueFloat(focuserPosition) ;
-	  sendValueAll (target);
-
-	  if( TCmode->getValueInteger()== ABSOLUTE_TC) {
-	    TCFocOffset->setValueFloat(target->getValueFloat() - defaultPosition->getValueFloat ()) ;
-	  }else{
-	    TCFocOffset->setValueFloat(tcFocOffset) ;
-	  }
-	  sendValueAll (TCFocOffset);
-	}
-	return 0;
 }
 void Fli::valueChanged (rts2core::Value *changed_value)
 {
-        bool set=false ;
-        long currentOffset=0 ; // in case TC_TEMP_REF is set, it will be calculated in setTo
-        long steps;
-        int ret ;
 
-        if (changed_value == TCmode) {
-	  set=true ;
 
-	  switch (TCmode->getValueInteger())
-	  {
+  long steps= 0  ;
+  long positionTc= 0 ;
+  int ret ;
 
-		case ABSOLUTE_TC:
-			break;
-		case RELATIVE_TC:
-			break;
-		case NO_TC:
-		default:
-		{
-		  currentOffset= (long) TCFocOffset->getValueFloat() ;
-		  TCFocOffset->setValueFloat(0.) ;
-		  sendValueAll (TCFocOffset);
-		}
-	  }
+  if ((changed_value == TCmode) || (changed_value ==TCtemperatureRef)) {
 
-	}  else if(changed_value ==TCtemperatureRef) {
-	  set=true ;
-	}
+    positionTc= + defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ()+ tcOffset() ;
+    ret= setTo( positionTc) ;
+    if( ret){
+      logStream (MESSAGE_ERROR) << "Fli::valueChanged: error: "<< ret << ", error positionTc: "<< positionTc << sendLog;
+    } else {
+      // ToDo: ret does not show up in the log files
+      if( ret == 0) {
+	logStream (MESSAGE_ERROR) << "Fli::valueChanged: ok: "<< 0 << " (zero), positionTc: "<< positionTc<< sendLog;
+      } else {
+	logStream (MESSAGE_ERROR) << "Fli::valueChanged: ok: "<< ret << ", positionTc: "<< positionTc<< sendLog;
+      }
+      position->setValueInteger ((int) steps);
+    }
+    target->setValueFloat(positionTc) ;
+    sendValueAll (target);
+    return ;
+  }
 
-	if( set) {
-
-	  ret = FLIGetStepperPosition (dev, &steps);
-	  if (ret) {
-
-	    logStream (MESSAGE_ERROR) << "Fli::valueChanged: error: "<< ret << ", retrieving position: " << sendLog;
-	  } else {
-	    ret= setTo( steps- currentOffset) ;
-	    if( ! ret){
-	      position->setValueInteger ((int) steps);
-	    }
-	  }
-	}
-	Focusd::valueChanged (changed_value);
+  Focusd::valueChanged (changed_value);
 
 }
 int Fli::isFocusing ()

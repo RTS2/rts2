@@ -53,6 +53,7 @@ class Optec:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (float num);
+		virtual float tcOffset () {return 0.;};
 		virtual int isFocusing ();
 };
 

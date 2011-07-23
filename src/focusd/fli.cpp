@@ -47,6 +47,7 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (float num);
+  virtual float tcOffset () {return 0.;};
 		rts2core::ValueLong *focExtent;
 
 	public:

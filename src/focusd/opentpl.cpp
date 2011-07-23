@@ -48,6 +48,7 @@ class OpenTpl:public Focusd
 		virtual bool isAtStartPosition ();
 
 		virtual int setTo (float num);
+  virtual float tcOffset () {return 0.;};
 		virtual int isFocusing ();
 	public:
 		OpenTpl (int argc, char **argv);

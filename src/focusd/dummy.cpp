@@ -45,6 +45,7 @@ class Dummy:public Focusd
 		Dummy (int argc, char **argv);
 		~Dummy (void);
 		virtual int setTo (float num);
+		virtual float tcOffset () {return 0.;};
 		virtual int isFocusing ();
 };
 

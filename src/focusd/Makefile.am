@@ -27,11 +27,16 @@ EXTRA_DIST =
 
 if FLI
 bin_PROGRAMS += rts2-focusd-fli
+bin_PROGRAMS += rts2-focusd-flitc
 rts2_focusd_fli_SOURCES = fli.cpp
 rts2_focusd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_focusd_fli_CPPFLAGS = @INC_FLI@
+rts2_focusd_flitc_SOURCES = flitc.cpp
+rts2_focusd_flitc_LDFLAGS = @LIB_FLI@ @LIB_M@
+rts2_focusd_flitc_CPPFLAGS = @INC_FLI@
 else
 EXTRA_DIST += fli.cpp
+EXTRA_DIST += flitc.cpp
 endif
 
 if MDMTCS

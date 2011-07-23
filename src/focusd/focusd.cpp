@@ -155,21 +155,23 @@ int Focusd::endFocusing ()
 
 int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
+        float tco= tcOffset();
+
 	if (old_value == target)
 	{
 		return setPosition (new_value->getValueFloat ())? -2 : 0;
 	}
 	if (old_value == defaultPosition)
 	{
-		return setPosition (new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ())? -2 : 0;
+		return setPosition (new_value->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ()+tco )? -2 : 0;
 	}
 	if (old_value == focusingOffset)
 	{
-		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat ())? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + new_value->getValueFloat () + tempOffset->getValueFloat ()+tco )? -2 : 0;
 	}  
 	if (old_value == tempOffset)
 	{
-		return setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat ())? -2 : 0;
+		return setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + new_value->getValueFloat ()+tco )? -2 : 0;
 	}
 	return rts2core::Device::setValue (old_value, new_value);
 }
@@ -177,7 +179,7 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 int Focusd::scriptEnds ()
 {
 	tempOffset->setValueFloat (0);
-	setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat ());
+	setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tcOffset());
 	sendValueAll (tempOffset);
 	return rts2core::Device::scriptEnds ();
 }
