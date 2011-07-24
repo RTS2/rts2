@@ -87,7 +87,12 @@ int Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
-	if (isAtStartPosition () == false)
+	if (isnan (defaultPosition->getValueFloat ()))
+	{
+		target->setValueFloat (getPosition ());
+		defaultPosition->setValueFloat (getPosition ());
+	}
+	else if (isAtStartPosition () == false)
 	{
 		setPosition (defaultPosition->getValueFloat ());
 	}
