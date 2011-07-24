@@ -26,6 +26,7 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/labellist.h"
+#include "../utilsdb/simbadtarget.h"
 #endif
 
 using namespace rts2xmlrpc;
@@ -392,6 +393,15 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		// try to parse and understand string (similar to new target), return either target or all target information
 		else if (vals[0] == "tbystring")
 		{
+			const char *tar_name = params->getString ("ts", "");
+			if (tar_name[0] == '\0')
+				throw JSONException ("empty ts parameter");
+			rts2db::Target *target = createTargetByString (tar_name);
+			if (target == NULL)
+				throw JSONException ("cannot parse target");
+			struct ln_equ_posn pos;
+			target->getPosition (&pos);
+			os << "\"name\":\"" << tar_name << "\",\"ra\":" << pos.ra << ",\"dec\":" << pos.dec;
 		}
 		else if (vals[0] == "ibyoid")
 		{
