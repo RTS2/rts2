@@ -389,6 +389,10 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.loadByLabelId (label);
 			jsonTargets (tar_set, os, params);
 		}
+		// try to parse and understand string (similar to new target), return either target or all target information
+		else if (vals[0] == "tbystring")
+		{
+		}
 		else if (vals[0] == "ibyoid")
 		{
 			int obsid = params->getInteger ("oid", -1);

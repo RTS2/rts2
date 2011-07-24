@@ -31,7 +31,7 @@
 #include "../writers/devcliimg.h"
 
 #ifdef HAVE_PGSQL
-#include "../db/simbad/simbadtarget.h"
+#include "../utilsdb/simbadtarget.h"
 #endif
 
 #include "nlayout.h"

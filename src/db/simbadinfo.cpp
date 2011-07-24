@@ -19,10 +19,11 @@
 
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
+#include "../utilsdb/simbadtarget.h"
+
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2askchoice.h"
-#include "simbad/simbadtarget.h"
 
 #include "rts2targetapp.h"
 

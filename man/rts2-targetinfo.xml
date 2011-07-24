@@ -132,6 +132,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>--name-only</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--satisfied</option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

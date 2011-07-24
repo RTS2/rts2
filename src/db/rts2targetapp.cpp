@@ -18,10 +18,10 @@
  */
 
 #include "rts2targetapp.h"
-#include "simbad/simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
-#include "../utilsdb/targetell.h"
+
+#include "../utilsdb/simbadtarget.h"
 
 #include <sstream>
 #include <iostream>
@@ -41,44 +41,7 @@ Rts2TargetApp::~Rts2TargetApp (void)
 
 void Rts2TargetApp::getObject (const char *obj_text)
 {
-	LibnovaRaDec raDec;
-
-	int ret = raDec.parseString (obj_text);
-	if (ret == 0)
-	{
-		std::string new_prefix;
-
-		// default prefix for new RTS2 sources
-		new_prefix = std::string ("RTS2_");
-
-		// set name..
-		ConstTarget *constTarget = new ConstTarget ();
-		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
-		std::ostringstream os;
-
-		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
-		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
-		constTarget->setTargetName (os.str ().c_str ());
-		constTarget->setTargetType (TYPE_OPORTUNITY);
-		target = constTarget;
-		return;
-	}
-	// if it's MPC ephemeris..
-	target = new EllTarget ();
-	ret = ((EllTarget *) target)->orbitFromMPC (obj_text);
-	if (ret == 0)
-	{
-		return;
-	}
-
-	delete target;
-	target = NULL;
-
-	// try to get target from SIMBAD
-	target = new rts2db::SimbadTarget (obj_text);
-	target->load ();
-	target->setTargetType (TYPE_OPORTUNITY);
-	return;
+	target = createTargetByString (obj_text);
 }
 
 int Rts2TargetApp::askForDegrees (const char *desc, double &val)

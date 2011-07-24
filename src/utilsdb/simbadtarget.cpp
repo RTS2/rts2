@@ -17,9 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "simbadtarget.h"
+#include "targetell.h"
+
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/urlencoding.h"
-#include "simbadtarget.h"
+
+#include "../utils/rts2config.h"
 
 #include <sstream>
 #include <libxml/parser.h>
@@ -224,4 +228,46 @@ void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
 			*_os << "ALIAS " << (*alias) << std::endl;
 		}
 	}
+}
+
+Target *createTargetByString (const char *tar_string)
+{
+	Target *rtar = NULL;
+
+	LibnovaRaDec raDec;
+
+	int ret = raDec.parseString (tar_string);
+	if (ret == 0)
+	{
+		std::string new_prefix;
+
+		// default prefix for new RTS2 sources
+		new_prefix = std::string ("RTS2_");
+
+		// set name..
+		ConstTarget *constTarget = new ConstTarget ();
+		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
+		std::ostringstream os;
+
+		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
+		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
+		constTarget->setTargetName (os.str ().c_str ());
+		constTarget->setTargetType (TYPE_OPORTUNITY);
+		return constTarget;
+	}
+	// if it's MPC ephemeris..
+	rtar = new EllTarget ();
+	ret = ((EllTarget *) rtar)->orbitFromMPC (tar_string);
+	if (ret == 0)
+	{
+		return rtar;
+	}
+
+	delete rtar;
+
+	// try to get target from SIMBAD
+	rtar = new rts2db::SimbadTarget (tar_string);
+	rtar->load ();
+	rtar->setTargetType (TYPE_OPORTUNITY);
+	return rtar;
 }

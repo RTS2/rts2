@@ -1,5 +1,3 @@
-SUBDIRS = simbad
-
 if PGSQL
 
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
@@ -29,11 +27,11 @@ rts2_user_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../uti
 
 rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
 rts2_newtarget_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS}
-rts2_newtarget_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBXML_LIBS@ $(AM_LDADD)
+rts2_newtarget_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBXML_LIBS@ $(AM_LDADD)
 
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
 rts2_simbadinfo_CXXFLAGS = @LIBXML_CFLAGS@ ${AM_CXXFLAGS}
-rts2_simbadinfo_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBXML_LIBS@ $(AM_LDADD)
+rts2_simbadinfo_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBXML_LIBS@ $(AM_LDADD)
 
 rts2_plan_SOURCES = planapp.cpp
 rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@

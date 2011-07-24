@@ -11,7 +11,7 @@ rts2_mon_SOURCES = nmonitor.cpp nwindow.cpp daemonwindow.cpp nmenu.cpp nmsgbox.c
 if PGSQL
 
 rts2_mon_CXXFLAGS = @LIBXML_CFLAGS@ @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
-rts2_mon_LDADD = ../db/simbad/libsimbad.a ../../lib/xmlrpc++/librts2xmlrpc.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIB_CFITSIO@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@ @LIBXML_LIBS@ @LIB_M@ @LIB_NOVA@ @LIB_ECPG@
+rts2_mon_LDADD = ../utilsdb/librts2blockdb.a ../../lib/xmlrpc++/librts2xmlrpc.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIB_CFITSIO@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@ @LIBXML_LIBS@ @LIB_M@ @LIB_NOVA@ @LIB_ECPG@
 
 else
 

@@ -21,7 +21,7 @@
 #include "altplot.h"
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
-#include "../db/simbad/simbadtarget.h"
+#include "../utilsdb/simbadtarget.h"
 #include "../utils/rts2command.h"
 
 #ifdef HAVE_PGSQL

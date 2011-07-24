@@ -61,11 +61,12 @@ class FlatAttempt:
 
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
-	def __init__(self,filter,binning=None,ngood=None,window=None):
+	def __init__(self,filter,binning=None,ngood=None,window=None,expTimes=None):
 		self.filter = filter
 		self.binning = binning
 		self.ngood = ngood
 		self.window = window
+		self.expTimes = expTimes
 		self.attempts = []
 
 	def attempt(self, exptime, average, ratio, res):

@@ -22,6 +22,8 @@ class Test(rts2comm.Rts2Comm):
 		self.exposure()
 		self.setValue('exposure',2)
 		self.exposure()
+		self.log('I','offseting by 0.1 degree in RA and DEC')
+		self.setValueByType(DEVICE_TELESCOPE,'OFFS','0.1 0.1')
 		self.altaz(40,50)
 		self.setValue('exposure',3)
 		self.altaz(60,70)

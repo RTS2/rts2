@@ -791,7 +791,6 @@ AC_OUTPUT([Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
-	   src/db/simbad/Makefile
 	   src/sensord/Makefile
 	   src/rotad/Makefile
 	   src/logger/Makefile

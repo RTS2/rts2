@@ -24,7 +24,7 @@
 #include <libnova/libnova.h>
 #include <list>
 
-#include "../../utilsdb/target.h"
+#include "target.h"
 
 namespace rts2db
 {
@@ -57,4 +57,12 @@ class SimbadTarget:public ConstTarget
 };
 
 }
+
+/**
+ * Return new target object, created from string. String might contain RA DEC pair, MPEC coordinates or any Simbad name.
+ *
+ * @return new target object. Caller must deallocate target object (delete it).
+ */
+rts2db::Target *createTargetByString (const char *tar_string);
+
 #endif							 /* !__RTS2__SIMBADTARGET__ */

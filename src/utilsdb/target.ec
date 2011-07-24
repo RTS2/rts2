@@ -27,6 +27,7 @@
 #include "observationset.h"
 #include "targetset.h"
 #include "sqlerror.h"
+#include "simbadtarget.h"
 
 #include "../utils/infoval.h"
 #include "../utils/app.h"
