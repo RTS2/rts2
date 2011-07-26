@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "camd.h"
-#include "../utils/rts2device.h"
+#include "../utils/device.h"
 #include "../utils/block.h"
 
 #include "sbigudrv.h"
@@ -135,7 +135,8 @@ class Sbig:public Camera
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
-		virtual int afterNight ();
+		virtual int tempOff ();
+		virtual void afterNight ();
 };
 
 }
@@ -240,22 +241,20 @@ int Sbig::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		switch (new_value->getValueInteger ())
 		{
 			case 0:
-				return setcool (0, 0, 0) == 0 ? 0 : -2;
+				return tempOff () == 0 ? 0 : -2;
 			case 1:
 				return setCoolTemp (tempSet->getValueFloat ()) == 0 ? 0 : -2;
-			case 2:
-				return setcool (2, coolingPower->getValueInteger (), 0) == 0 ? 0 : -2;
 			default:
 				return -2;
 		}
 	}
 	if (old_value == coolingPower)
 	{
-		return setcool (2, new_value->getValueInteger (), 0) == 0 ? 0 : -2;
+		return -1; //setcool (2, new_value->getValueInteger (), 0) == 0 ? 0 : -2;
 	}
 	if (old_value == fan)
 	{
-		return set_fan (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return -1; //set_fan (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }
@@ -271,7 +270,7 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true, RTS2_VALUE_WRITABLE);
 	tempRegulation->addSelVal ("OFF");
 	tempRegulation->addSelVal ("TEMP");
-	tempRegulation->addSelVal ("POWER");
+	//tempRegulation->addSelVal ("POWER");
 
 	tempRegulation->setValueInteger (0);
 
@@ -510,10 +509,10 @@ int Sbig::camCoolHold ()
 	ret = fanState (TRUE);
 	if (ret)
 		return -1;
-	if (isnan (nightCoolTemp))
+	if (isnan (nightCoolTemp->getValueFloat ()))
 		ret = setCoolTemp (-5);
 	else
-		ret = setCoolTemp (nightCoolTemp);
+		ret = setCoolTemp (nightCoolTemp->getValueFloat ());
 	if (ret)
 		return -1;
 	return fanState (TRUE);
@@ -535,7 +534,7 @@ int Sbig::setCoolTemp (float new_temp)
 	return Camera::setCoolTemp (new_temp);
 }
 
-int Sbig::afterNight ()
+int Sbig::tempOff ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -544,7 +543,14 @@ int Sbig::afterNight ()
 	if (fanState (FALSE))
 		return -1;
 	ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-	return checkSbigHw (ret);
+	checkSbigHw (ret);
+	return ret;
+}
+
+void Sbig::afterNight ()
+{
+	if (tempOff ())
+		logStream (MESSAGE_WARNING) << "cannot turn off temperature regulation at the end of night" << sendLog;
 }
 
 int main (int argc, char **argv)

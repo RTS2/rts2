@@ -203,7 +203,7 @@ AM_CONDITIONAL(EPICS, test x$epics != xno)
 AC_ARG_WITH(sbig,
 [  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
 SBIG="${withval}";
-LIB_SBIG="-L${SBIG} -lsbigudrv $SBIG/csbigcam.o $SBIG/csbigimg.o";
+LIB_SBIG="-L${SBIG} -lsbigudrv $SBIG/csbigcam.o $SBIG/csbigimg.o -lusb";
 INC_SBIG="-I${SBIG}",
 [SBIG=no])
 
