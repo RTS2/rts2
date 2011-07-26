@@ -30,6 +30,9 @@
 #define MAX_MOVE               ((1<<24)-1)
 #define MOVE_SLEEP_TIME        5
 
+#define OPT_PARK_POS          OPT_LOCAL + 571
+#define OPT_ASSSUME_0_PARK     OPT_LOCAL + 572
+
 namespace rts2teld
 {
 
@@ -83,6 +86,9 @@ class Trencin:public Fork
 
 		const char *device_nameDec;
 		rts2core::ConnSerial *trencinConnDec;
+
+		rts2core::ValueAltAz *parkPos;
+		bool assumeParked;
 
 		void tel_write (rts2core::ConnSerial *conn, char command);
 
@@ -581,6 +587,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	trencinConnRa = NULL;
 	trencinConnDec = NULL;
 
+	parkPos = NULL;
+	assumeParked = false;
+
 	haZero = 0;
 	decZero = 0;
 
@@ -596,6 +605,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	device_nameDec = "/dev/ttyS1";
 	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
 	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
+	addOption (OPT_ASSSUME_0_PARK, "assume-parked", 0, "assume mount is parked when motors read 0 0");
 
 	createRaGuide ();
 	createDecGuide ();
@@ -701,6 +712,28 @@ int Trencin::processOption (int in_opt)
 			break;
 		case 'D':
 			device_nameDec = optarg;
+			break;
+		case OPT_PARK_POS:
+			{
+				std::istringstream *is;
+				is = new std::istringstream (std::string(optarg));
+				double palt,paz;
+				char c;
+				*is >> palt >> c >> paz;
+				if (is->fail () || c != ':')
+				{
+					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+					delete is;
+					return -1;
+				}
+				delete is;
+				if (parkPos == NULL)
+					createValue (parkPos, "park_position", "mount park position", false);
+				parkPos->setValueAltAz (palt, paz);
+			}
+			break;
+		case OPT_ASSSUME_0_PARK:
+			assumeParked = true;
 			break;
 		default:
 			return Fork::processOption (in_opt);
@@ -822,6 +855,27 @@ int Trencin::init ()
 	{
 		logStream (MESSAGE_ERROR) << "cannot init motors" << sendLog;
 		return -1;
+	}
+
+	// if parked..
+	if (assumeParked)
+	{
+		ret = info ();
+		if (ret)
+			return ret;
+		if (unitRa->getValueInteger () == 0 && unitDec->getValueInteger () == 0)
+		{
+			struct ln_hrz_posn hrz;
+			struct ln_equ_posn equ;
+
+			hrz.alt = parkPos->getAlt ();
+			hrz.az = parkPos->getAz ();
+
+			ln_get_equ_from_hrz (&hrz, config->getObserver (), ln_get_julian_from_sys (), &equ);
+
+			setTo (equ.ra, equ.dec);
+			logStream (MESSAGE_DEBUG) << "set telescope to park position (" << LibnovaHrz (&hrz) << ")" << sendLog;
+		}
 	}
 
 	return ret;
