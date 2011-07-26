@@ -547,6 +547,7 @@ void Trencin::setRa (long new_ra)
 		stopWorm ();
 	}
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
+	long old_diff = diff;
 
 	if (wormRa->getValueBool ())
 	{
@@ -563,6 +564,7 @@ void Trencin::setRa (long new_ra)
 		diff += 2 * sspeed;
 	}
 
+	logStream (MESSAGE_INFO) << "original diff " << old_diff << " adjusted diff " << diff << sendLog;
 	cycleMoveRa = 0;
 	tel_run (trencinConnRa, diff);
 }
@@ -594,7 +596,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	decZero = 0;
 
 	haCpd = -56889;
-	decCpd = -110222;
+	decCpd = -119040;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
@@ -860,22 +862,16 @@ int Trencin::init ()
 	// if parked..
 	if (assumeParked)
 	{
-		ret = info ();
-		if (ret)
-			return ret;
-		if (unitRa->getValueInteger () == 0 && unitDec->getValueInteger () == 0)
-		{
-			struct ln_hrz_posn hrz;
-			struct ln_equ_posn equ;
+		struct ln_hrz_posn hrz;
+		struct ln_equ_posn equ;
 
-			hrz.alt = parkPos->getAlt ();
-			hrz.az = parkPos->getAz ();
+		hrz.alt = parkPos->getAlt ();
+		hrz.az = parkPos->getAz ();
 
-			ln_get_equ_from_hrz (&hrz, config->getObserver (), ln_get_julian_from_sys (), &equ);
+		ln_get_equ_from_hrz (&hrz, config->getObserver (), ln_get_julian_from_sys (), &equ);
 
-			setTo (equ.ra, equ.dec);
-			logStream (MESSAGE_DEBUG) << "set telescope to park position (" << LibnovaHrz (&hrz) << ")" << sendLog;
-		}
+		setTo (equ.ra, equ.dec);
+		logStream (MESSAGE_DEBUG) << "set telescope to park position (" << LibnovaHrz (&hrz) << ")" << sendLog;
 	}
 
 	return ret;
@@ -1105,8 +1101,7 @@ int Trencin::info ()
 	}
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
-	setTelRa (t_telRa);
-	setTelDec (t_telDec);
+	setTelRaDec (t_telRa, t_telDec);
 
 	return Fork::info ();
 }
@@ -1194,15 +1189,16 @@ int Trencin::startPark ()
 		initRa ();
 		initDec ();
 
-		setRa (0);
-		setDec (0);
+		// calculate parking ra dec
+		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+		return moveAltAz ();
+
 	}
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "canot start park " << er << sendLog;
 		return -1;
 	}
-	return 0;
 }
 
 
