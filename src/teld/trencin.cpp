@@ -1223,6 +1223,8 @@ int Trencin::startPark ()
 {
 	try
 	{
+		if ((getState () & TEL_MASK_MOVING) == TEL_PARKED || (getState () & TEL_MASK_MOVING) == TEL_PARKING)
+			return 0;
 		if (wormRa->getValueBool ())
 		{
 			stopWorm ();
