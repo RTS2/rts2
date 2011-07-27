@@ -1385,6 +1385,7 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 		rts2core::ValueInteger *unit;
 		rts2core::ValueInteger *cycle;
 		int cycleMove;
+		int32_t last_u;
 
 
 		if (conn == trencinConnRa)
@@ -1392,12 +1393,14 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 			unit = unitRa;
 			cycle = cycleRa;
 			cycleMove = cycleMoveRa;
+			last_u = info_u_ra;
 		}
 		else if (conn == trencinConnDec)
 		{
 			unit = unitDec;
 			cycle = cycleDec;
 			cycleMove = cycleMoveDec;
+			last_u = info_u_dec;
 		}
 		else
 		{
@@ -1407,9 +1410,11 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 		// read current value and check for expected cycle value - if it does not agree, change it
 		readAxis (conn, unit);
 
-		if (cycleMove > 0 && unit->getValueInteger () < MAX_MOVE / 2)
+		// last_move_xx < 0
+		if (cycleMove > 0 && unit->getValueInteger () < last_u)
 			cycle->inc ();
-		else if (cycleMove < 0 && unit->getValueInteger () > MAX_MOVE / 2)
+		// last_move_xx > 0
+		else if (cycleMove < 0 && unit->getValueInteger () > last_u)
 			cycle->dec ();
 	}
 }
