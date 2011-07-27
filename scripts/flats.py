@@ -16,6 +16,7 @@
 # test this script by calling it and verifiing that it prints something what
 # does not look like error message on standard output.
 #
+# (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 # (C) 2009,2010 Antonio de Ugarte & Petr Kubanek <petr@kubanek.net>
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -127,7 +128,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		# fill in default flat and other levels
 		self.flatLevels()
 
-		self.expTimes = expTimes
+		self.defaultExpTimes = expTimes
+		self.expTimes = self.defaultExpTimes
 		self.startExpTime = self.expTimes[0] # starting exposure time. Must be within expTimes[0] .. expTimes[-1]
 		
 		self.waitingSubWindow = None # do not use subwindow to wait for flats
@@ -324,16 +326,22 @@ class FlatScript (rts2comm.Rts2Comm):
 		return ret
 
 	def setConfiguration(self):
-		if (self.flat.filter is not None):
+		if self.flat.filter is not None:
 			self.setValue('filter',self.flat.filter)
-		if (self.flat.binning is not None):
+		if self.flat.binning is not None:
 			self.setValue('binning',self.flat.binning)
 		else:
 			self.setValue('binning',0)
-		if (self.flat.ngood is not None):
+		if self.flat.ngood is not None:
 			self.numberFlats = self.flat.ngood
 		else:
 			self.numberFlats = self.defaultNumberFlats
+		if self.flat.expTimes is not None:
+			self.expTimes = self.flat.expTimes
+		else:
+			self.expTimes = self.defaultExpTimes
+
+		self.startExpTime = self.expTimes[0]
 	
 	def execute(self, evening):
 		self.exptime = self.startExpTime

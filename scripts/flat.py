@@ -11,7 +11,7 @@
 from flats import FlatScript,Flat
 
 # You would at least like to specify filter order, if not binning and other things
-f = FlatScript(eveningFlats=[Flat('i',binning=1,window='100 100 500 500')],maxBias=1,maxDarks=0,expTimes=range(1,40))
+f = FlatScript(eveningFlats=[Flat('i',binning=1,window='100 100 500 500',expTimes=[5,10,40])],maxBias=1,maxDarks=0,expTimes=range(1,40))
 
 # Change deafult number of images
 f.flatLevels(defaultNumberFlats=3,biasLevel=550,allowedOptimalDeviation=0.1)
