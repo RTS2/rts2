@@ -170,6 +170,9 @@ class Trencin:public Fork
 
 		int32_t ac, dc;
 
+		int32_t info_u_ra;
+		int32_t info_u_dec;
+
 		void tel_run (rts2core::ConnSerial *conn, int value);
 		/**
 		 * Stop telescope movement. Phases is bit mask indicating which phase should be commited.
@@ -319,7 +322,7 @@ void Trencin::selectSuccess ()
 			}
 			else if (fabs (raMoving->getValueInteger ()) > MAX_MOVE)
 			{
-				raMoving->setValueInteger (raMoving->getValueInteger () - raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE);
+				raMoving->setValueInteger (raMoving->getValueInteger () - (raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
 				tel_run (trencinConnRa, raMoving->getValueInteger ());
 			}
 			else
@@ -340,7 +343,7 @@ void Trencin::selectSuccess ()
 		{
 		 	if (fabs (decMoving->getValueInteger ()) > MAX_MOVE)
 			{
-				decMoving->setValueInteger (decMoving->getValueInteger () - decMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE);
+				decMoving->setValueInteger (decMoving->getValueInteger () - (decMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
 				tel_run (trencinConnDec, decMoving->getValueInteger ());
 			}
 			else
@@ -1029,6 +1032,7 @@ void Trencin::valueChanged (rts2core::Value *changed_value)
 	Fork::valueChanged (changed_value);
 }
 
+#define DEBUG_MOVE  1
 
 int Trencin::info ()
 {
@@ -1036,69 +1040,107 @@ int Trencin::info ()
 	double t_telRa;
 	double t_telDec;
 
-	int32_t u_ra;
-	int32_t u_dec;
+	int32_t u_ra, u_dec;
 
 	int32_t left_track;
 
 	// update axRa and axDec
 	if (isnan (raWormStart->getValueDouble ()))
 	{
+#ifdef DEBUG_MOVE
+		logStream (MESSAGE_DEBUG) << "cycleRa " << cycleRa->getValueInteger () << " cycleMoveRa " << cycleMoveRa << sendLog;
+#endif
 		if (raMoving->getValueInteger () == 0)
 		{
 			readAxis (trencinConnRa, unitRa);
-	 		u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
+#ifdef DEBUG_MOVE
+			logStream (MESSAGE_DEBUG) << "unitRa " << unitRa->getValueInteger () << sendLog;
+#endif
+			u_ra = unitRa->getValueInteger ();
+			if (cycleMoveRa == 0)
+			{
+				if (u_ra < info_u_ra && raMoving->getValueInteger () > 0)
+					cycleRa->inc ();
+				if (u_ra > info_u_ra && raMoving->getValueInteger () < 0)
+					cycleRa->dec ();
+
+				sendValueAll (cycleRa);
+			}
+	 		u_ra += MAX_MOVE * cycleRa->getValueInteger ();
+#ifdef DEBUG_MOVE
+			logStream (MESSAGE_DEBUG) << "u_ra " << u_ra << " cycleRa " << cycleRa->getValueInteger () << sendLog;
+#endif
 		}
 		else
 		{
-			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
-			u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - (double) left_track / fabs (raMoving->getValueInteger ()));
-			if (u_ra < 0)
+			left_track = velRa->getValueInteger () * 8 * (raMovingEnd->getValueDouble () - getNow ());
+			info_u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - (double) left_track / fabs (raMoving->getValueInteger ()));
+#ifdef DEBUG_MOVE
+			logStream (MESSAGE_DEBUG) << "cycleRa " << cycleRa->getValueInteger () << " info_u_ra " << info_u_ra << " raMoving " << raMoving->getValueInteger () << " unitRa " << unitRa->getValueInteger () << " left_track " << left_track << sendLog;
+#endif
+			if (info_u_ra < 0)
 			{
 				cycleRa->dec ();
 				cycleMoveRa++;
-				u_ra += MAX_MOVE;
+				info_u_ra += MAX_MOVE;
 			}
-			if (u_ra > MAX_MOVE)
+			if (info_u_ra > MAX_MOVE)
 			{
 				cycleRa->inc ();
 				cycleMoveRa--;
-				u_ra -= MAX_MOVE;
+				info_u_ra -= MAX_MOVE;
 			}
 
-			u_ra += MAX_MOVE * cycleRa->getValueInteger ();
+			u_ra = MAX_MOVE * cycleRa->getValueInteger () + info_u_ra;
 		}
+#ifdef DEBUG_MOVE
+		logStream (MESSAGE_DEBUG) << "cycleRa " << cycleRa->getValueInteger () << " info_u_ra " << info_u_ra << " u_ra " << u_ra << sendLog;
+#endif
 	}
 	else
 	{
-		// RA worm is runnin, unitRa and cycleRa are set when new position arrives from the axis
-		u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
+		// RA worm is running, unitRa and cycleRa are set when new position arrives from the axis
+		info_u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
 	}
 
 	if (decMoving->getValueInteger () == 0)
 	{
 		readAxis (trencinConnDec, unitDec);
-		u_dec = MAX_MOVE * cycleDec->getValueInteger () + unitDec->getValueInteger ();
+ 		u_dec = unitDec->getValueInteger ();
+		if (cycleMoveDec == 0)
+		{
+			if (u_dec < info_u_dec && decMoving->getValueInteger () > 0)
+				cycleDec->inc ();
+			if (u_dec > info_u_dec && decMoving->getValueInteger () < 0)
+				cycleDec->dec ();
+
+			sendValueAll (cycleDec);
+		}
+		u_dec += MAX_MOVE * cycleDec->getValueInteger ();
 	}
 	else
 	{
-		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
-		u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - (double) left_track / fabs (decMoving->getValueInteger ()));
-		if (u_dec < 0)
+		left_track = velDec->getValueInteger () * 8 * (decMovingEnd->getValueDouble () - getNow ());
+		info_u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - (double) left_track / fabs (decMoving->getValueInteger ()));
+		if (info_u_dec < 0)
 		{
 			cycleDec->dec ();
 			cycleMoveDec++;
-			u_dec += MAX_MOVE;
+			info_u_dec += MAX_MOVE;
 		}
-		if (u_dec > MAX_MOVE)
+		if (info_u_dec > MAX_MOVE)
 		{
 			cycleDec->inc ();
 			cycleMoveDec--;
-			u_dec -= MAX_MOVE;
+			info_u_dec -= MAX_MOVE;
 		}
 
-		u_dec += MAX_MOVE * cycleDec->getValueInteger ();
+		u_dec = MAX_MOVE * cycleDec->getValueInteger () + info_u_dec;
 	}
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "cycleDec " << cycleDec->getValueInteger () << " info_u_dec " << info_u_dec << " u_dec " << u_dec << sendLog;
+#endif
+
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
 	setTelRaDec (t_telRa, t_telDec);
