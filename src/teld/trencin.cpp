@@ -886,6 +886,7 @@ int Trencin::init ()
 		ln_get_equ_from_hrz (&hrz, config->getObserver (), ln_get_julian_from_sys (), &equ);
 
 		setTo (equ.ra, equ.dec);
+		maskState (TEL_MASK_MOVING, TEL_PARKED, "telescope was probably parked at initializiation");
 		logStream (MESSAGE_DEBUG) << "set telescope to park position (" << LibnovaHrz (&hrz) << ")" << sendLog;
 	}
 
@@ -1166,6 +1167,8 @@ int Trencin::info ()
 	logStream (MESSAGE_DEBUG) << "cycleDec " << cycleDec->getValueInteger () << " info_u_dec " << info_u_dec << " u_dec " << u_dec << sendLog;
 #endif
 
+	if (decMoving->getValueInteger () == 0 && raMoving->getValueInteger () == 0 && isnan (raWormStart->getValueDouble ()))
+		setIdleInfoInterval (60);
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
 	setTelRaDec (t_telRa, t_telDec);
@@ -1253,12 +1256,14 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 	{
 		tel_run (trencinConnRa, new_ra_off - last_off_ra);
 		last_off_ra = new_ra_off;
+		setIdleInfoInterval (0.5);
 	}
 
 	if (new_dec_off != last_off_dec)
 	{
 		tel_run (trencinConnDec, new_dec_off - last_off_dec);
 		last_off_dec = new_dec_off;
+		setIdleInfoInterval (0.5);
 	}
 }
 
