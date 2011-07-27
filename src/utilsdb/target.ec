@@ -190,7 +190,9 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	}
 
 	// print sun position
-	std::ostringstream _os4;
+	std::ostringstream _os4, os_lal, os_laz;
+	
+	// lunar position
 
 	if (header)
 	{
@@ -198,27 +200,37 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 		_os4 << "SAZ ";
 		_os4.precision (0);
 		_os4.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
+		os_lal << "LAL ";
+		os_laz << "LAZ ";
+		os_lal.precision (0);
+		os_lal.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		os_laz.precision (0);
+		os_laz.setf (std::ios_base::fixed, std::ios_base::floatfield);
+
 	}
 
 	jd = jd_start;
 	for (i = h_start; i <= h_end; i+=h_step, jd += h_step/24.0)
 	{
 		ln_get_solar_equ_coords (jd, &pos);
-		ln_get_hrz_from_equ (&pos, getObserver(), jd, &hrz);
+		ln_get_hrz_from_equ (&pos, getObserver (), jd, &hrz);
 		_os << " " << std::setw (3) << hrz.alt;
 		_os4 << " " << std::setw (3) << hrz.az;
+
+		ln_get_lunar_equ_coords (jd, &pos);
+		ln_get_hrz_from_equ (&pos, getObserver (), jd, &hrz);
+		os_lal << " " << std::setw (3) << hrz.alt;
+		os_laz << " " << std::setw (3) << hrz.az;
 	}
 
 	if (header)
 	{
-		_os
-			<< std::endl
-			<< _os4.str ()
-			<< std::endl;
+		_os << std::endl << _os4.str () << std::endl << os_lal.str () << std::endl << os_laz.str () << std::endl;
 	}
 	else
 	{
-		_os << _os4.str ();
+		_os << _os4.str () << os_lal.str () << os_laz.str ();
 	}
 
 	if (header)
