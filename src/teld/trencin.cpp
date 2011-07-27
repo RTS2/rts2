@@ -1118,7 +1118,7 @@ int Trencin::info ()
 	else
 	{
 		// RA worm is running, unitRa and cycleRa are set when new position arrives from the axis
-		info_u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
+		u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
 	}
 
 	if (decMoving->getValueInteger () == 0)
