@@ -437,6 +437,10 @@ class Telescope:public rts2core::Device
 			hrz->az = telAltAz->getAz ();
 		}
 
+		double getOffsetRa () { return offsRaDec->getRa (); }
+
+		double getOffsetDec () { return offsRaDec->getDec (); }
+
 		/**
 		 * Returns true if target was changed from the last
 		 * sucessfull move command. Target position is position which includes
@@ -561,6 +565,12 @@ class Telescope:public rts2core::Device
 		 * @see getOrigin()
 		 */
 		virtual int startResync () = 0;
+
+		/**
+		 * Offset telescope coordinates. Called when some offset values (either OFFS or CORR) changed
+		 * and telescope needs to be reposiented.
+		 */
+		virtual void startOffseting (rts2core::Value *changed_value);
 
 		/**
 		 * Move telescope to target ALTAZ coordinates.

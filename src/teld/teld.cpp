@@ -413,7 +413,7 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	}
 	if (changed_value == offsRaDec || changed_value == corrRaDec)
 	{
-		startResyncMove (NULL, false);
+		startOffseting (changed_value);
 	}
 	if (changed_value == telAltAz)
 	{
@@ -1193,6 +1193,11 @@ void Telescope::signaledHUP ()
 		}
 	}
 	rts2core::Device::signaledHUP ();
+}
+
+void Telescope::startOffseting (rts2core::Value *changed_value)
+{
+	startResyncMove (NULL, false);
 }
 
 int Telescope::moveAltAz ()

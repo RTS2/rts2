@@ -50,6 +50,8 @@ class Trencin:public Fork
 		virtual int endMove ();
 		virtual int stopMove ();
 
+		virtual void startOffseting (rts2core::Value *changed_value);
+
 		virtual int startPark ();
 		virtual int endPark ();
 
@@ -172,6 +174,9 @@ class Trencin:public Fork
 
 		int32_t info_u_ra;
 		int32_t info_u_dec;
+
+		int32_t last_off_ra;
+		int32_t last_off_dec;
 
 		void tel_run (rts2core::ConnSerial *conn, int value);
 		/**
@@ -322,8 +327,7 @@ void Trencin::selectSuccess ()
 			}
 			else if (fabs (raMoving->getValueInteger ()) > MAX_MOVE)
 			{
-				raMoving->setValueInteger (raMoving->getValueInteger () - (raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
-				tel_run (trencinConnRa, raMoving->getValueInteger ());
+				tel_run (trencinConnRa, raMoving->getValueInteger () - (raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
 			}
 			else
 			{
@@ -343,8 +347,7 @@ void Trencin::selectSuccess ()
 		{
 		 	if (fabs (decMoving->getValueInteger ()) > MAX_MOVE)
 			{
-				decMoving->setValueInteger (decMoving->getValueInteger () - (decMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
-				tel_run (trencinConnDec, decMoving->getValueInteger ());
+				tel_run (trencinConnDec, decMoving->getValueInteger () - (decMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE));
 			}
 			else
 			{
@@ -606,6 +609,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	acMargin = (int32_t) (haCpd * 5);
 
+	last_off_ra = 0;
+	last_off_dec = 0;
+
 	device_nameRa = "/dev/ttyS0";
 	device_nameDec = "/dev/ttyS1";
 	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
@@ -797,7 +803,7 @@ int Trencin::setTo (double set_ra, double set_dec)
 	}
 	catch (rts2core::Error &er)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot set position " << er << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot set position " << er << sendLog;
 		return -1;
 	}
 
@@ -880,7 +886,6 @@ int Trencin::init ()
 	return ret;
 }
 
-
 int Trencin::updateLimits ()
 {
 	acMin = (int32_t) (fabs (haCpd) * -180);
@@ -889,11 +894,9 @@ int Trencin::updateLimits ()
 	return 0;
 }
 
-
 void Trencin::updateTrack ()
 {
 }
-
 
 int Trencin::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
@@ -1009,7 +1012,6 @@ int Trencin::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	return Fork::setValue (old_value, new_value);
 }
-
 
 void Trencin::valueChanged (rts2core::Value *changed_value)
 {
@@ -1174,9 +1176,12 @@ int Trencin::startResync ()
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
+
+	last_off_ra = 0;
+	last_off_dec = 0;
+
 	return 0;
 }
-
 
 int Trencin::isMoving ()
 {
@@ -1185,14 +1190,12 @@ int Trencin::isMoving ()
 	return -2;
 }
 
-
 int Trencin::endMove ()
 {
 	if (wormRa->getValueBool () == true)
 		startWorm ();
 	return Fork::endMove ();
 }
-
 
 int Trencin::stopMove ()
 {
@@ -1218,6 +1221,23 @@ int Trencin::stopMove ()
 	return 0;
 }
 
+void Trencin::startOffseting (rts2core::Value *changed_value)
+{
+	int32_t new_ra_off = haCpd * getOffsetRa ();
+	int32_t new_dec_off = decCpd * getOffsetDec ();
+
+	if (new_ra_off != last_off_ra)
+	{
+		tel_run (trencinConnRa, new_ra_off - last_off_ra);
+		last_off_ra = new_ra_off;
+	}
+
+	if (new_dec_off != last_off_dec)
+	{
+		tel_run (trencinConnDec, new_dec_off - last_off_dec);
+		last_off_dec = new_dec_off;
+	}
+}
 
 int Trencin::startPark ()
 {
@@ -1245,12 +1265,10 @@ int Trencin::startPark ()
 	}
 }
 
-
 int Trencin::isParking ()
 {
 	return isMoving ();
 }
-
 
 int Trencin::endPark ()
 {
