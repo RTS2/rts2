@@ -178,6 +178,9 @@ class Trencin:public Fork
 		int32_t last_off_ra;
 		int32_t last_off_dec;
 
+		int32_t last_move_ra;
+		int32_t last_move_dec;
+
 		void tel_run (rts2core::ConnSerial *conn, int value);
 		/**
 		 * Stop telescope movement. Phases is bit mask indicating which phase should be commited.
@@ -611,6 +614,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	last_off_ra = 0;
 	last_off_dec = 0;
+
+	last_move_ra = 0;
+	last_move_dec = 0;
 
 	device_nameRa = "/dev/ttyS0";
 	device_nameDec = "/dev/ttyS1";
@@ -1056,15 +1062,21 @@ int Trencin::info ()
 		{
 			readAxis (trencinConnRa, unitRa);
 #ifdef DEBUG_MOVE
-			logStream (MESSAGE_DEBUG) << "unitRa " << unitRa->getValueInteger () << sendLog;
+			logStream (MESSAGE_DEBUG) << "unitRa " << unitRa->getValueInteger () << " last_move_ra " << last_move_ra << sendLog;
 #endif
 			u_ra = unitRa->getValueInteger ();
 			if (cycleMoveRa == 0)
 			{
-				if (u_ra < info_u_ra && raMoving->getValueInteger () > 0)
+				if (u_ra < info_u_ra && last_move_ra > 0)
+				{
 					cycleRa->inc ();
-				if (u_ra > info_u_ra && raMoving->getValueInteger () < 0)
+					cycleMoveRa--;
+				}
+				if (u_ra > info_u_ra && last_move_ra < 0)
+				{
 					cycleRa->dec ();
+					cycleMoveRa++;
+				}
 
 				sendValueAll (cycleRa);
 			}
@@ -1075,7 +1087,10 @@ int Trencin::info ()
 		}
 		else
 		{
-			left_track = velRa->getValueInteger () * 8 * (raMovingEnd->getValueDouble () - getNow ());
+			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
+			// sometime we are too fast in calculating left track - it must be smaller then total, which is in raMoving
+			if (left_track > fabs (raMoving->getValueInteger ()))
+				left_track = fabs (raMoving->getValueInteger ());
 			info_u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - (double) left_track / fabs (raMoving->getValueInteger ()));
 #ifdef DEBUG_MOVE
 			logStream (MESSAGE_DEBUG) << "cycleRa " << cycleRa->getValueInteger () << " info_u_ra " << info_u_ra << " raMoving " << raMoving->getValueInteger () << " unitRa " << unitRa->getValueInteger () << " left_track " << left_track << sendLog;
@@ -1111,10 +1126,16 @@ int Trencin::info ()
  		u_dec = unitDec->getValueInteger ();
 		if (cycleMoveDec == 0)
 		{
-			if (u_dec < info_u_dec && decMoving->getValueInteger () > 0)
+			if (u_dec < info_u_dec && last_move_dec > 0)
+			{
 				cycleDec->inc ();
-			if (u_dec > info_u_dec && decMoving->getValueInteger () < 0)
+				cycleMoveDec--;
+			}
+			if (u_dec > info_u_dec && last_move_dec < 0)
+			{
 				cycleDec->dec ();
+				cycleMoveDec++;
+			}
 
 			sendValueAll (cycleDec);
 		}
@@ -1122,7 +1143,9 @@ int Trencin::info ()
 	}
 	else
 	{
-		left_track = velDec->getValueInteger () * 8 * (decMovingEnd->getValueDouble () - getNow ());
+		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
+		if (left_track > fabs (decMoving->getValueInteger ()))
+			left_track = fabs (decMoving->getValueInteger ());
 		info_u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - (double) left_track / fabs (decMoving->getValueInteger ()));
 		if (info_u_dec < 0)
 		{
@@ -1321,6 +1344,7 @@ void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 	{
 		raMovingEnd->setValueDouble (getNow () + 2 + fabs (value) / (64 * velRa->getValueInteger ()));
 		raMoving->setValueInteger (value);
+		last_move_ra = value;
 
 		sendValueAll (raMovingEnd);
 		sendValueAll (raMoving);
@@ -1329,6 +1353,7 @@ void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 	{
 	  	decMovingEnd->setValueDouble (getNow () + 2 + fabs (value) / (64 * velDec->getValueInteger ()));
 		decMoving->setValueInteger (value);
+		last_move_dec = value;
 
 		sendValueAll (decMovingEnd);
 		sendValueAll (decMoving);
