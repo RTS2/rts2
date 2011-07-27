@@ -390,6 +390,19 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			tar_set.loadByLabelId (label);
 			jsonTargets (tar_set, os, params);
 		}
+		// returns targets within certain radius from given ra dec
+		else if (vals[0] == "tbydistance")
+		{
+			struct ln_equ_posn pos;
+			pos.ra = params->getDouble ("ra",rts2_nan("f"));
+			pos.dec = params->getDouble ("dec",rts2_nan("f"));
+			double radius = params->getDouble ("radius",rts2_nan("f"));
+			if (isnan (pos.ra) || isnan (pos.dec) || isnan (radius))
+				throw JSONException ("invalid ra, dec or radius parameter");
+			rts2db::TargetSet ts (&pos, radius, Rts2Config::instance ()->getObserver ());
+			ts.load ();
+			jsonTargets (ts, os, params);
+		}
 		// try to parse and understand string (similar to new target), return either target or all target information
 		else if (vals[0] == "tbystring")
 		{
@@ -401,7 +414,16 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw JSONException ("cannot parse target");
 			struct ln_equ_posn pos;
 			target->getPosition (&pos);
-			os << "\"name\":\"" << tar_name << "\",\"ra\":" << pos.ra << ",\"dec\":" << pos.dec;
+			os << "\"name\":\"" << tar_name << "\",\"ra\":" << pos.ra << ",\"dec\":" << pos.dec << ",\"desc\":\"" << target->getTargetInfo () << "\"";
+			double nearest = params->getDouble ("nearest", -1);
+			if (nearest >= 0)
+			{
+				os << ",\"nearest\":{";
+				rts2db::TargetSet ts (&pos, nearest, Rts2Config::instance ()->getObserver ());
+				ts.load ();
+				jsonTargets (ts, os, params);
+				os << "}";
+			}
 		}
 		else if (vals[0] == "ibyoid")
 		{
