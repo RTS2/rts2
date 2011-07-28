@@ -50,11 +50,15 @@
 #define OPT_NOTCHECKNULL    1010
 
 #define OPT_RUNAS           1011
+#define OPT_NOAUTH          1012
 
 /**
  * Start of local option number playground.
  */
 #define OPT_LOCAL      10000
+
+namespace rts2core
+{
 
 /**
  * A program option.
@@ -63,15 +67,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Option
+class Option
 {
-	int short_option;
-	const char *long_option;
-	int has_arg;
-	const char *help_msg;
 	public:
-		Rts2Option (int in_short_option, const char *in_long_option, int in_has_arg,
-			const char *in_help_msg)
+		Option (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
 		{
 			short_option = in_short_option;
 			long_option = in_long_option;
@@ -83,10 +82,7 @@ class Rts2Option
 		 */
 		void help ();
 		void getOptionChar (char **end_opt);
-		bool haveLongOption ()
-		{
-			return long_option != NULL;
-		}
+		bool haveLongOption () { return long_option != NULL; }
 		void getOptionStruct (struct option *options)
 		{
 			options->name = long_option;
@@ -94,5 +90,13 @@ class Rts2Option
 			options->flag = NULL;
 			options->val = short_option;
 		}
+
+	private:
+		int short_option;
+		const char *long_option;
+		int has_arg;
+		const char *help_msg;
 };
+
+}
 #endif							 /* !__RTS2_OPTION__ */

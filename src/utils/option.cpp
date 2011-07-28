@@ -17,13 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2option.h"
+#include "option.h"
 
 #include <iostream>
 #include <iomanip>
 
-void
-Rts2Option::getOptionChar (char **end_opt)
+using namespace rts2core;
+
+void Option::getOptionChar (char **end_opt)
 {
 	if (!isalnum (short_option))
 		return;
@@ -42,9 +43,7 @@ Rts2Option::getOptionChar (char **end_opt)
 	}
 }
 
-
-void
-Rts2Option::help ()
+void Option::help ()
 {
 	if (short_option < 900)
 	{
