@@ -90,9 +90,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		 * @param _master_port   Central server port for the connectio.
 		 * @param _serverNum     Server number (number of centrald which device is connected to)
 		 */
-		Rts2DevConnMaster (rts2core::Block * _master, char *_device_host, int _device_port,
-			const char *_device_name, int _device_type,
-			const char *_master_host, int _master_port, int _serverNum);
+		Rts2DevConnMaster (rts2core::Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum);
 		virtual ~ Rts2DevConnMaster (void);
 
 		virtual int init ();
@@ -295,6 +293,11 @@ class Device:public Daemon
 		}
 
 		virtual void signaledHUP ();
+
+		/**
+		 * Returns true if device connection must be authorized.
+		 */
+		bool requireAuthorization () { return doAuth; }
 	protected:
 		/**
 		 * Process on option, when received from getopt () call.
@@ -308,7 +311,7 @@ class Device:public Daemon
 
 		virtual void beforeRun ();
 
-		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK); }
+		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
 
 		/**
 		 * Return device BOP state.
@@ -369,6 +372,7 @@ class Device:public Daemon
 		rts2core::ValueSelection *modesel;
 
 		bool doCheck;
+		bool doAuth;
 
 		int loadModefile ();
 

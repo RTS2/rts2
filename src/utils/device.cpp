@@ -34,8 +34,8 @@ using namespace rts2core;
 int Rts2DevConn::command ()
 {
 	int ret;
-								 // authorized and running
-	if ((getCentraldId () != -1 && isConnState (CONN_AUTH_OK)) || getType () == DEVICE_DEVICE)
+	// authorized and running
+	if (master->requireAuthorization () == false || (getCentraldId () != -1 && isConnState (CONN_AUTH_OK)) || getType () == DEVICE_DEVICE)
 	{
 		ret = master->commandAuthorized (this);
 		if (ret == DEVDEM_E_HW)
@@ -506,9 +506,11 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 	deviceStatusCommand = NULL;
 
 	doCheck = true;
+	doAuth = true;
 
 	// now add options..
-	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some reccomended values are not set");
+	addOption (OPT_NOAUTH, "noauth", 0, "allow unauthorized connections");
+	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some recomended values are not set");
 	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
 	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
@@ -690,6 +692,9 @@ int Device::processOption (int in_opt)
 			break;
 		case OPT_NOTCHECKNULL:
 			doCheck = false;
+			break;
+		case OPT_NOAUTH:
+			doAuth = false;
 			break;
 		case 'd':
 			device_name = optarg;

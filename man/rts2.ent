@@ -150,6 +150,7 @@
 <arg choice='opt' rep='repeat'><option>--server</option> <replaceable class='parameter'>hostname<arg choice='opt'>:port</arg></replaceable></arg>
 <arg choice='opt'><option>--localhost</option> <replaceable class='parameter'>hostname</replaceable></arg>
 <arg choice='opt'><option>--notcheck</option></arg>
+<arg choice='opt'><option>--noauth</option></arg>
 <arg choice='opt'><option>--run-as</option> <replaceable class='parameter'>user<arg choice='opt'>.group</arg></replaceable></arg>
 <arg choice='opt'><option>--lock-prefix</option> <replaceable class='parameter'>path to lock file</replaceable></arg>
 <arg choice='opt'><option>--local-port</option> <replaceable class='parameter'>local port</replaceable></arg>
@@ -209,6 +210,20 @@
       not configured properly, and the user cannot change how network is
       configured. Together with <emphasis>--local-port</emphasis> it can
       be used to run RTS2 through tunnels.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--noauth</option></term>
+  <listitem>
+    <para>
+      Allow device to operate without central server. When run with this
+      option, device will accept unauthorized connections. This is usefull to
+      run standalone device drivers and connect directly to them, without need
+      to authorize against central server.
+    </para>
+    <para>
+      This option makes system less secure.
     </para>
   </listitem>
 </varlistentry>

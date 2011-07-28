@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #include "rts2object.h"
-#include "rts2option.h"
+#include "option.h"
 #include "rts2message.h"
 #include "rts2logstream.h"
 
@@ -277,7 +277,7 @@ class App:public Rts2Object
 		/**
 		 * Holds options which might be passed to the program.
 		 */
-		std::vector < Rts2Option > options;
+		std::vector < Option > options;
 
 		/**
 		 * Call to process options and arguments.

@@ -83,7 +83,7 @@ int App::initOptions ()
 	int c;
 	int ret;
 
-	std::vector < Rts2Option >::iterator opt_iter;
+	std::vector < Option >::iterator opt_iter;
 
 	struct option *long_option, *an_option;
 
@@ -191,7 +191,7 @@ int App::init ()
 
 void App::helpOptions ()
 {
-	std::vector < Rts2Option >::reverse_iterator opt_iter;
+	std::vector < Option >::reverse_iterator opt_iter;
 	for (opt_iter = options.rbegin (); opt_iter != options.rend (); opt_iter++)
 		opt_iter->help ();
 }
@@ -262,7 +262,7 @@ int App::processArgs (const char *arg)
 
 void App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
 {
-	options.push_back (Rts2Option (in_short_option, in_long_option, in_has_arg, in_help_msg));
+	options.push_back (Option (in_short_option, in_long_option, in_has_arg, in_help_msg));
 }
 
 int App::askForInt (const char *desc, int &val)

@@ -41,7 +41,6 @@
 #include "rts2event.h"
 #include "rts2object.h"
 #include "rts2conn.h"
-#include "rts2option.h"
 #include "rts2address.h"
 #include "rts2user.h"
 #include "rts2devclient.h"
