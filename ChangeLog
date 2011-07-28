@@ -1,3 +1,6 @@
+2011-07-28
+ * Added --noauth device option
+
 2011-07-17
  * Rotator device type, Pyxis Optec rotator driver
 
