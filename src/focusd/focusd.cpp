@@ -194,16 +194,9 @@ int Focusd::commandAuthorized (Rts2Conn * conn)
 	if (conn->isCommand ("help"))
 	{
 		conn->sendMsg ("info  - information about focuser");
-		conn->sendMsg ("focus - auto focusing");
 		conn->sendMsg ("exit  - exit from connection");
 		conn->sendMsg ("help  - print, what you are reading just now");
 		return 0;
-	}
-	else if (conn->isCommand ("focus"))
-	{
-		// CHECK_PRIORITY;
-
-		return autoFocus (conn);
 	}
 	return rts2core::Device::commandAuthorized (conn);
 }
