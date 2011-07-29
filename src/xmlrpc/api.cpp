@@ -665,6 +665,9 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 		case RTS2_VALUE_RADEC:
 			os << "{\"ra\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getRa ()) << ",\"dec\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getDec ()) << "}";
 			break;
+		case RTS2_VALUE_ALTAZ:
+			os << "{\"alt\":" << JsonDouble (((rts2core::ValueAltAz *) value)->getAlt ()) << ",\"az\":" << JsonDouble (((rts2core::ValueAltAz *) value)->getAz ()) << "}";
+			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
 			break;
