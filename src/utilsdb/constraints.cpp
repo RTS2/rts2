@@ -21,6 +21,13 @@
 #include "../utils/utilsfunc.h"
 #include "../utils/rts2config.h"
 
+#ifndef HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
+double ln_get_alt_from_airmass (double X, double airmass_scale)
+{
+	return ln_rad_to_deg (asin ((2 * airmass_scale + 1 - X * X) / (2 * X * airmass_scale)));
+}
+#endif // ! HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
+
 bool between (double val, double low, double upper)
 {
 	if (isnan (val))
@@ -175,6 +182,52 @@ void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int 
 	}
 }
 
+void Constraint::getAltitudeViolatedIntervals (std::vector <ConstraintDoubleInterval> &ac)
+{
+	std::vector <ConstraintDoubleInterval> si;
+	getAltitudeIntervals (si);
+	for (double alt = 90; alt > -90; )
+	{
+		if (si.size () == 0)
+		{
+			if (ac.size () > 0 || alt < 90)
+				ac.push_back (ConstraintDoubleInterval (alt, -90));
+			alt = -90;
+		}
+		else
+		{
+			std::vector <ConstraintDoubleInterval>::iterator highest = si.begin ();
+			double ah = highest->getUpper ();
+			if (isnan (ah))
+				ah = -90;
+			// find highest altitude..
+			for (std::vector <ConstraintDoubleInterval>::iterator iter = highest + 1; iter != si.end (); iter++)
+			{
+				if (!isnan (iter->getUpper ()) && iter->getUpper () > ah)
+				{
+					highest = iter;
+					ah = iter->getUpper ();
+				}
+				else if (isnan (iter->getUpper ()) && !isnan (iter->getLower ()) && iter->getLower () > ah)
+				{
+					highest = iter;
+					ah = iter->getLower ();
+				}
+			}
+			// decide which part is violated..
+			if (!isnan (highest->getUpper ()) && ah < alt)
+			{
+				ac.push_back (ConstraintDoubleInterval (alt, ah));
+			}
+			if (!isnan (highest->getLower ()))
+				alt = highest->getLower ();
+			else
+				alt = -90;
+			si.erase (highest);
+		}
+	}
+}
+
 void ConstraintTime::load (xmlNodePtr cons)
 {
 	clearIntervals ();
@@ -222,12 +275,40 @@ bool ConstraintAirmass::satisfy (Target *tar, double JD)
 	return isBetween (am);
 }
 
+void ConstraintAirmass::getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac)
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		double l = iter->getUpper ();
+		double u = iter->getLower ();
+		if (!isnan (l))
+			l = ln_get_alt_from_airmass (l, 750.0);
+		if (!isnan (u))
+			u = ln_get_alt_from_airmass (u, 750.0);
+		ac.push_back (ConstraintDoubleInterval (l, u));
+	}
+}
+
 bool ConstraintZenithDistance::satisfy (Target *tar, double JD)
 {
 	double zd = tar->getZenitDistance (JD);
 	if (isnan (zd))
 		return true;
 	return isBetween(zd);
+}
+
+void ConstraintZenithDistance::getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac)
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		double l = iter->getUpper ();
+		double u = iter->getLower ();
+		if (!isnan (l))
+			l = 90 - l;
+		if (!isnan (u))
+			u = 90 - u;
+		ac.push_back (ConstraintDoubleInterval (l, u));
+	}
 }
 
 bool ConstraintHA::satisfy (Target *tar, double JD)
@@ -345,6 +426,42 @@ Constraints::~Constraints ()
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 		iter->second.null ();
 	clear ();
+}
+
+size_t Constraints::getAltitudeConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac)
+{
+	size_t i = 0;
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (!strcmp (iter->second->getName (), CONSTRAINT_AIRMASS) || !strcmp (iter->second->getName (), CONSTRAINT_ZENITH_DIST))
+		{
+			std::vector <ConstraintDoubleInterval> vv;
+
+			iter->second->getAltitudeIntervals (vv);
+			ac[std::string (iter->second->getName ())] = vv; 
+			
+			i++;
+		}
+	}
+	return i;
+}
+
+size_t Constraints::getAltitudeViolatedConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac)
+{
+	size_t i = 0;
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (!strcmp (iter->second->getName (), CONSTRAINT_AIRMASS) || !strcmp (iter->second->getName (), CONSTRAINT_ZENITH_DIST))
+		{
+			std::vector <ConstraintDoubleInterval> vv;
+
+			iter->second->getAltitudeViolatedIntervals (vv);
+			ac[std::string (iter->second->getName ())] = vv; 
+			
+			i++;
+		}
+	}
+	return i;
 }
 
 bool Constraints::satisfy (Target *tar, double JD)

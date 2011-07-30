@@ -2082,6 +2082,16 @@ ConstraintsList Target::getSatisfiedConstraints (double JD)
 	return ret;
 }
 
+size_t Target::getAltitudeConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac)
+{
+	return getConstraints ()->getAltitudeConstraints (ac);
+}
+
+size_t Target::getAltitudeViolatedConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac)
+{
+	return getConstraints ()->getAltitudeViolatedConstraints (ac);
+}
+
 void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	getConstraints ()->getSatisfiedIntervals (this, from, to, length, step, satisfiedIntervals);

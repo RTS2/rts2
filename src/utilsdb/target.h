@@ -78,6 +78,7 @@ class Constraints;
 class Observation;
 
 class ConstraintsList;
+class ConstraintDoubleInterval;
 
 typedef std::vector < std::pair < time_t, time_t > > interval_arr_t;
 
@@ -626,6 +627,13 @@ class Target:public Rts2Target
 		size_t getSatisfiedConstraints (double JD, ConstraintsList &satisfied);
 
 		ConstraintsList getSatisfiedConstraints (double JD);
+
+		/**
+		 * Fill target list of altitude constraints.
+		 */
+		size_t getAltitudeConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac);
+
+		size_t getAltitudeViolatedConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac);
 
 		/**
 		 * Calculate constraint satifaction.

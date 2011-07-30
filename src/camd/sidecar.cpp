@@ -48,6 +48,18 @@ class SidecarConn:public rts2core::ConnTCP
 		void sendCommand (const char *cmd, std::istringstream **_is, int wtime = 10);
 
 		void sendCommand (const char *cmd, double p1, std::istringstream **_is, int wtime = 10);
+
+		/**
+		 * Call method on server.
+		 *
+		 * @param method   method name
+		 * @param p1       first parameter
+		 * @param _is      string output (return of the call)
+		 * @param wtime    wait time (in seconds)
+		 */
+		// this does not return anything. It only returns possible output of command in _is. You might want to parse
+		// method output to get more, e.g. status of the call
+		void callMethod (const char *method, int p1, std::istringstream **_is, int wtime = 10);
 };
 
 /**
@@ -61,13 +73,19 @@ class Sidecar:public Camera
 		Sidecar (int in_argc, char **in_argv);
 		virtual ~Sidecar ();
 
+
+	protected:
 		/**
 		 * Process -t option (Teledyne server IP).
 		 */
 		virtual int processOption (int in_opt);
+
 		virtual int init ();
 		virtual int initChips ();
 		virtual int info ();
+
+		// called when variable is changed
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		virtual int startExposure ();
 		virtual int doReadout ();
@@ -78,6 +96,7 @@ class Sidecar:public Camera
 
 		HostString *sidecarServer;
 		SidecarConn *sidecarConn;
+		SidecarConn *imageRetrievalConn;
 
 		// variables holders
 		rts2core::ValueSelection *fsMode;
@@ -103,10 +122,18 @@ void SidecarConn::sendCommand (const char *cmd, double p1, std::istringstream **
 	sendCommand (os.str ().c_str (), _is, wtime);
 }
 
+void SidecarConn::callMethod (const char *method, int p1, std::istringstream **_is, int wtime)
+{
+	std::ostringstream os;
+	os << method << "(" << p1 << ")";
+	sendCommand (os.str ().c_str (), _is, wtime);
+}
+
 Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	sidecarServer = NULL;
 	sidecarConn = NULL;
+	imageRetrievalConn = NULL;
 
 	createTempCCD ();
 	createExpType ();
@@ -115,18 +142,20 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	// false means that it will not be recorded to FITS
 	// RTS2_VALUE_WRITABLE means you can change value from monitor
 	// CAM_WORKING means the value can only be set if camera is not exposing or reading the image
-	createValue (fsMode, "fs_mode", "mode of the chip exposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (fsMode, "fs_mode", "mode of the chip exposure (Up The Ramp[0] vs Fowler[1])", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	fsMode->addSelVal ("0 option");
 	fsMode->addSelVal ("1 option");
 
-	width = 200;
-	height = 100;
+	width = 2048;
+	height = 2048;
 
 	addOption ('t', NULL, 1, "Teledyne host name and double colon separated port (port defaults to 5000)");
 }
 
 Sidecar::~Sidecar ()
 {
+	delete sidecarConn;
+	delete imageRetrievalConn;
 }
 
 int Sidecar::processOption (int in_opt)
@@ -161,12 +190,18 @@ int Sidecar::init ()
 	try
 	{
 		sidecarConn = new SidecarConn (this, sidecarServer->getHostname (), sidecarServer->getPort ());
+		// Images are scp'd back to linux rts2 machine via a python TCP server running on the windows machine.
+		// The port address of this image retrieval server is one higher (5001) than the port of the
+		// HxRG Socket Server (5000). 
+		imageRetrievalConn = new SidecarConn (this, sidecarServer->getHostname (), sidecarServer->getPort ()+1);
 		sidecarConn->init ();
+		imageRetrievalConn->init ();
 		sidecarConn->setDebug ();
+		imageRetrievalConn->setDebug ();
 		// initialize system..
 		std::istringstream *is;
 		sidecarConn->sendCommand ("Ping", &is);
-		sidecarConn->sendCommand ("Initialize1", &is);
+		// sidecarConn->sendCommand ("Initialize1", &is);
 		delete is;
 	}
 	catch (rts2core::ConnError er)
@@ -200,18 +235,34 @@ int Sidecar::info ()
 	std::istringstream *is;
 	sidecarConn->sendCommand ("Ping", &is);
 	delete is;
-	sidecarConn->sendCommand ("GetConfig", &is);
-	parseConfig (is);
-	delete is;
-	sidecarConn->sendCommand ("GetTelemetry", &is, 120);
-	delete is;
+	// sidecarConn->sendCommand ("GetConfig", &is);
+	// parseConfig (is);
+	// delete is;
+	// sidecarConn->sendCommand ("GetTelemetry", &is, 120);
+	// delete is;
 	return Camera::info ();
+}
+
+int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	if (old_value == fsMode)
+	{
+		// this will send SetFSMode(0) (or 1..) on sidecar connection
+		std::istringstream *is;
+		sidecarConn->callMethod ("SetFSMode",new_value->getValueInteger (), &is);
+		// if that will return anything, we shall process output found in is..can be done in callMethod
+		delete is;
+		return 0;
+	}
+	return 0;
 }
 
 int Sidecar::startExposure ()
 {
 	std::istringstream *is;
-	sidecarConn->sendCommand ("Exposure ", getExposure (), &is);
+	sidecarConn->sendCommand ("AcquireRamp", &is);
+	// Maybe have image retrieval command sent as part of doReadout below.
+	imageRetrievalConn->sendCommand ("cklein@192.168.1.56:/home/cklein/Desktop/HxRG_Data", &is);
 	return 0;
 }
 

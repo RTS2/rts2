@@ -26,7 +26,7 @@ namespace rts2xmlrpc
 {
 
 /**
- * Display double value as JSON - instead of nan, write nul.
+ * Display double value as JSON - instead of nan, write null.
  */
 class JsonDouble
 {

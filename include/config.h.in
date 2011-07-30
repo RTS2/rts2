@@ -30,6 +30,9 @@
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
+/* If Libnova provides ln_get_alt_from_airmass function */
+#undef HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
+
 /* If Libnova provides ln_get_heliocentric_time_diff function */
 #undef HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
 

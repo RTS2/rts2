@@ -511,6 +511,42 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			}
 			os << "]";
 		}
+		// return intervals of altitude constraints (or vilated intervals)
+		else if (vals[0] == "cnst_alt" || vals[0] == "cnst_alt_v")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+
+			std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > ac;
+
+			if (vals[0] == "cnst_alt")
+				tar->getAltitudeConstraints (ac);
+			else
+				tar->getAltitudeViolatedConstraints (ac);
+
+			os << "\"id\":" << tar_id << ",\"altitudes\":{";
+
+			for (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> >::iterator iter = ac.begin (); iter != ac.end (); iter++)
+			{
+				if (iter != ac.begin ())
+					os << ",\"";
+				else
+					os << "\"";
+				os << iter->first << "\":[";
+				for (std::vector <rts2db::ConstraintDoubleInterval>::iterator di = iter->second.begin (); di != iter->second.end (); di++)
+				{
+					if (di != iter->second.begin ())
+						os << ",[";
+					else
+						os << "[";
+					os << JsonDouble (di->getLower ()) << "," << JsonDouble (di->getUpper ()) << "]";
+				}
+				os << "]";
+			}
+			os << "}";
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));

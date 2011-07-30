@@ -553,6 +553,13 @@ if test "x"$ac_cv_have_decl_ln_get_heliocentric_time_diff = "xyes"; then
 	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF, 1, [If Libnova provides ln_get_heliocentric_time_diff function])
 fi
 
+AH_TEMPLATE([HAVE_DECL_LN_GET_ALT_FROM_AIRMASS],[If Libnova provides ln_get_alt_from_airmass function])
+
+AC_CHECK_DECL(ln_get_alt_from_airmass, , ,[#include <libnova/libnova.h>])
+if test "x"$ac_cv_have_decl_ln_get_alt_from_airmass= "xyes"; then
+	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_ALT_FROM_AIRMASS, 1, [If Libnova provides ln_get_alt_from_airmass function])
+fi
+
 if test "x"$xfocusc = "xyes"; then
 	AC_PATH_XTRA
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])

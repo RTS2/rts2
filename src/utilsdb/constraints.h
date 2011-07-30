@@ -46,6 +46,39 @@ namespace rts2db
 class Target;
 
 /**
+ * Simple interval for constraints. Has lower and upper bounds.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */ 
+class ConstraintDoubleInterval
+{
+	public:
+		ConstraintDoubleInterval (const ConstraintDoubleInterval *i) { lower = i->lower; upper = i->upper; }
+		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
+		bool satisfy (double val);
+		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
+		{
+			if (!isnan (cons.lower))
+				os << cons.lower << " < ";
+			if (!isnan (cons.upper))
+			  	os << " < " << cons.upper;
+			return os;
+		}
+
+		/**
+		 * Print interval.
+		 */
+		void print (std::ostream &os);
+
+		double getLower () { return lower; }
+		double getUpper () { return upper; }
+
+	private:
+		double lower;
+		double upper;
+};
+
+/**
  * Abstract class for constraint.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -81,36 +114,15 @@ class Constraint
 		 * @param ret   returned array of violated time intervals
 		 */
 		virtual void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
-};
-
-/**
- * Simple interval for constraints. Has lower and upper bounds.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */ 
-class ConstraintDoubleInterval
-{
-	public:
-		ConstraintDoubleInterval (const ConstraintDoubleInterval *i) { lower = i->lower; upper = i->upper; }
-		ConstraintDoubleInterval (double _lower, double _upper) { lower = _lower; upper = _upper; }
-		bool satisfy (double val);
-		friend std::ostream & operator << (std::ostream & os, ConstraintDoubleInterval &cons)
-		{
-			if (!isnan (cons.lower))
-				os << cons.lower << " < ";
-			if (!isnan (cons.upper))
-			  	os << " < " << cons.upper;
-			return os;
-		}
 
 		/**
-		 * Print interval.
+		 * Return list of altitude intervals. Usefull only for
+		 * altitude-based constraints - e.g. airmass and zenith
+		 * distance.
 		 */
-		void print (std::ostream &os);
+		virtual void getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac) { throw rts2core::Error ("getAltitudeIntervals is not supported"); }
 
-	private:
-		double lower;
-		double upper;
+		void getAltitudeViolatedIntervals (std::vector <ConstraintDoubleInterval> &ac);
 };
 
 /**
@@ -152,7 +164,6 @@ class ConstraintInterval: public Constraint
 		void addInterval (double lower, double upper) { intervals.push_back (ConstraintDoubleInterval (lower, upper)); }
 		virtual bool isBetween (double JD);
 
-	private:
 		std::list <ConstraintDoubleInterval> intervals;
 };
 
@@ -176,13 +187,18 @@ class ConstraintAirmass:public ConstraintInterval
 		virtual bool satisfy (Target *tar, double JD);
 
 		virtual const char* getName () { return CONSTRAINT_AIRMASS; }
+
+		virtual void getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac);
 };
 
 class ConstraintZenithDistance:public ConstraintInterval
 {
 	public:
 		virtual bool satisfy (Target *tar, double JD);
+
 		virtual const char* getName () { return CONSTRAINT_ZENITH_DIST; }
+
+		virtual void getAltitudeIntervals (std::vector <ConstraintDoubleInterval> &ac);
 };
 
 class ConstraintHA:public ConstraintInterval
@@ -295,6 +311,17 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		Constraints (Constraints &cs);
 
 		~Constraints ();
+
+		/**
+		 * Return list of constaints which bound satisfied altitude constraints.
+		 */
+		size_t getAltitudeConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac);
+
+		/**
+		 * Return list of constaints which bound violated altitude constraints.
+		 */
+		size_t getAltitudeViolatedConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac);
+
 		/**
 		 * Check if constrains are satisfied.
 		 *
@@ -332,7 +359,6 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param satisfiedIntervals  pair of double values (JD from - to) of satisfied constraints
 		 */
 		void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
-
 
 		/**
 		 * Return time until when constraints are satisfied.
