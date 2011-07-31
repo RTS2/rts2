@@ -547,6 +547,27 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 			}
 			os << "}";
 		}
+		else if (vals[0] == "create_target")
+		{
+			const char *tn = params->getString ("tn", "");
+			double ra = params->getDouble ("dec", rts2_nan("f"));
+			double dec = params->getDouble ("dec", rts2_nan("f"));
+			const char *desc = params->getString ("desc", "");
+			const char *type = params->getString ("type", "O");
+			bool overwrite = params->getBoolean ("overwrite", false);
+
+			if (strlen (tn) == 0)
+				throw JSONException ("empty target name");
+			if (strlen (type) != 1)
+				throw JSONException ("invalid target type");
+
+			rts2db::ConstTarget nt;
+			nt.setTargetName (tn);
+			nt.setPosition (ra, dec);
+			nt.setTargetInfo (std::string (desc));
+			nt.setTargetType (type[0]);
+			nt.save (overwrite);
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
