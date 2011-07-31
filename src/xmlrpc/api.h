@@ -98,7 +98,7 @@ class API:public GetRequestAuthorized
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
 		void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value);
 #ifdef HAVE_PGSQL
-		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params);
+		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 #endif
 };

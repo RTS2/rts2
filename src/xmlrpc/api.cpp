@@ -401,7 +401,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				throw JSONException ("invalid ra, dec or radius parameter");
 			rts2db::TargetSet ts (&pos, radius, Rts2Config::instance ()->getObserver ());
 			ts.load ();
-			jsonTargets (ts, os, params);
+			jsonTargets (ts, os, params, &pos);
 		}
 		// try to parse and understand string (similar to new target), return either target or all target information
 		else if (vals[0] == "tbystring")
@@ -421,7 +421,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 				os << ",\"nearest\":{";
 				rts2db::TargetSet ts (&pos, nearest, Rts2Config::instance ()->getObserver ());
 				ts.load ();
-				jsonTargets (ts, os, params);
+				jsonTargets (ts, os, params, &pos);
 				os << "}";
 			}
 		}
@@ -790,22 +790,28 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 }
 
 #ifdef HAVE_PGSQL
-void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params)
+void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom)
 {
 	bool extended = params->getInteger ("e", false);
 	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
+	int c = 4;
 	os << "\"h\":["
 		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}";
+	if (dfrom)
+	{
+		os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":4}";
+		c = 5;
+	}
 	if (extended)
-		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":4},"
-		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":5},"
-		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":6},"
-		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":7},"
-		"{\"n\":\"Transit\",\"t\":\"t\",\"c\":8},"
-		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":9}";
+		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":" << (c) << "},"
+		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":" << (c + 1) << "},"
+		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":" << (c + 2) << "},"
+		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":" << (c + 3) << "},"
+		"{\"n\":\"Transit\",\"t\":\"t\",\"c\":" << (c + 4) << "},"
+		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":" << (c + 5) << "}";
 	os << "],\"d\":[" << std::fixed;
 
 	double JD = ln_get_julian_from_timet (&from);
@@ -825,6 +831,9 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 			os << "\"" << n << "\",";
 
 		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec);
+
+		if (dfrom)
+			os << ',' << JsonDouble (tar->getDistance (dfrom, JD));
 
 		if (extended)
 		{
