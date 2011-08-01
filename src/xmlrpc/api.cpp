@@ -112,6 +112,8 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		return;
 	}
 
+	os << std::fixed;
+	os.precision (8);
 
 	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
 
@@ -836,7 +838,6 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 	os << "],\"d\":[" << std::fixed;
 
 	double JD = ln_get_julian_from_timet (&from);
-	os.precision (8);
 	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
 	{
 		if (iter != tar_set.begin ())
