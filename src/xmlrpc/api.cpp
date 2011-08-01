@@ -550,7 +550,7 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 		else if (vals[0] == "create_target")
 		{
 			const char *tn = params->getString ("tn", "");
-			double ra = params->getDouble ("dec", rts2_nan("f"));
+			double ra = params->getDouble ("ra", rts2_nan("f"));
 			double dec = params->getDouble ("dec", rts2_nan("f"));
 			const char *desc = params->getString ("desc", "");
 			const char *type = params->getString ("type", "O");
