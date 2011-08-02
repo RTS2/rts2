@@ -31,6 +31,7 @@ CameraImage::~CameraImage (void)
 	}
 	deviceWaits.clear ();
 	delete image;
+	image = NULL;
 }
 
 void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double after)
