@@ -101,6 +101,18 @@ API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (pre
 
 void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
+	try
+	{
+		executeJSON (path, params, response_type, response, response_length);
+	}
+	catch (rts2core::Error &er)
+	{
+		throw JSONException (er.what ());
+	}
+}
+
+void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
 	Rts2Conn *conn;
