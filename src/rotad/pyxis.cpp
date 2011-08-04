@@ -46,7 +46,7 @@ class Pyxis:public Rotator
 		const char *optecDevice;
 		rts2core::ConnSerial *optecConn;
 
-		char rbuf[50];
+		char rbuf[1000];
 };
 
 }
@@ -90,6 +90,7 @@ int Pyxis::init ()
 		return ret;
 	
 	optecConn = new rts2core::ConnSerial (optecDevice, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 40);
+	optecConn->setDebug (true);
 	ret = optecConn->init ();
 	if (ret)
 		return ret;
@@ -107,16 +108,17 @@ int Pyxis::info ()
 {
 	if ((getState () & ROT_MASK_ROTATING) != ROT_IDLE)
 		return -1;
-	if (optecConn->writeRead ("CGETPA", 6, rbuf, 6, '\n') < 0)
+	int ret = optecConn->writeRead ("CGETPA", 6, rbuf, 1000, '\r');
+	if (ret < 0)
 		return -1;
-	rbuf[3] = '\0';	
-	setCurrentPosition (atoi (rbuf));
+	rbuf[ret - 2 ] = '\0';	
+	setCurrentPosition (atoi (rbuf + ret - 5));
 	return Rotator::info ();	
 }
 
 void Pyxis::setTarget (double vt)
 {
-	sprintf (rbuf, "CPA%03d", (int) vt);
+	sprintf (rbuf, "CPA%03d", (int) ln_range_degrees (vt));
 	if (optecConn->writePort (rbuf, 6) < 0)
 		throw rts2core::Error ("cannot move to destination");
 }
@@ -126,13 +128,12 @@ long Pyxis::isRotating ()
 	ssize_t ret = optecConn->readPortNoBlock (rbuf, 49);
 	if (ret < 0)
 		return -1;
-	if (ret > 0 && rbuf[ret - 1] == 'F')
+	if (ret > 0 && (rbuf[ret - 1] == 'F' || rbuf[ret-1] == '2'))
 	{
-		info ();
 		return -2;
 	}
 	// update information..
-	setCurrentPosition (getCurrentPosition () + ret);
+	setCurrentPosition (getCurrentPosition () + (double) ret / 128);
 	return USEC_SEC / 10;
 }
 
