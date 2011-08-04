@@ -52,6 +52,11 @@ class Rotator:public rts2core::Device
 		 */
 		virtual long isRotating () = 0;
 
+		/**
+		 * Called at the end of rotation.
+		 */
+		virtual void endRotation () { infoAll (); }
+
 		double getCurrentPosition () { return currentPosition->getValueDouble (); }
 		double getTargetPosition () { return targetPosition->getValueDouble (); }
 		double getDifference () { return toGo->getValueDouble (); }

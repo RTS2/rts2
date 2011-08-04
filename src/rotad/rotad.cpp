@@ -45,6 +45,7 @@ int Rotator::idle ()
 				// ends with error
 				maskState (ROT_MASK_ROTATING | BOP_EXPOSURE, ROT_IDLE, "rotation finished with error");
 			}
+			endRotation ();
 			setIdleInfoInterval (60);
 		}
 		else
