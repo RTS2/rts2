@@ -318,7 +318,12 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 
 size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 {
-	int ret = recv (sock, rbuf, b_len, MSG_DONTWAIT);
+	int old_flags = fcntl (sock, F_GETFL, 0);
+	int ret = fcntl (sock, F_SETFL, O_NONBLOCK);
+	if (ret)
+		throw Error (strerror (errno));
+	ret = read (sock, rbuf, b_len);
+	fcntl (sock, F_SETFL, old_flags);
 	if (ret < 0)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
