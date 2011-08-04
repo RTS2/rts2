@@ -330,6 +330,13 @@ size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 			return 0;
 		throw Error (strerror (errno));	
 	}
+	if (debugPortComm)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "readed from port '";
+		logBuffer (ls, rbuf, ret);
+		ls << "'" << sendLog;
+	}
 	return ret;
 }
 
