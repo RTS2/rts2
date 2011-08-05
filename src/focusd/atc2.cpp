@@ -18,6 +18,7 @@
  */
 
 #define FOCUSER_PORT "/dev/ttyS1"
+#define OPT_HOME     OPT_LOCAL + 236
 
 #include "focusd.h"
 #include "../utils/connserial.h"
@@ -99,6 +100,7 @@ class ATC2:public Focusd
 		
 		char buf[15];
 		const char *device_file;
+		bool homeAtStart;
                 rts2core::ConnSerial *ATC2Conn; // communication port with ATC2
 
 		rts2core::ValueInteger *mirrorTarget;
@@ -118,6 +120,7 @@ using namespace rts2focusd;
 ATC2::ATC2 (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
+	homeAtStart = false;
 	ATC2Conn = NULL;
 
 	createTemperature (); // ??
@@ -132,6 +135,7 @@ ATC2::ATC2 (int argc, char **argv):Focusd (argc, argv)
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", true);
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
+	addOption (OPT_HOME, "home", 0, "home (send FINDOPTIMA) at startup");
 }
 
 ATC2::~ATC2 ()
@@ -146,6 +150,9 @@ int ATC2::processOption (int in_opt)
 	{
 		case 'f':
 			device_file = optarg;
+			break;
+		case OPT_HOME:
+			homeAtStart = true;
 			break;
 		default:
 			return Focusd::processOption (in_opt);
@@ -178,6 +185,13 @@ int ATC2::init ()
 	openRem ();
 
 	setIdleInfoInterval (40);
+
+	if (homeAtStart)
+	{
+		ret = findOptima ();
+		if (ret)
+			return -1;
+	}
 
 	return 0;
 }
