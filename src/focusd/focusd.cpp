@@ -89,6 +89,9 @@ int Focusd::initValues ()
 
 	if (isnan (defaultPosition->getValueFloat ()))
 	{
+		// refresh position values
+		if (info ())
+			return -1;
 		target->setValueFloat (getPosition ());
 		defaultPosition->setValueFloat (getPosition ());
 	}
