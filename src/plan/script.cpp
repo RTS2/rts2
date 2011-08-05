@@ -843,6 +843,19 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 				(*el_iter)->printScript (os);
 			}
 			break;
+		case PRINT_JSON:
+			os << "[";
+			for (el_iter = begin (); el_iter != end (); el_iter++)
+			{
+				if (el_iter != begin ())
+					os << ",{";
+				else
+					os << "{";
+				(*el_iter)->printJson (os);
+				os << "}";
+			}
+			os << "]";
+			break;
 	}
 }
 

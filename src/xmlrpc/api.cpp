@@ -217,13 +217,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		rts2script::Script script = rts2script::Script ();
 		script.setTarget (cname, target);
-		script.prettyPrint (os, rts2script::PRINT_XML);
-
-		response_type = "application/xml";
-		response_length = os.str ().length ();
-		response = new char[response_length];
-		memcpy (response, os.str().c_str (), response_length);
-		return;
+		script.prettyPrint (os, rts2script::PRINT_JSON);
 	}
 	// return altitude of target..
 	else if (vals.size () == 1 && vals[0] == "taltitudes")

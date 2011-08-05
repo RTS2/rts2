@@ -85,7 +85,7 @@ class UnknowOperantMultiplier:public ParsingError
 /**
  * Types of script output.
  */
-typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT } printType;
+typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT, PRINT_JSON } printType;
 
 /**
  * Holds script to execute on given device.

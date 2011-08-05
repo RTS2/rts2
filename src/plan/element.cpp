@@ -407,6 +407,18 @@ int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	return 0;
 }
 
+void ElementChangeValue::printScript (std::ostream &os)
+{
+	if (deviceName[0])
+		os << deviceName << ".";
+	os << valName << op << operands;
+}
+
+void ElementChangeValue::printJson (std::ostream &os)
+{
+	os << "\"cmd\":\"" << op << "\",\"device\":\"" << deviceName << "\",\"name\":\"" << valName << "\",\"operands\":\"" << operands << "\"";
+}
+
 std::string ElementChangeValue::getOperands ()
 {
 	std::ostringstream os;
