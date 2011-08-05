@@ -120,6 +120,17 @@ void ExpandStringValue::writeTo (std::ostream &os)
 				os << ((rts2core::ValueRaDec *) val)->getDec ();
 			}
 		}
+		else if (val->getValueBaseType () == RTS2_VALUE_ALTAZ)
+		{
+			if (strcasecmp (subName, "alt") == 0)
+			{
+				os << ((rts2core::ValueAltAz *) val)->getAlt ();
+			}
+			else if (strcasecmp (subName, "az") == 0)
+			{
+				os << ((rts2core::ValueAltAz *) val)->getAz ();
+			}
+		}
 		else
 		{
 			os << "invalid subname " << subName << " for value " << deviceName << " " << valueName << " ";
