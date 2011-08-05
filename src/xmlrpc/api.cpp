@@ -157,6 +157,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			else
 				os << ",";
 			os << '"' << (*iter)->getName () << '"';
+			iter++;
 		}
 		os << ']';
 	}
