@@ -260,7 +260,9 @@ void ATC2::openRem ()
 
 int ATC2::findOptima ()
 {
+	ATC2Conn->setVTime (400);
 	int ret = ATC2Conn->writeRead ("FINDOPTIMA", 10, buf, 14);
+	ATC2Conn->setVTime (100);
 	if (ret != 14)
 		return -1;
 	if (strncmp (buf, "\r\nFINDOPTIMA\r\n", 14))
