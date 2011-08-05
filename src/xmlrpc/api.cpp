@@ -581,6 +581,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			nt.setTargetInfo (std::string (desc));
 			nt.setTargetType (type[0]);
 			nt.save (overwrite);
+
+			os << "\"id\":" << nt.getTargetID ();
 		}
 		else if (vals[0] == "plan")
 		{
