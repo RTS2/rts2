@@ -88,6 +88,7 @@ class Execute:public Element
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXE << " " << exec; }
 
 		virtual void printXml (std::ostream &os) { os << "  <exe path='" << exec << "'/>"; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXE << "\",\"path\":\"" << exec << "\""; }
 
 	private:
 		ConnExecute *connExecute;
