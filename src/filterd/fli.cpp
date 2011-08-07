@@ -42,6 +42,7 @@ class Fli:public Filterd
 	private:
 		flidev_t dev;
 		flidomain_t deviceDomain;
+		const char *name;
 
 		long filter_count;
 
@@ -56,8 +57,11 @@ Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 {
 	deviceDomain = FLIDEVICE_FILTERWHEEL | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
+	name = NULL;
+
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('f', NULL, 1, "FLI device path");
 }
 
 Fli::~Fli (void)
@@ -98,6 +102,9 @@ int Fli::processOption (int in_opt)
 					return -1;
 			}
 			break;
+		case 'f':
+			name = optarg;
+			break;
 		default:
 			return Filterd::processOption (in_opt);
 	}
@@ -116,26 +123,35 @@ int Fli::init (void)
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
-
-	ret = FLIList (deviceDomain, &names);
-	if (ret)
-		return -1;
-
-	if (names[0] == NULL)
+	
+	if (name == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
-			<< sendLog;
+		ret = FLIList (deviceDomain, &names);
+		if (ret)
+			return -1;
+
+		if (names[0] == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
+			return -1;
+		}
+
+		nam_sep = strchr (names[0], ';');
+		if (nam_sep)
+			*nam_sep = '\0';
+
+		ret = FLIOpen (&dev, names[0], deviceDomain);
+		FLIFreeList (names);
+	}
+	else
+	{
+		ret = FLIOpen (&dev, name, deviceDomain);
+	}
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
 		return -1;
 	}
-
-	nam_sep = strchr (names[0], ';');
-	if (nam_sep)
-		*nam_sep = '\0';
-
-	ret = FLIOpen (&dev, names[0], deviceDomain);
-	FLIFreeList (names);
-	if (ret)
-		return -1;
 
 	ret = FLIGetFilterCount (dev, &filter_count);
 	if (ret)
