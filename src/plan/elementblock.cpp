@@ -280,14 +280,11 @@ ElementSignalEnd::ElementSignalEnd (Script * in_script, int end_sig_num):Element
 	sig_num = end_sig_num;
 }
 
-
 ElementSignalEnd::~ElementSignalEnd (void)
 {
 }
 
-
-int
-ElementSignalEnd::waitForSignal (int in_sig)
+int ElementSignalEnd::waitForSignal (int in_sig)
 {
 	// we get our signall..
 	if (in_sig == sig_num)
@@ -467,6 +464,18 @@ void ElementFor::printScript (std::ostream &os)
 {
 	os << COMMAND_BLOCK_FOR << " " << max;
 	ElementBlock::printScript (os);
+}
+
+void ElementFor::printJson (std::ostream &os)
+{
+	os << "\"cmd\":\"" COMMAND_BLOCK_FOR "\",\"count\":" << max << ",\"block\":[{";
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+	{
+	  	if (iter != blockElements.begin ())
+			os << "},{";
+		(*iter)->printJson (os);
+	}
+	os << "}]";
 }
 
 double ElementFor::getExpectedDuration ()

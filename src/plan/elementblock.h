@@ -173,6 +173,7 @@ class ElementFor:public ElementBlock
 		virtual void prettyPrint (std::ostream &os);
 		virtual void printXml (std::ostream &os);
 		virtual void printScript (std::ostream &os);
+		virtual void printJson (std::ostream &os);
 
 		virtual double getExpectedDuration ();
 

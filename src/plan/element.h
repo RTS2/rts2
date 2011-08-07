@@ -215,7 +215,7 @@ class ElementDark:public Element
 		virtual void prettyPrint (std::ostream &os) { os << "dark " << expTime; }
 		virtual void printXml (std::ostream &os) { os << "  <dark length='" << expTime << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
-		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_DARK << "\",\"duration\":" << expTime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
 
 		virtual double getExpectedDuration () { return expTime; }
 	private:
