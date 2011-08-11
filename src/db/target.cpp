@@ -205,12 +205,19 @@ TargetApp::~TargetApp ()
 
 void TargetApp::usage ()
 {
-	std::cout << "Set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
+	std::cout << "Unless you use option to process arguments only as target IDs, arguments are first resolved as target names. \"%\" character can be used as wildcard - please see bellow for examples" << std::endl
+		<< "Set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
 		<< "  " << getAppName () << " -n +3600 192         .. " << std::endl
-		<< "Disable target for 1 hour after it is executed:" << std::endl
+		<< "Delete targets with name starting with GRB" << std::endl
+		<< "  " << getAppName () << " --delete-targets GRB%" << std::endl
+		<< "Delete targets with name starting with NGC, do not ask for single target confirmation" << std::endl
+		<< "  " << getAppName () << " --delete-targets --force NGC%" << std::endl
+		<< "Disable target 192 for 1 hour after it is executed:" << std::endl
 		<< "  " << getAppName () << " --tempdisable 3600 192 .. " << std::endl
-		<< "Disable target for 2 days and 3 hours after it is executed:" << std::endl
+		<< "Disable target 196 for 2 days and 3 hours after it is executed:" << std::endl
 		<< "  " << getAppName () << " --tempdisable 2d3h 196" << std::endl
+		<< "Disable all targets with name starting with M" << std::endl
+		<< "  " << getAppName () << " -d M%" << std::endl
 		<< "Set M31 airmass limit to < 1.5 and lunarDistance to > 40:" << std::endl
 		<< "  " << getAppName () << " --lunarDistance 40: --airmass :1.5 M31" << std::endl; 
 }
