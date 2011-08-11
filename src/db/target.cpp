@@ -71,6 +71,8 @@
 
 #define OPT_RESETC          OPT_LOCAL + 843
 
+#define OPT_FORCE           OPT_LOCAL + 845
+
 class CamScript
 {
 	public:
@@ -137,6 +139,8 @@ class TargetApp:public Rts2AppDb
 		const char *program;
 
 		rts2db::resolverType resType;
+
+		bool confirmOp;
 };
 
 TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
@@ -155,6 +159,10 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	config = NULL;
 
 	resType = rts2db::NAME_ID;
+
+	confirmOp = true;
+
+	addOption (OPT_FORCE, "force", 0, "do not ask before performing change (deletion, ..)");
 
 	addOption ('a', NULL, 0, "select all matching target (if search by name gives multiple targets)");
 	addOption ('e', NULL, 0, "enable given target(s)");
@@ -308,6 +316,9 @@ int TargetApp::processOption (int in_opt)
 			break;
 		case OPT_RESETC:
 			op |= OP_CONS_RESET;
+			break;
+		case OPT_FORCE:
+			confirmOp = false;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -471,6 +482,14 @@ int TargetApp::doProcessing ()
 		{
 			for (rts2db::TargetSet::iterator iter = target_set.begin (); iter != target_set.end (); iter++)
 			{
+				if (confirmOp)
+				{
+					std::ostringstream os;
+					os << "Delete " << iter->second->getTargetName () << "?";
+					bool rep = askForBoolean (os.str ().c_str (), false);
+					if (rep == false)
+						continue;
+				}
 				std::cout << "Deleting " << iter->second->getTargetName ();
 				iter->second->deleteTarget ();
 				std::cout << "." << std::endl;
