@@ -63,6 +63,9 @@ class Arc:public Camera
 		int processOption (int opt);
 		int init ();
 
+		virtual void initBinnings ();
+		virtual int setBinning (int in_vert, int in_hor);
+
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 #ifdef ARC_API_1_7
@@ -258,6 +261,33 @@ int Arc::init ()
 	}
 	return 0;
 #endif
+}
+
+void Arc::initBinnings ()
+{
+	Camera::initBinnings ();
+
+	addBinning2D (2, 2);
+	addBinning2D (3, 3);
+	addBinning2D (4, 4);
+	addBinning2D (1, 2);
+	addBinning2D (2, 1);
+	addBinning2D (4, 1);
+}
+
+int Arc::setBinning (int in_vert, int in_hori)
+{
+	try
+	{
+		int o_v, o_h;
+		controller.SetBinning (getUsedHeight (), getUsedWidth (), in_vert, in_hori, &o_v, &o_h);
+		logStream (MESSAGE_DEBUG) << "set binning " << in_vert << "x" << in_hori << " with outputs " << o_v << "x" << o_h << sendLog;
+		return 0;
+	}
+	catch (std::exception er)
+	{
+		return -1;
+	}
 }
 
 int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
