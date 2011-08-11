@@ -245,8 +245,13 @@ int Arc::init ()
 	                                     w,      // Image col size
 	                                     timFile->getValue ());    // DSP timing file
 		if (utilFile->getValue ())
+		{
+			logStream (MESSAGE_DEBUG) << "loading " << utilFile->getValue () << sendLog;
 			controller.LoadControllerFile (utilFile->getValue ());
+		}
 		setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
+		long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
+		controller.CheckReply (lReply);
 	}
 	catch (std::runtime_error &ex)
 	{
@@ -456,6 +461,14 @@ int Arc::doReadout ()
 		return USEC_SEC / 1000.0;
 	arc::CDeinterlace deint;
 	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
+	logStream (MESSAGE_DEBUG) << "shifting" << sendLog;
+	for (int i = 0; i < chipUsedSize () * 2; i += 2)
+	{
+		uint8_t *op = ((uint8_t *) controller.mapFd) + i;
+		uint8_t o = *op;
+		*op = *(op+1);
+		*(op+1) = o;
+	}
 	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
 	return -2;
 #endif
