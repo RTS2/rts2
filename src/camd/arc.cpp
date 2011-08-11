@@ -175,6 +175,8 @@ int Arc::info ()
 #else
 	try
 	{
+		if ((getState () & CAM_WORKING))
+			return 0;
 		tempCCD->setValueDouble (controller.GetArrayTemperature ());
 	}
 	catch (std::exception ex)
