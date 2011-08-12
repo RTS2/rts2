@@ -60,6 +60,18 @@ class SidecarConn:public rts2core::ConnTCP
 		// this does not return anything. It only returns possible output of command in _is. You might want to parse
 		// method output to get more, e.g. status of the call
 		void callMethod (const char *method, int p1, std::istringstream **_is, int wtime = 10);
+
+		/**
+		 * Call method on server with 5 parameters of arbitary type.
+		 *
+		 * @see callMethod(cmd,p1,_is,wtime)
+		 */
+		template < typename t1, typename t2, typename t3, typename t4, typename t5 > void callMethod (const char *cmd, t1 p1, t2 p2, t3 p3, t4 p4, t5 p5, std::istringstream **_is, int wtime = 10)
+		{
+			std::ostringstream os;
+			os << std::fixed << cmd << "(" << p1 << "," << p2 << "," << p3 << "," << p4 << "," << p5 << ")";
+			sendCommand (os.str().c_str (), _is, wtime);
+		}
 };
 
 /**
@@ -100,6 +112,12 @@ class Sidecar:public Camera
 
 		// variables holders
 		rts2core::ValueSelection *fsMode;
+
+		rts2core::ValueInteger *nReset;
+		rts2core::ValueInteger *nRead;
+		rts2core::ValueInteger *nGroups;
+		rts2core::ValueInteger *nDropFrames;
+		rts2core::ValueInteger *nRamps;
 
 		int parseConfig (std::istringstream *is);
 };
@@ -145,6 +163,12 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (fsMode, "fs_mode", "mode of the chip exposure (Up The Ramp[0] vs Fowler[1])", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	fsMode->addSelVal ("0 option");
 	fsMode->addSelVal ("1 option");
+
+	createValue (nReset, "n_reset", "number of reset frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (nRead, "n_read", "number of read frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (nGroups, "n_groups", "number of groups", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (nDropFrames, "n_drop_frames", "number of drop frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (nRamps, "n_ramps", "number of ramps", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	width = 2048;
 	height = 2048;
@@ -245,12 +269,18 @@ int Sidecar::info ()
 
 int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
+	std::istringstream *is = NULL;
 	if (old_value == fsMode)
 	{
 		// this will send SetFSMode(0) (or 1..) on sidecar connection
-		std::istringstream *is;
 		sidecarConn->callMethod ("SetFSMode",new_value->getValueInteger (), &is);
 		// if that will return anything, we shall process output found in is..can be done in callMethod
+		delete is;
+		return 0;
+	}
+	else if (old_value == nReset)
+	{
+		sidecarConn->callMethod ("SetRampParam", new_value->getValueInteger (), nRead->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
