@@ -492,10 +492,13 @@ int TargetApp::doProcessing ()
 				if (confirmOp)
 				{
 					std::ostringstream os;
-					os << "Delete " << iter->second->getTargetName () << "?";
-					bool rep = askForBoolean (os.str ().c_str (), false);
-					if (rep == false)
+					os << "Delete " << iter->second->getTargetName () << " (yes/no/all)?";
+					char ch;
+					askForChr (os.str ().c_str (), ch);
+					if (! (ch == 'y' || ch == 'Y' || ch == 'a' || ch == 'A') )
 						continue;
+					if (ch == 'a' || ch == 'A')
+						confirmOp = false;
 				}
 				std::cout << "Deleting " << iter->second->getTargetName ();
 				iter->second->deleteTarget ();
