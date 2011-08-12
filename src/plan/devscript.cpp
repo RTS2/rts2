@@ -314,6 +314,8 @@ void DevScript::deleteScript ()
 			lastTargetObsID = currentTarget->getObsTargetID ();
 			if (script->getExecutedCount () == 0)
 			{
+				logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID ()
+					<< " on device " << script_connection->getName () << ", because its execution count is 0" << sendLog;
 				dont_execute_for = currentTarget->getTargetID ();
 				dont_execute_for_obsid = currentTarget->getObsId ();
 				if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
@@ -325,6 +327,8 @@ void DevScript::deleteScript ()
 		if (getFailedCount () > 0)
 		{
 			// don't execute us for current target..
+			logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID ()
+				<< " on device " << script_connection->getName () << ", because previous execution was with error" << sendLog;
 			dont_execute_for = currentTarget->getTargetID ();
 			dont_execute_for_obsid = currentTarget->getObsId ();
 		}
@@ -341,7 +345,8 @@ void DevScript::setNextTarget (Rts2Target * in_target)
 {
 	if (in_target->getTargetID () == dont_execute_for && in_target->getObsId () == dont_execute_for_obsid)
 	{
-	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target, as it should not be execute" << sendLog;
+	  	logStream (MESSAGE_WARNING) << "device " << script_connection->getName () << " ignores next target (" << in_target->getTargetID () << "," << dont_execute_for 
+			<< "), as it should not be execute" << sendLog;
 		nextTarget = NULL;
 	}
 	else
