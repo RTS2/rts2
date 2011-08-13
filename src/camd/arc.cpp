@@ -197,11 +197,17 @@ int Arc::killAll ()
 #else
 	long lReply;
 	// abort exposure
-	lReply = controller.Command (arc::TIM_ID, 0x00dd02);
-	controller.CheckReply (lReply);
+	if (getState () & CAM_EXPOSING)
+	{
+		lReply = controller.Command (arc::TIM_ID, 0x00dd02);
+		controller.CheckReply (lReply);
+	}
 	// abort readout
-	lReply = controller.Command (arc::TIM_ID, 0x000202);
-	controller.CheckReply (lReply);
+	if (getState () & CAM_READING)
+	{
+		lReply = controller.Command (arc::TIM_ID, 0x000202);
+		controller.CheckReply (lReply);
+	}
 #endif
 	return Camera::killAll ();
 }
