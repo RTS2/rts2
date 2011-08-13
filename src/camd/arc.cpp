@@ -59,6 +59,8 @@ class Arc:public Camera
 
 		virtual int info ();
 
+		virtual int killAll ();
+
 	protected:
 		int processOption (int opt);
 		int init ();
@@ -186,6 +188,22 @@ int Arc::info ()
 	}
 #endif
 	return Camera::info ();
+}
+
+int Arc::killAll ()
+{
+#ifdef ARC_API_1_7
+
+#else
+	long lReply;
+	// abort exposure
+	lReply = controller.Command (arc::TIM_ID, 0x00dd02);
+	controller.CheckReply (lReply);
+	// abort readout
+	lReply = controller.Command (arc::TIM_ID, 0x000202);
+	controller.CheckReply (lReply);
+#endif
+	return Camera::killAll ();
 }
 
 int Arc::processOption (int opt)
