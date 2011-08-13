@@ -157,13 +157,10 @@ class App:public Rts2Object
 		 * Ask user for boolean value. Various entries (YyNn01) are allowed.
 		 *
 		 * @param desc     Description.
-		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @param visible  If false, application will display * instead of typed characters. Handy to handle password inputs.
-		 * @return -1 on error, 0 on success.
+		 * @param val      Default value.
+		 * @return value selected by user
 		 */
 		bool askForBoolean (const char *desc, bool val);
-
-
 
 		/**
 		 * Function used in messaging API to pass message to
