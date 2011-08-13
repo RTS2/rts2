@@ -195,19 +195,21 @@ int Arc::killAll ()
 #ifdef ARC_API_1_7
 
 #else
-	long lReply;
-	// abort exposure
-	if (getState () & CAM_EXPOSING)
+	// reset controller
+        controller.SetupController( true,          // Reset Controller
+                                     true,          // Test Data Link ( TDL )
+                                     true,          // Power On
+                                     h,      // Image row size
+                                     w,      // Image col size
+                                     timFile->getValue ());    // DSP timing file
+	if (utilFile->getValue ())
 	{
-		lReply = controller.Command (arc::TIM_ID, 0x00dd02);
-		controller.CheckReply (lReply);
+		logStream (MESSAGE_DEBUG) << "loading " << utilFile->getValue () << sendLog;
+		controller.LoadControllerFile (utilFile->getValue ());
 	}
-	// abort readout
-	if (getState () & CAM_READING)
-	{
-		lReply = controller.Command (arc::TIM_ID, 0x000202);
-		controller.CheckReply (lReply);
-	}
+	setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
+	long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
+	controller.CheckReply (lReply);
 #endif
 	return Camera::killAll ();
 }
