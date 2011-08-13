@@ -181,7 +181,7 @@ void reverseInterval (time_t from, time_t to, interval_arr_t &intervals)
 }
 
 // find first satisifing interval ending after first violation..
-void findFirst (interval_arr_t::const_iterator si, const interval_arr_t::const_iterator &end, double t)
+void findFirst (interval_arr_t::const_iterator &si, const interval_arr_t::const_iterator &end, double t)
 {
 	while (si->second < t && si != end)
 		si++;
@@ -193,18 +193,24 @@ void findFirst (interval_arr_t::const_iterator si, const interval_arr_t::const_i
 // merge two intervals, find their intersection
 void mergeIntervals (const interval_arr_t master, const interval_arr_t &add, interval_arr_t &ret)
 {
+	if (add.size () == 0 || master.size () == 0)
+	{
+		ret.clear ();
+		return;
+	}
 	interval_arr_t::const_iterator addi = add.begin ();
 	for (interval_arr_t::const_iterator mi = master.begin (); mi != master.end (); mi++)
 	{
 		while (addi->first < mi->second)
 		{
 			findFirst (addi, add.end (), mi->first);
-			if (addi == master.end ())
+			if (addi == add.end ())
 				break;
 			// intervals have empty conjunction
 			if (addi->first > mi->second)
 				continue;
 			ret.push_back (std::pair <time_t, time_t> (max (mi->first, addi->first), min (mi->second, addi->second)));
+			addi++;
 		}
 	}
 }
@@ -548,7 +554,15 @@ size_t Constraints::getTimeConstraints (std::map <std::string, ConstraintPtr> &c
 	size_t i = 0;
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (!strcmp (iter->second->getName (), CONSTRAINT_HA) || !strcmp (iter->second->getName (), CONSTRAINT_TIME))
+		if (!strcmp (iter->second->getName (), CONSTRAINT_HA)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_TIME)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_LDISTANCE)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_LALTITUDE)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_LPHASE)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_SDISTANCE)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_SALTITUDE)
+			|| !strcmp (iter->second->getName (), CONSTRAINT_MAXREPEATS)
+		)
 		{
 			cons[iter->second->getName ()] = iter->second;
 			
@@ -591,6 +605,7 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	satisfiedIntervals.clear ();
+	satisfiedIntervals.push_back (std::pair <time_t, time_t> (from, to));
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		interval_arr_t intervals;
