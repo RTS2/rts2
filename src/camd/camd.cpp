@@ -1002,12 +1002,12 @@ int Camera::camStartExposureWithoutCheck ()
 		sendValueAll (dataChannels);
 	}
 
+	used_bh = ((Binning2D *)(binning->getData ()))->horizontal; 
+	used_bv = ((Binning2D *)(binning->getData ()))->vertical; 
+
 	ret = startExposure ();
 	if (ret)
 		return ret;
-
-	used_bh = ((Binning2D *)(binning->getData ()))->horizontal; 
-	used_bv = ((Binning2D *)(binning->getData ()))->vertical; 
 
 	double now = getNow ();
 
