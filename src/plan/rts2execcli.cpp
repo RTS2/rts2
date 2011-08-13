@@ -63,7 +63,7 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 		case EVENT_AFTER_COMMAND_FINISHED:
 			image = (Image *) event->getArg ();
 			if (!strcmp (image->getCameraName (), getName ()))
-				queImage (image);
+				queImage (image, type == EVENT_AFTER_COMMAND_FINISHED ? false : true);
 			break;
 		case EVENT_COMMAND_OK:
 			nextCommand ();
@@ -256,11 +256,11 @@ void Rts2DevClientCameraExec::nextCommand ()
 		setTriggered ();
 }
 
-void Rts2DevClientCameraExec::queImage (Image * image)
+void Rts2DevClientCameraExec::queImage (Image * image, bool run_after)
 {
 	// try immediately processing..
 	std::string after_command;
-	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
+	if (run_after && Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
 	{
 		int timeout = 60;
 		std::string arg;
@@ -276,6 +276,7 @@ void Rts2DevClientCameraExec::queImage (Image * image)
 		else
 		{
 			getMaster ()->addConnection (afterCommand);
+			return;
 		}
 	}
 
