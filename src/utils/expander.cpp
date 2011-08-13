@@ -86,7 +86,6 @@ std::string Expander::getMonthString (int month)
 	return _os.str ();
 }
 
-
 std::string Expander::getDayString (int day)
 {
 	std::ostringstream _os;
@@ -94,7 +93,6 @@ std::string Expander::getDayString (int day)
 	_os << std::setw (2) << day;
 	return _os.str ();
 }
-
 
 std::string Expander::getYDayString ()
 {
@@ -104,7 +102,6 @@ std::string Expander::getYDayString ()
 	return _os.str ();
 }
 
-
 std::string Expander::getHourString ()
 {
 	std::ostringstream _os;
@@ -112,7 +109,6 @@ std::string Expander::getHourString ()
 	_os << std::setw (2) << getHour ();
 	return _os.str ();
 }
-
 
 std::string Expander::getMinString ()
 {
@@ -122,7 +118,6 @@ std::string Expander::getMinString ()
 	return _os.str ();
 }
 
-
 std::string Expander::getSecString ()
 {
 	std::ostringstream _os;
@@ -131,7 +126,6 @@ std::string Expander::getSecString ()
 	return _os.str ();
 }
 
-
 std::string Expander::getMSecString ()
 {
 	std::ostringstream _os;
@@ -139,7 +133,6 @@ std::string Expander::getMSecString ()
 	_os << std::setw (3) << ((int) (expandTv.tv_usec / 1000.0));
 	return _os.str ();
 }
-
 
 std::string Expander::getNightString ()
 {
@@ -150,7 +143,6 @@ std::string Expander::getNightString ()
 		<< std::setw (2) << getNightDay ();
 	return _os.str ();
 }
-
 
 std::string Expander::expandVariable (char var, size_t beg)
 {
@@ -257,8 +249,11 @@ void Expander::getFormating (const std::string &expression, std::string::iterato
 
 std::string Expander::expand (std::string expression)
 {
+	num_pos = -1;
+
 	std::ostringstream ret;
 	std::string exp;
+
 	for (std::string::iterator iter = expression.begin (); iter != expression.end (); iter++)
 	{
 		switch (*iter)
