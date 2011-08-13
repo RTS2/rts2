@@ -210,6 +210,7 @@ int Arc::killAll ()
 	setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
 	long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
 	controller.CheckReply (lReply);
+	beforeNight ();
 #endif
 	return Camera::killAll ();
 }
@@ -313,7 +314,7 @@ int Arc::setBinning (int in_vert, int in_hori)
 	try
 	{
 		int o_v, o_h;
-		controller.SetBinning (getUsedHeight (), getUsedWidth (), in_vert, in_hori, &o_v, &o_h);
+		controller.SetBinning (getHeight (), getWidth (), in_vert, in_hori, &o_v, &o_h);
 		logStream (MESSAGE_DEBUG) << "set binning " << in_vert << "x" << in_hori << " with outputs " << o_v << "x" << o_h << sendLog;
 		return 0;
 	}
