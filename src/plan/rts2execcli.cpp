@@ -258,11 +258,6 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 void Rts2DevClientCameraExec::queImage (Image * image)
 {
-	// find image processor with lowest que number..
-	Rts2Conn *minConn = getMaster ()->getMinConn ("queue_size");
-	if (!minConn)
-		return;
-
 	// try immediately processing..
 	std::string after_command;
 	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
@@ -283,6 +278,11 @@ void Rts2DevClientCameraExec::queImage (Image * image)
 			getMaster ()->addConnection (afterCommand);
 		}
 	}
+
+	// find image processor with lowest que number..
+	Rts2Conn *minConn = getMaster ()->getMinConn ("queue_size");
+	if (!minConn)
+		return;
 
 	if (image->getImageType () != IMGTYPE_FLAT && image->getImageType () != IMGTYPE_DARK)
 	{
