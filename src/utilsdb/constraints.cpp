@@ -152,7 +152,64 @@ bool ConstraintInterval::isBetween (double val)
 	return false;
 }
 
-void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+// interval functions
+
+// reverse intervals. Intervals must be ordered
+void reverseInterval (time_t from, time_t to, interval_arr_t &intervals)
+{
+	interval_arr_t ret;
+	if (intervals.size ())
+	{
+		interval_arr_t::iterator iter = intervals.begin ();
+		time_t t = from;
+		
+		for (; iter != intervals.end (); iter++)
+		{
+			if (t < iter->first)
+				ret.push_back (std::pair <time_t, time_t> (t, iter->first));
+			t = iter->second;
+		}
+		iter--;
+		if (iter->second < to)
+			ret.push_back (std::pair <time_t, time_t> (iter->second, to));
+	}
+	else
+	{
+		ret.push_back (std::pair <time_t, time_t> (from, to));
+	}
+	intervals = ret;
+}
+
+// find first satisifing interval ending after first violation..
+void findFirst (interval_arr_t::const_iterator si, const interval_arr_t::const_iterator &end, double t)
+{
+	while (si->second < t && si != end)
+		si++;
+}
+
+#define min(a,b) ((a < b) ? a : b)
+#define max(a,b) ((a > b) ? a : b)
+
+// merge two intervals, find their intersection
+void mergeIntervals (const interval_arr_t master, const interval_arr_t &add, interval_arr_t &ret)
+{
+	interval_arr_t::const_iterator addi = add.begin ();
+	for (interval_arr_t::const_iterator mi = master.begin (); mi != master.end (); mi++)
+	{
+		while (addi->first < mi->second)
+		{
+			findFirst (addi, add.end (), mi->first);
+			if (addi == master.end ())
+				break;
+			// intervals have empty conjunction
+			if (addi->first > mi->second)
+				continue;
+			ret.push_back (std::pair <time_t, time_t> (max (mi->first, addi->first), min (mi->second, addi->second)));
+		}
+	}
+}
+
+void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
 {
 	double vf = rts2_nan ("f");
 
@@ -161,7 +218,7 @@ void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int 
 	double t;
 	for (t = ln_get_julian_from_timet (&from); t < to_JD; t += step / 86400.0)
 	{
-		if (!satisfy (tar, t))
+		if (satisfy (tar, t))
 		{
 			if (isnan (vf))
 				vf = t;
@@ -180,6 +237,12 @@ void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int 
 		ln_get_timet_from_julian (t, &to);
 		ret.push_back (std::pair <time_t, time_t> (from, to));
 	}
+}
+
+void Constraint::getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+{
+	getSatisfiedIntervals (tar, from, to, step, ret);
+	reverseInterval (from, to, ret);
 }
 
 void Constraint::getAltitudeViolatedIntervals (std::vector <ConstraintDoubleInterval> &ac)
@@ -265,6 +328,22 @@ void ConstraintTime::load (xmlNodePtr cons)
 bool ConstraintTime::satisfy (Target *target, double JD)
 {
 	return isBetween (JD);
+}
+
+void ConstraintTime::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+{
+	// get list of satisfied intervals
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		double l = iter->getUpper ();
+		double u = iter->getLower ();
+		if (!isnan (l) && l >= from && !isnan (u) && u <= to)
+			ret.push_back (std::pair <time_t, time_t> (l, u));
+		if (isnan (l) && !isnan (u) && u <= to)
+			ret.push_back (std::pair <time_t, time_t> (from, u));
+		if (!isnan (l) && l >= from  && isnan (u))
+			ret.push_back (std::pair <time_t, time_t> (l, to));
+	}
 }
 
 bool ConstraintAirmass::satisfy (Target *tar, double JD)
@@ -382,9 +461,9 @@ void ConstraintMaxRepeat::print (std::ostream &os)
 	os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
 }
 
-void ConstraintMaxRepeat::getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
+void ConstraintMaxRepeat::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
 {
-	if (maxRepeat > 0 && tar->getTotalNumberOfObservations () > maxRepeat)
+	if (maxRepeat <= 0 || tar->getTotalNumberOfObservations () < maxRepeat)
 		ret.push_back ( std::pair <time_t, time_t> (from, to) );
 }
 
@@ -464,6 +543,21 @@ size_t Constraints::getAltitudeViolatedConstraints (std::map <std::string, std::
 	return i;
 }
 
+size_t Constraints::getTimeConstraints (std::map <std::string, ConstraintPtr> &cons)
+{
+	size_t i = 0;
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (!strcmp (iter->second->getName (), CONSTRAINT_HA) || !strcmp (iter->second->getName (), CONSTRAINT_TIME))
+		{
+			cons[iter->second->getName ()] = iter->second;
+			
+			i++;
+		}
+	}
+	return i;
+}
+
 bool Constraints::satisfy (Target *tar, double JD)
 {
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
@@ -494,51 +588,17 @@ size_t Constraints::getSatisfied (Target *tar, double JD, ConstraintsList &satis
 	return satisfied.size ();
 }
 
-// find first satisifing interval ending after first violation..
-void findFirst (interval_arr_t::iterator si, const interval_arr_t::iterator &end, double t)
-{
-	while (si->second > t && si != end)
-		si++;
-}
-
 void Constraints::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	satisfiedIntervals.clear ();
-	// at beginning, full interval is satisfied
-	satisfiedIntervals.push_back (std::pair <time_t, time_t> (from, to));
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
 		interval_arr_t intervals;
-		iter->second->getViolatedIntervals (tar, from, to, step, intervals);
+		iter->second->getSatisfiedIntervals (tar, from, to, step, intervals);
 		// now look for join with current intervals..
-		interval_arr_t::iterator si = satisfiedIntervals.begin ();
-		for (interval_arr_t::iterator vi = intervals.begin (); vi != intervals.end (); vi++)
-		{
-			findFirst (si, satisfiedIntervals.end (), vi->first);
-			if (si == satisfiedIntervals.end ())
-				break;
-			si->second = vi->first;
-			// remove empty interval
-			if (si->second <= si->first || (si->first >= vi->first && si->second <= vi->second) )
-				si = satisfiedIntervals.erase (si);
-			else	
-				si++;
-			if (si == satisfiedIntervals.end ())
-			{
-				for (interval_arr_t::iterator vi2 = vi + 1; vi2 != intervals.end (); vi++, vi2++)
-					satisfiedIntervals.push_back (std::pair <time_t, time_t> (vi->second, vi2->first));
-				if (vi->second < to)
-					satisfiedIntervals.push_back (std::pair <time_t, time_t> (vi->second, to));
-				break;
-			}
-			// now found all intervals inside violation, and remove them..
-			while (si->second < vi->second && si != satisfiedIntervals.end ())
-				si = satisfiedIntervals.erase (si);
-			if (si == satisfiedIntervals.end ())
-				break;
-			// si now holds something, which has end after end of violation, and begin before end of violation
-			si->first = vi->second;
-		}
+		interval_arr_t ret = satisfiedIntervals;
+		satisfiedIntervals.clear ();
+		mergeIntervals (ret, intervals, satisfiedIntervals);
 	}
 }
 
@@ -560,6 +620,12 @@ double Constraints::getSatisfiedDuration (Target *tar, double from, double to, d
 		}
 	}
 	return rts2_nan ("f");
+}
+
+void Constraints::getViolatedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &violatedIntervals)
+{
+	getSatisfiedIntervals (tar, from, to, length, step, violatedIntervals);
+	reverseInterval (from, to, violatedIntervals);
 }
 
 void Constraints::load (xmlNodePtr _node, bool overwrite)

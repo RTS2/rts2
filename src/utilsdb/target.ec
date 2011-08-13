@@ -2092,6 +2092,11 @@ size_t Target::getAltitudeViolatedConstraints (std::map <std::string, std::vecto
 	return getConstraints ()->getAltitudeViolatedConstraints (ac);
 }
 
+size_t Target::getTimeConstraints (std::map <std::string, ConstraintPtr> &cons)
+{
+	return getConstraints ()->getTimeConstraints (cons);
+}
+
 void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
 {
 	getConstraints ()->getSatisfiedIntervals (this, from, to, length, step, satisfiedIntervals);
@@ -2100,6 +2105,11 @@ void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step
 double Target::getSatisfiedDuration (double from, double to, double length, double step)
 {
 	return getConstraints ()->getSatisfiedDuration (this, from, to, length, step);
+}
+
+void Target::getViolatedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
+{
+	getConstraints ()->getViolatedIntervals (this, from, to, length, step, satisfiedIntervals);
 }
 
 TargetSet * Target::getCalTargets (double JD, double minaird)

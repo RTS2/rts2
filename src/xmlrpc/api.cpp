@@ -228,7 +228,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("invalid id parameter");
 		time_t from = params->getInteger ("from", master->getNow () - 86400);
 		time_t to = params->getInteger ("to", from + 86400);
-		const int steps = params->getInteger ("step", 1000);
+		const int steps = params->getInteger ("steps", 1000);
 
 		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		const double jd_from = ln_get_julian_from_timet (&from);
@@ -470,7 +470,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			// 60 sec = 1 minute step (by default)
 			double step = params->getDouble ("step", 60);
 
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), master->getNotifyConnection ());
 			rts2db::Constraints *cons = tar->getConstraints ();
 
 			os << '"' << cn << "\":[";
@@ -520,7 +520,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			os << "]";
 		}
-		// return intervals of altitude constraints (or vilated intervals)
+		// return intervals of altitude constraints (or violated intervals)
 		else if (vals[0] == "cnst_alt" || vals[0] == "cnst_alt_v")
 		{
 			int tar_id = params->getInteger ("id", -1);
@@ -556,6 +556,52 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			os << "}";
 		}
+		// return intervals of time constraints (or violated time intervals)
+		else if (vals[0] == "cnst_time" || vals[0] == "cnst_time_v")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			time_t from = params->getInteger ("from", master->getNow ());
+			time_t to = params->getInteger ("to", from + 86400);
+			double steps = params->getDouble ("steps", 1000);
+
+			steps = double ((to - from)) / steps;
+
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+
+			std::map <std::string, rts2db::ConstraintPtr> cons;
+
+			tar->getTimeConstraints (cons);
+
+			os << "\"id\":" << tar_id << ",\"constraints\":{";
+
+			for (std::map <std::string, rts2db::ConstraintPtr>::iterator iter = cons.begin (); iter != cons.end (); iter++)
+			{
+				if (iter != cons.begin ())
+					os << ",\"";
+				else
+					os << "\"";
+				os << iter->first << "\":[";
+
+				rts2db::interval_arr_t intervals;
+				if (vals[0] == "cnst_time")
+					iter->second->getSatisfiedIntervals (tar, from, to, steps, intervals);
+				else
+					iter->second->getViolatedIntervals (tar, from, to, steps, intervals);
+
+				for (rts2db::interval_arr_t::iterator it = intervals.begin (); it != intervals.end (); it++)
+				{
+					if (it != intervals.begin ())
+						os << ",[";
+					else
+						os << "[";
+					os << it->first << "," << it->second << "]";
+				}
+				os << "]";
+			}
+			os << "}";
+		}
 		else if (vals[0] == "create_target")
 		{
 			const char *tn = params->getString ("tn", "");
@@ -585,10 +631,10 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			ps.load ();
 
 			os << "\"h\":["
-				"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
-				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
-				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
-				"{\"n\":\"Obs ID\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":3,\"c\":3},"
+				"{\"n\":\"Plan ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/plan/\",\"href\":0,\"c\":0},"
+				"{\"n\":\"Target ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":1},"
+				"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/targets/\",\"href\":1,\"c\":2},"
+				"{\"n\":\"Obs ID\",\"t\":\"a\",\"prefix\":\"" << master->getPagePrefix () << "/observations/\",\"href\":3,\"c\":3},"
 				"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
 				"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
 				"{\"n\":\"RA\",\"t\":\"r\",\"c\":6},"

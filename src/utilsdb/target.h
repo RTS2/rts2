@@ -34,6 +34,7 @@
 #include "../utils/device.h"
 #include "../utils/rts2target.h"
 #include "../utils/connnotify.h"
+#include "../utils/counted_ptr.h"
 
 #include "targetset.h"
 #include "labels.h"
@@ -79,6 +80,8 @@ class Observation;
 
 class ConstraintsList;
 class ConstraintDoubleInterval;
+
+typedef counted_ptr <Constraint> ConstraintPtr;
 
 typedef std::vector < std::pair < time_t, time_t > > interval_arr_t;
 
@@ -631,9 +634,11 @@ class Target:public Rts2Target
 		/**
 		 * Fill target list of altitude constraints.
 		 */
-		size_t getAltitudeConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac);
+		size_t getAltitudeConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac);
 
-		size_t getAltitudeViolatedConstraints (std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > &ac);
+		size_t getAltitudeViolatedConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac);
+
+		size_t getTimeConstraints (std::map <std::string, ConstraintPtr> &cons);
 
 		/**
 		 * Calculate constraint satifaction.
@@ -641,6 +646,8 @@ class Target:public Rts2Target
 		void getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
 
 		double getSatisfiedDuration (double from, double to, double length, double step);
+
+		void getViolatedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
 
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 

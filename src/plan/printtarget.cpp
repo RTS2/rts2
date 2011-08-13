@@ -29,6 +29,7 @@
 #define OPT_AIRMASS               OPT_LOCAL + 206
 #define OPT_TARGETID              OPT_LOCAL + 207
 #define OPT_SATISFIED             OPT_LOCAL + 208
+#define OPT_VIOLATED              OPT_LOCAL + 209
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -69,6 +70,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	printCalTargets = false;
 	printObservations = false;
 	printSatisfied = false;
+	printViolated = false;
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
@@ -108,6 +110,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 	addOption (OPT_SATISFIED, "satisfied", 0, "print targets satisfied intervals");
+	addOption (OPT_VIOLATED, "violated", 0, "print targets violated intervals");
 }
 
 PrintTarget::~PrintTarget ()
@@ -230,6 +233,9 @@ int PrintTarget::processOption (int in_opt)
 			break;
 		case OPT_SATISFIED:
 			printSatisfied = true;
+			break;
+		case OPT_VIOLATED:
+			printViolated = true;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -383,7 +389,7 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			delete cal;
 		}
 		// print constraint satifaction
-		if (printSatisfied)
+		if (printSatisfied || printViolated)
 		{
 			rts2db::interval_arr_t si;
 			time_t now;
@@ -391,9 +397,18 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			now -= now % 60;
 			time_t to = now + 86400;
 			to += 60 - (to % 60);
-			target->getSatisfiedIntervals (now, to, 1800, 60, si);
-			for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
-				std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
+			if (printSatisfied)
+			{
+				target->getSatisfiedIntervals (now, to, 1800, 60, si);
+				for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
+					std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
+			}
+			if (printViolated)
+			{
+				target->getViolatedIntervals (now, to, 1800, 60, si);
+				for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
+					std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
+			}
 		}
 		// print observations..
 		if (printObservations)

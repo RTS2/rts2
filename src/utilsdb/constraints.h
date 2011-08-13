@@ -22,7 +22,6 @@
 #define __RTS2_CONSTRAINTS__
 
 #include "target.h"
-#include "../utils/counted_ptr.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -105,6 +104,17 @@ class Constraint
 		virtual const char* getName () = 0;
 
 		/**
+		 * Return array with intervals when constraint for given target is satisfied.
+		 *
+		 * @param tar
+		 * @param from
+		 * @param to
+		 * @param step
+		 * @param ret   returned array of violated time intervals
+		 */
+		virtual void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
+
+		/**
 		 * Return array with intervals when constraint for given target is violated.
 		 *
 		 * @param tar
@@ -113,7 +123,7 @@ class Constraint
 		 * @param step
 		 * @param ret   returned array of violated time intervals
 		 */
-		virtual void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
+		void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 
 		/**
 		 * Return list of altitude intervals. Usefull only for
@@ -179,6 +189,8 @@ class ConstraintTime:public ConstraintInterval
 		virtual bool satisfy (Target *tar, double JD);
 
 		virtual const char* getName () { return CONSTRAINT_TIME; }
+
+		virtual void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 };
 
 class ConstraintAirmass:public ConstraintInterval
@@ -264,12 +276,10 @@ class ConstraintMaxRepeat:public Constraint
 
 		void copyConstraint (ConstraintMaxRepeat *i) { maxRepeat = i->maxRepeat; }
 
-		virtual void getViolatedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
+		virtual void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret);
 	private:
 		int maxRepeat;
 };
-
-typedef counted_ptr <Constraint> ConstraintPtr;
 
 /**
  * List of constraints.
@@ -322,6 +332,9 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 */
 		size_t getAltitudeViolatedConstraints (std::map <std::string, std::vector <ConstraintDoubleInterval> > &ac);
 
+
+		size_t getTimeConstraints (std::map <std::string, ConstraintPtr> &cons);
+
 		/**
 		 * Check if constrains are satisfied.
 		 *
@@ -359,6 +372,8 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param satisfiedIntervals  pair of double values (JD from - to) of satisfied constraints
 		 */
 		void getSatisfiedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
+
+		void getViolatedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &violatedIntervals);
 
 		/**
 		 * Return time until when constraints are satisfied.
