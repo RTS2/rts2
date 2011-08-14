@@ -352,6 +352,7 @@ class Device:public Daemon
 		 */
 		void setNeedReload () { maskState (DEVICE_NEED_RELOAD, DEVICE_NEED_RELOAD, "need reload values when in idle"); }
 		bool getNeedReload () { return getState () & DEVICE_NEED_RELOAD; }
+		void clearNeedReload () { maskState (DEVICE_NEED_RELOAD, 0, "reload cleared"); }
 
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 

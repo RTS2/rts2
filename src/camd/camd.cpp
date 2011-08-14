@@ -1019,6 +1019,7 @@ int Camera::camStartExposureWithoutCheck ()
 	{
 		Binning2D *bin = (Binning2D *) binning->getData ();
 		setBinning (bin->horizontal, bin->vertical);
+		clearNeedReload ();
 	}
 
 	ret = startExposure ();
