@@ -515,8 +515,15 @@ int Camera::scriptEnds ()
 
 	// set back default binning
 	binning->setValueInteger (0);
-	Binning2D *bin = (Binning2D *) binning->getData ();
-	setBinning (bin->horizontal, bin->vertical);
+	if ((getState () & DEVICE_STATUS_MASK) != DEVICE_IDLE)
+	{
+		setNeedReload ();
+	}
+	else
+	{
+		Binning2D *bin = (Binning2D *) binning->getData ();
+		setBinning (bin->horizontal, bin->vertical);
+	}
 	sendValueAll (binning);
 
 	dataType->setValueInteger (0);
@@ -1006,7 +1013,13 @@ int Camera::camStartExposureWithoutCheck ()
 	}
 
 	used_bh = ((Binning2D *)(binning->getData ()))->horizontal; 
-	used_bv = ((Binning2D *)(binning->getData ()))->vertical; 
+	used_bv = ((Binning2D *)(binning->getData ()))->vertical;
+
+	if (getNeedReload ())
+	{
+		Binning2D *bin = (Binning2D *) binning->getData ();
+		setBinning (bin->horizontal, bin->vertical);
+	}
 
 	ret = startExposure ();
 	if (ret)

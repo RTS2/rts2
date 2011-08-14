@@ -347,6 +347,12 @@ class Device:public Daemon
 		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
 		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
 
+		/**
+		 * Signal that device need to reload values while in idle state.
+		 */
+		void setNeedReload () { maskState (DEVICE_NEED_RELOAD, DEVICE_NEED_RELOAD, "need reload values when in idle"); }
+		bool getNeedReload () { return getState () & DEVICE_NEED_RELOAD; }
+
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
 		/**
