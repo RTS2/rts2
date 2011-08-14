@@ -316,7 +316,7 @@ int Arc::setBinning (int in_vert, int in_hori)
 		int o_v, o_h;
 		controller.SetBinning (getHeight (), getWidth (), in_vert, in_hori, &o_v, &o_h);
 		logStream (MESSAGE_DEBUG) << "set binning " << in_vert << "x" << in_hori << " with outputs " << o_v << "x" << o_h << sendLog;
-		return 0;
+		return Camera::setBinning (in_vert, in_hori);
 	}
 	catch (std::exception er)
 	{

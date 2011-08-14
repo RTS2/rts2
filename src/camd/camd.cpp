@@ -513,7 +513,10 @@ int Camera::scriptEnds ()
 	box (-1, -1, -1, -1);
 	sendValueAll (chipUsedReadout);
 
+	// set back default binning
 	binning->setValueInteger (0);
+	Binning2D *bin = (Binning2D *) binning->getData ();
+	setBinning (bin->horizontal, bin->vertical);
 	sendValueAll (binning);
 
 	dataType->setValueInteger (0);

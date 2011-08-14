@@ -122,8 +122,7 @@ int Alta::setBinning (int in_vert, int in_hori)
 {
 	alta->write_RoiBinningH (in_hori);
 	alta->write_RoiBinningV (in_vert);
-	int ret = Camera::setBinning (in_vert, in_hori);
-	return ret;
+	return Camera::setBinning (in_vert, in_hori);
 }
 
 int Alta::startExposure ()
