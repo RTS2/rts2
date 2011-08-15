@@ -433,6 +433,14 @@ int Arc::startExposure ()
 	try
 	{
 		long lReply;
+		if (chipUsedReadout->wasChanged ())
+		{
+			long oRows, oCols;
+			lReply = controller.SetSubArray (oRows, oCols,
+				chipUsedReadout->getXInt () + chipUsedReadout->getWidth () / 2, chipUsedReadout->getYInt () + chipUsedReadout->getHeight () / 2,
+				chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), getWidth () - chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt (), 0);
+			controller.checkReply (lReply);
+		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
 		controller.SetOpenShutter (getExpType () == 0);
