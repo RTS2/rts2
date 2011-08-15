@@ -195,6 +195,18 @@ int Arc::killAll ()
 #ifdef ARC_API_1_7
 
 #else
+	if (getState () & CAM_READING)
+	{
+		try
+		{
+			controller.Command (arc::TIM_ID, 0x000202);
+			sleep (30);
+		}
+		catch (std::exception ex)
+		{
+			logStream (MESSAGE_ERROR) << "kill with ex" << sendLog;
+		}
+	}
 	// reset controller
         controller.SetupController( true,          // Reset Controller
                                      true,          // Test Data Link ( TDL )
@@ -209,7 +221,7 @@ int Arc::killAll ()
 	}
 	setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
 	long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
-	controller.CheckReply (lReply);
+	//controller.CheckReply (lReply);
 	beforeNight ();
 #endif
 	return Camera::killAll ();
@@ -435,11 +447,10 @@ int Arc::startExposure ()
 		long lReply;
 		if (chipUsedReadout->wasChanged ())
 		{
-			long oRows, oCols;
-			lReply = controller.SetSubArray (oRows, oCols,
-				chipUsedReadout->getXInt () + chipUsedReadout->getWidth () / 2, chipUsedReadout->getYInt () + chipUsedReadout->getHeight () / 2,
+			int oRows, oCols;
+			controller.SetSubArray (oRows, oCols,
+				chipUsedReadout->getXInt () + chipUsedReadout->getWidthInt () / 2, chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt () / 2,
 				chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), getWidth () - chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt (), 0);
-			controller.checkReply (lReply);
 		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
@@ -498,14 +509,6 @@ int Arc::doReadout ()
 		return USEC_SEC / 1000.0;
 	arc::CDeinterlace deint;
 	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
-	logStream (MESSAGE_DEBUG) << "shifting" << sendLog;
-	for (int i = 0; i < chipUsedSize () * 2; i += 2)
-	{
-		uint8_t *op = ((uint8_t *) controller.mapFd) + i;
-		uint8_t o = *op;
-		*op = *(op+1);
-		*(op+1) = o;
-	}
 	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
 	return -2;
 #endif
