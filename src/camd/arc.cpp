@@ -208,22 +208,15 @@ int Arc::killAll ()
 		}
 	}
 	// reset controller
-        controller.SetupController( true,          // Reset Controller
-                                     true,          // Test Data Link ( TDL )
-                                     true,          // Power On
-                                     h,      // Image row size
-                                     w,      // Image col size
-                                     timFile->getValue ());    // DSP timing file
-	if (utilFile->getValue ())
-	{
-		logStream (MESSAGE_DEBUG) << "loading " << utilFile->getValue () << sendLog;
-		controller.LoadControllerFile (utilFile->getValue ());
-	}
-	setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
-	long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
-	//controller.CheckReply (lReply);
-	beforeNight ();
 #endif
+	// readout must end..
+	while (controller.IsReadout ())
+	{
+		std::cout << "waiting for readout " << controller.GetPixelCount () << std::endl;
+		sleep (1);
+                //long lReply = controller.Command (arc::TIM_ID, 0x0202);
+                //controller.CheckReply (lReply);
+	}
 	return Camera::killAll ();
 }
 
@@ -447,10 +440,13 @@ int Arc::startExposure ()
 		long lReply;
 		if (chipUsedReadout->wasChanged ())
 		{
+			int x = chipUsedReadout->getXInt () + chipUsedReadout->getWidthInt () / 2;
+			int y = chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt () / 2;
 			int oRows, oCols;
-			controller.SetSubArray (oRows, oCols,
-				chipUsedReadout->getXInt () + chipUsedReadout->getWidthInt () / 2, chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt () / 2,
-				chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), getWidth () - chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt (), 0);
+			std::cout << x << " " << y << " " << " " << chipUsedReadout->getWidthInt () << " " << chipUsedReadout->getHeightInt () << " " << getWidth () << " " << getHeight () << std::endl;
+			controller.SetSubArray (oRows, oCols, y, x, 
+				chipUsedReadout->getHeightInt (), chipUsedReadout->getWidthInt (), getWidth (), 0);
+			std::cout << "oRows " << oRows << " oCols " << oCols << std::endl;
 		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
