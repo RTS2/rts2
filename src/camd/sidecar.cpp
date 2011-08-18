@@ -302,6 +302,26 @@ int Sidecar::parseConfig (std::istringstream *is)
 		std::string var;
 		*is >> var;
 		logStream (MESSAGE_DEBUG) << "got " << var << sendLog;
+		// parse it..
+		size_t pos = var.find('=');
+		if (pos == std::string::npos)
+		{
+			logStream (MESSAGE_DEBUG) << "cannot find = in '" << var << "', ignoring this line" << sendLog;
+			continue;
+		}
+		// variable name and variable value
+		std::string vn = var.substr (0, pos - 1);
+		std::string vv = var.substr (pos + 1);
+		rts2core::Value *vp = getOwnValue (vn.c_str ());
+		if (vp == NULL)
+		{
+			logStream (MESSAGE_DEBUG) << "cannot find value with name " << vn << ", creating it" << sendLog;
+			rts2core::ValueDouble *vd;
+			createValue (vd, vn.c_str (), "created by parseConfing", false);
+			updateMetaInformations (vd);
+			vp = vd;
+		}
+		vp->setValueCharArr (vv.c_str ());
 	}
 	return 0;
 }
