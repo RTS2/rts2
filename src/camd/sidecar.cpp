@@ -60,7 +60,7 @@ class SidecarConn:public rts2core::ConnTCP
 		// this does not return anything. It only returns possible output of command in _is. You might want to parse
 		// method output to get more, e.g. status of the call
 		void callMethod (const char *method, int p1, std::istringstream **_is, int wtime = 10);
-
+		
 		/**
 		 * Call method on server with 5 parameters of arbitary type.
 		 *
@@ -112,13 +112,17 @@ class Sidecar:public Camera
 
 		// variables holders
 		rts2core::ValueSelection *fsMode;
-
-		rts2core::ValueInteger *nReset;
-		rts2core::ValueInteger *nRead;
+        rts2core::ValueInteger *nResets;
+		rts2core::ValueInteger *nReads;
 		rts2core::ValueInteger *nGroups;
 		rts2core::ValueInteger *nDropFrames;
 		rts2core::ValueInteger *nRamps;
-
+		rts2core::ValueSelection *gain;
+		rts2core::ValueSelection *ktcRemoval;
+		rts2core::ValueSelection *warmTest;
+		rts2core::ValueSelection *idleMode;
+        rts2core::ValueSelection *enhancedClocking;
+        
 		int parseConfig (std::istringstream *is);
 };
 
@@ -161,15 +165,65 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	// RTS2_VALUE_WRITABLE means you can change value from monitor
 	// CAM_WORKING means the value can only be set if camera is not exposing or reading the image
 	createValue (fsMode, "fs_mode", "mode of the chip exposure (Up The Ramp[0] vs Fowler[1])", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	fsMode->addSelVal ("0 option");
-	fsMode->addSelVal ("1 option");
+	fsMode->addSelVal ("0 Up The Ramp");
+	fsMode->addSelVal ("1 Fowler Sampling");
+	fsMode->setValueInteger(0);
 
-	createValue (nReset, "n_reset", "number of reset frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	createValue (nRead, "n_read", "number of read frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (nResets, "n_resets", "number of reset frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nResets->setValueInteger(0);
+	createValue (nReads, "n_reads", "number of read frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nReads->setValueInteger(1);
 	createValue (nGroups, "n_groups", "number of groups", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nGroups->setValueInteger(1);
 	createValue (nDropFrames, "n_drop_frames", "number of drop frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nDropFrames->setValueInteger(1);
 	createValue (nRamps, "n_ramps", "number of ramps", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+    nRamps->setValueInteger(1);
 
+
+
+    createValue (gain, "gain", "set the gain. 0-15", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	gain->addSelVal ("0   -3dB, small Cin");
+	gain->addSelVal ("1    0dB, small Cin");
+	gain->addSelVal ("2    3dB, small Cin");
+	gain->addSelVal ("3    6dB, small Cin");
+	gain->addSelVal ("4    6dB, large Cin");
+	gain->addSelVal ("5    9dB, small Cin");
+	gain->addSelVal ("6    9dB, large Cin");
+	gain->addSelVal ("7   12dB, small Cin");
+	gain->addSelVal ("8   12dB, large Cin");
+	gain->addSelVal ("9   15dB, small Cin");
+	gain->addSelVal ("10  15dB, large Cin");
+	gain->addSelVal ("11  18dB, small Cin");
+	gain->addSelVal ("12  18dB, large Cin");
+	gain->addSelVal ("13  21dB, large Cin");
+	gain->addSelVal ("14  24dB, large Cin");
+	gain->addSelVal ("15  27dB, large Cin");
+	gain->setValueInteger(8);
+
+    createValue (ktcRemoval, "preamp_ktc_removal", "turn on (1) or off (0) the preamp KTC removal", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	ktcRemoval->addSelVal ("0 Off");
+	ktcRemoval->addSelVal ("1 On");
+	ktcRemoval->setValueInteger(1);
+    
+    createValue (warmTest, "warm_test", "set for warm (1) or cold (0)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	warmTest->addSelVal ("0 Cold");
+	warmTest->addSelVal ("1 Warm");
+	warmTest->setValueInteger(1);
+	
+	// Not sure why, but changing the IdleModeOption in the rts2-mon does not affect a change
+	// in the HxRG Socket Server. The SS does show receiving the TCP command, though.
+	createValue (idleMode, "idle_mode", "do nothing (0), continuously reset (1), or continuously read-reset (2)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	idleMode->addSelVal ("0 Do Nothing");
+	idleMode->addSelVal ("1 Continuous Resets");
+	idleMode->addSelVal ("2 Continuous Read-Resets");
+	idleMode->setValueInteger(1);
+	
+	createValue (enhancedClocking, "clocking", "normal (0) or enhanced (1)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	enhancedClocking->addSelVal ("0 Normal");
+	enhancedClocking->addSelVal ("1 Enhanced");
+	enhancedClocking->setValueInteger(0);
+	
 	width = 2048;
 	height = 2048;
 
@@ -178,8 +232,6 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 Sidecar::~Sidecar ()
 {
-	delete sidecarConn;
-	delete imageRetrievalConn;
 }
 
 int Sidecar::processOption (int in_opt)
@@ -269,7 +321,7 @@ int Sidecar::info ()
 
 int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-	std::istringstream *is = NULL;
+    std::istringstream *is = NULL;
 	if (old_value == fsMode)
 	{
 		// this will send SetFSMode(0) (or 1..) on sidecar connection
@@ -278,12 +330,77 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		delete is;
 		return 0;
 	}
-	else if (old_value == nReset)
+	
+    else if (old_value == nResets)
 	{
-		sidecarConn->callMethod ("SetRampParam", new_value->getValueInteger (), nRead->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
+		sidecarConn->callMethod ("SetRampParam", new_value->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
+	
+    else if (old_value == nReads)
+	{
+		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), new_value->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+
+    else if (old_value == nGroups)
+	{
+		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), new_value->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+
+    else if (old_value == nDropFrames)
+	{
+		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), new_value->getValueInteger (), nRamps->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+
+    else if (old_value == nRamps)
+	{
+		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+
+	else if (old_value == gain)
+	{
+		sidecarConn->callMethod ("SetGain",new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+	
+	else if (old_value == ktcRemoval)
+	{
+		sidecarConn->callMethod ("SetKTCRemoval",new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+	
+	else if (old_value == warmTest)
+	{
+		sidecarConn->callMethod ("SetWarmTest",new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+		
+	else if (old_value == idleMode)
+	{
+		sidecarConn->callMethod ("SetIdleModeOption",new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+
+	else if (old_value == enhancedClocking)
+	{
+		sidecarConn->callMethod ("SetEnhancedClk",new_value->getValueInteger (), &is);
+		delete is;
+		return 0;
+	}
+	
 	return 0;
 }
 
@@ -298,21 +415,23 @@ int Sidecar::startExposure ()
 
 int Sidecar::doReadout ()
 {
-	int ret;
-	long usedSize = dataBufferSize;
-	if (usedSize > getWriteBinaryDataSize ())
-		usedSize = getWriteBinaryDataSize ();
-	for (int i = 0; i < usedSize; i += 2)
-	{
-		uint16_t *d = (uint16_t* ) (dataBuffer + i);
-		*d = i;
-	}
-	ret = sendReadoutData (dataBuffer, usedSize);
-	if (ret < 0)
-		return ret;
+//   std::istringstream *is;
+//    imageRetrievalConn->sendCommand ("cklein@192.168.1.56:/home/cklein/Desktop/HxRG_Data", &is);
+//	int ret;
+//	long usedSize = dataBufferSize;
+//	if (usedSize > getWriteBinaryDataSize ())
+//		usedSize = getWriteBinaryDataSize ();
+//	for (int i = 0; i < usedSize; i += 2)
+//	{
+//		uint16_t *d = (uint16_t* ) (dataBuffer + i);
+//		*d = i;
+//	}
+//	ret = sendReadoutData (dataBuffer, usedSize);
+//	if (ret < 0)
+//		return ret;
 
-	if (getWriteBinaryDataSize () == 0)
-		return -2;				 // no more data..
+//	if (getWriteBinaryDataSize () == 0)
+//		return -2;				 // no more data..
 	return 0;					 // imediately send new data
 }
 
