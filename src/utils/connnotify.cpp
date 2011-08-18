@@ -96,3 +96,13 @@ int ConnNotify::receive (fd_set * readset)
 	}
 	return 0;
 }
+
+
+int ConnNotify::addWatch (const char *filename, uint32_t mask)
+{
+#ifdef HAVE_SYS_INOTIFY_H
+	return inotify_add_watch (sock, filename, mask);
+#else
+	return -1;
+#endif
+}

@@ -644,12 +644,10 @@ class Block: public rts2core::App
 		 */
 		std::map <Rts2Conn *, std::vector <Value *> > failedValues ();
 
-#ifdef HAVE_SYS_INOTIFY_H
 		/**
 		 * Called when modified file entry is read from inotify file descriptor.
 		 */
 		 virtual void fileModified (struct inotify_event *event) {};
-#endif
 
 	protected:
 

@@ -75,9 +75,9 @@ class ConnNotify:public Rts2ConnNoSend
 		bool getDebug () { return debug; }
 
 #ifdef HAVE_SYS_INOTIFY_H
-		int addWatch (const char *filename, uint32_t mask = IN_MODIFY) { return inotify_add_watch (sock, filename, mask); }
+		int addWatch (const char *filename, uint32_t mask = IN_MODIFY);
 #else
-		int addWatch (const char *filename, uint32_t mask = 0) { return -1; }
+		int addWatch (const char *filename, uint32_t mask = 0);
 #endif
 
 	private:
