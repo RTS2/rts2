@@ -32,11 +32,11 @@ namespace rts2focusd
  */
 class Fli:public Focusd
 {
-	private:
-		flidev_t dev;
-		flidomain_t deviceDomain;
+	public:
+		Fli (int argc, char **argv);
+		virtual ~ Fli (void);
 
-		int fliDebug;
+		virtual int commandAuthorized (Rts2Conn * conn);
 
 	protected:
 		virtual int isFocusing ();
@@ -47,14 +47,17 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (float num);
-  virtual float tcOffset () {return 0.;};
+		virtual float tcOffset () { return 0.;};
 		rts2core::ValueLong *focExtent;
 
-	public:
-		Fli (int argc, char **argv);
-		virtual ~ Fli (void);
+	private:
+		flidev_t dev;
+		flidomain_t deviceDomain;
+		const char *name;
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		int fliDebug;
+
+
 };
 
 };
@@ -65,11 +68,13 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 {
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
+	name = NULL;
+
 	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
-	addOption ('D', "domain", 1,
-		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-	addOption ('b', "fli_debug", 1,
-		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+
+	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('f', NULL, 1, "FLI device path");
 }
 
 Fli::~Fli (void)
@@ -112,6 +117,9 @@ int Fli::processOption (int in_opt)
 					break;
 			}
 			break;
+		case 'f':
+			name = optarg;
+			break;
 		default:
 			return Focusd::processOption (in_opt);
 	}
@@ -132,23 +140,35 @@ int Fli::init ()
 	if (fliDebug)
 		FLISetDebugLevel (NULL, FLIDEBUG_ALL);
 
-	ret = FLIList (deviceDomain, &names);
-	if (ret)
-		return -1;
-
-	if (names[0] == NULL)
+	if (name == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
-			<< sendLog;
+		ret = FLIList (deviceDomain, &names);
+		if (ret)
+			return -1;
+
+		if (names[0] == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
+			return -1;
+		}
+
+		nam_sep = strchr (names[0], ';');
+		if (nam_sep)
+			*nam_sep = '\0';
+
+		ret = FLIOpen (&dev, names[0], deviceDomain);
+		FLIFreeList (names);
+	}
+	else
+	{
+		ret = FLIOpen (&dev, name, deviceDomain);
+	}
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
 		return -1;
 	}
 
-	nam_sep = strchr (names[0], ';');
-	if (nam_sep)
-		*nam_sep = '\0';
-
-	ret = FLIOpen (&dev, names[0], deviceDomain);
-	FLIFreeList (names);
 	if (ret)
 		return -1;
 
