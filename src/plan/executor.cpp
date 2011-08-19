@@ -28,6 +28,7 @@
 
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
 #define OPT_DONT_DARK     OPT_LOCAL + 101
+#define OPT_DISABLE_AUTO  OPT_LOCAL + 102
 
 namespace rts2plan
 {
@@ -121,6 +122,7 @@ class Executor:public Rts2DeviceDb
 		rts2core::ValueString *program;
 
 		rts2core::ValueBool *autoLoop;
+		rts2core::ValueBool *defaultAutoLoop;
 
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueString *next_name;
@@ -167,6 +169,9 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false, RTS2_VALUE_WRITABLE);
 	autoLoop->setValueBool (true);
 
+	createValue (defaultAutoLoop, "default_auto_loop", "default state of auto loop (after execution of a script)", false, RTS2_VALUE_WRITABLE);
+	defaultAutoLoop->setValueBool (true);
+
 	createValue (next_id, "next", "ID of next target", false, RTS2_VALUE_WRITABLE);
 	createValue (next_name, "next_name", "name of next target", false);
 
@@ -192,6 +197,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
+	addOption (OPT_DISABLE_AUTO, "no-auto", 0, "disable autolooping");
 }
 
 Executor::~Executor (void)
@@ -210,6 +216,10 @@ int Executor::processOption (int in_opt)
 			break;
 		case OPT_DONT_DARK:
 			doDarks->setValueBool (false);
+			break;
+		case OPT_DISABLE_AUTO:
+			autoLoop->setValueBool (false);
+			defaultAutoLoop->setValueBool (false);
 			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
@@ -804,7 +814,7 @@ void Executor::doSwitch ()
 				currentTarget = getActiveQueue ()->front ().target;
 			}
 			// switch auto loop back to true
-			autoLoop->setValueBool (true);
+			autoLoop->setValueBool (defaultAutoLoop->getValueBool ());
 			sendValueAll (autoLoop);
 		}
 		else
