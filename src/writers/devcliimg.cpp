@@ -158,7 +158,7 @@ void DevClientCameraImage::postEvent (Rts2Event * event)
 void DevClientCameraImage::writeFilter (Image *img)
 {
 	int camFilter = img->getFilterNum ();
-	char imageFilter[4];
+	char imageFilter[5];
 	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 4);
 	imageFilter[4] = '\0';
 	img->setFilter (imageFilter);

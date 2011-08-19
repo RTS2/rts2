@@ -275,11 +275,7 @@ int ImageSkyDb::updateDB ()
 	// data found..do just update
 	if (sqlca.sqlcode != 0)
 	{
-		if (sqlca.sqlcode != ECPG_PGSQL)
-		{
-			printf ("Cannot insert new image, triyng update (error: %li %s)\n",
-				sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
-		}
+		int orig_err = sqlca.sqlcode;
 		EXEC SQL ROLLBACK;
 		EXEC SQL
 			UPDATE
@@ -299,7 +295,9 @@ int ImageSkyDb::updateDB ()
 		// still error.. return -1
 		if (sqlca.sqlcode != 0)
 		{
-			reportSqlError ("image OBJECT update");
+			std::ostringstream os;
+			os << "image OBJECT update original error " << orig_err << " img_id " << d_img_id << " obs_id " << d_obs_id;
+			reportSqlError (os.str ().c_str ());
 			EXEC SQL ROLLBACK;
 			return -1;
 		}
