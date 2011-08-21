@@ -29,6 +29,9 @@
 
 using namespace rts2image;
 
+// to add more debugging
+// #define DEBUG_EXTRA
+
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath):DevClientCameraImage (_connection), DevScript (_connection)
 {
 	expandPath = _expandPath;
@@ -134,11 +137,14 @@ void Rts2DevClientCameraExec::nextCommand ()
 	int ret;
 	ret = haveNextCommand (this);
 #ifdef DEBUG_EXTRA
-	std::cout << "Rts2DevClientCameraExec::nextComd " << ret << std::endl;
+	logStream (MESSAGE_DEBUG) << "connection " << getName () << " Rts2DevClientCameraExec::nextComd haveNextCommand " << ret << sendLog;
 #endif						 /* DEBUG_EXTRA */
 	if (!ret)
 		return;
 
+#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "connection " << getName () << "next command " << nextComd->getText () << " bopmask " << nextComd->getBopMask () << sendLog;
+#endif
 	waitMetaData = false;
 
 	if (nextComd->getBopMask () & BOP_EXPOSURE)
@@ -146,10 +152,18 @@ void Rts2DevClientCameraExec::nextCommand ()
 		// if command cannot be executed when telescope is moving, do not execute it
 		// before target was moved
 		if (currentTarget && !currentTarget->wasMoved())
+		{
+#ifdef DEBUG_EXTRA
+			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE target not moved" << sendLog;
+#endif
 			return;
+		}
 		// do not execute next exposure before all meta data of the current exposure are written
 		if (waitForMetaData ())
 		{
+#ifdef DEBUG_EXTRA
+			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE wait for metadata" << sendLog;
+#endif
 			waitMetaData = true;
 		  	return;
 		}
@@ -158,7 +172,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 	rts2core::Value *val;
 
 #ifdef DEBUG_EXTRA
-	std::cout << "bopMask " << std::hex << nextComd->getBopMask () << std::endl;
+	logStream (MESSAGE_DEBUG) << "bopMask " << std::hex << nextComd->getBopMask () << sendLog;
 #endif
 
 	if (nextComd->getBopMask () & BOP_WHILE_STATE)
@@ -168,7 +182,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		if (val && val->getValueInteger () != 0)
 		{
 #ifdef DEBUG_EXTRA
-			std::cout << "val > 0" << std::endl;
+			logStream (MESSAGE_DEBUG) << "BOP_WHILE_STATE que_exp_num > 0" << sendLog;
 #endif
 			return;
 		}
@@ -176,7 +190,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		if (!connection->queEmptyForOriginator (this))
 		{
 #ifdef DEBUG_EXTRA
-			std::cout << "not empty " << std::endl;
+			logStream (MESSAGE_DEBUG) << "command queue is not empty " << sendLog;
 #endif
 			return;
 		}
@@ -188,14 +202,14 @@ void Rts2DevClientCameraExec::nextCommand ()
 		if (val && val->getValueInteger () != 0)
 		{
 #ifdef DEBUG_EXTRA
-			std::cout << "TEL_MOVE val > 0" << std::endl;
+			logStream (MESSAGE_DEBUG) << "BOP_TEL_MOVE que_exp_num > 0" << sendLog;
 #endif
 			return;
 		}
 		if (waitForExposure)
 		{
 #ifdef DEBUG_EXTRA
-			std::cout << "wait for exposure" << std::endl;
+			logStream (MESSAGE_DEBUG) << "BOP_TEL_MOVE wait for exposure" << sendLog;
 #endif
 			return;
 		}
@@ -203,7 +217,12 @@ void Rts2DevClientCameraExec::nextCommand ()
 	else if (nextComd->getBopMask () & BOP_EXPOSURE)
 	{
 		if (waitForExposure)
+		{
+#ifdef DEBUG_EXTRA
+			logStream (MESSAGE_DEBUG) << "BOP_EXPOSURE wait for exposure" << sendLog;
+#endif
 			return;
+		}
 	}
 
 	// send command to other device
@@ -215,7 +234,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 			if (!connection->queEmptyForOriginator (this))
 			{
 #ifdef DEBUG_EXTRA
-				std::cout << "queue not empty" << std::endl;
+				logStream (MESSAGE_DEBUG) << "with cmdConn !BOP_WHILE_STATE queue not empty" << sendLog;
 #endif
 				return;
 			}
@@ -224,13 +243,16 @@ void Rts2DevClientCameraExec::nextCommand ()
 			val = getConnection ()->getValue ("que_exp_num");
 			if (val && val->getValueInteger () > 0)
 			{
+#ifdef DEBUG_EXTRA
+				logStream (MESSAGE_DEBUG) << "with cmdConn !BOP_WHILE_STATE que_exp_num > 0" << sendLog;
+#endif
 				return;
 			}
 
 			if ((getConnection ()->getState () & CAM_EXPOSING) || (getConnection ()->getBopState () & BOP_TEL_MOVE) || (getConnection ()->getFullBopState () & BOP_TEL_MOVE))
 			{
 #ifdef DEBUG_EXTRA
-				std::cout << "wrong state" << std::endl;
+				logStream (MESSAGE_DEBUG) << "with cmdConn CAM_EXPOSING " << getConnection ()->getState () << " BOP_TEL_MOVE " << getConnection ()->getBopState () << " full state " << getConnection ()->getFullBopState () << sendLog;
 #endif
 				return;
 			}
@@ -240,6 +262,9 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 		// execute command
 		// when it returns, we can execute next command
+#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "sending command " << nextComd->getText () << " to " << cmdConn->getName () << sendLog;
+#endif
 		cmdConn->queCommand (nextComd);
 		nextComd = NULL;
 		waitForExposure = false;
@@ -247,7 +272,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 	}
 
 #ifdef DEBUG_EXTRA
-	std::cout << "For " << getName () << " queueing " << nextComd->getText () << std::endl;
+	logStream (MESSAGE_DEBUG) << "for " << getName () << " queueing " << nextComd->getText () << sendLog;
 #endif						 /* DEBUG_EXTRA */
 	waitForExposure = nextComd->getBopMask () & BOP_EXPOSURE;
 	queCommand (nextComd);
