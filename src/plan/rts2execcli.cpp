@@ -143,7 +143,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 		return;
 
 #ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "connection " << getName () << "next command " << nextComd->getText () << " bopmask " << nextComd->getBopMask () << sendLog;
+	logStream (MESSAGE_DEBUG) << "connection " << getName () << " next command " << nextComd->getText () << " bopmask " << nextComd->getBopMask () << sendLog;
 #endif
 	waitMetaData = false;
 
