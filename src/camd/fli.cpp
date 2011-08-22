@@ -166,7 +166,10 @@ long Fli::isExposing ()
 	long tl;
 	ret = FLIGetExposureStatus (dev, &tl);
 	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "failed at isExposing" << sendLog;
 		return -1;
+	}
 
 	return tl * 1000;			 // we get tl in msec, needs to return usec
 }
