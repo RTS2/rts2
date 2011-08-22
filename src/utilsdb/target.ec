@@ -87,8 +87,8 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	struct ln_equ_posn pos;
 	double jd;
 
-	int old_precison;
-	std::ios_base::fmtflags old_settings;
+	int old_precison = 0;
+	std::ios_base::fmtflags old_settings = std::ios_base::skipws;
 
 	if (header)
 	{

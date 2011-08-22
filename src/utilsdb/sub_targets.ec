@@ -160,6 +160,7 @@ int ConstTarget::selectedAsGood ()
 			tar_id = :d_tar_id;
 	if (sqlca.sqlcode)
 	{
+		logStream (MESSAGE_ERROR) << "error while loading target positions for target with it ID " << d_tar_id << " observation target ID " << getObsTargetID () << sendLog;
 		logMsgDb ("ConstTarget::selectedAsGood", MESSAGE_ERROR);
 		return -1;
 	}
@@ -396,7 +397,7 @@ void CalibrationTarget::load ()
 	time_t valid;
 
 	PosCalibration *fallback_obs_calib = NULL;
-	time_t fallback_last_image;
+	time_t fallback_last_image = 0;
 	double fallback_last_time = 0;
 
 	std::list <PosCalibration *> cal_list;
