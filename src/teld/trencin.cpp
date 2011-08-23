@@ -30,7 +30,7 @@
 #define MAX_MOVE               ((1<<24)-1)
 #define MOVE_SLEEP_TIME        5
 
-#define OPT_PARK_POS          OPT_LOCAL + 571
+#define OPT_PARK_POS           OPT_LOCAL + 571
 #define OPT_ASSSUME_0_PARK     OPT_LOCAL + 572
 
 namespace rts2teld

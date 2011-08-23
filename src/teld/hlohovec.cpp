@@ -22,8 +22,11 @@
 
 #include "../utils/rts2config.h"
 
-#define OPT_RA                   OPT_LOCALHOST + 2201
-#define OPT_DEC                  OPT_LOCALHOST + 2202
+#define OPT_RA                OPT_LOCAL + 2201
+#define OPT_DEC               OPT_LOCAL + 2202
+
+
+#define OPT_PARK_POS          OPT_LOCAL + 2203
 
 #define RTS2_HLOHOVEC_TIMERRG    RTS2_LOCAL_EVENT + 1210
 #define RTS2_HLOHOVEC_TIMERDG    RTS2_LOCAL_EVENT + 1211
@@ -31,11 +34,11 @@
 #define RTS2_HLOHOVEC_TSTOPDG    RTS2_LOCAL_EVENT + 1213
 
 // steps per full RA and DEC revolutions (360 degrees)
-#define RA_TICKS                 1000000000
-#define DEC_TICKS                1000000000
+#define RA_TICKS                 (14350 * 65535 / 2.0)
+#define DEC_TICKS                (10400 * 65535)
 
-#define RAGSTEP                  100000000
-#define DEGSTEP                  100000000
+#define RAGSTEP                  1000
+#define DEGSTEP                  1000
 
 using namespace rts2teld;
 
@@ -81,6 +84,8 @@ class Hlohovec:public GEM
 		const char *devRA;
 		const char *devDEC;
 
+		rts2core::ValueAltAz *parkPos;
+
 		void matchGuideRa (int rag);
 		void matchGuideDec (int decg);
 };
@@ -94,6 +99,8 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
 
 	devRA = NULL;
 	devDEC = NULL;
+
+	parkPos = NULL;
 
 	ra_ticks = RA_TICKS;
 	dec_ticks = DEC_TICKS;
@@ -110,6 +117,7 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
 
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt az separated with :)");
 }
 
 Hlohovec::~Hlohovec ()
@@ -160,6 +168,25 @@ int Hlohovec::processOption (int opt)
 			break;
 		case OPT_DEC:
 			devDEC = optarg;
+			break;
+		case OPT_PARK_POS:
+			{
+				std::istringstream *is;
+				is = new std::istringstream (std::string(optarg));
+				double palt,paz;
+				char c;
+				*is >> palt >> c >> paz;
+				if (is->fail () || c != ':')
+				{
+					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+					delete is;
+					return -1;
+				}
+				delete is;
+				if (parkPos == NULL)
+					createValue (parkPos, "park_position", "mount park position", false);
+				parkPos->setValueAltAz (palt, paz);
+			}
 			break;
 		default:
 			return GEM::processOption (opt);
@@ -297,7 +324,13 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 
 int Hlohovec::startPark ()
 {
-	return 0;
+	if (parkPos)
+	{
+		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
+		return 0;
+	}
+	else
+		return -1;
 }
 
 int Hlohovec::endPark ()

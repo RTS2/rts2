@@ -84,7 +84,7 @@ int TGDrive::init ()
 	write2b (TGA_MASTER_CMD, 2);
 	write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
 	write2b (TGA_MASTER_CMD, 5);
-	write4b (TGA_MODE, 0x4004);
+	write4b (TGA_MODE, TGA_MODE_PA);
 
 //	write4b (TGA_ACCEL, 4947850);
 //	write4b (TGA_DECEL, 4947850);
@@ -149,7 +149,7 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		}
 		else if (old_value == dSpeed)
 		{
-			write4b (TGA_DSPEED, new_value->getValueDouble () * TGA_SPEEDFACTOR);
+			setTargetSpeed (new_value->getValueDouble () * TGA_SPEEDFACTOR); 
 		}
 		else if (old_value == maxSpeed)
 		{
@@ -170,11 +170,8 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 void TGDrive::setTargetPos (int32_t pos)
 {
-	if (stopped)
-	{
-		write4b (TGA_MODE, 0x4004);
-		stopped = false;
-	}
+	write4b (TGA_MODE, TGA_MODE_PA);
+	stopped = false;
 	write4b (TGA_TARPOS, pos);
 }
 
@@ -185,15 +182,23 @@ void TGDrive::setCurrentPos (int32_t pos)
 	reset ();
 }
 
+void TGDrive::setTargetSpeed (int32_t dspeed)
+{
+	write4b (TGA_MODE, TGA_MODE_DS);
+	stopped = false;
+	write4b (TGA_DSPEED, dspeed);
+}
+
 void TGDrive::stop ()
 {
 	// other way to stop..with backslahs
-	//setTargetPos (getPosition ());
+	setTargetPos (getPosition ());
 
 	// other possibility is to switch to speed mode..
-	stoppedPosition = read4b (TGA_CURRPOS);
-	write4b (TGA_MODE, 0x2002);
-	stopped = true;
+	//write4b (TGA_DSPEED, 0);
+	//stoppedPosition = read4b (TGA_CURRPOS);
+	//write4b (TGA_MODE, TGA_MODE_DS);
+	//stopped = true;
 }
 
 bool TGDrive::checkStop ()
@@ -203,7 +208,7 @@ bool TGDrive::checkStop ()
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	if ((appStatus->getValueInteger () & 0x08) == 0x08)
 	{
-		write4b (TGA_MODE, 0x4004);
+		write4b (TGA_MODE, TGA_MODE_PA);
 		write4b (TGA_TARPOS, stoppedPosition);
 		stopped = false;
 		return false;
