@@ -34,13 +34,13 @@
 #define RTS2_HLOHOVEC_TSTOPDG    RTS2_LOCAL_EVENT + 1213
 
 // steps per full RA and DEC revolutions (360 degrees)
-#define RA_TICKS                 (14350 * 65535 / 2.0)
+#define RA_TICKS                 (-14350 * 65535 / 2.0)
 #define DEC_TICKS                (10400 * 65535)
 
 #define RAGSTEP                  1000
 #define DEGSTEP                  1000
 
-#define TRACK_SPEED              (TGA_SPEEDFACTOR / 6.0)
+#define TRACK_SPEED              (-TGA_SPEEDFACTOR / 6.0)
 
 using namespace rts2teld;
 
@@ -290,11 +290,6 @@ int Hlohovec::startResync ()
 
 int Hlohovec::isMoving ()
 {
-	// track speed..
-	if (tracking->getValueBool () && !raDrive->isMoving () && !raDrive->isMovingSpeed ())
-	{
-		raDrive->setTargetSpeed (TRACK_SPEED);
-	}
 	if (raDrive->isMoving () || decDrive->isMoving ())
 		return USEC_SEC / 100;
 	return -2;
@@ -347,8 +342,8 @@ int Hlohovec::endPark ()
 
 int Hlohovec::updateLimits ()
 {
-	acMin = -RA_TICKS;
-	acMax = RA_TICKS;
+	acMin = RA_TICKS;
+	acMax = -RA_TICKS;
 	dcMin = -DEC_TICKS;
 	dcMax = DEC_TICKS;
 	return 0;
@@ -402,9 +397,9 @@ int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		matchGuideDec (new_value->getValueInteger ());
 		return 0;
 	}
-	else if (old_value == tracking && !raDrive->isMoving ())
+	else if (old_value == tracking)
 	{
-		raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0);
+		raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0, false);
 	}
 	int ret = raDrive->setValue (old_value, new_value);
 	if (ret != 1)

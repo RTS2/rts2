@@ -178,12 +178,13 @@ class TGDrive: public rts2core::ConnSerial
 		void setTargetPos (int32_t pos);
 		void setCurrentPos (int32_t pos);
 
-		void setTargetSpeed (int32_t dspeed);
+		void setTargetSpeed (int32_t dspeed, bool changeMode = true);
 
 		int32_t getPosition () { return aPos->getValueInteger (); }
 
 		bool isMoving () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
 		bool isMovingSpeed () { return tgaMode->getValueInteger () == TGA_MODE_DS; }
+		bool isMovingPos () { return tgaMode->getValueInteger () == TGA_MODE_PA; }
 
 		void stop ();
 

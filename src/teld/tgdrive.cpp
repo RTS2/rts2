@@ -118,7 +118,7 @@ void TGDrive::info ()
 	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
-	appStatus->setValueInteger (read2b (TGA_MODE));
+	tgaMode->setValueInteger (read2b (TGA_MODE));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
@@ -195,10 +195,13 @@ void TGDrive::setCurrentPos (int32_t pos)
 	reset ();
 }
 
-void TGDrive::setTargetSpeed (int32_t dspeed)
+void TGDrive::setTargetSpeed (int32_t dspeed, bool changeMode)
 {
-	write4b (TGA_MODE, TGA_MODE_DS);
-	stopped = false;
+	if (changeMode || (read4b (TGA_STATUS) & 0x02))
+	{
+		write4b (TGA_MODE, TGA_MODE_DS);
+	}
+	stopped = (dspeed == 0);
 	write4b (TGA_DSPEED, dspeed);
 }
 
