@@ -87,7 +87,7 @@ namespace rts2teld
 class Telescope:public rts2core::Device
 {
 	public:
-		Telescope (int argc, char **argv, bool diffTrack = false);
+		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (Rts2Event * event);
@@ -266,6 +266,11 @@ class Telescope:public rts2core::Device
 		 */
 		void createRaGuide ();
 		void createDecGuide ();
+
+		/**
+		 * Telescope can track.
+		 */
+		void createTracking ();
 
 		virtual int processOption (int in_opt);
 
@@ -684,6 +689,8 @@ class Telescope:public rts2core::Device
 
 		rts2core::ValueSelection *raGuide;
 		rts2core::ValueSelection *decGuide;
+
+		rts2core::ValueBool *tracking;
 
 		/**
 		 * Returns differential tracking values. Telescope must support

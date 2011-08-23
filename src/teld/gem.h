@@ -32,7 +32,7 @@ namespace rts2teld
 class GEM: public Telescope
 {
 	public:
-		GEM (int in_argc, char **in_argv, bool diffTrack = false);
+		GEM (int in_argc, char **in_argv, bool diffTrack = false, bool hasTracking = false);
 		virtual ~GEM (void);
 
 	protected:

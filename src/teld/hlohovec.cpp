@@ -40,6 +40,8 @@
 #define RAGSTEP                  1000
 #define DEGSTEP                  1000
 
+#define TRACK_SPEED              (TGA_SPEEDFACTOR / 6.0)
+
 using namespace rts2teld;
 
 namespace rts2teld
@@ -92,7 +94,7 @@ class Hlohovec:public GEM
 
 }
 
-Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv)
+Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 {
 	raDrive = NULL;
 	decDrive = NULL;
@@ -288,6 +290,11 @@ int Hlohovec::startResync ()
 
 int Hlohovec::isMoving ()
 {
+	// track speed..
+	if (tracking->getValueBool () && !raDrive->isMoving () && !raDrive->isMovingSpeed ())
+	{
+		raDrive->setTargetSpeed (TRACK_SPEED);
+	}
 	if (raDrive->isMoving () || decDrive->isMoving ())
 		return USEC_SEC / 100;
 	return -2;
@@ -394,6 +401,10 @@ int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	{
 		matchGuideDec (new_value->getValueInteger ());
 		return 0;
+	}
+	else if (old_value == tracking && !raDrive->isMoving ())
+	{
+		raDrive->setTargetSpeed (((rts2core::ValueBool *) new_value)->getValueBool () ? TRACK_SPEED : 0);
 	}
 	int ret = raDrive->setValue (old_value, new_value);
 	if (ret != 1)

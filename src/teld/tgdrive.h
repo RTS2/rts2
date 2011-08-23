@@ -183,6 +183,7 @@ class TGDrive: public rts2core::ConnSerial
 		int32_t getPosition () { return aPos->getValueInteger (); }
 
 		bool isMoving () { return (appStatus->getValueInteger () & 0x02) == 0x00; }
+		bool isMovingSpeed () { return tgaMode->getValueInteger () == TGA_MODE_DS; }
 
 		void stop ();
 
@@ -247,7 +248,9 @@ class TGDrive: public rts2core::ConnSerial
 		rts2core::ValueInteger *maxPosErr;
 
 		rts2core::ValueDouble *dSpeed;
+		rts2core::ValueInteger *dSpeedInt;
 		rts2core::ValueDouble *aSpeed;
+		rts2core::ValueInteger *aSpeedInt;
 		rts2core::ValueDouble *maxSpeed;
 
 		rts2core::ValueDouble *accel;
@@ -257,6 +260,7 @@ class TGDrive: public rts2core::ConnSerial
 		rts2core::ValueFloat *dCur;
 		rts2core::ValueFloat *aCur;
 
+		rts2core::ValueInteger *tgaMode;
 		rts2core::ValueInteger *appStatus;
 		rts2core::ValueInteger *faults;
 		rts2core::ValueInteger *masterCmd;

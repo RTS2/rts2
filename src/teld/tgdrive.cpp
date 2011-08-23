@@ -49,8 +49,12 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	_master->createValue (maxPosErr, pbuf, "maximal position error", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "DSPEED");
 	_master->createValue (dSpeed, pbuf, "[r/s] desired speed", false, RTS2_VALUE_WRITABLE);
+	strcpy (p, "DSPEED_INT");
+	_master->createValue (dSpeedInt, pbuf, "desired speed in internal units", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ASPEED");
 	_master->createValue (aSpeed, pbuf, "[r/s] actual speed", false);
+	strcpy (p, "ASPEED_INT");
+	_master->createValue (aSpeedInt, pbuf, "[r/s] actual speed", false);
 	strcpy (p, "MAXSPEED");
 	_master->createValue (maxSpeed, pbuf, "[r/s] maximal profile generator speed", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACCEL");
@@ -63,6 +67,8 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	_master->createValue (dCur, pbuf, "[A] desired current", false, RTS2_VALUE_WRITABLE);
 	strcpy (p, "ACURRENT");
 	_master->createValue (aCur, pbuf, "[A] actual current", false);
+	strcpy (p, "MODE");
+	_master->createValue (tgaMode, pbuf, "axis mode", false, RTS2_DT_HEX);
 	strcpy (p, "STATUS");
 	_master->createValue (appStatus, pbuf, "axis status", true, RTS2_DT_HEX);
 	strcpy (p, "FAULT");
@@ -102,14 +108,17 @@ void TGDrive::info ()
 	aPos->setValueInteger (read4b (TGA_CURRPOS));
 	posErr->setValueInteger (read4b (TGA_POSERR));
 	maxPosErr->setValueInteger (read4b (TGA_MAXPOSERR));
-	dSpeed->setValueDouble (read4b (TGA_DSPEED) / TGA_SPEEDFACTOR);
-	aSpeed->setValueDouble (read4b (TGA_ASPEED) / TGA_SPEEDFACTOR);
+	dSpeedInt->setValueInteger (read4b (TGA_DSPEED));
+	dSpeed->setValueDouble (dSpeedInt->getValueInteger () / TGA_SPEEDFACTOR);
+	aSpeedInt->setValueInteger (read4b (TGA_ASPEED));
+	aSpeed->setValueDouble (aSpeedInt->getValueInteger () / TGA_SPEEDFACTOR);
 	maxSpeed->setValueDouble (read4b (TGA_VMAX) / TGA_SPEEDFACTOR);
 	accel->setValueDouble (read4b (TGA_ACCEL) / TGA_ACCELFACTOR);
 	decel->setValueDouble (read4b (TGA_DECEL) / TGA_ACCELFACTOR);
 	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
+	appStatus->setValueInteger (read2b (TGA_MODE));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
@@ -149,7 +158,11 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		}
 		else if (old_value == dSpeed)
 		{
-			setTargetSpeed (new_value->getValueDouble () * TGA_SPEEDFACTOR); 
+			setTargetSpeed (new_value->getValueDouble () * TGA_SPEEDFACTOR);
+		}
+		else if (old_value == dSpeedInt)
+		{
+			setTargetSpeed (new_value->getValueInteger ());
 		}
 		else if (old_value == maxSpeed)
 		{

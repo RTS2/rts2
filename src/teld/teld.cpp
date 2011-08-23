@@ -40,7 +40,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTracking):rts2core::Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -68,6 +68,16 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):rts2core::Dev
 	{
 		diffTrackRaDec = NULL;
 	}
+
+	if (hasTracking)
+	{
+		createValue (tracking, "TRACKING", "telescope tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	}
+	else
+	{
+		tracking = NULL;
+	}
+
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J200) - with offsets applied", true);
 
