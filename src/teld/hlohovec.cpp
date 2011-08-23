@@ -34,8 +34,8 @@
 #define RTS2_HLOHOVEC_TSTOPDG    RTS2_LOCAL_EVENT + 1213
 
 // steps per full RA and DEC revolutions (360 degrees)
-#define RA_TICKS                 (-14350 * 65535 / 2.0)
-#define DEC_TICKS                (10400 * 65535)
+#define RA_TICKS                 (-14350 * 65535)
+#define DEC_TICKS                (-10400 * 65535)
 
 #define RAGSTEP                  1000
 #define DEGSTEP                  1000
@@ -107,8 +107,8 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 	ra_ticks = RA_TICKS;
 	dec_ticks = DEC_TICKS;
 
-	haCpd = RA_TICKS / 180.0;
-	decCpd = DEC_TICKS / 180.0;
+	haCpd = RA_TICKS / 360.0;
+	decCpd = DEC_TICKS / 360.0;
 
 	acMargin = haCpd;
 	
@@ -329,7 +329,7 @@ int Hlohovec::startPark ()
 	if (parkPos)
 	{
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-		return 0;
+		return moveAltAz ();
 	}
 	else
 		return -1;
@@ -344,8 +344,8 @@ int Hlohovec::updateLimits ()
 {
 	acMin = RA_TICKS;
 	acMax = -RA_TICKS;
-	dcMin = -DEC_TICKS;
-	dcMax = DEC_TICKS;
+	dcMin = DEC_TICKS;
+	dcMax = -DEC_TICKS;
 	return 0;
 }
 
