@@ -103,8 +103,8 @@ std::map <const char *, std::list <rts2core::Value *> >::iterator TempChannel::f
 Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	int i;
-	char *chan;
-    char *channames[10] = {"A", "B", "C1", "C2", "C3", "C4", "D1", "D2", "D3", "D4"};
+	const char *chan;
+	const char *channames[10] = {"A", "B", "C1", "C2", "C3", "C4", "D1", "D2", "D3", "D4"};
 	rts2core::ValueDouble *vd;
 	rts2core::ValueBool *vb;
 	rts2core::ValueSelection *vs;
