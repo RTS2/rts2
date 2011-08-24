@@ -44,8 +44,6 @@ class Fork: public Telescope
 
 		int32_t acMin;
 		int32_t acMax;
-		int32_t dcMin;
-		int32_t dcMax;
 
 		int acMargin;
 
