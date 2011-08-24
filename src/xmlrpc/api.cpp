@@ -625,6 +625,21 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			os << "\"id\":" << nt.getTargetID ();
 		}
+		else if (vals[0] == "change_script")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			const char *cam = params->getString ("c", NULL);
+			if (strlen (cam) == 0)
+				throw JSONException ("unknow camera");
+			const char *s = params->getString ("s", "");
+			if (strlen (s) == 0)
+				throw JSONException ("empty script");
+			tar->setScript (cam, s);
+			os << "\"id\":" << tar_id << ",\"camera\":\"" << cam << "\",\"script\":\"" << s << "\"";
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
