@@ -59,6 +59,8 @@ class Hlohovec:public GEM
 		virtual ~Hlohovec ();
 
 		virtual void postEvent (Rts2Event *event);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 	protected:
 		virtual void usage ();
 		virtual int processOption (int opt);
@@ -154,6 +156,17 @@ void Hlohovec::postEvent (Rts2Event *event)
 			break;
 	}
 	GEM::postEvent (event);
+}
+
+int Hlohovec::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("writeeeprom"))
+	{
+		raDrive->write2b (TGA_MASTER_CMD, 3);
+		decDrive->write2b (TGA_MASTER_CMD, 3);
+		return 0;
+	}
+	return GEM::commandAuthorized (conn);
 }
 
 void Hlohovec::usage ()
