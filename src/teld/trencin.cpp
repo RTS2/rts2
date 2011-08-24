@@ -295,6 +295,9 @@ int Trencin::stopWorm ()
 		if (worm_start_unit_ra < 0)
 			worm_start_unit_ra += MAX_MOVE;
 		tel_write_ra ('=', worm_start_unit_ra);
+		// reset info and unit pointes..
+		info_u_ra = worm_start_unit_ra;
+		unitRa->setValueInteger (worm_start_unit_ra);
 		// set proper values for speed after reset
 		initRa ();
 		raWormStart->setValueDouble (rts2_nan ("f"));
@@ -321,6 +324,9 @@ void Trencin::selectSuccess ()
 		int old_axis = unitRa->getValueInteger ();
 		if (readAxis (trencinConnRa, unitRa, false) == 0)
 		{
+#ifdef DEBUG_MOVE
+			logStream (MESSAGE_DEBUG) << "selectSuccess cycleRa " << cycleRa->getValueInteger () << sendLog;
+#endif
 			if (!isnan (raWormStart->getValueDouble ()))
 			{
 				// moves backward..so if reading becomes higher, we crosed a full cycle..
@@ -337,6 +343,10 @@ void Trencin::selectSuccess ()
 				raMoving->setValueInteger (0);
 			}
 			sendValueAll (raMoving);
+
+#ifdef DEBUG_MOVE
+			logStream (MESSAGE_DEBUG) << "selectSuccess cycleRa " << cycleRa->getValueInteger () << sendLog;
+#endif
 		}
 		else
 		{
@@ -544,17 +554,20 @@ void Trencin::setSpeedDec (int new_speed)
 
 void Trencin::setRa (long new_ra)
 {
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "setRa raMoving " << raMoving->getValueInteger () << sendLog;
+#endif
 	if (raMoving->getValueInteger () != 0)
 	{
 		tel_kill (trencinConnRa);
 		raMovingEnd->setValueDouble (getNow ());
-
-		readAxis (trencinConnRa, unitRa);
 	}
 	else
 	{
 		stopWorm ();
 	}
+	readAxis (trencinConnRa, unitRa);
+
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
 	long old_diff = diff;
 
@@ -1218,6 +1231,8 @@ int Trencin::isMoving ()
 
 int Trencin::endMove ()
 {
+	info_u_ra = unitRa->getValueInteger ();
+	info_u_dec = unitDec->getValueInteger ();
 	if (wormRa->getValueBool () == true)
 		startWorm ();
 	return Fork::endMove ();
@@ -1327,6 +1342,9 @@ int Trencin::commandAuthorized (Rts2Conn *conn)
 
 void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 {
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "tel_run " << (conn == trencinConnRa) << sendLog;
+#endif
 	if (value == 0)
 		return;
 	tel_write (conn, '[');
@@ -1367,6 +1385,9 @@ void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 
 void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 {
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "kill cycleRa " << cycleRa->getValueInteger () << " cycleDec " << cycleDec->getValueInteger () << sendLog;
+#endif 
 	if (phases & 0x01)
 	{
 		tel_write (conn, "K\rU\r");
@@ -1410,6 +1431,10 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 		// read current value and check for expected cycle value - if it does not agree, change it
 		readAxis (conn, unit);
 
+#ifdef DEBUG_MOVE
+		logStream (MESSAGE_DEBUG) << "kill cycleMove " << cycleMove << " cycle " << cycle->getValueInteger () << " unit " << unit->getValueInteger () << " last " << last_u << sendLog;
+#endif
+
 		// last_move_xx < 0
 		if (cycleMove > 0 && unit->getValueInteger () < last_u)
 			cycle->inc ();
@@ -1417,6 +1442,9 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 		else if (cycleMove < 0 && unit->getValueInteger () > last_u)
 			cycle->dec ();
 	}
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "kill ends cycleRa " << cycleRa->getValueInteger () << " cycleDec " << cycleDec->getValueInteger () << sendLog;
+#endif 
 }
 
 void Trencin::stopMoveRa ()
