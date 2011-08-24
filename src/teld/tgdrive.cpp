@@ -213,13 +213,13 @@ void TGDrive::setTargetSpeed (int32_t dspeed, bool changeMode)
 void TGDrive::stop ()
 {
 	// other way to stop..with backslahs
-	setTargetPos (getPosition ());
+	// setTargetPos (getPosition ());
 
 	// other possibility is to switch to speed mode..
-	//write4b (TGA_DSPEED, 0);
-	//stoppedPosition = read4b (TGA_CURRPOS);
-	//write4b (TGA_MODE, TGA_MODE_DS);
-	//stopped = true;
+	write4b (TGA_DSPEED, 0);
+	stoppedPosition = read4b (TGA_CURRPOS);
+	write4b (TGA_MODE, TGA_MODE_DS);
+	stopped = true;
 }
 
 bool TGDrive::checkStop ()

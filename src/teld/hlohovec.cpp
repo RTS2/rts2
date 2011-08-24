@@ -325,6 +325,8 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 		return -1;
 	raDrive->setCurrentPos (ac);
 	decDrive->setCurrentPos (dc);
+	if (tracking->getValueBool ())
+		raDrive->setTargetSpeed (TRACK_SPEED);
 	return 0;
 }
 
