@@ -96,6 +96,7 @@ class API:public GetRequestAuthorized
 
 		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 		void sendStatValue (rts2core::Value *value, std::ostringstream &os);
+		void sendRectangleValue (rts2core::Value *value, std::ostringstream &os);
 		void sendValue (rts2core::Value *value, std::ostringstream &os);
 		void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value);
 #ifdef HAVE_PGSQL

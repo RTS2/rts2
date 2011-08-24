@@ -758,6 +758,12 @@ void API::sendStatValue (rts2core::Value *value, std::ostringstream &os)
 	os << "]";
 }
 
+void API::sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
+{
+	rts2core::ValueRectangle *r = (rts2core::ValueRectangle *) value;
+	os << "[" << r->getXInt () << "," << r->getYInt () << "," << r->getWidthInt () << "," << r->getHeightInt () << "]";
+}
+
 void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 {
 	switch (value->getValueBaseType ())
@@ -831,10 +837,18 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 			os << "[" << (*iter)->getFlags () << ",";
 	  	if ((*iter)->getValueExtType() & RTS2_VALUE_ARRAY)
 		  	sendArrayValue (*iter, os);
-		else if ((*iter)->getValueExtType() & RTS2_VALUE_STAT)
-			sendStatValue (*iter, os);
-		else
-		  	sendValue (*iter, os);
+		else switch ((*iter)->getValueExtType())
+		{
+			case RTS2_VALUE_STAT:
+				sendStatValue (*iter, os);
+				break;
+			case RTS2_VALUE_RECTANGLE:
+				sendRectangleValue (*iter, os);
+				break;
+			default:
+		  		sendValue (*iter, os);
+				break;
+		}
 		if (extended)
 			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
 	}
