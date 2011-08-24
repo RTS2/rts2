@@ -118,7 +118,7 @@ void TGDrive::info ()
 	emerDecel->setValueDouble (read4b (TGA_EMERDECEL) / TGA_ACCELFACTOR);
 	dCur->setValueFloat (read2b (TGA_DESCUR) / TGA_CURRENTFACTOR);
 	aCur->setValueFloat (read2b (TGA_ACTCUR) / TGA_CURRENTFACTOR);
-	tgaMode->setValueInteger (read2b (TGA_MODE));
+	tgaMode->setValueInteger (read4b (TGA_MODE));
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	faults->setValueInteger (read2b (TGA_FAULTS));
 	masterCmd->setValueInteger (read2b (TGA_MASTER_CMD));
@@ -179,6 +179,11 @@ int TGDrive::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		return -2;
 	}
 	return 0;
+}
+
+void TGDrive::setMode (int32_t mode)
+{
+	write4b (TGA_MODE, mode);
 }
 
 void TGDrive::setTargetPos (int32_t pos)

@@ -175,6 +175,8 @@ class TGDrive: public rts2core::ConnSerial
 		 */
 		int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
+		void setMode (int32_t mode);
+
 		void setTargetPos (int32_t pos);
 		void setCurrentPos (int32_t pos);
 
