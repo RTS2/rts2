@@ -28,21 +28,23 @@ int AHE::openALeaf()
     cmdSent=0;
     response = '\x00';
 
-    while(response != POLL_A_OPENED && cmdSent < MAX_COMMANDS)
-    {
+	while(response != POLL_A_OPENED && cmdSent < MAX_COMMANDS)
+	{
 		sconn->writePort(CMD_A_OPEN);
-        sleep(1);
+		usleep(SERIAL_SLEEP);
 		sconn->readPort(response);
 		cmdSent++;
-		
-    }
+
+	}
 
     if(cmdSent < MAX_COMMANDS)
     {
+       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
         return 1;
     }
     else
     {
+		logStream(MESSAGE_ERROR) << "Opening of leaf A exceeded max commands." << sendLog;
         return -1;
     }
 }
@@ -55,17 +57,19 @@ int AHE::openBLeaf()
     while(response != POLL_B_OPENED && cmdSent < MAX_COMMANDS)
     {
         sconn->writePort(CMD_B_OPEN);
-        sleep(1);
+		usleep(SERIAL_SLEEP);
         sconn->readPort(response);
         cmdSent++;
     }
 
     if(cmdSent < MAX_COMMANDS)
     {
+       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
         return 1;
     }
     else
     {
+		logStream(MESSAGE_ERROR) << "Opening of leaf B exceeded max commands." << sendLog;
         return -1;
     }
 }
@@ -78,19 +82,20 @@ int AHE::closeALeaf()
    while(response != POLL_A_CLOSED && cmdSent < MAX_COMMANDS)
    {
        sconn->writePort(CMD_A_CLOSE);
-       sleep(1);
+       usleep(SERIAL_SLEEP);
        sconn->readPort(response);
        cmdSent++;
    }
 
-   return 1;
 
    if(cmdSent < MAX_COMMANDS)
    {
+       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
        return 1;
    }
    else
    {
+	   logStream(MESSAGE_ERROR) << "Closing of leaf A exceeded max commands." << sendLog;
        return -1;
    }
 }
@@ -104,20 +109,20 @@ int AHE::closeBLeaf()
    while(response != POLL_B_CLOSED && cmdSent < MAX_COMMANDS)
    {
        sconn->writePort(CMD_B_CLOSE);
-       sleep(1);
+       usleep(SERIAL_SLEEP);
        sconn->readPort(response);
        cmdSent++;
    }
 
-   return 1;
-
 
    if(cmdSent < MAX_COMMANDS)
    {
+       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
        return 1;
    }
    else
    {
+	   logStream(MESSAGE_ERROR) << "Closing of leaf B exceeded max commands." << sendLog;
        return -1;
    }
 }

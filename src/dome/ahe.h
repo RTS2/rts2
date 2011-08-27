@@ -28,6 +28,7 @@
 #define POLL_A_CLOSED 'X'
 #define POLL_B_CLOSED 'Y'
 #define MAX_COMMANDS 50 //think of this as a timeout
+#define SERIAL_SLEEP 600000 //time to sleep before sending command
 #define SERIAL_TIMEOUT 300
 
 #include "../utils/connserial.h"
