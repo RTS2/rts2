@@ -133,7 +133,7 @@ PlanSetTarget::PlanSetTarget (int tar_id)
 
 PlanSetNight::PlanSetNight (double JD)
 {
-	Rts2Night night = Rts2Night (JD, Rts2Config::instance ()->getObserver ());
+	Rts2Night night (JD, Rts2Config::instance ()->getObserver ());
 	from = *(night.getFrom ());
 	to = *(night.getTo ());
 	planFromTo (from, to);
