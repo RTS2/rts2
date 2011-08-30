@@ -135,7 +135,15 @@ class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
 class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 {
 	public:
-		XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface () {}
+		XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface ()
+		{
+			lastImage = NULL;
+		}
+
+		virtual ~XmlDevCameraClient ()
+		{
+			delete lastImage;
+		}
 
 		virtual void stateChanged (Rts2ServerState * state)
 		{
@@ -151,6 +159,8 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 		
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 
+		rts2image::Image *getLastImage () { return lastImage; }
+
 	protected:
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 
@@ -160,6 +170,9 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 		}
 
 		virtual Rts2Conn *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
+
+	private:
+		rts2image::Image *lastImage;
 };
 
 /**

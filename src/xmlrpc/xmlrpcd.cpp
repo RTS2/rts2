@@ -75,12 +75,15 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
-	return new rts2image::Image ("/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
+	delete lastImage;
+	lastImage = new rts2image::Image ("/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
+	lastImage->keepImage ();
+	return lastImage;
 }
 
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)
 {
-	return rts2image::IMAGE_DO_BASIC_PROCESSING;
+	return rts2image::IMAGE_KEEP_COPY;
 }
 
 int XmlRpcd::idle ()
