@@ -447,6 +447,11 @@ class Target:public Rts2Target
 		int getRST (struct ln_rst_time *rst) { return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON); }
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon) = 0;
 
+		// return if object is visible at observatory location during specified night
+		bool isVisibleDuringNight (double jd, double horizon);
+
+		bool isVisibleDuringCurrentNight () { return isVisibleDuringNight (ln_get_julian_from_sys (), getMinObsAlt ()); }
+
 		// returns 1 when we are almost the same target, so
 		// interruption of this target is not necessary
 		// otherwise (when interruption is necessary) returns 0

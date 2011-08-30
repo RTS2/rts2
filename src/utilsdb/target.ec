@@ -826,6 +826,28 @@ int Target::secToObjectMeridianPass (double JD)
 	return ret;
 }
 
+bool Target::isVisibleDuringNight (double jd, double horizon)
+{
+	struct ln_rst_time rst;
+	int ret;
+	Rts2Night night (jd, getObserver ());
+
+	ret = getRST (&rst, night.getJDFrom (), horizon);
+	// not visible at all
+	if (ret < 0)
+		return false;
+	// circumpolar
+	else if (ret > 0)
+		return true;
+	if (night.getJDFrom () < rst.set && night.getJDTo () > rst.set)
+		return true;
+	if (night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise)
+		return true;
+	if (night.getJDFrom () < rst.transit && night.getJDTo () > rst.transit)
+		return true;
+	return false;
+}
+
 int Target::beforeMove ()
 {
 	startCalledNum++;
@@ -1615,6 +1637,8 @@ void Target::printExtra (Rts2InfoValStream &_os, double JD)
 		_os << "Target is disabled" << std::endl;
 	}
 	_os
+		<< std::endl
+		<< InfoVal<const char*> ("IS VISIBLE TONIGHT", isVisibleDuringCurrentNight () ? "yes" : "no")
 		<< std::endl
 		<< InfoVal<double> ("TARGET PRIORITY", tar_priority)
 		<< InfoVal<double> ("TARGET BONUS", tar_bonus)
