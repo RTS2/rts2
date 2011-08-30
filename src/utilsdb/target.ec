@@ -1638,7 +1638,7 @@ void Target::printExtra (Rts2InfoValStream &_os, double JD)
 	}
 	_os
 		<< std::endl
-		<< InfoVal<const char*> ("IS VISIBLE TONIGHT", isVisibleDuringCurrentNight () ? "yes" : "no")
+		<< InfoVal<const char*> ("IS VISIBLE TONIGHT", isVisibleDuringNight (JD, getMinObsAlt ()) ? "yes" : "no")
 		<< std::endl
 		<< InfoVal<double> ("TARGET PRIORITY", tar_priority)
 		<< InfoVal<double> ("TARGET BONUS", tar_bonus)
