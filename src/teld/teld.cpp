@@ -1241,6 +1241,16 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		mpec->setValueString ("");
 		return startResyncMove (conn, false);
 	}
+	else if (conn->isCommand ("do_move"))
+	{
+		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
+			return -2;
+		modelOn ();
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		mpec->setValueString ("");
+		tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
+		return startResyncMove (conn, false);
+	}
 	else if (conn->isCommand ("move_not_model"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
