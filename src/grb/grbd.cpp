@@ -60,8 +60,14 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	createValue (lastIntegral, "last_integral", "time of last INTEGRAL position", false);
 	createValue (lastIntegralRaDec, "last_integral_position", "INTEGRAL current position", false);
 
-	createValue (recordNotVisible, "not_visible", "record GRBs not visible from current location", false, RTS2_VALUE_WRITABLE);
+	createValue (recordNotVisible, "not_visible", "record GRBs not visible from the current location", false, RTS2_VALUE_WRITABLE);
 	recordNotVisible->setValueBool (true);
+
+	createValue (recordOnlyVisibleTonight, "only_visible_tonight", "record GRBs only visible during current night from the current location", false, RTS2_VALUE_WRITABLE);
+	recordOnlyVisibleTonight->setValueBool (false);
+
+	createValue (minGrbAltitude, "min_grb_altitude", "minimal GRB altitute to be considered as visible", false, RTS2_VALUE_WRITABLE);
+	minGrbAltitude->setValueDouble (0);
 
 	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
 	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
@@ -144,6 +150,8 @@ int Grbd::reloadConfig ()
 	}
 
 	recordNotVisible->setValueBool (config->getBoolean ("grbd", "notvisible", recordNotVisible->getValueBool ()));
+	recordOnlyVisibleTonight->setValueBool (config->getBoolean ("grbd", "onlyvisibletonight", recordOnlyVisibleTonight->getValueBool ()));
+	minGrbAltitude->setValueDouble (config->getDoubleDefault ("observatory", "min_alt", minGrbAltitude->getValueDouble ()));
 
 	// try to get exe from config
 	if (!addExe)

@@ -19,6 +19,7 @@
 
 #include "conngrb.h"
 #include "../utils/connfork.h"
+#include "../utils/libnova_cpp.h"
 #include "../utilsdb/sqlerror.h"
 
 #include <arpa/inet.h>
@@ -687,8 +688,30 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	        )
 	)	
 	{
-		logStream (MESSAGE_DEBUG) << "not recording GRB at " << grb_ra << " " << grb_dec << ", as it is never visible from current location (latitude " << master->observer->lat << ")" << sendLog;
+		logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << ", as it is never visible from current location (latitude " << master->observer->lat << ")" << sendLog;
 		return 0;
+	}
+
+	if (master->getRecordOnlyVisibleTonight () == true)
+	{
+		// check if target is visible tonight at all..
+		struct ln_rst_time rst;
+		double JD = ln_get_julian_from_sys ();
+		Rts2Night night (JD, master->observer);
+
+		struct ln_equ_posn pos;
+		pos.ra = grb_ra;
+		pos.dec = grb_dec;
+
+		ln_get_object_next_rst_horizon (night.getJDFrom (), master->observer, &pos, master->getMinGrbAltitute (), &rst);
+
+		if (!((night.getJDFrom () < rst.set && night.getJDTo () > rst.set) || 
+			(night.getJDFrom () < rst.rise && night.getJDTo () > rst.rise) || 
+			(night.getJDFrom () < rst.transit && night.getJDTo () > rst.transit)))
+		{
+			logStream (MESSAGE_INFO) << "not recording GRB at " << LibnovaRaDec (grb_ra, grb_dec) << " as it is not durring current night above minimal altitude " << LibnovaDeg90 (master->getMinGrbAltitute ()) << sendLog;
+			return 0;
+		}
 	}
 
 	struct tm grb_broken_time;
@@ -858,7 +881,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			return 1;
 		}
 		// HETE burst have values -999 in some retraction notices..
-		// do updates only when new position is better then old one
+		// do updates only when new position is better than old one
 		if (
 			(d_grb_errorbox_ind < 0
 			|| isnan (grb_errorbox)

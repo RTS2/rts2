@@ -575,6 +575,19 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>onlyvisibletonight</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Record only GRBs visible tonight from the observatory location.
+	      You can check for target visibility using -e and looking for IS
+	      VISIBLE TONIGHT. Default to false, e.g. GRBs will be recorded
+	      regardless of current visibility.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>add_exe</option>
 	  </term>
 	  <listitem>

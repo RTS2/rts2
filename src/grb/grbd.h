@@ -66,6 +66,8 @@ class Grbd:public Rts2DeviceDb
 		void updateIntegral (double lastTime, double ra, double dec);
 
 		bool getRecordNotVisble () { return recordNotVisible->getValueBool (); }
+		bool getRecordOnlyVisibleTonight () { return recordOnlyVisibleTonight->getValueBool (); }
+		double getMinGrbAltitute () { return minGrbAltitude->getValueDouble (); }
 
 		struct ln_lnlat_posn *observer;
 	protected:
@@ -102,6 +104,8 @@ class Grbd:public Rts2DeviceDb
 		rts2core::ValueRaDec *lastIntegralRaDec;
 
 		rts2core::ValueBool *recordNotVisible;
+		rts2core::ValueBool *recordOnlyVisibleTonight;
+		rts2core::ValueDouble *minGrbAltitude;
 };
 
 }
