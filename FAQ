@@ -65,20 +65,27 @@ Yes, currently it runs on those telescopes:
 BART - Ondrejov, Czech Republic
 
 BOOTES - Two telescopes in Huelva station, Spain, one (Bootes IR) on
-http://www.osn.iaa.es, Bootes 2 near Malaga, Spain
+http://www.osn.iaa.es, Bootes 2 near Malaga, Spain, Bootes 3 at New Zealand
 
 FRAM - monitoring telescope at Argentina, build by Physical Institute of the
 Czech Republic
 
 Watcher - Boyden observatory, South Africa
 
-BNL, NY, LSST(.org) testing lab - used as master controller for CCD tests (without telescope).
+BNL, NY and LPNHE Paris, LSST(.org) testing labs - used as master controller for CCD tests (without telescope).
 
 D50 - new Ondrejov 50cm
 
-And future plans: 1 x RT in Spain (Astrobiology), 1.23m at CAHA
-(http://www.caha.es), new Bootes system at New Zealand. Plus there is plan to
-finally make from it a network - work in progress.
+1.23m CAHA, Spain
+
+Scheduling for 1.2m FLWO, AZ, USA
+
+ObsVermes, Switzerland
+
+CHASE 500, CTIO, Chile
+
+And future plans: BOOTES 4 (most probably China), 1.5m SPM, Mexico. Plus there
+is plan to finally make from it a network - work in progress.
 
 *) Can I use it?
 
@@ -343,11 +350,9 @@ something like 0.2 sec is value I expected. Running on moderate HW (PC Pentium
 *) Where will I find images?
 
 Images are in:                                                                                                                           
-                                                                                                                                          
 /images/<epoch>/que/<camera_name>  - there is temporaly storage for                                                                       
 images, which haven't been processed yet. Nothing should remains here on                                                                  
 morning.                                                                                                                                  
-                                                                                                                                          
 /images/<epoch>/archive/<target_id>/<camera_name>/object - images with astrometry. So                                                     
 for example, as GRB050724 get target_id 49999 on Bootes IR, images with
 astrometry were put to /images/<epoch>/archive/49999/<camera_name>/object/<date+time>.fits                                                                
