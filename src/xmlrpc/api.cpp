@@ -907,6 +907,16 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}";
+	
+	struct ln_equ_posn oradec;
+
+	if (dfrom == NULL)
+	{
+			oradec.ra = params->getDouble ("ra",rts2_nan("f"));
+			oradec.dec = params->getDouble ("dec",rts2_nan("f"));
+			if (!isnan (oradec.ra) && !isnan (oradec.dec))
+				dfrom = &oradec;
+	}
 	if (dfrom)
 	{
 		os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":4}";
