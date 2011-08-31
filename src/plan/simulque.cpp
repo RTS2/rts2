@@ -86,7 +86,7 @@ void SimulQueue::simulate (double from, double to)
 			{
 				addTarget (createTarget (n_id, *observer, NULL), from, t);
 				sq->front ().target->startObservation ();
-				sq->beforeChange (from + 5);
+				sq->beforeChange (t);
 				found = true;
 				break;
 			}
