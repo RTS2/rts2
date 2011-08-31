@@ -114,6 +114,10 @@ void ConnEpics::queueGetValue (rts2core::Value *value)
 			pchtype = DBR_LONG;
 			val->storage = malloc (sizeof (long));
 			break;
+		case RTS2_VALUE_BOOL:
+			pchtype = DBR_INT;
+			val->storage = malloc (sizeof (int));
+			break;
 		default:
 			throw ConnEpicsErrorChannel ("queueGetValue unsupported value type ", ca_name (val->vchid), ECA_NORMAL);
 	}
@@ -220,6 +224,9 @@ void ConnEpics::callPendIO ()
 					break;
 				case RTS2_VALUE_LONGINT:
 					((rts2core::ValueLong *)(*iter).value)->setValueLong (*((long*) (*iter).storage));
+					break;
+				case RTS2_VALUE_BOOL:
+					((rts2core::ValueBool *)(*iter).value)->setValueBool ((*((int*) (*iter).storage)) != 0);
 					break;
 				default:
 					throw ConnEpicsErrorChannel ("callPendIO unsupported value type ", ca_name ((*iter).vchid), ECA_NORMAL);
