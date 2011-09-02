@@ -643,6 +643,31 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			os << "\"id\":" << nt.getTargetID ();
 		}
+		else if (vals[0] == "update_target")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *t = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (t->getTargetType () != TYPE_OPORTUNITY)
+				throw JSONException ("can update only constant targets");
+			rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
+
+			const char *tn = params->getString ("tn", "");
+			double ra = params->getDouble ("ra", rts2_nan("f"));
+			double dec = params->getDouble ("dec", rts2_nan("f"));
+			const char *desc = params->getString ("desc", NULL);
+
+			if (strlen (tn) > 0)
+				tar->setTargetName (tn);
+			tar->setPosition (ra, dec);
+			if (desc != NULL)
+				tar->setTargetInfo (std::string (desc));
+			tar->save (true);
+
+			os << "\"id\":" << tar->getTargetID ();
+			delete tar;
+		}
 		else if (vals[0] == "change_script")
 		{
 			int tar_id = params->getInteger ("id", -1);
