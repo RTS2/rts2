@@ -416,6 +416,15 @@ class Telescope:public rts2core::Device
 		}
 
 		/**
+		 * Sets target to nan. If startResync is called, it forced
+		 * it to recompute target positions.
+		 */
+		void resetTelTarget ()
+		{
+			tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
+		}
+
+		/**
 		 * Sets ALT-AZ target. The program should call moveAltAz() to
 		 * start alt-az movement.
 		 *
