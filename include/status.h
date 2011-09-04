@@ -145,6 +145,12 @@
 // device need reload when it enter idle state - what should be reload is device specific
 #define DEVICE_NEED_RELOAD  0x00002000
 
+// device is starting up
+#define DEVICE_STARTUP      0x00004000
+
+// device is in shutdown
+#define DEVICE_SHUTDOWN     0x00008000
+
 #define DEVICE_IDLE         0x00000000
 
 // Camera status

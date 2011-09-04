@@ -348,6 +348,22 @@ class Device:public Daemon
 		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
 
 		/**
+		 * Signal that device is starting up. All actions should then be suspended.
+		 * It is up to device driver to decide how to suspend those actions.
+		 */
+		void startStartup () { maskState (DEVICE_MISC_MASK, DEVICE_STARTUP, "startup started"); }
+
+		/**
+		 * Signal that device finished startup and is ready to accept commands.
+		 */
+		void endStartup () { maskState (DEVICE_STARTUP, 0, "startup finished"); }
+
+		bool isStartingUp () { return getState () & DEVICE_STARTUP; }
+
+		void startShutdown () { maskState (DEVICE_MISC_MASK, DEVICE_SHUTDOWN, "shutdown started"); }
+		void endShutdown () { maskState (DEVICE_SHUTDOWN, 0, "shutdown finished"); }
+
+		/**
 		 * Signal that device need to reload values while in idle state.
 		 */
 		void setNeedReload () { maskState (DEVICE_NEED_RELOAD, DEVICE_NEED_RELOAD, "need reload values when in idle"); }
