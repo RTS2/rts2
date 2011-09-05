@@ -5,6 +5,7 @@
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
   <http>
+    <docroot>/home/observer</docroot>
     <public>/graph/SD/*</public>
     <dir path="/images/luthien" to="/luthien"/>
     <defaultImageLabel>%D/%M @OBJECT</defaultImageLabel>
