@@ -609,7 +609,7 @@ static const char *dateScript =
 "document.write(\"<iframe id='CalendarControlIFrame' src='javascript:false;' frameBorder='0' scrolling='no'></iframe>\");\n"
 "document.write(\"<div id='CalendarControl'></div>\");\n";
 
-const char *targetEditScript = 
+const char *targetEdit = 
 // exposure script object
 "function Exposure (num, filter, length){\n"
   "this.num = num;\n"
@@ -652,6 +652,18 @@ const char *targetEditScript =
     "ret += se.options[i].value;\n"
   "}\n"
   "return ret;\n"
+"}\n"
+
+"function createTarget (tn, ra, dec, desc, func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/create_target?tn=' + tn + '&ra=' + ra + '&dec=' + dec + '&desc=' + desc), true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.id);\n"
+  "}\n"
+  "hr.send(null);\n"
 "}\n";
 
 const char *tableScript = 
@@ -969,7 +981,7 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 	else if (vals[0] == "date.js")
 		reply = dateScript;
 	else if (vals[0] == "targetedit.js")
-	  	reply = targetEditScript;
+	  	reply = targetEdit;
 	else if (vals[0] == "table.js")
 		reply = tableScript;
 	else if (vals[0] == "widgets.js")
