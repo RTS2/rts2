@@ -24,6 +24,8 @@
 #include "../utils/connserial.h"
 #include "../utils/libnova_cpp.h"
 
+#define DEBUG_MOVE  1
+
 #define EVENT_TIMER_RA_WORM    RTS2_LOCAL_EVENT + 1230
 
 // maximal movement lenght
@@ -1054,8 +1056,6 @@ void Trencin::valueChanged (rts2core::Value *changed_value)
 	Fork::valueChanged (changed_value);
 }
 
-#define DEBUG_MOVE  1
-
 int Trencin::info ()
 {
 	int ret;
@@ -1233,6 +1233,11 @@ int Trencin::endMove ()
 {
 	info_u_ra = unitRa->getValueInteger ();
 	info_u_dec = unitDec->getValueInteger ();
+#ifdef DEBUG_MOVE
+	logStream (MESSAGE_DEBUG) << "endMove cycleMoveRa " << cycleMoveRa << " cycleMoveDec " << cycleMoveDec << ", setting both to 0" << sendLog;
+#endif
+	cycleMoveRa = 0;
+	cycleMoveDec = 0;
 	if (wormRa->getValueBool () == true)
 		startWorm ();
 	return Fork::endMove ();
