@@ -839,6 +839,20 @@ const char *widgetsScript =
   "hr.send(null);\n"
 "}\n";
 
+/**
+ *
+ * setCall (device, variable, value)
+ *
+ * Sets variable with device call. Please be aware that device cache will
+ * not be refreshed after call, so most probably it will contain old values.
+ *
+ * setGetCallFunction (device, variable, value, func)
+ *
+ * Call setCall function with device, variable and value as parameters. Then
+ * calls info function to refresh device variables, and when it sucessfully finished, calls
+ * func. Pass (new) value of variable to function as single parameter.
+ */
+
 const char *setGetApi =
 "function setCall (device, variable, value){\n"
   "var hr = new XMLHttpRequest();\n"
@@ -867,6 +881,51 @@ const char *setGetApi =
     "if (this.readyState != 4 || this.status != 200) { return; }\n"
     "var t = JSON.parse(this.responseText);\n"
     "this.input.value = t.d[this.variable];\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+"function getCallTime (device, variable, input, show_diff){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/get?d=' + device, true);\n"
+  "hr.variable = variable;\n"
+  "hr.input = input;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "var now = new Date();\n"
+    "var d = new Date(t.d[this.variable] * 1000);\n"
+    "var s = d.toString();\n"
+    "if (show_diff){ s += ' ' + (now.valueOf() - d.valueOf()) / 1000.0;}\n"
+    "this.input.value = s;\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+"function setGetCall (device, variable, input){\n"
+  "setCall (device, variable, input.value);\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/cmd?c=info&d=' + device, true);\n"
+  "hr.variable = variable;\n"
+  "hr.input = input;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.input.value = t.d[this.variable][1];\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+"function setGetCallFunction (device, variable, value, func){\n"
+  "setCall (device, variable, value);\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/cmd?c=info&d=' + device, true);\n"
+  "hr.variable = variable;\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.d[this.variable][1]);\n"
   "}\n"
   "hr.send(null);\n"
 "}\n"
