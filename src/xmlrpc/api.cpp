@@ -627,7 +627,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			double dec = params->getDouble ("dec", rts2_nan("f"));
 			const char *desc = params->getString ("desc", "");
 			const char *type = params->getString ("type", "O");
-			bool overwrite = params->getBoolean ("overwrite", false);
 
 			if (strlen (tn) == 0)
 				throw JSONException ("empty target name");
@@ -639,7 +638,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			nt.setPosition (ra, dec);
 			nt.setTargetInfo (std::string (desc));
 			nt.setTargetType (type[0]);
-			nt.save (overwrite);
+			nt.save (false);
 
 			os << "\"id\":" << nt.getTargetID ();
 		}
