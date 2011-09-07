@@ -9,12 +9,15 @@
 
 <script type='text/javascript' language="javascript">
 function refreshData(){
-	getCall("DOME","weather_open",this.document.getElementById("DOME_weather_open"));
-	if (document.getElementById("DOME_weather_open").value == 1) {
+	getCallFunction("DOME","weather_open",function(v){
+	   document.getElementById("DOME_weather_open").value = v;
+	   if (v == 1) {
 		document.getElementById("DOME_on").checked = true;
-	} else {
+	   } else {
 		document.getElementById("DOME_off").checked = true;
-	}
+	   }
+	});
+
 	getCall("DOME","ignore_time",this.document.getElementById("DOME_ignore_time_raw"),true);
 	getCallTime("DOME","ignore_time",this.document.getElementById("DOME_ignore_time"),true);
 	getCall("DOME","moveCountTop",this.document.getElementById("DOME_moveCountTop"));
@@ -22,12 +25,6 @@ function refreshData(){
 	setTimeout('refreshData();',1000);
 }
 </script>
-
-<p>
-  This is a test template, which shows how to interact with RTS2 from
-  JavaScript through library calls provided in rts2-xmlrpcd API. This must be
-  parsed by rts2-xmlrpcd to provide expected results.
-</p>
 
 <h1>Some template examples</h1>
 
