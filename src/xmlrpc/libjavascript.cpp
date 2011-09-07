@@ -664,7 +664,20 @@ const char *targetEdit =
     "this.func(t.id);\n"
   "}\n"
   "hr.send(null);\n"
-"}\n";
+"}\n"
+
+"function updateTarget (id, tn, ra, dec, desc, func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/update_target?id=' + id + '&tn=' + tn + '&ra=' + ra + '&dec=' + dec + '&desc=' + desc), true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.id);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+;
 
 const char *tableScript = 
 "function Table(api_access, element_id, objectName){\n"
