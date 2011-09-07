@@ -47,6 +47,7 @@ class ElementDisable:public ElementTarget
 		virtual void prettyPrint (std::ostream &os) { os << "disable target"; }
 		virtual void printXml (std::ostream &os) { os << "  <disable>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_TARGET_DISABLE; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_TARGET_DISABLE << "\""; };
 };
 
 class ElementTempDisable:public ElementTarget
@@ -59,6 +60,7 @@ class ElementTempDisable:public ElementTarget
 		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << distime << " (" << getDistTimeSec () << " seconds)"; }
 		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << getDistTimeSec () << "</tempdisable>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_TAR_TEMP_DISAB << " " << distime; }
+		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_TAR_TEMP_DISAB << "\",\"duration\":" << getDistTimeSec (); };
 
 		void setTempDisable (const char *dist) { distime = std::string (dist); }
 
