@@ -270,13 +270,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		if (tid <= 0)
 			throw JSONException ("empty target ID");
 		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
-		target->getConstraints ()->print (os);
-
-		response_type = "application/xml";
-		response_length = os.str ().length ();
-		response = new char[response_length];
-		memcpy (response, os.str().c_str (), response_length);
-		return;
+		target->getConstraints ()->printJSON (os);
 	}
 #endif // HAVE_PGSQL
 	else if (vals.size () == 1)
@@ -363,7 +357,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			else
 			{
-				// TODO must deallocated..
 				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
@@ -681,6 +674,26 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("empty script");
 			tar->setScript (cam, s);
 			os << "\"id\":" << tar_id << ",\"camera\":\"" << cam << "\",\"script\":\"" << s << "\"";
+			delete tar;
+		}
+		else if (vals[0] == "change_constraints")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			const char *cn = params->getString ("cn", NULL);
+			const char *ci = params->getString ("ci", NULL);
+			if (cn == NULL)
+				throw JSONException ("constraint not specified");
+			rts2db::Constraints constraints;
+			constraints.parse (cn, ci);
+			tar->appendConstraints (constraints);
+
+			os << "\"id\":" << tar_id << ",";
+			constraints.printJSON (os);
+
+			delete tar;
 		}
 		else if (vals[0] == "plan")
 		{

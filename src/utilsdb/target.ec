@@ -1010,7 +1010,7 @@ void Target::setConstraints (Constraints &cons)
 		ofs.open (getConstraintFile ());
 
 		ofs << "<?xml version=\"1.0\"?>" << std::endl << std::endl;
-		cons.print (ofs);
+		cons.printXML (ofs);
 		ofs.close ();
 	}
 	catch (std::ofstream::failure f)
@@ -2073,7 +2073,7 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
 {
 	_os << "Constraints" << std::endl;
-	constraints->print (*(_os.getStream ()));
+	constraints->printXML (*(_os.getStream ()));
 	_os << std::endl;
 }
 

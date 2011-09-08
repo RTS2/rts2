@@ -67,7 +67,8 @@ class ConstraintDoubleInterval
 		/**
 		 * Print interval.
 		 */
-		void print (std::ostream &os);
+		void printXML (std::ostream &os);
+		void printJSON (std::ostream &os);
 
 		double getLower () { return lower; }
 		double getUpper () { return upper; }
@@ -99,7 +100,8 @@ class Constraint
                  */
 		virtual void parse (const char *arg) = 0;
 
-		virtual void print (std::ostream &os) = 0;
+		virtual void printXML (std::ostream &os) = 0;
+		virtual void printJSON (std::ostream &os) = 0;
 
 		virtual const char* getName () = 0;
 
@@ -159,7 +161,8 @@ class ConstraintInterval: public Constraint
                  */
 		virtual void parse (const char *arg);
 
-		virtual void print (std::ostream &os);
+		virtual void printXML (std::ostream &os);
+		virtual void printJSON (std::ostream &os);
 
 		void copyIntervals (ConstraintInterval *cs)
 		{
@@ -270,7 +273,8 @@ class ConstraintMaxRepeat:public Constraint
 
 		virtual void parse (const char *arg);
 
-		virtual void print (std::ostream &os);
+		virtual void printXML (std::ostream &os);
+		virtual void printJSON (std::ostream &os);
 
 		virtual const char* getName () { return CONSTRAINT_MAXREPEATS; }
 
@@ -408,7 +412,8 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		/**
 		 * Print constraints.
 		 */
-		void print (std::ostream &os);
+		void printXML (std::ostream &os);
+		void printJSON (std::ostream &os);
 
 	private:
 		Constraint *createConstraint (const char *name);

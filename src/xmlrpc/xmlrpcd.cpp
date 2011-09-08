@@ -271,7 +271,10 @@ void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->isForSource (source))
+		{
+			deleteAsync.push_back (*iter);
 			iter = asyncAPIs.erase (iter);
+		}
 		else
 			iter++;
 	}

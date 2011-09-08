@@ -48,7 +48,7 @@ bool ConstraintDoubleInterval::satisfy (double val)
 	return between (val, lower, upper);
 }
 
-void ConstraintDoubleInterval::print (std::ostream &os)
+void ConstraintDoubleInterval::printXML (std::ostream &os)
 {
 	os << "    <interval>";
 	if (!isnan (lower))
@@ -57,6 +57,22 @@ void ConstraintDoubleInterval::print (std::ostream &os)
 		os << std::endl << "      <upper>" << upper << "</upper>";
 	os << std::endl << "    </interval>" << std::endl;
 }
+
+void ConstraintDoubleInterval::printJSON (std::ostream &os)
+{
+	os << "[";
+	if (!isnan (lower))
+		os << lower << ",";
+	else
+		os << "null,";
+	if (!isnan (upper))
+		os << upper;
+	else
+		os << "null";
+	os << "]";
+}
+
+
 
 ConstraintInterval::ConstraintInterval (ConstraintInterval &cons)
 {
@@ -132,14 +148,26 @@ void ConstraintInterval::parse (const char *arg)
 	delete[] sint;
 }
 
-void ConstraintInterval::print (std::ostream &os)
+void ConstraintInterval::printXML (std::ostream &os)
 {
 	os << "  <" << getName () << ">" << std::endl;
 	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
 	{
-		iter->print (os);
+		iter->printXML (os);
 	}
 	os << "  </" << getName () << ">" << std::endl;
+}
+
+void ConstraintInterval::printJSON (std::ostream &os)
+{
+	os << "\"" << getName () << "\":[";
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter != intervals.begin ())
+			os << ",";
+		iter->printJSON (os);
+	}
+	os << "]";
 }
 
 bool ConstraintInterval::isBetween (double val)
@@ -462,9 +490,14 @@ void ConstraintMaxRepeat::parse (const char *arg)
 	maxRepeat = atoi (arg);
 }
 
-void ConstraintMaxRepeat::print (std::ostream &os)
+void ConstraintMaxRepeat::printXML (std::ostream &os)
 {
 	os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
+}
+
+void ConstraintMaxRepeat::printJSON (std::ostream &os)
+{
+	os << "\"" << getName () << "\":" << maxRepeat;
 }
 
 void ConstraintMaxRepeat::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
@@ -716,14 +749,24 @@ void Constraints::parse (const char *name, const char *arg)
 	}
 }
 
-void Constraints::print (std::ostream &os)
+void Constraints::printXML (std::ostream &os)
 {
 	os << "<constraints>" << std::endl;
 	for (Constraints::iterator iter = begin (); iter != end (); iter++)
 	{
-		iter->second->print (os);
+		iter->second->printXML (os);
 	}
 	os << "</constraints>" << std::endl;
+}
+
+void Constraints::printJSON (std::ostream &os)
+{
+	for (Constraints::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter != begin ())
+			os << ",";
+		iter->second->printJSON (os);
+	}
 }
 
 Constraint *Constraints::createConstraint (const char *name)
