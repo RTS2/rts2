@@ -677,6 +677,34 @@ const char *targetEdit =
   "}\n"
   "hr.send(null);\n"
 "}\n"
+
+"function executeNow (id,func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/cmd?d=EXEC&c=now '+id), true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.d.current[1]);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+;
+
+const char *rts2Central = 
+// exposure script object
+"function rts2SetState(val, func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/cmd?d=centrald&c=' + val), true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(val);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
 ;
 
 const char *tableScript = 
@@ -888,6 +916,18 @@ const char *setGetApi =
   "hr.send(null);\n"
 "}\n"
 
+"function setCallFunction (device, variable, value, func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/set?d=' + device + '&n=' + variable + '&v=' + value,true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+  "this.func(hr.status);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
+
 "function setCallRaDec (device, variable, ra, dec){\n"
   "var hr = new XMLHttpRequest();\n"
   "hr.open('GET','../api/set?d=' + device + '&n=' + variable + '&v=' + ra + ' ' + dec,true);\n"
@@ -998,6 +1038,8 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 	  	reply = widgetsScript;
 	else if (vals[0] == "setgetapi.js")
 	  	reply = setGetApi;
+        else if (vals[0] == "rts2centrald.js")
+                reply = rts2Central;
 	else
 		throw rts2core::Error ("JavaScript not found");
 
