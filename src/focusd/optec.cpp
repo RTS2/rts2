@@ -20,7 +20,7 @@
 #define FOCUSER_PORT "/dev/ttyS0"
 
 #include "focusd.h"
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 namespace rts2focusd
 {

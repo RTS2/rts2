@@ -13,12 +13,12 @@ CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
 
 PLAN_STDLIBS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 
-noinst_LIBRARIES = libscript.a
+lib_LTLIBRARIES = libscript.la
 
-libscript_a_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp devscript.cpp rts2spiral.cpp \
+libscript_la_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp devscript.cpp rts2spiral.cpp \
 		elementblock.cpp elementguiding.cpp rts2targetscr.cpp elementtarget.cpp elementhex.cpp elementwaitfor.cpp \
 		rts2scriptinterface.cpp operands.cpp elementexe.cpp printtarget.cpp connexe.cpp connselector.cpp
-libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
+libscript_la_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 
 
 rts2_scriptexec_SOURCES = scriptexec.cpp 
@@ -31,54 +31,55 @@ rts2_scriptor_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CF
 
 if PGSQL
 
-libscript_a_SOURCES += rts2execclidb.cpp elementacquire.cpp executorque.cpp simulque.cpp
+PG_LDADD = -lscript -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+
+libscript_la_SOURCES += rts2execclidb.cpp elementacquire.cpp executorque.cpp simulque.cpp
 
 rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
-rts2_scriptexec_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
-
+rts2_scriptexec_LDADD = ${PG_LDADD} 
 rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
-rts2_scriptor_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptor_LDADD = ${PG_LDADD}
 
 bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-marchive 
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
 rts2_executor_SOURCES = executor.cpp
 rts2_executor_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_executor_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_executor_LDADD = ${PG_LDADD}
 
 rts2_imgproc_SOURCES = imgproc.cpp 
 rts2_imgproc_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_imgproc_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_imgproc_LDADD = ${PG_LDADD}
 
 nodist_rts2_selector_SOURCES = rts2selector.cpp
 rts2_selector_SOURCES = selector.cpp
 rts2_selector_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_selector_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_selector_LDADD = ${PG_LDADD}
 
 nodist_rts2_seltest_SOURCES = rts2selector.cpp
 rts2_seltest_SOURCES = seltest.cpp
 rts2_seltest_CXXFLAGS = @LIBNCURSES_CFLAGS@ ${PLAN_STDLIBS}
-rts2_seltest_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@
+rts2_seltest_LDADD = ${PG_LDADD}
 
 rts2_targetinfo_SOURCES = targetinfo.cpp
 rts2_targetinfo_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_targetinfo_LDADD = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_targetinfo_LDADD = ${PG_LDADD}
 
 rts2_marchive_SOURCES = marchive.cpp
 rts2_marchive_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_marchive_LDADD = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_marchive_LDADD = ${PG_LDADD}
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
 
 else
 
-rts2_scriptexec_LDFLAGS = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
-rts2_scriptor_LDADD = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptexec_LDFLAGS = -lscript ../writers/librts2image.a -L../utils -lrts2block @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptor_LDADD = -lscript ../writers/librts2image.a -L../utils -lrts2block @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 rts2_imgproc_SOURCES = imgproc.cpp 
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
-rts2_imgproc_LDADD = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_imgproc_LDADD = -lscript ../writers/librts2image.a -L../utils -lrts2block @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 EXTRA_DIST += executor.cpp executorque.cpp simulque.cpp selector.cpp seltest.cpp targetinfo.cpp marchive.cpp
 

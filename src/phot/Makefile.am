@@ -2,15 +2,11 @@
 
 bin_PROGRAMS = rts2-phot-ssp5 rts2-phot-dummy
 
-noinst_HEADERS = phot.h kernel/phot.h
+noinst_HEADERS = kernel/phot.h
 
-noinst_LIBRARIES = librts2phot.a
-
-LDADD = librts2phot.a ../utils/librts2block.a @LIB_NOVA@
+LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@
-
-librts2phot_a_SOURCES = phot.cpp
 
 if SUNOS
 EXTRA_DIST = phot_optec.cpp

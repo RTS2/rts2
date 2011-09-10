@@ -22,11 +22,11 @@
 #include <iomanip>
 #include <sstream>
 
-#include "../utils/riseset.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/app.h"
-#include "../utils/rts2config.h"
-#include "../utils/rts2centralstate.h"
+#include "riseset.h"
+#include "libnova_cpp.h"
+#include "app.h"
+#include "rts2config.h"
+#include "../../lib/rts2/rts2centralstate.h"
 
 #define OPT_LAT              OPT_LOCAL + 230
 #define OPT_LONG             OPT_LOCAL + 231

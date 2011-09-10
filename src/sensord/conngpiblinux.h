@@ -21,7 +21,7 @@
 #define __RTS2_CONN_GPIB_LINUX__
 
 #include "conngpib.h"
-#include "../utils/error.h"
+#include "error.h"
 
 #include <gpib/ib.h>
 #include <sstream>

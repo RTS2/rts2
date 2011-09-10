@@ -22,8 +22,8 @@
 #include "stateevents.h"
 #include "message.h"
 
-#include "../utils/block.h"
-#include "../utils/rts2logstream.h"
+#include "block.h"
+#include "rts2logstream.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>

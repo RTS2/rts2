@@ -19,8 +19,8 @@
 
 #include "xmlrpcd.h"
 
-#include "../utils/connfork.h"
-#include "../utils/timestamp.h"
+#include "../../lib/rts2/connfork.h"
+#include "timestamp.h"
 
 using namespace rts2xmlrpc;
 

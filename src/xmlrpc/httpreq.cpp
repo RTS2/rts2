@@ -25,13 +25,13 @@
 #include "dirsupport.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/observationset.h"
-#include "../utilsdb/imageset.h"
-#include "../utilsdb/user.h"
-#include "../utilsdb/targetset.h"
+#include "../../lib/rts2db/observationset.h"
+#include "../../lib/rts2db/imageset.h"
+#include "../../lib/rts2db/user.h"
+#include "../../lib/rts2db/targetset.h"
 #endif /* HAVE_PGSQL */
 
-#include "../utils/radecparser.h"
+#include "../../lib/rts2/radecparser.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;

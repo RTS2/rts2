@@ -19,8 +19,8 @@
 
 #include "conngpib.h"
 
-#include "../utils/error.h"
-#include "../utils/app.h"
+#include "error.h"
+#include "app.h"
 
 using namespace rts2sensord;
 

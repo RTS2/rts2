@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "../utils/rts2connnosend.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 namespace rts2sensord
 {

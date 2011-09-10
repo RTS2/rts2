@@ -21,8 +21,8 @@
 #define __RTS2_TARGESCR__
 
 #include "rts2scriptinterface.h"
-#include "../utils/rts2target.h"
-#include "../writers/image.h"
+#include "../../lib/rts2/rts2target.h"
+#include "../../lib/rts2fits/image.h"
 
 class Rts2ScriptExec;
 

@@ -22,7 +22,7 @@
 
 #include "sensord.h"
 
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 #define EVENT_CLOUD_HEATER      RTS2_LOCAL_EVENT + 1300
 

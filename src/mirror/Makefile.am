@@ -2,11 +2,9 @@
 
 bin_PROGRAMS = rts2-mirror-dummy
 
-noinst_HEADERS = mirror.h
-
 EXTRA_DIST = mirror.cpp
 
-LDADD = mirror.o ../utils/librts2block.a @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 if SUNOS

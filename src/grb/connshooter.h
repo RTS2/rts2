@@ -20,7 +20,7 @@
 #ifndef __RTS2_SHOOTERCONN__
 #define __RTS2_SHOOTERCONN__
 
-#include "../utils/rts2connnosend.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 #include "augershooter.h"
 

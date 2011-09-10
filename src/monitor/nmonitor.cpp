@@ -27,7 +27,7 @@
 #include <fstream>
 
 #include "nmonitor.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #ifdef HAVE_XCURSES
 char *XCursesProgramName = "rts2-mon";

@@ -18,8 +18,8 @@
  */
 
 #include "teld.h"
-#include "../utils/connserial.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2/connserial.h"
+#include "rts2config.h"
 
 /*!
  * NexStar teld for testing purposes.

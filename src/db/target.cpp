@@ -19,15 +19,15 @@
 
 #include "../plan/script.h"
 #include "../plan/elementtarget.h"
-#include "../utilsdb/constraints.h"
-#include "../utilsdb/observation.h"
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/sqlerror.h"
-#include "../utilsdb/target.h"
-#include "../utilsdb/targetset.h"
-#include "../utils/rts2askchoice.h"
-#include "../utils/rts2config.h"
-#include "../utils/rts2format.h"
+#include "../../lib/rts2db/constraints.h"
+#include "../../lib/rts2db/observation.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/sqlerror.h"
+#include "../../lib/rts2db/target.h"
+#include "../../lib/rts2db/targetset.h"
+#include "../../lib/rts2/rts2askchoice.h"
+#include "rts2config.h"
+#include "rts2format.h"
 
 #include <iostream>
 

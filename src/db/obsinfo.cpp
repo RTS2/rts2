@@ -1,6 +1,6 @@
 #include "imgdisplay.h"
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/observationset.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/observationset.h"
 
 #include <list>
 #include <iostream>

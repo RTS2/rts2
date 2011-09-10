@@ -43,8 +43,8 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "../utils/rts2config.h" 
-#include "clicupola.h"
+#include "../../lib/rts2/clicupola.h"
+#include "rts2config.h" 
 #include "pier-collision.h"
 
 #include <termios.h>

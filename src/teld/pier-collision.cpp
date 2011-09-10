@@ -30,7 +30,7 @@
 
 #include "pier-collision.h"
 
-#include "../utils/utilsfunc.h"
+#include "utilsfunc.h"
 
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))

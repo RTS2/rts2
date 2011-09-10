@@ -27,7 +27,7 @@
 #define CMD_FOCUS_GOTO        "FG"
 
 #include "focusd.h"
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 namespace rts2focusd
 {

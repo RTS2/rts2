@@ -22,10 +22,10 @@
 
 #include "connimgprocess.h"
 #include "rts2execcli.h"
-#include "../writers/image.h"
-#include "../utilsdb/target.h"
-#include "../utils/rts2command.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2fits/image.h"
+#include "../../lib/rts2db/target.h"
+#include "rts2command.h"
+#include "rts2config.h"
 
 using namespace rts2image;
 

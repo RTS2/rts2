@@ -19,7 +19,7 @@
 
 
 #include "phot.h"
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 #include <time.h>
 

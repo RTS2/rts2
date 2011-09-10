@@ -18,10 +18,10 @@
  */
 
 #include "rts2targetapp.h"
-#include "../utils/rts2config.h"
-#include "../utils/libnova_cpp.h"
+#include "rts2config.h"
+#include "libnova_cpp.h"
 
-#include "../utilsdb/simbadtarget.h"
+#include "../../lib/rts2db/simbadtarget.h"
 
 #include <sstream>
 #include <iostream>

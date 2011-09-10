@@ -23,12 +23,12 @@
 #include "executorque.h"
 #include "simulque.h"
 
-#include "../utils/connnotify.h"
-#include "../utils/rts2devclient.h"
-#include "../utils/rts2event.h"
-#include "../utils/rts2command.h"
-#include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/planset.h"
+#include "../../lib/rts2/connnotify.h"
+#include "rts2devclient.h"
+#include "rts2event.h"
+#include "rts2command.h"
+#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/planset.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 #define OPT_ADD_QUEUE           OPT_LOCAL + 6

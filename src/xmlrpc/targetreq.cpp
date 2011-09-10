@@ -21,19 +21,19 @@
 #include "altplot.h"
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
-#include "../utilsdb/simbadtarget.h"
-#include "../utils/rts2command.h"
+#include "../../lib/rts2db/simbadtarget.h"
+#include "rts2command.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/observationset.h"
-#include "../utilsdb/imageset.h"
-#include "../utilsdb/targetset.h"
-#include "../utilsdb/constraints.h"
-#include "../utilsdb/planset.h"
-#include "../utilsdb/labels.h"
+#include "../../lib/rts2db/observationset.h"
+#include "../../lib/rts2db/imageset.h"
+#include "../../lib/rts2db/targetset.h"
+#include "../../lib/rts2db/constraints.h"
+#include "../../lib/rts2db/planset.h"
+#include "../../lib/rts2db/labels.h"
 #endif /* HAVE_PGSQL */
 
-#include "../utils/radecparser.h"
+#include "../../lib/rts2/radecparser.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;

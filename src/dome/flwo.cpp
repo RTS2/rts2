@@ -18,7 +18,7 @@
  */
 
 #include "dome.h"
-#include "../utils/connfork.h"
+#include "../../lib/rts2/connfork.h"
 
 #define OPT_OPEN     OPT_LOCAL + 620
 #define OPT_CLOSE    OPT_LOCAL + 621

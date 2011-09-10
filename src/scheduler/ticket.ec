@@ -19,8 +19,8 @@
 
 #include "ticket.h"
 
-#include "../utils/rts2config.h"
-#include "../utilsdb/sqlerror.h"
+#include "rts2config.h"
+#include "../../lib/rts2db/sqlerror.h"
 
 using namespace rts2sched;
 

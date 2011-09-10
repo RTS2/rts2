@@ -18,8 +18,8 @@
  */
 
 #include "augershooter.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2command.h"
+#include "libnova_cpp.h"
+#include "rts2command.h"
 
 using namespace rts2grbd;
 

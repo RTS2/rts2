@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/sqlerror.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/sqlerror.h"
+#include "rts2config.h"
 
 #include "rts2schedbag.h"
 

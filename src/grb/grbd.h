@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBD__
 #define __RTS2_GRBD__
 
-#include "../utilsdb/rts2devicedb.h"
+#include "../../lib/rts2db/rts2devicedb.h"
 #include "conngrb.h"
 #include "rts2grbfw.h"
 
@@ -65,7 +65,7 @@ class Grbd:public Rts2DeviceDb
 		void updateSwift (double lastTime, double ra, double dec);
 		void updateIntegral (double lastTime, double ra, double dec);
 
-		bool getRecordNotVisble () { return recordNotVisible->getValueBool (); }
+		bool getRecordNotVisible () { return recordNotVisible->getValueBool (); }
 		bool getRecordOnlyVisibleTonight () { return recordOnlyVisibleTonight->getValueBool (); }
 		double getMinGrbAltitute () { return minGrbAltitude->getValueDouble (); }
 

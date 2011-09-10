@@ -18,12 +18,12 @@
  */
 
 #include "imgdisplay.h"
-#include "../utils/rts2config.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2format.h"
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/messagedb.h"
-#include "../utilsdb/observationset.h"
+#include "rts2config.h"
+#include "libnova_cpp.h"
+#include "rts2format.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/messagedb.h"
+#include "../../lib/rts2db/observationset.h"
 
 #include "imgdisplay.h"
 

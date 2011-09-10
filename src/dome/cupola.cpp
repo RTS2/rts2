@@ -1,5 +1,5 @@
 #include "cupola.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #include <math.h>
 

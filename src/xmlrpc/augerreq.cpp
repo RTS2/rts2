@@ -21,11 +21,11 @@
 #include "nightdur.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/augerset.h"
+#include "../../lib/rts2db/augerset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include "altaz.h"
 #endif // HAVE_LIBJPEG
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;

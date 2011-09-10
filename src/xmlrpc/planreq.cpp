@@ -19,7 +19,7 @@
 
 #include "xmlrpcd.h"
 
-#include "../utilsdb/plan.h"
+#include "../../lib/rts2db/plan.h"
 
 using namespace rts2xmlrpc;
 

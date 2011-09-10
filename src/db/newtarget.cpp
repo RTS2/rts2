@@ -17,12 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/target.h"
-#include "../utilsdb/targetset.h"
-#include "../utils/rts2config.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2askchoice.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/target.h"
+#include "../../lib/rts2db/targetset.h"
+#include "rts2config.h"
+#include "libnova_cpp.h"
+#include "../../lib/rts2/rts2askchoice.h"
 
 #include "rts2targetapp.h"
 

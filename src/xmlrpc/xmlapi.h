@@ -23,7 +23,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "config.h"
 #include "r2x.h"
-#include "../utils/block.h"
+#include "block.h"
 
 using namespace XmlRpc;
 

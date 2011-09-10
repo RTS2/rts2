@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/connbait.h"
+#include "../../lib/rts2/connbait.h"
 
 #define OPT_BAITHOST    OPT_LOCAL + 600
 

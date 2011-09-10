@@ -20,7 +20,7 @@
 #ifndef __RTS2_DAVISUDP__
 #define __RTS2_DAVISUDP__
 
-#include "../utils/rts2connnosend.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 namespace rts2sensord
 {

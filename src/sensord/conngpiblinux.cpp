@@ -19,7 +19,7 @@
 
 #include "conngpiblinux.h"
 
-#include "../utils/rts2connnosend.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 using namespace rts2sensord;
 

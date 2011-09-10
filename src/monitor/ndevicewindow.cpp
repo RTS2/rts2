@@ -20,9 +20,9 @@
 #include "nmonitor.h"
 #include "ndevicewindow.h"
 
-#include "../utils/timestamp.h"
-#include "../utils/rts2displayvalue.h"
-#include "../utils/riseset.h"
+#include "timestamp.h"
+#include "../../lib/rts2/rts2displayvalue.h"
+#include "riseset.h"
 
 using namespace rts2ncurses;
 

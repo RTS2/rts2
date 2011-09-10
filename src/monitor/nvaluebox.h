@@ -20,9 +20,8 @@
 #ifndef __RTS2_NVALUEBOX__
 #define __RTS2_NVALUEBOX__
 
-#include "../utils/valuearray.h"
-#include "../utils/value.h"
-#include "../utils/valuerectangle.h"
+#include "valuearray.h"
+#include "valuerectangle.h"
 
 #include "nwindow.h"
 #include "nwindowedit.h"

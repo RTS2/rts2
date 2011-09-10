@@ -1,6 +1,6 @@
-#include "../writers/rts2appdbimage.h"
-#include "../writers/imagedb.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2fits/rts2appdbimage.h"
+#include "../../lib/rts2fits/imagedb.h"
+#include "rts2config.h"
 
 #include <iostream>
 

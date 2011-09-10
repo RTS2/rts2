@@ -30,10 +30,10 @@
 #include <stdio.h>
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/rts2devicedb.h"
+#include "../../lib/rts2db/rts2devicedb.h"
 #else
-#include "../utils/device.h"
-#include "../utils/rts2config.h"
+#include "device.h"
+#include "rts2config.h"
 #endif
 
 namespace rts2plan

@@ -20,7 +20,7 @@
 #include "xmlrpcd.h"
 #include "xmlrpc++/XmlRpcException.h"
 #include "xmlrpc++/urlencoding.h"
-#include "../utilsdb/observation.h"
+#include "../../lib/rts2db/observation.h"
 
 #ifdef HAVE_PGSQL
 

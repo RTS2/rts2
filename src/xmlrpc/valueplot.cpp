@@ -23,8 +23,8 @@
 
 #ifdef HAVE_LIBJPEG
 
-#include "../utils/expander.h"
-#include "../utils/libnova_cpp.h"
+#include "../../lib/rts2/expander.h"
+#include "libnova_cpp.h"
 
 using namespace rts2xmlrpc;
 

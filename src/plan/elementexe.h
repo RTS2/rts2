@@ -22,7 +22,7 @@
 
 #include "connexe.h"
 #include "element.h"
-#include "../utils/connfork.h"
+#include "../../lib/rts2/connfork.h"
 
 namespace rts2script
 {

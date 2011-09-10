@@ -23,22 +23,22 @@
 #include "config.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/recvals.h"
-#include "../utilsdb/records.h"
-#include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/targetset.h"
+#include "../../lib/rts2db/recvals.h"
+#include "../../lib/rts2db/records.h"
+#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/targetset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #include "valueplot.h"
 #endif // HAVE_LIBJPEG
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 #else
 
 #endif // HAVE_PGSQL
 
 #include "xmlrpc++/XmlRpc.h"
 
-#include "../utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 #include <string.h>
 
 // maximal age of static documents

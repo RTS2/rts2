@@ -22,8 +22,8 @@
 
 #include <libnova/libnova.h>
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/target.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/target.h"
 
 /**
  * Base of the target application.

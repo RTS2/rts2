@@ -21,7 +21,7 @@
 #include <time.h>
 
 #include "sensord.h"
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 #include "aag.h"
 
 namespace rts2sensord

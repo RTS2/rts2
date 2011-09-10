@@ -22,10 +22,10 @@
 
 #include "nwindow.h"
 
-#include "../utils/block.h"
-#include "../utils/rts2conn.h"
-#include "../utils/rts2client.h"
-#include "../utils/rts2devclient.h"
+#include "block.h"
+#include "rts2conn.h"
+#include "../../lib/rts2/rts2client.h"
+#include "rts2devclient.h"
 
 namespace rts2ncurses
 {

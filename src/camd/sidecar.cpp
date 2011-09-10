@@ -18,8 +18,8 @@
  */
 
 #include "camd.h"
-#include "../utils/utilsfunc.h"
-#include "../utils/conntcp.h"
+#include "utilsfunc.h"
+#include "../../lib/rts2/conntcp.h"
 
 namespace rts2camd
 {

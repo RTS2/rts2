@@ -23,9 +23,9 @@
 #include "script.h"
 #include "devscript.h"
 
-#include "../writers/devcliimg.h"
-#include "../utils/rts2event.h"
-#include "../utils/rts2target.h"
+#include "../../lib/rts2fits/devcliimg.h"
+#include "rts2event.h"
+#include "../../lib/rts2/rts2target.h"
 
 #define EVENT_SCRIPT_STARTED               RTS2_LOCAL_EVENT+50
 #define EVENT_LAST_READOUT                 RTS2_LOCAL_EVENT+51

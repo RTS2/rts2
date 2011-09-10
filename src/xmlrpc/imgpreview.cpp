@@ -21,7 +21,7 @@
 #define	_FILE_OFFSET_BITS 64
 #endif
 
-#include "../writers/image.h"
+#include "../../lib/rts2fits/image.h"
 #include "bsc.h"
 #include "dirsupport.h"
 #ifdef HAVE_LIBARCHIVE

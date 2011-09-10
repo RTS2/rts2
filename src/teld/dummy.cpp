@@ -19,7 +19,7 @@
  */
 
 #include "teld.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #define OPT_MOVE_FAST    OPT_LOCAL + 510
 

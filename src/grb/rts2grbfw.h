@@ -1,8 +1,8 @@
 #ifndef __RTS2_GRBFW__
 #define __RTS2_GRBFW__
 
-#include "../utils/block.h"
-#include "../utils/rts2connnosend.h"
+#include "block.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 /**
  * Defines forward connection.

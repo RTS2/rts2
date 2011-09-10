@@ -21,7 +21,7 @@
 #define __RTS2_MESSAGEEVENTS__
 
 #include "emailaction.h"
-#include "../utils/rts2message.h"
+#include "rts2message.h"
 
 namespace rts2xmlrpc
 {

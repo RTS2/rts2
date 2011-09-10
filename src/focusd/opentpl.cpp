@@ -20,8 +20,8 @@
 
 #define DEBUG_EXTRA
 
-#include "../utils/connopentpl.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2/connopentpl.h"
+#include "rts2config.h"
 
 #include "focusd.h"
 

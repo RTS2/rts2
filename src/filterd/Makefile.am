@@ -1,14 +1,10 @@
 bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy
 
-noinst_HEADERS = filterd.h
-
-noinst_LIBRARIES  = librts2filterd.a
-
 EXTRA_DIST = 
 
-librts2filterd_a_SOURCES = filterd.cpp
+librts2filterd_la_SOURCES = filterd.cpp
 
-LDADD = librts2filterd.a ../utils/librts2block.a @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_filterd_ifw_SOURCES = ifw.cpp

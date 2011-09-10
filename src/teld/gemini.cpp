@@ -28,9 +28,9 @@
 
 #include "teld.h"
 #include "hms.h"
-#include "../utils/connserial.h"
-#include "../utils/rts2config.h"
-#include "../utils/utilsfunc.h"
+#include "../../lib/rts2/connserial.h"
+#include "rts2config.h"
+#include "utilsfunc.h"
 
 #define RATE_SLEW                'S'
 #define RATE_FIND                'M'

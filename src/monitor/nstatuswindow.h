@@ -22,7 +22,7 @@
 
 #include "daemonwindow.h"
 #include "ncomwin.h"
-#include "../utils/rts2client.h"
+#include "../../lib/rts2/rts2client.h"
 
 namespace rts2ncurses
 {

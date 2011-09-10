@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "model/telmodel.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2format.h"
-#include "../utils/rts2cliapp.h"
-#include "../writers/imagedb.h"
+#include "../../lib/rts2/model/telmodel.h"
+#include "libnova_cpp.h"
+#include "rts2format.h"
+#include "../../lib/rts2/rts2cliapp.h"
+#include "../../lib/rts2fits/imagedb.h"
 
 #include <iostream>
 #include <fstream>

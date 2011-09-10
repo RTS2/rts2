@@ -20,7 +20,7 @@
 #include "executorque.h"
 #include "simulque.h"
 #include "script.h"
-#include "../utilsdb/constraints.h"
+#include "../../lib/rts2db/constraints.h"
 
 using namespace rts2plan;
 

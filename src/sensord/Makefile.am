@@ -6,26 +6,12 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-flwo-weather rts2-sensor-thorlaser \
 	rts2-sensor-arduino rts2-sensor-mdm-bait
 
-noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h
-
-noinst_LIBRARIES = librts2sensord.a
+noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h tps534-oak.h \
+	sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h 
 
 EXTRA_DIST = 
 
-if GPIBLIB
-
-librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
-
-else
-
-librts2sensord_a_SOURCES = sensord.cpp
-
-EXTRA_DIST += sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
-
-endif
-
-
-LDADD = librts2sensord.a ../utils/librts2block.a @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
@@ -78,7 +64,7 @@ else
 bin_PROGRAMS += rts2-sensor-tps534
 
 rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c 
-rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD} ../dome/librts2oak.a
+rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD} -L../dome -lrts2oak
 endif
 
 rts2_sensor_flwo_weather_SOURCES = flwo-weather.cpp
@@ -106,7 +92,11 @@ endif
 
 if GPIBLIB
 
-LDADD += @LIB_GPIB@
+lib_LTLIBRARIES = librts2sensorgpib.la
+
+librts2sensorgpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
+
+LDADD += @LIB_GPIB@ -lrts2sensorgpib
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
@@ -130,7 +120,8 @@ rts2_sensor_mm2500_SOURCES = mm2500.cpp
 
 else
 
-EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp mm2500.cpp lakeshore-330.cpp lakeshore-340.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp mm2500.cpp lakeshore-330.cpp lakeshore-340.cpp \
+	sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
 endif
 

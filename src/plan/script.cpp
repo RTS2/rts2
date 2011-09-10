@@ -30,7 +30,7 @@
 #include "elementacquire.h"
 #endif							 /* HAVE_PGSQL */
 
-#include "../utilsdb/scriptcommands.h"
+#include "../../lib/rts2db/scriptcommands.h"
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>

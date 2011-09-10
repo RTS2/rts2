@@ -24,13 +24,13 @@
 #include "elementblock.h"
 #include <config.h>
 
-#include "../utils/counted_ptr.h"
-#include "../utils/block.h"
-#include "../utils/rts2command.h"
-#include "../utils/rts2devclient.h"
-#include "../utils/rts2target.h"
-#include "../utilsdb/rts2camlist.h"
-#include "../writers/image.h"
+#include "../../lib/rts2/counted_ptr.h"
+#include "block.h"
+#include "rts2command.h"
+#include "rts2devclient.h"
+#include "../../lib/rts2/rts2target.h"
+#include "../../lib/rts2db/rts2camlist.h"
+#include "../../lib/rts2fits/image.h"
 
 #include <list>
 

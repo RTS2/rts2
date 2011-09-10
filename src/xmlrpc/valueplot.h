@@ -22,7 +22,7 @@
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>
-#include "../utilsdb/records.h"
+#include "../../lib/rts2db/records.h"
 #include "plot.h"
 
 namespace rts2xmlrpc

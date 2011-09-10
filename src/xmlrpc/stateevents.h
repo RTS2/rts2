@@ -24,7 +24,7 @@
 #include <list>
 
 #include "emailaction.h"
-#include "../utils/rts2conn.h"
+#include "rts2conn.h"
 
 namespace rts2xmlrpc
 {

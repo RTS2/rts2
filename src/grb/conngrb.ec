@@ -18,9 +18,9 @@
  */
 
 #include "conngrb.h"
-#include "../utils/connfork.h"
-#include "../utils/libnova_cpp.h"
-#include "../utilsdb/sqlerror.h"
+#include "../../lib/rts2/connfork.h"
+#include "libnova_cpp.h"
+#include "../../lib/rts2db/sqlerror.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -682,7 +682,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	int grb_isnew = 0;
 
-	if ((master->getRecordNotVisble () == false) && 
+	if ((master->getRecordNotVisible () == false) && 
 		((master->observer->lat > 0 && grb_dec < (master->observer->lat - 90 ))
 		 || (master->observer->lat < 0 && grb_dec > (master->observer->lat + 90 ))
 	        )

@@ -20,10 +20,10 @@
 #include <sstream>
 #include <fstream>
 
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #include "teld.h"
-#include "../utils/connopentpl.h"
+#include "../../lib/rts2/connopentpl.h"
 
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2

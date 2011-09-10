@@ -20,7 +20,7 @@
 #ifndef __RTS2_AUGERSHOOTER__
 #define __RTS2_AUGERSHOOTER__
 
-#include "../utilsdb/rts2devicedb.h"
+#include "../../lib/rts2db/rts2devicedb.h"
 #include "connshooter.h"
 
 #define RTS2_EVENT_AUGER_SHOWER   RTS2_LOCAL_EVENT + 700

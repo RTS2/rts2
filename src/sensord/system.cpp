@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/statvfs.h>
 #include <iostream>
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #define OPT_STORAGE         OPT_LOCAL + 601
 

@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2devclient.h"
-#include "../utils/rts2displayvalue.h"
-#include "../utils/rts2command.h"
-#include "../utils/expander.h"
-#include "../utils/utilsfunc.h"
+#include "rts2devclient.h"
+#include "../../lib/rts2/rts2displayvalue.h"
+#include "rts2command.h"
+#include "../../lib/rts2/expander.h"
+#include "utilsfunc.h"
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800
 

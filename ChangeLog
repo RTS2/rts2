@@ -2,6 +2,7 @@
  * change_constraints API
 
 2011-09-04
+ * Moved libs to lib directory
  * Startup and Shutdown states
 
 2011-08-14

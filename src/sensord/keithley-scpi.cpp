@@ -19,7 +19,7 @@
 
 #include "sensorgpib.h"
 
-#include "../utils/error.h"
+#include "error.h"
 
 namespace rts2sensord
 {

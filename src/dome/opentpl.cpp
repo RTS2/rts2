@@ -18,8 +18,8 @@
  */
 
 #include "dome.h"
-#include "../utils/connopentpl.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2/connopentpl.h"
+#include "rts2config.h"
 
 #include <libnova/libnova.h>
 

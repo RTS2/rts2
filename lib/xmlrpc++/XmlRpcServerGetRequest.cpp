@@ -3,7 +3,7 @@
 #include "urlencoding.h"
 #include "XmlRpcServerGetRequest.h"
 #include "XmlRpcServer.h"
-#include "../../src/utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 
 #include "string.h"
 #include <stdlib.h>

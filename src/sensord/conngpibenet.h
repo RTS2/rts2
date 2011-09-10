@@ -22,8 +22,8 @@
 
 #include "conngpib.h"
 
-#include "../utils/block.h"
-#include "../utils/conntcp.h"
+#include "block.h"
+#include "../../lib/rts2/conntcp.h"
 
 
 namespace rts2sensord

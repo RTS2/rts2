@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/block.h"
-#include "../utils/rts2connnosend.h"
+#include "block.h"
+#include "../../lib/rts2/rts2connnosend.h"
 #include "grbconst.h"
 #include "grbd.h"
 #include "rts2grbfw.h"

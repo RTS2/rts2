@@ -20,7 +20,7 @@
 #ifndef __RTS2_CONN_GPIB__
 #define __RTS2_CONN_GPIB__
 
-#include "../utils/value.h"
+#include "value.h"
 
 #include <list>
 

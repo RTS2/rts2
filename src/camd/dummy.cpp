@@ -18,7 +18,7 @@
  */
 
 #include "camd.h"
-#include "../utils/utilsfunc.h"
+#include "utilsfunc.h"
 
 #define OPT_WIDTH        OPT_LOCAL + 1
 #define OPT_HEIGHT       OPT_LOCAL + 2

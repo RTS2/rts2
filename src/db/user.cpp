@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/userset.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/userset.h"
 
-#include "../utils/rts2askchoice.h"
-#include "../utils/rts2target.h"
+#include "../../lib/rts2/rts2askchoice.h"
+#include "../../lib/rts2/rts2target.h"
 
 using namespace rts2db;
 

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = librts2xmlrpc.a
+lib_LTLIBRARIES = librts2xmlrpc.la
 
 noinst_HEADERS = \
 	base64.h \
@@ -16,7 +16,7 @@ noinst_HEADERS = \
 	XmlRpcUtil.h \
 	XmlRpcValue.h
 
-librts2xmlrpc_a_SOURCES = \
+librts2xmlrpc_la_SOURCES = \
 	urlencoding.cpp \
 	XmlRpcClient.cpp \
 	XmlRpcDispatch.cpp \
@@ -29,4 +29,4 @@ librts2xmlrpc_a_SOURCES = \
 	XmlRpcUtil.cpp \
 	XmlRpcValue.cpp
 
-librts2xmlrpc_a_CXXFLAGS = @NOVA_CFLAGS@
+librts2xmlrpc_la_CXXFLAGS = @NOVA_CFLAGS@

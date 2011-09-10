@@ -24,19 +24,19 @@
 #include "httpreq.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/targetset.h"
-#include "../utilsdb/rts2camlist.h"
+#include "../../lib/rts2db/targetset.h"
+#include "../../lib/rts2db/rts2camlist.h"
 #if defined(HAVE_LIBJPEG)
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 #else
 
 #endif // HAVE_PGSQL
 
 #include "xmlrpc++/XmlRpc.h"
 
-#include "../utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 
 namespace rts2xmlrpc
 {

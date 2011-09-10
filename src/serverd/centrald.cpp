@@ -18,10 +18,10 @@
  */
 
 #include "centrald.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2command.h"
-#include "../utils/rts2centralstate.h"
-#include "../utils/timestamp.h"
+#include "libnova_cpp.h"
+#include "rts2command.h"
+#include "../../lib/rts2/rts2centralstate.h"
+#include "timestamp.h"
 
 void Rts2ConnCentrald::setState (int in_value, char *msg)
 {

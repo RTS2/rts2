@@ -22,10 +22,10 @@
 
 #include "operands.h"
 #include "rts2spiral.h"
-#include "../writers/image.h"
-#include "../utils/rts2object.h"
-#include "../utils/block.h"
-#include "../utilsdb/scriptcommands.h"
+#include "../../lib/rts2fits/image.h"
+#include "rts2object.h"
+#include "block.h"
+#include "../../lib/rts2db/scriptcommands.h"
 
 #include "status.h"
 

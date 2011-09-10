@@ -20,8 +20,8 @@
 #ifndef __RTS2_EXECUTORQUEUE__
 #define __RTS2_EXECUTORQUEUE__
 
-#include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/target.h"
+#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/target.h"
 
 // queue modes
 #define QUEUE_FIFO                   0

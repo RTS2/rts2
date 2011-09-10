@@ -31,7 +31,8 @@
 #define SERIAL_SLEEP 600000 //time to sleep before sending command
 #define SERIAL_TIMEOUT 300
 
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
+
 enum DomeStatus
 {
      ERROR=-1, OPENED, CLOSED, OPENING, CLOSING

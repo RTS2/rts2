@@ -19,11 +19,11 @@
 
 #define DEBUG_EXTRA
 
-#include "fork.h"
+#include "../../lib/rts2/fork.h"
 
-#include "../utils/rts2config.h"
-#include "../utils/connserial.h"
-#include "../utils/libnova_cpp.h"
+#include "rts2config.h"
+#include "../../lib/rts2/connserial.h"
+#include "libnova_cpp.h"
 
 namespace rts2teld
 {

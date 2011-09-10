@@ -21,10 +21,10 @@
 
 #include "script.h"
 
-#include "../utils/rts2config.h"
-#include "../utils/utilsfunc.h"
-#include "../writers/image.h"
-#include "../writers/devclifoc.h"
+#include "rts2config.h"
+#include "utilsfunc.h"
+#include "../../lib/rts2fits/image.h"
+#include "../../lib/rts2fits/devclifoc.h"
 
 using namespace rts2script;
 using namespace rts2image;

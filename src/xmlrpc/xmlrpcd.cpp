@@ -21,10 +21,10 @@
 #include "xmlrpcd.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/messagedb.h"
+#include "../../lib/rts2db/messagedb.h"
 #else
-#include "../utils/rts2config.h"
-#include "../utils/device.h"
+#include "rts2config.h"
+#include "device.h"
 #endif /* HAVE_PGSQL */
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
@@ -76,7 +76,7 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
 	delete lastImage;
-	lastImage = new rts2image::Image ("/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
+	lastImage = new rts2image::Image ("!/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
 	lastImage->keepImage ();
 	return lastImage;
 }

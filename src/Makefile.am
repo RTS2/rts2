@@ -1,13 +1,10 @@
 
 SUBDIRS = \
-	utils	\
 	serverd \
 	phot	\
 	dome	\
 	focusd  \
 	mirror  \
-	utilsdb \
-	writers \
 	plan \
 	db \
 	monitor \

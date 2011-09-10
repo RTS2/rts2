@@ -19,8 +19,8 @@
 
 #include "rts2schedbag.h"
 
-#include "../utils/rts2config.h"
-#include "../utils/utilsfunc.h"
+#include "rts2config.h"
+#include "utilsfunc.h"
 
 #include <algorithm>
 #include <stdexcept>

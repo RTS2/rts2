@@ -3,9 +3,9 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "../utils/block.h"
-#include "../utils/rts2client.h"
-#include "../utils/rts2command.h"
+#include "block.h"
+#include "../../lib/rts2/rts2client.h"
+#include "rts2command.h"
 
 using namespace std;
 

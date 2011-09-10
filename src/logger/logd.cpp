@@ -18,7 +18,7 @@
  */
 
 #include "rts2loggerbase.h"
-#include "../utils/device.h"
+#include "device.h"
 
 class Rts2Logd:public rts2core::Device, public Rts2LoggerBase
 {

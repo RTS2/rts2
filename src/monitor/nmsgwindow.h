@@ -21,7 +21,7 @@
 #define __RTS2_NMSGWINDOW__
 
 #include "daemonwindow.h"
-#include "../utils/rts2message.h"
+#include "rts2message.h"
 
 #include <list>
 

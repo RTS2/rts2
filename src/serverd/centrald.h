@@ -20,13 +20,13 @@
 #ifndef __RTS2_CENTRALD__
 #define __RTS2_CENTRALD__
 
-#include "../utils/riseset.h"
+#include "riseset.h"
 
 #include <libnova/libnova.h>
 
 #include <config.h>
-#include "../utils/daemon.h"
-#include "../utils/rts2config.h"
+#include "daemon.h"
+#include "rts2config.h"
 #include "status.h"
 
 using namespace rts2core;

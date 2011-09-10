@@ -21,7 +21,7 @@
 #define OPT_HOME     OPT_LOCAL + 236
 
 #include "focusd.h"
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 // AVAILABLE COMMANDS IN ATC-02:
 //     OPENREM   +(CR/LF)   open communication between C and ATC-02

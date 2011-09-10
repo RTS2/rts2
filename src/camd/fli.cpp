@@ -283,6 +283,7 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('N', NULL, 1, "Camera serial number (string, device name)");
 	addOption ('b', NULL, 0, "use background flush");
 	addOption ('l', NULL, 1, "Number of CCD flushes");
+	addOption ('f', NULL, 1, "FLI device path");
 }
 
 Fli::~Fli (void)

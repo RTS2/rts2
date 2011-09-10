@@ -19,15 +19,15 @@
  */
 
 #include "xmlrpc++/XmlRpc.h"
-#include "../utils/rts2cliapp.h"
+#include "../../lib/rts2/rts2cliapp.h"
 #include <iostream>
 #include <vector>
 #include <string.h>
 #include <iomanip>
 
 #include "r2x.h"
-#include "../utils/rts2configraw.h"
-#include "../utils/libnova_cpp.h"
+#include "rts2configraw.h"
+#include "libnova_cpp.h"
 
 using namespace XmlRpc;
 

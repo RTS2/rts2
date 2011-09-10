@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../writers/image.h"
+#include "../../lib/rts2fits/image.h"
 
 #include <unistd.h>
 #include <iostream>

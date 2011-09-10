@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/utilsfunc.h"
-#include "../utilsdb/rts2appdb.h"
-#include "../writers/imagedb.h"
+#include "utilsfunc.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2fits/imagedb.h"
 
 #include <iostream>
 #include <list>

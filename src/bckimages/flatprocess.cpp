@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 #include <fitsio.h>
 
 #include <dirent.h>

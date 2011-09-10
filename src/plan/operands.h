@@ -20,9 +20,9 @@
 #ifndef __RTS2_OPERANDS__
 #define __RTS2_OPERANDS__
 
-#include "../utils/error.h"
-#include "../utils/utilsfunc.h"
-#include "../utils/block.h"
+#include "error.h"
+#include "utilsfunc.h"
+#include "block.h"
 
 #include <vector>
 #include <ostream>

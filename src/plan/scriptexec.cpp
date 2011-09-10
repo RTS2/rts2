@@ -21,7 +21,7 @@
 #include "rts2execcli.h"
 #include "rts2devcliphot.h"
 
-#include "../utils/rts2config.cpp"
+#include "rts2config.h"
 
 #include <iostream>
 #include <fstream>

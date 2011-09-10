@@ -20,10 +20,10 @@
 #include "connimgprocess.h"
 #include "script.h"
 
-#include "../utils/rts2command.h"
-#include "../utils/rts2config.h"
-#include "../utils/utilsfunc.h"
-#include "../utilsdb/rts2taruser.h"
+#include "rts2command.h"
+#include "rts2config.h"
+#include "utilsfunc.h"
+#include "../../lib/rts2db/rts2taruser.h"
 
 #include <errno.h>
 #include <sys/types.h>

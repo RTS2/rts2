@@ -1,0 +1,70 @@
+# Process this file with automake to produce Makefile.in
+
+SUBDIRS = model
+
+noinst_PROGRAMS = test
+
+bin_PROGRAMS=rts2-horizon
+
+AM_CXXFLAGS=@NOVA_CFLAGS@
+
+test_SOURCES = test.cpp
+test_LDADD = -lrts2 @LIB_NOVA@
+
+lib_LTLIBRARIES = librts2.la
+
+librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp option.cpp \
+	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp value.cpp valuestat.cpp \
+	rts2devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp rts2connnosend.cpp \
+	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
+	rts2message.cpp conntcp.cpp connnotify.cpp connudp.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
+	rts2target.cpp rts2displayvalue.cpp scriptdevice.cpp \
+	rts2cliapp.cpp valueminmax.cpp expander.cpp \
+	riseset.cpp valuerectangle.cpp rts2data.cpp radecparser.cpp \
+	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
+	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
+	teld.cpp camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp domeford.cpp phot.cpp rotad.cpp \
+	gem.cpp fork.cpp tgdrive.cpp \
+	clicupola.cpp cliwheel.cpp clifocuser.cpp
+
+librts2_la_LIBADD = model/librts2model.la
+
+EXTRA_DIST =
+
+# CYGWIN workaround
+if NOT_GETADDRINFO
+librts2_la_SOURCES += getaddrinfo.c
+else
+EXTRA_DIST += getaddrinfo.c
+endif
+
+if NOT_GETOPT_LONG
+librts2_la_SOURCES += getopt_own.c
+else
+EXTRA_DIST += getopt_own.c
+endif
+
+noinst_HEADERS = rts2connnosend.h connfork.h rts2askchoice.h infoval.h \
+	conntcp.h connnotify.h connudp.h rts2centralstate.h rts2target.h \
+	rts2displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
+	radecparser.h connserial.h connmodbus.h domeford.h \
+	getopt_own.h connopentpl.h connepics.h connford.h counted_ptr.h expression.h nimotion.h \
+	gem.h fork.h tgdrive.h \
+	connbait.h clicupola.h cliwheel.h clifocuser.h
+
+if EPICS
+lib_LTLIBRARIES += librts2epics.la
+librts2epics_la_SOURCES = connepics.cpp
+librts2epics_la_CXXFLAGS = @INC_EPICS@ @NOVA_CFLAGS@
+else
+EXTRA_DIST += connepics.cpp
+endif
+
+if SUNOS
+EXTRA_DIST += nimotion.c
+else
+librts2_la_SOURCES += nimotion.c
+endif
+
+rts2_horizon_SOURCES = horizonapp.cpp
+rts2_horizon_LDADD = -lrts2 @LIB_NOVA@

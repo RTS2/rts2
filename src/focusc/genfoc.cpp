@@ -18,8 +18,8 @@
  */
 
 #include "genfoc.h"
-#include "../utils/rts2config.h"
-#include "../writers/memimage.h"
+#include "rts2config.h"
+#include "../../lib/rts2fits/memimage.h"
 
 #include <iostream>
 #include <iomanip>

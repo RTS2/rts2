@@ -23,9 +23,9 @@
 
 #include <algorithm>
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/target.h"
-#include "../utils/rts2askchoice.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/target.h"
+#include "../../lib/rts2/rts2askchoice.h"
 
 namespace rts2plan
 {

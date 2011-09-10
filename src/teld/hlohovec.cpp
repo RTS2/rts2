@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "tgdrive.h"
-#include "gem.h"
+#include "../../lib/rts2/tgdrive.h"
+#include "../../lib/rts2/gem.h"
 
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202

@@ -18,9 +18,9 @@
  */
 
 #include "printtarget.h"
-#include "../utilsdb/sqlerror.h"
-#include "../utilsdb/targetset.h"
-#include "../utilsdb/target_auger.h"
+#include "../../lib/rts2db/sqlerror.h"
+#include "../../lib/rts2db/targetset.h"
+#include "../../lib/rts2db/target_auger.h"
 
 #define OPT_AUGER_ID              OPT_LOCAL + 501
 #define OPT_ID_ONLY               OPT_LOCAL + 502

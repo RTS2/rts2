@@ -13,7 +13,7 @@
  */
 
 #include "tellx200.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #define RATE_FIND 'M'
 #define DIR_NORTH 'n'

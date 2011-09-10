@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBCONN__
 #define __RTS2_GRBCONN__
 
-#include "../utils/rts2connnosend.h"
+#include "../../lib/rts2/rts2connnosend.h"
 
 #include "grbconst.h"
 #include "grbd.h"

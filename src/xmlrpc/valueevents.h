@@ -20,8 +20,8 @@
 #ifndef __RTS2__VALUEEVENTS__
 #define __RTS2__VALUEEVENTS__
 
-#include "../utils/value.h"
-#include "../utils/expression.h"
+#include "value.h"
+#include "../../lib/rts2/expression.h"
 
 #include "emailaction.h"
 

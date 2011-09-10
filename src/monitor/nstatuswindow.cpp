@@ -19,7 +19,7 @@
 
 #include "nmonitor.h"
 #include "nstatuswindow.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 using namespace rts2ncurses;
 

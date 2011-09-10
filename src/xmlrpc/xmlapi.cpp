@@ -23,21 +23,21 @@
 #include "xmlstream.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/recvals.h"
-#include "../utilsdb/records.h"
-#include "../utilsdb/recordsavg.h"
-#include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/imageset.h"
-#include "../utilsdb/observationset.h"
-#include "../utilsdb/messagedb.h"
-#include "../utilsdb/targetset.h"
-#include "../utilsdb/user.h"
-#include "../utilsdb/sqlerror.h"
+#include "../../lib/rts2db/recvals.h"
+#include "../../lib/rts2db/records.h"
+#include "../../lib/rts2db/recordsavg.h"
+#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/imageset.h"
+#include "../../lib/rts2db/observationset.h"
+#include "../../lib/rts2db/messagedb.h"
+#include "../../lib/rts2db/targetset.h"
+#include "../../lib/rts2db/user.h"
+#include "../../lib/rts2db/sqlerror.h"
 #include "../scheduler/ticket.h"
-#include "../writers/imagedb.h"
+#include "../../lib/rts2fits/imagedb.h"
 #else
-#include "../utils/rts2config.h"
-#include "../utils/device.h"
+#include "rts2config.h"
+#include "device.h"
 #endif /* HAVE_PGSQL */
 
 using namespace rts2xmlrpc;

@@ -22,9 +22,9 @@
 
 #include "rts2targetscr.h"
 #include "rts2scriptinterface.h"
-#include "../utils/connfork.h"
-#include "../utils/rts2client.h"
-#include "../utils/rts2target.h"
+#include "../../lib/rts2/connfork.h"
+#include "../../lib/rts2/rts2client.h"
+#include "../../lib/rts2/rts2target.h"
 
 class Rts2TargetScr;
 

@@ -20,8 +20,8 @@
 #include "bbserver.h"
 #include "r2x.h"
 
-#include "../utils/hoststring.h"
-#include "../utils/daemon.h"
+#include "hoststring.h"
+#include "daemon.h"
 
 using namespace rts2xmlrpc;
 

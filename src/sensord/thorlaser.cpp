@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 #define CHAN_NUM   4
 

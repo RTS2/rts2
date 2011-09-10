@@ -18,7 +18,7 @@
  */
 
 #include "rts2loggerbase.h"
-#include "../utils/rts2client.h"
+#include "../../lib/rts2/rts2client.h"
 
 class Rts2Logger:public Rts2Client, public Rts2LoggerBase
 {

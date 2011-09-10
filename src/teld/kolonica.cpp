@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "fork.h"
+#include "../../lib/rts2/fork.h"
 
-#include "../utils/connserial.h"
+#include "../../lib/rts2/connserial.h"
 
 namespace rts2teld
 {

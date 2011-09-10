@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/connudp.h"
+#include "../../lib/rts2/connudp.h"
 
 #include <fstream>
 #include <sstream>

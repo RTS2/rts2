@@ -20,13 +20,13 @@
 
 #include "xmlrpcd.h"
 
-#include "../utilsdb/constraints.h"
-#include "../utilsdb/planset.h"
+#include "../../lib/rts2db/constraints.h"
+#include "../../lib/rts2db/planset.h"
 #include "../plan/script.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/labellist.h"
-#include "../utilsdb/simbadtarget.h"
+#include "../../lib/rts2db/labellist.h"
+#include "../../lib/rts2db/simbadtarget.h"
 #endif
 
 using namespace rts2xmlrpc;

@@ -18,8 +18,8 @@
  */
 
 #include "libcss.h"
-#include "../utils/utilsfunc.h"
-#include "../utils/error.h"
+#include "utilsfunc.h"
+#include "error.h"
 
 using namespace rts2xmlrpc;
 

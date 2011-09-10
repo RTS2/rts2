@@ -19,7 +19,7 @@
 
 #include "framudp.h"
 #include "fram-weather.h"
-#include "../utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 
 #include <fcntl.h>
 #include <errno.h>

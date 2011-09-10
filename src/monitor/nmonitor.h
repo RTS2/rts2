@@ -24,14 +24,14 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#include "../utils/block.h"
-#include "../utils/rts2client.h"
-#include "../utils/rts2command.h"
+#include "block.h"
+#include "../../lib/rts2/rts2client.h"
+#include "rts2command.h"
 
-#include "../writers/devcliimg.h"
+#include "../../lib/rts2fits/devcliimg.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/simbadtarget.h"
+#include "../../lib/rts2db/simbadtarget.h"
 #endif
 
 #include "nlayout.h"

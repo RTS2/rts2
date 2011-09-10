@@ -21,9 +21,9 @@
 #include "expandstrings.h"
 #include "xmlrpcd.h"
 
-#include "../utils/block.h"
-#include "../utils/rts2conn.h"
-#include "../utils/rts2displayvalue.h"
+#include "block.h"
+#include "rts2conn.h"
+#include "../../lib/rts2/rts2displayvalue.h"
 
 using namespace rts2xmlrpc;
 

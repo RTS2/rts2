@@ -6,6 +6,8 @@ AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
+LT_INIT()
+
 AC_PREREQ(2.50)
 
 AM_MAINTAINER_MODE
@@ -747,6 +749,7 @@ AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
 
 AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
+AX_PREFIX_CONFIG_H(include/rts2core-config.h,RTS2CORE)
 
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
@@ -764,6 +767,10 @@ AC_OUTPUT([Makefile
 	   doc/doxyfile
 	   lib/Makefile
 	   lib/xmlrpc++/Makefile
+	   lib/rts2/Makefile
+	   lib/rts2/model/Makefile
+	   lib/rts2fits/Makefile
+	   lib/rts2db/Makefile
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
@@ -793,10 +800,6 @@ AC_OUTPUT([Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
 	   src/teld/Makefile
-	   src/teld/model/Makefile
-	   src/utils/Makefile
-	   src/writers/Makefile
-	   src/utilsdb/Makefile
 	   src/db/Makefile
 	   src/sensord/Makefile
 	   src/rotad/Makefile

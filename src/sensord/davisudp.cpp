@@ -19,7 +19,7 @@
 
 #include "davis.h"
 #include "davisudp.h"
-#include "../utils/utilsfunc.h"
+#include "utilsfunc.h"
 
 #include <fcntl.h>
 

@@ -22,13 +22,13 @@
 #include "xmlrpc++/urlencoding.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/observationset.h"
-#include "../utilsdb/imageset.h"
+#include "../../lib/rts2db/observationset.h"
+#include "../../lib/rts2db/imageset.h"
 #ifdef HAVE_LIBJPEG
 #include "altaz.h"
 #include "altplot.h"
 #endif // HAVE_LIBJPEG
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;

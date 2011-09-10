@@ -19,8 +19,8 @@
  */
 
 #include "httpreq.h"
-#include "../utils/block.h"
-#include "../utilsdb/imageset.h"
+#include "block.h"
+#include "../../lib/rts2db/imageset.h"
 
 namespace rts2xmlrpc
 {

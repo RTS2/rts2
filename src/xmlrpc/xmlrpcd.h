@@ -26,10 +26,10 @@
 #include <deque>
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/rts2devicedb.h"
+#include "../../lib/rts2db/rts2devicedb.h"
 #else
-#include "../utils/rts2config.h"
-#include "../utils/device.h"
+#include "rts2config.h"
+#include "device.h"
 #endif /* HAVE_PGSQL */
 
 #include "directory.h"
@@ -53,8 +53,8 @@
 #include "libcss.h"
 #include "api.h"
 #include "images.h"
-#include "../utils/connnotify.h"
-#include "../writers/devcliimg.h"
+#include "../../lib/rts2/connnotify.h"
+#include "../../lib/rts2fits/devcliimg.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 

@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/plan.h"
-#include "../utilsdb/planset.h"
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2config.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/plan.h"
+#include "../../lib/rts2db/planset.h"
+#include "libnova_cpp.h"
+#include "rts2config.h"
 
 #include <signal.h>
 #include <iostream>

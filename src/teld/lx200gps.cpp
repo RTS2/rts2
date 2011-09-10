@@ -44,7 +44,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 #include <termios.h>
 // uncomment following line, if you want all tel_desc read logging (will

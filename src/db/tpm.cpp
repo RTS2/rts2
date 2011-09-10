@@ -27,10 +27,10 @@
 #include <ostream>
 #include <iostream>
 
-#include "../utils/rts2cliapp.h"
-#include "../utils/rts2config.h"
-#include "../utils/rts2format.h"
-#include "../writers/image.h"
+#include "../../lib/rts2/rts2cliapp.h"
+#include "rts2config.h"
+#include "rts2format.h"
+#include "../../lib/rts2fits/image.h"
 
 class TPM:public Rts2CliApp
 {

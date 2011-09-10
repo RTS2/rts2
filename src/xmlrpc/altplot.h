@@ -22,8 +22,8 @@
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>
-#include "../utilsdb/imageset.h"
-#include "../utilsdb/targetset.h"
+#include "../../lib/rts2db/imageset.h"
+#include "../../lib/rts2db/targetset.h"
 #include "plot.h"
 
 namespace rts2xmlrpc

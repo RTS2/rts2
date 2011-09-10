@@ -16,8 +16,8 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	libjavascript.cpp libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp \
 	expandstrings.cpp xmlapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDADD= ../scheduler/librts2scheduler.a ../plan/libscript.a ../utilsdb/librts2blockdb.a \
-	../writers/librts2imagedb.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIBPG_LIBS@ \
+rts2_xmlrpcd_LDADD= -L../scheduler -lrts2scheduler -L../plan -lscript -L../../lib/rts2db -lrts2db \
+	-L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIBPG_LIBS@ \
 	@LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ $(AM_LDFLAGS)
 
 CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
@@ -32,7 +32,7 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	libcss.cpp bbserver.cpp api.cpp images.cpp messageevents.cpp switchstatereq.cpp directory.cpp expandstrings.cpp \
 	xmlapi.cpp
 rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcd_LDADD = ../db/simbad/libsimbad.a ../writers/librts2image.a ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a \
+rts2_xmlrpcd_LDADD = -L../db/simbad -lsimbad -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc \
 	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ ${AM_LDADD}
 
 endif
@@ -41,4 +41,4 @@ EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec graphreq.cpp
 
 rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcclient_LDADD = ../utils/librts2block.a ../../lib/xmlrpc++/librts2xmlrpc.a @LIB_NOVA@ $(AM_LDADD)
+rts2_xmlrpcclient_LDADD = -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIB_NOVA@ $(AM_LDADD)

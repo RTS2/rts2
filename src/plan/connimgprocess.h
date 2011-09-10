@@ -22,8 +22,8 @@
 #define __RTS2CONNIMGPROCESS__
 
 #include "connexe.h"
-#include "../writers/imagedb.h"
-#include "../utilsdb/observation.h"
+#include "../../lib/rts2fits/imagedb.h"
+#include "../../lib/rts2db/observation.h"
 
 namespace rts2plan
 {

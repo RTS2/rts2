@@ -18,7 +18,7 @@
  */
 
 #include "connshooter.h"
-#include "../utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 
 #include <errno.h>
 #include <netdb.h>

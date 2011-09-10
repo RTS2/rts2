@@ -18,8 +18,8 @@
  */
 
 #include "connexe.h"
-#include "../utils/rts2command.h"
-#include "../utils/daemon.h"
+#include "rts2command.h"
+#include "daemon.h"
 
 using namespace rts2script;
 

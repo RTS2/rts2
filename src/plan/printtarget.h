@@ -17,14 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/constraints.h"
-#include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2camlist.h"
-#include "../utilsdb/target.h"
-#include "../utilsdb/observationset.h"
-#include "../utils/rts2config.h"
-#include "../utils/rts2format.h"
-#include "../utils/libnova_cpp.h"
+#include "../../lib/rts2db/constraints.h"
+#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/rts2camlist.h"
+#include "../../lib/rts2db/target.h"
+#include "../../lib/rts2db/observationset.h"
+#include "rts2config.h"
+#include "rts2format.h"
+#include "libnova_cpp.h"
 #include "script.h"
 
 #include <iostream>

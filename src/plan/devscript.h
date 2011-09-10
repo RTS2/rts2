@@ -22,9 +22,9 @@
 
 #include "script.h"
 
-#include "../utils/rts2object.h"
-#include "../utils/block.h"
-#include "../utils/rts2target.h"
+#include "rts2object.h"
+#include "block.h"
+#include "../../lib/rts2/rts2target.h"
 
 namespace rts2script
 {

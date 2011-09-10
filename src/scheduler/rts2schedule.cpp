@@ -18,8 +18,8 @@
  */
 
 #include "rts2schedule.h"
-#include "../utilsdb/accountset.h"
-#include "../utilsdb/targetset.h"
+#include "../../lib/rts2db/accountset.h"
+#include "../../lib/rts2db/targetset.h"
 
 using namespace rts2db;
 

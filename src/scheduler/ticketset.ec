@@ -18,7 +18,7 @@
  */
 
 #include "ticketset.h"
-#include "../utilsdb/sqlerror.h"
+#include "../../lib/rts2db/sqlerror.h"
 
 using namespace rts2sched;
 
