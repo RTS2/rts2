@@ -90,7 +90,7 @@ void MessageSet::load (double from, double to, int type_mask)
 	int d_type_mask = type_mask;
 
 	double d_message_time;
-	varchar d_message_oname[8];
+	varchar d_message_oname[9];
 	int d_message_type;
 	varchar d_message_string[200];
 	EXEC SQL END DECLARE SECTION;
@@ -119,6 +119,7 @@ void MessageSet::load (double from, double to, int type_mask)
 			:d_message_string;
 		if (sqlca.sqlcode)
 			break;
+		d_message_oname.arr[d_message_oname.len] = '\0';
 		push_back (MessageDB (d_message_time, d_message_oname.arr, d_message_type, d_message_string.arr));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
