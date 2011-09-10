@@ -695,6 +695,33 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			delete tar;
 		}
+		else if (vals[0] == "tlabs_delete")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			int ltype = params->getInteger ("ltype", -1);
+			if (ltype < 0)
+				throw JSONException ("unknow/missing label type");
+			tar->deleteLabels (ltype);
+			jsonLabels (tar, os);
+		}
+		else if (vals[0] == "tlabs_add")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			int ltype = params->getInteger ("ltype", -1);
+			if (ltype < 0)
+				throw JSONException ("unknow/missing label type");
+			const char *ltext = params->getString ("ltext", NULL);
+			if (ltext == NULL)
+				throw JSONException ("missing label text");
+			tar->addLabel (ltext, ltype, true);
+			jsonLabels (tar, os);
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
@@ -1080,6 +1107,21 @@ void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpP
 			<< (*iter)->getAbsoluteFileName () << "\"]";
 	}
 
+	os << "]";
+}
+
+void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
+{
+	std::vector <std::pair <int, std::string> > tlabels = tar->getLabels ();
+	os << "\"id\":" << tar->getTargetID () << ",\"labels\":[";
+	for (std::vector <std::pair <int, std::string> >::iterator iter = tlabels.begin (); iter != tlabels.end (); iter++)
+	{
+		if (iter == tlabels.begin ())
+			os << "[";
+		else
+			os << ",[";
+		os << iter->first << ",\"" << iter->second << "\"";
+	}
 	os << "]";
 }
 #endif // HAVE_PGSQL

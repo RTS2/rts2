@@ -102,6 +102,7 @@ class API:public GetRequestAuthorized
 #ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
+		void jsonLabels (rts2db::Target *tar, std::ostream &os);
 #endif
 };
 

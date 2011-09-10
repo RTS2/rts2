@@ -730,6 +730,10 @@ class Target:public Rts2Target
 		 */
 		std::vector <std::pair <int, std::string> > getLabels () { return labels.getTargetLabels (getTargetID ()); }
 
+		void deleteLabels (int ltype) { labels.deleteTargetLabels (getTargetID (), ltype); }
+
+		void addLabel (const char *label, int ltype, bool create) { labels.addLabel (getTargetID (), label, ltype, create); }
+
 	protected:
 		char *target_comment;
 		struct ln_lnlat_posn *observer;

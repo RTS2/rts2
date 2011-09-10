@@ -978,8 +978,8 @@ std::string Target::getPIName ()
 
 void Target::setPIName (const char *name)
 {
-	labels.deleteTargetLabels (getTargetID (), LABEL_PI);
- 	labels.addLabel (getTargetID (), name, LABEL_PI, true);
+	deleteLabels (LABEL_PI);
+ 	addLabel (name, LABEL_PI, true);
 }
 
 std::string Target::getProgramName ()
@@ -992,8 +992,8 @@ std::string Target::getProgramName ()
 
 void Target::setProgramName (const char *program)
 {
-	labels.deleteTargetLabels (getTargetID (), LABEL_PROGRAM);
- 	labels.addLabel (getTargetID (), program, LABEL_PROGRAM, true);
+	deleteLabels (LABEL_PROGRAM);
+ 	addLabel (program, LABEL_PROGRAM, true);
 }
 
 void Target::setConstraints (Constraints &cons)
