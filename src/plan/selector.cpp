@@ -141,7 +141,6 @@ class SelectorDev:public Rts2DeviceDb
 		// load plan to queue
 		void queuePlan (rts2plan::ExecutorQueue *, double t);
 
-
 		rts2plan::Queues::iterator findQueue (const char *name);
 };
 
@@ -279,12 +278,9 @@ int SelectorDev::init ()
 	if (ret)
 		return ret;
 
-	if (!queueNames.empty ())
-	{
-		createValue (selQueNames, "queue_names", "selector queue names", false);
-		createValue (lastQueue, "last_queue", "queue used for last selection", false);
-		lastQueue->addSelVal ("automatic");
-	}
+	createValue (selQueNames, "queue_names", "selector queue names", false);
+	createValue (lastQueue, "last_queue", "queue used for last selection", false);
+	lastQueue->addSelVal ("automatic");
 	
 	for (std::deque <const char *>::iterator iter = queueNames.begin (); iter != queueNames.end (); iter++)
 	{
