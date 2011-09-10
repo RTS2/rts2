@@ -264,14 +264,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		os << "]";
 	}
-	else if (vals.size () == 1 && vals[0] == "consts")
-	{
-		int tid = params->getInteger ("id", -1);
-		if (tid <= 0)
-			throw JSONException ("empty target ID");
-		rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
-		target->getConstraints ()->printJSON (os);
-	}
 #endif // HAVE_PGSQL
 	else if (vals.size () == 1)
 	{
@@ -466,6 +458,14 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("invalid type parametr");
 			rts2db::Labels lb;
 			os << lb.getLabel (label, t);
+		}
+		else if (vals[0] == "consts")
+		{
+			int tid = params->getInteger ("id", -1);
+			if (tid <= 0)
+				throw JSONException ("empty target ID");
+			rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			target->getConstraints ()->printJSON (os);
 		}
 		// violated constrainsts..
 		else if (vals[0] == "violated")
