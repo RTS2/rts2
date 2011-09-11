@@ -61,7 +61,7 @@ class FLWOCAT:
 			  	l=l.rstrip()
 				if (len(l) == 0):
 				  	continue
-				if l[0] == '#' and l[1] == '!':
+				if l[0] == '#' and len(l) > 1 and l[1] == '!':
 				  	self.parsePiProg(l[1:])
 					continue
 				if l[0] == '!':
