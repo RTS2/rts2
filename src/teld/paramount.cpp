@@ -20,10 +20,10 @@
 
 #define DEBUG_EXTRA
 
-#include "gem.h"
-#include "model/telmodel.h"
+#include "../../lib/rts2/gem.h"
+#include "../../lib/rts2/model/telmodel.h"
 
-#include "../utils/libnova_cpp.h"
+#include "libnova_cpp.h"
 
 #include <libmks3.h>
 #include <iostream>
