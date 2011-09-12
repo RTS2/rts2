@@ -24,6 +24,7 @@
 #define OPT_HEIGHT       OPT_LOCAL + 2
 #define OPT_DATA_SIZE    OPT_LOCAL + 3
 #define OPT_CHANNELS     OPT_LOCAL + 4
+#define OPT_REMOVE_TEMP  OPT_LOCAL + 5
 
 namespace rts2camd
 {
@@ -39,6 +40,8 @@ class Dummy:public Camera
 		Dummy (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 		{
 			createTempCCD ();
+
+			showTemp = true;
 
 			supportFrameT = false;
 			infoSleep = 0;
@@ -69,6 +72,7 @@ class Dummy:public Camera
 			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
 			addOption (OPT_CHANNELS, "channels", 1, "number of data channels");
+			addOption (OPT_REMOVE_TEMP, "no-temp", 0, "do not show temperature related fields");
 		}
 
 		virtual ~Dummy (void)
@@ -102,6 +106,9 @@ class Dummy:public Camera
 					createDataChannels ();
 					setNumChannels (atoi (optarg));
 					break;
+				case OPT_REMOVE_TEMP:
+					showTemp = false;
+					break;
 				default:
 					return Camera::processOption (in_opt);
 			}
@@ -113,6 +120,12 @@ class Dummy:public Camera
 			ret = Camera::init ();
 			if (ret)
 				return ret;
+
+			if (showTemp)
+			{
+				createTempAir ();
+				createTempSet ();
+			}
 
 			usleep (infoSleep);
 			strcpy (ccdType, "Dummy");
@@ -130,7 +143,14 @@ class Dummy:public Camera
 		virtual int info ()
 		{
 			usleep (infoSleep);
-			tempCCD->setValueDouble (100);
+			float t = tempSet->getValueFloat ();
+			if (isnan (t))
+				t = 30;
+			tempCCD->setValueFloat (t + random_num() * 3);
+			if (tempAir)
+			{
+				tempAir->setValueFloat (t + random_num () * 3);
+			}
 			return Camera::info ();
 		}
 		virtual int startExposure () { return 0; }
@@ -179,6 +199,8 @@ class Dummy:public Camera
 		int height;
 
 		long dataSize;
+
+		bool showTemp;
 
 		void generateImage (long usedSize);
 };
