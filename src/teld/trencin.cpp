@@ -800,23 +800,27 @@ int Trencin::setTo (double set_ra, double set_dec)
 	applyCorrections (&pos, ln_get_julian_from_sys ());
 
 	setTarget (pos.ra, pos.dec);
-	sky2counts (u_ra, u_dec);
+	ret = sky2counts (u_ra, u_dec);
+	if (ret)
+		return -1;
 
 	cycleRa->setValueInteger (u_ra / MAX_MOVE);
 	cycleDec->setValueInteger (u_dec / MAX_MOVE);
 
+	logStream (MESSAGE_INFO) << "setting to " << LibnovaRaDec (&pos) << " u_ra " << u_ra << " u_dec " << u_dec << " cycle ra dec " << cycleRa->getValueInteger () << " " << cycleDec->getValueInteger () << sendLog;
+
 	u_ra %= MAX_MOVE;
 	if (u_ra < 0)
 	{
+		u_ra += MAX_MOVE;
 		cycleRa->dec ();
-		u_ra = MAX_MOVE + u_ra;
 	}
 
 	u_dec %= MAX_MOVE;
 	if (u_dec < 0)
 	{
+		u_dec += MAX_MOVE;
 		cycleDec->dec ();
-		u_dec = MAX_MOVE + u_dec;
 	}
 
 	try
@@ -829,6 +833,11 @@ int Trencin::setTo (double set_ra, double set_dec)
 		logStream (MESSAGE_ERROR) << "cannot set position " << er << sendLog;
 		return -1;
 	}
+
+	logStream (MESSAGE_INFO) << "after setting to " << LibnovaRaDec (&pos) << " u_ra " << u_ra << " u_dec " << u_dec << " cycle ra dec " << cycleRa->getValueInteger () << " " << cycleDec->getValueInteger () << sendLog;
+
+	cycleMoveRa = 0;
+	cycleMoveDec = 0;
 
 	if (wormRa->getValueBool () == true)
 		return startWorm ();
@@ -1273,6 +1282,7 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 {
 	int32_t new_ra_off = haCpd * getOffsetRa ();
 	int32_t new_dec_off = decCpd * getOffsetDec ();
+	bool moved = false;
 
 	if (new_ra_off != last_off_ra)
 	{
@@ -1288,6 +1298,7 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 		tel_run (trencinConnRa, new_ra_off - last_off_ra);
 		last_off_ra = new_ra_off;
 		setIdleInfoInterval (0.5);
+		moved = true;
 	}
 
 	if (new_dec_off != last_off_dec)
@@ -1300,7 +1311,11 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 		tel_run (trencinConnDec, new_dec_off - last_off_dec);
 		last_off_dec = new_dec_off;
 		setIdleInfoInterval (0.5);
+		moved = true;
 	}
+
+	if (moved)
+		maskState (TEL_MASK_MOVING, TEL_MOVING, "offseting started");
 }
 
 int Trencin::startPark ()
@@ -1368,6 +1383,14 @@ void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 #endif
 	if (value == 0)
 		return;
+
+	conn->flushPortIO ();
+
+	if (conn == trencinConnRa)
+		initRa ();
+	else
+		initDec ();
+
 	tel_write (conn, '[');
 	if (value > 0)
 	{
@@ -1436,6 +1459,8 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 			cycle = cycleRa;
 			cycleMove = cycleMoveRa;
 			last_u = info_u_ra;
+
+			cycleMoveRa = 0;
 		}
 		else if (conn == trencinConnDec)
 		{
@@ -1443,6 +1468,8 @@ void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 			cycle = cycleDec;
 			cycleMove = cycleMoveDec;
 			last_u = info_u_dec;
+
+			cycleMoveDec = 0;
 		}
 		else
 		{
