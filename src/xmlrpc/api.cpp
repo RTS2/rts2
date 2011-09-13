@@ -27,6 +27,7 @@
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/labellist.h"
 #include "../../lib/rts2db/simbadtarget.h"
+#include "../../lib/rts2db/messagedb.h"
 #endif
 
 using namespace rts2xmlrpc;
@@ -783,7 +784,31 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					<< iter->text << "\"]";
 			}
 			os << "]";
-		}	
+		}
+		else if (vals[0] == "messages")
+		{
+			double to = params->getDouble ("to", master->getNow ());
+			double from = params->getDouble ("from", to - 86400);
+			int typemask = params->getInteger ("type", MESSAGE_MASK_ALL);
+
+			rts2db::MessageSet ms;
+			ms.load (from, to, typemask);
+
+			os << "\"h\":["
+				"{\"n\":\"Time\",\"t\":\"t\",\"c\":0},"
+				"{\"n\":\"Component\",\"t\":\"s\",\"c\":1},"
+				"{\"n\":\"Type\",\"t\":\"n\",\"c\":2},"
+				"{\"n\":\"Text\",\"t\":\"s\",\"c\":3}],"
+				"\"d\":[";
+
+			for (rts2db::MessageSet::iterator iter = ms.begin (); iter != ms.end (); iter++)
+			{
+				if (iter != ms.begin ())
+					os << ",";
+				os << "[" << iter->getMessageTime () << ",\"" << iter->getMessageOName () << "\"," << iter->getType () << ",\"" << iter->getMessageString () << "\"]";
+			}
+			os << "]";
+		}
 #endif
 		else
 		{
