@@ -828,7 +828,7 @@ void Telescope::changeMasterState (int old_state, int new_state)
 		|| (new_state & SERVERD_STANDBY_MASK)) && standbyPark->getValueInteger () != 0)
 	{
 		// ignore nighttime park request
-		if (standbyPark->getValueInteger () == 2 || ! ((new_state & SERVERD_NIGHT) || (new_state & SERVERD_DUSK) || (new_state & SERVERD_DAWN)))
+		if (standbyPark->getValueInteger () == 2 || ! ((new_state & SERVERD_STATUS_MASK) == SERVERD_NIGHT || (new_state & SERVERD_STATUS_MASK) == SERVERD_DUSK || (new_state & SERVERD_STATUS_MASK) == SERVERD_DAWN))
 		{
 	  		if ((getState () & TEL_MASK_MOVING) != TEL_PARKED && (getState () & TEL_MASK_MOVING) != TEL_PARKING)
 				startPark (NULL);
