@@ -840,6 +840,9 @@ int Trencin::setTo (double set_ra, double set_dec)
 	cycleMoveRa = 0;
 	cycleMoveDec = 0;
 
+	last_move_ra = 0;
+	last_move_dec = 0;
+
 	if (wormRa->getValueBool () == true)
 		return startWorm ();
 	return 0;
