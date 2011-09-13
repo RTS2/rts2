@@ -569,6 +569,7 @@ void Trencin::setRa (long new_ra)
 	else
 	{
 		stopWorm ();
+		sleep (3);
 	}
 	readAxis (trencinConnRa, unitRa);
 
@@ -1385,11 +1386,6 @@ void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 		return;
 
 	conn->flushPortIO ();
-
-	if (conn == trencinConnRa)
-		initRa ();
-	else
-		initDec ();
 
 	tel_write (conn, '[');
 	if (value > 0)
