@@ -1120,6 +1120,7 @@ int Telescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 	ret = setTo (set_ra, set_dec);
 	if (ret)
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set to");
+	sendValueAll (telRaDec);
 	return ret;
 }
 
