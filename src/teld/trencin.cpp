@@ -1276,6 +1276,15 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 
 	if (new_ra_off != last_off_ra)
 	{
+		if (raMoving->getValueInteger () != 0)
+		{
+			tel_kill (trencinConnRa);
+			raMovingEnd->setValueDouble (getNow ());
+		}
+		else
+		{
+			stopWorm ();
+		}
 		tel_run (trencinConnRa, new_ra_off - last_off_ra);
 		last_off_ra = new_ra_off;
 		setIdleInfoInterval (0.5);
@@ -1283,6 +1292,11 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 
 	if (new_dec_off != last_off_dec)
 	{
+		if (decMoving->getValueInteger () != 0)
+		{
+			tel_kill (trencinConnDec);
+			decMovingEnd->setValueDouble (getNow ());
+		}
 		tel_run (trencinConnDec, new_dec_off - last_off_dec);
 		last_off_dec = new_dec_off;
 		setIdleInfoInterval (0.5);
