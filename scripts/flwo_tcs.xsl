@@ -3,7 +3,10 @@
 <xsl:output method='text' indent='no'/>
 
 <xsl:template match='/'>
-@ imgid = 1
+if ( ! (${?imgid}) ) then
+	@ imgid = 1
+endif
+
 set continue=1
 unset imgdir
 set xpa=0
@@ -35,6 +38,7 @@ set in=`$xmlrpc -G SEL.interrupt`
 if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
+	rts2-logcom "interrupting target $name ($tar_id)"
 endif  
 </xsl:variable>
 
@@ -61,17 +65,17 @@ if ( $continue == 1 ) then
 			if ( $rdec &gt; -5 &amp;&amp; $rdec &lt; 5 ) then
 				set rdec = 0
 			endif
-			echo `date` "offseting $rra $rdec ($ora $odec; $lastra $lastdec)"
+			rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec)"
 			if ( $rra != 0 || $rdec != 0 ) then
 				tele offset $rra $rdec
 				set lastra=$ora
 				set lastdec=$odec
 			endif	
 		else
-			echo `date` too big offset $ora $odec
+			rts2-logcom "too big offset $ora $odec"
 		endif	  	
 	else
-		echo `date` "not offseting - correction from different target (observing $name, correction from $cname)"  
+		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  
 	endif  
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
@@ -82,6 +86,14 @@ if ( $continue == 1 ) then
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 	$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
+	set avrg=`$RTS2/bin/rts2-image -s $lastimage | cut -d' ' -f2`
+	if ( `echo $avrg '&lt;' 200 | bc` == 1 ) then
+		rts2-logcom "average value of image $lastimage is too low - $avrg, expected at least 200"
+		rts2-logcom "this is probably problem with KeplerCam controller. Please proceed to restart"
+		rts2-logcom "CCD driver, and then call again GOrobot"
+		set continue=0
+		exit
+	endif
 	$xmlrpc -c "IMGP.only_process $lastimage"
 	if ( $xpa == 1 ) then
 		xpaset ds9 fits mosaicimage iraf &lt; $lastimage
@@ -108,7 +120,7 @@ if ( $continue == 1 ) then
 			endif
 		end
 	else  -->
-		echo `date` 'executing script <xsl:value-of select='@path'/>'
+		rts2-logcom 'executing script <xsl:value-of select='@path'/>'
 		source <xsl:value-of select='@path'/>
 <!--	fi -->
 endif
