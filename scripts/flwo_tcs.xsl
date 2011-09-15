@@ -18,7 +18,7 @@ set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
 set lastra=0
 set lastdec=0
 
-set foc_toffs=0
+set defoc_toffs=0
 
 <xsl:apply-templates select='*'/>
 
@@ -80,13 +80,13 @@ if ( $continue == 1 ) then
 	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  
 	endif
-	if ( $foc_toffs != $foc_current ) then
-		@ diff = $foc_toffs - $foc_current
-		rts2-logcom "offseting focus to $diff ( $foc_toffs - $foc_current )"
-		tele focus $diff
-		@ foc_current += $diff
+	set diff=`echo $defoc_toffs - $defoc_current | bc`
+	if ( $diff != 0 ) then
+		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
+		tele hfocus `printf '%+0.2f' $diff`
+		set defoc_current=`echo $defoc_current + $diff | bc`
 	else
-		rts2-logcom "not changing offsfing ( $foc_toffs - $foc_current )"
+		rts2-logcom "not changing offsfing ( $defoc_toffs - $defoc_current )"
 	endif
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
@@ -169,7 +169,7 @@ if ( $continue == 1 ) then
 endif
 </xsl:if>
 <xsl:if test='@value = "FOC_TOFFS" and @device = "FOC"'>
-@ foc_toffs += <xsl:value-of select='@operands'/>
+set defoc_toffs=`echo $defoc_toffs + <xsl:value-of select='@operands'/> | bc`
 </xsl:if>
 </xsl:template>
 
