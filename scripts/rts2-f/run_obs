@@ -24,6 +24,7 @@ endif
 if ( $last_tar_id != $tar_id ) then
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
 	echo $tar_id $obs_id > $lasttarget
+	@ imgid=1
 endif
 
 set ti=`rts2-targetinfo $tar_id`
@@ -35,7 +36,8 @@ set program=`rts2-targetinfo --program $tar_id`
 set ra=`echo $ti | awk '{ print $3 }'`
 set dec=`echo $ti | awk '{ print $4 }'`
 
-echo "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
+rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
+#echo "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
 echo "Observation ID is $obs_id"
 
 # for doauto script, to report in log file:
@@ -48,7 +50,7 @@ if ( $notmove == 1 ) then
 
 	sleep 3
 else
-	if ( $last_tar_id != $tar_id ) then
+	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" ) then
 		echo -n "sending coordinates $ra $dec 2000.0 .. "
 		tele coords $ra $dec 2000.0
 
@@ -85,4 +87,5 @@ rm -f /tmp/$obs_id
 
 $RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 
-echo `date` "observation $obs_id of object $name ($ra $dec) ends"
+#echo `date` "observation $obs_id of object $name ($ra $dec) ends"
+rts2-logcom "observation $obs_id of object $name ($ra $dec) ends"
