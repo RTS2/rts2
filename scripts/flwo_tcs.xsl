@@ -2,15 +2,6 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method='text' indent='no'/>
 
-<xsl:variable name='unoffset_focus'>
-	if ( $foc_toffs != 0 ) then
-		@ foc_toffs *= -1
-		rts2-logcom "changing focus back, moving by $foc_toffs"
-		tele focus $foc_toffs
-		set foc_toffs=0
-	endif
-</xsl:variable>
-
 <xsl:template match='/'>
 if ( ! (${?imgid}) ) then
 	@ imgid = 1
@@ -31,15 +22,12 @@ set foc_toffs=0
 
 <xsl:apply-templates select='*'/>
 
-<xsl:copy-of select='$unoffset_focus'/>
-
 </xsl:template>
 
 <xsl:variable name='abort'>
 if ( -e $rts2abort ) then
 	source $RTS2/bin/.rts2-runabort
 	rm -f $lasttarget
-	<xsl:copy-of select='$unoffset_focus'/>
 	exit
 endif
 if ( $ignoreday == 0 ) then
@@ -91,7 +79,15 @@ if ( $continue == 1 ) then
 		endif	  	
 	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  
-	endif  
+	endif
+	if ( $foc_toffs != $foc_current ) then
+		@ diff = $foc_toffs - $foc_current
+		rts2-logcom "offseting focus to $diff ( $foc_toffs - $foc_current )"
+		tele focus $diff
+		@ foc_current += $diff
+	else
+		rts2-logcom "not changing offsfing ( $foc_toffs - $foc_current )"
+	endif
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
@@ -173,8 +169,6 @@ if ( $continue == 1 ) then
 endif
 </xsl:if>
 <xsl:if test='@value = "FOC_TOFFS" and @device = "FOC"'>
-tele focus <xsl:value-of select='@operands'/>
-rts2-logcom "changing focus by <xsl:value-of select='@operands'/>, offset is $foc_toffs"
 @ foc_toffs += <xsl:value-of select='@operands'/>
 </xsl:if>
 </xsl:template>
