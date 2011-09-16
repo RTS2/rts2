@@ -1125,7 +1125,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 
 void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 {
-	os << "{\"h\":["
+	os << "\"h\":["
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
 		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":3},"
 		"{\"n\":\"End\",\"t\":\"tT\",\"c\":4},"
@@ -1140,14 +1140,14 @@ void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 		if (iter != obss->begin ())
 			os << ",";
 		os << "[" << iter->getObsId () << ","
-			<< iter->getObsStart () << "\",\""
-			<< iter->getObsEnd () << "\","
+			<< iter->getObsStart () << ","
+			<< iter->getObsEnd () << ","
 			<< iter->getNumberOfImages () << ","
 			<< iter->getNumberOfGoodImages ()
-			<< "]\n";
+			<< "]";
 	}
 
-	os << "]}";
+	os << "]";
 }
 
 void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params)
