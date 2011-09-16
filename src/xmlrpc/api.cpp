@@ -723,6 +723,18 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			tar->addLabel (ltext, ltype, true);
 			jsonLabels (tar, os);
 		}
+		else if (vals[0] == "obytid")
+		{
+			int tar_id = params->getInteger ("id", -1);
+			if (tar_id < 0)
+				throw JSONException ("unknow target ID");
+			rts2db::ObservationSet obss = rts2db::ObservationSet ();
+
+			obss.loadTarget (tar_id);
+
+			jsonObservations (&obss, os);
+			
+		}
 		else if (vals[0] == "plan")
 		{
 			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
@@ -1109,6 +1121,33 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		os << "]";
 	}
 	os << "]";
+}
+
+void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
+{
+	os << "{\"h\":["
+		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
+		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":3},"
+		"{\"n\":\"End\",\"t\":\"tT\",\"c\":4},"
+		"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5},"
+		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
+		"],\"d\":[";
+
+	os << std::fixed;
+
+	for (rts2db::ObservationSet::iterator iter = obss->begin (); iter != obss->end (); iter++)
+	{
+		if (iter != obss->begin ())
+			os << ",";
+		os << "[" << iter->getObsId () << ","
+			<< iter->getObsStart () << "\",\""
+			<< iter->getObsEnd () << "\","
+			<< iter->getNumberOfImages () << ","
+			<< iter->getNumberOfGoodImages ()
+			<< "]\n";
+	}
+
+	os << "]}";
 }
 
 void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params)
