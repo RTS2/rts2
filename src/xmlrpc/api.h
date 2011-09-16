@@ -21,6 +21,7 @@
 #include "httpreq.h"
 #include "block.h"
 #include "../../lib/rts2db/imageset.h"
+#include "../../lib/rts2db/observationset.h"
 
 namespace rts2xmlrpc
 {
@@ -101,6 +102,7 @@ class API:public GetRequestAuthorized
 		void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value);
 #ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL);
+		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);
 #endif
