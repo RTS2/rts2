@@ -97,9 +97,11 @@ class FLWOCAT:
 				  	autoguide = 'ON'
 
 				script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
+
+				if len(a) > 15 and a[15] != 0:
+					script = 'FOC.FOC_TOFFS+={0} {1}'.format(float(a[15]),script)
 		
 				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
-
 	
 				if float(a[13]) > 0:
 					cmd.append ("--airmass")
