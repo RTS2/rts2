@@ -330,11 +330,9 @@ Target::Target ()
 	tar_bonus = rts2_nan ("f");
 	tar_bonus_time = 0;
 	tar_next_observable = 0;
-	bool n_tar_enabled = false;
 
-	config->getFloat ("newtarget", "priority", tar_priority);
-	config->getBoolean ("newtarget", "enabled", n_tar_enabled);
-	setTargetEnabled (n_tar_enabled, false);
+	config->getFloat ("newtarget", "priority", tar_priority, 0);
+	setTargetEnabled (config->getBoolean ("newtarget", "enabled", false), false);
 }
 
 Target::~Target (void)
