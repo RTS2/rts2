@@ -249,7 +249,7 @@ Target *createTargetByString (const char *tar_string)
 		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
 		std::ostringstream os;
 
-		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
+		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix, "RTS2");
 		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
 		constTarget->setTargetName (os.str ().c_str ());
 		constTarget->setTargetType (TYPE_OPORTUNITY);
