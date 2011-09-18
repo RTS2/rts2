@@ -37,11 +37,13 @@ import dms
 
 class imgAstrometryScript:
     """calibrate a fits image with astrometry.net."""
-    def __init__(self,fits_file,scale_relative_error=0.05,astrometry_bin='/home/petr/astrometry/bin'):
+    def __init__(self,fits_file,odir=None,scale_relative_error=0.05,astrometry_bin='/home/petr/astrometry/bin'):
         self.scale_relative_error=scale_relative_error
 	self.astrometry_bin=astrometry_bin
 
-	self.odir=tempfile.mkdtemp()
+	self.odir = odir
+	if self.odir is None:
+		self.odir=tempfile.mkdtemp()
 
         self.infpath=self.odir + '/input.fits'
         shutil.copy(fits_file, self.infpath)
@@ -85,24 +87,35 @@ class imgAstrometryScript:
 	       ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
 	       
         # cleanup
-        shutil.rmtree(self.odir)
+        #shutil.rmtree(self.odir)
 
 	return ret
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print 'Usage: %s  <fits filename>' % (sys.argv[0])
+    if len(sys.argv) <= 2:
+        print 'Usage: %s <odir> <fits filename> <xoffs> <yoffs>' % (sys.argv[0])
         sys.exit(1)
 
-    a = imgAstrometryScript(sys.argv[1])
+    a = imgAstrometryScript(sys.argv[2],sys.argv[1])
 
     ra = dec = None
 
-    ff=pyfits.fitsopen(sys.argv[1],'readonly')
+    ff=pyfits.fitsopen(sys.argv[2],'readonly')
     ra=ff[0].header['RA']
     dec=ff[0].header['DEC']
     object=ff[0].header['OBJECT']
     ff.close()
+
+    fn = os.path.basename(sys.argv[1])
+    num = -1
+    try:
+	    num = int(fn.split('.')[0])
+    except Exception,ex:
+    	    pass
+
+    if len(sys.argv) >= 5:
+	xoffs = float(sys.argv[3])
+	yoffs = float(sys.argv[4])
 
     ret=a.run(scale=0.67,ra=ra,dec=dec)
 
@@ -111,8 +124,8 @@ if __name__ == '__main__':
 	    raorig=dms.parseDMS(ra)
 	    decorig=dms.parseDMS(dec)
 
-	    raastr=float(ret[0])
-	    decastr=float(ret[1])
+	    raastr=float(ret[0]) + xoffs
+	    decastr=float(ret[1]) + yoffs
 
 	    print "correct 1 ", raastr, decastr, raorig-raastr, decorig-decastr
 
@@ -128,3 +141,4 @@ if __name__ == '__main__':
 	    c.doubleValue('odec','offsets dec as calculated from astrometry',(decorig-decastr)*3600.0)
 
 	    c.stringValue('object','astrometry object',object)
+	    c.integerValue('img_num','last astrometry number',num)
