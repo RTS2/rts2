@@ -1298,6 +1298,7 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 		else
 		{
 			stopWorm ();
+			sleep (3);
 		}
 		tel_run (trencinConnRa, new_ra_off - last_off_ra);
 		last_off_ra = new_ra_off;
@@ -1331,6 +1332,7 @@ int Trencin::startPark ()
 		if (wormRa->getValueBool ())
 		{
 			stopWorm ();
+			sleep (3);
 			wormRa->setValueBool (true);
 		}
 		initRa ();
