@@ -418,12 +418,12 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Return vertical binning.
 		 */
-		int binningHorizontal () { return used_bh; }
+		int binningHorizontal () { return binningX->getValueInteger (); }
 
 		/**
 		 * Return vertical binning.
 		 */
-		int binningVertical () { return used_bv; }
+		int binningVertical () { return binningY->getValueInteger (); }
 
 		/**
 		 * Get size of pixel in bytes.
@@ -789,8 +789,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueBool *waitingForEmptyQue;
 		rts2core::ValueBool *waitingForNotBop;
 
-		int used_bh;
-		int used_bv;
+		rts2core::ValueInteger *binningX;
+		rts2core::ValueInteger *binningY;
 
 		char *focuserDevice;
 		char *wheelDevice;

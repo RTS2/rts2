@@ -307,9 +307,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
-	used_bh = -1;
-	used_bv = -1;
-
 	timeReadoutStart = rts2_nan ("f");
 
 	pixelX = rts2_nan ("f");
@@ -362,6 +359,12 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	createValue (binning, "binning", "chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (binningX, "BINX", "[pixels] binning along X axis", true, 0, CAM_WORKING);
+	createValue (binningY, "BINY", "[pixels] binning along X axis", true, 0, CAM_WORKING);
+
+	binningX->setValueInteger (-1);
+	binningY->setValueInteger (-1);
+
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING);
 
 	createValue (exposure, "exposure", "current exposure time", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -1012,8 +1015,8 @@ int Camera::camStartExposureWithoutCheck ()
 		sendValueAll (dataChannels);
 	}
 
-	used_bh = ((Binning2D *)(binning->getData ()))->horizontal; 
-	used_bv = ((Binning2D *)(binning->getData ()))->vertical;
+	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
+	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
 
 	if (getNeedReload ())
 	{
