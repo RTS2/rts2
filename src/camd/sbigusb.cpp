@@ -29,8 +29,10 @@
 #include "sbigudrv.h"
 #include "csbigcam.h"
 
-unsigned int
-ccd_c2ad (double t)
+#define OPT_USBPORT     OPT_LOCAL + 230
+#define OPT_SERIAL      OPT_LOCAL + 231
+
+unsigned int ccd_c2ad (double t)
 {
 	double r = 3.0 * exp (0.94390589891 * (25.0 - t) / 25.0);
 	unsigned int ret = (unsigned int) (4096.0 / (10.0 / r + 1.0));
@@ -39,9 +41,7 @@ ccd_c2ad (double t)
 	return ret;
 }
 
-
-double
-ccd_ad2c (unsigned int ad)
+double ccd_ad2c (unsigned int ad)
 {
 	double r;
 	if (ad == 0)
@@ -50,9 +50,7 @@ ccd_ad2c (unsigned int ad)
 	return 25.0 - 25.0 * (log (r / 3.0) / 0.94390589891);
 }
 
-
-double
-ambient_ad2c (unsigned int ad)
+double ambient_ad2c (unsigned int ad)
 {
 	double r;
 	r = 3.0 / (4096.0 / (double) ad - 1.0);
@@ -75,8 +73,7 @@ class Sbig:public Camera
 		{
 			if (ret == CE_NO_ERROR)
 				return 0;
-			logStream (MESSAGE_ERROR) << "Sbig::checkSbigHw ret: " << ret
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "Sbig::checkSbigHw ret: " << ret << sendLog;
 			return -1;
 		}
 		int fanState (int newFanState);
@@ -282,8 +279,8 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	pcam = NULL;
 	usb_port = 0;
 	reqSerialNumber = NULL;
-	addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
-	addOption ('n', "serial_number", 1, "SBIG serial number to accept for that camera");
+	addOption (OPT_USBPORT, "usb-port", 1, "USB port number - defaults to 0");
+	addOption (OPT_SERIAL, "serial-number", 1, "SBIG serial number to accept for that camera");
 }
 
 Sbig::~Sbig ()
@@ -295,7 +292,7 @@ int Sbig::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'u':
+		case OPT_USBPORT:
 			usb_port = atoi (optarg);
 			if (usb_port <= 0 || usb_port > 3)
 			{
@@ -303,7 +300,7 @@ int Sbig::processOption (int in_opt)
 				return -1;
 			}
 			break;
-		case 'n':
+		case OPT_SERIAL:
 			if (usb_port)
 				return -1;
 			reqSerialNumber = optarg;
@@ -354,8 +351,7 @@ int Sbig::init ()
 	if (reqSerialNumber)
 	{
 		QueryUSBResults qusbres;
-		if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) !=
-			CE_NO_ERROR)
+		if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) != CE_NO_ERROR)
 		{
 			delete pcam;
 			return -1;
@@ -363,9 +359,7 @@ int Sbig::init ()
 		// search for serial number..
 		for (usb_port = 0; usb_port < 4; usb_port++)
 		{
-			if (qusbres.usbInfo[usb_port].cameraFound == TRUE
-				&& !strncmp (qusbres.usbInfo[usb_port].serialNumber,
-				reqSerialNumber, 10))
+			if (qusbres.usbInfo[usb_port].cameraFound == TRUE && !strncmp (qusbres.usbInfo[usb_port].serialNumber, reqSerialNumber, 10))
 				break;
 		}
 		if (usb_port == 4)
