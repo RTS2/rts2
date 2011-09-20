@@ -23,8 +23,8 @@
 #include <string.h>
 
 #include "camd.h"
-#include "../utils/device.h"
-#include "../utils/block.h"
+#include "device.h"
+#include "block.h"
 
 #include "sbigudrv.h"
 #include "csbigcam.h"
