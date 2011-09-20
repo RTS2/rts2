@@ -1253,6 +1253,10 @@ int Trencin::endMove ()
 #endif
 	cycleMoveRa = 0;
 	cycleMoveDec = 0;
+
+	raMoving->setValueInteger (0);
+	decMoving->setValueInteger (0);
+
 	if (wormRa->getValueBool () == true)
 		startWorm ();
 	return Fork::endMove ();
@@ -1298,7 +1302,7 @@ void Trencin::startOffseting (rts2core::Value *changed_value)
 		else
 		{
 			stopWorm ();
-			sleep (3);
+			usleep (USEC_SEC * 1.5);
 		}
 		tel_run (trencinConnRa, new_ra_off - last_off_ra);
 		last_off_ra = new_ra_off;
