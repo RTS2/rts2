@@ -234,6 +234,8 @@ std::string Rts2Conn::getStateString ()
 				_os << std::hex << getCameraChipState (i);
 			if (real_state & CAM_FOCUSING)
 				_os << " | FOCUSING";
+			if (real_state & CAM_HAS_IMAGE)
+				_os << " | IMAGE_READY";
 			switch (real_state & CAM_MASK_SHUTTER)
 			{
 				case CAM_SHUT_CLEARED:

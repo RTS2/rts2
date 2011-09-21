@@ -833,7 +833,7 @@ void Camera::checkReadouts ()
 		endReadout ();
 		afterReadout ();
 		if (ret == -2)
-			maskState (CAM_MASK_READING, CAM_NOTREADING, "readout ended", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+			maskState (CAM_MASK_READING | CAM_MASK_HAS_IMAGE, CAM_NOTREADING | CAM_HAS_IMAGE, "readout ended", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 		else
 			maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
 	}
@@ -1040,7 +1040,7 @@ int Camera::camStartExposureWithoutCheck ()
 	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
 	infoAll ();
 
-	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_EXPOSING | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
+	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, CAM_EXPOSING | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
 
 	logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
