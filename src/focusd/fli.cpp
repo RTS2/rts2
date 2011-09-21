@@ -178,14 +178,25 @@ int Fli::init ()
 		return -1;
 	focExtent->setValueInteger (extent);
 
-	// calibrate by moving to home position, then move to default position
-	ret = FLIHomeFocuser (dev);
-	if (ret)
+	if (!isnan (defaultPosition->getValueFloat ()))
 	{
-		logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-		return -1;
+		float def = defaultPosition->getValueFloat ();
+		if (def < 0)
+		{
+			ret = info ();
+			if (ret)
+				return -1;
+			def = getPosition ();
+		}
+		// calibrate by moving to home position, then move to default position
+		ret = FLIHomeFocuser (dev);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+			return -1;
+		}
+		setPosition (defaultPosition->getValueInteger ());
 	}
-	setPosition (defaultPosition->getValueInteger ());
 
 	return 0;
 }
@@ -234,12 +245,31 @@ int Fli::setTo (float num)
 		return -1;
 	}
 
-	num -= position->getValueInteger ();
+	long s = num - position->getValueInteger ();
 
-	ret = FLIStepMotorAsync (dev, (long) num);
+	ret = FLIStepMotorAsync (dev, s);
 	if (ret)
 		return -1;
-	return 0;
+	// wait while move starts..
+	double timeout = getNow () + 2;
+	do
+	{
+		ret = FLIGetStepsRemaining (dev, &s);
+		if (ret)
+			return -1;
+		if (s != 0)
+			return 0;
+
+		ret = FLIGetStepperPosition (dev, &s);
+		if (ret)
+			return -1;
+		if (s == num)
+			return 0;
+	} while (getNow () < timeout);
+	
+	logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
+	
+	return -1;
 }
 
 int Fli::isFocusing ()
@@ -264,7 +294,7 @@ bool Fli::isAtStartPosition ()
 	ret = info ();
 	if (ret)
 		return false;
-	return getPosition () == 0;
+	return getPosition () == defaultPosition->getValueFloat ();
 }
 
 int Fli::commandAuthorized (Rts2Conn * conn)
