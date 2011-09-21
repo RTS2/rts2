@@ -89,6 +89,10 @@ int Camera::setBinning (int in_vert, int in_hori)
 		yplate->setValueDouble (defaultYplate * in_vert);
 		sendValueAll (yplate);
 	}
+	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
+	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
+	sendValueAll (binningX);
+	sendValueAll (binningY);
 	return 0;
 }
 
@@ -670,6 +674,8 @@ void Camera::addBinning2D (int bin_v, int bin_h)
 void Camera::initBinnings ()
 {
 	addBinning2D (1,1);
+	binningX->setValueInteger (1);
+	binningY->setValueInteger (1);
 }
 
 void Camera::addDataType (int in_type)
