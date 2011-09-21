@@ -370,6 +370,17 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			conn->queCommand (new rts2core::Rts2CommandExposure (master, (Rts2DevClientCamera *) (conn->getOtherDevClient ()), 0), 0, aa);
 			throw XmlRpc::XmlRpcAsynchronous ();
 		}
+		else if (vals[0] == "hasimage")
+		{
+			const char *camera = params->getString ("ccd","");
+			conn = master->getOpenConnection (camera);
+			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
+				throw JSONException ("cannot find camera with given name");
+			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+
+			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
+		}
 #ifdef HAVE_PGSQL
 		// returns target information specified by target name
 		else if (vals[0] == "tbyname")
