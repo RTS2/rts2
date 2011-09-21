@@ -1,7 +1,7 @@
 #ifndef __RTS2_APP_IMAGE__
 #define __RTS2_APP_IMAGE__
 
-#include "../utils/rts2cliapp.h"
+#include "../rts2/rts2cliapp.h"
 #include "image.h"
 
 #include <list>
