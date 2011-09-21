@@ -67,28 +67,22 @@ namespace rts2camd
  */
 class Sbig:public Camera
 {
-	private:
-		CSBIGCam * pcam;
-		int checkSbigHw (PAR_ERROR ret)
-		{
-			if (ret == CE_NO_ERROR)
-				return 0;
-			logStream (MESSAGE_ERROR) << "Sbig::checkSbigHw ret: " << ret << sendLog;
-			return -1;
-		}
-		int fanState (int newFanState);
-		int usb_port;
-		char *reqSerialNumber;
+	public:
+		Sbig (int argc, char **argv);
+		virtual ~ Sbig ();
 
-		SBIG_DEVICE_TYPE getDevType ();
+		virtual int init ();
 
-		GetCCDInfoResults0 chip_info;
-		ReadoutLineParams rlp;
-		int sbig_readout_mode;
-
-		rts2core::ValueInteger *coolingPower;
-		rts2core::ValueSelection *tempRegulation;
-		rts2core::ValueBool *fan;
+		// callback functions for Camera alone
+		virtual int info ();
+		virtual long camWaitExpose ();
+		virtual int camStopExpose ();
+		virtual int camBox (int x, int y, int width, int height);
+		virtual int camCoolMax ();
+		virtual int camCoolHold ();
+		virtual int setCoolTemp (float new_temp);
+		virtual int tempOff ();
+		virtual void afterNight ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -118,22 +112,30 @@ class Sbig:public Camera
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-	public:
-		Sbig (int argc, char **argv);
-		virtual ~ Sbig ();
+	private:
+		CSBIGCam * pcam;
+		int checkSbigHw (PAR_ERROR ret)
+		{
+			if (ret == CE_NO_ERROR)
+				return 0;
+			logStream (MESSAGE_ERROR) << "Sbig::checkSbigHw ret: " << ret << sendLog;
+			return -1;
+		}
+		int fanState (int newFanState);
+		int usb_port;
+		char *reqSerialNumber;
 
-		virtual int init ();
+		SBIG_DEVICE_TYPE getDevType ();
 
-		// callback functions for Camera alone
-		virtual int info ();
-		virtual long camWaitExpose ();
-		virtual int camStopExpose ();
-		virtual int camBox (int x, int y, int width, int height);
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
-		virtual int setCoolTemp (float new_temp);
-		virtual int tempOff ();
-		virtual void afterNight ();
+		GetCCDInfoResults0 chip_info;
+		ReadoutLineParams rlp;
+		int sbig_readout_mode;
+
+		rts2core::ValueInteger *coolingPower;
+		rts2core::ValueSelection *tempRegulation;
+		rts2core::ValueBool *fan;
+
+		int initSbig ();
 };
 
 }
@@ -152,6 +154,9 @@ int Sbig::initChips ()
 int Sbig::startExposure ()
 {
 	PAR_ERROR ret;
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	if (!pcam->CheckLink ())
 		return -1;
 
@@ -285,6 +290,8 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 Sbig::~Sbig ()
 {
+	if (pcam)
+		pcam->CloseDriver ();
 	delete pcam;
 }
 
@@ -334,16 +341,25 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 int Sbig::init ()
 {
 	int ret_c_init;
-	OpenDeviceParams odp;
 
 	ret_c_init = Camera::init ();
 	if (ret_c_init)
 		return ret_c_init;
+	return initSbig ();
+}
 
+int Sbig::initSbig ()
+{
+	if (pcam)
+	{
+		pcam->CloseDriver ();
+		delete pcam;
+	}
 	pcam = new CSBIGCam ();
 	if (pcam->OpenDriver () != CE_NO_ERROR)
 	{
 		delete pcam;
+		pcam = NULL;
 		return -1;
 	}
 
@@ -354,6 +370,7 @@ int Sbig::init ()
 		if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) != CE_NO_ERROR)
 		{
 			delete pcam;
+			pcam = NULL;
 			return -1;
 		}
 		// search for serial number..
@@ -365,27 +382,32 @@ int Sbig::init ()
 		if (usb_port == 4)
 		{
 			delete pcam;
+			pcam = NULL;
 			return -1;
 		}
 		usb_port++;				 //cause it's 1 based..
 	}
 
+	OpenDeviceParams odp;
 	odp.deviceType = getDevType ();
 	if (pcam->OpenDevice (odp) != CE_NO_ERROR)
 	{
 		delete pcam;
+		pcam = NULL;
 		return -1;
 	}
 
 	if (pcam->GetError () != CE_NO_ERROR)
 	{
 		delete pcam;
+		pcam = NULL;
 		return -1;
 	}
 	pcam->EstablishLink ();
 	if (pcam->GetError () != CE_NO_ERROR)
 	{
 		delete pcam;
+		pcam = NULL;
 		return -1;
 	}
 
@@ -429,8 +451,21 @@ int Sbig::info ()
 	QueryTemperatureStatusResults qtsr;
 	QueryCommandStatusParams qcsp;
 	QueryCommandStatusResults qcsr;
-	if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) != CE_NO_ERROR)
+
+	int ret;
+	if (pcam == NULL && initSbig ())
 		return -1;
+
+	if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) != CE_NO_ERROR)
+	{
+		// device not ready - try to reinit
+		ret = initSbig ();
+		if (ret)
+			return -1;
+
+		if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) != CE_NO_ERROR)
+			return -1;
+	}
 	qcsp.command = CC_MISCELLANEOUS_CONTROL;
 	if (pcam->SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) != CE_NO_ERROR)
 		return -1;
@@ -457,6 +492,9 @@ long Sbig::camWaitExpose ()
 int Sbig::camStopExpose ()
 {
 	PAR_ERROR ret;
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	if (!pcam->CheckLink ())
 	{
 		return DEVDEM_E_HW;
@@ -476,6 +514,9 @@ int Sbig::camBox (int x, int y, int width, int height)
 
 int Sbig::fanState (int newFanState)
 {
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	PAR_ERROR ret;
 	MiscellaneousControlParams mcp;
 	mcp.fanEnable = newFanState;
@@ -487,6 +528,9 @@ int Sbig::fanState (int newFanState)
 
 int Sbig::camCoolMax ()
 {
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
 	temp.regulation = REGULATION_OVERRIDE;
@@ -514,6 +558,9 @@ int Sbig::camCoolHold ()
 
 int Sbig::setCoolTemp (float new_temp)
 {
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
 	temp.regulation = REGULATION_ON;
@@ -530,6 +577,9 @@ int Sbig::setCoolTemp (float new_temp)
 
 int Sbig::tempOff ()
 {
+	if (pcam == NULL && initSbig ())
+		return -1;
+
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
 	temp.regulation = REGULATION_OFF;
