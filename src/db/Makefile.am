@@ -15,6 +15,8 @@ PG_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb ${LDAD
 
 noinst_HEADERS = rts2targetapp.h
 
+rts2_image_LDADD = ${PG_LDADD}
+
 rts2_nightreport_SOURCES = nightreport.cpp
 rts2_nightreport_LDADD = ${PG_LDADD}
 
@@ -25,7 +27,7 @@ rts2_target_SOURCES = target.cpp
 rts2_target_LDADD = ${PG_LDADD}
 
 rts2_tpm_SOURCES = tpm.cpp
-rts2_tmp_LDADD = ${PG_LDADD}
+rts2_tpm_LDADD = ${PG_LDADD}
 
 rts2_obsinfo_SOURCES = obsinfo.cpp
 rts2_obsinfo_LDADD = ${PG_LDADD}
@@ -46,7 +48,7 @@ rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_plan_LDADD = ${PG_LDADD}
 
 nodist_rts2_airmasscale_SOURCES = airmasscale.cpp
-nodist_rts2_airmasscale_LDADD = ${PG_LDADD}
+rts2_airmasscale_LDADD = ${PG_LDADD}
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
