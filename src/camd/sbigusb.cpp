@@ -71,8 +71,6 @@ class Sbig:public Camera
 		Sbig (int argc, char **argv);
 		virtual ~ Sbig ();
 
-		virtual int init ();
-
 		// callback functions for Camera alone
 		virtual int info ();
 		virtual long camWaitExpose ();
@@ -86,6 +84,8 @@ class Sbig:public Camera
 
 	protected:
 		virtual int processOption (int in_opt);
+
+		virtual int initHardware ();
 		virtual int initChips ();
 		virtual void initBinnings ()
 		{
@@ -134,8 +134,6 @@ class Sbig:public Camera
 		rts2core::ValueInteger *coolingPower;
 		rts2core::ValueSelection *tempRegulation;
 		rts2core::ValueBool *fan;
-
-		int initSbig ();
 };
 
 }
@@ -154,7 +152,7 @@ int Sbig::initChips ()
 int Sbig::startExposure ()
 {
 	PAR_ERROR ret;
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	if (!pcam->CheckLink ())
@@ -338,17 +336,7 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 	}
 }
 
-int Sbig::init ()
-{
-	int ret_c_init;
-
-	ret_c_init = Camera::init ();
-	if (ret_c_init)
-		return ret_c_init;
-	return initSbig ();
-}
-
-int Sbig::initSbig ()
+int Sbig::initHardware ()
 {
 	if (pcam)
 	{
@@ -453,13 +441,13 @@ int Sbig::info ()
 	QueryCommandStatusResults qcsr;
 
 	int ret;
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) != CE_NO_ERROR)
 	{
 		// device not ready - try to reinit
-		ret = initSbig ();
+		ret = initHardware ();
 		if (ret)
 			return -1;
 
@@ -492,7 +480,7 @@ long Sbig::camWaitExpose ()
 int Sbig::camStopExpose ()
 {
 	PAR_ERROR ret;
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	if (!pcam->CheckLink ())
@@ -514,7 +502,7 @@ int Sbig::camBox (int x, int y, int width, int height)
 
 int Sbig::fanState (int newFanState)
 {
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	PAR_ERROR ret;
@@ -528,7 +516,7 @@ int Sbig::fanState (int newFanState)
 
 int Sbig::camCoolMax ()
 {
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	SetTemperatureRegulationParams temp;
@@ -558,7 +546,7 @@ int Sbig::camCoolHold ()
 
 int Sbig::setCoolTemp (float new_temp)
 {
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	SetTemperatureRegulationParams temp;
@@ -577,7 +565,7 @@ int Sbig::setCoolTemp (float new_temp)
 
 int Sbig::tempOff ()
 {
-	if (pcam == NULL && initSbig ())
+	if (pcam == NULL && initHardware ())
 		return -1;
 
 	SetTemperatureRegulationParams temp;

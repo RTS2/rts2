@@ -43,7 +43,7 @@ class Fli:public Focusd
 		virtual bool isAtStartPosition ();
 
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (float num);
@@ -66,6 +66,7 @@ using namespace rts2focusd;
 
 Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 {
+	dev = -1;
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
@@ -126,19 +127,18 @@ int Fli::processOption (int in_opt)
 	return 0;
 }
 
-int Fli::init ()
+int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
 	int ret_f;
 	char **names;
 	char *nam_sep;
 
-	ret_f = Focusd::init ();
-	if (ret_f)
-		return ret_f;
-
 	if (fliDebug)
 		FLISetDebugLevel (NULL, FLIDEBUG_ALL);
+
+	if (dev > 0)
+		FLIClose (dev);
 
 	if (name == NULL)
 	{
@@ -225,7 +225,14 @@ int Fli::info ()
 
 	ret = FLIGetStepperPosition (dev, &steps);
 	if (ret)
-		return -1;
+	{
+		ret = initHardware ();
+		if (ret)
+			return -1;
+		ret = FLIGetStepperPosition (dev, &steps);
+		if (ret)
+			return -1;
+	}
 
 	position->setValueInteger ((int) steps);
 
