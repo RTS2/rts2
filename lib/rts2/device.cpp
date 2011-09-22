@@ -825,7 +825,7 @@ int Device::init ()
 		addCentraldConnection (conn_master, true);
 	}
 
-	return 0;
+	return initHardware ();
 }
 
 int Device::initValues ()
