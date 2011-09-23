@@ -954,7 +954,7 @@ void API::sendSelection (std::ostringstream &os, rts2core::ValueSelection *value
 
 void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
 {
-	bool extended = true;
+	bool extended = false;
 	if (params)
 		extended = params->getInteger ("e", false);
 
