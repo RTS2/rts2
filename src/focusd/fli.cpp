@@ -138,7 +138,10 @@ int Fli::initHardware ()
 		FLISetDebugLevel (NULL, FLIDEBUG_ALL);
 
 	if (dev > 0)
+	{
 		FLIClose (dev);
+		dev = -1;
+	}
 
 	if (name == NULL)
 	{
