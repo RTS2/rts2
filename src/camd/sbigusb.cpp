@@ -134,6 +134,8 @@ class Sbig:public Camera
 		rts2core::ValueInteger *coolingPower;
 		rts2core::ValueSelection *tempRegulation;
 		rts2core::ValueBool *fan;
+
+		int initError ();
 };
 
 }
@@ -345,22 +347,15 @@ int Sbig::initHardware ()
 	}
 	pcam = new CSBIGCam ();
 	if (pcam->OpenDriver () != CE_NO_ERROR)
-	{
-		delete pcam;
-		pcam = NULL;
-		return -1;
-	}
+		return initError ();
 
 	// find camera by serial number..
 	if (reqSerialNumber)
 	{
 		QueryUSBResults qusbres;
 		if (pcam->SBIGUnivDrvCommand (CC_QUERY_USB, NULL, &qusbres) != CE_NO_ERROR)
-		{
-			delete pcam;
-			pcam = NULL;
-			return -1;
-		}
+			return initError ();
+
 		// search for serial number..
 		for (usb_port = 0; usb_port < 4; usb_port++)
 		{
@@ -368,36 +363,21 @@ int Sbig::initHardware ()
 				break;
 		}
 		if (usb_port == 4)
-		{
-			delete pcam;
-			pcam = NULL;
-			return -1;
-		}
+			return initError ();
 		usb_port++;				 //cause it's 1 based..
 	}
 
 	OpenDeviceParams odp;
 	odp.deviceType = getDevType ();
 	if (pcam->OpenDevice (odp) != CE_NO_ERROR)
-	{
-		delete pcam;
-		pcam = NULL;
-		return -1;
-	}
+		return initError ();
 
 	if (pcam->GetError () != CE_NO_ERROR)
-	{
-		delete pcam;
-		pcam = NULL;
-		return -1;
-	}
+		return initError ();
+
 	pcam->EstablishLink ();
 	if (pcam->GetError () != CE_NO_ERROR)
-	{
-		delete pcam;
-		pcam = NULL;
-		return -1;
-	}
+		return initError ();
 
 	// init chips
 	GetCCDInfoParams req;
@@ -408,9 +388,8 @@ int Sbig::initHardware ()
 	req.request = CCD_INFO_IMAGING;
 	ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &res);
 	if (ret != CE_NO_ERROR)
-	{
-		return -1;
-	}
+		return initError ();
+
 	setSize (res.readoutInfo[0].width, res.readoutInfo[0].height, 0, 0);
 	//	res.readoutInfo[0].pixelWidth,
 	//		res.readoutInfo[0].pixelHeight);
@@ -418,7 +397,7 @@ int Sbig::initHardware ()
 	GetDriverInfoResults0 gccdir0;
 	pcam->GetDriverInfo (DRIVER_STD, gccdir0);
 	if (pcam->GetError () != CE_NO_ERROR)
-		return -1;
+		return initError ();
 	sprintf (ccdType, "SBIG_%i", pcam->GetCameraType ());
 	// get serial number
 
@@ -428,10 +407,20 @@ int Sbig::initHardware ()
 	reqI.request = CCD_INFO_EXTENDED;
 	ret = pcam->SBIGUnivDrvCommand (CC_GET_CCD_INFO, &reqI, &resI);
 	if (ret != CE_NO_ERROR)
-		return -1;
+		return initError ();
 	strcpy (serialNumber, resI.serialNumber);
 
+	clearHWError ();
+
 	return initChips ();
+}
+
+int Sbig::initError ()
+{
+	delete pcam;
+	pcam = NULL;
+	raiseHWError ();
+	return -1;
 }
 
 int Sbig::info ()

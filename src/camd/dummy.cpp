@@ -59,6 +59,9 @@ class Dummy:public Camera
 			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
 			noiseRange->setValueDouble (300);
 
+			createValue (hasError, "has_error", "if true, info will report error", false, RTS2_VALUE_WRITABLE);
+			hasError->setValueBool (false);
+
 			createExpType ();
 
 			width = 200;
@@ -142,6 +145,12 @@ class Dummy:public Camera
 		}
 		virtual int info ()
 		{
+			if (hasError->getValueBool ())
+			{
+				raiseHWError ();
+				return -1;
+			}
+			clearHWError ();
 			usleep (infoSleep);
 			float t = tempSet->getValueFloat ();
 			if (isnan (t))
@@ -195,6 +204,7 @@ class Dummy:public Camera
 		rts2core::ValueDouble *readoutSleep;
 		rts2core::ValueSelection *genType;
 		rts2core::ValueDouble *noiseRange;
+		rts2core::ValueBool *hasError;
 		int width;
 		int height;
 

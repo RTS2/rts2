@@ -428,6 +428,16 @@ class Daemon:public rts2core::Block
 		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"), Rts2Conn *commandedConn = NULL);
 
 		/**
+		 * Raise hardware error status bit.
+		 */
+		void raiseHWError () { maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "device error", getNow ()); }
+
+		/**
+		 * Clear hardware error status bit.
+		 */
+		void clearHWError () { maskState (DEVICE_ERROR_HW, 0, "error cleared"); }
+
+		/**
 		 * Return daemon state without ERROR information.
 		 */
 		int getDaemonState ()
