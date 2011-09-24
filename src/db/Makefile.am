@@ -4,6 +4,7 @@ AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPE
 bin_PROGRAMS = rts2-image
 
 rts2_image_SOURCES = appimagemanip.cpp
+rts2_image_LDADD = ${LDADD}
 
 EXTRA_DIST = airmasscale.ec
 CLEANFILES = airmasscale.cpp
