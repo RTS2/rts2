@@ -20,6 +20,8 @@ set lastdec=0
 
 set defoc_toffs=0
 
+set autog='UNKNOWN'
+
 <xsl:apply-templates select='*'/>
 
 </xsl:template>
@@ -59,7 +61,7 @@ if ( $continue == 1 ) then
 	set ora=`$xmlrpc --quiet -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
 	set odec=`$xmlrpc --quiet -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
 	if ( $cname == $name ) then
-		if ( ${%ora} > 0 &amp;&amp; ${%odec} > 0 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &lt; 500 ) then
+		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
 		  	set rra=`expr $ora - $lastra`
 			set rdec=`expr $odec - $lastdec`
 			if ( $rra &gt; -5 &amp;&amp; $rra &lt; 5 ) then
@@ -68,12 +70,21 @@ if ( $continue == 1 ) then
 			if ( $rdec &gt; -5 &amp;&amp; $rdec &lt; 5 ) then
 				set rdec = 0
 			endif
-			rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec)"
-			if ( $rra != 0 || $rdec != 0 ) then
-				tele offset $rra $rdec
-				set lastra=$ora
-				set lastdec=$odec
-			endif	
+
+			if ( $autog == 'ON' ) then
+				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum"
+			else
+	        		set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
+				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
+				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
+
+				rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum autog $autog"
+				if ( $rra != 0 || $rdec != 0 ) then
+					tele offset $rra $rdec
+					set lastra=$ora
+					set lastdec=$odec
+				endif
+			endif
 		else
 			rts2-logcom "too big offset $ora $odec"
 		endif	  	
@@ -86,7 +97,7 @@ if ( $continue == 1 ) then
 		tele hfocus `printf '%+0.2f' $diff`
 		set defoc_current=`echo $defoc_current + $diff | bc`
 	else
-		rts2-logcom "not changing offsfing ( $defoc_toffs - $defoc_current )"
+		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )"
 	endif
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
@@ -166,6 +177,7 @@ if ( $continue == 1 ) then
 	else
 		echo `date` "autog already in $guidestatus status, not changing it"
 	endif
+	set autog=<xsl:value-of select='@operands'/>
 endif
 </xsl:if>
 <xsl:if test='@value = "FOC_TOFFS" and @device = "FOC"'>
