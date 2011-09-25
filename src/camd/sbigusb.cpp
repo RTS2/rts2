@@ -76,11 +76,7 @@ class Sbig:public Camera
 		virtual long camWaitExpose ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
-		virtual int setCoolTemp (float new_temp);
-		virtual int tempOff ();
-		virtual void afterNight ();
+		virtual int switchCooling (bool cooling);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -134,6 +130,10 @@ class Sbig:public Camera
 		rts2core::ValueInteger *coolingPower;
 		rts2core::ValueSelection *tempRegulation;
 		rts2core::ValueBool *fan;
+
+		int camCoolHold ();
+		int setCoolTemp (float new_temp);
+		int setCoolPower (int power);
 
 		int initError ();
 };
@@ -243,20 +243,20 @@ int Sbig::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		switch (new_value->getValueInteger ())
 		{
 			case 0:
-				return tempOff () == 0 ? 0 : -2;
-			case 1:
 				return setCoolTemp (tempSet->getValueFloat ()) == 0 ? 0 : -2;
+			case 1:
+				return setCoolPower (coolingPower->getValueInteger ()) == 0 ? 0 : -2;
 			default:
 				return -2;
 		}
 	}
 	if (old_value == coolingPower)
 	{
-		return -1; //setcool (2, new_value->getValueInteger (), 0) == 0 ? 0 : -2;
+		return setCoolPower (coolingPower->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == fan)
 	{
-		return -1; //set_fan (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+		return fanState (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }
@@ -270,9 +270,8 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createExpType ();
 
 	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true, RTS2_VALUE_WRITABLE);
-	tempRegulation->addSelVal ("OFF");
 	tempRegulation->addSelVal ("TEMP");
-	//tempRegulation->addSelVal ("POWER");
+	tempRegulation->addSelVal ("POWER");
 
 	tempRegulation->setValueInteger (0);
 
@@ -503,19 +502,30 @@ int Sbig::fanState (int newFanState)
 	return checkSbigHw (ret);
 }
 
-int Sbig::camCoolMax ()
+int Sbig::switchCooling (bool cool)
 {
 	if (pcam == NULL && initHardware ())
 		return -1;
 
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
-	temp.regulation = REGULATION_OVERRIDE;
-	temp.ccdSetpoint = 255;
+	temp.regulation = cool ? (tempRegulation->getValueInteger () == 0 ? REGULATION_ON : REGULATION_OVERRIDE) : REGULATION_OFF;
+	logStream (MESSAGE_DEBUG) << "switch cooling to " << cool << sendLog;
 	if (fanState (TRUE))
 		return -1;
+	switch (tempRegulation->getValueInteger ())
+	{
+		case 0:
+			temp.ccdSetpoint = ccd_c2ad (tempSet->getValueFloat ());
+			break;
+		case 1:
+			temp.ccdSetpoint = coolingPower->getValueInteger ();
+			break;
+	}
 	ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-	return checkSbigHw (ret);
+	if (checkSbigHw (ret))
+		return -1;
+	return Camera::switchCooling (cool);
 }
 
 int Sbig::camCoolHold ()
@@ -540,9 +550,8 @@ int Sbig::setCoolTemp (float new_temp)
 
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
-	temp.regulation = REGULATION_ON;
-	logStream (MESSAGE_DEBUG) << "sbig setCoolTemp setTemp " << new_temp <<
-		sendLog;
+	temp.regulation = coolingOnOff->getValueBool () ? REGULATION_ON : REGULATION_OFF;
+	logStream (MESSAGE_DEBUG) << "sbig setCoolTemp setTemp " << new_temp << sendLog;
 	if (fanState (TRUE))
 		return -1;
 	temp.ccdSetpoint = ccd_c2ad (new_temp);
@@ -552,26 +561,22 @@ int Sbig::setCoolTemp (float new_temp)
 	return Camera::setCoolTemp (new_temp);
 }
 
-int Sbig::tempOff ()
+int Sbig::setCoolPower (int power)
 {
 	if (pcam == NULL && initHardware ())
 		return -1;
 
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
-	temp.regulation = REGULATION_OFF;
-	temp.ccdSetpoint = 0;
-	if (fanState (FALSE))
+	temp.regulation = coolingOnOff->getValueBool () ? REGULATION_OVERRIDE : REGULATION_OFF;
+	logStream (MESSAGE_DEBUG) << "sbig setCoolPower to power " << power << sendLog;
+	if (fanState (TRUE))
 		return -1;
+	temp.ccdSetpoint = power;
 	ret = pcam->SBIGUnivDrvCommand (CC_SET_TEMPERATURE_REGULATION, &temp, NULL);
-	checkSbigHw (ret);
-	return ret;
-}
-
-void Sbig::afterNight ()
-{
-	if (tempOff ())
-		logStream (MESSAGE_WARNING) << "cannot turn off temperature regulation at the end of night" << sendLog;
+	if (checkSbigHw (ret))
+		return -1;
+	return 0;
 }
 
 int main (int argc, char **argv)

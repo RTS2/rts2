@@ -177,6 +177,11 @@ class Camera:public rts2core::ScriptDevice
 		virtual long camWaitExpose ();
 
 		/**
+		 * Start/stop cooling.
+		 */
+		virtual int switchCooling (bool newval) { return 0; }
+
+		/**
 		 * Sets camera cooling temperature. Descendants should call
 		 * Camera::setCoolTemp to make sure that the set temperature is
 		 * updated.
@@ -190,14 +195,16 @@ class Camera:public rts2core::ScriptDevice
 			return 0;
 		}
 
-
 		/**
 		 * Called before night stars. Can be used to hook in preparing camera for night.
 		 */
 		virtual void beforeNight ()
 		{
 			if (nightCoolTemp && !isnan (nightCoolTemp->getValueFloat ()))
+			{
+				switchCooling (true);
 				setCoolTemp (nightCoolTemp->getValueFloat ());
+			}
 		}
 		
 		/**
@@ -205,6 +212,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual void afterNight ()
 		{
+			switchCooling (false);
 		}
 
 		/**
@@ -479,6 +487,7 @@ class Camera:public rts2core::ScriptDevice
 		// which channels are off (and which are on)
 		rts2core::BoolArray *channels;
 
+		rts2core::ValueBool *coolingOnOff;
 		// temperature and others; all in deg Celsius
 		rts2core::ValueFloat *tempAir;
 		rts2core::ValueFloat *tempCCD;
@@ -731,6 +740,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void createTempSet ()
 		{
+			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE);
 			nightCoolTemp->setValueFloat (rts2_nan("f"));
