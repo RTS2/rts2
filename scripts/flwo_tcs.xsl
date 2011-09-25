@@ -19,9 +19,6 @@ if ( $? == 0 ) set xpa=1
 
 set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
 
-set lastra=0
-set lastdec=0
-
 set defoc_toffs=0
 
 set autog='UNKNOWN'
@@ -66,8 +63,8 @@ if ( $continue == 1 ) then
 	set odec=`$xmlrpc --quiet -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
 	if ( $cname == $name ) then
 		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
-		  	set rra=`expr $ora - $lastra`
-			set rdec=`expr $odec - $lastdec`
+		  	set rra=$ora
+			set rdec=$odec
 			if ( $rra &gt; -5 &amp;&amp; $rra &lt; 5 ) then
 				set rra = 0
 			endif
@@ -80,16 +77,14 @@ if ( $continue == 1 ) then
 			set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
 
 			if ( $autog == 'ON' ) then
-				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum"
+				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
 			else
 				if ( $imgnum &lt;= $lastoffimage ) then
-					rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+					rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 				else
-					rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum autog $autog"
+					rts2-logcom "offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum autog $autog"
 					if ( $rra != 0 || $rdec != 0 ) then
 						tele offset $rra $rdec
-						set lastra=$ora
-						set lastdec=$odec
 					endif
 					set lastoffimage=$imgnum
 				endif
