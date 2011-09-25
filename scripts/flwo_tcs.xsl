@@ -71,13 +71,13 @@ if ( $continue == 1 ) then
 				set rdec = 0
 			endif
 
+        		set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
+			set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
+			set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
+
 			if ( $autog == 'ON' ) then
 				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum"
 			else
-	        		set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
-				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
-				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
-
 				rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum autog $autog"
 				if ( $rra != 0 || $rdec != 0 ) then
 					tele offset $rra $rdec
