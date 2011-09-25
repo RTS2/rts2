@@ -7,6 +7,10 @@ if ( ! (${?imgid}) ) then
 	@ imgid = 1
 endif
 
+if ( ! (${?lastoffimage}) ) then
+	set lastoffimage=-1
+endif
+
 set continue=1
 unset imgdir
 set xpa=0
@@ -78,11 +82,16 @@ if ( $continue == 1 ) then
 			if ( $autog == 'ON' ) then
 				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum"
 			else
-				rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum autog $autog"
-				if ( $rra != 0 || $rdec != 0 ) then
-					tele offset $rra $rdec
-					set lastra=$ora
-					set lastdec=$odec
+				if ( $imgnum &lt;= $lastoffimage ) then
+					rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+				else
+					rts2-logcom "offseting $rra $rdec ($ora $odec; $lastra $lastdec; $xoffs $yoffs) img_num $imgnum autog $autog"
+					if ( $rra != 0 || $rdec != 0 ) then
+						tele offset $rra $rdec
+						set lastra=$ora
+						set lastdec=$odec
+					endif
+					set lastoffimage=$imgnum
 				endif
 			endif
 		else
