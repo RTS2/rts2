@@ -184,7 +184,7 @@ if ( $continue == 1 ) then
 	set autog=<xsl:value-of select='@operands'/>
 endif
 </xsl:if>
-<xsl:if test='@value = "FOC_TOFFS" and @device = "FOC"'>
+<xsl:if test='@value = "FOC_TOFF" and @device = "FOC"'>
 set defoc_toffs=`echo $defoc_toffs + <xsl:value-of select='@operands'/> | bc`
 </xsl:if>
 </xsl:template>
