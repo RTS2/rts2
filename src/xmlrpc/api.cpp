@@ -125,7 +125,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		return;
 	}
 
-	os << std::fixed;
 	os.precision (8);
 
 	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
