@@ -38,7 +38,7 @@ class Alta:public Camera
 		Alta (int argc, char **argv);
 		virtual ~ Alta (void);
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int info ();
 
@@ -92,7 +92,6 @@ void Alta::setBitDepth (int newBit)
 int Alta::initChips ()
 {
 	setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
-	setBinning (1, 1);
 	pixelX = nan ("f");
 	pixelY = nan ("f");
 	//  gain = alta->m_ReportedGainSixteenBit;
@@ -116,6 +115,8 @@ void Alta::initBinnings ()
 	addBinning2D (7,7);
 	addBinning2D (10,10);
 	addBinning2D (20,20);
+
+        setBinning (1, 1);
 }
 
 int Alta::setBinning (int in_vert, int in_hori)
@@ -275,16 +276,10 @@ int Alta::processOption (int in_opt)
 	return 0;
 }
 
-int Alta::init ()
+int Alta::initHardware ()
 {
-	int ret;
-	ret = Camera::init ();
-	if (ret)
-	{
-		return ret;
-	}
 	alta = (CApnCamera *) new CApnCamera ();
-	ret = alta->InitDriver (cameraId->getValueInteger (), 0, 0);
+	int ret = alta->InitDriver (cameraId->getValueInteger (), 0, 0);
 
 	if (!ret)
 	{
