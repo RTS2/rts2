@@ -1036,7 +1036,9 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
-		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3}";
+		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
+		"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
+		
 	
 	struct ln_equ_posn oradec;
 
@@ -1076,7 +1078,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		else
 			os << "\"" << n << "\",";
 
-		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec);
+		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec) << ",\"" << tar->getTargetInfo () << "\"";
 
 		if (dfrom)
 			os << ',' << JsonDouble (tar->getDistance (dfrom, JD));
