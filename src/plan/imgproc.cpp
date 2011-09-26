@@ -99,6 +99,9 @@ class ImageProc:public rts2core::Device
 #endif
 		std::list < ConnProcess * >imagesQue;
 		ConnProcess *runningImage;
+
+		rts2core::ValueBool *applyCorrections;
+
 		rts2core::ValueInteger *goodImages;
 		rts2core::ValueInteger *trashImages;
 		rts2core::ValueInteger *badImages;
@@ -146,6 +149,9 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	runningImage = NULL;
 
 	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
+
+	createValue (applyCorrections, "apply_corrections", "apply corrections from astrometry", false, RTS2_VALUE_WRITABLE);
+	applyCorrections->setValueBool (true);
 
 	createValue (goodImages, "good_astrom", "number of images with astrometry", false);
 	goodImages->setValueInteger (0);
