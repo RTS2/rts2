@@ -1140,10 +1140,11 @@ void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 {
 	os << "\"h\":["
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
-		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":3},"
-		"{\"n\":\"End\",\"t\":\"tT\",\"c\":4},"
-		"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5},"
-		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
+		"{\"n\":\"Slew\",\"t\":\"t\",\"c\":1},"
+		"{\"n\":\"Start\",\"t\":\"tT\",\"c\":2},"
+		"{\"n\":\"End\",\"t\":\"tT\",\"c\":3},"
+		"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":4},"
+		"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":5}"
 		"],\"d\":[";
 
 	os << std::fixed;
@@ -1153,8 +1154,9 @@ void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
 		if (iter != obss->begin ())
 			os << ",";
 		os << "[" << iter->getObsId () << ","
-			<< iter->getObsStart () << ","
-			<< iter->getObsEnd () << ","
+			<< JsonDouble(iter->getObsSlew ()) << ","
+			<< JsonDouble(iter->getObsStart ()) << ","
+			<< JsonDouble(iter->getObsEnd ()) << ","
 			<< iter->getNumberOfImages () << ","
 			<< iter->getNumberOfGoodImages ()
 			<< "]";
