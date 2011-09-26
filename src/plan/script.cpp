@@ -315,7 +315,8 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	commandStart = nextElement ();
 	// if we include device name
 	devSep = index (commandStart, '.');
-	if (devSep)
+	char *opsep = index (commandStart, '=');
+	if (devSep && (opsep == NULL || devSep < opsep))
 	{
 		*devSep = '\0';
 		strncpy (new_device, commandStart, DEVICE_NAME_SIZE);
