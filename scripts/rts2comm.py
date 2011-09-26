@@ -166,7 +166,17 @@ class Rts2Comm:
 		"""Add to device string value."""
 		print "string",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
-	
+
+	def boolValue(self,name,desc,value):
+		"""Add to device boolean value."""
+		print "bool",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
+	def onoffValue(self,name,desc,value):
+		"""Add to device boolean value with on/off display type."""
+		print "onoff",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
 	def log(self,level,text):
 		print "log",level,text
 		sys.stdout.flush()
