@@ -288,10 +288,11 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"ID\",\"t\":\"a\",\"c\":0,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/\",\"href\":0},"
 			"{\"n\":\"TargetID\",\"t\":\"a\",\"c\":1,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
 			"{\"n\":\"Target name\",\"t\":\"a\",\"c\":2,\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":1},"
-			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":3},"
-			"{\"n\":\"End\",\"t\":\"tT\",\"c\":4},"
-			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":5},"
-			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":6}"
+			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
+			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":4},"
+			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"
+			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":6},"
+			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":7}"
 			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
@@ -313,12 +314,13 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 				_os << ",";
 			_os << "[" << iter->getObsId () << ","
 				<< iter->getTargetId () << ","
-				<< "\"" << iter->getTargetName () << "\",\""
-				<< iter->getObsStart () << "\",\""
-				<< iter->getObsEnd () << "\","
+				<< "\"" << iter->getTargetName () << "\","
+				<< JsonDouble (iter->getObsSlew ()) << ","
+				<< JsonDouble (iter->getObsStart ()) << ","
+				<< JsonDouble (iter->getObsEnd ()) << ","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages ()
-				<< "]\n";
+				<< "]";
 		}
 
 		_os << "]}";
