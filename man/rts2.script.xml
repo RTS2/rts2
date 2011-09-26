@@ -841,6 +841,20 @@ double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>bool {variable name} {variable description} {value}</option></term>
+	<listitem><para>
+	  Creates or update device boolean value. Similar to
+	  <emphasis>double</emphasis> command, described above.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>onoff {variable name} {variable description} {value}</option></term>
+	<listitem><para>
+	  Creates or update device boolean value with ON/OFF type. Similar to
+	  <emphasis>bool</emphasis> command, described above.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>radec {ra} {dec}</option></term>
 	<listitem><para>
 	  Moves telescope to given equatorial (RA DEC) coordinates. Coordinates

@@ -231,6 +231,37 @@ void ConnExe::processCommand (char *cmd)
 			master->updateMetaInformations (vi);
 		}
 	}
+	else if (!strcasecmp (cmd, "bool") || !strcasecmp (cmd, "onoff"))
+	{
+		char *vname, *desc, *val;
+		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
+			throw rts2core::Error ("invalid string");
+		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		// either variable with given name exists..
+		if (v)
+		{
+			if (v->getValueBaseType () == RTS2_VALUE_BOOL)
+			{
+				((rts2core::ValueInteger *) v)->setValueCharArr (val);
+				((rts2core::Daemon *) master)->sendValueAll (v);
+			}
+			else
+			{
+				throw rts2core::Error (std::string ("value is not boolean ") + vname);
+			}
+		}
+		// or create it and distribute it..
+		else
+		{
+			rts2core::ValueBool *vi;
+			if (!strcasecmp (cmd, "bool"))
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, RTS2_VALUE_WRITABLE);
+			else
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			vi->setValueCharArr (val);
+			master->updateMetaInformations (vi);
+		}
+	}
 	else
 	{
 		throw rts2core::Error (std::string ("unknow command ") + cmd);
