@@ -122,6 +122,11 @@ class TargetQueue:public std::list <QueuedTarget>
 		void beforeChange (double now);
 
 		/**
+		 * Sort targets by current queue ordering.
+		 */
+		void sortQueue ();
+
+		/**
 		 * Runs queue filter, remove expired observations.
 		 */
 		void filter (double now);

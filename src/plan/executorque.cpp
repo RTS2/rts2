@@ -114,6 +114,7 @@ double TargetQueue::getMaximalDuration (rts2db::Target *tar)
 
 void TargetQueue::beforeChange (double now)
 {
+	sortQueue ();
 	switch (getQueueType ())
 	{
 		case QUEUE_FIFO:
@@ -128,6 +129,21 @@ void TargetQueue::beforeChange (double now)
 			}
 			break;
 		case QUEUE_HIGHEST:
+		case QUEUE_WESTEAST:
+		case QUEUE_WESTEAST_MERIDIAN:
+			break;
+	}
+	filter (now);
+}
+
+void TargetQueue::sortQueue ()
+{
+	switch (getQueueType ())
+	{
+		case QUEUE_FIFO:
+		case QUEUE_CIRCULAR:
+			break;
+		case QUEUE_HIGHEST:
 			sort (sortQuedTargetByAltitude (*observer));
 			break;
 		case QUEUE_WESTEAST:
@@ -137,7 +153,6 @@ void TargetQueue::beforeChange (double now)
 			sortWestEastMeridian ();
 			break;
 	}
-	filter (now);
 }
 
 void TargetQueue::filter (double now)

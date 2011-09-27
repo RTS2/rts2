@@ -466,8 +466,7 @@ int SelectorDev::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 
 void SelectorDev::valueChanged (rts2core::Value *value)
 {
-	if ((value == selEnabled && selEnabled->getValueBool ())
-		|| value == queueOnly)
+	if ((value == selEnabled && selEnabled->getValueBool ()) || value == queueOnly)
 		updateNext ();
 	else
 	{
@@ -544,7 +543,14 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			if (q->queueFromConn (conn, withTimes, notifyConn))
 				return -2;
 			if (getMasterState () == SERVERD_NIGHT)
+			{
 				q->beforeChange (getNow ());
+			}
+			else
+			{
+				q->sortQueue ();
+				q->updateVals ();
+			}
 		}
 		catch (rts2core::Error &er)
 		{
