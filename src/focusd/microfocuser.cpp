@@ -42,8 +42,8 @@ class Microfocuser:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
-  		virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+  		virtual double tcOffset () {return 0.;};
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 	protected:
@@ -145,7 +145,7 @@ int Microfocuser::info ()
 	if (ret != 7)
 		return ret;
 
-	position->setValueFloat (atoi (buf + 2));
+	position->setValueDouble (atoi (buf + 2));
 
 	usleep (USEC_SEC);
 
@@ -162,9 +162,9 @@ int Microfocuser::commandAuthorized (Rts2Conn * conn)
 	return Focusd::commandAuthorized (conn);
 }
 
-int Microfocuser::setTo (float num)
+int Microfocuser::setTo (double num)
 {
-	float diff = num - position->getValueFloat ();
+	double diff = num - position->getValueDouble ();
 	// ignore sub-step requests
 	if (fabs (diff) < 1)
 		return 0;

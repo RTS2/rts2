@@ -52,8 +52,8 @@ class Optec:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
-		virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
 		virtual int isFocusing ();
 };
 
@@ -208,7 +208,7 @@ Optec::info ()
 	return Focusd::info ();
 }
 
-int Optec::setTo (float num)
+int Optec::setTo (double num)
 {
 	char command[7], rbuf[7];
 	char add = ' ';

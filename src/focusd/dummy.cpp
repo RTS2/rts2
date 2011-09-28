@@ -44,8 +44,8 @@ class Dummy:public Focusd
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
-		virtual int setTo (float num);
-		virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
 		virtual int isFocusing ();
 };
 
@@ -83,18 +83,18 @@ int Dummy::processOption (int opt)
 
 int Dummy::initValues ()
 {
-	position->setValueFloat (0);
-	defaultPosition->setValueFloat (0);
+	position->setValueDouble (0);
+	defaultPosition->setValueDouble (0);
 	temperature->setValueFloat (100);
 	return Focusd::initValues ();
 }
 
-int Dummy::setTo (float num)
+int Dummy::setTo (double num)
 {
-	if (position->getValueFloat () > num)
-		focSteps->setValueFloat (-1 * fabs (focSteps->getValueFloat ()));
+	if (position->getValueDouble () > num)
+		focSteps->setValueDouble (-1 * fabs (focSteps->getValueFloat ()));
 	else	
-		focSteps->setValueFloat (fabs (focSteps->getValueFloat ()));
+		focSteps->setValueDouble (fabs (focSteps->getValueDouble ()));
 	sendValueAll (focSteps);
 	return 0;
 }

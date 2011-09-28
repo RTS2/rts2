@@ -68,8 +68,8 @@ class Robofocus:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
-		virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
 };
 
 }
@@ -224,7 +224,7 @@ int Robofocus::getSwitchState ()
 	return ret;
 }
 
-int Robofocus::setTo (float num)
+int Robofocus::setTo (double num)
 {
 	char command[9], command_buf[10];
 	sprintf (command, "FG%06i", (int) num);

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Markus Wildi <markus.wildi@one-arcsec.org>
  * 
  * temperature compensation: 2011, Markus Wildi <markus.wildi@one-arcsec.org>
  *                    
@@ -76,8 +77,8 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual void meteo ();
-		virtual int setTo (float num);
-                virtual float tcOffset () ;
+		virtual int setTo (double num);
+                virtual double tcOffset ();
 		rts2core::ValueLong *focExtent;
 		virtual void valueChanged (rts2core::Value *changed_value);
 	public:
@@ -312,7 +313,8 @@ void Fli::meteo()
 	  logStream (MESSAGE_ERROR) << "FLI::meteo failed on device: "<< meteoDevice<< sendLog;
 	}
 }
-int Fli::setTo (float num)
+
+int Fli::setTo (double num)
 {
 	LIBFLIAPI ret;
 	ret = info ();
@@ -332,10 +334,11 @@ int Fli::setTo (float num)
 		return -1;
 	return 0;
 }
-float Fli::tcOffset(){
 
-        float tcFocOffset= 0.;
-	float tmpPosition= 0.;
+double Fli::tcOffset ()
+{
+        double tcFocOffset= 0.;
+	double tmpPosition= 0.;
 
 	if( TCmode->getValueInteger () == NO_TC) {
 	  
@@ -379,12 +382,10 @@ float Fli::tcOffset(){
 
 	  logStream (MESSAGE_DEBUG) << "Fli::tcOffset " << sendLog;
 	  return 0. ;
-
 }
+
 void Fli::valueChanged (rts2core::Value *changed_value)
 {
-
-
   long steps= 0  ;
   long positionTc= 0 ;
   int ret ;
@@ -404,14 +405,14 @@ void Fli::valueChanged (rts2core::Value *changed_value)
       }
       position->setValueInteger ((int) steps);
     }
-    target->setValueFloat(positionTc) ;
+    target->setValueDouble (positionTc) ;
     sendValueAll (target);
     return ;
   }
 
   Focusd::valueChanged (changed_value);
-
 }
+
 int Fli::isFocusing ()
 {
 	LIBFLIAPI ret;

@@ -47,8 +47,8 @@ class OpenTpl:public Focusd
 		virtual int endFocusing ();
 		virtual bool isAtStartPosition ();
 
-		virtual int setTo (float num);
-  virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
 		virtual int isFocusing ();
 	public:
 		OpenTpl (int argc, char **argv);
@@ -169,13 +169,13 @@ OpenTpl::info ()
 	return Focusd::info ();
 }
 
-int OpenTpl::setTo (float num)
+int OpenTpl::setTo (double num)
 {
 	int status = 0;
 
 	int power = 1;
 	int referenced = 0;
-	double offset = focusingOffset->getValueFloat () + tempOffset->getValueFloat ();
+	double offset = focusingOffset->getValueDouble () + tempOffset->getValueDouble ();
 
 	status = opentplConn->get ("FOCUS.REFERENCED", referenced, &status);
 	if (referenced != 1)
@@ -194,7 +194,7 @@ int OpenTpl::setTo (float num)
 		logStream (MESSAGE_ERROR) << "setTo cannot set offset!" << sendLog;
 		return -1;
 	}
-	position->setValueFloat (num);
+	position->setValueDouble (num);
 	return 0;
 }
 

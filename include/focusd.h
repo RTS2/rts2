@@ -57,18 +57,18 @@ class Focusd:public rts2core::Device
 	protected:
 		std::string focType;
 
-		rts2core::ValueFloat *position;
-		rts2core::ValueFloat *target;
+		rts2core::ValueDouble *position;
+		rts2core::ValueDoubleMinMax *target;
 		rts2core::ValueFloat *temperature;
 
-		rts2core::ValueFloat *defaultPosition;
-		rts2core::ValueFloat *focusingOffset;
-		rts2core::ValueFloat *tempOffset;
+		rts2core::ValueDoubleMinMax *defaultPosition;
+		rts2core::ValueDoubleMinMax *focusingOffset;
+		rts2core::ValueDoubleMinMax *tempOffset;
 
 		virtual int processOption (int in_opt);
 
-		virtual int setTo (float num) = 0;
-		virtual float tcOffset () = 0;
+		virtual int setTo (double num) = 0;
+		virtual double tcOffset () = 0;
 
 		virtual int isFocusing ();
 		virtual int endFocusing ();
@@ -87,9 +87,9 @@ class Focusd:public rts2core::Device
 		 *
 		 * @return Focuser target position.
 		 */
-		int getTarget ()
+		double getTarget ()
 		{
-			return target->getValueInteger ();
+			return target->getValueDouble ();
 		}
 
 		// callback functions from focuser connection

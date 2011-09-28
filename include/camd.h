@@ -752,12 +752,12 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return Exposure time in seconds and fractions of seconds.
 		 */
-		float getExposure () { return exposure->getValueFloat (); }
+		double getExposure () { return exposure->getValueDouble (); }
 
 		/**
 		 * Set exposure time.
 		 */
-		virtual void setExposure (float in_exp) { exposure->setValueFloat (in_exp); }
+		virtual void setExposure (double exp) { exposure->setValueDouble (exp); }
 
 		/**
 		 * Returns exposure type.
@@ -785,7 +785,7 @@ class Camera:public rts2core::ScriptDevice
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
 
-		rts2core::ValueFloat *exposure;
+		rts2core::ValueDoubleMinMax *exposure;
 
 		// shared memory identifier
 		int sharedMemId;

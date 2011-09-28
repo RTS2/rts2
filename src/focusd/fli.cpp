@@ -46,8 +46,8 @@ class Fli:public Focusd
 		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
-		virtual float tcOffset () { return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () { return 0.;};
 		rts2core::ValueLong *focExtent;
 
 	private:
@@ -130,7 +130,6 @@ int Fli::processOption (int in_opt)
 int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
-	int ret_f;
 	char **names;
 	char *nam_sep;
 
@@ -242,7 +241,7 @@ int Fli::info ()
 	return Focusd::info ();
 }
 
-int Fli::setTo (float num)
+int Fli::setTo (double num)
 {
 	LIBFLIAPI ret;
 	ret = info ();

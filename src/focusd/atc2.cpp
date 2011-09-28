@@ -78,8 +78,8 @@ class ATC2:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
-		virtual float tcOffset () {return 0.;};
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 	protected:
@@ -287,20 +287,20 @@ int ATC2::findOptima ()
 // send focus to given position
 // Robofocus: FG000000 gets position, while FGXXXXXX sets position when XXXXXXis different from zero.
 // ATC-02: BFL_xxx.xx+(CR/LF) set the new back focus position
-int ATC2::setTo (float num)
+int ATC2::setTo (double num)
 {
-	if (fabs (num - position->getValueFloat ()) < 0.015)
+	if (fabs (num - position->getValueDouble ()) < 0.015)
 		return 0;
 	char b1[10];
 	char command[50];
 
 	// compare as well strings we will send..
 	snprintf (b1, 9, "%06.2f", num);
-	snprintf (command, 9, "%06.2f", position->getValueFloat ());
+	snprintf (command, 9, "%06.2f", position->getValueDouble ());
 	if (strcmp (b1, command) == 0)
 		return 0;
 
-	logStream (MESSAGE_DEBUG) << "changing position from " << position->getValueFloat () << " (" << command << ") to " << num << " (" << b1 << ")" << sendLog;
+	logStream (MESSAGE_DEBUG) << "changing position from " << position->getValueDouble () << " (" << command << ") to " << num << " (" << b1 << ")" << sendLog;
 
 	size_t l = snprintf (command, 50, "BFL %06.2f", num);
 	if (ATC2Conn->writePort (command, l))
