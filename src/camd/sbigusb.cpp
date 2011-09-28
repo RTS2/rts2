@@ -339,6 +339,7 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 
 int Sbig::initHardware ()
 {
+	setExposureMinMax (0, 655.35);
 	if (pcam)
 	{
 		pcam->CloseDriver ();
