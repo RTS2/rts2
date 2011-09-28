@@ -755,6 +755,11 @@ class Camera:public rts2core::ScriptDevice
 		double getExposure () { return exposure->getValueDouble (); }
 
 		/**
+		 * Set exposure minimal and maximal times.
+		 */
+		void setExposureMinMax (double exp_min, double exp_max);
+
+		/**
 		 * Set exposure time.
 		 */
 		virtual void setExposure (double exp) { exposure->setValueDouble (exp); }

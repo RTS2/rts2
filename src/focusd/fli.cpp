@@ -48,7 +48,6 @@ class Fli:public Focusd
 		virtual int info ();
 		virtual int setTo (double num);
 		virtual double tcOffset () { return 0.;};
-		rts2core::ValueLong *focExtent;
 
 	private:
 		flidev_t dev;
@@ -70,8 +69,6 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
-
-	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
 
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
@@ -178,7 +175,7 @@ int Fli::initHardware ()
 	ret = FLIGetFocuserExtent (dev, &extent);
 	if (ret)
 		return -1;
-	focExtent->setValueInteger (extent);
+	setFocusExtend (0, extent);
 
 	if (!isnan (defaultPosition->getValueFloat ()))
 	{
@@ -247,12 +244,6 @@ int Fli::setTo (double num)
 	ret = info ();
 	if (ret)
 		return ret;
-
-	if (num < 0 || num > focExtent->getValueInteger())
-	{
-		logStream (MESSAGE_ERROR) << "Desired position not in focuser's extent: " << num << sendLog;
-		return -1;
-	}
 
 	long s = num - position->getValueInteger ();
 

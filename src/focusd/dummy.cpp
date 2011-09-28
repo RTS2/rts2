@@ -31,22 +31,25 @@ namespace rts2focusd
  */
 class Dummy:public Focusd
 {
-	private:
-		rts2core::ValueFloat *focSteps;
-	protected:
-		virtual int processOption (int opt);
-		virtual int initValues ();
-
-		virtual bool isAtStartPosition ()
-		{
-			return false;
-		}
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
 		virtual int setTo (double num);
 		virtual double tcOffset () {return 0.;};
 		virtual int isFocusing ();
+
+	protected:
+		virtual int processOption (int opt);
+		virtual int initValues ();
+
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+
+		virtual bool isAtStartPosition () { return false; }
+
+	private:
+		rts2core::ValueFloat *focSteps;
+		rts2core::ValueDouble *focMin;
+		rts2core::ValueDouble *focMax;
 };
 
 }
@@ -57,6 +60,9 @@ Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 {
 	focType = std::string ("Dummy");
 	createTemperature ();
+
+	createValue (focMin, "foc_min", "minimal focuser value", false, RTS2_VALUE_WRITABLE);
+	createValue (focMax, "foc_max", "maximal focuser value", false, RTS2_VALUE_WRITABLE);
 
 	createValue (focSteps, "focstep", "focuser steps (step size per second)", false, RTS2_VALUE_WRITABLE);
 	focSteps->setValueFloat (1);
@@ -87,6 +93,21 @@ int Dummy::initValues ()
 	defaultPosition->setValueDouble (0);
 	temperature->setValueFloat (100);
 	return Focusd::initValues ();
+}
+
+int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	if (old_value == focMin)
+	{
+		setFocusExtend (new_value->getValueDouble (), focMax->getValueDouble ());
+		return 0;
+	}
+	else if (old_value == focMax)
+	{
+		setFocusExtend (focMin->getValueDouble (), new_value->getValueDouble ());
+		return 0;
+	}
+	return Focusd::setValue (old_value, new_value);
 }
 
 int Dummy::setTo (double num)

@@ -1250,6 +1250,13 @@ int Camera::getStateChip (int chip)
 	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
 }
 
+void Camera::setExposureMinMax (double exp_min, double exp_max)
+{
+	exposure->setMin (exp_min);
+	exposure->setMax (exp_max);
+	updateMetaInformations (exposure);
+}
+
 int Camera::getFilterNum ()
 {
 	if (wheelDevice)

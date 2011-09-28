@@ -73,6 +73,11 @@ class Focusd:public rts2core::Device
 		virtual int isFocusing ();
 		virtual int endFocusing ();
 
+		double getFocusMin () { return target->getMin (); }
+		double getFocusMax () { return target->getMax (); }
+
+		void setFocusExtend (double foc_min, double foc_max);
+
 		virtual bool isAtStartPosition () = 0;
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);

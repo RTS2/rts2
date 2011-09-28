@@ -34,8 +34,8 @@ Focusd::Focusd (int in_argc, char **in_argv):rts2core::Device (in_argc, in_argv,
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
 
-	focusingOffset->setValueFloat (0);
-	tempOffset->setValueFloat (0);
+	focusingOffset->setValueDouble (0);
+	tempOffset->setValueDouble (0);
 
 	addOption (OPT_START, "start-position", 1, "focuser start position (focuser will be set to this one, if initial position is detected");
 }
@@ -87,21 +87,21 @@ int Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
-	if (isnan (defaultPosition->getValueFloat ()))
+	if (isnan (defaultPosition->getValueDouble ()))
 	{
 		// refresh position values
 		if (info ())
 			return -1;
-		target->setValueFloat (getPosition ());
-		defaultPosition->setValueFloat (getPosition ());
+		target->setValueDouble (getPosition ());
+		defaultPosition->setValueDouble (getPosition ());
 	}
 	else if (isAtStartPosition () == false)
 	{
-		setPosition (defaultPosition->getValueFloat ());
+		setPosition (defaultPosition->getValueDouble ());
 	}
 	else
 	{
-		target->setValueFloat (getPosition ());
+		target->setValueDouble (getPosition ());
 	}
 
 	return rts2core::Device::initValues ();
@@ -116,15 +116,21 @@ int Focusd::idle ()
 int Focusd::setPosition (float num)
 {
 	int ret;
-	target->setValueFloat (num);
+	target->setValueDouble (num);
 	sendValueAll (target);
 	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
 	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
+	if ((!isnan (getFocusMin ()) && num < getFocusMin ()) || (!isnan (getFocusMax ()) && num > getFocusMax ()))
+	{
+		logStream (MESSAGE_ERROR) << "focuser outside of focuser extend " << num << sendLog;
+		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change is not possible - outside of the range");
+		return -1;
+	}
 	ret = setTo (num);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set focuser to " << num << sendLog;
-		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change started");
+		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE | DEVICE_ERROR_HW, DEVICE_ERROR_HW, "focus change aborted");
 		return ret;
 	}
 	return ret;
@@ -161,6 +167,25 @@ int Focusd::endFocusing ()
 	return 0;
 }
 
+void Focusd::setFocusExtend (double foc_min, double foc_max)
+{
+	target->setMin (foc_min);
+	target->setMax (foc_max);
+	updateMetaInformations (target);
+
+	defaultPosition->setMin (foc_min);
+	defaultPosition->setMax (foc_max);
+	updateMetaInformations (defaultPosition);
+
+	focusingOffset->setMin (foc_min);
+	focusingOffset->setMax (foc_max);
+	updateMetaInformations (focusingOffset);
+
+	tempOffset->setMin (foc_min);
+	tempOffset->setMax (foc_max);
+	updateMetaInformations (tempOffset);
+}
+
 int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
         float tco= tcOffset();
@@ -186,8 +211,8 @@ int Focusd::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 int Focusd::scriptEnds ()
 {
-	tempOffset->setValueFloat (0);
-	setPosition (defaultPosition->getValueFloat () + focusingOffset->getValueFloat () + tempOffset->getValueFloat () + tcOffset());
+	tempOffset->setValueDouble (0);
+	setPosition (defaultPosition->getValueDouble () + focusingOffset->getValueDouble () + tempOffset->getValueDouble () + tcOffset());
 	sendValueAll (tempOffset);
 	return rts2core::Device::scriptEnds ();
 }
