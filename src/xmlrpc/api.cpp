@@ -960,7 +960,9 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 	os << "\"d\":{" << std::fixed;
 	double mfrom = rts2_nan ("f");
 	bool first = true;
-	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	rts2core::ValueVector::iterator iter;
+
+	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
 		if (conn->getOtherDevClient ())
 		{
@@ -996,6 +998,23 @@ void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpPa
 		if (extended)
 			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
 	}
+	os << "},\"minmax\":{";
+
+	bool firstMMax = true;
+
+	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	{
+		if ((*iter)->getValueExtType () == RTS2_VALUE_MMAX && (*iter)->getValueBaseType () == RTS2_VALUE_DOUBLE)
+		{
+			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (*iter);
+			if (firstMMax)
+				firstMMax = false;
+			else
+				os << ",";
+			os << "\"" << v->getName () << "\":[" << JsonDouble (v->getMin ()) << "," << JsonDouble (v->getMax ()) << "]";
+		}
+	}
+
 	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"f\":" << JsonDouble (mfrom);
 }
 
