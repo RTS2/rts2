@@ -4,7 +4,6 @@ AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPE
 bin_PROGRAMS = rts2-image
 
 rts2_image_SOURCES = appimagemanip.cpp
-rts2_image_LDADD = ${LDADD}
 
 EXTRA_DIST = airmasscale.ec
 CLEANFILES = airmasscale.cpp
@@ -55,6 +54,8 @@ rts2_airmasscale_LDADD = ${PG_LDADD}
 	@ECPG@ -o $@ $^
 
 else
+
+rts2_image_LDADD = ${LDADD}
 
 EXTRA_DIST += nightreport.cpp targetlist.cpp target.cpp tpm.cpp obsinfo.cpp user.cpp newtarget.cpp rts2targetapp.cpp simbadinfo.cpp planapp.cpp airmasscale.ec
 
