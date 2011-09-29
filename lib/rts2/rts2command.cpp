@@ -113,8 +113,7 @@ int Rts2Command::commandReturnQued (Rts2Conn * conn)
 int Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	if (originator)
-		originator->
-			postEvent (new Rts2Event (EVENT_COMMAND_FAILED, (void *) this));
+		originator->postEvent (new Rts2Event (EVENT_COMMAND_FAILED, (void *) this));
 	return -1;
 }
 
