@@ -130,6 +130,12 @@ class Dummy:public Camera
 
 				createValue (tempMin, "temp_min", "[C] minimal set temperature", false, RTS2_VALUE_WRITABLE);
 				createValue (tempMax, "temp_max", "[C] maximal set temperature", false, RTS2_VALUE_WRITABLE);
+
+				tempMin->setValueDouble (-257);
+				tempMax->setValueDouble (50);
+
+				tempSet->setMin (-257);
+				tempSet->setMax (50);
 			}
 
 			setExposureMinMax (0,3600);
