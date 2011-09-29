@@ -48,6 +48,10 @@ class Dummy:public Camera
 			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			readoutSleep->setValueDouble (0);
 
+			createValue (expMin, "exp_min", "[s] minimal exposure time", false, RTS2_VALUE_WRITABLE);
+			createValue (expMax, "exp_max", "[s] maximal exposure time", false, RTS2_VALUE_WRITABLE);
+			tempMin = tempMax = NULL;
+
 			createValue (genType, "gen_type", "data generation algorithm", true, RTS2_VALUE_WRITABLE);
 			genType->addSelVal ("random");
 			genType->addSelVal ("linear");
@@ -117,18 +121,20 @@ class Dummy:public Camera
 			}
 			return 0;
 		}
-		virtual int init ()
+		virtual int initHardware ()
 		{
-			int ret;
-			ret = Camera::init ();
-			if (ret)
-				return ret;
-
 			if (showTemp)
 			{
 				createTempAir ();
 				createTempSet ();
+
+				createValue (tempMin, "temp_min", "[C] minimal set temperature", false, RTS2_VALUE_WRITABLE);
+				createValue (tempMax, "temp_max", "[C] maximal set temperature", false, RTS2_VALUE_WRITABLE);
 			}
+
+			setExposureMinMax (0,3600);
+			expMin->setValueDouble (0);
+			expMax->setValueDouble (3600);
 
 			usleep (infoSleep);
 			strcpy (ccdType, "Dummy");
@@ -198,6 +204,8 @@ class Dummy:public Camera
 			addDataType (RTS2_DATA_ULONG);
 		}
 
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+
 	private:
 		bool supportFrameT;
 		int infoSleep;
@@ -205,6 +213,11 @@ class Dummy:public Camera
 		rts2core::ValueSelection *genType;
 		rts2core::ValueDouble *noiseRange;
 		rts2core::ValueBool *hasError;
+
+		rts2core::ValueDouble *expMin;
+		rts2core::ValueDouble *expMax;
+		rts2core::ValueDouble *tempMin;
+		rts2core::ValueDouble *tempMax;
 		int width;
 		int height;
 
@@ -218,6 +231,33 @@ class Dummy:public Camera
 };
 
 using namespace rts2camd;
+
+int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	if (old_value == expMin)
+	{
+		setExposureMinMax (new_value->getValueDouble (), expMax->getValueDouble ());
+		return 0;
+	}
+	else if (old_value == expMax)
+	{
+		setExposureMinMax (expMin->getValueDouble (), new_value->getValueDouble ());
+		return 0;
+	}
+	else if (old_value == tempMin)
+	{
+		tempSet->setMin (new_value->getValueDouble ());
+		updateMetaInformations (tempSet);
+		return 0;
+	}
+	else if (old_value == tempMax)
+	{
+		tempSet->setMax (new_value->getValueDouble ());
+		updateMetaInformations (tempSet);
+		return 0;
+	}
+	return Camera::setValue (old_value, new_value);
+}
 
 int Dummy::doReadout ()
 {
