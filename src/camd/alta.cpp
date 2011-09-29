@@ -310,7 +310,7 @@ int Alta::info ()
 {
 	coolerStatus->setValueInteger (alta->read_CoolerStatus ());
 	coolerEnabled->setValueBool (alta->read_CoolerEnable ());
-	tempSet->setValueFloat (alta->read_CoolerSetPoint ());
+	tempSet->setValueDouble (alta->read_CoolerSetPoint ());
 	tempCCD->setValueFloat (alta->read_TempCCD ());
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
 	fanMode->setValueInteger (alta->read_FanMode ());
