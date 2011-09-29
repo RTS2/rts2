@@ -340,6 +340,11 @@ SBIG_DEVICE_TYPE Sbig::getDevType ()
 int Sbig::initHardware ()
 {
 	setExposureMinMax (0, 655.35);
+	
+	tempSet->setMin (-100);
+	tempSet->setMax (50);
+	updateMetaInformations (tempSet);
+
 	if (pcam)
 	{
 		pcam->CloseDriver ();
@@ -448,7 +453,7 @@ int Sbig::info ()
 		return -1;
 	fan->setValueInteger (qcsr.status & 0x100);
 	tempAir->setValueFloat (pcam->ADToDegreesC (qtsr.ambientThermistor, FALSE));
-	tempSet->setValueFloat (pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE));
+	tempSet->setValueDouble (pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE));
 	tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
 	coolingPower->setValueInteger (qtsr.power);
 	return Camera::info ();
