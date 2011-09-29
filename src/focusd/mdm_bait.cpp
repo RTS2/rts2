@@ -45,7 +45,8 @@ class BAIT:public Focusd
 		virtual int init ();
 		virtual int info ();
 
-		virtual int setTo (float num);
+		virtual int setTo (double num);
+		virtual double tcOffset () { return 0.; }
 
 	private:
 		rts2core::ValueFloat *t_tcs, *t_west, *t_frame, *t_mirror, *t_secondary;
@@ -171,7 +172,7 @@ int BAIT::info ()
 	return Focusd::info ();
 }
 
-int BAIT::setTo (float num)
+int BAIT::setTo (double num)
 {
 	char buf[255];
 	snprintf (buf, 255, "FOCUSABS %d", (int) num);

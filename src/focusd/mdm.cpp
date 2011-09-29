@@ -44,7 +44,8 @@ class MDM:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int setTo (float num);
+		virtual int setTo (double num);
+		virtual double tcOffset () { return 0.; }
 
 	private:
 		int tcssock;
@@ -125,7 +126,7 @@ int MDM::info ()
 }
 
 
-int MDM::setTo (float num)
+int MDM::setTo (double num)
 {
 	char buf[255];
 	snprintf (buf, 255, "FOCUSABS %d", (int) num);
