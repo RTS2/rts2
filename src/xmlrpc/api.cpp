@@ -289,11 +289,12 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			os << "\"type\":" << conn->getOtherType ();
 		}
 		// set or increment variable
-		else if (vals[0] == "set" || vals[0] == "inc")
+		else if (vals[0] == "set" || vals[0] == "inc" || vals[0] == "dec")
 		{
 			const char *device = params->getString ("d","");
 			const char *variable = params->getString ("n", "");
 			const char *value = params->getString ("v", "");
+			int async = params->getInteger ("async", 0);
 			if (variable[0] == '\0')
 				throw JSONException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
@@ -310,10 +311,24 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			char op;
 			if (vals[0] == "inc")
 				op = '+';
+			else if (vals[0] == "dec")
+				op = '-';
 			else
 				op = '=';
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
-			sendConnectionValues (os, conn, params);
+			if (async)
+			{
+				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
+				sendConnectionValues (os, conn, params);
+			}
+			else
+			{
+				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
+				throw XmlRpc::XmlRpcAsynchronous ();
+			}
+
 		}
 		// get variable
 		else if (vals[0] == "get" || vals[0] == "status")
