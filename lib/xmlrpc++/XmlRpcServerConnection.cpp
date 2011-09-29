@@ -472,7 +472,7 @@ void XmlRpcServerConnection::executeGet()
 		{
 			XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: JSON fault %s.", fault.getMessage().c_str());
 			_get_response = new char[200];
-			_get_response_length = snprintf (_get_response, 200, "{\"error\":\"%s\"}", fault.getMessage().c_str());
+			_get_response_length = snprintf (_get_response, 200, "{\"error\":\"%s\",\"ret\":-2}", fault.getMessage().c_str());
 			response_type = "text/json";
 			http_code = HTTP_BAD_REQUEST;
 		}
