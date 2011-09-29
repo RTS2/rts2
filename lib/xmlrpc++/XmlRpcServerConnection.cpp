@@ -654,7 +654,7 @@ void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, 
 
 void XmlRpcServerConnection::generateJSONFaultResponse(std::string const& errorMsg)
 {
-	std::string body = "{\"error\":" + errorMsg + "\"}";
+	std::string body = "{\"error\":" + errorMsg + "\", \"ret\":-2}";
 	std::string header =
 		"HTTP/1.1 400 Error\r\n"
 		"Date: " + getHttpDate () +
