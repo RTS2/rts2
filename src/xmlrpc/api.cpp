@@ -1241,7 +1241,7 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 			os << "[";
 		else
 			os << ",[";
-		os << iter->first << ",\"" << iter->second << "\"";
+		os << iter->first << ",\"" << iter->second << "\"]";
 	}
 	os << "]";
 }
