@@ -362,7 +362,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
 	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE, CAM_WORKING);
 
-	createValue (binning, "binning", "chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (binning, "binning", "[pixelX x pixelY] chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (binningX, "BINX", "[pixels] binning along X axis", true, 0, CAM_WORKING);
 	createValue (binningY, "BINY", "[pixels] binning along X axis", true, 0, CAM_WORKING);
 

@@ -74,7 +74,7 @@ class Binning2D: public rts2core::Rts2SelData
 		std::string getDescription ()
 		{
 			std::ostringstream _os;
-			_os << vertical << "x" << horizontal;
+			_os << horizontal << "x" << vertical;
 			return _os.str();
 		}
 };
