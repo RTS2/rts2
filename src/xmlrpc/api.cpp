@@ -344,6 +344,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "get" || vals[0] == "status")
 		{
 			const char *device = params->getString ("d","");
+			bool ext = params->getInteger ("e", 0);
 			if (isCentraldName (device))
 				conn = master->getSingleCentralConn ();
 			else
@@ -351,7 +352,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (conn == NULL)
 				throw JSONException ("cannot find device");
 			double from = params->getDouble ("from", 0);
-			sendConnectionValues (os, conn, params, from);
+			sendConnectionValues (os, conn, params, from, ext);
 		}
 		// execute command on server
 		else if (vals[0] == "cmd")
@@ -371,7 +372,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (async)
 			{
 				conn->queCommand (new rts2core::Rts2Command (master, cmd));
-				sendConnectionValues (os, conn, params);
+				sendConnectionValues (os, conn, params, rts2_nan("f"), ext);
 			}
 			else
 			{
