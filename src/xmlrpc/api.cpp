@@ -330,6 +330,14 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 
 		}
+		// return night start and end
+		else if (vals[0] == "night")
+		{
+			double ns = params->getDouble ("day", time (NULL));
+			time_t ns_t = ns;
+			Rts2Night n (ln_get_julian_from_timet (&ns_t), Rts2Config::instance ()->getObserver ());
+			os << "\"from\":" << *(n.getFrom ()) << ",\"to\":" << *(n.getTo ());
+		}
 		// get variable
 		else if (vals[0] == "get" || vals[0] == "status")
 		{
