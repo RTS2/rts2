@@ -721,6 +721,18 @@ const char *rts2Central =
   "}\n"
   "hr.send(null);\n"
 "}\n"
+
+"function getMessages(from,to,type,func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET','../api/messages?from=' + from+'&to=' + to +'&type=' + type, true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+     "if (this.readyState != 4 || this.status != 200) { return; }\n"
+     "var t = JSON.parse(this.responseText);\n"
+     "this.func(t.d);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
 ;
 
 const char *tableScript = 
