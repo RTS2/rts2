@@ -32,12 +32,13 @@
 
 using namespace rts2xmlrpc;
 
-AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):Rts2Object ()
+AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source, bool _ext):Rts2Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
 	req = _req;
 	conn = _conn;
 	source = _source;
+	ext = _ext;
 }
 
 void AsyncAPI::postEvent (Rts2Event *event)
@@ -47,13 +48,13 @@ void AsyncAPI::postEvent (Rts2Event *event)
 	{
 		case EVENT_COMMAND_OK:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL);
+			req->sendConnectionValues (os, conn, NULL, rts2_nan("f"), ext);
 			os << ",\"ret\":0 }";
 			req->sendAsyncJSON (os, source);
 			break;
 		case EVENT_COMMAND_FAILED:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL);
+			req->sendConnectionValues (os, conn, NULL, rts2_nan("f"), ext);
 			os << ", \"ret\":-1 }";
 			req->sendAsyncJSON (os, source);
 			break;
@@ -64,14 +65,14 @@ void AsyncAPI::postEvent (Rts2Event *event)
 class AsyncAPIExpose:public AsyncAPI
 {
 	public:
-		AsyncAPIExpose (API *_req, Rts2Conn *conn, XmlRpcServerConnection *_source);
+		AsyncAPIExpose (API *_req, Rts2Conn *conn, XmlRpcServerConnection *_source, bool _ext);
 
 		virtual void postEvent (Rts2Event *event);
 	private:
 		enum {waitForExpReturn, waitForImage} callState;
 };
 
-AsyncAPIExpose::AsyncAPIExpose (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source):AsyncAPI (_req, _conn, _source)
+AsyncAPIExpose::AsyncAPIExpose (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
 {
 	callState = waitForExpReturn;
 }
@@ -295,6 +296,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *variable = params->getString ("n", "");
 			const char *value = params->getString ("v", "");
 			int async = params->getInteger ("async", 0);
+			int ext = params->getInteger ("e", 0);
 			if (variable[0] == '\0')
 				throw JSONException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
@@ -318,11 +320,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (async)
 			{
 				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
-				sendConnectionValues (os, conn, params);
+				sendConnectionValues (os, conn, params, ext);
 			}
 			else
 			{
-				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
@@ -357,6 +359,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *device = params->getString ("d", "");
 			const char *cmd = params->getString ("c", "");
 			int async = params->getInteger ("async", 0);
+			bool ext = params->getInteger ("e", 0);
 			if (cmd[0] == '\0')
 				throw JSONException ("empty command");
 			if (isCentraldName (device))
@@ -372,7 +375,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			else
 			{
-				AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 				conn->queCommand (new rts2core::Rts2Command (master, cmd), 0, aa);
@@ -383,10 +386,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "expose")
 		{
 			const char *camera = params->getString ("ccd","");
+			bool ext = params->getInteger ("e", 0);
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
-			AsyncAPI *aa = new AsyncAPI (this, conn, connection);
+			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			conn->queCommand (new rts2core::Rts2CommandExposure (master, (Rts2DevClientCamera *) (conn->getOtherDevClient ()), 0), 0, aa);
@@ -974,12 +978,8 @@ void API::sendSelection (std::ostringstream &os, rts2core::ValueSelection *value
 
 }
 
-void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from)
+void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from, bool extended)
 {
-	bool extended = false;
-	if (params)
-		extended = params->getInteger ("e", false);
-
 	os << "\"d\":{" << std::fixed;
 	double mfrom = rts2_nan ("f");
 	bool first = true;
