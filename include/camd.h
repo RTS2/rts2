@@ -494,7 +494,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDoubleStat *tempCCDHistory;
 		rts2core::ValueInteger *tempCCDHistoryInterval;
 		rts2core::ValueInteger *tempCCDHistorySize;
-		rts2core::ValueFloat *tempSet;
+		rts2core::ValueDoubleMinMax *tempSet;
 
 		// night cooling temperature
 		rts2core::ValueFloat *nightCoolTemp;
