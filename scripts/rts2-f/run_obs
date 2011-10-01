@@ -6,11 +6,37 @@
 #setenv tar_id `$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases`
 
 set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
-if ( $? != 0 || $tar_id <= 0 ) then
-	echo `date` selector is not running, executing seltest to select next target
+if ( $? != 0 ) then
+	rts2-logcom "selector is not running, executing seltest to select next targets"
 	set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
-	echo `date` selected $tar_id
+	rts2-logcom "selected $tar_id"
 endif
+
+if ( $tar_id <= 0 ) then
+	rts2-logcom "Automatic selector is not enabled. I'll wait 30 seconds, then repeat the test."
+	rts2-logcom "Please fill the queues if you believe that something should be observed,"
+	rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
+	rts2-logcom "is fine"
+endif
+
+while ( $tar_id <= 0 )
+	if ( -e $rts2abort ) then
+		rts2-logcom "abort detected (while waiting for next tar_id)"
+		exit
+	endif
+
+	$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+	set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+	if ( $? != 0 ) then
+		rts2-logcom "selector/rts2-f is not running"
+		set tar_id=-1
+	endif
+
+	if ( $tar_id <= 0 ) then
+		rts2-logcom "waiting for 30 seconds (target not selected..)"
+		sleep 30
+	endif
+end
 
 $RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 
