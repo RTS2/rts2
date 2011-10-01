@@ -21,7 +21,9 @@ set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
 
 set defoc_toffs=0
 
-set autog='UNKNOWN'
+if ( ! (${?autog}) ) then
+	set autog='UNKNOWN'
+endif
 
 <xsl:apply-templates select='*'/>
 
@@ -72,21 +74,30 @@ if ( $continue == 1 ) then
 				set rdec = 0
 			endif
 
-        		set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
-			set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
-			set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
+			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
+			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
-			if ( $autog == 'ON' ) then
-				rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
+			if ( $apply == 0 ) then
+        			rts2-logcom "corrections disabled, do not apply correction $rra $rdec ($ora $odec) img_num $imgnum"	
 			else
-				if ( $imgnum &lt;= $lastoffimage ) then
-					rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
+				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
+
+				if ( $autog == 'ON' ) then
+					rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
 				else
-					rts2-logcom "offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum autog $autog"
-					if ( $rra != 0 || $rdec != 0 ) then
-						tele offset $rra $rdec
+					if ( $imgnum &lt;= $lastoffimage ) then
+						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+					else
+						rts2-logcom "offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum autog $autog"
+						if ( $rra != 0 || $rdec != 0 ) then
+							tele offset $rra $rdec
+						endif
+						set lastoffimage=$imgnum
+						if ( ${?lastimage} ) then
+							set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
+						endif  
 					endif
-					set lastoffimage=$imgnum
 				endif
 			endif
 		else
@@ -98,7 +109,8 @@ if ( $continue == 1 ) then
 	set diff=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff != 0 ) then
 		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
-		tele hfocus `printf '%+0.2f' $diff`
+		set diff_f=`printf '%+02.f' $diff`
+		tele hfocus $diff_f
 		set defoc_current=`echo $defoc_current + $diff | bc`
 	else
 		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )"
@@ -163,9 +175,8 @@ endif
 if ( $continue == 1 ) then
 	set ampstatus=`tele ampcen ?`
 	if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
-		echo -n `date` 'set ampcen to <xsl:value-of select='@operands'/>'
 		tele ampcen <xsl:value-of select='@operands'/>
-		echo '.'
+		rts2-logcom 'set ampcen to <xsl:value-of select='@operands'/>'
 	else
 		echo `date` "ampcen already on $ampstatus, not changing it"
 	endif
@@ -173,15 +184,18 @@ endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
 if ( $continue == 1 ) then
-	set guidestatus=`tele autog ?`
-	if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
-		echo -n `date` 'set autog to <xsl:value-of select='@operands'/>'
-		tele autog <xsl:value-of select='@operands'/>
-		echo '.'
+	if ( $autog != <xsl:value-of select='@operands'/> ) then
+		set guidestatus=`tele autog ?`
+		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
+			tele autog <xsl:value-of select='@operands'/>
+			rts2-logcom 'set autog to <xsl:value-of select='@operands'/>'
+		else
+			echo `date` "autog already in $guidestatus status, not changing it"
+		endif
+		set autog=<xsl:value-of select='@operands'/>
 	else
-		echo `date` "autog already in $guidestatus status, not changing it"
-	endif
-	set autog=<xsl:value-of select='@operands'/>
+		echo `date` 'autog already set, ignoring it'
+	endif	  	
 endif
 </xsl:if>
 <xsl:if test='@value = "FOC_TOFF" and @device = "FOC"'>
