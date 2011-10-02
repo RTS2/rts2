@@ -56,10 +56,10 @@ class Rts2Comm:
 
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
-		return float(self.getValue(value,device))
+		return float(self.getValue(value,device).split(" ")[0])
 
 	def getValueInteger(self,value,device = None):
-		return int(self.getValue(value,device))
+		return int(self.getValue(value,device).split(" ")[0])
 
 	def incrementValue(self,name,new_value,device = None):
 		if (device is None):
