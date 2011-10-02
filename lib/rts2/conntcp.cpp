@@ -210,7 +210,7 @@ void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 		buf_top += ret;
 		if (debug)
 		{
-			*(buf_top + 1) = '\0';
+			*buf_top = '\0';
 			logStream (MESSAGE_DEBUG) << "received " << buf << sendLog;
 		}
 
