@@ -3,7 +3,7 @@
  * Copyright (C) 2011 Markus Wildi <markus.wildi@one-arcsec.org>
  * 
  * temperature compensation: 2011, Markus Wildi <markus.wildi@one-arcsec.org>
- *                    
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -18,15 +18,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-/*!
- * @file Driver for Finger Lake Instruments CCD, temperature compensation
- * 
- * @author  Petr Kubanek, Markus Wildi
- */
-
 
 #include "focusd.h"
-#include <limits>
+
 #include "libfli.h"
 #define  OPT_FLI_METEO_DEVICE      OPT_LOCAL + 135
 #define  OPT_FLI_METEO_TEMPERATURE OPT_LOCAL + 136
@@ -50,9 +44,30 @@ namespace rts2focusd
  */
 class Fli:public Focusd
 {
+	public:
+		Fli (int argc, char **argv);
+		virtual ~ Fli (void);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+                virtual int willConnect (Rts2Address * in_addr);
+
+	protected:
+		virtual int isFocusing ();
+		virtual bool isAtStartPosition ();
+
+		virtual int processOption (int in_opt);
+		virtual int initHardware ();
+		virtual int initValues ();
+		virtual int info ();
+		virtual int setTo (double num);
+                virtual double tcOffset () ;
+		virtual void meteo ();
+		virtual void valueChanged (rts2core::Value *changed_value);
+
 	private:
 		flidev_t dev;
 		flidomain_t deviceDomain;
+		const char *name;
 
 		int fliDebug;
                 char *meteoDevice;
@@ -67,27 +82,6 @@ class Fli:public Focusd
                 char *TCmodeStr ; 
 
                 rts2core::ValueDouble *temperatureMeteo;
-
-	protected:
-		virtual int isFocusing ();
-		virtual bool isAtStartPosition ();
-
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual int initValues ();
-		virtual int info ();
-		virtual void meteo ();
-		virtual int setTo (double num);
-                virtual double tcOffset ();
-		rts2core::ValueLong *focExtent;
-		virtual void valueChanged (rts2core::Value *changed_value);
-	public:
-		Fli (int argc, char **argv);
-		virtual ~ Fli (void);
-
-		virtual int commandAuthorized (Rts2Conn * conn);
-                virtual int willConnect (Rts2Address * in_addr);
-
 };
 
 };
@@ -96,10 +90,11 @@ using namespace rts2focusd;
 
 Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 {
+	dev = -1;
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
+	name = NULL;
 
-	createValue (focExtent, "FOC_EXTENT", "focuser extent value in steps", false);
 	createValue (temperatureMeteo, "TEMP_METEO", "temperature from the meteo device", true); //go to FITS
 	createValue (TCtemperatureRef, "TC_TEMP_REF", "temperature at the time when FOC_DEF was set", false, RTS2_VALUE_WRITABLE);
 	createValue (TCFocOffset, "FOC_TC", "absolute position or offset calculated by temperature compensation", false);
@@ -107,10 +102,9 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	createValue (TCslope, "TCP1", "slope of the linear temperature model", false);
 	createValue (TCmode, "TCMODE", "temperature compensation absolute, relative to FOC_DEF, no tc", false, RTS2_VALUE_WRITABLE);
 
-	addOption ('D', "domain", 1,
-		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-	addOption ('b', "fli_debug", 1,
-		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('f', NULL, 1, "FLI device path");
 
 	addOption (OPT_FLI_METEO_DEVICE, "meteoDevice",  1, "meteo device name to monitor its temperature");
 	addOption (OPT_FLI_METEO_TEMPERATURE, "meteoVariable",  1, "meteo device temperature variable name");
@@ -165,6 +159,11 @@ int Fli::processOption (int in_opt)
 					break;
 			}
 			break;
+		case 'f':
+			name = optarg;
+			break;
+
+
 	        case OPT_FLI_METEO_DEVICE:
                         meteoDevice = optarg;
                         break;
@@ -199,8 +198,7 @@ int Fli::processOption (int in_opt)
 	}
 	return 0;
 }
-int 
-Fli::willConnect (Rts2Address * in_addr)
+int Fli::willConnect (Rts2Address * in_addr)
 {
     if (meteoDevice && in_addr->getType () == DEVICE_TYPE_SENSOR) {
       logStream (MESSAGE_DEBUG) << "FLI::willConnect to DEVICE_TYPE_SENSOR: "<< meteoDevice << ", variable: "<< meteoVariable<< sendLog;
@@ -208,37 +206,51 @@ Fli::willConnect (Rts2Address * in_addr)
     }
     return Focusd::willConnect (in_addr);
 }
-int Fli::init ()
+
+int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
-	int ret_f;
 	char **names;
 	char *nam_sep;
-
-	ret_f = Focusd::init ();
-	if (ret_f)
-		return ret_f;
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, FLIDEBUG_ALL);
 
-	ret = FLIList (deviceDomain, &names);
-	if (ret)
-		return -1;
-
-	if (names[0] == NULL)
+	if (dev > 0)
 	{
-		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
-			<< sendLog;
+		FLIClose (dev);
+		dev = -1;
+	}
+
+	if (name == NULL)
+	{
+		ret = FLIList (deviceDomain, &names);
+		if (ret)
+			return -1;
+
+		if (names[0] == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
+			return -1;
+		}
+
+		nam_sep = strchr (names[0], ';');
+		if (nam_sep)
+			*nam_sep = '\0';
+
+		ret = FLIOpen (&dev, names[0], deviceDomain);
+		FLIFreeList (names);
+	}
+	else
+	{
+		ret = FLIOpen (&dev, name, deviceDomain);
+	}
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
 		return -1;
 	}
 
-	nam_sep = strchr (names[0], ';');
-	if (nam_sep)
-		*nam_sep = '\0';
-
-	ret = FLIOpen (&dev, names[0], deviceDomain);
-	FLIFreeList (names);
 	if (ret)
 		return -1;
 
@@ -246,21 +258,28 @@ int Fli::init ()
 	ret = FLIGetFocuserExtent (dev, &extent);
 	if (ret)
 		return -1;
-	focExtent->setValueInteger (extent);
+	setFocusExtend (0, extent);
 
-	// calibrate by moving to home position, then move to default position
-	ret = FLIHomeFocuser (dev);
-	if (ret)
+	if (!isnan (defaultPosition->getValueFloat ()))
 	{
-		logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-		return -1;
+		float def = defaultPosition->getValueFloat ();
+		if (def < 0)
+		{
+			ret = info ();
+			if (ret)
+				return -1;
+			def = getPosition ();
+		}
+                // wildi removed for testing
+		// calibrate by moving to home position, then move to default position
+		//ret = FLIHomeFocuser (dev);
+		//if (ret)
+		//{
+		//	logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+		//	return -1;
+		//}
+		setPosition (defaultPosition->getValueInteger ());
 	}
-	// connect to the meteo device to retrieve the temperature
-	addConstValue (meteoDevice, meteoDevice, "meteo device name to monitor its temperature");
-	addConstValue (meteoVariable, meteoVariable, "meteo device temperature variable name");
-	meteo();
-
-	setPosition (defaultPosition->getValueInteger ());
 
 	return 0;
 }
@@ -289,10 +308,17 @@ int Fli::info ()
 
 	ret = FLIGetStepperPosition (dev, &steps);
 	if (ret)
-		return -1;
+	{
+		ret = initHardware ();
+		if (ret)
+			return -1;
+		ret = FLIGetStepperPosition (dev, &steps);
+		if (ret)
+			return -1;
+	}
 
 	position->setValueInteger ((int) steps);
-	meteo();
+
 	return Focusd::info ();
 }
 void Fli::meteo()
@@ -302,7 +328,6 @@ void Fli::meteo()
 	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
 	  if( meteoDeviceTemperature) {
 	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_DOUBLE) {
-
 	      //logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValue() << sendLog;
 	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueDouble());
 	    }  
@@ -321,20 +346,32 @@ int Fli::setTo (double num)
 	if (ret)
 		return ret;
 
-	if (num < 0 || num > focExtent->getValueInteger())
-	{
-		logStream (MESSAGE_ERROR) << "Desired position not in focuser's extent: " << num << sendLog;
-		return -1;
-	}
+	long s = num - position->getValueInteger ();
 
-	num -= position->getValueInteger ();
-
-	ret = FLIStepMotorAsync (dev, (long) num);
+	ret = FLIStepMotorAsync (dev, s);
 	if (ret)
 		return -1;
-	return 0;
-}
+	// wait while move starts..
+	double timeout = getNow () + 2;
+	do
+	{
+		ret = FLIGetStepsRemaining (dev, &s);
+		if (ret)
+			return -1;
+		if (s != 0)
+			return 0;
 
+		ret = FLIGetStepperPosition (dev, &s);
+		if (ret)
+			return -1;
+		if (s == num)
+			return 0;
+	} while (getNow () < timeout);
+	
+	logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
+	
+	return -1;
+}
 double Fli::tcOffset ()
 {
         double tcFocOffset= 0.;
@@ -383,7 +420,6 @@ double Fli::tcOffset ()
 	  logStream (MESSAGE_DEBUG) << "Fli::tcOffset " << sendLog;
 	  return 0. ;
 }
-
 void Fli::valueChanged (rts2core::Value *changed_value)
 {
   long steps= 0  ;
@@ -435,7 +471,7 @@ bool Fli::isAtStartPosition ()
 	ret = info ();
 	if (ret)
 		return false;
-	return getPosition () == 0;
+	return getPosition () == defaultPosition->getValueFloat ();
 }
 
 int Fli::commandAuthorized (Rts2Conn * conn)
