@@ -213,6 +213,7 @@ class Configuration:
         self.cp[('fits header mapping', 'EXPOSURE')]= 'EXPOSURE'
         self.cp[('fits header mapping', 'CCD_TEMP')]= 'CCD_TEMP'
         self.cp[('fits header mapping', 'FOC_POS')] = 'FOC_POS'
+        self.cp[('fits header mapping', 'DATE-OBS')]= 'DATE-OBS'
 
         self.cp[('telescope', 'TEL_RADIUS')] = 0.09 # [meter]
         self.cp[('telescope', 'TEL_FOCALLENGTH')] = 1.26 # [meter]
@@ -590,8 +591,11 @@ class Telescope():
 
 class FitResults():
     """Class holding fit results"""
-    def __init__(self):
-
+    def __init__(self, averageFwhm=None):
+        focPosS= sorted(averageFwhm)
+        self.nrDatapoints= len(averageFwhm)
+        self.focPosMin=focPosS[0]
+        self.focPosMax=focPosS[-1]
         self.date=None
         self.dateEpoch=None
         self.temperature=None
@@ -602,6 +606,7 @@ class FitResults():
         self.minimumFwhm=None
         self.referenceFileName=None
         self.error=False
+        self.withinBounds= False
 #FWHM_FOCUS 3583.601214
 #FWHM parameters: chi2 6.421956e+02, p0...p2 1.386810e+03 -7.045635e-01 7.027618e-05
 #FLUX_FOCUS 3578.484908
@@ -637,6 +642,7 @@ class FitResults():
                             logging.info('DATE           {0}'.format(self.date))
                             # 2011-04-16-T19:26:36
                             self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%d-T%H:%M:%S'))
+
                         except:
                             logging.error('fitResults: problems reading date: {0} %Y-%m-%dT%H:%M:%S'.format(self.date))
                     except:
@@ -654,7 +660,7 @@ class FitResults():
                     self.objects= objectsMatch.group(1)
                     continue
 
-                parametersMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' result fwhm: (.+)', line)
+                parametersMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' result fwhm\w*: (.+)', line)
                 if( not parametersMatch==None):
                     parameters= parametersMatch.group(1)
 #chi2 2.445347e+00,  p(0...4)=(7.277240e+01 +/- 1.160489e+00), (8.826737e-03 +/- 4.871031e-04), (-2.223469e-05 +/- 1.425056e-07), (3.992524e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
@@ -687,10 +693,13 @@ class FitResults():
                 if( not fwhmMatch==None):
                     self.minimumFocPos= float(fwhmMatch.group(1))
                     self.minimumFwhm= float(fwhmMatch.group(2))
+                    if( self.minimumFocPos >= self.focPosMin) and( self.minimumFocPos <=self.focPosMax):
+                        self.withinBounds= True
                     continue
 
             frfn.close()
        
+
 class SXObject():
     """Class holding the used properties of SExtractor object"""
     def __init__(self, objectNumber=None, focusPosition=None, position=None, fwhm=None, flux=None, fluxError=None, associatedSXobject=None, separationOK=True, propertiesOK=True, acceptanceOK=True):
@@ -1087,6 +1096,7 @@ class ReferenceCatalogue(Catalogue):
     def __init__(self, fitsHDU=None, SExtractorParams=None):
         self.fitsHDU  = fitsHDU
         self.catalogueFileName= serviceFileOp.expandToCat(self.fitsHDU)
+        self.ds9RegionFileName= serviceFileOp.expandToDs9RegionFileName(self.fitsHDU)
         self.lines= []
         self.catalogue = {}
         self.sxObjects = {}
@@ -1107,7 +1117,7 @@ class ReferenceCatalogue(Catalogue):
         return None
 
     def writeCatalogue(self):
-        logging.info( 'ReferenceCatalogue.writeCatalogue: writing reference catalogue, for ' + self.fitsHDU.fitsFileName) 
+        logging.info( 'ReferenceCatalogue.writeCatalogue: writing reference catalogue:{0}, for {1}'.format( self.skyList, self.fitsHDU.fitsFileName)) 
 
         pElement = re.compile( r'#[ ]+([0-9]+)[ ]+([\w]+)')
         pData    = re.compile( r'^[ \t]+([0-9]+)[ \t]+')
@@ -1127,6 +1137,10 @@ class ReferenceCatalogue(Catalogue):
                         sys.exit(1)
                         break
         SXcat.close()
+
+    def printSelectedSXobjects(self):
+        for sxReferenceObjectNumber, sxReferenceObject in self.sxObjects.items():
+            print "======== %5d %5d %7.1f %7.1f" %  (int(sxReferenceObjectNumber), sxReferenceObject.focusPosition, sxReferenceObject.position[0],sxReferenceObject.position[1])
 
     def runSExtractor(self):
         if( verbose):
@@ -1201,6 +1215,10 @@ class ReferenceCatalogue(Catalogue):
                 pass
             elif( data):
                 items= line.split()
+                # need for speed
+                if( not self.checkAcceptanceByValue(float(items[itemNrX_IMAGE]), float(items[itemNrY_IMAGE]), self.circle)):
+                    continue
+
                 sxObjectNumber= items[0] # NUMBER
                 
                 for (j, item) in enumerate(items):
@@ -1285,8 +1303,10 @@ class ReferenceCatalogue(Catalogue):
         return True
 
     def checkAcceptance(self, sxObject=None, circle=None):
-        distance= math.sqrt(( float(sxObject.position[0])- circle.transformedCenterX)**2 +(float(sxObject.position[1])- circle.transformedCenterX)**2)
- 
+        return self.checkAcceptanceByValue(float(sxObject.position[0]), float(sxObject.position[1]), circle)
+
+    def checkAcceptanceByValue(self, x=None, y=None, circle=None):
+        distance= math.sqrt(( float(x)- circle.transformedCenterX)**2 +(float(y)- circle.transformedCenterX)**2)
         if( circle.transformedRadius >= 0):
             if( distance < abs( circle.transformedRadius)):
                 return True
@@ -1324,6 +1344,7 @@ class ReferenceCatalogue(Catalogue):
                 if( not self.checkProperties(sxObjectNumber1)):
                     sxObject1.propertiesOK=False
                     flaggedProperties += 1
+
                 if(not self.checkAcceptance(sxObject1, self.circle)):
                     sxObject1.acceptanceOK=False
                     flaggedAcceptance += 1
@@ -1340,11 +1361,12 @@ class ReferenceCatalogue(Catalogue):
         return self.numberReferenceObjects() 
 
 class AcceptanceRegion():
-    """Class holding the properties of the acceptance circle, units are (binned) pixel"""
+    """Class holding the properties of the acceptance circle, units are 1x1 pixel"""
     def __init__(self, fitsHDU=None, centerOffsetX=None, centerOffsetY=None, radius=None):
         self.fitsHDU= fitsHDU
         self.naxis1= 0
         self.naxis2= 0
+        self.binning= fitsHDU.binning
 
         try:
             # if binning is used these values represent the rebinned pixels, e.g. 1x1 4096 and 2x2 2048
@@ -1354,11 +1376,11 @@ class AcceptanceRegion():
             logging.error("AcceptanceRegion.__init__: something went wrong here")
 
         if( centerOffsetX==None):
-            self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))
+            self.centerOffsetX= float(runTimeConfig.value('CENTER_OFFSET_X'))/self.binning
         if( centerOffsetY==None):
-            self.centerOffsetY= float(runTimeConfig.value('CENTER_OFFSET_Y'))
+            self.centerOffsetY= float(runTimeConfig.value('CENTER_OFFSET_Y'))/self.binning
         if( radius==None):
-            self.radius = float(runTimeConfig.value('RADIUS'))
+            self.radius = float(runTimeConfig.value('RADIUS'))/self.binning
         l_x= 0. # window (ev.)
         l_y= 0.
         self.transformedCenterX= (self.naxis1- l_x)/2 + self.centerOffsetX 
@@ -1379,6 +1401,7 @@ class Catalogues():
         self.averageFlux={}
         self.stdFlux={}
         self.referenceCatalogue= referenceCatalogue
+        self.binning=self.referenceCatalogue.fitsHDU.binning
         if( self.referenceCatalogue != None):
             self.dataFileNameFwhm= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FWHM_IMAGE')
             self.dataFileNameFlux= serviceFileOp.expandToFitInput( self.referenceCatalogue.fitsHDU, 'FLUX_MAX')
@@ -1430,18 +1453,17 @@ class Catalogues():
                 self.numberOfObjectsFoundInAllFiles += 1
 
         if( self.numberOfObjectsFoundInAllFiles < runTimeConfig.value('MINIMUM_OBJECTS')):
-            logging.error('Catalogues.writeFitInputValues: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
+            logging.error('Catalogues.countObjectsFoundInAllFiles: too few sxObjects %d < %d' % (self.numberOfObjectsFoundInAllFiles, runTimeConfig.value('MINIMUM_OBJECTS')))
             return False
         else:
             return True
 
     def writeFitInputValues(self):
         discardedPositions= 0
-        binning= 1+ runTimeConfig.value(runTimeConfig.ccd.binning)
         fitInput= open( self.dataFileNameFwhm, 'w')
         for focPos in sorted(self.averageFwhm):
             if(self.stdFwhm[focPos]> 0):
-                line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * binning )
+                line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * self.binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * self.binning )
                 fitInput.write(line)
             else:
                 logging.error('writeFitInputValues: dropped focPos: {0}, due to standard deviation equals zero'.format(focPos))
@@ -1450,14 +1472,13 @@ class Catalogues():
         fitInput.close()
         fitInput= open( self.dataFileNameFlux, 'w')
         for focPos in sorted(self.averageFlux):
-            line= "%06d %f %f %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFlux[focPos]/self.maxFlux * self.maxFwhm * binning)
+            line= "%06d %f %f %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning, runTimeConfig.value('FOCUSER_RESOLUTION'), self.stdFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning)
             fitInput.write(line)
 
         fitInput.close()
         return discardedPositions
-
+    # ToDo: currently not used
     def findExtrema(self):
-        binning= 1+ runTimeConfig.value(runTimeConfig.ccd.binning)
 
         b = dict(map(lambda item: (item[1],item[0]),self.averageFwhm.items()))
         try:
@@ -1477,11 +1498,11 @@ class Catalogues():
                 break
         else:
             weightedMean= numpy.average(a=focPosS, axis=0, weights=weightS) 
-            logging.info('Catalogues.findExtrema: minimum position: {0}, FWHM: {1}, weighted mean: {2}'.format(minFocPos, self.averageFwhm[minFocPos]* binning, weightedMean))
+            logging.info('Catalogues.findExtrema: minimum position: {0}, FWHM: {1}, weighted mean: {2}'.format(minFocPos, self.averageFwhm[minFocPos]* self.binning, weightedMean))
 
             return weightedMean
 
-        logging.info('Catalogues.findExtrema: weighted mean failed, using minimum position: {0}, FWHM: {1}'.format(minFocPos, self.averageFwhm[minFocPos]* binning))
+        logging.info('Catalogues.findExtrema: weighted mean failed, using minimum position: {0}, FWHM: {1}'.format(minFocPos, self.averageFwhm[minFocPos]* self.binning))
 
         return minFocPos
 
@@ -1532,27 +1553,25 @@ class Catalogues():
                     frfn.write(item)
 
                 frfn.close()
-
+            #
             # parse the fit results
-            # 2.682403 11.429C 2.926316
-            fitResults= FitResults()
+            fitResults= FitResults(self.averageFwhm)
+            #
+            from datetime import datetime
+            from dateutil import tz
+
+            from_zone = tz.gettz('UTC')
+            to_zone = tz.gettz('Europe/Amsterdam')
+            utc = datetime.strptime(self.referenceCatalogue.fitsHDU.variableHeaderElements['DATE-OBS'], '%Y-%m-%dT%H:%M:%S.%f')
+            utc = utc.replace(tzinfo=from_zone)
+            # ToDo: might be simpler
+            europe = utc.astimezone(to_zone)
+            # RoDo: not the right place?
+            fitResults.dateEpoch=time.mktime(europe.timetuple())
+
             fitResults.referenceFileName=self.referenceCatalogue.fitsHDU.fitsFileName
-            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, fitResults.referenceFileName))
-#            print 'Catalogues.fitTheValues: {0} {1} {2} --{3} --{4} {5} {6} {7}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, runTimeConfig.value('ACCEPTABLE_CHI2'), runTimeConfig.value('THRESHOLD'))
-
-#            print '{0} < {1}'.format(fitResults.chi2 , runTimeConfig.value('ACCEPTABLE_CHI2'))
-#            print '{0} > {1}'.format(fitResults.minimumFwhm , 0)
-#            print '{0} < {1}'.format(fitResults.minimumFwhm , runTimeConfig.value('THRESHOLD'))
-
-            if((fitResults.chi2 < runTimeConfig.value('ACCEPTABLE_CHI2')) and (fitResults.minimumFwhm > 0) and (fitResults.minimumFwhm < runTimeConfig.value('THRESHOLD'))):
-                logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2))
-#                print 'GOOD'
-                return fitResults
-            else:
-                fitResults.minimumFocPos= self.findExtrema()
-                logging.warning('Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), fitResults.minimumFocPos))
-#                print 'Catalogues.fitTheValues: fit with: {0} failed, using weighted mean: {1}'.format( runTimeConfig.value('FITPRG'), fitResults.minimumFocPos)
-                return fitResults
+            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, fitResults.withinBounds, fitResults.referenceFileName, fitResults.constants))
+            return fitResults
         else:
             logging.error('Catalogues.fitTheValues: too few objects, do not fit')
 
@@ -1758,6 +1777,13 @@ class FitsHDU():
             return False
 
         try:
+            self.variableHeaderElements['DATE-OBS']= fitsHDU[0].header[runTimeConfig.value('DATE-OBS')]
+        except:
+            self.isValid= False
+            logging.error('headerProperties: fits file ' + self.fitsFileName + ' the required header elements DATE-OBS not found')
+            return False
+
+        try:
             self.variableHeaderElements['EXPOSURE'] = fitsHDU[0].header[runTimeConfig.value('EXPOSURE')]
             self.variableHeaderElements['DATETIME'] = fitsHDU[0].header[runTimeConfig.value('DATETIME')]
             self.variableHeaderElements['CCD_TEMP'] = fitsHDU[0].header[runTimeConfig.value('CCD_TEMP')]
@@ -1887,6 +1913,7 @@ class FitsHDUs():
                 if( verbose):
                     print 'FitsHDUs.validate: valid hdu: ' + hdu.fitsFileName
 
+        # ToDo: check that, seems to be always valid (that is not wrong but superfluous)
         # variable header elements
         keys= hdur.variableHeaderElements.keys()
         differentFocuserPositions={}
@@ -1909,16 +1936,22 @@ class FitsHDUs():
         else:
             logging.error('FitsHDUs.validate: hdus are invalid due too few focuser positions %d required are %d' % (self.numberOfFocusPositions, runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
 
-        # everything is valid up to now, take any HDU
-        # make sure the the binning is set according to the fits files
+        # check if binning is the same
+        bin0= self.fitsHDUsList[0].staticHeaderElements['BINNING']
         for hdu in self.fitsHDUsList:
-            if( runTimeConfig.ccd.binning != hdu.staticHeaderElements['BINNING']):
-                runTimeConfig.ccd.binning= hdu.staticHeaderElements['BINNING']
-                logging.warn('FitsHDUs.validate: setting binning to {0}'.format( runTimeConfig.ccd.binning))
 
-            break
+            if( bin0 == hdu.staticHeaderElements['BINNING']):
+                logging.info('FitsHDUs.validate: binning {0}'.format(hdu.staticHeaderElements['BINNING']))                
+            else:
+                logging.warn('FitsHDUs.validate: different binning {0}, configuration: {1}'.format( hdu.staticHeaderElements['BINNING']))
+                self.isValid= False
+                break
+        else:
+            logging.info('FitsHDUs.validate: binning {0} for all hdus ok'.format( bin0))                
+            self.isValid= self.isValid and True
 
         return self.isValid
+
     def countFocuserPositions(self):
         differentFocuserPositions={}
         for hdu in self.fitsHDUsList:

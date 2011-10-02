@@ -36,6 +36,10 @@ import time
 import logging
 import subprocess
 from operator import itemgetter, attrgetter
+from datetime import datetime
+from dateutil import tz
+
+import rts2af_meteodb
 
 
 import numpy
@@ -76,7 +80,6 @@ class main(rts2af.AFScript):
         paramsSexctractor= rts2af.SExtractorParams()
         paramsSexctractor.readSExtractorParams()
 
-
         if( paramsSexctractor==None):
             print "exiting"
             sys.exit(1)
@@ -101,14 +104,35 @@ class main(rts2af.AFScript):
         if( not cat.createCatalogue()):
             logging.error('rts2af_fwhm.py: returning due to invalid catalogue')
             return
-        if(cat.cleanUpReference()==0):
+
+
+        numberReferenceObjects=cat.cleanUpReference()
+        #cat.printSelectedSXobjects()
+        if(numberReferenceObjects==0):
             logging.error('rts2af_fwhm.py: returning due to no objects found')
             return
-                
-        fwhm= cat.average('FWHM_IMAGE')
-        logging.info('rts2af_fwhm.py, FWHM:{0}'.format(fwhm))
-        print 'FWHM:{0}'.format(fwhm)
         
+        fwhm= cat.average('FWHM_IMAGE')
+        dc= rts2af_meteodb.ReadMeteoDB()
 
+        # LOG file:
+        # CEST                                                                             UTC
+        # 2011-06-25T22:50:29.513 CET EXEC 8 creating image /scratch//images//que/20110625/20110625205029-512-RA.fits
+        # FITS HEADER /scratch/images/archive/20110625/20003/20110625205029-512-RA.fits
+        #            UTC
+        # DATE-OBS= '2011-06-25T20:50:29.512' / start of exposure
+        #date= time.mktime(time.strptime(cat.fitsHDU.variableHeaderElements['DATE-OBS'] + 'GMT', '%Y-%m-%dT%H:%M:%S.%f%Z'))
+        from_zone = tz.gettz('UTC')
+        to_zone = tz.gettz('Europe/Amsterdam')
+        utc = datetime.strptime(cat.fitsHDU.variableHeaderElements['DATE-OBS'], '%Y-%m-%dT%H:%M:%S.%f')
+        utc = utc.replace(tzinfo=from_zone)
+        # ToDo: might be simpler
+        europe = utc.astimezone(to_zone)
+        europe_epoch=time.mktime(europe.timetuple())
+ 
+        (temperatureConsole, temperatureIss)= dc.queryMeteoDb(europe_epoch)
+    
+        logging.info('rts2af_fwhm.py: FWHM: {0}, {1}, {2}, {3}, {4}, {5}'.format(cat.fitsHDU.variableHeaderElements['FOC_POS'], fwhm, numberReferenceObjects, cat.fitsHDU.staticHeaderElements['FILTER'], temperatureConsole, referenceFitsFileName))
 if __name__ == '__main__':
     main(sys.argv[0]).main()
+

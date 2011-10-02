@@ -95,17 +95,19 @@ class main(rts2af.AFScript):
 
         cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
 
+
         cat.runSExtractor()
         if( not cat.createCatalogue()):
             logging.error('rts2af_fwhm.py: returning due to invalid catalogue')
             return
-        if(cat.cleanUpReference()==0):
+        numberReferenceObjects=cat.cleanUpReference()
+        if(numberReferenceObjects==0):
             logging.error('rts2af_fwhm.py: returning due to no objects found')
             return
                 
         fwhm= cat.average('FWHM_IMAGE')
-        logging.info('rts2af_fwhm.py: FWHM:{0}, {1}'.format(fwhm, referenceFitsFileName))
-        
+        logging.info('rts2af_fwhm.py: FWHM: {0}, {1}, {2}, {3}, {4}, {5}'.format(cat.fitsHDU.variableHeaderElements['FOC_POS'], fwhm, numberReferenceObjects, cat.fitsHDU.staticHeaderElements['FILTER'], cat.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE'], referenceFitsFileName))
+
         # While a focus run is in progress there might still images 
         # be analyzed.
         # No new focus run is then scheduled in rts2af-queue.

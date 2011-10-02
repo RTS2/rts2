@@ -108,14 +108,14 @@ class Model(rts2af.AFScript):
         # now: X hardcoded
         #
         filterX= 'X'
-        date1= '2011-07-04'
-        date2= '2011-07-05'
-        date3= '2011-07-09'
+#        date1= '2011-07-04'
+#        date2= '2011-07-05'
+#        date3= '2011-07-09'
         for root, dirs, names in os.walk(self.runTimeConfig.value('BASE_DIRECTORY')):
 
-            if(not (re.search( date1, root) or re.search( date1, root) or re.search( date3, root))):
-                print '----------{0}'.format(root)
-                continue
+#            if(not (re.search( date1, root) or re.search( date1, root) or re.search( date3, root))):
+#                print '----------{0}'.format(root)
+#                continue
 
             if(re.search( filterX, root)): #ToDo: make a configurable variable
                 if(len(names)<= self.runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
@@ -139,13 +139,13 @@ class Model(rts2af.AFScript):
                             targetDirectory= root
                             referenceFileName= name
                             break
-#                        if(re.search( r'reference.fits.bz2', name)):
-#                            print 'rts2af_model.py: ------------------------'
-#                            print 'rts2af_model.py: named reference file found: {0}'.format(name)
-#                            referenceFileName= name.replace('.bz2', '')
-#                            targetDirectory=self.bz2Prepare( root)
-#                            print 'rts2af_model.py: bz2 target directory: {0}'.format(targetDirectory)
-#                            break
+                        if(re.search( r'reference.fits.bz2', name)):
+                            print 'rts2af_model.py: ------------------------'
+                            print 'rts2af_model.py: named reference file found: {0}'.format(name)
+                            referenceFileName= name.replace('.bz2', '')
+                            targetDirectory=self.bz2Prepare( root)
+                            print 'rts2af_model.py: bz2 target directory: {0}'.format(targetDirectory)
+                            break
                     else:
                         # find the one with the smallest FWHM
                         fitsNameFwhm={}
@@ -154,12 +154,12 @@ class Model(rts2af.AFScript):
                         namesTmp=[]
                         for name in names:
                             pass
-#                            if(re.search( r'fits.bz2', name)):
-#                                print 'rts2af_model.py: bz2 file found: {0}'.format(name)
-#                                referenceFileName= name
-#                                targetDirectory= self.bz2Prepare(root)
-#                                namesTmp = os.listdir(targetDirectory)
-#                                break
+                            if(re.search( r'fits.bz2', name)):
+                                print 'rts2af_model.py: bz2 file found: {0}'.format(name)
+                                referenceFileName= name
+                                targetDirectory= self.bz2Prepare(root)
+                                namesTmp = os.listdir(targetDirectory)
+                                break
                         else:
                             namesTmp= names
                             targetDirectory= root

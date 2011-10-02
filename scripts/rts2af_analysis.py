@@ -185,12 +185,13 @@ class main(rts2af.AFScript):
             logging.error('rts2af_analysis.py: would fit now: {0}'.format(referenceFitsFileName))
         else:
             # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
-            fitsResults= cats.fitTheValues()
-            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}'.format(fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.temperature)
-            logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(fitsResults.minimumFocPos, referenceFitsFileName))
+            fitResult= cats.fitTheValues()
+            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints)
+
+            logging.info('rts2af_analysis.py: fit result {0}, reference file:'.format(fitResult.minimumFocPos, referenceFitsFileName))
             # input format for rts2af_model_analyze.py
             # uncomment that if you need it
-            logging.info('{0} {1} {2} {3} {4} {5} {6} rts2af_model_analyze.py\n'.format(fitsResults.chi2, fitsResults.temperature, fitsResults.objects, fitsResults.minimumFocPos, fitsResults.minimumFwhm, fitsResults.dateEpoch, fitsResults.referenceFileName))
+            logging.info('rts2af_analysis.py: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, fitResult.temperature, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
 
         logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
 
