@@ -18,9 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #include "focusd.h"
-
 #include "libfli.h"
 #define  OPT_FLI_METEO_DEVICE      OPT_LOCAL + 135
 #define  OPT_FLI_METEO_TEMPERATURE OPT_LOCAL + 136
@@ -39,8 +37,8 @@ namespace rts2focusd
  * FLI focuser driver. You will need FLIlib and option to ./configure
  * (--with-fli=<llibflidir>) to get that running. Please read ../../INSTALL.fli
  * for instructions.
- *
- * @author Petr Kubanek <petr@kubanek.net>
+ * @file Driver for Finger Lake Instruments CCD, temperature compensation
+ * @author Petr Kubanek <petr@kubanek.net>, Markus Wildi wildi.markus@bluewin.ch
  */
 class Fli:public Focusd
 {
@@ -297,6 +295,7 @@ int Fli::initValues ()
 		return -1;
 	}
 	focType = std::string (ft);
+        meteo() ;
 	return Focusd::initValues ();
 }
 
@@ -318,6 +317,7 @@ int Fli::info ()
 	}
 
 	position->setValueInteger ((int) steps);
+        meteo() ;
 
 	return Focusd::info ();
 }
@@ -327,9 +327,9 @@ void Fli::meteo()
 	if( connMeteo) {
 	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
 	  if( meteoDeviceTemperature) {
-	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_DOUBLE) {
-	      //logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValue() << sendLog;
-	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueDouble());
+	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_FLOAT) {
+	      //logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValueFloat() << sendLog;
+	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
 	    }  
 	  } else {
 	      logStream (MESSAGE_ERROR) << "FLI::meteo meteoDeviceTemperature=NULL : "<< sendLog;
