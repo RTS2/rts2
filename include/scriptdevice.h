@@ -39,6 +39,8 @@ class ScriptDevice:public Device
 	public:
 		ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 	private:
 		rts2core::ValueInteger * scriptRepCount;
 		rts2core::ValueString *runningScript;
@@ -46,6 +48,12 @@ class ScriptDevice:public Device
 		rts2core::ValueInteger *commentNumber;
 		rts2core::ValueInteger *scriptPosition;
 		rts2core::ValueInteger *scriptLen;
+		rts2core::IntegerArray *elementPosition;
+
+		void blockEnter ();
+		void blockExit ();
+		void elementExecuted ();
+		void elementFirst ();
 };
 
 }

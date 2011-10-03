@@ -38,4 +38,69 @@ ScriptDevice::ScriptDevice (int in_argc, char **in_argv, int in_device_type, con
 
 	createValue (scriptLen, "scriptLen", "length of the current script element", false, RTS2_VALUE_WRITABLE, 0);
 	scriptPosition->setValueInteger (0);
+
+	createValue (elementPosition, "elementPosition", "position of element within the script", false, RTS2_VALUE_WRITABLE);
+}
+
+int ScriptDevice::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("block_enter"))
+	{
+		blockEnter ();
+		return 0;
+	}
+	else if (conn->isCommand ("block_exit"))
+	{
+		if (elementPosition->size () <= 0)
+			return -2;
+		blockExit ();
+		return 0;
+	}
+	else if (conn->isCommand ("element_executed"))
+	{
+		elementExecuted ();
+		return 0;
+	}
+	else if (conn->isCommand ("element_first"))
+	{
+		elementFirst ();
+		return 0;
+	}
+	return Device::commandAuthorized (conn);
+}
+
+void ScriptDevice::blockEnter ()
+{
+	elementPosition->addValue (0);
+	sendValueAll (elementPosition);
+}
+
+void ScriptDevice::blockExit ()
+{
+	elementPosition->removeLast ();
+	sendValueAll (elementPosition);
+}
+
+void ScriptDevice::elementExecuted ()
+{
+	if (elementPosition->size () == 0)
+		blockEnter ();
+
+	std::vector <int>::iterator i = elementPosition->valueEnd () - 1;
+	*i = *i + 1;
+	elementPosition->changed ();
+
+	sendValueAll (elementPosition);
+}
+
+void ScriptDevice::elementFirst ()
+{
+	if (elementPosition->size () == 0)
+		blockEnter ();
+
+	std::vector <int>::iterator i = elementPosition->valueEnd () - 1;
+	*i = 0;
+	elementPosition->changed ();
+
+	sendValueAll (elementPosition);
 }
