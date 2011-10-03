@@ -225,6 +225,15 @@ class IntegerArray: public ValueArray
 			changed ();
 		}
 
+		/**
+		 * Remove last value.
+		 */
+		void removeLast ()
+		{
+			value.pop_back ();
+			changed ();
+		}
+
 		std::vector <int>::iterator valueBegin () { return value.begin (); }
 
 		std::vector <int>::iterator valueEnd () { return value.end (); }
