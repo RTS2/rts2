@@ -1560,6 +1560,9 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 void Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText)
 {
+	// no label, no work
+	if (labelText == NULL)
+		return;
 	mimage.fontPointsize (fs);
 	mimage.fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
 	mimage.draw (Magick::DrawableRectangle (x, y - fs - 4, mimage.size (). width () - x - 2, y));
