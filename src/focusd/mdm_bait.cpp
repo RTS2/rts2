@@ -18,7 +18,7 @@
  */
 
 #include "focusd.h"
-#include "../utils/connbait.h"
+#include "../../lib/rts2/connbait.h"
 #include "tcsutils.h"
 
 #define OPT_TCSHOST     OPT_LOCAL + 520
