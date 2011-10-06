@@ -18,7 +18,7 @@
  */
 
 #include "teld.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 #include "tcsutils.h"
 
 #define OPT_TCSHOST     OPT_LOCAL + 520
