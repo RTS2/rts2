@@ -268,6 +268,14 @@ class Daemon:public rts2core::Block
 			val = new T (in_val_name, in_description, writeToFits, valueFlags);
 			addConstValue (val);
 		}
+
+		/**
+		 * Adds value to list of values supported by daemon.
+		 *
+		 * @param value Value which will be added.
+		 */
+		void addValue (Value * value, int queCondition = 0);
+
 		void addConstValue (Value * value);
 		void addConstValue (const char *in_name, const char *in_desc, const char *in_value);
 		void addConstValue (const char *in_name, const char *in_desc, std::string in_value);
@@ -530,13 +538,6 @@ class Daemon:public rts2core::Block
 		ValueTime *info_time;
 
 		double idleInfoInterval;
-
-		/**
-		 * Adds value to list of values supported by daemon.
-		 *
-		 * @param value Value which will be added.
-		 */
-		void addValue (Value * value, int queCondition = 0);
 
 		bool doHupIdleLoop;
 
