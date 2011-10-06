@@ -143,9 +143,18 @@ int Dummy::startResync ()
 	// check if target is above/below horizon
 	struct ln_equ_posn tar;
 	struct ln_hrz_posn hrz;
+	struct ln_equ_posn model_change;
+
+	double JD = ln_get_julian_from_sys ();
 
 	getTarget (&tar);
-	ln_get_hrz_from_equ (&tar, Rts2Config::instance ()->getObserver (), ln_get_julian_from_sys (), &hrz);
+	applyModel (&tar, &model_change, telFlip->getValueInteger (), JD);
+	tar.ra = ln_range_degrees (tar.ra + model_change.ra);
+	tar.dec += model_change.dec;
+
+	setTarget (tar.ra, tar.dec);
+
+	ln_get_hrz_from_equ (&tar, Rts2Config::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot move to negative altitude (" << hrz.alt << ")" << sendLog;
