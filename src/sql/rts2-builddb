@@ -36,10 +36,11 @@ Options:
   -d .. directory with initialization files
   -I .. do not fill database with initialization data
   -T .. do not fill database with standard targets
+  -A .. fill database with all standard targets
 
 Options must be folowed by name of an existing database. You must create database with createdb binary.
 
-WARNING: Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifying -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do.
+WARNING: Please be aware that if you select to not fill database with initialization data, some of the RTS2 functionalities will be broken. Particularly specifying -I will result in empty types table, which means that you will be unable to create any new target before you create entry for its type. Please use -T and -I options only when you are sure you know what they do. Use-A to load all available data (planetary targets,..).
 
 EOF
       exit 1
@@ -53,6 +54,9 @@ EOF
       ;;
     -I)
       doinit=0
+      ;;
+    -A)
+      doinit=3
       ;;
     *)
       if [ "x$DBNAME" != "x" ]; then
@@ -129,9 +133,14 @@ if [ $doinit != 0 ]; then
   if [ $doinit != 2 ]; then
     run_psql "creating standard targets" $INITDIR/data/targets.sql
   fi
-  # if asked, load Landoldts and planets
-  echo -n "Would you like to create Landolt calibration fields targets [Y|n]?"
-  read repl
+
+  if [ $doinit == 3 ]; then
+    repl=Y
+  else
+    # if asked, load Landoldts and planets
+    echo -n "Would you like to create Landolt calibration fields targets [Y|n]?"
+    read repl
+  fi
 
   if [ "x$repl" = 'xY' -o "x$repl" = 'xy' -o "x$repl" = 'x' ]; then
     run_psql "creating Landold skyflats targets" $INITDIR/data/landolt.sql
@@ -139,8 +148,13 @@ if [ $doinit != 0 ]; then
     echo "Landolt fields targets skipped."
   fi
 
-  echo -n "Would you like to create targets for planets [Y|n]?"
-  read repl
+  if [ $doinit == 3 ]; then
+    repl=Y
+  else
+    echo -n "Would you like to create targets for planets [Y|n]?"
+    read repl
+  fi
+
   if [ "x$repl" = 'xY' -o "x$repl" = 'xy' -o "x$repl" = 'x' ]; then
     run_psql "creating planets targets" $INITDIR/data/planets.sql
   else
