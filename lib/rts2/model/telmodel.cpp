@@ -24,22 +24,18 @@
 
 using namespace rts2telmodel;
 
-Model::Model (rts2teld::Telescope * in_telescope,
-const char *in_modelFile)
+Model::Model (rts2teld::Telescope * in_telescope, const char *in_modelFile)
 {
 	cond = new ObsConditions (in_telescope);
 	modelFile = in_modelFile;
 }
-
 
 Model::~Model (void)
 {
 	delete cond;
 }
 
-
-int
-Model::load ()
+int Model::load ()
 {
 	std::ifstream is (modelFile);
 	load (is);
@@ -48,23 +44,18 @@ Model::load ()
 	return 0;
 }
 
-
-int
-Model::apply (struct ln_equ_posn *pos)
+int Model::apply (struct ln_equ_posn *pos)
 {
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin ();
-		iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->apply (pos, cond);
 	}
 	return 0;
 }
 
-
-int
-Model::applyVerbose (struct ln_equ_posn *pos)
+int Model::applyVerbose (struct ln_equ_posn *pos)
 {
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin (); iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		struct ln_equ_posn old_pos = *pos;
 		logStream (MESSAGE_DEBUG) // << (*iter)
@@ -78,14 +69,11 @@ Model::applyVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-
-int
-Model::reverse (struct ln_equ_posn *pos)
+int Model::reverse (struct ln_equ_posn *pos)
 {
 	struct ln_equ_posn pos2;
 
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin ();
-		iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		pos2.ra = pos->ra;
 		pos2.dec = pos->dec;
@@ -98,14 +86,11 @@ Model::reverse (struct ln_equ_posn *pos)
 	return 0;
 }
 
-
-int
-Model::reverseVerbose (struct ln_equ_posn *pos)
+int Model::reverseVerbose (struct ln_equ_posn *pos)
 {
 	struct ln_equ_posn pos2;
 
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin ();
-		iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		struct ln_equ_posn old_pos = *pos;
 
@@ -131,21 +116,16 @@ Model::reverseVerbose (struct ln_equ_posn *pos)
 	return 0;
 }
 
-
-int
-Model::reverse (struct ln_equ_posn *pos, double sid)
+int Model::reverse (struct ln_equ_posn *pos, double sid)
 {
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin ();
-		iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->reverse (pos, cond);
 	}
 	return 0;
 }
 
-
-std::istream &
-Model::load (std::istream & is)
+std::istream & Model::load (std::istream & is)
 {
 	std::string name;
 
@@ -279,22 +259,18 @@ Model::load (std::istream & is)
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "Unknow model term '" << name
-				<< "' at model line " << lineNo << sendLog;
+			logStream (MESSAGE_ERROR) << "Unknow model term '" << name << "' at model line " << lineNo << sendLog;
 			return is;
 		}
-		terms.push_back (term);
+		push_back (term);
 		lineNo++;
 	}
 	return is;
 }
 
-
-std::ostream &
-Model::print (std::ostream & os)
+std::ostream & Model::print (std::ostream & os)
 {
-	for (std::vector < ModelTerm * >::iterator iter = terms.begin ();
-		iter != terms.end (); iter++)
+	for (std::vector < ModelTerm * >::iterator iter = begin (); iter != end (); iter++)
 	{
 		(*iter)->print (os);
 	}

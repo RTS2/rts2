@@ -87,19 +87,8 @@ class ObsConditions
  *
  * @ingroup RTS2TPoint
  */
-class Model
+class Model:public std::vector < ModelTerm * >
 {
-	private:
-		ObsConditions * cond;
-		const char *modelFile;
-
-		char caption[81];		 // Model description: 80 chars + NULL
-		char method;			 // method: T or S
-		int num;				 // Number of active observations
-		double rms;				 // sky RMS (arcseconds)
-		double refA;			 // refraction constant A (arcseconds)
-		double refB;			 // refraction constant B (arcseconds)
-		std::vector < ModelTerm * >terms;
 	public:
 		Model (rts2teld::Telescope * in_telescope, const char *in_modelFile);
 		virtual ~ Model (void);
@@ -126,6 +115,17 @@ class Model
 
 		std::istream & load (std::istream & is);
 		std::ostream & print (std::ostream & os);
+
+	private:
+		ObsConditions * cond;
+		const char *modelFile;
+
+		char caption[81];		 // Model description: 80 chars + NULL
+		char method;			 // method: T or S
+		int num;				 // Number of active observations
+		double rms;				 // sky RMS (arcseconds)
+		double refA;			 // refraction constant A (arcseconds)
+		double refB;			 // refraction constant B (arcseconds)
 };
 
 

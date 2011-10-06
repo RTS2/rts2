@@ -22,6 +22,7 @@
 #define __RTS2_MODELTERM__
 
 #include "telmodel.h"
+#include "value.h"
 
 namespace rts2telmodel
 {
@@ -43,28 +44,14 @@ class ObsConditions;
  *
  * @ingroup RTS2TPointTerm
  */
-class ModelTerm
+class ModelTerm:public rts2core::ValueDouble
 {
-	private:
-		// term name
-		std::string name;
-	protected:
-		double corr;			 // corection parameter, always in degrees!
-		double sigma;			 // model sigma
 	public:
-		ModelTerm (const char *in_name, double in_corr, double in_sigma)
-		{
-			name = std::string (in_name);
-			corr = in_corr;
-			sigma = in_sigma;
-		}
-		virtual ~ ModelTerm (void)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions) = 0;
-		virtual void reverse (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions)
+		ModelTerm (const char *in_name, double in_corr, double in_sigma);
+		virtual ~ ModelTerm (void) {}
+		
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions) = 0;
+		virtual void reverse (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 		{
 			struct ln_equ_posn pos_old;
 			pos_old.ra = pos->ra;
@@ -75,6 +62,11 @@ class ModelTerm
 		}
 
 		std::ostream & print (std::ostream & os);
+	protected:
+		double sigma;			 // model sigma
+	private:
+		// term name
+		std::string name;
 };
 
 std::ostream & operator << (std::ostream & os, ModelTerm * term);
@@ -89,12 +81,8 @@ std::ostream & operator << (std::ostream & os, ModelTerm * term);
 class TermME:public ModelTerm
 {
 	public:
-		TermME (double in_corr, double in_sigma):ModelTerm ("ME", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermME (double in_corr, double in_sigma):ModelTerm ("ME", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -107,12 +95,8 @@ class TermME:public ModelTerm
 class TermMA:public ModelTerm
 {
 	public:
-		TermMA (double in_corr, double in_sigma):ModelTerm ("MA", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermMA (double in_corr, double in_sigma):ModelTerm ("MA", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -125,12 +109,8 @@ class TermMA:public ModelTerm
 class TermIH:public ModelTerm
 {
 	public:
-		TermIH (double in_corr, double in_sigma):ModelTerm ("IH", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermIH (double in_corr, double in_sigma):ModelTerm ("IH", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -143,12 +123,8 @@ class TermIH:public ModelTerm
 class TermID:public ModelTerm
 {
 	public:
-		TermID (double in_corr, double in_sigma):ModelTerm ("ID", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermID (double in_corr, double in_sigma):ModelTerm ("ID", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -161,12 +137,8 @@ class TermID:public ModelTerm
 class TermCH:public ModelTerm
 {
 	public:
-		TermCH (double in_corr, double in_sigma):ModelTerm ("CH", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermCH (double in_corr, double in_sigma):ModelTerm ("CH", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -179,12 +151,8 @@ class TermCH:public ModelTerm
 class TermNP:public ModelTerm
 {
 	public:
-		TermNP (double in_corr, double in_sigma):ModelTerm ("NP", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermNP (double in_corr, double in_sigma):ModelTerm ("NP", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -197,12 +165,8 @@ class TermNP:public ModelTerm
 class TermPHH:public ModelTerm
 {
 	public:
-		TermPHH (double in_corr, double in_sigma):ModelTerm ("PHH", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermPHH (double in_corr, double in_sigma):ModelTerm ("PHH", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -213,12 +177,8 @@ class TermPHH:public ModelTerm
 class TermPDD:public ModelTerm
 {
 	public:
-		TermPDD (double in_corr, double in_sigma):ModelTerm ("PDD", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermPDD (double in_corr, double in_sigma):ModelTerm ("PDD", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -231,12 +191,8 @@ class TermPDD:public ModelTerm
 class TermA1H:public ModelTerm
 {
 	public:
-		TermA1H (double in_corr, double in_sigma):ModelTerm ("A1H", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermA1H (double in_corr, double in_sigma):ModelTerm ("A1H", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -249,12 +205,8 @@ class TermA1H:public ModelTerm
 class TermA1D:public ModelTerm
 {
 	public:
-		TermA1D (double in_corr, double in_sigma):ModelTerm ("A1D", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermA1D (double in_corr, double in_sigma):ModelTerm ("A1D", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -267,12 +219,8 @@ class TermA1D:public ModelTerm
 class TermTF:public ModelTerm
 {
 	public:
-		TermTF (double in_corr, double in_sigma):ModelTerm ("TF", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermTF (double in_corr, double in_sigma):ModelTerm ("TF", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -285,12 +233,8 @@ class TermTF:public ModelTerm
 class TermTX:public ModelTerm
 {
 	public:
-		TermTX (double in_corr, double in_sigma):ModelTerm ("TX", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermTX (double in_corr, double in_sigma):ModelTerm ("TX", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -303,13 +247,8 @@ class TermTX:public ModelTerm
 class TermHCEC:public ModelTerm
 {
 	public:
-		TermHCEC (double in_corr, double in_sigma):ModelTerm ("HCEC",
-			in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermHCEC (double in_corr, double in_sigma):ModelTerm ("HCEC", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -322,13 +261,8 @@ class TermHCEC:public ModelTerm
 class TermHCES:public ModelTerm
 {
 	public:
-		TermHCES (double in_corr, double in_sigma):ModelTerm ("HCES",
-			in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermHCES (double in_corr, double in_sigma):ModelTerm ("HCES", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -341,13 +275,8 @@ class TermHCES:public ModelTerm
 class TermDCEC:public ModelTerm
 {
 	public:
-		TermDCEC (double in_corr, double in_sigma):ModelTerm ("DCEC",
-			in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermDCEC (double in_corr, double in_sigma):ModelTerm ("DCEC", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -360,13 +289,8 @@ class TermDCEC:public ModelTerm
 class TermDCES:public ModelTerm
 {
 	public:
-		TermDCES (double in_corr, double in_sigma):ModelTerm ("DCES",
-			in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermDCES (double in_corr, double in_sigma):ModelTerm ("DCES", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -379,12 +303,8 @@ class TermDCES:public ModelTerm
 class TermDAB:public ModelTerm
 {
 	public:
-		TermDAB (double in_corr, double in_sigma):ModelTerm ("DAB", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermDAB (double in_corr, double in_sigma):ModelTerm ("DAB", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 /**
@@ -397,12 +317,8 @@ class TermDAB:public ModelTerm
 class TermDAF:public ModelTerm
 {
 	public:
-		TermDAF (double in_corr, double in_sigma):ModelTerm ("DAF", in_corr,
-			in_sigma)
-		{
-		}
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		TermDAF (double in_corr, double in_sigma):ModelTerm ("DAF", in_corr, in_sigma) {}
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
 };
 
 typedef enum
@@ -419,6 +335,10 @@ sincos_t;
  */
 class TermHarmonics:public ModelTerm
 {
+	public:
+		TermHarmonics (double in_corr, double in_sigma, const char *in_name);
+		virtual void apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions);
+
 	private:
 		char resType;
 		sincos_t func[2];
@@ -426,14 +346,8 @@ class TermHarmonics:public ModelTerm
 		int mul[2];
 
 		const char *getFunc (const char *in_func, int i);
-		double getValue (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions, int i);
-		double getMember (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions, int i);
-	public:
-		TermHarmonics (double in_corr, double in_sigma, const char *in_name);
-		virtual void apply (struct ln_equ_posn *pos,
-			ObsConditions * obs_conditions);
+		double getValue (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i);
+		double getMember (struct ln_equ_posn *pos, ObsConditions * obs_conditions, int i);
 };
 
 };

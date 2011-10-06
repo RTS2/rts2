@@ -658,6 +658,8 @@ int Telescope::init ()
 		ret = model->load ();
 		if (ret)
 			return ret;
+		for (std::vector <rts2telmodel::ModelTerm *>::iterator iter = model->begin (); iter != model->end (); iter++)
+			addValue (*iter, TEL_MOVING);
 	}
 
 	if (horizonFile)
