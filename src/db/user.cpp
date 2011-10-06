@@ -23,6 +23,8 @@
 #include "../../lib/rts2/rts2askchoice.h"
 #include "../../lib/rts2/rts2target.h"
 
+#define OPT_PASSWORD   OPT_LOCAL + 321
+
 using namespace rts2db;
 
 /**
@@ -43,6 +45,7 @@ class Rts2UserApp:public Rts2AppDb
 		enum {NOT_SET, LIST_USER, NEW_USER, DELETE_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
 		op;
 		const char *user;
+		const char *password;
 		User r2user;
 
 		int listUser ();
@@ -65,6 +68,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 {
 	op = NOT_SET;
 	user = NULL;
+	password = NULL;
 
 	r2user = User ();
 
@@ -85,6 +89,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 	addOption ('p', NULL, 1, "set user password");
 	addOption ('e', NULL, 1, "set user email");
 	addOption ('m', NULL, 1, "edit user mailing preferences");
+	addOption (OPT_PASSWORD, "password", 1, "user password");
 }
 
 Rts2UserApp::~Rts2UserApp (void)
@@ -143,6 +148,9 @@ int Rts2UserApp::processOption (int in_opt)
 					break;
 			}
 			return 0;
+		case OPT_PASSWORD:
+			password = optarg;
+			return 0;
 	}
 	return Rts2AppDb::processOption (in_opt);
 }
@@ -159,13 +167,20 @@ int Rts2UserApp::newUser ()
 	std::string passwd;
 	std::string email;
 
-	int ret;
-	ret = askForPassword ("User password", passwd);
-	if (ret)
-		return ret;
-	ret = askForString ("User email (can be left empty)", email);
-	if (ret)
-		return ret;
+	if (password)
+	{
+		passwd = std::string (password);
+		email = std::string ("");
+	}
+	else
+	{
+		int ret = askForPassword ("User password", passwd);
+		if (ret)
+			return ret;
+		ret = askForString ("User email (can be left empty)", email);
+		if (ret)
+			return ret;
+	}
 	return createUser (std::string (user), passwd, email);
 }
 
