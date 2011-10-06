@@ -26,3 +26,5 @@ SELECT 1;
 ' LANGUAGE 'SQL';
 
 alter table grb add column grb_autodisabled boolean not null default false;
+
+alter table targets add column interruptible boolean not null default true;
