@@ -11,6 +11,9 @@ if ( ! (${?lastoffimage}) ) then
 	set lastoffimage=-1
 endif
 
+# next autoguider attempt
+set nextautog=`date +%s`
+
 set continue=1
 unset imgdir
 set xpa=0
@@ -118,6 +121,29 @@ if ( $continue == 1 ) then
 	else
 		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )"
 	endif
+
+	if ( $autog == 'ON' ) then
+		set guidestatus=`tele autog ?`
+		if ( $guidestatus != $autog ) then
+			rts2-logcom "system should guide, but autoguider is in $guidestatus. Grabing autoguider image"
+			tele grab
+			set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
+			set dir=/Realtime/guider/frames/ROBOT_`date +"%Y%m%d"`
+			mkdir $dir
+			set autof=$dir/`date +"%H%M%S"`.fits
+			cp $lastgrab $autof
+			rts2-logcom "autoguider image saved in $autof"
+			set nowdate=`date +"%s"`
+			if ( $nextautog &lt; $nowdate ) then
+				tele autog ON
+				@ nextautog = $nowdate + 300
+				rts2-logcom "tried again autoguider ON, next attempt at $nextautog"
+			else
+				rts2-logcom "autoguider timeout $nextautog not expired (now $nowdate)"
+			endif
+		endif
+	endif
+
 	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
@@ -191,7 +217,9 @@ if ( $continue == 1 ) then
 		set guidestatus=`tele autog ?`
 		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
 			tele autog <xsl:value-of select='@operands'/>
-			rts2-logcom 'set autog to <xsl:value-of select='@operands'/>'
+			set nextautog=`date +"%s"`
+			@ nextautog = $nextautog + 300
+			rts2-logcom "set autog to <xsl:value-of select='@operands'/>, next autoguiding attempt not before $nextautog"
 		else
 			echo `date` "autog already in $guidestatus status, not changing it"
 		endif
