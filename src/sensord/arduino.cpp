@@ -33,6 +33,7 @@ class Arduino:public Sensor
 {
 	public:
 		Arduino (int argc, char **argv);
+		virtual ~Arduino ();
 
 		virtual int commandAuthorized (Rts2Conn *conn);
 	protected:
@@ -78,9 +79,14 @@ Arduino::Arduino (int argc, char **argv): Sensor (argc, argv)
 	createValue (a2_y, "DEC_Y", "DEC accelometer Y", false);
 	createValue (a2_z, "DEC_Z", "DEC accelometer Z", false);
 
-	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection");
+	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for Arduino USB serial connection)");
 
 	setIdleInfoInterval (1);
+}
+
+Arduino::~Arduino ()
+{
+	delete arduinoConn;
 }
 
 int Arduino::commandAuthorized (Rts2Conn * conn)
