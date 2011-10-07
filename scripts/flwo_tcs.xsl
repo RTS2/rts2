@@ -31,6 +31,7 @@ endif
 
 <xsl:variable name='abort'>
 if ( -e $rts2abort ) then
+	rts2-logcom 'aborting observations. Please wait'
 	source $RTS2/bin/.rts2-runabort
 	rm -f $lasttarget
 	exit
@@ -83,8 +84,10 @@ if ( $continue == 1 ) then
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
 				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
 
-				if ( $autog == 'ON' ) then
-					rts2-logcom "autoguider is $autog - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
+				set currg=`tele autog ?`
+
+				if ( $currg == 'ON' ) then
+					rts2-logcom "autoguider is $currg - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
 				else
 					if ( $imgnum &lt;= $lastoffimage ) then
 						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
@@ -103,8 +106,8 @@ if ( $continue == 1 ) then
 		else
 			rts2-logcom "too big offset $ora $odec"
 		endif	  	
-	else
-		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  
+<!---	else
+		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	endif
 	set diff=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff != 0 ) then
