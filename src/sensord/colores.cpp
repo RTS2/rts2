@@ -40,11 +40,25 @@ class Colores:public Sensor
 		virtual int initHardware ();
 		virtual int info ();
 
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *coloresConn;
 
 		rts2core::ValueBool *filtA;
+		rts2core::ValueBool *filtB;
+		rts2core::ValueBool *filtC;
+
+		rts2core::ValueBool *mirror;
+
+		rts2core::ValueFloat *temp1;
+		rts2core::ValueFloat *temp2;
+
+		rts2core::ValueInteger *light1;
+		rts2core::ValueInteger *light2;
+
+		void coloresCommand (char c);
 };
 
 }
@@ -56,7 +70,17 @@ Colores::Colores (int argc, char **argv): Sensor (argc, argv)
 	device_file = NULL;
 	coloresConn = NULL;
 
-	createValue (filtA, "A", "A filter", false, RTS2_VALUE_WRITABLE);
+	createValue (mirror, "mirror", "mirror position", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	createValue (filtA, "A", "A filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (filtB, "B", "B filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	createValue (filtC, "C", "C filter", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	createValue (temp1, "T1", "T1 value", false);
+	createValue (temp2, "T2", "T2 value", false);
+
+	createValue (light1, "L1", "light 1", false);
+	createValue (light2, "L2", "light 2", false);
 
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB)");
 
@@ -89,7 +113,7 @@ int Colores::initHardware ()
 		return -1;
 	}
 
-	coloresConn = new rts2core::ConnSerial (device_file, this, rts2core::BS57600, rts2core::C8, rts2core::NONE, 30);
+	coloresConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 50);
 	int ret = coloresConn->init ();
 	if (ret)
 		return ret;
@@ -97,17 +121,76 @@ int Colores::initHardware ()
 	coloresConn->flushPortIO ();
 	coloresConn->setDebug (true);
 
+	// init connection
+	ret = coloresConn->writePort ("\n", 1);
+	if (ret < 0)
+		return -1;
+	sleep (10);
+	coloresConn->flushPortIO ();
+
+	mirror->setValueBool (true);
+
 	return 0;
 }
 
 int Colores::info ()
 {
-	char buf[200];
-	int ret = coloresConn->writeRead ("i\n", 1, buf, 199, '\n');
-	if (ret < 0)
-		return -1;
-
+	coloresCommand ('\n');
 	return Sensor::info ();
+}
+
+int Colores::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	if (old_value == mirror)
+	{
+		coloresConn->setVTime (150);
+		coloresCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'M':'m');
+		coloresConn->setVTime (50);
+		return 0;
+	}
+	else if (old_value == filtA)
+	{
+		coloresCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'A':'a');
+		return 0;
+	}
+	else if (old_value == filtB)
+	{
+		coloresCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'B':'b');
+		return 0;
+	}
+	else if (old_value == filtC)
+	{
+		coloresCommand (((rts2core::ValueBool *) new_value)->getValueBool () ? 'C':'c');
+		return 0;
+	}
+	return Sensor::setValue (old_value, new_value);
+}
+
+void Colores::coloresCommand (char c)
+{
+	char buf[200];
+	coloresConn->writeRead (&c, 1, buf, 199, '\n');
+
+	char fA,fB,fC;
+	float t1,t2;
+	int l1,l2;
+
+	int ret = sscanf (buf, "FW1=%c,FW2=%c,FW3=%c,T1=%f,T2=%f,L1=%d,L2=%d", &fA, &fB, &fC, &t1, &t2, &l1, &l2);
+	if (ret != 7)
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse colores reply '" << buf << "', ret:" << ret << sendLog;
+		return;
+	}
+
+	filtA->setValueBool (fA == '1');
+	filtB->setValueBool (fB == '1');
+	filtC->setValueBool (fC == '1');
+
+	temp1->setValueFloat (t1);
+	temp2->setValueFloat (t2);
+
+	light1->setValueInteger (l1);
+	light2->setValueInteger (l2);
 }
 
 int main (int argc, char **argv)
