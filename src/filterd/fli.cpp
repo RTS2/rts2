@@ -30,7 +30,7 @@ class Fli:public Filterd
 		virtual ~ Fli (void);
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int init (void);
+		virtual int initHardware ();
 
 		virtual void changeMasterState (int old_state, int new_state);
 
@@ -58,6 +58,7 @@ Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 	deviceDomain = FLIDEVICE_FILTERWHEEL | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
+	dev = 0;
 
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
@@ -111,15 +112,18 @@ int Fli::processOption (int in_opt)
 	return 0;
 }
 
-int Fli::init (void)
+int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
 	char **names;
 	char *nam_sep;
 
-	ret = Filterd::init ();
-	if (ret)
-		return ret;
+
+	if (dev)
+	{
+		FLIClose (dev);
+		dev = 0;
+	}
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
@@ -150,6 +154,7 @@ int Fli::init (void)
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
+		dev = 0;
 		return -1;
 	}
 
@@ -169,11 +174,22 @@ void Fli::changeMasterState (int old_state, int new_state)
 
 int Fli::getFilterNum (void)
 {
-	long ret_f;
+	long ret_f = -1;
 	LIBFLIAPI ret;
+
+	if (dev == 0)
+	{
+		ret = initHardware ();
+		if (ret)
+			return -1;
+	}
 	ret = FLIGetFilterPos (dev, &ret_f);
-	if (ret)
+	if (ret || ret_f < 0)
+	{
+		FLIClose (dev);
+		dev = 0;
 		return -1;
+	}
 	return (int) ret_f;
 }
 
@@ -182,6 +198,13 @@ int Fli::setFilterNum (int new_filter)
 	LIBFLIAPI ret;
 	if (new_filter < -1 || new_filter >= filter_count)
 		return -1;
+
+	if (dev == 0)
+	{
+		ret = initHardware ();
+		if (ret)
+			return -1;
+	}
 
 	ret = FLISetFilterPos (dev, new_filter);
 	if (ret)
