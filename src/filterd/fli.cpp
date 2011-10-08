@@ -58,7 +58,7 @@ Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 	deviceDomain = FLIDEVICE_FILTERWHEEL | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
-	dev = 0;
+	dev = -1;
 
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
@@ -119,10 +119,10 @@ int Fli::initHardware ()
 	char *nam_sep;
 
 
-	if (dev)
+	if (dev >= 0)
 	{
 		FLIClose (dev);
-		dev = 0;
+		dev = -1;
 	}
 
 	if (fliDebug)
@@ -154,13 +154,15 @@ int Fli::initHardware ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open device " << (name == NULL ? names[0] : name) << ":" << strerror (errno) << sendLog;
-		dev = 0;
+		dev = -1;
 		return -1;
 	}
 
 	ret = FLIGetFilterCount (dev, &filter_count);
 	if (ret)
 		return -1;
+
+	std::cerr << "filter count" << filter_count << std::endl;
 
 	return 0;
 }
@@ -177,18 +179,18 @@ int Fli::getFilterNum (void)
 	long ret_f = -1;
 	LIBFLIAPI ret;
 
-	if (dev == 0)
+	if (dev < 0)
 	{
 		ret = initHardware ();
 		if (ret)
-			return -1;
+			throw rts2core::Error ("cannot reinit hardware");
 	}
 	ret = FLIGetFilterPos (dev, &ret_f);
 	if (ret || ret_f < 0)
 	{
 		FLIClose (dev);
-		dev = 0;
-		return -1;
+		dev = -1;
+		throw rts2core::Error ("invalid return");
 	}
 	return (int) ret_f;
 }
@@ -199,7 +201,7 @@ int Fli::setFilterNum (int new_filter)
 	if (new_filter < -1 || new_filter >= filter_count)
 		return -1;
 
-	if (dev == 0)
+	if (dev < 0)
 	{
 		ret = initHardware ();
 		if (ret)
@@ -208,7 +210,11 @@ int Fli::setFilterNum (int new_filter)
 
 	ret = FLISetFilterPos (dev, new_filter);
 	if (ret)
+	{
+		FLIClose (dev);
+		dev = -1;
 		return -1;
+	}
 	return Filterd::setFilterNum (new_filter);
 }
 
