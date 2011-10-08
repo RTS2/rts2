@@ -784,10 +784,18 @@ int Daemon::info ()
 int Daemon::info (Rts2Conn * conn)
 {
 	int ret;
-	ret = info ();
-	if (ret)
+	try
 	{
-		conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+		ret = info ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
+			return -1;
+		}
+	}
+	catch (rts2core::Error &er)
+	{
+		conn->sendCommandEnd (DEVDEM_E_HW, er.what ());
 		return -1;
 	}
 	ret = sendInfo (conn);
@@ -799,9 +807,16 @@ int Daemon::info (Rts2Conn * conn)
 int Daemon::infoAll ()
 {
 	int ret;
-	ret = info ();
-	if (ret)
+	try
+	{
+		ret = info ();
+		if (ret)
+			return -1;
+	}
+	catch (rts2core::Error &er)
+	{
 		return -1;
+	}
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 		sendInfo (*iter);

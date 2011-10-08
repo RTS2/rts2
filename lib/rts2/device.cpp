@@ -131,7 +131,14 @@ int Rts2DevConn::authorizationOK ()
 	setConnState (CONN_AUTH_OK);
 	master->baseInfo ();
 	master->sendBaseInfo (this);
-	master->info ();
+	try
+	{
+		master->info ();
+	}
+	catch (rts2core::Error &er)
+	{
+		// pass
+	}
 	master->sendInfo (this, true);
 	master->sendFullStateInfo (this);
 	sendCommandEnd (DEVDEM_OK, "OK authorized");
