@@ -50,7 +50,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 			cat.write('\t'.join(map(lambda y:str(y),x)) + '\n')
 		cat.close()
 
-	seg_fwhms = map(lambda x:FWHM(),range(0,len(ff)))
+	seg_fwhms = map(lambda x:FWHM(),range(0,len(ff)+1))
 	for x in c.objects:
 		if pr:
 			print '\t'.join(map(lambda y:str(y),x))
