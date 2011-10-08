@@ -7,6 +7,10 @@ import math
 
 from optparse import OptionParser
 
+FOC_POS = 'FOC_POS'
+#non-RTS2 files usually have TELFOCUS
+#FOC_POS = 'TELFOCUS'
+
 class FWHM:
 	"""Holds FWHM on segments."""
 	def __init__(self):
@@ -75,10 +79,13 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 	for x in range(0,len(seg_fwhms)):
 	  	if x == 0:
 			suffix = defsuffix
-			print 'double fwhm_foc{0} "focuser positon" {1}'.format(suffix,ff[0].header['TELFOCUS'])
+			try:
+				print 'double fwhm_foc{0} "focuser positon" {1}'.format(suffix,ff[0].header[FOC_POS])
+			except KeyError,er:
+				pass
 			try:
 				zd = 90 - ff[0].header['TEL_ALT']
-				fz = fwhm * (math.cos(math.radians(zd)) ** 0.6)
+				fz = seg_fwhms[x].fwhm * (math.cos(math.radians(zd)) ** 0.6)
 				print 'double fwhm_zd{0} "[deg] zenith distance of the FWHM measurement" {1}'.format(suffix,zd)
 				print 'double fwhm_zenith{0} "estimated zenith FWHM" {1}'.format(suffix,fz)
 			except KeyError,er:
@@ -99,7 +106,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 		print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,seg_fwhms[x].i)
 
 	if d:
-		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header['TELFOCUS'],seg_fwhms[0].i) + '}')
+		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
 
 if __name__ == '__main__':
 	parser = OptionParser()
