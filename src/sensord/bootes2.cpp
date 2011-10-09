@@ -49,6 +49,7 @@ class Bootes2: public SensorWeather
 		virtual int info ();
 
 		virtual void valueChanged (rts2core::Value *v);
+		virtual void changeMasterState (int old_state, int new_state);
 
 	private:
 		comedi_t *comediDevice;
@@ -58,6 +59,9 @@ class Bootes2: public SensorWeather
 	
 		rts2core::ValueDoubleStat *tempMeas;
 		rts2core::ValueDoubleStat *humiMeas;
+
+		bool tempOnOff;
+		bool humiOnOff;
 		
 		rts2core::ValueDouble *humBad;
 		rts2core::ValueDouble *humGood;
@@ -94,6 +98,35 @@ class Bootes2: public SensorWeather
 }
 
 using namespace rts2sensord;
+
+Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
+{
+	comediFile = "/dev/comedi0";
+
+	createValue (raining, "raining", "if it is raining (from rain detector)", false);
+
+	createValue (tempMeas, "TEMP", "outside temperature", true);
+	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
+
+	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false, RTS2_VALUE_WRITABLE);
+	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false, RTS2_VALUE_WRITABLE);
+
+	createValue (vd, "values", "[V] values", false);
+	createValue (vb, "vb", "LEDs", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+
+	humiOnOff = false;
+	tempOnOff = false;
+
+	addOption ('c', NULL, 1, "path to comedi device");
+	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
+	addOption (OPT_HUMI_GOOD, "humidity_good", 1, "[%] when humidity is bellow this value, weather is good");
+
+	setIdleInfoInterval (5);
+}
+
+Bootes2::~Bootes2 ()
+{
+}
 
 int Bootes2::getVolts (int subdevice, int channel, double &volts)
 {
@@ -136,6 +169,9 @@ int Bootes2::updateHumidity ()
 	hum *= 100;
 	humiMeas->addValue (hum, LIFOSIZE);
 	humiMeas->calculate ();
+
+	humiOnOff = !humiOnOff;
+	comedi_dio_write (comediDevice, 2, 0, humiOnOff);
 	return 0;
 }
 
@@ -147,6 +183,9 @@ int Bootes2::updateTemperature ()
 	temp = (temp - 0.4) * 100;
 	tempMeas->addValue (temp, LIFOSIZE);
 	tempMeas->calculate ();
+
+	tempOnOff = !tempOnOff;
+	comedi_dio_write (comediDevice, 2, 0, tempOnOff);
 	return 0;
 }
 
@@ -202,8 +241,10 @@ int Bootes2::initHardware ()
 		  	logStream (MESSAGE_ERROR) << "Cannot init comedi roof - subdev " << subdev << " channel " << i << ", error " << ret << sendLog;
 			return -1;
 		}
-		vb->addValue (false);
 	}
+
+	for (i = 0; i < 2; i++)
+		vb->addValue (false);
 
 	return 0;
 }
@@ -211,15 +252,15 @@ int Bootes2::initHardware ()
 int Bootes2::info ()
 {
 	int ret;
-	uint32_t value;
-	ret = comedi_dio_read (comediDevice, 3, 5, &value);
+	double rv;
+	ret = getVolts (0, 5, rv);
 	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
 		setWeatherTimeout (3600, "cannot read rain status");
 		return -1;
 	}
-	if (value == 0)
+	if (rv < 3)
 	{
 		setWeatherTimeout (3600, "raining");
 		if (raining->getValueBool () == false)
@@ -232,6 +273,7 @@ int Bootes2::info ()
 			logStream (MESSAGE_INFO) << "rains ends" << sendLog;
 		raining->setValueBool (false);
 	}
+
 	ret = updateTemperature ();
 	if (ret)
 	{
@@ -271,38 +313,33 @@ void Bootes2::valueChanged (rts2core::Value *v)
 {
 	if (v == vb)
 	{
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 2; i++)
 		{
-			comedi_dio_write (comediDevice, 2, i, (*vb)[i]);
+			comedi_dio_write (comediDevice, 2, 4 + i, (*vb)[i]);
 		}
 	}
 }
 
-Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
+void Bootes2::changeMasterState (int old_state, int new_state)
 {
-	comediFile = "/dev/comedi0";
-
-	createValue (raining, "raining", "if it is raining (from rain detector)", false);
-
-	createValue (tempMeas, "TEMP", "outside temperature", true);
-	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
-
-	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false, RTS2_VALUE_WRITABLE);
-	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false, RTS2_VALUE_WRITABLE);
-
-	createValue (vd, "values", "[V] values", false);
-	createValue (vb, "vb", "LEDs", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-
-	addOption ('c', NULL, 1, "path to comedi device");
-	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
-	addOption (OPT_HUMI_GOOD, "humidity_good", 1, "[%] when humidity is bellow this value, weather is good");
-
-	setIdleInfoInterval (5);
-}
-
-Bootes2::~Bootes2 ()
-{
-
+	if (new_state & SERVERD_STANDBY_MASK)
+	{
+		comedi_dio_write (comediDevice, 2, 6, 1);
+		comedi_dio_write (comediDevice, 2, 7, 1);
+	}
+	switch (new_state & SERVERD_STATUS_MASK)
+	{
+		case SERVERD_HARD_OFF:
+		case SERVERD_SOFT_OFF:
+			comedi_dio_write (comediDevice, 2, 6, 0);
+			comedi_dio_write (comediDevice, 2, 7, 1);
+			break;
+		default:
+			comedi_dio_write (comediDevice, 2, 6, 1);
+			comedi_dio_write (comediDevice, 2, 7, 0);
+			break;
+	}
+	SensorWeather::changeMasterState (old_state, new_state);
 }
 
 int main (int argc, char **argv)
