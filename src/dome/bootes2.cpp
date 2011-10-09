@@ -340,9 +340,9 @@ Bootes2::info ()
 		return -1;
 
 	if (swCloseLeft->getValueBool () && swCloseRight->getValueBool ())
-		setState (DOME_CLOSED, "Dome is closed");
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "Init: dome is closed");
 	else if (swOpenLeft->getValueBool () && swOpenRight->getValueBool ())
-	  	setState (DOME_OPENED, "Dome is opened");
+	  	maskState (DOME_DOME_MASK, DOME_OPENED, "Init: dome is opened");
 
 	return Dome::info ();
 }
