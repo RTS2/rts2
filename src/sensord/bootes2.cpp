@@ -1,6 +1,6 @@
 /* 
  * Access data from Bootes 2 weather station.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009,2011 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,6 +48,8 @@ class Bootes2: public SensorWeather
 		virtual int initHardware ();
 		virtual int info ();
 
+		virtual void valueChanged (rts2core::Value *v);
+
 	private:
 		comedi_t *comediDevice;
 		const char *comediFile;
@@ -59,6 +61,9 @@ class Bootes2: public SensorWeather
 		
 		rts2core::ValueDouble *humBad;
 		rts2core::ValueDouble *humGood;
+
+		rts2core::DoubleArray *vd;
+		rts2core::BoolArray *vb;
 
 		/**
 		 * Returns volts from the device.
@@ -84,8 +89,6 @@ class Bootes2: public SensorWeather
 		 * @return -1 on error, 0 on success.
 		 */
 		int updateHumidity ();
-
-		int val;
 };
 
 }
@@ -177,9 +180,9 @@ int Bootes2::initHardware ()
 		return -1;
 	}
 
-	/* input port - sensors - subdevice 3 */
 	int subdev = 3;
 	int i;
+	/* input port - sensors - subdevice 3 */
 	for (i = 0; i < 8; i++)
 	{
 		ret = comedi_dio_config (comediDevice, subdev, i, COMEDI_INPUT);
@@ -199,6 +202,7 @@ int Bootes2::initHardware ()
 		  	logStream (MESSAGE_ERROR) << "Cannot init comedi roof - subdev " << subdev << " channel " << i << ", error " << ret << sendLog;
 			return -1;
 		}
+		vb->addValue (false);
 	}
 
 	return 0;
@@ -249,18 +253,34 @@ int Bootes2::info ()
 		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
 	}
 
-	for (int i = 0; i < 16; i++)
-		comedi_dio_write (comediDevice, 2, i, val);
+	std::vector <double> vals;
 
-	val = (val + 1) % 2;
+	for (int i = 0; i < 8; i++)
+	{
+		double v;
+		getVolts (0, i, v);
+		vals.push_back (v);
+	}
+
+	vd->setValueArray (vals);
 
 	return SensorWeather::info ();
+}
+
+void Bootes2::valueChanged (rts2core::Value *v)
+{
+	if (v == vb)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			comedi_dio_write (comediDevice, 2, i, (*vb)[i]);
+		}
+	}
 }
 
 Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 {
 	comediFile = "/dev/comedi0";
-	val = 0;
 
 	createValue (raining, "raining", "if it is raining (from rain detector)", false);
 
@@ -269,6 +289,9 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 
 	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false, RTS2_VALUE_WRITABLE);
 	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false, RTS2_VALUE_WRITABLE);
+
+	createValue (vd, "values", "[V] values", false);
+	createValue (vb, "vb", "LEDs", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	addOption ('c', NULL, 1, "path to comedi device");
 	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
