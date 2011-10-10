@@ -160,6 +160,9 @@
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
 
+/* Define to 1 if you have the `round' function. */
+#undef HAVE_ROUND
+
 /* Define to 1 if you have the `scandir' function. */
 #undef HAVE_SCANDIR
 
@@ -211,6 +214,9 @@
 
 /* Define to 1 if you have the `strtod' function. */
 #undef HAVE_STRTOD
+
+/* Define to 1 if you have the `strtof' function. */
+#undef HAVE_STRTOF
 
 /* Define to 1 if you have the `strtol' function. */
 #undef HAVE_STRTOL

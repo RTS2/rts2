@@ -131,14 +131,22 @@ void ConstraintInterval::parse (const char *arg)
 
 	if (cp != sint)
 	{
+#ifdef HAVE_STRTOF
 		lower = strtof (sint, &endp);
+#else
+		lower = strtod (sint, &endp);
+#endif
 		if (*endp != 0)
 			throw rts2core::Error ((std::string ("cannot parse lower intrval - ") + arg).c_str ());
 	}
 	
 	if (*(cp + 1) != '\0')
 	{
+#ifdef HAVE_STRTOF
 		upper = strtof (cp + 1, &endp);
+#else
+		upper = strtod (cp + 1, &endp);
+#endif		
 		if (*endp != 0)
 			throw rts2core::Error ((std::string ("cannot find : in interval ") + (cp + 1)).c_str ());
 	}

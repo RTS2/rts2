@@ -309,6 +309,10 @@ int Image::radius (unsigned short *in_data, double px, double py, int rmax)
 	return (r);
 }
 
+#ifndef HAVE_ROUND
+#define round(x)  ((int) x)
+#endif
+
 int Image::integrate (unsigned short *in_data, double px, double py, int size, float *ret)
 {
 	int i, j;
