@@ -176,7 +176,13 @@ int bigNG::init ()
        return ret;
     }
 
-    tban_init(&tban, devFile);
+    ret =  tban_init(&tban, devFile);
+
+    if(ret != TBAN_OK)
+    {
+        logStream(MESSAGE_ERROR) << "Cannot connect to BigNG..exiting" << sendLog;
+        return 1;
+    }
     bigNG_init(&tban);
     
     return 0;
@@ -247,7 +253,8 @@ void bigNG::beforeRun()
 	   ret = tban_open(&tban);
 	   if(ret != TBAN_OK)
 	   {
-		   logStream(MESSAGE_ERROR) << "Cannot open/init device device" << sendLog;
+		   logStream(MESSAGE_ERROR) << "Cannot open/init device device...exiting" << sendLog;
+           exit(0);
 	   }
 	}
 
