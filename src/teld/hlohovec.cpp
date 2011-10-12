@@ -40,7 +40,10 @@
 #define RAGSTEP                  1000
 #define DEGSTEP                  1000
 
+// track is 15 arcsec/second
 #define TRACK_SPEED              (-TGA_SPEEDFACTOR / 6.0)
+// track one arcdeg in second
+#define SPEED_ARCDEGSEC		 (TRACK_SPEED * (4.0 * 60.0))
 
 using namespace rts2teld;
 
@@ -76,6 +79,8 @@ class Hlohovec:public GEM
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int startPark ();
 		virtual int endPark ();
+
+		virtual void setDiffTrack (double dra, double ddec);
 
 		virtual int updateLimits ();
 		virtual int getHomeOffset (int32_t & off);
@@ -357,6 +362,15 @@ int Hlohovec::startPark ()
 int Hlohovec::endPark ()
 {
 	return 0;
+}
+
+void Hlohovec::setDiffTrack (double dra, double ddec)
+{
+	if (tracking->getValueBool ())
+		raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
+	else
+		raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);
+	decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
 }
 
 int Hlohovec::updateLimits ()
