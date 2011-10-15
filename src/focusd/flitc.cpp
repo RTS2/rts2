@@ -47,15 +47,16 @@ class Fli:public Focusd
 		virtual ~ Fli (void);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
-                virtual int willConnect (Rts2Address * in_addr);
 
 	protected:
+                virtual int willConnect (Rts2Address * in_addr);
 		virtual int isFocusing ();
 		virtual bool isAtStartPosition ();
 
 		virtual int processOption (int in_opt);
 		virtual int initHardware ();
 		virtual int initValues ();
+		virtual int idle ();
 		virtual int info ();
 		virtual int setTo (double num);
                 virtual double tcOffset () ;
@@ -268,14 +269,13 @@ int Fli::initHardware ()
 				return -1;
 			def = getPosition ();
 		}
-                // wildi removed for testing
 		// calibrate by moving to home position, then move to default position
-		//ret = FLIHomeFocuser (dev);
-		//if (ret)
-		//{
-		//	logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-		//	return -1;
-		//}
+		ret = FLIHomeFocuser (dev);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+			return -1;
+		}
 		setPosition (defaultPosition->getValueInteger ());
 	}
 
@@ -298,7 +298,11 @@ int Fli::initValues ()
         meteo() ;
 	return Focusd::initValues ();
 }
-
+int Fli::idle ()
+{
+        meteo() ;
+	return Focusd::idle ();
+}
 int Fli::info ()
 {
 	LIBFLIAPI ret;
