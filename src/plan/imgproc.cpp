@@ -111,6 +111,9 @@ class ImageProc:public rts2core::Device
 
 		rts2core::ValueInteger *queSize;
 
+		rts2core::ValueRaDec *lastRaDec;
+		rts2core::ValueRaDec *lastCorrections;
+
 		rts2core::ValueTime *lastGood;
 		rts2core::ValueTime *lastTrash;
 		rts2core::ValueTime *lastBad;
@@ -169,6 +172,9 @@ ImageProc::ImageProc (int _argc, char **_argv)
 
 	createValue (queSize, "queue_size", "number of images waiting for processing", false);
 	queSize->setValueInteger (0);
+
+	createValue (lastRaDec, "last_radec", "last correct image coordinates", false);
+	createValue (lastCorrections, "last_corrections", "size of last corrections", false, RTS2_DT_DEG_DIST);
 
 	createValue (lastGood, "last_astrom", "last image with correct astrometry", false);
 	createValue (lastTrash, "last_noastrom", "last image without astrometry", false);
@@ -382,8 +388,12 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 			case GET:
 				goodImages->inc ();
 				nightGoodImages->inc ();
+				lastRaDec->setValueRaDec (((ConnImgOnlyProcess *) runningImage)->getRa (), ((ConnImgOnlyProcess *) runningImage)->getDec ());
+				lastCorrections->setValueRaDec (((ConnImgOnlyProcess *) runningImage)->getRaErr (), ((ConnImgOnlyProcess *) runningImage)->getDecErr ());
 				sendValueAll (goodImages);
 				sendValueAll (nightGoodImages);
+				sendValueAll (lastRaDec);
+				sendValueAll (lastCorrections);
 				if (isnan (lastGood->getValueDouble ()) || runningImage->getExposureEnd () > lastGood->getValueDouble ())
 				{
 					lastGood->setValueDouble (runningImage->getExposureEnd ());

@@ -76,6 +76,12 @@ class ConnImgOnlyProcess:public ConnProcess
 
 		virtual void processLine ();
 
+		double getRa () { return ra; }
+		double getDec () { return dec; }
+
+		double getRaErr () { return ra_err; }
+		double getDecErr () { return dec_err; }
+
 	protected:
 		virtual void processCommand (char *cmd);
 
@@ -85,6 +91,10 @@ class ConnImgOnlyProcess:public ConnProcess
 
 		long id;
 		double ra, dec, ra_err, dec_err;
+
+	private:
+		// normalize astrometry output and check if astrometry errors are reasonable
+		void checkAstrometry ();
 };
 
 /**

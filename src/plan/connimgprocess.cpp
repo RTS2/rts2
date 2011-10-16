@@ -93,6 +93,7 @@ void ConnImgOnlyProcess::processCommand (char *cmd)
 		else
 		{
 			astrometryStat = GET;
+			checkAstrometry ();
 		}
 	}
 	else
@@ -111,7 +112,7 @@ void ConnImgOnlyProcess::processLine ()
 	 	ra_err /= 60.0;
 		dec_err /= 60.0;
 		astrometryStat = GET;
-		// inform others..
+		checkAstrometry ();
 	}
 	else
 	{
@@ -197,7 +198,6 @@ void ConnImgProcess::connectionError (int last_data_size)
 				if (last_good_jpeg)
 					image->writeAsJPEG (last_good_jpeg, 1, "%Y-%m-%d %H:%M:%S @OBJECT");
 #endif
-
 				image->setAstroResults (ra, dec, ra_err, dec_err);
 				if (end_event <= 0)
 					image->toArchive ();
@@ -296,6 +296,24 @@ void ConnImgProcess::connectionError (int last_data_size)
 	}
 
 	ConnImgOnlyProcess::connectionError (last_data_size);
+}
+
+void ConnImgOnlyProcess::checkAstrometry ()
+{
+	if (ra_err > 180)
+		ra_err -= 360;
+	if (ra_err < -180)
+		ra_err += 360;
+	if (fabs (ra_err) > 180)
+	{
+		logStream (MESSAGE_ERROR) << "received invalid ra error: " << ra_err << " " << LibnovaDegDist (ra_err) << sendLog;
+		astrometryStat = BAD;
+	}
+	if (fabs (dec_err) >= 180)
+	{
+		logStream (MESSAGE_ERROR) << "received invalid dec error: " << dec_err << " " << LibnovaDegDist (dec_err) << sendLog;
+		astrometryStat = BAD;
+	}
 }
 
 ConnObsProcess::ConnObsProcess (rts2core::Block * in_master, const char *in_exe, int in_obsId, int in_timeout):ConnProcess (in_master, in_exe, in_timeout)
