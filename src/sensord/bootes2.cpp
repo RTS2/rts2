@@ -254,7 +254,7 @@ int Bootes2::info ()
 	int ret;
 	double rv;
 	ret = getVolts (0, 5, rv);
-	if (ret != 1)
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
 		setWeatherTimeout (3600, "cannot read rain status");
