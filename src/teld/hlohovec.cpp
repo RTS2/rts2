@@ -1,6 +1,6 @@
 /* 
  * Driver for Hlohovec (Slovakia) 50cm telescope.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009,2011 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -90,10 +90,13 @@ class Hlohovec:public GEM
 		TGDrive *raDrive;
 		TGDrive *decDrive;
 
+		int32_t tAc;
+
 		const char *devRA;
 		const char *devDEC;
 
 		rts2core::ValueAltAz *parkPos;
+		rts2core::ValueDouble *moveTolerance;
 
 		void matchGuideRa (int rag);
 		void matchGuideDec (int decg);
@@ -123,6 +126,9 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 
 	createRaGuide ();
 	createDecGuide ();
+
+	createValue (moveTolerance, "move_tolerance", "[deg] minimal movement distance", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	moveTolerance->setValueDouble (4.0 / 60.0);
 
 	addOption (OPT_RA, "ra", 1, "RA drive serial device");
 	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
@@ -296,20 +302,37 @@ int Hlohovec::resetMount ()
 
 int Hlohovec::startResync ()
 {
-	int32_t ac;
 	int32_t dc;
-	int ret = sky2counts (ac, dc);
+	int ret = sky2counts (tAc, dc);
 	if (ret)
 		return -1;
-	raDrive->setTargetPos (ac);
+	raDrive->setTargetPos (tAc);
 	decDrive->setTargetPos (dc);
 	return 0;
 }
 
 int Hlohovec::isMoving ()
 {
-	if (tracking->getValueBool () && !raDrive->isMoving () && raDrive->isMovingPos ())
+	if (tracking->getValueBool () && raDrive->isMovingPos ())
 	{
+		if (raDrive->isMoving ())
+		{
+			int32_t diffAc;
+			int32_t ac;
+			int32_t dc;
+			int ret = sky2counts (ac, dc);
+			if (ret)
+				return -1;
+			diffAc = ac - tAc;
+			// if difference in H is greater then 1 arcmin..
+			if (fabs (diffAc) > haCpd * moveTolerance->getValueDouble ())
+			{
+				raDrive->setTargetPos (ac);
+				tAc = ac;
+				return USEC_SEC / 100;
+			}
+		}
+		// set to speed mode when tracking and move was finished..
 		raDrive->setMode (TGA_MODE_DS);
 	}
 	if (raDrive->isMoving () || decDrive->isMoving ())
