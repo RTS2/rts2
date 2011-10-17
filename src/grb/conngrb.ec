@@ -227,13 +227,6 @@ int ConnGrb::pr_swift_with_radec ()
 	grb_ra = lbuf[BURST_RA] / 10000.0;
 	grb_dec = lbuf[BURST_DEC] / 10000.0;
 
-	// ignore wrong packets.. (2^10 or 2^11 set)
-	if (lbuf[MISC] & 0xC00)
-	{
-		logStream (MESSAGE_INFO) << "ignoring GCN packet, as it's MISC field suggest it is not correct: " << std::hex << lbuf[MISC] << " at RA " << std::dec << grb_ra << " DEC " << grb_dec << sendLog;
-		return -1;
-	}
-
 	// we will set grb_is_grb to true in some special cases..
 	switch (grb_type)
 	{
@@ -272,6 +265,14 @@ int ConnGrb::pr_swift_with_radec ()
 		default:
 			grb_errorbox = getInstrumentErrorBox (grb_type);
 	}
+
+	// ignore wrong packets.. (2^10 or 2^11 set)
+	if (lbuf[MISC] & 0xC00)
+	{
+		logStream (MESSAGE_INFO) << "setting error box to 360 degrees, as GCN packet, as it's MISC field suggest it is not correct: " << std::hex << lbuf[MISC] << " at RA " << std::dec << grb_ra << " DEC " << grb_dec << sendLog;
+		grb_errorbox = 360;
+	}
+
 	return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false, true);
 }
 
