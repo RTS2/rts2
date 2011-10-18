@@ -288,17 +288,21 @@ int Block::idle ()
 
 	// test for any pending timers..
 	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
+	std::vector <std::map <double, Rts2Event *>::iterator> toDelete;
 	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
 		Rts2Event *sec = iter_t->second;
-		std::map <double, Rts2Event *>::iterator itt = iter_t;
+		toDelete.push_back (iter_t);
 		iter_t++;
-		timers.erase (itt);
 	 	if (sec->getArg () != NULL)
 		  	((Rts2Object *)sec->getArg ())->postEvent (sec);
 		else
 			postEvent (sec);
 	}
+
+	// delete timers queue for delete
+	for (std::vector <std::map <double, Rts2Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
+		timers.erase (*iter_d);
 
 	return 0;
 }
