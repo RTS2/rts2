@@ -291,7 +291,9 @@ int Block::idle ()
 	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
 		Rts2Event *sec = iter_t->second;
-		timers.erase (iter_t++);
+		std::map <double, Rts2Event *>::iterator itt = iter_t;
+		iter_t++;
+		timers.erase (itt);
 	 	if (sec->getArg () != NULL)
 		  	((Rts2Object *)sec->getArg ())->postEvent (sec);
 		else
