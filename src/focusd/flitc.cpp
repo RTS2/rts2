@@ -270,7 +270,7 @@ int Fli::initHardware ()
 			def = getPosition ();
 		}
 		// calibrate by moving to home position, then move to default position
-		ret = FLIHomeFocuser (dev);
+				ret = FLIHomeFocuser (dev);
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
@@ -322,7 +322,6 @@ int Fli::info ()
 
 	position->setValueInteger ((int) steps);
         meteo() ;
-
 	return Focusd::info ();
 }
 void Fli::meteo()
@@ -332,8 +331,10 @@ void Fli::meteo()
 	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
 	  if( meteoDeviceTemperature) {
 	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_FLOAT) {
-	      //logStream (MESSAGE_DEBUG) << "Fli::meteo: temperature is: " <<  meteoDeviceTemperature->getValueFloat() << sendLog;
 	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
+	      // logStream (MESSAGE_DEBUG) << "Fli::meteo:  temperature is: " << meteoDeviceTemperature->getValueFloat() <<"retrieved: " << temperatureMeteo->getValueDouble() << sendLog;
+
+	      //	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
 	    }  
 	  } else {
 	      logStream (MESSAGE_ERROR) << "FLI::meteo meteoDeviceTemperature=NULL : "<< sendLog;
@@ -368,7 +369,11 @@ int Fli::setTo (double num)
 		ret = FLIGetStepperPosition (dev, &s);
 		if (ret)
 			return -1;
-		if (s == num)
+		//		if (s == num)
+		// ToDo:
+		// 2011-10-18T07:04:17.599 CET FOC_FLI 1 timeout during moving focuser to 3160.899902, actual position is 3161
+		// num is declared to be float, double
+		if (((s+1) > num) && ((s-1) < num))
 			return 0;
 	} while (getNow () < timeout);
 	
