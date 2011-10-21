@@ -50,7 +50,7 @@
 uint16_t *mem;
 
 // enables printout of low level debug
-//#define DEBUG
+#define DEBUG
 
 int writeWord (uint16_t pd)
 {
@@ -243,7 +243,18 @@ void flex_load_velocity (uint8_t axis, int32_t velocity, uint8_t inputVector)
 	uint16_t data[2];
 	data[0] = ((uint32_t) velocity) >> 16;
 	data[1] = velocity & 0xffff;
-	writePacketWithIOVector (axis, 391, 2, data, 0xff);
+	writePacketWithIOVector (axis, 391, 2, data, inputVector);
+	checkStatus ();
+}
+
+void flex_load_rpm (uint8_t axis, int64_t rpm, uint8_t inputVector)
+{
+	uint16_t data[4];
+	data[0] = rpm & 0xffff;
+	data[1] = (rpm >> 16) & 0xffff;
+	data[2] = (rpm >> 32) & 0xffff;
+	data[3] = (rpm >> 48) & 0xffff;
+	writePacketWithIOVector (axis, 371, 4, data, inputVector);
 	checkStatus ();
 }
 
@@ -279,6 +290,13 @@ void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity)
 	int16_t c;
 	readPacket (&c, 2, (uint16_t *) velocity);
 	btol32 (velocity);
+}
+
+void flex_read_rpm (uint8_t axis, int64_t *rpm)
+{
+	writePacket (axis, 374, 0, NULL);
+	int16_t c;
+	readPacket (&c, 4, (uint16_t *) rpm);
 }
 
 void flex_read_position_rtn (uint8_t axis, int32_t *position)

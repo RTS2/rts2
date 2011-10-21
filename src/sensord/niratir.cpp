@@ -73,6 +73,7 @@ class NIRatir:public Sensor
 		rts2core::ValueInteger *ax1position;
 
 		rts2core::ValueInteger *ax1velocity;
+		rts2core::ValueLong *ax1rpm;
 
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
@@ -86,6 +87,8 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	createValue (ax1position, "AX1_POS", "current 1st axis position", false, RTS2_VALUE_WRITABLE);
 
 	createValue (ax1velocity, "AX1_VEL", "1st axis velocity", false, RTS2_VALUE_WRITABLE);
+
+	createValue (ax1rpm, "AX1_RPM", "1st axis maximal velocity in RPM", false, RTS2_VALUE_WRITABLE);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -142,6 +145,10 @@ int NIRatir::info ()
 	flex_read_velocity_rtn (NIMC_AXIS1, &cp);
 	ax1velocity->setValueInteger (cp);
 
+	int64_t cpp;
+	flex_read_rpm (NIMC_AXIS1, &cpp);
+	ax1rpm->setValueLong (cpp);
+
 	return Sensor::info ();
 }
 
@@ -154,7 +161,12 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	}
 	else if (old_value == ax1velocity)
 	{
-		moveVelocity (NIMC_AXIS1, new_value->getValueInteger ());
+		flex_load_velocity (NIMC_AXIS1, new_value->getValueInteger (), 0xff);
+		return 0;
+	}
+	else if (old_value == ax1rpm)
+	{
+		flex_load_rpm (NIMC_AXIS1, new_value->getValueLong (), 0xff);
 		return 0;
 	}
 	return Sensor::setValue (old_value, new_value);

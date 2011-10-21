@@ -129,11 +129,15 @@ void flex_load_counts_steps_rev (uint8_t resource, int16_t type, uint32_t val);
 
 void flex_load_velocity (uint8_t axis, int32_t velocity, uint8_t inputVector);
 
+void flex_load_rpm (uint8_t axis, int64_t rpm, uint8_t inputVector);
+
 void flex_load_target_pos (uint8_t axis, uint32_t position);
 
 void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t polarity,uint16_t driveMode);
 
 void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity);
+
+void flex_read_rpm (uint8_t axis, int64_t *rpm);
 
 void flex_read_position_rtn (uint8_t axis, int32_t *position);
 
