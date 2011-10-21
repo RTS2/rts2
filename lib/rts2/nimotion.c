@@ -39,6 +39,7 @@
 #include "nimotion.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -48,20 +49,27 @@
 // mapped memory location
 uint16_t *mem;
 
+// enables printout of low level debug
+//#define DEBUG
+
 int writeWord (uint16_t pd)
 {
 	while (1)
 	{
 		uint16_t a = mem[4];
+#ifdef DEBUG
 		printf ("mem %04x\r", a);
+#endif
 		if (a & NIMC_READY_TO_RECEIVE)
 			break;
 		usleep (1000);
 	}
 		
 	mem[0] = pd;
+#ifdef DEBUG
 	printf ("wrote %04x (%d)\n", pd, pd);
 	printf ("mcs %04x csr %04x\n", mem[2], mem[4]);
+#endif
 	return 0;
 }
 
@@ -79,16 +87,22 @@ int16_t readData ()
 	// wait for RDB
 	while ((mem[4] & NIMC_DATA_IN_RDB) == 0x00)
 	{
+#ifdef DEBUG
 		printf ("wait %x\r", mem[4]);
+#endif
 		if (mem[4] & NIMC_PACKET_ERROR)
 		{
+#ifdef DEBUG
 			printf ("\nerror %x\n", mem[4]);
+#endif
 			//exit (5);
 		}
 		usleep (1000);
 	}
 	int16_t r = mem[0];
+#ifdef DEBUG
 	printf ("readData %04x (%d)\n", r, r);
+#endif
 	return r;
 }
 
@@ -118,10 +132,14 @@ void writePacketWithIOVector (uint8_t resource, uint16_t command, uint8_t size, 
 	// wait for signaled end of packet..
 	while (mem[4] & NIMC_COMMAND_IN_PROGRESS)
 	{
+#ifdef DEBUG
 		printf ("wait for command %d csr %04x\r", command, mem[4]);
+#endif
 		usleep (1000);
 	}
+#ifdef DEBUG
 	printf ("wait ends csr %04x                                         \n", mem[4]);
+#endif
 }
 
 void writePacket (uint8_t resource, uint16_t command, uint8_t size, uint16_t *data)
@@ -134,7 +152,9 @@ void writePacket (uint8_t resource, uint16_t command, uint8_t size, uint16_t *da
 void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *error)
 {
 	writePacket (NIMC_NOAXIS, 2, 0, NULL);
+#ifdef DEBUG
 	printf ("reading error\n");
+#endif
 	*command = readData ();
 	*command = readData ();
 	*resource = readData ();
@@ -145,21 +165,27 @@ void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *erro
 		readData ();
 	}
 	while (mem[4] & NIMC_DATA_IN_RDB);
+#ifdef DEBUG
 	fprintf (stderr, "command %04x res %04x error %d\n", *command, *resource, *error);
+#endif
 }
 
 void checkStatus ()
 {
 	if (mem[4] & NIMC_MODAL_ERROR_MSG)
 	{
+#ifdef DEBUG
 		fprintf (stderr, "modal error\n");
+#endif
 		int16_t c, r;
 		int32_t e;
 		flex_read_error_msg_rtn (&c, &r, &e);
 	}
 	if (mem[4] & NIMC_PACKET_ERROR)
 	{
+#ifdef DEBUG
 		fprintf (stderr, "packet error\n");
+#endif
 	}
 }
 
@@ -282,12 +308,16 @@ void flex_stop_motion (uint8_t resource, uint16_t stopType, uint16_t map)
 	checkStatus ();
 }
 
-void initMotion ()
+void initMotion (const char *path)
 {
 	int16_t c, r;
 	int32_t e;
 
-	int fd0 = open ("/sys/bus/pci/devices/0000:01:01.0/resource0", O_RDWR);
+	char rp[strlen (path) + 11];
+
+	sprintf (rp, "%s/resource0", path);
+
+	int fd0 = open (rp, O_RDWR);
 	if (fd0 < 0)
 	{
 		perror ("cannot open PCI resource file");
@@ -302,7 +332,8 @@ void initMotion ()
 
 	*((int32_t *) (mem0 + 0xc0)) = 0xff8fe000 | 0x80;
 
-	int fd1 = open ("/sys/bus/pci/devices/0000:01:01.0/resource1", O_RDWR);
+	sprintf (rp, "%s/resource1", path);
+	int fd1 = open (rp, O_RDWR);
 	if (fd1 < 0)
 	{
 		perror ("cannot open PCI resource1 file");
@@ -315,8 +346,10 @@ void initMotion ()
 		perror ("cannot map PCI resource1 file");
 		exit (4);
 	}
-	
+
+#ifdef DEBUG
 	printf ("address %x %x %x %x\n", mem[2], mem[4], mem[0x300], mem[0x180]);
+#endif
 
 	writeWord (0x000a);
 

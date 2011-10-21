@@ -143,7 +143,10 @@ void flex_start (uint8_t resource, uint16_t map);
 
 void flex_stop_motion (uint8_t resource, uint16_t stopType, uint16_t map);
 
-void initMotion ();
+/**
+ * @param path /proc entry to PCI device - see lspci for ID, you will then need something like /sys/bus/pci/devices/0000:01:01.0
+ */
+void initMotion (const char *path);
 
 #ifdef __cplusplus
 }
