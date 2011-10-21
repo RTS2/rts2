@@ -216,25 +216,6 @@ int Lakeshore::info ()
 			lname[0] = '1' + i;
 			readChannelValues (lname, loops[i]);
 		}
-		
-		/*        std::ostringstream tempS1;
-        std::ostringstream tempS2;
-        rts2core::ValueString *tempV = ValueString("tempV");
-        for (i = 0; i < NUM_LOOP; i++)
-        {
-            
-            tempS1 << "CFILT? " << i;
-            readValue (tempS1.str().c_str(), tempV);
-            cflit[i]->setValueCharArr(tempV->getValue());
-            tempS1.str(std::string());
-            
-            tempS1 << "CLIMIT? " << i;
-            readValue (tempS1.str().c_str(), tempV);
-            cflit[i]->setValueCharArr(tempV->getValue());
-            tempS1.str(std::string());
-            
-	    }*/
-        
 	}
 	catch (rts2core::Error er)
 	{
@@ -317,7 +298,10 @@ void Lakeshore::readChannelValues (const char *pn, TempChannel *pv)
 		std::list <rts2core::Value*>::iterator iter_v = iter->second.begin ();
 		for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
 		{
-			(*iter_v)->setValueCharArr (iter_sc->c_str ());
+			if ((*iter_v)->getValueBaseType () == RTS2_VALUE_SELECTION && (*iter_v)->getName () != "CSET_IN_1" && (*iter_v)->getName () != "CSET_IN_2")
+				(*iter_v)->setValueInteger (atoi (iter_sc->c_str ()) - 1);
+			else
+				(*iter_v)->setValueCharArr (iter_sc->c_str ());
 		}
 	}
 }
@@ -330,10 +314,26 @@ void Lakeshore::changeChannelValue (const char *chan, std::map <const char *, st
 	for (std::list <rts2core::Value *>::iterator vit = it->second.begin (); vit != it->second.end (); vit++)
 	{
 		_os << ",";
-		if (*vit == oldValue)
-			_os << newValue->getValue ();
+		if ((*vit)->getName () == "CSET_IN_1" || (*vit)->getName () == "CSET_IN_2")
+		{
+			std::cout << "CSET_IN" << (*vit)->getDisplayValue () << std::endl;
+			if (*vit == oldValue)
+				_os << newValue->getDisplayValue ();
+			else
+				_os << (*vit)->getDisplayValue ();
+		}
 		else
-			_os << (*vit)->getValue ();
+		{
+			rts2core::Value *nv;
+			if (*vit == oldValue)
+				nv = newValue;
+			else
+				nv = *vit;
+			if ((*vit)->getValueBaseType () == RTS2_VALUE_SELECTION)
+				_os << nv->getValueInteger () + 1;
+			else
+				_os << nv->getValue ();
+		}
 	}
 	gpibWrite (_os.str ().c_str ());
 }
