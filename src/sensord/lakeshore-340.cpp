@@ -67,25 +67,7 @@ class Lakeshore:public Gpib
 
 	private:
 		TempChannel *temps[NUM_CHAN];
-        
-		// configure control filter
-		rts2core::ValueBool *cflit[NUM_LOOP];  // |<on/off>|
-        
-		// configure control loop limit parameters
-		rts2core::ValueFloat *climit_sp[NUM_LOOP]; // limit set point
-		rts2core::ValueFloat *climit_ps[NUM_LOOP]; // limit max positive slope
-		rts2core::ValueFloat *climit_ns[NUM_LOOP]; // limit max negative slope
-		rts2core::ValueInteger *climit_mc[NUM_LOOP]; // limit max current (1=0.25A, 2=0.5A, 3=1.0A, 4=2.0A, 5=User)
-		rts2core::ValueInteger *climit_mr[NUM_LOOP]; // limit max loop 1 heater range (0-5)
-        
-		// configure control loop mode
-		rts2core::ValueInteger *cmode[NUM_LOOP]; // (1=manual PID, 2=zone, 3=open loop, 4=auto tune PID, 5=auto tune PI, 6=auto tune P)
-        
-		// configure control loop parameters
-		rts2core::ValueSelection *cset_in[NUM_LOOP]; // which input (A-D4)
-		rts2core::ValueInteger *cset_un[NUM_LOOP]; // setpoint units (1=kelvin, 2=celsius, 3=sensor units)
-		rts2core::ValueBool *cset_st[NUM_LOOP]; // set control loop on/off
-		rts2core::ValueBool *cset_is[NUM_LOOP]; // set control loop on/off after power-up
+		TempChannel *loops[NUM_LOOP];
         
 		// query heater output
 		rts2core::ValueFloat *htr; // heater output in percent
@@ -93,20 +75,8 @@ class Lakeshore:public Gpib
 		// query heater status
 		rts2core::ValueInteger *htrst; // heater error code
         
-		// configure control loop PID values
-		rts2core::ValueFloat *pid_p[NUM_LOOP];    // value for P (0-1000, 0.1 resolution)
-		rts2core::ValueFloat *pid_i[NUM_LOOP];    // value for I (0-1000, 0.1 resolution)
-		rts2core::ValueInteger *pid_d[NUM_LOOP];  // value for D (0-1000, 1 resolution)
-        
-		// configure control loop ramp parameters
-		rts2core::ValueBool *ramp_st[NUM_LOOP]; // set ramping on or off
-		rts2core::ValueFloat *ramp_rt[NUM_LOOP]; // set ramp setpoint [kelvin/minute]
-        
 		// configure heater range
 		rts2core::ValueInteger *range; // heater range (0-5)
-        
-		// configure control loop setpoint
-		rts2core::ValueFloat *setp[NUM_LOOP]; // value of setpoint in given units
         
 		template < typename T > rts2core::Value *tempValue (T *&val, const char *prefix, const char *chan, const char *_info, bool writeToFits, uint32_t flags = 0)
 		{
@@ -117,15 +87,18 @@ class Lakeshore:public Gpib
 			return val;
 		}
 
-		template < typename T > void channelValue (T * &val, const char *name, const char *desc, int i, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
+		template < typename T > rts2core::Value *loopValue (T * &val, const char *name, const char *desc, int i, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
 		{
 			std::ostringstream _os_n, _os_i;
 			_os_n << name << "_" << i;
 			_os_i << desc << " " << i;
 			createValue (val, _os_n.str ().c_str (), _os_i.str (), writeToFits, valueFlags, queCondition);
+			return val;
 		}
 
-		void changeTempValue (const char *chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue);
+		void readChannelValues (const char *pn, TempChannel *pv);
+
+		void changeChannelValue (const char *chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue);
 };
 
 }
@@ -153,6 +126,7 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	rts2core::ValueDouble *vd;
 	rts2core::ValueInteger *vi;
 	rts2core::ValueBool *vb;
+	rts2core::ValueSelection *vs;
 
 	for (i = 0, chan = channames[0]; i < NUM_CHAN; i++, chan = channames[i])
 	{
@@ -160,7 +134,7 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 
 		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "[C] channel temperature", true));
 		(*(temps[i]))["KRDG"].push_back (tempValue (vd, "TEMP_K", chan, "[K] channel temperature in deg K", true));
-		(*(temps[i]))["FILTER"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false, RTS2_VALUE_WRITABLE));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
 		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_POINTS", chan, "channel filter number of data points used for the filtering function. Valid range 2-64.", false, RTS2_VALUE_WRITABLE));
 		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_WINDOW", chan, "channel filtering window. Valid range 1 - 10", false, RTS2_VALUE_WRITABLE));
 	}
@@ -168,25 +142,41 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	for (i = 0; i < NUM_LOOP; i++)
 	{
 		int j = i + 1;
-		channelValue (cflit[i], "CFLIT", "control filter, loop", j, true, RTS2_VALUE_WRITABLE);
-    		channelValue (climit_sp[i], "CLIMIT_SP", "setpoint limit value, loop", j, true, RTS2_VALUE_WRITABLE);
-       		channelValue (climit_ps[i], "CLIMIT_PS", "max. positive slope, loop", j, true, RTS2_VALUE_WRITABLE);
-       		channelValue (climit_ns[i], "CLIMIT_NS", "max. negative slop, loop", j, true, RTS2_VALUE_WRITABLE);
-        	channelValue (climit_mc[i], "CLIMIT_MC", "max. current (1=0.25A - 4=2.0A), loop", j, true, RTS2_VALUE_WRITABLE);
-       		channelValue (climit_mr[i], "CLIMIT_MR", "max. loop 1 heater range (0-5)", j, true, RTS2_VALUE_WRITABLE);
-        	channelValue (cmode[i], "CMODE", "control mode, loop", j, true, RTS2_VALUE_WRITABLE);
-       		channelValue (cset_in[i], "CSET_IN", "input, loop", j, true, RTS2_VALUE_WRITABLE);
-		for (int k = 0; k < NUM_CHAN; k++)
-			cset_in[i]->addSelVal (channames[k]);
-		channelValue (cset_un[i], "CSET_UN", "units, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (cset_st[i], "CSET_ST", "state, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (cset_is[i], "CSET_IS", "state after powerup, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (pid_p[i], "PID_P", "PID p value, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (pid_i[i], "PID_I", "PID i value, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (pid_d[i], "PID_D", "PID d value, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (ramp_st[i], "RAMP_ST", "ramping status, loop", j, true, RTS2_VALUE_WRITABLE);
-		channelValue (ramp_rt[i], "RAMP_RT", "ramping rate, loop", j, false, RTS2_VALUE_WRITABLE);
-		channelValue (setp[i], "SETP", "setpoint, loop", j, true, RTS2_VALUE_WRITABLE);
+		loops[i] = new TempChannel ();
+		(*(loops[i]))["CFILT"].push_back (loopValue (vb, "CFILT", "control filter, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
+
+		(*(loops[i]))["CLIMIT"].push_back (loopValue (vd, "CLIMIT_SP", "setpoint limit value, loop", j, true, RTS2_VALUE_WRITABLE));
+       		(*(loops[i]))["CLIMIT"].push_back (loopValue (vd, "CLIMIT_PS", "max. positive slope, loop", j, true, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["CLIMIT"].push_back (loopValue (vd, "CLIMIT_NS", "max. negative slop, loop", j, true, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["CLIMIT"].push_back (loopValue (vi, "CLIMIT_MC", "max. current (1=0.25A - 4=2.0A), loop", j, true, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["CLIMIT"].push_back (loopValue (vi, "CLIMIT_MR", "max. loop 1 heater range (0-5)", j, true, RTS2_VALUE_WRITABLE));
+
+		(*(loops[i]))["CMODE"].push_back (loopValue (vs, "CMODE", "control mode, loop", j, true, RTS2_VALUE_WRITABLE));
+		vs->addSelVal ("Manual PID");
+		vs->addSelVal ("Zone");
+		vs->addSelVal ("Open Loop");
+		vs->addSelVal ("AutoTune PID");
+		vs->addSelVal ("AutoTune PI");
+		vs->addSelVal ("AutoTune P");
+
+		(*(loops[i]))["CSET"].push_back (loopValue (vs, "CSET_IN", "input, loop", j, true, RTS2_VALUE_WRITABLE));
+		vs->addSelVal ("A");
+		vs->addSelVal ("B");
+
+		(*(loops[i]))["CSET"].push_back (loopValue (vs, "CSET_UN", "units, loop", j, true, RTS2_VALUE_WRITABLE));
+		vs->addSelVal ("Kelvin");
+		vs->addSelVal ("Celsius");
+		vs->addSelVal ("sensor units");
+
+		(*(loops[i]))["CSET"].push_back (loopValue (vb, "CSET_ST", "state, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["CSET"].push_back (loopValue (vb, "CSET_IS", "state after powerup, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["PID"].push_back (loopValue (vd, "PID_P", "PID p value, loop", j, true, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["PID"].push_back (loopValue (vd, "PID_I", "PID i value, loop", j, true, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["PID"].push_back (loopValue (vi, "PID_D", "PID d value, loop", j, true, RTS2_VALUE_WRITABLE));
+
+		(*(loops[i]))["RAMP"].push_back (loopValue (vb, "RAMP_ST", "ramping status, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["RAMP"].push_back (loopValue (vd, "RAMP_RT", "[K/min] ramping rate, loop", j, false, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["SETP"].push_back (loopValue (vd, "SETP", "[some units] setpoint, loop", j, true, RTS2_VALUE_WRITABLE));
 	}
     
 	createValue(htr, "HTR", "query heater output", true);
@@ -215,22 +205,16 @@ int Lakeshore::info ()
 		const char *chan;
 		for (i = 0, chan = channames[0]; i < NUM_CHAN; i++, chan = channames[i])
 		{
-			for (std::map <const char*, std::list <rts2core::Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
-			{
-				std::ostringstream _os;
-				_os << iter->first << "? " << chan;
+			readChannelValues (chan, temps[i]);
+		}
+		// get control loop parameters
 
-				char buf[100];
-				gpibWriteRead (_os.str ().c_str (), buf, 100);
-				std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
-
-				std::vector<std::string>::iterator iter_sc = sc.begin ();
-				std::list <rts2core::Value*>::iterator iter_v = iter->second.begin ();
-				for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
-				{
-					(*iter_v)->setValueCharArr (iter_sc->c_str ());
-				}
-			}
+		char lname[2];
+		lname[1] = '\0';
+		for (i = 0; i < NUM_LOOP; i++)
+		{
+			lname[0] = '1' + i;
+			readChannelValues (lname, loops[i]);
 		}
 		
 		/*        std::ostringstream tempS1;
@@ -239,7 +223,7 @@ int Lakeshore::info ()
         for (i = 0; i < NUM_LOOP; i++)
         {
             
-            tempS1 << "CFLIT? " << i;
+            tempS1 << "CFILT? " << i;
             readValue (tempS1.str().c_str(), tempV);
             cflit[i]->setValueCharArr(tempV->getValue());
             tempS1.str(std::string());
@@ -286,145 +270,26 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 	{
 		int i;
 		const char *chan;
+		std::map <const char *, std::list <rts2core::Value *> >::iterator it;
+
 		for (i = 0, chan = channames[0]; i < NUM_CHAN; i++, chan = channames[i])
 		{
-			std::map <const char *, std::list <rts2core::Value *> >::iterator it = temps[i]->findValue (oldValue);
+			it = temps[i]->findValue (oldValue);
 			if (it != temps[i]->end ())
 			{
-				changeTempValue (chan, it, oldValue, newValue);
+				changeChannelValue (chan, it, oldValue, newValue);
 				return 0;
 			}
 		}
-        
-		std::ostringstream tempS;
-		rts2core::ValueString *tempV = new rts2core::ValueString ("tempV");
-		int comLoop;
-		for (comLoop = 1; comLoop <= 2; comLoop++)
+		char lname[2];
+		lname[1] = '\0';
+		for (i = 0; i < NUM_LOOP; i++)
 		{
-			if (oldValue == cflit[comLoop])
+			lname[0] = '1' + i;
+			it = loops[i]->findValue (oldValue);
+			if (it != loops[i]->end ())
 			{
-				tempS << comLoop << ", " << (((rts2core::ValueBool *) newValue)->getValueBool () ? 1 : 0);
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CFLIT", tempV);
-				return 0;
-			}
-			else if (oldValue == climit_sp[comLoop])
-			{
-				tempS << comLoop << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue () << ", " << climit_ps[comLoop]->getDisplayValue () << ", " << climit_ns[comLoop]->getDisplayValue () << ", " << climit_mc[comLoop]->getDisplayValue () << ", " << climit_mr[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CLIMIT", tempV);
-				return 0;
-			}
-			else if (oldValue == climit_ps[comLoop])
-			{
-				tempS << comLoop << ", " << climit_sp[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue () << ", " << climit_ns[comLoop]->getDisplayValue () << ", " << climit_mc[comLoop]->getDisplayValue () << ", " << climit_mr[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CLIMIT", tempV);
-				return 0;
-			}
-			else if (oldValue == climit_ns[comLoop])
-			{
-				tempS << comLoop << ", " << climit_sp[comLoop]->getDisplayValue () << ", " << climit_ps[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue () << ", " << climit_mc[comLoop]->getDisplayValue () << ", " << climit_mr[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CLIMIT", tempV);
-				return 0;
-			}
-			else if (oldValue == climit_mc[comLoop])
-			{
-				tempS << comLoop << ", " << climit_sp[comLoop]->getDisplayValue () << ", " << climit_ps[comLoop]->getDisplayValue () << ", " << climit_ns[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueInteger *) newValue)->getDisplayValue () << ", " << climit_mr[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CLIMIT", tempV);
-				return 0;
-			}
-			else if (oldValue == climit_mr[comLoop])
-			{
-				tempS << comLoop << ", " << climit_sp[comLoop]->getDisplayValue () << ", " << climit_ps[comLoop]->getDisplayValue () << ", " << climit_ns[comLoop]->getDisplayValue () << ", " << climit_mc[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueInteger *) newValue)->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CLIMIT", tempV);
-				return 0;
-			}
-			else if (oldValue == cmode[comLoop])
-			{
-				tempS << comLoop << ", " << ((rts2core::ValueInteger *) newValue)->getDisplayValue();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CMODE", tempV);
-				return 0;
-			}
-			else if (oldValue == cset_in[comLoop])
-			{
-				tempS << comLoop << ", " << ((rts2core::ValueString *) newValue)->getValue () << ", " << cset_un[comLoop]->getDisplayValue () << ", " << (((rts2core::ValueBool *) cset_st[comLoop])->getValueBool () ? 1 : 0) << ", " << (((rts2core::ValueBool *) cset_is[comLoop])->getValueBool () ? 1 : 0);
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CSET", tempV);
-				return 0;
-			}
-			else if (oldValue == cset_un[comLoop])
-			{
-				tempS << comLoop << ", " << cset_in[comLoop]->getValue () << ", " << ((rts2core::ValueInteger *) newValue)->getDisplayValue () << ", " << (((rts2core::ValueBool *) cset_st[comLoop])->getValueBool () ? 1 : 0) << ", " << (((rts2core::ValueBool *) cset_is[comLoop])->getValueBool () ? 1 : 0);
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CSET", tempV);
-				return 0;
-			}
-			else if (oldValue == cset_st[comLoop])
-			{
-				tempS << comLoop << ", " << cset_in[comLoop]->getValue () << ", " << cset_un[comLoop]->getDisplayValue () << ", " << (((rts2core::ValueBool *) newValue)->getValueBool () ? 1 : 0) << ", " << (((rts2core::ValueBool *) cset_is[comLoop])->getValueBool () ? 1 : 0);
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CSET", tempV);
-				return 0;
-			}
-			else if (oldValue == cset_is[comLoop])
-			{
-				tempS << comLoop << ", " << cset_in[comLoop]->getValue () << ", " << cset_un[comLoop]->getDisplayValue () << ", " << (((rts2core::ValueBool *) cset_st[comLoop])->getValueBool () ? 1 : 0) << ", " << (((rts2core::ValueBool *) newValue)->getValueBool () ? 1 : 0);
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("CSET", tempV);
-				return 0;
-			}
-			else if (oldValue == pid_p[comLoop])
-			{
-				tempS << comLoop << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue () << ", " << pid_i[comLoop]->getDisplayValue () << ", " << pid_d[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("PID", tempV);
-				return 0;
-			}
-			else if (oldValue == pid_i[comLoop])
-			{
-				tempS << comLoop << ", " << pid_p[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue () << ", " << pid_d[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("PID", tempV);
-				return 0;
-			}
-			else if (oldValue == pid_d[comLoop])
-			{
-				tempS << comLoop << ", " << pid_p[comLoop]->getDisplayValue () << ", " << pid_i[comLoop]->getDisplayValue () << ", " << ((rts2core::ValueInteger *) newValue)->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("PID", tempV);
-				return 0;
-			}
-			else if (oldValue == ramp_st[comLoop])
-			{
-				tempS << comLoop << ", " << (((rts2core::ValueBool *) newValue)->getValueBool () ? 1 : 0) << ", " << ramp_rt[comLoop]->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("RAMP", tempV);
-				return 0;
-			}
-			else if (oldValue == ramp_rt[comLoop])
-			{
-				tempS << comLoop << ", " << (((rts2core::ValueBool *) ramp_st[comLoop])->getValueBool () ? 1 : 0) << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("RAMP", tempV);
-				return 0;
-			}
-			else if (oldValue == range)
-			{
-				tempS << ((rts2core::ValueInteger *) newValue)->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("RANGE", tempV);
-				return 0;
-			}
-			else if (oldValue == setp[comLoop])
-			{
-				tempS << comLoop << ", " << ((rts2core::ValueFloat *) newValue)->getDisplayValue ();
-				tempV->setValueCharArr(tempS.str().c_str());
-				writeValue("SETP", tempV);
+				changeChannelValue (lname, it, oldValue, newValue);
 				return 0;
 			}
 		}
@@ -437,12 +302,39 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 	return Gpib::setValue (oldValue, newValue);
 }
 
-void Lakeshore::changeTempValue (const char *chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue)
+void Lakeshore::readChannelValues (const char *pn, TempChannel *pv)
+{
+	for (std::map <const char*, std::list <rts2core::Value*> >::iterator iter = pv->begin (); iter != pv->end (); iter++)
+	{
+		std::ostringstream _os;
+		_os << iter->first << "? " << pn;
+
+		char buf[100];
+		gpibWriteRead (_os.str ().c_str (), buf, 100);
+		std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
+
+		std::vector<std::string>::iterator iter_sc = sc.begin ();
+		std::list <rts2core::Value*>::iterator iter_v = iter->second.begin ();
+		for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
+		{
+			(*iter_v)->setValueCharArr (iter_sc->c_str ());
+		}
+	}
+}
+
+void Lakeshore::changeChannelValue (const char *chan, std::map <const char *, std::list <rts2core::Value *> >::iterator it, rts2core::Value *oldValue, rts2core::Value *newValue)
 {
 	std::ostringstream _os;
 	_os << it->first << " " << chan;
 	_os << std::fixed;
-	_os << newValue->getValueFloat ();
+	for (std::list <rts2core::Value *>::iterator vit = it->second.begin (); vit != it->second.end (); vit++)
+	{
+		_os << ",";
+		if (*vit == oldValue)
+			_os << newValue->getValue ();
+		else
+			_os << (*vit)->getValue ();
+	}
 	gpibWrite (_os.str ().c_str ());
 }
 
