@@ -258,6 +258,16 @@ void flex_load_rpm (uint8_t axis, int64_t rpm, uint8_t inputVector)
 	checkStatus ();
 }
 
+void flex_load_acceleration (uint8_t axis, uint16_t accelerationType, uint32_t acceleration, uint8_t inputVector)
+{
+	uint16_t data[3];
+	data[0] = accelerationType;
+	data[1] = acceleration >> 16;
+	data[2] = acceleration & 0xffff;
+	writePacketWithIOVector (axis, 379, 3, data, inputVector);
+	checkStatus ();
+}
+
 void flex_load_target_pos (uint8_t axis, uint32_t position)
 {
 	uint16_t data[2];
@@ -323,6 +333,17 @@ void flex_stop_motion (uint8_t resource, uint16_t stopType, uint16_t map)
 {
 	uint16_t data[2] = {stopType, map};
 	writePacket (resource, 384, 2, data);
+	checkStatus ();
+}
+
+void flex_reset_pos (uint8_t axis, int32_t position1, int32_t position2, uint8_t inputVector)
+{
+	uint16_t data[4];
+	data[0] = position1 >> 16;
+	data[1] = position1 & 0xffff;
+	data[2] = position2 >> 16;
+	data[3] = position2 & 0xffff;
+	writePacketWithIOVector (axis, 42, 4, data, inputVector);
 	checkStatus ();
 }
 

@@ -65,6 +65,7 @@ class NIRatir:public Sensor
 		virtual int info ();
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+		virtual int commandAuthorized (Rts2Conn * conn);
 
 	private:
 		const char *boardPCI;
@@ -74,6 +75,11 @@ class NIRatir:public Sensor
 
 		rts2core::ValueInteger *ax1velocity;
 		rts2core::ValueLong *ax1rpm;
+
+		rts2core::ValueLong *ax1acceleration;
+		rts2core::ValueLong *ax1deceleration;
+
+		rts2core::ValueBool *ax1enabled;
 
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
@@ -89,6 +95,15 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	createValue (ax1velocity, "AX1_VEL", "1st axis velocity", false, RTS2_VALUE_WRITABLE);
 
 	createValue (ax1rpm, "AX1_RPM", "1st axis maximal velocity in RPM", false, RTS2_VALUE_WRITABLE);
+
+	createValue (ax1acceleration, "AX1_ACC", "1st axis acceleration", false, RTS2_VALUE_WRITABLE);
+	createValue (ax1deceleration, "AX1_DEC", "1st axis deceleration", false, RTS2_VALUE_WRITABLE);
+
+	createValue (ax1enabled, "AX1_ENB", "1st axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	ax1enabled->setValueBool (true);
+
+	ax1acceleration->setValueLong (20);
+	ax1deceleration->setValueLong (20);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -133,6 +148,9 @@ int NIRatir::initHardware ()
 	flex_load_counts_steps_rev (NIMC_AXIS1, NIMC_STEPS, 24);
 	flex_config_inhibit_output (NIMC_AXIS1, 0, 0, 0);
 
+	flex_load_acceleration (NIMC_AXIS1, NIMC_ACCELERATION, ax1acceleration->getValueLong (), 0xff);
+	flex_load_acceleration (NIMC_AXIS1, NIMC_DECELERATION, ax1deceleration->getValueLong (), 0xff);
+
 	return 0;	
 }
 
@@ -169,13 +187,38 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		flex_load_rpm (NIMC_AXIS1, new_value->getValueLong (), 0xff);
 		return 0;
 	}
+	else if (old_value == ax1acceleration)
+	{
+		flex_load_acceleration (NIMC_AXIS1, NIMC_ACCELERATION, new_value->getValueLong (), 0xff);
+		return 0;
+	}
+	else if (old_value == ax1deceleration)
+	{
+		flex_load_acceleration (NIMC_AXIS1, NIMC_DECELERATION, new_value->getValueLong (), 0xff);
+		return 0;
+	}
+	else if (old_value == ax1enabled)
+	{
+		flex_enable_axis (((rts2core::ValueBool *) new_value)->getValueBool () ? 0x02 : 0x0, NIMC_PID_RATE_250);
+		return 0;
+	}
 	return Sensor::setValue (old_value, new_value);
+}
+
+int NIRatir::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		flex_reset_pos (NIMC_AXIS1, 0, 0, 0xff);
+		return 0;
+	}
+	return Sensor::commandAuthorized (conn);
 }
 
 void NIRatir::moveAbs (int axis, int32_t pos)
 {
 	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, 0x02);
-	flex_set_op_mode (axis, NIMC_RELATIVE_POSITION);
+	flex_set_op_mode (axis, NIMC_ABSOLUTE_POSITION);
 	flex_load_target_pos (axis, pos);
 	flex_start (axis, 0x02);
 }

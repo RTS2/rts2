@@ -41,6 +41,20 @@
  */
 #define NIMC_NOAXIS            0x00
 #define NIMC_AXIS1             0x01
+#define NIMC_AXIS2             0x02
+#define NIMC_AXIS3             0x03
+#define NIMC_AXIS4             0x04
+#define NIMC_AXIS5             0x05
+#define NIMC_AXIS6             0x06
+#define NIMC_AXIS7             0x07
+#define NIMC_AXIS8             0x08
+#define NIMC_AXIS9             0x09
+#define NIMC_AXIS10            0x0a
+#define NIMC_AXIS11            0x0b
+#define NIMC_AXIS12            0x0c
+#define NIMC_AXIS13            0x0d
+#define NIMC_AXIS14            0x0e
+#define NIMC_AXIS15            0x0f
 
 //Load Counts/Steps per Revolution constants
 #define NIMC_COUNTS  0
@@ -97,6 +111,11 @@
 #define  NIMC_ABSOLUTE_CONTOURING   5
 #define  NIMC_RELATIVE_CONTOURING   6
 
+// Acceleration/deceleration
+#define  NIMC_BOTH                  0
+#define  NIMC_ACCELERATION          1
+#define  NIMC_DECELERATION          2
+
 // stop motion types
 #define  NIMC_DECEL_STOP 0
 #define  NIMC_HALT_STOP 1
@@ -131,9 +150,11 @@ void flex_load_velocity (uint8_t axis, int32_t velocity, uint8_t inputVector);
 
 void flex_load_rpm (uint8_t axis, int64_t rpm, uint8_t inputVector);
 
+void flex_load_acceleration (uint8_t axis, uint16_t accelerationType, uint32_t acceleration, uint8_t inputVector);
+
 void flex_load_target_pos (uint8_t axis, uint32_t position);
 
-void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t polarity,uint16_t driveMode);
+void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t polarity, uint16_t driveMode);
 
 void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity);
 
@@ -146,6 +167,16 @@ void flex_set_op_mode (uint8_t resource, uint16_t operationMode);
 void flex_start (uint8_t resource, uint16_t map);
 
 void flex_stop_motion (uint8_t resource, uint16_t stopType, uint16_t map);
+
+/**
+ * Reset the axis position to the specified position.
+ *
+ * @param axis           Axis to reset
+ * @param position1      value for axis and primary feedback resource
+ * @param position2      value for secondary feedback resource
+ * @param inputVector    source of the data for this function
+ */
+void flex_reset_pos (uint8_t axis, int32_t position1, int32_t position2, uint8_t inputVector);
 
 /**
  * @param path /proc entry to PCI device - see lspci for ID, you will then need something like /sys/bus/pci/devices/0000:01:01.0
