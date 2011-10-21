@@ -133,6 +133,8 @@ void flex_load_target_pos (uint8_t axis, uint32_t position);
 
 void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t polarity,uint16_t driveMode);
 
+void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity);
+
 void flex_read_position_rtn (uint8_t axis, int32_t *position);
 
 void flex_set_op_mode (uint8_t resource, uint16_t operationMode);

@@ -34,7 +34,7 @@
  *
  * You will need to quess a bit which command ID provides which function, as
  * there isn't any direct mapping. Checking name and parameters usually will
- * lead to finsing the match.
+ * lead to figuring the match.
  */
 #include "nimotion.h"
 
@@ -99,7 +99,7 @@ void readPacket (int16_t *c, uint8_t size, uint16_t *data)
 	int16_t s;
 	*c = readData ();
 	// extract size
-	for (s = h >> 8; s > 0; s--)
+	for (s = h >> 8; s > 2; s--)
 	{
 		*data = readData ();
 		data++;
@@ -238,11 +238,29 @@ void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t pol
 	checkStatus ();
 }
 
+// swap 2 bytes..
+void btol32 (int32_t *b)
+{
+	int32_t r = *b & 0xffff;
+	r = r << 16;
+	r |= (*b >> 16);
+	*b = r;
+}
+
+void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity)
+{
+	writePacket (axis, 392, 0, NULL);
+	int16_t c;
+	readPacket (&c, 2, (uint16_t *) velocity);
+	btol32 (velocity);
+}
+
 void flex_read_position_rtn (uint8_t axis, int32_t *position)
 {
 	writePacket (axis, 41, 0, NULL);
 	int16_t c;
 	readPacket (&c, 2, (uint16_t *) position);
+	btol32 (position);
 }
 
 void flex_set_op_mode (uint8_t resource, uint16_t operationMode)
