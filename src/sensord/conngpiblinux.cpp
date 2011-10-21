@@ -73,7 +73,7 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "::gpibWriteRead dev " << gpib_dev << " read ";
-		ls.logArr (reply, ret);
+		ls.logArr (reply, ibcnt);
 		ls << sendLog;
 	}
 }
