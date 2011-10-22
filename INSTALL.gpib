@@ -1,0 +1,34 @@
+Instructions to install GPIB sensors
+====================================
+
+If you need to control GPIB enabled sensors/devices, you need to make sure 
+linux-gpib infrastructure is present on target machine.
+
+The linux-gpib project is on SourceForge, so see
+http://linux-gpib.sourceforge.net/ for details. Below are instructions to get
+GPIB drivers configured, compiled and running a device with the NI USB GPIB
+interface on Debian based distribution (e.g. Ubuntu):
+
+sudo apt-get install libgpib0-dev libgpib-bin
+svn co https://linux-gpib.svn.sourceforge.net/svnroot/linux-gpib/trunk/linux-gpib linux-gpib
+cd linux-gpib
+./configure
+cd drivers
+make && sudo make install
+
+Then after plugging NI USB interface to USB on the target computer, you should
+see in dmesg output line with:
+
+ni_usb_gpib: attach
+
+If that's the case, the last step is to run RTS2 ./configure adding
+"--with-gpib" option:
+
+user@host:~/fliusb/libfli$ cd ~/rts2
+user@host:~/rts2$ ./configure --with-gpib
+
+Then run make and (as root) make install. After installing, start the GPIB
+driver(s) you need - e.g. rts2-sensor-lakeshore-340 or
+rts2-sensor-keithley-scpi. GPIB sensors ussually requires -p option for primary
+address of the device, which you can configure/query on device (please see
+device manual for details).
