@@ -146,6 +146,14 @@ void flex_configure_stepper_output (uint8_t resource, uint8_t driveMode, uint8_t
 
 void flex_load_counts_steps_rev (uint8_t resource, int16_t type, uint32_t val);
 
+/**
+ * Load base velocity, e.g. velocity where move starts.
+ *
+ * @param axis            axis to control
+ * @param baseVelocity    base velocity for the stepper axis in steps/seconds
+ */
+void flex_load_base_vel (uint8_t axis, uint16_t baseVelocity);
+
 void flex_load_velocity (uint8_t axis, int32_t velocity, uint8_t inputVector);
 
 void flex_load_rpm (uint8_t axis, int64_t rpm, uint8_t inputVector);

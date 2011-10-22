@@ -74,7 +74,8 @@ class NIRatir:public Sensor
 		rts2core::ValueInteger *ax1position;
 
 		rts2core::ValueInteger *ax1velocity;
-		rts2core::ValueLong *ax1rpm;
+		rts2core::ValueInteger *ax1maxv;
+		rts2core::ValueInteger *ax1basev;
 
 		rts2core::ValueLong *ax1acceleration;
 		rts2core::ValueLong *ax1deceleration;
@@ -90,20 +91,24 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	createValue (ax1target, "AX1_TAR", "1st axis target position", false, RTS2_VALUE_WRITABLE);
 	ax1target->setValueInteger (0);
 
-	createValue (ax1position, "AX1_POS", "current 1st axis position", false, RTS2_VALUE_WRITABLE);
+	createValue (ax1position, "AX1_POS", "current 1st axis position", true);
 
-	createValue (ax1velocity, "AX1_VEL", "1st axis velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (ax1velocity, "AX1_VEL", "1st axis current velocity", false);
 
-	createValue (ax1rpm, "AX1_RPM", "1st axis maximal velocity in RPM", false, RTS2_VALUE_WRITABLE);
+	createValue (ax1maxv, "AX1_MAX_VEL", "1st axis maximal velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (ax1basev, "AX1_BASE_VEL", "1st axis base velocity", false, RTS2_VALUE_WRITABLE);
+
+	ax1maxv->setValueInteger (2000);
+	ax1basev->setValueInteger (0);
 
 	createValue (ax1acceleration, "AX1_ACC", "1st axis acceleration", false, RTS2_VALUE_WRITABLE);
 	createValue (ax1deceleration, "AX1_DEC", "1st axis deceleration", false, RTS2_VALUE_WRITABLE);
 
-	createValue (ax1enabled, "AX1_ENB", "1st axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-	ax1enabled->setValueBool (true);
-
 	ax1acceleration->setValueLong (20);
 	ax1deceleration->setValueLong (20);
+
+	createValue (ax1enabled, "AX1_ENB", "1st axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	ax1enabled->setValueBool (true);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -148,6 +153,9 @@ int NIRatir::initHardware ()
 	flex_load_counts_steps_rev (NIMC_AXIS1, NIMC_STEPS, 24);
 	flex_config_inhibit_output (NIMC_AXIS1, 0, 0, 0);
 
+	flex_load_base_vel (NIMC_AXIS1, ax1basev->getValueInteger ());
+	flex_load_velocity (NIMC_AXIS1, ax1maxv->getValueInteger (), 0xff);
+
 	flex_load_acceleration (NIMC_AXIS1, NIMC_ACCELERATION, ax1acceleration->getValueLong (), 0xff);
 	flex_load_acceleration (NIMC_AXIS1, NIMC_DECELERATION, ax1deceleration->getValueLong (), 0xff);
 
@@ -163,10 +171,6 @@ int NIRatir::info ()
 	flex_read_velocity_rtn (NIMC_AXIS1, &cp);
 	ax1velocity->setValueInteger (cp);
 
-	int64_t cpp;
-	flex_read_rpm (NIMC_AXIS1, &cpp);
-	ax1rpm->setValueLong (cpp);
-
 	return Sensor::info ();
 }
 
@@ -177,14 +181,14 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		moveAbs (NIMC_AXIS1, new_value->getValueInteger ());
 		return 0;
 	}
-	else if (old_value == ax1velocity)
+	else if (old_value == ax1basev)
 	{
-		flex_load_velocity (NIMC_AXIS1, new_value->getValueInteger (), 0xff);
+		flex_load_base_vel (NIMC_AXIS1, new_value->getValueInteger ());
 		return 0;
 	}
-	else if (old_value == ax1rpm)
+	else if (old_value == ax1maxv)
 	{
-		flex_load_rpm (NIMC_AXIS1, new_value->getValueLong (), 0xff);
+		flex_load_velocity (NIMC_AXIS1, new_value->getValueInteger (), 0xff);
 		return 0;
 	}
 	else if (old_value == ax1acceleration)

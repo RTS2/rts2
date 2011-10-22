@@ -238,6 +238,12 @@ void flex_load_counts_steps_rev (uint8_t resource, int16_t type, uint32_t val)
 	checkStatus ();
 }
 
+void flex_load_base_vel (uint8_t axis, uint16_t baseVelocity)
+{
+	writePacket (axis, 28, 1, &baseVelocity);
+	checkStatus ();
+}
+
 void flex_load_velocity (uint8_t axis, int32_t velocity, uint8_t inputVector)
 {
 	uint16_t data[2];
