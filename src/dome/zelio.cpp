@@ -142,6 +142,7 @@ class Zelio:public Dome
 		rts2core::ValueBool *openingIgnoreRain;
 		rts2core::ValueBool *ignoreRain;
 		rts2core::ValueBool *automode;
+		rts2core::ValueBool *ignoreAutomode;
 		rts2core::ValueBool *timeoutOccured;
 		rts2core::ValueBool *onPower;
 		rts2core::ValueBool *weather;
@@ -328,7 +329,7 @@ bool Zelio::isGoodWeather ()
 		return false;
 	}
 	// not in auto mode..
-	if (!(reg & ZS_SW_AUTO))
+	if (!(reg & ZS_SW_AUTO) && ignoreAutomode->getValueBool () == false)
 	{
 	  	setWeatherTimeout (30, "not in auto mode");
 		return false;
@@ -504,7 +505,10 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false, RTS2_VALUE_WRITABLE);
 	deadTimeout->setValueInteger (60);
 
-	createValue (automode, "automode", "state of automatic dome mode", false);
+	createValue (automode, "automode", "state of automatic dome mode", false, RTS2_DT_ONOFF);
+	createValue (ignoreAutomode, "automode_ignore", "do not switch to off when not in automatic", false, RTS2_VALUE_WRITABLE);
+	ignoreAutomode->setValueBool (false);
+
 	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
 	createValue (emergencyButton, "emergency", "state of emergency button", false);
