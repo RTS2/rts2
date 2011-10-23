@@ -60,7 +60,7 @@ class Bootes2: public SensorWeather
 		rts2core::ValueDoubleStat *tempMeas;
 		rts2core::ValueDoubleStat *humiMeas;
 
-		bool tempOnOff;
+		bool rainOnOff;
 		bool humiOnOff;
 		
 		rts2core::ValueDouble *humBad;
@@ -86,6 +86,13 @@ class Bootes2: public SensorWeather
 		 * @return -1 on error, 0 on success.
 		 */
 		int updateTemperature ();
+
+		/**
+		 * Update rain measurements.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int updateRain ();
 
 		/**
 		 * Update humidity.
@@ -115,7 +122,7 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 	createValue (vb, "vb", "LEDs", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	humiOnOff = false;
-	tempOnOff = false;
+	rainOnOff = false;
 
 	addOption ('c', NULL, 1, "path to comedi device");
 	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
@@ -164,14 +171,32 @@ int Bootes2::getVolts (int subdevice, int channel, double &volts)
 int Bootes2::updateHumidity ()
 {
 	double hum;
+	
+	humiOnOff = !humiOnOff;
+	
 	if (getVolts (0, 0, hum))
+	{
+		comedi_dio_write (comediDevice, 2, 3, humiOnOff);
 		return -1;
+	}
+
 	hum *= 100;
 	humiMeas->addValue (hum, LIFOSIZE);
 	humiMeas->calculate ();
 
-	humiOnOff = !humiOnOff;
-	comedi_dio_write (comediDevice, 2, 0, humiOnOff);
+	
+	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
+	{
+		setWeatherTimeout (600, "humidity rised above humidity_bad");
+		comedi_dio_write (comediDevice, 2, 3, 1);
+	}
+	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
+	{
+		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
+		comedi_dio_write (comediDevice, 2, 3, 0);
+	}
+
+	comedi_dio_write (comediDevice, 2, 2, humiOnOff);
 	return 0;
 }
 
@@ -183,10 +208,45 @@ int Bootes2::updateTemperature ()
 	temp = (temp - 0.4) * 100;
 	tempMeas->addValue (temp, LIFOSIZE);
 	tempMeas->calculate ();
-
-	tempOnOff = !tempOnOff;
-	comedi_dio_write (comediDevice, 2, 0, tempOnOff);
 	return 0;
+}
+
+int Bootes2::updateRain ()
+{
+	int ret=0;
+	double rv;
+	
+	rainOnOff = !rainOnOff;
+
+	ret = getVolts (0, 5, rv);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
+		setWeatherTimeout (3600, "cannot read rain status");
+		comedi_dio_write (comediDevice, 2, 1, rainOnOff);
+		return -1;
+	}
+
+	if (rv < 3)
+	{
+		setWeatherTimeout (3600, "raining");
+		if (raining->getValueBool () == false)
+			logStream (MESSAGE_INFO) << "raining, switching to bad weather" << sendLog;
+		raining->setValueBool (true);
+		comedi_dio_write (comediDevice, 2, 1, 1);
+	}
+
+	else
+	{
+		if (raining->getValueBool () == true)
+			logStream (MESSAGE_INFO) << "rains ends" << sendLog;
+		raining->setValueBool (false);
+		comedi_dio_write (comediDevice, 2, 1, 0);
+	}
+
+	// ImAlive LED signal
+	comedi_dio_write (comediDevice, 2, 0, rainOnOff);
+	return ret;
 }
 
 int Bootes2::processOption (int _opt)
@@ -252,27 +312,8 @@ int Bootes2::initHardware ()
 int Bootes2::info ()
 {
 	int ret;
-	double rv;
-	ret = getVolts (0, 5, rv);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
-		setWeatherTimeout (3600, "cannot read rain status");
-		return -1;
-	}
-	if (rv < 3)
-	{
-		setWeatherTimeout (3600, "raining");
-		if (raining->getValueBool () == false)
-			logStream (MESSAGE_INFO) << "raining, switching to bad weather" << sendLog;
-		raining->setValueBool (true);
-	}
-	else
-	{
-		if (raining->getValueBool () == true)
-			logStream (MESSAGE_INFO) << "rains ends" << sendLog;
-		raining->setValueBool (false);
-	}
+
+	ret = updateRain ();	
 
 	ret = updateTemperature ();
 	if (ret)
@@ -286,15 +327,7 @@ int Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
-	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
-	{
-		setWeatherTimeout (600, "humidity rised above humidity_bad");
-	}
-	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
-	{
-		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
-	}
-
+	
 	std::vector <double> vals;
 
 	for (int i = 0; i < 8; i++)
