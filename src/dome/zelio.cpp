@@ -284,6 +284,8 @@ bool Zelio::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
 		return true;
+	if (ignoreAutomode->getValueBool () == true && isOpened ())
+		return true;
 	uint16_t reg;
 	uint16_t reg3;
 	try
