@@ -284,7 +284,7 @@ bool Zelio::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
 		return true;
-	if (ignoreAutomode->getValueBool () == true && isOpened ())
+	if (ignoreAutomode->getValueBool () == true && isOpened () == -2)
 		return true;
 	uint16_t reg;
 	uint16_t reg3;
@@ -331,10 +331,19 @@ bool Zelio::isGoodWeather ()
 		return false;
 	}
 	// not in auto mode..
-	if (!(reg & ZS_SW_AUTO) && ignoreAutomode->getValueBool () == false)
+	if (!(reg & ZS_SW_AUTO))
 	{
-	  	setWeatherTimeout (30, "not in auto mode");
-		return false;
+		if (ignoreAutomode->getValueBool () == false)
+		{
+	  		setWeatherTimeout (30, "not in auto mode");
+			return false;
+		}
+		// not in automode, and not opened - switch to bad weather
+		else if (isOpened () != -2)
+		{
+			setWeatherTimeout (30, "automode ignored, but dome is not opened");
+			return false;
+		}
 	}
 	return Dome::isGoodWeather ();
 }
