@@ -3,6 +3,7 @@
 <xsl:output method='text' indent='no'/>
 
 <xsl:template match='/'>
+
 if ( ! (${?imgid}) ) then
 	@ imgid = 1
 endif
@@ -12,7 +13,9 @@ if ( ! (${?lastoffimage}) ) then
 endif
 
 # next autoguider attempt
-set nextautog=`date +%s`
+if ( ! (${?nextautog}) ) then
+	set nextautog=`date +%s`
+endif
 
 set continue=1
 unset imgdir
@@ -27,6 +30,8 @@ set defoc_toffs=0
 if ( ! (${?autog}) ) then
 	set autog='UNKNOWN'
 endif
+
+rts2-logcom "script running"
 
 <xsl:apply-templates select='*'/>
 
@@ -51,7 +56,7 @@ if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
 	rts2-logcom "interrupting target $name ($tar_id)"
-endif  
+endif
 </xsl:variable>
 
 <xsl:template match="disable">
@@ -64,6 +69,7 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
+  	rts2-logcom "starting pre-exposure checks"
         set cname=`$xmlrpc --quiet -G IMGP.object`
 	set ora=`$xmlrpc --quiet -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
 	set odec=`$xmlrpc --quiet -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
@@ -78,6 +84,8 @@ if ( $continue == 1 ) then
 				set rdec = 0
 			endif
 
+			rts2-logcom "asking for apply"
+
 			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
@@ -87,9 +95,9 @@ if ( $continue == 1 ) then
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
 				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
 
-				set currg=`tele autog ?`
+				set currg=`$xmlrpc --quiet -G TELE.autog`
 
-				if ( $currg == 'ON' ) then
+				if ( $currg == '1' ) then
 					rts2-logcom "autoguider is $currg - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
 				else
 					if ( $imgnum &lt;= $lastoffimage ) then
@@ -115,7 +123,7 @@ if ( $continue == 1 ) then
 	set diff=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff != 0 ) then
 		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
-		set diff_f=`printf '%+02.f' $diff`
+		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
 		set defoc_current=`echo $defoc_current + $diff | bc`
 	else
@@ -123,13 +131,18 @@ if ( $continue == 1 ) then
 	endif
 
 	if ( $autog == 'ON' ) then
-		set guidestatus=`tele autog ?`
+		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
+		if ( $guidestatus == 1 ) then
+			set guidestatus = "ON"
+		else
+			set guidestatus = "OFF"
+		endif
 		if ( $guidestatus != $autog ) then
 			rts2-logcom "system should guide, but autoguider is in $guidestatus. Grabing autoguider image"
 			tele grab
 			set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
 			set dir=/Realtime/guider/frames/ROBOT_`date +"%Y%m%d"`
-			mkdir $dir
+			mkdir -p $dir
 			set autof=$dir/`date +"%H%M%S"`.fits
 			cp $lastgrab $autof
 			rts2-logcom "autoguider image saved in $autof"
@@ -137,9 +150,7 @@ if ( $continue == 1 ) then
 			if ( $nextautog &lt; $nowdate ) then
 				tele autog ON
 				@ nextautog = $nowdate + 300
-				rts2-logcom "tried again autoguider ON, next attempt at $nextautog"
-			else
-				rts2-logcom "autoguider timeout $nextautog not expired (now $nowdate)"
+				rts2-logcom "tried again autoguider ON"
 			endif
 		endif
 	endif
@@ -202,7 +213,7 @@ endif
 </xsl:if>
 <xsl:if test='@value = "ampcen"'>
 if ( $continue == 1 ) then
-	set ampstatus=`tele ampcen ?`
+	set ampstatus=`$xmlrpc --quiet -G TELE.ampcen`
 	if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
 		tele ampcen <xsl:value-of select='@operands'/>
 		rts2-logcom 'set ampcen to <xsl:value-of select='@operands'/>'
@@ -214,8 +225,13 @@ endif
 <xsl:if test='@value = "autoguide"'>
 if ( $continue == 1 ) then
 	if ( $autog != <xsl:value-of select='@operands'/> ) then
-		set guidestatus=`tele autog ?`
-		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
+		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
+		if ( $guidestatus == 1 ) then
+			set guidestatus = "ON"
+		else
+			set guidestatus = "OFF"
+		endif
+		if ( $guidestatus == <xsl:value-of select='@operands'/> ) then
 			tele autog <xsl:value-of select='@operands'/>
 			set nextautog=`date +"%s"`
 			@ nextautog = $nextautog + 300
