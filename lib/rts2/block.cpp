@@ -946,18 +946,20 @@ bool Block::commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_co
 
 void Block::deleteTimers (int event_type)
 {
+	std::vector <std::map <double, Rts2Event *>::iterator> toDelete;
 	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
 	{
 		if (iter->second->getType () == event_type)
 		{
 			delete (iter->second);
-			timers.erase (iter++);
+			toDelete.push_back (iter);
 		}
-		else
-		{
-			iter++;
-		}
+		iter++;
 	}
+
+	// delete timers queue for delete
+	for (std::vector <std::map <double, Rts2Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
+		timers.erase (*iter_d);
 }
 
 void Block::valueMaskError (Value *val, int32_t err)
