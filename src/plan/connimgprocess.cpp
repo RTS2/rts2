@@ -96,6 +96,20 @@ void ConnImgOnlyProcess::processCommand (char *cmd)
 			checkAstrometry ();
 		}
 	}
+	else if (!strcasecmp (cmd, "corrwerr"))
+	{
+		double err;
+		if (paramNextLong (&id) || paramNextDouble (&ra) || paramNextDouble (&dec)
+			|| paramNextDouble (&ra_err) || paramNextDouble (&dec_err) || paramNextDouble (&err) || !paramEnd ())
+		{
+			logStream (MESSAGE_WARNING) << "invalid corrwerr string" << sendLog;
+		}
+		else
+		{
+			astrometryStat = GET;
+			checkAstrometry ();
+		}
+	}
 	else
 	{
 		ConnProcess::processCommand (cmd);

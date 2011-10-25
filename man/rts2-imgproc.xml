@@ -1,0 +1,238 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2011-10-25</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-imgproc">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.2</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote this manual page.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2011</year>
+      <holder>&fzu;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>
+      Server for image processing. Order images into queue, runs processing script
+      on one after another to do basic image processing.
+    </refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &deviceappdb;
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &help;
+    </cmdsynopsis>  
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> is a RTS2 component for running image
+      processing script. Image processing script is a standalone binary/script,
+      which communicate with <command>&dhpackage;</command> through standard
+      input/output.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Image processing stdin/stdout protocol</title>
+    <para>
+      You can use in image processing most of the commands mentioned in
+      <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+      Plus you can use the additional, image processing script specific
+      commands:
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>correct {id} {ra} {dec} {offset_ra} {offset_dec}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Command correction to telescope.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>corrwerr {id} {ra} {dec} {offset_ra} {offset_dec} {error}</option>
+        </term>
+	<listitem>
+	  <para>
+	    Command correction with error. Similar to
+	    <command>correct</command>, but allows users to specify position
+	    error. The error is angular distance (in degrees) between recorded
+	    telescope position and calculated position.
+	  </para>
+	</listitem>  
+      </varlistentry>
+    </variablelist>  
+  </refsect1>
+  <refsect1>
+    <title>Variables</title>
+    <para>
+      <command>&dhpackage;</command> exposes to system by default the following variables.
+    </para>  
+    <variablelist>
+      &infotime;
+      <varlistentry>
+        <term>apply_corrections</term>
+	<listitem>
+	  <para>
+	    If true, corrections from astrometry are applied. You can use this
+	    to quickly disable corrections if they just make observation worse.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>good_astrom</term>
+	<listitem>
+	  <para>
+	    Total number of images with astrometry from last system restart.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>no_astrom</term>
+	<listitem>
+	  <para>
+	    Total number of images without astrometry from last system restart.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>failed_images</term>
+	<listitem>
+	  <para>
+	    Total number of images which processing script failed (e.g.
+	    returned non-0 return status) from last system restart.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>dark_images</term>
+	<listitem>
+	  <para>
+	    Total number of dark images.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>flat_images</term>
+	<listitem>
+	  <para>
+	    Total number of flat images processed through system.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>queue_size</term>
+	<listitem>
+	  <para>
+	    Size of the images queue. If a new image is queued to image
+	    processor while another image is beeing processed, new image is put
+	    into queue. 
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>flat_sun_min</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>flat_sun_max</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>night_disable_type</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>selector_queue</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>last_queue</term>
+	<listitem>
+	  <para>
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>  
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    &optiongnu;
+
+    <variablelist>
+      &deviceappdblist;
+    </variablelist>
+  </refsect1> 
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.script</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

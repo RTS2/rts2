@@ -55,7 +55,7 @@
       <arg rep='repeat'><option>--filter-aliases</option> <replaceable class='parameter'>filter aliases file</replaceable></arg>
       <arg rep='repeat'><option>--filter-file</option> <replaceable class='parameter'>camera</replaceable>:<replaceable class='parameter'>filter file</replaceable></arg>
       <arg><option>--available-filters</option> <replaceable class='parameter'>camera</replaceable> <replaceable class='parameter'>filters</replaceable></arg>
-      &deviceapp;
+      &deviceappdb;
     </cmdsynopsis>
     <cmdsynopsis>
       <command>&dhpackage;</command>
