@@ -21,7 +21,7 @@
 #   Or visit http://www.gnu.org/licenses/gpl.html.
 #
 
-__author__ = 'markus.wildi@one-arcsec.org'
+__author__ = 'petr@fzu.cz'
 
 import os
 import shutil
@@ -32,6 +32,7 @@ import re
 import time
 import pyfits
 import tempfile
+import pynova
 
 import dms
 
@@ -87,13 +88,13 @@ class imgAstrometryScript:
 	       ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
 	       
         # cleanup
-        #shutil.rmtree(self.odir)
+        shutil.rmtree(self.odir)
 
 	return ret
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
-        print 'Usage: %s <odir> <fits filename> <xoffs> <yoffs>' % (sys.argv[0])
+        print 'Usage: %s <odir> <fits filename> <xoffs> <yoffs> <origname>' % (sys.argv[0])
         sys.exit(1)
 
     a = imgAstrometryScript(sys.argv[2],sys.argv[1])
@@ -106,39 +107,46 @@ if __name__ == '__main__':
     object=ff[0].header['OBJECT']
     ff.close()
 
-    fn = os.path.basename(sys.argv[1])
-    num = -1
-    try:
-	    num = int(fn.split('.')[0])
-    except Exception,ex:
-    	    pass
+    xoffs = 0
+    yoffs = 0
 
     if len(sys.argv) >= 5:
 	xoffs = float(sys.argv[3])
 	yoffs = float(sys.argv[4])
 
+    num = -1
+    try:
+    	    fn = os.path.basename(sys.argv[5])
+	    num = int(fn.split('.')[0])
+    except Exception,ex:
+    	    pass
+
     ret=a.run(scale=0.67,ra=ra,dec=dec)
 
     if ret:
-
-	    raorig=dms.parseDMS(ra)
+	    raorig=dms.parseDMS(ra)*15.0
 	    decorig=dms.parseDMS(dec)
 
-	    raastr=float(ret[0]) + xoffs
-	    decastr=float(ret[1]) + yoffs
+	    raastr=float(ret[0])*15.0
+	    decastr=float(ret[1])
 
-	    print "correct 1 ", raastr, decastr, raorig-raastr, decorig-decastr
+	    err = pynova.angularSeparation(raorig,decorig,raastr-xoffs/3600,decastr-yoffs/3600.0)
+
+	    print "corrwerr 1 {0:.10f} {1:.10f} {2:.10f} {3:.10f} {4:.10f}".format(raastr + xoffs/3600.0, decastr + yoffs/3600.0, ((raorig-raastr)-xoffs/3600.0), decorig-decastr-yoffs/3600.0, err)
 
 	    import rts2comm
 	    c = rts2comm.Rts2Comm()
-	    c.doubleValue('real_ra','image ra ac calculated from astrometry',raastr)
-	    c.doubleValue('real_dec','image dec as calculated from astrometry',decastr)
+	    c.doubleValue('real_ra','[hours] image ra ac calculated from astrometry',raastr)
+	    c.doubleValue('real_dec','[deg] image dec as calculated from astrometry',decastr)
 
-	    c.doubleValue('tra','image ra ac calculated from astrometry',raorig)
-	    c.doubleValue('tdec','image dec as calculated from astrometry',decorig)
+	    c.doubleValue('tra','[hours] image ra ac calculated from astrometry',raorig)
+	    c.doubleValue('tdec','[deg] image dec as calculated from astrometry',decorig)
 
-	    c.doubleValue('ora','offsets ra ac calculated from astrometry',(raorig-raastr)*3600.0)
-	    c.doubleValue('odec','offsets dec as calculated from astrometry',(decorig-decastr)*3600.0)
+	    c.doubleValue('xoffs','[arcsec] x offset',xoffs)
+	    c.doubleValue('yoffs','[arcsec] y offset',yoffs)
+
+	    c.doubleValue('ora','[arcsec] offsets ra ac calculated from astrometry',(raorig-raastr)*3600.0-xoffs)
+	    c.doubleValue('odec','[arcsec] offsets dec as calculated from astrometry',(decorig-decastr)*3600.0-yoffs)
 
 	    c.stringValue('object','astrometry object',object)
 	    c.integerValue('img_num','last astrometry number',num)
