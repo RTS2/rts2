@@ -123,7 +123,8 @@ if ( $continue == 1 ) then
 <!---	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	endif
-	set diff=printf '%+0f' `echo $defoc_toffs - $defoc_current | bc`
+	set diff=`echo $defoc_toffs - $defoc_current | bc`
+	set diff=`printf '%+0f' $diff`
 	if ( $diff != 0 ) then
 		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
 		set diff_f=`printf '%+02f' $diff`
@@ -298,19 +299,17 @@ else
 			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage`" )
 				echo "$line" | grep "^corrwerr" &gt; /dev/null
 				if ( $? == 0 ) then
-					echo "corrwerr $? $line"
 					set l=`echo $line`
-					echo $l[5] $l[6] $l[7]
 					set ora_l = `echo "$l[5] * 3600.0" | bc`
 					set odec_l = `echo "$l[6] * 3600.0" | bc`
 					set ora = `echo $ora_l | sed 's#^\([-+0-9]*\).*#\1#'`
 					set odec = `echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
 					@ err = `echo "$l[7] * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
 					if ( $err > $pre ) then
-						rts2-logcom "acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err"
+						rts2-logcom "acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
 						tele offset $ora $odec
 					else
-						rts2-logcom "error is less than $pre arcseconds ( $ora_l $odec_l ), stop acquistion"
+						rts2-logcom "error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
 						@ err = 0
 					endif
 					@ last_acq_obs_id = $obs_id
@@ -318,7 +317,7 @@ else
 			end
 		endif
 	end
-	if ( $attemps &lt;= $maxattemps ) then
+	if ( $attemps &lt;= 0 ) then
 		rts2-logcom "maximal number of attemps exceeded"
 	endif  
 endif	
