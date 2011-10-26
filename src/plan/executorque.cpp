@@ -256,7 +256,6 @@ void TargetQueue::filterExpired (double now)
 				for (TargetQueue::iterator irem = begin (); irem != iter;)
 					irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
 			}
-			iter++;
 		}
 	}
 	// second: check if requests must be removed, either because their end time is in past
