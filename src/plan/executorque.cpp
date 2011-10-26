@@ -243,48 +243,34 @@ void TargetQueue::filterExpired (double now)
 {
 	if (empty ())
 		return;
-	TargetQueue::iterator iter;
-	TargetQueue::iterator iter2 = begin ();
-	for (;iter2 != end ();)
+	TargetQueue::iterator iter = begin ();
+	// first: in FIFO, remove any requests which are before request with start or end time in the past 
+	if (getQueueType () == QUEUE_FIFO)
 	{
-		double t_start = iter2->t_start;
-		double t_end = iter2->t_end;
-		if (!isnan (t_start) && t_start <= now && !isnan (t_end) && t_end <= now)
-			iter2 = removeEntry (iter2, REMOVED_TIMES_EXPIRED);
-		else if (iter2->target->observationStarted () && getRemoveAfterExecution () == true)
-		  	iter2 = removeEntry (iter2, REMOVED_STARTED);
-		else  
-			iter2++;
-	}
-	if (empty ())
-		return;
-	iter = iter2 = begin ();
-	iter2++;
-	while (iter2 != end ())
-	{
-		double t_start = iter2->t_start;
-		bool do_erase = false;
-		switch (getQueueType ())
+		for (;iter != end ();iter++)
 		{
-			case QUEUE_FIFO:
-				do_erase = (iter->target->observationStarted () && (isnan (t_start) || t_start <= now));
-				break;
-			default:
-				do_erase = (!isnan (t_start) && t_start <= now);
-				break;
-		}
-
-		if (do_erase)
-		{
-			iter = removeEntry (iter, REMOVED_NEXT_NEEDED);
-			iter2 = iter;
-			iter2++;
-		}
-		else
-		{
+			double t_start = iter->t_start;
+			double t_end = iter->t_end;
+			if ((!isnan (t_start) && t_start <= now) || (!isnan (t_end) && t_end <= now))
+			{
+				for (TargetQueue::iterator irem = begin (); irem != iter;)
+					irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
+			}
 			iter++;
-			iter2++;
 		}
+	}
+	// second: check if requests must be removed, either because their end time is in past
+	// or they were observed and should be observed only once
+	iter = begin ();
+	for (;iter != end ();)
+	{
+		double t_end = iter->t_end;
+		if (!isnan (t_end) && t_end <= now)
+			iter = removeEntry (iter, REMOVED_TIMES_EXPIRED);
+		else if (iter->target->observationStarted () && getRemoveAfterExecution () == true)
+		  	iter = removeEntry (iter, REMOVED_STARTED);
+		else  
+			iter++;
 	}
 }
 

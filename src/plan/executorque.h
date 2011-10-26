@@ -148,7 +148,11 @@ class TargetQueue:public std::list <QueuedTarget>
 		void sortWestEastMeridian ();
 
 		/**
-		 * Remove observations which observing time expired.
+		 * Remove observation request which expired. Expired request are:
+		 *  - in FIFO mode, all request before 
+		 *     - request with set start_time or end_time, which expired (is in past)
+		 *  - any request with end time in past
+		 *  - if remove_after_execution is true, request with started observations
 		 */
 		void filterExpired (double now);
 
