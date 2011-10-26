@@ -20,8 +20,9 @@ endif
 set continue=1
 unset imgdir
 set xpa=0
-xpaget ds9 >&amp; /dev/null
-if ( $? == 0 ) set xpa=1
+# XPA takes way too long to queury. Uncomment this if you would like to check for it anyway, but expect ~0.2 sec penalty
+# xpaget ds9 >&amp; /dev/null
+# if ( $? == 0 ) set xpa=1
 
 set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
 
@@ -31,7 +32,7 @@ if ( ! (${?autog}) ) then
 	set autog='UNKNOWN'
 endif
 
-rts2-logcom "script running"
+<!-- rts2-logcom "script running" -->
 
 <xsl:apply-templates select='*'/>
 
@@ -69,10 +70,12 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
-  	rts2-logcom "starting pre-exposure checks"
+  	<!-- rts2-logcom "starting pre-exposure checks" -->
         set cname=`$xmlrpc --quiet -G IMGP.object`
-	set ora=`$xmlrpc --quiet -G IMGP.ora | sed 's#^\([-+0-9]*\).*#\1#'`
-	set odec=`$xmlrpc --quiet -G IMGP.odec | sed 's#^\([-+0-9]*\).*#\1#'`
+	set ora_l=`$xmlrpc --quiet -G IMGP.ora`
+	set odec_l=`$xmlrpc --quiet -G IMGP.odec`
+	set ora=`echo $ora_l | sed 's#^\([-+0-9]*\).*#\1#'`
+	set odec=`echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
 	if ( $cname == $name ) then
 		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
 		  	set rra=$ora
@@ -84,26 +87,26 @@ if ( $continue == 1 ) then
 				set rdec = 0
 			endif
 
-			rts2-logcom "asking for apply"
-
 			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
 			if ( $apply == 0 ) then
-        			rts2-logcom "corrections disabled, do not apply correction $rra $rdec ($ora $odec) img_num $imgnum"	
+        			rts2-logcom "corrections disabled, do not apply correction $rra $rdec ($ora_l $odec_l) img_num $imgnum"	
 			else
+
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
 				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
 
+				$xmlrpc --quiet -c TELE.info
 				set currg=`$xmlrpc --quiet -G TELE.autog`
 
 				if ( $currg == '1' ) then
-					rts2-logcom "autoguider is $currg - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum"
+					rts2-logcom "autoguider is $currg - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum"
 				else
 					if ( $imgnum &lt;= $lastoffimage ) then
-						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 					else
-						rts2-logcom "offseting $rra $rdec ($ora $odec; $xoffs $yoffs) img_num $imgnum autog $autog"
+						rts2-logcom "offseting $ora $odec from $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 						if ( $rra != 0 || $rdec != 0 ) then
 							tele offset $rra $rdec
 						endif
@@ -115,12 +118,12 @@ if ( $continue == 1 ) then
 				endif
 			endif
 		else
-			rts2-logcom "too big offset $ora $odec"
+			rts2-logcom "too big offset $ora_l $odec_l"
 		endif	  	
 <!---	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	endif
-	set diff=`echo $defoc_toffs - $defoc_current | bc`
+	set diff=printf '%+0f' `echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff != 0 ) then
 		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
 		set diff_f=`printf '%+02f' $diff`
@@ -131,6 +134,7 @@ if ( $continue == 1 ) then
 	endif
 
 	if ( $autog == 'ON' ) then
+		$xmlrpc --quiet -c TELE.info
 		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
 		if ( $guidestatus == 1 ) then
 			set guidestatus = "ON"
@@ -207,7 +211,6 @@ endif
 <xsl:template match="set">
 <xsl:if test='@value = "filter"'>
 if ( $continue == 1 ) then
-	echo -n `date` 'moving filter wheel to <xsl:value-of select='@operands'/>'
 	source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
 endif
 </xsl:if>
@@ -225,6 +228,7 @@ endif
 <xsl:if test='@value = "autoguide"'>
 if ( $continue == 1 ) then
 	if ( $autog != <xsl:value-of select='@operands'/> ) then
+		$xmlrpc --quiet -c TELE.info
 		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
 		if ( $guidestatus == 1 ) then
 			set guidestatus = "ON"
@@ -233,9 +237,9 @@ if ( $continue == 1 ) then
 		endif
 		if ( $guidestatus == <xsl:value-of select='@operands'/> ) then
 			tele autog <xsl:value-of select='@operands'/>
-			set nextautog=`date +"%s"`
+			set nextautog=`date +%s`
 			@ nextautog = $nextautog + 300
-			rts2-logcom "set autog to <xsl:value-of select='@operands'/>, next autoguiding attempt not before $nextautog"
+			rts2-logcom "set autog to <xsl:value-of select='@operands'/>"
 		else
 			echo `date` "autog already in $guidestatus status, not changing it"
 		endif
@@ -258,6 +262,66 @@ while ($count_<xsl:value-of select='$count'/> &lt; <xsl:value-of select='@count'
 @ count_<xsl:value-of select='$count'/> ++
 
 end
+</xsl:template>
+
+<xsl:template match="acquire">
+<!-- handles astrometry corrections -->
+if ( ! (${?last_acq_obs_id}) ) then
+	@ last_acq_obs_id = 0
+endif
+if ( $last_acq_obs_id == $obs_id ) then
+	echo `date` "already acquired for $obs_id"
+else	
+	rts2-logcom "acquiring for obsid $obs_id"
+	tele filter i
+	if ( $autog == 'ON' ) then
+		tele autog OFF
+		$autog = 'OFF'
+	endif
+	@ pre = `echo "<xsl:value-of select='@precision'/> * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
+	@ err = $pre + 1
+	@ maxattemps = 5
+	@ attemps = $maxattemps
+	while ( $continue == 1 &amp;&amp; $err &gt; $pre &amp;&amp; $attemps &gt; 0 )
+		@ attemps --
+		echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
+		<xsl:copy-of select='$abort'/>
+		ccd gowait <xsl:value-of select='@length'/>
+		<xsl:copy-of select='$abort'/>
+		dstore
+		<xsl:copy-of select='$abort'/>
+		if ( $continue == 1 ) then
+			if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
+			set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
+			<!-- run astrometry, process its output -->	
+			echo `date` "running astrometry on $lastimage"
+			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage`" )
+				echo "$line" | grep "^corrwerr" &gt; /dev/null
+				if ( $? == 0 ) then
+					echo "corrwerr $? $line"
+					set l=`echo $line`
+					echo $l[5] $l[6] $l[7]
+					set ora_l = `echo "$l[5] * 3600.0" | bc`
+					set odec_l = `echo "$l[6] * 3600.0" | bc`
+					set ora = `echo $ora_l | sed 's#^\([-+0-9]*\).*#\1#'`
+					set odec = `echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
+					@ err = `echo "$l[7] * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
+					if ( $err > $pre ) then
+						rts2-logcom "acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err"
+						tele offset $ora $odec
+					else
+						rts2-logcom "error is less than $pre arcseconds ( $ora_l $odec_l ), stop acquistion"
+						@ err = 0
+					endif
+					@ last_acq_obs_id = $obs_id
+				endif
+			end
+		endif
+	end
+	if ( $attemps &lt;= $maxattemps ) then
+		rts2-logcom "maximal number of attemps exceeded"
+	endif  
+endif	
 </xsl:template>
 
 </xsl:stylesheet>
