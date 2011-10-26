@@ -123,13 +123,13 @@ if ( $continue == 1 ) then
 <!---	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	endif
-	set diff=`echo $defoc_toffs - $defoc_current | bc`
-	set diff=`printf '%+0f' $diff`
-	if ( $diff != 0 ) then
+	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
+	if ( $diff_l != 0 ) then
+		set diff=`printf '%+0f' $diff`
 		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
 		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
-		set defoc_current=`echo $defoc_current + $diff | bc`
+		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	else
 		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )"
 	endif
