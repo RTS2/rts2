@@ -38,8 +38,16 @@ ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float i
 	obsId = -1;
 	imgId = -1;
 
-	center_pos.ra = in_center_pos->ra;
-	center_pos.dec = in_center_pos->dec;
+	if (in_center_pos)
+	{
+		center_pos.ra = in_center_pos->ra;
+		center_pos.dec = in_center_pos->dec;
+	}
+	else
+	{
+		center_pos.ra = 0;
+		center_pos.dec = 0;
+	}
 }
 
 void ElementAcquire::postEvent (Rts2Event * event)

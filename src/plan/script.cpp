@@ -416,7 +416,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamDouble (&precision) || getNextParamFloat (&expTime))
 			return NULL;
 		// target is already acquired
-		if (target->isAcquired ())
+		if (target && target->isAcquired ())
 			return new ElementNone (this);
 		return new ElementAcquire (this, precision, expTime, target_pos);
 	}

@@ -374,7 +374,11 @@ int SelectorDev::selectNext ()
 		}
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
-			return sel->selectNext (getMasterState ());
+		{	
+			int id = sel->selectNext (getMasterState ());
+			logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
+			return id;
+		}
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
 	}
 	catch (rts2core::Error er)
