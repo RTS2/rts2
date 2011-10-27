@@ -60,6 +60,32 @@ if ( $? == 0 &amp;&amp; $in == 1 ) then
 endif
 </xsl:variable>
 
+<!-- called after guider is set to ON. Wait for some time for guider to settle down,
+  and either find guide star, or give up-->
+<xsl:variable name='guidetest'>
+	tele autog ON
+	@ retr = 5
+	while ( $retr &gt;= 0 )
+		set gs=`tele autog ?`
+		if ( $gs == 'ON' ) then
+			break
+		endif
+		$xmlrpc --quiet -c TELE.info
+		set fwhms=`$xmlrpc --quiet -G TELE.fwhms`
+		set guide_seg=`$xmlrpc --quiet -G TELE.guide_seg`
+		set isguiding=`$xmlrpc --quiet -G TELE.isguiding`
+		rts2-logcom "autoguider started, but star still not acquired. FWHMS $fwhms SEG $guide_seg isguiding $isguiding"
+		@ retr --
+	end
+	if ( $retr &gt; 0 ) then
+		rts2-logcom "successfully switched autoguider to ON"
+	else
+		@ nextautog = $nowdate + 300
+		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
+		rts2-logcom "autoguider command failed, will tray again at $textdate"
+	endif	
+</xsl:variable>
+
 <xsl:template match="disable">
 $RTS2/bin/rts2-target -d $tar_id
 </xsl:template>
@@ -146,16 +172,15 @@ if ( $continue == 1 ) then
 			rts2-logcom "system should guide, but autoguider is in $guidestatus. Grabing autoguider image"
 			tele grab
 			set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-			set dir=/Realtime/guider/frames/ROBOT_`date +"%Y%m%d"`
+			set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
 			mkdir -p $dir
-			set autof=$dir/`date +"%H%M%S"`.fits
+			set autof=$dir/`date +%H%M%S`.fits
 			cp $lastgrab $autof
 			rts2-logcom "autoguider image saved in $autof"
-			set nowdate=`date +"%s"`
+			set nowdate=`date +%s`
 			if ( $nextautog &lt; $nowdate ) then
-				tele autog ON
-				@ nextautog = $nowdate + 300
-				rts2-logcom "tried again autoguider ON"
+				rts2-logcom "trying to guide again (switching autog to ON)"
+				<xsl:copy-of select='$guidetest'/>
 			endif
 		endif
 	endif
@@ -236,17 +261,21 @@ if ( $continue == 1 ) then
 		else
 			set guidestatus = "OFF"
 		endif
-		if ( $guidestatus == <xsl:value-of select='@operands'/> ) then
-			tele autog <xsl:value-of select='@operands'/>
-			set nextautog=`date +%s`
-			@ nextautog = $nextautog + 300
-			rts2-logcom "set autog to <xsl:value-of select='@operands'/>"
+		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
+			if ( <xsl:value-of select='@operands'/> == "ON" ) then
+				rts2-logcom "commanding autoguiding to ON"
+				set nowdate=`date +%s`
+				<xsl:copy-of select='$guidetest'/>
+			else
+				rts2-logcom "switching guiding to OFF"
+				tele autog OFF
+			endif
 		else
 			echo `date` "autog already in $guidestatus status, not changing it"
 		endif
 		set autog=<xsl:value-of select='@operands'/>
 	else
-		echo `date` 'autog already set, ignoring it'
+		echo `date` 'autog already set, ignoring autog request'
 	endif	  	
 endif
 </xsl:if>
