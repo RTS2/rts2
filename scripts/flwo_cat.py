@@ -9,6 +9,7 @@ class FLWOCAT:
 		self.tarid = None
 		self.pi = None
 		self.program = None
+		self.acqexp = 20
 
 	def run_cmd(self,cmd,read_callback=None):
 		print cmd
@@ -26,6 +27,7 @@ class FLWOCAT:
 	def parse_script(self,scr):
 		ret = ''
 		s = scr.split(',')
+		acex = None
 		for se in s:
 		  	fil = se.split('-')
 			ret += 'filter=' + fil[0] + ' ';
@@ -33,7 +35,12 @@ class FLWOCAT:
 				ret += 'for ' + fil[2] + ' { E ' + fil[1] + ' }'
 			else:
 			  	ret += 'E ' + fil[1]
+			if acex is None:
+				acex = fil[1]
 			ret += ' '
+		if acex is not None:
+			self.acqexp = acex
+
 		return ret
 	
 	def process_newtarget(self,line):
@@ -96,7 +103,10 @@ class FLWOCAT:
 				if a[10] == '1':
 				  	autoguide = 'ON'
 
-				script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
+				if len(a) > 16 and a[16] != 0:	
+					script = 'ampcen={0} A 0.001 {1} autoguide={2} {3}'.format(ampcen,self.acqexp,autoguide,script)
+				else:
+					script = 'ampcen={0} autoguide={1} {2}'.format(ampcen,autoguide,script)
 
 				if len(a) > 15 and a[15] != 0:
 					script = 'FOC.FOC_TOFFS+={0} {1}'.format(float(a[15]),script)
