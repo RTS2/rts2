@@ -136,8 +136,7 @@ int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	#ifdef DEBUG_EXTRA
 	LibnovaRaDec lchange (&model_change);
 
-	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
-		sendLog;
+	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
 	ac += (int32_t) (model_change.ra * haCpd);

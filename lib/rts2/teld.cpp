@@ -52,10 +52,10 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
 	// users offset
-	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
-	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
@@ -83,17 +83,17 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
-	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
 
-	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE, 0);
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
 	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0);
 
 	// position error
-	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
+	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST_180);
 
 	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - one feeded to TCS", false);
 
@@ -162,22 +162,22 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	move_connection = NULL;
 
-	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	ignoreCorrection->setValueDouble (0);
 
-	createValue (defIgnoreCorrection, "def_ignore_cor", "default ignore correction. ignore_correction is changed to this value at the end of the script", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (defIgnoreCorrection, "def_ignore_cor", "default ignore correction. ignore_correction is changed to this value at the end of the script", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	defIgnoreCorrection->setValueDouble (0);
 
-	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	smallCorrection->setValueDouble (0);
 
-	createValue (correctionLimit, "correction_limit", "corrections above this limit will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (correctionLimit, "correction_limit", "corrections above this limit will be ignored", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	correctionLimit->setValueDouble (5.0);
 
-	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	modelLimit->setValueDouble (5.0);
 
-	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
+	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST_180 | RTS2_VALUE_WRITABLE);
 	telFov->setValueDouble (180.0);
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
@@ -397,7 +397,7 @@ int Telescope::setValue (rts2core::Value * old_value, rts2core::Value * new_valu
 		if (LibnovaEllFromMPC (&mpec_orbit, desc, new_value->getValue ()))
 			return -2;
 	}
-	if (old_value == diffTrackRaDec)
+	else if (old_value == diffTrackRaDec)
 	{
 	  	setDiffTrack (((rts2core::ValueRaDec *)new_value)->getRa (), ((rts2core::ValueRaDec *)new_value)->getDec ());
 		return 0;

@@ -196,11 +196,9 @@ int ValueInteger::doOpValue (char op, Value * old_value)
 	switch (op)
 	{
 		case '+':
-			return setValueInteger (old_value->getValueInteger () +
-				getValueInteger ());
+			return setValueInteger (old_value->getValueInteger () + getValueInteger ());
 		case '-':
-			return setValueInteger (old_value->getValueInteger () -
-				getValueInteger ());
+			return setValueInteger (old_value->getValueInteger () - getValueInteger ());
 		case '=':
 			return setValueInteger (getValueInteger ());
 	}
@@ -289,6 +287,24 @@ int ValueDouble::doOpValue (char op, Value * old_value)
 			return Value::doOpValue (op, old_value);
 	}
 	return 0;
+}
+
+void ValueDouble::setValueDouble (double in_value)
+{
+	if (value != in_value)
+	{
+		changed ();
+		if (getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+		{
+			value = ln_range_degrees (in_value);
+			if (value > 180.0)
+				value -= 360.0;
+		}
+		else
+		{
+			value = in_value;
+		}
+	}
 }
 
 void ValueDouble::setFromValue (Value * newValue)

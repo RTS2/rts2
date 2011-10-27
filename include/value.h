@@ -182,6 +182,8 @@
 #define RTS2_DT_KMG                   0x00090000
 #define RTS2_DT_INTERVAL              0x000a0000
 #define RTS2_DT_ONOFF                 0x000b0000
+// degrees distance in -180..180 range
+#define RTS2_DT_DEG_DIST_180          0x000c0000
 // write values to FITS headers, even if it is an array
 #define RTS2_FITS_HEADERS             0x00100000
 
@@ -542,14 +544,7 @@ class ValueDouble:public Value
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Value * old_value);
-		void setValueDouble (double in_value)
-		{
-			if (value != in_value)
-			{
-				changed ();
-				value = in_value;
-			}
-		}
+		void setValueDouble (double in_value);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
 		virtual double getValueDouble () { return value; }
