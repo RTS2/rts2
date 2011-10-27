@@ -8,7 +8,8 @@
     <docroot>/home/observer</docroot>
     <public>/graph/SD/*</public>
     <dir path="/images/luthien" to="/luthien"/>
-    <defaultImageLabel>%D/%M @OBJECT</defaultImageLabel>
+    <default-channel>0</default-channel>
+    <defaultImageLabel>@OBJECT @EXPTIME @FILTER</defaultImageLabel>
   </http>
   <events>
     <device name="C0">
@@ -63,8 +64,4 @@
       </value>
     </device>
   </events>
-  <bb>
-    <server>localhost:8889</server>
-    <observatory>Test</observatory>
-  </bb>
 </config>

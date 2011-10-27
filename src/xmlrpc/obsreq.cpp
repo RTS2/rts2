@@ -77,7 +77,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
 
 	std::ostringstream _os;
 	std::ostringstream _title;

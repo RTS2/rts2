@@ -238,6 +238,11 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		const char* getPagePrefix () { return page_prefix.c_str (); }
 
 		/**
+		 * Default channel for display.
+		 */
+		int defchan; 
+
+		/**
 		 * If requests from localhost should be authorized.
 		 */
 		bool authorizeLocalhost () { return auth_localhost; }

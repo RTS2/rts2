@@ -35,6 +35,7 @@ Events::Events (XmlRpcd *_master)
 	master = _master;
 	defImageLabel = NULL;
 	docroot = std::string ();
+	defchan = INT_MAX;
 }
 
 void Events::parseState (xmlNodePtr event, std::string deviceName)
@@ -237,8 +238,16 @@ void Events::parseHttp (xmlNodePtr ev)
 			if (ev->children == NULL)
 			  	throw XmlEmptyNode (ev);
 			if (docroot.length () != 0)
-				throw XmlError ("docroot specified multiple times");
+				throw XmlError ("docroot specified more than once");
 			docroot = std::string ((const char *) ev->children->content);
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "default-channel"))
+		{
+			if (ev->children == NULL)
+			  	throw XmlEmptyNode (ev);
+			if (defchan != INT_MAX)
+				throw XmlError ("docroot specified multiple times");
+			defchan = atoi ((char *) ev->children->content);
 		}
 		else if (xmlStrEqual (ev->name, (xmlChar *) "allsky"))
 		{

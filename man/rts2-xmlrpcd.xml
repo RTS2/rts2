@@ -107,69 +107,116 @@
       &deviceapplist;
 
     </variablelist>
-  </refsect1> 
+  </refsect1>
   <refsect1>
-    <title>Event actions</title>
-
+    <title>XML configuration file</title>
     <para>
-      RTS2 currently supports two actions, which can be executed on value
-      change. They are <emphasis>record</emphasis>  and <emphasis>command</emphasis>.
+      Due to complex nature of <command>&dhpackage;</command>, it uses own
+      configuration file. This is specified with <option>--event-file</option>.
+      Multiple configuration files can be specified.
     </para>
-
+    <para>
+      Configuration file is an XML file, which format is specified in schema.
+      It has two major sections - <emphasis>http</emphasis> and
+      <emphasis>events</emphasis>.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Http section</title>
+    <para>
+      <emphasis>Http</emphasis> section configures embbeded HTTP server. It
+      includes entries to configure document root, and so on.
+    </para>
     <refsect2>
-      <title>record</title>
+      <title>docroot</title>
       <para>
-	Records value change to database. This of course works only if RTS2 was
-	compiled with database support. Values are recorded to various record_
-	tables.
+	Document root of the embedded HTTP server. Requests which do not match
+	<emphasis>API</emphasis> entries, nor any links, are directed to this
+	directory.
       </para>
-    </refsect2>
-
+    </refsect2>  
     <refsect2>
-      <title>command</title>
+      <title>default-channel</title>
       <para>
-	This action executes given command. The command is executed with
-	environmental variables filled with values of all devices presents.
-	Environemntal variables names are formed from device name and variable
-	name joined with underscore (_). Their value is something sensible,
-	what can be printed out (booleans as true/false string, double numbers
-	in readable form, RA and DEC in sexadecimal notation,..).
+        Specify default channel for image display. -1 is used to display all
+	channels in multiple FITS file, 0-.. is for channel/extension.
       </para>
       <para>
-	Centrald state and variables are added as
-	<emphasis>centraldN_name</emphasis>, where N is number from 1. This is
-	to distinguish between posibly different centrald XMLRPC can be
-	connected. You will usually use N = 1.
+	This option has sense only for multiple FITS files. It does not need to
+	be specified on setups where only single extenstion FITS files are
+	produced.
       </para>
+    </refsect2>  
+  </refsect1>
+  <refsect1>
+    <title>Events section</title>
+    <para>
+      <emphasis>Events</emphasis> section configures
+      <command>&dhpackage;</command> reactions to change of system
+      environment.
+    </para>
+    <refsect2>
+      <title>Event actions</title>
+
       <para>
-	Moreover, device state is also present in environment, as device name
-	joined with _state. Let's suppose we have a device S1, with variable
-	DBL with value 0.123. Device is currently in state 1. If you put in
-	command script which will call set and store all environemtal variables
-	to file, you will get this for S1:
+        RTS2 currently supports two actions, which can be executed on value
+        change. They are <emphasis>record</emphasis>  and <emphasis>command</emphasis>.
       </para>
-      <programlisting>
+
+      <refsect3>
+        <title>record</title>
+        <para>
+  	  Records value change to database. This of course works only if RTS2 was
+ 	  compiled with database support. Values are recorded to various record_
+	  tables.
+        </para>
+      </refsect3>
+      <refsect3>
+        <title>command</title>
+        <para>
+  	  This action executes given command. The command is executed with
+  	  environmental variables filled with values of all devices presents.
+  	  Environemntal variables names are formed from device name and variable
+  	  name joined with underscore (_). Their value is something sensible,
+  	  what can be printed out (booleans as true/false string, double numbers
+  	  in readable form, RA and DEC in sexadecimal notation,..).
+        </para>
+        <para>
+  	  Centrald state and variables are added as
+  	  <emphasis>centraldN_name</emphasis>, where N is number from 1. This is
+  	  to distinguish between posibly different centrald XMLRPC can be
+  	  connected. You will usually use N = 1.
+        </para>
+        <para>
+  	  Moreover, device state is also present in environment, as device name
+  	  joined with _state. Let's suppose we have a device S1, with variable
+  	  DBL with value 0.123. Device is currently in state 1. If you put in
+  	  command script which will call set and store all environemtal variables
+  	  to file, you will get this for S1:
+        </para>
+        <programlisting>
 <![CDATA[
 S1_DBL=0.123
 S1_state=1
 ]]>
-      </programlisting>
-      <para>
-	So to send email with status of dome switches, which are in DOME device
-	variables end_switch_open and end_switch_close, you should modify
-	following program:
-      </para>
-      <programlisting>
+        </programlisting>
+        <para>
+  	  So to send email with status of dome switches, which are in DOME device
+  	  variables end_switch_open and end_switch_close, you should modify
+  	  following program:
+        </para>
+        <programlisting>
 <![CDATA[
 #!/bin/bash
 
 echo "Hi, dome end switches values: $DOME_end_switch_open $DOME_end_switch_close
 centrald1 sun_alt: $centrald1_sun_alt
-
+  
 Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 ]]>
-      </programlisting>
-    </refsect2>
+        </programlisting>
+      </refsect3>
+    </refsect2>  
   </refsect1>
   <refsect1>
     <title>Event trigger configuration file</title>
@@ -185,29 +232,34 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
       </para>
       <programlisting>
 <![CDATA[
-<events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
-  <device name="C0">
-    <state state-mask="2" state="2">
-      <command>/etc/rts2/event.d/c0_reading</command>
-    </state>
-  </device>
-  <device name="DOME">
-    <state state-mask="7" state="4">
-      <command>/etc/rts2/event.d/dome_opened</command>
-    </state>
-    <state state-mask="7" state="1">
-      <command>/etc/rts2/event.d/dome_closed</command>
-    </state>
-  </device>
-  <device name="C0">
-    <value name="CCD_TEMP">
-      <record/<
-    </value>
-    <value name="CCD_SET" cadency=60>
-      <record/>
-    </value>
-  </device>
-</events>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
+  <http>
+    <docroot>/var/www/rts2</docroot>
+  </http>  
+  <events>
+    <device name="C0">
+      <state state-mask="2" state="2">
+        <command>/etc/rts2/event.d/c0_reading</command>
+      </state>
+    </device>
+    <device name="DOME">
+      <state state-mask="7" state="4">
+        <command>/etc/rts2/event.d/dome_opened</command>
+      </state>
+      <state state-mask="7" state="1">
+        <command>/etc/rts2/event.d/dome_closed</command>
+      </state>
+    </device>
+    <device name="C0">
+      <value name="CCD_TEMP">
+        <record/<
+      </value>
+      <value name="CCD_SET" cadency=60>
+        <record/>
+      </value>
+    </device>
+  </events>
+</config>  
 ]]>
       </programlisting>
       <para>

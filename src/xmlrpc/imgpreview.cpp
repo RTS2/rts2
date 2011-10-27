@@ -145,7 +145,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
 
 	Magick::Image mimage = image.getMagickImage (label, quantiles, chan);
 
@@ -171,7 +171,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();

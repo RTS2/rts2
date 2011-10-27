@@ -72,6 +72,7 @@ class Events
 
 		// directory which can override default files
 		std::string docroot;
+		int defchan;
 
 		// directories mapping
 		std::vector <DirectoryMapping> dirs;

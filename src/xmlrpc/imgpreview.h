@@ -22,9 +22,8 @@
 #include "xmlapi.h"
 
 #define DEFAULT_QUANTILES    0.005
-#define DEFAULT_CHAN         0
 // number of channels in image
-//#define CHANNELS             4
+#define CHANNELS             4
 
 namespace rts2xmlrpc
 {

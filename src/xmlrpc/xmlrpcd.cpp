@@ -180,6 +180,10 @@ int XmlRpcd::init ()
 	
 	if (events.docroot.length () > 0)
 		XmlRpcServer::setDefaultGetRequest (new Directory (NULL, events.docroot.c_str (), "index.html", NULL));
+	if (events.defchan != INT_MAX)
+		defchan = events.defchan;
+	else
+		defchan = 0;
 
 	setMessageMask (MESSAGE_MASK_ALL);
 

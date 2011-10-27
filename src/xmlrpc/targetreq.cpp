@@ -843,7 +843,7 @@ void Targets::printTargetImages (rts2db::Target *tar, HttpParams *params, const 
 	const char * label_encoded = lb.c_str ();
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
-	int chan = params->getInteger ("chan", DEFAULT_CHAN);
+	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
 
 	Previewer preview = Previewer ();
 
