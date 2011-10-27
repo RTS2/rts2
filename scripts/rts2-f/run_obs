@@ -2,50 +2,55 @@
 # assumes rts2-f-env script was called, so important variables
 # are set up
 
-#setenv tar_id $1
-#setenv tar_id `$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases`
-
-set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
-if ( $? != 0 ) then
-	rts2-logcom "selector is not running, executing seltest to select next targets"
-	set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
-	rts2-logcom "selected $tar_id"
-endif
-
-if ( $tar_id <= 0 ) then
-	rts2-logcom "Automatic selector is not enabled. I'll wait 30 seconds, then repeat the test."
-	rts2-logcom "Please fill the queues if you believe that something should be observed,"
-	rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
-	rts2-logcom "is fine"
-endif
-
-while ( $tar_id <= 0 )
-	if ( -e $rts2abort ) then
-		rts2-logcom "abort detected (while waiting for next tar_id)"
-		exit
-	endif
-
-	$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
-	set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
-	if ( $? != 0 ) then
-		rts2-logcom "selector/rts2-f is not running"
-		set tar_id=-1
-	endif
-
-	if ( $tar_id <= 0 ) then
-		rts2-logcom "waiting for 30 seconds (target not selected..)"
-		sleep 30
-	endif
-end
-
-$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
-
 if ( -r $lasttarget ) then
 	setenv last_tar_id `cut -f1 -d' ' $lasttarget`
 	setenv obs_id `cut -f2 -d' ' $lasttarget`
 else
 	setenv last_tar_id -1
 endif
+
+# run focusing script, if last target was not focusing..
+if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 ) then
+	set tar_id=3
+	rts2-logcom "Run FWHM focus script. Abort with nabort."
+else	 
+	set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+	if ( $? != 0 ) then
+		# rts2-logcom "selector is not running, executing seltest to select next targets"
+		# set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
+		# rts2-logcom "selected $tar_id"
+		rts2-logcom "selector is not running!!"
+		set tar_id=-1
+	endif
+
+	if ( $tar_id <= 0 ) then
+		rts2-logcom "Automatic selector is not enabled. I'll wait 30 seconds, then repeat the test."
+		rts2-logcom "Please fill the queues if you believe that something should be observed,"
+		rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
+		rts2-logcom "is fine"
+	endif
+
+	while ( $tar_id <= 0 )
+		if ( -e $rts2abort ) then
+			rts2-logcom "abort detected (while waiting for next tar_id)"
+			exit
+		endif
+
+		$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+		set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+		if ( $? != 0 ) then
+			rts2-logcom "selector/rts2-f is not running"
+			set tar_id=-1
+		endif
+	
+		if ( $tar_id <= 0 ) then
+			rts2-logcom "waiting for 30 seconds (target not selected..)"
+			sleep 30
+		endif
+	end
+endif	
+
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 
 if ( $last_tar_id != $tar_id ) then
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
@@ -62,8 +67,10 @@ set program=`rts2-targetinfo --program $tar_id`
 set ra=`echo $ti | awk '{ print $3 }'`
 set dec=`echo $ti | awk '{ print $4 }'`
 
-rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
-#echo "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
+if ( $last_tar_id != $tar_id ) then
+	rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
+endif
+
 echo "Observation ID is $obs_id"
 
 # for doauto script, to report in log file:
@@ -72,11 +79,14 @@ setenv rts2obstarg $name
 $RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c "SEL.observation $tar_id $obs_id"
 
 if ( $notmove == 1 ) then
-  	echo "move to coordinates ignored"
+  	rts2-logcom "already on target coordinates"
 
-	sleep 3
+	#sleep 3
 else
 	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" ) then
+		echo -n "Track on"
+		tele trackon
+		tele domeon
 		echo -n "sending coordinates $ra $dec 2000.0 .. "
 		tele coords $ra $dec 2000.0
 
@@ -89,20 +99,26 @@ else
 		# mark end of slew
 		$RTS2/bin/rts2-target --observe $obs_id
 
-		echo "marked end of telescope movement"
+		rts2-logcom "marked end of telescope movement"
+
+		set autog='UNKNOW'
+
+		object "$name"
+		setcom kepccd Object "$name"
+		tele pi "$pi"
+		tele program "$program"
 	endif
 endif
-	
-object "$name"
-setcom kepccd Object "$name"
-tele pi "$pi"
-tele program "$program"
+
+# rts2-logcom "observing setup finished"
 
 # translate observation to observation file..
 
 rm -f /tmp/$obs_id
 
 $RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc /home/petr/rts2/scripts/flwo_tcs.xsl - > /tmp/$obs_id
+
+# rts2-logcom "script created"
 
 source /tmp/$obs_id
 
@@ -114,4 +130,4 @@ rm -f /tmp/$obs_id
 $RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
 
 #echo `date` "observation $obs_id of object $name ($ra $dec) ends"
-rts2-logcom "observation $obs_id of object $name ($ra $dec) ends"
+rts2-logcom "script for observation $obs_id of object $name ($ra $dec) ends"
