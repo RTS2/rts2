@@ -927,26 +927,12 @@ class ValueRaDec: public Value
 		/**
 		 * Sets RA.
 		 */
-		void setRa (double in_ra)
-		{
-			if (ra != in_ra)
-			{
-				ra = in_ra;
-				changed ();
-			}
-		}
+		void setRa (double in_ra);
 
 		/**
 		 * Sets DEC.
 		 */
-		void setDec (double in_dec)
-		{
-			if (decl != in_dec)
-			{
-				decl = in_dec;
-				changed ();
-			}
-		}
+		void setDec (double in_dec);
 
 		virtual int doOpValue (char op, Value * old_value);
 

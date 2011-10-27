@@ -63,6 +63,8 @@ class Filterd:public rts2core::Device
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
+		int getFilterNumFromName (std::string filter_name) { return filter->getSelIndex (filter_name); }
+
 	private:
 		rts2core::ValueSelection *filter;
 

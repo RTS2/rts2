@@ -43,7 +43,7 @@ int ConnNotify::init ()
 #if defined(HAVE_INOTIFY_INIT1) || defined(HAVE_SYS_INOTIFY_H)
         if (sock == -1)
         {
-		throw Error ("cannot initialize notify FD");
+//		throw Error ("cannot initialize notify FD");
         }
         return 0;
 #else

@@ -41,8 +41,10 @@ std::string getDisplayValue (rts2core::Value * value)
 			_os << LibnovaDeg (value->getValueDouble ());
 			break;
 		case RTS2_DT_DEG_DIST:
-		case RTS2_DT_DEG_DIST_180:
 			_os << LibnovaDegDist (value->getValueDouble ());
+			break;
+		case RTS2_DT_DEG_DIST_180:
+			_os << LibnovaDeg180 (value->getValueDouble ());
 			break;
 		case RTS2_DT_PERCENTS:
 			_os << std::setw (6) << value->getValueDouble () << "%";

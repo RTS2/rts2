@@ -711,6 +711,38 @@ int ValueRaDec::setValueCharArr (const char *in_value)
 	return 0;
 }
 
+void ValueRaDec::setRa (double in_ra)
+{
+	if (getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+	{
+		// normalize RA
+		in_ra = ln_range_degrees (in_ra);
+		if (in_ra > 180.0)
+			in_ra -= 360.0;
+	}
+	if (ra != in_ra)
+	{
+		ra = in_ra;
+		changed ();
+	}
+}
+
+void ValueRaDec::setDec (double in_dec)
+{
+	// normalize DEC
+	if (getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+	{
+		in_dec = ln_range_degrees (in_dec);
+		if (in_dec > 180.0)
+			in_dec -= 360.0;
+	}
+	if (decl != in_dec)
+	{
+		decl = in_dec;
+		changed ();
+	}
+}
+
 int ValueRaDec::doOpValue (char op, Value *old_value)
 {
 	switch (old_value->getValueType ())

@@ -90,6 +90,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
+	createValue (total_offsets, "total_offsets", "[deg] OFFS - corr", false, RTS2_DT_DEG_DIST_180);
+
 	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0);
 
 	// position error
@@ -995,6 +997,10 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	{
 		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
+
+	// update total_offsets
+	total_offsets->setValueRaDec (offsRaDec->getRa () - corrRaDec->getRa (), offsRaDec->getDec () - corrRaDec->getDec ());
+	sendValueAll (total_offsets);
 
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 

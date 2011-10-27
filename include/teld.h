@@ -56,25 +56,18 @@ namespace rts2teld
  *
  * Those values are important for telescope:
  *
- * <ul>
- *   <li><b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are
- *          usually entered by observing program (rts2-executor).</li>
- *   <li><b>OFFSRA, OFFSDEC</b> contains offsets applied to ORI coordinates.</li>
- *   <li><b>OBJRA,OBJDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.</li>
- *   <li><b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in MORA and MODEC</li>
- *   <li><b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC</li>
- *   <li><b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA - MORA, TARDEC - CORR_DEC - MODEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.<li>
- *   <li><b>MORA,MODEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).</li>
- * </ul>
+ *   - <b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are usually entered by observing program (rts2-executor).
+ *   - <b>OFFSRA, OFFSDEC</b> contains offsets applied to ORI coordinates.
+ *   - <b>OBJRA,OBJDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.
+ *   - <b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in MORA and MODEC
+ *   - <b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC
+ *   - <b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA - MORA, TARDEC - CORR_DEC - MODEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.
+ *   - <b>MORA,MODEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).
  *
  * Following auxiliary values are used to track telescope offsets:
  *
- * <ul>
- *   <li><b>woffsRA, woffsDEC</b> contains offsets which weren't yet applied. They can be set either directly or when you change OFFS value. When move command is executed, OFFSRA += woffsRA, OFFSDEC += woffsDEC and woffsRA and woffsDEC are set to 0.</li>
- *   <li><b>wcorrRA, wcorrDEC</b> contains corrections which weren't yet
- *   applied. They can be set either directy or by correct command. When move
- *   command is executed, CORRRA += wcorrRA, CORRDEC += wcorrDEC and wcorrRA = 0, wcorrDEC = 0.</li>
- * </ul>
+ *   - <b>woffsRA, woffsDEC</b> contains offsets which weren't yet applied. They can be set either directly or when you change OFFS value. When move command is executed, OFFSRA += woffsRA, OFFSDEC += woffsDEC and woffsRA and woffsDEC are set to 0.
+ *   - <b>wcorrRA, wcorrDEC</b> contains corrections which weren't yet applied. They can be set either directy or by correct command. When move command is executed, CORRRA += wcorrRA, CORRDEC += wcorrDEC and wcorrRA = 0, wcorrDEC = 0.
  *
  * Please see startResync() documentation for functions available to
  * retrieve various coordinates. startResync is the routine which is called
@@ -789,6 +782,8 @@ class Telescope:public rts2core::Device
 		 * RA DEC correction which waits to be applied.
 		 */
 		rts2core::ValueRaDec *wcorrRaDec;
+
+		rts2core::ValueRaDec *total_offsets;
 
 		/**
 		 * Modelling changes.

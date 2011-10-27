@@ -114,7 +114,13 @@ void NDeviceWindow::printValue (rts2core::Value * value)
 					LibnovaDeg v_dd (((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_rd << " " << v_dd;
 				}
-				else
+				else if (value->getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+				{
+					LibnovaDeg180 v_rd (((rts2core::ValueRaDec *) value)->getRa ());
+					LibnovaDeg90 v_dd (((rts2core::ValueRaDec *) value)->getDec ());
+					_os << v_rd << " " << v_dd;
+				}
+				else 
 				{
 					LibnovaRaDec v_radec (((rts2core::ValueRaDec *) value)->getRa (), ((rts2core::ValueRaDec *) value)->getDec ());
 					_os << v_radec;
