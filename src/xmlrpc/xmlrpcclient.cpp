@@ -203,10 +203,7 @@ int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &
 		logStream (MESSAGE_ERROR) << "error calling '" << methodName << "' with arguments " << in << sendLog;
 		return -1;
 	}
-	if (printRes)
-	{
-		std::cout << "output of method '" << methodName << "':" << std::endl << result << std::endl << std::endl;
-	}
+	logStream (MESSAGE_DEBUG) << "output of method '" << methodName << "':'" << result << "'" << sendLog;
 	return 0;
 }
 
@@ -604,10 +601,10 @@ int Client::getTargets ()
 
 void Client::usage ()
 {
-	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manula pages for details." << std::endl << std::endl
+	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manual pages for details." << std::endl << std::endl
 		<< "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
-		<< " To set T0.ORI to 10 20, run: " << std::endl
-		<< "  " << getAppName () << " -s T0.ORI \"10 20\"" << std::endl
+		<< " To set T0.ORI to -10 20, run: " << std::endl
+		<< "  " << getAppName () << " -s T0.ORI -- \"-10 20\"" << std::endl
 		<< " So to run random pointing, run: " << std::endl
 		<< "  " << getAppName () << " -s T0.ORI \"`rts2-telmodeltest -r`\"" << std::endl
 		<< "  " << getAppName () << " -c <device name>.<command>" << std::endl
