@@ -140,7 +140,7 @@ void StateApp::printAltTable (std::ostream & _os)
 	double jd_start = ((int) JD) - 0.5;
 
 	_os << std::endl << "** SUN POSITION table from "
-		<< LibnovaDate (jd_start) << " **" << std::endl << std::endl;
+		<< TimeJD (jd_start) << " **" << std::endl << std::endl;
 
 	printAltTable (_os, jd_start, -1, 11);
 	_os << std::endl;
@@ -310,12 +310,13 @@ int StateApp::run ()
 	if (calculateSun != NONE)
 	{
 		double jd = ln_get_julian_from_sys ();
+		struct ln_equ_posn pos;
+		struct ln_hrz_posn hrz;
+		ln_get_solar_equ_coords (jd, &pos);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
+
 		if (calculateSun == SUN_ALT || calculateSun == SUN_AZ)
 		{
-			struct ln_equ_posn pos;
-			struct ln_hrz_posn hrz;
-			ln_get_solar_equ_coords (jd, &pos);
-			ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
 			if (calculateSun == SUN_ALT)
 				std::cout << hrz.alt << std::endl;
 			else 
@@ -325,10 +326,25 @@ int StateApp::run ()
 		{
 			struct ln_rst_time rst;
 			ret = ln_get_solar_rst_horizon (jd, Rts2Config::instance ()->getObserver (), sunLimit, &rst);
+			if (ret)
+			{
+				std::cerr << "cannot find rise/set times" << std::endl;
+				return -1;
+			}
 			if (calculateSun == SUN_BELOW)
-				std::cout << LibnovaDate (rst.set) << std::endl;
+			{
+				if (hrz.alt <= sunLimit + LN_SOLAR_STANDART_HORIZON )
+					std::cout << "now" << std::endl;
+				else
+					std::cout << TimeJD (rst.set) << std::endl;
+			}
 			else
-				std::cout << LibnovaDate (rst.rise) << std::endl;
+			{
+			  	if (hrz.alt >= sunLimit - LN_SOLAR_STANDART_HORIZON )
+					std::cout << "now" << std::endl;
+				else
+					std::cout << TimeJD (rst.rise) << std::endl;
+			}
 		}
 		return 0;
 	}
