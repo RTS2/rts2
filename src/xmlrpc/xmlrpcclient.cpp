@@ -498,7 +498,7 @@ int Client::getVariables ()
 						printEndAmp = true;
 					}
 				}
-				std::cout << (*riter).second[j]["value"];
+				std::cout << std::fixed << (*riter).second[j]["value"];
 				if (printEndAmp)
 					std::cout << '"';
 				std::cout << std::endl;
