@@ -4,18 +4,14 @@
 
 <xsl:template match='/'>
 
-if ( ! (${?imgid}) ) then
-	@ imgid = 1
-endif
+if ( ! (${?imgid}) ) @ imgid = 1
 
-if ( ! (${?lastoffimage}) ) then
-	set lastoffimage=-1
-endif
+if ( ! (${?lastoffimage}) ) set lastoffimage=-1
 
+if ( ! (${?last_offtarget}) ) set last_offtarget=-1
+	
 # next autoguider attempt
-if ( ! (${?nextautog}) ) then
-	set nextautog=`date +%s`
-endif
+if ( ! (${?nextautog}) ) set nextautog=`date +%s`
 
 set continue=1
 unset imgdir
@@ -24,13 +20,9 @@ set xpa=0
 # xpaget ds9 >&amp; /dev/null
 # if ( $? == 0 ) set xpa=1
 
-set xmlrpc="$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON"
-
 set defoc_toffs=0
 
-if ( ! (${?autog}) ) then
-	set autog='UNKNOWN'
-endif
+if ( ! (${?autog}) ) set autog='UNKNOWN'
 
 <!-- rts2-logcom "script running" -->
 
@@ -132,6 +124,12 @@ if ( $continue == 1 ) then
 					if ( $imgnum &lt;= $lastoffimage ) then
 						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 					else
+						if ( $tar_id == $last_offtarget ) then
+							$xmlrpc -s TELE.CORR_ -- "$ora_l $odec_l"
+						else
+							$xmlrpc -s TELE.OFFS -- "$ora_l $odec_l"
+							set last_offtarget = $tar_id
+						endif
 						rts2-logcom "offseting $ora $odec from $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 						if ( $rra != 0 || $rdec != 0 ) then
 							tele offset $rra $rdec
@@ -296,9 +294,8 @@ end
 
 <xsl:template match="acquire">
 <!-- handles astrometry corrections -->
-if ( ! (${?last_acq_obs_id}) ) then
-	@ last_acq_obs_id = 0
-endif
+if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
+
 if ( $last_acq_obs_id == $obs_id ) then
 	echo `date` "already acquired for $obs_id"
 else	
