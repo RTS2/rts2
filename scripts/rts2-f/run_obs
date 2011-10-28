@@ -14,7 +14,7 @@ if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 ) then
 	set tar_id=3
 	rts2-logcom "Run FWHM focus script. Abort with nabort."
 else	 
-	set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+	set tar_id=`$xmlrpc -G SEL.next_id`
 	if ( $? != 0 ) then
 		# rts2-logcom "selector is not running, executing seltest to select next targets"
 		# set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
@@ -36,8 +36,8 @@ else
 			exit
 		endif
 
-		$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
-		set tar_id=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -G SEL.next_id`
+		$xmlrpc -c SEL.next
+		set tar_id=`$xmlrpc -G SEL.next_id`
 		if ( $? != 0 ) then
 			rts2-logcom "selector/rts2-f is not running"
 			set tar_id=-1
@@ -50,64 +50,59 @@ else
 	end
 endif	
 
-$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+$xmlrpc -c SEL.next
 
 if ( $last_tar_id != $tar_id ) then
+	$xmlrpc -s TELE.OFFS "0 0"
+	$xmlrpc -s TELE.CORR_ "0 0"
+
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
 	echo $tar_id $obs_id > $lasttarget
 	@ imgid=1
-endif
+	set ti=`rts2-targetinfo $tar_id`
 
-set ti=`rts2-targetinfo $tar_id`
+	set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
+	set pi=`rts2-targetinfo --pi $tar_id`
+	set program=`rts2-targetinfo --program $tar_id`
 
-set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
-set pi=`rts2-targetinfo --pi $tar_id`
-set program=`rts2-targetinfo --program $tar_id`
+	set ra=`echo $ti | awk '{ print $3 }'`
+	set dec=`echo $ti | awk '{ print $4 }'`
 
-set ra=`echo $ti | awk '{ print $3 }'`
-set dec=`echo $ti | awk '{ print $4 }'`
+	# for doauto script, to report in log file:
+	setenv rts2obstarg $name
 
-if ( $last_tar_id != $tar_id ) then
-	rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program"
-endif
-
-echo "Observation ID is $obs_id"
-
-# for doauto script, to report in log file:
-setenv rts2obstarg $name
-
-$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c "SEL.observation $tar_id $obs_id"
-
-if ( $notmove == 1 ) then
-  	rts2-logcom "already on target coordinates"
-
-	#sleep 3
+	rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
 else
-	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" ) then
-		echo -n "Track on"
-		tele trackon
-		tele domeon
-		echo -n "sending coordinates $ra $dec 2000.0 .. "
-		tele coords $ra $dec 2000.0
+	rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
+endif
 
-		sleep 3
+$xmlrpc -c "SEL.observation $tar_id $obs_id"
 
-		tele enable
+#notmove is for debugging - testing during day
+if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
+	echo -n "Track on"
+	tele trackon
+	tele domeon
+	echo -n "sending coordinates $ra $dec 2000.0 .. "
+	tele coords $ra $dec 2000.0
 
-		echo "on coordinates"
+	sleep 3
 
-		# mark end of slew
-		$RTS2/bin/rts2-target --observe $obs_id
+	tele enable
 
-		rts2-logcom "marked end of telescope movement"
+	echo "on coordinates"
 
-		set autog='UNKNOW'
+	# mark end of slew
+	$RTS2/bin/rts2-target --observe $obs_id
 
-		object "$name"
-		setcom kepccd Object "$name"
-		tele pi "$pi"
-		tele program "$program"
-	endif
+	rts2-logcom "marked end of telescope movement"
+
+	set autog='UNKNOW'
+
+	object "$name"
+	setcom kepccd Object "$name"
+	tele pi "$pi"
+	tele program "$program"
 endif
 
 # rts2-logcom "observing setup finished"
@@ -127,7 +122,7 @@ $RTS2/bin/rts2-target --end $obs_id
 
 rm -f /tmp/$obs_id
 
-$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON -c SEL.next
+$xmlrpc -c SEL.next
 
 #echo `date` "observation $obs_id of object $name ($ra $dec) ends"
 rts2-logcom "script for observation $obs_id of object $name ($ra $dec) ends"
