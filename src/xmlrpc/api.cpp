@@ -690,6 +690,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				case TYPE_GPS:
 				case TYPE_TERESTIAL:
 				case TYPE_AUGER:
+				case TYPE_LANDOLT:
 				{
 					rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
 					const char *tn = params->getString ("tn", "");
@@ -709,7 +710,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					break;
 				}	
 				default:
-					throw JSONException ("can update only subclass of constant targets");
+				{
+					std::ostringstream _err;
+					_err << "can update only subclass of constant targets, " << t->getTargetType () << " is unknow";
+					throw JSONException (_err.str ());
+				}	
 			}		
 
 		}
