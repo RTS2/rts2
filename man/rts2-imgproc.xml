@@ -104,6 +104,31 @@
     </variablelist>  
   </refsect1>
   <refsect1>
+    <title>Commands</title>
+    <para>
+      The following commands can be issued over TCP/IP connection.
+    </para>
+    <refsect2>
+      <title>que_image</title>
+      <para>
+        Queue image for processing. Standard image processing script is then
+	called on given image.
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>only_process</title>
+      <para>
+        Queue image for processing. Image will not be opened and its data won't
+	be written into database. This command is handy to process images which
+	does not has RTS2 keywords in FITS header.
+      </para>
+      <para>
+	Command can be followed by an arbitary number of arguments, which will
+	be passed to processing script as command line arguments.
+      </para>
+    </refsect2>
+  </refsect1>    
+  <refsect1>
     <title>Variables</title>
     <para>
       <command>&dhpackage;</command> exposes to system by default the following variables.
@@ -167,41 +192,6 @@
 	    Size of the images queue. If a new image is queued to image
 	    processor while another image is beeing processed, new image is put
 	    into queue. 
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>flat_sun_min</term>
-	<listitem>
-	  <para>
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>flat_sun_max</term>
-	<listitem>
-	  <para>
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>night_disable_type</term>
-	<listitem>
-	  <para>
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>selector_queue</term>
-	<listitem>
-	  <para>
-	  </para>
-	</listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>last_queue</term>
-	<listitem>
-	  <para>
 	  </para>
 	</listitem>
       </varlistentry>

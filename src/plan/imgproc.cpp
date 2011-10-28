@@ -66,7 +66,6 @@ class ImageProc:public rts2core::Device
 		int que (ConnProcess * newProc);
 
 		int queImage (const char *_path);
-		int onlyProcess (const char *_path);
 		int doImage (const char *_path);
 
 		int queDark (const char *_path);
@@ -530,13 +529,6 @@ int ImageProc::queImage (const char *_path)
 	return que (newImageConn);
 }
 
-int ImageProc::onlyProcess (const char *_path)
-{
-	ConnProcess *newConn;
-	newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
-	return que (newConn);
-}
-
 int ImageProc::doImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
@@ -593,9 +585,15 @@ int ImageProc::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("only_process"))
 	{
 		char *in_imageName;
-		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+		if (conn->paramNextString (&in_imageName))
 			return -2;
-		return onlyProcess (in_imageName);	
+		ConnProcess *newConn;
+		newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), in_imageName, Rts2Config::instance ()->getAstrometryTimeout ());
+
+		while (!conn->paramNextString (&in_imageName))
+			newConn->addArg (in_imageName);
+
+		return que (newConn);
 	}
 	else if (conn->isCommand ("do_image"))
 	{
