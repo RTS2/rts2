@@ -1616,7 +1616,8 @@ double Image::getAstrometryErr ()
 	struct ln_equ_posn pos2;
 	pos2.ra = pos_astr.ra + ra_err;
 	pos2.dec = pos_astr.dec + dec_err;
-	return ln_get_angular_separation (&pos_astr, &pos2);
+	img_err = ln_get_angular_separation (&pos_astr, &pos2);
+	return img_err;
 }
 
 int Image::saveImage ()

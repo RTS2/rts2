@@ -64,6 +64,9 @@
 #define OPT_MOUNTNAME OPT_LOCAL + 10
 #define OPT_LABEL     OPT_LOCAL + 11
 #define OPT_ZOOM      OPT_LOCAL + 12
+#define OPT_ERR_RA    OPT_LOCAL + 13
+#define OPT_ERR_DEC   OPT_LOCAL + 14
+#define OPT_ERR       OPT_LOCAL + 15
 
 namespace rts2image
 {
@@ -79,16 +82,16 @@ class AppImage:public rts2image::AppImageCore
 		virtual ~AppImage ();
 	protected:
 		virtual int processOption (int in_opt);
-	#ifdef HAVE_LIBJPEG
+#ifdef HAVE_LIBJPEG
 		virtual int init ();
-	#endif
-	#ifdef HAVE_PGSQL
+#endif
+#ifdef HAVE_PGSQL
 		virtual bool doInitDB ();
 
 		virtual int processImage (rts2image::ImageDb * image);
-	#else
+#else
 		virtual int processImage (rts2image::Image * image);
-	#endif						 /* HAVE_PGSQL */
+#endif						 /* HAVE_PGSQL */
 
 		virtual void usage ();
 	private:
@@ -97,9 +100,9 @@ class AppImage:public rts2image::AppImageCore
 		void printOffset (double x, double y, rts2image::Image * image);
 
 		int addDate (rts2image::Image * image);
-	#ifdef HAVE_PGSQL
+#ifdef HAVE_PGSQL
 		int insert (rts2image::ImageDb * image);
-	#endif
+#endif
 		void testImage (rts2image::Image * image);
 		void pointDistance (rts2image::Image * image);
 		void testEval (rts2image::Image * image);
@@ -126,6 +129,10 @@ class AppImage:public rts2image::AppImageCore
 
 		const char *cameraName;
 		const char *mountName;
+
+		double err_ra;
+		double err_dec;
+		double err;
 };
 
 }
@@ -183,6 +190,7 @@ int AppImage::insert (ImageDb * image)
 	  	image->setCameraName (cameraName);
 	if (mountName)
 	  	image->setMountName (mountName);
+	image->setErrors (err_ra, err_dec, err);	
 
 	return image->saveImage ();
 }
@@ -328,11 +336,11 @@ int AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_ADDHELIO;
 			readOnly = false;
 			break;
-		#ifdef HAVE_PGSQL
+#ifdef HAVE_PGSQL
 		case 'i':
 			operation |= IMAGEOP_INSERT;
 			break;
-		#endif					 /* HAVE_PGSQL */
+#endif					 /* HAVE_PGSQL */
 		case OPT_OBSID:
 			obsid = atoi (optarg);
 			break;
@@ -345,6 +353,15 @@ int AppImage::processOption (int in_opt)
 		case OPT_MOUNTNAME:
 			mountName = optarg;
 			break;
+		case OPT_ERR_RA:
+			err_ra = atof (optarg);
+			break;
+		case OPT_ERR_DEC:
+			err_dec = atof (optarg);
+			break;
+		case OPT_ERR:
+			err = atof (optarg);
+			break;	
 		case 'm':
 			if (move_expr)
 				return -1;
@@ -518,6 +535,8 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	cameraName = NULL;
 	mountName = NULL;
 
+	err_ra = err_dec = err = rts2_nan ("f");
+
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
@@ -532,6 +551,9 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption (OPT_IMGID, "imgid", 1, "force image ID for image operations");
 	addOption (OPT_CAMNAME, "camera", 1, "force camera name for image operations");
 	addOption (OPT_MOUNTNAME, "telescope", 1, "force telescope name for image operations");
+	addOption (OPT_ERR_RA, "ra-err", 1, "force image RA error");
+	addOption (OPT_ERR_DEC, "dec-err", 1, "force image DEC error");
+	addOption (OPT_ERR, "err", 1, "force image position error");
 	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('e', NULL, 0, "image evaluation for AF purpose");

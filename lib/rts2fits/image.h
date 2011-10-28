@@ -660,6 +660,16 @@ class Image:public FitsFile
 		 */
 		int createWCS (double x_off = 0, double y_off = 0);
 
+		/**
+		 * Sets image errors.
+		 */
+		void setErrors (double i_r, double i_d, double i_e)
+		{
+			ra_err = i_r;
+			dec_err = i_d;
+			img_err = i_e;
+		}
+
 		friend std::ostream & operator << (std::ostream & _os, Image & image)
 		{
 			return image.printImage (_os);

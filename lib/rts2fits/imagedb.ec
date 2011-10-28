@@ -351,7 +351,10 @@ int ImageSkyDb::updateAstrometry ()
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
-	d_img_err = getAstrometryErr ();
+	if (isnan (img_err))
+		d_img_err = getAstrometryErr ();
+	else	
+		d_img_err = img_err;
 
 	snprintf (s_astrometry.arr, 2000,
 		"NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
