@@ -117,8 +117,9 @@ class FLWOCAT:
 					cmd.append ("--airmass")
 					cmd.append (":" + a[13])
 
-				if float(a[14]) > 0:
-					if float(a[14]) > 90:
+				lundist = float(a[14])
+				if lundist > 0 and lundist != 90:
+					if lundist > 90:
 						cmd.append ("--lunarAltitude")
 						cmd.append (":0")
 					else:
