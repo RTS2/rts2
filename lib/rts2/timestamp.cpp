@@ -121,10 +121,13 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 				_oss << ":";
 			diff %= 60;
 		}
-		_oss << std::setw (2) << diff << "." << std::
-			setw (3) << (int) (usec_diff / (USEC_SEC / 1000));
-		if (!print_all)
-			_oss << "s";
+
+		if (diff > 0 || print_all)
+		{ 
+			_oss << std::setw (2) << diff << "." << std::setw (3) << (int) (usec_diff / (USEC_SEC / 1000));
+			if (!print_all)
+				_oss << "s";
+		}
 		_os << _oss.str ();
 	}
 	return _os;
