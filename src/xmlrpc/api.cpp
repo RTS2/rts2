@@ -746,7 +746,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			tar->deleteLabels (ltype);
 			jsonLabels (tar, os);
 		}
-		else if (vals[0] == "tlabs_add")
+		else if (vals[0] == "tlabs_add" || vals[0] == "tlabs_set")
 		{
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
@@ -758,6 +758,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *ltext = params->getString ("ltext", NULL);
 			if (ltext == NULL)
 				throw JSONException ("missing label text");
+			if (vals[0] == "tlabs_set")
+				tar->deleteLabels (ltype);
 			tar->addLabel (ltext, ltype, true);
 			jsonLabels (tar, os);
 		}
