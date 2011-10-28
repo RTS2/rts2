@@ -53,6 +53,8 @@ endif
 $xmlrpc -c SEL.next
 
 if ( $last_tar_id != $tar_id ) then
+	$xmlrpc -c "TELE.move $ra $dec"
+
 	$xmlrpc -s TELE.OFFS "0 0"
 	$xmlrpc -s TELE.CORR_ "0 0"
 
@@ -72,6 +74,13 @@ if ( $last_tar_id != $tar_id ) then
 	setenv rts2obstarg $name
 
 	rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
+
+	set autog='UNKNOW'
+
+	object "$name"
+	setcom kepccd Object "$name"
+	tele pi "$pi"
+	tele program "$program"
 else
 	rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
 endif
@@ -96,13 +105,6 @@ if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 )
 	$RTS2/bin/rts2-target --observe $obs_id
 
 	rts2-logcom "marked end of telescope movement"
-
-	set autog='UNKNOW'
-
-	object "$name"
-	setcom kepccd Object "$name"
-	tele pi "$pi"
-	tele program "$program"
 endif
 
 # rts2-logcom "observing setup finished"
