@@ -692,7 +692,6 @@ int Rts2Centrald::idle ()
 	time_t curr_time;
 
 	int call_state;
-	int old_current_state;
 
 	curr_time = time (NULL);
 
@@ -713,7 +712,6 @@ int Rts2Centrald::idle ()
 		if ((getState () & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
 			&& (getState () & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF)
 		{
-			old_current_state = getState ();
 			if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
 				&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 			{

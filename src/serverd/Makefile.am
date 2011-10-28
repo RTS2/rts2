@@ -12,6 +12,6 @@ rts2_moodd_SOURCES = moodd.cpp
 rts2_moodd_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 rts2_moodd_CXXFLAGS = @NOVA_CFLAGS@
 
-rts2_state_SOURCES = rts2-state.cpp
+rts2_state_SOURCES = stateapp.cpp
 rts2_state_LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 rts2_state_CXXFLAGS = @NOVA_CFLAGS@

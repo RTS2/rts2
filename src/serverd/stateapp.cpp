@@ -1,6 +1,7 @@
 /* 
  * State - display day states for rts2.
  * Copyright (C) 2003 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +33,8 @@
 #define OPT_LONG             OPT_LOCAL + 231
 #define OPT_SUN_ALTITUDE     OPT_LOCAL + 232
 #define OPT_SUN_AZIMUTH      OPT_LOCAL + 233
+#define OPT_SUN_BELOW        OPT_LOCAL + 234
+#define OPT_SUN_ABOVE        OPT_LOCAL + 235
 
 namespace rts2centrald
 {
@@ -77,7 +80,8 @@ class StateApp:public rts2core::App
 		void printAltTable (std::ostream & _os);
 		void printDayStates (std::ostream & _os);
 
-		enum {NONE, SUN_ALT, SUN_AZ } calculateSun;
+		enum {NONE, SUN_ALT, SUN_AZ, SUN_ABOVE, SUN_BELOW } calculateSun;
+		double sunLimit;
 };
 
 }
@@ -188,6 +192,15 @@ int StateApp::processOption (int in_opt)
 			break;
 		case OPT_SUN_AZIMUTH:
 			calculateSun = SUN_AZ;
+			break;
+		case OPT_SUN_BELOW:
+			calculateSun = SUN_BELOW;
+			sunLimit = atof (optarg);
+			break;
+		case OPT_SUN_ABOVE:
+			calculateSun = SUN_ABOVE;
+			sunLimit = atof (optarg);
+			break;
 		case 'c':
 			verbose = -1;
 			break;
@@ -223,6 +236,8 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	conff = NULL;
 
 	calculateSun = NONE;
+	sunLimit = 0;
+
 	time (&currTime);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
@@ -233,7 +248,9 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	addOption ('t', NULL, 1, "print for given time (int unix time)");
 	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
 	addOption (OPT_SUN_AZIMUTH, "sun-azimuth", 0, "return current sun azimuth (in degrees)");
-	addOption ('v', "verbose", 0, "be verbose");
+	addOption (OPT_SUN_BELOW, "sun-below", 1, "prints time when sun altitude goes below specified altitude (in degrees)");
+	addOption (OPT_SUN_ABOVE, "sun-above", 1, "prints time when sun altitude goes above specified altitude (in degrees)");
+	addOption ('v', NULL, 0, "be verbose");
 }
 
 int StateApp::init ()
@@ -292,15 +309,27 @@ int StateApp::run ()
 
 	if (calculateSun != NONE)
 	{
-		struct ln_equ_posn pos;
-		struct ln_hrz_posn hrz;
 		double jd = ln_get_julian_from_sys ();
-		ln_get_solar_equ_coords (jd, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
-		if (calculateSun == SUN_ALT)
-			std::cout << hrz.alt << std::endl;
-		else if (calculateSun == SUN_AZ)
-		  	std::cout << hrz.az << std::endl;	
+		if (calculateSun == SUN_ALT || calculateSun == SUN_AZ)
+		{
+			struct ln_equ_posn pos;
+			struct ln_hrz_posn hrz;
+			ln_get_solar_equ_coords (jd, &pos);
+			ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
+			if (calculateSun == SUN_ALT)
+				std::cout << hrz.alt << std::endl;
+			else 
+			  	std::cout << hrz.az << std::endl;
+		}
+		else 
+		{
+			struct ln_rst_time rst;
+			ret = ln_get_solar_rst_horizon (jd, Rts2Config::instance ()->getObserver (), sunLimit, &rst);
+			if (calculateSun == SUN_BELOW)
+				std::cout << LibnovaDate (rst.set) << std::endl;
+			else
+				std::cout << LibnovaDate (rst.rise) << std::endl;
+		}
 		return 0;
 	}
 
