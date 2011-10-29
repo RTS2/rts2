@@ -9,7 +9,7 @@ class FLWOCAT:
 		self.tarid = None
 		self.pi = None
 		self.program = None
-		self.acqexp = 20
+		self.acqexp = 15
 
 	def run_cmd(self,cmd,read_callback=None):
 		print cmd
@@ -27,7 +27,6 @@ class FLWOCAT:
 	def parse_script(self,scr):
 		ret = ''
 		s = scr.split(',')
-		acex = None
 		for se in s:
 		  	fil = se.split('-')
 			ret += 'filter=' + fil[0] + ' ';
@@ -35,11 +34,7 @@ class FLWOCAT:
 				ret += 'for ' + fil[2] + ' { E ' + fil[1] + ' }'
 			else:
 			  	ret += 'E ' + fil[1]
-			if acex is None:
-				acex = fil[1]
 			ret += ' '
-		if acex is not None:
-			self.acqexp = acex
 
 		return ret
 	
