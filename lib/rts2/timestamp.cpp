@@ -105,7 +105,9 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			diff %= 86400;
 			print_all = true;
 		}
-		_oss.fill ('0');
+		if (print_all)
+			_oss.fill ('0');
+
 		if (diff / 3600 >= 1 || print_all)
 		{
 			_oss << std::setw (2) << (diff / 3600) << ":";
