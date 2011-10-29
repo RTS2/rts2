@@ -188,6 +188,9 @@ int StateApp::processOption (int in_opt)
 		case OPT_LONG:
 			lng = atof (optarg);
 			break;
+		case 'N':
+			std::cout << pureNumbers;
+			break;
 		case OPT_SUN_ALTITUDE:
 			calculateSun = SUN_ALT;
 			break;
@@ -248,6 +251,7 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	addOption ('c', NULL, 0,  "print current state (one number) and exits");
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
 	addOption ('t', NULL, 1, "print for given time (in unix time)");
+	addOption ('N', NULL, 0, "do not pretty print");
 	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
 	addOption (OPT_SUN_AZIMUTH, "sun-azimuth", 0, "return current sun azimuth (in degrees)");
 	addOption (OPT_SUN_BELOW, "sun-below", 1, "prints time when sun altitude goes below specified altitude (in degrees)");
@@ -333,16 +337,20 @@ int StateApp::run ()
 			if (calculateSun == SUN_BELOW)
 			{
 				if (hrz.alt <= sunLimit + LN_SOLAR_STANDART_HORIZON )
-					std::cout << "now" << std::endl;
-				else
-					std::cout << Timestamp (ev_time) << std::endl;
+				{
+					std::cout << Timestamp (currTime) << std::endl;
+					return 1;
+				}
+				std::cout << Timestamp (ev_time) << std::endl;
 			}
 			else
 			{
 			  	if (hrz.alt >= sunLimit - LN_SOLAR_STANDART_HORIZON )
-					std::cout << "now" << std::endl;
-				else
-					std::cout << Timestamp (ev_time) << std::endl;
+				{
+					std::cout << Timestamp (currTime) << std::endl;
+					return 1;
+				}
+				std::cout << Timestamp (ev_time) << std::endl;
 			}
 		}
 		return 0;
