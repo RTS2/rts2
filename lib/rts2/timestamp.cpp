@@ -113,19 +113,22 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			_oss << std::setw (2) << (diff / 3600) << ":";
 			diff %= 3600;
 			print_all = true;
+			_oss.fill ('0');
 		}
 		if (diff / 60 >= 1 || print_all)
 		{
 			_oss << std::setw (2) << (diff / 60);
 			if (!print_all)
-				_oss << "m ";
+				_oss << "m";
 			else
 				_oss << ":";
 			diff %= 60;
 		}
 
 		if (diff > 0 || print_all)
-		{ 
+		{
+			if (!print_all)
+				_oss << " ";
 			_oss << std::setw (2) << diff;
 			int msec = usec_diff / (USEC_SEC / 1000);
 			if (msec > 0 || print_all)
