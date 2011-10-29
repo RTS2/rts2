@@ -98,10 +98,10 @@ if ( $continue == 1 ) then
 		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
 		  	set rra=$ora
 			set rdec=$odec
-			if ( $rra &gt; -5 &amp;&amp; $rra &lt; 5 ) then
+			if ( $rra &gt; -2 &amp;&amp; $rra &lt; 2 ) then
 				set rra = 0
 			endif
-			if ( $rdec &gt; -5 &amp;&amp; $rdec &lt; 5 ) then
+			if ( $rdec &gt; -2 &amp;&amp; $rdec &lt; 2 ) then
 				set rdec = 0
 			endif
 
@@ -130,11 +130,13 @@ if ( $continue == 1 ) then
 							$xmlrpc -s TELE.OFFS -- "$ora_l $odec_l"
 							set last_offtarget = $tar_id
 						endif
-						rts2-logcom "offseting $ora $odec from $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 						if ( $rra != 0 || $rdec != 0 ) then
+							rts2-logcom "offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 							tele offset $rra $rdec
+							@ lastoffimage = $imgnum
+						else
+							rts2-logcom "zero offsets, not offseting ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 						endif
-						set lastoffimage=$imgnum
 						if ( ${?lastimage} ) then
 							set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
 						endif  
@@ -183,31 +185,31 @@ if ( $continue == 1 ) then
 		endif
 	endif
 
-	echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
+	echo `date +"%D %T.%3N %Z"` 'starting <xsl:value-of select='@length'/> sec exposure, 'img id $imgid
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
 	<xsl:copy-of select='$abort'/>
 	dstore
+	echo `date +"%D %T.%3N %Z"` 'exposure done'
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
-	$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $lastimage
-	set avrg=`$RTS2/bin/rts2-image -s $lastimage | cut -d' ' -f2`
-	if ( `echo $avrg '&lt;' 200 | bc` == 1 ) then
+	$xmlrpc -c "IMGP.only_process $lastimage $obs_id $imgid"
+	set avrg=`$xmlrpc --quiet -G IMGP.average`
+	if ( $? == 0 &amp;&amp; `echo $avrg '&lt;' 200 | bc` == 1 ) then
 		rts2-logcom "average value of image $lastimage is too low - $avrg, expected at least 200"
 		rts2-logcom "this is probably problem with KeplerCam controller. Please proceed to restart"
 		rts2-logcom "CCD driver, and then call again GOrobot"
 		set continue=0
 		exit
 	endif
-	$xmlrpc -c "IMGP.only_process $lastimage"
 	if ( $xpa == 1 ) then
 		xpaset ds9 fits mosaicimage iraf &lt; $lastimage
 		xpaset -p ds9 zoom to fit
 		xpaset -p ds9 scale scope global
 	endif	
 	@ imgid ++
-	echo `date` 'exposure done'
+	echo `date +"%D %T.%3N %Z"` 'exposure sequence done'
 endif
 <xsl:copy-of select='$abort'/>
 </xsl:template>
@@ -245,7 +247,7 @@ if ( $continue == 1 ) then
 		tele ampcen <xsl:value-of select='@operands'/>
 		rts2-logcom 'set ampcen to <xsl:value-of select='@operands'/>'
 	else
-		echo `date` "ampcen already on $ampstatus, not changing it"
+		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it"
 	endif
 endif
 </xsl:if>
@@ -269,11 +271,11 @@ if ( $continue == 1 ) then
 				tele autog OFF
 			endif
 		else
-			echo `date` "autog already in $guidestatus status, not changing it"
+			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it"
 		endif
 		set autog=<xsl:value-of select='@operands'/>
 	else
-		echo `date` 'autog already set, ignoring autog request'
+		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request'
 	endif	  	
 endif
 </xsl:if>
@@ -297,7 +299,7 @@ end
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
 if ( $last_acq_obs_id == $obs_id ) then
-	echo `date` "already acquired for $obs_id"
+	echo `date +"%D %T.%3N %Z"` "already acquired for $obs_id"
 else	
 	rts2-logcom "acquiring for obsid $obs_id"
 	tele filter i
@@ -311,7 +313,7 @@ else
 	@ attemps = $maxattemps
 	while ( $continue == 1 &amp;&amp; $err &gt; $pre &amp;&amp; $attemps &gt; 0 )
 		@ attemps --
-		echo `date` 'starting <xsl:value-of select='@length'/> sec exposure'
+		echo `date +"%D %T.%3N %Z"` 'starting <xsl:value-of select='@length'/> sec exposure'
 		<xsl:copy-of select='$abort'/>
 		ccd gowait <xsl:value-of select='@length'/>
 		<xsl:copy-of select='$abort'/>
@@ -321,7 +323,7 @@ else
 			if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 			set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 			<!-- run astrometry, process its output -->	
-			echo `date` "running astrometry on $lastimage"
+			echo `date +"%D %T.%3N %Z"` "running astrometry on $lastimage"
 			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage`" )
 				echo "$line" | grep "^corrwerr" &gt; /dev/null
 				if ( $? == 0 ) then
