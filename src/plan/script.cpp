@@ -881,6 +881,14 @@ double Script::getExpectedDuration ()
 	return ret;
 }
 
+int Script::getExpectedImages ()
+{
+	int ret = 0;
+	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+		ret += (*iter)->getExpectedImages ();
+	return ret;
+}
+
 double getMaximalDuration (Rts2Target *tar, Rts2CamList &cameras)
 {
   	double md = rts2_nan ("f");

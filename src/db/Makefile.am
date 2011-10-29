@@ -10,12 +10,16 @@ CLEANFILES = airmasscale.cpp
 
 if PGSQL
 
-bin_PROGRAMS += rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo rts2-plan rts2-airmasscale
+bin_PROGRAMS += rts2-targetinfo rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo rts2-plan rts2-airmasscale
 PG_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb ${LDADD} 
 
 noinst_HEADERS = rts2targetapp.h
 
 rts2_image_LDADD = ${PG_LDADD}
+
+rts2_targetinfo_SOURCES = targetinfo.cpp
+rts2_targetinfo_CXXFLAGS = ${AM_CXXFLAGS} @JPEG_CFLAGS@
+rts2_targetinfo_LDADD = -L../plan -lscript ${PG_LDADD} @LIB_JPEG@
 
 rts2_nightreport_SOURCES = nightreport.cpp
 rts2_nightreport_LDADD = ${PG_LDADD}
@@ -57,6 +61,6 @@ else
 
 rts2_image_LDADD = ${LDADD}
 
-EXTRA_DIST += nightreport.cpp targetlist.cpp target.cpp tpm.cpp obsinfo.cpp user.cpp newtarget.cpp rts2targetapp.cpp simbadinfo.cpp planapp.cpp airmasscale.ec
+EXTRA_DIST += targetinfo.cpp nightreport.cpp targetlist.cpp target.cpp tpm.cpp obsinfo.cpp user.cpp newtarget.cpp rts2targetapp.cpp simbadinfo.cpp planapp.cpp airmasscale.ec
 
 endif

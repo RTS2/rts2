@@ -121,6 +121,9 @@
         <arg choice="plain"><option>--program</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>--script-images <replaceable class="parameter">camera name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>--parse <replaceable class="parameter">camera name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
@@ -405,6 +408,14 @@
         <listitem>
           <para>
 	    Print target(s) program(s) name(s).
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--script-images <replaceable class="parameter">camera name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Parse camera script and print number of images it is expected to produce to standard output.
 	  </para>
         </listitem>
       </varlistentry>

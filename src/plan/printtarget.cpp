@@ -30,6 +30,7 @@
 #define OPT_TARGETID              OPT_LOCAL + 207
 #define OPT_SATISFIED             OPT_LOCAL + 208
 #define OPT_VIOLATED              OPT_LOCAL + 209
+#define OPT_SCRIPT_IMAGES         OPT_LOCAL + 210
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -107,6 +108,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_TARGETID, "targetid", 0, "print target(s) id(s)");
 	addOption (OPT_PI, "pi", 0, "print target(s) PI name(s)");
 	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
+	addOption (OPT_SCRIPT_IMAGES, "script-images", 1, "print number of images script for given camera is expected to produce");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 	addOption (OPT_SATISFIED, "satisfied", 0, "print targets satisfied intervals");
@@ -224,6 +226,10 @@ int PrintTarget::processOption (int in_opt)
 		case OPT_PROGRAM:
 			printExtended = -4;
 			break;
+		case OPT_SCRIPT_IMAGES:
+			printExtended = -6;
+			scriptCameras.push_back (std::string (optarg));
+			break;
 		case OPT_PARSE_SCRIPT:
 			printExtended = -1;
 			scriptCameras.push_back (std::string (optarg));
@@ -275,7 +281,7 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 		}
 		else
 		{
-			std::cout << pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << std::endl;
+			std::cout << pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << " # images " << script.getExpectedImages () << std::endl;
 		}
 	}
 }
@@ -329,6 +335,16 @@ void PrintTarget::printTarget (rts2db::Target *target)
 				case -5:
 					std::cout << target->getTargetID () << std::endl;
 					break;
+				case -6:
+					for (std::vector <std::string>::iterator iter = scriptCameras.begin (); iter != scriptCameras.end (); iter++)
+					{
+						std::string script_buf;
+						// parse and pretty print script
+						rts2script::Script script = rts2script::Script ();
+						script.setTarget ((*iter).c_str (), target);
+						std::cout << script.getExpectedImages () << std::endl;
+					}
+					break;	
 				case 0:
 					target->printShortInfo (std::cout, JD);
 					std::cout << std::endl;

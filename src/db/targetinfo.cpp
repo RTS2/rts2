@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "printtarget.h"
+#include "../plan/printtarget.h"
 #include "../../lib/rts2db/sqlerror.h"
 #include "../../lib/rts2db/targetset.h"
 #include "../../lib/rts2db/target_auger.h"

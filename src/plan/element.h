@@ -169,6 +169,11 @@ class Element:public Rts2Object
 		 */
 		virtual double getExpectedDuration () { return 0; }
 
+		/**
+		 * Return number of exposures the script is expected to take.
+		 */
+		virtual int getExpectedImages () { return 0; }
+
 		Script *getScript () { return script; }
 
 	protected:
@@ -201,6 +206,7 @@ class ElementExpose:public Element
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
 		virtual double getExpectedDuration () { return expTime; }
+		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;
@@ -218,6 +224,7 @@ class ElementDark:public Element
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
 
 		virtual double getExpectedDuration () { return expTime; }
+		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;
 		enum {first, SHUTTER, EXPOSURE } callProgress;

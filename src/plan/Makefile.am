@@ -40,7 +40,7 @@ rts2_scriptexec_LDADD = ${PG_LDADD}
 rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptor_LDADD = ${PG_LDADD}
 
-bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-marchive 
+bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-marchive 
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
 rts2_executor_SOURCES = executor.cpp
@@ -61,10 +61,6 @@ rts2_seltest_SOURCES = seltest.cpp
 rts2_seltest_CXXFLAGS = @LIBNCURSES_CFLAGS@ ${PLAN_STDLIBS}
 rts2_seltest_LDADD = ${PG_LDADD}
 
-rts2_targetinfo_SOURCES = targetinfo.cpp
-rts2_targetinfo_CXXFLAGS = ${PLAN_STDLIBS}
-rts2_targetinfo_LDADD = ${PG_LDADD}
-
 rts2_marchive_SOURCES = marchive.cpp
 rts2_marchive_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_marchive_LDADD = ${PG_LDADD}
@@ -81,6 +77,6 @@ rts2_imgproc_SOURCES = imgproc.cpp
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_imgproc_LDADD = -lscript -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
-EXTRA_DIST += printtarget.cpp executor.cpp executorque.cpp simulque.cpp selector.cpp seltest.cpp targetinfo.cpp marchive.cpp
+EXTRA_DIST += printtarget.cpp executor.cpp executorque.cpp simulque.cpp selector.cpp seltest.cpp marchive.cpp
 
 endif

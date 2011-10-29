@@ -66,6 +66,7 @@ class ElementBlock:public Element
 		virtual void printScript (std::ostream &os);
 
 		virtual double getExpectedDuration ();
+		virtual int getExpectedImages ();
 
 	protected:
 		std::list < Element * > blockElements;
@@ -176,6 +177,7 @@ class ElementFor:public ElementBlock
 		virtual void printJson (std::ostream &os);
 
 		virtual double getExpectedDuration ();
+		virtual int getExpectedImages ();
 
 	protected:
 		virtual bool endLoop () { return getLoopCount () >= max; }

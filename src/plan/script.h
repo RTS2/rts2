@@ -1,6 +1,7 @@
 /*
  * Script support.
  * Copyright (C) 2005-2007,2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -164,6 +165,11 @@ class Script:public Rts2Object, public std::list <Element *>
 		 */
 		double getExpectedDuration ();
 
+		/**
+		 * Return total number of exposures expected in script.
+		 */
+		int getExpectedImages ();
+		 
 		int getLoopCount () { return loopCount; }
 
 	private:
