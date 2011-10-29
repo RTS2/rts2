@@ -2315,7 +2315,7 @@ void Image::print (std::ostream & _os, int in_flags)
 		<< std::setw (4) << getImgId () << SEP
 		<< Timestamp (getExposureSec () + (double) getExposureUsec () /	USEC_SEC) << SEP
 		<< std::setw (3) << getFilter () << SEP
-		<< std::setw (8) << std::fixed << getExposureLength () << "'" << SEP
+		<< std::setw (8) << std::fixed << TimeDiff (getExposureLength ()) << SEP
 		<< LibnovaDegArcMin (ra_err) << SEP << LibnovaDegArcMin (dec_err) << SEP
 		<< LibnovaDegArcMin (img_err) << std::endl;
 
