@@ -81,6 +81,7 @@ class StateApp:public rts2core::App
 		void printDayStates (std::ostream & _os);
 
 		enum {NONE, SUN_ALT, SUN_AZ, SUN_ABOVE, SUN_BELOW } calculateSun;
+		bool stateOnly;
 		double sunLimit;
 };
 
@@ -202,7 +203,7 @@ int StateApp::processOption (int in_opt)
 			sunLimit = atof (optarg);
 			break;
 		case 'c':
-			verbose = -1;
+			stateOnly = true;
 			break;
 		case 't':
 			currTime = atoi (optarg);
@@ -236,6 +237,7 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	conff = NULL;
 
 	calculateSun = NONE;
+	stateOnly = false;
 	sunLimit = 0;
 
 	time (&currTime);
@@ -245,7 +247,7 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	addOption (OPT_LONG, "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
 	addOption ('c', NULL, 0,  "print current state (one number) and exits");
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
-	addOption ('t', NULL, 1, "print for given time (int unix time)");
+	addOption ('t', NULL, 1, "print for given time (in unix time)");
 	addOption (OPT_SUN_ALTITUDE, "sun-altitude", 0, "return current sun altitude (in degrees)");
 	addOption (OPT_SUN_AZIMUTH, "sun-azimuth", 0, "return current sun azimuth (in degrees)");
 	addOption (OPT_SUN_BELOW, "sun-below", 1, "prints time when sun altitude goes below specified altitude (in degrees)");
@@ -309,11 +311,10 @@ int StateApp::run ()
 
 	if (calculateSun != NONE)
 	{
-		double jd = ln_get_julian_from_sys ();
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
-		ln_get_solar_equ_coords (jd, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
+		ln_get_solar_equ_coords (JD, &pos);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
 
 		if (calculateSun == SUN_ALT || calculateSun == SUN_AZ)
 		{
@@ -324,11 +325,9 @@ int StateApp::run ()
 		}
 		else 
 		{
-			struct ln_rst_time rst;
-			ret = ln_get_solar_rst_horizon (jd, Rts2Config::instance ()->getObserver (), sunLimit, &rst);
-			if (ret)
+			if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, sunLimit, sunLimit, eve_time, mor_time, verbose))
 			{
-				std::cerr << "cannot find rise/set times" << std::endl;
+				std::cerr << "cannot find rise/set times for horizon " << sunLimit << "degrees." << std::endl;
 				return -1;
 			}
 			if (calculateSun == SUN_BELOW)
@@ -336,34 +335,34 @@ int StateApp::run ()
 				if (hrz.alt <= sunLimit + LN_SOLAR_STANDART_HORIZON )
 					std::cout << "now" << std::endl;
 				else
-					std::cout << TimeJD (rst.set) << std::endl;
+					std::cout << Timestamp (ev_time) << std::endl;
 			}
 			else
 			{
 			  	if (hrz.alt >= sunLimit - LN_SOLAR_STANDART_HORIZON )
 					std::cout << "now" << std::endl;
 				else
-					std::cout << TimeJD (rst.rise) << std::endl;
+					std::cout << Timestamp (ev_time) << std::endl;
 			}
 		}
 		return 0;
 	}
 
-	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose > 0))
+	if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
 	{
 		std::cerr << "Error getting next type" << std::endl;
 		return -1;
 	}
-	switch (verbose)
+
+	if (stateOnly)
 	{
-		case -1:
-			std::cout << curr_type << std::endl;
-			break;
-		default:
-			printAltTable (std::cout);
-			printDayStates (std::cout);
-			std::cout << std::endl;
-			break;
+		std::cout << curr_type << std::endl;
+	}
+	else
+	{
+		printAltTable (std::cout);
+		printDayStates (std::cout);
+		std::cout << std::endl;
 	}
 	return 0;
 }
