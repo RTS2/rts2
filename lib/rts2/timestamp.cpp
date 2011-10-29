@@ -33,6 +33,13 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 	// convert timestamp to timeval
 	struct timeval tv;
 	struct tm *tmval;
+	if (formatPureNumbers (_os))
+	{
+		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		_os.precision(6);
+		_os << _ts.ts;
+		return _os;
+	}
 	if (isnan (_ts.ts))
 	{
 		_os << std::right << std::setw (22) << "---- ";
