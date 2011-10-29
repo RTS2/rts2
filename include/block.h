@@ -347,7 +347,7 @@ class Block: public rts2core::App
 		 *
 		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
 		 */
-		const int getMasterState ()
+		const unsigned int getMasterState ()
 		{
 			return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK);
 		}
@@ -357,7 +357,7 @@ class Block: public rts2core::App
 		 *
 		 * @return Master state.
 		 */
-		const int getMasterStateFull ()
+		const unsigned int getMasterStateFull ()
 		{
 			return masterState;
 		}
@@ -795,7 +795,7 @@ class Block: public rts2core::App
 		std::list <Rts2Address *> blockAddress;
 		std::list <Rts2ConnUser * > blockUsers;
 
-		int masterState;
+		unsigned int masterState;
 		Rts2Conn *stateMasterConn;
 
 		/**

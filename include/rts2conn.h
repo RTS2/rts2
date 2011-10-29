@@ -145,7 +145,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		void setCommandInProgress (bool in_progress) { commandInProgress = in_progress; }
 
-		int getState () { return serverState->getValue (); }
+		unsigned int getState () { return serverState->getValue (); }
 		
 		/**
 		 * Get weather state of the connection.

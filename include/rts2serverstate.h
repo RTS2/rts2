@@ -52,14 +52,14 @@ class Rts2ServerState
 			value = new_value;
 		}
 
-		int getValue () { return value; }
+		unsigned int getValue () { return value; }
 
-		int getOldValue () { return oldValue; }
+		unsigned int getOldValue () { return oldValue; }
 
-		bool maskValueChanged (int q_mask) { return (getValue () & q_mask) != (getOldValue () & q_mask); }
+		bool maskValueChanged (unsigned int q_mask) { return (getValue () & q_mask) != (getOldValue () & q_mask); }
 	private:
-		int value;
-		int oldValue;
+		unsigned int value;
+		unsigned int oldValue;
 		time_t lastUpdate;
 };
 #endif							 /* !__RTS2_SERVER_STATE__ */

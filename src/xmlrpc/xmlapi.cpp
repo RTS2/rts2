@@ -203,7 +203,7 @@ void DeviceType::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 
 void MasterState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
-	result = ((XmlRpcd *) getMasterApp ())->getMasterStateFull ();
+	result = int (((XmlRpcd *) getMasterApp ())->getMasterStateFull ());
 }
 
 void MasterStateIs::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)

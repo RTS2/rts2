@@ -430,7 +430,10 @@ int Client::getMasterState ()
 	}
 	if (ret)
 		return ret;
-	std::cout << result << std::endl;
+	if (masterStateQuery)
+		std::cout << result << std::endl;
+	else
+		std::cout << (unsigned int) ((int) result) << std::endl;
 	return ret;
 }
 
