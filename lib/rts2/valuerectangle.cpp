@@ -85,7 +85,6 @@ int ValueRectangle::setValueCharArr (const char *in_value)
 	strncpy (buf, in_value, VALUE_BUF_LEN);
 	// split on spaces
 	char *top = buf;
-	char *val_start = top;
 
 	while (!isspace (*top) && *top)
 		top++;
@@ -94,7 +93,6 @@ int ValueRectangle::setValueCharArr (const char *in_value)
 	*top = '\0';
 	x->setValueCharArr (buf);
 	top++;
-	val_start = top;
 
 	while (!isspace (*top) && *top)
 		top++;
@@ -103,7 +101,6 @@ int ValueRectangle::setValueCharArr (const char *in_value)
 	*top = '\0';
 	y->setValueCharArr (buf);
 	top++;
-	val_start = top;
 
 	while (!isspace (*top) && *top)
 		top++;
@@ -112,7 +109,6 @@ int ValueRectangle::setValueCharArr (const char *in_value)
 	*top = '\0';
 	w->setValueCharArr (buf);
 	top++;
-	val_start = top;
 
 	while (!isspace (*top) && *top)
 		top++;
