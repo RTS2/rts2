@@ -96,9 +96,10 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 			_oss << "-";
 			diff *= -1;
 		}
-		long usec_diff =
-			(long) ((fabs (_td.time_2 - _td.time_1) - diff) * USEC_SEC);
+		long usec_diff = (long) ((fabs (_td.time_2 - _td.time_1) - diff) * USEC_SEC);
+
 		bool print_all = false;
+		bool mprinted = false;
 		if (diff / 86400 >= 1)
 		{
 			_oss << (diff / 86400) << " days ";
@@ -119,7 +120,10 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 		{
 			_oss << std::setw (2) << (diff / 60);
 			if (!print_all)
+			{
 				_oss << "m";
+				mprinted = true;
+			}	
 			else
 				_oss << ":";
 			diff %= 60;
@@ -127,7 +131,7 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 
 		if (diff > 0 || print_all)
 		{
-			if (!print_all)
+			if (mprinted)
 				_oss << " ";
 			_oss << std::setw (2) << diff;
 			int msec = usec_diff / (USEC_SEC / 1000);
