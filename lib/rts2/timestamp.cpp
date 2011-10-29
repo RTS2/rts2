@@ -124,7 +124,10 @@ std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 
 		if (diff > 0 || print_all)
 		{ 
-			_oss << std::setw (2) << diff << "." << std::setw (3) << (int) (usec_diff / (USEC_SEC / 1000));
+			_oss << std::setw (2) << diff;
+			int msec = usec_diff / (USEC_SEC / 1000);
+			if (msec > 0 || print_all)
+				 _oss << "." << std::setw (3) << msec;
 			if (!print_all)
 				_oss << "s";
 		}
