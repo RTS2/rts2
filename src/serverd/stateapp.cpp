@@ -329,7 +329,7 @@ int StateApp::run ()
 		}
 		else 
 		{
-			if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, sunLimit, sunLimit, eve_time, mor_time, verbose))
+			if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time, sunLimit, sunLimit, 0, 0, verbose))
 			{
 				std::cerr << "cannot find rise/set times for horizon " << sunLimit << "degrees." << std::endl;
 				return -1;
