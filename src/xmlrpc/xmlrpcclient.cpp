@@ -606,8 +606,8 @@ void Client::usage ()
 {
 	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manual pages for details." << std::endl << std::endl
 		<< "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
-		<< " To set T0.ORI to -10 20, run: " << std::endl
-		<< "  " << getAppName () << " -s T0.ORI -- \"-10 20\"" << std::endl
+		<< " To set T0.OFFS to -10' 20\" (-10 arcmin in RA, 20 arcsec in DEC), run: " << std::endl
+		<< "  " << getAppName () << " -s T0.OFFS -- \"-10' 20\\\"\"" << std::endl
 		<< " So to run random pointing, run: " << std::endl
 		<< "  " << getAppName () << " -s T0.ORI \"`rts2-telmodeltest -r`\"" << std::endl
 		<< "  " << getAppName () << " -c <device name>.<command>" << std::endl
