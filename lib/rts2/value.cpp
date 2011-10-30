@@ -689,14 +689,14 @@ ValueRaDec::ValueRaDec (std::string in_val_name, std::string in_description, boo
 int ValueRaDec::setValue (Rts2Conn * connection)
 {
 	double r, d;
-	if (connection->paramNextDouble (&r))
+	if (connection->paramNextDMS (&r))
 		return -2;
 	if (connection->paramEnd ())
 	{
 		setValueRaDec (r, r);
 		return 0;
 	}
-	if (connection->paramNextDouble (&d) || !connection->paramEnd ())
+	if (connection->paramNextDMS (&d) || !connection->paramEnd ())
 		return -2;
 	setValueRaDec (r, d);
 	return 0;

@@ -60,8 +60,31 @@ double parseDMS (const char *hptr, double *mul)
 			errno = ERANGE;
 			return rts2_nan ("f");
 		}
+		// check if the last character specify multiplication - "'smdh..
+		if (*endptr)
+		{
+			switch (*endptr)
+			{
+				case 'd':
+					*mul = 1;
+					break;
+				case 'h':
+					*mul = 15.0;
+				case 'm':
+				case '\'':
+					*mul = 1 / 60.0;
+					break;
+				case 's':
+				case '"':
+					*mul = 1 / 3600.0;
+					break;
+				default:
+					endptr--;
+			}
+			// endptr-- just above cancel effect of string without multiplicator..
+			endptr++;
+		}
 		ret += n * *mul;
-		
 		if (errno == ERANGE)
 			return rts2_nan ("f");
 		// we get sucessfuly to end
