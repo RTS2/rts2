@@ -75,7 +75,6 @@ class Executor:public Rts2DeviceDb
 
 		void clearNextTargets ();
 
-		void beforeChange ();
 		void doSwitch ();
 		int switchTarget ();
 
@@ -768,21 +767,6 @@ void Executor::clearNextTargets ()
 	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
 }
 
-void Executor::beforeChange ()
-{
-	// both currentTarget and nextTarget are defined
-	char currType;
-	char nextType;
-	if (currentTarget)
-		currType = currentTarget->getTargetType ();
-	else
-		currType = TYPE_UNKNOW;
-	if (getActiveQueue ()->size () != 0)
-		nextType = getActiveQueue ()->front ().target->getTargetType ();
-	else
-		nextType = currType;
-}
-
 void Executor::doSwitch ()
 {
 	int ret;
@@ -796,8 +780,6 @@ void Executor::doSwitch ()
 		// create again our target..since conditions changed, we will get different target id
 		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer, &notifyConn));
 	}
-	// check dark and flat processing
-	beforeChange ();
 	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process

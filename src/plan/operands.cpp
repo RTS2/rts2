@@ -98,24 +98,41 @@ Operand *OperandsSet::parseOperand (std::string str, mulType_t mulType)
 			else switch (mulType)
 			{
 				case MUL_ANGLE:
-					if (*it == 'm')
-			  			mul = 1/60.0;
-					else if (*it == 's')
-						mul = 1/3600.0;
-					else if (*it == 'h')
-						mul = 15;
-					else
-			  			throw rts2script::UnknowOperantMultiplier (*it);
+					switch (*it)
+					{
+						case 'd':
+							mul = 1;
+							break;
+						case 'h':
+							mul = 15;
+							break;
+						case 'm':
+						case '\'':
+			  				mul = 1/60.0;
+							break;
+						case 's':
+						case '\"':
+							mul = 1/3600.0;
+							break;
+						default:
+			  				throw rts2script::UnknowOperantMultiplier (*it);
+					}		
 					break;
 				case MUL_TIME:
-					if (*it == 'd')
-			  			mul = 86400;
-					else if (*it == 'h')
-			  			mul = 3600;
-					else if (*it == 'w')
-			  			mul = 7 * 86400;
-					else
-			  			throw rts2script::UnknowOperantMultiplier (*it);
+					switch (*it)
+					{
+						case 'd':
+			  				mul = 86400;
+							break;
+						case 'h':
+			  				mul = 3600;
+							break;
+						case 'w':
+			  				mul = 7 * 86400;
+							break;
+						default:	
+			  				throw rts2script::UnknowOperantMultiplier (*it);
+					}		
 					break;
 			}
 			// eats units specifications
