@@ -587,6 +587,6 @@ int Sbig::setCoolPower (int power)
 
 int main (int argc, char **argv)
 {
-	Sbig device = Sbig (argc, argv);
+	Sbig device (argc, argv);
 	return device.run ();
 }

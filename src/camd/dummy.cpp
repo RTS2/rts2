@@ -340,6 +340,6 @@ void Dummy::generateImage (long usedSize)
 
 int main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }

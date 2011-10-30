@@ -426,6 +426,6 @@ void Urvc2::afterNight ()
 
 int main (int argc, char **argv)
 {
-	Urvc2 device = Urvc2 (argc, argv);
+	Urvc2 device (argc, argv);
 	return device.run ();
 }

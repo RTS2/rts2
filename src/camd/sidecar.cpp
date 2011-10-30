@@ -457,6 +457,6 @@ int Sidecar::doReadout ()
 
 int main (int argc, char **argv)
 {
-	Sidecar device = Sidecar (argc, argv);
+	Sidecar device (argc, argv);
 	return device.run ();
 }

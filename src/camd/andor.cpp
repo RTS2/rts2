@@ -133,7 +133,7 @@ class Andor:public Camera
 		rts2core::ValueInteger *bitDepth;
 		rts2core::ValueInteger *acqusitionMode;
 
-		rts2core::ValueInteger *outputAmp;
+//		rts2core::ValueInteger *outputAmp;
 		rts2core::ValueInteger *outPreAmpGain;
 
 		rts2core::ValueBool *emAdvanced;
@@ -235,10 +235,10 @@ long Andor::isExposing ()
 			AbortAcquisition ();
 			FreeInternalMemory ();
 			logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
-			maskState (CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOTREADING, "chip extended readout finished");
+			maskState (CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOTREADING, "extended readout finished");
 			return -3;
 		}
-		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_EXPOSING | CAM_NOTREADING, "chip extended readout finished");
+		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_EXPOSING | CAM_NOTREADING, "extended readout finished");
 		quedExpNumber->dec ();
 		sendValueAll (quedExpNumber);
 		incExposureNumber ();
@@ -371,8 +371,8 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING);
 
-	createValue (outputAmp, "OUTAMP", "output amplifier", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
-	outputAmp->setValueInteger (0);
+//	createValue (outputAmp, "OUTAMP", "output amplifier", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+//	outputAmp->setValueInteger (0);
 
 	outPreAmpGain = NULL;
 
@@ -694,10 +694,10 @@ int Andor::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	  	return setUseFT (((rts2core::ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	if (old_value == useRunTillAbort)
 		return 0;
-	if (old_value == outputAmp)
-	{
-		return SetOutputAmplifier (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
-	}
+//	if (old_value == outputAmp)
+//	{
+//		return SetOutputAmplifier (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+//	}
 	if (old_value == outPreAmpGain)
 	{
 		return SetPreAmpGain (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;

@@ -50,7 +50,7 @@ class V4L:public Camera
 
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 		virtual void initDataTypes ();	
 
 		virtual void setExposure (float in_exp);
@@ -114,12 +114,8 @@ int V4L::processOption (int opt)
 	return 0;
 }
 
-int V4L::init ()
+int V4L::initHardware ()
 {
-	int ret;
-	ret = Camera::init ();
-	if (ret)
-		return ret;
 	// try to open video file..
 	fd = open (videodev, O_RDONLY);
 	if (fd < 0)
@@ -128,7 +124,7 @@ int V4L::init ()
 		return -1;
 	}
 	struct v4l2_capability cap;
-	ret = ioctl (fd, VIDIOC_QUERYCAP, &cap);
+	int ret = ioctl (fd, VIDIOC_QUERYCAP, &cap);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot determine device capabilities: " << strerror (errno) << sendLog;
@@ -229,6 +225,7 @@ int V4L::init ()
 			default:
 				logStream (MESSAGE_DEBUG) << "unhandled option: " << queryctrl.name << " " << queryctrl.id << sendLog;
 		}
+		queryctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 
 	return 0;
@@ -365,6 +362,6 @@ void V4L::everyEvenByte (char *bytes)
 
 int main (int argc, char **argv)
 {
-	V4L device = V4L (argc, argv);
+	V4L device (argc, argv);
 	return device.run ();
 }

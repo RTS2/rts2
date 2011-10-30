@@ -554,6 +554,6 @@ void Fli::afterNight ()
 
 int main (int argc, char **argv)
 {
-	Fli device = Fli (argc, argv);
+	Fli device (argc, argv);
 	return device.run ();
 }

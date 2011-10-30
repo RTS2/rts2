@@ -872,6 +872,6 @@ int Apogee::setCoolTemp (float new_temp)
 
 int main (int argc, char **argv)
 {
-	Apogee device = Apogee (argc, argv);
+	Apogee device (argc, argv);
 	return device.run ();
 }

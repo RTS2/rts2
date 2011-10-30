@@ -261,6 +261,8 @@ int MICCD::info ()
 			case G10800:
 			case G11400:
 			case G12000:
+			case G2:
+			case G3:
 				ret = reinitCamera ();
 				if (ret)
 					return -1;
@@ -268,9 +270,6 @@ int MICCD::info ()
 				if (ret)
 					return -1;
 				break;
-			case G2:
-			case G3:
-				return -1;
 		}
 	}
 	tempCCD->setValueFloat (val);

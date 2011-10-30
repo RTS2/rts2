@@ -339,6 +339,6 @@ int Miniccd::setCoolTemp (float _temp)
 
 int main (int argc, char **argv)
 {
-	Miniccd device = Miniccd (argc, argv);
+	Miniccd device (argc, argv);
 	return device.run ();
 }

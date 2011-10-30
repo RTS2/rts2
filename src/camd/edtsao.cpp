@@ -1473,6 +1473,6 @@ int EdtSao::initValues ()
 
 int main (int argc, char **argv)
 {
-	EdtSao device = EdtSao (argc, argv);
+	EdtSao device (argc, argv);
 	return device.run ();
 }

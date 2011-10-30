@@ -687,6 +687,6 @@ int MiniccdIl::setCoolTemp (float _temp)
 int
 main (int argc, char **argv)
 {
-	MiniccdIl device = MiniccdIl (argc, argv);
+	MiniccdIl device (argc, argv);
 	return device.run ();
 }

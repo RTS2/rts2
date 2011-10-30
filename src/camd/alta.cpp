@@ -334,6 +334,6 @@ void Alta::afterNight ()
 
 int main (int argc, char **argv)
 {
-	Alta device = Alta (argc, argv);
+	Alta device (argc, argv);
 	return device.run ();
 }
