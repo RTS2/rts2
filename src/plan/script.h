@@ -106,6 +106,14 @@ class Script:public Rts2Object, public std::list <Element *>
 		Script (const char *script);
 		virtual ~ Script (void);
 
+		void setFullReadoutTime (float t) { fullReadoutTime = t; }
+		void setFilterMovement (float t) { filterMovement = t; }
+		void setTelescopeSpeed (float t) { telescopeSpeed = t; }
+
+		float getFullReadoutTime () { return fullReadoutTime; }
+		float getFilterMovement () { return filterMovement; }
+		float getTelescopeSpeed () { return telescopeSpeed; }
+
 		/**
 		 * Parse target script.
 		 */
@@ -217,6 +225,15 @@ class Script:public Rts2Object, public std::list <Element *>
 
 		// offset for scripts spanning more than one line
 		int lineOffset;
+
+		// full camera readout in seconds
+		float fullReadoutTime;
+
+		// average filter movement time in seconds
+		float filterMovement;
+
+		// telescope average speed (in degrees per second)
+		float telescopeSpeed;
 };
 
 template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])

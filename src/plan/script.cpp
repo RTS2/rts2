@@ -1,6 +1,7 @@
 /*
  * Script support.
  * Copyright (C) 2005-2007,2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -123,6 +124,10 @@ Script::Script (int scriptLoopCount, rts2core::Block * _master):Rts2Object ()
 	cmdBuf = NULL;
 	cmdBufTop = NULL;
 	wholeScript = std::string ("");
+
+	fullReadoutTime = 0;
+	filterMovement = 0;
+	telescopeSpeed = -1;
 }
 
 Script::Script (const char *script):Rts2Object ()

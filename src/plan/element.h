@@ -205,7 +205,7 @@ class ElementExpose:public Element
 		virtual void printScript (std::ostream &os) { os << COMMAND_EXPOSURE " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
-		virtual double getExpectedDuration () { return expTime; }
+		virtual double getExpectedDuration ();
 		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;
@@ -223,7 +223,7 @@ class ElementDark:public Element
 		virtual void printScript (std::ostream &os) { os << COMMAND_DARK " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" COMMAND_DARK "\",\"duration\":" << expTime; }
 
-		virtual double getExpectedDuration () { return expTime; }
+		virtual double getExpectedDuration ();
 		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;
@@ -352,6 +352,8 @@ class ElementChangeValue:public Element
 		virtual void printXml (std::ostream &os) { os << "  <set device='" << deviceName << "' value='" << valName << "' op='" << op << "' operands='" << operands << "'/>"; }
 		virtual void printScript (std::ostream &os);
 		virtual void printJson (std::ostream &os);
+
+		virtual double getExpectedDuration ();
 
 		std::string getOperands ();
 

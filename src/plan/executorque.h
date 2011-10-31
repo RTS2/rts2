@@ -30,6 +30,8 @@
 #define QUEUE_WESTEAST               3
 // observe targets only when they pass meridian
 #define QUEUE_WESTEAST_MERIDIAN      4
+// order targets by time remaining till they become unobservable
+#define QUEUE_OUT_OF_LIMITS          5
 
 // timer events for queued start/end
 #define EVENT_NEXT_START      RTS2_LOCAL_EVENT + 1400
@@ -148,6 +150,12 @@ class TargetQueue:public std::list <QueuedTarget>
 		void sortWestEastMeridian ();
 
 		/**
+		 * Sort targets by out-of-limits criteria. First are targets which
+		 * sets below limit as first.
+		 */
+		void sortOutOfLimits ();
+
+		/**
 		 * Remove observation request which expired. Expired request are:
 		 *  - in FIFO mode, all request before 
 		 *     - request with set start_time or end_time, which expired (is in past)
@@ -156,9 +164,9 @@ class TargetQueue:public std::list <QueuedTarget>
 		 */
 		void filterExpired (double now);
 
-		// filter or skip observations bellow horizon
+		// filter or skip observations below horizon
 		// if skipBelowHorizon is set to false (default), remove observations which are currently
-		// bellow horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		// below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
 		void filterBelowHorizon (double now);
 
 		/**
@@ -203,7 +211,7 @@ class ExecutorQueue:public TargetQueue
 
 		/**
 		 * Select next valid observation target. As queues might hold targets which are invalid (e.g. start date of observation
-		 * is in future, object is bellow horizon,..), can return failure even if queue is not empty.
+		 * is in future, object is below horizon,..), can return failure even if queue is not empty.
 		 *
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */

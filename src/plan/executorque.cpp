@@ -70,7 +70,7 @@ class sortByMeridianPriority:public rts2db::sortWestEast
 
 bool sortByMeridianPriority::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 {
-	// if both targets are did not yet pass meridian, pick the highest
+	// if both targets did not yet pass meridian, pick the highest
 	if (tar1->getHourAngle (JD, observer) < 0 && tar2->getHourAngle (JD, observer) < 0)
 	{
 		struct ln_hrz_posn hr1, hr2;
@@ -82,6 +82,31 @@ bool sortByMeridianPriority::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 		return sortWestEast::doSort (tar1, tar2);
 	else
 		return tar1->getTargetPriority () > tar2->getTargetPriority ();
+}
+
+/**
+ * Sort targets by time they set. First will be targets that go out of limits, last targets that are
+ * above limits for the longest period of time (or are below limit now)
+ */
+class sortByOutOfLimits:public rts2db::sortWestEast
+{
+	public:
+		sortByOutOfLimits (struct ln_lnlat_posn *_observer, double jd):rts2db::sortWestEast (_observer, jd) {};
+		bool operator () (rts2db::Target *tar1, rts2db::Target *tar2) { return doSort (tar1, tar2); }
+	protected:
+		bool doSort (rts2db::Target *tar1, rts2db::Target *tar2);
+};
+
+bool sortByOutOfLimits::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
+{
+	time_t t_from;
+	ln_get_timet_from_julian (JD, &t_from);
+	double from = t_from;
+
+	double v1 = tar1->getSatisfiedDuration (from, from + 86400, 0, 60);
+	double v2 = tar2->getSatisfiedDuration (from, from + 86400, 0, 60);
+	std::cout << "sorting " << tar1->getTargetName () << " " << v1 << " 2: " << tar2->getTargetName () << " " << v2 << std::endl;
+	return v1 < v2;
 }
 
 bool QueuedTarget::notExpired (double now)
@@ -131,6 +156,7 @@ void TargetQueue::beforeChange (double now)
 		case QUEUE_HIGHEST:
 		case QUEUE_WESTEAST:
 		case QUEUE_WESTEAST_MERIDIAN:
+		case QUEUE_OUT_OF_LIMITS:
 			break;
 	}
 	filter (now);
@@ -152,6 +178,9 @@ void TargetQueue::sortQueue ()
 		case QUEUE_WESTEAST_MERIDIAN:
 			sortWestEastMeridian ();
 			break;
+		case QUEUE_OUT_OF_LIMITS:
+			sortOutOfLimits ();
+			break;	
 	}
 }
 
@@ -205,7 +234,61 @@ void TargetQueue::sortWestEastMeridian ()
 
 		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
 		{
-		  	std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+		  	// std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+			// skip target if it's not above horizon
+			ExecutorQueue::iterator qi = findTarget (*iter);
+			double tjd = jd;
+			if (!isAboveHorizon (*qi, tjd))
+			{
+				// std::cout << "target not met constraints: " << (*iter)->getTargetName () << std::endl;
+				continue;
+			}
+
+			jd = tjd;	
+			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
+				break;  
+		}
+		// If such target does not exists, select front..
+		if (iter == preparedTargets.end ())
+		{
+			// std::cout << "end reached, takes from beginning" << std::endl;  
+			iter = preparedTargets.begin ();
+		}
+
+		jd += getMaximalDuration (*iter) / 86400.0;  
+		orderedTargets.push_back ((*iter));
+		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
+		preparedTargets.erase (iter);
+	}
+	// std::cout << "ordering.." << std::endl;
+	/**for (std::list < rts2db::Target *>::iterator i = orderedTargets.begin (); i != orderedTargets.end (); i++)
+	{
+		std::cout << (*i)->getTargetName () << " " << (*i)->getTargetID () << std::endl;
+	}*/
+	orderByTargetList (orderedTargets);
+}
+
+void TargetQueue::sortOutOfLimits ()
+{
+	std::list < rts2db::Target *> preparedTargets;  
+	std::list < rts2db::Target *> orderedTargets;
+	double jd = ln_get_julian_from_sys ();
+	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
+	{
+		preparedTargets.push_back (ti->target);
+	}
+	while (!preparedTargets.empty ())
+	{
+		std::cout << "sorting by out of limits" << std::endl;
+		// find maximal priority in targets, and order by HA..
+		preparedTargets.sort (sortByOutOfLimits (*observer, jd));
+		std::cout << "sorting finished" << std::endl;
+		// now find the first target which is on west (for HA + its duration).
+		std::list < rts2db::Target *>::iterator iter;
+
+		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
+		{
+		  	std::cout << "sort out of limits " << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
 			// skip target if it's not above horizon
 			ExecutorQueue::iterator qi = findTarget (*iter);
 			double tjd = jd;
@@ -222,7 +305,7 @@ void TargetQueue::sortWestEastMeridian ()
 		// If such target does not exists, select front..
 		if (iter == preparedTargets.end ())
 		{
-			std::cout << "end reached, takes from beginning" << std::endl;  
+			// std::cout << "end reached, takes from beginning" << std::endl;  
 			iter = preparedTargets.begin ();
 		}
 
@@ -231,7 +314,7 @@ void TargetQueue::sortWestEastMeridian ()
 		std::cout << LibnovaDate (jd) << " " << (*iter)->getTargetID () << " " << (*iter)->getTargetName () << std::endl;
 		preparedTargets.erase (iter);
 	}
-	std::cout << "ordering.." << std::endl;
+	std::cout << "sort out of limits - ordering.." << std::endl;
 	for (std::list < rts2db::Target *>::iterator i = orderedTargets.begin (); i != orderedTargets.end (); i++)
 	{
 		std::cout << (*i)->getTargetName () << " " << (*i)->getTargetID () << std::endl;
@@ -293,14 +376,14 @@ void TargetQueue::filterBelowHorizon (double now)
 				if (firsttar == NULL)
 					firsttar = iter->target;
 
-				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
+				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " below horizon" << sendLog;
 
 				push_back (*iter);
 				iter = erase (iter);
 			}
 			else
 			{
-				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " bellow horizon" << sendLog;
+				logStream (MESSAGE_WARNING) << "Removing target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " below horizon" << sendLog;
 				iter = erase (iter);
 			}
 		}
@@ -375,6 +458,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 	queueType->addSelVal ("HIGHEST");
 	queueType->addSelVal ("WESTEAST");
 	queueType->addSelVal ("WESTEAST_MERIDIAN");
+	queueType->addSelVal ("SET_TIMES");
 }
 
 ExecutorQueue::~ExecutorQueue ()

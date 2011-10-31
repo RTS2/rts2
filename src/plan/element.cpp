@@ -146,6 +146,11 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 	return 0;
 }
 
+double ElementExpose::getExpectedDuration ()
+{
+	return expTime + script->getFullReadoutTime ();
+}
+
 ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;
@@ -183,6 +188,11 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	callProgress = first;
 	return 0;
+}
+
+double ElementDark::getExpectedDuration ()
+{
+	return expTime + script->getFullReadoutTime ();
 }
 
 ElementBox::ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h):Element (_script)
@@ -417,6 +427,15 @@ void ElementChangeValue::printScript (std::ostream &os)
 void ElementChangeValue::printJson (std::ostream &os)
 {
 	os << "\"cmd\":\"" << op << "\",\"device\":\"" << deviceName << "\",\"name\":\"" << valName << "\",\"operands\":\"" << operands << "\"";
+}
+
+double ElementChangeValue::getExpectedDuration ()
+{
+	if (valName == "filter" && !*deviceName)
+	{
+		return script->getFilterMovement ();
+	}
+	return Element::getExpectedDuration ();
 }
 
 std::string ElementChangeValue::getOperands ()
