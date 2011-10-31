@@ -60,7 +60,7 @@ void ElementAcquire::postEvent (Rts2Event * event)
 			image = (Image *) event->getArg ();
 			if (image->getObsId () == obsId && image->getImgId () == imgId)
 			{
-				// we get bellow required errror?
+				// we get below required errror?
 				double img_prec = image->getPrecision ();
 				if (isnan (img_prec))
 				{

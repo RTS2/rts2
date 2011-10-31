@@ -191,7 +191,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (grb_sep_limit, "grb_sep_limit", "[deg] when GRB distane is above grb_sep_limit degrees from current position, telescope will be immediatelly slewed to new position", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	grb_sep_limit->setValueDouble (0);
 
-	createValue (grb_min_sep, "grb_min_sep", "[deg] when GRB is bellow grb_min_sep degrees from current position, telescope will not be slewed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	createValue (grb_min_sep, "grb_min_sep", "[deg] when GRB is below grb_min_sep degrees from current position, telescope will not be slewed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	grb_min_sep->setValueDouble (0);
 
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
@@ -717,7 +717,7 @@ int Executor::setGrb (int grbId)
 			logStream (MESSAGE_INFO) << "GRB update for target " << grbTarget->getTargetName () << " (#"
 				<< grbTarget->getObsTargetID () << ") ignored, as its distance from current target "
 				<< currentTarget->getTargetName () << " (#" << currentTarget->getObsTargetID ()
-				<< ") is bellow separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
+				<< ") is below separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
 				<< "." << sendLog;
 			return 0;
 		}

@@ -106,6 +106,20 @@ bool sortByOutOfLimits::doSort (rts2db::Target *tar1, rts2db::Target *tar2)
 	double v1 = tar1->getSatisfiedDuration (from, from + 86400, 0, 60);
 	double v2 = tar2->getSatisfiedDuration (from, from + 86400, 0, 60);
 	std::cout << "sorting " << tar1->getTargetName () << " " << v1 << " 2: " << tar2->getTargetName () << " " << v2 << std::endl;
+	if ((isnan (v1) && isnan (v2)) || (isinf (v1) && isinf (v2)))
+	{
+		// if both are not visible, order west-east..
+		return sortWestEast::doSort (tar1, tar2);
+	}
+	// only one is not visible..
+	else if (isnan (v1) || isinf (v2))
+	{
+		return false;
+	}
+	else if (isnan (v2) || isinf (v1))
+	{
+		return true;
+	}
 	return v1 < v2;
 }
 

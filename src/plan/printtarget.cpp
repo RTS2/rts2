@@ -439,9 +439,9 @@ void PrintTarget::printTarget (rts2db::Target *target)
 			time (&now);
 			time_t to = now + printVisible;
 			double visible = target->getSatisfiedDuration (now, to, 0, 60);
-			if (isnan (visible))
+			if (isinf (visible))
 				std::cout << "satisfied constraints for full specified interval" << std::endl;
-			else if (visible == now)
+			else if (isnan (visible))
 				std::cout << "is not visible during from start of the specified interval" << std::endl;
 			else	
 				std::cout << "satisifed constraints for " << TimeDiff (visible - now) << " (" << (visible - now) << ") seconds, until " << Timestamp (visible) << std::endl;

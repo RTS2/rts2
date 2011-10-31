@@ -214,14 +214,14 @@ void Selector::findNewTargets ()
 	checkTargetObservability ();
 	checkTargetBonus ();
 
-	// drop targets which gets bellow horizon..
+	// drop targets which gets below horizon..
 	for (std::vector < TargetEntry * >::iterator target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
 	{
 		rts2db::Target *tar = (*target_list)->target;
 		ret = tar->considerForObserving (JD);
 		if (ret)
 		{
-			// don't observe us - we are bellow horizont etc..
+			// don't observe us - we are below horizont etc..
 			logStream (MESSAGE_DEBUG) << "remove target " << tar->getTargetName () << " # " << tar->getTargetID () << " from possible targets" << sendLog;
 			delete *target_list;
 			target_list = possibleTargets.erase (target_list);
