@@ -67,6 +67,7 @@ class PrintTarget:public Rts2AppDb
 		bool printObservations;
 		bool printSatisfied;
 		bool printViolated;
+		double printVisible;
 		int printImages;
 		int printCounts;
 		int printGNUplot;
