@@ -799,6 +799,7 @@ class Target:public Rts2Target
 
 		double satisfiedFrom;
 		double satisfiedTo;
+		double satisfiedProbedUntil;
 };
 
 /**

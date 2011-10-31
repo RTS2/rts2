@@ -289,8 +289,9 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 
 	observationStart = -1;
 
-	satisfiedFrom = rts2_nan ("f");
-	satisfiedTo = rts2_nan ("f");
+	satisfiedFrom = NAN;
+	satisfiedTo = NAN;
+	satisfiedProbedUntil = NAN;
 }
 
 Target::Target ()
@@ -325,8 +326,9 @@ Target::Target ()
 
 	observationStart = -1;
 
-	satisfiedFrom = rts2_nan ("f");
-	satisfiedTo = rts2_nan ("f");
+	satisfiedFrom = NAN;
+	satisfiedTo = NAN;
+	satisfiedProbedUntil = NAN;
 
 	tar_priority = 0;
 	tar_bonus = rts2_nan ("f");
@@ -2128,19 +2130,35 @@ void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step
 
 double Target::getSatisfiedDuration (double from, double to, double length, double step)
 {
-	if (!isnan (satisfiedFrom) && !isnan (satisfiedTo))
+	if (!isnan (satisfiedFrom) && !isnan (satisfiedProbedUntil))
 	{
-		if (from >= satisfiedFrom && from <= satisfiedTo && satisfiedTo <= to)
-			return satisfiedTo;
-		// don't recalculate full interval
-		from = satisfiedTo;
+		if (from >= satisfiedFrom && from <= satisfiedProbedUntil)
+		{
+			// did not find end of interval..
+			if (!isinf (satisfiedTo) || isnan (satisfiedTo) || to <= satisfiedProbedUntil)
+				return satisfiedTo;
+			// don't recalculate full interval
+			from = satisfiedProbedUntil;
+		}
 	}
 	satisfiedTo = getConstraints ()->getSatisfiedDuration (this, from, to, length, step);
-	if (isnan (satisfiedTo))
+	// update boundaries where we probed..
+	if (isnan (satisfiedFrom) || from < satisfiedFrom)
+		satisfiedFrom = from;
+	// visible during full interval
+	if (isinf (satisfiedTo))
 	{
-		satisfiedTo = to;
-		return rts2_nan ("f");
+		satisfiedProbedUntil = to;
+		// visible during full interval
+		return INFINITY;
 	}
+	// not visible at all..
+	else if (isnan (satisfiedTo))
+	{
+		satisfiedProbedUntil = from;
+		return NAN;
+	}
+	satisfiedProbedUntil = satisfiedTo;
 	return satisfiedTo;
 }
 

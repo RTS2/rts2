@@ -666,16 +666,21 @@ double Constraints::getSatisfiedDuration (Target *tar, double from, double to, d
 	fti = (time_t) (from + length);
 	
 	double t;
-	for (t = ln_get_julian_from_timet (&fti); t < to_JD; t += step / 86400.0)
+	double from_JD = ln_get_julian_from_timet (&fti);
+	for (t = from_JD; t < to_JD; t += step / 86400.0)
 	{
 		if (!satisfy (tar, t))
 		{
-			time_t ret;  
+			if (t == from_JD)
+			{
+				return NAN;
+			}
+			time_t ret;
 		  	ln_get_timet_from_julian (t, &ret);
 			return ret;
 		}
 	}
-	return rts2_nan ("f");
+	return INFINITY;
 }
 
 void Constraints::getViolatedIntervals (Target *tar, time_t from, time_t to, int length, int step, interval_arr_t &violatedIntervals)
