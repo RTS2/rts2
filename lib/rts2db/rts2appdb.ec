@@ -202,7 +202,11 @@ void Rts2SqlQuery::display ()
 
 	while (1)
 	{
+#ifdef HAVE_PGSQL_9
 		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR "disp_desc";
+#else
+		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR disp_desc;
+#endif		
 
 		if (sqlca.sqlcode)
 		{

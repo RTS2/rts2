@@ -683,6 +683,7 @@ AC_SUBST(debug)
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
+AH_TEMPLATE([HAVE_PGSQL_9], [If PGSQL version is 9 or higher])
 AH_TEMPLATE([HAVE_PGSQL_SET_VARSIZE], [If PGSQL provides SET_VARSIZE function])
 
 if test "x"$psql = xyes ; then
@@ -696,6 +697,9 @@ if test "x"$psql = xyes ; then
 
   if test $PG_MAJOR -gt 7 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
+  fi
+  if test $PG_MAJOR -gt 9 ; then
+    AC_DEFINE_UNQUOTED(HAVE_PGSQL_9, 1, [If PGSQL version is 9 or higher])
   fi
   if test $PG_MAJOR -gt 8; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
