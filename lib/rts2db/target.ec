@@ -90,19 +90,15 @@ void Target::printAltTable (std::ostream & _os, double jd_start, double h_start,
 	int old_precison = 0;
 	std::ios_base::fmtflags old_settings = std::ios_base::skipws;
 
+	jd_start += h_start / 24.0;
+
 	if (header)
 	{
 		old_precison = _os.precision (0);
 		old_settings = _os.flags ();
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-	}
-
-	jd_start += h_start / 24.0;
-
-	if (header)
-	{
-		_os
-			<< "H   ";
+		
+		_os << "H   ";
 
 		char old_fill = _os.fill ('0');
 		for (i = h_start; i <= h_end; i+=h_step)
@@ -246,7 +242,7 @@ void Target::printAltTable (std::ostream & _os, double JD)
 	_os
 		<< std::endl
 		<< "** HOUR, ALTITUDE, AZIMUTH, MOON DISTANCE, SUN POSITION table from "
-		<< LibnovaDate (jd_start)
+		<< TimeJD (jd_start)
 		<< " **"
 		<< std::endl
 		<< std::endl;
@@ -292,6 +288,9 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	groupConstraintFile = NULL;
 
 	observationStart = -1;
+
+	satisfiedFrom = rts2_nan ("f");
+	satisfiedTo = rts2_nan ("f");
 }
 
 Target::Target ()
@@ -325,6 +324,9 @@ Target::Target ()
 	groupConstraintFile = NULL;
 
 	observationStart = -1;
+
+	satisfiedFrom = rts2_nan ("f");
+	satisfiedTo = rts2_nan ("f");
 
 	tar_priority = 0;
 	tar_bonus = rts2_nan ("f");
@@ -2126,7 +2128,20 @@ void Target::getSatisfiedIntervals (time_t from, time_t to, int length, int step
 
 double Target::getSatisfiedDuration (double from, double to, double length, double step)
 {
-	return getConstraints ()->getSatisfiedDuration (this, from, to, length, step);
+	if (!isnan (satisfiedFrom) && !isnan (satisfiedTo))
+	{
+		if (from >= satisfiedFrom && from <= satisfiedTo && satisfiedTo <= to)
+			return satisfiedTo;
+		// don't recalculate full interval
+		from = satisfiedTo;
+	}
+	satisfiedTo = getConstraints ()->getSatisfiedDuration (this, from, to, length, step);
+	if (isnan (satisfiedTo))
+	{
+		satisfiedTo = to;
+		return rts2_nan ("f");
+	}
+	return satisfiedTo;
 }
 
 void Target::getViolatedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals)
@@ -2247,6 +2262,7 @@ void Target::revalidateConstraints (int watchID)
 		{
 			delete constraints;
 			constraints = NULL;
+			satisfiedFrom = satisfiedTo = rts2_nan ("f");
 			return;
 		}
 	}

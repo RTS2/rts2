@@ -264,7 +264,7 @@ void FlatTarget::load ()
 		double d_tar_ra;
 		double d_tar_dec;
 		int d_tar_id;
-		const int db_target_flat = TARGET_FLAT;
+		int db_target_flat = TARGET_FLAT;
 	EXEC SQL END DECLARE SECTION;
 
 	if (getTargetID () != TARGET_FLAT)
@@ -279,10 +279,8 @@ void FlatTarget::load ()
 	struct ln_equ_posn antiSolarPosition;
 	struct ln_hrz_posn hrz;
 	double JD;
-	double lst;
 
 	JD = ln_get_julian_from_sys ();
-	lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 
 	getAntiSolarPos (&antiSolarPosition, JD);
 

@@ -202,7 +202,7 @@ void Rts2SqlQuery::display ()
 
 	while (1)
 	{
-		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR disp_desc;
+		EXEC SQL FETCH next FROM disp_cur INTO DESCRIPTOR "disp_desc";
 
 		if (sqlca.sqlcode)
 		{
@@ -447,7 +447,7 @@ int Rts2AppDb::initDB ()
 		EXEC SQL CONNECT TO :c_db;
 		if (sqlca.sqlcode != 0)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2AppDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << sendLog;
+			logStream (MESSAGE_ERROR) << "Rts2AppDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 			return -1;
 		}
 	}

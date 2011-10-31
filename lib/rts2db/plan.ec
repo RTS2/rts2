@@ -317,7 +317,6 @@ void Plan::print (std::ostream & _os)
 {
 	struct ln_hrz_posn hrz;
 	const char *tar_name;
-	struct ln_lnlat_posn *obs;
 	int good;
 	double JD;
 	int ret;
@@ -334,7 +333,6 @@ void Plan::print (std::ostream & _os)
 		tar_name = getTarget()->getTargetName();
 		good = getTarget()->isGood (JD);
 	}
-	obs = Rts2Config::instance()->getObserver ();
 	getTarget ()->getAltAz (&hrz, JD);
 	LibnovaHrz lHrz (&hrz);
 	_os << "  " << std::setw (8) << plan_id << SEP

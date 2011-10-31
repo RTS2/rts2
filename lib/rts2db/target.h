@@ -796,6 +796,9 @@ class Target:public Rts2Target
 		char *constraintFile;
 		char *groupConstraintFile;
 		Constraints *constraints;
+
+		double satisfiedFrom;
+		double satisfiedTo;
 };
 
 /**
