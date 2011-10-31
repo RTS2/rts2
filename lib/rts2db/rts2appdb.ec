@@ -476,5 +476,3 @@ int Rts2AppDb::init ()
 		ret = initDB ();
 	return ret;
 }
-
-
