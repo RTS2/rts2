@@ -552,7 +552,21 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			}
 			else
 			{
-				q->sortQueue ();
+				time_t now;
+				Rts2Conn *centralConn = getSingleCentralConn ();
+				if (centralConn == NULL)
+				{
+					time (&now);
+				}
+				else
+				{
+					rts2core::Value *night_start = centralConn->getValue ("night_start");
+					if (night_start != NULL)
+						now = night_start->getValueDouble ();
+					else
+						time (&now);
+				}
+				q->sortQueue (now);
 				q->updateVals ();
 			}
 		}

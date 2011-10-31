@@ -124,9 +124,12 @@ class TargetQueue:public std::list <QueuedTarget>
 		void beforeChange (double now);
 
 		/**
-		 * Sort targets by current queue ordering.
+		 * Sort targets by current queue ordering. Assumes that observations will
+		 * start at now time.
+		 *
+		 * @param now  time (seconds from 1/1/1970) when observations should start
 		 */
-		void sortQueue ();
+		void sortQueue (double now);
 
 		/**
 		 * Runs queue filter, remove expired observations.
@@ -147,13 +150,22 @@ class TargetQueue:public std::list <QueuedTarget>
 		virtual bool getSkipBelowHorizon () = 0;
 		virtual bool getTestConstraints () = 0;
 
-		void sortWestEastMeridian ();
+
+		/**
+		 * Sort targets by west-east priority on west, by altitude on
+		 * east.
+		 *
+		 * @param now start time (in JD)
+		 */
+		void sortWestEastMeridian (double jd);
 
 		/**
 		 * Sort targets by out-of-limits criteria. First are targets which
 		 * sets below limit as first.
+		 *
+		 * @param now start time (in JD)
 		 */
-		void sortOutOfLimits ();
+		void sortOutOfLimits (double jd);
 
 		/**
 		 * Remove observation request which expired. Expired request are:

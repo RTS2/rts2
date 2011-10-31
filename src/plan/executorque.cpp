@@ -153,7 +153,7 @@ double TargetQueue::getMaximalDuration (rts2db::Target *tar)
 
 void TargetQueue::beforeChange (double now)
 {
-	sortQueue ();
+	sortQueue (now);
 	switch (getQueueType ())
 	{
 		case QUEUE_FIFO:
@@ -176,24 +176,26 @@ void TargetQueue::beforeChange (double now)
 	filter (now);
 }
 
-void TargetQueue::sortQueue ()
+void TargetQueue::sortQueue (double now)
 {
+	time_t t_now = now;
+	double now_JD = ln_get_julian_from_timet (&t_now);
 	switch (getQueueType ())
 	{
 		case QUEUE_FIFO:
 		case QUEUE_CIRCULAR:
 			break;
 		case QUEUE_HIGHEST:
-			sort (sortQuedTargetByAltitude (*observer));
+			sort (sortQuedTargetByAltitude (*observer, now_JD));
 			break;
 		case QUEUE_WESTEAST:
-			sort (sortQuedTargetWestEast (*observer));
+			sort (sortQuedTargetWestEast (*observer, now_JD));
 			break;
 		case QUEUE_WESTEAST_MERIDIAN:
-			sortWestEastMeridian ();
+			sortWestEastMeridian (now_JD);
 			break;
 		case QUEUE_OUT_OF_LIMITS:
-			sortOutOfLimits ();
+			sortOutOfLimits (now_JD);
 			break;	
 	}
 }
@@ -230,11 +232,10 @@ void TargetQueue::orderByTargetList (std::list <rts2db::Target *> tl)
 	}
 }
 
-void TargetQueue::sortWestEastMeridian ()
+void TargetQueue::sortWestEastMeridian (double jd)
 {
 	std::list < rts2db::Target *> preparedTargets;  
 	std::list < rts2db::Target *> orderedTargets;
-	double jd = ln_get_julian_from_sys ();
 	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
 	{
 		preparedTargets.push_back (ti->target);
@@ -282,11 +283,10 @@ void TargetQueue::sortWestEastMeridian ()
 	orderByTargetList (orderedTargets);
 }
 
-void TargetQueue::sortOutOfLimits ()
+void TargetQueue::sortOutOfLimits (double jd)
 {
 	std::list < rts2db::Target *> preparedTargets;  
 	std::list < rts2db::Target *> orderedTargets;
-	double jd = ln_get_julian_from_sys ();
 	for (TargetQueue::iterator ti = begin (); ti != end (); ti++)
 	{
 		preparedTargets.push_back (ti->target);
