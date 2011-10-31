@@ -238,8 +238,7 @@ int Bootes1B::info ()
 
 bool Bootes1B::isMoving ()
 {
-	int ret;
-	ret = zjisti_stav_portu ();
+	zjisti_stav_portu ();
 	if (getPortState (CLOSE_END_1) == getPortState (CLOSE_END_2)
 		&& getPortState (OPEN_END_1) == getPortState (OPEN_END_2)
 		&& (getPortState (CLOSE_END_1) != getPortState (OPEN_END_1)))
