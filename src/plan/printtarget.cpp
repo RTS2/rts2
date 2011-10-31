@@ -31,6 +31,7 @@
 #define OPT_SATISFIED             OPT_LOCAL + 208
 #define OPT_VIOLATED              OPT_LOCAL + 209
 #define OPT_SCRIPT_IMAGES         OPT_LOCAL + 210
+#define OPT_VISIBLE_FOR           OPT_LOCAL + 211
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -72,6 +73,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	printObservations = false;
 	printSatisfied = false;
 	printViolated = false;
+	printVisible = rts2_nan ("f");
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
@@ -110,6 +112,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_ar
 	addOption (OPT_PROGRAM, "program", 0, "print target(s) program(s) name(s)");
 	addOption (OPT_SCRIPT_IMAGES, "script-images", 1, "print number of images script for given camera is expected to produce");
 	addOption (OPT_PARSE_SCRIPT, "parse", 1, "pretty print parsed script for given camera");
+	addOption (OPT_VISIBLE_FOR, "visible", 1, "check visibility during next seconds");
 	addOption (OPT_CHECK_CONSTRAINTS, "constraints", 1, "check targets agains constraint file");
 	addOption (OPT_SATISFIED, "satisfied", 0, "print targets satisfied intervals");
 	addOption (OPT_VIOLATED, "violated", 0, "print targets violated intervals");
@@ -242,6 +245,9 @@ int PrintTarget::processOption (int in_opt)
 			break;
 		case OPT_VIOLATED:
 			printViolated = true;
+			break;
+		case OPT_VISIBLE_FOR:
+			printVisible = atof (optarg);
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -425,6 +431,20 @@ void PrintTarget::printTarget (rts2db::Target *target)
 				for (rts2db::interval_arr_t::iterator in = si.begin (); in != si.end (); in++)
 					std::cout << " from " << Timestamp (in->first) << " to " << Timestamp (in->second) << std::endl;
 			}
+		}
+		// print how long target will be visible
+		if (!isnan (printVisible))
+		{
+			time_t now;
+			time (&now);
+			time_t to = now + printVisible;
+			double visible = target->getSatisfiedDuration (now, to, 0, 60);
+			if (isnan (visible))
+				std::cout << "satisfied constraints for full specified interval" << std::endl;
+			else if (visible == now)
+				std::cout << "is not visible during from start of the specified interval" << std::endl;
+			else	
+				std::cout << "satisifed constraints for " << TimeDiff (visible - now) << " (" << (visible - now) << ") seconds, until " << Timestamp (visible) << std::endl;
 		}
 		// print observations..
 		if (printObservations)
