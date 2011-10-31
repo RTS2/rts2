@@ -650,6 +650,15 @@ class Target:public Rts2Target
 		 */
 		void getSatisfiedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
 
+		/**
+		 * Return length (in seconds) of intervale when constraints will be satisfied. Check start
+		 * at time from + length.
+		 *
+		 * @param from    ctime (seconds from 1/1/1970) of the interval to check from
+		 * @param to      ctime (seconds from 1/1/1970) of check interval ends
+		 * @param length  length of observing script in seconds
+		 * @param step    step (in seconds) for steppign through check
+		 */
 		double getSatisfiedDuration (double from, double to, double length, double step);
 
 		void getViolatedIntervals (time_t from, time_t to, int length, int step, interval_arr_t &satisfiedIntervals);
