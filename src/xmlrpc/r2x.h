@@ -78,6 +78,8 @@
 
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
+#define R2X_DEVICES_VALUES_PRETTYLIST "rts2.devices.values.prettylist"
+
 /**
  * Return RTS2 variable. Two  parameters must be specified, with following meaning:
  *
@@ -86,6 +88,13 @@
  */
 #define R2X_VALUE_GET                 "rts2.value.get"
 
+/**
+ * Return pretty printed RTS2 variable. Two  parameters must be specified, with following meaning:
+ *
+ * @param device Name of device for which variable will be set.
+ * @param var    Name of variable which will be set.
+ */
+#define R2X_VALUE_PRETTY              "rts2.value.pretty"
 
 /**
  * Set RTS2 variable. Three parameters must be specified, with following meaning:

@@ -323,6 +323,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		DeviceState deviceState;
 		ListValues listValues;
 		ListValuesDevice listValuesDevice;
+		ListPrettyValuesDevice listPrettValuesDecice;
 		GetValue _getValue;
 		SetValue setValue;
 		SetValueByType setValueByType;

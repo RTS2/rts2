@@ -304,6 +304,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   deviceState (this),
   listValues (this),
   listValuesDevice (this),
+  listPrettValuesDecice (this),
   _getValue (this),
   setValue (this),
   setValueByType (this),
@@ -526,7 +527,7 @@ void XmlRpcd::sendBB ()
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		XmlRpcValue connData;
-		connectionValuesToXmlRpc (*iter, connData);
+		connectionValuesToXmlRpc (*iter, connData, false);
 		data[(*iter)->getName ()] = connData;
 	}
 

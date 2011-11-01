@@ -1161,7 +1161,8 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 						cs << ",";
 					script.setTarget (cam->c_str (), tar);
 					double d = script.getExpectedDuration ();
-					cs << "{\"" << *cam << "\":[\"" << script_buf << "\"," << d << "]}";
+					int e = script.getExpectedImages ();
+					cs << "{\"" << *cam << "\":[\"" << script_buf << "\"," << d << "," << e << "]}";
 					if (d > md)
 						md = d;  
 				}

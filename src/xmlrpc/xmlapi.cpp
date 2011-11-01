@@ -22,6 +22,8 @@
 
 #include "xmlstream.h"
 
+#include "../../lib/rts2/rts2displayvalue.h"
+
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/recvals.h"
 #include "../../lib/rts2db/records.h"
@@ -42,10 +44,7 @@
 
 using namespace rts2xmlrpc;
 
-/**
- * Transform connection values to XMLRPC.
- */
-void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
+void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result, bool pretty)
 {
 	int i = 0;
 	for (rts2core::ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
@@ -56,48 +55,91 @@ void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
 
 		rts2core::Value *val = *variter;
 
-		switch (val->getValueExtType ())
+		if (pretty)
 		{
-			case RTS2_VALUE_RECTANGLE:
-				retVar["value"] = (*variter)->getDisplayValue ();
-				break;
-			default:
-				switch (val->getValueBaseType ())
+			std::ostringstream _os;
+			switch (val->getValueType ())
+			{
+				case RTS2_VALUE_RADEC:
 				{
-					case RTS2_VALUE_INTEGER:
-						int int_val;
-						int_val = (*variter)->getValueInteger ();
-						retVar["value"] = int_val;
-						break;
-					case RTS2_VALUE_DOUBLE:
-						double dbl_value;
-						dbl_value = (*variter)->getValueDouble ();
-						retVar["value"] = dbl_value;
-						break;
-					case RTS2_VALUE_FLOAT:
-						float float_val;
-						float_val = (*variter)->getValueFloat ();
-						retVar["value"] = float_val;
-						break;
-					case RTS2_VALUE_BOOL:
-						bool bool_val;
-						bool_val = ((rts2core::ValueBool*)(*variter))->getValueBool ();
-						retVar["value"] = bool_val;
-						break;
-					case RTS2_VALUE_LONGINT:
-						int_val = (*variter)->getValueLong ();
-						retVar["value"] = int_val;
-						break;
-					case RTS2_VALUE_TIME:
-						struct tm tm_s;
-						long usec;
-						((rts2core::ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
-						retVar["value"] = XmlRpcValue (&tm_s);
-						break;
-					default:
-						retVar["value"] = (*variter)->getValue ();
-						break;
+					if (val->getValueDisplayType () == RTS2_DT_DEGREES)
+					{
+						LibnovaDeg v_rd (((rts2core::ValueRaDec *) val)->getRa ());
+						LibnovaDeg v_dd (((rts2core::ValueRaDec *) val)->getDec ());
+						_os << v_rd << " " << v_dd;
+					}
+					else if (val->getValueDisplayType () == RTS2_DT_DEG_DIST_180)
+					{
+						LibnovaDeg180 v_rd (((rts2core::ValueRaDec *) val)->getRa ());
+						LibnovaDeg90 v_dd (((rts2core::ValueRaDec *) val)->getDec ());
+						_os << v_rd << " " << v_dd;
+					}
+					else 
+					{
+						LibnovaRaDec v_radec (((rts2core::ValueRaDec *) val)->getRa (), ((rts2core::ValueRaDec *) val)->getDec ());
+						_os << v_radec;
+					}
+					break;
+				}	
+				case RTS2_VALUE_ALTAZ:
+				{
+					LibnovaHrz hrz (((rts2core::ValueAltAz *) val)->getAlt (), ((rts2core::ValueAltAz *) val)->getAz ());
+					_os << hrz;
+					break;
 				}
+				case RTS2_VALUE_SELECTION:
+					_os << ((rts2core::ValueSelection *) val)->getSelName ();
+					break;
+				default:
+					_os << getDisplayValue (val);
+			}
+			retVar["value"] = _os.str ();
+		}
+		else
+		{
+			switch (val->getValueExtType ())
+			{
+				case RTS2_VALUE_RECTANGLE:
+					retVar["value"] = (*variter)->getDisplayValue ();
+					break;
+				default:
+					switch (val->getValueBaseType ())
+					{
+						case RTS2_VALUE_INTEGER:
+							int int_val;
+							int_val = (*variter)->getValueInteger ();
+							retVar["value"] = int_val;
+							break;
+						case RTS2_VALUE_DOUBLE:
+							double dbl_value;
+							dbl_value = (*variter)->getValueDouble ();
+							retVar["value"] = dbl_value;
+							break;
+						case RTS2_VALUE_FLOAT:
+							float float_val;
+							float_val = (*variter)->getValueFloat ();
+							retVar["value"] = float_val;
+							break;
+						case RTS2_VALUE_BOOL:
+							bool bool_val;
+							bool_val = ((rts2core::ValueBool*)(*variter))->getValueBool ();
+							retVar["value"] = bool_val;
+							break;
+						case RTS2_VALUE_LONGINT:
+							int_val = (*variter)->getValueLong ();
+							retVar["value"] = int_val;
+							break;
+						case RTS2_VALUE_TIME:
+							struct tm tm_s;
+							long usec;
+							((rts2core::ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
+							retVar["value"] = XmlRpcValue (&tm_s);
+							break;
+						default:
+							retVar["value"] = (*variter)->getValue ();
+							break;
+					}
+			}
 		}
 		result[i] = retVar;
 	}
@@ -322,7 +364,69 @@ void ListValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
 		}
-		connectionValuesToXmlRpc (conn, result);
+		connectionValuesToXmlRpc (conn, result, false);
+	}
+	// print from all
+	else
+	{
+		connections_t::iterator iter;
+		rts2core::ValueVector::iterator variter;
+		for (iter = serv->getCentraldConns ()->begin (); iter != serv->getCentraldConns ()->end (); iter++)
+		{
+			conn = *iter;
+			std::string deviceName = (*iter)->getName ();
+			// filter device list
+			int v;
+			for (v = 0; v < params.size (); v++)
+			{
+				if (((std::string) params[v]) == deviceName)
+					break;
+			}
+			if (v == params.size ())
+				continue;
+			for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+			{
+				result[i] = deviceName + "." + (*variter)->getName ();
+			}
+		}
+		for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
+		{
+			conn = *iter;
+			std::string deviceName = (*iter)->getName ();
+			// filter device list
+			int v;
+			for (v = 0; v < params.size (); v++)
+			{
+				if (((std::string) params[v]) == deviceName)
+					break;
+			}
+			if (v == params.size ())
+				continue;
+			for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+			{
+				result[i] = deviceName + "." + (*variter)->getName ();
+			}
+		}
+	}
+}
+
+void ListPrettyValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+{
+	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	Rts2Conn *conn;
+	int i = 0;
+	// print results for a single device..
+	if (params.size() == 1)
+	{
+		if (((std::string) params[0]).length () == 0)
+			conn = serv->getSingleCentralConn ();
+		else
+			conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+		if (!conn)
+		{
+			throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
+		}
+		connectionValuesToXmlRpc (conn, result, true);
 	}
 	// print from all
 	else
@@ -416,6 +520,32 @@ void GetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 			result = val->getValue ();
 			break;
 	}
+}
+
+void GetPrettyValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+{
+	std::string devName = params[0];
+	std::string valueName = params[1];
+	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	Rts2Conn *conn;
+	if (devName.length () == 0)
+	{
+		conn = serv->getSingleCentralConn ();
+	}
+	else
+	{
+		conn = serv->getOpenConnection (devName.c_str ());
+	}
+	if (!conn)
+	{
+		throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+	}
+	rts2core::Value *val = conn->getValue (valueName.c_str ());
+	if (!val)
+	{
+		throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
+	}
+	result = getDisplayValue (val);
 }
 
 void SessionMethodValue::setXmlValutRts2 (Rts2Conn *conn, std::string valueName, XmlRpcValue &x_val)

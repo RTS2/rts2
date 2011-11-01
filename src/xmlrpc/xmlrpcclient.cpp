@@ -71,7 +71,7 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TARGET_LIST, HTTP_GET, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, GET_STATE, GET_MASTER_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES_PRETTY, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TARGET_LIST, HTTP_GET, TEST, NOOP} xmlOp;
 
 		const char *masterStateQuery;
 
@@ -158,7 +158,7 @@ class Client: public Rts2CliApp
 		/**
 		 * Return variables. Variables names are in args.
 		 */
-		int getVariables ();
+		int getVariables (bool pretty);
 
 		/**
 		 * Return device types. Device names are in args.
@@ -445,7 +445,7 @@ int Client::schedTicketInfo (int ticketId)
 	return runXmlMethod (R2X_TICKET_INFO, oneArg, result);	
 }
 
-int Client::getVariables ()
+int Client::getVariables (bool pretty)
 {
 	int e = 0;
 	// store results per device
@@ -473,7 +473,7 @@ int Client::getVariables ()
 		{
 			XmlRpcValue oneArg, result;
 			oneArg = a;
-			int ret = runXmlMethod (R2X_DEVICES_VALUES_LIST, oneArg, result, false);
+			int ret = runXmlMethod (pretty ? R2X_DEVICES_VALUES_PRETTYLIST : R2X_DEVICES_VALUES_LIST, oneArg, result, false);
 			if (ret)
 			{
 				e++;
@@ -671,6 +671,14 @@ int Client::processOption (int opt)
 			xmlOp = GET_VARIABLES;
                         getVariablesPrintNames = false;
 			break;
+		case 'p':
+			xmlOp = GET_VARIABLES_PRETTY;
+                        getVariablesPrintNames = true;
+			break;
+		case 'P':
+			xmlOp = GET_VARIABLES_PRETTY;
+                        getVariablesPrintNames = false;
+			break;
 		case 't':
 			xmlOp = GET_TYPES;
 			break;
@@ -707,7 +715,7 @@ int Client::processArgs (const char *arg)
 		masterStateQuery = arg;
 		return 0;
 	}
-	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET || xmlOp == TARGET_LIST))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == GET_VARIABLES_PRETTY || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET || xmlOp == TARGET_LIST))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -748,7 +756,9 @@ int Client::doProcessing ()
 		case SCHED_TICKET:
 			return schedTicketInfo (schedTicket);
 		case GET_VARIABLES:
-			return getVariables ();
+			return getVariables (false);
+		case GET_VARIABLES_PRETTY:
+			return getVariables (true);
 		case GET_TYPES:
 			return getTypes ();
 		case GET_MESSAGES:
@@ -843,8 +853,10 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption ('S', NULL, 0, "get state of device(s) specified as argument(s)");
 	addOption ('i', NULL, 0, "increment variable(s) specified as argument(s)");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
-        addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
-	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
+	addOption ('P', NULL, 0, "pretty print value(s) specified as argument(s), separated with new line");
+	addOption ('p', NULL, 0, "pretty print value(s) specified as argument(s)");
+        addOption ('G', NULL, 0, "get value(s) specified as arguments, print them separated with new line");
+	addOption ('g', NULL, 0, "get value(s) specified as arguments");
 }
 
 Client::~Client (void)

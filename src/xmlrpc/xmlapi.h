@@ -27,7 +27,10 @@
 
 using namespace XmlRpc;
 
-void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result);
+/**
+ * Transform connection values to XMLRPC.
+ */
+void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result, bool pretty);
 
 /**
  * Represents session methods. Those must be executed either with user name and
@@ -202,22 +205,18 @@ class DeviceState: public SessionMethod
  */
 class ListValues: public SessionMethod
 {
-	protected:
-		ListValues (const char *in_name, XmlRpcServer* s): SessionMethod (in_name, s)
-		{
-		}
-
 	public:
-		ListValues (XmlRpcServer* s): SessionMethod (R2X_VALUES_LIST, s)
-		{
-		}
+		ListValues (XmlRpcServer* s): SessionMethod (R2X_VALUES_LIST, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
 
 		std::string help ()
 		{
-			return std::string ("Returns name of devices conencted to the system");
+			return std::string ("Returns name of devices connected to the system");
 		}
+
+	protected:
+		ListValues (const char *in_name, XmlRpcServer* s): SessionMethod (in_name, s) {}
 };
 
 /**
@@ -230,9 +229,20 @@ class ListValues: public SessionMethod
 class ListValuesDevice: public ListValues
 {
 	public:
-		ListValuesDevice (XmlRpcServer* s): ListValues (R2X_DEVICES_VALUES_LIST, s)
+		ListValuesDevice (XmlRpcServer* s): ListValues (R2X_DEVICES_VALUES_LIST, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
+
+		std::string help ()
 		{
+			return std::string ("Returns name of devices conencted to the system for given device(s)");
 		}
+};
+
+class ListPrettyValuesDevice: public ListValues
+{
+	public:
+		ListPrettyValuesDevice (XmlRpcServer* s): ListValues (R2X_DEVICES_VALUES_PRETTYLIST, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
 
@@ -246,6 +256,14 @@ class GetValue: public SessionMethod
 {
 	public:
 		GetValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_GET, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
+};
+
+class GetPrettyValue: public SessionMethod
+{
+	public:
+		GetPrettyValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_PRETTY, s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result);
 };
