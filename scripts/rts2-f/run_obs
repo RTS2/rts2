@@ -14,21 +14,9 @@ if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 ) then
 	set tar_id=3
 	rts2-logcom "Run FWHM focus script. Abort with nabort."
 else	 
-	set tar_id=`$xmlrpc -G SEL.next_id`
-	if ( $? != 0 ) then
-		# rts2-logcom "selector is not running, executing seltest to select next targets"
-		# set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
-		# rts2-logcom "selected $tar_id"
-		rts2-logcom "selector is not running!!"
-		set tar_id=-1
-	endif
+	set err_prinout=0
 
-	if ( $tar_id <= 0 ) then
-		rts2-logcom "Automatic selector is not enabled. I'll wait 30 seconds, then repeat the test."
-		rts2-logcom "Please fill the queues if you believe that something should be observed,"
-		rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
-		rts2-logcom "is fine"
-	endif
+	set tar_id=-1
 
 	while ( $tar_id <= 0 )
 		if ( -e $rts2abort ) then
@@ -36,28 +24,38 @@ else
 			exit
 		endif
 
-		$xmlrpc -c SEL.next
 		set tar_id=`$xmlrpc -G SEL.next_id`
 		if ( $? != 0 ) then
-			rts2-logcom "selector/rts2-f is not running"
+			# rts2-logcom "selector is not running, executing seltest to select next targets"
+			# set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
+			# rts2-logcom "selected $tar_id"
+			if ( $err_prinout != 1 ) then
+				rts2-logcom "selector/rts2-f is not running!!"
+				set err_prinout=1
+			endif	
 			set tar_id=-1
+		else
+			if ( $tar_id <= 0 ) then
+				if ( $err_prinout != 2 ) then
+					rts2-logcom "Automatic selector is not enabled. I'll repeat test every 5 seconds."
+					rts2-logcom "Please fill the queues if you believe that something should be observed,"
+					rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
+					rts2-logcom "is fine"
+					set err_prinout=2
+				endif	
+			endif
 		endif
-	
+
 		if ( $tar_id <= 0 ) then
-			rts2-logcom "waiting for 30 seconds (target not selected..)"
-			sleep 30
-		endif
+			sleep 5
+			$xmlrpc -c SEL.next
+		endif	
 	end
 endif	
 
 $xmlrpc -c SEL.next
 
 if ( $last_tar_id != $tar_id ) then
-	$xmlrpc -c "TELE.move $ra $dec"
-
-	$xmlrpc -s TELE.OFFS "0 0"
-	$xmlrpc -s TELE.CORR_ "0 0"
-
 	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
 	echo $tar_id $obs_id > $lasttarget
 	@ imgid=1
@@ -92,7 +90,38 @@ if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 )
 	echo -n "Track on"
 	tele trackon
 	tele domeon
-	echo -n "sending coordinates $ra $dec 2000.0 .. "
+
+	set oldoffs=`$xmlrpc -G TELE.OFFS`
+
+	set rra=`echo "$oldoffs" | awk '{printf "%d",$1 * 3600.0;}'`
+	set rdec=`echo "$oldoffs" | awk '{printf "%d",$2 * 3600.0;}'`
+	echo "initial offsets $rra $rdec"
+	if ( $rra > -30 && $rra < 30 ) then
+		set rra = 0
+	endif
+	if ( $rdec > -30 && $rdec < 30 ) then
+		set rdec = 0
+	endif
+	if ( $rra != 0 || $rdec != 0 ) then
+		# offset by xoff/yoff
+		set xoff=`$xmlrpc -G TELE.offs_x`
+		set yoff=`$xmlrpc -G TELE.offs_y`
+		set tel=`$xmlrpc -G TELE.TEL`
+		set teldec=`echo $tel | awk '{print cos($1*pi/180);}'`
+		set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2/$3;}'`
+		set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
+		rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
+		tele offset $of_ra $of_dec
+		sleep 6
+		rts2-logcom "executing tele set"
+		tele set
+	else
+		rts2-logcom "initial zero offsets, not offseting ($rra $rdec)"
+	endif
+
+	$xmlrpc -c "TELE.move $ra $dec"
+
+	rts2-logcom "sending coordinates $ra $dec 2000.0 .."
 	tele coords $ra $dec 2000.0
 
 	sleep 3
@@ -104,7 +133,7 @@ if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 )
 	# mark end of slew
 	$RTS2/bin/rts2-target --observe $obs_id
 
-	rts2-logcom "marked end of telescope movement"
+	rts2-logcom "moved to $ra $dec 2000.0"
 endif
 
 # rts2-logcom "observing setup finished"

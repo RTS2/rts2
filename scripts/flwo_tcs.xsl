@@ -96,20 +96,11 @@ if ( $continue == 1 ) then
 	set odec=`echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
 	if ( $cname == $name ) then
 		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
-		  	set rra=$ora
-			set rdec=$odec
-			if ( $rra &gt; -2 &amp;&amp; $rra &lt; 2 ) then
-				set rra = 0
-			endif
-			if ( $rdec &gt; -2 &amp;&amp; $rdec &lt; 2 ) then
-				set rdec = 0
-			endif
-
 			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
 			if ( $apply == 0 ) then
-        			rts2-logcom "corrections disabled, do not apply correction $rra $rdec ($ora_l $odec_l) img_num $imgnum"	
+        			rts2-logcom "corrections disabled, do not apply correction $ora $odec ($ora_l $odec_l) img_num $imgnum"	
 			else
 
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
@@ -119,27 +110,42 @@ if ( $continue == 1 ) then
 				set currg=`$xmlrpc --quiet -G TELE.autog`
 
 				if ( $currg == '1' ) then
-					rts2-logcom "autoguider is $currg - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum"
+					rts2-logcom "autoguider is $currg - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum"
 				else
 					if ( $imgnum &lt;= $lastoffimage ) then
-						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+						rts2-logcom "older or same image received - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 					else
 						if ( $tar_id == $last_offtarget ) then
-							$xmlrpc -s TELE.CORR_ -- "$ora_l\" $odec_l\""
+							$xmlrpc -s TELE.CORR_ -- "${ora_l}s ${odec_l}s"
+							$RTS2/bin/jt '/api/cmd?d=TELE&amp;c=info'
+							set toffs=`$xmlrpc -G TELE.total_offsets`
+							set rra=`echo "$toffs" | awk '{printf "%d",$1 * -3600.0;}'`
+							set rdec=`echo "$toffs" | awk '{printf "%d",$2 * -3600.0;}'`
+							echo "total offsets $toffs ($rra $rdec)"
+							if ( $rra &gt; -1 &amp;&amp; $rra &lt; 1 ) then
+								set rra = 0
+							endif
+							if ( $rdec &gt; -1 &amp;&amp; $rdec &lt; 1 ) then
+								set rdec = 0
+							endif
+							if ( $rra != 0 || $rdec != 0 ) then
+								rts2-logcom "offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+								tele offset $rra $rdec
+								@ lastoffimage = $imgnum
+							else
+								rts2-logcom "zero offsets, not offseting ($rra $rdec; $ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+							endif
+							if ( ${?lastimage} ) then
+								set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
+								rts2-logcom "setting last $lastoffimage"
+							endif
 						else
-							$xmlrpc -s TELE.OFFS -- "$ora_l\" $odec_l\""
+							rts2-logcom "applying first offsets ($ora_l $odec_l; $xoffs $yoffs) $tar_id $last_offtarget"
+							$xmlrpc -s TELE.OFFS -- "${ora_l}s ${odec_l}s"
+							$xmlrpc -s TELE.CORR_ -- "${ora_l}s ${odec_l}s"
 							set last_offtarget = $tar_id
-						endif
-						if ( $rra != 0 || $rdec != 0 ) then
-							rts2-logcom "offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
-							tele offset $rra $rdec
 							@ lastoffimage = $imgnum
-						else
-							rts2-logcom "zero offsets, not offseting ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
 						endif
-						if ( ${?lastimage} ) then
-							set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
-						endif  
 					endif
 				endif
 			endif
@@ -207,7 +213,7 @@ if ( $continue == 1 ) then
 		xpaset ds9 fits mosaicimage iraf &lt; $lastimage
 		xpaset -p ds9 zoom to fit
 		xpaset -p ds9 scale scope global
-	endif	
+	endif
 	@ imgid ++
 <!--	echo `date +"%D %T.%3N %Z"` 'exposure sequence done' -->
 endif
@@ -237,7 +243,9 @@ endif
 <xsl:template match="set">
 <xsl:if test='@value = "filter"'>
 if ( $continue == 1 ) then
+	echo "before filter"
 	source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
+	echo "after filter"
 endif
 </xsl:if>
 <xsl:if test='@value = "ampcen"'>
