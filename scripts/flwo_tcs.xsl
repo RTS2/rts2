@@ -125,9 +125,9 @@ if ( $continue == 1 ) then
 						rts2-logcom "older or same image received - not offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 					else
 						if ( $tar_id == $last_offtarget ) then
-							$xmlrpc -s TELE.CORR_ -- "$ora_l $odec_l"
+							$xmlrpc -s TELE.CORR_ -- "$ora_l\" $odec_l\""
 						else
-							$xmlrpc -s TELE.OFFS -- "$ora_l $odec_l"
+							$xmlrpc -s TELE.OFFS -- "$ora_l\" $odec_l\""
 							set last_offtarget = $tar_id
 						endif
 						if ( $rra != 0 || $rdec != 0 ) then
@@ -146,7 +146,7 @@ if ( $continue == 1 ) then
 		else
 			rts2-logcom "too big offset $ora_l $odec_l"
 		endif	  	
-<!---	else
+<!--	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	endif
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
@@ -156,8 +156,8 @@ if ( $continue == 1 ) then
 		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
-	else
-		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )"
+<!--	else
+		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )" -->
 	endif
 
 	if ( $autog == 'ON' ) then
@@ -209,7 +209,7 @@ if ( $continue == 1 ) then
 		xpaset -p ds9 scale scope global
 	endif	
 	@ imgid ++
-	echo `date +"%D %T.%3N %Z"` 'exposure sequence done'
+<!--	echo `date +"%D %T.%3N %Z"` 'exposure sequence done' -->
 endif
 <xsl:copy-of select='$abort'/>
 </xsl:template>
@@ -246,8 +246,8 @@ if ( $continue == 1 ) then
 	if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
 		tele ampcen <xsl:value-of select='@operands'/>
 		rts2-logcom 'set ampcen to <xsl:value-of select='@operands'/>'
-	else
-		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it"
+<!--	else
+		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it" -->
 	endif
 endif
 </xsl:if>
@@ -270,12 +270,12 @@ if ( $continue == 1 ) then
 				rts2-logcom "switching guiding to OFF"
 				tele autog OFF
 			endif
-		else
-			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it"
+<!--		else
+			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it" -->
 		endif
 		set autog=<xsl:value-of select='@operands'/>
-	else
-		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request'
+<!--	else
+		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request' -->
 	endif	  	
 endif
 </xsl:if>
