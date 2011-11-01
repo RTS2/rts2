@@ -1,0 +1,64 @@
+#!/bin/bash
+
+filename=$1
+obs_id=$2
+imgid=$3
+
+tmpdir=/tmp/imgproc.$$
+
+echo "log D processing $filename files in $tmpdir"
+echo "tempentry " `echo $tmpdir | sed s#^/tmp/##`
+
+$RTS2/bin/rts2-image -i --camera KCAM --telescope FLWO48 --obsid $obs_id --imgid $imgid $filename
+
+avrg=`$RTS2/bin/rts2-image -s $filename | cut -d' ' -f2`
+echo 'double average "[ADU] average"' $avrg
+
+mkdir $tmpdir
+cp $filename $tmpdir
+
+cd $tmpdir
+fn=`echo $filename|sed 's#.*/##'`
+
+/home/mink/bin/fitssplit $fn opath=$tmpdir
+
+# calculate fwhm
+
+for x in *IM?.fits; do
+	imnum=`echo $x | sed 's#.*IM\(.\)\.fits#\1#'`
+	/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py $x $imnum
+done
+
+scale_low=0.6
+scale_high=0.7
+
+amp=-1
+offs=`rts2-image -p '@POFFS' $fn`
+
+xoffs=0
+yoffs=0
+
+if [ "$offs" = '0 0' ]; then
+	amp=2
+	xoffs=-345
+	yoffs=-345
+elif [ "$offs" = '345 -345' ]; then
+	amp=1
+elif [ "$offs" = '-345 -345' ]; then
+	amp=2
+elif [ "$offs" = '345 345' ]; then
+	amp=3
+elif [ "$offs" = '-345 345' ]; then
+	amp=4
+else
+	echo "log W unknow amp offset $offs, using default (2)"
+	amp=2
+fi
+
+for x in *IM${amp}.fits; do
+	/home/petr/rts2-sys/usr/share/rts2/scripts/astrometry.py $tmpdir $x $xoffs $yoffs $filename $obs_id $imgid
+done
+
+echo "log D removing $tmpdir"
+
+#rm -rf $tmpdir
