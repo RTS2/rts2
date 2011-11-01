@@ -33,18 +33,21 @@ double parseDMS (const char *hptr, double *mul)
 	char *locptr;
 	char *endptr;
 	double ret;					 //to store return value
+	int m_sign;
 
 	if (!(locptr = strdup (hptr)))
 		return rts2_nan ("f");
 
+	*mul = 1;
+
 	if (*locptr == '-')
 	{
 		locptr++;
-		*mul = -1;
+		m_sign = -1;
 	}
 	else
 	{
-		*mul = 1;
+		m_sign = 1;
 	}
 
 	endptr = locptr;
@@ -91,7 +94,7 @@ double parseDMS (const char *hptr, double *mul)
 		if (!*endptr)
 		{
 			errno = 0;
-			return ret;
+			return ret * m_sign;
 		}
 
 		// if we have error in translating first string..
@@ -106,7 +109,7 @@ double parseDMS (const char *hptr, double *mul)
 	}
 
 	errno = 0;
-	return ret;
+	return ret * m_sign;
 }
 
 int parseRaDec (const char *radec, double &ra, double &dec)
