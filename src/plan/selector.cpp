@@ -106,6 +106,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueInteger *next_plan_id;
+		rts2core::ValueTime *selectLength;
 		rts2core::ValueTime *nextTime;
 		rts2core::ValueBool *interrupt;
 
@@ -142,6 +143,12 @@ class SelectorDev:public Rts2DeviceDb
 		void queuePlan (rts2plan::ExecutorQueue *, double t);
 
 		rts2plan::Queues::iterator findQueue (const char *name);
+
+		/**
+		 * Check if selectLength is in future. If it is in past,
+		 * update it.
+		 */
+		void updateSelectLength ();
 };
 
 }
@@ -165,6 +172,9 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (next_plan_id, "next_plan_id", "ID of next plan, if next target is from plan", false);
 	next_plan_id->setValueInteger (-1);
+
+	createValue (selectLength, "select_until", "observations should end by this time", false);
+	selectLength->setValueDouble (NAN);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
@@ -498,6 +508,23 @@ rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
 	return qi;
 }
 
+void SelectorDev::updateSelectLength ()
+{
+	Rts2Conn *centralConn = getSingleCentralConn ();
+	if (centralConn != NULL)
+	{
+		rts2core::Value *night_stop = centralConn->getValue ("night_stop");
+		if (night_stop)
+		{
+			selectLength->setValueDouble (night_stop->getValueDouble ());
+			logStream (MESSAGE_INFO) << "selector assumes night will end at " << Timestamp (selectLength->getValueDouble ()) << sendLog;
+			return;
+		}
+	}
+	logStream (MESSAGE_WARNING) << "centrald not running, setting selection length to tomorrow" << sendLog;
+	selectLength->setValueDouble (getNow () + 86400);
+}
+
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
 {
 	char *name;
@@ -625,8 +652,10 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
-		case SERVERD_DAWN:
+		case SERVERD_EVENING:
+			break;
 		case SERVERD_DUSK:
+		case SERVERD_DAWN:
 			// low latency select to catch right moment for flats
 			idle_select->setValueInteger (30);
 			sendValueAll (idle_select);
@@ -634,12 +663,19 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 		case SERVERD_MORNING | SERVERD_STANDBY:
 		case SERVERD_SOFT_OFF:
 		case SERVERD_HARD_OFF:
-			selEnabled->setValueBool (true);
 			break;
 		case SERVERD_NIGHT:
 			idle_select->setValueInteger (night_idle_select->getValueInteger ());
 			sendValueAll (idle_select);
 			break;
+	}
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	{
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
+			break;
+		default:
+			updateSelectLength ();
 	}
 	updateNext ();
 	Rts2DeviceDb::changeMasterState (old_state, new_state);
