@@ -35,25 +35,6 @@ namespace rts2sensord
  */
 class FramWeather: public SensorWeather
 {
-	private:
-		// measured values
-		rts2core::ValueFloat *windSpeed;
-		rts2core::ValueBool *rain;
-		rts2core::ValueSelection *watch;
-
-		rts2core::ValueFloat *maxWindSpeed;
-		rts2core::ValueInteger *connUpdateSep;
-
-		rts2core::ValueInteger *timeoutConn;
-		rts2core::ValueInteger *timeoutRain;
-		rts2core::ValueInteger *timeoutWindspeed;
-
-		ConnFramWeather *weatherConn;
-
-	protected:
-		virtual int processOption (int _opt);
-		virtual int init ();
-
 	public:
 		FramWeather (int args, char **argv);
 
@@ -68,6 +49,27 @@ class FramWeather: public SensorWeather
 		 * @param _date       Date and time of last weather measurement.
 		 */
 		void setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date);
+
+	protected:
+		virtual int processOption (int _opt);
+		virtual int init ();
+
+		virtual bool isGoodWeather ();
+
+	private:
+		// measured values
+		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueBool *rain;
+		rts2core::ValueSelection *watch;
+
+		rts2core::ValueFloat *maxWindSpeed;
+		rts2core::ValueInteger *connUpdateSep;
+
+		rts2core::ValueInteger *timeoutConn;
+		rts2core::ValueInteger *timeoutRain;
+		rts2core::ValueInteger *timeoutWindspeed;
+
+		ConnFramWeather *weatherConn;
 };
 
 }

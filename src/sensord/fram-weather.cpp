@@ -79,6 +79,13 @@ int FramWeather::info ()
 	return (getLastInfoTime () < connUpdateSep->getValueInteger ()) ? 0 : -1;
 }
 
+bool FramWeather::isGoodWeather ()
+{
+	if (getLastInfoTime () > connUpdateSep->getValueInteger ())
+		return false;
+	return SensorWeather::isGoodWeather ();	
+}
+
 void FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date)
 {
 	struct tm _tm;
