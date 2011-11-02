@@ -28,10 +28,11 @@
 
 using namespace rts2plan;
 
-Selector::Selector (rts2core::ConnNotify *_notifyConn)
+Selector::Selector (rts2core::ConnNotify *_notifyConn, Rts2CamList *cameras)
 {
 	observer = NULL;
 	notifyConn = _notifyConn;
+	cameraList = cameras;
 }
 
 Selector::~Selector (void)
@@ -67,7 +68,7 @@ void Selector::init ()
 	}
 }
 
-int Selector::selectNext (int masterState, double az1, double az2)
+int Selector::selectNext (int masterState, double length)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
@@ -78,7 +79,7 @@ int Selector::selectNext (int masterState, double az1, double az2)
 	switch (masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_NIGHT:
-			return selectNextNight (0, false, az1, az2);
+			return selectNextNight (0, false, length);
 			break;
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
@@ -95,7 +96,7 @@ int Selector::selectNext (int masterState, double az1, double az2)
 				else if (sun_hrz.alt < flat_sun_min)
 				{
 					// special case - select GRBs, which are new (=targets with priority higher then 1500)
-					ret = selectNextNight (1500, false, az1, az2);
+					ret = selectNextNight (1500, false, length);
 					if (ret != -1)
 						return ret;
 				}
@@ -271,7 +272,7 @@ void Selector::findNewTargets ()
 	EXEC SQL CLOSE findnewtargets;
 };
 
-int Selector::selectNextNight (int in_bonusLimit, bool verbose, double az1, double az2)
+int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 {
 	// search for new observation targets..
 	findNewTargets ();
@@ -297,12 +298,14 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double az1, doub
 	for (target_list = possibleTargets.begin (); target_list != possibleTargets.end (); target_list++)
 	{
 		rts2db::Target *tar = (*target_list)->target;
-		if (!isnan (az1) && !isnan (az2))
+		if (cameraList && !isnan (length))
 		{
-			struct ln_hrz_posn hrz;
-			tar->getAltAz (&hrz, JD);
-			if (hrz.az < az1 || hrz.az > az2)
-				continue;  
+			if (getMaximalScriptDuration (tar, *cameraList) > length)
+			{
+				logStream (MESSAGE_DEBUG) << "script for target " << tar->getTargetName () << " (# " << tar->getTargetID () << ") is too longer than " << length << " seconds, ignoring the target" << sendLog;
+				continue;
+			}
+
 		}
 		if (tar->checkConstraints (JD))
 		{

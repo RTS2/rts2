@@ -58,9 +58,9 @@ class PrintTarget:public Rts2AppDb
 		void printTargetDS9 (rts2db::Target *target);
 
 		struct ln_lnlat_posn *obs;
+		Rts2CamList cameras;
 
 	private:
-		Rts2CamList cameras;
 		std::vector <std::string> scriptCameras;
 		int printExtended;
 		bool printCalTargets;

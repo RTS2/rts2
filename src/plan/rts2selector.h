@@ -23,6 +23,7 @@
 
 #include <algorithm>
 
+#include "../../lib/rts2db/rts2camlist.h"
 #include "../../lib/rts2db/rts2appdb.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2/rts2askchoice.h"
@@ -65,15 +66,21 @@ struct bonusSort: public std::binary_function <TargetEntry *, TargetEntry *, boo
 class Selector
 {
 	public:
-		Selector (rts2core::ConnNotify *_notifyConn = NULL);
+		/**
+		 * Selector constructor.
+		 *
+		 * @param _notifyConn  notification connection
+		 * @param cameras      list of cameras to select from
+		 */
+		Selector (rts2core::ConnNotify *_notifyConn = NULL, Rts2CamList *cameras = NULL);
 		virtual ~ Selector (void);
 
 		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
 		void init ();
 
 		// return next observation..
-		int selectNext (int masterState, double az1 = rts2_nan ("f"), double az2 = rts2_nan ("f"));
-		int selectNextNight (int in_bonusLimit = 0, bool verbose = false, double az1 = rts2_nan ("f"), double az2 = rts2_nan ("f"));
+		int selectNext (int masterState, double length = NAN);
+		int selectNextNight (int in_bonusLimit = 0, bool verbose = false, double length = NAN);
 
 		double getFlatSunMin () { return flat_sun_min; }
 		double getFlatSunMax () { return flat_sun_max; }
@@ -150,6 +157,8 @@ class Selector
 		struct ln_lnlat_posn *observer;
 		double flat_sun_min;
 		double flat_sun_max;
+
+		Rts2CamList *cameraList;
 
 		// available filters for filter command on cameras
 		std::map <std::string, std::vector < std::string > > availableFilters;

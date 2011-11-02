@@ -894,9 +894,9 @@ int Script::getExpectedImages ()
 	return ret;
 }
 
-double getMaximalDuration (Rts2Target *tar, Rts2CamList &cameras)
+double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras)
 {
-  	double md = rts2_nan ("f");
+  	double md = 0;
 	for (Rts2CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
 	{
 		std::string script_buf;

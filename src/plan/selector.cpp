@@ -106,7 +106,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueInteger *next_plan_id;
-		rts2core::ValueTime *selectLength;
+		rts2core::ValueTime *selectUntil;
 		rts2core::ValueTime *nextTime;
 		rts2core::ValueBool *interrupt;
 
@@ -145,7 +145,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2plan::Queues::iterator findQueue (const char *name);
 
 		/**
-		 * Check if selectLength is in future. If it is in past,
+		 * Check if selectUntil is in future. If it is in past,
 		 * update it.
 		 */
 		void updateSelectLength ();
@@ -173,8 +173,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	createValue (next_plan_id, "next_plan_id", "ID of next plan, if next target is from plan", false);
 	next_plan_id->setValueInteger (-1);
 
-	createValue (selectLength, "select_until", "observations should end by this time", false);
-	selectLength->setValueDouble (NAN);
+	createValue (selectUntil, "select_until", "observations should end by this time", false, RTS2_VALUE_WRITABLE);
+	selectUntil->setValueDouble (NAN);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
@@ -251,7 +251,7 @@ int SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new rts2plan::Selector (notifyConn);
+	sel = new rts2plan::Selector (notifyConn, &cameras);
 
 	sel->setObserver (observer);
 	sel->init ();
@@ -360,6 +360,10 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
+		double selectLength = selectUntil->getValueDouble ();
+		if (!isnan (selectLength))
+			selectLength -= getNow ();
+
 	 	if (getMasterState () == SERVERD_NIGHT && lastQueue != NULL)
 		{
 			int id = -1;
@@ -368,7 +372,7 @@ int SelectorDev::selectNext ()
 			rts2plan::Queues::iterator iter;
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
-				iter->filter (getNow ());
+				iter->filter (getNow (), selectLength);
 				bool hard;
 				id = iter->selectNextObservation (next_pid, hard);
 				if (id >= 0)
@@ -384,8 +388,8 @@ int SelectorDev::selectNext ()
 		}
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
-		{	
-			int id = sel->selectNext (getMasterState ());
+		{
+			int id = sel->selectNext (getMasterState (), selectLength);
 			logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
 			return id;
 		}
@@ -510,19 +514,21 @@ rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
 
 void SelectorDev::updateSelectLength ()
 {
+	if (selectUntil->getValueDouble () > getNow ())
+		return;
 	Rts2Conn *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
 	{
 		rts2core::Value *night_stop = centralConn->getValue ("night_stop");
 		if (night_stop)
 		{
-			selectLength->setValueDouble (night_stop->getValueDouble ());
-			logStream (MESSAGE_INFO) << "selector assumes night will end at " << Timestamp (selectLength->getValueDouble ()) << sendLog;
+			selectUntil->setValueDouble (night_stop->getValueDouble ());
+			logStream (MESSAGE_INFO) << "selector assumes night will end at " << Timestamp (selectUntil->getValueDouble ()) << sendLog;
 			return;
 		}
 	}
 	logStream (MESSAGE_WARNING) << "centrald not running, setting selection length to tomorrow" << sendLog;
-	selectLength->setValueDouble (getNow () + 86400);
+	selectUntil->setValueDouble (getNow () + 86400);
 }
 
 int SelectorDev::commandAuthorized (Rts2Conn * conn)
@@ -652,8 +658,6 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
-		case SERVERD_EVENING:
-			break;
 		case SERVERD_DUSK:
 		case SERVERD_DAWN:
 			// low latency select to catch right moment for flats

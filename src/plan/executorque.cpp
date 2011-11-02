@@ -130,25 +130,15 @@ bool QueuedTarget::notExpired (double now)
 
 double TargetQueue::getMaximalDuration (rts2db::Target *tar)
 {
-	double md = 0;
-	for (Rts2CamList::iterator cam = master->cameras.begin (); cam != master->cameras.end (); cam++)
+	try
 	{
-		try
-		{
-			std::string script_buf;
-			rts2script::Script script;
-			tar->getScript (cam->c_str(), script_buf);
-			script.setTarget (cam->c_str (), tar);
-			double d = script.getExpectedDuration ();
-			if (d > md)
-				md = d;  
-		}
-		catch (rts2core::Error &er)
-		{
-			logStream (MESSAGE_ERROR) << "cannot parsing script for camera " << *cam << ": " << er << sendLog;
-		}
+		return getMaximalScriptDuration (tar, master->cameras);
 	}
-	return md;
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+	}
+	return NAN;
 }
 
 void TargetQueue::beforeChange (double now)
@@ -200,10 +190,10 @@ void TargetQueue::sortQueue (double now)
 	}
 }
 
-void TargetQueue::filter (double now)
+void TargetQueue::filter (double now, double maxLength)
 {
 	filterExpired (now);
-	filterBelowHorizon (now);
+	filterUnobservable (now, maxLength);
 	updateVals ();
 }
 
@@ -370,7 +360,7 @@ void TargetQueue::filterExpired (double now)
 	}
 }
 
-void TargetQueue::filterBelowHorizon (double now)
+void TargetQueue::filterUnobservable (double now, double maxLength)
 {
 	if (!empty ())
 	{
@@ -382,15 +372,30 @@ void TargetQueue::filterBelowHorizon (double now)
 		{
 			// isAboveHorizon changes jd parameter - we would like to keep the current time
 		  	double tjd = JD;
-			if (isAboveHorizon (*iter, tjd))
-				return;
+			if (isnan (maxLength))
+			{
+				if (isAboveHorizon (*iter, tjd))
+					return;
+			}
+			else
+			{
+				if (cameras == NULL)
+				{
+					cameras = new Rts2CamList ();
+					cameras->load ();
+				}
+				// calculate target script length..
+				double tl = getMaximalScriptDuration (iter->target, *cameras);
+				if (tl > maxLength && isAboveHorizon (*iter, tjd))
+					return;
+			}	
 
 			if (getSkipBelowHorizon ())
 			{
 				if (firsttar == NULL)
 					firsttar = iter->target;
 
-				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " below horizon" << sendLog;
+				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable" << sendLog;
 
 				push_back (*iter);
 				iter = erase (iter);
@@ -432,6 +437,7 @@ ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln
 {
 	std::string sn (name);
 	currentTarget = NULL;
+	timerAdded = NAN;
 
 	int read_only_fl = read_only ? 0 : RTS2_VALUE_WRITABLE;
 
@@ -510,7 +516,6 @@ void ExecutorQueue::clearNext ()
 
 int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
 {
-	removeTimers ();
 	if (queueEnabled->getValueBool () == false)
 		return -1;
 	if (size () > 0)
@@ -535,18 +540,22 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
 		}
 		else
 		{
-			double t = now;
+			double t = now + 60;
 			// add timers..
 			double t_start = front ().t_start;
-			if (!isnan (t_start) && t_start > t)
+			if (!isnan (t_start) && (isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
 				master->addTimer (t_start - t, new Rts2Event (EVENT_NEXT_START));
+				timerAdded = t_start;
 			}
 			else
 			{
 				double t_end = front ().t_end;
-				if (!isnan (t_end) && t_end > t)
+				if (!isnan (t_end) && (isnan (timerAdded) || t_end != timerAdded) && t_end > t)
+				{
 					master->addTimer (t_end - t, new Rts2Event (EVENT_NEXT_END));
+					timerAdded = t_end;
+				}
 			}
 
 		}
@@ -663,12 +672,6 @@ void ExecutorQueue::updateVals ()
 	master->sendValueAll (nextPlanIds);
 	master->sendValueAll (nextHard);
 	master->sendValueAll (queueEntry);
-}
-
-void ExecutorQueue::removeTimers ()
-{
-	master->deleteTimers (EVENT_NEXT_START);
-	master->deleteTimers (EVENT_NEXT_END);
 }
 
 ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &iter, const int reason)

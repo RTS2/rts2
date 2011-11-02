@@ -109,6 +109,12 @@ class TargetQueue:public std::list <QueuedTarget>
 		{
 			observer = _observer;
 			master = _master;
+			cameras = NULL;
+		}
+
+		~TargetQueue ()
+		{
+			delete cameras;
 		}
 
 		const TargetQueue::iterator findTarget (rts2db::Target *tar);
@@ -133,8 +139,10 @@ class TargetQueue:public std::list <QueuedTarget>
 
 		/**
 		 * Runs queue filter, remove expired observations.
+		 *
+		 * @param maxLength   maximal allowed length of observation
 		 */
-		void filter (double now);
+		void filter (double now, double maxLength = NAN);
 
 		/**
 		 * Update values from the target list. Must be called after queue content changed.
@@ -176,10 +184,12 @@ class TargetQueue:public std::list <QueuedTarget>
 		 */
 		void filterExpired (double now);
 
-		// filter or skip observations below horizon
-		// if skipBelowHorizon is set to false (default), remove observations which are currently
-		// below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
-		void filterBelowHorizon (double now);
+		/*
+		 * Filter or skip observations which are not observable at the moment.
+		 * if skipBelowHorizon is set to false (default), remove observations which are currently
+		 * below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		 */
+		void filterUnobservable (double now, double maxLength = NAN);
 
 		/**
 		 * Remove target from queue.
@@ -191,6 +201,9 @@ class TargetQueue:public std::list <QueuedTarget>
 		// return true if its't time to remove first element from the queue. This is usaully when the
 		// second observation next time is before the current time
 		bool frontTimeExpires (double now);
+
+	private:
+		Rts2CamList *cameras;	
 };
 
 class SimulQueueTargets;
@@ -224,7 +237,7 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * Select next valid observation target. As queues might hold targets which are invalid (e.g. start date of observation
 		 * is in future, object is below horizon,..), can return failure even if queue is not empty.
-		 *
+		 * 
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
 		int selectNextObservation (int &pid, bool &hard);
@@ -294,8 +307,7 @@ class ExecutorQueue:public TargetQueue
 		rts2core::ValueBool *removeAfterExecution;
 		rts2core::ValueBool *queueEnabled;
 
-		// remove timers set by targets in queue
-		void removeTimers ();
+		double timerAdded;
 
 		// remove target with debug entry why it was removed from the queue
 		ExecutorQueue::iterator removeEntry (ExecutorQueue::iterator &iter, const int reason);

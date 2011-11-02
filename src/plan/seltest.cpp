@@ -26,6 +26,7 @@
 #define OPT_PRINT_POSSIBLE      OPT_LOCAL + 633
 #define OPT_PRINT_SATISFIED     OPT_LOCAL + 634
 #define OPT_PRINT_DISSATISFIED  OPT_LOCAL + 635
+#define OPT_MAXLENGTH           OPT_LOCAL + 636
 
 namespace rts2plan
 {
@@ -82,13 +83,14 @@ class SelectorApp:public PrintTarget
 
 		int runInteractive ();
 		void disableTargets ();
+		double maxLength;
 };
 
 }
 
 using namespace rts2plan;
 
-SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv),sel()
+SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv),sel(NULL, &cameras)
 {
 	addOption (OPT_FILTERS, "available-filters", 1, "available filters for given camera. Camera name is separated with space, filters with :");
 	addOption (OPT_FILTER_FILE, "filter-file", 1, "available filter for camera and file separated with :");
@@ -96,6 +98,9 @@ SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_
 
 	verbosity = 0;
 	addOption ('v', NULL, 0, "increase verbosity");
+
+	addOption (OPT_MAXLENGTH, "max-length", 1, "maximal allowed length");
+	maxLength = NAN;
 
 	printFilter = NONE;
 	addOption (OPT_PRINT_SATISFIED, "print-satisfied", 0, "print all available targets satisfiing observing conditions, ordered by priority");
@@ -133,6 +138,9 @@ int SelectorApp::processOption (int opt)
 				return -1;  
 			printFilter = DISSATISIFIED;
 			break;
+		case OPT_MAXLENGTH:
+			maxLength = atof (optarg);
+			break;	
 		case OPT_FILTERS:
 			sel.parseFilterOption (optarg);
 			break;
@@ -173,7 +181,16 @@ int SelectorApp::doProcessing ()
 	sel.setObserver (observer);
 	sel.init ();
 
-	next_tar = sel.selectNextNight (0, verbosity);
+	next_tar = sel.selectNextNight (0, verbosity, maxLength);
+
+	if (next_tar < 0)
+	{
+		if (!isnan (maxLength))
+			std::cout << "cannot find any possible targets with maximal length " << TimeDiff (maxLength) << std::endl;
+		else
+			std::cout << "cannot find any possible targets" << std::endl;
+		return -1;	
+	}
 
 	if (printFilter != NONE)
 	  	sel.printPossible (std::cout, PrintFilter (printFilter, ln_get_julian_from_sys ()));
