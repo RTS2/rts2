@@ -125,8 +125,8 @@ if __name__ == '__main__':
     ret=a.run(scale=0.67,ra=ra,dec=dec)
 
     if ret:
-	    raorig=dms.parseDMS(ra)*15.0
-	    decorig=dms.parseDMS(dec)
+	    raorig=ff[0].header['CRVAL1']
+	    decorig=ff[0].header['CRVAL2']
 
 	    raastr=float(ret[0])*15.0
 	    decastr=float(ret[1])
