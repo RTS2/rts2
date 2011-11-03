@@ -278,7 +278,7 @@ int Grbd::newGcnGrb (int tar_id)
 	if (queueName)
 	{
 		int num = 0;
-		rts2core::Rts2CommandQueueNow cmd (this, queueName, tar_id);
+		rts2core::Rts2CommandQueueNowOnce cmd (this, queueName, tar_id);
 		queueCommandForType (DEVICE_TYPE_SELECTOR, cmd, &num);
 		if (num == 0)
 		{
