@@ -698,7 +698,7 @@ if test "x"$psql = xyes ; then
   if test $PG_MAJOR -gt 7 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
   fi
-  if test $PG_MAJOR -gt 9 ; then
+  if test $PG_MAJOR -gt 8 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_9, 1, [If PGSQL version is 9 or higher])
   fi
   if test $PG_MAJOR -gt 8; then
