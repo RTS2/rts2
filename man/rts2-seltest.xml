@@ -55,6 +55,7 @@
       <arg choice='opt'><option>--print-satisfied</option></arg>
       <arg choice='opt'><option>--print-dissatisfied</option></arg>
       <arg choice='opt'><option>--print-possible</option></arg>
+      <arg choice='opt'><option>--max-length <replaceable class='parameter'>seconds</replaceable></option></arg>
       <arg choice='opt'><option>-v</option></arg>
       &dbapp;
     </cmdsynopsis>
@@ -110,6 +111,13 @@
 	    targets which does not satisfy constraints are printed out. If you
 	    would like to filter targets not satisifing the constraints, please
 	    use <option>--print-satisfied</option>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--max-length <replaceable class='parameter'>seconds</replaceable></option></term>
+	<listitem>
+	  <para>
 	  </para>
 	</listitem>
       </varlistentry>
