@@ -154,6 +154,9 @@
 /* If PGSQL version is 8 or higher */
 #undef HAVE_PGSQL_8
 
+/* If PGSQL version is 9 or higher */
+#undef HAVE_PGSQL_9
+
 /* If PGSQL provides SET_VARSIZE function */
 #undef HAVE_PGSQL_SET_VARSIZE
 
