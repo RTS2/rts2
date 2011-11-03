@@ -207,6 +207,16 @@ const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)
 	return end ();
 }
 
+const TargetQueue::iterator TargetQueue::findTarget (int tar_id)
+{
+	for (TargetQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->target->getTargetID () == tar_id)
+			return iter;  
+	}
+	return end ();
+}
+
 void TargetQueue::orderByTargetList (std::list <rts2db::Target *> tl)
 {
 	TargetQueue::iterator fi = begin ();

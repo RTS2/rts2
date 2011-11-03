@@ -580,6 +580,17 @@ class Rts2CommandQueueNow:public Rts2Command
 		Rts2CommandQueueNow (rts2core::Block * _master, const char *queue, int tar_id);
 };
 
+/**
+ * Queue target only once, make sure it does not create multiple entries into queue.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+class Rts2CommandQueueNowOnce:public Rts2Command
+{
+	public:
+		Rts2CommandQueueNowOnce (rts2core::Block * _master, const char *queue, int tar_id);
+};
+
 class Rts2CommandExecShower:public Rts2Command
 {
 	public:

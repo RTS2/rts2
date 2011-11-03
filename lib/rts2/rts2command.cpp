@@ -571,6 +571,13 @@ Rts2CommandQueueNow::Rts2CommandQueueNow (rts2core::Block *_master, const char *
 	setCommand (_os);
 }
 
+Rts2CommandQueueNowOnce::Rts2CommandQueueNowOnce (rts2core::Block *_master, const char *queue, int tar_id):Rts2Command (_master)
+{
+	std::ostringstream _os;
+	_os << "now_once " << queue << " " << tar_id;
+	setCommand (_os);
+}
+
 Rts2CommandExecShower::Rts2CommandExecShower (rts2core::Block * _master):Rts2Command (_master)
 {
 	setCommand ("shower");

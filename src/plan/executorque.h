@@ -117,7 +117,20 @@ class TargetQueue:public std::list <QueuedTarget>
 			delete cameras;
 		}
 
+		/**
+		 * Find target represented by given class.
+		 */
 		const TargetQueue::iterator findTarget (rts2db::Target *tar);
+
+		/**
+		 * Find the first target in the queue by by target ID.
+		 *
+		 * @param tar_id  ID of target searched in the queue
+		 *
+		 * @return iterator pointing to the first target with the given
+		 * targer ID in the queue, or end() if target cannot be found.
+		 */
+		const TargetQueue::iterator findTarget (int tar_id);
 
 		// order by given target list
 		void orderByTargetList (std::list <rts2db::Target *> tl);

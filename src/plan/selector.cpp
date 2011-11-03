@@ -612,7 +612,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			updateNext ();
 		return 0;
 	}
-	else if (conn->isCommand ("now"))
+	else if (conn->isCommand ("now") || conn->isCommand ("now_once"))
 	{
 		int tar_id;
 		if (conn->paramNextString (&name) || conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
@@ -620,6 +620,14 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 		rts2plan::Queues::iterator qi = findQueue (name);
 		if (qi == queues.end ())
 			return -2;
+		if (conn->isCommand ("now_once"))
+		{
+			if (qi->findTarget (tar_id) != qi->end ())
+			{
+				logStream (MESSAGE_INFO) << "target with ID " << tar_id << " is already queued, ignoring now_once request" << sendLog;
+				return -2;
+			}
+		}
 		rts2db::Target *tar = createTarget (tar_id, observer, notifyConn);
 		if (tar == NULL)
 			return -2;
