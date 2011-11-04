@@ -208,12 +208,13 @@ if ( $continue == 1 ) then
 		endif
 	endif
 
-	rts2-logcom "Starting $imgid $actual_filter exposure (<xsl:value-of select='@length'/> sec) exposure `date`"
+	rts2-logcom "Starting $actual_filter exposure $imgid (<xsl:value-of select='@length'/> sec) at `date`"
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
 	<xsl:copy-of select='$abort'/>
 	dstore
-	rts2-logcom "Exposure in $actual_filter filter (<xsl:value-of select='@length'/> sec) done; last offsets" `echo $ora_l $odec_l | awk '{ printf "%+0.3f %+0.3f",$1,$2;}'`
+	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
+	rts2-logcom "Exposure in $actual_filter filter (<xsl:value-of select='@length'/> sec) done; offsets" `echo $ora_l $odec_l $fwhm2 | awk '{ printf "%+0.2f\" %+0.2f\" FWHM %.2f\"",$1,$2,$3*0.675;}'`
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
@@ -333,8 +334,9 @@ if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 if ( $last_acq_obs_id == $obs_id ) then
 	<xsl:copy-of select='$printd'/> "already acquired for $obs_id"
 else	
-	rts2-logcom "acquiring for obsid $obs_id"
+	rts2-logcom "Acquiring for obsid $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
+	object test
 	if ( $autog == 'ON' ) then
 		tele autog OFF
 		$autog = 'OFF'
@@ -346,17 +348,17 @@ else
 	while ( $continue == 1 &amp;&amp; $err &gt; $pre &amp;&amp; $attemps &gt; 0 )
 		@ attemps --
 		<xsl:copy-of select='$abort'/>
-		rts2-logcom 'Starting <xsl:value-of select='@length'/> sec exposure'
+		rts2-logcom 'Starting i acqusition <xsl:value-of select='@length'/> sec exposure'
 		ccd gowait <xsl:value-of select='@length'/>
 		<xsl:copy-of select='$abort'/>
 		dstore
-		rts2-logcom 'exposure done'
+		rts2-logcom 'Acqusition exposure done'
 		<xsl:copy-of select='$abort'/>
 		if ( $continue == 1 ) then
 			if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 			set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 			<!-- run astrometry, process its output -->	
-			rts2-logcom "running astrometry on $lastimage, $obs_id $imgid"
+			rts2-logcom "Running astrometry on $lastimage, $obs_id $imgid"
 			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage $obs_id $imgid`" )
 				echo "$line" | grep "^corrwerr" &gt; /dev/null
 				if ( $? == 0 ) then
@@ -367,10 +369,10 @@ else
 					set odec = `echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
 					@ err = `echo "$l[7] * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
 					if ( $err > $pre ) then
-						rts2-logcom "acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
+						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
 						tele offset $ora $odec
 					else
-						rts2-logcom "error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
+						rts2-logcom "Error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
 						@ err = 0
 					endif
 					@ last_acq_obs_id = $obs_id
@@ -381,7 +383,8 @@ else
 	end
 	if ( $attemps &lt;= 0 ) then
 		rts2-logcom "maximal number of attemps exceeded"
-	endif  
+	endif
+	object $name
 endif	
 </xsl:template>
 
