@@ -40,35 +40,23 @@ yoffs=0
 
 if [ "$offs" = '0 0' ]; then
 	amp=2
-	xoffs=0
-	yoffs=0
+	xoffs=-345
+	yoffs=-345
 elif [ "$offs" = '345 -345' ]; then
 	amp=1
-	xoffs=345
-	yoffs=-345
 elif [ "$offs" = '-345 -345' ]; then
 	amp=2
-	xoffs=-345
-	yoffs=-345
 elif [ "$offs" = '345 345' ]; then
 	amp=3
-	xoffs=345
-	yoffs=345
 elif [ "$offs" = '-345 345' ]; then
 	amp=4
-	xoffs=-345
-	yoffs=345
 else
+	echo "log W unknow amp offset $offs, using default (2)"
 	amp=2
-	xoffs=`echo $offs | cut -d' ' -f1`
-	yoffs=`echo $offs | cut -d' ' -f2`
-	echo "log W unknow amp offset $xoffs $yoffs ( $offs ), using default (2)"
-	
 fi
 
 for x in *IM${amp}.fits; do
-	/home/petr/rts2/scripts/rts2-f/astrometry.py $tmpdir $x $xoffs $yoffs $filename $obs_id $imgid
-	#/home/petr/rts2-sys/usr/share/rts2/scripts/astrometry.py $tmpdir $x $xoffs $yoffs $filename $obs_id $imgid
+	/home/petr/rts2-sys/usr/share/rts2/scripts/astrometry.py $tmpdir $x $xoffs $yoffs $filename $obs_id $imgid
 done
 
 echo "log D removing $tmpdir"
