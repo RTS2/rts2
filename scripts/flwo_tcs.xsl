@@ -119,9 +119,7 @@ if ( $continue == 1 ) then
 				$xmlrpc --quiet -c TELE.info
 				set currg=`$xmlrpc --quiet -G TELE.autog`
 
-				if ( $currg == '1' ) then
-					rts2-logcom "autoguider is $currg - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum"
-				else
+				if ( $currg != '1' ) then
 					if ( $imgnum &lt;= $lastoffimage ) then
 						rts2-logcom "older or same image received - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
 					else
@@ -157,6 +155,10 @@ if ( $continue == 1 ) then
 							@ lastoffimage = $imgnum
 						endif
 					endif
+				<xsl:if test='$debug != 0'>
+				else
+					rts2-logcom "Autoguider is $currg - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum"
+				</xsl:if>	
 				endif
 			endif
 		else
@@ -164,7 +166,7 @@ if ( $continue == 1 ) then
 		endif	  	
 	<xsl:if test='$debug != 0'>
 	else
-		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
+		rts2-logcom "Not offseting - correction from different target (observing $name, correction from $cname)"  -->
 	</xsl:if>	
 	endif
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
@@ -176,7 +178,7 @@ if ( $continue == 1 ) then
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	<xsl:if test='$debug != 0'>
 	else
-		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )" -->
+		rts2-logcom "Keeping focusing offset ( $defoc_toffs - $defoc_current )" -->
 	</xsl:if>
 	endif
 
@@ -211,7 +213,7 @@ if ( $continue == 1 ) then
 	ccd gowait <xsl:value-of select='@length'/>
 	<xsl:copy-of select='$abort'/>
 	dstore
-	rts2-logcom "$actual_filter <xsl:value-of select='@length'/> sec exposure done"
+	rts2-logcom "Exposure in $actual_filter filter (<xsl:value-of select='@length'/> sec) done; last offsets" `echo $ora_l $odec_l | awk '{ printf "%+0.3f %+0.3f",$1,$2;}'`
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
