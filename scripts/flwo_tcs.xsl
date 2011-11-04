@@ -1,6 +1,16 @@
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:param name='debug'>0</xsl:param>
 <xsl:output method='text' indent='no'/>
+
+<xsl:variable name='printd'>
+<xsl:choose>
+  <xsl:when test='$debug = 0'>
+# </xsl:when>
+  <xsl:otherwise>
+echo `date +'%D %T.%02N'` </xsl:otherwise>
+</xsl:choose>  
+</xsl:variable>
 
 <xsl:template match='/'>
 
@@ -24,7 +34,7 @@ set defoc_toffs=0
 
 if ( ! (${?autog}) ) set autog='UNKNOWN'
 
-<!-- rts2-logcom "script running" -->
+<xsl:copy-of select='$printd'/> "script running"
 
 <xsl:apply-templates select='*'/>
 
@@ -66,15 +76,15 @@ endif
 		set fwhms=`$xmlrpc --quiet -G TELE.fwhms`
 		set guide_seg=`$xmlrpc --quiet -G TELE.guide_seg`
 		set isguiding=`$xmlrpc --quiet -G TELE.isguiding`
-		rts2-logcom "autoguider started, but star still not acquired. FWHMS $fwhms SEG $guide_seg isguiding $isguiding"
+		rts2-logcom "Autoguider started, but star still not acquired. FWHMS $fwhms SEG $guide_seg isguiding $isguiding"
 		@ retr --
 	end
 	if ( $retr &gt; 0 ) then
-		rts2-logcom "successfully switched autoguider to ON"
+		rts2-logcom "Successfully switched autoguider to ON"
 	else
 		@ nextautog = $nowdate + 300
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
-		rts2-logcom "autoguider command failed, will tray again at $textdate"
+		rts2-logcom "Autoguider command failed, will try again at $textdate"
 	endif	
 </xsl:variable>
 
@@ -88,7 +98,7 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
-  	<!-- rts2-logcom "starting pre-exposure checks" -->
+  	<xsl:copy-of select='$printd'/> "starting pre-exposure checks"
         set cname=`$xmlrpc --quiet -G IMGP.object`
 	set ora_l=`$xmlrpc --quiet -G IMGP.ora`
 	set odec_l=`$xmlrpc --quiet -G IMGP.odec`
@@ -100,7 +110,7 @@ if ( $continue == 1 ) then
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
 			if ( $apply == 0 ) then
-        			rts2-logcom "corrections disabled, do not apply correction $ora $odec ($ora_l $odec_l) img_num $imgnum"	
+        			rts2-logcom "Corrections disabled, do not apply correction $ora $odec ($ora_l $odec_l) img_num $imgnum"	
 			else
 
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
@@ -121,7 +131,7 @@ if ( $continue == 1 ) then
 							set toffs=`$xmlrpc -G TELE.total_offsets`
 							set rra=`echo "$toffs" | awk '{printf "%d",$1 * -3600.0;}'`
 							set rdec=`echo "$toffs" | awk '{printf "%d",$2 * -3600.0;}'`
-							echo "total offsets $toffs ($rra $rdec)"
+							<xsl:copy-of select='printd'/> "total offsets $toffs ($rra $rdec)"
 							if ( $rra &gt; -1 &amp;&amp; $rra &lt; 1 ) then
 								set rra = 0
 							endif
@@ -152,18 +162,22 @@ if ( $continue == 1 ) then
 		else
 			rts2-logcom "too big offset $ora_l $odec_l"
 		endif	  	
-<!--	else
+	<xsl:if test='$debug != 0'>
+	else
 		rts2-logcom "not offseting - correction from different target (observing $name, correction from $cname)"  -->
+	</xsl:if>	
 	endif
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff_l != 0 ) then
 		set diff=`printf '%+0f' $diff`
-		rts2-logcom "offseting focus to $diff ( $defoc_toffs - $defoc_current )"
+		rts2-logcom "Offseting focus to $diff ( $defoc_toffs - $defoc_current )"
 		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
-<!--	else
+	<xsl:if test='$debug != 0'>
+	else
 		rts2-logcom "keep focusing offset ( $defoc_toffs - $defoc_current )" -->
+	</xsl:if>
 	endif
 
 	if ( $autog == 'ON' ) then
@@ -175,28 +189,29 @@ if ( $continue == 1 ) then
 			set guidestatus = "OFF"
 		endif
 		if ( $guidestatus != $autog ) then
-			rts2-logcom "system should guide, but autoguider is in $guidestatus. Grabing autoguider image"
-			tele grab
-			set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-			set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
-			mkdir -p $dir
-			set autof=$dir/`date +%H%M%S`.fits
-			cp $lastgrab $autof
-			rts2-logcom "autoguider image saved in $autof"
+			rts2-logcom "system should guide, but autoguider is in $guidestatus."
 			set nowdate=`date +%s`
 			if ( $nextautog &lt; $nowdate ) then
+				rts2-logcom "Grabing autoguider image"
+				tele grab
+				set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
+				set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
+				mkdir -p $dir
+				set autof=$dir/`date +%H%M%S`.fits
+				cp $lastgrab $autof
+				rts2-logcom "autoguider image saved in $autof"
 				rts2-logcom "trying to guide again (switching autog to ON)"
 				<xsl:copy-of select='$guidetest'/>
 			endif
 		endif
 	endif
 
-	echo `date +"%D %T.%3N %Z"` 'starting <xsl:value-of select='@length'/> sec exposure, 'img id $imgid
+	rts2-logcom "Starting $imgid $actual_filter exposure (<xsl:value-of select='@length'/> sec) exposure `date`"
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
 	<xsl:copy-of select='$abort'/>
 	dstore
-	echo `date +"%D %T.%3N %Z"` 'exposure done'
+	rts2-logcom "$actual_filter <xsl:value-of select='@length'/> sec exposure done"
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
@@ -215,7 +230,7 @@ if ( $continue == 1 ) then
 		xpaset -p ds9 scale scope global
 	endif
 	@ imgid ++
-<!--	echo `date +"%D %T.%3N %Z"` 'exposure sequence done' -->
+	<xsl:copy-of select='$printd'/> 'exposure sequence done' 
 endif
 <xsl:copy-of select='$abort'/>
 </xsl:template>
@@ -243,9 +258,10 @@ endif
 <xsl:template match="set">
 <xsl:if test='@value = "filter"'>
 if ( $continue == 1 ) then
-	echo "before filter"
+	<xsl:copy-of select='$printd'/> "before filter"
 	source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
-	echo "after filter"
+	set actual_filter="<xsl:value-of select='@operands'/>"
+	<xsl:copy-of select='$printd'/> "after filter"
 endif
 </xsl:if>
 <xsl:if test='@value = "ampcen"'>
@@ -253,9 +269,11 @@ if ( $continue == 1 ) then
 	set ampstatus=`$xmlrpc --quiet -G TELE.ampcen`
 	if ( $ampstatus != <xsl:value-of select='@operands'/> ) then
 		tele ampcen <xsl:value-of select='@operands'/>
-		rts2-logcom 'set ampcen to <xsl:value-of select='@operands'/>'
-<!--	else
+		rts2-logcom 'Ampcen set to <xsl:value-of select='@operands'/>'
+	<xsl:if test='$debug != 0'>
+	else
 		echo `date +"%D %T.%3N %Z"` "ampcen already on $ampstatus, not changing it" -->
+	</xsl:if>	
 	endif
 endif
 </xsl:if>
@@ -271,19 +289,23 @@ if ( $continue == 1 ) then
 		endif
 		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
 			if ( <xsl:value-of select='@operands'/> == "ON" ) then
-				rts2-logcom "commanding autoguiding to ON"
+				rts2-logcom "Commanding autoguiding to ON"
 				set nowdate=`date +%s`
 				<xsl:copy-of select='$guidetest'/>
 			else
-				rts2-logcom "switching guiding to OFF"
+				rts2-logcom "Set guiding to OFF"
 				tele autog OFF
 			endif
-<!--		else
+		<xsl:if test='$debug != 0'>	
+		else
 			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it" -->
+		</xsl:if>	
 		endif
 		set autog=<xsl:value-of select='@operands'/>
-<!--	else
-		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request' -->
+	<xsl:if test='$debug != 0'>	
+	else
+		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request'
+	</xsl:if>	
 	endif	  	
 endif
 </xsl:if>
@@ -307,10 +329,10 @@ end
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
 if ( $last_acq_obs_id == $obs_id ) then
-	echo `date +"%D %T.%3N %Z"` "already acquired for $obs_id"
+	<xsl:copy-of select='$printd'/> "already acquired for $obs_id"
 else	
 	rts2-logcom "acquiring for obsid $obs_id"
-	tele filter i
+	source $RTS2/bin/rts2_tele_filter i
 	if ( $autog == 'ON' ) then
 		tele autog OFF
 		$autog = 'OFF'
@@ -321,18 +343,19 @@ else
 	@ attemps = $maxattemps
 	while ( $continue == 1 &amp;&amp; $err &gt; $pre &amp;&amp; $attemps &gt; 0 )
 		@ attemps --
-		echo `date +"%D %T.%3N %Z"` 'starting <xsl:value-of select='@length'/> sec exposure'
 		<xsl:copy-of select='$abort'/>
+		rts2-logcom 'Starting <xsl:value-of select='@length'/> sec exposure'
 		ccd gowait <xsl:value-of select='@length'/>
 		<xsl:copy-of select='$abort'/>
 		dstore
+		rts2-logcom 'exposure done'
 		<xsl:copy-of select='$abort'/>
 		if ( $continue == 1 ) then
 			if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 			set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
 			<!-- run astrometry, process its output -->	
-			echo `date +"%D %T.%3N %Z"` "running astrometry on $lastimage"
-			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage`" )
+			rts2-logcom "running astrometry on $lastimage, $obs_id $imgid"
+			foreach line ( "`/home/petr/rts2-sys/bin/img_process $lastimage $obs_id $imgid`" )
 				echo "$line" | grep "^corrwerr" &gt; /dev/null
 				if ( $? == 0 ) then
 					set l=`echo $line`
@@ -351,6 +374,7 @@ else
 					@ last_acq_obs_id = $obs_id
 				endif
 			end
+			@ imgid ++
 		endif
 	end
 	if ( $attemps &lt;= 0 ) then
