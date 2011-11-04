@@ -13,14 +13,14 @@ endif
 if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 ) then
 	set tar_id=3
 	rts2-logcom "Run FWHM focus script. Abort with nabort."
-else	 
-	set err_prinout=0
+else
+	if ( ! (${?err_prinout}) ) set err_prinout=0
 
 	set tar_id=-1
 
-	while ( $tar_id <= 0 )
+	if ( $tar_id <= 0 ) then
 		if ( -e $rts2abort ) then
-			rts2-logcom "abort detected (while waiting for next tar_id)"
+			rts2-logcom "abort detected (when waiting for next tar_id)"
 			exit
 		endif
 
@@ -32,128 +32,141 @@ else
 			if ( $err_prinout != 1 ) then
 				rts2-logcom "selector/rts2-f is not running!!"
 				set err_prinout=1
-			endif	
+			endif
+			rts2-logcom "Restarting selector"
+			$RTS2/etc/init.d/rts2 start
+			sleep 5
+			set qfile=`ls -tr /home/observer/RTS2-F/QUEUES/autosave/*.ques|tail -n1`
+			rts2-logcom "Reloading queues from $qfile"
+			/home/petr/pyrts2/widgets/loadqueues.py $qfile
 			set tar_id=-1
 		else
 			if ( $tar_id <= 0 ) then
 				if ( $err_prinout != 2 ) then
-					rts2-logcom "Automatic selector is not enabled. I'll repeat test every 5 seconds."
+					rts2-logcom "Automatic selector is not enabled. I'll repeat test every 10 seconds."
 					rts2-logcom "Please fill the queues if you believe that something should be observed,"
 					rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
 					rts2-logcom "is fine"
 					set err_prinout=2
-				endif	
+				endif
+			else
+				set err_prinout=0
 			endif
 		endif
 
 		if ( $tar_id <= 0 ) then
-			sleep 5
+			sleep 10
 			$xmlrpc -c SEL.next
 		endif	
-	end
+	endif
 endif	
 
 $xmlrpc -c SEL.next
 
-if ( $last_tar_id != $tar_id ) then
-	setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
-	echo $tar_id $obs_id > $lasttarget
-	@ imgid=1
-	set ti=`rts2-targetinfo $tar_id`
+if ( $tar_id > 0 ) then
+	if ( $last_tar_id != $tar_id ) then
+		setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
+		echo $tar_id $obs_id > $lasttarget
+		@ imgid=1
+		set ti=`rts2-targetinfo $tar_id`
+	
+		set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
+		set pi=`rts2-targetinfo --pi $tar_id`
+		set program=`rts2-targetinfo --program $tar_id`
+	
+		set ra=`echo $ti | awk '{ print $3 }'`
+		set dec=`echo $ti | awk '{ print $4 }'`
+	
+		# for doauto script, to report in log file:
+		setenv rts2obstarg $name
+	
+		rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
+		set autog='UNKNOW'
+	
+		object "$name"
+		setcom kepccd Object "$name"
+		tele pi "$pi"
+		tele program "$program"
 
-	set name=`rts2-targetinfo --name $tar_id | sed -e 's# #_#g' -e 's#[^A-Za-z0-9+_.-]#X#g'`
-	set pi=`rts2-targetinfo --pi $tar_id`
-	set program=`rts2-targetinfo --program $tar_id`
+		$xmlrpc -c "SEL.observation $tar_id $obs_id"
 
-	set ra=`echo $ti | awk '{ print $3 }'`
-	set dec=`echo $ti | awk '{ print $4 }'`
+		# save queues..
+		/home/petr/pyrts2/widgets/savequeues.py /home/observer/RTS2-F/QUEUES/autosave/`date +'%Y.%m%d-%T'.ques` >& /dev/null &
+#	else
+#		rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
+	endif
 
-	# for doauto script, to report in log file:
-	setenv rts2obstarg $name
+	#notmove is for debugging - testing during day
+	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
+		echo -n "Track on"
+		tele trackon
+		tele domeon
+	
+		set oldoffs=`$xmlrpc -G TELE.OFFS`
+	
+		set rra=`echo "$oldoffs" | awk '{printf "%d",$1 * 3600.0;}'`
+		set rdec=`echo "$oldoffs" | awk '{printf "%d",$2 * 3600.0;}'`
+		echo "initial offsets $rra $rdec"
+		if ( $rra > -30 && $rra < 30 ) then
+			set rra = 0
+		endif
+		if ( $rdec > -30 && $rdec < 30 ) then
+			set rdec = 0
+		endif
+		if ( $rra != 0 || $rdec != 0 ) then
+			# offset by xoff/yoff
+			set xoff=`$xmlrpc -G TELE.offs_x`
+			set yoff=`$xmlrpc -G TELE.offs_y`
+			set tel=`$xmlrpc -G TELE.TEL`
+			set teldec=`echo $tel | awk '{print cos($1*3.14159265/180);}'`
+			set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2/$3;}'`
+			#set of_ra=`echo $rra $xoff | awk '{printf "%d",$1 - $2;}'`
+			set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
+			#rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
+			#tele offset $of_ra $of_dec
+			#sleep 6
+			#rts2-logcom "executing tele set"
+			#tele set
+		else
+			rts2-logcom "initial offsets are zero, not offseting ($rra $rdec)"
+		endif
+	
+		$xmlrpc -c "TELE.move $ra $dec"
+	
+		rts2-logcom -n "Moving to $ra $dec 2000.0 .."
+		tele coords $ra $dec 2000.0
+	
+		sleep 3
+	
+		tele enable
+	
+		echo "on coordinates"
+	
+		# mark end of slew
+		$RTS2/bin/rts2-target --observe $obs_id
+	
+		rts2-logcom "moved to $ra $dec 2000.0"
+	endif
 
-	rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
-
-	set autog='UNKNOW'
-
-	object "$name"
-	setcom kepccd Object "$name"
-	tele pi "$pi"
-	tele program "$program"
-else
-	rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
+	# rts2-logcom "observing setup finished"
+	
+	# translate observation to observation file..
+	
+	rm -f /tmp/$obs_id
+	
+	$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc $RTS2/usr/share/rts2/flwo_tcs.xsl - > /tmp/$obs_id
+	
+	# rts2-logcom "script created"
+	
+	source /tmp/$obs_id
+	
+	# end it
+	$RTS2/bin/rts2-target --end $obs_id
+	
+	rm -f /tmp/$obs_id
+	
+	$xmlrpc -c SEL.next
+	
+	#echo `date` "observation $obs_id of object $name ($ra $dec) ends"
+	#rts2-logcom "script for observation $obs_id of object $name ($ra $dec) ends"
 endif
-
-$xmlrpc -c "SEL.observation $tar_id $obs_id"
-
-#notmove is for debugging - testing during day
-if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
-	echo -n "Track on"
-	tele trackon
-	tele domeon
-
-	set oldoffs=`$xmlrpc -G TELE.OFFS`
-
-	set rra=`echo "$oldoffs" | awk '{printf "%d",$1 * 3600.0;}'`
-	set rdec=`echo "$oldoffs" | awk '{printf "%d",$2 * 3600.0;}'`
-	echo "initial offsets $rra $rdec"
-	if ( $rra > -30 && $rra < 30 ) then
-		set rra = 0
-	endif
-	if ( $rdec > -30 && $rdec < 30 ) then
-		set rdec = 0
-	endif
-	if ( $rra != 0 || $rdec != 0 ) then
-		# offset by xoff/yoff
-		set xoff=`$xmlrpc -G TELE.offs_x`
-		set yoff=`$xmlrpc -G TELE.offs_y`
-		set tel=`$xmlrpc -G TELE.TEL`
-		set teldec=`echo $tel | awk '{print cos($1*pi/180);}'`
-		set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2/$3;}'`
-		set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
-		rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
-		tele offset $of_ra $of_dec
-		sleep 6
-		rts2-logcom "executing tele set"
-		tele set
-	else
-		rts2-logcom "initial zero offsets, not offseting ($rra $rdec)"
-	endif
-
-	$xmlrpc -c "TELE.move $ra $dec"
-
-	rts2-logcom "sending coordinates $ra $dec 2000.0 .."
-	tele coords $ra $dec 2000.0
-
-	sleep 3
-
-	tele enable
-
-	echo "on coordinates"
-
-	# mark end of slew
-	$RTS2/bin/rts2-target --observe $obs_id
-
-	rts2-logcom "moved to $ra $dec 2000.0"
-endif
-
-# rts2-logcom "observing setup finished"
-
-# translate observation to observation file..
-
-rm -f /tmp/$obs_id
-
-$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc /home/petr/rts2/scripts/flwo_tcs.xsl - > /tmp/$obs_id
-
-# rts2-logcom "script created"
-
-source /tmp/$obs_id
-
-# end it
-$RTS2/bin/rts2-target --end $obs_id
-
-rm -f /tmp/$obs_id
-
-$xmlrpc -c SEL.next
-
-#echo `date` "observation $obs_id of object $name ($ra $dec) ends"
-rts2-logcom "script for observation $obs_id of object $name ($ra $dec) ends"
