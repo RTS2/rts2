@@ -379,6 +379,16 @@ int Dome::commandAuthorized (Rts2Conn * conn)
 	{
 		return (domeCloseStart () == 0 ? 0 : -2);
 	}
+	else if (conn->isCommand ("close_for"))
+	{
+		double next_good;
+		if (conn->paramNextDouble (&next_good) || !conn->paramEnd())
+			return -2;
+		if (next_good < 0)
+			return -2;
+		nextGoodWeather->setValueDouble (getNow () + next_good);
+		return (domeCloseStart () == 0 ? 0 : -2);
+	}
 	else if (conn->isCommand ("reset_next"))
 	{
 		nextGoodWeather->setValueDouble (getNow () - 1);
