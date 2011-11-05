@@ -367,13 +367,13 @@ int MICCD::startExposure ()
 				if (camera.model != G10800)	
 					return -1;
 				// else try to reinit..
-				logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinint.." << sendLog;
+				logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinintiliaze it.." << sendLog;
 				if (reinitCamera ())
 					return -1;
 				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 				if (ret < 0)
 				{
-					logStream (MESSAGE_ERROR) << "reinit failed" << sendLog;
+					logStream (MESSAGE_ERROR) << "reinitilization failed" << sendLog;
 					return -1;
 				}
 			}
@@ -519,7 +519,7 @@ int MICCD::reinitCamera ()
 		case G12000:
 			if (miccd_fan (&camera, fan->getValueInteger ()))
 			{
-				logStream (MESSAGE_ERROR) << "reinit failed - cannot set fan" << sendLog;
+				logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set fan" << sendLog;
 				return -1;
 			}
 			break;
@@ -527,7 +527,7 @@ int MICCD::reinitCamera ()
 		case G3:
 			if (miccd_mode (&camera, mode->getValueInteger ()))
 			{
-				logStream (MESSAGE_ERROR) << "reinit failed - cannot set mode" << sendLog;
+				logStream (MESSAGE_ERROR) << "reinitilization failed - cannot set mode" << sendLog;
 				return -1;
 			}
 			break;
