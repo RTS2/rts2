@@ -82,7 +82,10 @@ int FramWeather::info ()
 bool FramWeather::isGoodWeather ()
 {
 	if (getLastInfoTime () > connUpdateSep->getValueInteger ())
+	{
+		setWeatherTimeout (80, "did not received weather update");
 		return false;
+	}
 	return SensorWeather::isGoodWeather ();	
 }
 
