@@ -684,14 +684,18 @@ AC_SUBST(debug)
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
 AH_TEMPLATE([HAVE_PGSQL_9], [If PGSQL version is 9 or higher])
+AH_TEMPLATE([HAVE_ECPG_9], [If ECPG version is 9 or higher])
 AH_TEMPLATE([HAVE_PGSQL_SET_VARSIZE], [If PGSQL provides SET_VARSIZE function])
 
 if test "x"$psql = xyes ; then
   AC_POSTGRESQL
   AC_ECPG
 
-  PG_MAJOR=`pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'`
-  PG_MINOR=`pg_config --version | sed 's/PostgreSQL [[0-9]]\.//' | sed 's/\..*$//'`
+  PG_MAJOR=`$PG_CONFIG --version | sed 's/PostgreSQL //' | sed 's/\..*$//'`
+  PG_MINOR=`$PG_CONFIG --version | sed 's/PostgreSQL [[0-9]]*\.//' | sed 's/\..*$//'`
+
+  ECPG_MAJOR=`$ECPG --version | sed 's/ecpg (PostgreSQL //' | sed 's/\..*$//'`
+  ECPG_MINOR=`$ECPG --version | sed 's/ecpg (PostgreSQL [[0-9]]*\.//' | sed 's/\..*$//'`
 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
 
@@ -700,11 +704,12 @@ if test "x"$psql = xyes ; then
   fi
   if test $PG_MAJOR -gt 8 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_9, 1, [If PGSQL version is 9 or higher])
-  fi
-  if test $PG_MAJOR -gt 8; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
   fi
-  if test $PG_MAJOR -eq 8 -a $PG_MINOR -gt 2; then
+  if test $ECPG_MAJOR -gt 8 ; then
+    AC_DEFINE_UNQUOTED(HAVE_ECPG_9, 1, [If ECPG version is 9 or higher])
+  fi
+  if test $PG_MAJOR -eq 8 -a $PG_MINOR -gt 2 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
   fi
 fi
@@ -784,7 +789,6 @@ AC_OUTPUT([Makefile
 	   src/camd/edtsao/Makefile
 	   src/dome/Makefile
 	   src/dome/zelio/Makefile
-	   src/libindi/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
