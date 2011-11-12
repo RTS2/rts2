@@ -396,7 +396,8 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 				}
 				// calculate target script length..
 				double tl = getMaximalScriptDuration (iter->target, *cameras);
-				if (tl > maxLength && isAboveHorizon (*iter, tjd))
+				// if target length is smaller then horizon, and target isAbove..
+				if (tl < maxLength && isAboveHorizon (*iter, tjd))
 					return;
 			}	
 
