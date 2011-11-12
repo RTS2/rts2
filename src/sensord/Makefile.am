@@ -100,7 +100,7 @@ lib_LTLIBRARIES = librts2sensorgpib.la
 
 librts2sensorgpib_la_SOURCES = sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
-LDADD += @LIB_GPIB@ -lrts2sensorgpib
+LDADD += -lrts2sensorgpib @LIB_GPIB@
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
