@@ -370,8 +370,7 @@ int Rts2DevConnMaster::idle ()
 			if (now > nextTime)
 			{
 				nextTime = now + 60;
-				int ret;
-				ret = init ();
+				init ();
 			}
 			break;
 		default:
