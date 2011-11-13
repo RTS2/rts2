@@ -80,12 +80,18 @@ EXTRA_DIST += miccd.cpp
 endif
 
 if EDTPDV
-bin_PROGRAMS += rts2-camd-edtsao
+bin_PROGRAMS += rts2-camd-edtsao rts2-camd-reflex
+
 rts2_camd_edtsao_SOURCES = edtsao.cpp
 rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@ 
 rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@
+
+rts2_camd_reflex_SOURCES = reflex.cpp
+rts2_camd_reflex_LDFLAGS = @LIB_PTHREAD@ @LIB_EDTPDV@ 
+rts2_camd_reflex_CXXFLAGS = @INC_EDTPDV@
+
 else
-EXTRA_DIST += edtsao.cpp
+EXTRA_DIST += edtsao.cpp reflex.cpp
 endif
 
 if ARC
