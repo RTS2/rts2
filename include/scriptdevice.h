@@ -48,6 +48,7 @@ class ScriptDevice:public Device
 		rts2core::ValueInteger *commentNumber;
 		rts2core::ValueInteger *scriptPosition;
 		rts2core::ValueInteger *scriptLen;
+		rts2core::ValueSelection *scriptStatus;
 		rts2core::IntegerArray *elementPosition;
 
 		void blockEnter ();

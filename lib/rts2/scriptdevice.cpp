@@ -32,6 +32,10 @@ ScriptDevice::ScriptDevice (int in_argc, char **in_argv, int in_device_type, con
 	createValue (scriptComment, "SCR_COMM", "comment recorded for this script", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 
 	createValue (commentNumber, "COMM_NUM", "comment order within current script", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (scriptStatus, "script_status", "script status", false, RTS2_VALUE_WRITABLE);
+	scriptStatus->addSelVal ("run");
+	scriptStatus->addSelVal ("pause");
+	scriptStatus->addSelVal ("stop");
 
 	createValue (scriptPosition, "scriptPosition", "position within script", false, RTS2_VALUE_WRITABLE, 0);
 	scriptPosition->setValueInteger (0);
