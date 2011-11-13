@@ -323,10 +323,12 @@ std::string Image::expandVariable (char expression, size_t beg)
 			return getObsString ();
 		case 'p':
 			return getProcessingString ();
+		case 'R':
+			return getTargetIDSelString ();
 		case 'T':
-			return getTargetString ();
+			return getTargetName ();
 		case 't':
-			return getTargetSelString ();
+			return getTargetIDString ();
 		case 'n':
 			return getExposureNumberString ();
 		default:
@@ -1650,7 +1652,14 @@ void Image::setCameraName (const char *new_name)
 	strcpy (cameraName, new_name);
 }
 
-std::string Image::getTargetString ()
+std::string Image::getTargetName ()
+{
+	if (*targetName == '\0')
+		getTargetHeaders ();
+	return std::string (targetName);
+}
+
+std::string Image::getTargetIDString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -1658,7 +1667,7 @@ std::string Image::getTargetString ()
 	return _os.str ();
 }
 
-std::string Image::getTargetSelString ()
+std::string Image::getTargetIDSelString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');

@@ -365,8 +365,10 @@ class Image:public FitsFile
 
 		int getTargetId () { if (targetId < 0) getTargetHeaders (); return targetId; }
 
-		std::string getTargetString ();
-		std::string getTargetSelString ();
+		std::string getTargetName ();
+
+		std::string getTargetIDString ();
+		std::string getTargetIDSelString ();
 
 		std::string getExposureNumberString ();
 		std::string getObsString ();

@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2011-02-01</date>">
+  <!ENTITY dhdate      "<date>2011-05-17</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -119,6 +119,15 @@
 	</listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--with-times</option></term>
+	<listitem>
+	  <para>
+	    Specify observation times with target. Values starting with + are
+	    time from now. Please see examples below for valid observing times.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>--server</option>=<replaceable class='parameter'>SERVER</replaceable></term>
 	<listitem>
 	  <para>
@@ -166,6 +175,21 @@
     </para> 
     <screen>
       <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B&percnt;</replaceable>
+    </screen>
+    <para>
+      Following will place on queue named <emphasis>manual</emphasis> all
+      targets beginning with <emphasis>B</emphasis>.  It will first clear
+      queue, so target entries will not be added to the targets already in the
+      queue.
+    </para> 
+    <screen>
+      <command>&dhpackage;</command> <option>--clear</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>B&percnt;</replaceable>
+    </screen>
+    <para>
+      The next command queues targets with ID 1000 and specify starting time 1h from now:
+    </para>
+    <screen>
+      <command>&dhpackage;</command> <option>--clear</option> <option>--with-times</option> <option>--queue</option> <replaceable class='parameter'>manual</replaceable> <replaceable class='argument'>1000</replaceable> <replaceable class='argument'>+3600</replaceable> <replaceable class='argument'>-</replaceable>
     </screen>
   </refsect1>
   <refsect1>

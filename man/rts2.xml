@@ -560,6 +560,14 @@
       </varlistentry>
       <varlistentry>
         <term>
+	  <option>R</option>
+	</term>
+	<listitem>
+	  <para>Executor (selector) target ID</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>S</option>
         </term>
         <listitem>
@@ -579,7 +587,7 @@
 	  <option>T</option>
         </term>
         <listitem>
-          <para>Executor (selected) target ID.</para>
+          <para>Target name</para>
         </listitem>
       </varlistentry>
       <varlistentry>
