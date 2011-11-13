@@ -54,8 +54,32 @@ void BAIT::writeRead (const char *cmd, char *reply, size_t buf_len)
 		throw rts2core::Error ("cannot send BAIT command");
 	char *buftop = reply;
 	size_t bufused = 0;
-	while (true)
+	while (sock > 0)
 	{
+		struct timeval read_tout;
+
+		read_tout.tv_sec = 180;
+		read_tout.tv_usec = 0;
+			
+		fd_set read_set;
+		fd_set write_set;
+		fd_set exp_set;
+
+		FD_ZERO (&read_set);
+		FD_ZERO (&write_set);
+		FD_ZERO (&exp_set);
+
+		FD_SET (sock, &read_set);
+
+		ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
+		if (ret <= 0)
+		{
+			logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 30 seconds, reinitiliazing" << sendLog;
+			connectionError (-1);
+			throw rts2core::Error ("cannot read from connection");
+		}
+
+
 		cmdlen = recv (sock, buftop, buf_len - bufused, 0);
 		if (cmdlen < 0)
 		{
