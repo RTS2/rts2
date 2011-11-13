@@ -20,8 +20,8 @@
 #include "camd.h"
 #include "edtsao/interface.h"
 
-#include "../utils/connfork.h"
-#include "../utils/valuearray.h"
+#include "../../lib/rts2/connfork.h"
+#include "valuearray.h"
 
 #define OPT_NOTIMEOUT  OPT_LOCAL + 73
 #define OPT_NOWRITE    OPT_LOCAL + 74
@@ -123,7 +123,7 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, t_controllerType contr
 			}
 			break;
 		case C:
-			setMin (0);
+			setMin (3.60);
 			setMax (20);
 			break;
 		case D:
@@ -171,7 +171,7 @@ long ValueEdt::getHexValue (float in_v, t_controllerType controllerType)
 					val = (long) (in_v * 204.7);
 					break;
 				case CHANNEL_16:
-					val = (long) (in_v * 204.75);
+					val = (long) (((in_v - 3.60) / 20.40) * 4095);
 					break;
 			}
 			break;
@@ -222,6 +222,8 @@ class EdtSao:public Camera
 
 		virtual int init ();
 		virtual int initValues ();
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -641,10 +643,16 @@ int EdtSao::setGrayScale (bool _grayScale)
 		case CHANNEL_4:
 			return setGrayScale (_grayScale, 0);
 	}
+	return 0;
 }
 
 void EdtSao::beforeRun ()
 {
+	// set gain to high
+	int ret = setEDTGain (edtGain->getValueInteger () == 0);
+	if (ret)
+		exit (ret);
+
 	Camera::beforeRun ();
 
 	for (int i = 0; i < totalChannels; i++)
@@ -652,16 +660,11 @@ void EdtSao::beforeRun ()
 		setADOffset (i, (*ADoffsets)[i]);
 	}
 
-	int ret;
-
 	depth = 2;
 
 	// do initialization
 	reset ();
 
-	ret = setEDTGain (true);
-	if (ret)
-		exit (ret);
 	ret = edtwrite (SAO_PARALER_SP);
 	if (ret)
 		exit (ret);
@@ -1424,7 +1427,7 @@ int EdtSao::init ()
 			break;
 	} */
 
-	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE | RTS2_DT_SIMPLE_ARRAY, CAM_WORKING);
 
 	dataChannels->setValueInteger (totalChannels);
 
@@ -1469,6 +1472,18 @@ int EdtSao::initValues ()
 	}
 
 	return Camera::initValues ();
+}
+
+int EdtSao::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		reset ();
+		return 0;
+	}
+	return Camera::commandAuthorized (conn);
 }
 
 int main (int argc, char **argv)
