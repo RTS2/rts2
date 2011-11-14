@@ -399,6 +399,10 @@ int Cloud4::info ()
 			setWeatherTimeout (300, "do not rised above TRIGGOOD");
 		}
 	}
+	else
+	{
+		setWeatherTimeout (85, "waiting for enough measurements from cloud sensor");
+	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
 	return SensorWeather::info ();

@@ -207,6 +207,10 @@ int Mrakomer::info ()
 			valueWarning (tempDiff);
 		}
 	}
+	else
+	{
+		setWeatherTimeout (85, "waiting for enough measurements from cloud sensor");
+	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
 	return SensorWeather::info ();
