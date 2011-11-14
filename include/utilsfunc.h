@@ -268,4 +268,18 @@ typedef std::basic_string<char, ci_char_traits> ci_string;
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif
 
+/**
+ * Converts string int some type.
+ *
+ * @param t     returned value
+ * @param s     string to convert.
+ *
+ * @return false on failure, true on success
+ */
+template <class T> bool from_string (T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&))
+{
+	std::istringstream iss(s);
+	return !(iss >> f >> t).fail();
+}
+
 #endif							 /* !__RTS_UTILSFUNC__ */
