@@ -780,6 +780,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2/model/Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
+	   src/libindi/Makefile 
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
@@ -841,7 +842,7 @@ CCD's:
   andor         ${ANDOR}
   arc           ${ARC}
   arc-1.7       ${ARC_1_7}
-  edtsao        ${EDTPDV}
+  edtpdv        ${EDTPDV}
   fli           ${FLI}
   miccd         ${MICCD}
   sbig          ${SBIG}
