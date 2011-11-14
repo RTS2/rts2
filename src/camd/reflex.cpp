@@ -196,6 +196,7 @@ Reflex::~Reflex (void)
 
 void Reflex::beforeRun ()
 {
+	Camera::beforeRun ();
 }
 
 void Reflex::initBinnings ()
@@ -309,7 +310,7 @@ int Reflex::openInterface (int CLport)
 	closeInterface ();
 
 	//int CLBaudrate = (int) (baudRate->getData ());
-	int CLBaudrate = CL_BAUDRATE_115200;
+	int CLBaudrate = 115200;
 #ifdef CL_EDT
 	CLHandle = pdv_open (EDT_INTERFACE, 0);
 	if (!CLHandle)
@@ -499,7 +500,7 @@ int Reflex::readRegister(unsigned addr, unsigned& data)
 		return -1;
 	if (ret.length() != 9)
 		return 1;
-	if (from_string (data, ret.substr (1), std::hex))
+	if (!from_string (data, ret.substr (1), std::hex))
 	{
 		logStream (MESSAGE_ERROR) << "received invalid register value: " << ret << sendLog;
 		return -1;
