@@ -247,6 +247,15 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createRegister (0x00000033, "int.daughter7_flags", "Daughter 7 feature flags", false, false, true);
 	createRegister (0x00000034, "int.daughter8_flags", "Daughter 8 feature flags", false, false, true);
 
+	createRegister (0x10000000, "sys.timing_lines", "Number of lines of timining data", true, true, false);
+	for (int i = 0; i < 64; i++)
+	{
+		std::ostringstream name, desc;
+		name << "sys.tp" << i;
+		desc << "20-bit value for timing core parameter " << i;
+		createRegister (0x10000001 + i, name.str ().c_str (), desc.str ().c_str (), true, true, true);
+	}
+
 	configFile = NULL;
 	config = NULL;
 
@@ -592,7 +601,7 @@ int Reflex::readRegister(unsigned addr, unsigned& data)
 	std::string ret;
 
 	snprintf(s, 100, ">R%08X\r", addr);
-	if (interfaceCommand (s, ret, 100))
+	if (interfaceCommand (s, ret, 100, getDebug ()))
 		return -1;
 	if (ret.length() != 9)
 		return 1;
@@ -635,6 +644,8 @@ void Reflex::reloadConfig ()
 void Reflex::createBoards ()
 {
 	uint32_t ba;
+	int i;
+
 	for (int bt = BOARD_TYPE_BP; bt < BOARD_TYPE_D8; bt++)
 	{
 		std::ostringstream biss;
@@ -647,12 +658,68 @@ void Reflex::createBoards ()
 				break;
 			case BT_BPX6:
 				ba = 0x00010000;
-				createRegister (ba, "back.temperature", "[mK] backplane module temperature", false, true, false);
-				createRegister (ba + 1, "back.status", "backplane status", false, true, true);
+				createRegister (ba++, "back.temperature", "[mK] backplane module temperature", false, true, false);
+				createRegister (ba, "back.status", "backplane status", false, true, true);
+
+				ba = 0x10010000;
+				// control registers
+				createRegister (ba++, "MCLK", "[Hz} master clock frequency (60 MHz - 100 MHz)", true, true, false);
+				createRegister (ba++, "daughter_enable", "bit-field specifying which AD daughter modules the backplane should read", true, true, false);
+				createRegister (ba++, "pair_count", "number of pairs of AD daughter modules the backplane should read", true, true, false);
+
+				createRegister (ba++, "pair_0chA", "daughter module to read on Channel A of Pair 0", true, true, false);
+				createRegister (ba++, "pair_0chB", "daughter module to read on Channel B of Pair 0", true, true, false);
+				createRegister (ba++, "pair_1chA", "daughter module to read on Channel A of Pair 1", true, true, false);
+				createRegister (ba++, "pair_1chB", "daughter module to read on Channel B of Pair 1", true, true, false);
+				createRegister (ba++, "pair_2chA", "daughter module to read on Channel A of Pair 2", true, true, false);
+				createRegister (ba++, "pair_2chB", "daughter module to read on Channel B of Pair 2", true, true, false);
+				createRegister (ba++, "pair_3chA", "daughter module to read on Channel A of Pair 3", true, true, false);
+				createRegister (ba++, "pair_3chB", "daughter module to read on Channel B of Pair 3", true, true, false);
 				break;
 			case BT_CLIF:
 				ba = 0x00020000;
 				createRegister (ba, "clif.temperature", "[mK] camera link module temperature", false, true, false);
+
+				ba = 0x10020000;
+				createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, true, false);
+				createRegister (ba++, "clif.loop_count", "number active pixel clocks per line", true, true, false);
+
+				for (i = 0; i < 32; i++)
+				{
+					std::ostringstream name, desc;
+					name << "clif.tapA" << i << "_start";
+					desc << "channel A tap " << i << "start address in line buffer";
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+				}
+				for (i = 0; i < 32; i++)
+				{
+					std::ostringstream name, desc;
+					name << "clif.tapB" << i << "_start";
+					desc << "channel B tap " << i << "start address in line buffer";
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+				}
+
+				for (i = 0; i < 32; i++)
+				{
+					std::ostringstream name, desc;
+					name << "clif.tapA" << i << "_delta";
+					desc << "channel A tap " << i << "delta address in line buffer";
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+				}
+				for (i = 0; i < 32; i++)
+				{
+					std::ostringstream name, desc;
+					name << "clif.tapB" << i << "_delta";
+					desc << "channel B tap " << i << "delta address in line buffer";
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+				}
+				createRegister (ba++, "clif.line_length", "line length in camera clock cycles", true, true, false);
+				createRegister (ba++, "clif.precount", "dummy camera link clock cycles before LVAL high", true, true, false);
+				createRegister (ba++, "clif.postcount", "dummy camera link clock cycles after LVAL low", true, true, false);
+				createRegister (ba++, "clif.line_cunt", "number of camera link lines", true, true, false);
+				createRegister (ba++, "clif.idle_ount", "number of idle camera link lines between frames", true, true, false);
+				createRegister (ba++, "clif.link_mode", "camera link mode", true, true, false);
+
 				break;
 			case BT_PA:
 				ba = 0x00030000;
@@ -665,7 +732,7 @@ void Reflex::createBoards ()
 				createRegister (ba++, "pwrA.p5VA_A", "[mA] +5V analog supply current reading", false, true, false);
 
 				createRegister (ba++, "pwrA.m5VA_V", "[mV] -5V analog supply voltage reading", false, true, false);
-				createRegister (ba++, "pwrA.m5VA_A", "[mA] -5V analog supply current reading", false, true, false);
+				createRegister (ba, "pwrA.m5VA_A", "[mA] -5V analog supply current reading", false, true, false);
 				break;
 			case BT_PB:
 				ba = 0x00040000;
@@ -681,48 +748,112 @@ void Reflex::createBoards ()
 				createRegister (ba++, "pwrB.m15VA_A", "[mA] -15V analog supply current reading", false, true, false);
 
 				createRegister (ba++, "pwrB.TEC_set", "[mK] monitored value of TEC setpoint", false, true, false);
-				createRegister (ba++, "pwrB.TEC_actual", "[mK] current TEC temperature", false, true, false);
+				createRegister (ba, "pwrB.TEC_actual", "[mK] current TEC temperature", false, true, false);
+
+				ba = 0x10040000;
+				createRegister (ba++, "pwrB.TEC_set", "[mK] TEC setpoint (zero to disable)", true, true, false);
 				break;
 			case BT_AD8X120:
 			case BT_AD8X100:
+				ba = (bt - POWER) << 16;
+				createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
+				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
+
+				// control registers
+				ba = 0x10000000 | ((bt - POWER) < 16);
+				createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, true, false);
+				createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, true, false);
+
+				createRegister (ba++, (bn + "raw_mode").c_str (), "CDS/raw mode", true, true, false);
+				createRegister (ba++, (bn + "raw_channel").c_str (), "AD channel to stream in raw mode, 0-7", true, true, false);
+				createRegister (ba++, (bn + "cds_gain").c_str (), "[M] fixed point gain to apply in CDS mode (0x00010000 is gain 1.0)", true, true, true);
+				createRegister (ba++, (bn + "cds_offset").c_str (), "fixed point offset to apply in CDS mode", true, true, false);
+				createRegister (ba++, (bn + "hdr_mode").c_str (), "Normal/HDR (32 bit) sample mode", true, true, false);
+
+				createRegister (ba++, (bn + "cds_reset_start").c_str (), "starting sample to use for CDS reset level after pixel clock", true, true, false);
+				createRegister (ba++, (bn + "cds_reset_stop").c_str (), "last sample to use for CDS reset level after pixel clock", true, true, false);
+				createRegister (ba++, (bn + "cds_video_start").c_str (), "starting sample to use for CDS video level after pixel clock", true, true, false);
+				createRegister (ba++, (bn + "cda_video_stop").c_str (), "last sample to use for CDS video level after pixel clock", true, true, false);
+				break;
 			case BT_DRIVER:
 				ba = (bt - POWER) << 16;
 				createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
-				createRegister (ba++, (bn + "status").c_str (), "module status", false, true, true);
+				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
+
+				ba = 0x10000000 | ((bt - POWER) << 16);
+				createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, true, true);
+
+				for (i = 1; i < 13; i++)
+				{
+					std::ostringstream n;
+					n << i;
+					createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[mV] low level clock voltage for channel " + n.str ()).c_str (), true, true, false);
+					createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[mV] high level clock voltage for channel " + n.str ()).c_str (), true, true, false);
+					createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[mV] clock slew rate for channel " + n.str ()).c_str (), true, true, false);
+				}
 				break;
 			case BT_BIAS:
+				ba = (bt - POWER) << 16;
+				createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
+				for (i = 1; i < 9; i++)
 				{
-					ba = (bt - POWER) << 16;
-					createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
-					int i;
-					for (i = 1; i < 9; i++)
-					{
-						std::ostringstream vname, comment;
-						vname << bn << "LV" << i;
-						comment << "[mv] Low-voltage bias #" << i << " voltage";
-						createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
-					}
-					for (i = 1; i < 9; i++)
-					{
-						std::ostringstream vname, comment;
-						vname << bn << "HV" << i;
-						comment << "[mv] High-voltage bias #" << i << " voltage";
-						createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
-					}
-					for (i = 1; i < 9; i++)
-					{
-						std::ostringstream vname, comment;
-						vname << bn << "LC" << i;
-						comment << "[uA] Low voltage bias #" << i << " current";
-						createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
-					}
-					for (i = 1; i < 9; i++)
-					{
-						std::ostringstream vname, comment;
-						vname << bn << "HC" << i;
-						comment << "[uA] High-voltage bias #" << i << " current";
-						createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
-					}
+					std::ostringstream vname, comment;
+					vname << bn << "meas_LV" << i;
+					comment << "[mv] Low-voltage bias #" << i << " voltage";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "meas_HV" << i;
+					comment << "[mv] High-voltage bias #" << i << " voltage";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "meas_LC" << i;
+					comment << "[uA] Low voltage bias #" << i << " current";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "meas_HC" << i;
+					comment << "[uA] High-voltage bias #" << i << " current";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+
+				ba = 0x10000000 | ((bt - POWER) << 16);
+				createRegister (ba++, (bn + "bias_enable").c_str (), "bit field identifing which biash channels to enable", true, true, true);
+
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "LV" << i;
+					comment << "[mv] DC bias level for LV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "HV" << i;
+					comment << "[mv] DC bias level for HV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "LC" << i;
+					comment << "[uA] current limit for LV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+				}
+				for (i = 1; i < 9; i++)
+				{
+					std::ostringstream vname, comment;
+					vname << bn << "HC" << i;
+					comment << "[uA] current limit for HV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
 				}
 				break;
 			default:
