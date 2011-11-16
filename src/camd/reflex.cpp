@@ -32,9 +32,12 @@
 //#define CL_EURESYS
 
 #ifdef CL_EURESYS
+
 #include <terminal.h>
 #define hSerRef void *
+
 #elif defined(CL_EDT)
+
 #include <edtinc.h>
 #define CL_BAUDRATE_9600                        9600
 #define CL_BAUDRATE_19200                       19200
@@ -44,8 +47,13 @@
 #define CL_BAUDRATE_230400                      230400
 #define CL_BAUDRATE_460800                      460800
 #define CL_BAUDRATE_921600                      921600
+
+const int NUM_RING_BUFFERS = 2;
+
 #else
+
 #include <clallserial.h>
+
 #endif
 
 
@@ -80,6 +88,38 @@ class RRegister:public rts2core::ValueInteger
 		 * If value should be update on info call.
 		 */
 		bool info_update;
+};
+
+/**
+ * Reflex state. Describes how to change controller outputs.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+struct RState
+{
+	std::string name;
+
+	std::string value_backplane;
+	std::string value_interface;
+
+	std::string id_backplane;
+	std::string id_interface;	
+
+	std::string daughter_values[MAX_DAUGHTER_COUNT];
+	std::string daughter_ids[MAX_DAUGHTER_COUNT];
+};
+
+/**
+ * Holds all states, enables quick search on them.
+ *
+ * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ */
+class RStates:public std::list <RState>
+{
+	public:
+		RStates ():std::list <RState> () {}
+
+		RStates::iterator findName (std::string sname);
 };
 
 /**
@@ -159,8 +199,19 @@ class Reflex:public Camera
 
 		void reloadConfig ();
 
+		// parse states for program
+		void parseStates ();
+
+		// compile program
+		void compile ();
+
+		// load timing informations
+		void loadTiming ();
+
 		// create board values
 		void createBoards ();
+
+		RStates states;
 
 		rts2core::ValueSelection *baudRate;
 #ifdef CL_EDT
@@ -173,6 +224,18 @@ class Reflex:public Camera
 }
 
 using namespace rts2camd;
+
+
+RStates::iterator RStates::findName (std::string sname)
+{
+	RStates::iterator iter;
+	for (iter = begin (); iter != end (); iter++)
+	{
+		if (iter->name == sname)
+			return iter;
+	}
+	return iter;
+}
 
 Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
@@ -300,7 +363,20 @@ long Reflex::isExposing ()
 
 int Reflex::readoutStart ()
 {
+	int width, height;
+	
+	width = getUsedWidth ();
+	height = getUsedHeight ();
+
+#ifdef CL_EDT
+	int ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
+	if (ret == -1)
+	{
+		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
+		return -1;
+	}
 	return 0;
+#endif
 }
 
 int Reflex::doReadout ()
@@ -636,9 +712,65 @@ void Reflex::reloadConfig ()
 
 	config = new Rts2ConfigRaw ();
 	if (config->loadFile (configFile))
-		throw rts2core::Error ("cannot load .rcf configuration file");
+	{
+		config = NULL;
+		throw rts2core::Error ("cannot parse .rcf configuration file");
+	}
+
+	parseStates ();
+}
+
+void Reflex::parseStates ()
+{
+	if (config == NULL)
+		throw rts2core::Error ("empty configuration file");
+	states.clear ();
+	int count;
+	int ret = config->getInteger ("TIMING", "STATES", count);
+	if (ret || count < 0)
+		throw rts2core::Error ("invalid state count");
+
+	for (int i = 0; i < count; i++)
+	{
+		RState newState;
+		std::ostringstream n;
+		n << "STATE" << i;
+
+		ret = config->getString ("TIMING", (n.str () + "NAME").c_str (), newState.name);
+		if (ret)
+			throw rts2core::Error ("cannot get state name");
+		if (states.findName (newState.name) != states.end())
+			throw rts2core::Error ("duplicate state name " + newState.name);
+
+		if (config->getString ("TIMING", (n.str () + "\\BACKPLANE\\ID").c_str (), newState.id_backplane)
+			|| config->getString ("TIMING", (n.str () + "\\INTERFACE\\ID").c_str (), newState.id_interface)
+			|| config->getString ("TIMING", (n.str () + "\\BACKPLANE\\CLOCKS").c_str (), newState.value_backplane)
+			|| config->getString ("TIMING", (n.str () + "\\INTERFACE\\CLOCKS").c_str (), newState.value_interface))
+			throw rts2core::Error ("cannot find backplane/interface id/clocks");
 		
-	
+		for (int b = 0; b < MAX_DAUGHTER_COUNT; b++)
+		{
+			std::ostringstream bn;
+			bn << n.str () << "\\BOARD" << (b + 1);
+
+			config->getString ("TIMING", (bn.str () + "\\ID").c_str (), newState.daughter_ids[b], "");
+			config->getString ("TIMING", (bn.str () + "\\CLOCKS").c_str (), newState.daughter_values[b], "");
+		}
+
+		states.push_back (newState);
+	}
+}
+
+// compile program
+void Reflex::compile ()
+{
+
+}
+
+// load timing informations
+void Reflex::loadTiming ()
+{
+
 }
 
 void Reflex::createBoards ()
