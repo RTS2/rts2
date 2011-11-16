@@ -4,7 +4,7 @@ SUBDIRS = urvc2 apogee edtsao
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-sidecar
 
-noinst_HEADERS = ccd_msg.h
+noinst_HEADERS = ccd_msg.h reflex.h
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
