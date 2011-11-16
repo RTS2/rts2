@@ -17,12 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/libnova_cpp.h"
-#include "../utils/rts2config.h"
+#include "libnova_cpp.h"
+#include "rts2config.h"
 
 #include "tellx200.h"
 #include "hms.h"
-#include "clicupola.h"
+#include "../../lib/rts2/clicupola.h"
 #include "pier-collision.h"
 
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
