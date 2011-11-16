@@ -1026,7 +1026,7 @@ int EdtSao::readoutStart ()
 	ret = pdv_setsize (pd, width * dataChannels->getValueInteger (), height);
 	if (ret == -1)
 	{
-		logStream (MESSAGE_ERROR) << "startExposure failed in pdv_setsize" << sendLog;
+		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
 		return -1;
 	}
 	depth = pdv_get_depth (pd);
