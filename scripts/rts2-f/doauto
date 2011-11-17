@@ -210,9 +210,10 @@ while (1 != 0)
 	set slit = `wc -l /Realtime/lib/slit_status | awk '{print $1}'`
 	if ( $slit == 1 ) then
 	  	if ( $tar_id == -2 ) then
+			rts2-logcom "system is not ON. interrupt script now with ctrl+c if you don't want robot to close dome"
 			set count=15
 			while ( $count > 0 )
-				echo -n "system is not ON. Slit will be closed in $count seconds, unless you interrupt script now with ctrl+c\r"
+				echo -n "Dome will close in $count seconds\r"
 				sleep 1
 				@ count--
 			end
