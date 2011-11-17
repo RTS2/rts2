@@ -107,6 +107,9 @@ struct RState
 
 	std::string daughter_values[MAX_DAUGHTER_COUNT];
 	std::string daughter_ids[MAX_DAUGHTER_COUNT];
+
+	// state compiled to be loaded into timing core
+	std::string compiled;
 };
 
 /**
@@ -201,6 +204,9 @@ class Reflex:public Camera
 
 		// parse states for program
 		void parseStates ();
+
+		// compile states, fill compiled member of RState
+		void compileStates ();
 
 		// compile program
 		void compile ();
@@ -718,6 +724,7 @@ void Reflex::reloadConfig ()
 	}
 
 	parseStates ();
+	compileStates ();
 }
 
 void Reflex::parseStates ()
@@ -758,6 +765,97 @@ void Reflex::parseStates ()
 		}
 
 		states.push_back (newState);
+	}
+}
+
+std::string compileState (std::string value, int bt)
+{
+	std::ostringstream ret;
+	ret.fill ('0');
+	ret.setf (std::ios::hex, std::ios::basefield);
+	
+	unsigned count = 0;
+	switch (bt)
+	{
+		case BT_BPX6:
+		case BT_CLIF:
+			count = 8;
+			break;
+		case BT_NONE:
+		case BT_BIAS:
+			return ret.str ();
+		case BT_DRIVER:
+			count = 12;
+			break;
+		case BT_AD8X120:
+			count = 5;
+			break;
+		case BT_AD8X100:
+			count = 4;
+			break;
+		case BT_HS:
+			count = 10;
+			break;
+		default:
+			throw rts2core::Error ("unknow board type while compiling states");
+	}
+	if (value.length () != count)
+	{
+		std::ostringstream err;
+		err << "invalid length of value for board type " << std::hex << bt << ": expected " << count << " characters, string is " << value;
+		throw rts2core::Error (err.str ());
+	}
+	uint16_t clockdata = 0;
+	uint16_t keepdata = 0;
+	int bit = 1;
+	for (unsigned  clock = 0; clock < count; clock++)
+	{
+		switch (value[clock])
+		{
+			case '0':
+				break;
+			case '1':
+				clockdata |= bit;
+				break;
+			case '2':
+				keepdata |= bit;
+				break;
+		}
+		bit <<= 1;
+	}
+	// perform special handling of states..
+	switch (bt)
+	{
+		case BT_AD8X100:
+			// Old AD8X120 is CLAMP, FVAL, LVAL, DVAL, PCLK
+			// For new AD8X100, FVAL is now SYNC, LVAL is don't care.  Realign DVAL and PCLK to match old timing
+			clockdata = (clockdata & 0x3) | ((clockdata & 0xC) << 1);
+			keepdata = (keepdata & 0x3) | ((keepdata & 0xC) << 1);
+		case BT_BPX6:
+		case BT_CLIF:
+		case BT_AD8X120:
+			ret.width (2);
+			ret << clockdata << keepdata;
+			break;
+		case BT_HS:
+			// Slots for LVAL still exists, though FVAL is now sync and LVAL is don't care.  Realign remaining clocks.
+			clockdata = (clockdata & 0x1) | ((clockdata & 0x3FE) << 1);
+			keepdata = (keepdata & 0x1) | ((keepdata & 0x3FE) << 1);
+		case BT_DRIVER:
+			ret.width (4);
+			ret << clockdata << keepdata;
+			break;
+	}
+	return ret.str ();
+}
+
+void Reflex::compileStates ()
+{
+	for (RStates::iterator iter = states.begin (); iter != states.end (); iter++)
+	{
+		iter->compiled = compileState (iter->value_backplane, BT_BPX6) + compileState (iter->value_interface, BT_CLIF);
+		for (uint32_t i = 0; i < MAX_DAUGHTER_COUNT; i++)
+			iter->compiled += compileState (iter->daughter_values[i], registers[BOARD_TYPE_D1 + i]->getValueInteger () << 24);
 	}
 }
 
