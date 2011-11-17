@@ -270,6 +270,12 @@ class App:public Rts2Object
 		 */
 		virtual int init ();
 
+		/**
+		 * Return set debug level.
+		 *
+		 * @return debug level
+		 */
+		int getDebug () { return debug; }
 	private:
 		/**
 		 * Holds options which might be passed to the program.
