@@ -196,6 +196,11 @@ class Reflex:public Camera
 		int readRegister(uint32_t addr, uint32_t& data);
 		int writeRegister(uint32_t addr, uint32_t data);
 
+		/**
+		 * Update value of all registers in memory.
+		 */
+		void rereadAllRegisters ();
+
 		// related to configuration file..
 		const char *configFile;
 		Rts2ConfigRaw *config;
@@ -204,9 +209,18 @@ class Reflex:public Camera
 
 		// parse states for program
 		void parseStates ();
-
 		// compile states, fill compiled member of RState
 		void compileStates ();
+
+		// parse parameters
+		void parseParameters ();
+
+		/**
+		 * Find index of a parameter.
+		 *
+		 * @return parameter index, or -1 if parameter cannot be found
+		 */
+		int parameterIndex (const std::string pname);
 
 		// compile program
 		void compile ();
@@ -218,6 +232,9 @@ class Reflex:public Camera
 		void createBoards ();
 
 		RStates states;
+		std::vector <std::string> program;
+
+		std::vector <std::pair <std::string, uint32_t> > parameters;
 
 		rts2core::ValueSelection *baudRate;
 #ifdef CL_EDT
@@ -413,6 +430,8 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
+
+
 int Reflex::initHardware ()
 {
 	int ret;
@@ -420,19 +439,11 @@ int Reflex::initHardware ()
 	if (ret)
 		return ret;
 
-	// read all registers
-	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
-	{
-		uint32_t rval;
-		if (readRegister (iter->first, rval))
-		{
-			logStream (MESSAGE_ERROR) << "error reading register 0x" << std::setw (8) << std::setfill ('0') << std::hex << iter->first << sendLog;
-			return -1;
-		}
-		iter->second->setValueInteger (rval);
-	}
+	rereadAllRegisters ();
 
 	createBoards ();
+
+	rereadAllRegisters ();
 
 	reloadConfig ();
 	return 0;
@@ -706,6 +717,22 @@ int Reflex::writeRegister(unsigned addr, unsigned data)
 	return 0;
 }
 
+void Reflex::rereadAllRegisters ()
+{
+	// read all registers
+	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
+	{
+		uint32_t rval;
+		if (readRegister (iter->first, rval))
+		{
+			std::ostringstream err;
+			err << "error reading register 0x" << std::setw (8) << std::setfill ('0') << std::hex << iter->first;
+			throw rts2core::Error (err.str ());
+		}
+		iter->second->setValueInteger (rval);
+	}
+}
+
 void Reflex::reloadConfig ()
 {
 	if (!configFile)
@@ -725,6 +752,8 @@ void Reflex::reloadConfig ()
 
 	parseStates ();
 	compileStates ();
+
+	compile ();
 }
 
 void Reflex::parseStates ()
@@ -766,6 +795,30 @@ void Reflex::parseStates ()
 
 		states.push_back (newState);
 	}
+}
+
+/**
+ * Return next token; tokens are space separated entitites
+ */
+void getToken (std::string &tokens, std::string &token)
+{
+	unsigned int i;
+	token = std::string ("");
+	// eat white space..
+	for (i = 0; i < tokens.length (); i++)
+	{
+		if (isspace (tokens[i]))
+			tokens = tokens.substr (1);
+		else
+			break;
+	}
+	for (i = 0; i < tokens.length (); i++)
+	{
+		if (!isgraph (tokens[i]))
+			break;
+		token.push_back(tokens[i]);
+	}
+	tokens = tokens.substr (i);
 }
 
 std::string compileState (std::string value, int bt)
@@ -859,10 +912,67 @@ void Reflex::compileStates ()
 	}
 }
 
+void Reflex::parseParameters ()
+{
+	parameters.clear ();
+	int pcount;
+	if (config->getInteger ("TIMING", "PARAMETERS", pcount) || pcount < 0) 
+		throw rts2core::Error ("cannot get number of paramter lines (TIMING/PARAMETERS");
+	for (int l = 0; l < pcount; l++)
+	{
+		std::string line;
+		std::string token;
+
+		std::ostringstream ln;
+		ln << "PARAMETER" << l;
+
+		if (config->getString ("TIMING", ln.str ().c_str (), line))
+			throw rts2core::Error ("cannot retrieve TIMING/" + ln.str ());
+		getToken (line, token);
+		if (token.empty () || token[0] == '#')
+			continue;
+
+	}
+}
+
+int Reflex::parameterIndex (const std::string pname)
+{
+	int ret = 0;
+	for (std::vector <std::pair <std::string, uint32_t> >::iterator iter = parameters.begin (); iter != parameters.end (); iter++)
+	{
+		if (iter->first == pname)
+			return ret;
+		ret++;
+	}
+	return -1;
+}
+
 // compile program
 void Reflex::compile ()
 {
+	program.clear ();
+	// assign to program lines
+	// the lines will be then converted to code..
+	int linecount, line;
+	if (config->getInteger ("TIMING", "LINES", linecount) || linecount < 0)
+		throw rts2core::Error ("invalid number of lines (TIMING/LINES value in config file)");
 
+	for (line = 0; line < linecount; line++)
+	{
+		std::ostringstream linename;
+		linename << "LINE" << line;
+		std::string pl;
+		if (config->getString ("TIMING", linename.str ().c_str (), pl))
+			throw rts2core::Error ("missiing " + linename.str ());
+		program.push_back (pl);
+	}
+
+	std::vector <std::string>::iterator iter;
+	// first compile step - get rid of comments, get constants and labels
+	for (iter=program.begin (); iter < program.end (); iter++)
+	{
+		
+	}
 }
 
 // load timing informations
@@ -893,40 +1003,40 @@ void Reflex::createBoards ()
 
 				ba = 0x10010000;
 				// control registers
-				createRegister (ba++, "MCLK", "[Hz} master clock frequency (60 MHz - 100 MHz)", true, true, false);
-				createRegister (ba++, "daughter_enable", "bit-field specifying which AD daughter modules the backplane should read", true, true, false);
-				createRegister (ba++, "pair_count", "number of pairs of AD daughter modules the backplane should read", true, true, false);
+				createRegister (ba++, "MCLK", "[Hz} master clock frequency (60 MHz - 100 MHz)", true, false, false);
+				createRegister (ba++, "daughter_enable", "bit-field specifying which AD daughter modules the backplane should read", true, false, false);
+				createRegister (ba++, "pair_count", "number of pairs of AD daughter modules the backplane should read", true, false, false);
 
-				createRegister (ba++, "pair_0chA", "daughter module to read on Channel A of Pair 0", true, true, false);
-				createRegister (ba++, "pair_0chB", "daughter module to read on Channel B of Pair 0", true, true, false);
-				createRegister (ba++, "pair_1chA", "daughter module to read on Channel A of Pair 1", true, true, false);
-				createRegister (ba++, "pair_1chB", "daughter module to read on Channel B of Pair 1", true, true, false);
-				createRegister (ba++, "pair_2chA", "daughter module to read on Channel A of Pair 2", true, true, false);
-				createRegister (ba++, "pair_2chB", "daughter module to read on Channel B of Pair 2", true, true, false);
-				createRegister (ba++, "pair_3chA", "daughter module to read on Channel A of Pair 3", true, true, false);
-				createRegister (ba++, "pair_3chB", "daughter module to read on Channel B of Pair 3", true, true, false);
+				createRegister (ba++, "pair_0chA", "daughter module to read on Channel A of Pair 0", true, false, false);
+				createRegister (ba++, "pair_0chB", "daughter module to read on Channel B of Pair 0", true, false, false);
+				createRegister (ba++, "pair_1chA", "daughter module to read on Channel A of Pair 1", true, false, false);
+				createRegister (ba++, "pair_1chB", "daughter module to read on Channel B of Pair 1", true, false, false);
+				createRegister (ba++, "pair_2chA", "daughter module to read on Channel A of Pair 2", true, false, false);
+				createRegister (ba++, "pair_2chB", "daughter module to read on Channel B of Pair 2", true, false, false);
+				createRegister (ba++, "pair_3chA", "daughter module to read on Channel A of Pair 3", true, false, false);
+				createRegister (ba++, "pair_3chB", "daughter module to read on Channel B of Pair 3", true, false, false);
 				break;
 			case BT_CLIF:
 				ba = 0x00020000;
 				createRegister (ba, "clif.temperature", "[mK] camera link module temperature", false, true, false);
 
 				ba = 0x10020000;
-				createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, true, false);
-				createRegister (ba++, "clif.loop_count", "number active pixel clocks per line", true, true, false);
+				createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, false, false);
+				createRegister (ba++, "clif.loop_count", "number active pixel clocks per line", true, false, false);
 
 				for (i = 0; i < 32; i++)
 				{
 					std::ostringstream name, desc;
 					name << "clif.tapA" << i << "_start";
 					desc << "channel A tap " << i << "start address in line buffer";
-					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
 				}
 				for (i = 0; i < 32; i++)
 				{
 					std::ostringstream name, desc;
 					name << "clif.tapB" << i << "_start";
 					desc << "channel B tap " << i << "start address in line buffer";
-					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
 				}
 
 				for (i = 0; i < 32; i++)
@@ -934,21 +1044,21 @@ void Reflex::createBoards ()
 					std::ostringstream name, desc;
 					name << "clif.tapA" << i << "_delta";
 					desc << "channel A tap " << i << "delta address in line buffer";
-					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
 				}
 				for (i = 0; i < 32; i++)
 				{
 					std::ostringstream name, desc;
 					name << "clif.tapB" << i << "_delta";
 					desc << "channel B tap " << i << "delta address in line buffer";
-					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+					createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
 				}
-				createRegister (ba++, "clif.line_length", "line length in camera clock cycles", true, true, false);
-				createRegister (ba++, "clif.precount", "dummy camera link clock cycles before LVAL high", true, true, false);
-				createRegister (ba++, "clif.postcount", "dummy camera link clock cycles after LVAL low", true, true, false);
-				createRegister (ba++, "clif.line_cunt", "number of camera link lines", true, true, false);
-				createRegister (ba++, "clif.idle_ount", "number of idle camera link lines between frames", true, true, false);
-				createRegister (ba++, "clif.link_mode", "camera link mode", true, true, false);
+				createRegister (ba++, "clif.line_length", "line length in camera clock cycles", true, false, false);
+				createRegister (ba++, "clif.precount", "dummy camera link clock cycles before LVAL high", true, false, false);
+				createRegister (ba++, "clif.postcount", "dummy camera link clock cycles after LVAL low", true, false, false);
+				createRegister (ba++, "clif.line_cunt", "number of camera link lines", true, false, false);
+				createRegister (ba++, "clif.idle_ount", "number of idle camera link lines between frames", true, false, false);
+				createRegister (ba++, "clif.link_mode", "camera link mode", true, false, false);
 
 				break;
 			case BT_PA:
@@ -981,7 +1091,7 @@ void Reflex::createBoards ()
 				createRegister (ba, "pwrB.TEC_actual", "[mK] current TEC temperature", false, true, false);
 
 				ba = 0x10040000;
-				createRegister (ba++, "pwrB.TEC_set", "[mK] TEC setpoint (zero to disable)", true, true, false);
+				createRegister (ba++, "pwrB.TEC_set", "[mK] TEC setpoint (zero to disable)", true, false, false);
 				break;
 			case BT_AD8X120:
 			case BT_AD8X100:
@@ -991,19 +1101,19 @@ void Reflex::createBoards ()
 
 				// control registers
 				ba = 0x10000000 | ((bt - POWER) < 16);
-				createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, true, false);
-				createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, true, false);
+				createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, false, false);
+				createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, false, false);
 
-				createRegister (ba++, (bn + "raw_mode").c_str (), "CDS/raw mode", true, true, false);
-				createRegister (ba++, (bn + "raw_channel").c_str (), "AD channel to stream in raw mode, 0-7", true, true, false);
-				createRegister (ba++, (bn + "cds_gain").c_str (), "[M] fixed point gain to apply in CDS mode (0x00010000 is gain 1.0)", true, true, true);
-				createRegister (ba++, (bn + "cds_offset").c_str (), "fixed point offset to apply in CDS mode", true, true, false);
-				createRegister (ba++, (bn + "hdr_mode").c_str (), "Normal/HDR (32 bit) sample mode", true, true, false);
+				createRegister (ba++, (bn + "raw_mode").c_str (), "CDS/raw mode", true, false, false);
+				createRegister (ba++, (bn + "raw_channel").c_str (), "AD channel to stream in raw mode, 0-7", true, false, false);
+				createRegister (ba++, (bn + "cds_gain").c_str (), "[M] fixed point gain to apply in CDS mode (0x00010000 is gain 1.0)", true, false, true);
+				createRegister (ba++, (bn + "cds_offset").c_str (), "fixed point offset to apply in CDS mode", true, false, false);
+				createRegister (ba++, (bn + "hdr_mode").c_str (), "Normal/HDR (32 bit) sample mode", true, false, false);
 
-				createRegister (ba++, (bn + "cds_reset_start").c_str (), "starting sample to use for CDS reset level after pixel clock", true, true, false);
-				createRegister (ba++, (bn + "cds_reset_stop").c_str (), "last sample to use for CDS reset level after pixel clock", true, true, false);
-				createRegister (ba++, (bn + "cds_video_start").c_str (), "starting sample to use for CDS video level after pixel clock", true, true, false);
-				createRegister (ba++, (bn + "cda_video_stop").c_str (), "last sample to use for CDS video level after pixel clock", true, true, false);
+				createRegister (ba++, (bn + "cds_reset_start").c_str (), "starting sample to use for CDS reset level after pixel clock", true, false, false);
+				createRegister (ba++, (bn + "cds_reset_stop").c_str (), "last sample to use for CDS reset level after pixel clock", true, false, false);
+				createRegister (ba++, (bn + "cds_video_start").c_str (), "starting sample to use for CDS video level after pixel clock", true, false, false);
+				createRegister (ba++, (bn + "cda_video_stop").c_str (), "last sample to use for CDS video level after pixel clock", true, false, false);
 				break;
 			case BT_DRIVER:
 				ba = (bt - POWER) << 16;
@@ -1011,15 +1121,15 @@ void Reflex::createBoards ()
 				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
 				ba = 0x10000000 | ((bt - POWER) << 16);
-				createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, true, true);
+				createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, false, true);
 
 				for (i = 1; i < 13; i++)
 				{
 					std::ostringstream n;
 					n << i;
-					createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[mV] low level clock voltage for channel " + n.str ()).c_str (), true, true, false);
-					createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[mV] high level clock voltage for channel " + n.str ()).c_str (), true, true, false);
-					createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[mV] clock slew rate for channel " + n.str ()).c_str (), true, true, false);
+					createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[mV] low level clock voltage for channel " + n.str ()).c_str (), true, false, false);
+					createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[mV] high level clock voltage for channel " + n.str ()).c_str (), true, false, false);
+					createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[mV] clock slew rate for channel " + n.str ()).c_str (), true, false, false);
 				}
 				break;
 			case BT_BIAS:
@@ -1055,35 +1165,35 @@ void Reflex::createBoards ()
 				}
 
 				ba = 0x10000000 | ((bt - POWER) << 16);
-				createRegister (ba++, (bn + "bias_enable").c_str (), "bit field identifing which biash channels to enable", true, true, true);
+				createRegister (ba++, (bn + "bias_enable").c_str (), "bit field identifing which biash channels to enable", true, false, true);
 
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << "LV" << i;
 					comment << "[mv] DC bias level for LV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, false, false);
 				}
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << "HV" << i;
 					comment << "[mv] DC bias level for HV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, false, false);
 				}
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << "LC" << i;
 					comment << "[uA] current limit for LV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, false, false);
 				}
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << "HC" << i;
 					comment << "[uA] current limit for HV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, false, false);
 				}
 				break;
 			default:
