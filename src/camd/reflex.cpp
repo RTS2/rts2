@@ -110,6 +110,7 @@ struct RState
 
 	// state compiled to be loaded into timing core
 	std::string compiled;
+	unsigned int address;
 };
 
 /**
@@ -233,6 +234,7 @@ class Reflex:public Camera
 
 		RStates states;
 		std::vector <std::string> program;
+		std::vector <std::string> code;
 
 		std::vector <std::pair <std::string, uint32_t> > parameters;
 
@@ -744,7 +746,7 @@ void Reflex::reloadConfig ()
 	delete config;
 
 	config = new Rts2ConfigRaw ();
-	if (config->loadFile (configFile))
+	if (config->loadFile (configFile, true))
 	{
 		config = NULL;
 		throw rts2core::Error ("cannot parse .rcf configuration file");
@@ -753,7 +755,11 @@ void Reflex::reloadConfig ()
 	parseStates ();
 	compileStates ();
 
+	parseParameters ();
+
 	compile ();
+
+	loadTiming ();
 }
 
 void Reflex::parseStates ()
@@ -797,6 +803,25 @@ void Reflex::parseStates ()
 	}
 }
 
+
+/**
+ * Eat spaces from beginning of tokens string.
+ */
+char nextChar (std::string &tokens)
+{
+	unsigned int i;
+	for (i = 0; i < tokens.length (); i++)
+	{
+		if (!isspace (tokens[i]))
+			break;
+	}
+	if (i > 0)
+		tokens = tokens.substr (i);
+	if (tokens.empty ())
+		return 0;
+	return tokens[0];
+}
+
 /**
  * Return next token; tokens are space separated entitites
  */
@@ -805,16 +830,10 @@ void getToken (std::string &tokens, std::string &token)
 	unsigned int i;
 	token = std::string ("");
 	// eat white space..
+	nextChar (tokens);
 	for (i = 0; i < tokens.length (); i++)
 	{
-		if (isspace (tokens[i]))
-			tokens = tokens.substr (1);
-		else
-			break;
-	}
-	for (i = 0; i < tokens.length (); i++)
-	{
-		if (!isgraph (tokens[i]))
+		if (!isalnum (tokens[i]))
 			break;
 		token.push_back(tokens[i]);
 	}
@@ -876,6 +895,7 @@ std::string compileState (std::string value, int bt)
 		}
 		bit <<= 1;
 	}
+	ret << std::uppercase;
 	// perform special handling of states..
 	switch (bt)
 	{
@@ -887,16 +907,14 @@ std::string compileState (std::string value, int bt)
 		case BT_BPX6:
 		case BT_CLIF:
 		case BT_AD8X120:
-			ret.width (2);
-			ret << clockdata << keepdata;
+			ret << std::setw (2) << clockdata << std::setw (2) << keepdata;
 			break;
 		case BT_HS:
 			// Slots for LVAL still exists, though FVAL is now sync and LVAL is don't care.  Realign remaining clocks.
 			clockdata = (clockdata & 0x1) | ((clockdata & 0x3FE) << 1);
 			keepdata = (keepdata & 0x1) | ((keepdata & 0x3FE) << 1);
 		case BT_DRIVER:
-			ret.width (4);
-			ret << clockdata << keepdata;
+			ret << std::setw (4) << clockdata << std::setw (4) << keepdata;
 			break;
 	}
 	return ret.str ();
@@ -908,7 +926,7 @@ void Reflex::compileStates ()
 	{
 		iter->compiled = compileState (iter->value_backplane, BT_BPX6) + compileState (iter->value_interface, BT_CLIF);
 		for (uint32_t i = 0; i < MAX_DAUGHTER_COUNT; i++)
-			iter->compiled += compileState (iter->daughter_values[i], registers[BOARD_TYPE_D1 + i]->getValueInteger () << 24);
+			iter->compiled += compileState (iter->daughter_values[i], registers[BOARD_TYPE_D1 + i]->getValueInteger () >> 24);
 	}
 }
 
@@ -931,7 +949,17 @@ void Reflex::parseParameters ()
 		getToken (line, token);
 		if (token.empty () || token[0] == '#')
 			continue;
-
+		if (parameterIndex (token) >= 0)
+			throw rts2core::Error ("Multiple declaration of parameter with name " + token);
+		if (nextChar (line) != '=')
+			throw rts2core::Error ("Parameters must be of the form NAME = VALUE");
+		std::string pname = token;
+		getToken (line, token);
+		char *endptr;
+		uint32_t value = strtol (token.c_str (), &endptr,0);
+		if (*endptr)
+			throw rts2core::Error ("Invalid number " + token);
+		parameters.push_back (std::pair <std::string, uint32_t> (pname, value));
 	}
 }
 
@@ -953,32 +981,243 @@ void Reflex::compile ()
 	program.clear ();
 	// assign to program lines
 	// the lines will be then converted to code..
-	int linecount, line;
+	int linecount, lnum;
+	unsigned int address = 0;
+	
 	if (config->getInteger ("TIMING", "LINES", linecount) || linecount < 0)
 		throw rts2core::Error ("invalid number of lines (TIMING/LINES value in config file)");
 
-	for (line = 0; line < linecount; line++)
+	for (lnum = 0; lnum < linecount; lnum++)
 	{
 		std::ostringstream linename;
-		linename << "LINE" << line;
+		linename << "LINE" << lnum;
 		std::string pl;
 		if (config->getString ("TIMING", linename.str ().c_str (), pl))
-			throw rts2core::Error ("missiing " + linename.str ());
+			throw rts2core::Error ("missing " + linename.str ());
+
+		std::transform (pl.begin(), pl.end(), pl.begin(), (int(*)(int)) std::toupper);
 		program.push_back (pl);
 	}
 
+	// name of label and its address..
+	std::map <std::string, int> labels;
+
+	// constant and its value
+	std::map <std::string, uint32_t> constants;
+
 	std::vector <std::string>::iterator iter;
+	std::string token;
 	// first compile step - get rid of comments, get constants and labels
-	for (iter=program.begin (); iter < program.end (); iter++)
+	for (lnum = 0, iter = program.begin (); iter < program.end (); iter++, lnum++)
 	{
-		
+		std::string line = *iter;
+		getToken (line, token);
+		// ignore empty lines
+		if (token.empty () || token[0] == '#')
+		{
+			*iter = std::string ("");
+		}
+		// label..
+		else if (!line.empty () && (line[0] == ':'))
+		{
+			if (labels.find (token) != labels.end ())
+				throw rts2core::Error ("multiple declaration of label " + token);
+			labels[token] = address;
+			*iter = std::string ("");
+		}
+		// SET expression - constants
+		else if (token == "SET")
+		{
+			getToken (line, token);
+			if (token.empty ())
+				throw rts2core::Error ("missing parameter name");
+			if (constants.find (token) != constants.end ())
+				throw rts2core::Error ("multiple declaration of constant " + token);
+			char *endptr;
+			constants[token] = strtol (line.c_str (), &endptr, 0);
+			if (*endptr && !isspace (*endptr))
+				throw rts2core::Error ("invalid number " + line);
+			*iter = std::string ("");
+		}
+		else
+		{
+			// check state name
+			if (states.findName (token) == states.end ())
+				throw rts2core::Error ("invalid state name " + token);
+			address++;
+			continue;
+		}
+	}
+
+	// assign address to states
+	for (RStates::iterator siter = states.begin (); siter != states.end (); siter++)
+	{
+		siter->address = address;
+		address++;
+	}
+
+	// second pass - emit code
+	address = 0;
+
+	code.clear ();
+
+	for (lnum = 0, iter = program.begin (); iter != program.end (); iter++)
+	{
+		int opcode = 0;
+		int condparam = 0;
+		int jump = 0;
+		int count = 0;
+		int countparam = 0;
+		int decparam = 0;
+
+		bool ifflag = false;
+		bool branchflag = false;
+
+		if (iter->empty ())
+			continue;
+		address++;
+
+		getToken (*iter, token);
+		std::string compiled_state = states.findName (token)->compiled;
+
+		if ((*iter)[0] != ';')
+			goto encode;
+		*iter = iter->substr (1);
+		getToken (*iter, token);
+		if (token.empty ())
+			goto encode;
+		if (token == "IF")
+		{
+			ifflag = true;
+			// check for ! (not)
+			if (nextChar (*iter) == '!')
+			{
+				*iter = iter->substr (1);
+				opcode |= 0x10; // Branch if parameter is zero
+			}
+			else
+			{
+				opcode |= 0x18; // Branch if parameter is not zero
+			}
+			getToken (*iter, token);
+			condparam = parameterIndex (token);
+			if (condparam < 0)
+				throw rts2core::Error ("Unknow parameter " + token);
+			getToken (*iter, token);
+		}
+		if (token == "GOTO")
+		{
+			branchflag = true;
+			getToken (*iter, token);
+			if (labels.find (token) == labels.end ())
+				throw rts2core::Error ("Unknown label " + token + " for GOTO");
+			opcode |= 0x01;
+			jump = labels[token];
+		}
+		else if (token == "CALL" || (states.findName (token) != states.end ()))
+		{
+			branchflag = true;
+			if (token == "CALL")
+			{
+				getToken (*iter, token);
+				if (labels.find (token) == labels.end ())
+					throw rts2core::Error ("Unknown label " + token + " for CALL");
+				jump = labels[token];
+			}
+			else
+			{
+				jump = states.findName (token)->address;
+			}
+			count = 1; // default count if no count specified
+			opcode |= 0x02; // CALL
+			if (nextChar (*iter) == '(')
+			{
+				*iter = iter->substr (1);
+				getToken (*iter, token);
+				// argument is a constant
+				if (constants.find (token) != constants.end ())
+				{
+					count = constants[token];
+				}
+				// argument is a parameter register
+				else if ((countparam = parameterIndex (token)) >= 0)
+				{
+					opcode |= 0x20; // use parameter for count
+				}
+				else
+				{
+					countparam = 0;
+					char *endptr;
+					count = strtol (token.c_str (), &endptr, 0);
+					if (*endptr)
+						throw rts2core::Error ("invalid number " + token + " for call repeat index");
+				}
+				if ((count < 1) || (count > 1048575))
+					throw rts2core::Error ("COUNT for CALL LABEL(COUNT) must be 1-1048575");
+				if (nextChar (*iter) != ')')
+					throw rts2core::Error ("missing closing parenthesis");
+			}
+		}
+		else if (ifflag)
+		{
+			throw rts2core::Error ("IF not followed by GOTO or CALL");
+		}
+		else if (token == "RETURN")
+		{
+			branchflag = true;
+			getToken (*iter, token);
+			if (labels.find (token) == labels.end ())
+				throw rts2core::Error ("unknow label " + token + " for RETURN");
+			jump = labels[token];
+			opcode |= 0x04; // RETURN
+		}
+		// check for parameter decrement
+		if (branchflag)
+		{
+			if (nextChar (*iter) != ';')
+				goto encode;
+			getToken (*iter, token);
+		}
+		if (iter->empty ())
+			goto encode;
+		decparam = parameterIndex (token);
+		if (decparam < 0)
+			throw rts2core::Error ("Unknow parameter " + token);
+		if ((nextChar (*iter) != '-') || (nextChar (*iter) != '-'))
+			throw rts2core::Error ("Error parsing decrement parameter (should be " + token + "--)");
+		opcode |= 0x40; // Decrement parameter
+	encode:
+		std::ostringstream os;
+		os.fill ('0');
+		os.setf (std::ios::hex, std::ios::basefield);
+		os << std::uppercase << std::setw (2) << opcode << std::setw (2) << condparam << std::setw (2) << countparam << std::setw (2) << decparam << std::setw (4) << jump << std::setw (6) << count << compiled_state;
+		code.push_back (os.str ());
+	}
+	// Encode states
+	for (RStates::iterator siter = states.begin (); siter != states.end (); siter++)
+	{
+		std::ostringstream os;
+		os.fill ('0');
+		os.setf (std::ios::hex, std::ios::basefield);
+		os << "04000000" << std::uppercase << std::setw (4) << siter->address << "000000" << siter->compiled;
+		code.push_back (os.str ());
 	}
 }
 
 // load timing informations
 void Reflex::loadTiming ()
 {
-
+	std::string s;
+	if (interfaceCommand (">TA000\r", s, 100))
+		throw rts2core::Error ("Error seting timing load address");
+	writeRegister (SYSTEM_CONTROL_ADDR, code.size ());
+	for (std::vector <std::string>::iterator iter = code.begin (); iter != code.end (); iter++)
+	{
+		std::ostringstream os;
+		os << ">T" << *iter << '\r';
+		if (interfaceCommand (os.str ().c_str (), s, 100))
+			throw rts2core::Error ("Error loading timing");
+	}
 }
 
 void Reflex::createBoards ()

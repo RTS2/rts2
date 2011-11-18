@@ -20,10 +20,13 @@
 #ifndef __RTS2_REFLEX_H__
 #define __RTS2_REFLEX_H__
 
+
 #define FIXED_BOARD_COUNT          4
 #define MAX_DAUGHTER_COUNT         8
 #define TOTAL_BOARD_COUNT         12
+#define PARAM_COUNT               64
 
+#define SYSTEM_CONTROL_ADDR       0x10000000
 #define SYSTEM_STATUS_ADDR        0x00000000
 #define ERROR_SYSTEM_STATUS_ADDR  0x40000000
 
