@@ -312,6 +312,10 @@
 #define IMGPROC_IDLE        0x00
 #define IMGPROC_RUN         0x01
 
+// selector simulating..
+#define SEL_SIMULATING      0x01
+#define SEL_IDLE            0x00
+
 // to send data
 
 #define DEVDEM_DATA         0x80
