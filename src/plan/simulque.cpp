@@ -59,25 +59,30 @@ SimulQueue::~SimulQueue ()
 
 }
 
-void SimulQueue::simulate (double from, double to)
+void SimulQueue::start (double _from, double _to)
 {
-  	double t = from;
-	// fill in simulation queue structure..
-	std::vector <SimulQueueTargets> sqs;
-	Queues::iterator qi;
+  	from = _from;
+	to = _to;
+	t = from;
 
-	std::vector <SimulQueueTargets>::iterator sq;
+	sqs.clear ();
 
-	for (qi = queues->begin (); qi != queues->end (); qi++)
+	// fill in simulation queues
+	for (Queues::iterator qi = queues->begin (); qi != queues->end (); qi++)
 		sqs.push_back (SimulQueueTargets (*qi));
 
 	clear ();
+}
 
-	while (t < to)
+double SimulQueue::step ()
+{
+	std::vector <SimulQueueTargets>::iterator sq;
+
+	if (t < to)
 	{
 	  	sq = sqs.begin ();
 		bool found = false;
-		for (qi = queues->begin (); qi != queues->end (); qi++)
+		for (Queues::iterator qi = queues->begin (); qi != queues->end (); qi++)
 		{
 			sq->filter (t);
 			int n_id = qi->selectNextSimulation (*sq, t, to, t);
@@ -94,11 +99,14 @@ void SimulQueue::simulate (double from, double to)
 		}
 		if (!found)
 			t += 60;
-		from = t;	
+		from = t;
+		return (t - from) / (to - from);
 	}
 
 	for (sq = sqs.begin (); sq != sqs.end (); sq++)
 		sq->clearNext ();
 
 	updateVals ();
+
+	return 2;
 }

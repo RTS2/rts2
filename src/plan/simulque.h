@@ -61,12 +61,33 @@ class SimulQueue:public ExecutorQueue
 		SimulQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues);
 		virtual ~SimulQueue ();
 
-		void simulate (double from, double to);
+		void start (double from, double to);
+
+		/**
+		 * Performs one step of the simulation.
+		 *
+		 * @return Progress (0-1 range) of the simulation, 2 if simulation was done
+		 */
+		double step ();
+		
+		/**
+		 * Get simulation time.
+		 *
+		 * @return current simulation time. You can get simulation progress when calling step ().
+		 * @see step()
+		 */
+		double getSimulationTime () { return t; } 
 
 	private:
 		// list of simulation input queues
 
 		Queues *queues;
+
+		std::vector <SimulQueueTargets> sqs;
+
+		double from;
+		double to;
+		double t;
 };
 
 }

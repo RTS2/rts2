@@ -99,6 +99,8 @@ class SelectorDev:public Rts2DeviceDb
 
 		virtual int init ();
 
+		virtual int idle ();
+
 		virtual void valueChanged (rts2core::Value *value);
 
 	private:
@@ -122,6 +124,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2core::ValueString *nightDisabledTypes;
 
 		struct ln_lnlat_posn *observer;
+		int last_auto_id;
 
 		rts2core::StringArray *selQueNames;
 
@@ -129,6 +132,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		rts2plan::Queues queues;
 
+		rts2core::ValueTime *simulTime;
 		rts2plan::SimulQueue *simulQueue;
 
 		std::deque <const char *> queueNames;
@@ -163,6 +167,8 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 	lastQueue = NULL;
 
 	simulQueue = NULL;
+
+	last_auto_id = -2;
 
 	notifyConn = new rts2core::ConnNotify (this);
 	addConnection (notifyConn);
@@ -303,12 +309,32 @@ int SelectorDev::init ()
 	notifyConn->setDebug (true);
 
 	// create and add simulation queue
+	createValue (simulTime, "simul_time", "simulation time", false);
 	simulQueue = new rts2plan::SimulQueue (this, "simul", &observer, &queues);
 
 	lastQueue->addSelVal ("simul");
 	selQueNames->addValue ("simul");
 
 	return 0;
+}
+
+int SelectorDev::idle ()
+{
+	if (getState () & SEL_SIMULATING)
+	{
+		double p = simulQueue->step ();
+		if (p == 2)
+		{
+			maskState (SEL_SIMULATING, SEL_IDLE, "simulation finished");
+			setTimeout (60);
+		}
+		else
+		{
+			simulTime->setValueDouble (simulQueue->getSimulationTime ());
+			sendValueAll (simulTime);
+		}
+	}
+	return Rts2DeviceDb::idle ();
 }
 
 rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
@@ -390,7 +416,11 @@ int SelectorDev::selectNext ()
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
 		{
 			int id = sel->selectNext (getMasterState (), selectLength);
-			logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
+			if (id != last_auto_id)
+			{
+				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
+				last_auto_id = id;
+			}
 			return id;
 		}
 		logStream (MESSAGE_WARNING) << "empty queue, target not selected" << sendLog;
@@ -649,11 +679,13 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("simulate"))
 	{
-	  	double from;
+		double from;
 		double to;
 		if (conn->paramNextDouble (&from) || conn->paramNextDouble (&to) || !conn->paramEnd ())
 			return -2;
-		simulQueue->simulate (from, to);
+		simulQueue->start (from, to);
+		maskState (SEL_SIMULATING, SEL_SIMULATING, "starting simulation");
+		setTimeout (0);
 		return 0;
 	}
 	else
