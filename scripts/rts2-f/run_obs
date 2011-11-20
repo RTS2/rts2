@@ -20,17 +20,14 @@ else
 
 	if ( $tar_id <= 0 ) then
 		if ( -e $rts2abort ) then
-			rts2-logcom "abort detected (when waiting for next tar_id)"
+			rts2-logcom "Abort detected (when waiting for next tar_id)"
 			exit
 		endif
 
 		set tar_id=`$xmlrpc -G SEL.next_id`
 		if ( $? != 0 ) then
-			# rts2-logcom "selector is not running, executing seltest to select next targets"
-			# set tar_id=`$RTS2/bin/rts2-seltest --filter-file='KCAM:/Realtime/lib/filt.dat' --filter-aliases /home/petr/rts2-sys/etc/rts2/aliases --targetid`
-			# rts2-logcom "selected $tar_id"
 			if ( $err_prinout != 1 ) then
-				rts2-logcom "selector/rts2-f is not running!!"
+				rts2-logcom "Selector/rts2-f is not running!!"
 				set err_prinout=1
 			endif
 			rts2-logcom "Restarting selector"
@@ -44,9 +41,7 @@ else
 			if ( $tar_id <= 0 ) then
 				if ( $err_prinout != 2 ) then
 					rts2-logcom "Automatic selector is not enabled. I'll repeat test every 10 seconds."
-					rts2-logcom "Please fill the queues if you believe that something should be observed,"
-					rts2-logcom "or allow automatic selection. Do not take any action if you believe that this"
-					rts2-logcom "is fine"
+					echo "Please fill the queues if you believe that something should be observed, or allow automatic selection. Do not take any action if you believe that this is fine"
 					set err_prinout=2
 				endif
 			else
@@ -98,7 +93,7 @@ if ( $tar_id > 0 ) then
 
 	#notmove is for debugging - testing during day
 	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
-		echo -n "Track on"
+		echo -n "Track on, DOME ON"
 		tele trackon
 		tele domeon
 	
@@ -106,7 +101,7 @@ if ( $tar_id > 0 ) then
 	
 		set rra=`echo "$oldoffs" | awk '{printf "%d",$1 * 3600.0;}'`
 		set rdec=`echo "$oldoffs" | awk '{printf "%d",$2 * 3600.0;}'`
-		echo "initial offsets $rra $rdec"
+		# echo "initial offsets $rra $rdec"
 		if ( $rra > -30 && $rra < 30 ) then
 			set rra = 0
 		endif
@@ -127,8 +122,8 @@ if ( $tar_id > 0 ) then
 			#sleep 6
 			#rts2-logcom "executing tele set"
 			#tele set
-		else
-			rts2-logcom "initial offsets are zero, not offseting ($rra $rdec)"
+		#else
+		#	rts2-logcom "initial offsets are zero, not offseting ($rra $rdec)"
 		endif
 	
 		$xmlrpc -c "TELE.move $ra $dec"
@@ -144,8 +139,6 @@ if ( $tar_id > 0 ) then
 	
 		# mark end of slew
 		$RTS2/bin/rts2-target --observe $obs_id
-	
-		rts2-logcom "moved to $ra $dec 2000.0"
 	endif
 
 	# rts2-logcom "observing setup finished"
