@@ -335,9 +335,7 @@ end
 <!-- handles astrometry corrections -->
 if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 
-if ( $last_acq_obs_id == $obs_id ) then
-	<xsl:copy-of select='$printd'/> "already acquired for $obs_id"
-else	
+if ( $last_acq_obs_id != $obs_id ) then
 	rts2-logcom "Starting acquistion/centering for observatinon with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
@@ -389,6 +387,10 @@ else
 		rts2-logcom "maximal number of attemps exceeded"
 	endif
 	object $name
+<xsl:if test='$debug != 0'>
+else
+	rts2-logcom "already acquired for $obs_id"
+</xsl:if>	
 endif	
 </xsl:template>
 
