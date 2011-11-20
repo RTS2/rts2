@@ -214,7 +214,8 @@ if ( $continue == 1 ) then
 	<xsl:copy-of select='$abort'/>
 	dstore
 	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
-	rts2-logcom "Exposure in $actual_filter filter (<xsl:value-of select='@length'/> sec) done; offsets" `echo $ora_l $odec_l $fwhm2 | awk '{ printf "%+0.2f\" %+0.2f\" FWHM %.2f\"",$1,$2,$3*0.675;}'`
+	set flux=`$xmlrpc --quiet -G IMGP.source_flux`
+	rts2-logcom "Exposure done; offsets" `echo $ora_l $odec_l $fwhm2 $flux | awk '{ printf "%+0.2f\" %+0.2f\" FWHM %.2f\" FL %d",$1,$2,$3*0.675,$4;}'`
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
