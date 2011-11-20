@@ -42,7 +42,7 @@ if ( ! (${?autog}) ) set autog='UNKNOWN'
 
 <xsl:variable name='abort'>
 if ( -e $rts2abort ) then
-	rts2-logcom 'aborting observations. Please wait'
+	rts2-logcom 'Aborting observations. Please wait'
 	source $RTS2/bin/.rts2-runabort
 	rm -f $lasttarget
 	exit
@@ -58,7 +58,7 @@ set in=`$xmlrpc -G SEL.interrupt`
 if ( $? == 0 &amp;&amp; $in == 1 ) then
 	rm -f $lasttarget
 	set continue=0
-	rts2-logcom "interrupting target $name ($tar_id)"
+	rts2-logcom "Interrupting target $name ($tar_id)"
 endif
 </xsl:variable>
 
@@ -84,7 +84,7 @@ endif
 	else
 		@ nextautog = $nowdate + 300
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
-		rts2-logcom "Autoguider command failed, will try again at $textdate"
+		rts2-logcom "Autoguider command failed, will try again on $textdate"
 	endif	
 </xsl:variable>
 
@@ -102,15 +102,15 @@ if ( $continue == 1 ) then
         set cname=`$xmlrpc --quiet -G IMGP.object`
 	set ora_l=`$xmlrpc --quiet -G IMGP.ora`
 	set odec_l=`$xmlrpc --quiet -G IMGP.odec`
-	set ora=`echo $ora_l | sed 's#^\([-+0-9]*\).*#\1#'`
-	set odec=`echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
+	set ora=`printf "%.0f" $ora_l`
+	set odec=`printf "%.0f" $odec_l`
 	if ( $cname == $name ) then
 		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
 			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
 			if ( $apply == 0 ) then
-        			rts2-logcom "Corrections disabled, do not apply correction $ora $odec ($ora_l $odec_l) img_num $imgnum"	
+        			rts2-logcom "Corrections disabled, do not apply correction $ora_l" $odec_l""	
 			else
 
 				set xoffs=`$xmlrpc --quiet -G IMGP.xoffs`
@@ -120,16 +120,14 @@ if ( $continue == 1 ) then
 				set currg=`$xmlrpc --quiet -G TELE.autog`
 
 				if ( $currg != '1' ) then
-					if ( $imgnum &lt;= $lastoffimage ) then
-						rts2-logcom "older or same image received - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
-					else
+					if ( $imgnum &gt; $lastoffimage ) then
 						if ( $tar_id == $last_offtarget ) then
 							$xmlrpc -s TELE.CORR_ -- "${ora_l}s ${odec_l}s"
 							$RTS2/bin/jt '/api/cmd?d=TELE&amp;c=info'
 							set toffs=`$xmlrpc -G TELE.total_offsets`
 							set rra=`echo "$toffs" | awk '{printf "%d",$1 * -3600.0;}'`
 							set rdec=`echo "$toffs" | awk '{printf "%d",$2 * -3600.0;}'`
-							<xsl:copy-of select='printd'/> "total offsets $toffs ($rra $rdec)"
+							<xsl:copy-of select='$printd'/> "Total offsets $toffs ($rra $rdec)"
 							if ( $rra &gt; -1 &amp;&amp; $rra &lt; 1 ) then
 								set rra = 0
 							endif
@@ -137,23 +135,30 @@ if ( $continue == 1 ) then
 								set rdec = 0
 							endif
 							if ( $rra != 0 || $rdec != 0 ) then
-								rts2-logcom "offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+								<xsl:copy-of select-'$printd'/> "Offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+								rts2-logcom "Applying offsets from catalogue match $rra\" $rdec\""
 								tele offset $rra $rdec
 								@ lastoffimage = $imgnum
+							<xsl:if test='$debug != 0'>
 							else
-								rts2-logcom "zero offsets, not offseting ($rra $rdec; $ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+								rts2-logcom "Zero offsets, not offseting ($rra $rdec; $ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+							</xsl:if>
 							endif
 							if ( ${?lastimage} ) then
 								set lastoffimage=`echo $lastimage | sed 's#.*/\([0-9][0-9][0-9][0-9]\).*#\1#'`
-								rts2-logcom "setting last $lastoffimage"
+								<xsl:copy-of select='$printd'/> "setting last $lastoffimage"
 							endif
 						else
-							rts2-logcom "applying first offsets ($ora_l $odec_l; $xoffs $yoffs) $tar_id $last_offtarget"
+							<xsl:copy-of select='$printd'/> "applying first offsets ($ora_l $odec_l; $xoffs $yoffs) $tar_id $last_offtarget"
 							$xmlrpc -s TELE.OFFS -- "${ora_l}s ${odec_l}s"
 							$xmlrpc -s TELE.CORR_ -- "${ora_l}s ${odec_l}s"
 							set last_offtarget = $tar_id
 							@ lastoffimage = $imgnum
 						endif
+					<xsl:if test='$debug != 0'>
+					else
+						rts2-logcom "Older or same image received - not offseting $ora $odec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum lastimage $lastoffimage"
+					</xsl:if>	
 					endif
 				<xsl:if test='$debug != 0'>
 				else
@@ -162,7 +167,7 @@ if ( $continue == 1 ) then
 				endif
 			endif
 		else
-			rts2-logcom "too big offset $ora_l $odec_l"
+			rts2-logcom "Too big offset $ora_l\" $odec_l\""
 		endif	  	
 	<xsl:if test='$debug != 0'>
 	else
@@ -191,7 +196,7 @@ if ( $continue == 1 ) then
 			set guidestatus = "OFF"
 		endif
 		if ( $guidestatus != $autog ) then
-			rts2-logcom "system should guide, but autoguider is in $guidestatus."
+			rts2-logcom "System should guide, but autoguider is in $guidestatus."
 			set nowdate=`date +%s`
 			if ( $nextautog &lt; $nowdate ) then
 				rts2-logcom "Grabing autoguider image"
@@ -201,8 +206,7 @@ if ( $continue == 1 ) then
 				mkdir -p $dir
 				set autof=$dir/`date +%H%M%S`.fits
 				cp $lastgrab $autof
-				rts2-logcom "autoguider image saved in $autof"
-				rts2-logcom "trying to guide again (switching autog to ON)"
+				rts2-logcom "Autoguider image saved in $autof; trying to guide again"
 				<xsl:copy-of select='$guidetest'/>
 			endif
 		endif
@@ -222,9 +226,8 @@ if ( $continue == 1 ) then
 	$xmlrpc -c "IMGP.only_process $lastimage $obs_id $imgid"
 	set avrg=`$xmlrpc --quiet -G IMGP.average`
 	if ( $? == 0 &amp;&amp; `echo $avrg '&lt;' 200 | bc` == 1 ) then
-		rts2-logcom "average value of image $lastimage is too low - $avrg, expected at least 200"
-		rts2-logcom "this is probably problem with KeplerCam controller. Please proceed to restart"
-		rts2-logcom "CCD driver, and then call again GOrobot"
+		rts2-logcom "Average value of image $lastimage is too low - $avrg, expected at least 200"
+		echo "This is probably problem with KeplerCam controller. Please proceed to restart CCD driver, and then call again GOrobot. Current observation will be aborted."
 		set continue=0
 		exit
 	endif
@@ -253,7 +256,7 @@ if ( $continue == 1 ) then
 			endif
 		end
 	else  -->
-		rts2-logcom 'executing script <xsl:value-of select='@path'/>'
+		<xsl:copy-of select='$printd'/> rts2-logcom 'executing script <xsl:value-of select='@path'/>'
 		source <xsl:value-of select='@path'/>
 <!--	fi -->
 endif
@@ -335,7 +338,7 @@ if ( ! (${?last_acq_obs_id}) ) @ last_acq_obs_id = 0
 if ( $last_acq_obs_id == $obs_id ) then
 	<xsl:copy-of select='$printd'/> "already acquired for $obs_id"
 else	
-	rts2-logcom "Acquiring for obsid $obs_id"
+	rts2-logcom "Starting acquistion/centering for observatinon with ID $obs_id"
 	source $RTS2/bin/rts2_tele_filter i
 	object test
 	if ( $autog == 'ON' ) then
