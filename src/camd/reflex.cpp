@@ -280,6 +280,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createExpType ();
 
 	createDataChannels ();
+	setNumChannels (1);
 
 	createValue (baudRate, "baud_rate", "CL baud rate", true, CAM_WORKING);
 	baudRate->addSelVal ("9600", (rts2core::Rts2SelData *) CL_BAUDRATE_9600);
@@ -428,7 +429,7 @@ int Reflex::readoutStart ()
 		return -1;
 	}
 	pdv_start_images (CLHandle, NUM_RING_BUFFERS);
-	return 0;
+	return Camera::readoutStart ();
 #endif
 }
 
@@ -503,6 +504,9 @@ int Reflex::initHardware ()
 	rereadAllRegisters ();
 
 	reloadConfig ();
+
+	setSize (1000, 1000, 0, 0);
+
 	return 0;
 }
 
@@ -839,6 +843,11 @@ void Reflex::reloadConfig ()
 
 	configSystem ();
 
+	configTEC ();
+	
+	for (int i = 0; i < MAX_DAUGHTER_COUNT; i++)
+		configBoard (i);
+
 	parseStates ();
 	compileStates ();
 
@@ -847,6 +856,10 @@ void Reflex::reloadConfig ()
 	compile ();
 
 	loadTiming ();
+
+	std::string s;
+	if (interfaceCommand (">A\r", s, 5000))
+		throw rts2core::Error ("Failed to configure all after loading timing");
 
 	rereadAllRegisters ();
 }
@@ -2084,12 +2097,11 @@ void Reflex::configSystem ()
 		}
 	}
 
+
+
 	// Send configure system command
 	if (interfaceCommand (">C\r", s, 3000))
 		throw rts2core::Error ("Error configuring system");
-
-	if (interfaceCommand (">A\r", s, 5000))
-		throw rts2core::Error ("Error issuing configure all command");
 
 //	if (interfaceCommand(">L1\r", s, 100, false))
 //		throw rts2core::Error ("Error enabling polling")
@@ -2124,6 +2136,8 @@ void Reflex::configBoard (int board)
 	// Bias board
 	switch (boardType (BOARD_DAUGHTERS + board))
 	{
+		case BT_NONE:
+			return;
 		case BT_BIAS:
 			// Set bias enable bits
 			bit = 1;
@@ -2539,10 +2553,10 @@ void Reflex::configBoard (int board)
 	}
 
 	// Apply board configuration
-	std::ostringstream cmd;
-	cmd << ">B" << (BOARD_DAUGHTERS + board) << "\r";
-	if (interfaceCommand(cmd.str ().c_str (), s, 3000))
-			throw rts2core::Error ("Error configuring board");
+//	std::ostringstream cmd;
+//	cmd << ">B" << (BOARD_DAUGHTERS + board) << "\r";
+//	if (interfaceCommand(cmd.str ().c_str (), s, 3000))
+//			throw rts2core::Error ("Error configuring board");
 //	if (interfaceCommand(">L1\r", s, 100, false))
 //		throw rts2core::Error ("Error enabling polling");
 }
@@ -2580,12 +2594,12 @@ void Reflex::configTEC ()
 		throw rts2core::Error ("Error setting TEC setpoint");
 
 	// Apply board configuration
-	if (interfaceCommand(">B3", s, 3000))
-		throw rts2core::Error ("Error configuring board");
+//	if (interfaceCommand(">B3", s, 3000))
+//		throw rts2core::Error ("Error configuring board");
 	// Apply TEC command twice to allow for some settling
-	usleep(USEC_SEC / 2);
-	if (interfaceCommand(">B3", s, 3000))
-		throw rts2core::Error ("Error configuring board");
+//	usleep(USEC_SEC / 2);
+//	if (interfaceCommand(">B3", s, 3000))
+//		throw rts2core::Error ("Error configuring board");
 //	if (interfaceCommand(">L1\r", s, 100, false))
 //		throw rts2core::Error ("Error enabling polling");
 }
