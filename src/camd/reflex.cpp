@@ -232,6 +232,11 @@ class Reflex:public Camera
 		// create board values
 		void createBoards ();
 
+		// configure routines
+		void configSystem ();
+		void configBoard (int board);
+		void configTEC ();
+
 		RStates states;
 		std::vector <std::string> program;
 		std::vector <std::string> code;
@@ -239,6 +244,10 @@ class Reflex:public Camera
 		std::vector <std::pair <std::string, uint32_t> > parameters;
 
 		rts2core::ValueSelection *baudRate;
+
+		// return board type for given board
+		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 24) & 0xFF; }
+		int boardRevision (int board) { return registers[BOARD_TYPE_BP + board]->getValueInteger () >> 16 & 0xFF; }
 #ifdef CL_EDT
 		PdvDev *CLHandle;
 #else
@@ -926,7 +935,7 @@ void Reflex::compileStates ()
 	{
 		iter->compiled = compileState (iter->value_backplane, BT_BPX6) + compileState (iter->value_interface, BT_CLIF);
 		for (uint32_t i = 0; i < MAX_DAUGHTER_COUNT; i++)
-			iter->compiled += compileState (iter->daughter_values[i], registers[BOARD_TYPE_D1 + i]->getValueInteger () >> 24);
+			iter->compiled += compileState (iter->daughter_values[i], boardType (BOARD_DAUGHTERS + i));
 	}
 }
 
@@ -1230,7 +1239,7 @@ void Reflex::createBoards ()
 		std::ostringstream biss;
 		biss << "board" << (bt - BOARD_TYPE_PB) << ".";
 		std::string bn = biss.str ();
-		switch (registers[bt]->getValueInteger () >> 24)
+		switch ((registers[bt]->getValueInteger () >> 24) & 0xFF)
 		{
 			case BT_NONE:
 				// empty board
@@ -1436,9 +1445,1063 @@ void Reflex::createBoards ()
 				}
 				break;
 			default:
-				logStream (MESSAGE_ERROR) << "unknow board type " << std::hex << (registers[bt]->getValueInteger () >> 24) << sendLog;
+				logStream (MESSAGE_ERROR) << "unknow board type " << std::hex << ((registers[bt]->getValueInteger () >> 24) & 0xFF) << sendLog;
 		}
 	}
+}
+
+void Reflex::configSystem ()
+{
+	int i, bit;
+	unsigned u, a, b;
+	std::string s;
+	// System config
+	double mclk;
+	int pclk;
+	int trigin;
+	// Deinterlacing
+	bool cds, raw, used;
+	int board, boardsusedcount, adc, lines, tap, taplength, tapcount, loopcount, clmode, hdrmode, cllength, clspeed;
+	int boardsused[MAX_DAUGHTER_COUNT];
+	char dir;
+	bool tapenable[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+	int tapstart[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+	int tapdelta[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+	unsigned tapaenable, tapbenable;
+	int tapasource[MAX_TAP_COUNT], tapbsource[MAX_TAP_COUNT];
+	int tapastart[MAX_TAP_COUNT], tapbstart[MAX_TAP_COUNT];
+	int tapadelta[MAX_TAP_COUNT], tapbdelta[MAX_TAP_COUNT];
+
+	if (! (registers[BOARD_TYPE_BP]->getValueInteger () && (BT_BPX6 << 24)))
+		throw rts2core::Error ("Unknown backplane type");
+
+//	// Disable polling to speed up configuration
+//	if (interfaceCommand(">L0\r", s, 100, false))
+//		throw rts2core::Error ("Error disabling polling")
+
+	// Get target master clock frequency
+	if (config->getDouble ("SYSTEM", "MASTERCLOCK", mclk, 0) || (mclk < 60.0) || (mclk > 100.0))
+		throw rts2core::Error ("Invalid master clock setting (must be 60 - 100 MHz)");
+	i = mclk * 1000000;
+
+	// Set master clock register
+	if (writeRegister (SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_MCLK, i))
+		throw rts2core::Error ("Error writing Backplane master clock register");
+
+	// Pixel clock divider
+	if (boardRevision (BOARD_BP) > 1)
+	{
+		if (registers[BUILD_IF]->getValueInteger () >= 336)
+		{
+			if (config->getInteger ("SYSTEM", "PIXELCLOCK", pclk, 0) || (pclk < 0) || (pclk > 16))
+				throw rts2core::Error ("Invalid pixel clock setting (must be 0 - 16)");
+			pclk--;
+			pclk = (pclk < 0 ? 0 : (pclk > 15 ? 15: pclk));
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_REVB_PCLK, pclk))
+				throw rts2core::Error ("Error writing Backplane pixel clock register");
+		}
+		
+		// Trigger in
+		if (registers[BUILD_IF]->getValueInteger () >= 354)
+		{
+			config->getString ("SYSTEM", "TRIGGERIN", s, "Disabled");
+			if (s == "Normal")
+				trigin = 1;
+			else if (s == "Inverted")
+				trigin = 3;
+			else
+				trigin = 0;
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_REVB_TRIGIN, trigin))
+				throw rts2core::Error ("Error writing Backplane trigger in register");
+		}
+	}
+
+	// Set backplane deinterlacing
+
+	// Get HDR mode (0 = Normal 16 bits / pixel, 1 = HDR 32 bits / pixel)
+	config->getString ("BACKPLANE", "HDRMODE", s);
+	hdrmode = (s == "1");
+
+	// Get tap length in samples (subtract 1 since 0 = 1 sample, 1 = 2 samples, etc)
+	if (config->getInteger ("BACKPLANE", "TAPLENGTH", taplength) || taplength <= 0)
+		throw rts2core::Error ("Invalid tap length");
+	// Prototype systems had deinterlacing engine on backplane
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAP_LENGTH, taplength - 1))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap length");
+	}
+	else
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LOOP_COUNT, taplength - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing tap length");
+	}
+
+	// Get padding
+	config->getInteger ("BACKPLANE", "PREPADDING", i, -1);
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		if (i < 0)
+			throw rts2core::Error ("Invalid prepadding length");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_PRE_COUNT, i))
+			throw rts2core::Error ("Error writing Backplane deinterlacing prepadding");
+	}
+	else
+	{
+		if (i <= 0)
+			throw rts2core::Error ("Invalid prepadding length");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_PRE_COUNT, i - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing prepadding");
+	}
+
+	config->getInteger ("BACKPLANE", "POSTPADDING", i, -1);
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		if (i < 0)
+			throw rts2core::Error ("Invalid postpadding length");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_POST_COUNT, i))
+			throw rts2core::Error ("Error writing Backplane deinterlacing postpadding");
+	}
+	else
+	{
+		if (i <= 0)
+			throw rts2core::Error ("Invalid postpadding length");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_POST_COUNT, i - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing postpadding");
+	}
+
+	// All taps initially disabled
+	for (board = 0; board < MAX_DAUGHTER_COUNT; board++)
+		for (adc = 0; adc < MAX_ADC_COUNT; adc++)
+		{
+			tapenable[board][adc] = false;
+			tapstart[board][adc] = 0;
+			tapdelta[board][adc] = 0;
+		}
+
+	// Examine tap order
+	cds = false;
+	raw = false;
+	tapcount = 0;
+	if (config->getInteger ("BACKPLANE", "TAPCOUNT", lines) || lines < 0)
+		throw rts2core::Error ("Invalid tap count");
+	for (i = 0; i < lines; i++)
+	{
+		std::ostringstream os;
+		os << "TAP" << i;
+		config->getString ("BACKPLANE", os.str ().c_str (), s);
+		std::transform (s.begin(), s.end(), s.begin(), (int(*)(int)) std::toupper);
+		if (s.empty())
+			continue;
+		// Check for raw taps
+		if (s.substr (0, 3) == "RAW")
+		{
+			if (s.length() != 4)
+				throw rts2core::Error ("Invalid tap entry");
+			if (cds)
+				throw rts2core::Error ("Cannot mix CDS and raw taps");
+			raw = true;
+			board = s[3] - 'A';
+			if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
+				throw rts2core::Error ("Invalid tap entry");
+			if (tapenable[board][0])
+				throw rts2core::Error ("Duplicate tap entry");
+			tapenable[board][0] = true;
+			tapstart[board][0] = tapcount * taplength;
+			tapdelta[board][0] = 1;
+		}
+		// Normal CDS taps
+		else
+		{
+			if (raw)
+				throw rts2core::Error ("Cannot mix CDS and raw taps");
+			cds = true;
+			if (s.length() != 3)
+				throw rts2core::Error ("Invalid tap entry");
+			board = s[0] - 'A';
+			if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
+				throw rts2core::Error ("Invalid tap entry");
+			adc = s[1] - '1';
+			if ((adc < 0) || (adc >= MAX_ADC_COUNT))
+				throw rts2core::Error ("Invalid tap entry");
+			dir = s[2];
+			if ((dir != 'L') && (dir != 'R'))
+				throw rts2core::Error ("Invalid tap entry");
+			if (tapenable[board][adc])
+				throw rts2core::Error ("Duplicate tap entry");
+			tapenable[board][adc] = true;
+			if (dir == 'L')
+			{
+				tapstart[board][adc] = tapcount * taplength;
+				tapdelta[board][adc] = 1;
+			}
+			else
+			{
+				tapstart[board][adc] =  (tapcount + 1) * taplength - 1;
+				tapdelta[board][adc] = -1;
+			}
+		}
+		tapcount++;
+	}
+	if (tapcount == 0)
+		throw rts2core::Error ("No taps selected");
+
+	// Find which boards need to be enabled for reading
+	u = 0;
+	boardsusedcount = 0;
+	for (board = 0; board < MAX_DAUGHTER_COUNT; board++)
+	{
+		used = false;
+		for (adc = 0; adc < MAX_ADC_COUNT; adc++)
+			if (tapenable[board][adc])
+				used = true;
+		if (used)
+		{
+			u |= 1 << board;
+			boardsused[boardsusedcount] = board;
+			boardsusedcount++;
+		}
+	}
+	if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_DAUGHTER_ENABLE, u))
+		throw rts2core::Error ("Error writing Backplane daughter board enable bits");
+
+	// Set number of daughter boards production backplane must read from, and read order
+	if (boardRevision (BOARD_BP) > 1)
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_REVB_TAP_COUNT, ((boardsusedcount - 1) / 2)))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap loop count");
+		for (i = 0; i < (boardsusedcount + 1) / 2; i++)
+		{
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_REVB_TAPA_SOURCE0 + i), 1 << boardsused[i * 2]))
+				throw rts2core::Error ("Error writing Backplane deinterlacing tap sources");
+			if ((i * 2 + 1) < boardsusedcount)
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_REVB_TAPB_SOURCE0 + i), 1 << boardsused[i * 2 + 1]))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap sources");
+			}
+			else
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_REVB_TAPB_SOURCE0 + i), 0))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap sources");
+			}
+		}
+	}
+
+	// Set tap engine loop count
+	if (raw)
+	{
+		// In raw mode an ADC board streams a single channel continuously
+		loopcount = (tapcount + 1) / 2;
+	}
+	if (cds)
+	{
+		if (hdrmode)
+			// In HDR CDS mode an ADC board sends groups of 16 samples (two 16 bit samples for each of 8 channels) - all 16 must be read, even if some taps are ignored/discarded
+			loopcount = ((boardsusedcount + 1) / 2) * 16;
+		else
+			// In normal CDS mode an ADC board sends groups of 8 samples - all 8 must be read, even if some taps are ignored/discarded
+			loopcount = ((boardsusedcount + 1) / 2) * 8;
+	}
+	// Subtract 1 from loop count since 0 = 1 loop, 1 = 2 loops, etc
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAP_COUNT, loopcount - 1))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap count");
+	}
+	else
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_TAP_COUNT, loopcount - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing tap count");
+	}
+
+	// Calculate tap engine enables, sources, starts and deltas for prototype backplane
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		tap = 0;
+		tapaenable = 0;
+		tapbenable = 0;
+		for (i = 0; i < MAX_PROTOTYPE_TAP_COUNT; i++)
+		{
+			tapasource[i] = 0;
+			tapbsource[i] = 0;
+		}
+		for (i = 0; i < boardsusedcount; i++)
+		{
+			// Source of 1 is slot A, etc, while board is zero-based
+			board = boardsused[i];
+			if (raw)
+			{
+				// Even taps go to engine A, odd taps to engine B
+				if (tap % 2 == 0)
+				{
+					tapasource[tap / 2] = board + 1;
+					tapaenable |= 1 << (tap / 2);
+					tapastart[tap / 2] = tapstart[board][0];
+					tapadelta[tap / 2] = tapdelta[board][0];
+				}
+				else
+				{
+					tapbsource[tap / 2] = board + 1;
+					tapbenable |= 1 << (tap / 2);
+					tapbstart[tap / 2] = tapstart[board][0];
+					tapbdelta[tap / 2] = tapdelta[board][0];
+				}
+				tap++;
+			}
+			if (cds)
+			{
+				for (adc = 0; adc < MAX_ADC_COUNT; adc++)
+				{
+					// Even boards go to engine A, odd taps to engine B
+					if (i % 2 == 0)
+					{
+						tapasource[tap + adc] = board + 1;
+						if (tapenable[board][adc])
+							tapaenable |= 1 << (tap + adc);
+						tapastart[tap + adc] = tapstart[board][adc];
+						tapadelta[tap + adc] = tapdelta[board][adc];
+					}
+					else
+					{
+						tapbsource[tap + adc] = board + 1;
+						if (tapenable[board][adc])
+							tapbenable |= 1 << (tap + adc);
+						tapbstart[tap + adc] = tapstart[board][adc];
+						tapbdelta[tap + adc] = tapdelta[board][adc];
+					}
+				}
+				// After filling 8 taps on engine A and B, move to the next set of 8
+				if (i % 2)
+					tap += 8;
+			}
+		}
+		// Write tap engine A and B source words (8 tap sources per 32-bit control word)
+		for (tap = 0; tap < MAX_PROTOTYPE_TAP_COUNT / 8; tap++)
+		{
+			a = 0;
+			b = 0;
+			bit = 0;
+			for (i = 0; i < 8; i++)
+			{
+				a |= tapasource[tap * 8 + i] << bit;
+				b |= tapbsource[tap * 8 + i] << bit;
+				bit += 4;
+			}
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPA_7_0_SOURCE + tap), a))
+				throw rts2core::Error ("Error writing Backplane deinterlacing tap A source");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPB_7_0_SOURCE + tap), b))
+				throw rts2core::Error ("Error writing Backplane deinterlacing tap B source");
+		}
+		// Write tap engine A and B enables (each bit of 32-bit control word controls one tap enable)
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAPA_ENABLE, tapaenable))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap A enables");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAPB_ENABLE, tapbenable))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap B enables");
+		// Write tap engine A and B start and delta control words
+		for (tap = 0; tap < loopcount; tap++)
+		{
+			// Only write start and delta for enabled taps
+			if (tapaenable & (1 << tap))
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPA_0_START + tap), tapastart[tap]))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap A start");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPA_0_DELTA + tap), tapadelta[tap]))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap A delta");
+			}
+			if (tapbenable & (1 << tap))
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPB_0_START + tap), tapbstart[tap]))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap B start");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | (BACKPLANE_TAPB_0_DELTA + tap), tapbdelta[tap]))
+					throw rts2core::Error ("Error writing Backplane deinterlacing tap B delta");
+			}
+		}
+		// Write number of 32-bit reads necessary to read an entire line (16-bit tap count x tap length / 2)
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_READ_COUNT, tapcount * taplength / 2 - 1))
+			throw rts2core::Error ("Error writing Backplane deinterlacing read count");
+	}
+	// Calculate tap engine enables, sources, starts and deltas for production system
+	else
+	{
+		tap = 0;
+		tapaenable = 0;
+		tapbenable = 0;
+		if (raw)
+		{
+			for (i = 0; i < boardsusedcount; i++)
+			{
+				board = boardsused[i];
+				// Even taps go to engine A, odd taps to engine B
+				if (tap % 2 == 0)
+				{
+					tapaenable |= 1 << (tap / 2);
+					tapastart[tap / 2] = tapstart[board][0];
+					tapadelta[tap / 2] = tapdelta[board][0];
+				}
+				else
+				{
+					tapbenable |= 1 << (tap / 2);
+					tapbstart[tap / 2] = tapstart[board][0];
+					tapbdelta[tap / 2] = tapdelta[board][0];
+				}
+				tap++;
+			}
+		}
+		if (cds)
+		{
+			// HDR CDS
+			if (hdrmode)
+			{
+				taplength *= 2;	// CameraLink lines must be twices as long
+				for (adc = 0; adc < MAX_ADC_COUNT * 2; adc++)
+				{
+					for (i = 0; i < boardsusedcount + boardsusedcount % 2; i++)
+					{
+						if (i < boardsusedcount)
+						{
+							board = boardsused[i];
+							// MSB 16 bit samples
+							if (adc < MAX_ADC_COUNT)
+							{
+								// Even taps go to engine A, odd taps to engine B
+								if (tap % 2 == 0)
+								{
+									if (tapenable[board][adc])
+										tapaenable |= 1 << (tap / 2);
+									tapastart[tap / 2] = tapstart[board][adc] * 2;
+									tapadelta[tap / 2] = tapdelta[board][adc] * 2;
+								}
+								else
+								{
+									if (tapenable[board][adc])
+										tapbenable |= 1 << (tap / 2);
+									tapbstart[tap / 2] = tapstart[board][adc] * 2;
+									tapbdelta[tap / 2] = tapdelta[board][adc] * 2;
+								}
+							}
+							// LSB 16 bit samples
+							else
+							{
+								// Even taps go to engine A, odd taps to engine B
+								if (tap % 2 == 0)
+								{
+									if (tapenable[board][adc - MAX_ADC_COUNT])
+										tapaenable |= 1 << (tap / 2);
+									tapastart[tap / 2] = tapstart[board][adc - MAX_ADC_COUNT] * 2 + 1;
+									tapadelta[tap / 2] = tapdelta[board][adc - MAX_ADC_COUNT] * 2;
+								}
+								else
+								{
+									if (tapenable[board][adc - MAX_ADC_COUNT])
+										tapbenable |= 1 << (tap / 2);
+									tapbstart[tap / 2] = tapstart[board][adc - MAX_ADC_COUNT] * 2 + 1;
+									tapbdelta[tap / 2] = tapdelta[board][adc - MAX_ADC_COUNT] * 2;
+								}
+							}
+						}
+						tap++;
+					}
+				}
+			}
+			// Normal CDS
+			else
+			{
+				for (adc = 0; adc < MAX_ADC_COUNT; adc++)
+				{
+					for (i = 0; i < boardsusedcount + boardsusedcount % 2; i++)
+					{
+						if (i < boardsusedcount)
+						{
+							board = boardsused[i];
+							// Even taps go to engine A, odd taps to engine B
+							if (tap % 2 == 0)
+							{
+								if (tapenable[board][adc])
+									tapaenable |= 1 << (tap / 2);
+								tapastart[tap / 2] = tapstart[board][adc];
+								tapadelta[tap / 2] = tapdelta[board][adc];
+							}
+							else
+							{
+								if (tapenable[board][adc])
+									tapbenable |= 1 << (tap / 2);
+								tapbstart[tap / 2] = tapstart[board][adc];
+								tapbdelta[tap / 2] = tapdelta[board][adc];
+							}
+						}
+						tap++;
+					}
+				}
+			}
+		}
+		// Write tap engine A and B enables (each bit of 32-bit control word controls one tap enable)
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_TAPA_ENABLE, tapaenable))
+			throw rts2core::Error ("Error writing Interface deinterlacing tap A enables");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_TAPB_ENABLE, tapbenable))
+			throw rts2core::Error ("Error writing Interface deinterlacing tap B enables");
+		// Write tap engine A and B start and delta control words
+		for (tap = 0; tap < loopcount; tap++)
+		{
+			// Only write start and delta for enabled taps
+			if (tapaenable & (1 << tap))
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | (INTERFACE_REVC_TAPA_0_START + tap), tapastart[tap]))
+					throw rts2core::Error ("Error writing Interface deinterlacing tap A start");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | (INTERFACE_REVC_TAPA_0_DELTA + tap), tapadelta[tap]))
+					throw rts2core::Error ("Error writing Interface deinterlacing tap A delta");
+			}
+			if (tapbenable & (1 << tap))
+			{
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | (INTERFACE_REVC_TAPB_0_START + tap), tapbstart[tap]))
+					throw rts2core::Error ("Error writing Interface deinterlacing tap B start");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | (INTERFACE_REVC_TAPB_0_DELTA + tap), tapbdelta[tap]))
+					throw rts2core::Error ("Error writing Interface deinterlacing tap B delta");
+			}
+		}
+		// Get CameraLink mode (0 = Full, 1 = Base)
+		config->getString ("BACKPLANE", "CLMODE", s);
+		if (s == "Full")
+			clmode = 0;
+		else if (s == "Base")
+			clmode = 1;
+		else
+			throw rts2core::Error ("Invalid CameraLink mode");
+		if (clmode == 0)
+			cllength = tapcount * taplength / 4 - 1;	// Full-mode is 64-bits per CameraLink clock
+		else
+			cllength = tapcount * taplength - 1;		// Base-mode is 16-bits per CameraLink clock
+		// Write number of CameraLink pixels necessary to read an entire CameraLink line
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_LENGTH, cllength))
+			throw rts2core::Error ("Error writing Interface deinterlacing line length");
+		// Write number of CameraLink lines per frame
+		if (config->getInteger ("BACKPLANE", "LINECOUNT", i) || i <= 0)
+			throw rts2core::Error ("Invalid line count");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_COUNT, i - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing line count");
+		// Write number of idle CameraLink lines between frames
+		if (config->getInteger ("BACKPLANE", "IDLELINECOUNT", i) || i <= 0)
+			throw rts2core::Error ("Invalid idle line count");
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_IDLE_COUNT, i - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing idle line count");
+		// Write CameraLink mode
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_CL_MODE, clmode))
+			throw rts2core::Error ("Error writing Interface deinterlacing CameraLink mode");
+		// Write CameraLink speed
+		if (registers[BUILD_IF]->getValueInteger () > 356)
+		{
+			config->getString ("BACKPLANE", "CLSPEED", s);
+			if (s == "80")
+				clspeed = 0;
+			else if (s == "40")
+				clspeed = 1;
+			else
+				throw rts2core::Error ("Invalid CameraLink speed");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_CL_SPEED, clspeed))
+				throw rts2core::Error ("Error writing Interface deinterlacing CameraLink speed");
+		}
+	}
+
+	// Send configure system command
+	if (interfaceCommand(">C\r", s, 3000))
+		throw rts2core::Error ("Error configuring system");
+
+//	if (interfaceCommand(">L1\r", s, 100, false))
+//		throw rts2core::Error ("Error enabling polling")
+}
+
+void Reflex::configBoard (int board)
+{
+	std::string s, id;
+	std::ostringstream ss_key;
+	const char *key;
+	int i, enable, bit, itemp, hdr;
+	bool hven[8], lven[8];
+	double dtemp;
+	bool drven[12];
+	double clamp, gain;
+
+	if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
+		throw rts2core::Error ("Invalid board number specified");
+
+	// Silently ignore boards that aren't installed
+	if (!boardType (board))
+		return;
+	ss_key << "BOARD" << (board + 1);
+
+	std::string skey = ss_key.str ();
+	key = skey.c_str ();
+
+//	// Disable polling to speed up configuration
+//	if (interfaceCommand(">L0\r", s, 100, false))
+//		throw rts2core::Error ("Error disabling polling");
+
+	// Bias board
+	switch (boardType (BOARD_DAUGHTERS + board))
+	{
+		case BT_BIAS:
+			// Set bias enable bits
+			bit = 1;
+			enable = 0;
+			for (i = 0; i < 8; i++)
+			{
+				std::ostringstream s_subkey;
+				s_subkey << (i + 1);
+				std::string subkey = s_subkey.str ();
+				config->getString (key, ("LE" + subkey).c_str (), s, "-");
+				if ((s != "1") && (s != "0"))
+					throw rts2core::Error ("Invalid bias enable setting (" + skey + "/LE" + subkey + ")");
+				lven[i] = (s == "1");
+				config->getString (key, ("HE" + subkey).c_str (), s, "-");
+				if ((s != "1") && (s != "0"))
+					throw rts2core::Error ("Invalid bias enable setting (" + skey + "/HE" + subkey + ")");
+				hven[i] = (s == "1");
+				if (lven[i])
+					enable |= bit;
+				if (hven[i])
+					enable |= bit << 8;
+				bit <<= 1;
+			}
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | BIAS_ENABLE, enable))
+				throw rts2core::Error ("Error setting bias enables");
+			// Set voltages
+			for (i = 0; i < 8; i++)
+			{
+				std::ostringstream s_subkey;
+				s_subkey << (i + 1);
+				std::string subkey = s_subkey.str ();
+				if (config->getDouble (key, ("LV" + subkey).c_str (), dtemp))
+					throw rts2core::Error ("Error parsing bias voltage (" + skey + "/LV" + subkey + ")");
+				if ((dtemp < -13.0) || (dtemp > 13.0))
+					 rts2core::Error ("Requested bias voltage out of range (" + skey + "/LV" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_SET_LV1 + i), int (dtemp * 1000.0)))
+					throw rts2core::Error ("Error setting bias voltages");
+				if (config->getDouble (key, ("LC" + subkey).c_str (), dtemp))
+					throw rts2core::Error ("Error parsing bias current limit (" + skey + "/LC" + subkey + ")");
+				if ((dtemp < 0.0) || (dtemp > 100.0))
+					throw rts2core::Error ("Requested bias current limit out of range (" + skey + "/LC" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_SET_LC1 + i), int (dtemp * 1000.0)))
+					throw rts2core::Error ("Error setting bias current limits");
+				if (config->getInteger (key, ("LO" + subkey).c_str (), itemp))
+					throw rts2core::Error ("Error parsing bias order (" + skey + "/LO" + subkey + ")");
+				if ((itemp < 0) || (itemp > 10))
+					throw rts2core::Error ("Requested bias order out of range (" + skey + "/LO" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_ORDER_LV1 + i), itemp))
+					throw rts2core::Error ("Error setting bias order");
+				if (config->getDouble (key, ("HV" + subkey).c_str (), dtemp))
+					throw rts2core::Error ("Error parsing bias voltage (" + skey + "/HV" + subkey + ")");
+				if ((dtemp < 0.0) || (dtemp > 28.0))
+					throw rts2core::Error ("Requested bias voltage out of range (" + skey + "/HV" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_SET_HV1 + i), int (dtemp * 1000.0)))
+					throw rts2core::Error ("Error setting bias voltages");
+				if (config->getDouble (key, ("HC" + subkey).c_str (), dtemp))
+					throw rts2core::Error ("Error parsing bias current limit (" + skey + "/HC" + subkey + ")");
+				if ((dtemp < 0.0) || (dtemp > 100.0))
+					throw rts2core::Error ("Requested bias current limit out of range (" + skey + "/HC" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_SET_HC1 + i), int (dtemp * 1000.0)))
+					throw rts2core::Error ("Error setting bias current limits");
+				if (config->getInteger (key, ("HO" + subkey).c_str (), itemp))
+					throw rts2core::Error ("Error parsing bias order (" + skey + "/HO" + subkey + ")");
+				if ((itemp < 0) || (itemp > 10))
+					throw rts2core::Error ("Requested bias order out of range (" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (BIAS_ORDER_HV1 + i), itemp))
+					throw rts2core::Error ("Error setting bias order");
+			}
+			break;
+		// Driver board
+		case BT_DRIVER:
+			// Set driver enable bits
+			bit = 1;
+			enable = 0;
+			for (i = 0; i < 12; i++)
+			{
+				drven[i] = false;
+				std::ostringstream s_subkey;
+				s_subkey << "ENABLE" << (i + 1);
+				std::string subkey = s_subkey.str ();
+				config->getString (key, subkey.c_str (), s, "-");
+				if ((s != "1") && (s != "0"))
+					throw rts2core::Error ("Invalid driver enable setting (" + skey + "/" + subkey + ")");
+				if (s == "1")
+				{
+					drven[i] = true;
+					enable |= bit;
+				}
+				bit <<= 1;
+			}
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | DRIVER_ENABLE, enable))
+				throw rts2core::Error ("Error setting driver enables");
+
+			// Set high and low clock voltages, and slew rates
+			for (i = 0; i < 12; i++)
+			{
+				if (drven[i])
+				{
+					std::ostringstream s_subkey;
+					s_subkey << (i + 1);
+					std::string subkey = s_subkey.str ();
+					if (config->getDouble (key, ("LOWLEVEL" + subkey).c_str (), dtemp))
+						throw rts2core::Error ("Error parsing driver low level (" + skey + "/LOWLEVEL" + subkey + ")");
+					if ((dtemp < -12.0) || (dtemp > 12.0))
+						throw rts2core::Error ("Requested driver low level out of range (" + skey + "/LOWLEVEL" + subkey + ")");
+					if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_LOW + 3 * i), int (dtemp * 1000.0)))
+						throw rts2core::Error ("Error setting driver low level (" + subkey + ")");
+					if (config->getDouble (key, ("HIGHLEVEL" + subkey).c_str (), dtemp))
+						throw rts2core::Error ("Error parsing driver high level (" + skey + "/HIGHLEVEL" + subkey + ")");
+					if ((dtemp < -12.0) || (dtemp > 12.0))
+						throw rts2core::Error ("Requested driver high level out of range (" + skey + "/HIGHLEVEL" + subkey + ")");
+					if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_HIGH + 3 * i), int (dtemp * 1000.0)))
+						throw rts2core::Error ("Error setting driver high level (" + skey + "/HIGHLEVEL" + subkey + ")");
+					if (config->getDouble (key, ("SLEWRATE" + subkey).c_str (), dtemp))
+						throw rts2core::Error ("Error parsing driver slew rate (" + skey + "/SLEWRATE" + subkey + ")");
+					if ((dtemp < 0.001) || (dtemp > 5000.0))
+						throw rts2core::Error ("Requested driver slew rate out of range (" + skey + "/SLEWRATE" + subkey + ")");
+					if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (DRIVER_DRV1_SLEW + 3 * i), int (dtemp * 1000.0)))
+						throw rts2core::Error ("Error setting driver slew rate (" + skey + "/SLEWRATE" + subkey + ")");
+				}
+			}
+			break;
+		case BT_AD8X120:
+			// Low level clamp
+			if (config->getDouble (key, "CLAMPLOW", clamp))
+				throw rts2core::Error ("Error parsing clamp low level (" + skey + "/CLAMPLOW)");
+			if ((clamp < -3.0) || (clamp > 3.0))
+				throw rts2core::Error ("Requested clamp low level out of range (" + skey + "/CLAMPLOW)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_CLAMP_LOW, int(clamp * 1000.0)))
+				throw rts2core::Error ("Error setting AD clamp low level (" + skey + "/CLAMPLOW)");
+			// High level clamp
+			if (config->getDouble (key, "CLAMPHIGH", clamp))
+				throw rts2core::Error ("Error parsing clamp high level (" + skey + "/CLAMPHIGH)");
+			if ((clamp < -3.0) || (clamp > 3.0))
+				throw rts2core::Error ("Requested clamp high level out of range (" + skey + "/CLAMPHIGH)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_CLAMP_HIGH, int (clamp * 1000.0)))
+				throw rts2core::Error ("Error setting AD clamp high level (" + skey + "/CLAMPHIGH)");
+			config->getString (key, "CDSMODE", s, "-");
+			if (s == "CDS")
+				itemp = 0;
+			else if (s == "Raw")
+				itemp = 1;
+			else
+				throw rts2core::Error ("Error parsing CDS mode (" + skey + "/CDSMODE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_RAW_MODE, itemp))
+				throw rts2core::Error ("Error setting AD CDS mode (" + skey + "/CDSMODE)");
+			// Raw channel
+			if (config->getInteger (key, "RAWCHANNEL", itemp))
+				throw rts2core::Error ("Error parsing raw channel (" + skey + "/RAWCHANNEL)");
+			if ((itemp < 1) || (itemp > 8))
+				throw rts2core::Error ("Requested raw channel out of range (" + skey + "/RAWCHANNEL)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_RAW_CHANNEL, itemp - 1))
+				throw rts2core::Error ("Error setting raw channel");
+			// CDS Offset
+			if (config->getInteger (key, "CDSOFFSET", itemp))
+				throw rts2core::Error ("Error parsing CDS offset (" + skey + "/CDSOFFSET)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested CDS offset out of range (" + skey + "/CDSOFFSET)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_CDS_OFFSET, itemp))
+				throw rts2core::Error ("Error setting CDS offset");
+			// SHP Toggle 1
+			if (config->getInteger (key, "SHPTOGGLE1", itemp))
+				throw rts2core::Error ("Error parsing SHP toggle 1 (" + skey + "/SHPTOGGLE1)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHP toggle 1 out of range (" + skey + "/SHPTOGGLE1)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_SHP_TOGGLE1, itemp))
+				throw rts2core::Error ("Error setting SHP toggle 1");
+			// SHP Toggle 2
+			if (config->getInteger (key, "SHPTOGGLE2", itemp))
+				throw rts2core::Error ("Error parsing SHP toggle 2 (" + skey + "/SHPTOGGLE2)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHP toggle 2 out of range (" + skey + "/SHPTOGGLE2)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_SHP_TOGGLE2, itemp))
+				throw rts2core::Error ("Error setting SHP toggle 2");
+			// SHD Toggle 1
+			if (config->getInteger (key, "SHDTOGGLE1", itemp))
+				throw rts2core::Error ("Error parsing SHD toggle 1 (" + skey + "/SHDTOGGLE1)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHD toggle 1 out of range (" + skey + "/SHDTOGGLE1)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_SHD_TOGGLE1, itemp))
+				throw rts2core::Error ("Error setting SHD toggle 1");
+			// SHD Toggle 2
+			if (config->getInteger (key, "SHDTOGGLE2", itemp))
+				throw rts2core::Error ("Error parsing SHD toggle 2 (" + skey + "/SHDTOGGLE2)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHD toggle 1 out of range (" + skey + "/SHDTOGGLE2)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X120_SHD_TOGGLE2, itemp))
+				throw rts2core::Error ("Error setting SHD toggle 2");
+			break;
+		// AD8X100 board
+		case  BT_AD8X100:
+			// Low level clamp
+			if (config->getDouble (key, "CLAMPLOW", clamp))
+				throw rts2core::Error ("Error parsing clamp low level (" + skey + "/CLAMPLOW)");
+			if ((clamp < -3.0) || (clamp > 3.0))
+				throw rts2core::Error ("Requested clamp low level out of range (" + skey + "/CLAMPLOW)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_CLAMP_LOW, int (clamp * 1000.0)))
+				throw rts2core::Error ("Error setting AD clamp low level (" + skey + "/CLAMPLOW)");
+			// High level clamp
+			if (config->getDouble (key, "CLAMPHIGH", clamp))
+				throw rts2core::Error ("Error parsing clamp high level (" + skey + "/CLAMPHIGH)");
+			if ((clamp < -3.0) || (clamp > 3.0))
+				throw rts2core::Error ("Requested clamp high level out of range (" + skey + "/CLAMPHIGH)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_CLAMP_HIGH, int (clamp * 1000.0)))
+				throw rts2core::Error ("Error setting AD clamp high level (" + skey + "/CLAMPHIGH)");
+			// CDS mode
+			config->getString (key, "CDSMODE", s, "-");
+			if (s == "CDS")
+			{
+				itemp = 0;
+				hdr = 0;
+			}
+			else if (s == "Raw")
+			{
+				itemp = 1;
+				hdr = 0;
+			}
+			else if (s == "HDR CDS")
+			{
+				itemp = 0;
+				hdr = 1;
+			}
+			else
+				throw rts2core::Error ("Error parsing CDS mode (" + skey + "/CDSMODE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_RAW_MODE, itemp))
+				throw rts2core::Error ("Error setting AD CDS mode (" + skey + "/CDSMODE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_CDS_MODE, hdr))
+				throw rts2core::Error ("Error setting AD CDS mode (" + skey + "/CDSMODE)");
+			// Raw channel
+			if (config->getInteger (key, "RAWCHANNEL", itemp))
+				throw rts2core::Error ("Error parsing raw channel (" + skey + "/RAWCHANNEL)");
+			if ((itemp < 1) || (itemp > 8))
+				throw rts2core::Error ("Requested raw channel out of range (" + skey + "/RAWCHANNEL)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_RAW_CHANNEL, itemp - 1))
+				throw rts2core::Error ("Error setting raw channel");
+			// CDS Gain
+			if (config->getDouble (key, "CDSGAIN", dtemp))
+				throw rts2core::Error ("Error parsing CDS gain (" + skey + "/CDSGAIN)");
+			if ((dtemp <= 0) || (dtemp > 65535))
+				throw rts2core::Error ("Requested CDS gain out of range (" + skey + "/CDSGAIN)");
+			itemp = dtemp * 65536.0;
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_CDS_GAIN, itemp))
+				throw rts2core::Error ("Error setting CDS gain");
+			gain = dtemp;
+			// CDS Offset
+			if (config->getDouble (key, "CDSOFFSET", dtemp))
+				throw rts2core::Error ("Error parsing CDS offset (" + skey + "/CDSOFFSET)");
+			// Scale offset by gain (offset is applied before gain on the AD board, but user usually wants offset after gain)
+			dtemp /= gain;
+			if ((dtemp < -32768) || (dtemp > 32767))
+				throw rts2core::Error ("Requested CDS offset out of range (" + skey + "/CDSOFFSET)");
+			itemp = dtemp * 65536.0;
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_CDS_OFFSET, itemp))
+				throw rts2core::Error ("Error setting CDS offset");
+			// SHP Toggle 1
+			if (config->getInteger (key, "SHPTOGGLE1", itemp))
+				throw rts2core::Error ("Error parsing SHP toggle 1 (" + skey + "/SHPTOGGLE1)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHP toggle 1 out of range (" + skey + "/SHPTOGGLE1)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_SHP_TOGGLE1, itemp))
+				throw rts2core::Error ("Error setting SHP toggle 1");
+			// SHP Toggle 2
+			if (config->getInteger (key, "SHPTOGGLE2", itemp))
+				throw rts2core::Error ("Error parsing SHP toggle 2 (" + skey + "/SHPTOGGLE2)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHP toggle 2 out of range (" + skey + "/SHPTOGGLE2)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_SHP_TOGGLE2, itemp))
+				throw rts2core::Error ("Error setting SHP toggle 2");
+			// SHD Toggle 1
+			if (config->getInteger (key, "SHDTOGGLE1", itemp))
+				throw rts2core::Error ("Error parsing SHD toggle 1 (" + skey + "/SHDTOGGLE1)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHD toggle 1 out of range (" + skey + "/SHDTOGGLE1)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_SHD_TOGGLE1, itemp))
+				throw rts2core::Error ("Error setting SHD toggle 1");
+			// SHD Toggle 2
+			if (config->getInteger (key, "SHDTOGGLE2", itemp))
+				throw rts2core::Error ("Error parsing SHD toggle 2 (" + skey + "/SHDTOGGLE2)");
+			if ((itemp < 0) || (itemp > 65535))
+				throw rts2core::Error ("Requested SHD toggle 2 out of range (" + skey + "/SHDTOGGLE2)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_SHD_TOGGLE2, itemp))
+				throw rts2core::Error ("Error setting SHD toggle 2");
+			break;
+		// HS board
+		case BT_HS:
+			if (config->getInteger (key, "RGRISINGEDGE", itemp))
+				throw rts2core::Error ("Error parsing RG rising edge (" + skey + "/RGRISINGEDGE)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested RG rising edge out of range (" + skey + "/RGRISINGEDGE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_RG_RISING_EDGE, itemp))
+				throw rts2core::Error ("Error setting RG rising edge");
+			if (config->getInteger (key, "RGFALLINGEDGE", itemp))
+				throw rts2core::Error ("Error parsing RG falling edge (" + skey + "/RGFALLINGEDGE)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested RG falling edge out of range (" + skey + "/RGFALLINGEDGE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_RG_FALLING_EDGE, itemp))
+				throw rts2core::Error ("Error setting RG falling edge");
+			for (i = 0; i < 6; i++)
+			{
+				std::ostringstream s_subkey;
+				s_subkey << (i + 1);
+				std::string subkey = s_subkey.str ();
+				if (config->getInteger (key, ("S" + subkey + "RISINGEDGE").c_str (), itemp))
+					throw rts2core::Error ("Error parsing S" + subkey + " rising edge (" + skey + "/S" + subkey + "RISINGEDGE)");
+				if ((itemp < 0) || (itemp > 63))
+					throw rts2core::Error ("Requested S" + subkey + " rising edge out of range (" + skey + "/S" + subkey + "RISINGEDGE)");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (HS_S1_RISING_EDGE + (i * 2)), itemp))
+					throw rts2core::Error ("Error setting S" + subkey + " rising edge");
+				if (config->getInteger (key, ("S" + subkey + "FALLINGEDGE").c_str (), itemp))
+					throw rts2core::Error ("Error parsing S" + subkey + " falling edge (" + skey + "/S" + subkey + "FALLINGEDGE)");
+				if ((itemp < 0) || (itemp > 63))
+					throw rts2core::Error ("Requested S" + subkey + " falling edge out of range (" + skey + "/S" + subkey + "FALLINGEDGE)");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (HS_S1_FALLING_EDGE + (i * 2)), itemp))
+					throw rts2core::Error ("Error setting S" + subkey + " falling edge");
+			}
+			if (config->getInteger (key, "LINELENGTH", itemp))
+				throw rts2core::Error ("Error parsing line length (" + skey + "/LINELENGTH)");
+			if ((itemp < 0) || (itemp > 8191))
+				throw rts2core::Error ("Requested line length out of range (" + skey + "/LINELENGTH)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_LINE_LENGTH, itemp))
+				throw rts2core::Error ("Error setting line length");
+			if (config->getInteger (key, "CLPOBSTART", itemp))
+				throw rts2core::Error ("Error parsing CLPOB start (" + skey + "/CLPOBSTART)");
+			if ((itemp < 0) || (itemp > 8191))
+				throw rts2core::Error ("Requested CLPOB start out of range (" + skey + "/CLPOBSTART)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_CLPOB_START, itemp))
+				throw rts2core::Error ("Error setting CLPOB start");
+			if (config->getInteger (key, "CLPOBEND", itemp))
+				throw rts2core::Error ("Error parsing CLPOB end (" + skey + "/CLPOBEND)");
+			if ((itemp < 0) || (itemp > 8191))
+				throw rts2core::Error ("Requested CLPOB end out of range (" + skey + "/CLPOBEND)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_CLPOB_END, itemp))
+				throw rts2core::Error ("Error setting CLPOB end");
+			if (config->getInteger (key, "CLPOBLEVEL", itemp))
+				throw rts2core::Error ("Error parsing CLPOB level (" + skey + "/CLPOBLEVEL)");
+			if ((itemp < 0) || (itemp > 1023))
+				throw rts2core::Error ("Requested CLPOB level out of range (" + skey + "/CLPOBLEVEL)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_CLPOB_LEVEL, itemp))
+				throw rts2core::Error ("Error setting CLPOB level");
+
+			for (i = 0; i < 6; i++)
+			{
+				std::ostringstream s_subkey;
+				s_subkey << "S" << (i + 1) << "HIGH";
+				std::string subkey = s_subkey.str ();
+				if (config->getInteger (key, subkey.c_str (), itemp))
+					throw rts2core::Error ("Error parsing S high flag (" + skey + "/" + subkey + ")");
+				if ((itemp < 0) || (itemp > 1))
+					throw rts2core::Error ("Requested high flag invalid (" + skey + "/" + subkey + ")");
+				if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | (HS_S1_HIGH + i), itemp))
+					throw rts2core::Error ("Error setting " + subkey + " high flag");
+			}
+
+			if (config->getInteger (key, "LVDSTEST", itemp))
+				throw rts2core::Error ("Error parsing LVDS test flag (" + skey + "/LVDSTEST)");
+			if ((itemp < 0) || (itemp > 1))
+				throw rts2core::Error ("Requested LVDS test flag invalid (" + skey + "/LVDSTEST)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_LVDS_TEST, itemp))
+				throw rts2core::Error ("Error setting LVDS test flag");
+			if (config->getInteger (key, "TCLKDELAY", itemp))
+				throw rts2core::Error ("Error parsing TCLK delay (" + skey + "/TCLKDELAY)");
+			if ((itemp < 0) || (itemp > 15))
+				throw rts2core::Error ("Requested TCLK delay out of range (" + skey + "/TCLKDELAY)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_TCLK_DELAY, itemp))
+				throw rts2core::Error ("Error setting TCLK delay");
+			if (config->getInteger (key, "DOUTPHASE", itemp))
+					throw rts2core::Error ("Error parsing DOUT phase (" + skey + "/DOUTPHASE)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested DOUT phase out of range (" + skey + "/DOUTPHASE)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_DOUT_PHASE, itemp))
+				throw rts2core::Error ("Error setting DOUT phase");
+			if (config->getInteger (key, "SHPLOC", itemp))
+				throw rts2core::Error ("Error parsing SHP location (" + skey + "/SHPLOC)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested SHP location out of range (" + skey + "/SHPLOC)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_SHP_LOC, itemp))
+				throw rts2core::Error ("Error setting SHP location");
+			if (config->getInteger (key, "SHPWIDTH", itemp))
+				throw rts2core::Error ("Error parsing SHP width (" + skey + "/SHPWIDTH)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested SHP width out of range (" + skey + "/SHPWIDTH)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_SHP_WIDTH, itemp))
+				throw rts2core::Error ("Error setting SHP width");
+			if (config->getInteger (key, "SHDLOC", itemp))
+				throw rts2core::Error ("Error parsing SHD location (" + skey + "/SHDLOC)");
+			if ((itemp < 0) || (itemp > 63))
+				throw rts2core::Error ("Requested SHD location out of range (" + skey + "/SHDLOC)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_SHD_LOC, itemp))
+				throw rts2core::Error ("Error setting SHD location");
+			config->getString (key, "CDSGAIN", s, "-");
+			if (s == "-3")
+				itemp = 0;
+			else if (s == "0")
+				itemp = 1;
+			else if (s == "3")
+				itemp = 2;
+			else if (s == "6")
+				itemp = 3;
+			else
+				throw rts2core::Error ("Error parsing CDS gain (" + skey + "/CDSGAIN)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_CDS_GAIN, itemp))
+				throw rts2core::Error ("Error setting CDS gain");
+			if (config->getDouble (key, "VGAGAIN", dtemp))
+				throw rts2core::Error ("Error parsing VGA gain (" + skey + "/VGAGAIN)");
+			itemp = int ((dtemp - 5.75) / 0.0358);
+			if ((itemp < 0) || (itemp > 1023))
+				throw rts2core::Error ("Requested VGA gain out of range (" + skey + "/VGAGAIN)");
+			if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | HS_VGA_GAIN, itemp))
+				throw rts2core::Error ("Error setting VGA gain");
+			break;
+		default:
+			throw rts2core::Error ("Unknown board type (" + skey + ")");
+	}
+
+	// Apply board configuration
+	std::ostringstream cmd;
+	cmd << ">B" << (BOARD_DAUGHTERS + board) << "\r";
+	if (interfaceCommand(cmd.str ().c_str (), s, 3000))
+			throw rts2core::Error ("Error configuring board");
+//	if (interfaceCommand(">L1\r", s, 100, false))
+//		throw rts2core::Error ("Error enabling polling");
+}
+
+void Reflex::configTEC ()
+{
+	std::string s;
+	double dtemp;
+	int tecenable;
+
+	// No TEC on rev A PowerB boards
+	if (boardRevision (BOARD_PB) == 1)
+		return;
+
+//	// Disable polling to speed up configuration
+//	if (interfaceCommand(">L0\r", s, 100, false))
+//		throw rts2core::Error ("Error disabling polling")
+
+	config->getString ("POWERB", "TECENABLE", s, "");
+	tecenable = (s == "1");
+
+	if (tecenable)
+	{
+		if (config->getDouble ("POWERB", "TECSETPOINT", dtemp))
+			throw rts2core::Error ("Error parsing TEC setpoint (POWERB/TECSETPOINT)");
+		if ((dtemp < -100.0) || (dtemp > 50.0))
+			throw rts2core::Error ("Requested TEC setpoint out of range (POWERB/TECSETPOINT)");
+		dtemp += 273.15;	// C to K
+	}
+	else
+	{
+		dtemp = 0.0;
+	}
+	if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_PB + 1) << 16) | POWERB_TEC_SETPOINT, int (dtemp * 1000.0)))
+		throw rts2core::Error ("Error setting TEC setpoint");
+
+	// Apply board configuration
+	if (interfaceCommand(">B3", s, 3000))
+		throw rts2core::Error ("Error configuring board");
+	// Apply TEC command twice to allow for some settling
+	usleep(USEC_SEC / 2);
+	if (interfaceCommand(">B3", s, 3000))
+		throw rts2core::Error ("Error configuring board");
+//	if (interfaceCommand(">L1\r", s, 100, false))
+//		throw rts2core::Error ("Error enabling polling");
 }
 
 int main (int argc, char **argv)
