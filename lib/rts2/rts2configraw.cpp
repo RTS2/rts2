@@ -431,6 +431,19 @@ int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &
 	return 0;
 }
 
+int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value, int defVal)
+{
+  	int ret;
+	clearVerboseEntry ();
+	ret = getInteger (section, valueName, value);
+	if (ret)
+	{
+		value = defVal;
+	}
+	setVerboseEntry ();
+	return ret;
+}
+
 int Rts2ConfigRaw::getIntegerDefault (const char *section, const char *valueName, int defVal)
 {
 	int ret;
