@@ -202,6 +202,8 @@ class Reflex:public Camera
 		 */
 		void rereadAllRegisters ();
 
+		int sendChannel (int chan, u_char *buf, int chanorder, int totalchanel);
+
 		// related to configuration file..
 		const char *configFile;
 		Rts2ConfigRaw *config;
@@ -274,6 +276,10 @@ RStates::iterator RStates::findName (std::string sname)
 Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	CLHandle = NULL;
+
+	createExpType ();
+
+	createDataChannels ();
 
 	createValue (baudRate, "baud_rate", "CL baud rate", true, CAM_WORKING);
 	baudRate->addSelVal ("9600", (rts2core::Rts2SelData *) CL_BAUDRATE_9600);
@@ -404,17 +410,44 @@ int Reflex::readoutStart ()
 
 #ifdef CL_EDT
 	int ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
-	if (ret == -1)
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
 		return -1;
 	}
+	ret = pdv_auto_set_roi (CLHandle);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "call to pdv_auto_set failed" << sendLog;
+		return -1;
+	}
+	ret = pdv_multibuf (CLHandle, NUM_RING_BUFFERS);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "pdv_multibuf call failed" << sendLog;
+		return -1;
+	}
+	pdv_start_images (CLHandle, NUM_RING_BUFFERS);
 	return 0;
 #endif
 }
 
 int Reflex::doReadout ()
 {
+#ifdef CL_EDT
+	unsigned char * buf = pdv_wait_image (CLHandle);
+	int i,j;
+	for (i = 0, j = 0; i < dataChannels->getValueInteger (); i++)
+	{
+		if ((*channels)[i])
+		{
+			int ret = sendChannel (i, buf, j, dataChannels->getValueInteger ());
+			if (ret < 0)
+				return -1;
+			j++;
+		}
+	}
+#endif
 	return -2;
 }
 
@@ -780,6 +813,11 @@ void Reflex::rereadAllRegisters ()
 		}
 		iter->second->setValueInteger (rval);
 	}
+}
+
+int Reflex::sendChannel (int chan, u_char *buf, int chanorder, int totalchanel)
+{
+	return sendReadoutData ((char *) buf, getWriteBinaryDataSize (chanorder), chanorder);
 }
 
 void Reflex::reloadConfig ()
