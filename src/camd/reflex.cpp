@@ -247,7 +247,7 @@ class Reflex:public Camera
 
 		// return board type for given board
 		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 24) & 0xFF; }
-		int boardRevision (int board) { return registers[BOARD_TYPE_BP + board]->getValueInteger () >> 16 & 0xFF; }
+		int boardRevision (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 16) & 0xFF; }
 #ifdef CL_EDT
 		PdvDev *CLHandle;
 #else
@@ -438,10 +438,23 @@ int Reflex::processOption (int in_opt)
 
 int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
+	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
+	{
+		if (old_value == iter->second)
+		{
+			std::string s;
+			switch (iter->first)
+			{
+				// special registers first
+				case 0x00000004:
+					return interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000) ? -2 : 0;
+				default:	
+					return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
+			}
+		}
+	}
 	return Camera::setValue (old_value, new_value);
 }
-
-
 
 int Reflex::initHardware ()
 {
@@ -491,11 +504,36 @@ int Reflex::initValues ()
 
 int Reflex::commandAuthorized (Rts2Conn * conn)
 {
-	if (conn->isCommand ("reset"))
+	std::string s;
+	if (conn->isCommand ("warmboot"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return 0;
+		return interfaceCommand (">WARMBOOT\r", s, 100);
+	}
+	else if (conn->isCommand ("reboot"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return interfaceCommand (">REBOOT\r", s, 5000);
+	}
+	else if (conn->isCommand ("standby"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return interfaceCommand (">STANDBY\r", s, 5000);
+	}
+	else if (conn->isCommand ("resume"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return interfaceCommand (">RESUME\r", s, 5000);
+	}
+	else if (conn->isCommand ("clear"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return interfaceCommand (">E\r", s, 100);
 	}
 	return Camera::commandAuthorized (conn);
 }
@@ -761,6 +799,8 @@ void Reflex::reloadConfig ()
 		throw rts2core::Error ("cannot parse .rcf configuration file");
 	}
 
+	configSystem ();
+
 	parseStates ();
 	compileStates ();
 
@@ -769,6 +809,8 @@ void Reflex::reloadConfig ()
 	compile ();
 
 	loadTiming ();
+
+	rereadAllRegisters ();
 }
 
 void Reflex::parseStates ()
@@ -1225,8 +1267,11 @@ void Reflex::loadTiming ()
 		std::ostringstream os;
 		os << ">T" << *iter << '\r';
 		if (interfaceCommand (os.str ().c_str (), s, 100))
-			throw rts2core::Error ("Error loading timing");
+			throw rts2core::Error ("Error loading timing line");
 	}
+
+	if (interfaceCommand (">T\r", s, 3000))
+		throw rts2core::Error ("Error applying timing");
 }
 
 void Reflex::createBoards ()
@@ -2002,8 +2047,11 @@ void Reflex::configSystem ()
 	}
 
 	// Send configure system command
-	if (interfaceCommand(">C\r", s, 3000))
+	if (interfaceCommand (">C\r", s, 3000))
 		throw rts2core::Error ("Error configuring system");
+
+	if (interfaceCommand (">A\r", s, 5000))
+		throw rts2core::Error ("Error issuing configure all command");
 
 //	if (interfaceCommand(">L1\r", s, 100, false))
 //		throw rts2core::Error ("Error enabling polling")
