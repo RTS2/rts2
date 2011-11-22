@@ -247,6 +247,10 @@ class Reflex:public Camera
 
 		rts2core::ValueSelection *baudRate;
 
+		// holds board/adc pair for each channel
+		// there are MAX_TAP_COUNT channels pairs (so MAX_TAP_COUNT * 2)
+		std::pair <int, int> channeltap[MAX_TAP_COUNT * 2];
+
 		// return board type for given board
 		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 24) & 0xFF; }
 		int boardRevision (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 16) & 0xFF; }
@@ -504,8 +508,6 @@ int Reflex::initHardware ()
 	rereadAllRegisters ();
 
 	reloadConfig ();
-
-	setSize (1000, 1000, 0, 0);
 
 	return 0;
 }
@@ -1681,6 +1683,9 @@ void Reflex::configSystem ()
 	tapcount = 0;
 	if (config->getInteger ("BACKPLANE", "TAPCOUNT", lines) || lines < 0)
 		throw rts2core::Error ("Invalid tap count");
+
+	int ct = 0;
+
 	for (i = 0; i < lines; i++)
 	{
 		std::ostringstream os;
@@ -1726,6 +1731,7 @@ void Reflex::configSystem ()
 			if (tapenable[board][adc])
 				throw rts2core::Error ("Duplicate tap entry");
 			tapenable[board][adc] = true;
+			channeltap[ct++] = std::pair <int, int> (board, adc);
 			if (dir == 'L')
 			{
 				tapstart[board][adc] = tapcount * taplength;
@@ -2074,6 +2080,11 @@ void Reflex::configSystem ()
 			throw rts2core::Error ("Invalid line count");
 		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_COUNT, i - 1))
 			throw rts2core::Error ("Error writing Interface deinterlacing line count");
+
+		setNumChannels (ct);
+		// one channel size
+		setSize (taplength, i, 0, 0);
+
 		// Write number of idle CameraLink lines between frames
 		if (config->getInteger ("BACKPLANE", "IDLELINECOUNT", i) || i <= 0)
 			throw rts2core::Error ("Invalid idle line count");
