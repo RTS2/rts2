@@ -1708,6 +1708,7 @@ void Reflex::configSystem ()
 			if (tapenable[board][0])
 				throw rts2core::Error ("Duplicate tap entry");
 			tapenable[board][0] = true;
+			channeltap[ct++] = std::pair <int, int> (board, 0);
 			tapstart[board][0] = tapcount * taplength;
 			tapdelta[board][0] = 1;
 		}
