@@ -387,6 +387,8 @@ class Value
 
 		bool prefixWithDevice () { return (rts2Type & RTS2_VALUE_DEVPREFIX); }
 
+		void setWritable () { rts2Type |= RTS2_VALUE_WRITABLE; }
+
 		int32_t getFlags () { return rts2Type; }
 
 		/**

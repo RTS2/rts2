@@ -75,6 +75,5 @@ struct imghdr
 	int16_t shutter;
 	int16_t x, y;					 //! image beginning (detector coordinates)
 	uint16_t channel;				 //! which channel is those data
-	uint16_t totalChannel;				 //! total number of channels of this image
 };
 #endif							 // __RTS_IMGHDR__

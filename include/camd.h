@@ -360,6 +360,12 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void setDataType (int ntype) { dataType->setValueInteger (ntype); }
 
+		/**
+		 * Allow user change data type directly. Usually data type should be changed
+		 * indirectly, from some variables which triggers data type change.
+		 */
+		void setDataTypeWritable () { dataType->setWritable (); }
+
 		int nAcc;
 		struct imghdr *focusingHeader;
 

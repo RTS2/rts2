@@ -208,6 +208,8 @@ class Dummy:public Camera
 			addDataType (RTS2_DATA_DOUBLE);
 			addDataType (RTS2_DATA_SBYTE);
 			addDataType (RTS2_DATA_ULONG);
+
+			setDataTypeWritable ();
 		}
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
