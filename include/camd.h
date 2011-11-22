@@ -696,6 +696,7 @@ class Camera:public rts2core::ScriptDevice
 
 		void setNumChannels (int num)
 		{
+			channels->clear ();
 			for (int i = 0; i < num; i++)
 				channels->addValue (true);
 		}
