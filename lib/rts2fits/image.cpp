@@ -1281,7 +1281,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 			fits_write_img_sht (getFitsFile (), 0, 1, pixelSize, (int16_t *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_LONG:
-			fits_write_img_lng (getFitsFile (), 0, 1, pixelSize, (long int *) pixelData, &fits_status);
+			fits_write_img_int (getFitsFile (), 0, 1, pixelSize, (int *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_LONGLONG:
 			fits_write_img_lnglng (getFitsFile (), 0, 1, pixelSize, (LONGLONG *) pixelData, &fits_status);
@@ -1299,7 +1299,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 			fits_write_img_usht (getFitsFile (), 0, 1, pixelSize, (short unsigned int *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_ULONG:
-			fits_write_img_ulng (getFitsFile (), 0, 1, pixelSize, (unsigned long *) pixelData, &fits_status);
+			fits_write_img_uint (getFitsFile (), 0, 1, pixelSize, (unsigned int *) pixelData, &fits_status);
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
@@ -1919,7 +1919,7 @@ void Image::loadChannels ()
 				fits_read_img_sht (getFitsFile (), 0, 1, pixelSize, 0, (int16_t *) imageData, &anyNull, &fits_status);
 				break;
 			case RTS2_DATA_LONG:
-				fits_read_img_lng (getFitsFile (), 0, 1, pixelSize, 0, (long int *) imageData, &anyNull, &fits_status);
+				fits_read_img_int (getFitsFile (), 0, 1, pixelSize, 0, (int *) imageData, &anyNull, &fits_status);
 				break;
 	
 			case RTS2_DATA_LONGLONG:
@@ -1938,7 +1938,7 @@ void Image::loadChannels ()
 				fits_read_img_usht (getFitsFile (), 0, 1, pixelSize, 0,(short unsigned int *) imageData, &anyNull, &fits_status);
 				break;
 			case RTS2_DATA_ULONG:
-				fits_read_img_ulng (getFitsFile (), 0, 1, pixelSize, 0, (unsigned long *) imageData, &anyNull, &fits_status);
+				fits_read_img_uint (getFitsFile (), 0, 1, pixelSize, 0, (unsigned int *) imageData, &anyNull, &fits_status);
 				break;
 			default:
 				logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
