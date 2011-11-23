@@ -135,8 +135,8 @@ if ( $continue == 1 ) then
 								set rdec = 0
 							endif
 							if ( $rra != 0 || $rdec != 0 ) then
-								<xsl:copy-of select-'$printd'/> "Offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
-								rts2-logcom "Applying offsets from catalogue match $rra\" $rdec\""
+								<xsl:copy-of select='$printd'/> "Offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
+								rts2-logcom "Applying offsets from catalogue match" `echo $rra $rdec | awk '{ printf "%+0.2f\" %+0.2f\"",$1,$2; }'`
 								tele offset $rra $rdec
 								@ lastoffimage = $imgnum
 							<xsl:if test='$debug != 0'>
@@ -167,7 +167,7 @@ if ( $continue == 1 ) then
 				endif
 			endif
 		else
-			rts2-logcom "Too big offset $ora_l\" $odec_l\""
+			rts2-logcom "Too big offset " `echo $ora_l $odec_l | awk '{ printf "%+0.2f\" %+0.2f\"",$1,$2; }'`
 		endif	  	
 	<xsl:if test='$debug != 0'>
 	else
