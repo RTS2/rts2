@@ -151,6 +151,11 @@ double ElementExpose::getExpectedDuration ()
 	return expTime + script->getFullReadoutTime ();
 }
 
+double ElementExpose::getExpectedLightTime ()
+{
+	return expTime;
+}
+
 ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;

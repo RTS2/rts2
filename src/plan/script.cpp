@@ -125,9 +125,11 @@ Script::Script (int scriptLoopCount, rts2core::Block * _master):Rts2Object ()
 	cmdBufTop = NULL;
 	wholeScript = std::string ("");
 
+	target_pos.ra = target_pos.dec = NAN;
+
 	fullReadoutTime = 0;
 	filterMovement = 0;
-	telescopeSpeed = -1;
+	telescopeSpeed = 0;
 }
 
 Script::Script (const char *script):Rts2Object ()
@@ -157,7 +159,7 @@ Script::~Script (void)
 	delete[] cmdBuf;
 }
 
-void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
+void Script::parseScript (Rts2Target *target)
 {
 	char *comment = NULL;
 	Element *element;
@@ -188,7 +190,7 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 	commandStart = cmdBuf;
 	while (1)
 	{
-		element = parseBuf (target, target_pos);
+		element = parseBuf (target);
 		if (!element)
 			break;
 		element->setLen (cmdBufTop - commandStart);
@@ -228,7 +230,6 @@ void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
 int Script::setTarget (const char *cam_name, Rts2Target * target)
 {
 	std::string scriptText;
-	struct ln_equ_posn target_pos;
 
 	target->getPosition (&target_pos);
 
@@ -254,7 +255,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 
 		cmdBuf = new char[scriptText.length () + 1];
 		strcpy (cmdBuf, scriptText.c_str ());
-		parseScript (target, &target_pos);
+		parseScript (target);
 		// ret == 0 if this was the last (or only) line of the script - see target->getScript call comments.
 	} while (ret == 1);
 
@@ -306,7 +307,7 @@ void Script::postEvent (Rts2Event * event)
 	Rts2Object::postEvent (event);
 }
 
-Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
+Element *Script::parseBuf (Rts2Target * target)
 {
 	char *devSep;
 	char *el;
@@ -423,7 +424,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// target is already acquired
 		if (target && target->isAcquired ())
 			return new ElementNone (this);
-		return new ElementAcquire (this, precision, expTime, target_pos);
+		return new ElementAcquire (this, precision, expTime, &target_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_HAM))
 	{
@@ -431,7 +432,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		float exposure;
 		if (getNextParamInteger (&repNumber) || getNextParamFloat (&exposure))
 			return NULL;
-		return new ElementAcquireHam (this, repNumber, exposure, target_pos);
+		return new ElementAcquireHam (this, repNumber, exposure, &target_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_STAR_SEARCH))
 	{
@@ -442,7 +443,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamInteger (&repNumber) || getNextParamDouble (&precision)
 			|| getNextParamFloat (&exposure) || getNextParamDouble (&scale))
 			return NULL;
-		return new ElementAcquireStar (this, repNumber, precision, exposure, scale, scale, target_pos);
+		return new ElementAcquireStar (this, repNumber, precision, exposure, scale, scale, &target_pos);
 	}
 	#endif						 /* HAVE_PGSQL */
 	else if (!strcmp (commandStart, COMMAND_BLOCK_WAITSIG))
@@ -457,7 +458,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		blockEl = new ElementSignalEnd (this, waitSig);
-		parseBlock (blockEl, target, target_pos);
+		parseBlock (blockEl, target);
 		return blockEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_ACQ))
@@ -472,7 +473,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			acqIfEl = new ElementAcquired (this, target->getObsTargetID ());
 		else
 			acqIfEl = new ElementAcquired (this, 1);
-		parseBlock (acqIfEl, target, target_pos);
+		parseBlock (acqIfEl, target);
 		// test for if..
 		if (isNext (COMMAND_BLOCK_ELSE))
 		{
@@ -483,7 +484,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			// parse block..
 			while (1)
 			{
-				newElement = parseBuf (target, target_pos);
+				newElement = parseBuf (target);
 				// "}" will result in NULL, which we capture here
 				if (!newElement)
 					break;
@@ -520,20 +521,20 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		forEl = new ElementFor (this, max);
-		parseBlock (forEl, target, target_pos);
+		parseBlock (forEl, target);
 		return forEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_WHILE))
 	{
 		int max;
-		rts2operands::Operand *condition = parseOperand (target, target_pos);
+		rts2operands::Operand *condition = parseOperand (target);
 		if (getNextParamInteger (&max))
 			return NULL;
 		el = nextElement ();
 		if (*el != '{')
 			return NULL;
 		ElementWhile *whileEl = new ElementWhile (this, condition, max);
-		parseBlock (whileEl, target, target_pos);
+		parseBlock (whileEl, target);
 		return whileEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_DO))
@@ -545,11 +546,11 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		ElementDo *doEl = new ElementDo (this, max);
-		parseBlock (doEl, target, target_pos);
+		parseBlock (doEl, target);
 		el = nextElement ();
 		if (strcmp (el, COMMAND_BLOCK_WHILE))
 			return NULL;
-		rts2operands::Operand *condition = parseOperand (target, target_pos);
+		rts2operands::Operand *condition = parseOperand (target);
 		doEl->setCondition (condition);
 		return doEl;
 	}
@@ -559,7 +560,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		ElementOnce *singleEl = new ElementOnce (this);
-		parseBlock (singleEl, target, target_pos);
+		parseBlock (singleEl, target);
 		return singleEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT_SOD))
@@ -575,7 +576,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			return NULL;
 		forEl = new ElementWhileSod (this, endSod);
 		// parse block..
-		parseBlock (forEl, target, target_pos);
+		parseBlock (forEl, target);
 		return forEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_WAITFOR))
@@ -630,7 +631,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		hexEl = new ElementHex (this, new_device, ra_size, dec_size);
-		parseBlock (hexEl, target, target_pos);
+		parseBlock (hexEl, target);
 		return hexEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_FXF))
@@ -646,7 +647,7 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (*el != '{')
 			return NULL;
 		ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
-		parseBlock (ffEl, target, target_pos);
+		parseBlock (ffEl, target);
 		return ffEl;
 	}
 	else if (!strcmp (commandStart, COMMAND_EXE))
@@ -666,11 +667,11 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 }
 
 
-void Script::parseBlock (ElementBlock *el, Rts2Target * target, struct ln_equ_posn *target_pos)
+void Script::parseBlock (ElementBlock *el, Rts2Target * target)
 {
 	while (1)
 	{
-		Element *newElement = parseBuf (target, target_pos);
+		Element *newElement = parseBuf (target);
 		// "}" will result in NULL, which we capture here
 		if (!newElement)
 			return;
@@ -679,7 +680,7 @@ void Script::parseBlock (ElementBlock *el, Rts2Target * target, struct ln_equ_po
 	}
 }
 
-rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_posn *target_pos, rts2operands::Operand *op)
+rts2operands::Operand * Script::parseOperand (Rts2Target *target, rts2operands::Operand *op)
 {
 	while (isspace (*cmdBufTop))
 		cmdBufTop++;
@@ -690,7 +691,7 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 			cmdBufTop++;
 		while (isspace (*cmdBufTop));
 		// find end of operand..
-		return parseOperand (target, target_pos);
+		return parseOperand (target);
 	}
 
 	while (*cmdBufTop != '\0')
@@ -713,7 +714,7 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 				cmdBufTop++;
 			while (isspace (*cmdBufTop));
 			// find end of operand..
-			return parseOperand (target, target_pos);
+			return parseOperand (target);
 		}
 		else if (*cmdBufTop == '=' || *cmdBufTop == '>' || *cmdBufTop == '<')
 		{
@@ -747,7 +748,7 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 			{
 				throw ParsingError ("In conditions, only == is allowed");
 			}
-			rts2operands::Operand *op2 = parseOperand (target, target_pos);
+			rts2operands::Operand *op2 = parseOperand (target);
 			return new rts2operands::OperandsLREquation (op, cmp, op2);
 		}
 		// find out what character represents..
@@ -878,11 +879,24 @@ std::list <Element *>::iterator Script::findElement (const char *name, std::list
 	return iter;
 }
 
-double Script::getExpectedDuration ()
+double Script::getExpectedDuration (struct ln_equ_posn *tel)
+{
+	double ret = 0;
+	if (tel && !isnan (target_pos.ra) && !isnan (target_pos.dec))
+	{
+		double dist = ln_get_angular_separation (tel, &target_pos);
+		ret += dist * getTelescopeSpeed ();
+	}
+	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+		ret += (*iter)->getExpectedDuration ();
+	return ret;
+}
+
+double Script::getExpectedLightTime ()
 {
 	double ret = 0;
 	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
-		ret += (*iter)->getExpectedDuration ();
+		ret += (*iter)->getExpectedLightTime ();
 	return ret;
 }
 
@@ -894,7 +908,7 @@ int Script::getExpectedImages ()
 	return ret;
 }
 
-double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras)
+double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel)
 {
   	double md = 0;
 	for (Rts2CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
@@ -903,7 +917,7 @@ double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras)
 		rts2script::Script script;
 		tar->getScript (cam->c_str(), script_buf);
 		script.setTarget (cam->c_str (), tar);
-		double d = script.getExpectedDuration ();
+		double d = script.getExpectedDuration (tel);
 		if (d > md)
 			md = d;  
 	}

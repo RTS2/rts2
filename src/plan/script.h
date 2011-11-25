@@ -117,7 +117,8 @@ class Script:public Rts2Object, public std::list <Element *>
 		/**
 		 * Parse target script.
 		 */
-		void parseScript (Rts2Target *target, struct ln_equ_posn *target_pos);
+		void parseScript (Rts2Target *target);
+		
 		/**
 		 * Get script from target, create vector of script elements and
 		 * script string, which will be put to FITS header.
@@ -170,8 +171,15 @@ class Script:public Rts2Object, public std::list <Element *>
 
 		/**
 		 * Return expected script duration in seconds.
+		 *
+		 * @param tel  current telescope position (or NULL if it is unknow/unimportant).
 		 */
-		double getExpectedDuration ();
+		double getExpectedDuration (struct ln_equ_posn *tel = NULL);
+
+		/**
+		 * Return expected script total of light time (shutter opened, system taking science data)
+		 */
+		double getExpectedLightTime ();
 
 		/**
 		 * Return total number of exposures expected in script.
@@ -199,21 +207,20 @@ class Script:public Rts2Object, public std::list <Element *>
 		int getNextParamDouble (double *val);
 		int getNextParamInteger (int *val);
 		// we should not save reference to target, as it can be changed|deleted without our knowledge
-		Element *parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos);
+		Element *parseBuf (Rts2Target * target);
 
 		/**
 		 * Parse block surrounded with {}
 		 *
 		 * @param el          ElementBlock where elements from block will be stored.
 		 * @param target      Passed from parseBuf. Target for observation.
-		 * @param target_pos  Passed from parseBuf. Target position.
 		 */
-		void parseBlock (ElementBlock *el, Rts2Target * target, struct ln_equ_posn *target_pos);
+		void parseBlock (ElementBlock *el, Rts2Target * target);
 
 		/**
 		 * Parse string as operand, returns reference to newly created operand.
 		 */
-		rts2operands::Operand *parseOperand (Rts2Target * target, struct ln_equ_posn *target_pos, rts2operands::Operand *op = NULL);
+		rts2operands::Operand *parseOperand (Rts2Target * target, rts2operands::Operand *op = NULL);
 
 		std::list < Element * >::iterator el_iter;
 		rts2core::Block *master;
@@ -222,6 +229,9 @@ class Script:public Rts2Object, public std::list <Element *>
 		int commentNumber;
 		// is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
 		int executedCount;
+
+		// target position
+		struct ln_equ_posn target_pos;
 
 		// offset for scripts spanning more than one line
 		int lineOffset;
@@ -310,7 +320,8 @@ typedef counted_ptr <Script> ScriptPtr;
  *
  * @param tar     target for which scripts will be retrieved
  * @param cameras list of cameras for which to retrieve scripts.
+ * @param tel     current telescope position, used to estimate time needed for telescope movement
  */
-double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras);
+double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel = NULL);
 
 #endif							 /* ! __RTS2_SCRIPT__ */

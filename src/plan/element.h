@@ -170,6 +170,11 @@ class Element:public Rts2Object
 		virtual double getExpectedDuration () { return 0; }
 
 		/**
+		 * Return expected element duration of light time (shutter opened, taking science data).
+		 */
+		virtual double getExpectedLightTime () { return 0; }
+
+		/**
 		 * Return number of exposures the script is expected to take.
 		 */
 		virtual int getExpectedImages () { return 0; }
@@ -206,6 +211,7 @@ class ElementExpose:public Element
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXPOSURE << "\",\"duration\":" << expTime; }
 
 		virtual double getExpectedDuration ();
+		virtual double getExpectedLightTime ();
 		virtual int getExpectedImages () { return 1; }
 	private:
 		float expTime;

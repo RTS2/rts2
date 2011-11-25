@@ -275,6 +275,14 @@ double ElementBlock::getExpectedDuration ()
 	return ret;
 }
 
+double ElementBlock::getExpectedLightTime ()
+{
+	double ret = 0;
+	for (std::list < Element *>::iterator iter = blockElements.begin (); iter != blockElements.end (); iter++)
+		ret += (*iter)->getExpectedLightTime ();
+	return ret;
+}
+
 int ElementBlock::getExpectedImages ()
 {
 	int ret = 0;
@@ -489,6 +497,11 @@ void ElementFor::printJson (std::ostream &os)
 double ElementFor::getExpectedDuration ()
 {
 	return max * ElementBlock::getExpectedDuration ();
+}
+
+double ElementFor::getExpectedLightTime ()
+{
+	return max * ElementBlock::getExpectedLightTime ();
 }
 
 int ElementFor::getExpectedImages ()

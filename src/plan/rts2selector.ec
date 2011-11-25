@@ -147,7 +147,7 @@ void Selector::considerTarget (int consider_tar_id, double JD)
 		std::string scripttext;
 		newTar->getScript (iter->first.c_str (), scripttext);
 		rts2script::Script script (scripttext.c_str ());
-		script.parseScript (NULL, NULL);
+		script.parseScript (NULL);
 		for (rts2script::Script::iterator se = script.begin (); se != script.end (); se++)
 		{
 		  	std::ostringstream os;

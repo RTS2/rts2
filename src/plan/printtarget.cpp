@@ -287,7 +287,8 @@ void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 		}
 		else
 		{
-			std::cout << pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << " # images " << script.getExpectedImages () << std::endl;
+			std::cout << pref << " |-- expected light time: " << TimeDiff (0, script.getExpectedLightTime ()) << " # images " << script.getExpectedImages () << std::endl
+				<< pref << " \\-- expected duration: " << TimeDiff (0, script.getExpectedDuration ()) << std::endl;
 		}
 	}
 }
