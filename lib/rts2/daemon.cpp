@@ -29,6 +29,7 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "daemon.h"
 
@@ -47,6 +48,8 @@
 #ifndef LOCK_UN
 #define   LOCK_UN   8    /* unlock */
 #endif
+
+#define OPT_AUTORESTART         OPT_LOCAL + 623
 
 using namespace rts2core;
 
@@ -69,6 +72,8 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	runAs = NULL;
 
 	daemonize = DO_DAEMONIZE;
+	autorestart = -1;
+	watched_child = -1;
 
 	doHupIdleLoop = false;
 
@@ -79,6 +84,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	idleInfoInterval = -1;
 
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
+	addOption (OPT_AUTORESTART, "autorestart", 1, "seconds to wait for restart of crashed daemon");
 	addOption (OPT_LOCALPORT, "local-port", 1, "define local port on which we will listen to incoming requests");
 	addOption (OPT_LOCKPREFIX, "lock-prefix", 1, "prefix for lock file");
 	addOption (OPT_RUNAS, "run-as", 1, "run under specified user (and group, if it's provided after .)");
@@ -100,6 +106,9 @@ int Daemon::processOption (int in_opt)
 	{
 		case 'i':
 			daemonize = DONT_DAEMONIZE;
+			break;
+		case OPT_AUTORESTART:
+			autorestart = atoi (optarg);
 			break;
 		case OPT_LOCALPORT:
 			setPort (atoi (optarg));
@@ -343,11 +352,50 @@ int Daemon::run ()
 {
 	initDaemon ();
 	beforeRun ();
-	while (!getEndLoop ())
+	while (autorestart > 0)
 	{
-		oneRunLoop ();
+		watched_child = fork ();
+		if (watched_child < 0)
+		{
+			logStream (MESSAGE_ERROR) << "cannot fork for autostart watch, exiting. " << strerror (errno) << sendLog;
+			exit (4);
+		}
+		if (watched_child > 0)
+		{
+			int status;
+			pid_t ret = waitpid (watched_child, &status, 0);
+			if (ret < 0)
+			{
+				logStream (MESSAGE_ERROR) << "cannot wait for child after autostart, exiting " << strerror (errno) << sendLog;
+				return -1;
+			}
+			// kill signal/endRunLoop call can set autorestart to -1..
+			if (autorestart > 0)
+			{
+				sleep (autorestart);
+				logStream (MESSAGE_ERROR) << "restarted (due to autostart)" << sendLog;
+			}
+		}
+		else
+		{
+			// don't autostart child..
+			autorestart = -1;
+			setEndLoop (false);
+		}
 	}
+	while (!getEndLoop ())
+		oneRunLoop ();
 	return 0;
+}
+
+void Daemon::endRunLoop ()
+{
+	if (watched_child > 0)
+	{
+		kill (SIGINT, watched_child);
+		autorestart = -1;
+	}
+	Block::endRunLoop ();
 }
 
 int Daemon::idle ()

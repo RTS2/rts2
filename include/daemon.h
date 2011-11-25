@@ -56,6 +56,8 @@ class Daemon:public rts2core::Block
 		virtual ~ Daemon (void);
 		virtual int run ();
 
+		virtual void endRunLoop ();
+
 		/**
 		 * Init daemon.
 		 * This is call to init daemon. It calls @see Daemon::init and @see Daemon::initValues
@@ -520,6 +522,9 @@ class Daemon:public rts2core::Block
 	private:
 		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
 		enum { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;
+		// <= 0 - don't autorestart, > 0 - wait autorestart seconds, then restart daemon
+		int autorestart;
+		pid_t watched_child;
 		int listen_sock;
 		void addConnectionSock (int in_sock);
 		const char * lock_fname;

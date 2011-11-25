@@ -154,6 +154,7 @@
 <arg choice='opt'><option>--run-as</option> <replaceable class='parameter'>user<arg choice='opt'>.group</arg></replaceable></arg>
 <arg choice='opt'><option>--lock-prefix</option> <replaceable class='parameter'>path to lock file</replaceable></arg>
 <arg choice='opt'><option>--local-port</option> <replaceable class='parameter'>local port</replaceable></arg>
+<arg choice='opt'><option>--autorestart</option> <replaceable class='parameter'>time in seconds</replaceable></arg>
 <arg choice='opt'><option>-i</option></arg>
 &basicapp;
 " >
@@ -277,6 +278,24 @@
       traffic. Ussually the port number is not fixed, and is taken from the
       system, which provides some unused port number. If you for any reason
       would like to provide port number, you can do it using this option.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--autorestart</option> <replaceable class='parameter'>time in seconds</replaceable></term>
+  <listitem>
+    <para>
+      Set wait time for automatic restart of the device. This might be handy if
+      daemon can crash for unknown causes, or causes triggered by actions
+      outside of daemon control (e.g. update of system libraries).
+    </para>
+    <para>
+      By default automatic restarts are disabled. Please use this option with
+      caution, as it might mask crashes which are worth to investigate and fix.
+      Use of this option should be limited either to times when a device driver
+      is being developed and crash for misterious reasons, or when some wait
+      period is needed in case of automatic driver restart after it ceased to
+      work due to hardware failure.
     </para>
   </listitem>
 </varlistentry>
