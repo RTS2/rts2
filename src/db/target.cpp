@@ -411,9 +411,7 @@ void TargetApp::setTempdisable ()
 		rts2db::Target *tar = iter->second;
 		tar->getScript (camera, cs);
 		rts2script::Script script = rts2script::Script (cs.c_str ());
-		struct ln_equ_posn target_pos;
-		tar->getPosition (&target_pos);
-		script.parseScript (tar, &target_pos);
+		script.parseScript (tar);
 		int failedCount = script.getFaultLocation ();
 		if (failedCount != -1)
 		{
@@ -539,9 +537,7 @@ int TargetApp::doProcessing ()
 			for (std::list < CamScript >::iterator iter = new_scripts.begin (); iter != new_scripts.end (); iter++)
 			{
 				rts2script::Script script = rts2script::Script (iter->script);
-				struct ln_equ_posn target_pos;
-				target_set.begin ()->second->getPosition (&target_pos);
-				script.parseScript (((Rts2Target *) target_set.begin ()->second), &target_pos);
+				script.parseScript (((Rts2Target *) target_set.begin ()->second));
 				int failedCount = script.getFaultLocation ();
 				if (failedCount != -1)
 				{
