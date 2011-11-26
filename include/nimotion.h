@@ -56,6 +56,15 @@
 #define NIMC_AXIS14            0x0e
 #define NIMC_AXIS15            0x0f
 
+#define NIMC_IO_PORT1          0x01
+#define NIMC_IO_PORT2          0x02
+#define NIMC_IO_PORT3          0x03
+#define NIMC_IO_PORT4          0x04
+#define NIMC_IO_PORT5          0x05
+#define NIMC_IO_PORT6          0x06
+#define NIMC_IO_PORT7          0x07
+#define NIMC_IO_PORT8          0x08
+
 //Load Counts/Steps per Revolution constants
 #define NIMC_COUNTS  0
 #define NIMC_STEPS   1
@@ -185,6 +194,23 @@ void flex_stop_motion (uint8_t resource, uint16_t stopType, uint16_t map);
  * @param inputVector    source of the data for this function
  */
 void flex_reset_pos (uint8_t axis, int32_t position1, int32_t position2, uint8_t inputVector);
+
+/**
+ * Read I/O port status.
+ *
+ * @param port     NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
+ * @param portData bitmasked state of 8 I/O port; upper 8 bits should be unused
+ */
+void flex_read_port_rtn (int8_t port, uint16_t *portData);
+
+/**
+ * Set I/O port.
+ *
+ * @param port     NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
+ * @param mustOn   bitmask of outputs which must turn on
+ * @param mustOff  bitmask of outputs which must turn off
+ */
+void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff); 
 
 /**
  * @param path /proc entry to PCI device - see lspci for ID, you will then need something like /sys/bus/pci/devices/0000:01:01.0

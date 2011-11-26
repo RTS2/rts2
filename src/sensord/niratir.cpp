@@ -82,6 +82,8 @@ class NIRatir:public Sensor
 
 		rts2core::ValueBool *ax1enabled;
 
+		rts2core::BoolArray *ports;
+
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
 };
@@ -109,6 +111,10 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 
 	createValue (ax1enabled, "AX1_ENB", "1st axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	ax1enabled->setValueBool (true);
+
+	createValue (ports, "PORTS", "I/O ports status", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+	for (int i = 0; i < 8; i++)
+		ports->addValue (false);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -171,6 +177,15 @@ int NIRatir::info ()
 	flex_read_velocity_rtn (NIMC_AXIS1, &cp);
 	ax1velocity->setValueInteger (cp);
 
+	uint16_t portS;
+
+	flex_read_port_rtn (NIMC_IO_PORT1, &portS);
+	for (int i = 0; i < 8; i++)
+	{
+		ports->setValueBool (i, portS & 0x01);
+		portS = portS >> 1;
+	}
+
 	return Sensor::info ();
 }
 
@@ -204,6 +219,23 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	else if (old_value == ax1enabled)
 	{
 		flex_enable_axis (((rts2core::ValueBool *) new_value)->getValueBool () ? 0x02 : 0x0, NIMC_PID_RATE_250);
+		return 0;
+	}
+	else if (old_value == ports)
+	{
+		rts2core::BoolArray *nv = (rts2core::BoolArray *) new_value;
+		uint8_t mon = 0;
+		uint8_t moff = 0;
+		for (int i = 0; i < 8; i++)
+		{
+			if ((*nv)[i])
+				mon |= 0x01;
+			else
+				moff |= 0x01;
+			mon = mon << 1;
+			moff = moff << 1;
+		}
+		flex_set_port (NIMC_IO_PORT1, mon, moff);
 		return 0;
 	}
 	return Sensor::setValue (old_value, new_value);

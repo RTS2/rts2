@@ -353,6 +353,22 @@ void flex_reset_pos (uint8_t axis, int32_t position1, int32_t position2, uint8_t
 	checkStatus ();
 }
 
+void flex_read_port_rtn (int8_t port, uint16_t *portData)
+{
+	writePacket (port, 319, 0, NULL);
+	int16_t c;
+	readPacket (&c, 1, portData);
+}
+
+void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff)
+{
+	uint16_t data;
+	data = (mustOn << 8) | mustOff;
+
+	writePacket (port, 318, 1, &data);
+	checkStatus ();
+}
+
 void initMotion (const char *path)
 {
 	int16_t c, r;
