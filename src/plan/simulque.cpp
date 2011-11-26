@@ -85,7 +85,8 @@ double SimulQueue::step ()
 		for (Queues::iterator qi = queues->begin (); qi != queues->end (); qi++)
 		{
 			sq->filter (t);
-			int n_id = qi->selectNextSimulation (*sq, t, to, t);
+			struct ln_equ_posn nextp;
+			int n_id = qi->selectNextSimulation (*sq, t, to, t, &currentp, &nextp);
 			// remove target from simulation..
 			if (n_id > 0)
 			{
@@ -93,6 +94,8 @@ double SimulQueue::step ()
 				sq->front ().target->startObservation ();
 				sq->beforeChange (t);
 				found = true;
+				currentp.ra = nextp.ra;
+				currentp.dec = nextp.dec;
 				break;
 			}
 			sq++;

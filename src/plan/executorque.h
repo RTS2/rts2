@@ -135,7 +135,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		// order by given target list
 		void orderByTargetList (std::list <rts2db::Target *> tl);
 
-		double getMaximalDuration (rts2db::Target *tar);
+		double getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp = NULL);
 
 		/**
 		 * Put next target on front of the queue.
@@ -259,7 +259,7 @@ class ExecutorQueue:public TargetQueue
 		 * Simulate selection of next observation from the queue. Adjust sq list if 
 		 * observation is selected and will not be repeated.
 		 */
-		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end);
+		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end, struct ln_equ_posn *currentp, struct ln_equ_posn *nextp);
 
 		int queueFromConn (Rts2Conn *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
 

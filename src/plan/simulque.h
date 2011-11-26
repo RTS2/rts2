@@ -88,6 +88,8 @@ class SimulQueue:public ExecutorQueue
 		double from;
 		double to;
 		double t;
+
+		struct ln_equ_posn currentp;
 };
 
 }

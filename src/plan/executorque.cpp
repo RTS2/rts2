@@ -128,11 +128,11 @@ bool QueuedTarget::notExpired (double now)
 	return (isnan (t_start) || t_start <= now) && (isnan (t_end) || t_end > now);
 }
 
-double TargetQueue::getMaximalDuration (rts2db::Target *tar)
+double TargetQueue::getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn *currentp)
 {
 	try
 	{
-		return getMaximalScriptDuration (tar, master->cameras);
+		return getMaximalScriptDuration (tar, master->cameras, currentp);
 	}
 	catch (rts2core::Error &er)
 	{
@@ -574,7 +574,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
 	return -1;
 }
 
-int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end)
+int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end, struct ln_equ_posn *currentp, struct ln_equ_posn *nextp)
 {
 	if (queueEnabled->getValueBool () == false)
 		return -1;
@@ -582,13 +582,15 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	{
 		struct ln_hrz_posn hrz;
 		time_t tn = from;
-		sq.front ().target->getAltAz (&hrz, ln_get_julian_from_timet (&tn), *observer);
+		double JD = ln_get_julian_from_timet (&tn);
+		sq.front ().target->getPosition (nextp, JD);
+		ln_get_hrz_from_equ (nextp, *observer, JD, &hrz);
 		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (from))
 		{
 		  	// single execution?
 			if (removeAfterExecution->getValueBool ())
 			{
-				e_end = from + getMaximalDuration (sq.front ().target);
+				e_end = from + getMaximalDuration (sq.front ().target, currentp);
 			}
 			// otherwise, put end to either time_end, 
 			else
@@ -600,7 +602,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 				// or to time when target will become unacessible
 				else
 				{
-					e_end = sq.front ().target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ().target), 60);
+					e_end = sq.front ().target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ().target, currentp), 60);
 					if (isnan (e_end))
 						e_end = to;
 				}
