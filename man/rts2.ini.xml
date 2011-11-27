@@ -375,6 +375,23 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>telescope_speed</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Telescope speed (in degrees/seconds). Average telescope movement
+	      speed.  Should include overhead for ramp up/down times. Typically
+	      you will set this to 30-50 % of top telescope speed, depending on
+	      how long is the ramp and how much it spend on additional
+	      overheads. You can get estimate of average speed by running
+	      rts2-nightreport on some full nights - average telescope movement
+	      speed is printed with every observation in the output list.
+	      Default to 0.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>default_camera</option>
 	  </term>
 	  <listitem>
@@ -1077,6 +1094,32 @@
 	    <para>Argument passed to command executed after readout is
 	    finished. Please note that first argument is always absolute image
 	    filename.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>readout_time</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Camera readout time (in seconds). If set, script length for the
+	      camera will include CCD readout time. Default to 0.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>filter_movement</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Filter moving time (in seconds). If set, script length for the
+	      camera will include time for moving the filter. In current
+	      implementation dump, cannot count filters to move and calculate
+	      filter movement time depending on how long filter wheel must move
+	      (e.g. how many filters are between target and current filter).
+	      Default to 0.
+	    </para>
 	  </listitem>
 	</varlistentry>
       </variablelist>

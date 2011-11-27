@@ -26,6 +26,7 @@
 #include "elementhex.h"
 #include "elementwaitfor.h"
 #include "operands.h"
+#include "rts2config.h"
 
 #ifdef HAVE_PGSQL
 #include "elementacquire.h"
@@ -234,6 +235,13 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	target->getPosition (&target_pos);
 
 	strcpy (defaultDevice, cam_name);
+	
+	// set device specific values
+	Rts2Config *config = Rts2Config::instance ();
+	config->getFloat (cam_name, "readout_time", fullReadoutTime, fullReadoutTime);
+	config->getFloat (cam_name, "filter_movement", filterMovement, filterMovement);
+	config->getFloat ("observatory", "telescope_speed", telescopeSpeed, telescopeSpeed);
+	
 	commentNumber = 1;
 	wholeScript = std::string ("");
 
