@@ -90,7 +90,9 @@ double SimulQueue::step ()
 			// remove target from simulation..
 			if (n_id > 0)
 			{
-				addTarget (createTarget (n_id, *observer, NULL), from, t);
+				rts2db::Target *tar = createTarget (n_id, *observer, NULL);
+				addTarget (tar, from, t);
+				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (from) << " to " << LibnovaDateDouble (t) << sendLog;
 				sq->front ().target->startObservation ();
 				sq->beforeChange (t);
 				found = true;
