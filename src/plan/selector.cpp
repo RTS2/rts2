@@ -417,6 +417,8 @@ int SelectorDev::selectNext ()
 					return id;
 				}
 				queueSelectUntil->setValueDouble (next_time);
+				if (!isnan (next_time))
+					selectLength = next_time - getNow ();
 			}
 			sendValueAll (queueSelectUntil);
 			// use selector as fall-back, if queues are empty
