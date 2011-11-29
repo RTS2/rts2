@@ -109,6 +109,7 @@ class SelectorDev:public Rts2DeviceDb
 		rts2core::ValueInteger *next_id;
 		rts2core::ValueInteger *next_plan_id;
 		rts2core::ValueTime *selectUntil;
+		rts2core::ValueTime *queueSelectUntil;
 		rts2core::ValueTime *nextTime;
 		rts2core::ValueBool *interrupt;
 
@@ -181,6 +182,9 @@ SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVIC
 
 	createValue (selectUntil, "select_until", "observations should end by this time", false, RTS2_VALUE_WRITABLE);
 	selectUntil->setValueDouble (NAN);
+
+	createValue (queueSelectUntil, "queue_select_until", "time used to select onto, including possible changes from the queues", false);
+	queueSelectUntil->setValueDouble (NAN);
 
 	createValue (nextTime, "next_time", "time when selection method was run", false);
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
@@ -386,9 +390,12 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
-		double selectLength = selectUntil->getValueDouble ();
+		double next_time = selectUntil->getValueDouble ();
+		double selectLength = next_time;
 		if (!isnan (selectLength))
 			selectLength -= getNow ();
+
+		queueSelectUntil->setValueDouble (NAN);
 
 	 	if (getMasterState () == SERVERD_NIGHT && lastQueue != NULL)
 		{
@@ -400,15 +407,18 @@ int SelectorDev::selectNext ()
 			{
 				iter->filter (getNow (), selectLength);
 				bool hard;
-				id = iter->selectNextObservation (next_pid, hard);
+				id = iter->selectNextObservation (next_pid, hard, next_time);
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);
 					next_plan_id->setValueInteger (next_pid);
 					interrupt->setValueBool (hard);
+					sendValueAll (queueSelectUntil);
 					return id;
 				}
+				queueSelectUntil->setValueDouble (next_time);
 			}
+			sendValueAll (queueSelectUntil);
 			// use selector as fall-back, if queues are empty
 			lastQueue->setValueInteger (0);
 		}
@@ -544,7 +554,7 @@ rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
 
 void SelectorDev::updateSelectLength ()
 {
-	if (selectUntil->getValueDouble () > getNow ())
+	if (!isnan (selectUntil->getValueDouble ()) && selectUntil->getValueDouble () > getNow ())
 		return;
 	Rts2Conn *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)

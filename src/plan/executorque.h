@@ -250,10 +250,12 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * Select next valid observation target. As queues might hold targets which are invalid (e.g. start date of observation
 		 * is in future, object is below horizon,..), can return failure even if queue is not empty.
+		 *
+		 * @param next_time returns start time of the first observation in the queue, if it is in future.
 		 * 
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
-		int selectNextObservation (int &pid, bool &hard);
+		int selectNextObservation (int &pid, bool &hard, double &next_time);
 
 		/**
 		 * Simulate selection of next observation from the queue. Adjust sq list if 

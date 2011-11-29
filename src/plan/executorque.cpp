@@ -525,7 +525,7 @@ void ExecutorQueue::clearNext ()
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
+int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_time)
 {
 	if (queueEnabled->getValueBool () == false)
 		return -1;
@@ -568,6 +568,8 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard)
 					timerAdded = t_end;
 				}
 			}
+			if (!isnan (t_start) && (isnan(next_time) || next_time > t_start))
+				next_time = t_start;
 
 		}
 	}
