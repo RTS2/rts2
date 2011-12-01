@@ -330,7 +330,7 @@ int SelectorDev::idle ()
 		if (p == 2)
 		{
 			maskState (SEL_SIMULATING, SEL_IDLE, "simulation finished");
-			setTimeout (60);
+			setTimeout (60 * USEC_SEC);
 		}
 		else
 		{
@@ -390,8 +390,9 @@ int SelectorDev::selectNext ()
 {
 	try
 	{
-		double next_time = selectUntil->getValueDouble ();
-		double selectLength = next_time;
+		double next_time = NAN;
+		double next_length = NAN;
+		double selectLength = selectUntil->getValueDouble ();
 		if (!isnan (selectLength))
 			selectLength -= getNow ();
 
@@ -407,7 +408,7 @@ int SelectorDev::selectNext ()
 			{
 				iter->filter (getNow (), selectLength);
 				bool hard;
-				id = iter->selectNextObservation (next_pid, hard, next_time);
+				id = iter->selectNextObservation (next_pid, hard, next_time, next_length);
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);
@@ -416,9 +417,11 @@ int SelectorDev::selectNext ()
 					sendValueAll (queueSelectUntil);
 					return id;
 				}
-				queueSelectUntil->setValueDouble (next_time);
 				if (!isnan (next_time))
-					selectLength = next_time - getNow ();
+				{
+					next_length = next_time - getNow ();
+				}
+				queueSelectUntil->setValueDouble (next_time);
 			}
 			sendValueAll (queueSelectUntil);
 			// use selector as fall-back, if queues are empty

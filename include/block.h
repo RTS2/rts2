@@ -299,6 +299,12 @@ class Block: public rts2core::App
 		// only used in centrald!
 		void sendMessageAll (Rts2Message & msg);
 
+		/**
+		 * Set timeout for idle calls. Timeout is in
+		 * usec.
+		 *
+		 * @param new_timeout  new timeout in usec
+		 */
 		void setTimeout (long int new_timeout)
 		{
 			idle_timeout = new_timeout;
