@@ -525,7 +525,7 @@ void ExecutorQueue::clearNext ()
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_time)
+int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_time, double next_length)
 {
 	if (queueEnabled->getValueBool () == false)
 		return -1;
@@ -536,18 +536,26 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
 		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (now))
 		{
-			pid = front ().planid;
-			if (isnan (front().t_start))
+			if (!isnan (next_length))
 			{
-				hard = false;
+				// calculate target script length..
+				double tl = getMaximalScriptDuration (front ().target, master->cameras);
+				if (tl < next_length)
+				{
+					pid = front ().planid;
+					if (isnan (front().t_start))
+					{
+						hard = false;
+					}
+					else
+					{
+						// setting hard to false signalized the program asked for execution, so next call will not issue hard interruption targets
+						hard = front ().hard;
+						front ().hard = false;
+					}
+					return front ().target->getTargetID ();
+				}
 			}
-			else
-			{
-				// setting hard to false signalized the program asked for execution, so next call will not issue hard interruption targets
-				hard = front ().hard;
-				front ().hard = false;
-			}
-			return front ().target->getTargetID ();
 		}
 		else
 		{
