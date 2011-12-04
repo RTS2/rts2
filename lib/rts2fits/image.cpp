@@ -1654,7 +1654,7 @@ void Image::setCameraName (const char *new_name)
 
 std::string Image::getTargetName ()
 {
-	if (*targetName == '\0')
+	if (targetName == NULL || *targetName == '\0')
 		getTargetHeaders ();
 	return std::string (targetName);
 }
