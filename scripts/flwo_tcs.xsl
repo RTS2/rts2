@@ -135,8 +135,10 @@ if ( $continue == 1 ) then
 								set rdec = 0
 							endif
 							if ( $rra != 0 || $rdec != 0 ) then
+								set rra_l=`echo "$toffs" | awk '{printf "%f",$1 * -3600.0;}'`
+								set rdec_l=`echo "$toffs" | awk '{printf "%f",$2 * -3600.0;}'`
 								<xsl:copy-of select='$printd'/> "Offseting $rra $rdec ($ora_l $odec_l; $xoffs $yoffs) img_num $imgnum autog $autog"
-								rts2-logcom "Applying offsets from catalogue match" `echo $rra $rdec | awk '{ printf "%+0.2f\" %+0.2f\"",$1,$2; }'`
+								rts2-logcom "Applying offsets from catalogue match" `echo $rra_l $rdec_l | awk '{ printf "%+0.2f\" %+0.2f\"",$1,$2; }'`
 								tele offset $rra $rdec
 								@ lastoffimage = $imgnum
 							<xsl:if test='$debug != 0'>
@@ -176,14 +178,14 @@ if ( $continue == 1 ) then
 	endif
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff_l != 0 ) then
-		set diff=`printf '%+0f' $diff`
+		set diff=`printf '%+0f' $diff_l`
 		rts2-logcom "Offseting focus to $diff ( $defoc_toffs - $defoc_current )"
 		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	<xsl:if test='$debug != 0'>
 	else
-		rts2-logcom "Keeping focusing offset ( $defoc_toffs - $defoc_current )" -->
+		rts2-logcom "Keeping focusing offset ( $defoc_toffs - $defoc_current )"
 	</xsl:if>
 	endif
 
