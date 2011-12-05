@@ -536,7 +536,11 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
 		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (now))
 		{
-			if (!isnan (next_length))
+			if (isnan (next_length))
+			{
+				return front ().target->getTargetID ();
+			}
+			else
 			{
 				// calculate target script length..
 				double tl = getMaximalScriptDuration (front ().target, master->cameras);
