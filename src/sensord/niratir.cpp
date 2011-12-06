@@ -144,7 +144,12 @@ int NIRatir::initHardware ()
 		logStream (MESSAGE_ERROR) << "board path (-b option) was not specified" << sendLog;
 		return -1;
 	}
-	initMotion (boardPCI);
+	if (initMotion (boardPCI) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot init device on " << boardPCI << sendLog;
+		return -1;
+	}
+
 
 	flex_clear_pu_status ();
 	while (flex_read_csr_rtn () & NIMC_POWER_UP_RESET)

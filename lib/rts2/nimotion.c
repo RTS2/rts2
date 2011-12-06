@@ -369,7 +369,7 @@ void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff)
 	checkStatus ();
 }
 
-void initMotion (const char *path)
+int initMotion (const char *path)
 {
 	int16_t c, r;
 	int32_t e;
@@ -382,30 +382,67 @@ void initMotion (const char *path)
 	if (fd0 < 0)
 	{
 		perror ("cannot open PCI resource file");
-		exit (1);
+		return -1;
 	}
 	uint8_t *mem0 = mmap (NULL, 0x400, PROT_READ | PROT_WRITE, MAP_SHARED, fd0, 0);
 	if (mem0 == MAP_FAILED)
 	{
 		perror ("cannot map PCI resource file");
-		exit (2);
+		return -2;
 	}
 
-	*((int32_t *) (mem0 + 0xc0)) = 0xff8fe000 | 0x80;
+	char cpath[strlen (path) + 7];
+
+	sprintf (cpath, "%s/config", path);
+
+	// found bar1 offset
+	int fconfig = open (cpath, O_RDONLY);
+	if (fconfig < 0)
+	{
+		perror ("cannot open config file");
+		return -3;
+	}
+
+	uint32_t bar1 = 0;
+	if (lseek (fconfig, 20, SEEK_SET) < 0)
+	{
+		perror ("cannot seek to byte 24 in config file");
+		return -4;
+	}
+
+	char barp[4];
+
+	if (read (fconfig, barp, 4) < 4)
+	{
+		perror ("cannot read offsets 20-24 from config file (BAR1 location)");
+		return -5;
+	}
+
+	int i;
+
+	for (i = 0; i < 4; i++)
+	{
+		bar1 |= ((uint32_t) (barp[i])) << (i * 4);
+	}
+
+	printf ("bar1 is 0x%08x\n", bar1);
+
+
+	*((int32_t *) (mem0 + 0xc0)) = bar1 | 0x80;
 
 	sprintf (rp, "%s/resource1", path);
 	int fd1 = open (rp, O_RDWR);
 	if (fd1 < 0)
 	{
 		perror ("cannot open PCI resource1 file");
-		exit (3);
+		return -6;
 	}
 
 	mem = mmap (NULL, 0x400, PROT_READ | PROT_WRITE, MAP_SHARED, fd1, 0);
 	if (mem == MAP_FAILED)
 	{
 		perror ("cannot map PCI resource1 file");
-		exit (4);
+		return -7;
 	}
 
 #ifdef DEBUG
@@ -426,4 +463,6 @@ void initMotion (const char *path)
 	{
 		flex_read_error_msg_rtn (&c, &r, &e);
 	}
+
+	return 0;
 }

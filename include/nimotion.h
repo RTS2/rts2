@@ -214,8 +214,10 @@ void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff);
 
 /**
  * @param path /proc entry to PCI device - see lspci for ID, you will then need something like /sys/bus/pci/devices/0000:01:01.0
+ *
+ * @return < 0 on error
  */
-void initMotion (const char *path);
+int initMotion (const char *path);
 
 #ifdef __cplusplus
 }
