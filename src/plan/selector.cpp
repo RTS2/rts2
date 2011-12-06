@@ -395,8 +395,8 @@ int SelectorDev::selectNext ()
 		double selectLength = selectUntil->getValueDouble ();
 		if (!isnan (selectLength))
 		{
-		  	next_length = selectLength;
 			selectLength -= getNow ();
+		  	next_length = selectLength;
 		}
 
 		queueSelectUntil->setValueDouble (NAN);

@@ -302,7 +302,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 		{
 			if (getMaximalScriptDuration (tar, *cameraList) > length)
 			{
-				logStream (MESSAGE_DEBUG) << "script for target " << tar->getTargetName () << " (# " << tar->getTargetID () << ") is too longer than " << length << " seconds, ignoring the target" << sendLog;
+				logStream (MESSAGE_DEBUG) << "script for target " << tar->getTargetName () << " (# " << tar->getTargetID () << ") is longer than " << length << " seconds, ignoring the target" << sendLog;
 				continue;
 			}
 
