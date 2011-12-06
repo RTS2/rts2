@@ -436,7 +436,7 @@ void ElementChangeValue::printJson (std::ostream &os)
 
 double ElementChangeValue::getExpectedDuration ()
 {
-	if (valName == "filter" && !*deviceName)
+	if (valName == "filter")
 	{
 		return script->getFilterMovement ();
 	}
