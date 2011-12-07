@@ -433,7 +433,7 @@ int SelectorDev::selectNext ()
 		// select calibration frames even if in queue mode
 		if (queueOnly->getValueBool () == false || getMasterState () != SERVERD_NIGHT)
 		{
-			int id = sel->selectNext (getMasterState (), selectLength);
+			int id = sel->selectNext (getMasterState (), next_length);
 			if (id != last_auto_id)
 			{
 				logStream (MESSAGE_INFO) << "selecting from automatic selector " << id << sendLog;
