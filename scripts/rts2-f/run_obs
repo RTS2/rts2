@@ -54,7 +54,7 @@ else
 			$xmlrpc -c SEL.next
 		endif	
 	endif
-endif	
+endif
 
 $xmlrpc -c SEL.next
 
@@ -86,7 +86,7 @@ if ( $tar_id > 0 ) then
 		$xmlrpc -c "SEL.observation $tar_id $obs_id"
 
 		# save queues..
-		/home/petr/pyrts2/widgets/savequeues.py /home/observer/RTS2-F/QUEUES/autosave/`date +'%Y.%m%d-%T'.ques` >& /dev/null &
+		$RTS2/bin/autosavequeue > /dev/null
 #	else
 #		rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
 	endif
@@ -141,19 +141,18 @@ if ( $tar_id > 0 ) then
 		$RTS2/bin/rts2-target --observe $obs_id
 	endif
 
-	# rts2-logcom "observing setup finished"
-	
+	# run tempfocus only if last target was not focusing..
+	if ( $last_tar_id != 3 && $defoc_current == 0 ) then
+	      source $rts2dir/rts2.tempfocus
+	endif
+
 	# translate observation to observation file..
-	
 	rm -f /tmp/$obs_id
-	
 	$RTS2/bin/rts2-targetinfo --parse KCAM $tar_id | xsltproc $RTS2/usr/share/rts2/flwo_tcs.xsl - > /tmp/$obs_id
 	
-	# rts2-logcom "script created"
-	
+	# run observing script
 	source /tmp/$obs_id
 	
-	# end it
 	$RTS2/bin/rts2-target --end $obs_id
 	
 	rm -f /tmp/$obs_id
