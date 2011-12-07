@@ -127,7 +127,12 @@ class ConnFork:public Rts2ConnNoSend
 	private:
 		pid_t childPid;
 		std::vector <std::string> argv;
-		time_t forkedTimeout;
+		int forkedTimeout;
+
+		// for statistics, how much time was consumed
+		time_t startTime;
+		time_t endTime;
+
 		// holds pipe with stderr. Stdout is stored in sock
 		int sockerr;
 		// holds write end - we can send input to this socket

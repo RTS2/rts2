@@ -37,15 +37,11 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 
 	exePath = new char[strlen (_exe) + 1];
 	strcpy (exePath, _exe);
-	if (_timeout > 0)
-	{
-		time (&forkedTimeout);
-		forkedTimeout += _timeout;
-	}
-	else
-	{
-		forkedTimeout = 0;
-	}
+
+	forkedTimeout = _timeout;
+	time (&startTime);
+	endTime = 0;
+
 	fillConnEnvVars = _fillConnEnvVars;
 }
 
@@ -168,6 +164,9 @@ void ConnFork::connectionError (int last_data_size)
 
 void ConnFork::beforeFork ()
 {
+	time (&startTime);
+	if (forkedTimeout > 0)
+		endTime = startTime + forkedTimeout;
 }
 
 void ConnFork::initFailed ()
@@ -382,12 +381,13 @@ void ConnFork::term ()
 
 int ConnFork::idle ()
 {
-	if (forkedTimeout > 0)
+	if (endTime > 0)
 	{
 		time_t now;
 		time (&now);
-		if (now > forkedTimeout)
+		if (now > endTime)
 		{
+		  	endTime = now;
 			logStream (MESSAGE_WARNING) << "killing " << exePath << ", as it reached timeout" << sendLog;
 			term ();
 			endConnection ();
@@ -401,6 +401,7 @@ void ConnFork::childReturned (pid_t in_child_pid)
 	if (childPid == in_child_pid)
 	{
 		childEnd ();
+		time (&endTime);
 		childPid = -1;
 		// endConnection will be called after read from pipe fails
 	}
