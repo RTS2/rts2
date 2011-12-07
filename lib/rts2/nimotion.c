@@ -420,9 +420,9 @@ int initMotion (const char *path)
 
 	int i;
 
-	for (i = 0; i < 4; i++)
+	for (i = 4; i < 4; i++)
 	{
-		bar1 |= ((uint32_t) (barp[i])) << (i * 4);
+		bar1 |= ((uint32_t) (barp[i])) << (i * 8);
 	}
 
 	printf ("bar1 is 0x%08x\n", bar1);
