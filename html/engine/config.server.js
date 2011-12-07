@@ -1,14 +1,14 @@
 /* **************** SERVER/RTS configuration ********** */
 
 // server
-var _server = "/";
+var _server = "";
 
 // protocol
 var _protocol = "";
 
 // access
-var _user = "user";
-var _passwd = "password";
+var _user = "";
+var _passwd = "";
 
 
 /* **************** API data semantics **************** */
@@ -18,7 +18,7 @@ var _passwd = "password";
 var _APIDATA =
         {
         TARGETS: { ID:0, NAME:1 },
-        FINISHED: { ID:0, TargetID:1, NAME:2, FROM:3, TO:4 }
+        FINISHED: { ID:0, TargetID:1, NAME:2, FROM:4, TO:5 }
         };
 
 
@@ -29,8 +29,13 @@ var _APIDATA =
 */
 var _APIURL = {
                 /* apiID : URL string */
-                "targets":"/targets/api",
-                "finished":"/nights/#DATE#/api"
+                "targets":"/targets/api",            // all targets
+                "targetsbylabel":"/api/tbylabel?l=#LID#",       // targets by label
+                "labellist":"/api/labellist",             // list labels
+                "finished":"/nights/#DATE#/api",     // finished targets
+                "finbylabel":"/api/tbylabel/#DATE#?l=#LID#",       // targets by label
+                "images":"/observations/#ID#/api"   // images by target ID
+                                                    // for fullres image add /jpeg/ as prefix and append ?chan=X  for channel X=0-4 X=-1~mosaic
                 };
 
 /**
@@ -38,5 +43,6 @@ var _APIURL = {
 */
 function makeURL(apiID)
     {
-    return(_protocol+_user+':'+_passwd+'@'+_server+_APIURL[apiID]);
+ //   return(_protocol+_user+':'+_passwd+'@'+_server+_APIURL[apiID]);
+    return(_APIURL[apiID]);
     }

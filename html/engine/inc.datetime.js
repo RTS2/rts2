@@ -3,11 +3,11 @@
 /**
 * Prints date part of Date() object
 * @parameter d {Date} date object
-* @returns {string} DD/MM/YYYY
+* @returns {string} YYYY/MM/DD
 */
 function dateStr(d)
     {   
-    return(d.getDate()+'/'+(d.getMonth()+1).toString()+'/'+d.getFullYear());
+    return(d.getFullYear()+'/'+(d.getMonth()+1).toString()+'/'+d.getDate());
     }
  
 /**
@@ -25,7 +25,7 @@ function dateHrs(d) {return(d.getHours());}
 */
 function dateAddHrs(d,h)
     {
-    return(new Date(d.getTime()+ 3600000*h));
+    return(new Date(d.getTime()+ 3600000*(h)));
     }
 
 /**
@@ -50,11 +50,12 @@ function dateNoon(d)
 * @parameter s {string}
 * @returns {Date object}
 */
-function strToDateTime(s)
+function strToDateTime(dat)
     {
+    var s = new String(dat);
     var d = new Date();
     var re = /([0-9]{4})\/([0-9]{2})\/([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{3})/;
-    var ex = s.match(re);
+    var ex = s.toString().match(re);
     if(!ex){ return null;}
     d.setFullYear(Number(ex[1]));
     d.setMonth(Number(ex[2])-1);
@@ -66,6 +67,29 @@ function strToDateTime(s)
     return d;
     }
 
+/**
+* Makes Date object from API unix timestamp
+* @parameter s {int}
+* @returns {Date object}
+*/
+function unixDate(dat)
+    {
+    var d = new Date();
+    d.setTime(dat*1000);
+    return d;
+    }
+
+/**
+* Makes human readable string from API unix timestamp
+* @parameter s {int}
+* @returns {string}
+*/
+function unixDateStr(dat)
+    {
+    if(dat==null) return "-";
+    var d = unixDate(dat);    
+    return '<span class="timestamp">'+d.toString()+"</span>";
+    }
     
 /**
 * Makes Date object date string (YYYY/MM/DD) 

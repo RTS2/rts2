@@ -4,7 +4,7 @@
 * Dumps a table from given JSON data
 * CSS classnames for data styling defined by .colClasses array for each column
 * If colClass = "BLOCK" the collumn is ommited.
-* Functions for cell data processing defined by .colFX arrat for each column
+* Functions for cell data processing defined by .colFX array for each column
 * @constructor
 */
 function table(slotInstance) {
@@ -14,11 +14,11 @@ this.slot = slotInstance;
 this.slot.title = "Table view";
 }
 
+// functions to process(output) cell content 
+table.prototype.colFX = {};
+
 // column classes
 table.prototype.colClasses = new Array();
-
-// functions to process(output) cell content 
-table.prototype.colFX = new Array();
 
 /**
 * array of filters

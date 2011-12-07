@@ -11,7 +11,6 @@ this.slot = slotInstance;
 
 // BASE
 this.base = dateNoon(this.slot.parameters.date);    // base (moment) ... typically basedate 12:00 local
-
 // div width
 //this.slot.setWidth(720);
 
@@ -32,11 +31,13 @@ this.map = new Array();
 
 this.slot.menu =  // replace "main." with this.slot.name if module has to be used in other slot than main
     [
+    ["label.png",'Labels',"side.exec('labellist','labelList',{callbackAPI:'finished',callbackModule:'nightMap'});"],
     ["astro.png","Twilight info","side.exec(null,'transfer',{title:'Twilight info',height:180,content:main.module.sunInfo()});"],
     ["list.png",'List view',"main.setModule('finishedList');main.render();"],
     ["calendar.png","Pick date","side.exec(null,'daySelector',{slave:main});"],
     ];
 
+  
 
 // target preview DIV
 this.preview = null;
@@ -82,6 +83,7 @@ this.event = function(id,data)
         {
         // date picked from calendar
         case 'newdate':
+            document.initDate = data.date;
             this.slot.parameters.date = data.date;
             this.slot.reload();
             this.slot.render();
@@ -125,6 +127,8 @@ this.render = function()
     {
     var out = "";
 
+
+
     // global parameters
     var gp = this.slot.parameters;
     if(gp)
@@ -157,18 +161,22 @@ this.render = function()
      
     var malformed = 0;   // error counters
     var outOfRange = 0;
-    
+
     for(var row=0;row<rows;row++)
             {
             var d = DATA[row]; // get from data
-            var from = strToDateTime(d[_APIDATA.FINISHED.FROM]);
-            var to = strToDateTime(d[_APIDATA.FINISHED.TO]);               
+          //  var from = strToDateTime(d[_APIDATA.FINISHED.FROM]);
+          //  var to = strToDateTime(d[_APIDATA.FINISHED.TO]);               
+            var from = unixDate(d[_APIDATA.FINISHED.FROM]);
+            var to = unixDate(d[_APIDATA.FINISHED.TO]);
+            //status(from+' '+to);               
             if((from==null)||(to==null)) { malformed++; continue; }
             if(!this.mapFill(from,to,row+1000)) { outOfRange++; continue;}
             }
     
     // title
-    this.slot.title = "Night map: "+dateStr(this.base);
+    var tlabel = this.slot.parameters.lid?'<span class="timestamp">'+this.slot.parameters.labelName+'</span>':"";
+    this.slot.title = "Night map: "+dateStr(this.base)+' '+tlabel;
     
     out+='<div style="margin: 10px 0px 10px 0px"><i>Target:</i> <span id="mapTargetPreview" style="font-weight:bold">-</span></div>\n';
     
@@ -284,9 +292,9 @@ this.render = function()
         {
         var warnMessage = malformed+' malformed records, \n'+ outOfRange+' records out of time range.\n';
         out+='<div class="errorLine">\n'+warnMessage+'</div>\n';
-        status('WARNING: '+warnMessage);
+        //status('WARNING: '+warnMessage);
         }
-    
+
     
     // output
     this.slot.setContent(out);

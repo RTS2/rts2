@@ -8,6 +8,10 @@
 *     - autorization/login
 * @constructor
 */
+
+document.initDate = new Date();
+document.initDate.setTime(document.initDate.getTime()-12*60*60*1000);
+
 function workbench() 
 {
 this.activeView = null;
@@ -102,23 +106,24 @@ this.switchView = function(viewID)
     aux.hide();    
     
     // main switching board
+
     switch(viewID)
         {
         case 'finished':  
               main.show();
-              main.exec('finished','nightMap',{date: new Date("2010/9/27")});
+              main.exec('finished','nightMap',{date: document.initDate});
               break;
-        
+                                                                                               
         case 'editor': 
               main.show();
-              main.exec('targets','targetList',{date: new Date("2010/9/27")});
+              main.exec('targets','targetList',{date: document.initDate});
               break;
         
         case 'login': 
               main.show();
               main.exec(null,'login',null);
               break;
-        
+                                
         
         
         

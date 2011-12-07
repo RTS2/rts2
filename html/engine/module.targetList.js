@@ -20,10 +20,12 @@ this.table(slotInstance);
 // menu
 this.slot.menu =
     [
+    ["label.png",'Labels',"side.exec('labellist','labelList',{callbackAPI:'targetsbylabel',callbackModule:'targetList'});"],
     ["find.png",'Map view',"side.setModule('tarFilter');side.render();"],
     ];
 
-this.slot.title = "Target list";
+   var tlabel = this.slot.parameters.lid?' <span class="timestamp">'+this.slot.parameters.labelName+'</span>':"";
+this.slot.title = "Target list"+tlabel;
     
 // column classes
 this.colClasses = new Array();

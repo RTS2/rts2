@@ -38,7 +38,7 @@ this.render = function()
 * given DIV block using given parsing module
 * @constructor
 */
-function dumper(slotInstance)
+function general(slotInstance)
 {
 this.slot = slotInstance;
 

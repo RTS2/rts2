@@ -16,20 +16,24 @@ function finishedList(slotInstance)
 {
 
 this.table(slotInstance);
-
 // menu
 this.slot.menu =
     [
+    ["label.png",'Labels',"side.exec('labellist','labelList',{callback:finishedList});"],
     ["find.png",'Filtering',"side.setModule('finFilter');side.render();"],
     ["map.png",'Map view',"main.setModule('nightMap');main.render();"],
     ["calendar.png","Pick date","side.exec(null,'daySelector',{slave:main});"],
     ];
-
+                                                                                                      
 this.slot.title = "Finished observations"    
+
+// functions to process(output) cell content 
+this.colFX = {3:unixDateStr,4:unixDateStr,5:unixDateStr};
+
 
 // column classes
 this.colClasses = new Array();
-this.colClasses = { 0:"BLOCK", 1:"small right", 2:"bold pad", 3:"timestamp", 4:"timestamp"};
+this.colClasses = { 0:"BLOCK", 1:"small right", 2:"bold pad", 3:"timestamp", 4:"timestamp", 5:"timestamp"};
 
 // row actions
 this.rowActions = function(row)

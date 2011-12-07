@@ -113,18 +113,20 @@ this.load = function(apiID)
     {
     // translate api ID to URL
     var url=makeURL(apiID);
-    
     // parameter processing
     if(this.parameters)
         {
         // param injection into URL - replaces #-strings
+         if(typeof(this.parameters.dateinject)!='undefined') { var dd=new Date(); dd.setTime(this.parameters.dateinject);this.parameters.date=dd; }
         if(typeof(this.parameters.date)!='undefined') { url = url.replace('#DATE#',dateStr(this.parameters.date)); }
+        if(typeof(this.parameters.lid)!='undefined') { url = url.replace('#LID#',this.parameters.lid); }
         }
     
 
     // load new data
     this.loader = new apiLoad(this);
     this.loader.json = true;
+    status(url);
     var success = this.loader.load(url);
     this.data = this.loader.data; // local reference
     
@@ -153,6 +155,7 @@ this.reload = function()
 */
 this.exec = function(apiID,module,parameters)
     {
+
     this.parameters = parameters;
     this.setModule(module);
     if(apiID) this.load(apiID);

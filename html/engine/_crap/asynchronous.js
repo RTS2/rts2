@@ -72,7 +72,7 @@ this.exec = function(module,command)
 this.reload = function(apiID,module,command)
     {
     l = new apiLoad()
-    rl = new rtsuiLoad('main','dumper',"http://user:password@host");
+    rl = new rtsuiLoad('main','dumper',"http://petr:test@bootes2.homeip.net/B2/nights/2010/9/27/api");
     }
 
 

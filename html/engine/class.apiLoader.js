@@ -51,7 +51,13 @@ this.load = function(url)
     this.rq=new XMLHttpRequest();
     
     // exec
-    this.rq.open("GET",url,false);
+    try
+    {
+       this.rq.open("GET",url,false);
+    } catch(err) {
+       status('JSON get error on ' + url +err.toString());
+       return false;
+    }
     status("Loading "+url);
     this.rq.send();   
 

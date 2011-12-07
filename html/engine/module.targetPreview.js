@@ -9,6 +9,9 @@ function targetPreview(slotInstance)
 {
 this.slot = slotInstance;
 
+this.colFX = {3:unixDateStr,4:unixDateStr,5:unixDateStr};  
+
+
 // div setup
 this.slot.closeable = true;
 
@@ -27,7 +30,11 @@ this.render = function()
     out+= '<table align="center">\n';
     for(var i=0;i<data.h.length;i++)
         {
-        out+='<tr><th><i>'+data.h[i].n+':</i></th><td><b>'+data.d[index][i]+'</b></td></tr>\n'
+         var cellcontent;        
+         cellcontent = data.d[index][i]; // get from data
+         if(this.colFX[i]) { cellcontent = this.colFX[i](cellcontent); } // process by custom function if defined
+        
+        out+='<tr><th><i>'+data.h[i].n+':</i></th><td><b>'+cellcontent+'</b></td></tr>\n'
         }
     out+= '</table>\n';
     out+= '<hr>';  

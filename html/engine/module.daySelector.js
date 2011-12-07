@@ -75,10 +75,11 @@ this.render = function()
 this.datePicked = function(sender)
     {
     var sd = sender.getSelectedDay();
-    var d = new Date(0);
+    var d = new Date();
     d.setFullYear(Number(sd.year));
     d.setMonth(Number(sd.month)-1);
     d.setDate(Number(sd.day));
+    //alert(d+" "+sd.day+" "+sd.month+" "+sd.year);
     sender.slave.event('newdate',{date:d});
     }
 }
