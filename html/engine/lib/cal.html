@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>jsDatePick Javascript example</title>
+<link rel="stylesheet" type="text/css" media="all" href="jsDatePick.css" />
+<script type="text/javascript" src="jsDatePick.js"></script>
+<script type="text/javascript">
+	window.onload = function(){
+		
+		
+		calendar = new JsDatePick({
+			useMode:1,
+			isStripped:true,
+            cellColorScheme:"beige",
+			imgPath:'img/',
+            target:"calendarDiv"
+			/*selectedDate:{				This is an example of what the full configuration offers.
+				day:5,						For full documentation about these settings please see the full version of the code.
+				month:9,
+				year:2006
+			},
+			yearsRange:[1978,2020],
+			limitToToday:false,
+			dateFormat:"%m-%d-%Y",
+			
+			weekStartDay:1*/
+		});		
+		
+        calendar.setSelectedDay({day:1,month:1,year:2010});
+        
+		calendar.setOnSelectedDelegate(function(){
+			var sd = calendar.getSelectedDay();
+			alert(sd.day + "/" + sd.month + "/" + sd.year);
+		});
+		
+				
+	};
+</script>
+</head>
+<body>
+    <div id="calendarDiv" style="margin:10px 0 30px 0; border:dashed 1px red; width:205px; height:230px;"></div>
+<div style="background-color:red">iupwoiweiewi</div>
+</body>
+</html>

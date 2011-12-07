@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-language" content="en">
+<meta name="author" content="M.i.X (mixlab.observatory.cz)">
+<title>RTS UI</title>
+<link rel="stylesheet" type="text/css" href="style/style.css">
+<link rel="stylesheet" type="text/css" href="style/jsDatePick.css">
+<script language="JavaScript" src="engine/config.server.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/config.site.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/inc.datetime.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/inc.commons.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/class.slot.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/class.apiLoader.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/class.workbench.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.general.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.table.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.nightMap.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.finishedList.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.targetList.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.daySelector.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.targetPreview.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.login.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.finFilter.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/module.tarFilter.js" type="text/javascript"></script>
+<script language="JavaScript" src="engine/lib/jsDatePick.js" type="text/javascript"></script>
+</head>
+<body>
+<script language="JavaScript">
+<!--
+// workbench instance
+var wb = new workbench();
+
+// init
+window.onload = function()
+    {
+    wb.switchView('finished')
+//    wb.switchView('login')
+    }
+
+//-->
+</script>
+<div id="canvas">
+<div id="bar">
+   <img src="gfx/logo.png" border="0" width="200" height="22" alt="RTS2">
+   <div class="info">
+    <script language="JavaScript">
+    <!--
+    document.write(wb.serverInfo());
+    //-->
+    </script>
+   </div>
+</div>
+
+<div id="sidebar">
+    <div id="control">
+    <script language="JavaScript">
+    <!--
+    document.write(wb.menu());
+    //-->
+    </script>
+    <div id="hint"></div>
+    </div>
+
+    <div id="side"></div>
+
+</div><!-- sidebar-->
+
+<div class="slot" id="main"></div>
+<div class="slot" id="aux"></div>
+
+</div><!-- canvas -->
+
+<div id="footPit">
+    <div id="status">Ready</div> 
+    <div id="foot" align="right">
+    <b>RTS 2 UI</b> - &copy; <a href="http://mixlab.observatory.cz">M.i.X</a> 2010<br>
+    <a href="http://www.rts2.org">RTS homepage</a><br>
+    </div>
+</div>
+
+</body>
+</html>

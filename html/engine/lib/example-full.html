@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>jsDatePick Javascript example</title>
+<link rel="stylesheet" type="text/css" media="all" href="jsDatePick.css" />
+<script type="text/javascript" src="jsDatePick.js"></script>
+<script type="text/javascript">
+	window.onload = function(){
+		
+		
+		g_globalObject = new JsDatePick({
+			useMode:1,
+			isStripped:true,
+			target:"div3_example"
+			/*selectedDate:{				This is an example of what the full configuration offers.
+				day:5,						For full documentation about these settings please see the full version of the code.
+				month:9,
+				year:2006
+			},
+			yearsRange:[1978,2020],
+			limitToToday:false,
+			cellColorScheme:"beige",
+			dateFormat:"%m-%d-%Y",
+			imgPath:"img/",
+			weekStartDay:1*/
+		});		
+		
+		g_globalObject.setOnSelectedDelegate(function(){
+			var obj = g_globalObject.getSelectedDay();
+			alert("a date was just selected and the date is : " + obj.day + "/" + obj.month + "/" + obj.year);
+			document.getElementById("div3_example_result").innerHTML = obj.day + "/" + obj.month + "/" + obj.year;
+		});
+		
+		
+		
+		g_globalObject2 = new JsDatePick({
+			useMode:1,
+			isStripped:false,
+			target:"div4_example",
+			cellColorScheme:"beige"
+			/*selectedDate:{				This is an example of what the full configuration offers.
+				day:5,						For full documentation about these settings please see the full version of the code.
+				month:9,
+				year:2006
+			},
+			yearsRange:[1978,2020],
+			limitToToday:false,
+			dateFormat:"%m-%d-%Y",
+			imgPath:"img/",
+			weekStartDay:1*/
+		});
+		
+		g_globalObject2.setOnSelectedDelegate(function(){
+			var obj = g_globalObject2.getSelectedDay();
+			alert("a date was just selected and the date is : " + obj.day + "/" + obj.month + "/" + obj.year);
+			document.getElementById("div3_example_result").innerHTML = obj.day + "/" + obj.month + "/" + obj.year;
+		});		
+		
+	};
+</script>
+</head>
+<body>
+	<h2>jsDatePick's Javascript Calendar usage example - direct HTML appending</h2>
+    
+    This example will show the direct HTML appending version of the calendar
+    <br />
+    in two versions. one way is with the outside design and the other without.
+    <br />
+    This is done easily by using the <i>isStripped</i> property which you should supply in the Startup settings object.
+    <br />
+    Please take a look at the source of this file to fully understand how to use this calendar.
+    <br />
+    
+    <div id="div3_example" style="margin:10px 0 30px 0; border:dashed 1px red; width:205px; height:230px;">
+    	
+    </div>
+    
+    
+    <div id="div4_example" style="margin:10px 0 30px 0; border:dashed 1px blue; width:230px; height:250px;">
+    	
+    </div>
+    
+    
+    <div id="div3_example_result" style="height:20px; line-height:20px; margin:10px 0 0 0; border:dashed 1px #666;"></div>
+        
+</body>
+</html>
