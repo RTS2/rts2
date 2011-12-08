@@ -206,6 +206,8 @@ TargetApp::~TargetApp ()
 void TargetApp::usage ()
 {
 	std::cout << "Unless you use option to process arguments only as target IDs, arguments are first resolved as target names. \"%\" character can be used as wildcard - please see bellow for examples" << std::endl
+		<< "If you would like to remove constraints, just pass empy or invalid numbers as arguments - e.g. for intervals, specify only :, for maxRepeats, pass -1 as argument to --maxRepeats" << std::endl
+
 		<< "Set next observable time for target 192 to 1 hour (3600 seconds) from now" << std::endl
 		<< "  " << getAppName () << " -n +3600 192         .. " << std::endl
 		<< "Delete targets with name starting with GRB" << std::endl
@@ -219,7 +221,9 @@ void TargetApp::usage ()
 		<< "Disable all targets with name starting with M" << std::endl
 		<< "  " << getAppName () << " -d M%" << std::endl
 		<< "Set M31 airmass limit to < 1.5 and lunarDistance to > 40:" << std::endl
-		<< "  " << getAppName () << " --lunarDistance 40: --airmass :1.5 M31" << std::endl; 
+		<< "  " << getAppName () << " --lunarDistance 40: --airmass :1.5 M31" << std::endl
+		<< "Remove airmass limit for target M31" << std::endl
+		<< "  " << getAppName () << " --airmass : M31" << std::endl;
 }
 
 int TargetApp::processOption (int in_opt)
@@ -569,7 +573,7 @@ int TargetApp::doProcessing ()
 				else
 				{
 					target_set.appendConstraints (constraints);
-					std::cout << "Append constraints for:" << std::endl << target_set << std::endl;
+					std::cout << "Changed constraints for:" << std::endl << target_set << std::endl;
 				}
 			}
 			catch (rts2core::Error f)

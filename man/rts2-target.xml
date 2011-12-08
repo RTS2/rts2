@@ -272,7 +272,10 @@
         <term><option>--airmass <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></term>
         <listitem>
           <para>
-	    Set interval for target airmasses. Colon separated lower and upper limits. Missing value indicate that the limit is not set in the missing direction.
+	    Set interval for target airmasses. Colon separated lower and upper
+	    limits. Missing value indicate that the limit is not set in the
+	    missing direction. Empty interval, e.g. only :, causes program to
+	    remove airmass constraints.
 	  </para>
         </listitem>
       </varlistentry>
@@ -280,7 +283,10 @@
         <term><option>--lunarDistance <option><replaceable><optional>lower</optional>:<optional>upper</optional></replaceable></option></option></term>
         <listitem>
           <para>
-	    Set interval for target lunar distance. Colon separated lower and upper limits. Missing value indicate that the limit is not set in the missing direction.
+	    Set interval for target lunar distance. Colon separated lower and
+	    upper limits. Missing value indicate that the limit is not set in
+	    the missing direction. Empty inteval causes program to remove lunar
+	    distance constraints.
 	  </para>
         </listitem>
       </varlistentry>
@@ -290,7 +296,8 @@
           <para>
 	    Set interval for lunar altiude (height of moon above horizon).
             Colon separated lower and upper limits. Missing value indicate that the limit
-            is not set in the missing direction.
+	    is not set in the missing direction. Empty interval causes program
+	    to remove lunar altitude constraints.
 	  </para>
         </listitem>
       </varlistentry>
@@ -300,7 +307,8 @@
           <para>
 	    Specify maximal number this observation will be repeated. Argument
 	    is an integer - upper limit for maximal number of repeats of given
-	    observation.
+	    observation. Negative value causes program to remove maxRepeats
+	    constraint.
 	  </para>
 	</listitem>
       </varlistentry>

@@ -64,6 +64,8 @@ class ConstraintDoubleInterval
 			return os;
 		}
 
+		bool isInvalid () { return isnan (lower) && isnan (upper); }
+
 		/**
 		 * Print interval.
 		 */
@@ -99,6 +101,8 @@ class Constraint
 		 * @param arg   argument - parsable string specifing constrain parameters
                  */
 		virtual void parse (const char *arg) = 0;
+
+		virtual bool isInvalid () = 0;
 
 		virtual void printXML (std::ostream &os) = 0;
 		virtual void printJSON (std::ostream &os) = 0;
@@ -160,6 +164,8 @@ class ConstraintInterval: public Constraint
 		 * @param arg   colon separated interval boundaries
                  */
 		virtual void parse (const char *arg);
+
+		virtual bool isInvalid ();
 
 		virtual void printXML (std::ostream &os);
 		virtual void printJSON (std::ostream &os);
@@ -272,6 +278,8 @@ class ConstraintMaxRepeat:public Constraint
 		virtual bool satisfy (Target *tar, double JD);
 
 		virtual void parse (const char *arg);
+
+		virtual bool isInvalid () { return maxRepeat <= 0; }
 
 		virtual void printXML (std::ostream &os);
 		virtual void printJSON (std::ostream &os);
@@ -408,6 +416,11 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 		 * @param arg         constraint argument, specifiing constraint parameters
 		 */
 		void parse (const char *name, const char *arg);
+
+		/**
+		 * Remove invalid constraints. Useful to remove constraints from constraint file.
+		 */
+		void removeInvalid ();
 
 		/**
 		 * Print constraints.

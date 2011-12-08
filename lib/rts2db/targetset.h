@@ -196,6 +196,13 @@ class TargetSet:public std::map <int, Target * >
 		 */
 		void setConstraints (Constraints &cons);
 
+		/**
+		 * Append constraints specified to current target constraints.
+		 * If given constraint value is outside of expected range, constraint
+		 * is removed from target constraints.
+		 *
+		 * @param cons constraints to add
+		 */
 		void appendConstraints (Constraints &cons);
 
 		int save (bool overwrite = true);

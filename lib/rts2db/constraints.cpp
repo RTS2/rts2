@@ -156,6 +156,16 @@ void ConstraintInterval::parse (const char *arg)
 	delete[] sint;
 }
 
+bool ConstraintInterval::isInvalid ()
+{
+	for (std::list <ConstraintDoubleInterval>::iterator iter = intervals.begin (); iter != intervals.end (); iter++)
+	{
+		if (iter->isInvalid ())
+			return true;		
+	}
+	return false;
+}
+
 void ConstraintInterval::printXML (std::ostream &os)
 {
 	os << "  <" << getName () << ">" << std::endl;
@@ -701,7 +711,7 @@ void Constraints::load (xmlNodePtr _node, bool overwrite)
 		if (candidate != end ())
 		{
 			if (overwrite == false)
-				continue;  
+				continue;
 			con = candidate->second;
 		}
 		else 
@@ -759,6 +769,23 @@ void Constraints::parse (const char *name, const char *arg)
 			throw rts2core::Error ((std::string ("cannot allocate constraint with name ") + name).c_str ());
 		con->parse (arg);
 		(*this)[std::string (con->getName ())] = ConstraintPtr (con);
+	}
+}
+
+void Constraints::removeInvalid ()
+{
+	for (Constraints::iterator iter = begin (); iter != end ();)
+	{
+		if (iter->second->isInvalid ())
+		{
+			Constraints::iterator toerase = iter;
+			iter++;
+			erase (toerase);
+		}
+		else
+		{
+			iter++;
+		}
 	}
 }
 

@@ -228,6 +228,10 @@ class Target:public Rts2Target
 		 */
 		void setConstraints (Constraints &cons);
 
+		/**
+		 * Append constraints to target. If consiraint value is
+		 * outside of what is expected, constraint is removed.
+		 */
 		void appendConstraints (Constraints &cons);
 
 		struct ln_lnlat_posn *getObserver () { return observer; }
