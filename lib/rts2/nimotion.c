@@ -410,7 +410,7 @@ int initMotion (const char *path)
 		return -4;
 	}
 
-	char barp[4];
+	unsigned char barp[4];
 
 	if (read (fconfig, barp, 4) < 4)
 	{
