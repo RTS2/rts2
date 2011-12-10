@@ -41,7 +41,13 @@ class Expander
 		Expander (const struct timeval *tv);
 		Expander (Expander * in_expander);
 		virtual ~ Expander (void);
+
+		/**
+		 * Expand variables encoded in string. Iterates through string,
+		 * do some actions if it encounters % or @ expansion characters.
+		 */
 		std::string expand (std::string expression);
+
 		/**
 		 * Sets expanding date to current sysdate.
 		 */

@@ -254,26 +254,26 @@ std::string Expander::expand (std::string expression)
 	std::ostringstream ret;
 	std::string exp;
 
+	// iterates through string to expand
 	for (std::string::iterator iter = expression.begin (); iter != expression.end (); iter++)
 	{
 		switch (*iter)
 		{
 			case '%':
+				iter++;
+				getFormating (expression, iter, ret);
+
+				// don't expand last %
+				if (iter != expression.end ())
 				{
-					size_t beg = iter - expression.begin ();
-					iter++;
-					getFormating (expression, iter, ret);
-					if (iter != expression.end ())
-					{
-						std::string ex = expandVariable (*iter, beg);
-						if (ex.length () > 0)
-							ret << ex;
-						else
-							ret << std::setw (0);
-					}
+					std::string ex = expandVariable (*iter, ret.str ().length ());
+					if (ex.length () > 0)
+						ret << ex;
+					else
+						ret << std::setw (0);
 				}
 				break;
-				// that one enables to copy values from image header to expr
+			// that one copy values from image header to expression
 			case '@':
 				iter++;
 				exp = "";
