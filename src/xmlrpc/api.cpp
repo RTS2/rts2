@@ -139,7 +139,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
 		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
-		if (image == NULL)
+		if (image == NULL || image->getChannelSize () <= 0)
 			throw JSONException ("camera did not take a single image");
 
 		response_type = "binary/data";
@@ -391,10 +391,17 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
+
+			// this is safe, as all DEVICE_TYPE_CCDs are XmlDevCameraClient classes
+			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
+
+			// this will throw exception if expand string was not yet used
+			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()));
+
 			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
-			conn->queCommand (new rts2core::Rts2CommandExposure (master, (Rts2DevClientCamera *) (conn->getOtherDevClient ()), 0), 0, aa);
+			conn->queCommand (new rts2core::Rts2CommandExposure (master, camdev, 0), 0, aa);
 			throw XmlRpc::XmlRpcAsynchronous ();
 		}
 		else if (vals[0] == "hasimage")

@@ -73,12 +73,36 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 	return iter->second;
 }
 
+XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface (), nexpand ("")
+{
+	lastImage = NULL;
+
+	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
+	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
+}
+
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
 	delete lastImage;
-	lastImage = new rts2image::Image ("/tmp/xmlrpcd_%c.fits", getExposureNumber (), expStart, connection);
+
+	if (nexpand.length () == 0)
+		nexpand = fexpand;
+
+	std::string imagename = path + '/' + nexpand;
+	// make nexpand available for next exposure
+	nexpand = std::string ("");
+
+	lastImage = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection);
+
 	lastImage->keepImage ();
 	return lastImage;
+}
+
+void XmlDevCameraClient::setNextExpand (const char *fe)
+{
+	if (nexpand.length () != 0)
+		throw rts2core::Error ("Cannot set file expansion, when the previous was not yet used.");
+	nexpand = std::string (fe);
 }
 
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)

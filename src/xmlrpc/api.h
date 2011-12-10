@@ -87,19 +87,21 @@ digraph "JSON API calls handling" {
  *
  * @subsection Example
  *
- * http://localhost:8889/api/expose?ccd=C0&fn=%
+ * http://localhost:8889/api/expose?ccd=C0&fe=%N_%05u.fits
+ *
+ * Please note that example above expect that % and / characters will be
+ * properly URI encoded before passing as paremeters to GET call.
  *
  * @subsection Parameters
  *  - ccd  Name of CCD device. Required.
- *  - fn  File expansion name. Can include expansion characters. Default to
- *  filename provided in rts2.ini configuration file.
+ *  - fe  <i>File expansion string. Can include expansion characters. Default to filename expansion string provided in rts2.ini configuration file.
+          Please See man rts2.ini and man rts2 for details about configuration (xmlrpcd/images_name) and expansion characters.</i>
  * 
  * @page JSON_sql JSON database API
  *
  * @section targets List available targets
  *
  */
-
 
 namespace rts2xmlrpc
 {

@@ -135,10 +135,7 @@ class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
 class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 {
 	public:
-		XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface ()
-		{
-			lastImage = NULL;
-		}
+		XmlDevCameraClient (Rts2Conn *conn);
 
 		virtual ~XmlDevCameraClient ()
 		{
@@ -161,6 +158,20 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 
 		rts2image::Image *getLastImage () { return lastImage; }
 
+		/**
+		 * Return default image expansion subpath.
+		 *
+		 * @return default image expansion subpath
+		 */
+		const char * getDefaultFilename () { return fexpand.c_str (); }
+
+		/**
+		 * Set expansion for the next file. Throws error if there is an expansion
+		 * filled in, which was not yet used. This probably signal two consequtive
+		 * calls to this method, without camera going to EXPOSE state.
+		 */
+		void setNextExpand (const char *fe);
+
 	protected:
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 
@@ -173,6 +184,15 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 
 	private:
 		rts2image::Image *lastImage;
+		
+		// path for storing XMLRPC produced images
+		std::string path;
+		
+		// expansion for images
+		std::string fexpand;
+
+		// expand path for next filename
+		std::string nexpand;
 };
 
 /**

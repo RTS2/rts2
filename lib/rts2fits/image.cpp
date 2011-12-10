@@ -2622,9 +2622,7 @@ void Image::recordChange (Rts2Conn * conn, rts2core::Value * val)
 	delete[]name;
 }
 
-
-void
-Image::setEnvironmentalValues ()
+void Image::setEnvironmentalValues ()
 {
 	// record any environmental variables..
 	std::vector <std::string> envWrite;
