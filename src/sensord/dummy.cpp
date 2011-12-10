@@ -191,7 +191,7 @@ class Dummy:public Sensor
 
 using namespace rts2sensord;
 
-void Dummy::postEvent (Rts2Event *event);
+void Dummy::postEvent (Rts2Event *event)
 {
 	switch (event->getType ())
 	{
@@ -230,7 +230,7 @@ void Dummy::setFullBopState (int new_state)
 }
 
 
-int Dummy:init ()
+int Dummy::init ()
 {
 	int ret = Sensor::init ();
 	if (ret)
