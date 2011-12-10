@@ -465,6 +465,13 @@ class Image:public FitsFile
 
 		//int getCenter (double &x, double &y, int bin);
 
+		/**
+		 * Returns number of channels.
+		 *
+		 * @return number of channels
+		 */
+		int getChannelSize () { return channels.size (); }
+
 		long getChannelWidth (int chan) { return channels[chan]->getWidth (); }
 
 		long getChannelHeight (int chan) { return channels[chan]->getHeight (); }
