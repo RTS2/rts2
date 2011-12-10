@@ -22,3 +22,6 @@ f.run()
 
 # Send some optional emails - configure before uncomenting this line
 # f.sendEmail('robot@example.com','Example skyflats')
+
+# wait for end
+f.finish()
