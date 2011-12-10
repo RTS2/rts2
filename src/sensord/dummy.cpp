@@ -76,44 +76,11 @@ class Dummy:public Sensor
 		/**
 		 * Handles event send by RTS2 core. We use it there only to catch timer messages.
 		 */
-		virtual void postEvent (Rts2Event *event)
-		{
-			switch (event->getType ())
-			{
-				case EVENT_TIMER_TEST:
-					if (timerEnabled->getValueBool () == true)
-					{
-						// increas value
-						timerCount->inc ();
-						// send out value to all connections
-						sendValueAll (timerCount);
-						// reschedule us and return - ascending up to Sensor::postEvent will delete event object, we would like to avoid this
-						addTimer (5, event);
-						if (timerCount->getValueLong () % 12 == 0)
-							logStream (MESSAGE_INFO) << "60 seconds timer: " << timerCount->getValueLong () << sendLog;
-						if (generateCriticalMessages->getValueBool ())
-							sendCriticalMessage ();
-						return;
-					}
-					break;
-			}
-			Sensor::postEvent (event);
-		}
+		virtual void postEvent (Rts2Event *event);
+
 
 		/** Handles logic of BOP_WILL_EXPOSE and BOP_TRIG_EXPOSE. */
-		virtual void setFullBopState (int new_state)
-		{
-			if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
-			{
-				maskState (BOP_TRIG_EXPOSE, 0, "enabled exposure");
-				sleep (10);
-			}
-			if (new_state & BOP_TEL_MOVE)
-			{
-				maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for next exposure");
-			}
-		 	Sensor::setFullBopState (new_state);
-		}
+		virtual void setFullBopState (int new_state);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * newValue)
 		{
@@ -191,16 +158,8 @@ class Dummy:public Sensor
 			return Sensor::commandAuthorized (conn);
 		}
 	protected:
-		virtual int init ()
-		{
-			int ret = Sensor::init ();
-			if (ret)
-				return ret;
-			// initialize timer
-			addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
-			maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
-			return 0;
-		}
+		virtual int init ();
+
 	private:
 		rts2core::ValueInteger *testInt;
 		rts2core::ValueBool *goodWeather;
@@ -232,8 +191,57 @@ class Dummy:public Sensor
 
 using namespace rts2sensord;
 
-int
-main (int argc, char **argv)
+void Dummy::postEvent (Rts2Event *event);
+{
+	switch (event->getType ())
+	{
+		case EVENT_TIMER_TEST:
+			if (timerEnabled->getValueBool () == true)
+			{
+				// increas value
+				timerCount->inc ();
+				// send out value to all connections
+				sendValueAll (timerCount);
+				// reschedule us and return - ascending up to Sensor::postEvent will delete event object, we would like to avoid this
+				addTimer (5, event);
+				if (timerCount->getValueLong () % 12 == 0)
+					logStream (MESSAGE_INFO) << "60 seconds timer: " << timerCount->getValueLong () << sendLog;
+				if (generateCriticalMessages->getValueBool ())
+					sendCriticalMessage ();
+				return;
+			}
+			break;
+	}
+	Sensor::postEvent (event);
+}
+
+void Dummy::setFullBopState (int new_state)
+{
+	if ((new_state & BOP_WILL_EXPOSE) && !(getDeviceBopState () & BOP_WILL_EXPOSE))
+	{
+		maskState (BOP_TRIG_EXPOSE, 0, "enabled exposure");
+		sleep (10);
+	}
+	if (new_state & BOP_TEL_MOVE)
+	{
+		maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for next exposure");
+	}
+ 	Sensor::setFullBopState (new_state);
+}
+
+
+int Dummy:init ()
+{
+	int ret = Sensor::init ();
+	if (ret)
+		return ret;
+	// initialize timer
+	addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+	maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
+	return 0;
+}
+
+int main (int argc, char **argv)
 {
 	Dummy device (argc, argv);
 	return device.run ();
