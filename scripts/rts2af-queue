@@ -86,9 +86,13 @@ class Rts2Queue:
 	def getStateFocuser(self, focuser):
 		rep= self.loadJson('/api/get', {'d': focuser, 'e' : 1})
 		return rep['d']['TCMODE']
+
 	def getFocuserName(self):
-#		rep= self.loadJson('/api/devbytype', {'t':3})
-		rep= self.loadJson('/api/get', {'d': 'CCD_FLI'})
+# ther might be a simpler solution
+		rep= self.loadJson('/api/devbytype', {'t':3})
+		camera= rep[0]
+		rep= self.loadJson('/api/get', {'d': camera})
+		
 		return rep['d']['focuser']
 
 
@@ -115,12 +119,11 @@ if __name__ == '__main__':
         logformat= '%(asctime)s %(levelname)s %(message)s'
 	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.DEBUG, format= logformat)
 
-	logging.debug('rts2af-queue: staring with options:{0} '.format(options))
+	logging.debug('rts2af-queue: starting with options:{0} '.format(options))
 
 	q= Rts2Queue(options.queue,options.server,options.username,options.password)
-#	focuser= q.getFocuserName()
-	# ToDo: rts2-xmlrpc has a problem answering this request, so the name is hard wired.
-	focuser= 'FOC_FLI'
+	focuser= q.getFocuserName()
+
 	# Check if currently a focus run is in progress
 	current= str(q.getStateEXEC())
 	# [16778242, -1, 0, 0, u'ID of current target']
@@ -159,7 +162,8 @@ if __name__ == '__main__':
 
 	if options.clear:
 		resp = q.clearQueue()
-		print "cleared queue {0}: {1}".format(options.queue, resp['d']['plan_ids'][1])
+#		print "cleared queue {0}: {1}".format(options.queue, repr(resp))
+		print "cleared queue {0}: {1}".format(options.queue, resp['d']['plan_ids'])
 
 	for x in args:
 		tars = q.getTarget(x)
@@ -175,6 +179,7 @@ if __name__ == '__main__':
 		  	tids.append(t[0])
 			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
 		resp = q.queueTargets(tids)
-		print resp['d']['plan_ids'][1]
+#		print resp['d']['plan_ids'][1]
+		print resp['d']['plan_ids']
 
 	logging.debug('rts2af-queue: end      for options:{0} '.format(options))
