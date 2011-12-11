@@ -21,7 +21,8 @@
 #ifndef INDI_API_H
 #define INDI_API_H
 
-/** \mainpage Instrument Neutral Distributed Interface INDI
+/** \page INDI Instrument Neutral Distributed Interface INDI
+
     \section Introduction
     
     INDI is a simple XML-like communications protocol described for interactive and automated remote control of diverse instrumentation.\n
@@ -57,6 +58,7 @@ You can find information on INDI development in the <a href="http://indi.sf.net"
 
 \author Elwood Downey
 \author Jasem Mutlaq
+
 */
 
 /** \file indiapi.h
