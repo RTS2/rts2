@@ -74,6 +74,12 @@ class Previewer
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 
+/**
+ * Returns JPEG image, generated from FITS file. Usefull for quick display of images in 
+ * web browsers.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class JpegImageRequest: public GetRequestAuthorized
 {
 	public:
@@ -82,6 +88,11 @@ class JpegImageRequest: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
+/**
+ * Returns either directory structure, or JPEG image requested in the URL.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class JpegPreview:public GetRequestAuthorized
 {
 	public:
@@ -94,6 +105,11 @@ class JpegPreview:public GetRequestAuthorized
 
 #endif // HAVE_LIBJPEG
 
+/**
+ * Returns raw FITS file as it is written on the disk.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class FitsImageRequest:public GetRequestAuthorized
 {
 	public:
@@ -102,6 +118,12 @@ class FitsImageRequest:public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
+/**
+ * Creates compressed archive of files for download, send them as binary file 
+ * to HTTP client.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class DownloadRequest:public GetRequestAuthorized
 {
 	public:
@@ -122,7 +144,9 @@ class DownloadRequest:public GetRequestAuthorized
 }
 
 #ifdef HAVE_LIBARCHIVE
+
 int open_callback (struct archive *a, void *client_data);
 ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length);
 int close_callback (struct archive *a, void *client_data);
+
 #endif // HAVE_LIBARCHIVE

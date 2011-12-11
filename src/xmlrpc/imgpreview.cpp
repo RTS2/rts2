@@ -17,6 +17,51 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/**
+ * @page XMLRPCD_filedownload API calls for downloading images
+ *
+ * <a href="http://rts2.org">RTS2</a> supports multiple options for accessing
+ * images through HTTP protocol, run by <b>rts2-xmlrpcd</b>. One can get access
+ * to either raw data, FITS formated data, headers or to JPEG grayscale
+ * previews of the images.
+ *
+ * @section XMLRPCD_filedownload_points Access points
+ *
+ * Every call assume that method name is the first virtual subdirectory in the
+ * call. It is followed by full path to the file, and possibly call parameters
+ * after standard ?.
+ *
+ * As an example, let's assume there is <b>rts2-xmlrpcd</b> server on host
+ * <b>server</b>, running on port <b>8889</b>, accepting <b>preview</b> request
+ * for image on path <b>/images/2011.1210/0001.fits</b>, with parameter
+ * <b>ps</b> set to <b>200</b>.  Then this is the URL one would like to use to
+ * extract the image:
+ *
+ * http://server:8889/preview/images/2011.1210/0001.fits?ps=200
+ *
+ * Following are description of various image related services, with their
+ * parameters. Format of the documentation is similar to @ref JSON_description.
+ *
+ * @section XMLRPCD_filedownload_preview preview
+ *
+ * Generates zoomed JPEG images. This is primary usefull for quick access to
+ * small images to be put onto preview webpages.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/preview/images/2011.1210/0001.fits?ps=200&lb=@FOC_POS
+ *
+ * @subsection Parameters
+ *  - <i><b>ps</b> preview size in pixels. Default to 128 pixels.</i>
+ *  - <i><b>lb</b> label. Can include expansion characters, please see <b>man rts2</b> for details.</i>
+ *  - <i><b>q</b> quantiles for image display. Default to 0.005, which means that 0.5% of pixel values will be cut before the algorithm progress to generate ADU to pixel values transformation.</i>
+ *  - <i><b>chan</b> channel of multifits image. Specify which channel should be displayed, or use -1 to display all channels.</i>
+ *
+ * @subsection Return
+ *
+ * <b>image/jpeg</b> sized to have bigger axis equal to <b>ps</b> parameter.
+ */
+
 #ifdef __linux__
 #define	_FILE_OFFSET_BITS 64
 #endif
