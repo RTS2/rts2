@@ -132,6 +132,12 @@ class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
 		virtual Rts2Conn *getConnection () { return rts2core::Rts2DevClient::getConnection (); }
 };
 
+/**
+ * Device client for Camera, which is used inside XMLRPCD. Writes images to
+ * disk file, provides access to images.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 {
 	public:
@@ -171,6 +177,13 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 		 * calls to this method, without camera going to EXPOSE state.
 		 */
 		void setNextExpand (const char *fe);
+
+		// values for script progress,..a
+
+		/**
+		 * Last image location.
+		 */
+		rts2core::ValueString *lastFilename;
 
 	protected:
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);

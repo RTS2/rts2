@@ -79,6 +79,21 @@ XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCame
 
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
+
+	std::string vn = std::string (conn->getName ()) + "_lastimage";
+	rts2core::Value *v = ((rts2core::Daemon *) conn->getMaster ())->getOwnValue (vn.c_str ());
+
+	if (v)
+	{
+		if (v->getValueType () == RTS2_VALUE_STRING)
+			lastFilename = (rts2core::ValueString *) v;
+		else
+			throw rts2core::Error ("cannot create " + vn + ", value already exists with different type");		
+	}
+	else
+	{
+		((rts2core::Daemon *) conn->getMaster ())->createValue (lastFilename, vn.c_str (), "last image from camera", false);
+	}
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
@@ -95,6 +110,9 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 	lastImage = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection);
 
 	lastImage->keepImage ();
+
+	lastFilename->setValueCharArr (lastImage->getFileName ());
+	((rts2core::Daemon *) getMasterApp ())->sendValueAll (lastFilename);
 	return lastImage;
 }
 
