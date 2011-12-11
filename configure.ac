@@ -780,6 +780,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2/model/Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
+	   lib/rts2script/Makefile
 	   src/libindi/Makefile 
 	   scripts/Makefile
 	   src/Makefile

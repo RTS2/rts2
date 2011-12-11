@@ -23,7 +23,7 @@
 #include "script.h"
 #include "elementacquire.h"
 #include "element.h"
-#include "../../lib/rts2/rts2target.h"
+#include "../rts2/rts2target.h"
 
 namespace rts2script
 {

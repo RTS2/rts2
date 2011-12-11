@@ -32,7 +32,7 @@
 #include "elementacquire.h"
 #endif							 /* HAVE_PGSQL */
 
-#include "../../lib/rts2db/scriptcommands.h"
+#include "../rts2db/scriptcommands.h"
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>

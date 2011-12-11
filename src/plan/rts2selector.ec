@@ -19,7 +19,7 @@
  */
 
 #include "rts2selector.h"
-#include "script.h"
+#include "../../lib/rts2script/script.h"
 #include "rts2config.h"
 #include "utilsfunc.h"
 #include "../../lib/rts2db/sqlerror.h"

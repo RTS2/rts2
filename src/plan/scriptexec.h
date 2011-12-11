@@ -20,8 +20,8 @@
 #ifndef __SCRIPT_EXEC__
 #define __SCRIPT_EXEC__
 
-#include "rts2targetscr.h"
-#include "rts2scriptinterface.h"
+#include "../../lib/rts2script/rts2targetscr.h"
+#include "../../lib/rts2script/rts2scriptinterface.h"
 #include "../../lib/rts2/connfork.h"
 #include "../../lib/rts2/rts2client.h"
 #include "../../lib/rts2/rts2target.h"

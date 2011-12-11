@@ -20,8 +20,8 @@
 #include "elementguiding.h"
 #include "rts2execcli.h"
 #include "rts2config.h"
-#include "../../lib/rts2fits/image.h"
-#include "../../lib/rts2fits/devclifoc.h"
+#include "../rts2fits/image.h"
+#include "../rts2fits/devclifoc.h"
 
 using namespace rts2script;
 using namespace rts2image;

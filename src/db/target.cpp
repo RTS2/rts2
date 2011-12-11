@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../plan/script.h"
-#include "../plan/elementtarget.h"
+#include "../../lib/rts2script/script.h"
+#include "../../lib/rts2script/elementtarget.h"
 #include "../../lib/rts2db/constraints.h"
 #include "../../lib/rts2db/observation.h"
 #include "../../lib/rts2db/rts2appdb.h"

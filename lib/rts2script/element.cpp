@@ -23,8 +23,8 @@
 
 #include "rts2config.h"
 #include "utilsfunc.h"
-#include "../../lib/rts2fits/image.h"
-#include "../../lib/rts2fits/devclifoc.h"
+#include "../rts2fits/image.h"
+#include "../rts2fits/devclifoc.h"
 
 using namespace rts2script;
 using namespace rts2image;

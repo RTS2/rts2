@@ -21,9 +21,9 @@
 #include "valuearray.h"
 #include "../../lib/rts2db/rts2devicedb.h"
 #include "../../lib/rts2db/target.h"
-#include "executorque.h"
-#include "rts2execcli.h"
-#include "rts2execclidb.h"
+#include "../../lib/rts2script/executorque.h"
+#include "../../lib/rts2script/rts2execcli.h"
+#include "../../lib/rts2script/rts2execclidb.h"
 #include "rts2devcliphot.h"
 
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100

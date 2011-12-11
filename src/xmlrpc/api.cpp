@@ -22,7 +22,7 @@
 
 #include "../../lib/rts2db/constraints.h"
 #include "../../lib/rts2db/planset.h"
-#include "../plan/script.h"
+#include "../../lib/rts2script/script.h"
 
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/labellist.h"

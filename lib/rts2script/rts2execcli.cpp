@@ -22,8 +22,8 @@
 
 #include "connimgprocess.h"
 #include "rts2execcli.h"
-#include "../../lib/rts2fits/image.h"
-#include "../../lib/rts2db/target.h"
+#include "../rts2fits/image.h"
+#include "../rts2db/target.h"
 #include "rts2command.h"
 #include "rts2config.h"
 

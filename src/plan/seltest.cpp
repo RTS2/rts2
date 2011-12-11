@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "printtarget.h"
+#include "../../lib/rts2script/printtarget.h"
 #include "rts2selector.h"
 
 #define OPT_FILTERS             OPT_LOCAL + 630

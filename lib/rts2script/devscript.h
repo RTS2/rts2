@@ -24,7 +24,7 @@
 
 #include "rts2object.h"
 #include "block.h"
-#include "../../lib/rts2/rts2target.h"
+#include "../rts2/rts2target.h"
 
 namespace rts2script
 {

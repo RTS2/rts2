@@ -19,9 +19,9 @@
  */
 
 #include "rts2selector.h"
-#include "connselector.h"
-#include "executorque.h"
-#include "simulque.h"
+#include "../../lib/rts2script/connselector.h"
+#include "../../lib/rts2script/executorque.h"
+#include "../../lib/rts2script/simulque.h"
 
 #include "../../lib/rts2/connnotify.h"
 #include "rts2devclient.h"

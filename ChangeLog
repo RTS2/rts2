@@ -1,3 +1,6 @@
+2011-12-10
+ * created rts2script library in lib directory (moved from src/plan)
+
 2011-11-26
  * telescope_speed, filter_movement and readout_time configutation options
 

@@ -18,8 +18,8 @@
  */
 
 #include "status.h"
-#include "connimgprocess.h"
-#include "script.h"
+#include "../../lib/rts2script/connimgprocess.h"
+#include "../../lib/rts2script/script.h"
 
 #include <glob.h>
 #include <sys/types.h>

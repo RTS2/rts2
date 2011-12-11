@@ -20,7 +20,7 @@
 #include "connimgprocess.h"
 #include "elementacquire.h"
 
-#include "../../lib/rts2fits/devclifoc.h"
+#include "../rts2fits/devclifoc.h"
 #include "rts2config.h"
 
 using namespace rts2plan;

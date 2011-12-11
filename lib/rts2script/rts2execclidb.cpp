@@ -18,7 +18,7 @@
  */
 
 #include "rts2execclidb.h"
-#include "../../lib/rts2fits/imagedb.h"
+#include "../rts2fits/imagedb.h"
 
 Rts2DevClientCameraExecDb::Rts2DevClientCameraExecDb (Rts2Conn * in_connection):Rts2DevClientCameraExec (in_connection)
 {

@@ -18,7 +18,7 @@
  */
 
 #include "scriptexec.h"
-#include "rts2execcli.h"
+#include "../../lib/rts2script/rts2execcli.h"
 #include "rts2devcliphot.h"
 
 #include "rts2config.h"
