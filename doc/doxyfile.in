@@ -70,7 +70,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src/ ../include
+INPUT                  = ../include/ ../lib/ ../src/ 
 FILE_PATTERNS          = *.c *.cpp *.ec *.h
 RECURSIVE              = YES
 EXCLUDE                = 
