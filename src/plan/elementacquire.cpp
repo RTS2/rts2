@@ -201,6 +201,12 @@ void ElementAcquire::cancelCommands ()
 	processingState = FAILED;
 }
 
+double ElementAcquire::getExpectedDuration ()
+{
+	// conservative estimate: 3 images, 5 minutes to run astrometry on them
+	return (expTime + script->getFullReadoutTime ()) * 3 + 300;
+}
+
 ElementAcquireStar::ElementAcquireStar (Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec, struct ln_equ_posn *in_center_pos):ElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
 {
 	maxRetries = in_maxRetries;

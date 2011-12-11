@@ -37,6 +37,8 @@ class ElementAcquire:public Element
 		virtual int processImage (rts2image::Image * image);
 		virtual void cancelCommands ();
 
+		virtual double getExpectedDuration ();
+
 		virtual void printXml (std::ostream &os) { os << "  <acquire length='" << expTime << "' precision='" << reqPrecision << "'/>"; }
 		virtual void printScript (std::ostream &os) { os << COMMAND_ACQUIRE << " " << reqPrecision << " " << expTime; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_ACQUIRE << "\",\"duration\":" << expTime << ",\"precision\":" << reqPrecision; }
