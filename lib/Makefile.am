@@ -1,1 +1,1 @@
-SUBDIRS = xmlrpc++ rts2 rts2db rts2fits
+SUBDIRS = xmlrpc++ rts2 rts2db rts2fits rts2script
