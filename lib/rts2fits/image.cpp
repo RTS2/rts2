@@ -1414,7 +1414,7 @@ template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &bu
 	if (buf == NULL)
 		buf = new bt[s];
 
-	long k = offset;
+	long k = 0;
 
 	const void *imageData = getChannelData (chan);
 
@@ -1459,6 +1459,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 	{
 		int tw = 0;
 		int th = 0;
+		int maxh = 0;
 
 	  	if (chan >= 0)
 		{
@@ -1490,20 +1491,26 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 				{
 				  	if (lw > tw)
 					  	tw = lw;
-					th += lh;
+					th ++;
 				  	lw = 0;
 					lh = 0;
 				}
 				lw += (*iter)->getWidth ();
 				if ((*iter)->getHeight () > lh)
 				  	lh = (*iter)->getHeight ();
+				if (lh > maxh)
+					maxh = lh;
+
 			}
+
 			if (n % w == 0)
 			{
 				if (lw > tw)
 				  	tw = lw;
-				th += lh;	
 			}
+
+			// change total height from segments to pixels
+			th = maxh * th;
 
 			// copy grayscales
 			buf = new unsigned char[tw * th];
@@ -1521,7 +1528,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 			{
 			  	if (iter != channels.begin () && (n % w == 0))
 				{
-				  	lh += lw;
+				  	lh += maxh;
 					lw = 0;
 					loff = 0;
 				}
