@@ -1522,7 +1522,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 			else
 				n = 2;
 
-			int loff = 0;
+			int loff = tw;
 
 			for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++, n = (n + 1) % 4)
 			{
@@ -1530,7 +1530,11 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 				{
 				  	lh += maxh;
 					lw = 0;
-					loff = 0;
+					loff = tw - (*iter)->getWidth ();
+				}
+				else if (iter == channels.begin ())
+				{
+					loff = tw - (*iter)->getWidth ();
 				}
 
 				size_t offset = tw - (*iter)->getWidth ();
@@ -1541,7 +1545,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 				if ((*iter)->getHeight () > lw)
 				  	lw = (*iter)->getHeight ();
-				loff += (*iter)->getWidth ();	
+				loff -= (*iter)->getWidth ();	
 			}
 
 		}
