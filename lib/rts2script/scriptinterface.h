@@ -23,11 +23,16 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <math.h>
+#include <libnova/libnova.h>
+
+namespace rts2script
+{
 
 /**
  * Holds script for given device.
  */
-class Rts2ScriptForDevice
+class ScriptForDevice
 {
 	private:
 		std::string deviceName;
@@ -46,18 +51,18 @@ class Rts2ScriptForDevice
 			script = in_script;
 		}
 	public:
-		Rts2ScriptForDevice (std::string in_deviceName)
+		ScriptForDevice (std::string in_deviceName)
 		{
 			deviceName = in_deviceName;
 		}
 
-		Rts2ScriptForDevice (std::string in_deviceName, std::string in_script)
+		ScriptForDevice (std::string in_deviceName, std::string in_script)
 		{
 			deviceName = in_deviceName;
 			setScript (in_script);
 		}
 
-		virtual ~ Rts2ScriptForDevice (void)
+		virtual ~ ScriptForDevice (void)
 		{
 		}
 
@@ -76,19 +81,19 @@ class Rts2ScriptForDevice
 /**
  * For cases when script is in file.
  */
-class Rts2ScriptForDeviceStream:public Rts2ScriptForDevice
+class ScriptForDeviceStream:public ScriptForDevice
 {
 	private:
 		std::istream *is;
 	public:
-		Rts2ScriptForDeviceStream (std::string in_deviceName, std::istream *in_is)
-			:Rts2ScriptForDevice (in_deviceName)
+		ScriptForDeviceStream (std::string in_deviceName, std::istream *in_is)
+			:ScriptForDevice (in_deviceName)
 		{
 			setDeviceName (in_deviceName);
 			is = in_is;
 		}
 
-		virtual ~ Rts2ScriptForDeviceStream (void)
+		virtual ~ ScriptForDeviceStream (void)
 		{
 			delete is;
 		}
@@ -96,14 +101,14 @@ class Rts2ScriptForDeviceStream:public Rts2ScriptForDevice
 		virtual int getScript (std::string & buf);
 };
 
-class Rts2ScriptInterface
+class ScriptInterface
 {
 	public:
-		Rts2ScriptInterface ()
+		ScriptInterface ()
 		{
 		}
 
-		virtual ~Rts2ScriptInterface (void)
+		virtual ~ScriptInterface (void)
 		{
 		}
 
@@ -123,6 +128,8 @@ class Rts2ScriptInterface
 		 * @param ln_equ_posn  Position of next target.
 		 * @param JD           Julian data for which the position should be calculated.
 		 */
-		virtual void getPosition (struct ln_equ_posn *pos, double JD) = 0;
+		virtual void getPosition (struct ln_equ_posn *pos, double JD) { pos->ra = pos->dec = NAN; }
 };
+
+}
 #endif							 // !__RTS2_SCRIPTINTERFACE__

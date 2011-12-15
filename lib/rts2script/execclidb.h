@@ -1,6 +1,6 @@
-/* 
- * Script executor interface.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+/**
+ * Executor client for camera with database backend..
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,19 +17,24 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2scriptinterface.h"
+#ifndef __RTS2_EXECCLIDB__
+#define __RTS2_EXECCLIDB__
 
-int
-Rts2ScriptForDeviceStream::getScript (std::string & buf)
+#include "execcli.h"
+
+namespace rts2script
 {
-	// parse file..
-	if (is)
-	{
-		getline (*is, buf);
-		if (is->eof ())
-			return 0;
-		return 1;
-	}
 
-	return -1;
+class DevClientCameraExecDb:public DevClientCameraExec
+{
+	protected:
+		virtual void exposureStarted ();
+	public:
+		DevClientCameraExecDb (Rts2Conn * in_connection);
+		virtual ~ DevClientCameraExecDb (void);
+		virtual rts2image::Image *createImage (const struct timeval *expStart);
+		virtual void beforeProcess (rts2image::Image * image);
+};
+
 }
+#endif							 /* !__RTS2_EXECCLIDB__ */

@@ -20,23 +20,26 @@
 #ifndef __RTS2_TARGESCR__
 #define __RTS2_TARGESCR__
 
-#include "rts2scriptinterface.h"
+#include "scriptinterface.h"
 #include "../rts2/rts2target.h"
 #include "../rts2fits/image.h"
 
-class Rts2ScriptExec;
+namespace rts2script
+{
 
 /**
- * This target is used in Rts2ScriptExec to fill role of current
+ * This target is used in ScriptExec and XMLRPC to fill role of current
  * target, so executor logic will work properly.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TargetScr:public Rts2Target
+class ScriptTarget:public Rts2Target
 {
 	private:
-		Rts2ScriptInterface * master;
+		ScriptInterface * master;
 	public:
-		Rts2TargetScr (Rts2ScriptInterface * in_master);
-		virtual ~ Rts2TargetScr (void);
+		ScriptTarget (ScriptInterface * in_master);
+		virtual ~ ScriptTarget (void);
 
 		// target manipulation functions
 		virtual bool getScript (const char *device_name, std::string & buf);
@@ -54,4 +57,6 @@ class Rts2TargetScr:public Rts2Target
 		virtual int startObservation ();
 		virtual void writeToImage (rts2image::Image * image, double JD);
 };
+
+}
 #endif							 /* !__RTS2_TARGESCR__ */

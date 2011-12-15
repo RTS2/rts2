@@ -43,14 +43,14 @@ namespace XmlRpc
 			static bool nbRead(int socket, char* &s, int &l, bool *eof);
 
 			//! Write text to the specified socket. Returns false on error.
-			static bool nbWrite(int socket, std::string s, int *bytesSoFar);
+			static size_t nbWrite(int socket, std::string s, size_t *bytesSoFar, bool sendfull = true);
 
 			//! Write buffer to the specified socket. Returns false on error.
-			static bool nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar);
+			static size_t nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull = true);
 
 			// The next four methods are appropriate for servers.
 
-			//! Allow the port the specified socket is bound to to be re-bound immediately so
+			//! Allow the port the specified socket is bound to to be re-bound immediately 
 			//! server re-starts are not delayed. Returns false on failure.
 			static bool setReuseAddr(int socket);
 

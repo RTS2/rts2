@@ -144,7 +144,7 @@ namespace XmlRpc
 			std::string _response;
 
 			// Number of bytes of the response written so far
-			int _bytesWritten;
+			size_t _bytesWritten;
 
 			// Response to GET request - header
 			std::string _get_response_header;

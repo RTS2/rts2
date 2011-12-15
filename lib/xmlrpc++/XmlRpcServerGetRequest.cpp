@@ -177,7 +177,7 @@ namespace XmlRpc
 		std::cout << "length: " << _os.str ().length () << std::endl;
 		std::string head = printHeaders (HTTP_OK, "OK", "application/json", _os.str ().length ());
 		head += "\r\n\r\n";
-		int i = 0;
+		size_t i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), head, &i);
 		i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), _os.str (), &i);

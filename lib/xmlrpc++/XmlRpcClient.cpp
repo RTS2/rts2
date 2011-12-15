@@ -395,7 +395,7 @@ bool XmlRpcClient::writeRequest()
 		XmlRpcUtil::log(5, "XmlRpcClient::writeRequest (attempt %d):\n%s\n", _sendAttempts+1, _request.c_str());
 
 	// Try to write the request
-	if ( ! XmlRpcSocket::nbWrite(this->getfd(), _request, &_bytesWritten))
+	if ( XmlRpcSocket::nbWrite(this->getfd(), _request, &_bytesWritten) != 0 )
 	{
 		XmlRpcUtil::error("Error in XmlRpcClient::writeRequest: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 		return false;

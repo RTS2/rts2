@@ -56,6 +56,9 @@
 // slew to target, and do not wait for clearing of the block state
 #define EVENT_SLEW_TO_TARGET_NOW           RTS2_LOCAL_EVENT+68
 
+namespace rts2script
+{
+
 class GuidingParams
 {
 	public:
@@ -68,13 +71,11 @@ class GuidingParams
 		}
 };
 
-using namespace rts2script;
-
-class Rts2DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
+class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
 {
 	public:
-		Rts2DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL);
-		virtual ~ Rts2DevClientCameraExec (void);
+		DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL);
+		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);
 		virtual void nextCommand ();
@@ -118,7 +119,7 @@ class Rts2DevClientCameraExec:public rts2image::DevClientCameraImage, public Dev
 		bool waitMetaData;
 };
 
-class Rts2DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
+class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 {
 	private:
 		Rts2Target * currentTarget;
@@ -132,9 +133,11 @@ class Rts2DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 	protected:
 		virtual void moveEnd ();
 	public:
-		Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
+		DevClientTelescopeExec (Rts2Conn * in_connection);
 		virtual void postEvent (Rts2Event * event);
 		virtual void moveFailed (int status);
 };
+
+}
 
 #endif							 /*! __RTS2_EXECCLI__ */

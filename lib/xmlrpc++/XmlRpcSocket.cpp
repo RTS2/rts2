@@ -200,20 +200,15 @@ XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
 
 
 // Write text to the specified socket. Returns false on error.
-bool
-XmlRpcSocket::nbWrite(int fd, std::string s, int *bytesSoFar)
+size_t
+XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 {
 	int nToWrite = int(s.length()) - *bytesSoFar;
 	char *sp = const_cast<char*>(s.c_str()) + *bytesSoFar;
-	bool wouldBlock = false;
 
-	while ( nToWrite > 0 && ! wouldBlock )
+	while ( nToWrite > 0 )
 	{
-		#if defined(_WINDOWS)
 		int n = send(fd, sp, nToWrite, 0);
-		#else
-		int n = write(fd, sp, nToWrite);
-		#endif
 		XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
 
 		if (n > 0)
@@ -224,30 +219,27 @@ XmlRpcSocket::nbWrite(int fd, std::string s, int *bytesSoFar)
 		}
 		else if (nonFatalError())
 		{
+			if (!sendfull)
+				return n;
 		}
 		else
 		{
-			return false;		 // Error
+			return -1;		 // Error
 		}
 	}
-	return true;
+	return 0;
 }
 
 
 // Write text to the specified socket. Returns false on error.
-bool
-XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar)
+size_t
+XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull)
 {
 	size_t nToWrite = buf_len - *bytesSoFar;
-	bool wouldBlock = false;
 
-	while ( nToWrite > 0 && ! wouldBlock )
+	while ( nToWrite > 0 )
 	{
-		#if defined(_WINDOWS)
 		int n = send(fd, buf + *bytesSoFar, nToWrite, 0);
-		#else
-		int n = write(fd, buf + *bytesSoFar, nToWrite);
-		#endif
 		XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
 
 		if (n > 0)
@@ -257,13 +249,15 @@ XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesS
 		}
 		else if (nonFatalError())
 		{
+			if (!sendfull)
+				return n;
 		}
 		else
 		{
-			return false;		 // Error
+			return -1;		 // Error
 		}
 	}
-	return true;
+	return 0;
 }
 
 

@@ -18,7 +18,7 @@
  */
 
 #include "elementguiding.h"
-#include "rts2execcli.h"
+#include "execcli.h"
 #include "rts2config.h"
 #include "../rts2fits/image.h"
 #include "../rts2fits/devclifoc.h"

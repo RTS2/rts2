@@ -130,7 +130,7 @@ namespace XmlRpc
 			int _sendAttempts;
 
 			// Number of bytes of the request that have been written to the socket so far
-			int _bytesWritten;
+			size_t _bytesWritten;
 
 			// Non-zero (no IDLE) if some request (either XML-RPC or HTTP GET) is executed. If you want to multithread,
 			// each thread should have its own client.

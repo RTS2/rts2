@@ -18,7 +18,7 @@
  */
 
 #include "devscript.h"
-#include "rts2execcli.h"
+#include "execcli.h"
 
 using namespace rts2script;
 
@@ -314,13 +314,19 @@ void DevScript::deleteScript ()
 			lastTargetObsID = currentTarget->getObsTargetID ();
 			if (script->getExecutedCount () == 0)
 			{
-				logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID ()
-					<< " on device " << script_connection->getName () << ", because its execution count is 0" << sendLog;
-				dont_execute_for = currentTarget->getTargetID ();
-				dont_execute_for_obsid = currentTarget->getObsId ();
-				if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
+				if (currentTarget->getTargetID () >= 0)
 				{
-					nextTarget = NULL;
+					logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID () << " on device " << script_connection->getName () << ", because its execution count is 0" << sendLog;
+					dont_execute_for = currentTarget->getTargetID ();
+					dont_execute_for_obsid = currentTarget->getObsId ();
+					if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
+					{
+						nextTarget = NULL;
+					}
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "execution of script for virtual target failed" << sendLog;
 				}
 			}
 		}

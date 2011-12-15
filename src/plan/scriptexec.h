@@ -20,13 +20,16 @@
 #ifndef __SCRIPT_EXEC__
 #define __SCRIPT_EXEC__
 
-#include "../../lib/rts2script/rts2targetscr.h"
-#include "../../lib/rts2script/rts2scriptinterface.h"
+#include "../../lib/rts2script/scripttarget.h"
+#include "../../lib/rts2script/scriptinterface.h"
 #include "../../lib/rts2/connfork.h"
 #include "../../lib/rts2/rts2client.h"
 #include "../../lib/rts2/rts2target.h"
 
-class Rts2TargetScr;
+namespace rts2script
+{
+	class ScriptTarget;
+}
 
 namespace rts2plan
 {
@@ -35,7 +38,7 @@ namespace rts2plan
  * This is main client class. It takes care of supliing right
  * devclients and other things.
  */
-class ScriptExec:public Rts2Client, public Rts2ScriptInterface
+class ScriptExec:public Rts2Client, public rts2script::ScriptInterface
 {
 	public:
 		ScriptExec (int in_argc, char **in_argv);
@@ -61,13 +64,13 @@ class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		virtual int doProcessing ();
 	private:
 		rts2core::ValueString *expandPath;
-		std::vector < Rts2ScriptForDevice* > scripts;
+		std::vector < rts2script::ScriptForDevice* > scripts;
 		char *deviceName;
 		const char *defaultScript;
 
 		int waitState;
 
-		Rts2TargetScr *currentTarget;
+		rts2script::ScriptTarget *currentTarget;
 
 		time_t nextRunningQ;
 

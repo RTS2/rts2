@@ -17,20 +17,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2targetscr.h"
+#include "scripttarget.h"
 
-Rts2TargetScr::Rts2TargetScr (Rts2ScriptInterface * in_master):Rts2Target ()
+using namespace rts2script;
+
+ScriptTarget::ScriptTarget (ScriptInterface * in_master):Rts2Target ()
 {
 	master = in_master;
-	target_id = 1;
+	target_id = -2;
 	moveEnded ();
 }
 
-Rts2TargetScr::~Rts2TargetScr (void)
+ScriptTarget::~ScriptTarget (void)
 {
 }
 
-bool Rts2TargetScr::getScript (const char *device_name, std::string & buf)
+bool ScriptTarget::getScript (const char *device_name, std::string & buf)
 {
 	int ret = master->findScript (std::string (device_name), buf);
 	if (ret >= 0)
@@ -39,42 +41,42 @@ bool Rts2TargetScr::getScript (const char *device_name, std::string & buf)
 	throw rts2core::Error (std::string ("script for device ") + device_name + " is missing.");
 }
 
-void Rts2TargetScr::getPosition (struct ln_equ_posn *pos, double JD)
+void ScriptTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	master->getPosition (pos, JD);
 }
 
-int Rts2TargetScr::setNextObservable (time_t * time_ch)
+int ScriptTarget::setNextObservable (time_t * time_ch)
 {
 	return 0;
 }
 
-void Rts2TargetScr::setTargetBonus (float new_bonus, time_t * new_time)
+void ScriptTarget::setTargetBonus (float new_bonus, time_t * new_time)
 {
 
 }
 
-int Rts2TargetScr::save (bool overwrite)
-{
-	return 0;
-}
-
-int Rts2TargetScr::saveWithID (bool overwrite, int tar_id)
+int ScriptTarget::save (bool overwrite)
 {
 	return 0;
 }
 
-moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position, bool update_position)
+int ScriptTarget::saveWithID (bool overwrite, int tar_id)
+{
+	return 0;
+}
+
+moveType ScriptTarget::startSlew (struct ln_equ_posn * position, bool update_position)
 {
 	position->ra = position->dec = 0;
 	return OBS_MOVE_FAILED;
 }
 
-int Rts2TargetScr::startObservation ()
+int ScriptTarget::startObservation ()
 {
 	return -1;
 }
 
-void Rts2TargetScr::writeToImage (rts2image::Image * image, double JD)
+void ScriptTarget::writeToImage (rts2image::Image * image, double JD)
 {
 }

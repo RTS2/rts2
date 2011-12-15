@@ -73,27 +73,15 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 	return iter->second;
 }
 
-XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2image::DevClientCameraImage (conn), XmlDevInterface (), nexpand ("")
+XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), currentTarget (this)
 {
 	lastImage = NULL;
 
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
 
-	std::string vn = std::string (conn->getName ()) + "_lastimage";
-	rts2core::Value *v = ((rts2core::Daemon *) conn->getMaster ())->getOwnValue (vn.c_str ());
-
-	if (v)
-	{
-		if (v->getValueType () == RTS2_VALUE_STRING)
-			lastFilename = (rts2core::ValueString *) v;
-		else
-			throw rts2core::Error ("cannot create " + vn + ", value already exists with different type");		
-	}
-	else
-	{
-		((rts2core::Daemon *) conn->getMaster ())->createValue (lastFilename, vn.c_str (), "last image from camera", false);
-	}
+	createOrReplaceValue (lastFilename, conn, RTS2_VALUE_STRING, "_lastimage", "last image from camera", false, RTS2_VALUE_WRITABLE);
+	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false, RTS2_VALUE_WRITABLE);
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
@@ -112,8 +100,36 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 	lastImage->keepImage ();
 
 	lastFilename->setValueCharArr (lastImage->getFileName ());
-	((rts2core::Daemon *) getMasterApp ())->sendValueAll (lastFilename);
+	((rts2core::Daemon *) (connection->getMaster ()))->sendValueAll (lastFilename);
 	return lastImage;
+}
+
+bool XmlDevCameraClient::isScriptRunning ()
+{
+	int runningScripts = 0;
+
+	connection->postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
+	if (runningScripts > 0)
+		return true;
+			  
+	// if there are some images which need to be written
+	connection->postEvent (new Rts2Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
+	if (runningScripts > 0)
+		return true;
+	return false;
+}
+
+void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
+{
+	currentscript = std::string (scriptbuf);
+	if (killScripts)
+	{
+		connection->queCommand (new Rts2CommandKillAll (connection->getMaster ()));
+	}
+
+	connection->postEvent (new Rts2Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
+	connection->postEvent (new Rts2Event (EVENT_OBSERVE));
+
 }
 
 void XmlDevCameraClient::setNextExpand (const char *fe)

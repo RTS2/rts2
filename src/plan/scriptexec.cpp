@@ -18,7 +18,7 @@
  */
 
 #include "scriptexec.h"
-#include "../../lib/rts2script/rts2execcli.h"
+#include "../../lib/rts2script/execcli.h"
 #include "rts2devcliphot.h"
 
 #include "rts2config.h"
@@ -32,10 +32,15 @@ using namespace rts2image;
 
 // ScriptExec class
 
-class ClientCameraScript:public Rts2DevClientCameraExec
+/**
+ * Print on standard output image name when image has beed created.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ClientCameraScript:public DevClientCameraExec
 {
 	public:
-		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath):Rts2DevClientCameraExec (conn, _expandPath) {};
+		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath):DevClientCameraExec (conn, _expandPath) {};
 		virtual imageProceRes processImage (Image * image);
 };
 
@@ -44,7 +49,7 @@ imageProceRes ClientCameraScript::processImage (Image * image)
 	image->saveImage ();
 	std::cout << image->getFileName () << std::endl;
 
-	return Rts2DevClientCameraExec::processImage (image);
+	return DevClientCameraExec::processImage (image);
 }
 
 int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
@@ -52,13 +57,12 @@ int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 	// take script from stdin
 	if (deviceName)
 	{
-		scripts.push_back (new Rts2ScriptForDeviceStream (std::string (deviceName), &std::cin));
+		scripts.push_back (new rts2script::ScriptForDeviceStream (std::string (deviceName), &std::cin));
 		deviceName = NULL;
 	}
-	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
-		iter != scripts.end (); iter++)
+	for (std::vector < rts2script::ScriptForDevice * >::iterator iter = scripts.begin (); iter != scripts.end (); iter++)
 	{
-		Rts2ScriptForDevice *ds = *iter;
+		rts2script::ScriptForDevice *ds = *iter;
 		if (ds->isDevice (in_deviceName))
 		{
 			if (!nextRunningQ)
@@ -107,7 +111,7 @@ int ScriptExec::processOption (int in_opt)
 			}
 			else
 			{
-				scripts.push_back (new Rts2ScriptForDevice (std::string (deviceName), std::string (optarg)));
+				scripts.push_back (new rts2script::ScriptForDevice (std::string (deviceName), std::string (optarg)));
 				deviceName = NULL;
 			}
 			break;
@@ -118,7 +122,7 @@ int ScriptExec::processOption (int in_opt)
 				return -1;
 			}
 			is = new std::ifstream (optarg);
-			scripts.push_back (new Rts2ScriptForDeviceStream (std::string (deviceName), is));
+			scripts.push_back (new rts2script::ScriptForDeviceStream (std::string (deviceName), is));
 			deviceName = NULL;
 			break;
 		case 'e':
@@ -143,7 +147,7 @@ void ScriptExec::usage ()
 	  << "  " << "while true; do " << getAppName () << " -e /tmp/%n.fits -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; rm $x; done ; done" << std::endl;
 }
 
-ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()
+ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv), rts2script::ScriptInterface ()
 {
 	waitState = 0;
 	currentTarget = NULL;
@@ -170,12 +174,14 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_arg
 
 ScriptExec::~ScriptExec (void)
 {
-	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
+	for (std::vector < rts2script::ScriptForDevice * >::iterator iter = scripts.begin ();
 		iter != scripts.end (); iter++)
 	{
 		delete *iter;
 	}
 	scripts.clear ();
+
+	delete currentTarget;
 }
 
 int ScriptExec::init ()
@@ -211,11 +217,11 @@ int ScriptExec::init ()
 			std::cerr << "neither -d nor default_device configuration option was not provided" << std::endl;
 			return -1;
 		}
-		scripts.push_back (new Rts2ScriptForDevice (devName, std::string (defaultScript)));
+		scripts.push_back (new rts2script::ScriptForDevice (devName, std::string (defaultScript)));
 	}
 
 	// create current target
-	currentTarget = new Rts2TargetScr (this);
+	currentTarget = new rts2script::ScriptTarget (this);
 
 	return 0;
 }
@@ -231,7 +237,7 @@ rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
-			cli = new Rts2DevClientTelescopeExec (conn);
+			cli = new DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
 			cli = new ClientCameraScript (conn, expandPath);

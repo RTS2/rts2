@@ -1,3 +1,7 @@
+2011-12-15
+ * added runscript call
+ * cleaned rts2script library (moved more classes to rts2script namespace)
+
 2011-12-10
  * created rts2script library in lib directory (moved from src/plan)
 

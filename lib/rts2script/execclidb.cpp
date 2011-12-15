@@ -17,27 +17,29 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2execclidb.h"
+#include "execclidb.h"
 #include "../rts2fits/imagedb.h"
 
-Rts2DevClientCameraExecDb::Rts2DevClientCameraExecDb (Rts2Conn * in_connection):Rts2DevClientCameraExec (in_connection)
+using namespace rts2script;
+
+DevClientCameraExecDb::DevClientCameraExecDb (Rts2Conn * in_connection):DevClientCameraExec (in_connection)
 {
 }
 
 
-Rts2DevClientCameraExecDb::~Rts2DevClientCameraExecDb (void)
+DevClientCameraExecDb::~DevClientCameraExecDb (void)
 {
 
 }
 
-void Rts2DevClientCameraExecDb::exposureStarted ()
+void DevClientCameraExecDb::exposureStarted ()
 {
 	if (currentTarget)
 		currentTarget->startObservation ();
-	Rts2DevClientCameraExec::exposureStarted ();
+	DevClientCameraExec::exposureStarted ();
 }
 
-rts2image::Image * Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
+rts2image::Image * DevClientCameraExecDb::createImage (const struct timeval *expStart)
 {
 	imgCount++;
 	exposureScript = getScript ();
@@ -50,7 +52,7 @@ rts2image::Image * Rts2DevClientCameraExecDb::createImage (const struct timeval 
 	return NULL;
 }
 
-void Rts2DevClientCameraExecDb::beforeProcess (rts2image::Image * image)
+void DevClientCameraExecDb::beforeProcess (rts2image::Image * image)
 {
 	rts2image::Image *outimg = setImage (image, setValueImageType (image));
 	rts2image::img_type_t imageType = outimg->getImageType ();

@@ -156,7 +156,7 @@
 #define RTS2_VALUE_CHANGED            0x00000400
 
 /**
- * When set, writer will add to FITS header key with name <value_key>.CHANGED, That FITS key will be true,
+ * When set, writer will add to FITS header key with name {value_key}.CHANGED, That FITS key will be true,
  * if value changed during exposure. It will be false if value do not changed during exposure.
  * @ingroup RTS2Value
  */

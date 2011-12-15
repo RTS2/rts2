@@ -54,7 +54,9 @@
 #include "api.h"
 #include "images.h"
 #include "../../lib/rts2/connnotify.h"
-#include "../../lib/rts2fits/devcliimg.h"
+#include "../../lib/rts2script/execcli.h"
+#include "../../lib/rts2script/scriptinterface.h"
+#include "../../lib/rts2script/scripttarget.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 
@@ -82,7 +84,6 @@ class Directory;
 class XmlDevInterface
 {
 	public:
-		
 		void stateChanged (Rts2ServerState * state);
 
 		void valueChanged (rts2core::Value * value);
@@ -138,7 +139,7 @@ class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
+class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::ScriptInterface, XmlDevInterface
 {
 	public:
 		XmlDevCameraClient (Rts2Conn *conn);
@@ -172,18 +173,23 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 		const char * getDefaultFilename () { return fexpand.c_str (); }
 
 		/**
+		 * Return if there is running script on the device.
+		 */
+		bool isScriptRunning ();
+
+		/**
+		 * Execute script. If script is running, first kill it.
+		 */
+		void executeScript (const char *scriptbuf, bool killScripts = false);
+
+		/**
 		 * Set expansion for the next file. Throws error if there is an expansion
 		 * filled in, which was not yet used. This probably signal two consequtive
 		 * calls to this method, without camera going to EXPOSE state.
 		 */
 		void setNextExpand (const char *fe);
 
-		// values for script progress,..a
-
-		/**
-		 * Last image location.
-		 */
-		rts2core::ValueString *lastFilename;
+		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
 	protected:
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
@@ -206,6 +212,38 @@ class XmlDevCameraClient:public rts2image::DevClientCameraImage, XmlDevInterface
 
 		// expand path for next filename
 		std::string nexpand;
+
+		/**
+		 * Last image location.
+		 */
+		rts2core::ValueString *lastFilename;
+
+		/**
+		 * Call scriptends before new script is started.
+		 */
+		rts2core::ValueBool *callScriptEnds;
+
+		std::string currentscript;
+
+		rts2script::ScriptTarget currentTarget;
+
+		template < typename T > void createOrReplaceValue (T * &val, Rts2Conn *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
+		{
+			std::string vn = std::string (conn->getName ()) + suffix;
+			rts2core::Value *v = conn->getValue (vn.c_str ());
+
+			if (v)
+			{
+				if (v->getValueType () == expectedType)
+					val = (T *) v;
+				else
+					throw rts2core::Error (std::string ("cannot create ") + suffix + ", value already exists with different type");		
+			}
+			else
+			{
+				((rts2core::Daemon *) conn->getMaster ())->createValue (val, vn.c_str (), description, false);
+			}
+		}
 };
 
 /**

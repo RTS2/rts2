@@ -309,7 +309,7 @@ bool XmlRpcServerConnection::handleGet()
 
 	if (_getHeaderWritten != _get_response_header.length ())
 	{
-		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header.c_str (), _get_response_header.length (), &_getHeaderWritten))
+		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header.c_str (), _get_response_header.length (), &_getHeaderWritten) != 0 )
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
@@ -318,7 +318,7 @@ bool XmlRpcServerConnection::handleGet()
 	}
 	if (_getHeaderWritten == _get_response_header.length () && _getWritten != _get_response_length)
 	{
-		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten))
+		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten) != 0 )
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
@@ -353,7 +353,7 @@ bool XmlRpcServerConnection::writeResponse()
 	}
 
 	// Try to write the response
-	if ( ! XmlRpcSocket::nbWrite(this->getfd(), _response, &_bytesWritten))
+	if ( XmlRpcSocket::nbWrite(this->getfd(), _response, &_bytesWritten) != 0 )
 	{
 		XmlRpcUtil::error("XmlRpcServerConnection::writeResponse: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 		return false;

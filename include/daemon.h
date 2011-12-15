@@ -140,6 +140,8 @@ class Daemon:public rts2core::Block
 			int32_t valueFlags = 0,
 			int queCondition = 0)
 		{
+			if (getOwnValue (in_val_name))
+				throw rts2core::Error (std::string ("duplicate call to create value ") + in_val_name);
 			val = new T (in_val_name, in_description, writeToFits, valueFlags);
 			addValue (val, queCondition);
 		}

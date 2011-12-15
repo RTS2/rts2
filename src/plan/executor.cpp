@@ -22,8 +22,8 @@
 #include "../../lib/rts2db/rts2devicedb.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2script/executorque.h"
-#include "../../lib/rts2script/rts2execcli.h"
-#include "../../lib/rts2script/rts2execclidb.h"
+#include "../../lib/rts2script/execcli.h"
+#include "../../lib/rts2script/execclidb.h"
 #include "rts2devcliphot.h"
 
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
@@ -280,9 +280,9 @@ Rts2DevClient * Executor::createOtherType (Rts2Conn * conn, int other_device_typ
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
-			return new Rts2DevClientTelescopeExec (conn);
+			return new DevClientTelescopeExec (conn);
 		case DEVICE_TYPE_CCD:
-			return new Rts2DevClientCameraExecDb (conn);
+			return new DevClientCameraExecDb (conn);
 		case DEVICE_TYPE_FOCUS:
 			return new rts2image::DevClientFocusImage (conn);
 		case DEVICE_TYPE_PHOT:

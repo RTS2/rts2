@@ -18,7 +18,7 @@
  */
 
 /**
- * @file FLI camera driver
+ * @file fli.cpp FLI camera driver
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *

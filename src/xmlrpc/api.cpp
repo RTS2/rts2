@@ -175,6 +175,22 @@ digraph "JSON API calls handling" {
  * @section JSON_device_set set
  *
  * Set variable on server.
+ *
+ * @section JSON_device_script runscript
+ *
+ * Run script on device.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/runscript?d=C0&s=E 20&kill=1
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Device must be CCD/Camera.
+ * - <b>s</b> Script. Please bear in mind that you should URI encode any special characters in the script. Please see <b>man rts2.script</b> for details.
+ * - <i><b>kill</b> If 1, current script will be killed. Default to 0, which means finish current action on device, and then start new script.</i>
+ *
+ * @subsection Return
  * 
  * @page JSON_sql JSON database API
  *
@@ -578,6 +594,19 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
+		}
+		else if (vals[0] == "runscript")
+		{
+			const char *d = params->getString ("d","");
+			conn = master->getOpenConnection (d);
+			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
+				throw JSONException ("cannot find camera with given name");
+			const char *script = params->getString ("s","");
+			bool kills = params->getInteger ("kill", 0);
+
+			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
+			camdev->executeScript (script, kills);
+			os << "\"d\":\"" << d << "\",\"s\":\"" << script << "\"";
 		}
 #ifdef HAVE_PGSQL
 		// returns target information specified by target name
