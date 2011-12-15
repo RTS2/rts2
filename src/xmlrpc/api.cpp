@@ -318,7 +318,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("cannot find camera with given name");
 		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
-		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
 		if (image == NULL || image->getChannelSize () <= 0)
 			throw JSONException ("camera did not take a single image");
 
@@ -592,7 +592,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("cannot find camera with given name");
 			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
-			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
 		}
 		else if (vals[0] == "runscript")

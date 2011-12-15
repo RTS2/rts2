@@ -146,7 +146,6 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		virtual ~XmlDevCameraClient ()
 		{
-			delete lastImage;
 		}
 
 		virtual void stateChanged (Rts2ServerState * state)
@@ -162,8 +161,6 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		}
 		
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
-
-		rts2image::Image *getLastImage () { return lastImage; }
 
 		/**
 		 * Return default image expansion subpath.
@@ -202,8 +199,6 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		virtual Rts2Conn *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
 
 	private:
-		rts2image::Image *lastImage;
-		
 		// path for storing XMLRPC produced images
 		std::string path;
 		

@@ -1,6 +1,6 @@
 /* 
  * Client which produces images.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2007,2011 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -57,12 +57,13 @@ class DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		virtual void stateChanged (Rts2ServerState * state);
  
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
-	protected:
 
 		/**
-		 * Returns image on top of the que.
+		 * Returns image on top of the image queue.
 		 */
 		Image *getActualImage () { return lastImage; }
+
+	protected:
 
 		/**
 		 * Called before processImage, as soon as data becomes available.

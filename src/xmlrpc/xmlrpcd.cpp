@@ -75,8 +75,6 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 
 XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), currentTarget (this)
 {
-	lastImage = NULL;
-
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
 
@@ -86,8 +84,6 @@ XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2script::DevClientCam
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
-	delete lastImage;
-
 	if (nexpand.length () == 0)
 		nexpand = fexpand;
 
@@ -95,13 +91,13 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 	// make nexpand available for next exposure
 	nexpand = std::string ("");
 
-	lastImage = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection);
+	rts2image::Image * ret = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection);
 
-	lastImage->keepImage ();
+	ret->keepImage ();
 
-	lastFilename->setValueCharArr (lastImage->getFileName ());
+	lastFilename->setValueCharArr (ret->getFileName ());
 	((rts2core::Daemon *) (connection->getMaster ()))->sendValueAll (lastFilename);
-	return lastImage;
+	return ret;
 }
 
 bool XmlDevCameraClient::isScriptRunning ()
