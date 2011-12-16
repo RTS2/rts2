@@ -65,7 +65,39 @@
 #define NIMC_IO_PORT7          0x07
 #define NIMC_IO_PORT8          0x08
 
-//Load Counts/Steps per Revolution constants
+// ADC Channles
+#define NIMC_ADC1              0x51
+#define NIMC_ADC2              0x52
+#define NIMC_ADC3              0x53
+#define NIMC_ADC4              0x54
+#define NIMC_ADC5              0x55
+#define NIMC_ADC6              0x56
+#define NIMC_ADC7              0x57
+#define NIMC_ADC8              0x58
+#define NIMC_ADC9              0x59
+#define NIMC_ADC10             0x5A
+#define NIMC_ADC11             0x5B
+#define NIMC_ADC12             0x5C
+#define NIMC_ADC13             0x5D
+#define NIMC_ADC14             0x5E
+#define NIMC_ADC15             0x5F
+#define NIMC_ADC16             0xF1
+#define NIMC_ADC17             0xF2
+#define NIMC_ADC18             0xF3
+#define NIMC_ADC19             0xF4
+#define NIMC_ADC20             0xF5
+#define NIMC_ADC21             0xF6
+#define NIMC_ADC22             0xF7
+#define NIMC_ADC23             0xF8
+#define NIMC_ADC24             0xF9
+#define NIMC_ADC25             0xFA
+#define NIMC_ADC26             0xFB
+#define NIMC_ADC27             0xFC
+#define NIMC_ADC28             0xFD
+#define NIMC_ADC29             0xFE
+#define NIMC_ADC30             0xFF
+
+// Load Counts/Steps per Revolution constants
 #define NIMC_COUNTS  0
 #define NIMC_STEPS   1
 
@@ -211,6 +243,21 @@ void flex_read_port_rtn (int8_t port, uint16_t *portData);
  * @param mustOff  bitmask of outputs which must turn off
  */
 void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff); 
+
+/**
+ * Read ADCs.
+ *
+ * @param ADC      ADC channel to read
+ * @param ADCvalue converged ADC value
+ */
+void flex_read_adc16_rtn (uint8_t ADC, int32_t *ADCValue);
+
+/**
+ * Enable/disable ADC inputs.
+ *
+ * @param ADCMap   bitmap of ADCs to enable.
+ */
+void flex_enable_adcs (uint16_t ADCMap);
 
 /**
  * @param path /proc entry to PCI device - see lspci for ID, you will then need something like /sys/bus/pci/devices/0000:01:01.0

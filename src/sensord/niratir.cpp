@@ -84,6 +84,8 @@ class NIRatir:public Sensor
 
 		rts2core::BoolArray *ports;
 
+		rts2core::IntegerArray *ADCs;
+
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
 };
@@ -112,9 +114,15 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	createValue (ax1enabled, "AX1_ENB", "1st axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	ax1enabled->setValueBool (true);
 
+
+	int i;
 	createValue (ports, "PORTS", "I/O ports status", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
-	for (int i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)
 		ports->addValue (false);
+
+	createValue (ADCs, "ADCs", "I/O ADC values", false);
+	for (i = 0; i < 8; i++)
+		ADCs->addValue (0);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -170,6 +178,9 @@ int NIRatir::initHardware ()
 	flex_load_acceleration (NIMC_AXIS1, NIMC_ACCELERATION, ax1acceleration->getValueLong (), 0xff);
 	flex_load_acceleration (NIMC_AXIS1, NIMC_DECELERATION, ax1deceleration->getValueLong (), 0xff);
 
+	// enable first 8 ADCs
+	flex_enable_adcs (0x00ff);
+
 	return 0;	
 }
 
@@ -183,12 +194,20 @@ int NIRatir::info ()
 	ax1velocity->setValueInteger (cp);
 
 	uint16_t portS;
+	int i;
 
 	flex_read_port_rtn (NIMC_IO_PORT1, &portS);
-	for (int i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++)
 	{
 		ports->setValueBool (i, portS & 0x01);
 		portS = portS >> 1;
+	}
+
+	for (i = 0; i < 8; i++)
+	{
+		int32_t v;
+		flex_read_adc16_rtn (NIMC_ADC1 + i, &v);
+		ADCs->setValueInteger (i, v);
 	}
 
 	return Sensor::info ();

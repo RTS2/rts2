@@ -369,6 +369,20 @@ void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff)
 	checkStatus ();
 }
 
+void flex_read_adc16_rtn (uint8_t ADC, int32_t *ADCValue)
+{
+	writePacket (ADC, 480, 0, NULL);
+	int16_t c;
+	readPacket (&c, 2, (uint16_t *) ADCValue);
+	btol32 (ADCValue);
+}
+
+void flex_enable_adcs (uint16_t ADCMap)
+{
+	writePacket (0, 321, 1, &ADCMap);
+	checkStatus ();
+}
+
 int initMotion (const char *path)
 {
 	int16_t c, r;
