@@ -182,13 +182,15 @@ digraph "JSON API calls handling" {
  *
  * @subsection Example
  *
- * http://localhost:8889/api/runscript?d=C0&s=E 20&kill=1
+ * http://localhost:8889/api/runscript?d=C0&s=E 20&kill=1&fe=%N_%05u.fits
  *
  * @subsection Parameters
  *
- * - <b>d</b> Device name. Device must be CCD/Camera.
- * - <b>s</b> Script. Please bear in mind that you should URI encode any special characters in the script. Please see <b>man rts2.script</b> for details.
- * - <i><b>kill</b> If 1, current script will be killed. Default to 0, which means finish current action on device, and then start new script.</i>
+ *  - <b>d</b> Device name. Device must be CCD/Camera.
+ *  - <b>s</b> Script. Please bear in mind that you should URI encode any special characters in the script. Please see <b>man rts2.script</b> for details.
+ *  - <i><b>kill</b> If 1, current script will be killed. Default to 0, which means finish current action on device, and then start new script.</i>
+ *  - <i><b>fe</b>  File expansion string. Can include expansion characters. Default to filename expansion string provided in rts2.ini configuration file.
+          Please See man rts2.ini and man rts2 for details about configuration (xmlrpcd/images_name) and expansion characters.</i>
  *
  * @subsection Return
  * 
@@ -605,6 +607,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			bool kills = params->getInteger ("kill", 0);
 
 			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
+
+			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()));
+
 			camdev->executeScript (script, kills);
 			os << "\"d\":\"" << d << "\",\"s\":\"" << script << "\"";
 		}
