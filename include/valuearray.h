@@ -208,6 +208,8 @@ class IntegerArray: public ValueArray
 		virtual void setFromValue (rts2core::Value *newValue);
 		virtual bool isEqual (rts2core::Value *other_val);
 
+		void setValueInteger (int i, int v) { value[i] = v; }
+
 		void setValueArray (std::vector <int> _arr)
 		{
 			value = _arr;
