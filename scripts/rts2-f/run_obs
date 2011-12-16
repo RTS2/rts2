@@ -9,52 +9,47 @@ else
 	setenv last_tar_id -1
 endif
 
-# run focusing script, if last target was not focusing..
-if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 ) then
-	set tar_id=3
-	rts2-logcom "Run FWHM focus script. Abort with nabort."
-else
-	if ( ! (${?err_prinout}) ) set err_prinout=0
+if ( ! (${?err_prinout}) ) set err_prinout=0
 
+if ( -e $rts2abort ) then
+	rts2-logcom "Abort detected (when waiting for next tar_id)"
+	exit
+endif
+
+set tar_id=`$xmlrpc -G SEL.next_id`
+if ( $? != 0 ) then
+	if ( $err_prinout != 1 ) then
+		rts2-logcom "Selector/rts2-f is not running!!"
+		set err_prinout=1
+	endif
+	rts2-logcom "Restarting selector"
+	$RTS2/etc/init.d/rts2 start
+	sleep 5
+	set qfile=`ls -tr /home/observer/RTS2-F/QUEUES/autosave/*.ques|tail -n1`
+	rts2-logcom "Reloading queues from $qfile"
+	/home/petr/pyrts2/widgets/loadqueues.py $qfile
 	set tar_id=-1
-
+else
 	if ( $tar_id <= 0 ) then
-		if ( -e $rts2abort ) then
-			rts2-logcom "Abort detected (when waiting for next tar_id)"
-			exit
+		if ( $err_prinout != 2 ) then
+			rts2-logcom "Automatic selector is not enabled. I'll repeat test every 10 seconds."
+			echo "Please fill the queues if you believe that something should be observed, or allow automatic selection. Do not take any action if you believe that this is fine"
+			set err_prinout=2
 		endif
-
-		set tar_id=`$xmlrpc -G SEL.next_id`
-		if ( $? != 0 ) then
-			if ( $err_prinout != 1 ) then
-				rts2-logcom "Selector/rts2-f is not running!!"
-				set err_prinout=1
-			endif
-			rts2-logcom "Restarting selector"
-			$RTS2/etc/init.d/rts2 start
-			sleep 5
-			set qfile=`ls -tr /home/observer/RTS2-F/QUEUES/autosave/*.ques|tail -n1`
-			rts2-logcom "Reloading queues from $qfile"
-			/home/petr/pyrts2/widgets/loadqueues.py $qfile
-			set tar_id=-1
-		else
-			if ( $tar_id <= 0 ) then
-				if ( $err_prinout != 2 ) then
-					rts2-logcom "Automatic selector is not enabled. I'll repeat test every 10 seconds."
-					echo "Please fill the queues if you believe that something should be observed, or allow automatic selection. Do not take any action if you believe that this is fine"
-					set err_prinout=2
-				endif
-			else
-				set err_prinout=0
-			endif
-		endif
-
-		if ( $tar_id <= 0 ) then
-			sleep 10
-			$xmlrpc -c SEL.next
-		endif	
+	else
+		set err_prinout=0
 	endif
 endif
+
+# run focusing script, if last target was not focusing..
+if ( $rts2_focusing_succ == 0 && $last_tar_id != 3 && $last_tar_id != $tar_id ) then
+	set tar_id=3
+	rts2-logcom "Run FWHM focus script. Abort with nabort."
+endif
+
+if ( $tar_id <= 0 ) then
+	sleep 10
+endif	
 
 $xmlrpc -c SEL.next
 
