@@ -1,0 +1,14 @@
+#!/usr/bin/tcsh
+# rtshell script to zero defocus
+#  P. Kubanek  12/10/11
+# Outline:
+#  check for defoc_current, if != 0, apply its opossite
+
+if ( ${?defoc_current} ) then
+    if ( $defoc_current != 0 ) then
+       set diff_f=`echo $defoc_current | awk '{printf "%+0f",-$1;}'`
+       tele hfocus  $diff_f
+       rts2-logcom "Nulled focusing offset $defoc_current before starting focusing"
+       set defoc_current=0 
+    endif
+endif
