@@ -753,7 +753,7 @@ int Camera::initValues ()
 		{
 			rts2core::ValueSelection *filvals;
 			rts2core::DoubleArray *offsetsval;
-			createValue (filvals, (std::string ("filter") + fil).c_str (), "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+			createValue (filvals, (std::string ("FILT") + fil).c_str (), "used filter number", (wheelDevices.size () == 1) ? false : true, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 			createValue (offsetsval, (std::string ("filter_offsets_") + fil).c_str (), "filter offsets", false, RTS2_VALUE_WRITABLE);
 
 			camFilterVals.push_back (filvals);
