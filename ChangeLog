@@ -1,3 +1,6 @@
+2011-12-16
+ * multiple filter wheel support
+
 2011-12-15
  * added runscript call
  * cleaned rts2script library (moved more classes to rts2script namespace)

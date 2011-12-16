@@ -262,8 +262,13 @@ class Camera:public rts2core::ScriptDevice
 		char* dataBuffer;
 		long dataBufferSize;
 
-		rts2core::ValueSelection *camFilterVal;
+
+		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;
+
+		// for multiple filter wheels
+		std::vector <rts2core::ValueSelection *> camFilterVals;
+		std::vector <rts2core::DoubleArray *> camFiltersOffsets;
 
 		/**
 		 * Return exected exposure end.
@@ -485,6 +490,8 @@ class Camera:public rts2core::ScriptDevice
 		 * @return 0 when option was processed sucessfully, otherwise -1.
 		 */
 		virtual int processOption (int in_opt);
+
+		virtual void usage ();
 
 		int willConnect (Rts2Address * in_addr);
 		char *device_file;
@@ -783,10 +790,10 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @param @new_filter   new filter number
 		 */
-		virtual int setFilterNum (int new_filter);
-		virtual int getFilterNum ();
+		virtual int setFilterNum (int new_filter, const char *fn = NULL);
+		virtual int getFilterNum (const char *fn = NULL);
 
-		void offsetForFilter (int new_filter);
+		void offsetForFilter (int new_filter, int fn = -1);
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
@@ -815,7 +822,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueInteger *binningY;
 
 		char *focuserDevice;
-		char *wheelDevice;
+		std::vector < const char * > wheelDevices;
 
 		int lastFilterNum;
 

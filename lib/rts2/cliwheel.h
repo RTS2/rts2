@@ -31,7 +31,7 @@ namespace rts2camd
 
 struct filterStart
 {
-	char *filterName;
+	const char *filterName;
 	int filter;
 	void *arg;
 };

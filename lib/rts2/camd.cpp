@@ -254,9 +254,9 @@ void Camera::startImageData (Rts2Conn * conn)
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	int w, h;
-	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
-	h = chipUsedReadout->getHeightInt () / binningVertical ();
+	//int w, h;
+	// w = chipUsedReadout->getWidthInt () / binningHorizontal ();
+	// h = chipUsedReadout->getHeightInt () / binningVertical ();
 	focusingHeader->data_type = htons (getDataType ());
 	focusingHeader->naxes = htons (2);
 	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
@@ -381,16 +381,12 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);
 
-	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
-	createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
-
 	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
 	rotang->setValueDouble (0);
 
 	focuserDevice = NULL;
-	wheelDevice = NULL;
 
 	dataBuffer = NULL;
 	dataBufferSize = -1;
@@ -430,11 +426,15 @@ Camera::~Camera ()
 
 int Camera::willConnect (Rts2Address * in_addr)
 {
-	if (wheelDevice && in_addr->getType () == DEVICE_TYPE_FW
-		&& in_addr->isAddress (wheelDevice))
-		return 1;
-	if (focuserDevice && in_addr->getType () == DEVICE_TYPE_FOCUS
-		&& in_addr->isAddress (focuserDevice))
+	if (in_addr->getType () == DEVICE_TYPE_FW)
+	{
+		for (std::vector <const char *>::iterator iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++)
+		{
+			if (in_addr->isAddress (*iter))
+				return 1;
+		}
+	}
+	if (focuserDevice && in_addr->getType () == DEVICE_TYPE_FOCUS && in_addr->isAddress (focuserDevice))
 		return 1;
 	return rts2core::ScriptDevice::willConnect (in_addr);
 }
@@ -542,6 +542,13 @@ int Camera::scriptEnds ()
 int Camera::info ()
 {
 	camFilterVal->setValueInteger (getFilterNum ());
+
+	std::vector <rts2core::ValueSelection *>::iterator viter;
+	std::vector <const char *>::iterator niter;
+	for (viter = camFilterVals.begin (), niter = wheelDevices.begin (); viter != camFilterVals.end (); viter++, niter++)
+	{
+		(*viter)->setValueInteger (getFilterNum (*niter));
+	}
 	camFocVal->setValueInteger (getFocPos ());
 	return rts2core::ScriptDevice::info ();
 }
@@ -554,7 +561,7 @@ int Camera::processOption (int in_opt)
 			focuserDevice = optarg;
 			break;
 		case OPT_WHEEL:
-			wheelDevice = optarg;
+			wheelDevices.push_back (optarg);
 			break;
 		case OPT_FILTER_OFFSETS:
 			setFilterOffsets (optarg);
@@ -585,6 +592,12 @@ int Camera::processOption (int in_opt)
 			return rts2core::ScriptDevice::processOption (in_opt);
 	}
 	return 0;
+}
+
+void Camera::usage ()
+{
+	std::cout << "To sepcify multiple filter wheels, add multiple --wheeldev options." << std::endl
+		<< "  " << getAppName () << " --wheldev W0 --wheeldev W1" << std::endl;
 }
 
 int Camera::initChips ()
@@ -721,9 +734,31 @@ int Camera::initValues ()
 		addConstValue ("focuser", focuserDevice);
 	}
 
-	if (wheelDevice)
+	if (wheelDevices.size () > 0)
 	{
-		addConstValue ("wheel", wheelDevice);
+		addConstValue ("wheel", wheelDevices.front ());
+
+		char fil = 'A';
+		std::vector <const char *>::iterator iter;
+		for (iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, fil++)
+		{
+			addConstValue ((std::string ("wheel") + fil).c_str (), *iter);
+		}
+
+		createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+		createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
+
+		fil = 'A';
+		for (iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, fil++)
+		{
+			rts2core::ValueSelection *filvals;
+			rts2core::DoubleArray *offsetsval;
+			createValue (filvals, (std::string ("filter") + fil).c_str (), "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+			createValue (offsetsval, (std::string ("filter_offsets_") + fil).c_str (), "filter offsets", false, RTS2_VALUE_WRITABLE);
+
+			camFilterVals.push_back (filvals);
+			camFiltersOffsets.push_back (offsetsval);
+		}
 	}
 
 	addConstValue ("CCD_TYPE", "camera type", ccdRealType);
@@ -856,6 +891,16 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		if (ret == 0)
 			offsetForFilter (new_value->getValueInteger ());
 	}
+	int i = 0;
+	for (std::vector <rts2core::ValueSelection *>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++, i++)
+	{
+		if (*iter == old_value)
+		{
+			int ret = setFilterNum (new_value->getValueInteger (), wheelDevices[i]) == 0 ? 0 : -2;
+			if (ret == 0)
+				offsetForFilter (new_value->getValueInteger (), i);
+		}
+	}
 	if (old_value == tempSet)
 	{
 		return setCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
@@ -902,16 +947,30 @@ void Camera::addTempCCDHistory (float temp)
 void Camera::deviceReady (Rts2Conn * conn)
 {
 	// if that's filter wheel
-	if (wheelDevice && !strcmp (conn->getName (), wheelDevice) && conn->getOtherDevClient ())
+	if (wheelDevices.size () > 0 && conn->getOtherDevClient ())
 	{
-		// copy content of device filter variable to our list..
-		rts2core::Value *val = conn->getValue ("filter");
-		// it's filter and it's correct type
-		if (val != NULL && val->getValueType () == RTS2_VALUE_SELECTION)
+		// find filter wheel for which device connected..
+		int i = 0;
+		for (std::vector <const char *>::iterator iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, i++)
 		{
-			camFilterVal->duplicateSelVals ((rts2core::ValueSelection *) val);
-			// sends filter metainformations to all connected devices
-			updateMetaInformations (camFilterVal);
+			if (!strcmp (conn->getName (), *iter))
+			{
+				// copy content of device filter variable to our list..
+				rts2core::Value *val = conn->getValue ("filter");
+				// it's filter and it's correct type
+				if (val != NULL && val->getValueType () == RTS2_VALUE_SELECTION)
+				{
+					camFilterVals[i]->duplicateSelVals ((rts2core::ValueSelection *) val);
+					// sends filter metainformations to all connected devices
+					updateMetaInformations (camFilterVals[i]);
+					if (iter == wheelDevices.begin ())
+					{
+						camFilterVal->duplicateSelVals ((rts2core::ValueSelection *) val);
+						// sends filter metainformations to all connected devices
+						updateMetaInformations (camFilterVal);
+					}
+				}
+			}
 		}
 	}
 }
@@ -1200,13 +1259,17 @@ int Camera::camReadout (Rts2Conn * conn)
 	return -1;
 }
 
-int Camera::setFilterNum (int new_filter)
+int Camera::setFilterNum (int new_filter, const char *fn)
 {
 	int ret = -1;
-	if (wheelDevice)
+	if (wheelDevices.size () > 0)
 	{
 		struct filterStart fs;
-		fs.filterName = wheelDevice;
+		if (fn == NULL)
+			fs.filterName = wheelDevices[0];
+		else
+			fs.filterName = fn;
+
 		fs.filter = new_filter;
 		fs.arg = this;
 		postEvent (new Rts2Event (EVENT_FILTER_START_MOVE, (void *) &fs));
@@ -1225,15 +1288,24 @@ int Camera::setFilterNum (int new_filter)
 	return ret;
 }
 
-void Camera::offsetForFilter (int new_filter)
+void Camera::offsetForFilter (int new_filter, int fn)
 {
 	if (!focuserDevice)
 		return;
-	if ((size_t) new_filter >= camFilterOffsets->size ())
-		return;
 	struct focuserMove fm;
+	if (fn < 0)
+	{
+		if ((size_t) new_filter >= camFilterOffsets->size ())
+			return;
+		fm.value = (*camFilterOffsets)[new_filter];
+	}
+	else
+	{
+		if ((size_t) new_filter >= camFiltersOffsets[fn]->size ())
+			return;
+		fm.value = (*(camFiltersOffsets[fn]))[new_filter];
+	}
 	fm.focuserName = focuserDevice;
-	fm.value = (*camFilterOffsets)[new_filter];
 	fm.conn = this;
 	postEvent (new Rts2Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
 	if (fm.focuserName)
@@ -1257,12 +1329,15 @@ void Camera::setExposureMinMax (double exp_min, double exp_max)
 	updateMetaInformations (exposure);
 }
 
-int Camera::getFilterNum ()
+int Camera::getFilterNum (const char *fn)
 {
-	if (wheelDevice)
+	if (wheelDevices.size () > 0)
 	{
 		struct filterStart fs;
-		fs.filterName = wheelDevice;
+		if (fn == NULL)
+			fs.filterName = wheelDevices[0];
+		else
+			fs.filterName = fn;
 		fs.filter = -1;
 		postEvent (new Rts2Event (EVENT_FILTER_GET, (void *) &fs));
 		return fs.filter;
