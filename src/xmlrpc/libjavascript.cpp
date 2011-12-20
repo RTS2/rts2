@@ -690,6 +690,18 @@ const char *targetEdit =
   "hr.send(null);\n"
 "}\n"
 
+"function changeScript (id, cam, scr, func){\n"
+  "var hr = new XMLHttpRequest();\n"
+  "hr.open('GET',encodeURI('../api/change_script?id=' + id + '&c=' + cam + '&s=' + scr), true);\n"
+  "hr.func = func;\n"
+  "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.id);\n"
+  "}\n"
+  "hr.send(null);\n"
+"}\n"
+
 ;
 
 const char *rts2Central = 
@@ -722,14 +734,38 @@ const char *rts2Central =
   "hr.send(null);\n"
 "}\n"
 
+"function getState(device,func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/status?d=' + device, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.state & 0xff);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
+
 "function getMessages(from,to,type,func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/messages?from=' + from+'&to=' + to +'&type=' + type, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t.d);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
+
+"function centraldGetAll(func){\n"
   "var hr = new XMLHttpRequest();\n"
-  "hr.open('GET','../api/messages?from=' + from+'&to=' + to +'&type=' + type, true);\n"
+  "hr.open('GET','../api/status?d=centrald', true);\n"
   "hr.func = func;\n"
   "hr.onreadystatechange = function(){\n"
-     "if (this.readyState != 4 || this.status != 200) { return; }\n"
-     "var t = JSON.parse(this.responseText);\n"
-     "this.func(t.d);\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
   "}\n"
   "hr.send(null);\n"
 "}\n"
@@ -956,11 +992,13 @@ const char *setGetApi =
 "}\n"
 
 
-"function setCallRaDec (device, variable, ra, dec){\n"
+"function setCallRaDec (device, variable, ra, dec, func){\n"
   "var hr = new XMLHttpRequest();\n"
   "hr.open('GET','../api/set?d=' + device + '&n=' + variable + '&v=' + ra + ' ' + dec,true);\n"
+  "hr.func = func;\n"
   "hr.onreadystatechange = function(){\n"
     "if (hr.readyState != 4 || hr.status != 200) { return; }\n"
+  "this.func(hr.status);\n"
   "}\n"
   "hr.send(null);\n"
 "}\n"
@@ -1032,7 +1070,8 @@ const char *setGetApi =
     "}\n"  
   "}\n"
   "hr.send(null);\n"
-"}\n";
+"}\n"
+;
 
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
