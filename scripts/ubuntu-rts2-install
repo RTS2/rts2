@@ -1,0 +1,187 @@
+#!/bin/bash
+cat <<EOF
+This script will configure Ubuntu 11.04 to run RTS2
+
+It is primary intended for demonstration of RTS2 capabilities
+for workshop about observing with the 1.5m class telescope
+at AOB.
+
+Please provide password for sudo if you will be asked for it. You
+can review the script before running it from its source code.
+
+(C) 2011 Petr Kubanek, Institute of Physics, Prague <kubanek@fzu.cz>
+EOF
+
+cpuarch=`uname -m`
+eval `cat /etc/lsb-release`
+
+case $cpuarch in
+	x86_64)
+		echo '64 bit Linux detected'
+		;;
+	i?86)
+		echo '32 bit Linux detected'
+		;;
+	*)
+		echo "Unknow hardware: $cpuarch. Please check the script for details"
+		cpuarch=""
+		;;
+esac
+
+if [ x$cpuarch != x ]; then
+
+echo "Adding extra repositories"
+
+case $DISTRIB_CODENAME in
+	natty)
+		extra_p=postgresql-server-dev-8.4
+		;;
+	oneiric)
+		extra_p=postgresql-server-dev-9.1
+		;;
+	*)
+		extra_p=postgresql-server-dev-8.3
+		;;
+esac		
+
+sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME restricted multiverse universe"
+sudo apt-get -y update
+
+echo "Installing required debian packages"
+
+sudo apt-get -y install subversion postgresql $extra_p libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-pyfits python-matplotlib gdb valgrind libxt-dev
+
+echo "Downloading DS9"
+
+case $cpuarch in
+	'x86_64')
+		wget -O /tmp/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux64/ds9.linux64.6.2.tar.gz
+		;;
+	*)
+		wget -O /tmp/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux/ds9.linux.6.2.tar.gz
+		;;
+esac
+
+echo "Installing DS9"
+cd /tmp
+tar xzf /tmp/ds9.tar.gz
+sudo cp /tmp/ds9 /usr/bin
+
+echo "Retrievening, configuring, compiling and installing pyds9"
+wget -O /tmp/pyds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/python/pyds9-1.3.tar.gz
+tar xzf /tmp/pyds9.tar.gz
+cd pyds9-1.3
+sudo python ./setup.py install
+
+echo "Installing XPA library"
+cd xpa-*
+sudo make install
+
+cd /tmp
+echo "Retrieving, configuring, compiling and installing sextractor"
+wget -O /tmp/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
+tar xzf /tmp/sextractor.tar.gz
+cd sextractor-*
+./configure --disable-threads --prefix=/usr
+make
+sudo make install
+
+cd ~
+
+echo "Granting root access to postgresql database"
+sudo sudo -u postgres createuser -s root
+
+echo "Creating local user"
+sudo sudo -u postgres createuser -SDR $USER
+
+echo "Source files will be downloaded and configured in `pwd`."
+
+if [ -d rts2 ]; then
+	echo "Updating RTS2 source code"
+	cd rts2
+	svn up
+	cd ..
+else
+	if [ -f rts2 ]; then
+		echo "Please remove rts2 file and rerun!"
+	else
+		echo "Retrieving RTS2 source code"
+		svn co https://rts-2.svn.sourceforge.net/svnroot/rts-2/trunk/rts-2 rts2
+	fi
+fi
+
+if [ -d pyrts2 ]; then
+	echo "Updating pyrts2 source code"
+	cd pyrts2
+	svn up
+	cd ..
+else
+	if [ -f pyrts2 ]; then
+		echo "Please remove pyrts2 file and rerun!"
+	else
+		echo "Retrieving PyRTS2 source code"
+		svn co https://rts-2.svn.sourceforge.net/svnroot/rts-2/trunk/pyrts2 pyrts2
+	fi
+fi
+
+echo "Compiling RTS2"
+
+cd rts2
+./autogen.sh
+./configure --without-wcs
+make
+sudo make install
+
+if grep "/usr/local/lib" /etc/ld.so.conf >/dev/null; then
+	echo "/usr/local/lib is present in /etc/ld.so.conf"
+else
+	echo "Adding /usr/local/lib to ld.so.conf"
+	sudo echo -e "\n/usr/local/lib" >> /etc/ld.so.conf
+	sudo ldconfig
+fi
+
+echo "Configuring RTS2"
+sudo ./rts2-init
+
+echo "Creating proper rts2.ini configuration file"
+
+cat conf/rts2.ini | sed -e "s/altitude = xxxx/altitude = 600/" -e "s/longitude = xxxx/longitude = 15/" -e "s/latitude = xxxx/latitude = 50/" > /tmp/rts2.ini
+
+sudo cp /tmp/rts2.ini /etc/rts2/rts2.ini
+
+echo "Creating postgresql database"
+
+sudo createdb stars
+sudo psql stars <<EOF
+alter group observers add user $USER;
+EOF
+
+echo "Building postgresql database"
+cd src/sql/
+sudo ./rts2-builddb stars
+
+echo "Adding rts2test user"
+rts2-user -a rts2test --password 1234
+
+echo "Adding T0 telescope"
+./rts2-configdb -t T0
+
+echo "Adding C0 camera"
+./rts2-configdb -c C0
+
+echo "Adding W0 filter wheel"
+./rts2-configdb -f W0
+
+cd ~
+
+echo "Starting RTS2"
+
+sudo /etc/init.d/rts2 start
+
+echo "Running queues API. Use localhost:8889 as URI, rts2test as user and 1234 as password."
+./pyrts2/widgets/queues.py
+
+echo "Running rts2-mon. Please exit it with ctrl+c"
+rts2-mon
+
+fi
