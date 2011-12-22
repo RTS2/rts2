@@ -1961,7 +1961,7 @@ const char * Rts2Conn::getValueSelection (const char *value_name, int val_num)
 {
 	rts2core::Value *val;
 	val = getValue (value_name);
-	if (val->getValueType () != RTS2_VALUE_SELECTION)
+	if (val == NULL || val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
 	return ((rts2core::ValueSelection *) val)->getSelName (val_num);
 }
