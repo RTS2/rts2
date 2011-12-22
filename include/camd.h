@@ -691,6 +691,15 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
+		 * Create filter variable.
+		 */
+		void createFilter ()
+		{
+			if (camFilterVal == NULL)
+				createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+		}
+
+		/**
 		 * Add enumeration to shutter variable.
 		 *
 		 * @param enumName  Value which will be used for enumeration.

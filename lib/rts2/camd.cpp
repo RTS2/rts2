@@ -386,6 +386,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
 	rotang->setValueDouble (0);
 
+        camFilterVal = NULL;
 	focuserDevice = NULL;
 
 	dataBuffer = NULL;
@@ -541,7 +542,8 @@ int Camera::scriptEnds ()
 
 int Camera::info ()
 {
-	camFilterVal->setValueInteger (getFilterNum ());
+        if (camFilterVal)
+        	camFilterVal->setValueInteger (getFilterNum ());
 
 	std::vector <rts2core::ValueSelection *>::iterator viter;
 	std::vector <const char *>::iterator niter;
@@ -745,7 +747,7 @@ int Camera::initValues ()
 			addConstValue ((std::string ("wheel") + fil).c_str (), *iter);
 		}
 
-		createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+                createFilter ();
 		createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 
 		fil = 'A';

@@ -109,6 +109,7 @@ using namespace rts2camd;
 MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 {
 	createExpType ();
+	createFilter ();
 	createTempAir ();
 	createTempCCD ();
 	createTempSet ();
