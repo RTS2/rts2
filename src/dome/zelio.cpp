@@ -803,7 +803,7 @@ void Zelio::createZelioValues ()
 			createValue (blockOpenLeft, "block_open_left", "left open block", false);
 			createValue (blockCloseLeft, "block_close_left", "left close block", false);
 			createValue (blockOpenRight, "block_open_right", "right open block", false);
-			createValue (blockCloseRight, "block_close_left", "left close block", false);
+			createValue (blockCloseRight, "block_close_right", "right close block", false);
 
 			break;
 		case ZELIO_UNKNOW:
