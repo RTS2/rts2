@@ -768,6 +768,7 @@ AM_CONDITIONAL(SUNCYG, test x${target_os} = xcygwin -o x${target_os} = xsolaris2
 
 AC_OUTPUT([Makefile
 	   man/Makefile
+	   man/rts2.ent
 	   include/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile

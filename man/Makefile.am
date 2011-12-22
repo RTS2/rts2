@@ -2,6 +2,7 @@
 
 EXTRA_DIST = \
     rts2.ent \
+    rts2.ent.in \
     rts2.xml \
     rts2.ini.xml \
     rts2-device.xml \

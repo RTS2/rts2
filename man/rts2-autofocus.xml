@@ -9,15 +9,15 @@
   <!ENTITY dhusername  "Markus Wildi">
   <!ENTITY dhpackage   "rts2-autofocus">
 
-  <!ENTITY gnu         "<acronym>GNU</acronym>">
-  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
 ]>
 
 <refentry>
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.8.0</productnumber>
+    <productnumber>&rts2version;</productnumber>
     &dhdate;
     <authorgroup>
       <author>
