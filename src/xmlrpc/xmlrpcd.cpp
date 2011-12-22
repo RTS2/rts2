@@ -128,9 +128,9 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 
 }
 
-void XmlDevCameraClient::setNextExpand (const char *fe)
+void XmlDevCameraClient::setNextExpand (const char *fe, bool ignoreUnused)
 {
-	if (nexpand.length () != 0)
+	if (nexpand.length () != 0 && ignoreUnused == false)
 		throw rts2core::Error ("Cannot set file expansion, when the previous was not yet used.");
 	nexpand = std::string (fe);
 }

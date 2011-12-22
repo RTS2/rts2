@@ -183,8 +183,11 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 * Set expansion for the next file. Throws error if there is an expansion
 		 * filled in, which was not yet used. This probably signal two consequtive
 		 * calls to this method, without camera going to EXPOSE state.
+		 *
+		 * @param fe              next filename expand string
+		 * @param ignoreUnused    if true, will not throw error if nexpand is not null
 		 */
-		void setNextExpand (const char *fe);
+		void setNextExpand (const char *fe, bool ignoreUnused);
 
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 

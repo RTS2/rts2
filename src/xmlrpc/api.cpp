@@ -578,7 +578,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
 
 			// this will throw exception if expand string was not yet used
-			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()));
+			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()), false);
 
 			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
@@ -593,7 +593,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
 			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
-
 			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
 		}
@@ -608,7 +607,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
 
-			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()));
+			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()), true);
 
 			camdev->executeScript (script, kills);
 			os << "\"d\":\"" << d << "\",\"s\":\"" << script << "\"";
