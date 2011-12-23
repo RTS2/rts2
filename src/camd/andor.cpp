@@ -1076,6 +1076,10 @@ int Andor::initHardware ()
 	unsigned long err;
 	int ret;
 
+	ret = rts2core::Device::doDaemonize ();
+	if (ret)
+		exit (ret);
+
 	err = Initialize (andorRoot);
 	if (err != DRV_SUCCESS)
 	{
