@@ -387,6 +387,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	rotang->setValueDouble (0);
 
         camFilterVal = NULL;
+	camFilterOffsets = NULL;
 	focuserDevice = NULL;
 
 	dataBuffer = NULL;
@@ -1344,6 +1345,10 @@ int Camera::getFilterNum (const char *fn)
 		fs.filter = -1;
 		postEvent (new Rts2Event (EVENT_FILTER_GET, (void *) &fs));
 		return fs.filter;
+	}
+	else if (camFilterVal != NULL)
+	{
+		return getCamFilterNum ();
 	}
 	return 0;
 }

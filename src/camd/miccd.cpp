@@ -69,7 +69,6 @@ class MICCD:public Camera
 		virtual void afterNight ();
 
 		virtual int setFilterNum (int new_filter, const char *fn = NULL);
-		virtual int getFilterNum () { return getCamFilterNum (); }
 
 		virtual int startExposure ();
 		virtual int endExposure ();

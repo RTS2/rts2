@@ -72,7 +72,6 @@ class Urvc2:public Camera
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 		virtual int setFilterNum (int new_filter, const char *fn = NULL);
-		virtual int getFilterNum ();
 
 	private:
 		EEPROMContents eePtr;	 // global to prevent multiple EEPROM calls
@@ -119,11 +118,6 @@ int Urvc2::setFilterNum (int new_filter, const char *fn)
 	if (MicroCommand (MC_PULSE, getCameraID (), &pop, NULL))
 		return -1;
 	return 0;
-}
-
-int Urvc2::getFilterNum ()
-{
-	return getCamFilterNum ();
 }
 
 void Urvc2::get_eeprom ()
