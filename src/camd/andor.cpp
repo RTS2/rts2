@@ -72,7 +72,7 @@ class Andor:public Camera
 		virtual ~Andor (void);
 
 		virtual int initChips ();
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual bool supportFrameTransfer ();
 
@@ -1071,17 +1071,10 @@ int Andor::initChips ()
 	return 0;
 }
 
-int Andor::init ()
+int Andor::initHardware ()
 {
 	unsigned long err;
 	int ret;
-
-	if ((ret = Camera::init ()) != 0)
-		return ret;
-
-	ret = doDaemonize ();
-	if (ret)
-		exit (ret);
 
 	err = Initialize (andorRoot);
 	if (err != DRV_SUCCESS)
