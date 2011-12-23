@@ -748,7 +748,6 @@ int Camera::initValues ()
 		}
 
                 createFilter ();
-		createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 
 		fil = 'A';
 		for (iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, fil++)
