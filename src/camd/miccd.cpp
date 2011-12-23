@@ -68,7 +68,7 @@ class MICCD:public Camera
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 
-		virtual int setFilterNum (int new_filter);
+		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 		virtual int getFilterNum () { return getCamFilterNum (); }
 
 		virtual int startExposure ();
@@ -329,8 +329,10 @@ void MICCD::afterNight ()
 	setCoolTemp (+50);
 }
 
-int MICCD::setFilterNum (int new_filter)
+int MICCD::setFilterNum (int new_filter, const char *fn)
 {
+	if (fn != NULL)
+		return Camera::setFilterNum (new_filter, fn);
 	int ret = miccd_filter (&camera, new_filter) ? -1 : 0;
 	checkQueuedExposures ();
 	return ret;

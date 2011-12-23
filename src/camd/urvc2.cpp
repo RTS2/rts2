@@ -71,7 +71,7 @@ class Urvc2:public Camera
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual int setFilterNum (int new_filter);
+		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 		virtual int getFilterNum ();
 
 	private:
@@ -101,8 +101,10 @@ class Urvc2:public Camera
 
 using namespace rts2camd;
 
-int Urvc2::setFilterNum (int new_filter)
+int Urvc2::setFilterNum (int new_filter, const char *fn)
 {
+	if (fn != NULL)
+		return Camera::setFilterNum (new_filter, fn);
 	PulseOutParams pop;
 
 	if (new_filter < 0 || new_filter > 4)
@@ -124,8 +126,7 @@ int Urvc2::getFilterNum ()
 	return getCamFilterNum ();
 }
 
-void
-Urvc2::get_eeprom ()
+void Urvc2::get_eeprom ()
 {
 	if (GetEEPROM (cameraID, &eePtr) != CE_NO_ERROR)
 	{
@@ -154,9 +155,7 @@ Urvc2::get_eeprom ()
 	}
 }
 
-
-void
-Urvc2::init_shutter ()
+void Urvc2::init_shutter ()
 {
 	MiscellaneousControlParams ctrl;
 	StatusResults sr;
@@ -191,9 +190,7 @@ int Urvc2::set_fan (bool fan_state)
 	return 0;
 }
 
-
-int
-Urvc2::setcool (int reg, int setpt, int prel)
+int Urvc2::setcool (int reg, int setpt, int prel)
 {
 	MicroTemperatureRegulationParams cool;
 
