@@ -891,6 +891,7 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
 		if (ret == 0)
 			offsetForFilter (new_value->getValueInteger ());
+		return ret;
 	}
 	int i = 0;
 	for (std::vector <rts2core::ValueSelection *>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++, i++)
@@ -900,6 +901,7 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			int ret = setFilterNum (new_value->getValueInteger (), wheelDevices[i]) == 0 ? 0 : -2;
 			if (ret == 0)
 				offsetForFilter (new_value->getValueInteger (), i);
+			return ret;
 		}
 	}
 	if (old_value == tempSet)
