@@ -48,7 +48,7 @@ noinst_HEADERS = rts2connnosend.h connfork.h rts2askchoice.h infoval.h \
 	conntcp.h connnotify.h connudp.h rts2centralstate.h rts2target.h \
 	rts2displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
 	radecparser.h connserial.h connmodbus.h domeford.h \
-	getopt_own.h connopentpl.h connepics.h connford.h counted_ptr.h expression.h \
+	connopentpl.h connepics.h connford.h counted_ptr.h expression.h \
 	gem.h fork.h tgdrive.h \
 	connbait.h clicupola.h cliwheel.h clifocuser.h
 
