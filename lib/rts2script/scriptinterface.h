@@ -20,6 +20,8 @@
 #ifndef __RTS2_SCRIPTINTERFACE__
 #define __RTS2_SCRIPTINTERFACE__
 
+#include "nan.h"
+
 #include <string>
 #include <iostream>
 #include <fstream>

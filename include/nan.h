@@ -35,6 +35,7 @@ extern "C"
 
 /* Not a Number function generator */
 double rts2_nan (const char *code);
+#define NAN          rts2_nan("f")
 
 #ifdef __cplusplus
 }
