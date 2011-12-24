@@ -697,6 +697,7 @@ class Camera:public rts2core::ScriptDevice
 		{
 			if (camFilterVal == NULL)
 				createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+			if (camFilterOffsets == NULL)
 				createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 		}
 

@@ -567,6 +567,7 @@ int Camera::processOption (int in_opt)
 			wheelDevices.push_back (optarg);
 			break;
 		case OPT_FILTER_OFFSETS:
+			createFilter ();
 			setFilterOffsets (optarg);
 			break;
 		case 'e':
