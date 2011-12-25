@@ -78,12 +78,14 @@ class Arc:public Camera
 
 		virtual int startExposure ();
 		virtual long isExposing ();
+		virtual int stopExposure ();
 		virtual int doReadout ();
 
 	private:
 		int w;
 		int h;
 
+		rts2core::ValueBool *power;
 		rts2core::ValueInteger *biasWidth;
 		rts2core::ValueInteger *biasPosition;
 
@@ -131,6 +133,8 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 
 	createExpType ();
 	createTempCCD ();
+
+	createValue (power, "power", "controller power", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 
 	createValue (biasWidth, "bias_width", "Width of bias", true, RTS2_VALUE_WRITABLE);
 	biasWidth->setValueInteger (0);
@@ -199,8 +203,8 @@ int Arc::killAll ()
 	{
 		try
 		{
-			controller.Command (arc::TIM_ID, 0x000202);
-			sleep (30);
+			controller.PCICommand (arc::ABORT_READOUT);
+			//controller.PCICommand (arc::PCI_RESET);
 		}
 		catch (std::exception ex)
 		{
@@ -331,11 +335,20 @@ int Arc::setBinning (int in_vert, int in_hori)
 int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
 #ifdef ARC_API_1_7
-
+	if (old_value == power)
+	{
+		doCommand (pci_f, TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF, DON);
+		return 0;
+	}
 #else
 	if (old_value == synthetic)
 	{
 		controller.SetSyntheticImageMode (((rts2core::ValueBool *) new_value)->getValueBool ());
+		return 0;
+	}
+	else if (old_value == power)
+	{
+		controller.Command (TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF);
 		return 0;
 	}
 #endif
@@ -482,6 +495,20 @@ long Arc::isExposing ()
 #endif
 }
 
+int Arc::stopExposure ()
+{
+#ifdef ARC_API_1_7
+	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
+		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
+#else
+	controller.Command (arc::TIM_ID, arc::PEX);
+	controller.PCICommand (arc::PCI_RESET);
+#endif
+	return camera::stopExposure ();
+}
+
+virtual int killAll ();
+
 int Arc::doReadout ()
 {
 #ifdef ARC_API_1_7
@@ -582,6 +609,7 @@ int Arc::do_controller_setup ()
 		logStream (MESSAGE_ERROR) << "Power on failed -> 0x" << std::hex << getError() << sendLog;
 		return -1;
 	}
+	power->setValueBool (true);
 
 	/* -----------------------------------
 	   SET DIMENSIONS
