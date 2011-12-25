@@ -212,7 +212,6 @@ int Arc::killAll ()
 	// readout must end..
 	while (controller.IsReadout ())
 	{
-		std::cout << "waiting for readout " << controller.GetPixelCount () << std::endl;
 		sleep (1);
                 //long lReply = controller.Command (arc::TIM_ID, 0x0202);
                 //controller.CheckReply (lReply);
@@ -440,13 +439,12 @@ int Arc::startExposure ()
 		long lReply;
 		if (chipUsedReadout->wasChanged ())
 		{
-			int x = chipUsedReadout->getXInt () + chipUsedReadout->getWidthInt () / 2;
-			int y = chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt () / 2;
+			int bw = chipUsedReadout->getWidthInt () / binningHorizontal ();
+			int bh = chipUsedReadout->getHeightInt () / binningVertical ();
+			int x = chipUsedReadout->getXInt () + bw / 2;
+			int y = chipUsedReadout->getYInt () + bh / 2;
 			int oRows, oCols;
-			std::cout << x << " " << y << " " << " " << chipUsedReadout->getWidthInt () << " " << chipUsedReadout->getHeightInt () << " " << getWidth () << " " << getHeight () << std::endl;
-			controller.SetSubArray (oRows, oCols, y, x, 
-				chipUsedReadout->getHeightInt (), chipUsedReadout->getWidthInt (), getWidth (), 0);
-			std::cout << "oRows " << oRows << " oCols " << oCols << std::endl;
+			controller.SetSubArray (oRows, oCols, y, x, bh, bw, getWidth (), 0);
 		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
@@ -503,6 +501,7 @@ int Arc::doReadout ()
 		return USEC_SEC / 1000.0;
 	if (controller.GetPixelCount () != chipUsedSize ())
 		return USEC_SEC / 1000.0;
+
 	arc::CDeinterlace deint;
 	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
 	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
