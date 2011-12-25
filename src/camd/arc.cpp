@@ -203,12 +203,14 @@ int Arc::killAll ()
 	{
 		try
 		{
-			controller.PCICommand (arc::ABORT_READOUT);
-			//controller.PCICommand (arc::PCI_RESET);
+			controller.PCICommand (ABORT_READOUT);
+			sleep (2);
+			controller.PCICommand (PCI_RESET);
+			maskState (CAM_MASK_READING, 0, "reading interrupted");
 		}
 		catch (std::exception ex)
 		{
-			logStream (MESSAGE_ERROR) << "kill with ex" << sendLog;
+			logStream (MESSAGE_ERROR) << "kill with ex" << ex.what () << sendLog;
 		}
 	}
 	// reset controller
@@ -348,7 +350,7 @@ int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	}
 	else if (old_value == power)
 	{
-		controller.Command (TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF);
+		controller.Command (arc::TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF);
 		return 0;
 	}
 #endif
@@ -485,12 +487,20 @@ long Arc::isExposing ()
 
 	return 0;
 #else
-	long lPixCnt = controller.GetPixelCount ();
-	if (!controller.IsReadout () && lPixCnt == 0)
+	try
 	{
-		long lReply = controller.Command (arc::TIM_ID, RET);
-		return USEC_SEC * (getExposure () - lReply / 1000.0);
-	} 
+		long lPixCnt = controller.GetPixelCount ();
+		if (!controller.IsReadout () && lPixCnt == 0)
+		{
+			long lReply = controller.Command (arc::TIM_ID, RET);
+			return USEC_SEC * (getExposure () - lReply / 1000.0);
+		}
+	}
+	catch (std::runtime_error &er)
+	{
+		logStream (MESSAGE_ERROR) << "error in isExposing " << er.what () << sendLog;
+		return -1;
+	}
 	return 0;
 #endif
 }
@@ -501,13 +511,11 @@ int Arc::stopExposure ()
 	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
 		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
 #else
-	controller.Command (arc::TIM_ID, arc::PEX);
-	controller.PCICommand (arc::PCI_RESET);
+	controller.Command (arc::TIM_ID, PEX);
+	controller.PCICommand (PCI_RESET);
 #endif
-	return camera::stopExposure ();
+	return Camera::stopExposure ();
 }
-
-virtual int killAll ();
 
 int Arc::doReadout ()
 {
@@ -524,10 +532,18 @@ int Arc::doReadout ()
 	}
 	return USEC_SEC / 8.0;
 #else
-	if (controller.IsReadout ())
-		return USEC_SEC / 1000.0;
-	if (controller.GetPixelCount () != chipUsedSize ())
-		return USEC_SEC / 1000.0;
+	try
+	{
+		if (controller.IsReadout ())
+			return USEC_SEC / 1000.0;
+		if (controller.GetPixelCount () != chipUsedSize ())
+			return USEC_SEC / 1000.0;
+	}
+	catch (std::runtime_error &er)
+	{
+		logStream (MESSAGE_ERROR) << "error in doReadout " << er.what () << sendLog;
+		return -1;	
+	}
 
 	arc::CDeinterlace deint;
 	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
