@@ -288,6 +288,7 @@ int Arc::init ()
 			logStream (MESSAGE_DEBUG) << "loading " << utilFile->getValue () << sendLog;
 			controller.LoadControllerFile (utilFile->getValue ());
 		}
+		power->setValueBool (true);
 		setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
 		long lReply = controller.Command (arc::TIM_ID, SOS, AMP_0);
 		controller.CheckReply (lReply);
