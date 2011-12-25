@@ -1,4 +1,4 @@
-LDADD = -L../../lib/rts2script -lrts2script -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
+LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 bin_PROGRAMS = rts2-image
@@ -11,7 +11,7 @@ CLEANFILES = airmasscale.cpp
 if PGSQL
 
 bin_PROGRAMS += rts2-targetinfo rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo rts2-plan rts2-airmasscale
-PG_LDADD = -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb ${LDADD} 
+PG_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../../lib/rts2fits -lrts2imagedb ${LDADD} 
 
 noinst_HEADERS = rts2targetapp.h
 
