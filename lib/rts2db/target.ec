@@ -22,7 +22,7 @@
 #include "target_auger.h"
 #include "targetell.h"
 #include "rts2targetplanet.h"
-#include "rts2targetgrb.h"
+#include "targetgrb.h"
 #include "observation.h"
 #include "observationset.h"
 #include "targetset.h"

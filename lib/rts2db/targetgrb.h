@@ -37,7 +37,6 @@ class TargetGRB:public ConstTarget
 		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual int beforeMove ();
 		virtual float getBonus (double JD);
-		virtual double getMinObsAlt () { return 0; }
 		// some logic needed to distinguish states when GRB position change
 		// from last observation. there was update etc..
 		virtual int isContinues ();

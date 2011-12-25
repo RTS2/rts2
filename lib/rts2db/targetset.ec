@@ -22,7 +22,7 @@
 #include "rts2config.h"
 #include "libnova_cpp.h"
 
-#include "rts2targetgrb.h"
+#include "targetgrb.h"
 
 #include <sstream>
 
