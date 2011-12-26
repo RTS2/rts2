@@ -117,10 +117,9 @@ class Image:public FitsFile
 		Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
 		virtual ~ Image (void);
 
+		virtual void openFile (const char *_filename = NULL, bool readOnly = false, bool _verbose = false);
 		virtual int closeFile ();
 
-		void openImage (const char *_filename = NULL, bool _verbose = true, bool readOnly = false);
-		void getHeaders ();
 		/**
 		 * Retrieve from image target related headers.
 		 *
@@ -184,7 +183,6 @@ class Image:public FitsFile
 		 */
 		int symlinkImageExpand (std::string link_ex);
 
-
 		/**
 		 * Create hardlink of the image.
 		 *
@@ -204,40 +202,6 @@ class Image:public FitsFile
 		int linkImageExpand (std::string link_ex);
 
 		// int saveImageData (const char *save_filename, unsigned short *in_data);
-
-		void setValue (const char *name, bool value, const char *comment);
-		void setValue (const char *name, int value, const char *comment);
-		void setValue (const char *name, long value, const char *comment);
-		void setValue (const char *name, float value, const char *comment);
-		void setValue (const char *name, double value, const char *comment);
-		void setValue (const char *name, char value, const char *comment);
-		void setValue (const char *name, const char *value, const char *comment);
-		void setValue (const char *name, time_t * sec, long usec, const char *comment);
-		// that method is used to update DATE - creation date entry - for other file then ffile
-		void setCreationDate (fitsfile * out_file = NULL);
-
-		void getValue (const char *name, bool & value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, int &value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, long &value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, float &value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, double &value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, char &value, bool required = false, char *command = NULL);
-		void getValue (const char *name, char *value, int valLen, const char* defVal = NULL, bool required = false, char *comment = NULL);
-		void getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
-
-		/**
-		 * Get double value from image.
-		 *
-		 * @param name Value name.
-		 * @return Value
-		 * @throw KeyNotFound
-		 */
-		double getValue (const char *name);
-
-		void getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
-		void getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
-		void getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
-		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
 		void writeMetaData (struct imghdr *im_h, double xoa, double yoa);
 
@@ -731,7 +695,6 @@ class Image:public FitsFile
 		int writeExposureStart ();
 
 		virtual int isGoodForFwhm (struct stardata *sr);
-		char *getImageBase (void);
 
 		// expand expression to image path
 		virtual std::string expandVariable (char expression, size_t beg);
@@ -751,8 +714,11 @@ class Image:public FitsFile
 		
 		int createImage (std::string in_filename);
 		int createImage (char *in_filename);
+
+		void getHeaders ();
+
 		// if filename is NULL, will take name stored in this->getFileName ()
-		// if openImage should load header..
+		// if openFile will load header..
 		bool loadHeader;
 		bool verbose;
 
@@ -784,6 +750,9 @@ class Image:public FitsFile
 
 		void initData ();
 
+		/**
+		 * Write data channel (image) header).
+		 */
 		int writeImgHeader (struct imghdr *im_h, int nchan);
 
 		/**

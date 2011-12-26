@@ -206,7 +206,7 @@ void TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 {
 	// load image data, open them read-only
 	rts2image::ImageDb img;
-	img.openImage (filename.c_str (), true, true);
+	img.openFile (filename.c_str (), true, true);
 	struct ln_equ_posn posObj;
 	struct ln_equ_posn posTar;
 	struct ln_equ_posn posImg;

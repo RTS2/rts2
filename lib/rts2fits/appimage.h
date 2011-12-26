@@ -38,7 +38,7 @@ class AppImageCore:public Rts2CliApp
 			{
 				const char *an_name = *img_iter;
 				Image *image = new Image ();
-				image->openImage (an_name, false, readOnly);
+				image->openFile (an_name, readOnly, false);
 				ret = processImage (image);
 				delete image;
 				if (ret)

@@ -256,6 +256,16 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>base_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      String for %b expansion. Expansions characters (%,..) in this string will be ignored. Default to "/images". 
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>que_path</option>
 	  </term>
 	  <listitem>
@@ -1135,6 +1145,17 @@
 	      filter movement time depending on how long filter wheel must move
 	      (e.g. how many filters are between target and current filter).
 	      Default to 0.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>template</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Template filename. Holds default template for device. Template
+	      is used to specify FITS cards which should be created, their value and comment.
 	    </para>
 	  </listitem>
 	</varlistentry>

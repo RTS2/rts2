@@ -915,6 +915,20 @@ Value * Block::getValue (const char *device_name, const char *value_name)
 	return conn->getValue (value_name);
 }
 
+Value * Block::getValueExpression (std::string expression, const char *defaultDevice)
+{
+	size_t sep = expression.find ('.');
+	if (sep != std::string::npos)
+	{
+		std::string devname = expression.substr (0, sep);
+		if (getCentraldConns ()->size () > 0 && (devname.length () == 0 || devname == "centrald"))
+			return getCentraldConns ()->front ()->getValue (expression.substr (sep + 1).c_str ());
+		return getValue (expression.substr (0, sep).c_str (), expression.substr (sep + 1).c_str ());
+	}
+	// else
+	return getValue (defaultDevice, expression.c_str ());
+}
+
 int Block::statusInfo (Rts2Conn * conn)
 {
 	return 0;

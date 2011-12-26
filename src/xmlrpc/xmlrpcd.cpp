@@ -118,6 +118,24 @@ bool XmlDevCameraClient::isScriptRunning ()
 void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 {
 	currentscript = std::string (scriptbuf);
+	// verify that the script can be parsed
+	try
+	{
+		rts2script::Script sc (currentscript.c_str ());
+		sc.parseScript (&currentTarget);
+		int failedcount = sc.getFaultLocation ();
+		if (failedcount != -1)
+		{
+			std::ostringstream er;
+			er << "parsing of script '" << currentscript << " failed at position " << failedcount;
+			throw JSONException (er.str ());
+		}
+	}
+	catch (rts2script::ParsingError &er)
+	{
+		throw JSONException (er.what ());
+	}
+	
 	if (killScripts)
 	{
 		connection->queCommand (new Rts2CommandKillAll (connection->getMaster ()));

@@ -1293,15 +1293,6 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		mpec->setValueString ("");
 		return startResyncMove (conn, false);
 	}
-	else if (conn->isCommand ("fixed"))
-	{
-		// tar_ra hold HA (Hour Angle)
-		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-			return -2;
-		/*		modelOff ();
-				// currently don't know how to handle that */
-		return -2;
-	}
 	else if (conn->isCommand ("setto"))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
@@ -1338,9 +1329,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		if (applyCorrectionsFixed (total_cor_ra, total_cor_dec) == 0)
 			return 0;
-		if (cor_mark == moveNum->getValueInteger ()
-			&& corr_img == corrImgId->getValueInteger ()
-			&& img_id > wCorrImgId->getValueInteger ())
+		if (cor_mark == moveNum->getValueInteger () && corr_img == corrImgId->getValueInteger () && img_id > wCorrImgId->getValueInteger ())
 		{
 			if (pos_err < ignoreCorrection->getValueDouble ())
 			{

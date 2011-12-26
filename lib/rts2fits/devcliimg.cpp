@@ -26,7 +26,7 @@
 
 using namespace rts2image;
 
-DevClientCameraImage::DevClientCameraImage (Rts2Conn * in_connection):rts2core::Rts2DevClientCamera (in_connection)
+DevClientCameraImage::DevClientCameraImage (Rts2Conn * in_connection, std::string templateFile):rts2core::Rts2DevClientCamera (in_connection)
 {
 	chipNumbers = 0;
 	saveImage = 1;
@@ -54,21 +54,21 @@ DevClientCameraImage::DevClientCameraImage (Rts2Conn * in_connection):rts2core::
 	config->getString (connection->getName (), "origin", origin);
 
 	// load template file..
-	std::string tfn;
-	config->getString (connection->getName (), "template", tfn);
+	if (templateFile.length () == 0)
+		config->getString (connection->getName (), "template", templateFile);
 
-	if (tfn.length () > 0)
+	if (templateFile.length () > 0)
 	{
 		fitsTemplate = new Rts2ConfigRaw ();
-		if (fitsTemplate->loadFile (tfn.c_str (), true))
+		if (fitsTemplate->loadFile (templateFile.c_str (), true))
 		{
 			delete fitsTemplate;
 			fitsTemplate = NULL;
-			logStream (MESSAGE_ERROR) << "cannot load FITS template from " << tfn << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot load FITS template from " << templateFile << sendLog;
 		}
 		else
 		{
-			logStream (MESSAGE_INFO) << "loaded FITS template from " << tfn << sendLog;
+			logStream (MESSAGE_INFO) << "loaded FITS template from " << templateFile<< sendLog;
 		}
 	}
 
@@ -315,6 +315,7 @@ void DevClientCameraImage::exposureStarted ()
 
 		prematurelyReceived.clear ();
 
+		actualImage->image->writePrimaryHeader (getName ());
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 	
 		lastImage = image;

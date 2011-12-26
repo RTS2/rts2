@@ -20,7 +20,7 @@
 
 #include "fitsfile.h"
 
-#include "app.h"
+#include "block.h"
 #include "utilsfunc.h"
 
 #include "config.h"
@@ -34,6 +34,34 @@
 #include <unistd.h>
 
 using namespace rts2image;
+
+/**
+ * Class to fill string with device informations.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DeviceExpander:public rts2core::Expander
+{
+	public:
+		DeviceExpander (const char *_devname):rts2core::Expander () { devname = _devname; };
+
+	protected:
+		virtual std::string expandVariable (std::string expression);
+	
+	private:
+		const char *devname;
+};
+
+std::string DeviceExpander::expandVariable (std::string expression)
+{
+	// try to find value
+	rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, devname);
+	if (val != NULL)
+		return val->getValue ();
+	return rts2core::Expander::expandVariable (expression);
+}
+
+static DeviceExpander *masterExpander = NULL;
 
 ColumnData::ColumnData (std::string _name, std::vector <double> _data)
 {
@@ -75,6 +103,107 @@ ColumnData::ColumnData (std::string _name, std::vector <int> _data, bool isBoole
 	int *tp = (int *) data;
 	for (std::vector <int>::iterator iter = _data.begin (); iter != _data.end (); tp++, iter++)
 		*tp = *iter;
+}
+
+FitsFile::FitsFile ():rts2core::Expander ()
+{
+	ffile = NULL;
+	fileName = NULL;
+	absoluteFileName = NULL;
+	fits_status = 0;
+	templateFile = NULL;
+}
+
+FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
+{
+	fileName = NULL;
+	absoluteFileName = NULL;
+
+	setFitsFile (_fitsfile->getFitsFile ());
+	_fitsfile->setFitsFile (NULL);
+
+	setFileName (_fitsfile->getFileName ());
+
+	fits_status = _fitsfile->fits_status;
+	templateFile = NULL;
+}
+
+FitsFile::FitsFile (const char *_fileName):rts2core::Expander ()
+{
+	fileName = NULL;
+	absoluteFileName = NULL;
+	fits_status = 0;
+
+	templateFile = NULL;
+
+	createFile (_fileName);
+}
+
+FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
+{
+	ffile = NULL;
+	fileName = NULL;
+	absoluteFileName = NULL;
+	fits_status = 0;
+	templateFile = NULL;
+}
+
+FitsFile::FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
+{
+	fileName = NULL;
+	absoluteFileName = NULL;
+	fits_status = 0;
+	templateFile = NULL;
+
+	createFile (expandPath (_expression));
+}
+
+FitsFile::~FitsFile (void)
+{
+	closeFile ();
+
+	if (fileName != absoluteFileName)
+		delete[] absoluteFileName;
+	delete[] fileName;
+}
+
+void FitsFile::openFile (const char *_fileName, bool readOnly, bool _verbose)
+{
+	closeFile ();
+
+	fits_status = 0;
+
+	if (_fileName && _fileName != getFileName ())
+		setFileName (_fileName);
+
+	if (getFileName () == NULL)
+	 	throw ErrorOpeningFitsFile ("");
+
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "Opening " << getFileName () << " ffile " << getFitsFile () << sendLog;
+	#endif						 /* DEBUG_EXTRA */
+
+	fits_open_diskfile (&ffile, getFileName (), readOnly ? READONLY : READWRITE, &fits_status);
+	if (fits_status)
+	{
+		if (!(flags & IMAGE_CANNOT_LOAD))
+		{
+			logStream (MESSAGE_ERROR) << "while opening fits file: " << getFitsErrors () <<	sendLog;
+			flags |= IMAGE_CANNOT_LOAD;
+		}
+		throw ErrorOpeningFitsFile (getFileName ());
+	}
+}
+
+int FitsFile::closeFile ()
+{
+	if (getFitsFile ())
+	{
+		fits_close_file (getFitsFile (), &fits_status);
+		flags &= ~IMAGE_SAVE;
+		setFitsFile (NULL);
+	}
+	return 0;
 }
 
 std::string FitsFile::getFitsErrors ()
@@ -171,43 +300,299 @@ int FitsFile::createFile (std::string _fileName)
 	return createFile ();
 }
 
-void FitsFile::openFile (const char *_fileName, bool readOnly)
+void FitsFile::setValue (const char *name, bool value, const char *comment)
 {
-	closeFile ();
-
-	fits_status = 0;
-
-	if (_fileName && _fileName != getFileName ())
-		setFileName (_fileName);
-
-	if (getFileName () == NULL)
-	 	throw ErrorOpeningFitsFile ("");
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Opening " << getFileName () << " ffile " << getFitsFile () << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	fits_open_diskfile (&ffile, getFileName (), readOnly ? READONLY : READWRITE, &fits_status);
-	if (fits_status)
+	if (!getFitsFile ())
 	{
-		if (!(flags & IMAGE_CANNOT_LOAD))
-		{
-			logStream (MESSAGE_ERROR) << "while opening fits file: " << getFitsErrors () <<	sendLog;
-			flags |= IMAGE_CANNOT_LOAD;
-		}
-		throw ErrorOpeningFitsFile (getFileName ());
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	int i_val = value ? 1 : 0;
+	fits_update_key (getFitsFile (), TLOGICAL, (char *) name, &i_val, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	return fitsStatusSetValue (name, true);
+}
+
+void FitsFile::setValue (const char *name, int value, const char *comment)
+{
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	fits_update_key (getFitsFile (), TINT, (char *) name, &value, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name, true);
+}
+
+void FitsFile::setValue (const char *name, long value, const char *comment)
+{
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	fits_update_key (getFitsFile (), TLONG, (char *) name, &value, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name);
+}
+
+void FitsFile::setValue (const char *name, float value, const char *comment)
+{
+	float val = value;
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	if (isnan (val) || isinf (val))
+		val = FLOATNULLVALUE;
+	fits_update_key (getFitsFile (), TFLOAT, (char *) name, &val, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name);
+}
+
+void FitsFile::setValue (const char *name, double value, const char *comment)
+{
+	double val = value;
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	if (isnan (val) || isinf (val))
+		val = DOUBLENULLVALUE;
+	fits_update_key (getFitsFile (), TDOUBLE, (char *) name, &val, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name);
+}
+
+void FitsFile::setValue (const char *name, char value, const char *comment)
+{
+	char val[2];
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	val[0] = value;
+	val[1] = '\0';
+	fits_update_key (getFitsFile (), TSTRING, (char *) name, (void *) val, (char *) comment, &fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name);
+}
+
+void FitsFile::setValue (const char *name, const char *value, const char *comment)
+{
+	// we will not save null values
+	if (!value)
+		return;
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		openFile ();
+	}
+	fits_update_key_longstr (getFitsFile (), (char *) name, (char *) value, (char *) comment,
+		&fits_status);
+	flags |= IMAGE_SAVE;
+	fitsStatusSetValue (name);
+}
+
+void FitsFile::setValue (const char *name, time_t * sec, long usec, const char *comment)
+{
+	char buf[25];
+	struct tm t_tm;
+	gmtime_r (sec, &t_tm);
+	strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
+	snprintf (buf + 20, 4, "%03li", usec / 1000);
+	setValue (name, buf, comment);
+}
+
+void FitsFile::setCreationDate (fitsfile * out_file)
+{
+	fitsfile *curr_ffile = getFitsFile ();
+
+	if (out_file)
+	{
+		setFitsFile (out_file);
+	}
+
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
+
+	if (out_file)
+	{
+		setFitsFile (curr_ffile);
 	}
 }
 
-int FitsFile::closeFile ()
+void FitsFile::getValue (const char *name, bool & value, bool required, char *comment)
 {
-	if (getFitsFile ())
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+
+	int i_val;
+	fits_read_key (getFitsFile (), TLOGICAL, (char *) name, (void *) &i_val, comment, &fits_status);
+	value = i_val == TRUE;
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, int &value, bool required, char *comment)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+
+	fits_read_key (getFitsFile (), TINT, (char *) name, (void *) &value, comment, &fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, long &value, bool required, char *comment)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+	
+	fits_read_key (getFitsFile (), TLONG, (char *) name, (void *) &value, comment,
+		&fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, float &value, bool required, char *comment)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+	
+	fits_read_key (getFitsFile (), TFLOAT, (char *) name, (void *) &value, comment,	&fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, double &value, bool required, char *comment)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+	
+	fits_read_key (getFitsFile (), TDOUBLE, (char *) name, (void *) &value, comment, &fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, char &value, bool required, char *comment)
+{
+	static char val[FLEN_VALUE];
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+
+	fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment,
+		&fits_status);
+	value = *val;
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValue (const char *name, char *value, int valLen, const char* defVal, bool required, char *comment)
+{
+	try
 	{
-		fits_close_file (getFitsFile (), &fits_status);
-		flags &= ~IMAGE_SAVE;
-		setFitsFile (NULL);
+		static char val[FLEN_VALUE];
+		if (!getFitsFile ())
+			openFile (NULL, false, true);
+	
+                fits_status = 0;
+		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
+		strncpy (value, val, valLen);
+		value[valLen - 1] = '\0';
+		if (required)
+		{
+			fitsStatusGetValue (name, true);
+		}
+		else
+		{
+			if (fits_status == 0)
+				return;
+		}
 	}
-	return 0;
+	catch (rts2core::Error &er)
+	{
+		if (defVal)
+		{
+			strncpy (value, defVal, valLen);
+			return;
+		}
+		if (required)
+			throw (er);
+	}
+}
+
+void FitsFile::getValue (const char *name, char **value, int valLen, bool required, char *comment)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+
+	fits_read_key_longstr (getFitsFile (), (char *) name, value, comment, &fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+double FitsFile::getValue (const char *name)
+{
+	if (!getFitsFile ())
+		openFile (NULL, false, true);
+
+	double ret;
+	fits_read_key_dbl (getFitsFile (), (char *) name, &ret, NULL, &fits_status);
+	if (fits_status != 0)
+	{
+		fits_status = 0;
+		throw KeyNotFound (this, name);
+	}
+	return ret;
+}
+
+void FitsFile::getValues (const char *name, int *values, int num, bool required, int nstart)
+{
+	if (!getFitsFile ())
+		throw ErrorOpeningFitsFile (getFileName ());
+
+	int nfound;
+	fits_read_keys_log (getFitsFile (), (char *) name, nstart, num, values, &nfound,
+		&fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValues (const char *name, long *values, int num, bool required, int nstart)
+{
+	if (!getFitsFile ())
+		throw ErrorOpeningFitsFile (getFileName ());
+
+	int nfound;
+	fits_read_keys_lng (getFitsFile (), (char *) name, nstart, num, values, &nfound,
+		&fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValues (const char *name, double *values, int num, bool required, int nstart)
+{
+	if (!getFitsFile ())
+		throw ErrorOpeningFitsFile (getFileName ());
+
+	int nfound;
+	fits_read_keys_dbl (getFitsFile (), (char *) name, nstart, num, values, &nfound,
+		&fits_status);
+	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValues (const char *name, char **values, int num, bool required, int nstart)
+{
+	if (!getFitsFile ())
+		throw ErrorOpeningFitsFile (getFileName ());
+	
+	int nfound;
+	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
+	fitsStatusGetValue (name, required);
 }
 
 std::string FitsFile::expandPath (std::string pathEx)
@@ -232,6 +617,53 @@ std::string FitsFile::expandPath (std::string pathEx)
 		throw rts2core::Error ("too many files with name matching " + ret);
 	}
 	return ret;
+}
+
+void FitsFile::writeTemplate (Rts2ConfigSection *hc, const char *devname)
+{
+	for (Rts2ConfigSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
+	{
+		std::string v = iter->getValue ();
+		std::string com;
+		// find comment start..
+		size_t cb = v.find ('/');
+		if (cb != std::string::npos)
+		{
+			com = v.substr (cb + 1);
+			v = v.substr (0, cb - 1);
+		}
+		// expand v and com strings..
+		if (masterExpander == NULL)
+			masterExpander = new DeviceExpander (devname);
+		v = masterExpander->expand (v);
+		com = masterExpander->expand (com);
+		// value type based on suffix
+		std::string suff = iter->getSuffix ();
+		if (suff == "i")
+		{
+			long dl = atol (v.c_str ());
+			setValue (iter->getValueName ().c_str (), dl, com.c_str ());
+		}
+		else if (suff == "d")
+		{
+			double dv = atof (v.c_str ());
+			setValue (iter->getValueName ().c_str (), dv, com.c_str ());
+		}
+		else
+		{
+			setValue (iter->getValueName ().c_str (), v.c_str (), com.c_str ());
+		}
+	}
+}
+
+void FitsFile::writePrimaryHeader (const char *devname)
+{
+	if (templateFile)
+	{
+		Rts2ConfigSection *hc = templateFile->getSection ("PRIMARY", false);
+		if (hc)
+			writeTemplate (hc, devname);
+	}
 }
 
 void FitsFile::moveHDU (int hdu, int *hdutype)
@@ -266,68 +698,6 @@ void FitsFile::fitsStatusGetValue (const char *valname, bool required)
 	int ret = fitsStatusValue (valname, "GetValue");
 	if (ret && required)
 		throw KeyNotFound (this, valname);
-}
-
-FitsFile::FitsFile ():rts2core::Expander ()
-{
-	ffile = NULL;
-	fileName = NULL;
-	absoluteFileName = NULL;
-	fits_status = 0;
-	templateFile = NULL;
-}
-
-FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
-{
-	fileName = NULL;
-	absoluteFileName = NULL;
-
-	setFitsFile (_fitsfile->getFitsFile ());
-	_fitsfile->setFitsFile (NULL);
-
-	setFileName (_fitsfile->getFileName ());
-
-	fits_status = _fitsfile->fits_status;
-	templateFile = NULL;
-}
-
-FitsFile::FitsFile (const char *_fileName):rts2core::Expander ()
-{
-	fileName = NULL;
-	absoluteFileName = NULL;
-	fits_status = 0;
-
-	templateFile = NULL;
-
-	createFile (_fileName);
-}
-
-FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
-{
-	ffile = NULL;
-	fileName = NULL;
-	absoluteFileName = NULL;
-	fits_status = 0;
-	templateFile = NULL;
-}
-
-FitsFile::FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
-{
-	fileName = NULL;
-	absoluteFileName = NULL;
-	fits_status = 0;
-	templateFile = NULL;
-
-	createFile (expandPath (_expression));
-}
-
-FitsFile::~FitsFile (void)
-{
-	closeFile ();
-
-	if (fileName != absoluteFileName)
-		delete[] absoluteFileName;
-	delete[] fileName;
 }
 
 void FitsFile::loadTemlate (const char *fn)

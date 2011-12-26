@@ -32,7 +32,7 @@ int main (int argc, char **argv)
 	rts2image::Image *image;
 	long naxes[2];
 	image = new rts2image::Image ();
-	image->openImage (argv[1]);
+	image->openFile (argv[1]);
 	std::cout << "average: " << image->getAverage () << std::endl;
 	image->getValues ("NAXIS", naxes, 2);
 	std::cout << "NAXIS: " << naxes[0] << "x" << naxes[1] << std::endl;

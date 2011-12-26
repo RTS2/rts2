@@ -61,7 +61,7 @@ int Rts2DeleteApp::deleteImage (const char *in_name)
 	else
 	{
 		image = new rts2image::ImageDb ();
-		image->openImage (in_name);
+		image->openFile (in_name);
 		ret = image->deleteImage ();
 		delete image;
 	}

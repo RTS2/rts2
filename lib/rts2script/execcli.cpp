@@ -32,7 +32,7 @@ using namespace rts2script;
 // to add more debugging
 // #define DEBUG_EXTRA
 
-DevClientCameraExec::DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath):rts2image::DevClientCameraImage (_connection), DevScript (_connection)
+DevClientCameraExec::DevClientCameraExec (Rts2Conn * _connection, rts2core::ValueString *_expandPath, std::string templateFile):rts2image::DevClientCameraImage (_connection, templateFile), DevScript (_connection)
 {
 	expandPath = _expandPath;
 	waitForExposure = false;

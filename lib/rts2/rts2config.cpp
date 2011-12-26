@@ -40,6 +40,7 @@ int Rts2Config::getSpecialValues ()
 	getStringVector ("observatory", "required_devices", obs_requiredDevices, false);
 	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
 
+	getString ("observatory", "base_path", obs_basePath, "/images/");
 	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
 	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
 	getString ("observatory", "archive_path", obs_archive, "%b/archive/%t/%c/object/%f");

@@ -41,7 +41,7 @@ class Rts2AppDbImage:public Rts2AppDb
 				try
 				{
 					rts2image::ImageDb *imagedb = new rts2image::ImageDb ();
-					imagedb->openImage (an_name, false, readOnly);
+					imagedb->openFile (an_name, readOnly, false);
 					rts2image::ImageDb *image = getValueImageType (imagedb);
 					ret = processImage (image);
 					delete image;

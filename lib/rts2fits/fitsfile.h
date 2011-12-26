@@ -138,6 +138,8 @@ class FitsFile: public rts2core::Expander
 
 		virtual ~FitsFile (void);
 
+		virtual void openFile (const char *_filename = NULL, bool readOnly = false, bool _verbose = false);
+
 		/**
 		 * Load given template file. Template file specifies values
 		 * which should be written to the FITS headers, and general
@@ -171,6 +173,40 @@ class FitsFile: public rts2core::Expander
 		 */
 		virtual int closeFile ();
 
+		void setValue (const char *name, bool value, const char *comment);
+		void setValue (const char *name, int value, const char *comment);
+		void setValue (const char *name, long value, const char *comment);
+		void setValue (const char *name, float value, const char *comment);
+		void setValue (const char *name, double value, const char *comment);
+		void setValue (const char *name, char value, const char *comment);
+		void setValue (const char *name, const char *value, const char *comment);
+		void setValue (const char *name, time_t * sec, long usec, const char *comment);
+		// that method is used to update DATE - creation date entry - for other file then ffile
+		void setCreationDate (fitsfile * out_file = NULL);
+
+		void getValue (const char *name, bool & value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, int &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, long &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, float &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, double &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, char &value, bool required = false, char *command = NULL);
+		void getValue (const char *name, char *value, int valLen, const char* defVal = NULL, bool required = false, char *comment = NULL);
+		void getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
+
+		/**
+		 * Get double value from image.
+		 *
+		 * @param name Value name.
+		 * @return Value
+		 * @throw KeyNotFound
+		 */
+		double getValue (const char *name);
+
+		void getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
+
 		/**
 		 * Expand FITS path.
 		 *
@@ -179,6 +215,19 @@ class FitsFile: public rts2core::Expander
 		 * @return Expanded path.
 		 */
 		std::string expandPath (std::string pathEx);
+
+		/**
+		 * Write header template to FITS headers. Current frame in
+		 * multichannel/extensions image is used.
+		 *
+		 * @param hc     config section holding template to write
+		 */
+		void writeTemplate (Rts2ConfigSection *hc, const char *devname);
+
+		/**
+		 * Write image primary header from template.
+		 */
+		void writePrimaryHeader (const char *devname);
 
 		/**
 		 * Move current HDU.
@@ -236,8 +285,6 @@ class FitsFile: public rts2core::Expander
 		virtual int createFile ();
 		int createFile (const char *_filename);
 		int createFile (std::string _filename);
-
-		void openFile (const char *_filename = NULL, bool readOnly = false);
 
 		/**
 		 * Return pointer to fitsfile structure.

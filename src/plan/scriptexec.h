@@ -64,6 +64,8 @@ class ScriptExec:public Rts2Client, public rts2script::ScriptInterface
 		virtual int doProcessing ();
 	private:
 		rts2core::ValueString *expandPath;
+		std::string templateFile;
+
 		std::vector < rts2script::ScriptForDevice* > scripts;
 		char *deviceName;
 		const char *defaultScript;

@@ -40,7 +40,7 @@ using namespace rts2image;
 class ClientCameraScript:public DevClientCameraExec
 {
 	public:
-		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath):DevClientCameraExec (conn, _expandPath) {};
+		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath, std::string templateFile):DevClientCameraExec (conn, _expandPath, templateFile) {};
 		virtual imageProceRes processImage (Image * image);
 };
 
@@ -129,6 +129,9 @@ int ScriptExec::processOption (int in_opt)
 			expandPath = new rts2core::ValueString ("expand_path");
 			expandPath->setValueString (optarg);
 			break;
+		case 't':
+			templateFile = std::string (optarg);
+			break;
 		default:
 			return Rts2Client::processOption (in_opt);
 	}
@@ -154,6 +157,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_arg
 	nextRunningQ = 0;
 	configFile = NULL;
 	expandPath = NULL;
+	templateFile = std::string ("");
 
 	defaultScript = NULL;
 
@@ -168,6 +172,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_arg
 	addOption ('f', NULL, 1, "script filename");
 
 	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");
+	addOption ('t', NULL, 1, "template filename for FITS keys");
 
 	srandom (time (NULL));
 }
@@ -182,6 +187,7 @@ ScriptExec::~ScriptExec (void)
 	scripts.clear ();
 
 	delete currentTarget;
+	delete expandPath;
 }
 
 int ScriptExec::init ()
@@ -240,7 +246,7 @@ rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other
 			cli = new DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
-			cli = new ClientCameraScript (conn, expandPath);
+			cli = new ClientCameraScript (conn, expandPath, templateFile);
 			break;
 		case DEVICE_TYPE_FOCUS:
 			cli = new rts2image::DevClientFocusImage (conn);

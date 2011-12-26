@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2011-12-26/date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.fitstemplate">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2011</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Structure of FITS template file.</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      FITS template file is used to provide a list of variables which should be
+      written to FITS file. The template provides keys which goes to both
+      primary and extended (think about multiple channel devices) headers.
+    </para>
+
+    <para>
+      Template format is similar to <emphasis>.ini</emphasis> files. Everything
+      after ; (semicolon) is considered as comment and is ignored. Section
+      names are written in square brackeds, keys are written on line separated
+      by =.  Finally comments for FITS keys are separated by
+      <emphasis>/</emphasis>. Both comment and values can contain variable
+      names, which start with <emphasis>@</emphasis>. Device and variable can
+      be separated in those expansion with <emphasis>.</emphasis> (dot). Please
+      see the following example:
+
+      <literallayout>
+; this is a comment
+
+[PRIMARY] ; specify primary header
+
+KEYA = @VAL1 / this is a comment
+TVAL = @TV.AL / value of variable AL from device named TV
+TVDOUBLE.d = @TV.double / double value, written as double
+      </literallayout>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Standard sections</title>
+    
+    <para>
+      <emphasis>PRIMARY</emphasis> section specifies keys for primary section.
+      <emphasis>CHANNELn</emphasis>, where n is number from 1 onwards, specify
+      FITS keys for channels.
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Variable expansions</title>
+
+    <para>
+      Variables names are prefixed with <emphasis>@</emphasis>. Device and
+      variable names are separated with <emphasis>.</emphasis> (dot). If device
+      is not specified, default device, which is name of the device running the
+      script, is used.
+    </para>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

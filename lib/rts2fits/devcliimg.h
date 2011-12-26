@@ -44,7 +44,7 @@ imageProceRes;
 class DevClientCameraImage:public rts2core::Rts2DevClientCamera
 {
 	public:
-		DevClientCameraImage (Rts2Conn * in_connection);
+		DevClientCameraImage (Rts2Conn * in_connection, std::string templateFile = std::string (""));
 		virtual ~DevClientCameraImage (void);
 		virtual void postEvent (Rts2Event * event);
 

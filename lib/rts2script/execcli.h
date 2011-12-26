@@ -74,7 +74,7 @@ class GuidingParams
 class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
 {
 	public:
-		DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL);
+		DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
 		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);

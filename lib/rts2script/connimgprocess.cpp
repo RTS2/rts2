@@ -64,7 +64,7 @@ int ConnImgOnlyProcess::init ()
 	try
 	{
 		Image image;
-		image.openImage (imgPath.c_str (), false, true);
+		image.openFile (imgPath.c_str (), true, false);
 		if (image.getShutter () == SHUT_CLOSED)
 		{
 			astrometryStat = DARK;
@@ -172,14 +172,14 @@ void ConnImgProcess::connectionError (int last_data_size)
 	try
 	{
 	  	ImageDb *imagedb = new ImageDb ();
-		imagedb->openImage (imgPath.c_str ());
+		imagedb->openFile (imgPath.c_str ());
 		image = getValueImageType (imagedb);
 #else
 	Image *image = NULL;
 	try
 	{
 		image = new Image ();
-		image->openImage (imgPath.c_str ());
+		image->openFile (imgPath.c_str ());
 #endif
 		if (image->getImageType () == IMGTYPE_FLAT || image->getImageType () == IMGTYPE_DARK)
 		{

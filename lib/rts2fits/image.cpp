@@ -308,7 +308,7 @@ std::string Image::expandVariable (char expression, size_t beg)
 	switch (expression)
 	{
 		case 'b':
-			return getImageBase ();
+			return Rts2Config::instance ()->observatoryBasePath ();
 		case 'c':
 			return getCameraName ();
 		case 'E':
@@ -401,19 +401,6 @@ int Image::createImage (char *in_filename)
 	return createImage ();
 }
 
-void Image::openImage (const char *_filename, bool _verbose, bool readOnly)
-{
-  	verbose = _verbose;
-	if (_filename)
-		setFileName (_filename);
-
-	openFile (getFileName (), readOnly);
-
-	if (readOnly == false)
-		flags |= IMAGE_SAVE;
-	getHeaders ();
-}
-
 void Image::getHeaders ()
 {
 	struct timeval tv;
@@ -496,6 +483,17 @@ void Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_s
 	targetName = NULL;
 	obsId = _obs_id;
 	imgId = _img_id;
+}
+
+void Image::openFile (const char *_filename, bool readOnly, bool _verbose)
+{
+  	verbose = _verbose;
+
+	FitsFile::openFile (_filename, readOnly, _verbose);
+
+	if (readOnly == false)
+		flags |= IMAGE_SAVE;
+	getHeaders ();
 }
 
 int Image::closeFile ()
@@ -601,7 +599,7 @@ int Image::renameImage (const char *new_filename)
 		ret = rename (getFileName (), new_filename);
 		if (!ret)
 		{
-			openImage (new_filename);
+			openFile (new_filename);
 		}
 		else
 		{
@@ -616,7 +614,7 @@ int Image::renameImage (const char *new_filename)
 				else
 				{
 					unlink (getFileName ());
-					openImage (new_filename);
+					openFile (new_filename);
 				}
 			}
 			else
@@ -791,308 +789,6 @@ int Image::writeExposureStart ()
 	return 0;
 }
 
-char * Image::getImageBase ()
-{
-	static char buf[12];
-	strcpy (buf, "/images/");
-	return buf;
-}
-
-void Image::setValue (const char *name, bool value, const char *comment)
-{
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	int i_val = value ? 1 : 0;
-	fits_update_key (getFitsFile (), TLOGICAL, (char *) name, &i_val, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	return fitsStatusSetValue (name, true);
-}
-
-void Image::setValue (const char *name, int value, const char *comment)
-{
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	fits_update_key (getFitsFile (), TINT, (char *) name, &value, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name, true);
-}
-
-void Image::setValue (const char *name, long value, const char *comment)
-{
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	fits_update_key (getFitsFile (), TLONG, (char *) name, &value, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name);
-}
-
-void Image::setValue (const char *name, float value, const char *comment)
-{
-	float val = value;
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	if (isnan (val) || isinf (val))
-		val = FLOATNULLVALUE;
-	fits_update_key (getFitsFile (), TFLOAT, (char *) name, &val, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name);
-}
-
-void Image::setValue (const char *name, double value, const char *comment)
-{
-	double val = value;
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	if (isnan (val) || isinf (val))
-		val = DOUBLENULLVALUE;
-	fits_update_key (getFitsFile (), TDOUBLE, (char *) name, &val, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name);
-}
-
-void Image::setValue (const char *name, char value, const char *comment)
-{
-	char val[2];
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	val[0] = value;
-	val[1] = '\0';
-	fits_update_key (getFitsFile (), TSTRING, (char *) name, (void *) val, (char *) comment, &fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name);
-}
-
-void Image::setValue (const char *name, const char *value, const char *comment)
-{
-	// we will not save null values
-	if (!value)
-		return;
-	if (!getFitsFile ())
-	{
-		if (flags & IMAGE_NOT_SAVE)
-			return;
-		openImage ();
-	}
-	fits_update_key_longstr (getFitsFile (), (char *) name, (char *) value, (char *) comment,
-		&fits_status);
-	flags |= IMAGE_SAVE;
-	fitsStatusSetValue (name);
-}
-
-void Image::setValue (const char *name, time_t * sec, long usec, const char *comment)
-{
-	char buf[25];
-	struct tm t_tm;
-	gmtime_r (sec, &t_tm);
-	strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
-	snprintf (buf + 20, 4, "%03li", usec / 1000);
-	setValue (name, buf, comment);
-}
-
-void Image::setCreationDate (fitsfile * out_file)
-{
-	fitsfile *curr_ffile = getFitsFile ();
-
-	if (out_file)
-	{
-		setFitsFile (out_file);
-	}
-
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	setValue ("DATE", &(now.tv_sec), now.tv_usec, "creation date");
-
-	if (out_file)
-	{
-		setFitsFile (curr_ffile);
-	}
-}
-
-void Image::getValue (const char *name, bool & value, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-
-	int i_val;
-	fits_read_key (getFitsFile (), TLOGICAL, (char *) name, (void *) &i_val, comment, &fits_status);
-	value = i_val == TRUE;
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, int &value, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-
-	fits_read_key (getFitsFile (), TINT, (char *) name, (void *) &value, comment, &fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, long &value, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-	
-	fits_read_key (getFitsFile (), TLONG, (char *) name, (void *) &value, comment,
-		&fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, float &value, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-	
-	fits_read_key (getFitsFile (), TFLOAT, (char *) name, (void *) &value, comment,	&fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, double &value, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-	
-	fits_read_key (getFitsFile (), TDOUBLE, (char *) name, (void *) &value, comment, &fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, char &value, bool required, char *comment)
-{
-	static char val[FLEN_VALUE];
-	if (!getFitsFile ())
-		openImage (NULL, true);
-
-	fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment,
-		&fits_status);
-	value = *val;
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValue (const char *name, char *value, int valLen, const char* defVal, bool required, char *comment)
-{
-	try
-	{
-		static char val[FLEN_VALUE];
-		if (!getFitsFile ())
-			openImage (NULL, true);
-	
-                fits_status = 0;
-		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment, &fits_status);
-		strncpy (value, val, valLen);
-		value[valLen - 1] = '\0';
-		if (required)
-		{
-			fitsStatusGetValue (name, true);
-		}
-		else
-		{
-			if (fits_status == 0)
-				return;
-		}
-	}
-	catch (rts2core::Error &er)
-	{
-		if (defVal)
-		{
-			strncpy (value, defVal, valLen);
-			return;
-		}
-		if (required)
-			throw (er);
-	}
-}
-
-void Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-
-	fits_read_key_longstr (getFitsFile (), (char *) name, value, comment, &fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-double Image::getValue (const char *name)
-{
-	if (!getFitsFile ())
-		openImage (NULL, true);
-
-	double ret;
-	fits_read_key_dbl (getFitsFile (), (char *) name, &ret, NULL, &fits_status);
-	if (fits_status != 0)
-	{
-		fits_status = 0;
-		throw KeyNotFound (this, name);
-	}
-	return ret;
-}
-
-void Image::getValues (const char *name, int *values, int num, bool required, int nstart)
-{
-	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (getFileName ());
-
-	int nfound;
-	fits_read_keys_log (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValues (const char *name, long *values, int num, bool required, int nstart)
-{
-	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (getFileName ());
-
-	int nfound;
-	fits_read_keys_lng (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValues (const char *name, double *values, int num, bool required, int nstart)
-{
-	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (getFileName ());
-
-	int nfound;
-	fits_read_keys_dbl (getFitsFile (), (char *) name, nstart, num, values, &nfound,
-		&fits_status);
-	fitsStatusGetValue (name, required);
-}
-
-void Image::getValues (const char *name, char **values, int num, bool required, int nstart)
-{
-	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (getFileName ());
-	
-	int nfound;
-	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound, &fits_status);
-	fitsStatusGetValue (name, required);
-}
-
 int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 {
 	if (nchan != 1)
@@ -1105,36 +801,7 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 
 		Rts2ConfigSection *hc = templateFile->getSection (sec.str ().c_str (), false);
 		if (hc)
-		{
-			for (Rts2ConfigSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
-			{
-				std::string v = iter->getValue ();
-				std::string com;
-				// find comment begin..
-				size_t cb = v.find ('/');
-				if (cb != std::string::npos)
-				{
-					com = v.substr (cb + 1);
-					v = v.substr (0, cb - 1);
-				}
-				// value type based on suffix
-				std::string suff = iter->getSuffix ();
-				if (suff == "i")
-				{
-					long dl = atol (v.c_str ());
-					setValue (iter->getValueName ().c_str (), dl, com.c_str ());
-				}
-				else if (suff == "d")
-				{
-					double dv = atof (v.c_str ());
-					setValue (iter->getValueName ().c_str (), dv, com.c_str ());
-				}
-				else
-				{
-					setValue (iter->getValueName ().c_str (), v.c_str (), com.c_str ());
-				}
-			}
-		}
+			writeTemplate (hc, NULL);
 	}
 	else
 	{
@@ -1847,7 +1514,7 @@ void Image::loadChannels ()
 	// try to load data..
 	int anyNull = 0;
 	if (!getFitsFile ())
-		openImage (NULL, true);
+		openFile (NULL, false, true);
 
 	dataType = 0;
 	int hdutype;
@@ -2514,7 +2181,7 @@ void Image::writeConnArray (TableData *tableData)
 	{
 		if (flags & IMAGE_NOT_SAVE)
 			return;
-		openImage ();
+		openFile ();
 	}
 	writeArray (tableData->getName (), tableData);
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");

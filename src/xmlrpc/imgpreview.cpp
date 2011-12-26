@@ -184,7 +184,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 {
 	response_type = "image/jpeg";
 	rts2image::Image image;
-	image.openImage (path.c_str (), false, true);
+	image.openFile (path.c_str (), true, false);
 	Blob blob;
 
 	const char * label = params->getString ("lb", ((XmlRpcd *) getMasterApp ())->getDefaultImageLabel ());
@@ -227,7 +227,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		response_type = "image/jpeg";
 
 		rts2image::Image image;
-		image.openImage (absPath, false, true);
+		image.openFile (absPath, true, false);
 		Blob blob;
 
 		Magick::Image mimage = image.getMagickImage (NULL, quantiles, chan);
