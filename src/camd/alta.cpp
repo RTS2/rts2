@@ -166,8 +166,7 @@ long Alta::isExposing ()
 
 int Alta::stopExposure ()
 {
-	// we need to digitize image:(
-	alta->StopExposure (true);
+	alta->StopExposure (false);
 	return Camera::stopExposure ();
 }
 
