@@ -31,7 +31,7 @@
 #include "../../lib/rts2db/targetset.h"
 #endif /* HAVE_PGSQL */
 
-#include "../../lib/rts2/radecparser.h"
+#include "radecparser.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
