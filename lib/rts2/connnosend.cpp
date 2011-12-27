@@ -17,30 +17,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_CONN_NOSEND__
-#define __RTS2_CONN_NOSEND__
+#include "connnosend.h"
 
-#include "block.h"
-#include "rts2conn.h"
+using namespace rts2core;
 
-class Rts2Conn;
-
-/**
- * Class which does not send out anything. This class have sendMsg method
- * disabled, so it does not sends out anything. It typycaly used for connections
- * running other applications with fork call.
- *
- * @ingroup RTS2Block
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class Rts2ConnNoSend:public Rts2Conn
+ConnNoSend::ConnNoSend (Block * in_master):Rts2Conn (in_master)
 {
-	public:
-		Rts2ConnNoSend (rts2core::Block * in_master);
-		Rts2ConnNoSend (int in_sock, rts2core::Block * in_master);
-		virtual ~ Rts2ConnNoSend (void);
+	setConnTimeout (-1);
+}
 
-		virtual int sendMsg (const char *msg);
-};
-#endif							 /* !__RTS2_CONN_NOSEND__ */
+
+ConnNoSend::ConnNoSend (int in_sock, Block * in_master):Rts2Conn (in_sock, in_master)
+{
+	setConnTimeout (-1);
+}
+
+
+ConnNoSend::~ConnNoSend (void)
+{
+}
+
+int ConnNoSend::sendMsg (const char *msg)
+{
+	return 0;
+}

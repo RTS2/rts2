@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 #include "error.h"
 
 #include <ostream>
@@ -89,7 +89,7 @@ class ConnReceivingError:public ConnError
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnTCP:public Rts2ConnNoSend
+class ConnTCP:public ConnNoSend
 {
 	public:
 		/**

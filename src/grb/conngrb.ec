@@ -18,7 +18,7 @@
  */
 
 #include "conngrb.h"
-#include "../../lib/rts2/connfork.h"
+#include "connfork.h"
 #include "libnova_cpp.h"
 #include "../../lib/rts2db/sqlerror.h"
 
@@ -1201,7 +1201,7 @@ int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 	}
 }
 
-ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd *in_master):Rts2ConnNoSend (in_master)
+ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd *in_master):rts2core::ConnNoSend (in_master)
 {
 	master = in_master;
 	gcn_hostname = new char[strlen (in_gcn_hostname) + 1];

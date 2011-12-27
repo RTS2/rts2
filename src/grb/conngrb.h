@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBCONN__
 #define __RTS2_GRBCONN__
 
-#include "../../lib/rts2/rts2connnosend.h"
+#include "connnosend.h"
 
 #include "grbconst.h"
 #include "grbd.h"
@@ -35,7 +35,7 @@ class Grbd;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnGrb:public Rts2ConnNoSend
+class ConnGrb:public rts2core::ConnNoSend
 {
 	public:
 		ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);

@@ -20,7 +20,7 @@
 #include "xmlrpcd.h"
 
 #include "messageevents.h"
-#include "../../lib/rts2/connfork.h"
+#include "connfork.h"
 
 using namespace rts2xmlrpc;
 

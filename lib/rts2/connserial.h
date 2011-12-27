@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 #include <termios.h>
 
 namespace rts2core
@@ -49,7 +49,7 @@ typedef enum {NONE, ODD, EVEN} parityT;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnSerial: public Rts2ConnNoSend
+class ConnSerial: public ConnNoSend
 {
 	private:
 		struct termios s_termios;

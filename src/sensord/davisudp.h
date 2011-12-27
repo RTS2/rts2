@@ -20,7 +20,7 @@
 #ifndef __RTS2_DAVISUDP__
 #define __RTS2_DAVISUDP__
 
-#include "../../lib/rts2/rts2connnosend.h"
+#include "connnosend.h"
 
 namespace rts2sensord
 {
@@ -58,7 +58,7 @@ class WeatherBuf
 		void getValue (const char *name, float &val, int &status);
 };
 
-class DavisUdp:public Rts2ConnNoSend
+class DavisUdp:public rts2core::ConnNoSend
 {
 	public:
 		DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master);

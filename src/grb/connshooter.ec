@@ -543,7 +543,7 @@ std::string ConnShooter::failedCutsString (int i)
 	return os.str ();
 }
 
-ConnShooter::ConnShooter (int _port, DevAugerShooter * _master):Rts2ConnNoSend (_master)
+ConnShooter::ConnShooter (int _port, DevAugerShooter * _master):rts2core::ConnNoSend (_master)
 {
 	nbuf_pos = 0;
 	port = _port;

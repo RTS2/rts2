@@ -26,7 +26,7 @@
 
 using namespace rts2core;
 
-ConnNotify::ConnNotify (rts2core::Block *_master):Rts2ConnNoSend (_master)
+ConnNotify::ConnNotify (rts2core::Block *_master):ConnNoSend (_master)
 {
 	debug = false;
 }

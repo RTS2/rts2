@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 
 #ifdef HAVE_SYS_INOTIFY_H
 #include <sys/inotify.h>
@@ -38,7 +38,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
-class ConnNotify:public Rts2ConnNoSend
+class ConnNotify:public ConnNoSend
 {
 	public:
 		/**

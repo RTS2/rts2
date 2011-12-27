@@ -19,7 +19,7 @@
 
 #include "xmlrpcd.h"
 
-#include "../../lib/rts2/connfork.h"
+#include "connfork.h"
 #include "timestamp.h"
 
 using namespace rts2xmlrpc;

@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 
 namespace rts2core
 {
@@ -34,7 +34,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnUDP:public Rts2ConnNoSend
+class ConnUDP:public ConnNoSend
 {
 	public:
 		ConnUDP (int _port, rts2core::Block * _master, size_t _maxSize = 500);

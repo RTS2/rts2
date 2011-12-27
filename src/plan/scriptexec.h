@@ -20,9 +20,9 @@
 #ifndef __SCRIPT_EXEC__
 #define __SCRIPT_EXEC__
 
+#include "connfork.h"
 #include "../../lib/rts2script/scripttarget.h"
 #include "../../lib/rts2script/scriptinterface.h"
-#include "../../lib/rts2/connfork.h"
 #include "../../lib/rts2/rts2client.h"
 #include "../../lib/rts2/rts2target.h"
 

@@ -20,7 +20,7 @@
 #ifndef __RTS2_SHOOTERCONN__
 #define __RTS2_SHOOTERCONN__
 
-#include "../../lib/rts2/rts2connnosend.h"
+#include "connnosend.h"
 
 #include "augershooter.h"
 
@@ -41,7 +41,7 @@ class DevAugerShooter;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnShooter:public Rts2ConnNoSend
+class ConnShooter:public rts2core::ConnNoSend
 {
 	public:
 		ConnShooter (int _port, DevAugerShooter * _master);

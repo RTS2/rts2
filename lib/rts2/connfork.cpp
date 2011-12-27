@@ -26,7 +26,7 @@
 
 using namespace rts2core;
 
-ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):Rts2ConnNoSend (_master)
+ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):ConnNoSend (_master)
 {
 	childPid = -1;
 	sockerr = -1;
@@ -92,7 +92,7 @@ int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 			FD_SET (sockwrite, writeset);
 		}
 	}
-	return Rts2ConnNoSend::add (readset, writeset, expset);
+	return ConnNoSend::add (readset, writeset, expset);
 }
 
 int ConnFork::receive (fd_set * readset)
@@ -117,7 +117,7 @@ int ConnFork::receive (fd_set * readset)
 			logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
 		}
 	}
-	return Rts2ConnNoSend::receive (readset);
+	return ConnNoSend::receive (readset);
 }
 
 int ConnFork::writable (fd_set * writeset)
@@ -149,7 +149,7 @@ int ConnFork::writable (fd_set * writeset)
 			}
 		}
 	}
-	return Rts2ConnNoSend::writable (writeset);
+	return ConnNoSend::writable (writeset);
 }
 
 void ConnFork::connectionError (int last_data_size)

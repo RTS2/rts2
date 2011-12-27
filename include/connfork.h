@@ -20,7 +20,7 @@
 #ifndef __RTS2_CONN_FORK__
 #define __RTS2_CONN_FORK__
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 
 namespace rts2core
 {
@@ -37,7 +37,7 @@ namespace rts2core
  *
  * @ingroup RTS2Block
  */
-class ConnFork:public Rts2ConnNoSend
+class ConnFork:public ConnNoSend
 {
 	public:
 		ConnFork (rts2core::Block * _master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout = 0);

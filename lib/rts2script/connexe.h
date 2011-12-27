@@ -21,7 +21,7 @@
 #define __RTS2_CONNEXE__
 
 #include "element.h"
-#include "../rts2/connfork.h"
+#include "connfork.h"
 
 namespace rts2script {
 

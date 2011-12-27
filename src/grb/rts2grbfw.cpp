@@ -26,30 +26,23 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-Rts2GrbForwardConnection::Rts2GrbForwardConnection (rts2core::Block * in_master,
-int in_forwardPort):
-Rts2ConnNoSend (in_master)
+Rts2GrbForwardConnection::Rts2GrbForwardConnection (rts2core::Block * in_master, int in_forwardPort):rts2core::ConnNoSend (in_master)
 {
 	forwardPort = in_forwardPort;
 }
 
-
-int
-Rts2GrbForwardConnection::init ()
+int Rts2GrbForwardConnection::init ()
 {
 	int ret;
 	sock = socket (PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 	{
-		logStream (MESSAGE_ERROR)
-			<< "Rts2GrbForwardConnection cannot create listen socket "
-			<< strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2GrbForwardConnection cannot create listen socket " << strerror (errno) << sendLog;
 		return -1;
 	}
 	// do some listen stuff..
 	const int so_reuseaddr = 1;
-	setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr,
-		sizeof (so_reuseaddr));
+	setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &so_reuseaddr, sizeof (so_reuseaddr));
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_port = htons (forwardPort);
@@ -57,15 +50,13 @@ Rts2GrbForwardConnection::init ()
 	ret = bind (sock, (struct sockaddr *) &server, sizeof (server));
 	if (ret == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2GrbForwardConnection::init bind " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2GrbForwardConnection::init bind " << strerror (errno) << sendLog;
 		return -1;
 	}
 	ret = listen (sock, 5);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"Rts2GrbForwardConnection::init cannot listen: " << strerror (errno)
+		logStream (MESSAGE_ERROR) << "Rts2GrbForwardConnection::init cannot listen: " << strerror (errno)
 			<< sendLog;
 		close (sock);
 		sock = -1;
@@ -74,9 +65,7 @@ Rts2GrbForwardConnection::init ()
 	return 0;
 }
 
-
-int
-Rts2GrbForwardConnection::receive (fd_set * set)
+int Rts2GrbForwardConnection::receive (fd_set * set)
 {
 	int new_sock;
 	struct sockaddr_in other_side;
@@ -86,9 +75,7 @@ Rts2GrbForwardConnection::receive (fd_set * set)
 		new_sock = accept (sock, (struct sockaddr *) &other_side, &addr_size);
 		if (new_sock == -1)
 		{
-			logStream (MESSAGE_ERROR) <<
-				"Rts2GrbForwardConnection::receive accept " << strerror (errno) <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "Rts2GrbForwardConnection::receive accept " << strerror (errno) << sendLog;
 			return 0;
 		}
 		logStream (MESSAGE_INFO)
@@ -96,8 +83,7 @@ Rts2GrbForwardConnection::receive (fd_set * set)
 			<< inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.
 			sin_port) <<
 			sendLog;
-		Rts2GrbForwardClientConn *newConn =
-			new Rts2GrbForwardClientConn (new_sock, getMaster ());
+		Rts2GrbForwardClientConn *newConn = new Rts2GrbForwardClientConn (new_sock, getMaster ());
 		getMaster ()->addConnection (newConn);
 	}
 	return 0;
@@ -108,14 +94,11 @@ Rts2GrbForwardConnection::receive (fd_set * set)
  * Takes cares of client connections.
  */
 
-Rts2GrbForwardClientConn::Rts2GrbForwardClientConn (int in_sock, rts2core::Block * in_master):Rts2ConnNoSend (in_sock,
-in_master)
+Rts2GrbForwardClientConn::Rts2GrbForwardClientConn (int in_sock, rts2core::Block * in_master):rts2core::ConnNoSend (in_sock, in_master)
 {
 }
 
-
-void
-Rts2GrbForwardClientConn::forwardPacket (int32_t *nbuf)
+void Rts2GrbForwardClientConn::forwardPacket (int32_t *nbuf)
 {
 	int ret;
 	ret = write (sock, nbuf, SIZ_PKT * sizeof (nbuf[0]));
@@ -128,9 +111,7 @@ Rts2GrbForwardClientConn::forwardPacket (int32_t *nbuf)
 	}
 }
 
-
-void
-Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
+void Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -138,12 +119,10 @@ Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
 			forwardPacket ((int32_t *) event->getArg ());
 			break;
 	}
-	Rts2ConnNoSend::postEvent (event);
+	rts2core::ConnNoSend::postEvent (event);
 }
 
-
-int
-Rts2GrbForwardClientConn::receive (fd_set * set)
+int Rts2GrbForwardClientConn::receive (fd_set * set)
 {
 	static int32_t loc_buf[SIZ_PKT];
 	if (sock < 0)
@@ -155,9 +134,7 @@ Rts2GrbForwardClientConn::receive (fd_set * set)
 		ret = read (sock, loc_buf, SIZ_PKT);
 		if (ret != SIZ_PKT)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2GrbForwardClientConn::receive "
-				<< strerror (errno) << " (" << errno << ", " << ret << ")"
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "Rts2GrbForwardClientConn::receive " << strerror (errno) << " (" << errno << ", " << ret << ")" << sendLog;
 			connectionError (ret);
 			return -1;
 		}

@@ -24,14 +24,14 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "../../lib/rts2/rts2connnosend.h"
+#include "connnosend.h"
 
 namespace rts2sensord
 {
 
 class FramWeather;
 
-class ConnFramWeather:public Rts2ConnNoSend
+class ConnFramWeather:public rts2core::ConnNoSend
 {
 	private:
 		FramWeather * master;

@@ -113,7 +113,7 @@ void DavisUdp::setWeatherTimeout (time_t wait_time, const char *msg)
 	master->setWeatherTimeout (wait_time, msg);
 }
 
-DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master):Rts2ConnNoSend (_master)
+DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master):rts2core::ConnNoSend (_master)
 {
 	weather_port = _weather_port;
 	weather_timeout = _weather_timeout;

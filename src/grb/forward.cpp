@@ -18,7 +18,7 @@
  */
 
 #include "block.h"
-#include "../../lib/rts2/rts2connnosend.h"
+#include "connnosend.h"
 #include "grbconst.h"
 #include "grbd.h"
 #include "rts2grbfw.h"
@@ -35,7 +35,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnFwGrb:public Rts2ConnNoSend
+class Rts2ConnFwGrb:public rts2core::ConnNoSend
 {
 	private:
 		long lbuf[SIZ_PKT];		 // local buffer - swaped for Linux
@@ -66,8 +66,7 @@ class Rts2ConnFwGrb:public Rts2ConnNoSend
 
 		time_t nextTime;
 	public:
-		Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port,
-			rts2core::Block * in_master);
+		Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master);
 		virtual ~ Rts2ConnFwGrb (void);
 		virtual int idle ();
 		virtual int init ();
@@ -104,8 +103,7 @@ Rts2ConnFwGrb::pr_imalive ()
 }
 
 
-Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master):Rts2ConnNoSend
-(in_master)
+Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master):rts2core::ConnNoSend (in_master)
 {
 	gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
 	strcpy (gcn_hostname, in_gcn_hostname);
