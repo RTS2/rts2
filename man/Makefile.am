@@ -99,7 +99,7 @@ man_MANS = \
     rts2-queue.1 \
     rts2.queue.5 \
     rts2-imgproc.7 \
-    rts2.fitstemplate.7
+    rts2.fitstemplate.5
 
 XP=xsltproc --nonet
 
