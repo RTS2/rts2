@@ -88,6 +88,40 @@ TVDOUBLE.d = @TV.double / double value, written as double
   </refsect1>
 
   <refsect1>
+    <title>Value formatting</title>
+
+    <para>
+      Following format specifier can be added after variable name, separated
+      with <emphasis>.</emphasis> (dot) - please see example above.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>d</option>
+	</term>
+	<listitem>
+	  <para>
+	    Float (double) number. Value will be formated as number with decimal point. If value cannot be
+	    converted to float number, 0 will be written.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>i</option>
+	</term>
+	<listitem>
+	  <para>
+	    Integer number. Value will be formatted as number without decimal
+	    point. Floats will be rounded, non-numbers will be written as 0.
+	  </para>
+	</listitem>
+     </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
     <title>Variable expansions</title>
 
     <para>
