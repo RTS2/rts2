@@ -597,6 +597,13 @@ class Block: public rts2core::App
 		 */
 		virtual Value *getValue (const char *device_name, const char *value_name);
 
+		/**
+		 * Parse expression to deliver value. In expression name of device is separated by .
+		 *
+		 * @see getValue
+		 */
+		Value *getValueExpression (std::string expression, const char *defaultDevice = NULL);
+
 		virtual void endRunLoop ()
 		{
 			setEndLoop (true);

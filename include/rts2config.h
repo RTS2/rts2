@@ -281,12 +281,12 @@ class Rts2Config:public Rts2ConfigRaw
 
 
 		/**
-		 * Return true if astrometry from this device should be ignored
+		 * Returns false if astrometry from this device should be ignored
 		 * for corrections.
 		 *
 		 * @param name Device name.
 		 *
-		 * @return True if device astromery should be 
+		 * @return false if device astromery should be ignored
 		 */
 		bool isAstrometryDevice (const char *device_name)
 		{
@@ -294,9 +294,20 @@ class Rts2Config:public Rts2ConfigRaw
 		}
 
 		/**
+		 * Return base observatory path.
+		 *
+		 * @return observatory base path
+		 */
+		std::string observatoryBasePath ()
+		{
+			return obs_basePath;
+		}
+
+
+		/**
 		 * Return extension pattern for que images.
 		 *
-		 * @return Extension pattern (observatory/que_path entry in config file).
+		 * @return Extension pattern (observatory/que_path entry in config file)
 		 */
 		std::string observatoryQuePath ()
 		{
@@ -429,6 +440,8 @@ class Rts2Config:public Rts2ConfigRaw
 
 		std::vector <std::string> obs_requiredDevices;
 		std::vector <std::string> imgproc_astrometryDevices;
+
+		std::string obs_basePath;
 
 		std::string obs_quePath;
 		std::string obs_acqPath;
