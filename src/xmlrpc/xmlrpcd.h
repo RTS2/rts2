@@ -53,7 +53,7 @@
 #include "libcss.h"
 #include "api.h"
 #include "images.h"
-#include "../../lib/rts2/connnotify.h"
+#include "connnotify.h"
 #include "../../lib/rts2script/execcli.h"
 #include "../../lib/rts2script/scriptinterface.h"
 #include "../../lib/rts2script/scripttarget.h"

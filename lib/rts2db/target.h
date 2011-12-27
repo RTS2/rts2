@@ -33,7 +33,7 @@
 #include "objectcheck.h"
 #include "device.h"
 #include "../rts2/rts2target.h"
-#include "../rts2/connnotify.h"
+#include "connnotify.h"
 #include "../rts2/counted_ptr.h"
 
 #include "targetset.h"

@@ -23,7 +23,7 @@
 #include "../../lib/rts2script/executorque.h"
 #include "../../lib/rts2script/simulque.h"
 
-#include "../../lib/rts2/connnotify.h"
+#include "connnotify.h"
 #include "rts2devclient.h"
 #include "rts2event.h"
 #include "rts2command.h"
