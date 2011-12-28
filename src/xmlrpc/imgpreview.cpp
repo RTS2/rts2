@@ -115,7 +115,7 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
     "}\n"
   "}\n"
   "else\n"
-  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + name + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
+  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + encodeURI(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
     "w2.focus ();"
   "}\n"
 "}\n"
@@ -164,7 +164,9 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, c
 
 void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label, float quantiles, int chan)
 {
-	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
+	std::string fp (fpath);
+	urlencode (fp);
+	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fp << "?ps=" << prevsize << "&lb=" << label << "&chan=" << chan << "&q=" << quantiles << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected, float quantiles, int chan)
@@ -184,6 +186,7 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 {
 	response_type = "image/jpeg";
 	rts2image::Image image;
+	urldecode (path);
 	image.openFile (path.c_str (), true, false);
 	Blob blob;
 
@@ -217,6 +220,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	float quantiles = params->getDouble ("q", DEFAULT_QUANTILES);
 	int chan = params->getInteger ("chan", ((XmlRpcd *) getMasterApp ())->defchan);
+
+	urldecode (path);
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
