@@ -32,7 +32,7 @@ void XmlRpc::urlencode (std::string &url)
 	std::string ret;
 	for (std::string::iterator iter = url.begin (); iter != url.end (); iter++)
 	{
-		if (isalnum (*iter))
+		if (isalnum (*iter) || *iter == '/')
 		{
 			ret += *iter;
 		}
