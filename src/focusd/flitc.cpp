@@ -258,6 +258,9 @@ int Fli::initHardware ()
 	if (ret)
 		return -1;
 	setFocusExtend (0, extent);
+#define OFFSET_MIN -3000.
+	focusingOffset->setMin( OFFSET_MIN) ;
+	tempOffset->setMin(OFFSET_MIN) ;
 
 	if (!isnan (defaultPosition->getValueFloat ()))
 	{
@@ -270,11 +273,11 @@ int Fli::initHardware ()
 			def = getPosition ();
 		}
 		// calibrate by moving to home position, then move to default position
-				ret = FLIHomeFocuser (dev);
+		ret = FLIHomeFocuser (dev);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-			return -1;
+		    logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+		    return -1;
 		}
 		setPosition (defaultPosition->getValueInteger ());
 	}
@@ -330,11 +333,11 @@ void Fli::meteo()
 	if( connMeteo) {
 	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
 	  if( meteoDeviceTemperature) {
-	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_FLOAT) {
-	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
-	      // logStream (MESSAGE_DEBUG) << "Fli::meteo:  temperature is: " << meteoDeviceTemperature->getValueFloat() <<"retrieved: " << temperatureMeteo->getValueDouble() << sendLog;
+	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_DOUBLE) {
+	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueDouble());
+	      //	      logStream (MESSAGE_DEBUG) << "Fli::meteo:  temperature is: " << meteoDeviceTemperature->getValueFloat() <<"retrieved: " << temperatureMeteo->getValueDouble() << sendLog;
 
-	      //	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
+	      //temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
 	    }  
 	  } else {
 	      logStream (MESSAGE_ERROR) << "FLI::meteo meteoDeviceTemperature=NULL : "<< sendLog;
@@ -375,6 +378,7 @@ int Fli::setTo (double num)
 		// num is declared to be float, double
 		if (((s+1) > num) && ((s-1) < num))
 			return 0;
+			//		  logStream (MESSAGE_ERROR) << "WHILE focuser to " << num << ", actual position is " << s << " " << (s+ 1) <<" " << (s-1) << sendLog;
 	} while (getNow () < timeout);
 	
 	logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
