@@ -449,7 +449,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	self.usedFlats = self.morningFlats
 			self.takeFlats(False)
 			self.log('I','finished skyflats, closing dome')
-			self.sendCommand('close_for 3600',domeDevice)
+			if domeDevice:
+				self.sendCommand('close_for 3600',domeDevice)
 
 		# configurations which were used..
 		usedConfigs = []
