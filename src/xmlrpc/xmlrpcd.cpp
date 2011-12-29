@@ -73,7 +73,7 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 	return iter->second;
 }
 
-XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), currentTarget (this)
+XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
@@ -84,10 +84,20 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
+	std::string usp;
 	if (nexpand.length () == 0)
-		nexpand = fexpand;
+	{
+		if (screxpand.length () == 0)
+			usp = fexpand;
+		else
+			usp = screxpand;
+	}
+	else
+	{
+		usp = nexpand;
+	}
 
-	std::string imagename = path + '/' + nexpand;
+	std::string imagename = path + '/' + usp;
 	// make nexpand available for next exposure
 	nexpand = std::string ("");
 
@@ -146,11 +156,18 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 
 }
 
-void XmlDevCameraClient::setNextExpand (const char *fe, bool ignoreUnused)
+void XmlDevCameraClient::setNextExpand (const char *fe)
 {
-	if (nexpand.length () != 0 && ignoreUnused == false)
+	if (nexpand.length () != 0)
 		throw rts2core::Error ("Cannot set file expansion, when the previous was not yet used.");
 	nexpand = std::string (fe);
+	screxpand = std::string ("");
+}
+
+void XmlDevCameraClient::setScriptExpand (const char *fe)
+{
+	screxpand = std::string (fe);
+	nexpand = std::string ("");
 }
 
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)

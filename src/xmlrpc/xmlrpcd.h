@@ -185,9 +185,16 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 * calls to this method, without camera going to EXPOSE state.
 		 *
 		 * @param fe              next filename expand string
-		 * @param ignoreUnused    if true, will not throw error if nexpand is not null
 		 */
-		void setNextExpand (const char *fe, bool ignoreUnused);
+		void setNextExpand (const char *fe);
+
+		/**
+		 * Set expansion for duration of script. This is not reset by next exposure, but
+		 * is reset by setNextExpand call.
+		 *
+		 * @param fe               next filename expand string
+		 */
+		void setScriptExpand (const char *fe);
 
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
@@ -205,11 +212,13 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		// path for storing XMLRPC produced images
 		std::string path;
 		
-		// expansion for images
+		// default expansion for images
 		std::string fexpand;
 
 		// expand path for next filename
 		std::string nexpand;
+
+		std::string screxpand;
 
 		/**
 		 * Last image location.
