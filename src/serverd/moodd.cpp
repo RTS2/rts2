@@ -31,12 +31,11 @@ class MoodD: public Device
 	public:
 		MoodD (int argc, char **argv);
 
-		virtual void centraldConnRunning (Rts2Conn *conn);
-		virtual void centraldConnBroken (Rts2Conn *conn);
+		virtual void centraldConnRunning (Connection *conn);
+		virtual void centraldConnBroken (Connection *conn);
 
-		virtual int setMasterState (Rts2Conn *_conn, int new_state);
+		virtual int setMasterState (Connection *_conn, int new_state);
 };
-
 
 }
 
@@ -70,13 +69,13 @@ MoodD::checkCentarlds ()
 	setWeatherState (true, "all OK");
 }
 
-void MoodD::centraldConnRunning (Rts2Conn *conn)
+void MoodD::centraldConnRunning (Connection *conn)
 {
 	Device::centraldConnRunning (conn);
 	checkCentarlds ();
 }
 
-void MoodD::centraldConnBroken (Rts2Conn *conn)
+void MoodD::centraldConnBroken (Connection *conn)
 {
 	Device::centraldConnBroken (conn);
  	checkCentarlds ();
@@ -87,7 +86,7 @@ MoodD::MoodD (int argc, char **argv):Device (argc, argv, DEVICE_TYPE_SENSOR, "MO
 
 }
 
-int MoodD::setMasterState (Rts2Conn *_conn, int new_state)
+int MoodD::setMasterState (Connection *_conn, int new_state)
 {
 	Device::setMasterState (_conn, new_state);
 	checkCentarlds ();

@@ -31,7 +31,7 @@
 #define OPT_NOSYNC          OPT_LOCAL + 53
 #define OPT_DARK            OPT_LOCAL + 54
 
-Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
+Rts2GenFocCamera::Rts2GenFocCamera (rts2core::Connection * in_connection, Rts2GenFocClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
 
@@ -61,7 +61,7 @@ void Rts2GenFocCamera::exposureStarted ()
 {
 	if (exe == NULL)
 	{
-		queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
+		queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 	}
 	rts2image::DevClientCameraFoc::exposureStarted ();
 }
@@ -133,7 +133,7 @@ void Rts2GenFocCamera::printFWHMTable ()
 	std::cout << "=======================" << std::endl;
 }
 
-void Rts2GenFocCamera::focusChange (Rts2Conn * focus)
+void Rts2GenFocCamera::focusChange (rts2core::Connection * focus)
 {
 	if (getActualImage()->sexResultNum)
 	{
@@ -183,15 +183,15 @@ void Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 		}
 	}
 	rts2image::DevClientCameraFoc::focusChange (focus);
-	queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, bop));
+	queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 }
 
 void Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 {
-	connection->queCommand (new rts2core::Rts2CommandCenter (this, centerWidth, centerHeight));
+	connection->queCommand (new rts2core::CommandCenter (this, centerWidth, centerHeight));
 }
 
-Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
+Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
 {
 	defExposure = rts2_nan ("f");
 	defCenter = 0;
@@ -308,12 +308,12 @@ int Rts2GenFocClient::processOption (int in_opt)
 			skipFilters.push_back (atoi (optarg));
 			break;
 		default:
-			return Rts2Client::processOption (in_opt);
+			return rts2core::Client::processOption (in_opt);
 	}
 	return 0;
 }
 
-Rts2GenFocCamera * Rts2GenFocClient::createFocCamera (Rts2Conn * conn)
+Rts2GenFocCamera * Rts2GenFocClient::createFocCamera (rts2core::Connection * conn)
 {
 	return new Rts2GenFocCamera (conn, this);
 }
@@ -328,20 +328,20 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	}
 	else if (xOffset >= 0 || yOffset >= 0 || imageWidth >= 0 || imageHeight >= 0)
 	{
-		cam->queCommand (new rts2core::Rts2CommandBox (cam, xOffset, yOffset, imageWidth, imageHeight));
+		cam->queCommand (new rts2core::CommandBox (cam, xOffset, yOffset, imageWidth, imageHeight));
 	}
 	if (!isnan (defExposure))
 	{
-		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "exposure", '=', defExposure));
+		cam->queCommand (new rts2core::CommandChangeValue (cam, "exposure", '=', defExposure));
 
 	}
 	if (darks)
 	{
-		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "SHUTTER", '=', 1));
+		cam->queCommand (new rts2core::CommandChangeValue (cam, "SHUTTER", '=', 1));
 	}
 	if (defBin >= 0)
 	{
-		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "binning", '=', defBin));
+		cam->queCommand (new rts2core::CommandChangeValue (cam, "binning", '=', defBin));
 	}
 	// post exposure event..if name agree
 	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)
@@ -349,13 +349,13 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			printf ("Get conn: %s\n", cam->getName ());
-			cam->queCommand (new rts2core::Rts2CommandExposure (this, cam, bop));
+			cam->queCommand (new rts2core::CommandExposure (this, cam, bop));
 		}
 	}
 	return cam;
 }
 
-rts2core::Rts2DevClient *Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *Rts2GenFocClient::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -374,7 +374,7 @@ rts2core::Rts2DevClient *Rts2GenFocClient::createOtherType (Rts2Conn * conn, int
 		case DEVICE_TYPE_SENSOR:
 			return new rts2image::DevClientWriteImage (conn);
 		default:
-			return Rts2Client::createOtherType (conn, other_device_type);
+			return rts2core::Client::createOtherType (conn, other_device_type);
 	}
 }
 
@@ -383,7 +383,7 @@ int Rts2GenFocClient::init ()
 	Rts2Config *config;
 	int ret;
 
-	ret = Rts2Client::init ();
+	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
 

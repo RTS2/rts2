@@ -88,22 +88,22 @@ class Daemon:public rts2core::Block
 
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
-		virtual void centraldConnRunning (Rts2Conn *conn);
-		virtual void centraldConnBroken (Rts2Conn *conn);
+		virtual void centraldConnRunning (Connection *conn);
+		virtual void centraldConnBroken (Connection *conn);
 
 		virtual int baseInfo ();
-		int baseInfo (Rts2Conn * conn);
-		int sendBaseInfo (Rts2Conn * conn);
+		int baseInfo (Connection * conn);
+		int sendBaseInfo (Connection * conn);
 
 		virtual int info ();
-		int info (Rts2Conn * conn);
+		int info (Connection * conn);
 		int infoAll ();
 		void constInfoAll ();
-		int sendInfo (Rts2Conn * conn, bool forceSend = false);
+		int sendInfo (Connection * conn, bool forceSend = false);
 
-		int sendMetaInfo (Rts2Conn * conn);
+		int sendMetaInfo (Connection * conn);
 
-		virtual int setValue (Rts2Conn * conn);
+		virtual int setValue (Connection * conn);
 
 		/**
 		 * Return full device state. You are then responsible
@@ -163,6 +163,9 @@ class Daemon:public rts2core::Block
 
 		/**
 		 * Send progress parameters.
+		 *
+		 * @param start  operation start time
+		 * @param end    operation end time
 		 */
 		void sendProgressAll (double start, double end);
 
@@ -189,7 +192,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Returns true if connection is running.
 		 */
-		virtual bool isRunning (Rts2Conn *conn) = 0;
+		virtual bool isRunning (Connection *conn) = 0;
 
 		virtual int checkNotNulls ();
 
@@ -413,7 +416,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Called to set new state value
 		 */
-		void setState (int new_state, const char *description, Rts2Conn *commandedConn);
+		void setState (int new_state, const char *description, Connection *commandedConn);
 
 		/**
 		 * Called when state of the device is changed.
@@ -422,7 +425,7 @@ class Daemon:public rts2core::Block
 		 * @param old_state   Old device state.
 		 * @param description Text description of state change.
 		 */
-		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
+		virtual void stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn);
 
 		/**
 		 * Called from idle loop after HUP signal occured.
@@ -437,7 +440,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Send state change to all connection.
 		 */
-		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"), Rts2Conn *commandedConn = NULL);
+		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"), Connection *commandedConn = NULL);
 
 		/**
 		 * Raise hardware error status bit.

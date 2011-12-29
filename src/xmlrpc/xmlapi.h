@@ -30,7 +30,7 @@ using namespace XmlRpc;
 /**
  * Transform connection values to XMLRPC.
  */
-void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result, bool pretty);
+void connectionValuesToXmlRpc (rts2core::Connection *conn, XmlRpcValue& result, bool pretty);
 
 /**
  * Represents session methods. Those must be executed either with user name and
@@ -273,7 +273,7 @@ class SessionMethodValue:public SessionMethod
 	protected:
 		SessionMethodValue (const char *method, XmlRpcServer *s):SessionMethod (method, s) {}
 
-		void setXmlValutRts2 (Rts2Conn *conn, std::string valueName, XmlRpcValue &x_val);
+		void setXmlValutRts2 (rts2core::Connection *conn, std::string valueName, XmlRpcValue &x_val);
 };
 
 class SetValue: public SessionMethodValue

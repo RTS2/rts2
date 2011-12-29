@@ -24,9 +24,9 @@
 #include "../../lib/rts2script/simulque.h"
 
 #include "connnotify.h"
-#include "rts2devclient.h"
+#include "devclient.h"
 #include "rts2event.h"
-#include "rts2command.h"
+#include "command.h"
 #include "../../lib/rts2db/rts2devicedb.h"
 #include "../../lib/rts2db/planset.h"
 
@@ -39,30 +39,30 @@
 namespace rts2selector
 {
 
-class Rts2DevClientTelescopeSel:public rts2core::Rts2DevClientTelescope
+class Rts2DevClientTelescopeSel:public rts2core::DevClientTelescope
 {
 	public:
-		Rts2DevClientTelescopeSel (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection) {}
+		Rts2DevClientTelescopeSel (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection) {}
 
 	protected:
 		virtual void moveEnd ()
 		{
 			if (!moveWasCorrecting)
 				connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-			rts2core::Rts2DevClientTelescope::moveEnd ();
+			rts2core::DevClientTelescope::moveEnd ();
 		}
 };
 
-class Rts2DevClientExecutorSel:public rts2core::Rts2DevClientExecutor
+class Rts2DevClientExecutorSel:public rts2core::DevClientExecutor
 {
 	public:
-		Rts2DevClientExecutorSel (Rts2Conn * in_connection):rts2core::Rts2DevClientExecutor (in_connection) {}
+		Rts2DevClientExecutorSel (rts2core::Connection * in_connection):rts2core::DevClientExecutor (in_connection) {}
 
 	protected:
 		virtual void lastReadout ()
 		{
 			connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-			rts2core::Rts2DevClientExecutor::lastReadout ();
+			rts2core::DevClientExecutor::lastReadout ();
 		}
 };
 
@@ -72,7 +72,7 @@ class SelectorDev:public Rts2DeviceDb
 		SelectorDev (int argc, char **argv);
 		virtual ~ SelectorDev (void);
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual void postEvent (Rts2Event * event);
 		virtual void changeMasterState (int old_state, int new_state);
 
@@ -91,7 +91,7 @@ class SelectorDev:public Rts2DeviceDb
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -341,9 +341,9 @@ int SelectorDev::idle ()
 	return Rts2DeviceDb::idle ();
 }
 
-rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	rts2core::Rts2DevClient *ret;
+	rts2core::DevClient *ret;
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
@@ -352,7 +352,7 @@ rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int othe
 			ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
 			updateNext ();
 			if (next_id->getValueInteger () > 0 && selEnabled->getValueBool ())
-				conn->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
+				conn->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
 			return ret;
 		default:
 			return Rts2DeviceDb::createOtherType (conn, other_device_type);
@@ -496,12 +496,12 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		{
 			if (interrupt->getValueBool () == true)
 			{
-				(*iexec)->queCommand (new rts2core::Rts2CommandExecNow (this, next_id->getValueInteger ()));
+				(*iexec)->queCommand (new rts2core::CommandExecNow (this, next_id->getValueInteger ()));
 				interrupt->setValueBool (false);
 			}
 			else
 			{
-				(*iexec)->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
+				(*iexec)->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
 			}
 		}
 		return 0;
@@ -564,7 +564,7 @@ void SelectorDev::updateSelectLength ()
 {
 	if (!isnan (selectUntil->getValueDouble ()) && selectUntil->getValueDouble () > getNow ())
 		return;
-	Rts2Conn *centralConn = getSingleCentralConn ();
+	rts2core::Connection *centralConn = getSingleCentralConn ();
 	if (centralConn != NULL)
 	{
 		rts2core::Value *night_stop = centralConn->getValue ("night_stop");
@@ -579,7 +579,7 @@ void SelectorDev::updateSelectLength ()
 	selectUntil->setValueDouble (getNow () + 86400);
 }
 
-int SelectorDev::commandAuthorized (Rts2Conn * conn)
+int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 {
 	char *name;
 	if (conn->isCommand ("next"))
@@ -634,7 +634,7 @@ int SelectorDev::commandAuthorized (Rts2Conn * conn)
 			else
 			{
 				time_t now;
-				Rts2Conn *centralConn = getSingleCentralConn ();
+				rts2core::Connection *centralConn = getSingleCentralConn ();
 				if (centralConn == NULL)
 				{
 					time (&now);

@@ -85,7 +85,7 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 	_os << "<table>\n";
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn = serv->getOpenConnection (device);
+	rts2core::Connection *conn = serv->getOpenConnection (device);
 	if (conn == NULL)
 		throw rts2core::Error ("Cannot find specified device");
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)

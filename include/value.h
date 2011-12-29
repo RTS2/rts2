@@ -249,10 +249,10 @@
 
 #include <status.h>
 
-class Rts2Conn;
-
 namespace rts2core
 {
+
+class Connection;
 
 /**
  * Holds values send over TCP/IP.
@@ -292,7 +292,7 @@ class Value
 		 *
 		 * @return -2 on error, 0 on success.
 		 */
-		virtual int setValue (Rts2Conn * connection) = 0;
+		virtual int setValue (Connection * connection) = 0;
 
 		/**
 		 * Set value from string.
@@ -397,14 +397,14 @@ class Value
 		 * @param connection Connection over which value will be send.
 		 * @return -1 on error, 0 on success.
 		 */
-		int sendMetaInfo (Rts2Conn * connection);
+		int sendMetaInfo (Connection * connection);
 
 		/**
 		 * Sends value over given connection.
 		 *
 		 * @param connection Connection on which value will be send.
 		 */
-		virtual void send (Rts2Conn * connection);
+		virtual void send (Connection * connection);
 
 		/**
 		 * Reset value change bit, so changes will be recorded from now on.
@@ -454,7 +454,7 @@ class Value
 		/**
 		 * Send values meta infomration. @see sendMetaInfo adds to it actual value.
 		 */
-		virtual int sendTypeMetaInfo (Rts2Conn * connection);
+		virtual int sendTypeMetaInfo (Connection * connection);
 
 	private:
 		std::string valueName;
@@ -472,12 +472,12 @@ class ValueString:public Value
 		ValueString (std::string in_val_name);
 		ValueString (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0); 
 		virtual ~ ValueString (void) {}
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
 		std::string getValueString () { return value; }
-		virtual void send (Rts2Conn * connection);
+		virtual void send (Connection * connection);
 		virtual void setFromValue (Value * newValue);
 		virtual bool isEqual (Value *other_value);
 		virtual int checkNotNull ();
@@ -495,7 +495,7 @@ class ValueInteger:public Value
 	public:
 		ValueInteger (std::string in_val_name);
 		ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		/**
 		 * Returns -1 on error
@@ -542,7 +542,7 @@ class ValueDouble:public Value
 	public:
 		ValueDouble (std::string in_val_name);
 		ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Value * old_value);
@@ -617,7 +617,7 @@ class ValueFloat:public Value
 		ValueFloat (std::string in_val_name);
 		ValueFloat (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Value * old_value);
@@ -662,7 +662,7 @@ class ValueBool:public ValueInteger
 	public:
 		ValueBool (std::string in_val_name);
 		ValueBool (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 
 		void setValueBool (bool in_bool)
@@ -739,7 +739,7 @@ class ValueSelection:public ValueInteger
 		ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits = false, int32_t flags = 0);
 		virtual ~ValueSelection (void);
 
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int doOpValue (char op, Value * old_value);
 
@@ -822,7 +822,7 @@ class ValueSelection:public ValueInteger
 		void duplicateSelVals (ValueSelection * otherValue);
 
 	protected:
-		virtual int sendTypeMetaInfo (Rts2Conn * connection);
+		virtual int sendTypeMetaInfo (Connection * connection);
 
 	private:
 		// holds variables bag..
@@ -840,7 +840,7 @@ class ValueLong:public Value
 	public:
 		ValueLong (std::string in_val_name);
 		ValueLong (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Value * old_value);
@@ -885,7 +885,7 @@ class ValueRaDec: public Value
 	public:
 		ValueRaDec (std::string in_val_name);
 		ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 
 		/**
 		 * Set value from string, uses parsing from
@@ -978,7 +978,7 @@ class ValueAltAz: public Value
 	public:
 		ValueAltAz (std::string in_val_name);
 		ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 
 		/**
 		 * Set value from string, uses parsing from

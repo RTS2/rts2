@@ -52,9 +52,9 @@ class Rts2DevMirror:public rts2core::Device
 			return -1;
 		}
 
-		int startOpen (Rts2Conn * conn);
-		int startClose (Rts2Conn * conn);
+		int startOpen (rts2core::Connection * conn);
+		int startClose (rts2core::Connection * conn);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 };
 #endif							 /* ! __RTS2_MIRROR__ */

@@ -134,7 +134,7 @@ void NSelWindow::changeSelRow (int change)
 	selrow %= maxrow;
 }
 
-NDevListWindow::NDevListWindow (rts2core::Block * in_block, connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
+NDevListWindow::NDevListWindow (rts2core::Block * in_block, rts2core::connections_t *in_conns):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
 {
 	block = in_block;
 	conns = in_conns;
@@ -149,7 +149,7 @@ void NDevListWindow::draw ()
 	NWindow::draw ();
 	werase (scrolpad);
 	maxrow = 0;
-	connections_t::iterator iter;
+	rts2core::connections_t::iterator iter;
 	for (iter = block->getCentraldConns ()->begin (); iter != block->getCentraldConns ()->end (); iter++)
 	{
 		wprintw (scrolpad, "centrald\n");
@@ -157,7 +157,7 @@ void NDevListWindow::draw ()
 	}
 	for (iter = conns->begin (); iter != conns->end (); iter++)
 	{
-		Rts2Conn *conn = *iter;
+		rts2core::Connection *conn = *iter;
 		wprintw (scrolpad, "%s\n", conn->getName ());
 		maxrow++;
 	}
@@ -166,7 +166,7 @@ void NDevListWindow::draw ()
 	winrefresh ();
 }
 
-void NCentraldWindow::printState (Rts2Conn * conn)
+void NCentraldWindow::printState (rts2core::Connection * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
@@ -175,13 +175,13 @@ void NCentraldWindow::printState (Rts2Conn * conn)
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
-void NCentraldWindow::drawDevice (Rts2Conn * conn)
+void NCentraldWindow::drawDevice (rts2core::Connection * conn)
 {
 	printState (conn);
 	maxrow++;
 }
 
-NCentraldWindow::NCentraldWindow (Rts2Client * in_client):NSelWindow (10, 1, COLS - 10, LINES - 25, 1, 300, 300)
+NCentraldWindow::NCentraldWindow (rts2core::Client * in_client):NSelWindow (10, 1, COLS - 10, LINES - 25, 1, 300, 300)
 {
 	client = in_client;
 	draw ();
@@ -196,7 +196,7 @@ void NCentraldWindow::draw ()
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	maxrow = 0;
-	connections_t::iterator iter;
+	rts2core::connections_t::iterator iter;
 	for (iter = client->getCentraldConns ()->begin (); iter != client->getCentraldConns ()->end (); iter++)
 	{
 		drawDevice (*iter);

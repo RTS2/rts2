@@ -37,6 +37,23 @@
  */
 class Rts2ConnFwGrb:public rts2core::ConnNoSend
 {
+	public:
+		Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master);
+		virtual ~ Rts2ConnFwGrb (void);
+		virtual int idle ();
+		virtual int init ();
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+
+		virtual void connectionError (int last_data_size);
+		virtual int receive (fd_set * set);
+
+		int lastPacket ();
+		double delta ();
+		char *lastTarget ();
+		void setLastTarget (char *in_last_target);
+		int lastTargetTime ();
+
 	private:
 		long lbuf[SIZ_PKT];		 // local buffer - swaped for Linux
 		long nbuf[SIZ_PKT];		 // network buffer
@@ -65,33 +82,14 @@ class Rts2ConnFwGrb:public rts2core::ConnNoSend
 		int gcn_listen_sock;
 
 		time_t nextTime;
-	public:
-		Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master);
-		virtual ~ Rts2ConnFwGrb (void);
-		virtual int idle ();
-		virtual int init ();
-
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
-
-		virtual void connectionError (int last_data_size);
-		virtual int receive (fd_set * set);
-
-		int lastPacket ();
-		double delta ();
-		char *lastTarget ();
-		void setLastTarget (char *in_last_target);
-		int lastTargetTime ();
 };
 
-double
-Rts2ConnFwGrb::getPktSod ()
+double Rts2ConnFwGrb::getPktSod ()
 {
 	return lbuf[PKT_SOD] / 100.0;
 }
 
-
-int
-Rts2ConnFwGrb::pr_imalive ()
+int Rts2ConnFwGrb::pr_imalive ()
 {
 	deltaValue = here_sod - getPktSod ();
 	logStream (MESSAGE_DEBUG)
@@ -101,7 +99,6 @@ Rts2ConnFwGrb::pr_imalive ()
 	last_imalive_sod = getPktSod ();
 	return 0;
 }
-
 
 Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::Block * in_master):rts2core::ConnNoSend (in_master)
 {
@@ -123,7 +120,6 @@ Rts2ConnFwGrb::Rts2ConnFwGrb (char *in_gcn_hostname, int in_gcn_port, rts2core::
 	nextTime += getConnTimeout ();
 }
 
-
 Rts2ConnFwGrb::~Rts2ConnFwGrb (void)
 {
 	delete gcn_hostname;
@@ -133,9 +129,7 @@ Rts2ConnFwGrb::~Rts2ConnFwGrb (void)
 		close (gcn_listen_sock);
 }
 
-
-int
-Rts2ConnFwGrb::idle ()
+int Rts2ConnFwGrb::idle ()
 {
 	int ret;
 	int err;
@@ -187,9 +181,7 @@ Rts2ConnFwGrb::idle ()
 	return 0;
 }
 
-
-int
-Rts2ConnFwGrb::init_call ()
+int Rts2ConnFwGrb::init_call ()
 {
 	struct addrinfo hints;
 	struct addrinfo *info;
@@ -232,9 +224,7 @@ Rts2ConnFwGrb::init_call ()
 	return 0;
 }
 
-
-int
-Rts2ConnFwGrb::init_listen ()
+int Rts2ConnFwGrb::init_listen ()
 {
 	int ret;
 
@@ -280,9 +270,7 @@ Rts2ConnFwGrb::init_listen ()
 	return 0;
 }
 
-
-int
-Rts2ConnFwGrb::init ()
+int Rts2ConnFwGrb::init ()
 {
 	if (!strcmp (gcn_hostname, "-"))
 		return init_listen ();
@@ -290,21 +278,17 @@ Rts2ConnFwGrb::init ()
 		return init_call ();
 }
 
-
-int
-Rts2ConnFwGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int Rts2ConnFwGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (gcn_listen_sock >= 0)
 	{
 		FD_SET (gcn_listen_sock, readset);
 		return 0;
 	}
-	return Rts2Conn::add (readset, writeset, expset);
+	return rts2core::Connection::add (readset, writeset, expset);
 }
 
-
-void
-Rts2ConnFwGrb::connectionError (int last_data_size)
+void Rts2ConnFwGrb::connectionError (int last_data_size)
 {
 	logStream (MESSAGE_DEBUG) << "Rts2ConnFwGrb::connectionError" << sendLog;
 	if (sock > 0)
@@ -320,9 +304,7 @@ Rts2ConnFwGrb::connectionError (int last_data_size)
 	}
 }
 
-
-int
-Rts2ConnFwGrb::receive (fd_set * set)
+int Rts2ConnFwGrb::receive (fd_set * set)
 {
 	int ret = 0;
 	struct tm *t;
@@ -414,7 +396,6 @@ Rts2ConnFwGrb::receive (fd_set * set)
 	return ret;
 }
 
-
 // now the application
 class Rts2AppFw:public rts2core::Block
 {
@@ -427,11 +408,11 @@ class Rts2AppFw:public rts2core::Block
 		int forwardPort;
 
 	protected:
-		virtual Rts2Conn * createClientConnection (char *in_deviceName)
+		virtual rts2core::Connection * createClientConnection (char *in_deviceName)
 		{
 			return NULL;
 		}
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
+		virtual rts2core::Connection *createClientConnection (Rts2Address * in_addr)
 		{
 			return NULL;
 		}
@@ -445,8 +426,7 @@ class Rts2AppFw:public rts2core::Block
 		virtual int run ();
 };
 
-Rts2AppFw::Rts2AppFw (int in_argc, char **in_argv):
-rts2core::Block (in_argc, in_argv)
+Rts2AppFw::Rts2AppFw (int in_argc, char **in_argv):rts2core::Block (in_argc, in_argv)
 {
 	gcncnn = NULL;
 	gcn_host = NULL;
@@ -458,16 +438,13 @@ rts2core::Block (in_argc, in_argv)
 	addOption ('f', "forward", 1, "forward incoming notices to that port");
 }
 
-
 Rts2AppFw::~Rts2AppFw (void)
 {
 	if (gcn_host)
 		delete[]gcn_host;
 }
 
-
-int
-Rts2AppFw::processOption (int in_opt)
+int Rts2AppFw::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -487,9 +464,7 @@ Rts2AppFw::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2AppFw::init ()
+int Rts2AppFw::init ()
 {
 	int ret;
 
@@ -542,9 +517,7 @@ Rts2AppFw::init ()
 	return ret;
 }
 
-
-int
-Rts2AppFw::run ()
+int Rts2AppFw::run ()
 {
 	int ret;
 	ret = init ();
@@ -560,9 +533,7 @@ Rts2AppFw::run ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2AppFw grb = Rts2AppFw (argc, argv);
 	return grb.run ();

@@ -67,7 +67,7 @@ class Rts2Centrald:public Daemon
 		virtual int info ();
 		virtual int idle ();
 
-		virtual void deviceReady (Rts2Conn * conn);
+		virtual void deviceReady (rts2core::Connection * conn);
 
 		/**
 		 * Switch centrald state to ON.
@@ -109,7 +109,7 @@ class Rts2Centrald:public Daemon
 			return changeState (SERVERD_SOFT_OFF, user);
 		}
 
-		virtual Rts2Conn *createConnection (int in_sock);
+		virtual rts2core::Connection *createConnection (int in_sock);
 		void connAdded (Rts2ConnCentrald * added);
 
 		/**
@@ -120,7 +120,7 @@ class Rts2Centrald:public Daemon
 		 *
 		 * @return Connection with given connection number.
 		 */
-		Rts2Conn *getConnection (int conn_num);
+		rts2core::Connection *getConnection (int conn_num);
 
 		void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
@@ -163,7 +163,7 @@ class Rts2Centrald:public Daemon
 		 */
 		void bopMaskChanged ();
 
-		virtual int statusInfo (Rts2Conn * conn);
+		virtual int statusInfo (rts2core::Connection * conn);
 
 		/**
 		 * Return state of system, as seen from device identified by connection.
@@ -178,7 +178,7 @@ class Rts2Centrald:public Daemon
 		 *
 		 * @param conn Connection which is asking for state.
 		 */
-		int getStateForConnection (Rts2Conn * conn);
+		int getStateForConnection (rts2core::Connection * conn);
 
 	protected:
 		/**
@@ -193,12 +193,12 @@ class Rts2Centrald:public Daemon
 		 * NULL. They can be used in future to link two centrald to enable
 		 * cooperative observation.
 		 */
-		virtual Rts2Conn *createClientConnection (char *in_deviceName)
+		virtual rts2core::Connection *createClientConnection (char *in_deviceName)
 		{
 			return NULL;
 		}
 
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
+		virtual rts2core::Connection *createClientConnection (Rts2Address * in_addr)
 		{
 			return NULL;
 		}
@@ -206,14 +206,14 @@ class Rts2Centrald:public Daemon
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual bool isRunning (Rts2Conn *conn)
+		virtual bool isRunning (rts2core::Connection *conn)
 		{
 			return conn->isConnState (CONN_CONNECTED);
 		}
 
-		virtual void connectionRemoved (Rts2Conn * conn);
+		virtual void connectionRemoved (rts2core::Connection * conn);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
+		virtual void stateChanged (int new_state, int old_state, const char *description, rts2core::Connection *commandedConn);
 
 		virtual void signaledHUP ();
 
@@ -287,7 +287,7 @@ class Rts2Centrald:public Daemon
  *
  * It is used in Rts2Centrald.
  */
-class Rts2ConnCentrald:public Rts2Conn
+class Rts2ConnCentrald:public rts2core::Connection
 {
 	private:
 		int authorized;
@@ -335,9 +335,9 @@ class Rts2ConnCentrald:public Rts2Conn
 		 */
 		virtual ~ Rts2ConnCentrald (void);
 		virtual int sendMessage (Rts2Message & msg);
-		int sendConnectedInfo (Rts2Conn * conn);
+		int sendConnectedInfo (rts2core::Connection * conn);
 
-		virtual void updateStatusWait (Rts2Conn * conn);
+		virtual void updateStatusWait (rts2core::Connection * conn);
 
 		void statusCommandSend ()
 		{

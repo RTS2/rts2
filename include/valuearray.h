@@ -44,7 +44,7 @@ class ValueArray: public rts2core::Value
 		 */
 		virtual size_t size () = 0;
 
-		virtual int setValues (std::vector <int> &index, Rts2Conn * conn) = 0;
+		virtual int setValues (std::vector <int> &index, Connection * conn) = 0;
 };
 
 /**
@@ -62,8 +62,8 @@ class StringArray: public ValueArray
 
 		virtual ~StringArray () {}
 
-		virtual int setValue (Rts2Conn * connection);
-		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
+		virtual int setValue (Connection * connection);
+		virtual int setValues (std::vector <int> &index, Connection * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (rts2core::Value * newValue);
@@ -130,8 +130,8 @@ class DoubleArray: public ValueArray
 		
 		virtual ~DoubleArray () {}
 
-		virtual int setValue (Rts2Conn * connection);
-		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
+		virtual int setValue (Connection * connection);
+		virtual int setValues (std::vector <int> &index, Connection * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (rts2core::Value *newValue);
@@ -201,8 +201,8 @@ class IntegerArray: public ValueArray
 		
 		virtual ~IntegerArray () {}
 
-		virtual int setValue (Rts2Conn * connection);
-		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
+		virtual int setValue (Connection * connection);
+		virtual int setValues (std::vector <int> &index, Connection * conn);
 		virtual int setValueCharArr (const char *_value);
 		virtual const char *getValue ();
 		virtual void setFromValue (rts2core::Value *newValue);
@@ -279,8 +279,8 @@ class BoolArray: public IntegerArray
 			value.clear ();
 			changed ();
 		}
-		virtual int setValue (Rts2Conn * connection);
-		virtual int setValues (std::vector <int> &index, Rts2Conn * conn);
+		virtual int setValue (Connection * connection);
+		virtual int setValues (std::vector <int> &index, Connection * conn);
 		virtual int setValueCharArr (const char *_value);
 
 		virtual void setFromValue (rts2core::Value *newValue);

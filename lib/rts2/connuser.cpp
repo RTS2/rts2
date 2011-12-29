@@ -19,10 +19,12 @@
 
 #include <string.h>
 
-#include "rts2user.h"
+#include "connuser.h"
 #include "status.h"
 
-Rts2ConnUser::Rts2ConnUser (int in_centralId, const char *in_login)
+using namespace rts2core;
+
+ConnUser::ConnUser (int in_centralId, const char *in_login)
 {
 	centralId = in_centralId;
 	strncpy (login, in_login, DEVICE_NAME_SIZE);
@@ -30,13 +32,12 @@ Rts2ConnUser::Rts2ConnUser (int in_centralId, const char *in_login)
 }
 
 
-Rts2ConnUser::~Rts2ConnUser (void)
+ConnUser::~ConnUser (void)
 {
 }
 
 
-int
-Rts2ConnUser::update (int in_centralId, const char *new_login)
+int ConnUser::update (int in_centralId, const char *new_login)
 {
 	if (in_centralId != centralId)
 		return -1;

@@ -60,7 +60,7 @@ class Grbd:public Rts2DeviceDb
 
 		int newGcnGrb (int tar_id);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 		void updateSwift (double lastTime, double ra, double dec);
 		void updateIntegral (double lastTime, double ra, double dec);

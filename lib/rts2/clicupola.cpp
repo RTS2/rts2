@@ -18,14 +18,14 @@
  */
 
 #include "clicupola.h"
-#include "rts2command.h"
+#include "command.h"
 
 #include <math.h>
 #include <libnova/libnova.h>
 
 using namespace rts2teld;
 
-ClientCupola::ClientCupola (Rts2Conn * conn):rts2core::Rts2DevClientCupola (conn)
+ClientCupola::ClientCupola (rts2core::Connection * conn):rts2core::DevClientCupola (conn)
 {
 }
 
@@ -37,19 +37,19 @@ ClientCupola::~ClientCupola (void)
 void ClientCupola::syncEnded ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
-	rts2core::Rts2DevClientCupola::syncEnded ();
+	rts2core::DevClientCupola::syncEnded ();
 }
 
 void ClientCupola::syncFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
-	rts2core::Rts2DevClientCupola::syncFailed (status);
+	rts2core::DevClientCupola::syncFailed (status);
 }
 
 void ClientCupola::notMoveFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
-	rts2core::Rts2DevClientCupola::notMoveFailed (status);
+	rts2core::DevClientCupola::notMoveFailed (status);
 }
 
 void ClientCupola::postEvent (Rts2Event * event)
@@ -59,12 +59,12 @@ void ClientCupola::postEvent (Rts2Event * event)
 	{
 		case EVENT_CUP_START_SYNC:
 			dome_position = (struct ln_equ_posn *) event->getArg ();
-			connection->queCommand (new rts2core::Rts2CommandCupolaMove (this, dome_position->ra, dome_position->dec));
+			connection->queCommand (new rts2core::CommandCupolaMove (this, dome_position->ra, dome_position->dec));
 			dome_position->ra = rts2_nan ("f");
 			break;
 		case EVENT_CUP_NOT_MOVE:
-			connection->queCommand (new rts2core::Rts2CommandCupolaNotMove (this));
+			connection->queCommand (new rts2core::CommandCupolaNotMove (this));
 			break;
 	}
-	rts2core::Rts2DevClientCupola::postEvent (event);
+	rts2core::DevClientCupola::postEvent (event);
 }

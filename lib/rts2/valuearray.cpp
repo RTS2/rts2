@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2conn.h"
+#include "connection.h"
 #include "valuearray.h"
 
 #include "libnova_cpp.h"
@@ -35,7 +35,7 @@ StringArray::StringArray (std::string _val_name, std::string _description, bool 
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
-int StringArray::setValue (Rts2Conn * connection)
+int StringArray::setValue (Connection * connection)
 {
 	value.clear ();
 
@@ -51,7 +51,7 @@ int StringArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int StringArray::setValues (std::vector <int> &index, Rts2Conn *conn)
+int StringArray::setValues (std::vector <int> &index, Connection *conn)
 {
 	char *val;
 	int ret = conn->paramNextString (&val);
@@ -105,7 +105,7 @@ DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool 
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
 }
 
-int DoubleArray::setValue (Rts2Conn * connection)
+int DoubleArray::setValue (Connection * connection)
 {
 	value.clear ();
 
@@ -121,7 +121,7 @@ int DoubleArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int DoubleArray::setValues (std::vector <int> &index, Rts2Conn *conn)
+int DoubleArray::setValues (std::vector <int> &index, Connection *conn)
 {
 	double val;
 	int ret = conn->paramNextDouble (&val);
@@ -270,7 +270,7 @@ IntegerArray::IntegerArray (std::string _val_name, std::string _description, boo
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
 }
 
-int IntegerArray::setValue (Rts2Conn * connection)
+int IntegerArray::setValue (Connection * connection)
 {
 	value.clear ();
 
@@ -286,7 +286,7 @@ int IntegerArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int IntegerArray::setValues (std::vector <int> &index, Rts2Conn *conn)
+int IntegerArray::setValues (std::vector <int> &index, Connection *conn)
 {
 	int val;
 	int ret = conn->paramNextInteger (&val);
@@ -394,7 +394,7 @@ const char * BoolArray::getDisplayValue ()
 	return _os.c_str ();
 }
 
-int BoolArray::setValue (Rts2Conn * connection)
+int BoolArray::setValue (Connection * connection)
 {
 	value.clear ();
 
@@ -414,7 +414,7 @@ int BoolArray::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-int BoolArray::setValues (std::vector <int> &index, Rts2Conn *conn)
+int BoolArray::setValues (std::vector <int> &index, Connection *conn)
 {
 	char *val;
 	int ret = conn->paramNextString (&val);

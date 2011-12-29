@@ -92,7 +92,7 @@ class XmlDevInterface
 
 	protected:
 		virtual XmlRpcd *getMaster () = 0;
-		virtual Rts2Conn *getConnection () = 0;
+		virtual rts2core::Connection *getConnection () = 0;
 
 	private:
 		// value change times
@@ -107,30 +107,30 @@ class XmlDevInterface
  *
  * @addgroup XMLRPC
  */
-class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
+class XmlDevClient:public rts2core::DevClient, XmlDevInterface
 {
 	public:
-		XmlDevClient (Rts2Conn *conn):rts2core::Rts2DevClient (conn), XmlDevInterface () {}
+		XmlDevClient (rts2core::Connection *conn):rts2core::DevClient (conn), XmlDevInterface () {}
 
 		virtual void stateChanged (Rts2ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
-			rts2core::Rts2DevClient::stateChanged (state);
+			rts2core::DevClient::stateChanged (state);
 		}
 
 		virtual void valueChanged (rts2core::Value * value)
 		{
 			XmlDevInterface::valueChanged (value);
-			rts2core::Rts2DevClient::valueChanged (value);
+			rts2core::DevClient::valueChanged (value);
 		}
 
 	protected:
 		virtual XmlRpcd *getMaster ()
 		{
-			return (XmlRpcd *) rts2core::Rts2DevClient::getMaster ();
+			return (XmlRpcd *) rts2core::DevClient::getMaster ();
 		}
 
-		virtual Rts2Conn *getConnection () { return rts2core::Rts2DevClient::getConnection (); }
+		virtual rts2core::Connection *getConnection () { return rts2core::DevClient::getConnection (); }
 };
 
 /**
@@ -142,7 +142,7 @@ class XmlDevClient:public rts2core::Rts2DevClient, XmlDevInterface
 class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::ScriptInterface, XmlDevInterface
 {
 	public:
-		XmlDevCameraClient (Rts2Conn *conn);
+		XmlDevCameraClient (rts2core::Connection *conn);
 
 		virtual ~XmlDevCameraClient ()
 		{
@@ -199,7 +199,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 			return (XmlRpcd *) rts2image::DevClientCameraImage::getMaster ();
 		}
 
-		virtual Rts2Conn *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
+		virtual rts2core::Connection *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
 
 	private:
 		// path for storing XMLRPC produced images
@@ -225,7 +225,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		rts2script::ScriptTarget currentTarget;
 
-		template < typename T > void createOrReplaceValue (T * &val, Rts2Conn *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
+		template < typename T > void createOrReplaceValue (T * &val, rts2core::Connection *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
 		{
 			std::string vn = std::string (conn->getName ()) + suffix;
 			rts2core::Value *v = conn->getValue (vn.c_str ());
@@ -261,11 +261,11 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		XmlRpcd (int argc, char **argv);
 		virtual ~XmlRpcd ();
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
-		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
+		void stateChangedEvent (rts2core::Connection *conn, Rts2ServerState *new_state);
 
-		void valueChangedEvent (Rts2Conn *conn, rts2core::Value *new_value);
+		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
 
 		virtual void message (Rts2Message & msg);
 
@@ -345,7 +345,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		virtual void signaledHUP ();
 
-		virtual void connectionRemoved (Rts2Conn *coon);
+		virtual void connectionRemoved (rts2core::Connection *coon);
 
 		virtual void asyncFinished (XmlRpcServerConnection *source);
 

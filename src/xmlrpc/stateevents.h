@@ -24,7 +24,7 @@
 #include <list>
 
 #include "emailaction.h"
-#include "rts2conn.h"
+#include "connection.h"
 
 namespace rts2xmlrpc
 {
@@ -68,7 +68,7 @@ class StateChange
 			return deviceName == _deviceName;
 		}
 
-		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime) = 0;
+		virtual void run (XmlRpcd *_master, rts2core::Connection *_conn, double validTime) = 0;
 
 	protected:
 		int getChangeMask () { return changeMask; };
@@ -95,7 +95,7 @@ class StateChangeRecord: public StateChange
 			dbValueId = -1;
 		}
 
-		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime);
+		virtual void run (XmlRpcd *_master, rts2core::Connection *_conn, double validTime);
 };
 
 
@@ -113,7 +113,7 @@ class StateChangeCommand: public StateChange
 			commandName = _commandName;
 		}
 
-		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime);
+		virtual void run (XmlRpcd *_master, rts2core::Connection *_conn, double validTime);
 
 	private:
 		std::string deviceName;
@@ -132,7 +132,7 @@ class StateChangeEmail: public StateChange, public EmailAction
 		{
 		}
 
-		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
+		virtual void run (XmlRpcd *_master, rts2core::Connection *_conn, double validTime)
 		{
 			EmailAction::run (_master);
 		}

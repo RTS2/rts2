@@ -21,7 +21,7 @@
 #define __RTS2_CONN__
 
 /**
- * @file Contains Rts2Conn class.
+ * @file Contains Connection class.
  */
 
 #include <map>
@@ -77,19 +77,19 @@ class Rts2Address;
 
 class Rts2Event;
 
-class Rts2Conn;
-
 namespace rts2core
 {
+class Connection;
+
 class Value;
 
 class Block;
 
-class Rts2Command;
+class Command;
 
-class Rts2CommandStatusInfo;
+class CommandStatusInfo;
 
-class Rts2DevClient;
+class DevClient;
 
 /**
  * Superclass for any connection errors. All errors which occurs on connection
@@ -100,30 +100,28 @@ class Rts2DevClient;
 class ConnError: public Error
 {
 	public:
-		ConnError (Rts2Conn *conn, const char *_msg);
-		ConnError (Rts2Conn *conn, const char *_msg, int _errn);
+		ConnError (Connection *conn, const char *_msg);
+		ConnError (Connection *conn, const char *_msg, int _errn);
 };
-
-}
 
 /**
  * Represents one connection. It keeps connection running, check it states, and
  * handles various TCP/IP issues.  Connection is primary network connection,
  * but there are descendand classes which holds forked instance output.
  *
- * Rts2Conn is used primarly in @see rts2core::Block, which holds list of connections
+ * Connection is used primarly in @see rts2core::Block, which holds list of connections
  * and provide function to manage them.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup RTS2Block
  */
-class Rts2Conn:public Rts2Object
+class Connection:public Rts2Object
 {
 	public:
-		Rts2Conn (rts2core::Block * in_master);
-		Rts2Conn (int in_sock, rts2core::Block * in_master);
-		virtual ~ Rts2Conn (void);
+		Connection (rts2core::Block * in_master);
+		Connection (int in_sock, rts2core::Block * in_master);
+		virtual ~ Connection (void);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -318,7 +316,7 @@ class Rts2Conn:public Rts2Object
 		 * last command was received.  The optional notBop parameter describe at
 		 * which system states commands should not be send, and rather kept in que.
 		 *
-		 * @see Rts2Command
+		 * @see Command
 		 * @see EVENT_COMMAND_OK
 		 * @see EVENT_COMMAND_FAILED
 		 *
@@ -331,22 +329,22 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @callergraph
 		 */
-		void queCommand (rts2core::Rts2Command * cmd, int notBop, Rts2Object * originator = NULL);
+		void queCommand (rts2core::Command * cmd, int notBop, Rts2Object * originator = NULL);
 
 		/**
 		 * Que command on connection.
 		 *
-		 * @see Rts2Conn::queCommand(Rts2Command*,int)
+		 * @see Connection::queCommand(Command*,int)
 		 *
 		 * @param cmd Command which will be send.
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queCommand (rts2core::Rts2Command * cmd);
+		void queCommand (rts2core::Command * cmd);
 
 		/**
 		 * Send immediatelly command to connection.
-		 * This call is different from @see Rts2Conn::queCommand, that it will send
+		 * This call is different from @see Connection::queCommand, that it will send
 		 * command immediatly, and will not wait for end of previous command block.
 		 * As command is send immeditely, BOP mask does not make any sence in such case.
 		 *
@@ -354,7 +352,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queSend (rts2core::Rts2Command * cmd);
+		void queSend (rts2core::Command * cmd);
 
 		/**
 		 * Hook for command return.
@@ -367,7 +365,7 @@ class Rts2Conn:public Rts2Object
 		 * @param cmd Finished command.
 		 * @param in_status Command return status.
 		 */
-		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status);
+		virtual void commandReturn (rts2core::Command * cmd, int in_status);
 
 		/**
 		 * Determines if que is empty and there is not any running command.
@@ -408,7 +406,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @param conn Connection which will be removed.
 		 */
-		virtual void deleteConnection (Rts2Conn * conn);
+		virtual void deleteConnection (Connection * conn);
 
 		/**
 		 * Called when new device connect to the system.
@@ -503,9 +501,9 @@ class Rts2Conn:public Rts2Object
 
 		Rts2ServerState *getStateObject () { return serverState; }
 
-		rts2core::Rts2DevClient *getOtherDevClient () { return otherDevice; }
+		DevClient *getOtherDevClient () { return otherDevice; }
 
-		virtual void updateStatusWait (Rts2Conn * conn);
+		virtual void updateStatusWait (Connection * conn);
 		virtual void masterStateChanged ();
 
 		friend class rts2core::ConnError;
@@ -590,6 +588,12 @@ class Rts2Conn:public Rts2Object
 			return ((*iter).second)->getChannelSize (chan);
 		}
 
+		/**
+		 * Returns operation/state progress. Returns NAN if state progress parameter
+		 * is not available.
+		 */
+		double getProgress (double now);
+
 	protected:
 		char *buf;
 		size_t buf_size;
@@ -648,7 +652,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Reference to other device client.
 		 */
-		rts2core::Rts2DevClient *otherDevice;
+		DevClient *otherDevice;
 
 		/**
 		 * Type of device.
@@ -712,8 +716,8 @@ class Rts2Conn:public Rts2Object
 		in_addr addr;
 		int port;				 // local port & connection
 
-		std::list < rts2core::Rts2Command * >commandQue;
-		rts2core::Rts2Command *runningCommand;
+		std::list < rts2core::Command * >commandQue;
+		rts2core::Command *runningCommand;
 		enum {WAITING, SEND, RETURNING}
 		runningCommandStatus;
 
@@ -793,4 +797,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		void dataReceived ();
 };
+
+}
+
 #endif							 /* ! __RTS2_CONN__ */

@@ -21,37 +21,39 @@
 
 EXEC SQL include sqlca;
 
-Rts2DevClientPhotExec::Rts2DevClientPhotExec (Rts2Conn * in_connection):Rts2DevClientPhot (in_connection),DevScript (in_connection)
+using namespace rts2script;
+
+DevClientPhotExec::DevClientPhotExec (rts2core::Connection * in_connection):DevClientPhot (in_connection),DevScript (in_connection)
 {
 	minFlux = 20;
 }
 
 
-Rts2DevClientPhotExec::~Rts2DevClientPhotExec ()
+DevClientPhotExec::~DevClientPhotExec ()
 {
 	deleteScript ();
 }
 
-void Rts2DevClientPhotExec::integrationStart ()
+void DevClientPhotExec::integrationStart ()
 {
 	if (currentTarget)
 		currentTarget->startObservation ();
-	Rts2DevClientPhot::integrationStart ();
+	DevClientPhot::integrationStart ();
 }
 
-void Rts2DevClientPhotExec::integrationEnd ()
+void DevClientPhotExec::integrationEnd ()
 {
 	nextCommand ();
-	Rts2DevClientPhot::integrationEnd ();
+	DevClientPhot::integrationEnd ();
 }
 
-void Rts2DevClientPhotExec::integrationFailed (int status)
+void DevClientPhotExec::integrationFailed (int status)
 {
 	nextCommand ();
-	Rts2DevClientPhot::integrationFailed (status);
+	DevClientPhot::integrationFailed (status);
 }
 
-void Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
+void DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id;
@@ -77,7 +79,7 @@ void Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 
 	if (is_ov)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2DevClientPhotExec::addCount is_ov" << sendLog;
+		logStream (MESSAGE_DEBUG) << "DevClientPhotExec::addCount is_ov" << sendLog;
 		return;
 	}
 
@@ -130,7 +132,7 @@ void Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 
 	if (sqlca.sqlcode != 0)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevClientPhotExec::addCount db error " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "DevClientPhotExec::addCount db error " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 	}
 	else
@@ -139,18 +141,18 @@ void Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 	}
 }
 
-int Rts2DevClientPhotExec::getNextCommand ()
+int DevClientPhotExec::getNextCommand ()
 {
 	return getScript()->nextCommand (*this, &nextComd, cmd_device);
 }
 
-void Rts2DevClientPhotExec::postEvent (Rts2Event * event)
+void DevClientPhotExec::postEvent (Rts2Event * event)
 {
 	DevScript::postEvent (new Rts2Event (event));
-	Rts2DevClientPhot::postEvent (event);
+	DevClientPhot::postEvent (event);
 }
 
-void Rts2DevClientPhotExec::nextCommand ()
+void DevClientPhotExec::nextCommand ()
 {
 	int ret;
 	ret = haveNextCommand (this);
@@ -164,13 +166,13 @@ void Rts2DevClientPhotExec::nextCommand ()
 	nextComd = NULL;               // after command execute, it will be deleted
 }
 
-void Rts2DevClientPhotExec::filterMoveEnd ()
+void DevClientPhotExec::filterMoveEnd ()
 {
 	if ((connection->getState () & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
 		nextCommand ();
 }
 
-void Rts2DevClientPhotExec::filterMoveFailed (int status)
+void DevClientPhotExec::filterMoveFailed (int status)
 {
 	deleteScript ();
 }

@@ -94,7 +94,7 @@ int Cupola::idle ()
 	return Dome::idle ();
 }
 
-int Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
+int Cupola::moveTo (rts2core::Connection * conn, double ra, double dec)
 {
 	int ret;
 	targetPos.ra = ra;
@@ -103,8 +103,7 @@ int Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 	ret = moveStart ();
 	if (ret)
 		return ret;
-	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE,
-		DOME_CUP_NOT_SYNC | BOP_EXPOSURE);
+	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE, DOME_CUP_NOT_SYNC | BOP_EXPOSURE);
 	return 0;
 }
 
@@ -172,7 +171,7 @@ bool Cupola::needSlitChange ()
 	return true;
 }
 
-int Cupola::commandAuthorized (Rts2Conn * conn)
+int Cupola::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("move"))
 	{

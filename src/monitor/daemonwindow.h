@@ -23,9 +23,9 @@
 #include "nwindow.h"
 
 #include "block.h"
-#include "rts2conn.h"
-#include "../../lib/rts2/rts2client.h"
-#include "rts2devclient.h"
+#include "connection.h"
+#include "../../lib/rts2/client.h"
+#include "devclient.h"
 
 namespace rts2ncurses
 {
@@ -86,25 +86,25 @@ class NSelWindow:public NWindow
 class NDevListWindow:public NSelWindow
 {
 	public:
-		NDevListWindow (rts2core::Block * in_block, connections_t *in_conns);
+		NDevListWindow (rts2core::Block * in_block, rts2core::connections_t *in_conns);
 		virtual ~ NDevListWindow (void);
 		virtual void draw ();
 
 	private:
 		rts2core::Block * block;
-		connections_t *conns;
+		rts2core::connections_t *conns;
 };
 
 class NCentraldWindow:public NSelWindow
 {
 	public:
-		NCentraldWindow (Rts2Client * in_client);
+		NCentraldWindow (rts2core::Client * in_client);
 		virtual ~ NCentraldWindow (void);
 		virtual void draw ();
 	private:
-		Rts2Client * client;
-		void printState (Rts2Conn * conn);
-		void drawDevice (Rts2Conn * conn);
+		rts2core::Client * client;
+		void printState (rts2core::Connection * conn);
+		void drawDevice (rts2core::Connection * conn);
 };
 
 }

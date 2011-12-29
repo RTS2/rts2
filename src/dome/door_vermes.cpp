@@ -24,7 +24,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include "rts2conn.h"
+#include "connection.h"
 #include "dome.h"
 #include "vermes.h" 
 #include "door_vermes.h" 

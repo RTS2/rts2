@@ -34,7 +34,7 @@ namespace rts2core
 class ConnCreateError:public ConnError
 {
 	public:
-		ConnCreateError (Rts2Conn *conn, const char *_msg, int _errn):ConnError (conn, _msg, _errn)
+		ConnCreateError (Connection *conn, const char *_msg, int _errn):ConnError (conn, _msg, _errn)
 		{
 		}
 };
@@ -48,7 +48,7 @@ class ConnCreateError:public ConnError
 class ConnSendError:public ConnError
 {
 	public:
-		ConnSendError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
+		ConnSendError (Connection *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };
@@ -62,7 +62,7 @@ class ConnSendError:public ConnError
 class ConnTimeoutError:public ConnError
 {
 	public:
-		ConnTimeoutError (Rts2Conn *conn, const char *_msg):ConnError (conn, _msg)
+		ConnTimeoutError (Connection *conn, const char *_msg):ConnError (conn, _msg)
 		{
 		}
 };
@@ -75,7 +75,7 @@ class ConnTimeoutError:public ConnError
 class ConnReceivingError:public ConnError
 {
 	public:
-		ConnReceivingError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
+		ConnReceivingError (Connection *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };

@@ -18,7 +18,7 @@
  */
 
 #include "valuerectangle.h"
-#include "rts2conn.h"
+#include "connection.h"
 
 using namespace rts2core;
 
@@ -65,7 +65,7 @@ void ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
 	checkChange ();
 }
 
-int ValueRectangle::setValue (Rts2Conn *connection)
+int ValueRectangle::setValue (Connection *connection)
 {
 	char *val;
 	if (connection->paramNextString (&val) || x->setValueCharArr (val))

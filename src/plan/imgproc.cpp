@@ -61,7 +61,7 @@ class ImageProc:public rts2core::Device
 
 		virtual void changeMasterState (int old_state, int new_state);
 
-		virtual int deleteConnection (Rts2Conn * conn);
+		virtual int deleteConnection (rts2core::Connection * conn);
 
 		int que (ConnProcess * newProc);
 
@@ -79,7 +79,7 @@ class ImageProc:public rts2core::Device
 		int checkNotProcessed ();
 		void changeRunning (ConnProcess * newImage);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int reloadConfig ();
@@ -360,7 +360,7 @@ void ImageProc::changeMasterState (int old_state, int new_state)
 #endif
 }
 
-int ImageProc::deleteConnection (Rts2Conn * conn)
+int ImageProc::deleteConnection (rts2core::Connection * conn)
 {
 	std::list < ConnProcess * >::iterator img_iter;
 	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
@@ -573,7 +573,7 @@ int ImageProc::checkNotProcessed ()
 	return 0;
 }
 
-int ImageProc::commandAuthorized (Rts2Conn * conn)
+int ImageProc::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("que_image"))
 	{

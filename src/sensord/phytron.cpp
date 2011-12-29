@@ -42,7 +42,7 @@ class Phytron:public Sensor
 		virtual int init ();
 		virtual int info ();
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
@@ -332,7 +332,7 @@ int Phytron::info ()
 	return Sensor::info ();
 }
 
-int Phytron::commandAuthorized (Rts2Conn * conn)
+int Phytron::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

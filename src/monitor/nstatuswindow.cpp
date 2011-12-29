@@ -23,7 +23,7 @@
 
 using namespace rts2ncurses;
 
-NStatusWindow::NStatusWindow (NComWin * in_comWin, Rts2Client * in_master):NWindow (0, LINES - 1, COLS, 1, 0)
+NStatusWindow::NStatusWindow (NComWin * in_comWin, rts2core::Client * in_master):NWindow (0, LINES - 1, COLS, 1, 0)
 {
 	master = in_master;
 	comWin = in_comWin;
@@ -59,9 +59,9 @@ void NStatusWindow::draw ()
 		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + Rts2Config::instance ()->getObserver ()->lng;
 		struct ln_hms hms;
 		ln_deg_to_hms (lst, &hms);
-		std::map <Rts2Conn *, std::vector < rts2core::Value *> > failed = master->failedValues ();
+		std::map <rts2core::Connection *, std::vector < rts2core::Value *> > failed = master->failedValues ();
 		int f = 0;
-		for (std::map <Rts2Conn *, std::vector < rts2core::Value *> >::iterator i = failed.begin (); i != failed.end (); i++)
+		for (std::map <rts2core::Connection *, std::vector < rts2core::Value *> >::iterator i = failed.begin (); i != failed.end (); i++)
 			f += i->second.size ();
 
 		mvwprintw (window, 0, COLS - 38, "%2i %2i", failed.size (), f);

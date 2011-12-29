@@ -22,7 +22,7 @@
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
 #include "../../lib/rts2db/simbadtarget.h"
-#include "rts2command.h"
+#include "command.h"
 
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/observationset.h"
@@ -402,7 +402,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		  	throw XmlRpcException ("Telescope is not connected");
 		struct ln_equ_posn pos;
 		tar->getPosition (&pos);
-		(*iter)->queCommand (new rts2core::Rts2CommandMove (master, NULL, pos.ra, pos.dec));
+		(*iter)->queCommand (new rts2core::CommandMove (master, NULL, pos.ra, pos.dec));
 
 		// return status..
 		rts2core::ValueRaDec *telRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TEL", RTS2_VALUE_RADEC));
@@ -426,7 +426,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 		if (iter == master->getConnections ()->end ())
 		  	throw XmlRpcException ("Executor is not running");
-		(*iter)->queCommand (new rts2core::Rts2CommandExecNext (master, tar->getTargetID ()));
+		(*iter)->queCommand (new rts2core::CommandExecNext (master, tar->getTargetID ()));
 
 		std::ostringstream os;
 		os << "{\"status\":0}";
@@ -441,7 +441,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
 		if (iter == master->getConnections ()->end ())
 		  	throw XmlRpcException ("Executor is not running");
-		(*iter)->queCommand (new rts2core::Rts2CommandExecNow (master, tar->getTargetID ()));
+		(*iter)->queCommand (new rts2core::CommandExecNow (master, tar->getTargetID ()));
 
 		returnJSON ("{\"status\":0}", response_type, response, response_length);
 		return;

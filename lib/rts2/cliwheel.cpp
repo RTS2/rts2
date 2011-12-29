@@ -18,11 +18,11 @@
  */
 
 #include "cliwheel.h"
-#include "rts2command.h"
+#include "command.h"
 
 using namespace rts2camd;
 
-ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):rts2core::Rts2DevClientFilter (conn)
+ClientFilterCamera::ClientFilterCamera (rts2core::Connection * conn):rts2core::DevClientFilter (conn)
 {
 	activeConn = NULL;
 }
@@ -37,14 +37,14 @@ void ClientFilterCamera::filterMoveEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END, activeConn));
 	activeConn = NULL;
-	rts2core::Rts2DevClientFilter::filterMoveEnd ();
+	rts2core::DevClientFilter::filterMoveEnd ();
 }
 
 void ClientFilterCamera::filterMoveFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END, activeConn));
 	activeConn = NULL;
-	rts2core::Rts2DevClientFilter::filterMoveFailed (status);
+	rts2core::DevClientFilter::filterMoveFailed (status);
 }
 
 void ClientFilterCamera::postEvent (Rts2Event * event)
@@ -56,7 +56,7 @@ void ClientFilterCamera::postEvent (Rts2Event * event)
 			fs = (filterStart *) event->getArg ();
 			if (!strcmp (getName (), fs->filterName) && fs->filter >= 0)
 			{
-				connection->queCommand (new rts2core::Rts2CommandFilter (this, fs->filter));
+				connection->queCommand (new rts2core::CommandFilter (this, fs->filter));
 				fs->filter = -1;
 				activeConn = fs->arg;
 			}
@@ -67,7 +67,7 @@ void ClientFilterCamera::postEvent (Rts2Event * event)
 				fs->filter = getConnection ()->getValueInteger ("filter");
 			break;
 	}
-	rts2core::Rts2DevClientFilter::postEvent (event);
+	rts2core::DevClientFilter::postEvent (event);
 }
 
 void  ClientFilterCamera::valueChanged (rts2core::Value * value)
@@ -77,5 +77,5 @@ void  ClientFilterCamera::valueChanged (rts2core::Value * value)
 		getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END, activeConn));
 		activeConn = NULL;
 	}
-	rts2core::Rts2DevClientFilter::valueChanged (value);
+	rts2core::DevClientFilter::valueChanged (value);
 }

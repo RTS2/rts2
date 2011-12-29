@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2devclient.h"
+#include "devclient.h"
 #include "../../lib/rts2/rts2displayvalue.h"
-#include "rts2command.h"
+#include "command.h"
 #include "../../lib/rts2/expander.h"
 #include "utilsfunc.h"
 
@@ -32,7 +32,7 @@
  *
  * @ingroup RTS2Logger
  */
-class Rts2DevClientLogger:public rts2core::Rts2DevClient
+class Rts2DevClientLogger:public rts2core::DevClient
 {
 	public:
 		/**
@@ -43,7 +43,7 @@ class Rts2DevClientLogger:public rts2core::Rts2DevClient
 		 * @param in_fileCreationInterval  Interval between file creation.
 		 * @param in_logNames              String with space separated names of values which will be logged.
 		 */
-		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
+		Rts2DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
 
 		virtual ~ Rts2DevClientLogger (void);
 		virtual void infoOK ();
@@ -132,7 +132,7 @@ class Rts2LoggerBase
 {
 	public:
 		Rts2LoggerBase ();
-		rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 	protected:
 		int readDevices (std::istream & is);
 

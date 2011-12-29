@@ -36,7 +36,7 @@ ElementWaitFor::ElementWaitFor (Script * _script, const char *new_device, char *
 	setIdleTimeout (1);
 }
 
-int ElementWaitFor::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitFor::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return idle ();
 }
@@ -61,7 +61,7 @@ int ElementWaitFor::idle ()
 	return Element::idle ();
 }
 
-int ElementSleep::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementSleep::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (!isnan (sec))
 	{
@@ -79,7 +79,7 @@ int ElementSleep::idle ()
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementWaitForIdle::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitForIdle::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (client->getConnection ()->queEmptyForOriginator (client) == false)
 		return NEXT_COMMAND_KEEP;

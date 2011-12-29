@@ -56,7 +56,7 @@ using namespace rts2core;
 
 void Daemon::addConnectionSock (int in_sock)
 {
-	Rts2Conn *conn = createConnection (in_sock);
+	Connection *conn = createConnection (in_sock);
 	if (sendMetaInfo (conn))
 	{
 		delete conn;
@@ -493,7 +493,7 @@ void Daemon::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	}
 }
 
-void Daemon::centraldConnRunning (Rts2Conn *conn)
+void Daemon::centraldConnRunning (Connection *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
@@ -501,7 +501,7 @@ void Daemon::centraldConnRunning (Rts2Conn *conn)
 	}
 }
 
-void Daemon::centraldConnBroken (Rts2Conn *conn)
+void Daemon::centraldConnBroken (Connection *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
@@ -801,7 +801,7 @@ int Daemon::baseInfo ()
 	return 0;
 }
 
-int Daemon::baseInfo (Rts2Conn * conn)
+int Daemon::baseInfo (Connection * conn)
 {
 	int ret;
 	ret = baseInfo ();
@@ -813,7 +813,7 @@ int Daemon::baseInfo (Rts2Conn * conn)
 	return sendBaseInfo (conn);
 }
 
-int Daemon::sendBaseInfo (Rts2Conn * conn)
+int Daemon::sendBaseInfo (Connection * conn)
 {
 	for (ValueVector::iterator iter = constValues.begin ();
 		iter != constValues.end (); iter++)
@@ -830,7 +830,7 @@ int Daemon::info ()
 	return 0;
 }
 
-int Daemon::info (Rts2Conn * conn)
+int Daemon::info (Connection * conn)
 {
 	int ret;
 	try
@@ -890,7 +890,7 @@ void Daemon::constInfoAll ()
 		sendBaseInfo (*iter);
 }
 
-int Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
+int Daemon::sendInfo (Connection * conn, bool forceSend)
 {
 	if (!isRunning (conn))
 		return -1;
@@ -929,7 +929,7 @@ void Daemon::sendProgressAll (double start, double end)
 	  	(*iter)->sendProgress (start, end);
 }
 
-int Daemon::sendMetaInfo (Rts2Conn * conn)
+int Daemon::sendMetaInfo (Connection * conn)
 {
 	int ret;
 	ret = info_time->sendMetaInfo (conn);
@@ -952,7 +952,7 @@ int Daemon::sendMetaInfo (Rts2Conn * conn)
 	return 0;
 }
 
-int Daemon::setValue (Rts2Conn * conn)
+int Daemon::setValue (Connection * conn)
 {
 	char *v_name;
 	char *op;
@@ -1059,19 +1059,19 @@ err:
 	return ret;
 }
 
-void Daemon::setState (int new_state, const char *description, Rts2Conn *commandedConn)
+void Daemon::setState (int new_state, const char *description, Connection *commandedConn)
 {
 	if (state == new_state)
 		return;
 	stateChanged (new_state, state, description, commandedConn);
 }
 
-void Daemon::stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn)
+void Daemon::stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn)
 {
 	state = new_state;
 }
 
-void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end, Rts2Conn *commandedConn)
+void Daemon::maskState (int state_mask, int new_state, const char *description, double start, double end, Connection *commandedConn)
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)

@@ -43,7 +43,7 @@ class ConnExe:public rts2core::ConnFork
 
 		virtual void processErrorLine (char *errbuf);
 
-		Rts2Conn *getConnectionForScript (const char *name);
+		rts2core::Connection *getConnectionForScript (const char *name);
 		int getDeviceType (const char *name);
 	
 	private:

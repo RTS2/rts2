@@ -47,7 +47,7 @@ class Rts2DevPhot:public ScriptDevice
 		rts2core::ValueInteger *count;
 		rts2core::ValueFloat *exp;
 		rts2core::ValueBool *is_ov;
-		Rts2Conn * integrateConn;
+		rts2core::Connection * integrateConn;
 
 	protected:
 		rts2core::ValueInteger *req_count;
@@ -79,18 +79,18 @@ class Rts2DevPhot:public ScriptDevice
 		virtual int enableMove ();
 		virtual int disableMove ();
 
-		int startIntegrate (Rts2Conn * conn, float in_req_time, int _req_count);
+		int startIntegrate (rts2core::Connection * conn, float in_req_time, int _req_count);
 		virtual int stopIntegrate ();
 
-		int homeFilter (Rts2Conn * conn);
+		int homeFilter (rts2core::Connection * conn);
 		int moveFilter (int new_filter);
-		int enableFilter (Rts2Conn * conn);
+		int enableFilter (rts2core::Connection * conn);
 
 		virtual int scriptEnds ();
 
 		virtual void changeMasterState (int old_state, int new_state);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 		float getExposure () { return exp->getValueFloat (); }
 
@@ -105,7 +105,7 @@ class Rts2DevPhot:public ScriptDevice
 
 		virtual int idle ();
 
-		virtual int deleteConnection (Rts2Conn * conn)
+		virtual int deleteConnection (rts2core::Connection * conn)
 		{
 			if (integrateConn == conn)
 				integrateConn = NULL;

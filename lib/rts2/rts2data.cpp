@@ -17,12 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2conn.h"
+#include "connection.h"
 #include "rts2data.h"
 
 using namespace rts2core;
 
-int DataRead::readDataSize (Rts2Conn *conn)
+int DataRead::readDataSize (Connection *conn)
 {
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
@@ -47,7 +47,7 @@ DataChannels::~DataChannels ()
 		delete (*iter);
 }
 
-void DataChannels::initFromConnection (Rts2Conn *conn)
+void DataChannels::initFromConnection (Connection *conn)
 {
 	int data_type, channum;
 	if (conn->paramNextInteger (&data_type) || conn->paramNextInteger (&channum))

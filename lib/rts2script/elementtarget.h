@@ -42,7 +42,7 @@ class ElementDisable:public ElementTarget
 {
 	public:
 		ElementDisable (Script * in_script, Rts2Target * in_target):ElementTarget (in_script, in_target) {}
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "disable target"; }
 		virtual void printXml (std::ostream &os) { os << "  <disable>"; }
@@ -55,7 +55,7 @@ class ElementTempDisable:public ElementTarget
 	public:
 		ElementTempDisable (Script * in_script, Rts2Target * in_target, const char *in_distime):ElementTarget (in_script, in_target) 
 			{ distime = std::string(in_distime); }
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void prettyPrint (std::ostream &os) { os << "temporary disable target for " << distime << " (" << getDistTimeSec () << " seconds)"; }
 		virtual void printXml (std::ostream &os) { os << "  <tempdisable>" << getDistTimeSec () << "</tempdisable>"; }
@@ -79,7 +79,7 @@ class ElementTarBoost:public ElementTarget
 			seconds = in_seconds;
 			bonus = in_bonus;
 		}
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_TARGET_BOOST << " " << seconds << " " << bonus; }
 	private:

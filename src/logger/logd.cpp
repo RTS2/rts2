@@ -24,7 +24,7 @@ class Rts2Logd:public rts2core::Device, public Rts2LoggerBase
 {
 	public:
 		Rts2Logd (int in_argc, char **in_argv);
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -115,9 +115,9 @@ int Rts2Logd::willConnect (Rts2Address * in_addr)
 	return Rts2LoggerBase::willConnect (in_addr);
 }
 
-rts2core::Rts2DevClient *Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *Rts2Logd::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	rts2core::Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
+	rts2core::DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)
 	{
 		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));

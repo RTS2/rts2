@@ -185,7 +185,7 @@ int Camera::processData (char *data, size_t size)
 	return size;
 }
 
-int Camera::deleteConnection (Rts2Conn * conn)
+int Camera::deleteConnection (rts2core::Connection * conn)
 {
 	if (conn == exposureConn)
 	{
@@ -233,7 +233,7 @@ int Camera::getPhysicalChannel (int ch)
 	return j;
 }
 
-void Camera::startImageData (Rts2Conn * conn)
+void Camera::startImageData (rts2core::Connection * conn)
 {
 	if (sharedMemId >= 0)
 	{
@@ -441,7 +441,7 @@ int Camera::willConnect (Rts2Address * in_addr)
 	return rts2core::ScriptDevice::willConnect (in_addr);
 }
 
-rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *Camera::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -472,11 +472,11 @@ void Camera::checkQueChanges (int fakeState)
 				sendValueAll (quedExpNumber);
 				waitingForNotBop->setValueBool (true);
 				sendValueAll (waitingForNotBop);
-				connections_t::iterator iter;
+				rts2core::connections_t::iterator iter;
 				// ask all centralds for possible blocking devices
 				for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 				{
-					(*iter)->queCommand (new rts2core::Rts2CommandDeviceStatusInfo (this, exposureConn));
+					(*iter)->queCommand (new rts2core::CommandDeviceStatusInfo (this, exposureConn));
 				}
 			}
 		}
@@ -949,7 +949,7 @@ void Camera::addTempCCDHistory (float temp)
 	tempCCD->setValueFloat (tempCCDHistory->getValueFloat ());
 }
 
-void Camera::deviceReady (Rts2Conn * conn)
+void Camera::deviceReady (rts2core::Connection * conn)
 {
 	// if that's filter wheel
 	if (wheelDevices.size () > 0 && conn->getOtherDevClient ())
@@ -1139,7 +1139,7 @@ int Camera::camStartExposureWithoutCheck ()
 	return 0;
 }
 
-int Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
+int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
 {
 	int ret;
 
@@ -1192,7 +1192,7 @@ long Camera::camWaitExpose ()
 	return (ret == 0 ? -2 : ret);
 }
 
-int Camera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
+int Camera::camBox (rts2core::Connection * conn, int x, int y, int width, int height)
 {
 	int ret;
 	ret = box (x, y, width, height);
@@ -1202,7 +1202,7 @@ int Camera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
 	return ret;
 }
 
-int Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
+int Camera::camCenter (rts2core::Connection * conn, int in_h, int in_w)
 {
 	int ret;
 	ret = center (in_h, in_w);
@@ -1223,7 +1223,7 @@ int Camera::readoutStart ()
 	return ret;
 }
 
-int Camera::camReadout (Rts2Conn * conn)
+int Camera::camReadout (rts2core::Connection * conn)
 {
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
@@ -1394,7 +1394,7 @@ bool Camera::isIdle ()
 		(CAM_NOEXPOSURE | CAM_NOTREADING));
 }
 
-int Camera::commandAuthorized (Rts2Conn * conn)
+int Camera::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("help"))
 	{

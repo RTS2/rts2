@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2command.h"
+#include "command.h"
 #include "grbd.h"
 
 using namespace rts2grbd;
@@ -264,11 +264,11 @@ int Grbd::newGcnGrb (int tar_id)
 		logStream (MESSAGE_WARNING) << "GRB was not passed to executor, as this feature is disabled" << sendLog;
 		return -1;
 	}
-	Rts2Conn *exec;
+	rts2core::Connection *exec;
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new rts2core::Rts2CommandExecGrb (this, tar_id));
+		exec->queCommand (new rts2core::CommandExecGrb (this, tar_id));
 	}
 	else if (!queueName)
 	{
@@ -278,7 +278,7 @@ int Grbd::newGcnGrb (int tar_id)
 	if (queueName)
 	{
 		int num = 0;
-		rts2core::Rts2CommandQueueNowOnce cmd (this, queueName, tar_id);
+		rts2core::CommandQueueNowOnce cmd (this, queueName, tar_id);
 		queueCommandForType (DEVICE_TYPE_SELECTOR, cmd, &num);
 		if (num == 0)
 		{
@@ -289,7 +289,7 @@ int Grbd::newGcnGrb (int tar_id)
 	return 0;
 }
 
-int Grbd::commandAuthorized (Rts2Conn * conn)
+int Grbd::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("test"))
 	{

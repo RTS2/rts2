@@ -109,7 +109,7 @@ int Rts2DevPhot::startIntegrate ()
 	return -1;
 }
 
-int Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_count)
+int Rts2DevPhot::startIntegrate (rts2core::Connection * conn, float _req_time, int _req_count)
 {
 	int ret;
 	req_count->setValueInteger (_req_count);
@@ -139,7 +139,7 @@ int Rts2DevPhot::stopIntegrate ()
 	return 0;
 }
 
-int Rts2DevPhot::homeFilter (Rts2Conn * conn)
+int Rts2DevPhot::homeFilter (rts2core::Connection * conn)
 {
 	int ret;
 	ret = homeFilter ();
@@ -169,7 +169,7 @@ int Rts2DevPhot::moveFilter (int new_filter)
 	return 0;
 }
 
-int Rts2DevPhot::enableFilter (Rts2Conn * conn)
+int Rts2DevPhot::enableFilter (rts2core::Connection * conn)
 {
 	int ret;
 	ret = enableMove ();
@@ -249,7 +249,7 @@ void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 		endIntegrate ();
 }
 
-int Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
+int Rts2DevPhot::commandAuthorized (rts2core::Connection * conn)
 {
 	int ret;
 	if (conn->isCommand ("home"))

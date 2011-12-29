@@ -19,7 +19,7 @@
 
 #include "rts2loggerbase.h"
 
-Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::Rts2DevClient (in_conn)
+Rts2DevClientLogger::Rts2DevClientLogger (rts2core::Connection * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::DevClient (in_conn)
 {
 	exp = NULL;
 
@@ -35,7 +35,6 @@ Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSe
 	outputStream = &std::cout;
 }
 
-
 Rts2DevClientLogger::~Rts2DevClientLogger (void)
 {
 	if (outputStream != &std::cout)
@@ -43,9 +42,7 @@ Rts2DevClientLogger::~Rts2DevClientLogger (void)
 	delete exp;
 }
 
-
-void
-Rts2DevClientLogger::fillLogValues ()
+void Rts2DevClientLogger::fillLogValues ()
 {
 	for (std::list < std::string >::iterator iter = logNames.begin ();
 		iter != logNames.end (); iter++)
@@ -64,9 +61,7 @@ Rts2DevClientLogger::fillLogValues ()
 	}
 }
 
-
-void
-Rts2DevClientLogger::setOutputFile (const char *pattern)
+void Rts2DevClientLogger::setOutputFile (const char *pattern)
 {
 	if (exp == NULL)
 	{
@@ -76,9 +71,7 @@ Rts2DevClientLogger::setOutputFile (const char *pattern)
 	changeOutputStream ();
 }
 
-
-void
-Rts2DevClientLogger::changeOutputStream ()
+void Rts2DevClientLogger::changeOutputStream ()
 {
 	struct timeval tv;
 	getConnection ()->getInfoTime (tv);
@@ -102,9 +95,7 @@ Rts2DevClientLogger::changeOutputStream ()
 	outputStream = nstream;
 }
 
-
-void
-Rts2DevClientLogger::infoOK ()
+void Rts2DevClientLogger::infoOK ()
 {
 	if (logValues.empty ())
 		fillLogValues ();
@@ -131,7 +122,7 @@ void Rts2DevClientLogger::idle ()
 	gettimeofday (&now, NULL);
 	if (timercmp (&nextInfoCall, &now, <))
 	{
-		queCommand (new rts2core::Rts2CommandInfo (getMaster ()));
+		queCommand (new rts2core::CommandInfo (getMaster ()));
 		timeradd (&now, &numberSec, &nextInfoCall);
 	}
 }
@@ -144,7 +135,7 @@ void Rts2DevClientLogger::postEvent (Rts2Event * event)
 			setOutputFile ((const char *) event->getArg ());
 			break;
 	}
-	Rts2DevClient::postEvent (event);
+	rts2core::DevClient::postEvent (event);
 }
 
 Rts2LoggerBase::Rts2LoggerBase ()
@@ -214,7 +205,7 @@ int Rts2LoggerBase::willConnect (Rts2Address * in_addr)
 	return 0;
 }
 
-rts2core::Rts2DevClient * Rts2LoggerBase::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient * Rts2LoggerBase::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	Rts2LogValName *val = getLogVal (conn->getName ());
 	if (val)

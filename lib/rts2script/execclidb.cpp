@@ -22,7 +22,7 @@
 
 using namespace rts2script;
 
-DevClientCameraExecDb::DevClientCameraExecDb (Rts2Conn * in_connection):DevClientCameraExec (in_connection)
+DevClientCameraExecDb::DevClientCameraExecDb (rts2core::Connection * in_connection):DevClientCameraExec (in_connection)
 {
 }
 

@@ -14,10 +14,10 @@ test_LDADD = -lrts2 @LIB_NOVA@
 lib_LTLIBRARIES = librts2.la
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp option.cpp \
-	rts2address.cpp rts2user.cpp rts2client.cpp rts2command.cpp value.cpp valuestat.cpp \
-	rts2devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp connnosend.cpp \
+	rts2address.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
+	devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
-	rts2message.cpp conntcp.cpp connnotify.cpp connudp.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
+	rts2message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp rts2logstream.cpp rts2centralstate.cpp \
 	rts2target.cpp rts2displayvalue.cpp scriptdevice.cpp \
 	rts2cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp rts2data.cpp radecparser.cpp \
@@ -44,7 +44,7 @@ else
 EXTRA_DIST += getopt_own.c
 endif
 
-noinst_HEADERS = rts2askchoice.h infoval.h \
+noinst_HEADERS = client.h rts2askchoice.h infoval.h \
 	conntcp.h connudp.h rts2centralstate.h rts2target.h \
 	rts2displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
 	connserial.h connmodbus.h domeford.h \

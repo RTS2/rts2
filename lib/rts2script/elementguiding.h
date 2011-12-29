@@ -43,9 +43,7 @@ class ElementGuiding:public Element
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int nextCommand (Rts2DevClientCamera * client,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int in_sig);

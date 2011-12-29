@@ -214,7 +214,7 @@ digraph "JSON API calls handling" {
 
 using namespace rts2xmlrpc;
 
-AsyncAPI::AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source, bool _ext):Rts2Object ()
+AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):Rts2Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
 	req = _req;
@@ -247,14 +247,14 @@ void AsyncAPI::postEvent (Rts2Event *event)
 class AsyncAPIExpose:public AsyncAPI
 {
 	public:
-		AsyncAPIExpose (API *_req, Rts2Conn *conn, XmlRpcServerConnection *_source, bool _ext);
+		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
 
 		virtual void postEvent (Rts2Event *event);
 	private:
 		enum {waitForExpReturn, waitForImage} callState;
 };
 
-AsyncAPIExpose::AsyncAPIExpose (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
+AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
 {
 	callState = waitForExpReturn;
 }
@@ -299,7 +299,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 
 	// widgets - divs with informations
 	if (vals.size () >= 2 && vals[0] == "w")
@@ -501,7 +501,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				op = '=';
 			if (async)
 			{
-				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
+				conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
 				sendConnectionValues (os, conn, params, ext);
 			}
 			else
@@ -509,7 +509,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
-				conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
+				conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
 
@@ -553,7 +553,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("cannot find device");
 			if (async)
 			{
-				conn->queCommand (new rts2core::Rts2Command (master, cmd));
+				conn->queCommand (new rts2core::Command (master, cmd));
 				sendConnectionValues (os, conn, params, rts2_nan("f"), ext);
 			}
 			else
@@ -561,7 +561,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
-				conn->queCommand (new rts2core::Rts2Command (master, cmd), 0, aa);
+				conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
 				throw XmlRpc::XmlRpcAsynchronous ();
 			}
 		}
@@ -583,7 +583,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
-			conn->queCommand (new rts2core::Rts2CommandExposure (master, camdev, 0), 0, aa);
+			conn->queCommand (new rts2core::CommandExposure (master, camdev, 0), 0, aa);
 			throw XmlRpc::XmlRpcAsynchronous ();
 		}
 		else if (vals[0] == "hasimage")
@@ -1204,7 +1204,7 @@ void API::sendSelection (std::ostringstream &os, rts2core::ValueSelection *value
 
 }
 
-void API::sendConnectionValues (std::ostringstream & os, Rts2Conn * conn, HttpParams *params, double from, bool extended)
+void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, HttpParams *params, double from, bool extended)
 {
 	os << "\"d\":{" << std::fixed;
 	double mfrom = rts2_nan ("f");

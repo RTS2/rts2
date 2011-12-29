@@ -24,10 +24,10 @@
 #include <unistd.h>
 #include <vector>
 
-class Rts2Conn;
-
 namespace rts2core
 {
+
+class Connection;
 
 /**
  * Interface for varius DataRead classes.
@@ -43,7 +43,7 @@ class DataAbstractRead
 		/**
 		 * Read data size from connection.
 		 */
-		virtual int readDataSize (Rts2Conn *conn) = 0;
+		virtual int readDataSize (Connection *conn) = 0;
 
 		/**
 		 * Adds data to the buffer.
@@ -100,7 +100,7 @@ class DataRead:public DataAbstractRead
 			delete[] binaryReadBuff;
 		}
 
-		virtual int readDataSize (Rts2Conn *conn);
+		virtual int readDataSize (Connection *conn);
 
 		/**
 		 * Receive data from socket.
@@ -171,7 +171,7 @@ class DataShared: public DataAbstractRead
 	public:
 		DataShared (char *_data) { data = _data; }
 
-		virtual int readDataSize (Rts2Conn *conn) { return 0; }
+		virtual int readDataSize (Connection *conn) { return 0; }
 		virtual long addData (char *_data, long data_size) { return -1; }
 		virtual int getData (int sock) { return -1; }
 		virtual char *getDataBuff () { return data + sizeof (unsigned long); }
@@ -217,7 +217,7 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 *
 		 * @param conn connection from which data channel will be initialized
 		 */
-		void initFromConnection (Rts2Conn *conn);
+		void initFromConnection (Connection *conn);
 
 		/**
 		 * Read data for given channel.
@@ -225,7 +225,7 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 * @param chan  channel number
 		 * @param conn  connection which will be used to read the data
 		 */
-		int readChannel (int chan, Rts2Conn *conn) { return at(chan)->readDataSize (conn); }
+		int readChannel (int chan, Connection *conn) { return at(chan)->readDataSize (conn); }
 
 		long addData (int chan, char *_data, long data_size) { return at(chan)->addData (_data, data_size); }
 

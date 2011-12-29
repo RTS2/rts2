@@ -61,7 +61,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
-		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
+		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 		exposure_started = true;
 	}
 	else if (!strcasecmp (cmd, "radec"))
@@ -224,21 +224,21 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
-		masterElement->getConnection ()->queCommand (new Rts2Command (getMaster (), comm));
+		masterElement->getConnection ()->queCommand (new rts2core::Command (getMaster (), comm));
 	}
 	else if (!strcmp (cmd, "VT"))
 	{
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
-		Rts2CommandChangeValue cmdch (masterElement->getClient (), std::string (value), *operat, std::string (operand), true);
+		rts2core::CommandChangeValue cmdch (masterElement->getClient (), std::string (value), *operat, std::string (operand), true);
 		getMaster ()->queueCommandForType (deviceTypeNum, cmdch);
 	}
 	else if (!strcmp (cmd, "value"))
 	{
 		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
-		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
+		masterElement->getConnection ()->queCommand (new rts2core::CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
 	else if (!strcmp (cmd, "loopcount"))
 	{
@@ -339,7 +339,7 @@ int Execute::processImage (Image *image)
 	return Element::processImage (image);
 }
 
-int Execute::defnextCommand (Rts2DevClient * _client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (connExecute == NULL)
 	{

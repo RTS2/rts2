@@ -33,7 +33,7 @@ class ElementAcquire:public Element
 	public:
 		ElementAcquire (Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn *in_center_pos);
 		virtual void postEvent (Rts2Event * event);
-		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int processImage (rts2image::Image * image);
 		virtual void cancelCommands ();
 

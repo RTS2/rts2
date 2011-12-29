@@ -21,14 +21,17 @@
 #define __RTS2_CLIENT__
 
 #include "block.h"
-#include "rts2command.h"
-#include "rts2devclient.h"
+#include "command.h"
+#include "devclient.h"
 
 /**
  * @defgroup RTS2Client
  *
  * This module includes infrastructure needed for client applications.
  */
+
+namespace rts2core
+{
 
 /**
  * Represents connection between device and client.
@@ -40,7 +43,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnClient:public Rts2Conn
+class ConnClient:public Connection
 {
 	private:
 		Rts2Address * address;
@@ -48,8 +51,8 @@ class Rts2ConnClient:public Rts2Conn
 	protected:
 		virtual void connConnected ();
 	public:
-		Rts2ConnClient (rts2core::Block *_master, int _centrald_num, char *_name);
-		virtual ~ Rts2ConnClient (void);
+		ConnClient (Block *_master, int _centrald_num, char *_name);
+		virtual ~ ConnClient (void);
 
 		virtual int init ();
 
@@ -75,43 +78,36 @@ class Rts2ConnClient:public Rts2Conn
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnCentraldClient:public Rts2Conn
+class ConnCentraldClient:public Connection
 {
+	public:
+		ConnCentraldClient (Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
+		virtual int init ();
+
+		virtual int command ();
+
+	protected:
+		virtual void setState (int in_value, char * msg);
+
 	private:
 		const char *master_host;
 		const char *master_port;
 
 		const char *login;
 		const char *password;
-	protected:
-		virtual void setState (int in_value, char * msg);
-
-	public:
-		Rts2ConnCentraldClient (rts2core::Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
-		virtual int init ();
-
-		virtual int command ();
 };
 
-namespace rts2core
+class CommandLogin:public Command
 {
+	public:
+		CommandLogin (Block * master, const char *in_login, const char *in_password);
+		virtual int commandReturnOK (Connection * conn);
 
-class Rts2CommandLogin:public Rts2Command
-{
 	private:
+		enum { LOGIN_SEND, PASSWORD_SEND, INFO_SEND } state;
 		const char *login;
 		const char *password;
-	private:
-		enum
-		{ LOGIN_SEND, PASSWORD_SEND, INFO_SEND }
-		state;
-	public:
-		Rts2CommandLogin (rts2core::Block * master, const char *in_login,
-			const char *in_password);
-		virtual int commandReturnOK (Rts2Conn * conn);
 };
-
-}
 
 /**
  * Common class for client aplication.
@@ -123,23 +119,23 @@ class Rts2CommandLogin:public Rts2Command
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Client:public rts2core::Block
+class Client:public Block
 {
 	public:
-		Rts2Client (int in_argc, char **in_argv);
-		virtual ~ Rts2Client (void);
+		Client (int in_argc, char **in_argv);
+		virtual ~ Client (void);
 
 		virtual int run ();
 
 	protected:
-		virtual Rts2ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+		virtual ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
+		virtual Connection *createClientConnection (Rts2Address * in_addr);
 		virtual int willConnect (Rts2Address * in_addr);
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
-		virtual Rts2ConnCentraldClient *createCentralConn ();
+		virtual ConnCentraldClient *createCentralConn ();
 
 		const char *getCentralLogin ()
 		{
@@ -164,4 +160,6 @@ class Rts2Client:public rts2core::Block
 		const char *login;
 		const char *password;
 };
+
+}
 #endif							 /* ! __RTS2_CLIENT__ */

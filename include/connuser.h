@@ -22,19 +22,24 @@
 
 #include "status.h"
 
+namespace rts2core
+{
+
 /**
- * Holder class for users on Rts2Conn.
+ * Holder class for users on Connection.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnUser
+class ConnUser
 {
 	private:
 		int centralId;
 		char login[DEVICE_NAME_SIZE];
 	public:
-		Rts2ConnUser (int in_centralId, const char *in_login);
-		virtual ~ Rts2ConnUser (void);
+		ConnUser (int in_centralId, const char *in_login);
+		virtual ~ ConnUser ();
 		int update (int in_centralId, const char *new_login);
 };
+
+}
 #endif							 /* !__RTS2_CONN_USER__ */

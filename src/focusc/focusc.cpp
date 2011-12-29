@@ -32,13 +32,13 @@
 class Rts2focusc:public Rts2GenFocClient
 {
 	protected:
-		virtual Rts2GenFocCamera * createFocCamera (Rts2Conn * conn);
+		virtual Rts2GenFocCamera * createFocCamera (rts2core::Connection * conn);
 		virtual void help ();
 	public:
 		Rts2focusc (int argc, char **argv);
 };
 
-Rts2GenFocCamera * Rts2focusc::createFocCamera (Rts2Conn * conn)
+Rts2GenFocCamera * Rts2focusc::createFocCamera (rts2core::Connection * conn)
 {
 	return new Rts2GenFocCamera (conn, this);
 }

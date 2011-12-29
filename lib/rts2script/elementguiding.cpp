@@ -159,7 +159,7 @@ void ElementGuiding::postEvent (Rts2Event * event)
 	Element::postEvent (event);
 }
 
-int ElementGuiding::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementGuiding::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret = endSignal;
 	if (endSignal == -1)
@@ -176,7 +176,7 @@ int ElementGuiding::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** ne
 				return NEXT_COMMAND_NEXT;
 		case NEED_IMAGE:
 			// EXP_LIGHT, expTime);
-			*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+			*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 			getDevice (new_device);
 			processingState = WAITING_IMAGE;
 			return NEXT_COMMAND_KEEP;

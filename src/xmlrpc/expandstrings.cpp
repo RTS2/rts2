@@ -22,7 +22,7 @@
 #include "xmlrpcd.h"
 
 #include "block.h"
-#include "rts2conn.h"
+#include "connection.h"
 #include "../../lib/rts2/rts2displayvalue.h"
 
 using namespace rts2xmlrpc;
@@ -60,7 +60,7 @@ ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
 
 void ExpandStringDevice::writeTo (std::ostream &os)
 {
-	Rts2Conn *conn = ((rts2core::Block *) getMasterApp ())->getOpenConnection (deviceName);
+	rts2core::Connection *conn = ((rts2core::Block *) getMasterApp ())->getOpenConnection (deviceName);
 	if (conn == NULL)
 	{
 		os << "unknow device " << deviceName << std::endl;

@@ -43,7 +43,7 @@ class Focusd:public rts2core::Device
 
 		void checkState ();
 		int setPosition (float num);
-		int autoFocus (Rts2Conn * conn);
+		int autoFocus (rts2core::Connection * conn);
 
 		float getPosition ()
 		{
@@ -52,7 +52,7 @@ class Focusd:public rts2core::Device
 
 		virtual int scriptEnds ();
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		std::string focType;

@@ -40,7 +40,7 @@ void NMonitor::sendCommand ()
 	int curX = comWindow->getCurX ();
 	char command[curX + 1];
 	char *cmd_top = command;
-	Rts2Conn *conn = NULL;
+	rts2core::Connection *conn = NULL;
 	comWindow->getWinString (command, curX);
 	command[curX] = '\0';
 	// try to find ., which show DEVICE.command notation..
@@ -63,7 +63,7 @@ void NMonitor::sendCommand ()
 	}
 	if (*cmd_top)
 	{
-		oldCommand = new rts2core::Rts2Command (this, cmd_top);
+		oldCommand = new rts2core::Command (this, cmd_top);
 		conn->queCommand (oldCommand);
 		comWindow->winclear ();
 		comWindow->printCommand (command);
@@ -74,7 +74,7 @@ void NMonitor::sendCommand ()
 class sortConnName
 {
 	public:
-		bool operator () (Rts2Conn *con1, Rts2Conn *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
+		bool operator () (rts2core::Connection *con1, rts2core::Connection *con2) const { return strcmp (con1->getName (), con2->getName ()) < 0; }
 };
 
 void NMonitor::refreshConnections ()
@@ -93,7 +93,7 @@ void NMonitor::refreshConnections ()
 	daemonWindow = NULL;
 }
 
-Rts2Conn *NMonitor::connectionAt (unsigned int i)
+rts2core::Connection *NMonitor::connectionAt (unsigned int i)
 {
 	if (i < getCentraldConns ()->size ())
 		return (*getCentraldConns ())[i];
@@ -114,7 +114,7 @@ int NMonitor::processOption (int in_opt)
 			colorsOff = true;
 			break;
 		default:
-			return Rts2Client::processOption (in_opt);
+			return rts2core::Client::processOption (in_opt);
 	}
 	return 0;
 }
@@ -147,19 +147,17 @@ void NMonitor::addSelectSocks ()
 {
 	// add stdin for ncurses input
 	FD_SET (1, &read_set);
-	Rts2Client::addSelectSocks ();
+	rts2core::Client::addSelectSocks ();
 }
 
-Rts2ConnCentraldClient * NMonitor::createCentralConn ()
+rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
 {
-	return new NMonCentralConn (this, getCentralLogin (),
-		getCentralPassword (), getCentralHost (),
-		getCentralPort ());
+	return new NMonCentralConn (this, getCentralLogin (), getCentralPassword (), getCentralHost (), getCentralPort ());
 }
 
 void NMonitor::selectSuccess ()
 {
-	Rts2Client::selectSuccess ();
+	rts2core::Client::selectSuccess ();
 	while (1)
 	{
 		int input = getch ();
@@ -304,13 +302,13 @@ void NMonitor::changeActive (NWindow * new_active)
 
 void NMonitor::changeListConnection ()
 {
-	Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
+	rts2core::Connection *conn = connectionAt (deviceList->getSelRow ());
 	if (conn)
 	{
 		delete daemonWindow;
 		daemonWindow = NULL;
 		// if connection is among centrald connections..
-		connections_t::iterator iter;
+		rts2core::connections_t::iterator iter;
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			if (conn == (*iter))
 				daemonWindow = new NDeviceCentralWindow (conn);
@@ -328,7 +326,7 @@ void NMonitor::changeListConnection ()
 	resize ();
 }
 
-NMonitor::NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
+NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
 {
 	masterLayout = NULL;
 	daemonLayout = NULL;
@@ -416,7 +414,7 @@ int NMonitor::repaint ()
 int NMonitor::init ()
 {
 	int ret;
-	ret = Rts2Client::init ();
+	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
 
@@ -497,9 +495,9 @@ int NMonitor::init ()
 	masterLayout = new LayoutBlock (deviceList, daemonLayout, true, 8);
 	masterLayout = new LayoutBlock (masterLayout, msgwindow, false, 75);
 
-	connections_t::iterator iter;
+	rts2core::connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-		(*iter)->queCommand (new rts2core::Rts2Command (this, "info"));
+		(*iter)->queCommand (new rts2core::Command (this, "info"));
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
@@ -510,39 +508,39 @@ int NMonitor::init ()
 
 int NMonitor::idle ()
 {
-	int ret = Rts2Client::idle ();
+	int ret = rts2core::Client::idle ();
 	repaint ();
 	setTimeout (USEC_SEC);
 	return ret;
 }
 
-Rts2ConnClient * NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
+rts2core::ConnClient * NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
 {
 	return new NMonConn (this, _centrald_num, _deviceName);
 }
 
-rts2core::Rts2DevClient * NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	rts2core::Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
+	rts2core::DevClient *retC = rts2core::Client::createOtherType (conn, other_device_type);
 #ifdef HAVE_PGSQL
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
 	{
 		struct ln_equ_posn tarPos;
 		tarArg->getPosition (&tarPos);
-		conn->queCommand (new rts2core::Rts2CommandMove (this, (rts2core::Rts2DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
+		conn->queCommand (new rts2core::CommandMove (this, (rts2core::DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
 	}
 #endif
 	return retC;
 }
 
-int NMonitor::deleteConnection (Rts2Conn * conn)
+int NMonitor::deleteConnection (rts2core::Connection * conn)
 {
 	if (conn == connectionAt (deviceList->getSelRow ()))
 	{
 		// that will trigger daemonWindow reregistration before repaint
 		daemonWindow = NULL;
 	}
-	return Rts2Client::deleteConnection (conn);
+	return rts2core::Client::deleteConnection (conn);
 }
 
 void NMonitor::message (Rts2Message & msg)
@@ -689,7 +687,7 @@ void NMonitor::processKey (int key)
 	}
 }
 
-void NMonitor::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
+void NMonitor::commandReturn (rts2core::Command * cmd, int cmd_status)
 {
 	if (oldCommand == cmd)
 		comWindow->commandReturn (cmd, cmd_status);

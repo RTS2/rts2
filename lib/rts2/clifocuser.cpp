@@ -18,11 +18,11 @@
  */
 
 #include "clifocuser.h"
-#include "rts2command.h"
+#include "command.h"
 
 using namespace rts2camd;
 
-ClientFocusCamera::ClientFocusCamera (Rts2Conn * in_connection):rts2core::Rts2DevClientFocus (in_connection)
+ClientFocusCamera::ClientFocusCamera (rts2core::Connection * in_connection):rts2core::DevClientFocus (in_connection)
 {
 	activeConn = NULL;
 }
@@ -44,9 +44,9 @@ void ClientFocusCamera::postEvent (Rts2Event * event)
 			if (!strcmp (getName (), fm->focuserName))
 			{
 				if (event->getType () == EVENT_FOCUSER_SET)
-					connection->queCommand (new rts2core::Rts2CommandChangeValue (this, "FOC_TAR", '=', fm->value));
+					connection->queCommand (new rts2core::CommandChangeValue (this, "FOC_TAR", '=', fm->value));
 				else
-					connection->queCommand (new rts2core::Rts2CommandChangeValue (this, "FOC_TOFF", '=', fm->value));
+					connection->queCommand (new rts2core::CommandChangeValue (this, "FOC_TOFF", '=', fm->value));
 				// we process message
 				fm->focuserName = NULL;
 				activeConn = fm->conn;
@@ -60,18 +60,18 @@ void ClientFocusCamera::postEvent (Rts2Event * event)
 			}
 			break;
 	}
-	rts2core::Rts2DevClientFocus::postEvent (event);
+	rts2core::DevClientFocus::postEvent (event);
 }
 
 void ClientFocusCamera::focusingEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
-	rts2core::Rts2DevClientFocus::focusingEnd ();
+	rts2core::DevClientFocus::focusingEnd ();
 }
 
 void ClientFocusCamera::focusingFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
 	activeConn = NULL;
-	rts2core::Rts2DevClientFocus::focusingFailed (status);
+	rts2core::DevClientFocus::focusingFailed (status);
 }

@@ -30,7 +30,7 @@ namespace rts2core
 class ModbusError:public ConnError
 {
 	public:
-		ModbusError (Rts2Conn *conn, const char *desc):ConnError (conn, desc)
+		ModbusError (Connection *conn, const char *desc):ConnError (conn, desc)
 		{
 		}
 };

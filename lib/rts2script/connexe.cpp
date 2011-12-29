@@ -18,7 +18,7 @@
  */
 
 #include "connexe.h"
-#include "rts2command.h"
+#include "command.h"
 #include "daemon.h"
 
 using namespace rts2script;
@@ -62,10 +62,10 @@ void ConnExe::processCommand (char *cmd)
 	{
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
 			return;
-		Rts2Conn *conn = getConnectionForScript (device);
+		rts2core::Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
-			conn->queCommand (new Rts2Command (getMaster (), comm));
+			conn->queCommand (new rts2core::Command (getMaster (), comm));
 		}
 	}
 	else if (!strcmp (cmd, "CT"))
@@ -73,17 +73,17 @@ void ConnExe::processCommand (char *cmd)
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
-		Rts2Command comd (getMaster (), comm);
+		rts2core::Command comd (getMaster (), comm);
 		getMaster ()->queueCommandForType (deviceTypeNum, comd);
 	}
 	else if (!strcmp (cmd, "V"))
 	{
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
-		Rts2Conn *conn = getConnectionForScript (device);
+		rts2core::Connection *conn = getConnectionForScript (device);
 		if (conn)
 		{
-			conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
 		}
 	}
 	else if (!strcmp (cmd, "G"))
@@ -290,7 +290,7 @@ void ConnExe::processErrorLine (char *errbuf)
 	logStream (MESSAGE_ERROR) << "from script " << getExePath () << " received " << errbuf << sendLog;
 }
 
-Rts2Conn *ConnExe::getConnectionForScript (const char *_name)
+rts2core::Connection *ConnExe::getConnectionForScript (const char *_name)
 {
 	if (isCentraldName (_name))
 		return getMaster ()->getSingleCentralConn ();

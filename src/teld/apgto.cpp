@@ -216,7 +216,7 @@ namespace rts2teld
     virtual int stopDir (char *dir);
     virtual int abortAnyMotion () ;
     virtual bool shutterClosed() ;
-    virtual int commandAuthorized (Rts2Conn * conn);
+    virtual int commandAuthorized (rts2core::Connection * conn);
     virtual void valueChanged (rts2core::Value * changed_value) ;
   };
 
@@ -1842,7 +1842,7 @@ APGTO::abortAnyMotion ()
 bool
 APGTO::shutterClosed() {
 
-  Rts2Conn * conn_shutter = getOpenConnection (ccdDevice);
+  rts2core::Connection * conn_shutter = getOpenConnection (ccdDevice);
   if( conn_shutter) {
     rts2core::Value * flishutter =  conn_shutter->getValue ("SHUTTER");
     if( flishutter) {
@@ -1912,7 +1912,7 @@ APGTO::valueChanged (rts2core::Value * changed_value)
 }
 
 int 
-APGTO::commandAuthorized (Rts2Conn *conn)
+APGTO::commandAuthorized (rts2core::Connection *conn)
 {
   int ret = -1 ;
 
@@ -2139,7 +2139,7 @@ APGTO::info ()
 	      logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to shutter closed" << sendLog;
 	    }
 	  }
-	  Rts2Conn * conn_time = getOpenConnection (ccdDevice);
+	  rts2core::Connection * conn_time = getOpenConnection (ccdDevice);
 	  if( conn_time) {
 	    rts2core::Value * flitime = conn_time->getValue ("exposure_end"); // it is time when shutter closes!
 	    if( flitime) {

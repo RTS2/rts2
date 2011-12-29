@@ -263,7 +263,7 @@ class ExecutorQueue:public TargetQueue
 		 */
 		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end, struct ln_equ_posn *currentp, struct ln_equ_posn *nextp);
 
-		int queueFromConn (Rts2Conn *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
+		int queueFromConn (rts2core::Connection *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 

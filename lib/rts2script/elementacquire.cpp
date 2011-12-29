@@ -108,7 +108,7 @@ void ElementAcquire::postEvent (Rts2Event * event)
 	Element::postEvent (event);
 }
 
-int ElementAcquire::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementAcquire::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	// this code have to coordinate efforts to reach desired target with given precission
 	// based on internal state, it have to take exposure, assure that image will be processed,
@@ -120,15 +120,14 @@ int ElementAcquire::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** ne
 			if (isnan (lastPrecision))
 			{
 				bool en = false;
-				script->getMaster ()->
-					postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+				script->getMaster ()->postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 			}
 
-			camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
+			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0));
 			// change values of the exposur
-			camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
+			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera, "exposure", '=', expTime));
 
-			*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+			*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 			getDevice (new_device);
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<

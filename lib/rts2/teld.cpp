@@ -803,7 +803,7 @@ int Telescope::willConnect (Rts2Address * in_addr)
 	return rts2core::Device::willConnect (in_addr);
 }
 
-rts2core::Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *Telescope::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -959,7 +959,7 @@ int Telescope::endMove ()
 	return 0;
 }
 
-int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
+int Telescope::startResyncMove (rts2core::Connection * conn, bool onlyCorrect)
 {
 	int ret;
 
@@ -1122,7 +1122,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	return ret;
 }
 
-int Telescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
+int Telescope::setTo (rts2core::Connection * conn, double set_ra, double set_dec)
 {
 	int ret;
 	ret = setTo (set_ra, set_dec);
@@ -1132,7 +1132,7 @@ int Telescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 	return ret;
 }
 
-int Telescope::startPark (Rts2Conn * conn)
+int Telescope::startPark (rts2core::Connection * conn)
 {
 	if (blockMove->getValueBool () == true)
 	{
@@ -1234,7 +1234,7 @@ int Telescope::moveAltAz ()
 	return startResyncMove (NULL, false);
 }
 
-int Telescope::commandAuthorized (Rts2Conn * conn)
+int Telescope::commandAuthorized (rts2core::Connection * conn)
 {
 	double obj_ra;
 	double obj_dec;

@@ -64,14 +64,14 @@ int Value::doOpValue (char op, Value * old_value)
 	}
 }
 
-int Value::sendTypeMetaInfo (Rts2Conn * connection)
+int Value::sendTypeMetaInfo (Connection * connection)
 {
 	std::ostringstream _os;
 	_os << PROTO_METAINFO << " " << rts2Type << " " << '"' << getName () << "\" " << '"' << description << "\" ";
 	return connection->sendMsg (_os.str ());
 }
 
-int Value::sendMetaInfo (Rts2Conn * connection)
+int Value::sendMetaInfo (Connection * connection)
 {
 	int ret;
 	ret = sendTypeMetaInfo (connection);
@@ -82,7 +82,7 @@ int Value::sendMetaInfo (Rts2Conn * connection)
 	return 0;
 }
 
-void Value::send (Rts2Conn * connection)
+void Value::send (Connection * connection)
 {
 	connection->sendValueRaw (getName (), getValue ());
 }
@@ -102,7 +102,7 @@ const char * ValueString::getValue ()
 	return value.c_str ();
 }
 
-int ValueString::setValue (Rts2Conn * connection)
+int ValueString::setValue (Connection * connection)
 {
 	char *new_value;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
@@ -133,7 +133,7 @@ int ValueString::setValueInteger (int in_value)
 	return 0;
 }
 
-void ValueString::send (Rts2Conn * connection)
+void ValueString::send (Connection * connection)
 {
 	connection->sendValue (getName (), getValue ());
 }
@@ -175,7 +175,7 @@ const char * ValueInteger::getValue ()
 	return buf;
 }
 
-int ValueInteger::setValue (Rts2Conn * connection)
+int ValueInteger::setValue (Connection * connection)
 {
 	int new_value;
 	if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
@@ -250,7 +250,7 @@ const char * ValueDouble::getDisplayValue ()
 	return buf;
 }
 
-int ValueDouble::setValue (Rts2Conn * connection)
+int ValueDouble::setValue (Connection * connection)
 {
 	double new_value;
 	if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
@@ -395,7 +395,7 @@ const char * ValueFloat::getDisplayValue ()
 	return buf;
 }
 
-int ValueFloat::setValue (Rts2Conn * connection)
+int ValueFloat::setValue (Connection * connection)
 {
 	float new_value;
 	if (connection->paramNextFloat (&new_value) || !connection->paramEnd ())
@@ -456,7 +456,7 @@ ValueBool::ValueBool (std::string in_val_name, std::string in_description, bool 
 	setValueInteger (2);
 }
 
-int ValueBool::setValue (Rts2Conn * connection)
+int ValueBool::setValue (Connection * connection)
 {
 	char *new_value;
 	int ret;
@@ -509,7 +509,7 @@ void ValueSelection::deleteValues ()
 	values.clear ();
 }
 
-int ValueSelection::setValue (Rts2Conn * connection)
+int ValueSelection::setValue (Connection * connection)
 {
 	char *new_value;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
@@ -580,7 +580,7 @@ void ValueSelection::addSelVals (const char **vals)
 	}
 }
 
-int ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
+int ValueSelection::sendTypeMetaInfo (Connection * connection)
 {
 	int ret;
 	ret = ValueInteger::sendTypeMetaInfo (connection);
@@ -627,7 +627,7 @@ const char * ValueLong::getValue ()
 	return buf;
 }
 
-int ValueLong::setValue (Rts2Conn * connection)
+int ValueLong::setValue (Connection * connection)
 {
 	long int new_value;
 	if (connection->paramNextLong (&new_value) || !connection->paramEnd ())
@@ -686,7 +686,7 @@ ValueRaDec::ValueRaDec (std::string in_val_name, std::string in_description, boo
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
-int ValueRaDec::setValue (Rts2Conn * connection)
+int ValueRaDec::setValue (Connection * connection)
 {
 	double r, d;
 	if (connection->paramNextDMS (&r))
@@ -831,7 +831,7 @@ ValueAltAz::ValueAltAz (std::string in_val_name, std::string in_description, boo
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 
-int ValueAltAz::setValue (Rts2Conn * connection)
+int ValueAltAz::setValue (Connection * connection)
 {
 	if (connection->paramNextDouble (&alt))
 		return -2;

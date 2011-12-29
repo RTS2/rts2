@@ -25,7 +25,7 @@
 #define EVENT_FOCUSER_END_MOVE   RTS2_LOCAL_EVENT + 752
 #define EVENT_FOCUSER_GET        RTS2_LOCAL_EVENT + 753
 
-#include "rts2devclient.h"
+#include "devclient.h"
 
 namespace rts2camd
 {
@@ -37,10 +37,10 @@ struct focuserMove
 	void *conn;
 };
 
-class ClientFocusCamera:public rts2core::Rts2DevClientFocus
+class ClientFocusCamera:public rts2core::DevClientFocus
 {
 	public:
-		ClientFocusCamera (Rts2Conn * in_connection);
+		ClientFocusCamera (rts2core::Connection * in_connection);
 		virtual ~ ClientFocusCamera (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual void focusingFailed (int status);

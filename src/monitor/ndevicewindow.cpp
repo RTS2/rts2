@@ -26,7 +26,7 @@
 
 using namespace rts2ncurses;
 
-NDeviceWindow::NDeviceWindow (Rts2Conn * in_connection):NSelWindow (10, 1, COLS - 10, LINES - 25)
+NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection):NSelWindow (10, 1, COLS - 10, LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
@@ -304,7 +304,7 @@ bool NDeviceWindow::setCursor ()
 	return NSelWindow::setCursor ();
 }
 
-NDeviceCentralWindow::NDeviceCentralWindow (Rts2Conn * in_connection):NDeviceWindow (in_connection)
+NDeviceCentralWindow::NDeviceCentralWindow (rts2core::Connection * in_connection):NDeviceWindow (in_connection)
 {
 }
 

@@ -43,11 +43,11 @@ class Executor:public Rts2DeviceDb
 	public:
 		Executor (int argc, char **argv);
 		virtual ~ Executor (void);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual void deviceReady (Rts2Conn * conn);
+		virtual void deviceReady (rts2core::Connection * conn);
 
 		virtual int info ();
 
@@ -61,7 +61,7 @@ class Executor:public Rts2DeviceDb
 
 		int stop ();
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -275,18 +275,18 @@ int Executor::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
-Rts2DevClient * Executor::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
-			return new DevClientTelescopeExec (conn);
+			return new rts2script::DevClientTelescopeExec (conn);
 		case DEVICE_TYPE_CCD:
-			return new DevClientCameraExecDb (conn);
+			return new rts2script::DevClientCameraExecDb (conn);
 		case DEVICE_TYPE_FOCUS:
 			return new rts2image::DevClientFocusImage (conn);
 		case DEVICE_TYPE_PHOT:
-			return new Rts2DevClientPhotExec (conn);
+			return new rts2script::DevClientPhotExec (conn);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
 			return new rts2image::DevClientWriteImage (conn);
@@ -453,7 +453,7 @@ void Executor::postEvent (Rts2Event * event)
 	rts2core::Device::postEvent (event);
 }
 
-void Executor::deviceReady (Rts2Conn * conn)
+void Executor::deviceReady (rts2core::Connection * conn)
 {
 	if (currentTarget)
 		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
@@ -648,7 +648,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 
 	clearAll ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
-	queAll (new Rts2CommandKillAll (this));
+	queAll (new rts2core::CommandKillAll (this));
 
 	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET_NOW));
@@ -807,7 +807,7 @@ void Executor::doSwitch ()
 	if (currentTarget)
 	{
 		// send script_ends to all devices..
-		queAll (new Rts2CommandScriptEnds (this));
+		queAll (new rts2core::CommandScriptEnds (this));
 		postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 		postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 		// send note to selector..
@@ -815,7 +815,7 @@ void Executor::doSwitch ()
 		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
 		while (c != getConnections ()->end ())
 		{
-			(*c)->queCommand (new Rts2CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
+			(*c)->queCommand (new rts2core::CommandObservation (this, currentTarget->getTargetID (), currentTarget->getObsId ()));
 			c++;
 			getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
 		}
@@ -917,7 +917,7 @@ void Executor::updateScriptCount ()
 	scriptCount->setValueInteger (scriptRunning);
 }
 
-int Executor::commandAuthorized (Rts2Conn * conn)
+int Executor::commandAuthorized (rts2core::Connection * conn)
 {
 	int tar_id;
 	if (conn->isCommand ("grb"))

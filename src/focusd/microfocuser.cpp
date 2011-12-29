@@ -45,7 +45,7 @@ class Microfocuser:public Focusd
 		virtual int setTo (double num);
   		virtual double tcOffset () {return 0.;};
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
@@ -152,7 +152,7 @@ int Microfocuser::info ()
 	return Focusd::info ();
 }
 
-int Microfocuser::commandAuthorized (Rts2Conn * conn)
+int Microfocuser::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{

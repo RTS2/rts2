@@ -19,7 +19,7 @@
 
 #include "augershooter.h"
 #include "libnova_cpp.h"
-#include "rts2command.h"
+#include "command.h"
 
 using namespace rts2grbd;
 
@@ -236,7 +236,7 @@ void DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	{
 		logStream (MESSAGE_WARNING) << "Triggering is disabled, trigger " << LibnovaDateDouble (lastDate) << "not executed." << sendLog;
 	}
-	Rts2Conn *exec;
+	rts2core::Connection *exec;
 	lastAugerDate->setValueDouble (lastDate);
 	lastAugerRa->setValueDouble (ra);
 	lastAugerDec->setValueDouble (dec);
@@ -248,7 +248,7 @@ void DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new rts2core::Rts2CommandExecShower (this));
+		exec->queCommand (new rts2core::CommandExecShower (this));
 	}
 	else
 	{

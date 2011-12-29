@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "valuestat.h"
-#include "rts2conn.h"
+#include "connection.h"
 
 using namespace rts2core;
 
@@ -80,7 +80,7 @@ ValueDoubleStat::ValueDoubleStat (std::string in_val_name, std::string in_descri
 	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
-int ValueDoubleStat::setValue (Rts2Conn * connection)
+int ValueDoubleStat::setValue (Connection * connection)
 {
 	if (connection->paramNextDouble (&value)
 		|| connection->paramNextInteger (&numMes)
@@ -104,7 +104,7 @@ const char * ValueDoubleStat::getDisplayValue ()
 	return buf;
 }
 
-void ValueDoubleStat::send (Rts2Conn * connection)
+void ValueDoubleStat::send (Connection * connection)
 {
 	if (numMes != (int) valueList.size ())
 		calculate ();

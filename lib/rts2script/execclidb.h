@@ -30,7 +30,7 @@ class DevClientCameraExecDb:public DevClientCameraExec
 	protected:
 		virtual void exposureStarted ();
 	public:
-		DevClientCameraExecDb (Rts2Conn * in_connection);
+		DevClientCameraExecDb (rts2core::Connection * in_connection);
 		virtual ~ DevClientCameraExecDb (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (rts2image::Image * image);

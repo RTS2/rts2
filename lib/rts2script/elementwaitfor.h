@@ -35,7 +35,7 @@ class ElementWaitFor:public Element
 {
 	public:
 		ElementWaitFor (Script * _script, const char *new_device, char *_valueName, double _value, double _range);
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int idle ();
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_WAITFOR << " " << valueName << " " << tarval << " " << range; }
@@ -58,7 +58,7 @@ class ElementSleep:public Element
 {
 	public:
 		ElementSleep (Script * _script, double _sec):Element (_script) { sec = _sec; }
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int idle ();
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_SLEEP " " << sec; }
@@ -75,7 +75,7 @@ class ElementWaitForIdle:public Element
 {
 	public:
 		ElementWaitForIdle (Script *_script):Element (_script) {}
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_WAIT_FOR_IDLE; }
 };

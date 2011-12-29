@@ -57,7 +57,7 @@ class NComWin:public NWindow
 				mvwaddch (statuspad, y, x, ' ');
 		}
 
-		void commandReturn (rts2core::Rts2Command * cmd, int cmd_status);
+		void commandReturn (rts2core::Command * cmd, int cmd_status);
 };
 
 }

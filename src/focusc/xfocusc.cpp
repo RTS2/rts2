@@ -64,7 +64,7 @@ class Rts2xfocus:public Rts2GenFocClient
 		// initially in arcsec, but converted (and used) in degrees
 		double changeVal;
 
-		virtual Rts2GenFocCamera * createFocCamera (Rts2Conn * conn);
+		virtual Rts2GenFocCamera * createFocCamera (rts2core::Connection * conn);
 	protected:
 		/**
 		 * Add XWin connection socket, obtained by ConnectionNumber macro.
@@ -118,8 +118,7 @@ class Rts2xfocus:public Rts2GenFocClient
 class Rts2xfocusCamera:public Rts2GenFocCamera
 {
 	public:
-		Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
-			Rts2xfocus * in_master);
+		Rts2xfocusCamera (rts2core::Connection * in_connection, double in_change_val, Rts2xfocus * in_master);
 		virtual ~ Rts2xfocusCamera (void);
 
 		virtual void postEvent (Rts2Event * event);
@@ -278,7 +277,7 @@ double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, dou
 	return M;
 }
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val, Rts2xfocus * in_master):Rts2GenFocCamera (in_connection, in_master)
+Rts2xfocusCamera::Rts2xfocusCamera (rts2core::Connection * in_connection, double in_change_val, Rts2xfocus * in_master):Rts2GenFocCamera (in_connection, in_master)
 {
 	master = in_master;
 
@@ -561,40 +560,40 @@ void Rts2xfocusCamera::XeventLoop ()
 				switch (ks)
 				{
 					case XK_1:
-						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 0));
+						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 0));
 						break;
 					case XK_2:
-						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 1));
+						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 1));
 						break;
 					case XK_3:
-						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 2));
+						queCommand (new rts2core::CommandChangeValue (this, "binning", '=', 2));
 						break;
 					case XK_9:
 						master->GoNine = !master->GoNine;
 						break;
 					case XK_e:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 1));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 1));
 						break;
 					case XK_d:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 1));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 1));
 						break;
 					case XK_w:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 0.1));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 0.1));
 						break;
 					case XK_s:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 0.1));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 0.1));
 						break;
 					case XK_q:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 0.01));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '+', 0.01));
 						break;
 					case XK_a:
-						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 0.01));
+						queCommand (new rts2core::CommandChangeValue (this, "exposure", '-', 0.01));
 						break;
 					case XK_f:
-						connection->queCommand (new Rts2Command (master, "box 0 -1 -1 -1 -1"));
+						connection->queCommand (new rts2core::Command (master, "box 0 -1 -1 -1 -1"));
 						break;
 					case XK_c:
-						connection->queCommand (new Rts2Command (master, "center 0"));
+						connection->queCommand (new rts2core::Command (master, "center 0"));
 						break;
 					case XK_p:
 						master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));
@@ -1003,7 +1002,7 @@ void Rts2xfocus::usage ()
 
 void Rts2xfocus::help ()
 {
-	Rts2Client::help ();
+	rts2core::Client::help ();
 	std::cout << "Keys:" << std::endl
 		<< "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
 		<< "\t9     .. split screen to squares containg corners of the image and its center" << std::endl
@@ -1098,7 +1097,7 @@ int Rts2xfocus::init ()
 	return 0;
 }
 
-Rts2GenFocCamera * Rts2xfocus::createFocCamera (Rts2Conn * conn)
+Rts2GenFocCamera * Rts2xfocus::createFocCamera (rts2core::Connection * conn)
 {
 	Rts2xfocusCamera *cam;
 	cam = new Rts2xfocusCamera (conn, changeVal, this);

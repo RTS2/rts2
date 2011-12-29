@@ -18,42 +18,37 @@ class ConnFocus;
 
 class DevClientCameraFoc:public DevClientCameraImage
 {
-	private:
-		int isFocusing;
-
-	protected:
-		char *exe;
-
-		ConnFocus *focConn;
 	public:
-		DevClientCameraFoc (Rts2Conn * in_connection, const char *in_exe);
+		DevClientCameraFoc (rts2core::Connection * in_connection, const char *in_exe);
 		virtual ~ DevClientCameraFoc (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual imageProceRes processImage (Image * image);
 		// will cause camera to change focus by given steps BEFORE exposition
 		// when change == INT_MAX, focusing don't converge
-		virtual void focusChange (Rts2Conn * focus);
+		virtual void focusChange (rts2core::Connection * focus);
+
+	protected:
+		char *exe;
+
+		ConnFocus *focConn;
+
+	private:
+		int isFocusing;
+
 };
 
 class DevClientFocusFoc:public DevClientFocusImage
 {
+	public:
+		DevClientFocusFoc (rts2core::Connection * in_connection);
+		virtual void postEvent (Rts2Event * event);
+
 	protected:
 		virtual void focusingEnd ();
-	public:
-		DevClientFocusFoc (Rts2Conn * in_connection);
-		virtual void postEvent (Rts2Event * event);
 };
 
 class ConnFocus:public rts2core::ConnFork
 {
-	private:
-		char *img_path;
-		Image *image;
-		int change;
-		int endEvent;
-	protected:
-		virtual void initFailed ();
-		virtual void beforeFork ();
 	public:
 		ConnFocus (rts2core::Block * in_master, Image * in_image, const char *in_exe, int in_endEvent);
 		virtual ~ ConnFocus (void);
@@ -64,10 +59,27 @@ class ConnFocus:public rts2core::ConnFork
 		const char *getCameraName () { return image->getCameraName (); }
 		Image *getImage () { return image; }
 		void nullCamera () { image = NULL; }
+
+	protected:
+		virtual void initFailed ();
+		virtual void beforeFork ();
+
+	private:
+		char *img_path;
+		Image *image;
+		int change;
+		int endEvent;
 };
 
-class DevClientPhotFoc:public rts2core::Rts2DevClientPhot
+class DevClientPhotFoc:public rts2core::DevClientPhot
 {
+	public:
+		DevClientPhotFoc (rts2core::Connection * in_conn, char *in_photometerFile, float in_photometerTime, int in_photometerFilterChange, std::vector < int >in_skipFilters);
+		virtual ~ DevClientPhotFoc (void);
+
+	protected:
+		virtual void addCount (int count, float exp, bool is_ov);
+
 	private:
 		std::ofstream os;
 		char *photometerFile;
@@ -76,14 +88,6 @@ class DevClientPhotFoc:public rts2core::Rts2DevClientPhot
 		int countCount;
 		std::vector < int >skipFilters;
 		int newFilter;
-	protected:
-		virtual void addCount (int count, float exp, bool is_ov);
-	public:
-		DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile,
-			float in_photometerTime,
-			int in_photometerFilterChange,
-			std::vector < int >in_skipFilters);
-		virtual ~ DevClientPhotFoc (void);
 };
 
 }

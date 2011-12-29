@@ -56,23 +56,23 @@ namespace rts2core
 
 /**
  * Base class which represents commands send over network to other component.
- * This object is usually send through Rts2Conn::queCommand to connection,
+ * This object is usually send through Connection::queCommand to connection,
  * which process it, wait for the other side to reply, pass return code to
- * Rts2Conn::commandReturn callback and delete it.
+ * Connection::commandReturn callback and delete it.
  *
- * @see Rts2Conn
+ * @see Connection
  *
  * @ingroup RTS2Block
  * @ingroup RTS2Command
  */
-class Rts2Command
+class Command
 {
 	public:
-		Rts2Command (rts2core::Block * _owner);
-		Rts2Command (rts2core::Block * _owner, const char *_text);
-		Rts2Command (Rts2Command * _command);
-		Rts2Command (Rts2Command & _command);
-		virtual ~ Rts2Command (void);
+		Command (Block * _owner);
+		Command (Block * _owner, const char *_text);
+		Command (Command * _command);
+		Command (Command & _command);
+		virtual ~ Command (void);
 
 		/**
 		 * Set command for this command object.
@@ -88,12 +88,12 @@ class Rts2Command
 		 */
 		void setCommand (const char * _text);
 
-		void setConnection (Rts2Conn * conn) { connection = conn; }
+		void setConnection (Connection * conn) { connection = conn; }
 
-		Rts2Conn * getConnection () { return connection; }
+		Connection * getConnection () { return connection; }
 
 		virtual int send ();
-		int commandReturn (int status, Rts2Conn * conn);
+		int commandReturn (int status, Connection * conn);
 		/**
 		 * Returns command test.
 		 */
@@ -109,7 +109,7 @@ class Rts2Command
 		/**
 		 * Return command BOP mask.
 		 *
-		 * @see Rts2Command::setBopMask
+		 * @see Command::setBopMask
 		 *
 		 * @return Commmand BOP mask.
 		 */
@@ -121,7 +121,7 @@ class Rts2Command
 		 * @param _originator Call originator. Call originator is issued
 		 *   EVENT_COMMAND_OK or EVENT_COMMAND_FAILED event.
 		 *
-		 * @see Rts2Conn::queCommand
+		 * @see Connection::queCommand
 		 *
 		 * @callergraph
 		 */
@@ -155,7 +155,7 @@ class Rts2Command
 		 *
 		 * @param call_progress Call progress.
 		 *
-		 * @see Rts2Command::getStatusCallProgress
+		 * @see Command::getStatusCallProgress
 		 */
 		void setStatusCallProgress (cip_state_t call_progress)
 		{
@@ -174,7 +174,7 @@ class Rts2Command
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnOK (Rts2Conn * conn);
+		virtual int commandReturnOK (Connection * conn);
 
 		/**
 		 * Called when command returns with status indicating that it will be
@@ -190,7 +190,7 @@ class Rts2Command
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnQued (Rts2Conn * conn);
+		virtual int commandReturnQued (Connection * conn);
 
 		/**
 		 * Called when command returns with error.
@@ -204,17 +204,17 @@ class Rts2Command
 		 *
 		 * @callgraph
 		 */
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 
 		/**
 		 * Called to remove reference to deleted connection.
 		 *
 		 * @param conn Connection which will be removed.
 		 */
-		virtual void deleteConnection (Rts2Conn * conn);
+		virtual void deleteConnection (Connection * conn);
 	protected:
-		rts2core::Block * owner;
-		Rts2Conn * connection;
+		Block * owner;
+		Connection * connection;
 		char * text;
 	private:
 		int bopMask;
@@ -226,12 +226,12 @@ class Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CentraldCommand:public Rts2Command
+class Rts2CentraldCommand:public Command
 {
 
 	public:
-		Rts2CentraldCommand (rts2core::Block * _owner, char *_text)
-			:Rts2Command (_owner, _text)
+		Rts2CentraldCommand (Block * _owner, char *_text)
+			:Command (_owner, _text)
 		{
 		}
 };
@@ -241,22 +241,22 @@ class Rts2CentraldCommand:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandSendKey:public Rts2Command
+class CommandSendKey:public Command
 {
 	private:
 		int key;
 		int centrald_id;
 		int centrald_num;
 	public:
-		Rts2CommandSendKey (rts2core::Block * _master, int _centrald_id, int _centrald_num, int _key);
+		CommandSendKey (Block * _master, int _centrald_id, int _centrald_num, int _key);
 		virtual int send ();
 
-		virtual int commandReturnOK (Rts2Conn * conn)
+		virtual int commandReturnOK (Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_OK);
 			return -1;
 		}
-		virtual int commandReturnFailed (int status, Rts2Conn * conn)
+		virtual int commandReturnFailed (int status, Connection * conn)
 		{
 			connection->setConnState (CONN_AUTH_FAILED);
 			return -1;
@@ -268,11 +268,11 @@ class Rts2CommandSendKey:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandAuthorize:public Rts2Command
+class CommandAuthorize:public Command
 {
 	public:
-		Rts2CommandAuthorize (rts2core::Block * _master, int centralId, int key);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn)
+		CommandAuthorize (Block * _master, int centralId, int key);
+		virtual int commandReturnFailed (int status, Connection * conn)
 		{
 			logStream (MESSAGE_ERROR) << "authentification failed for connection " << conn->getName ()
 				<< " centrald num " << conn->getCentraldNum ()
@@ -287,10 +287,10 @@ class Rts2CommandAuthorize:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandKey:public Rts2Command
+class CommandKey:public Command
 {
 	public:
-		Rts2CommandKey (rts2core::Block * _master, const char * device_name);
+		CommandKey (Block * _master, const char * device_name);
 };
 
 /**
@@ -298,10 +298,10 @@ class Rts2CommandKey:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandCameraSettings:public Rts2Command
+class CommandCameraSettings:public Command
 {
 	public:
-		Rts2CommandCameraSettings (Rts2DevClientCamera * camera);
+		CommandCameraSettings (DevClientCamera * camera);
 };
 
 /**
@@ -309,7 +309,7 @@ class Rts2CommandCameraSettings:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandExposure:public Rts2Command
+class CommandExposure:public Command
 {
 	public:
 		/**
@@ -319,12 +319,12 @@ class Rts2CommandExposure:public Rts2Command
 		 * @param _camera Camera client for exposure
 		 * @param _bopMask BOP mask for exposure command
 		 */
-		Rts2CommandExposure (rts2core::Block * _master, Rts2DevClientCamera * _camera, int _bopMask);
+		CommandExposure (Block * _master, DevClientCamera * _camera, int _bopMask);
 
-		virtual int commandReturnOK (Rts2Conn *conn);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		virtual int commandReturnOK (Connection *conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 	private:
-		Rts2DevClientCamera * camera;
+		DevClientCamera * camera;
 };
 
 /**
@@ -332,10 +332,10 @@ class Rts2CommandExposure:public Rts2Command
  *
  * @ingourp RTS2Command
  */
-class Rts2CommandReadout:public Rts2Command
+class CommandReadout:public Command
 {
 	public:
-		Rts2CommandReadout (rts2core::Block * _master);
+		CommandReadout (Block * _master);
 };
 
 /**
@@ -343,32 +343,32 @@ class Rts2CommandReadout:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandFilter:public Rts2Command
+class CommandFilter:public Command
 {
 	private:
-		Rts2DevClientCamera * camera;
-		Rts2DevClientPhot * phot;
-		Rts2DevClientFilter * filterCli;
+		DevClientCamera * camera;
+		DevClientPhot * phot;
+		DevClientFilter * filterCli;
 		void setCommandFilter (int filter);
 	public:
-		Rts2CommandFilter (Rts2DevClientCamera * _camera, int filter);
-		Rts2CommandFilter (Rts2DevClientPhot * _phot, int filter);
-		Rts2CommandFilter (Rts2DevClientFilter * _filter, int filter);
+		CommandFilter (DevClientCamera * _camera, int filter);
+		CommandFilter (DevClientPhot * _phot, int filter);
+		CommandFilter (DevClientFilter * _filter, int filter);
 
-		virtual int commandReturnOK (Rts2Conn * conn);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandBox:public Rts2CommandCameraSettings
+class CommandBox:public CommandCameraSettings
 {
 	public:
-		Rts2CommandBox (Rts2DevClientCamera * _camera, int x, int y, int w, int h);
+		CommandBox (DevClientCamera * _camera, int x, int y, int w, int h);
 };
 
-class Rts2CommandCenter:public Rts2CommandCameraSettings
+class CommandCenter:public CommandCameraSettings
 {
 	public:
-		Rts2CommandCenter (Rts2DevClientCamera * _camera, int width, int height);
+		CommandCenter (DevClientCamera * _camera, int width, int height);
 };
 
 /**
@@ -376,25 +376,25 @@ class Rts2CommandCenter:public Rts2CommandCameraSettings
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandChangeValue:public Rts2Command
+class CommandChangeValue:public Command
 {
 	public:
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int _operand);
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long int _operand);
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand);
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand);
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2);
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, bool _operand);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, int _operand);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, long int _operand);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, float _operand);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, double _operand1, double _operand2);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, bool _operand);
 		/**
 		 * Change rectangle value.
 		 */
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int x, int y, int w, int h);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, int x, int y, int w, int h);
 		/**
 		 * Create command to change value from string.
 		 *
 		 * @param raw If true, string will be send without escaping.
 		 */
-		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, std::string _operand, bool raw = false);
+		CommandChangeValue (DevClient * _client, std::string _valName, char op, std::string _operand, bool raw = false);
 };
 
 /**
@@ -402,15 +402,15 @@ class Rts2CommandChangeValue:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandMove:public Rts2Command
+class CommandMove:public Command
 {
 	public:
-		Rts2CommandMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandMove (Block * _master, DevClientTelescope * _tel, double ra, double dec);
+		virtual int commandReturnFailed (int status, Connection * conn);
 	protected:
-		Rts2CommandMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel);
+		CommandMove (Block * _master, DevClientTelescope * _tel);
 	private:
-		Rts2DevClientTelescope *tel;
+		DevClientTelescope *tel;
 };
 
 /**
@@ -418,10 +418,10 @@ class Rts2CommandMove:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandMoveUnmodelled:public Rts2CommandMove
+class CommandMoveUnmodelled:public CommandMove
 {
 	public:
-		Rts2CommandMoveUnmodelled (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
+		CommandMoveUnmodelled (Block * _master, DevClientTelescope * _tel, double ra, double dec);
 };
 
 /**
@@ -429,10 +429,10 @@ class Rts2CommandMoveUnmodelled:public Rts2CommandMove
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandMoveFixed:public Rts2CommandMove
+class CommandMoveFixed:public CommandMove
 {
 	public:
-		Rts2CommandMoveFixed (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
+		CommandMoveFixed (Block * _master, DevClientTelescope * _tel, double ra, double dec);
 };
 
 /**
@@ -440,127 +440,127 @@ class Rts2CommandMoveFixed:public Rts2CommandMove
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandMoveAltAz:public Rts2CommandMove
+class CommandMoveAltAz:public CommandMove
 {
 	public:
-		Rts2CommandMoveAltAz (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double alt, double az);
+		CommandMoveAltAz (Block * _master, DevClientTelescope * _tel, double alt, double az);
 };
 
-class Rts2CommandResyncMove:public Rts2CommandMove
+class CommandResyncMove:public CommandMove
 {
 	public:
-		Rts2CommandResyncMove (rts2core::Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec);
+		CommandResyncMove (Block * _master, DevClientTelescope * _tel, double ra, double dec);
 };
 
-class Rts2CommandChange:public Rts2Command
+class CommandChange:public Command
 {
-	Rts2DevClientTelescope *tel;
+	DevClientTelescope *tel;
 	public:
-		Rts2CommandChange (rts2core::Block * _master, double ra, double dec);
-		Rts2CommandChange (Rts2DevClientTelescope * _tel, double ra, double dec);
-		Rts2CommandChange (Rts2CommandChange * _command, Rts2DevClientTelescope * _tel);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandChange (Block * _master, double ra, double dec);
+		CommandChange (DevClientTelescope * _tel, double ra, double dec);
+		CommandChange (CommandChange * _command, DevClientTelescope * _tel);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandCorrect:public Rts2Command
+class CommandCorrect:public Command
 {
 	public:
-		Rts2CommandCorrect (rts2core::Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err);
+		CommandCorrect (Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err);
 };
 
-class Rts2CommandStartGuide:public Rts2Command
+class CommandStartGuide:public Command
 {
 	public:
-		Rts2CommandStartGuide (rts2core::Block * _master, char dir, double dir_dist);
+		CommandStartGuide (Block * _master, char dir, double dir_dist);
 };
 
-class Rts2CommandStopGuide:public Rts2Command
+class CommandStopGuide:public Command
 {
 	public:
-		Rts2CommandStopGuide (rts2core::Block * _master, char dir);
+		CommandStopGuide (Block * _master, char dir);
 };
 
-class Rts2CommandStopGuideAll:public Rts2Command
+class CommandStopGuideAll:public Command
 {
 	public:
-		Rts2CommandStopGuideAll (rts2core::Block * _master):Rts2Command (_master)
+		CommandStopGuideAll (Block * _master):Command (_master)
 		{
 			setCommand ("stop_guide_all");
 		}
 };
 
-class Rts2CommandCupolaMove:public Rts2Command
+class CommandCupolaMove:public Command
 {
-	Rts2DevClientCupola * copula;
+	DevClientCupola * copula;
 	public:
-		Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, double ra,
+		CommandCupolaMove (DevClientCupola * _copula, double ra,
 			double dec);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandCupolaNotMove:public Rts2Command
+class CommandCupolaNotMove:public Command
 {
-	Rts2DevClientCupola * copula;
+	DevClientCupola * copula;
 	public:
-		Rts2CommandCupolaNotMove (Rts2DevClientCupola * _copula);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandCupolaNotMove (DevClientCupola * _copula);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandChangeFocus:public Rts2Command
+class CommandChangeFocus:public Command
 {
 	private:
-		Rts2DevClientFocus * focuser;
-		Rts2DevClientCamera * camera;
+		DevClientFocus * focuser;
+		DevClientCamera * camera;
 		void change (int _steps);
 	public:
-		Rts2CommandChangeFocus (Rts2DevClientFocus * _focuser, int _steps);
-		Rts2CommandChangeFocus (Rts2DevClientCamera * _camera, int _steps);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandChangeFocus (DevClientFocus * _focuser, int _steps);
+		CommandChangeFocus (DevClientCamera * _camera, int _steps);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandSetFocus:public Rts2Command
+class CommandSetFocus:public Command
 {
 	private:
-		Rts2DevClientFocus * focuser;
-		Rts2DevClientCamera * camera;
+		DevClientFocus * focuser;
+		DevClientCamera * camera;
 		void set (int _steps);
 	public:
-		Rts2CommandSetFocus (Rts2DevClientFocus * _focuser, int _steps);
-		Rts2CommandSetFocus (Rts2DevClientCamera * _camera, int _steps);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandSetFocus (DevClientFocus * _focuser, int _steps);
+		CommandSetFocus (DevClientCamera * _camera, int _steps);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandMirror:public Rts2Command
+class CommandMirror:public Command
 {
 	private:
-		Rts2DevClientMirror * mirror;
+		DevClientMirror * mirror;
 	public:
-		Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandMirror (DevClientMirror * _mirror, int _pos);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandIntegrate:public Rts2Command
+class CommandIntegrate:public Command
 {
 	private:
-		Rts2DevClientPhot * phot;
+		DevClientPhot * phot;
 	public:
-		Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filter,
+		CommandIntegrate (DevClientPhot * _phot, int _filter,
 			float _exp, int _count);
-		Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _exp,
+		CommandIntegrate (DevClientPhot * _phot, float _exp,
 			int _count);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
-class Rts2CommandExecNext:public Rts2Command
+class CommandExecNext:public Command
 {
 	public:
-		Rts2CommandExecNext (rts2core::Block * _master, int next_id);
+		CommandExecNext (Block * _master, int next_id);
 };
 
-class Rts2CommandExecNow:public Rts2Command
+class CommandExecNow:public Command
 {
 	public:
-		Rts2CommandExecNow (rts2core::Block * _master, int now_id);
+		CommandExecNow (Block * _master, int now_id);
 };
 
 /**
@@ -568,16 +568,16 @@ class Rts2CommandExecNow:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandExecGrb:public Rts2Command
+class CommandExecGrb:public Command
 {
 	public:
-		Rts2CommandExecGrb (rts2core::Block * _master, int grb_id);
+		CommandExecGrb (Block * _master, int grb_id);
 };
 
-class Rts2CommandQueueNow:public Rts2Command
+class CommandQueueNow:public Command
 {
 	public:
-		Rts2CommandQueueNow (rts2core::Block * _master, const char *queue, int tar_id);
+		CommandQueueNow (Block * _master, const char *queue, int tar_id);
 };
 
 /**
@@ -585,22 +585,22 @@ class Rts2CommandQueueNow:public Rts2Command
  *
  * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  */
-class Rts2CommandQueueNowOnce:public Rts2Command
+class CommandQueueNowOnce:public Command
 {
 	public:
-		Rts2CommandQueueNowOnce (rts2core::Block * _master, const char *queue, int tar_id);
+		CommandQueueNowOnce (Block * _master, const char *queue, int tar_id);
 };
 
-class Rts2CommandExecShower:public Rts2Command
+class CommandExecShower:public Command
 {
 	public:
-		Rts2CommandExecShower (rts2core::Block * _master);
+		CommandExecShower (Block * _master);
 };
 
-class Rts2CommandKillAll:public Rts2Command
+class CommandKillAll:public Command
 {
 	public:
-		Rts2CommandKillAll (rts2core::Block * _master);
+		CommandKillAll (Block * _master);
 };
 
 /**
@@ -608,16 +608,16 @@ class Rts2CommandKillAll:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandScriptEnds:public Rts2Command
+class CommandScriptEnds:public Command
 {
 	public:
-		Rts2CommandScriptEnds (rts2core::Block * _master);
+		CommandScriptEnds (Block * _master);
 };
 
-class Rts2CommandMessageMask:public Rts2Command
+class CommandMessageMask:public Command
 {
 	public:
-		Rts2CommandMessageMask (rts2core::Block * _master, int _mask);
+		CommandMessageMask (Block * _master, int _mask);
 };
 
 /**
@@ -625,12 +625,12 @@ class Rts2CommandMessageMask:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandInfo:public Rts2Command
+class CommandInfo:public Command
 {
 	public:
-		Rts2CommandInfo (rts2core::Block * _master);
-		virtual int commandReturnOK (Rts2Conn * conn);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandInfo (Block * _master);
+		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 };
 
 /**
@@ -654,21 +654,21 @@ class Rts2CommandInfo:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandStatusInfo:public Rts2Command
+class CommandStatusInfo:public Command
 {
 	private:
-		Rts2Conn * control_conn;
+		Connection * control_conn;
 	public:
-		Rts2CommandStatusInfo (rts2core::Block * master, Rts2Conn * _control_conn);
-		virtual int commandReturnOK (Rts2Conn * conn);
-		virtual int commandReturnFailed (Rts2Conn * conn);
+		CommandStatusInfo (Block * master, Connection * _control_conn);
+		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnFailed (Connection * conn);
 
 		const char * getCentralName()
 		{
 			return control_conn->getName ();
 		}
 
-		virtual void deleteConnection (Rts2Conn * conn);
+		virtual void deleteConnection (Connection * conn);
 };
 
 /**
@@ -676,19 +676,19 @@ class Rts2CommandStatusInfo:public Rts2Command
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandDeviceStatus:public Rts2CommandStatusInfo
+class CommandDeviceStatus:public CommandStatusInfo
 {
 	public:
-		Rts2CommandDeviceStatus (rts2core::Block * master, Rts2Conn * _control_conn);
+		CommandDeviceStatus (Block * master, Connection * _control_conn);
 };
 
 /**
  * Sends information to selector at the end of observation.
  */
-class Rts2CommandObservation:public Rts2Command
+class CommandObservation:public Command
 {
 	public:
-		Rts2CommandObservation (rts2core::Block * master, int tar_id, int obs_id);
+		CommandObservation (Block * master, int tar_id, int obs_id);
 };
 
 }

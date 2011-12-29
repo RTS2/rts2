@@ -134,7 +134,7 @@ class Dummy:public Sensor
 			return Sensor::setValue (old_value, newValue);
 		}
 
-		virtual int commandAuthorized (Rts2Conn * conn)
+		virtual int commandAuthorized (rts2core::Connection * conn)
 		{
 			if (conn->isCommand ("add"))
 			{

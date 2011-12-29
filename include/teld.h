@@ -87,7 +87,7 @@ class Telescope:public rts2core::Device
 
 		virtual void changeMasterState (int old_state, int new_state);
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
 		double getLatitude () { return telLatitude->getValueDouble (); }
 
@@ -96,9 +96,9 @@ class Telescope:public rts2core::Device
 
 		virtual int scriptEnds ();
 
-		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
+		int setTo (rts2core::Connection * conn, double set_ra, double set_dec);
 
-		int startPark (Rts2Conn * conn);
+		int startPark (rts2core::Connection * conn);
 
 		virtual int getFlip ();
 
@@ -145,7 +145,7 @@ class Telescope:public rts2core::Device
 
 		bool isModelOn () { return (calModel->getValueBool ()); }
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 		virtual void setFullBopState (int new_state);
 
@@ -548,7 +548,7 @@ class Telescope:public rts2core::Device
 
 		virtual void valueChanged (rts2core::Value * changed_value);
 
-		virtual int deleteConnection (Rts2Conn * in_conn)
+		virtual int deleteConnection (rts2core::Connection * in_conn)
 		{
 			if (in_conn == move_connection)
 				move_connection = NULL;
@@ -706,7 +706,7 @@ class Telescope:public rts2core::Device
 		void setBlockMove () { blockMove->setValueBool (true); sendValueAll (blockMove); }
 		void unBlockMove () { blockMove->setValueBool (false); sendValueAll (blockMove); }
 	private:
-		Rts2Conn * move_connection;
+		rts2core::Connection * move_connection;
 		int moveInfoCount;
 		int moveInfoMax;
 
@@ -852,9 +852,9 @@ class Telescope:public rts2core::Device
 		 */
 		rts2core::ValueTime *targetReached;
 
-		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec, bool onlyCorrect);
+		int startMove (rts2core::Connection * conn, double tar_ra, double tar_dec, bool onlyCorrect);
 
-		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
+		int startResyncMove (rts2core::Connection * conn, bool onlyCorrect);
 
 		/**
 		 * Date and time when last park command was issued.

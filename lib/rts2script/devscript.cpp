@@ -22,7 +22,7 @@
 
 using namespace rts2script;
 
-DevScript::DevScript (Rts2Conn * in_script_connection) : script ()
+DevScript::DevScript (rts2core::Connection * in_script_connection) : script ()
 {
 	currentTarget = NULL;
 	nextComd = NULL;
@@ -75,7 +75,7 @@ void DevScript::startTarget (bool callScriptEnds)
 	clearFailedCount ();
 
 	if (callScriptEnds)
-		queCommandFromScript (new Rts2CommandScriptEnds (script_connection->getMaster ()));
+		queCommandFromScript (new rts2core::CommandScriptEnds (script_connection->getMaster ()));
 
 	scriptBegin ();
 
@@ -258,20 +258,20 @@ void DevScript::postEvent (Rts2Event * event)
 
 void DevScript::scriptBegin ()
 {
-	Rts2DevClient *cli = script_connection->getOtherDevClient ();
+	rts2core::DevClient *cli = script_connection->getOtherDevClient ();
 	if (cli == NULL)
 	{
 		return;
 	}
 	if (script.get () == NULL)
 	{
-		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPREP"), '=', 0));
-		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPT"), '=', std::string ("")));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPREP"), '=', 0));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPT"), '=', std::string ("")));
 	}
 	else
 	{
-		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPREP"), '=', scriptLoopCount));
-		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPT"), '=', script->getWholeScript ()));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPREP"), '=', scriptLoopCount));
+		queCommandFromScript (new rts2core::CommandChangeValue (cli, std::string ("SCRIPT"), '=', script->getWholeScript ()));
 	}
 }
 
@@ -430,7 +430,7 @@ int DevScript::nextPreparedCommand ()
 	return ret;
 }
 
-int DevScript::haveNextCommand (Rts2DevClient *devClient)
+int DevScript::haveNextCommand (rts2core::DevClient *devClient)
 {
 	int ret;
 	// waiting for script or acqusition

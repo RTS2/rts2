@@ -25,7 +25,7 @@
 #endif
 
 #include "hoststring.h"
-#include "rts2command.h"
+#include "command.h"
 #include "daemon.h"
 #include "rts2configraw.h"
 
@@ -43,10 +43,10 @@ class Device;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevConn:public Rts2Conn
+class DevConnection:public Connection
 {
 	public:
-		Rts2DevConn (int in_sock, Device * in_master);
+		DevConnection (int in_sock, Device * in_master);
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
@@ -75,7 +75,7 @@ class Rts2DevConn:public Rts2Conn
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevConnMaster:public Rts2Conn
+class DevConnectionMaster:public Connection
 {
 	public:
 		/**
@@ -90,12 +90,12 @@ class Rts2DevConnMaster:public Rts2Conn
 		 * @param _master_port   Central server port for the connectio.
 		 * @param _serverNum     Server number (number of centrald which device is connected to)
 		 */
-		Rts2DevConnMaster (rts2core::Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum);
-		virtual ~ Rts2DevConnMaster (void);
+		DevConnectionMaster (rts2core::Block * _master, char *_device_host, int _device_port, const char *_device_name, int _device_type, const char *_master_host, int _master_port, int _serverNum);
+		virtual ~ DevConnectionMaster (void);
 
 		virtual int init ();
 		virtual int idle ();
-		int authorize (Rts2DevConn * conn);
+		int authorize (DevConnection * conn);
 
 		virtual void setConnState (conn_state_t new_conn_state);
 	protected:
@@ -121,11 +121,11 @@ class Rts2DevConnMaster:public Rts2Conn
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CommandRegister:public Rts2Command
+class CommandRegister:public Command
 {
 	public:
-		Rts2CommandRegister (rts2core::Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
-			:Rts2Command (in_master)
+		CommandRegister (rts2core::Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
+			:Command (in_master)
 		{
 			std::ostringstream _os;
 			_os << "register " << centrald_num
@@ -136,23 +136,23 @@ class Rts2CommandRegister:public Rts2Command
 			setCommand (_os);
 		}
 
-		virtual int commandReturnOK (Rts2Conn *conn)
+		virtual int commandReturnOK (Connection *conn)
 		{
 			conn->setConnState (CONN_AUTH_OK);
-			return Rts2Command::commandReturnOK (conn);
+			return Command::commandReturnOK (conn);
 		}
 
-		virtual int commandReturnFailed (int status, Rts2Conn *conn)
+		virtual int commandReturnFailed (int status, Connection *conn)
 		{
 			conn->endConnection ();
-			return Rts2Command::commandReturnFailed (status, conn);
+			return Command::commandReturnFailed (status, conn);
 		}
 };
 
 /**
  * Send status_info command from device to master, and wait for reply.
  *
- * This command works with Rts2CommandStatusInfo to ensure, that proper device
+ * This command works with CommandStatusInfo to ensure, that proper device
  * state is retrieved.
  *
  * @msc
@@ -175,21 +175,21 @@ class Rts2CommandRegister:public Rts2Command
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CommandDeviceStatusInfo:public Rts2Command
+class CommandDeviceStatusInfo:public Command
 {
 	public:
-		Rts2CommandDeviceStatusInfo (Device * master, Rts2Conn * in_owner_conn);
-		virtual int commandReturnOK (Rts2Conn * conn);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
+		CommandDeviceStatusInfo (Device * master, Connection * in_owner_conn);
+		virtual int commandReturnOK (Connection * conn);
+		virtual int commandReturnFailed (int status, Connection * conn);
 
-		Rts2Conn *getOwnerConn ()
+		Connection *getOwnerConn ()
 		{
 			return owner_conn;
 		}
 
-		virtual void deleteConnection (Rts2Conn * conn);
+		virtual void deleteConnection (Connection * conn);
 	private:
-		Rts2Conn * owner_conn;
+		Connection * owner_conn;
 };
 
 /**
@@ -203,7 +203,7 @@ class Device:public Daemon
 	public:
 		Device (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 		virtual ~Device (void);
-		virtual Rts2DevConn *createConnection (int in_sock);
+		virtual DevConnection *createConnection (int in_sock);
 
 		/**
 		 * Called for commands when connection is authorized. Command processing is
@@ -217,9 +217,9 @@ class Device:public Daemon
 		 * be left to processing.
 		 *
 		 */
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (Connection * conn);
 
-		int authorize (int centrald_num, Rts2DevConn * conn);
+		int authorize (int centrald_num, DevConnection * conn);
 
 		/**
 		 * Send commands to all masters which device has connected.
@@ -230,12 +230,12 @@ class Device:public Daemon
 		 */
 		int sendMasters (const char *msg);
 
-		virtual void centraldConnRunning (Rts2Conn *conn);
+		virtual void centraldConnRunning (Connection *conn);
 
 		/**
 		 * Send full state, including device full BOP state.
 		 */
-		void sendFullStateInfo (Rts2Conn * conn);
+		void sendFullStateInfo (Connection * conn);
 
 		// only devices can send messages
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
@@ -259,7 +259,7 @@ class Device:public Daemon
 		const char *getDeviceName () { return device_name; }
 		int getDeviceType () { return device_type; }
 
-		virtual int statusInfo (Rts2Conn * conn);
+		virtual int statusInfo (Connection * conn);
 
 		/**
 		 * Called to set current device BOP state.
@@ -319,7 +319,7 @@ class Device:public Daemon
 
 		virtual void beforeRun ();
 
-		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
+		virtual bool isRunning (Connection *conn) { return conn->isConnState (CONN_AUTH_OK) || requireAuthorization () == false; }
 
 		/**
 		 * Return device BOP state.
@@ -331,9 +331,9 @@ class Device:public Daemon
 		/**
 		 * Return central connection for given central server name.
 		 */
-		Rts2Conn *getCentraldConn (const char *server);
+		Connection *getCentraldConn (const char *server);
 
-		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
+		void queDeviceStatusCommand (Connection *in_owner_conn);
 
 		// sends operation block commands to master
 		// this functions should mark critical blocks during device execution
@@ -400,7 +400,7 @@ class Device:public Daemon
 		bool getNeedReload () { return getState () & DEVICE_NEED_RELOAD; }
 		void clearNeedReload () { maskState (DEVICE_NEED_RELOAD, 0, "reload cleared"); }
 
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+		virtual Connection *createClientConnection (Rts2Address * in_addr);
 
 		/**
 		 * Loop through que values and tries to free as much of them as is possible.
@@ -410,7 +410,7 @@ class Device:public Daemon
 		 */
 		virtual void checkQueChanges (int fakeState);
 
-		virtual void stateChanged (int new_state, int old_state, const char *description, Rts2Conn *commandedConn);
+		virtual void stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 	private:
@@ -449,7 +449,7 @@ class Device:public Daemon
 		int setMode (int new_mode);
 
 		int blockState;
-		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;
+		CommandDeviceStatusInfo *deviceStatusCommand;
 };
 
 }

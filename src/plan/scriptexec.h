@@ -23,7 +23,7 @@
 #include "connfork.h"
 #include "../../lib/rts2script/scripttarget.h"
 #include "../../lib/rts2script/scriptinterface.h"
-#include "../../lib/rts2/rts2client.h"
+#include "../../lib/rts2/client.h"
 #include "../../lib/rts2/rts2target.h"
 
 namespace rts2script
@@ -38,7 +38,7 @@ namespace rts2plan
  * This is main client class. It takes care of supliing right
  * devclients and other things.
  */
-class ScriptExec:public Rts2Client, public rts2script::ScriptInterface
+class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 {
 	public:
 		ScriptExec (int in_argc, char **in_argv);
@@ -46,14 +46,14 @@ class ScriptExec:public Rts2Client, public rts2script::ScriptInterface
 
 		virtual int findScript (std::string deviceName, std::string & buf);
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual void deviceReady (Rts2Conn * conn);
+		virtual void deviceReady (rts2core::Connection * conn);
 
 		virtual int idle ();
-		virtual void deviceIdle (Rts2Conn * conn);
+		virtual void deviceIdle (rts2core::Connection * conn);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 	protected:

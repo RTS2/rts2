@@ -35,7 +35,7 @@ int Rts2DevMirror::idle ()
 	return ret;
 }
 
-int Rts2DevMirror::startOpen (Rts2Conn * conn)
+int Rts2DevMirror::startOpen (rts2core::Connection * conn)
 {
 	int ret;
 	ret = startOpen ();
@@ -47,7 +47,7 @@ int Rts2DevMirror::startOpen (Rts2Conn * conn)
 	return 0;
 }
 
-int Rts2DevMirror::startClose (Rts2Conn * conn)
+int Rts2DevMirror::startClose (rts2core::Connection * conn)
 {
 	int ret;
 	ret = startClose ();
@@ -59,7 +59,7 @@ int Rts2DevMirror::startClose (Rts2Conn * conn)
 	return 0;
 }
 
-int Rts2DevMirror::commandAuthorized (Rts2Conn * conn)
+int Rts2DevMirror::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("mirror"))
 	{

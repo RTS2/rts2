@@ -35,7 +35,7 @@ class Arduino:public Sensor
 		Arduino (int argc, char **argv);
 		virtual ~Arduino ();
 
-		virtual int commandAuthorized (Rts2Conn *conn);
+		virtual int commandAuthorized (rts2core::Connection *conn);
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -89,7 +89,7 @@ Arduino::~Arduino ()
 	delete arduinoConn;
 }
 
-int Arduino::commandAuthorized (Rts2Conn * conn)
+int Arduino::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

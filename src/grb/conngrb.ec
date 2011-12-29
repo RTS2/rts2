@@ -1400,7 +1400,7 @@ int ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 		FD_SET (gcn_listen_sock, readset);
 		return 0;
 	}
-	return Rts2Conn::add (readset, writeset, expset);
+	return rts2core::Connection::add (readset, writeset, expset);
 }
 
 void ConnGrb::connectionError (int last_data_size)

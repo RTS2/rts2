@@ -22,14 +22,14 @@
 
 using namespace rts2script;
 
-int ElementDisable::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementDisable::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	getTarget ()->setTargetEnabled (false);
 	getTarget ()->save (true);
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementTempDisable::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementTempDisable::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
   	time_t now;
 	time (&now);
@@ -52,7 +52,7 @@ double ElementTempDisable::getDistTimeSec ()
 	return ret;
 }
 
-int ElementTarBoost::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementTarBoost::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	time_t now;
 	time (&now);

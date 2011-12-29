@@ -4,25 +4,23 @@
 #include <algorithm>
 
 #include "block.h"
-#include "../../lib/rts2/rts2client.h"
-#include "rts2command.h"
+#include "../../lib/rts2/client.h"
+#include "command.h"
 
 using namespace std;
 
-class Rts2CMonitorConnection:public Rts2ConnClient
+class Rts2CMonitorConnection:public rts2core::ConnClient
 {
 	private:
 		void printStatus ();
 	public:
-		Rts2CMonitorConnection (rts2core::Block * _master, int _centrald_num, char *_name)
-		:Rts2ConnClient (_master, _centrald_num, _name)
+		Rts2CMonitorConnection (rts2core::Block * _master, int _centrald_num, char *_name):rts2core::ConnClient (_master, _centrald_num, _name)
 		{
 		}
-		virtual void commandReturn (rts2core::Rts2Command * command, int cmd_status);
+		virtual void commandReturn (rts2core::Command * command, int cmd_status);
 };
 
-void
-Rts2CMonitorConnection::printStatus ()
+void Rts2CMonitorConnection::printStatus ()
 {
 	cout << "============================== \n\
   " << getName () << " status OK \n";
@@ -41,9 +39,7 @@ Rts2CMonitorConnection::printStatus ()
 	}
 }
 
-
-void
-Rts2CMonitorConnection::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
+void Rts2CMonitorConnection::commandReturn (rts2core::Command * cmd, int cmd_status)
 {
 	// if command failed..
 	if (cmd_status)
@@ -63,29 +59,28 @@ Rts2CMonitorConnection::commandReturn (rts2core::Rts2Command * cmd, int cmd_stat
 	}
 }
 
-
-class CommandInfo:public rts2core::Rts2Command
+class CommandInfo:public rts2core::Command
 {
 
 	public:
-		CommandInfo (rts2core::Block * in_owner):rts2core::Rts2Command (in_owner, "info")
+		CommandInfo (rts2core::Block * in_owner):rts2core::Command (in_owner, "info")
 		{
 		}
-		virtual int commandReturnOK (Rts2Conn * conn)
+		virtual int commandReturnOK (rts2core::Connection * conn)
 		{
 			owner->queAll ("base_info");
 			owner->queAll ("info");
-			return rts2core::Rts2Command::commandReturnOK (conn);
+			return rts2core::Command::commandReturnOK (conn);
 		}
 };
 
-class Rts2CMonitor:public Rts2Client
+class Rts2CMonitor:public rts2core::Client
 {
 	protected:
-		virtual Rts2ConnClient * createClientConnection (char *_deviceName);
+		virtual rts2core::ConnClient * createClientConnection (char *_deviceName);
 
 	public:
-		Rts2CMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
+		Rts2CMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
 		{
 
 		}
@@ -93,9 +88,7 @@ class Rts2CMonitor:public Rts2Client
 		virtual int run ();
 };
 
-
-Rts2ConnClient *
-Rts2CMonitor::createClientConnection (char *_deviceName)
+rts2core::ConnClient * Rts2CMonitor::createClientConnection (char *_deviceName)
 {
 	Rts2Address *addr = findAddress (_deviceName);
 	if (addr == NULL)
@@ -103,30 +96,24 @@ Rts2CMonitor::createClientConnection (char *_deviceName)
 	return new Rts2CMonitorConnection (this, addr->getCentraldNum (), _deviceName);
 }
 
-
-int
-Rts2CMonitor::idle ()
+int Rts2CMonitor::idle ()
 {
 	if (commandQueEmpty ())
 		endRunLoop ();
-	return Rts2Client::idle ();
+	return rts2core::Client::idle ();
 }
 
-
-int
-Rts2CMonitor::run ()
+int Rts2CMonitor::run ()
 {
-	connections_t::iterator iter;
+	rts2core::connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 	{
 		(*iter)->queCommand (new CommandInfo (this));
 	}
-	return Rts2Client::run ();
+	return rts2core::Client::run ();
 }
-
-
-int
-main (int argc, char **argv)
+ 
+int main (int argc, char **argv)
 {
 	Rts2CMonitor monitor = Rts2CMonitor (argc, argv);
 	return monitor.run ();

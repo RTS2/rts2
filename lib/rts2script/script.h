@@ -27,8 +27,8 @@
 
 #include "../rts2/counted_ptr.h"
 #include "block.h"
-#include "rts2command.h"
-#include "rts2devclient.h"
+#include "command.h"
+#include "devclient.h"
 #include "../rts2/rts2target.h"
 #include "../rts2db/rts2camlist.h"
 #include "../rts2fits/image.h"
@@ -131,7 +131,7 @@ class Script:public Rts2Object, public std::list <Element *>
 		int setTarget (const char *cam_name, Rts2Target *target);
 
 		virtual void postEvent (Rts2Event * event);
-		template < typename T > int nextCommand (T & device, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		template < typename T > int nextCommand (T & device, Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()
 		{
@@ -246,7 +246,7 @@ class Script:public Rts2Object, public std::list <Element *>
 		float telescopeSpeed;
 };
 
-template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+template < typename T > int Script::nextCommand (T & device, Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 
@@ -265,9 +265,9 @@ template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_
 		currElement = *el_iter;
 		ret = currElement->nextCommand (&device, new_command, new_device);
 		// send info about currently executed script element..
-		device.queCommand (new Rts2CommandChangeValue (&device, "scriptPosition", '=', currElement->getStartPos ()));
+		device.queCommand (new CommandChangeValue (&device, "scriptPosition", '=', currElement->getStartPos ()));
 		
-		device.queCommand (new Rts2CommandChangeValue (&device, "scriptLen", '=', currElement->getLen ()));
+		device.queCommand (new CommandChangeValue (&device, "scriptLen", '=', currElement->getLen ()));
 
 		if (ret != NEXT_COMMAND_NEXT)
 		{

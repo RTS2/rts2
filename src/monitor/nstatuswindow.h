@@ -22,20 +22,20 @@
 
 #include "daemonwindow.h"
 #include "ncomwin.h"
-#include "../../lib/rts2/rts2client.h"
+#include "../../lib/rts2/client.h"
 
 namespace rts2ncurses
 {
 
 class NStatusWindow:public NWindow
 {
-	private:
-		Rts2Client * master;
-		NComWin *comWin;
 	public:
-		NStatusWindow (NComWin * in_comWin, Rts2Client * in_master);
+		NStatusWindow (NComWin * in_comWin, rts2core::Client * in_master);
 		virtual ~ NStatusWindow (void);
 		virtual void draw ();
+	private:
+		rts2core::Client * master;
+		NComWin *comWin;
 };
 
 }

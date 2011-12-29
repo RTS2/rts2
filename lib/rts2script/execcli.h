@@ -74,7 +74,7 @@ class GuidingParams
 class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScript
 {
 	public:
-		DevClientCameraExec (Rts2Conn * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
+		DevClientCameraExec (rts2core::Connection * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
 		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);
@@ -94,11 +94,11 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		virtual void setWaitMove () { rts2image::DevClientCameraImage::setWaitMove (); }
 
-		virtual void queCommandFromScript (Rts2Command * com) { queCommand (com); }
+		virtual void queCommandFromScript (rts2core::Command * com) { queCommand (com); }
 
-		virtual int getFailedCount () { return Rts2DevClient::getFailedCount (); }
+		virtual int getFailedCount () { return rts2core::DevClient::getFailedCount (); }
 
-		virtual void clearFailedCount () { Rts2DevClient::clearFailedCount (); }
+		virtual void clearFailedCount () { rts2core::DevClient::clearFailedCount (); }
 
 		virtual void idle ();
 
@@ -124,7 +124,7 @@ class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 	private:
 		Rts2Target * currentTarget;
 		int blockMove;
-		Rts2CommandChange *cmdChng;
+		rts2core::CommandChange *cmdChng;
 
 		struct ln_equ_posn fixedOffset;
 
@@ -133,7 +133,7 @@ class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 	protected:
 		virtual void moveEnd ();
 	public:
-		DevClientTelescopeExec (Rts2Conn * in_connection);
+		DevClientTelescopeExec (rts2core::Connection * in_connection);
 		virtual void postEvent (Rts2Event * event);
 		virtual void moveFailed (int status);
 };

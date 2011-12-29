@@ -21,8 +21,8 @@
 #define __RTS2_DEVCLIENT_IMG__
 
 #include "rts2object.h"
-#include "rts2devclient.h"
-#include "rts2command.h"
+#include "devclient.h"
+#include "command.h"
 
 #include "image.h"
 #include "cameraimage.h"
@@ -32,19 +32,17 @@
 namespace rts2image
 {
 
-typedef enum
-{ IMAGE_DO_BASIC_PROCESSING, IMAGE_KEEP_COPY }
-imageProceRes;
+typedef enum { IMAGE_DO_BASIC_PROCESSING, IMAGE_KEEP_COPY } imageProceRes;
 
 /**
  * Defines client descendants capable to stream themselves
  * to an Image.
  *
  */
-class DevClientCameraImage:public rts2core::Rts2DevClientCamera
+class DevClientCameraImage:public rts2core::DevClientCamera
 {
 	public:
-		DevClientCameraImage (Rts2Conn * in_connection, std::string templateFile = std::string (""));
+		DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile = std::string (""));
 		virtual ~DevClientCameraImage (void);
 		virtual void postEvent (Rts2Event * event);
 
@@ -130,16 +128,16 @@ class DevClientCameraImage:public rts2core::Rts2DevClientCamera
 		bool triggered;
 
 		// already received informations from those devices..
-		std::vector < rts2core::Rts2DevClient * > prematurelyReceived;
+		std::vector < rts2core::DevClient * > prematurelyReceived;
 
 		// template for headers.
 		Rts2ConfigRaw *fitsTemplate;
 };
 
-class DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
+class DevClientTelescopeImage:public rts2core::DevClientTelescope
 {
 	public:
-		DevClientTelescopeImage (Rts2Conn * in_connection);
+		DevClientTelescopeImage (rts2core::Connection * in_connection);
 		virtual void postEvent (Rts2Event * event);
 		/**
 		 * Get target coordinates.
@@ -150,17 +148,17 @@ class DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
 		double getDistance (struct ln_equ_posn *in_pos);
 };
 
-class DevClientFocusImage:public rts2core::Rts2DevClientFocus
+class DevClientFocusImage:public rts2core::DevClientFocus
 {
 	public:
-		DevClientFocusImage (Rts2Conn * in_connection);
+		DevClientFocusImage (rts2core::Connection * in_connection);
 		virtual void postEvent (Rts2Event * event);
 };
 
-class DevClientWriteImage:public rts2core::Rts2DevClient
+class DevClientWriteImage:public rts2core::DevClient
 {
 	public:
-		DevClientWriteImage (Rts2Conn * in_connection);
+		DevClientWriteImage (rts2core::Connection * in_connection);
 		virtual void postEvent (Rts2Event * event);
 
 		virtual void infoOK ();
@@ -169,16 +167,16 @@ class DevClientWriteImage:public rts2core::Rts2DevClient
 		virtual void stateChanged (Rts2ServerState * state);
 };
 
-class Rts2CommandQueImage:public rts2core::Rts2Command
+class CommandQueImage:public rts2core::Command
 {
 	public:
-		Rts2CommandQueImage (rts2core::Block * in_owner, Image * image);
+		CommandQueImage (rts2core::Block * in_owner, Image * image);
 };
 
-class Rts2CommandQueObs:public rts2core::Rts2Command
+class CommandQueObs:public rts2core::Command
 {
 	public:
-		Rts2CommandQueObs (rts2core::Block * in_owner, int in_obsId);
+		CommandQueObs (rts2core::Block * in_owner, int in_obsId);
 };
 
 }

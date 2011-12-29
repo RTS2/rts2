@@ -36,7 +36,7 @@ class ValueDoubleMinMax:public ValueDouble
 		ValueDoubleMinMax (std::string in_val_name);
 		ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 
-		virtual int setValue (Rts2Conn * connection);
+		virtual int setValue (Connection * connection);
 		virtual int checkNotNull ();
 		virtual int doOpValue (char op, Value * old_value);
 		virtual const char *getValue ();

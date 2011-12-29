@@ -73,7 +73,7 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 	return iter->second;
 }
 
-XmlDevCameraClient::XmlDevCameraClient (Rts2Conn *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), currentTarget (this)
+XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), currentTarget (this)
 {
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
@@ -138,7 +138,7 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 	
 	if (killScripts)
 	{
-		connection->queCommand (new Rts2CommandKillAll (connection->getMaster ()));
+		connection->queCommand (new rts2core::CommandKillAll (connection->getMaster ()));
 	}
 
 	connection->postEvent (new Rts2Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
@@ -309,7 +309,7 @@ void XmlRpcd::signaledHUP ()
 	reloadEventsFile ();
 }
 
-void XmlRpcd::connectionRemoved (Rts2Conn *conn)
+void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 {
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
@@ -465,14 +465,14 @@ XmlRpcd::~XmlRpcd ()
 #endif /* HAVE_LIBJPEG */
 }
 
-rts2core::Rts2DevClient * XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	if (other_device_type == DEVICE_TYPE_CCD)
 		return new XmlDevCameraClient (conn);
 	return new XmlDevClient (conn);
 }
 
-void XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
+void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, Rts2ServerState * new_state)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -486,7 +486,7 @@ void XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 	}
 }
 
-void XmlRpcd::valueChangedEvent (Rts2Conn * conn, rts2core::Value * new_value)
+void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * new_value)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..

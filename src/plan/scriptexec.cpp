@@ -37,10 +37,10 @@ using namespace rts2image;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ClientCameraScript:public DevClientCameraExec
+class ClientCameraScript:public rts2script::DevClientCameraExec
 {
 	public:
-		ClientCameraScript (Rts2Conn *conn, rts2core::ValueString *_expandPath, std::string templateFile):DevClientCameraExec (conn, _expandPath, templateFile) {};
+		ClientCameraScript (rts2core::Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile):rts2script::DevClientCameraExec (conn, _expandPath, templateFile) {};
 		virtual imageProceRes processImage (Image * image);
 };
 
@@ -133,7 +133,7 @@ int ScriptExec::processOption (int in_opt)
 			templateFile = std::string (optarg);
 			break;
 		default:
-			return Rts2Client::processOption (in_opt);
+			return rts2core::Client::processOption (in_opt);
 	}
 	return 0;
 }
@@ -150,7 +150,7 @@ void ScriptExec::usage ()
 	  << "  " << "while true; do " << getAppName () << " -e /tmp/%n.fits -d C0 -S 'for 1000 { E 1 }' | while read x; do xpaset ds9 fits < $x; rm $x; done ; done" << std::endl;
 }
 
-ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv), rts2script::ScriptInterface ()
+ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv), rts2script::ScriptInterface ()
 {
 	waitState = 0;
 	currentTarget = NULL;
@@ -193,7 +193,7 @@ ScriptExec::~ScriptExec (void)
 int ScriptExec::init ()
 {
 	int ret;
-	ret = Rts2Client::init ();
+	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
 
@@ -237,13 +237,13 @@ int ScriptExec::doProcessing ()
 	return 0;
 }
 
-rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	Rts2DevClient *cli;
+	rts2core::DevClient *cli;
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
-			cli = new DevClientTelescopeExec (conn);
+			cli = new rts2script::DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
 			cli = new ClientCameraScript (conn, expandPath, templateFile);
@@ -259,7 +259,7 @@ rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other
 			cli = new rts2image::DevClientWriteImage (conn);
 			break;
 		default:
-			cli = Rts2Client::createOtherType (conn, other_device_type);
+			cli = rts2core::Client::createOtherType (conn, other_device_type);
 	}
 	return cli;
 }
@@ -292,10 +292,10 @@ void ScriptExec::postEvent (Rts2Event * event)
 			//      (currentTarget) ? currentTarget->getAcquired () : -2;
 			break;
 	}
-	Rts2Client::postEvent (event);
+	rts2core::Client::postEvent (event);
 }
 
-void ScriptExec::deviceReady (Rts2Conn * conn)
+void ScriptExec::deviceReady (rts2core::Connection * conn)
 {
 	conn->postEvent (new Rts2Event (callScriptEnd ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) currentTarget));
 	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
@@ -314,10 +314,10 @@ int ScriptExec::idle ()
 			nextRunningQ = now + 5;
 		}
 	}
-	return Rts2Client::idle ();
+	return rts2core::Client::idle ();
 }
 
-void ScriptExec::deviceIdle (Rts2Conn * conn)
+void ScriptExec::deviceIdle (rts2core::Connection * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();

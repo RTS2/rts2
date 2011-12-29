@@ -43,11 +43,11 @@ class ElementBlock:public Element
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual int nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void exposureEnd ();
 		virtual int processImage (rts2image::Image * image);
@@ -128,11 +128,11 @@ class ElementAcquired:public ElementBlock
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual int nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();
@@ -199,7 +199,7 @@ class ElementWhileSod:public ElementBlock
 
 		virtual ~ElementWhileSod (void) {}
 
-		virtual int nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void printScript (std::ostream &os);
 	protected:

@@ -36,7 +36,7 @@ class ThorLaser:public Sensor
 	public:
 		ThorLaser (int argc, char **argv);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int processOption (int opt);
@@ -208,7 +208,7 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for ThorLaser USB serial connection");
 }
 
-int ThorLaser::commandAuthorized (Rts2Conn * conn)
+int ThorLaser::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{

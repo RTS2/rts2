@@ -22,58 +22,66 @@
 
 #include "../../lib/rts2script/devscript.h"
 
-using namespace rts2script;
-
-class Rts2DevClientPhotExec:public Rts2DevClientPhot, public DevScript
+namespace rts2script
 {
-	private:
-		// minFlux to be considered as success
-		float minFlux;
+
+class DevClientPhotExec:public rts2core::DevClientPhot, public DevScript
+{
+	public:
+		DevClientPhotExec (rts2core::Connection * in_connection);
+		virtual ~ DevClientPhotExec (void);
+		virtual void postEvent (Rts2Event * event);
+		virtual void integrationFailed (int status);
+
+		virtual void filterMoveFailed (int status);
+
+		virtual void nextCommand ();
+
 
 	protected:
 		virtual void unblockWait ()
 		{
-			Rts2DevClientPhot::unblockWait ();
+			rts2core::DevClientPhot::unblockWait ();
 		}
 		virtual void unsetWait ()
 		{
-			Rts2DevClientPhot::unsetWait ();
+			rts2core::DevClientPhot::unsetWait ();
 		}
 
 		virtual void clearWait ()
 		{
-			Rts2DevClientPhot::clearWait ();
+			rts2core::DevClientPhot::clearWait ();
 		}
 
 		virtual int isWaitMove ()
 		{
-			return Rts2DevClientPhot::isWaitMove ();
+			return rts2core::DevClientPhot::isWaitMove ();
 		}
 
 		virtual void setWaitMove ()
 		{
-			Rts2DevClientPhot::setWaitMove ();
+			rts2core::DevClientPhot::setWaitMove ();
 		}
 
-		virtual void queCommandFromScript (Rts2Command * com)
+		virtual void queCommandFromScript (rts2core::Command * com)
 		{
 			queCommand (com);
 		}
 
 		virtual int getFailedCount ()
 		{
-			return Rts2DevClient::getFailedCount ();
+			return rts2core::DevClient::getFailedCount ();
 		}
 
 		virtual void clearFailedCount ()
 		{
-			Rts2DevClient::clearFailedCount ();
+			rts2core::DevClient::clearFailedCount ();
 		}
 
 		virtual void idle ()
 		{
 			DevScript::idle ();
-			Rts2DevClientPhot::idle ();
+			rts2core::DevClientPhot::idle ();
 		}
 
 		virtual void filterMoveEnd ();
@@ -84,14 +92,11 @@ class Rts2DevClientPhotExec:public Rts2DevClientPhot, public DevScript
 
 		virtual int getNextCommand ();
 
-	public:
-		Rts2DevClientPhotExec (Rts2Conn * in_connection);
-		virtual ~ Rts2DevClientPhotExec (void);
-		virtual void postEvent (Rts2Event * event);
-		virtual void integrationFailed (int status);
+	private:
+		// minFlux to be considered as success
+		float minFlux;
 
-		virtual void filterMoveFailed (int status);
-
-		virtual void nextCommand ();
 };
+
+}
 #endif							 /* !__RTS2_DEVCLIPHOT__ */

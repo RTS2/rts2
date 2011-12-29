@@ -44,7 +44,7 @@
 
 using namespace rts2xmlrpc;
 
-void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result, bool pretty)
+void connectionValuesToXmlRpc (rts2core::Connection *conn, XmlRpcValue& result, bool pretty)
 {
 	int i = 0;
 	for (rts2core::ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
@@ -237,7 +237,7 @@ void DeviceType::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 	if (params.size () != 1)
 		throw XmlRpcException ("Single device name expected");
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+	rts2core::Connection *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 	if (conn == NULL)
 		throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
 	result = conn->getOtherType ();
@@ -288,10 +288,10 @@ void DeviceCommand::sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 	if (params.size () != 2)
 		throw XmlRpcException ("Device name and command (as single parameter) expected");
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+	rts2core::Connection *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 	if (conn == NULL)
 		throw XmlRpcException ("Device named " + (std::string)params[0] + " does not exists");
-	conn->queCommand (new rts2core::Rts2Command (serv, ((std::string)params[1]).c_str()));
+	conn->queCommand (new rts2core::Command (serv, ((std::string)params[1]).c_str()));
 }
 
 void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
@@ -303,7 +303,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	std::string p1 = std::string (params[0]);
 
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 
 	if (p1 == "centrald" || p1 == "")
 		conn = *(serv->getCentraldConns ()->begin ());
@@ -321,7 +321,7 @@ void DeviceState::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 	connections_t::iterator iter;
 	rts2core::ValueVector::iterator variter;
 	int i = 0;
@@ -351,7 +351,7 @@ void ListValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 void ListValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 	int i = 0;
 	// print results for a single device..
 	if (params.size() == 1)
@@ -413,7 +413,7 @@ void ListValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 void ListPrettyValuesDevice::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 	int i = 0;
 	// print results for a single device..
 	if (params.size() == 1)
@@ -477,7 +477,7 @@ void GetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	std::string devName = params[0];
 	std::string valueName = params[1];
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 	if (devName.length () == 0)
 	{
 		conn = serv->getSingleCentralConn ();
@@ -527,7 +527,7 @@ void GetPrettyValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	std::string devName = params[0];
 	std::string valueName = params[1];
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn;
+	rts2core::Connection *conn;
 	if (devName.length () == 0)
 	{
 		conn = serv->getSingleCentralConn ();
@@ -548,7 +548,7 @@ void GetPrettyValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	result = getDisplayValue (val);
 }
 
-void SessionMethodValue::setXmlValutRts2 (Rts2Conn *conn, std::string valueName, XmlRpcValue &x_val)
+void SessionMethodValue::setXmlValutRts2 (rts2core::Connection *conn, std::string valueName, XmlRpcValue &x_val)
 {
 	int i_val;
 	double d_val;
@@ -573,7 +573,7 @@ void SessionMethodValue::setXmlValutRts2 (Rts2Conn *conn, std::string valueName,
 				s_val = (std::string) (x_val);
 				i_val = atoi (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
 			break;
 		case RTS2_VALUE_DOUBLE:
 			if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -585,7 +585,7 @@ void SessionMethodValue::setXmlValutRts2 (Rts2Conn *conn, std::string valueName,
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
 			break;
 
 		case RTS2_VALUE_FLOAT:
@@ -598,13 +598,13 @@ void SessionMethodValue::setXmlValutRts2 (Rts2Conn *conn, std::string valueName,
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
 			break;
 		case RTS2_VALUE_STRING:
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val)));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val)));
 			break;
 		default:
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val), true));
 			break;
 	}
 }
@@ -615,7 +615,7 @@ void SetValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	std::string devName = params[0];
 	std::string valueName = params[1];
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+	rts2core::Connection *conn = serv->getOpenConnection (devName.c_str ());
 	if (!conn)
 	{
 		throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
@@ -645,7 +645,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	std::string devName = params[0];
 	std::string valueName = params[1];
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-	Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+	rts2core::Connection *conn = serv->getOpenConnection (devName.c_str ());
 	if (!conn)
 	{
 		throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
@@ -673,7 +673,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				i_val = atoi (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
 			break;
 		case RTS2_VALUE_DOUBLE:
 			if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -685,7 +685,7 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
 			break;
 
 		case RTS2_VALUE_FLOAT:
@@ -698,13 +698,13 @@ void IncValue::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 				s_val = (std::string) (x_val);
 				d_val = atof (s_val.c_str ());
 			}
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
 			break;
 		case RTS2_VALUE_STRING:
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
 			break;
 		default:
-			conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
+			conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
 			break;
 	}
 }

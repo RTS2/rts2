@@ -51,17 +51,17 @@ int Element::processImage (Image * image)
 	return -1;
 }
 
-int Element::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Element::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_NEXT;
 }
 
-int Element::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Element::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return defnextCommand (camera, new_command, new_device);
 }
 
-int Element::nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Element::nextCommand (rts2core::DevClientPhot * phot, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return defnextCommand (phot, new_command, new_device);
 }
@@ -112,7 +112,7 @@ ElementExpose::ElementExpose (Script * _script, float in_expTime):Element (_scri
 	callProgress = first;
 }
 
-int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementExpose::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	getDevice (new_device);
 	if (callProgress == first)
@@ -127,7 +127,7 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 		callProgress = SHUTTER;
 		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 0)
 		{
-			*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0);
+			*new_command = new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
 			return NEXT_COMMAND_KEEP;
 		}
@@ -136,11 +136,11 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
 		callProgress = EXPOSURE;
-		*new_command = new Rts2CommandChangeValue (camera, "exposure", '=', expTime);
+		*new_command = new rts2core::CommandChangeValue (camera, "exposure", '=', expTime);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 	// prepare for next exposure in loop..
 	callProgress = first;
 	return 0;
@@ -162,7 +162,7 @@ ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 	callProgress = first;
 }
 
-int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementDark::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	getDevice (new_device);
 	if (callProgress == first)
@@ -177,7 +177,7 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 		callProgress = SHUTTER;
 		if (camera->getConnection ()->getValue ("SHUTTER") != NULL && camera->getConnection ()->getValueInteger ("SHUTTER") != 1)
 		{
-			*new_command = new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1);
+			*new_command = new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 1);
 			(*new_command)->setBopMask (BOP_TEL_MOVE);
 			return NEXT_COMMAND_KEEP;
 		}
@@ -186,11 +186,11 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 	if (callProgress == SHUTTER && camera->getConnection ()->getValue ("exposure") && camera->getConnection ()->getValueDouble ("exposure") != expTime)
 	{
 		callProgress = EXPOSURE;
-		*new_command = new Rts2CommandChangeValue (camera, "exposure", '=', expTime);
+		*new_command = new rts2core::CommandChangeValue (camera, "exposure", '=', expTime);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 		return NEXT_COMMAND_KEEP;
 	}
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
+	*new_command = new rts2core::CommandExposure (script->getMaster (), camera, 0);
 	callProgress = first;
 	return 0;
 }
@@ -208,9 +208,9 @@ ElementBox::ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h
 	h = in_h;
 }
 
-int ElementBox::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementBox::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandBox (camera, x, y, w, h);
+	*new_command = new rts2core::CommandBox (camera, x, y, w, h);
 	getDevice (new_device);
 	return 0;
 }
@@ -221,9 +221,9 @@ ElementCenter::ElementCenter (Script * _script, int in_w, int in_h):Element (_sc
 	h = in_h;
 }
 
-int ElementCenter::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementCenter::nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandCenter (camera, w, h);
+	*new_command = new rts2core::CommandCenter (camera, w, h);
 	getDevice (new_device);
 	return 0;
 }
@@ -235,9 +235,9 @@ ElementChange::ElementChange (Script * _script, char new_device[DEVICE_NAME_SIZE
 	setChangeRaDec (in_ra, in_dec);
 }
 
-int ElementChange::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementChange::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandChange (script->getMaster (), ra, dec);
+	*new_command = new rts2core::CommandChange (script->getMaster (), ra, dec);
 	strcpy (new_device, deviceName);
 	return 0;
 }
@@ -246,7 +246,7 @@ ElementWait::ElementWait (Script * _script):Element (_script)
 {
 }
 
-int ElementWait::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWait::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_CHECK_WAIT;
 }
@@ -256,7 +256,7 @@ ElementWaitAcquire::ElementWaitAcquire (Script * _script, int in_tar_id):Element
 	tar_id = in_tar_id;
 }
 
-int ElementWaitAcquire::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitAcquire::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
@@ -278,9 +278,9 @@ ElementPhotometer::ElementPhotometer (Script * _script, int in_filter, float in_
 	count = in_count;
 }
 
-int ElementPhotometer::nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementPhotometer::nextCommand (rts2core::DevClientPhot * phot, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandIntegrate (phot, filter, exposure, count);
+	*new_command = new rts2core::CommandIntegrate (phot, filter, exposure, count);
 	getDevice (new_device);
 	return 0;
 }
@@ -313,7 +313,7 @@ void ElementSendSignal::postEvent (Rts2Event * event)
 	Element::postEvent (event);
 }
 
-int ElementSendSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementSendSignal::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	// when some else script will wait reach point when it has to wait for
 	// this signal, it will not wait as it will ask before enetring wait
@@ -328,7 +328,7 @@ ElementWaitSignal::ElementWaitSignal (Script * _script, int in_sig):Element (_sc
 	sig = in_sig;
 }
 
-int ElementWaitSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWaitSignal::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 
@@ -399,7 +399,7 @@ void ElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 	strcpy (new_device, deviceName);
 }
 
-int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementChangeValue::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (op == '\0' || operands.size () == 0)
 		return -1;
@@ -410,12 +410,12 @@ int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 		rawString = true;
 	if (valName[0] == '!')
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
+		*new_command = new rts2core::CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName, op, _os.str(), rawString);
+		*new_command = new rts2core::CommandChangeValue (client, valName, op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE);
 	}
 	getDevice (new_device);
@@ -462,11 +462,11 @@ ElementComment::~ElementComment (void)
 	delete []comment;
 }
 
-int ElementComment::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementComment::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	client->getConnection ()->queCommand (new Rts2CommandChangeValue (client, "COMM_NUM", '=', cnum));
+	client->getConnection ()->queCommand (new rts2core::CommandChangeValue (client, "COMM_NUM", '=', cnum));
 	// script comment value
-	*new_command = new Rts2CommandChangeValue (client, "SCR_COMM", '=', std::string (comment));
+	*new_command = new rts2core::CommandChangeValue (client, "SCR_COMM", '=', std::string (comment));
 	getDevice (new_device);
 	return 0;
 }

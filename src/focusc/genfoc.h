@@ -19,7 +19,7 @@
 
 #ifndef __RTS2_GENFOC__
 #define __RTS2_GENFOC__
-#include "../../lib/rts2/rts2client.h"
+#include "../../lib/rts2/client.h"
 #include "../../lib/rts2fits/devclifoc.h"
 
 #include <vector>
@@ -32,13 +32,13 @@
 
 class Rts2GenFocCamera;
 
-class Rts2GenFocClient:public Rts2Client
+class Rts2GenFocClient:public rts2core::Client
 {
 	public:
 		Rts2GenFocClient (int argc, char **argv);
 		virtual ~ Rts2GenFocClient (void);
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual int init ();
 
 		float defaultExpousure () { return defExposure; }
@@ -55,7 +55,7 @@ class Rts2GenFocClient:public Rts2Client
 
 		char *focExe;
 
-		virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
+		virtual Rts2GenFocCamera *createFocCamera (rts2core::Connection * conn);
 		Rts2GenFocCamera *initFocCamera (Rts2GenFocCamera * cam);
 
 	private:
@@ -104,13 +104,13 @@ class fwhmData
 class Rts2GenFocCamera:public rts2image::DevClientCameraFoc
 {
 	public:
-		Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master);
+		Rts2GenFocCamera (rts2core::Connection * in_connection, Rts2GenFocClient * in_master);
 		virtual ~ Rts2GenFocCamera (void);
 
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
-		virtual void focusChange (Rts2Conn * focus);
+		virtual void focusChange (rts2core::Connection * focus);
 		void center (int centerWidth, int centerHeight);
 
 		/**

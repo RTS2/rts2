@@ -214,7 +214,7 @@ Image::Image (char *_filename, const struct timeval *in_exposureStart):FitsFile 
 	writeExposureStart ();
 }
 
-Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection):FitsFile (in_exposureStart)
+Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection):FitsFile (in_exposureStart)
 {
 	initData ();
 	setCameraName (in_connection->getName ());
@@ -224,7 +224,7 @@ Image::Image (const char *in_expression, int in_expNum, const struct timeval *in
 	writeExposureStart ();
 }
 
-Image::Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
+Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
 {
 	std::string in_filename;
 
@@ -2118,7 +2118,7 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 	throw rts2core::Error ("unknow array datatype");
 }
 
-void Image::prepareArrayData (const char *name, Rts2Conn *conn, rts2core::Value *val)
+void Image::prepareArrayData (const char *name, rts2core::Connection *conn, rts2core::Value *val)
 {
 	// if it's simple array, just write as header cards
 	if (val->getValueDisplayType () & RTS2_DT_SIMPLE_ARRAY)
@@ -2187,7 +2187,7 @@ void Image::writeConnArray (TableData *tableData)
 	setValue ("TSTART", tableData->getDate (), "data are recorded from this time");
 }
 
-void Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
+void Image::writeConnValue (rts2core::Connection * conn, rts2core::Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
 	char *name = (char *) val->getName ().c_str ();
@@ -2279,7 +2279,7 @@ void Image::writeConnValue (Rts2Conn * conn, rts2core::Value * val)
 	}
 }
 
-void Image::recordChange (Rts2Conn * conn, rts2core::Value * val)
+void Image::recordChange (rts2core::Connection * conn, rts2core::Value * val)
 {
 	char *name;
 	// construct name
@@ -2319,7 +2319,7 @@ void Image::setEnvironmentalValues ()
 	}
 }
 
-void Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
+void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
 {
 	for (rts2core::ValueVector::iterator iter = conn->valueBegin ();
 		iter != conn->valueEnd (); iter++)

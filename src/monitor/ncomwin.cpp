@@ -81,7 +81,7 @@ bool NComWin::setCursor ()
 	return true;
 }
 
-void NComWin::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
+void NComWin::commandReturn (rts2core::Command * cmd, int cmd_status)
 {
 	if (cmd_status == 0)
 		wcolor_set (statuspad, CLR_OK, NULL);

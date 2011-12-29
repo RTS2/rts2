@@ -29,7 +29,7 @@ double Operand::getDouble ()
 
 double SystemValue::getDouble ()
 {
-	Rts2Conn *conn = master->getOpenConnection (device.c_str ());
+	rts2core::Connection *conn = master->getOpenConnection (device.c_str ());
 	if (conn == NULL)
 		throw rts2script::ParsingError ("Cannot find device");
 	return conn->getValueDouble (value.c_str ());

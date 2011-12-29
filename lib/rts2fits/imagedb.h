@@ -59,7 +59,7 @@ class ImageDb:public Image
 	public:
 		ImageDb ();
 		ImageDb (Image * in_image);
-		ImageDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart);
+		ImageDb (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStart);
 		ImageDb (int in_obs_id, int in_img_id);
 		ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
 
@@ -84,7 +84,7 @@ class ImageDb:public Image
 class ImageSkyDb:public ImageDb
 {
 	public:
-		ImageSkyDb (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStartd);
+		ImageSkyDb (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStartd);
 		//! Construct image from already existed ImageDb instance
 		ImageSkyDb (Image * in_image);
 		//! Construct image directly from DB (eg. retrieve all missing parameters)

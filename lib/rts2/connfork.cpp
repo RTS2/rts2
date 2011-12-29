@@ -159,7 +159,7 @@ void ConnFork::connectionError (int last_data_size)
 		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it" << sendLog;
 		return;
 	}
-	Rts2Conn::connectionError (last_data_size);
+	Connection::connectionError (last_data_size);
 }
 
 void ConnFork::beforeFork ()
@@ -188,7 +188,7 @@ int ConnFork::newProcess ()
 	return execv (exePath, args);
 }
 
-void ConnFork::fillConnectionEnv (Rts2Conn *conn, const char *prefix)
+void ConnFork::fillConnectionEnv (Connection *conn, const char *prefix)
 {
 	std::ostringstream _os;
 	_os << conn->getState ();

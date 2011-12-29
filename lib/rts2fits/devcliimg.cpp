@@ -26,7 +26,7 @@
 
 using namespace rts2image;
 
-DevClientCameraImage::DevClientCameraImage (Rts2Conn * in_connection, std::string templateFile):rts2core::Rts2DevClientCamera (in_connection)
+DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile):rts2core::DevClientCamera (in_connection)
 {
 	chipNumbers = 0;
 	saveImage = 1;
@@ -105,22 +105,22 @@ void DevClientCameraImage::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_INFO_DEVCLI_OK:
-			images.infoOK (this, (rts2core::Rts2DevClient *) event->getArg ());
+			images.infoOK (this, (rts2core::DevClient *) event->getArg ());
 			// check also actualImage
 			if (actualImage)
-				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
+				actualImage->waitingFor ((rts2core::DevClient *) event->getArg ());
 			break;
 		case EVENT_INFO_DEVCLI_FAILED:
-			images.infoFailed (this, (rts2core::Rts2DevClient *) event->getArg ());
+			images.infoFailed (this, (rts2core::DevClient *) event->getArg ());
 			// check also actualImage
 			if (actualImage)
-				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
+				actualImage->waitingFor ((rts2core::DevClient *) event->getArg ());
 			break;
 		case EVENT_TRIGGERED:
-			ret_all = images.wasTriggered (this, (rts2core::Rts2DevClient *) event->getArg ());
+			ret_all = images.wasTriggered (this, (rts2core::DevClient *) event->getArg ());
 			if (actualImage)
 			{
-			  	ret_actual = actualImage->wasTriggered ((rts2core::Rts2DevClient *) event->getArg ());
+			  	ret_actual = actualImage->wasTriggered ((rts2core::DevClient *) event->getArg ());
 			}
 			else
 			{
@@ -130,8 +130,8 @@ void DevClientCameraImage::postEvent (Rts2Event * event)
 			if (ret_all == false && ret_actual == false)
 			{
 				// we have a problem, those data were received before exposure. They are most probably invalid.
-				prematurelyReceived.push_back ((rts2core::Rts2DevClient *) event->getArg ());
-				std::cout << "will ignore trigger from " << ((rts2core::Rts2DevClient *) event->getArg ())->getName () << std::endl;
+				prematurelyReceived.push_back ((rts2core::DevClient *) event->getArg ());
+				std::cout << "will ignore trigger from " << ((rts2core::DevClient *) event->getArg ())->getName () << std::endl;
 			}
 
 			// check that no image is waiting for trigger - e.g. this was last EVENT_TRIGGERED received
@@ -152,7 +152,7 @@ void DevClientCameraImage::postEvent (Rts2Event * event)
 				*((int *)event->getArg ()) += 1;
 			break;
 	}
-	rts2core::Rts2DevClientCamera::postEvent (event);
+	rts2core::DevClientCamera::postEvent (event);
 }
 
 void DevClientCameraImage::writeFilter (Image *img)
@@ -276,7 +276,7 @@ imageProceRes DevClientCameraImage::processImage (Image * image)
 
 void DevClientCameraImage::stateChanged (Rts2ServerState * state)
 {
-	rts2core::Rts2DevClientCamera::stateChanged (state);
+	rts2core::DevClientCamera::stateChanged (state);
 	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
 		triggered = false;
 }
@@ -326,7 +326,7 @@ void DevClientCameraImage::exposureStarted ()
 		return;
 	}
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
-	rts2core::Rts2DevClientCamera::exposureStarted ();
+	rts2core::DevClientCamera::exposureStarted ();
 }
 
 void DevClientCameraImage::exposureEnd ()
@@ -339,7 +339,7 @@ void DevClientCameraImage::exposureEnd ()
 		connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 	}
 
-	rts2core::Rts2DevClientCamera::exposureEnd ();
+	rts2core::DevClientCamera::exposureEnd ();
 }
 
 bool DevClientCameraImage::waitForMetaData ()
@@ -359,7 +359,7 @@ bool DevClientCameraImage::waitForMetaData ()
 	return false;
 }
 
-DevClientTelescopeImage::DevClientTelescopeImage (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
+DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection)
 {
 }
 
@@ -400,11 +400,11 @@ void DevClientTelescopeImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_MOUNT_CHANGE:
 			change = (struct ln_equ_posn *) event->getArg ();
-			queCommand (new rts2core::Rts2CommandChange (this, change->ra, change->dec));
+			queCommand (new rts2core::CommandChange (this, change->ra, change->dec));
 			break;
 	}
 
-	rts2core::Rts2DevClientTelescope::postEvent (event);
+	rts2core::DevClientTelescope::postEvent (event);
 }
 
 void DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
@@ -435,7 +435,7 @@ double DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
 	return ln_get_angular_separation (&tel, in_pos);
 }
 
-DevClientFocusImage::DevClientFocusImage (Rts2Conn * in_connection):rts2core::Rts2DevClientFocus (in_connection)
+DevClientFocusImage::DevClientFocusImage (rts2core::Connection * in_connection):rts2core::DevClientFocus (in_connection)
 {
 }
 
@@ -461,10 +461,10 @@ void DevClientFocusImage::postEvent (Rts2Event * event)
 			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 	}
-	rts2core::Rts2DevClientFocus::postEvent (event);
+	rts2core::DevClientFocus::postEvent (event);
 }
 
-DevClientWriteImage::DevClientWriteImage (Rts2Conn * in_connection):rts2core::Rts2DevClient (in_connection)
+DevClientWriteImage::DevClientWriteImage (rts2core::Connection * in_connection):rts2core::DevClient (in_connection)
 {
 }
 
@@ -479,7 +479,7 @@ void DevClientWriteImage::postEvent (Rts2Event * event)
 			// and check if we should trigger info call
 			if (connection->existWriteType (RTS2_VWHEN_BEFORE_END))
 			{
-				queCommand (new rts2core::Rts2CommandInfo (getMaster ()));
+				queCommand (new rts2core::CommandInfo (getMaster ()));
 				ci->waitForDevice (this, getMaster ()->getNow ());
 			}
 			if (connection->existWriteType (RTS2_VWHEN_TRIGGERED))
@@ -492,7 +492,7 @@ void DevClientWriteImage::postEvent (Rts2Event * event)
 			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 	}
-	rts2core::Rts2DevClient::postEvent (event);
+	rts2core::DevClient::postEvent (event);
 }
 
 void DevClientWriteImage::infoOK ()
@@ -508,19 +508,19 @@ void DevClientWriteImage::infoFailed ()
 
 void DevClientWriteImage::stateChanged (Rts2ServerState * state)
 {
-	rts2core::Rts2DevClient::stateChanged (state);
+	rts2core::DevClient::stateChanged (state);
 	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE) && !(state->getOldValue () & DEVICE_NOT_READY))
 		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
 }
 
-Rts2CommandQueImage::Rts2CommandQueImage (rts2core::Block * in_owner, Image * image):rts2core::Rts2Command (in_owner)
+CommandQueImage::CommandQueImage (rts2core::Block * in_owner, Image * image):rts2core::Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_image " << image->getFileName ();
 	setCommand (_os);
 }
 
-Rts2CommandQueObs::Rts2CommandQueObs (rts2core::Block * in_owner, int in_obsId):rts2core::Rts2Command (in_owner)
+CommandQueObs::CommandQueObs (rts2core::Block * in_owner, int in_obsId):rts2core::Command (in_owner)
 {
 	std::ostringstream _os;
 	_os << "que_obs " << in_obsId;

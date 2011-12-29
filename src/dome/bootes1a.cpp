@@ -168,9 +168,7 @@ Bootes1A::info ()
 	return Ford::info ();
 }
 
-
-bool
-Bootes1A::isMoving ()
+bool Bootes1A::isMoving ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -197,8 +195,7 @@ Bootes1A::isMoving ()
 // system!
 //	
 // This should be and stay the only code to touch the output to the dome
-int
-Bootes1A::swDome ()
+int Bootes1A::swDome ()
 {
 	if (! isMoving() )
 	{
@@ -210,8 +207,7 @@ Bootes1A::swDome ()
 	return -1;
 }
 
-int
-Bootes1A::startOpen ()
+int Bootes1A::startOpen ()
 {
 	if (getState () & DOME_OPENING)
 	{
@@ -236,9 +232,7 @@ Bootes1A::startOpen ()
 	return 0;
 }
 
-
-long
-Bootes1A::isOpened ()
+long Bootes1A::isOpened ()
 {
 	time_t now;
 	time (&now);

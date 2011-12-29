@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/rts2client.h"
+#include "../../lib/rts2/client.h"
 
 #include <algorithm>
 #include <list>
@@ -29,7 +29,7 @@ namespace rts2mon
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Talker:public Rts2Client
+class Talker:public rts2core::Client
 {
 	public:
 		Talker (int argc, char **argv);
@@ -48,7 +48,7 @@ class Talker:public Rts2Client
 
 using namespace rts2mon;
 
-Talker::Talker (int argc, char **argv):Rts2Client (argc, argv)
+Talker::Talker (int argc, char **argv):rts2core::Client (argc, argv)
 {
 	messageMask = MESSAGE_INFO;
 
@@ -73,7 +73,7 @@ int Talker::processOption (int opt)
 			messageMask = MESSAGE_ERROR | MESSAGE_CRITICAL;
 			break;
 		default:
-			return Rts2Client::processOption (opt);
+			return rts2core::Client::processOption (opt);
 	}
 	return 0;
 }
@@ -86,7 +86,7 @@ int Talker::processArgs (const char *arg)
 
 int Talker::init ()
 {
-	int ret = Rts2Client::init ();
+	int ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
 

@@ -140,7 +140,7 @@ digraph "Camera states" {
 class Camera:public rts2core::ScriptDevice
 {
 	public:
-		virtual int deleteConnection (Rts2Conn * conn);
+		virtual int deleteConnection (rts2core::Connection * conn);
 		/**
 		 * If chip support frame transfer.
 		 *
@@ -160,7 +160,7 @@ class Camera:public rts2core::ScriptDevice
 		void checkExposures ();
 		void checkReadouts ();
 
-		virtual void deviceReady (Rts2Conn * conn);
+		virtual void deviceReady (rts2core::Connection * conn);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -168,7 +168,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual int idle ();
 
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual int info ();
 
 		virtual int killAll ();
@@ -223,7 +223,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		virtual int readoutStart ();
 
-		int camReadout (Rts2Conn * conn);
+		int camReadout (rts2core::Connection * conn);
 
 		// focuser functions
 		int setFocuser (int new_set);
@@ -248,7 +248,7 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Handles camera commands.
 		 */
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
 
@@ -813,7 +813,7 @@ class Camera:public rts2core::ScriptDevice
 		double timeReadoutStart;
 
 		// connection which requries data to be send after end of exposure
-		Rts2Conn *exposureConn;
+		rts2core::Connection *exposureConn;
 
 		rts2core::ValueDoubleMinMax *exposure;
 
@@ -916,9 +916,9 @@ class Camera:public rts2core::ScriptDevice
 		int box (int _x, int _y, int _width, int _height, rts2core::ValueRectangle *retv = NULL);
 
 		// callback functions from camera connection
-		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);
-		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
-		int camCenter (Rts2Conn * conn, int in_w, int in_h);
+		int camExpose (rts2core::Connection * conn, int chipState, bool fromQue);
+		int camBox (rts2core::Connection * conn, int x, int y, int width, int height);
+		int camCenter (rts2core::Connection * conn, int in_w, int in_h);
 
 		/**
 		 * Return physical channel associated with
@@ -928,7 +928,7 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		int getPhysicalChannel (int ch);
 
-		void startImageData (Rts2Conn * conn);
+		void startImageData (rts2core::Connection * conn);
 
 		/**
 		 * @param chan    channel number (0..nchan)

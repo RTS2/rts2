@@ -25,8 +25,8 @@
 #endif
 
 #include "block.h"
-#include "../../lib/rts2/rts2client.h"
-#include "rts2command.h"
+#include "../../lib/rts2/client.h"
+#include "command.h"
 
 #include "../../lib/rts2fits/devcliimg.h"
 
@@ -84,7 +84,7 @@ using namespace rts2ncurses;
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class NMonitor:public Rts2Client
+class NMonitor:public rts2core::Client
 {
 	public:
 		NMonitor (int argc, char **argv);
@@ -93,10 +93,10 @@ class NMonitor:public Rts2Client
 		virtual int init ();
 		virtual int idle ();
 
-		virtual Rts2ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
+		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
-		virtual int deleteConnection (Rts2Conn * conn);
+		virtual int deleteConnection (rts2core::Connection * conn);
 
 		virtual void message (Rts2Message & msg);
 
@@ -104,7 +104,7 @@ class NMonitor:public Rts2Client
 
 		void processKey (int key);
 
-		void commandReturn (rts2core::Rts2Command * cmd, int cmd_status);
+		void commandReturn (rts2core::Command * cmd, int cmd_status);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -113,7 +113,7 @@ class NMonitor:public Rts2Client
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
 
-		virtual Rts2ConnCentraldClient *createCentralConn ();
+		virtual rts2core::ConnCentraldClient *createCentralConn ();
 
 	private:
 		WINDOW * cursesWin;
@@ -129,7 +129,7 @@ class NMonitor:public Rts2Client
 
 		NStatusWindow *statusWindow;
 
-		rts2core::Rts2Command *oldCommand;
+		rts2core::Command *oldCommand;
 
 		std::list < NWindow * >windowStack;
 
@@ -170,7 +170,7 @@ class NMonitor:public Rts2Client
 
 		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
 
-		connections_t orderedConn;
+		rts2core::connections_t orderedConn;
 
 		void refreshConnections ();
 		/**
@@ -178,26 +178,26 @@ class NMonitor:public Rts2Client
 		 *
 		 * @param i Number of connection which will be returned.
 		 *
-		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
+		 * @return NULL if connection with given number does not exists, or @see rts2core::Connection reference if it does.
 		 */
-		Rts2Conn *connectionAt (unsigned int i);
+		rts2core::Connection *connectionAt (unsigned int i);
 };
 
 /**
  * Make sure that update of connection state is notified in monitor.
  */
-class NMonConn:public Rts2ConnClient
+class NMonConn:public rts2core::ConnClient
 {
 	public:
-		NMonConn (NMonitor * _master, int _centrald_num, char *_name):Rts2ConnClient (_master, _centrald_num, _name)
+		NMonConn (NMonitor * _master, int _centrald_num, char *_name):rts2core::ConnClient (_master, _centrald_num, _name)
 		{
 			master = _master;
 		}
 
-		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status)
+		virtual void commandReturn (rts2core::Command * cmd, int in_status)
 		{
 			master->commandReturn (cmd, in_status);
-			return Rts2ConnClient::commandReturn (cmd, in_status);
+			return rts2core::ConnClient::commandReturn (cmd, in_status);
 		}
 	private:
 		NMonitor * master;
@@ -206,7 +206,7 @@ class NMonConn:public Rts2ConnClient
 /**
  * Make sure that command end is properly reflected
  */
-class NMonCentralConn:public Rts2ConnCentraldClient
+class NMonCentralConn:public rts2core::ConnCentraldClient
 {
 	public:
 		NMonCentralConn (NMonitor * in_master,
@@ -214,7 +214,7 @@ class NMonCentralConn:public Rts2ConnCentraldClient
 			const char *in_password,
 			const char *in_master_host,
 			const char
-			*in_master_port):Rts2ConnCentraldClient (in_master,
+			*in_master_port):rts2core::ConnCentraldClient (in_master,
 			in_login,
 			in_password,
 			in_master_host,
@@ -223,10 +223,10 @@ class NMonCentralConn:public Rts2ConnCentraldClient
 			master = in_master;
 		}
 
-		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status)
+		virtual void commandReturn (rts2core::Command * cmd, int in_status)
 		{
 			master->commandReturn (cmd, in_status);
-			Rts2ConnCentraldClient::commandReturn (cmd, in_status);
+			rts2core::ConnCentraldClient::commandReturn (cmd, in_status);
 		}
 	private:
 		NMonitor * master;

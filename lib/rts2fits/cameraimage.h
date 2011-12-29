@@ -26,7 +26,7 @@
 
 namespace rts2core
 {
-class Rts2DevClient;
+class DevClient;
 }
 
 namespace rts2image
@@ -42,18 +42,18 @@ class DevClientCameraImage;
 class ImageDeviceWait
 {
 	public:
-		ImageDeviceWait (rts2core::Rts2DevClient * in_devclient, double in_after)
+		ImageDeviceWait (rts2core::DevClient * in_devclient, double in_after)
 		{
 			devclient = in_devclient;
 			after = in_after;
 		}
 
-		rts2core::Rts2DevClient *getClient () { return devclient; }
+		rts2core::DevClient *getClient () { return devclient; }
 
 		double getAfter () { return after; }
 
 	private:
-		rts2core::Rts2DevClient * devclient;
+		rts2core::DevClient * devclient;
 		double after;
 };
 
@@ -68,7 +68,7 @@ class CameraImage
 		bool dataWriten;
 		Image *image;
 
-		CameraImage (Image * in_image, double in_exStart, std::vector < rts2core::Rts2DevClient * > &_prematurelyReceived)
+		CameraImage (Image * in_image, double in_exStart, std::vector < rts2core::DevClient * > &_prematurelyReceived)
 		{
 			image = in_image;
 			exStart = in_exStart;
@@ -78,11 +78,11 @@ class CameraImage
 		}
 		virtual ~ CameraImage (void);
 
-		void waitForDevice (rts2core::Rts2DevClient * devClient, double after);
-		bool waitingFor (rts2core::Rts2DevClient * devClient);
+		void waitForDevice (rts2core::DevClient * devClient, double after);
+		bool waitingFor (rts2core::DevClient * devClient);
 
-		void waitForTrigger (rts2core::Rts2DevClient * devClient);
-		bool wasTriggered (rts2core::Rts2DevClient * devClient);
+		void waitForTrigger (rts2core::DevClient * devClient);
+		bool wasTriggered (rts2core::DevClient * devClient);
 
 		void setExEnd (double in_exEnd) { exEnd = in_exEnd; }
 
@@ -98,8 +98,8 @@ class CameraImage
 		bool waitForMetaData () { return !(deviceWaits.empty () && triggerWaits.empty ()); }
 	private:
 		std::vector < ImageDeviceWait * > deviceWaits;
-		std::vector < rts2core::Rts2DevClient * > triggerWaits;
-		std::vector < rts2core::Rts2DevClient * > prematurelyReceived;
+		std::vector < rts2core::DevClient * > triggerWaits;
+		std::vector < rts2core::DevClient * > prematurelyReceived;
 };
 
 /**
@@ -114,9 +114,9 @@ class CameraImages:public std::map <int, CameraImage * >
 
 		void deleteOld ();
 
-		void infoOK (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
-		void infoFailed (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
-		bool wasTriggered (DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		void infoOK (DevClientCameraImage * master, rts2core::DevClient * client);
+		void infoFailed (DevClientCameraImage * master, rts2core::DevClient * client);
+		bool wasTriggered (DevClientCameraImage * master, rts2core::DevClient * client);
 };
 
 }

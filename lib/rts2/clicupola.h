@@ -20,7 +20,7 @@
 #ifndef __RTS2_CLI_CUP__
 #define __RTS2_CLI_CUP__
 
-#include "rts2devclient.h"
+#include "devclient.h"
 
 #define EVENT_CUP_START_SYNC    RTS2_LOCAL_EVENT + 550
 #define EVENT_CUP_SYNCED        RTS2_LOCAL_EVENT + 551
@@ -30,10 +30,10 @@
 namespace rts2teld
 {
 
-class ClientCupola:public rts2core::Rts2DevClientCupola
+class ClientCupola:public rts2core::DevClientCupola
 {
 	public:
-		ClientCupola (Rts2Conn * conn);
+		ClientCupola (rts2core::Connection * conn);
 		virtual ~ ClientCupola ();
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);

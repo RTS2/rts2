@@ -32,7 +32,7 @@
 #include "channel.h"
 
 #include "libnova_cpp.h"
-#include "rts2devclient.h"
+#include "devclient.h"
 #include "../rts2/expander.h"
 #include "../rts2/rts2target.h"
 
@@ -112,9 +112,9 @@ class Image:public FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
+		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection);
 		// create image in que
-		Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
+		Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart);
 		virtual ~ Image (void);
 
 		virtual void openFile (const char *_filename = NULL, bool readOnly = false, bool _verbose = false);
@@ -621,7 +621,7 @@ class Image:public FitsFile
 		 */
 		void setEnvironmentalValues ();
 
-		void writeConn (Rts2Conn * conn, imageWriteWhich_t which = EXPOSURE_START);
+		void writeConn (rts2core::Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
 
 		/**
 		 * This will create WCS from record available at the FITS file.
@@ -771,15 +771,15 @@ class Image:public FitsFile
 		 * Either prepare array data to be written, or write them to header if those are simple
 		 * data.
 		 */
-		void prepareArrayData (const char *name, Rts2Conn *conn, rts2core::Value *val);
+		void prepareArrayData (const char *name, rts2core::Connection *conn, rts2core::Value *val);
 
 		void writeConnArray (TableData *tableData);
 
 		// writes one value to image
-		void writeConnValue (Rts2Conn *conn, rts2core::Value *val);
+		void writeConnValue (rts2core::Connection *conn, rts2core::Value *val);
 
 		// record value changes
-		void recordChange (Rts2Conn *conn, rts2core::Value *val);
+		void recordChange (rts2core::Connection *conn, rts2core::Value *val);
 };
 
 }

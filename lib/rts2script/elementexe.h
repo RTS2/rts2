@@ -74,10 +74,10 @@ class Execute:public Element
 		Execute (Script * _script, rts2core::Block * _master, const char *_exec);
 		virtual ~Execute ();
 
-		virtual int defnextCommand (Rts2DevClient * _client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
-		Rts2Conn *getConnection () { return client->getConnection (); }
-		Rts2DevClient *getClient () { return client; }
+		rts2core::Connection *getConnection () { return client->getConnection (); }
+		rts2core::DevClient *getClient () { return client; }
 
 		virtual void exposureEnd ();
 
@@ -93,7 +93,7 @@ class Execute:public Element
 	private:
 		ConnExecute *connExecute;
 
-		Rts2DevClient *client;
+		rts2core::DevClient *client;
 
 		rts2core::Block *master;
 		const char *exec;

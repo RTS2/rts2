@@ -1,3 +1,6 @@
+2011-12-29
+ * Rts2Conn->Connection,Rts2Command->Command,..
+
 2011-12-26
  * expansion in templates
 

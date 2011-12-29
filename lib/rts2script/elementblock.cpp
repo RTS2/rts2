@@ -95,7 +95,7 @@ void ElementBlock::postEvent (Rts2Event * event)
 	Element::postEvent (event);
 }
 
-int ElementBlock::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	while (1)
@@ -116,7 +116,7 @@ int ElementBlock::defnextCommand (Rts2DevClient * client, Rts2Command ** new_com
 	return blockScriptRet (ret);
 }
 
-int ElementBlock::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	if (endLoop () || blockElements.empty ())
@@ -140,7 +140,7 @@ int ElementBlock::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_
 	return blockScriptRet (ret);
 }
 
-int ElementBlock::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	if (endLoop () || blockElements.empty ())
@@ -361,7 +361,7 @@ void ElementAcquired::postEvent (Rts2Event * event)
 	}
 }
 
-int ElementAcquired::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
@@ -371,7 +371,7 @@ int ElementAcquired::defnextCommand (Rts2DevClient * client, Rts2Command ** new_
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementAcquired::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
@@ -381,7 +381,7 @@ int ElementAcquired::nextCommand (Rts2DevClientCamera * client, Rts2Command ** n
 	return NEXT_COMMAND_NEXT;
 }
 
-int ElementAcquired::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
@@ -509,7 +509,7 @@ int ElementFor::getExpectedImages ()
 	return max * ElementBlock::getExpectedImages ();
 }
 
-int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWhileSod::nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	rts2core::Value *val = client->getConnection ()->getValue ("que_exp_num");
 

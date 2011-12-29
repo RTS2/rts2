@@ -62,7 +62,7 @@ class API;
 class AsyncAPI:public Rts2Object
 {
 	public:
-		AsyncAPI (API *_req, Rts2Conn *_conn, XmlRpcServerConnection *_source, bool _ext);
+		AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext);
 		
 		virtual void postEvent (Rts2Event *event);
 
@@ -70,14 +70,14 @@ class AsyncAPI:public Rts2Object
 		 * Check if the request is for connection or source..
 		 */
 		bool isForSource (XmlRpcServerConnection *_source) { return source == _source; }
-		bool isForConnection (Rts2Conn *_conn) { return conn == _conn; }
+		bool isForConnection (rts2core::Connection *_conn) { return conn == _conn; }
 
 	protected:
 		API *req;
 		XmlRpcServerConnection *source;
 
 	private:
-		Rts2Conn *conn;
+		rts2core::Connection *conn;
 		bool ext;
 };
 
@@ -97,7 +97,7 @@ class API:public GetRequestAuthorized
 		 *
 		 * @param time from which changed values will be reported. nan means that all values will be reported.
 		 */
-		void sendConnectionValues (std::ostringstream &os, Rts2Conn * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"), bool extended = false);
+		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"), bool extended = false);
 	private:
 		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);

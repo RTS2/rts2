@@ -136,7 +136,7 @@ int Focusd::setPosition (float num)
 	return ret;
 }
 
-int Focusd::autoFocus (Rts2Conn * conn)
+int Focusd::autoFocus (rts2core::Connection * conn)
 {
 	/* ask for priority */
 
@@ -217,7 +217,7 @@ int Focusd::scriptEnds ()
 	return rts2core::Device::scriptEnds ();
 }
 
-int Focusd::commandAuthorized (Rts2Conn * conn)
+int Focusd::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("help"))
 	{

@@ -35,29 +35,28 @@ namespace rts2script
  */
 class DevScript
 {
-	private:
-		Rts2Conn * script_connection;
-		ScriptPtr script;
-		Rts2Target *nextTarget;
-		int dont_execute_for;
-		int dont_execute_for_obsid;
-		int scriptLoopCount;
-		int scriptCount;
-		int lastTargetObsID;
-		void setNextTarget (Rts2Target * in_target);
 
-		void scriptBegin ();
+	public:
+		DevScript (rts2core::Connection * in_script_connection);
+		virtual ~ DevScript (void);
+		void postEvent (Rts2Event * event);
+		virtual void nextCommand () = 0;
+
+		void setScript (ScriptPtr _script) { script = _script; }
+
+		ScriptPtr& getScript () { return script; }
+
 	protected:
 		Rts2Target * currentTarget;
 		/**
 		 * Reference to next command.
 		 */
-		Rts2Command *nextComd;
+		rts2core::Command *nextComd;
 
 		/**
 		 * Reference to next command connection, if it differs from scripting device.
 		 */
-		Rts2Conn *cmdConn;
+		rts2core::Connection *cmdConn;
 		char cmd_device[DEVICE_NAME_SIZE];
 
 		enum
@@ -98,13 +97,13 @@ class DevScript
 		 * @return 0 when there isn't any next command to execute, 1 when
 		 * there is next command available.
 		 */
-		int haveNextCommand (Rts2DevClient *devClient);
+		int haveNextCommand (rts2core::DevClient *devClient);
 		virtual void unblockWait () = 0;
 		virtual void unsetWait () = 0;
 		virtual void clearWait () = 0;
 		virtual int isWaitMove () = 0;
 		virtual void setWaitMove () = 0;
-		virtual void queCommandFromScript (Rts2Command * comm) = 0;
+		virtual void queCommandFromScript (rts2core::Command * comm) = 0;
 
 		virtual int getFailedCount () = 0;
 		virtual void clearFailedCount () = 0;
@@ -112,15 +111,18 @@ class DevScript
 
 		virtual void deleteScript ();
 
-	public:
-		DevScript (Rts2Conn * in_script_connection);
-		virtual ~ DevScript (void);
-		void postEvent (Rts2Event * event);
-		virtual void nextCommand () = 0;
+	private:
+		rts2core::Connection * script_connection;
+		ScriptPtr script;
+		Rts2Target *nextTarget;
+		int dont_execute_for;
+		int dont_execute_for_obsid;
+		int scriptLoopCount;
+		int scriptCount;
+		int lastTargetObsID;
+		void setNextTarget (Rts2Target * in_target);
 
-		void setScript (ScriptPtr _script) { script = _script; }
-
-		ScriptPtr& getScript () { return script; }
+		void scriptBegin ();
 };
 
 }

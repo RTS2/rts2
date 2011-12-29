@@ -20,7 +20,7 @@
 #include "connimgprocess.h"
 #include "script.h"
 
-#include "rts2command.h"
+#include "command.h"
 #include "rts2config.h"
 #include "utilsfunc.h"
 #include "../rts2db/rts2taruser.h"
@@ -221,7 +221,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 					image->getValue ("CORR_IMG", corr_img);
 					if (telescopeName)
 					{
-						Rts2Conn *telConn;
+						rts2core::Connection *telConn;
 						telConn = master->findName (telescopeName);
 
 						rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
@@ -238,7 +238,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 
 							double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-							telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,	corr_img, image->getImgId (), ra_err, dec_err, posErr));
+							telConn->queCommand (new rts2core::CommandCorrect (master, corr_mark, corr_img, image->getImgId (), ra_err, dec_err, posErr));
 						}
 					}
 				}

@@ -34,7 +34,7 @@ CameraImage::~CameraImage (void)
 	image = NULL;
 }
 
-void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double after)
+void CameraImage::waitForDevice (rts2core::DevClient * devClient, double after)
 {
 	// check if this device was not prematurely triggered
 	if (std::find (prematurelyReceived.begin (), prematurelyReceived.end (), devClient) == prematurelyReceived.end ())
@@ -43,7 +43,7 @@ void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double aft
 		std::cout << "prematurely received " << devClient->getName () << std::endl;
 }
 
-bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
+bool CameraImage::waitingFor (rts2core::DevClient * devClient)
 {
 	bool ret = false;
 	for (std::vector < ImageDeviceWait * >::iterator iter = deviceWaits.begin (); iter != deviceWaits.end ();)
@@ -73,7 +73,7 @@ bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 	return ret;
 }
 
-void CameraImage::waitForTrigger (rts2core::Rts2DevClient * devClient)
+void CameraImage::waitForTrigger (rts2core::DevClient * devClient)
 {
 	// check if this device was not prematurely triggered
 	if (std::find (prematurelyReceived.begin (), prematurelyReceived.end (), devClient) == prematurelyReceived.end ())
@@ -82,9 +82,9 @@ void CameraImage::waitForTrigger (rts2core::Rts2DevClient * devClient)
 		std::cout << "received premature trigger " << devClient->getName () << std::endl;
 }
 
-bool CameraImage::wasTriggered (rts2core::Rts2DevClient * devClient)
+bool CameraImage::wasTriggered (rts2core::DevClient * devClient)
 {
-	for (std::vector < rts2core::Rts2DevClient * >::iterator iter = triggerWaits.begin (); iter != triggerWaits.end (); iter++)
+	for (std::vector < rts2core::DevClient * >::iterator iter = triggerWaits.begin (); iter != triggerWaits.end (); iter++)
 	{
 		if (*iter == devClient)
 		{
@@ -131,7 +131,7 @@ CameraImages::deleteOld ()
 	}
 }
 
-void CameraImages::infoOK (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+void CameraImages::infoOK (DevClientCameraImage * master, rts2core::DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
@@ -154,7 +154,7 @@ void CameraImages::infoOK (DevClientCameraImage * master, rts2core::Rts2DevClien
 	}
 }
 
-void CameraImages::infoFailed (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+void CameraImages::infoFailed (DevClientCameraImage * master, rts2core::DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
@@ -177,7 +177,7 @@ void CameraImages::infoFailed (DevClientCameraImage * master, rts2core::Rts2DevC
 	}
 }
 
-bool CameraImages::wasTriggered (DevClientCameraImage * master, rts2core::Rts2DevClient * client)
+bool CameraImages::wasTriggered (DevClientCameraImage * master, rts2core::DevClient * client)
 {
 	bool ret = false;
 

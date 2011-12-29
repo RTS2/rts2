@@ -627,7 +627,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (Rts2Conn *conn, bool withTimes, rts2core::ConnNotify *watchConn)
+int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn)
 {
 	double t_start = rts2_nan ("f");
 	double t_end = rts2_nan ("f");
