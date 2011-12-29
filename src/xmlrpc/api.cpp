@@ -198,6 +198,24 @@ digraph "JSON API calls handling" {
  *
  * @section targets List available targets
  *
+ * @section create_target Create target
+ *
+ * @section update_target Update target informations
+ *
+ * Update various target informations - its position, name, description string and flag indicating whenever it might be included in autonomouse selection.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/update_target?id=1000&enabled=0&ra=359.34&dec=87.2
+ *
+ * @subsection Parameters
+ *
+ *  - <b>id</b> Target ID.
+ *  - <i><b>tn</b> New target name. If not specified, target name is not changed.</i>
+ *  - <i><b>ra</b> New target RA. In degrees, 0-360. If not specified (or DEC is not specified), then target position is not updated).</i>
+ *  - <i><b>dec</b> New target DEC. In degrees, -90 to +90.</i>
+ *  - <i><b>enabled</b> New value of target enabled bit. If set to 1, target will be considered by autonomouse selector.</i>
+ *  - <i><b>desc</b> Target description.</i>
  */
 
 #include "xmlrpcd.h"
@@ -905,7 +923,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 					if (strlen (tn) > 0)
 						tar->setTargetName (tn);
-					if (ra > 0 && dec > -1000)
+					if (ra > -1000 && dec > -1000)
 						tar->setPosition (ra, dec);
 					tar->setTargetEnabled (enabled, true);
 					if (desc != NULL)
