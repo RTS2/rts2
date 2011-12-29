@@ -1050,7 +1050,7 @@ int APGTO::stopMove ()
 	// check for limit switch states..
 	if (limitSwitchName)
 	{
-		Rts2Conn *conn = getOpenConnection (limitSwitchName);
+		rts2core::Connection *conn = getOpenConnection (limitSwitchName);
 		if (conn != NULL)
 		{
 			rts2core::Value *vral = conn->getValue ("RA_LIMIT");
@@ -1625,7 +1625,7 @@ void APGTO::postEvent (Rts2Event *event)
 	{
 		case EVENT_TELESCOPE_LIMITS:
 			{
-				Rts2Conn *conn = getOpenConnection (limitSwitchName);
+				rts2core::Connection *conn = getOpenConnection (limitSwitchName);
 				if (conn != NULL)
 				{
 					rts2core::Value *vral = conn->getValue ("RA_LIMIT");
