@@ -36,7 +36,7 @@ class Fli:public Focusd
 		Fli (int argc, char **argv);
 		virtual ~ Fli (void);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int isFocusing ();
@@ -297,7 +297,7 @@ bool Fli::isAtStartPosition ()
 	return getPosition () == defaultPosition->getValueFloat ();
 }
 
-int Fli::commandAuthorized (Rts2Conn * conn)
+int Fli::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{
