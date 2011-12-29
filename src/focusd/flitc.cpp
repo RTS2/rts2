@@ -46,7 +46,7 @@ class Fli:public Focusd
 		Fli (int argc, char **argv);
 		virtual ~ Fli (void);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
                 virtual int willConnect (Rts2Address * in_addr);
@@ -329,7 +329,7 @@ int Fli::info ()
 }
 void Fli::meteo()
 {
-	Rts2Conn * connMeteo = getOpenConnection (meteoDevice);
+	rts2core::Connection * connMeteo = getOpenConnection (meteoDevice);
 	if( connMeteo) {
 	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
 	  if( meteoDeviceTemperature) {
@@ -487,7 +487,7 @@ bool Fli::isAtStartPosition ()
 	return getPosition () == defaultPosition->getValueFloat ();
 }
 
-int Fli::commandAuthorized (Rts2Conn * conn)
+int Fli::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{
