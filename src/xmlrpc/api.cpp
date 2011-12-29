@@ -898,13 +898,16 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				{
 					rts2db::ConstTarget *tar = (rts2db::ConstTarget *) t;
 					const char *tn = params->getString ("tn", "");
-					double ra = params->getDouble ("ra", rts2_nan("f"));
-					double dec = params->getDouble ("dec", rts2_nan("f"));
+					double ra = params->getDouble ("ra", -1000);
+					double dec = params->getDouble ("dec", -1000);
+					bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
 					const char *desc = params->getString ("desc", NULL);
 
 					if (strlen (tn) > 0)
 						tar->setTargetName (tn);
-					tar->setPosition (ra, dec);
+					if (ra > 0 && dec > -1000)
+						tar->setPosition (ra, dec);
+					tar->setTargetEnabled (enabled, true);
 					if (desc != NULL)
 						tar->setTargetInfo (std::string (desc));
 					tar->save (true);
