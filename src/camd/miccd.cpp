@@ -40,7 +40,7 @@ class MICCD:public Camera
 
 		virtual void postEvent (Rts2Event *event);
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int processOption (int opt);
@@ -538,7 +538,7 @@ int MICCD::reinitCamera ()
 	return 0;
 }
 
-int MICCD::commandAuthorized (Rts2Conn * conn)
+int MICCD::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("clear"))
 	{
