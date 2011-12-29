@@ -249,6 +249,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 			else
 			{
 				((rts2core::Daemon *) conn->getMaster ())->createValue (val, vn.c_str (), description, false);
+				((rts2core::Daemon *) conn->getMaster ())->updateMetaInformations (val);
 			}
 		}
 };
