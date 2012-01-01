@@ -155,10 +155,16 @@ void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *erro
 #ifdef DEBUG
 	printf ("reading error\n");
 #endif
+	int16_t len = readData ();
 	*command = readData ();
-	*command = readData ();
-	*resource = readData ();
-	*error = -70000 - ((int32_t) readData ());
+	if (len > 2)
+		*resource = readData ();
+	else
+		*resource = 0xff;
+	if (len > 3)
+		*error = -70000 - ((int32_t) readData ());
+	else
+		*error = 0xabcdef00;
 	do
 	{
 		sleep (1);
@@ -166,7 +172,7 @@ void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *erro
 	}
 	while (mem[4] & NIMC_DATA_IN_RDB);
 #ifdef DEBUG
-	fprintf (stderr, "command %04x res %04x error %d\n", *command, *resource, *error);
+	fprintf (stderr, "error reply len %d command %04x res %04x error %d\n", len, *command, *resource, *error);
 #endif
 }
 
