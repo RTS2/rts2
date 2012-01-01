@@ -101,7 +101,7 @@ class Cryocon:public Gpib
 
 		virtual int info ();
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int setValue (rts2core::Value * oldValue, rts2core::Value * newValue);
@@ -328,7 +328,7 @@ int Cryocon::info ()
 	return Gpib::info ();
 }
 
-int Cryocon::commandAuthorized (Rts2Conn * conn)
+int Cryocon::commandAuthorized (rts2core::Connection * conn)
 {
 	try
 	{
