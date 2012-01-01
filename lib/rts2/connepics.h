@@ -20,7 +20,7 @@
 #ifndef __RTS2_CONNEPICS__
 #define __RTS2_CONNEPICS__
 
-#include "rts2connnosend.h"
+#include "connnosend.h"
 #include "error.h"
 
 #include <cadef.h>
@@ -92,7 +92,7 @@ class EpicsVal
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnEpics: public Rts2ConnNoSend
+class ConnEpics: public ConnNoSend
 {
 	private:
 		std::list <EpicsVal> channels;

@@ -50,7 +50,7 @@ class ConnUDP:public ConnNoSend
 		virtual int process (size_t len, struct sockaddr_in &from) = 0;
 		virtual void connectionError (int last_data_size)
 		{
-			// do NOT call Rts2Conn::connectionError, UDP connection must run forewer.
+			// do NOT call Connection::connectionError, UDP connection must run forewer.
 			return;
 		}
 	private:

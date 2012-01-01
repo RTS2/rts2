@@ -208,8 +208,8 @@ class ConnSerial: public ConnNoSend
 		/**
 		 * Exchange packets - write to port and read reply.
 		 *
-		 * This call combines Rts2ConnSerial::writePort ()
-		 * and Rts2ConnSerial::readPort() calls to form a complete
+		 * This call combines ConnSerial::writePort ()
+		 * and ConnSerial::readPort() calls to form a complete
 		 * packet exchange.
 		 *
 		 * @param wbuf Buffer with data to write.
@@ -224,8 +224,8 @@ class ConnSerial: public ConnNoSend
 		/**
 		 * Exchange packets - write to port and read reply.
 		 *
-		 * This call combines Rts2ConnSerial::writePort ()
-		 * and Rts2ConnSerial::readPort() calls to form a complete
+		 * This call combines ConnSerial::writePort ()
+		 * and ConnSerial::readPort() calls to form a complete
 		 * packet exchange. Read continues while readed buffer is less then
 		 * rbuf and while endChar is not encountered.
 		 *

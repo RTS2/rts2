@@ -32,7 +32,7 @@ EpicsVal * ConnEpics::findValue (rts2core::Value *value)
 	throw ConnEpicsError ("value not found", ECA_NORMAL);
 }
 
-ConnEpics::ConnEpics (rts2core::Block *_master):Rts2ConnNoSend (_master)
+ConnEpics::ConnEpics (rts2core::Block *_master):ConnNoSend (_master)
 {
 	setConnTimeout (5);
 }
