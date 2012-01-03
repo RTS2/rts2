@@ -110,7 +110,15 @@ void readPacket (int16_t *c, uint8_t size, uint16_t *data)
 {
 	// read header..
 	int16_t h = readData ();
-	int16_t s;
+	int16_t s = h >> 8;
+	if (s - 2 != size)
+	{
+#ifdef DEBUG
+		printf ("invalid reply length - expected %d, received %d\n", size, s - 2);
+		return;
+#endif
+	}
+
 	*c = readData ();
 	// extract size
 	for (s = h >> 8; s > 2; s--)
@@ -155,7 +163,8 @@ void flex_read_error_msg_rtn (int16_t *command, int16_t *resource, int32_t *erro
 #ifdef DEBUG
 	printf ("reading error\n");
 #endif
-	int16_t len = readData ();
+	int16_t h = readData ();
+	int16_t len = (h >> 8) & 0xff;
 	*command = readData ();
 	if (len > 2)
 		*resource = readData ();
@@ -388,7 +397,7 @@ void flex_read_adc16_rtn (uint8_t ADC, int32_t *ADCValue)
 
 void flex_enable_adcs (uint16_t ADCMap)
 {
-	writePacket (0, 321, 1, &ADCMap);
+	writePacket (1, 321, 1, &ADCMap);
 	checkStatus ();
 }
 
