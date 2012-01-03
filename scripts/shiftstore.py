@@ -48,14 +48,16 @@ class ShiftStore:
 		the sequence
 	    - run standard fit on images (from focusing.py) Parameters
 	      governing the algorithm are specified in ShiftStore constructor.
+
+	@param shifts shifts performed between exposures, in pixels. Lenght of this array is equal to ((number of sources in a row) - 1).
 	"""
 
-	def __init__(self):
+	def __init__(self,shifts=[50,50,50,50,50,50,50,50,50,50]):
 		self.objects = None
 		self.sequences = []
 		self.xsep = self.ysep = 5
-		self.shifts = [100,50,50,50,50,50,50,50,50]
-		self.focpos = range(0,len(self.shifts))
+		self.shifts = shifts
+		self.focpos = range(0,len(self.shifts) + 1)
 
 	def testObjects(self,x,can,i):
 		"""
@@ -128,11 +130,11 @@ class ShiftStore:
 		can.sort(cmp=lambda x,y: cmp(x[2],y[2]))
 		# assume selected object is one in shift sequence
 		# place it at any possible position in shift sequence, and test if the sequence can be found
-		for i in range(0,len(self.shifts)):
+		for i in range(0,len(self.shifts) + 1):
 			# test if sequence can be found..
 			ret = self.testObjects(x,can,i)
 			# and if it is found, return it
-			if len(ret) == len(self.shifts):
+			if len(ret) == len(self.shifts) + 1:
 				return ret
 		# cannot found sequnce, so return None
 		return None
@@ -190,7 +192,7 @@ class ShiftStore:
 		if len(sequences) > 10:
 			# get median of FWHM from each sequence
 			fwhm=[]
-			for x in range(0,len(self.shifts)):
+			for x in range(0,len(self.shifts) + 1):
 				fa = []
 				for o in sequences:
 					fa.append(o[x][6])

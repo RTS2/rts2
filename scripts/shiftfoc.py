@@ -1,4 +1,4 @@
-#!/disk-a/obs12/kubanek/bin/python
+#!/usr/bin/python
 #
 # Autofocosing routines using shift-store.
 #
@@ -40,7 +40,9 @@ class ShiftFoc (rts2comm.Rts2Comm):
 	def __init__(self):
 		self.exptime = 10 # 60 # 10
 		self.step = 0.03 # 0.2
-		self.attempts = 9
+		self.shifts = [50]*9  # shift in pixels
+		self.shifts.append(100)  # last offset
+		self.attempts = len(self.shifts) + 1
 		self.focuser = self.getValue('focuser')
 
 	def beforeReadout(self):
@@ -65,12 +67,21 @@ class ShiftFoc (rts2comm.Rts2Comm):
 		self.exposure()
 
 		self.setValue('clrccd',0)
-		self.setValue('WINDOW','0 0 2048 50')
+
+		lastshift = 0
 
 		tries = {}
 
-		for self.num in range(1,self.attempts):
-		  	self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
+		self.num = 0
+
+		while self.num < (self.attempts - 1):
+			# change shifts
+			if self.shifts[self.num] != lastshift:
+				lastshift = self.shifts[self.num]
+				self.setValue('WINDOW','0 0 2048 {0}'.format(lastshift))
+			self.num += 1
+
+		  	self.log('I','starting {0}s exposure #{1}. focusing offset {2}, shifted by {3}'.format(self.exptime,self.num,self.off,lastshift))
 			img = self.exposure(self.beforeReadout)
 			tries[self.current_focus] = img
 
@@ -83,7 +94,7 @@ class ShiftFoc (rts2comm.Rts2Comm):
 		self.log('I','all focusing exposures finished, processing data')
 		lastimg = self.rename(lastimg,'/disk-b/obs12_images/%N/focusing/%f')
 
-		sc = shiftstore.ShiftStore()
+		sc = shiftstore.ShiftStore(shifts=self.shifts)
 		
 		return sc.runOnImage(lastimg,False)
 
