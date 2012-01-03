@@ -65,6 +65,8 @@ class Filterd:public rts2core::Device
 
 		int getFilterNumFromName (std::string filter_name) { return filter->getSelIndex (filter_name); }
 
+		void addFilter (const char *new_filter) { filter->addSelVal (new_filter); }
+
 	private:
 		rts2core::ValueSelection *filter;
 
