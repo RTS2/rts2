@@ -51,11 +51,12 @@ class TelLX200:public Telescope
 		 * Utility function for all those read_ra and other.
 		 *
 		 * @param hmsptr   where hms will be stored
-		 * @param command  command  
+		 * @param command  command
+		 * @param allowZ   if time can start with Z for Zulu time
 		 *
 		 * @return -1 and set errno on error, otherwise 0
 		 */
-		int tel_read_hms (double *hmsptr, const char *command);
+		int tel_read_hms (double *hmsptr, const char *command, bool allowZ = false);
 
 		/**
 		 * Reads control unit local time.

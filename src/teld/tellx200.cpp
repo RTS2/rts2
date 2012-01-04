@@ -76,7 +76,7 @@ int TelLX200::init ()
 	return 0;
 }
 
-int TelLX200::tel_read_hms (double *hmsptr, const char *command)
+int TelLX200::tel_read_hms (double *hmsptr, const char *command, bool allowZ)
 {
 	char wbuf[256];
 	int len;
@@ -84,7 +84,10 @@ int TelLX200::tel_read_hms (double *hmsptr, const char *command)
 		return -1;
 
 	wbuf[len - 1] = '\0';
-	*hmsptr = hmstod (wbuf);
+	if (allowZ && wbuf[0] == 'Z')
+		*hmsptr = hmstod (wbuf + 1);
+	else
+		*hmsptr = hmstod (wbuf);
 	if (isnan (*hmsptr))
 	{
 		logStream (MESSAGE_ERROR) << "invalid character for HMS: " << wbuf << sendLog;
@@ -135,7 +138,7 @@ int TelLX200::tel_read_azimuth ()
 int TelLX200::tel_read_local_time ()
 {
 	double new_local_time ;
-	if (tel_read_hms (&new_local_time, "#:GL#"))
+	if (tel_read_hms (&new_local_time, "#:GL#", true))
 		return -1;
 	localTime->setValueDouble (new_local_time * 15.);
 	return 0;
