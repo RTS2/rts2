@@ -37,7 +37,7 @@ class CloudSensorII:public SensorWeather, public BWCSII_Listener
 
 		//virtual int changeMasterState (int new_state);
 
-		virtual int commandAuthorized (Rts2Conn *conn);
+		virtual int commandAuthorized (rts2core::Connection *conn);
 
 		virtual void csII_reportSensorData(BWCloudSensorII *csII,
                         			   const BWCSII_reportSensorData &report);
@@ -233,7 +233,7 @@ CloudSensorII::~CloudSensorII (void)
 }
 
 
-int CloudSensorII::commandAuthorized (Rts2Conn *conn)
+int CloudSensorII::commandAuthorized (rts2core::Connection *conn)
 {
 	return SensorWeather::commandAuthorized (conn);
 }
