@@ -288,7 +288,13 @@ endif
 </xsl:if>
 <xsl:if test='@value = "autoguide"'>
 if ( $continue == 1 ) then
-	if ( $autog != <xsl:value-of select='@operands'/> ) then
+	set new_guide=<xsl:value-of select='@operands'/>
+	if ( $new_guide == 1 || $new_guide == "ON" || $new_guide == "on" ) then
+		set new_guide = "ON"
+	else
+		set new_guide = "OFF"
+	endif
+	if ( $autog != $new_guide ) then
 		$xmlrpc --quiet -c TELE.info
 		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
 		if ( $guidestatus == 1 ) then
@@ -296,8 +302,8 @@ if ( $continue == 1 ) then
 		else
 			set guidestatus = "OFF"
 		endif
-		if ( $guidestatus != <xsl:value-of select='@operands'/> ) then
-			if ( <xsl:value-of select='@operands'/> == "ON" ) then
+		if ( $guidestatus != $new_guide ) then
+			if ( $new_guide == "ON" ) then
 				rts2-logcom "Commanding autoguiding to ON"
 				set nowdate=`date +%s`
 				<xsl:copy-of select='$guidetest'/>
@@ -310,7 +316,7 @@ if ( $continue == 1 ) then
 			echo `date +"%D %T.%3N %Z"` "autog already in $guidestatus status, not changing it" -->
 		</xsl:if>	
 		endif
-		set autog=<xsl:value-of select='@operands'/>
+		set autog=$new_guide
 	<xsl:if test='$debug != 0'>	
 	else
 		echo `date +"%D %T.%3N %Z"` 'autog already set, ignoring autog request'
