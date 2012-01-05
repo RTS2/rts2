@@ -367,10 +367,10 @@ void DevClientTelescopeImage::postEvent (Rts2Event * event)
 {
 	struct ln_equ_posn *change;	 // change in degrees
 	CameraImage * ci;
+	Image *image;
 	switch (event->getType ())
 	{
 		case EVENT_WRITE_TO_IMAGE:
-			Image *image;
 			struct ln_equ_posn object;
 			struct ln_lnlat_posn obs;
 			struct ln_equ_posn suneq;
@@ -390,6 +390,10 @@ void DevClientTelescopeImage::postEvent (Rts2Event * event)
 			ln_get_hrz_from_equ (&suneq, &obs, image->getExposureJD (), &sunhrz);
 			image->setValue ("SUN_ALT", sunhrz.alt, "solar altitude");
 			image->setValue ("SUN_AZ", sunhrz.az, "solar azimuth");
+			break;
+		case EVENT_WRITE_ONLY_IMAGE:
+			image = (Image *) event->getArg ();
+			image->writeConn (getConnection (), EXPOSURE_START);
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *)event->getArg ();
@@ -456,6 +460,10 @@ void DevClientFocusImage::postEvent (Rts2Event * event)
 			image->writeConn (getConnection (), EXPOSURE_START);
 			image->setFocPos (getConnection ()->getValue ("FOC_POS")->getValueInteger ());
 			break;
+		case EVENT_WRITE_ONLY_IMAGE:
+			image = (Image *) event->getArg ();
+			image->writeConn (getConnection (), EXPOSURE_START);
+			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *) event->getArg ();
 			ci->image->writeConn (getConnection (), EXPOSURE_END);
@@ -471,6 +479,7 @@ DevClientWriteImage::DevClientWriteImage (rts2core::Connection * in_connection):
 void DevClientWriteImage::postEvent (Rts2Event * event)
 {
 	CameraImage *ci;
+	Image *image;
 	switch (event->getType ())
 	{
 		case EVENT_WRITE_TO_IMAGE:
@@ -486,6 +495,10 @@ void DevClientWriteImage::postEvent (Rts2Event * event)
 			{
 				ci->waitForTrigger (this);
 			}
+			break;
+		case EVENT_WRITE_ONLY_IMAGE:
+			image = (Image *) event->getArg ();
+			image->writeConn (getConnection (), EXPOSURE_START);
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *) event->getArg ();

@@ -1002,6 +1002,17 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		clearNextTargets ();
 		return 0;
 	}
+	else if (conn->isCommand ("write_headers"))
+	{
+		char *imgn;
+		if (conn->paramNextString (&imgn) || !conn->paramEnd ())
+			return -1;
+		rts2image::Image image;
+		image.openFile (imgn, false, true);
+		postEvent (new Rts2Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));
+		image.saveImage ();
+		return 0;
+	}
 	return Rts2DeviceDb::commandAuthorized (conn);
 }
 

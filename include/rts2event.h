@@ -22,7 +22,26 @@
 
 #include <string>
 
+/**
+ * Event fired when FITS headers should be recorded.
+ *
+ * @param arg  rts2image::CameraImage pointer
+ */
 #define EVENT_WRITE_TO_IMAGE        2
+
+/**
+ * Only collect and write all headers.
+ *
+ * @param arg  rts2image::Image pointer
+ */
+#define EVENT_WRITE_ONLY_IMAGE     25
+
+/**
+ * Event fired at the end of exposure, when certain headers should be recorded
+ * to FITS file.
+ *
+ * @param arg  rts2image::CameraImage pointer
+ */
 #define EVENT_WRITE_TO_IMAGE_ENDS  13
 #define EVENT_SET_TARGET            3
 #define EVENT_SET_TARGET_NOT_CLEAR 23
@@ -38,8 +57,14 @@
 
 #define EVENT_QUICK_ENABLE         12
 
-// info failed/sucess calls
+/**
+ * Device info command has been sucessfully executed.
+ */
 #define EVENT_INFO_DEVCLI_OK       14
+
+/**
+ * Device info command execution failed.
+ */
 #define EVENT_INFO_DEVCLI_FAILED   15
 
 /** Event issued when command return with OK state. */
