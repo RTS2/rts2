@@ -49,7 +49,7 @@ sudo apt-get -y update
 
 echo "Installing required debian packages"
 
-sudo apt-get -y install subversion postgresql $extra_p libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-pyfits python-matplotlib gdb valgrind libxt-dev
+sudo apt-get -y install subversion postgresql $extra_p libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-pyfits python-matplotlib gdb valgrind libxt-dev libfftw3-dev liblapack-dev libatlas-dev libatlas-base-dev
 
 echo "Downloading DS9"
 
@@ -164,13 +164,13 @@ echo "Adding rts2test user"
 rts2-user -a rts2test --password 1234
 
 echo "Adding T0 telescope"
-./rts2-configdb -t T0
+./rts2-configdb stars -t T0
 
 echo "Adding C0 camera"
-./rts2-configdb -c C0
+./rts2-configdb stars -c C0
 
 echo "Adding W0 filter wheel"
-./rts2-configdb -f W0
+./rts2-configdb stars -f W0
 
 cd ~
 
