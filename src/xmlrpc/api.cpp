@@ -217,6 +217,8 @@ digraph "JSON API calls handling" {
  *  - <i><b>tn</b> New target name. If not specified, target name is not changed.</i>
  *  - <i><b>ra</b> New target RA. In degrees, 0-360. If not specified (or DEC is not specified), then target position is not updated).</i>
  *  - <i><b>dec</b> New target DEC. In degrees, -90 to +90.</i>
+ *  - <i><b>pm_ra></b> New target proper motion in RA, in arcdeg/year. Proper motion can be set only for certain target types.</i>
+ *  - <i><b>pm_dec></b> New target proper motion in DEC, in arcdeg/year.</i>
  *  - <i><b>enabled</b> New value of target enabled bit. If set to 1, target will be considered by autonomouse selector.</i>
  *  - <i><b>desc</b> Target description.</i>
  */
@@ -629,7 +631,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			{
 				script = params->getString ("S","");
 				if (strlen (script) == 0)
-					throw XmlRpc::XmlRpcException ("you have to specify script (with s or S parameter)");
+					throw JSONException ("you have to specify script (with s or S parameter)");
 				callScriptEnd = false;
 			}
 			bool kills = params->getInteger ("kill", 0);
@@ -929,6 +931,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					const char *tn = params->getString ("tn", "");
 					double ra = params->getDouble ("ra", -1000);
 					double dec = params->getDouble ("dec", -1000);
+					double pm_ra = params->getDouble ("pm_ra", NAN);
+					double pm_dec = params->getDouble ("pm_dec", NAN);
 					bool enabled = params->getInteger ("enabled", tar->getTargetEnabled ());
 					const char *desc = params->getString ("desc", NULL);
 
@@ -936,6 +940,18 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 						tar->setTargetName (tn);
 					if (ra > -1000 && dec > -1000)
 						tar->setPosition (ra, dec);
+					if (!(isnan (pm_ra) && isnan (pm_dec)))
+					{
+						switch (tar->getTargetType ())
+						{
+							case TYPE_CALIBRATION:
+							case TYPE_OPORTUNITY:
+								((rts2db::ConstTarget *) (tar))->setProperMotion (pm_ra, pm_dec);
+								break;
+							default:
+								throw JSONException ("only calibration and oportunity targets can have proper motion");
+						}
+					}
 					tar->setTargetEnabled (enabled, true);
 					if (desc != NULL)
 						tar->setTargetInfo (std::string (desc));
