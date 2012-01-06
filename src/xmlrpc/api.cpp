@@ -201,6 +201,23 @@ digraph "JSON API calls handling" {
  *
  * @section targets List available targets
  *
+ * @section tbyname List targets by name
+ *
+ * Returns list (JSON table) with targets matching given name.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/tbyname?e=1&n=%
+ *
+ * @subsection Parameters
+ *
+ *  - <b>n</b> Target name. Can include % (URL encoded to %25) as wildcard.
+ *  - <i><b>ic</b> Ignore case. Ignore lower/upper case in target names.</i>
+ *  - <i><b>pm</b> Partial match allowed. Similar to specifing name as %{name}% - e.g. allow anything before and after name.</i>
+ *  - <i><b>e</b> Allow extended format. Result will include extra collumns.</i>
+ *  - <i><b>propm</b> Return target(s) proper motion.</i>
+ *  - <i><b>from</b> Datetime (as ctime, seconds from 1/1/1970) for which target(s) values will be calculated.</i>
+ *
  * @section create_target Create target
  *
  * @section update_target Update target informations
@@ -1397,7 +1414,7 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom)
 {
 	bool extended = params->getInteger ("e", false);
-	bool withpm = params->getInteger ("pm", false);
+	bool withpm = params->getInteger ("propm", false);
 	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
 	int c = 5;
 	os << "\"h\":["
