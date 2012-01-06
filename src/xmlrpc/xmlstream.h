@@ -77,6 +77,11 @@ class XmlStream: public Rts2InfoValStream
 			(*rpcval)[desc] = val.getRa ();
 		}
 
+		virtual void printInfoVal (const char *desc, LibnovaDegArcMin &val)
+		{
+			(*rpcval)[desc] = val.getDeg ();
+		}
+
 		virtual void printInfoVal (const char *desc, Timestamp &val)
 		{
 			struct tm tm_s;

@@ -214,8 +214,8 @@ void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	_os
-		<< InfoVal <LibnovaRaJ2000> ("PROPER MOTION RA", LibnovaRaJ2000 (proper_motion.ra)) 
-		<< InfoVal <LibnovaDecJ2000> ("PROPER MOTION DEC", LibnovaDecJ2000 (proper_motion.dec));
+		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION RA", LibnovaDegArcMin (proper_motion.ra)) 
+		<< InfoVal <LibnovaDegArcMin> ("PROPER MOTION DEC", LibnovaDegArcMin (proper_motion.dec));
 }
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)

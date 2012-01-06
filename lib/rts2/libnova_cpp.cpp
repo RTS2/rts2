@@ -532,9 +532,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 	else
 	{
 		_os << std::setw (5)
-			<< std::showpos << ((deg_dms.neg ? -1 : 1) *
-			(deg_dms.degrees * 60 +
-			deg_dms.minutes)) << std::noshowpos << "'";
+			<< std::showpos << ((deg_dms.neg ? -1 : 1) * (deg_dms.degrees * 60 + deg_dms.minutes)) << std::noshowpos << "'";
 	}
 	char old_fill = _os.fill ('0');
 	_os << std::setw (5) << deg_dms.seconds;

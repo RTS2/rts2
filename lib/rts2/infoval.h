@@ -26,14 +26,13 @@
 #include "libnova_cpp.h"
 #include "timestamp.h"
 
+/**
+ * Prints pretty formate RTS2 values on output.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 template < class val > class InfoVal
 {
-	private:
-		const char *desc;
-		val value;
-
-		template < class v > friend std::ostream & operator<< (std::ostream & _os,
-			InfoVal < v > _val);
 	public:
 		InfoVal (const char *in_desc, val in_value)
 		{
@@ -51,6 +50,11 @@ template < class val > class InfoVal
 			return value;
 		}
 
+	private:
+		const char *desc;
+		val value;
+
+		template < class v > friend std::ostream & operator<< (std::ostream & _os, InfoVal < v > _val);
 };
 
 /**
@@ -83,6 +87,8 @@ class Rts2InfoValStream
 		virtual void printInfoVal (const char *desc, LibnovaDeg &val) = 0;
 
 		virtual void printInfoVal (const char *desc, LibnovaRa &val) = 0;
+
+		virtual void printInfoVal (const char *desc, LibnovaDegArcMin &val) = 0;
 
 		virtual void printInfoVal (const char *desc, Timestamp &val) = 0;
 
@@ -167,6 +173,12 @@ class Rts2InfoValOStream: public Rts2InfoValStream
 				<< std::right << val << std::endl;
 		}
 
+		virtual void printInfoVal (const char *desc, LibnovaDegArcMin &val)
+		{
+			*_os << std::left << std::setw (20) << desc
+				<< std::right << val << std::endl;
+		}
+
 		virtual void printInfoVal (const char *desc, Timestamp &val)
 		{
 			*_os << std::left << std::setw (20) << desc
@@ -197,16 +209,14 @@ class Rts2InfoValOStream: public Rts2InfoValStream
 		}
 };
 
-template < class v > Rts2InfoValStream&
-Rts2InfoValStream::operator << (InfoVal <v> _val)
+template < class v > Rts2InfoValStream& Rts2InfoValStream::operator << (InfoVal <v> _val)
 {
 	printInfoVal (_val.getDesc (), _val.getValue ());
 	return *this;
 }
 
 
-template < class v >
-std::ostream & operator << (std::ostream & _os, InfoVal < v > _val)
+template < class v > std::ostream & operator << (std::ostream & _os, InfoVal < v > _val)
 {
 	_os << std::left << std::setw (20) << _val.desc
 		<< std::right << _val.value << std::endl;
