@@ -390,12 +390,12 @@ void TGDrive::writeMsg (char op, int16_t address)
 	*((int16_t *) (msg + 2)) = address;
 	char cs = 0x100 - (op + msg[2] + msg[3]);
 	int len = 2;
-	for (int i = 2; i < 4; i++, len++)
+	for (int i = 0; i < 2; i++, len++)
 	{
 		if (msg[len] == MSG_START)
 		{
-			if (i == 2)
-				msg[len + 2] = msg[len];
+			if (i == 0)
+				msg[4] = msg[3];
 			len++;
 			msg[len] = MSG_START;
 		}
