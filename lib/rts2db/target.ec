@@ -1796,9 +1796,6 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs, rts2core::ConnNot
 		case TYPE_FLAT:
 			retTarget = new FlatTarget (_tar_id, _obs);
 			break;
-		case TYPE_FOCUSING:
-			retTarget = new FocusingTarget (_tar_id, _obs);
-			break;
 		case TYPE_CALIBRATION:
 			retTarget = new CalibrationTarget (_tar_id, _obs);
 			break;

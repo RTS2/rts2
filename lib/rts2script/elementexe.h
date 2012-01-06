@@ -63,7 +63,7 @@ class ConnExecute:public ConnExe
 };
 
 /**
- * Element for command execution. Command can communicta with RTS2 through
+ * Element for command execution. Command can communicate with RTS2 through
  * standart input and output.
  *
  * @author Petr Kubanek <petr@kubanek.net>

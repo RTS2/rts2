@@ -28,3 +28,7 @@ SELECT 1;
 alter table grb add column grb_autodisabled boolean not null default false;
 
 alter table targets add column interruptible boolean not null default true;
+
+--- add proper motion
+alter table targets add column tar_pm_ra float8 default null;
+alter table targets add column tar_pm_dec float8 default null;

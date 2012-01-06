@@ -28,7 +28,6 @@
 
 #define COMMAND_EXPOSURE        "E"
 #define COMMAND_DARK            "D"
-#define COMMAND_FOCUSING        "O"
 #define COMMAND_CHANGE          "C"
 #define COMMAND_BOX             "BOX"
 #define COMMAND_CENTER          "CENTER"

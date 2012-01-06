@@ -181,6 +181,7 @@ class TargetSet:public std::map <int, Target * >
 		void setTargetBonusTime (time_t * new_time);
 		void setNextObservable (time_t * time_ch);
 		void setTargetScript (const char *device_name, const char *script);
+		void setTargetProperMotion (struct ln_equ_posn *pm);
 		void setTargetPIName (const char *pi);
 		void setTargetProgramName (const char *program);
 

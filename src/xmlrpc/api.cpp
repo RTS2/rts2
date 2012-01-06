@@ -178,16 +178,19 @@ digraph "JSON API calls handling" {
  *
  * @section JSON_device_script runscript
  *
- * Run script on device.
+ * Run script on device. Optionally kill previously running script, or don't call script end, which 
+ * resets device environment.
  *
  * @subsection Example
  *
  * http://localhost:8889/api/runscript?d=C0&s=E 20&kill=1&fe=%N_%05u.fits
+ * http://localhost:8889/api/runscript?d=C0&S=E 2&fe=%N_%05u.fits
  *
  * @subsection Parameters
  *
  *  - <b>d</b> Device name. Device must be CCD/Camera.
  *  - <b>s</b> Script. Please bear in mind that you should URI encode any special characters in the script. Please see <b>man rts2.script</b> for details.
+ *  - <b>S</b> Script, but call it without calling script ends (without reseting device state). See s parameter. Only one of the s or S parameters should be provided.
  *  - <i><b>kill</b> If 1, current script will be killed. Default to 0, which means finish current action on device, and then start new script.</i>
  *  - <i><b>fe</b>  File expansion string. Can include expansion characters. Default to filename expansion string provided in rts2.ini configuration file.
           Please See man rts2.ini and man rts2 for details about configuration (xmlrpcd/images_name) and expansion characters.</i>
@@ -620,11 +623,20 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			conn = master->getOpenConnection (d);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
+			bool callScriptEnd = true;
 			const char *script = params->getString ("s","");
+			if (strlen (script) == 0)
+			{
+				script = params->getString ("S","");
+				if (strlen (script) == 0)
+					throw XmlRpc::XmlRpcException ("you have to specify script (with s or S parameter)");
+				callScriptEnd = false;
+			}
 			bool kills = params->getInteger ("kill", 0);
 
 			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
 
+			camdev->setCallScriptEnds (callScriptEnd);
 			camdev->setScriptExpand (params->getString ("fe", camdev->getDefaultFilename ()));
 
 			camdev->executeScript (script, kills);
@@ -908,7 +920,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				case TYPE_GRB:
 				case TYPE_FLAT:
 				case TYPE_CALIBRATION:
-				case TYPE_FOCUSING:
 				case TYPE_GPS:
 				case TYPE_TERESTIAL:
 				case TYPE_AUGER:

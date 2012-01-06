@@ -1248,7 +1248,7 @@ int APGTO::info ()
   telFlip->setValueInteger (flip);
   if (tel_read_azimuth () || tel_read_altitude ()) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve  azimuth altitude " << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve horizontal coordinates" << sendLog;
   }
   if( error== ERROR_IN_INFO) {
     return -1 ;

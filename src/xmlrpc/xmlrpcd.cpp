@@ -79,7 +79,7 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
 
 	createOrReplaceValue (lastFilename, conn, RTS2_VALUE_STRING, "_lastimage", "last image from camera", false, RTS2_VALUE_WRITABLE);
-	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false, RTS2_VALUE_WRITABLE);
+	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false);
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
@@ -108,6 +108,12 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 	lastFilename->setValueCharArr (ret->getFileName ());
 	((rts2core::Daemon *) (connection->getMaster ()))->sendValueAll (lastFilename);
 	return ret;
+}
+
+void XmlDevCameraClient::setCallScriptEnds (bool nv)
+{
+	callScriptEnds->setValueBool (nv);
+	getMaster ()->sendValueAll (callScriptEnds);
 }
 
 bool XmlDevCameraClient::isScriptRunning ()

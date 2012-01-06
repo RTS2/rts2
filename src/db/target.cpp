@@ -31,47 +31,49 @@
 
 #include <iostream>
 
-#define OP_NONE             0x000000
-#define OP_ENABLE           0x000003
-#define OP_DISABLE          0x000001
-#define OP_MASK_EN          0x000003
-#define OP_PRIORITY         0x000004
-#define OP_BONUS            0x000008
-#define OP_BONUS_TIME       0x000010
-#define OP_NEXT_TIME        0x000020
-#define OP_SCRIPT           0x000040
-#define OP_NEXT_OBSER       0x000080
+#define OP_NONE                   0x000000
+#define OP_ENABLE                 0x000003
+#define OP_DISABLE                0x000001
+#define OP_MASK_EN                0x000003
+#define OP_PRIORITY               0x000004
+#define OP_BONUS                  0x000008
+#define OP_BONUS_TIME             0x000010
+#define OP_NEXT_TIME              0x000020
+#define OP_SCRIPT                 0x000040
+#define OP_NEXT_OBSER             0x000080
 
-#define OP_OBS_START        0x000100
-#define OP_OBS_SLEW         0x000200
-#define OP_OBS_END          0x000400
-#define OP_TEMPDISABLE      0x000800
-#define OP_CONSTRAINTS      0x001000
+#define OP_OBS_START              0x000100
+#define OP_OBS_SLEW               0x000200
+#define OP_OBS_END                0x000400
+#define OP_TEMPDISABLE            0x000800
+#define OP_CONSTRAINTS            0x001000
 
-#define OP_PI_NAME          0x002000
-#define OP_PROGRAM_NAME     0x004000
-#define OP_DELETE           0x008000
+#define OP_PI_NAME                0x002000
+#define OP_PROGRAM_NAME           0x004000
+#define OP_DELETE                 0x008000
 
-#define OP_CONS_RESET       0x010000
+#define OP_CONS_RESET             0x010000
+#define OP_SET_PROPER_MOTION      0x020000
 
-#define OPT_OBSERVE_START   OPT_LOCAL + 831
-#define OPT_OBSERVE_SLEW    OPT_LOCAL + 832
-#define OPT_OBSERVE_END     OPT_LOCAL + 833
-#define OPT_TEMPDISABLE     OPT_LOCAL + 834
-#define OPT_AIRMASS         OPT_LOCAL + 835
-#define OPT_LUNAR_DISTANCE  OPT_LOCAL + 836
-#define OPT_LUNAR_ALTITUDE  OPT_LOCAL + 837
-#define OPT_MAXREPEATS      OPT_LOCAL + 838
-#define OPT_PI_NAME         OPT_LOCAL + 839
-#define OPT_PROGRAM_NAME    OPT_LOCAL + 840
-#define OPT_DELETE          OPT_LOCAL + 841
+#define OPT_OBSERVE_START         OPT_LOCAL + 831
+#define OPT_OBSERVE_SLEW          OPT_LOCAL + 832
+#define OPT_OBSERVE_END           OPT_LOCAL + 833
+#define OPT_TEMPDISABLE           OPT_LOCAL + 834
+#define OPT_AIRMASS               OPT_LOCAL + 835
+#define OPT_LUNAR_DISTANCE        OPT_LOCAL + 836
+#define OPT_LUNAR_ALTITUDE        OPT_LOCAL + 837
+#define OPT_MAXREPEATS            OPT_LOCAL + 838
+#define OPT_PI_NAME               OPT_LOCAL + 839
+#define OPT_PROGRAM_NAME          OPT_LOCAL + 840
+#define OPT_SET_PROPER_MOTION     OPT_LOCAL + 841
+#define OPT_DELETE                OPT_LOCAL + 842
 
-#define OPT_ID_ONLY         OPT_LOCAL + 842
-#define OPT_NAME_ONLY       OPT_LOCAL + 844
+#define OPT_ID_ONLY               OPT_LOCAL + 843
+#define OPT_NAME_ONLY             OPT_LOCAL + 844
 
-#define OPT_RESETC          OPT_LOCAL + 843
+#define OPT_RESETC                OPT_LOCAL + 845
 
-#define OPT_FORCE           OPT_LOCAL + 845
+#define OPT_FORCE                 OPT_LOCAL + 846
 
 class CamScript
 {
@@ -138,6 +140,8 @@ class TargetApp:public Rts2AppDb
 		const char *pi;
 		const char *program;
 
+		struct ln_equ_posn pm;
+
 		rts2db::resolverType resType;
 
 		bool confirmOp;
@@ -158,6 +162,8 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 	defaultCamera = NULL;
 	config = NULL;
 
+	pm.ra = pm.dec = NAN;
+
 	resType = rts2db::NAME_ID;
 
 	confirmOp = true;
@@ -177,6 +183,7 @@ TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 
 	addOption (OPT_PI_NAME, "pi", 1, "set PI name");
 	addOption (OPT_PROGRAM_NAME, "program", 1, "set program name");
+	addOption (OPT_SET_PROPER_MOTION, "proper-motion", 1, "set target proper motion");
 
 	addOption ('N', NULL, 0, "do not pretty print");
 
@@ -315,6 +322,18 @@ int TargetApp::processOption (int in_opt)
 		case OPT_PROGRAM_NAME:
 			program = optarg;
 			op |= OP_PROGRAM_NAME;
+			break;
+		case OPT_SET_PROPER_MOTION:
+			{
+				LibnovaRaDec raDec;
+				if (raDec.parseString (optarg))
+				{
+					std::cerr << "cannot parse " << optarg << " as RA DEC string" << std::endl;
+					return -1;
+				}
+				raDec.getPos (&pm);
+				op |= OP_SET_PROPER_MOTION;
+			}
 			break;
 		case OPT_DELETE:
 			op |= OP_DELETE;
@@ -607,6 +626,10 @@ int TargetApp::doProcessing ()
 		if (op & OP_PROGRAM_NAME)
 		{
 			target_set.setTargetProgramName (program);
+		}
+		if (op & OP_SET_PROPER_MOTION)
+		{
+			target_set.setTargetProperMotion (&pm);
 		}
 		if (op == OP_NONE)
 		{

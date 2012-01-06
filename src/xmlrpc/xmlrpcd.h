@@ -163,6 +163,13 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 
 		/**
+		 * Set flag indicating if before script should be called script_ends.
+		 *
+		 * @param nv  new call script end flag value
+		 */
+		void setCallScriptEnds (bool nv);
+
+		/**
 		 * Return default image expansion subpath.
 		 *
 		 * @return default image expansion subpath

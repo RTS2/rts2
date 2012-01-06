@@ -820,19 +820,35 @@ class ConstTarget:public Target
 		virtual void load ();
 		virtual int saveWithID (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
+		
+		/**
+		 * Retrieve target proper motion.
+		 *
+		 * @param pm   Target proper motion (in arcdeg/year)
+		 */
+		virtual void getProperMotion (struct ln_equ_posn *pm);
+
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		void setPosition (double ra, double dec) { position.ra = ra; position.dec = dec; }
+		void setProperMotion (double pm_ra, double pm_dec) { proper_motion.ra = pm_ra; proper_motion.dec = pm_dec; }
+		void setProperMotion (struct ln_equ_posn *pm) { proper_motion.ra = pm->ra; proper_motion.dec = pm->dec; }
 
 	protected:
 		// get called when target was selected to update bonuses, target position etc..
 		virtual int selectedAsGood ();
 	private:
 		struct ln_equ_posn position;
+		struct ln_equ_posn proper_motion;
 };
 
+/**
+ * Class representing dark callibration targets.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class DarkTarget:public Target
 {
 	private:
@@ -861,7 +877,9 @@ class FlatTarget:public ConstTarget
 		void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
 };
 
-// possible calibration target
+/**
+ * Possible calibration targets.
+ */
 class PosCalibration:public Target
 {
 	public:
@@ -916,17 +934,12 @@ class CalibrationTarget:public ConstTarget
 		int needUpdate;
 };
 
-class FocusingTarget:public ConstTarget
-{
-	public:
-		FocusingTarget (int in_tar_id,
-			struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id,
-			in_obs)
-		{
-		};
-		virtual bool getScript (const char *deviceName, std::string & buf);
-};
-
+/**
+ * Modelling target. Points to random places on the sky to build pointing
+ * model.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ModelTarget:public ConstTarget
 {
 	private:

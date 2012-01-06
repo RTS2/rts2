@@ -66,7 +66,6 @@
 
 #define TYPE_DARK               'd'
 #define TYPE_FLAT               'f'
-#define TYPE_FOCUSING           'o'
 
 #define TYPE_LANDOLT            'l'
 

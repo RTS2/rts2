@@ -36,17 +36,21 @@ using namespace rts2db;
 // ConstTarget
 ConstTarget::ConstTarget () : Target ()
 {
+	position.ra = position.dec = 0;
+	proper_motion.ra = proper_motion.dec = NAN;
 }
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
 	position.ra = position.dec = 0;
+	proper_motion.ra = proper_motion.dec = NAN;
 }
 
 ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):Target (in_tar_id, in_obs)
 {
 	position.ra = pos->ra;
 	position.dec = pos->dec;
+	proper_motion.ra = proper_motion.dec = NAN;
 }
 
 void ConstTarget::load ()
@@ -54,18 +58,26 @@ void ConstTarget::load ()
 	EXEC SQL BEGIN DECLARE SECTION;
 	double d_ra;
 	double d_dec;
+	double d_pm_ra;
+	double d_pm_dec;
 	int d_ra_ind;
 	int d_dec_ind;
+	int d_pm_ra_ind;
+	int d_pm_dec_ind;
 	int db_tar_id = getObsTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
 	SELECT
 		tar_ra,
-		tar_dec
+		tar_dec,
+		tar_pm_ra,
+		tar_pm_dec
 	INTO
 		:d_ra :d_ra_ind,
-		:d_dec :d_dec_ind
+		:d_dec :d_dec_ind,
+		:d_pm_ra :d_pm_ra_ind,
+		:d_pm_dec :d_pm_dec_ind
 	FROM
 		targets
 	WHERE
@@ -78,12 +90,19 @@ void ConstTarget::load ()
 	}
 
 	if (d_ra_ind)
-		d_ra = rts2_nan ("f");
+		d_ra = NAN;
 	if (d_dec_ind)
-	  	d_dec = rts2_nan ("f");
+	  	d_dec = NAN;
+	if (d_pm_ra_ind)
+	  	d_pm_ra = NAN;
+	if (d_pm_dec_ind)
+		d_pm_dec = NAN;
 
 	position.ra = d_ra;
 	position.dec = d_dec;
+
+	proper_motion.ra = d_pm_ra;
+	proper_motion.dec = d_pm_dec;
 
 	Target::load ();
 }
@@ -91,9 +110,11 @@ void ConstTarget::load ()
 int ConstTarget::saveWithID (bool overwrite, int tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		double d_tar_ra;
-		double d_tar_dec;
-		int d_tar_id;
+	double d_tar_ra;
+	double d_tar_dec;
+	double d_tar_pm_ra;
+	double d_tar_pm_dec;
+	int d_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
 	int ret;
@@ -105,6 +126,9 @@ int ConstTarget::saveWithID (bool overwrite, int tar_id)
 	d_tar_ra = position.ra;
 	d_tar_dec = position.dec;
 
+	d_tar_pm_ra = proper_motion.ra;
+	d_tar_pm_dec = proper_motion.dec;
+
 	d_tar_id = tar_id;
 
 	EXEC SQL
@@ -112,7 +136,9 @@ int ConstTarget::saveWithID (bool overwrite, int tar_id)
 			targets
 		SET
 			tar_ra = :d_tar_ra,
-			tar_dec = :d_tar_dec
+			tar_dec = :d_tar_dec,
+			tar_pm_ra = :d_tar_pm_ra,
+			tar_pm_dec = :d_tar_pm_dec
 		WHERE
 			tar_id = :d_tar_id;
 
@@ -129,6 +155,14 @@ int ConstTarget::saveWithID (bool overwrite, int tar_id)
 void ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = position;
+	if (!isnan (proper_motion.ra) && !isnan (proper_motion.dec))
+		ln_get_equ_pm (pos, &proper_motion, JD, pos);
+}
+
+void ConstTarget::getProperMotion (struct ln_equ_posn *pm)
+{
+	pm->ra = proper_motion.ra;
+	pm->dec = proper_motion.dec;
 }
 
 int ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
@@ -179,6 +213,9 @@ int ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
 void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
+	_os
+		<< InfoVal <LibnovaRaJ2000> ("PROPER MOTION RA", LibnovaRaJ2000 (proper_motion.ra)) 
+		<< InfoVal <LibnovaDecJ2000> ("PROPER MOTION DEC", LibnovaDecJ2000 (proper_motion.dec));
 }
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
@@ -636,20 +673,6 @@ float CalibrationTarget::getBonus (double JD)
 		return maxBonus;
 	// otherwise linear increase
 	return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
-}
-
-bool FocusingTarget::getScript (const char *device_name, std::string &buf)
-{
- 	try
-	{
-		getDBScript (device_name, buf);
-		return false;
-	}
-	catch (rts2core::Error &er)
-	{
-	}
-	buf = std::string (COMMAND_FOCUSING);
-	return false;
 }
 
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)

@@ -339,6 +339,23 @@ void TargetSet::setTargetScript (const char *device_name, const char *script)
 	}
 }
 
+void TargetSet::setTargetProperMotion (struct ln_equ_posn *pm)
+{
+	for (iterator iter = begin (); iter != end (); iter++)
+	{
+		switch (iter->second->getTargetType ())
+		{
+			case TYPE_CALIBRATION:
+			case TYPE_OPORTUNITY:
+				((ConstTarget *) (iter->second))->setProperMotion (pm);
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "cannot set proper motion for non-constant target " << iter->second->getTargetID () << sendLog;
+				break;
+		}
+	}
+}
+
 void TargetSet::setTargetPIName (const char *pi)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
