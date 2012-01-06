@@ -98,15 +98,12 @@ class API:public GetRequestAuthorized
 		 * @param time from which changed values will be reported. nan means that all values will be reported.
 		 */
 		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"), bool extended = false);
+
+		void sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended);
 	private:
 		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
-		void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
-		void sendStatValue (rts2core::Value *value, std::ostringstream &os);
-		void sendRectangleValue (rts2core::Value *value, std::ostringstream &os);
-		void sendValue (rts2core::Value *value, std::ostringstream &os);
-		void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value);
 #ifdef HAVE_PGSQL
 		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL);
 		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);

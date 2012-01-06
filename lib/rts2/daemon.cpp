@@ -161,7 +161,7 @@ int Daemon::checkLockFile (const char *_lock_fname)
 int Daemon::checkNotNulls ()
 {
 	int failed = 0;
-	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	for (CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		int f = 0;
 		if ((*iter)->getValue ()->getFlags () & RTS2_VALUE_NOTNULL)
@@ -541,35 +541,35 @@ void Daemon::selectSuccess ()
 
 void Daemon::addValue (Value * value, int queCondition)
 {
-	values.push_back (new Rts2CondValue (value, queCondition));
+	values.push_back (new CondValue (value, queCondition));
 }
 
 Value * Daemon::getOwnValue (const char *v_name)
 {
-	Rts2CondValue *c_val = getCondValue (v_name);
+	CondValue *c_val = getCondValue (v_name);
 	if (c_val == NULL)
 		return NULL;
 	return c_val->getValue ();
 }
 
-Rts2CondValue * Daemon::getCondValue (const char *v_name)
+CondValue * Daemon::getCondValue (const char *v_name)
 {
-	Rts2CondValueVector::iterator iter;
+	CondValueVector::iterator iter;
 	for (iter = values.begin (); iter != values.end (); iter++)
 	{
-		Rts2CondValue *val = *iter;
+		CondValue *val = *iter;
 		if (val->getValue ()->isValue (v_name))
 			return val;
 	}
 	return NULL;
 }
 
-Rts2CondValue * Daemon::getCondValue (const Value *val)
+CondValue * Daemon::getCondValue (const Value *val)
 {
-	Rts2CondValueVector::iterator iter;
+	CondValueVector::iterator iter;
 	for (iter = values.begin (); iter != values.end (); iter++)
 	{
-		Rts2CondValue *c_val = *iter;
+		CondValue *c_val = *iter;
 		if (c_val->getValue () == val)
 			return c_val;
 	}
@@ -703,7 +703,7 @@ int Daemon::setValue (Value * old_value, Value * newValue)
 
 void Daemon::changeValue (Value * value, int nval)
 {
-	Rts2CondValue *cv = getCondValue (value);
+	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	nv->setValueInteger (nval);
 	doSetValue (cv, '=', nv);
@@ -711,7 +711,7 @@ void Daemon::changeValue (Value * value, int nval)
 
 void Daemon::changeValue (Value * value, bool nval)
 {
-	Rts2CondValue *cv = getCondValue (value);
+	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	((ValueBool *) nv)->setValueBool (nval);
 	doSetValue (cv, '=', nv);
@@ -719,13 +719,13 @@ void Daemon::changeValue (Value * value, bool nval)
 
 void Daemon::changeValue (Value * value, double nval)
 {
-	Rts2CondValue *cv = getCondValue (value);
+	CondValue *cv = getCondValue (value);
 	Value *nv = duplicateValue (value, false);
 	((ValueDoubleStat *) nv)->setValueDouble (nval);
 	doSetValue (cv, '=', nv);
 }
 
-int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value)
+int Daemon::setCondValue (CondValue * old_value_cond, char op, Value * new_value)
 {
 	// que change if that's necessary
 	if ((op != '=' || !old_value_cond->getValue ()->isEqual (new_value) || queValues.contains (old_value_cond->getValue ()))
@@ -743,7 +743,7 @@ int Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_v
 	return doSetValue (old_value_cond, op, new_value);
 }
 
-int Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Value * new_value)
+int Daemon::doSetValue (CondValue * old_cond_value, char op, Value * new_value)
 {
 	int ret;
 
@@ -872,7 +872,7 @@ int Daemon::infoAll ()
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		sendInfo (*iter);
 
-	for (Rts2CondValueVector::iterator iter2 = values.begin (); iter2 != values.end (); iter2++)
+	for (CondValueVector::iterator iter2 = values.begin (); iter2 != values.end (); iter2++)
 	{
 		Value *val = (*iter2)->getValue ();
 		val->resetNeedSend ();
@@ -894,7 +894,7 @@ int Daemon::sendInfo (Connection * conn, bool forceSend)
 {
 	if (!isRunning (conn))
 		return -1;
-	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	for (CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Value *val = (*iter)->getValue ();
 		if (val->needSend () || forceSend)
@@ -942,7 +942,7 @@ int Daemon::sendMetaInfo (Connection * conn)
 		if (ret < 0)
 			return -1;
 	}
-	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	for (CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Value *val = (*iter)->getValue ();
 		ret = val->sendMetaInfo (conn);
@@ -960,7 +960,7 @@ int Daemon::setValue (Connection * conn)
 	if (conn->paramNextString (&v_name) || conn->paramNextString (&op))
 		return -2;
 
-	Rts2CondValue *old_value_cond = NULL;
+	CondValue *old_value_cond = NULL;
 
 	const char *ai = NULL;
 

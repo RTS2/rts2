@@ -122,6 +122,16 @@ class Daemon:public rts2core::Block
 		Value *getOwnValue (const char *v_name);
 
 		/**
+		 * Return iterator to the first value.
+		 */
+		CondValueVector::iterator getValuesBegin () { return values.begin (); }
+
+		/**
+		 * Return iterator to the last value.
+		 */
+		CondValueVector::iterator getValuesEnd () { return values.end (); }
+
+		/**
 		 * Create new value, and return pointer to it.
 		 * It also saves value pointer to the internal values list.
 		 *
@@ -159,7 +169,7 @@ class Daemon:public rts2core::Block
 		 * 
 		 * @param val Value which references will be deleted.
 		 */
-		void deleteSaveValue (Rts2CondValue * val);
+		void deleteSaveValue (CondValue * val);
 
 		/**
 		 * Send progress parameters.
@@ -236,18 +246,18 @@ class Daemon:public rts2core::Block
 		 *
 		 * @param v_name Value name.
 		 *
-		 * @return Rts2CondValue for given value, if this exists. NULL if it does not exist.
+		 * @return CondValue for given value, if this exists. NULL if it does not exist.
 		 */
-		Rts2CondValue *getCondValue (const char *v_name);
+		CondValue *getCondValue (const char *v_name);
 
 		/**
 		 * Return conditional value entry for given value.
 		 *
 		 * @param val Value entry.
 		 *
-		 * @return Rts2CondValue for given value, if this exists. NULL if it does not exist.
+		 * @return CondValue for given value, if this exists. NULL if it does not exist.
 		 */
-		Rts2CondValue *getCondValue (const Value *val);
+		CondValue *getCondValue (const Value *val);
 
 		/**
 		 * Duplicate variable.
@@ -345,7 +355,7 @@ class Daemon:public rts2core::Block
 		 *
 		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
 		 */
-		int setCondValue (Rts2CondValue * old_value_cond, char op, Value * new_value);
+		int setCondValue (CondValue * old_value_cond, char op, Value * new_value);
 
 		/**
 		 * Perform value change.
@@ -355,7 +365,7 @@ class Daemon:public rts2core::Block
 		 *   (numerical or string), but "=", "+=" and "-=" are ussualy supported.
 		 * @param new_value
 		 */
-		int doSetValue (Rts2CondValue * old_cond_value, char op, Value * new_value);
+		int doSetValue (CondValue * old_cond_value, char op, Value * new_value);
 
 		/**
 		 * Called after value was changed.
@@ -368,10 +378,10 @@ class Daemon:public rts2core::Block
 		 * Returns whenever value change with old_value needs to be qued or
 		 * not.
 		 *
-		 * @param old_value Rts2CondValue object describing the old_value
+		 * @param old_value CondValue object describing the old_value
 		 * @param fakeState Server state agains which value change will be checked.
 		 */
-		bool queValueChange (Rts2CondValue * old_value, int fakeState)
+		bool queValueChange (CondValue * old_value, int fakeState)
 		{
 			return old_value->queValueChange (fakeState);
 		}
@@ -540,7 +550,7 @@ class Daemon:public rts2core::Block
 		// daemon state
 		int state;
 
-		Rts2CondValueVector values;
+		CondValueVector values;
 		// values which do not change, they are send only once at connection
 		// initialization
 		ValueVector constValues;

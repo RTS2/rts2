@@ -668,7 +668,7 @@ int Device::setMode (int new_mode)
 				<< "'." << sendLog;
 			return -1;
 		}
-		Rts2CondValue *cond_val = getCondValue (val->getName ().c_str ());
+		CondValue *cond_val = getCondValue (val->getName ().c_str ());
 		ret = setCondValue (cond_val, '=', new_value);
 		if (ret == -2)
 		{

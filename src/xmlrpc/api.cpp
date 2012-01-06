@@ -253,13 +253,13 @@ void AsyncAPI::postEvent (Rts2Event *event)
 	{
 		case EVENT_COMMAND_OK:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL, rts2_nan("f"), ext);
+			req->sendConnectionValues (os, conn, NULL, NAN, ext);
 			os << ",\"ret\":0 }";
 			req->sendAsyncJSON (os, source);
 			break;
 		case EVENT_COMMAND_FAILED:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL, rts2_nan("f"), ext);
+			req->sendConnectionValues (os, conn, NULL, NAN, ext);
 			os << ", \"ret\":-1 }";
 			req->sendAsyncJSON (os, source);
 			break;
@@ -316,6 +316,19 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	{
 		throw JSONException (er.what ());
 	}
+}
+
+void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
+{
+	os << "[";
+	for (std::vector <rts2core::SelVal>::iterator iter = value->selBegin (); iter != value->selEnd (); iter++)
+	{
+		if (iter != value->selBegin ())
+			os << ",";
+		os << '"' << iter->name << '"';
+	}
+	os << "]";
+
 }
 
 void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -550,14 +563,21 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		{
 			const char *device = params->getString ("d","");
 			bool ext = params->getInteger ("e", 0);
-			if (isCentraldName (device))
-				conn = master->getSingleCentralConn ();
-			else
-				conn = master->getOpenConnection (device);
-			if (conn == NULL)
-				throw JSONException ("cannot find device");
 			double from = params->getDouble ("from", 0);
-			sendConnectionValues (os, conn, params, from, ext);
+			if (!(strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ())))
+			{
+				sendOwnValues (os, params, from, ext);
+			}
+			else
+			{
+				if (isCentraldName (device))
+					conn = master->getSingleCentralConn ();
+				else
+				conn = master->getOpenConnection (device);
+				if (conn == NULL)
+					throw JSONException ("cannot find device");
+				sendConnectionValues (os, conn, params, from, ext);
+			}
 		}
 		// execute command on server
 		else if (vals[0] == "cmd")
@@ -577,7 +597,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (async)
 			{
 				conn->queCommand (new rts2core::Command (master, cmd));
-				sendConnectionValues (os, conn, params, rts2_nan("f"), ext);
+				sendConnectionValues (os, conn, params, NAN, ext);
 			}
 			else
 			{
@@ -681,9 +701,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "tbydistance")
 		{
 			struct ln_equ_posn pos;
-			pos.ra = params->getDouble ("ra",rts2_nan("f"));
-			pos.dec = params->getDouble ("dec",rts2_nan("f"));
-			double radius = params->getDouble ("radius",rts2_nan("f"));
+			pos.ra = params->getDouble ("ra", NAN);
+			pos.dec = params->getDouble ("dec", NAN);
+			double radius = params->getDouble ("radius", NAN);
 			if (isnan (pos.ra) || isnan (pos.dec) || isnan (radius))
 				throw JSONException ("invalid ra, dec or radius parameter");
 			rts2db::TargetSet ts (&pos, radius, Rts2Config::instance ()->getObserver ());
@@ -787,7 +807,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("unknow target ID");
 			time_t from = params->getDouble ("from", master->getNow ());
 			time_t to = params->getDouble ("to", from + 86400);
-			double length = params->getDouble ("length", rts2_nan ("f"));
+			double length = params->getDouble ("length", NAN);
 			int step = params->getInteger ("step", 60);
 
 			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
@@ -891,8 +911,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "create_target")
 		{
 			const char *tn = params->getString ("tn", "");
-			double ra = params->getDouble ("ra", rts2_nan("f"));
-			double dec = params->getDouble ("dec", rts2_nan("f"));
+			double ra = params->getDouble ("ra", NAN);
+			double dec = params->getDouble ("dec", NAN);
 			const char *desc = params->getString ("desc", "");
 			const char *type = params->getString ("type", "O");
 
@@ -1048,7 +1068,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		else if (vals[0] == "plan")
 		{
-			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", rts2_nan ("f")));
+			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", NAN));
 			ps.load ();
 
 			os << "\"h\":["
@@ -1143,7 +1163,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
 }
 
-void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
+void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 {
 	os << "[";
 	switch (value->getValueBaseType ())
@@ -1180,7 +1200,7 @@ void API::sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 	os << "]";
 }
 
-void API::sendStatValue (rts2core::Value *value, std::ostringstream &os)
+void sendStatValue (rts2core::Value *value, std::ostringstream &os)
 {
 	os << "[";
 	switch (value->getValueBaseType ())
@@ -1203,13 +1223,13 @@ void API::sendStatValue (rts2core::Value *value, std::ostringstream &os)
 	os << "]";
 }
 
-void API::sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
+void sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
 {
 	rts2core::ValueRectangle *r = (rts2core::ValueRectangle *) value;
 	os << "[" << r->getXInt () << "," << r->getYInt () << "," << r->getWidthInt () << "," << r->getHeightInt () << "]";
 }
 
-void API::sendValue (rts2core::Value *value, std::ostringstream &os)
+void sendValue (rts2core::Value *value, std::ostringstream &os)
 {
 	switch (value->getValueBaseType ())
 	{
@@ -1239,23 +1259,35 @@ void API::sendValue (rts2core::Value *value, std::ostringstream &os)
 	}
 }
 
-void API::sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
+void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
 {
-	os << "[";
-	for (std::vector <rts2core::SelVal>::iterator iter = value->selBegin (); iter != value->selEnd (); iter++)
+	os << "\"" << value->getName () << "\":";
+	if (extended)
+		os << "[" << value->getFlags () << ",";
+  	if (value->getValueExtType() & RTS2_VALUE_ARRAY)
 	{
-		if (iter != value->selBegin ())
-			os << ",";
-		os << '"' << iter->name << '"';
+	  	sendArrayValue (value, os);
 	}
-	os << "]";
-
+	else switch (value->getValueExtType())
+	{
+		case RTS2_VALUE_STAT:
+			sendStatValue (value, os);
+			break;
+		case RTS2_VALUE_RECTANGLE:
+			sendRectangleValue (value, os);
+			break;
+		default:
+	  		sendValue (value, os);
+			break;
+	}
+	if (extended)
+		os << "," << value->isError () << "," << value->isWarning () << ",\"" << value->getDescription () << "\"]";
 }
 
 void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, HttpParams *params, double from, bool extended)
 {
 	os << "\"d\":{" << std::fixed;
-	double mfrom = rts2_nan ("f");
+	double mfrom = NAN;
 	bool first = true;
 	rts2core::ValueVector::iterator iter;
 
@@ -1275,25 +1307,7 @@ void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * 
 		else
 			os << ",";
 
-		os << "\"" << (*iter)->getName () << "\":";
-		if (extended)
-			os << "[" << (*iter)->getFlags () << ",";
-	  	if ((*iter)->getValueExtType() & RTS2_VALUE_ARRAY)
-		  	sendArrayValue (*iter, os);
-		else switch ((*iter)->getValueExtType())
-		{
-			case RTS2_VALUE_STAT:
-				sendStatValue (*iter, os);
-				break;
-			case RTS2_VALUE_RECTANGLE:
-				sendRectangleValue (*iter, os);
-				break;
-			default:
-		  		sendValue (*iter, os);
-				break;
-		}
-		if (extended)
-			os << "," << (*iter)->isError () << "," << (*iter)->isWarning () << ",\"" << (*iter)->getDescription () << "\"]";
+		jsonValue (*iter, extended, os);
 	}
 	os << "},\"minmax\":{";
 
@@ -1313,6 +1327,44 @@ void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * 
 	}
 
 	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"f\":" << JsonDouble (mfrom);
+}
+
+void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)
+{
+	os << "\"d\":{" << std::fixed;
+	bool first = true;
+
+	XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+	rts2core::CondValueVector::iterator iter;
+
+	for (iter = master->getValuesBegin (); iter != master->getValuesEnd (); iter++)
+	{
+		if (first)
+			first = false;
+		else
+			os << ",";
+
+		jsonValue ((*iter)->getValue (), extended, os);
+	}
+	os << "},\"minmax\":{";
+
+	bool firstMMax = true;
+
+	for (iter = master->getValuesBegin (); iter != master->getValuesEnd (); iter++)
+	{
+		rts2core::Value *val = (*iter)->getValue ();
+		if (val->getValueExtType () == RTS2_VALUE_MMAX && val->getValueBaseType () == RTS2_VALUE_DOUBLE)
+		{
+			rts2core::ValueDoubleMinMax *v = (rts2core::ValueDoubleMinMax *) (val);
+			if (firstMMax)
+				firstMMax = false;
+			else
+				os << ",";
+			os << "\"" << v->getName () << "\":[" << JsonDouble (v->getMin ()) << "," << JsonDouble (v->getMax ()) << "]";
+		}
+	}
+
+	os << "},\"idle\":" << ((master->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE) << ",\"state\":" << master->getState () << ",\"f\":" << JsonDouble (from); 
 }
 
 void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -1345,8 +1397,9 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom)
 {
 	bool extended = params->getInteger ("e", false);
+	bool withpm = params->getInteger ("pm", false);
 	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
-	int c = 4;
+	int c = 5;
 	os << "\"h\":["
 		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
@@ -1359,23 +1412,32 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 
 	if (dfrom == NULL)
 	{
-			oradec.ra = params->getDouble ("ra",rts2_nan("f"));
-			oradec.dec = params->getDouble ("dec",rts2_nan("f"));
+			oradec.ra = params->getDouble ("ra", NAN);
+			oradec.dec = params->getDouble ("dec", NAN);
 			if (!isnan (oradec.ra) && !isnan (oradec.dec))
 				dfrom = &oradec;
 	}
 	if (dfrom)
 	{
-		os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":4}";
-		c = 5;
+		os << ",{\"n\":\"Distance\",\"t\":\"d\",\"c\":" << (c) << "}";
+		c++;
 	}
 	if (extended)
+	{
 		os << ",{\"n\":\"Duration\",\"t\":\"dur\",\"c\":" << (c) << "},"
 		"{\"n\":\"Scripts\",\"t\":\"scripts\",\"c\":" << (c + 1) << "},"
 		"{\"n\":\"Satisfied\",\"t\":\"s\",\"c\":" << (c + 2) << "},"
 		"{\"n\":\"Violated\",\"t\":\"s\",\"c\":" << (c + 3) << "},"
 		"{\"n\":\"Transit\",\"t\":\"t\",\"c\":" << (c + 4) << "},"
 		"{\"n\":\"Observable\",\"t\":\"t\",\"c\":" << (c + 5) << "}";
+		c += 6;
+	}
+	if (withpm)
+	{
+		os << ",{\"n\":\"Proper motion RA\",\"t\":\"d\",\"c\":" << (c) << "},"
+		"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
+		c += 2;
+	}
 	os << "],\"d\":[" << std::fixed;
 
 	double JD = ln_get_julian_from_timet (&from);
@@ -1446,6 +1508,21 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 				os << "," << JsonDouble (rst.transit) 
 					<< "," << (tar->isAboveHorizon (&hrz) ? "true" : "false");
 			}
+		}
+		if (withpm)
+		{
+			struct ln_equ_posn pm;
+			switch (tar->getTargetType ())
+			{
+				case TYPE_CALIBRATION:
+				case TYPE_OPORTUNITY:
+					((rts2db::ConstTarget *) tar)->getProperMotion (&pm);
+					break;
+				default:
+					pm.ra = pm.dec = NAN;
+			}
+
+			os << "," << JsonDouble (pm.ra) << "," << JsonDouble (pm.dec);
 		}
 		os << "]";
 	}

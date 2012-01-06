@@ -106,20 +106,20 @@ class ValueVector:public std::vector < Value * >
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CondValue
+class CondValue
 {
 	private:
 		Value *value;
 		int stateCondition;
 		int save;
 	public:
-		Rts2CondValue (Value * in_value, int in_stateCondition)
+		CondValue (Value * in_value, int in_stateCondition)
 		{
 			value = in_value;
 			stateCondition = in_stateCondition;
 			save = 0;
 		}
-		~Rts2CondValue (void) { delete value; }
+		~CondValue (void) { delete value; }
 
 		int getStateCondition () { return stateCondition; }
 
@@ -139,14 +139,14 @@ class Rts2CondValue
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CondValueVector:public std::vector < Rts2CondValue * >
+class CondValueVector:public std::vector < CondValue * >
 {
 	public:
-		Rts2CondValueVector () {}
+		CondValueVector () {}
 
-		~Rts2CondValueVector (void)
+		~CondValueVector (void)
 		{
-			for (Rts2CondValueVector::iterator iter = begin (); iter != end (); iter++)
+			for (CondValueVector::iterator iter = begin (); iter != end (); iter++)
 				delete *iter;
 		}
 };
@@ -160,13 +160,8 @@ class Rts2CondValueVector:public std::vector < Rts2CondValue * >
  */
 class ValueQue
 {
-	private:
-		char operation;
-		Rts2CondValue *old_value;
-		Value *new_value;
 	public:
-		ValueQue (Rts2CondValue * in_old_value, char in_operation,
-			Value * in_new_value)
+		ValueQue (CondValue * in_old_value, char in_operation, Value * in_new_value)
 		{
 			old_value = in_old_value;
 			operation = in_operation;
@@ -183,7 +178,7 @@ class ValueQue
 		{
 			return (getStateCondition () & state);
 		}
-		Rts2CondValue *getCondValue ()
+		CondValue *getCondValue ()
 		{
 			return old_value;
 		}
@@ -199,6 +194,10 @@ class ValueQue
 		{
 			return new_value;
 		}
+	private:
+		char operation;
+		CondValue *old_value;
+		Value *new_value;
 };
 
 /**
