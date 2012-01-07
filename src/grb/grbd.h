@@ -70,6 +70,8 @@ class Grbd:public Rts2DeviceDb
 		double getMinGrbAltitute () { return minGrbAltitude->getValueDouble (); }
 
 		struct ln_lnlat_posn *observer;
+
+		bool getCreateDisabled () { return createDisabled->getValueBool (); }
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
@@ -90,6 +92,7 @@ class Grbd:public Rts2DeviceDb
 		char *queueName;
 
 		rts2core::ValueBool *grb_enabled;
+		rts2core::ValueBool *createDisabled;
 
 		rts2core::ValueTime *last_packet;
 		rts2core::ValueDouble *delta;

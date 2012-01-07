@@ -796,6 +796,10 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		  	throw rts2db::SqlError ("cannot retrieve next value from grb_tar_id sequence");
 		}
 
+		// check and honest create_disabled value
+		if (master->getCreateDisabled ())
+			d_tar_enabled = false;
+
 		// insert new target
 		EXEC SQL
 		INSERT INTO

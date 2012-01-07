@@ -23,13 +23,14 @@
 using namespace rts2grbd;
 
 #define OPT_GRB_DISABLE         OPT_LOCAL + 49
-#define OPT_GCN_HOST            OPT_LOCAL + 50
-#define OPT_GCN_PORT            OPT_LOCAL + 51
-#define OPT_GCN_TEST            OPT_LOCAL + 52
-#define OPT_GCN_FORWARD         OPT_LOCAL + 53
-#define OPT_GCN_EXE             OPT_LOCAL + 54
-#define OPT_GCN_FOLLOUPS        OPT_LOCAL + 55
-#define OPT_QUEUE               OPT_LOCAL + 56
+#define OPT_GRB_CREATE_DISABLE  OPT_LOCAL + 50
+#define OPT_GCN_HOST            OPT_LOCAL + 51
+#define OPT_GCN_PORT            OPT_LOCAL + 52
+#define OPT_GCN_TEST            OPT_LOCAL + 53
+#define OPT_GCN_FORWARD         OPT_LOCAL + 54
+#define OPT_GCN_EXE             OPT_LOCAL + 55
+#define OPT_GCN_FOLLOUPS        OPT_LOCAL + 56
+#define OPT_QUEUE               OPT_LOCAL + 57
 
 Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
@@ -44,6 +45,9 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 
 	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false, RTS2_VALUE_WRITABLE);
 	grb_enabled->setValueBool (true);
+
+	createValue (createDisabled, "create_disabled", "if true, all GRBs will be created disabled, and will not be autoobserved", false, RTS2_VALUE_WRITABLE);
+	createDisabled->setValueBool (false);
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
 
@@ -70,12 +74,13 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	minGrbAltitude->setValueDouble (0);
 
 	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
-	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
-	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
+	addOption (OPT_GRB_CREATE_DISABLE, "create-disabled", 0, "create GRB targets disabled for automatic follow-up by merit function");
+	addOption (OPT_GCN_HOST, "gcn-host", 1, "GCN host name");
+	addOption (OPT_GCN_PORT, "gcn-port", 1, "GCN port");
 	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
 	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
-	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
+	addOption (OPT_GCN_FOLLOUPS, "exec-followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 	addOption (OPT_QUEUE, "queue-to", 1, "queue GRBs to following queue (using now command)");
 }
 
@@ -90,6 +95,9 @@ int Grbd::processOption (int in_opt)
 	{
 		case OPT_GRB_DISABLE:
 			grb_enabled->setValueBool (false);
+			break;
+		case OPT_GRB_CREATE_DISABLE:
+			createDisabled->setValueBool (true);
 			break;
 		case OPT_GCN_HOST:
 			gcn_host = new char[strlen (optarg) + 1];

@@ -53,12 +53,14 @@
       <arg choice="opt"><option>--localhost <replaceable>hostname</replaceable></option></arg>
       <arg choice="opt"><option>--modefile <replaceable>filename</replaceable></option></arg>
       <arg choice="opt"><option>-d <replaceable>device name</replaceable></option></arg>
-      <arg choice="opt"><option>--gcn_host</option></arg>
-      <arg choice="opt"><option>--gcn_port</option></arg>
+      <arg choice="opt"><option>--disable-grbs</option></arg>
+      <arg choice="opt"><option>--create-disabled</option></arg>
+      <arg choice="opt"><option>--gcn-host</option></arg>
+      <arg choice="opt"><option>--gcn-port</option></arg>
       <arg choice="opt"><option>--test</option></arg>
       <arg choice="opt"><option>--forward <replaceable>port</replaceable></option></arg>
       <arg choice="opt"><option>--add-exec <replaceable>command</replaceable></option></arg>
-      <arg choice="opt"><option>--exec_followups</option></arg>
+      <arg choice="opt"><option>--exec-followups</option></arg>
       <arg choice="opt"><option>--queue-to <replaceable>queue name</replaceable></option></arg>
     </cmdsynopsis>
 
@@ -80,6 +82,29 @@
 
     <variablelist>
       &dbapplist;
+      <varlistentry>
+        <term><option>--disable-grbs</option></term>
+	<listitem>
+	  <para>
+	    Disable immediate automatic GRB reaction. GRB targets will not be
+	    executed via <emphasis>now</emphasis> mechanism. You probably would like to
+	    couple this option with <emphasis>--create-disabled</emphasis> to completly disable
+	    GRB reactions, or with <emphasis>--queue-to</emphasis> to queue GRBs to a queue to allow
+	    automatic delayed follow-up observations.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--create-disabled</option></term>
+	<listitem>
+	  <para>
+	    Create GRB targets disabled for selection by merit function. Adding
+	    this flag together with <emphasis>--disable-grbs</emphasis> will
+	    disable all automatic GCN GRBs reactions - targets will be recoreded to the database,
+	    but newer executed.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>--queue-to <replaceable class="parameter">queue name</replaceable></option></term>
         <listitem>
