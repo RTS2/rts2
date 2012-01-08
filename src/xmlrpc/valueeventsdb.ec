@@ -80,6 +80,26 @@ int ValueChangeRecord::getRecvalId (const char *suffix, int recval_type)
 	return db_recval_id;
 }
 
+void ValueChangeRecord::recordValueInteger (int recval_id, int val, double validTime)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_recval_id = recval_id;
+	int  db_value = val;
+	double db_rectime = validTime;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL INSERT INTO records_integer
+	VALUES
+	(
+		:db_recval_id,
+		to_timestamp (:db_rectime),
+		:db_value
+	);
+
+	if (sqlca.sqlcode)
+		throw rts2db::SqlError ();
+}
+
 void ValueChangeRecord::recordValueDouble (int recval_id, double val, double validTime)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -127,6 +147,9 @@ void ValueChangeRecord::run (rts2core::Value *val, double validTime)
 
 	switch (val->getValueBaseType ())
 	{
+		case RTS2_VALUE_INTEGER:
+			recordValueInteger (getRecvalId (NULL, RTS2_VALUE_INTEGER | val->getValueDisplayType ()), val->getValueInteger (), validTime);
+			break;
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_FLOAT:
 			recordValueDouble (getRecvalId (NULL, RTS2_VALUE_DOUBLE | val->getValueDisplayType ()), val->getValueDouble (), validTime);

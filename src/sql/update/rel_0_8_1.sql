@@ -32,3 +32,31 @@ alter table targets add column interruptible boolean not null default true;
 --- add proper motion
 alter table targets add column tar_pm_ra float8 default null;
 alter table targets add column tar_pm_dec float8 default null;
+
+CREATE TABLE records_integer (
+	recval_id		integer REFERENCES recvals(recval_id) not NULL,
+	rectime			timestamp not NULL,
+	value			integer
+);
+
+CREATE INDEX records_integer_time ON records_integer (rectime);
+CREATE INDEX records_integer_recval_id ON records_integer (recval_id);
+CREATE UNIQUE INDEX records_integer_id_time ON records_integer (recval_id, rectime);
+
+DROP VIEW recvals_integer_statistics;
+
+CREATE VIEW recvals_integer_statistics AS
+SELECT
+	recval_id,
+	device_name,
+	value_name,
+	value_type,
+	(SELECT min(rectime) FROM records_integer WHERE records_integer.recval_id = recvals.recval_id) AS time_from,
+	(SELECT max(rectime) FROM records_integer WHERE records_integer.recval_id = recvals.recval_id) AS time_to
+FROM
+	recvals
+WHERE
+	value_type & 15 = 2;
+
+GRANT ALL ON records_integer TO GROUP observers;
+GRANT ALL ON recvals_integer_statistics TO GROUP observers;
