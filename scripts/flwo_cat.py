@@ -105,6 +105,9 @@ class FLWOCAT:
 
 				if len(a) > 15 and float(a[15]) != 0:
 					script = 'FOC.FOC_TOFF+={0} {1}'.format(float(a[15]),script)
+
+				if int(a[7]) > 1:
+				  	script = 'for ' + int(a[7]) + ' { ' + script + ' }'
 		
 				cmd = ["rts2-target", "-b", "0", "-e", "-p", str(prior), "-c", "KCAM", "-s", script]
 	
@@ -120,10 +123,6 @@ class FLWOCAT:
 					else:
 						cmd.append ("--lunarDistance")
 						cmd.append (a[14] + ":")
-
-				if int(a[7]) > 1:
-				  	cmd.append ("--maxRepeats")
-					cmd.append (a[7])
 
 				if self.pi is not None:
 					cmd.append ('--pi')
