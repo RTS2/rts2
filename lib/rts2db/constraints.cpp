@@ -510,7 +510,8 @@ void ConstraintMaxRepeat::parse (const char *arg)
 
 void ConstraintMaxRepeat::printXML (std::ostream &os)
 {
-	os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
+	if (maxRepeat > 0)
+		os << "  <" << getName () << ">" << maxRepeat << "</" << getName () << ">" << std::endl;
 }
 
 void ConstraintMaxRepeat::printJSON (std::ostream &os)
