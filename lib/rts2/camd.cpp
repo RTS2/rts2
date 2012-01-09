@@ -929,6 +929,11 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	{
 		return switchCooling (((rts2core::ValueBool *) new_value)->getValueBool ());
 	}
+	if (old_value == exposure)
+	{
+		setExposure(((rts2core::ValueDoubleMinMax *) new_value)->getValueDouble());
+		return 0;
+	}
 	return rts2core::ScriptDevice::setValue (old_value, new_value);
 }
 
