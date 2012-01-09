@@ -84,6 +84,7 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
+ 	exposureScript = getScript ();
 	std::string usp;
 	if (nexpand.length () == 0)
 	{
@@ -159,7 +160,6 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 
 	connection->postEvent (new Rts2Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
 	connection->postEvent (new Rts2Event (EVENT_OBSERVE));
-
 }
 
 void XmlDevCameraClient::setNextExpand (const char *fe)
@@ -178,6 +178,8 @@ void XmlDevCameraClient::setScriptExpand (const char *fe)
 
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)
 {
+	if (exposureScript.get ())
+		exposureScript->processImage (image);
 	return rts2image::IMAGE_KEEP_COPY;
 }
 
