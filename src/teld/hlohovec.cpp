@@ -313,6 +313,8 @@ int Hlohovec::startResync ()
 
 int Hlohovec::isMoving ()
 {
+	if (info ())
+		return -1;
 	if (tracking->getValueBool () && raDrive->isMovingPos ())
 	{
 		if (raDrive->isMoving ())
@@ -335,7 +337,7 @@ int Hlohovec::isMoving ()
 		// set to speed mode when tracking and move was finished..
 		raDrive->setMode (TGA_MODE_DS);
 	}
-	if (raDrive->isMoving () || decDrive->isMoving ())
+	if (raDrive->isMovingPos () || decDrive->isMoving ())
 		return USEC_SEC / 100;
 	return -2;
 }
