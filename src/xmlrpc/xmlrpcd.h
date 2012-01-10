@@ -206,6 +206,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
 	protected:
+		virtual void postEvent (Rts2Event *event);
+
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 
 		virtual XmlRpcd *getMaster ()
@@ -236,6 +238,11 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 * Call scriptends before new script is started.
 		 */
 		rts2core::ValueBool *callScriptEnds;
+
+		/**
+		 * True/false if script is running.
+		 */
+		rts2core::ValueBool *scriptRunning;
 
 		std::string currentscript;
 

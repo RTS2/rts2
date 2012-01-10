@@ -80,6 +80,7 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 	createOrReplaceValue (lastFilename, conn, RTS2_VALUE_STRING, "_lastimage", "last image from camera", false, RTS2_VALUE_WRITABLE);
 	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false);
+	createOrReplaceValue (scriptRunning, conn, RTS2_VALUE_BOOL, "_scriptrunning", "if script is running on device", false);
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
@@ -121,10 +122,11 @@ bool XmlDevCameraClient::isScriptRunning ()
 {
 	int runningScripts = 0;
 
+
 	connection->postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
-			  
+
 	// if there are some images which need to be written
 	connection->postEvent (new Rts2Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
 	if (runningScripts > 0)
@@ -155,6 +157,9 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 	
 	if (killScripts)
 	{
+		if (scriptRunning->getValueBool ())
+			logStream (MESSAGE_INFO) << "killing currently running script" << sendLog;
+		postEvent (new Rts2Event (EVENT_KILL_ALL));
 		connection->queCommand (new rts2core::CommandKillAll (connection->getMaster ()));
 	}
 
@@ -174,6 +179,19 @@ void XmlDevCameraClient::setScriptExpand (const char *fe)
 {
 	screxpand = std::string (fe);
 	nexpand = std::string ("");
+}
+
+void XmlDevCameraClient::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_SCRIPT_STARTED:
+		case EVENT_SCRIPT_ENDED:
+			scriptRunning->setValueBool (isScriptRunning ());
+			getMaster ()->sendValueAll (scriptRunning);
+			break;
+	}
+	rts2script::DevClientCameraExec::postEvent (event);
 }
 
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)
