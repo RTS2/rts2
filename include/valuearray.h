@@ -266,7 +266,14 @@ class BoolArray: public IntegerArray
 
 		virtual const char *getDisplayValue ();
 
-		void setValueBool (int i, bool v) { value[i] = v; }
+		void setValueBool (int i, bool v)
+		{
+			if (value[i] != v)
+			{
+				value[i] = v;
+				changed ();
+			}
+		}
 
 		void addValue (bool val)
 		{
