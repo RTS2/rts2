@@ -30,7 +30,7 @@
 
 using namespace rts2teld;
 
-TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20)
+TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS19200, rts2core::C8, rts2core::NONE, 60)
 {
 	setLogAsHex (true);
 
@@ -42,7 +42,7 @@ TGDrive::TGDrive (const char *_devName, const char *prefix, rts2core::Device *_m
 	strcpy (p, "TPOS");
 	_master->createValue (dPos, pbuf, "target position", true, RTS2_VALUE_WRITABLE);
 	strcpy (p, "APOS");
-	_master->createValue (aPos, pbuf, "actual position", true, RTS2_VALUE_WRITABLE);
+	_master->createValue (aPos, pbuf, "actual position", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	strcpy (p, "POSERR");
 	_master->createValue (posErr, pbuf, "position error", true);
 	strcpy (p, "MAXPOSERR");

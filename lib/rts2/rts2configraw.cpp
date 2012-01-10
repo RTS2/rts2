@@ -167,8 +167,12 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 		{
 			if (!sect)
 			{
-				logStream (MESSAGE_ERROR) << "value without section on line " << ln << ": " << line <<  sendLog;
-				return -1;
+				if (!addDefaultSection)
+				{
+					logStream (MESSAGE_ERROR) << "value without section on line " << ln << ": " << line <<  sendLog;
+					return -1;
+				}
+				sect = new Rts2ConfigSection ("");
 			}
 			// now create value..
 			enum { NAME, SUFF, VAL, VAL_QUT, VAL_END }
@@ -290,10 +294,11 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 	return 0;
 }
 
-Rts2ConfigRaw::Rts2ConfigRaw ()
+Rts2ConfigRaw::Rts2ConfigRaw (bool defaultSection)
 {
 	verboseEntry = true;
 	configStream = NULL;
+	addDefaultSection = defaultSection;
 }
 
 Rts2ConfigRaw::~Rts2ConfigRaw (void)

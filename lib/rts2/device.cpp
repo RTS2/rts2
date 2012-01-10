@@ -586,6 +586,25 @@ int Device::commandAuthorized (Connection * conn)
 	return -5;
 }
 
+int Device::loadAutosave ()
+{
+	if (autosaveFile == NULL)
+		return 0;
+	
+	Rts2ConfigRaw *autosave = new Rts2ConfigRaw (true);
+	int ret = autosave->loadFile (autosaveFile);
+	if (ret)
+	{
+		logStream (MESSAGE_WARNING) << "cannot open autosave file " << autosaveFile << ", ignoring the error" << sendLog;
+		return 0;
+	}
+
+	ret = setSectionValues ((*autosave)[0], 0);
+
+	delete autosave;
+	return ret;
+}
+
 int Device::loadModefile ()
 {
 	if (!modefile)
@@ -625,6 +644,12 @@ int Device::setMode (int new_mode)
 		return -1;
 	}
 	Rts2ConfigSection *sect = (*modeconf)[new_mode];
+
+	return setSectionValues (sect, new_mode);
+}
+
+int Device::setSectionValues (Rts2ConfigSection *sect, int new_mode)
+{
 	// setup values
 	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
@@ -843,7 +868,10 @@ int Device::init ()
 
 int Device::initValues ()
 {
-	return loadModefile ();
+	int ret = loadModefile ();
+	if (ret)
+		return ret;
+	return loadAutosave ();
 }
 
 void Device::beforeRun ()

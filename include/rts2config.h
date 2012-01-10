@@ -50,7 +50,7 @@ class Rts2Config:public Rts2ConfigRaw
 		/**
 		 * Construct RTS2 class. 
 		 */
-		Rts2Config ();
+		Rts2Config (bool defaultSection = false);
 
 		/**
 		 * Deletes object checker.

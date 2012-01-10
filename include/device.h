@@ -427,6 +427,7 @@ class Device:public Daemon
 		bool doCheck;
 		bool doAuth;
 
+		int loadAutosave ();
 		int loadModefile ();
 
 		int device_port;
@@ -447,6 +448,8 @@ class Device:public Daemon
 		 * @return -1 on error, 0 if sucessful.
 		 */
 		int setMode (int new_mode);
+
+		int setSectionValues (Rts2ConfigSection *sect, int new_mode);
 
 		int blockState;
 		CommandDeviceStatusInfo *deviceStatusCommand;

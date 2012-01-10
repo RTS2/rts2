@@ -47,10 +47,6 @@
  */
 class Rts2ConfigValue
 {
-	private:
-		std::string valueName;
-		std::string valueSuffix;
-		std::string value;
 	public:
 		Rts2ConfigValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value)
 		{
@@ -98,6 +94,11 @@ class Rts2ConfigValue
 		double getValueDouble () { return atof (value.c_str ()); }
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
+
+	private:
+		std::string valueName;
+		std::string valueSuffix;
+		std::string value;
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
@@ -110,10 +111,6 @@ std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
  */
 class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 {
-	private:
-		std::string sectName;
-		std::vector <std::string> missingValues;
-		std::vector <std::string> *blockedBy;
 	public:
 		Rts2ConfigSection (const char *name);
 		~Rts2ConfigSection (void);
@@ -156,6 +153,11 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 		 * @callergraph
 		 */
 		const bool containedInBlockedBy (const char *querying_device);
+
+	private:
+		std::string sectName;
+		std::vector <std::string> missingValues;
+		std::vector <std::string> *blockedBy;
 };
 
 /**
@@ -172,7 +174,11 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 {
 	public:
-		Rts2ConfigRaw ();
+		/**
+		 *
+		 * @param defaultSection  if values without section will be added to default section (e.g. with empty name).
+		 */
+		Rts2ConfigRaw (bool defaultSection = false);
 		virtual ~ Rts2ConfigRaw (void);
 		int loadFile (const char *filename = NULL, bool parseFullLine = false);
 
@@ -297,6 +303,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 
 	private:
 		bool verboseEntry;
+		bool addDefaultSection;
 
 		void setVerboseEntry () { verboseEntry = true; }
 

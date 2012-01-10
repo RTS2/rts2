@@ -77,7 +77,7 @@ int Rts2Config::getSpecialValues ()
 	return Rts2ConfigRaw::getSpecialValues ();
 }
 
-Rts2Config::Rts2Config ():Rts2ConfigRaw ()
+Rts2Config::Rts2Config (bool defaultSection):Rts2ConfigRaw (defaultSection)
 {
 	observer.lat = 0;
 	observer.lng = 0;
