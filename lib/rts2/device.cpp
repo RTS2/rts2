@@ -519,6 +519,7 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
 	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
+	addOption (OPT_AUTOSAVE, "autosave", 1, "autosave file");
 	addOption ('d', NULL, 1, "name of device");
 }
 
@@ -576,6 +577,10 @@ int Device::commandAuthorized (Connection * conn)
 		queDeviceStatusCommand (conn);
 		// OK will be returned when command return from centrald
 		return -1;
+	}
+	else if (conn->isCommand ("autosave"))
+	{
+		return autosaveValues ();
 	}
 	// we need to try that - due to other device commands
 	return -5;
@@ -694,6 +699,9 @@ int Device::processOption (int in_opt)
 			break;
 		case OPT_MODEFILE:
 			modefile = optarg;
+			break;
+		case OPT_AUTOSAVE:
+			autosaveFile = optarg;
 			break;
 		case OPT_NOTCHECKNULL:
 			doCheck = false;

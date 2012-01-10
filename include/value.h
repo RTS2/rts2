@@ -213,6 +213,11 @@
 #define RTS2_WR_GROUP_NUMBER(x)       (((0x20 + x) << 16) & 0x006f0000)
 
 /**
+ * If set, value will be auto-recorded to disk.
+ */
+#define RTS2_VALUE_AUTOSAVE           0x00800000
+
+/**
  * If set. value is read-write. When not set, value is read only.
  */
 #define RTS2_VALUE_WRITABLE           0x02000000
@@ -370,6 +375,8 @@ class Value
 		const int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
 
 		const int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
+
+		bool isAutosave () { return rts2Type & RTS2_VALUE_AUTOSAVE; }
 
 		bool isWritable () { return rts2Type & RTS2_VALUE_WRITABLE; }
 

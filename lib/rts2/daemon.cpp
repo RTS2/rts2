@@ -78,6 +78,8 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	doHupIdleLoop = false;
 
+	autosaveFile = NULL;
+
 	state = _init_state;
 
 	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time of last update", false);
@@ -1100,6 +1102,26 @@ void Daemon::signaledHUP ()
 void Daemon::sigHUP (int sig)
 {
 	doHupIdleLoop = true;
+}
+
+int Daemon::autosaveValues ()
+{
+	if (autosaveFile == NULL)
+		return -2;
+
+	std::ofstream of (autosaveFile, std::ios_base::out | std::ios_base::trunc);
+
+	for (CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	{
+		if ((*iter)->getValue ()->isAutosave ())
+		{
+			of << (*iter)->getValue ()->getName () << " = " << (*iter)->getValue ()->getDisplayValue () << std::endl;
+		}
+	}
+
+	of.close ();
+
+	return 0;
 }
 
 void Daemon::switchUser (const char *usrgrp)

@@ -35,7 +35,8 @@ class Dummy:public Sensor
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
-			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0);
+			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_AUTOSAVE, 0);
+			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
 			createValue (stopMoveErr, "stop_move_err", "error state of stop_move", false, RTS2_VALUE_WRITABLE);
@@ -162,6 +163,7 @@ class Dummy:public Sensor
 
 	private:
 		rts2core::ValueInteger *testInt;
+		rts2core::ValueDouble *testDouble;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *stopMove;
 		rts2core::ValueSelection *stopMoveErr;

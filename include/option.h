@@ -52,6 +52,8 @@
 #define OPT_RUNAS           1011
 #define OPT_NOAUTH          1012
 
+#define OPT_AUTOSAVE        1013
+
 /**
  * Start of local option number playground.
  */

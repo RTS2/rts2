@@ -534,6 +534,16 @@ class Daemon:public rts2core::Block
 		 */
 		virtual bool canCallInfoFromTimer () { return true; }
 
+		/**
+		 * Autosave values marked for autosaving.
+		 */
+		int autosaveValues ();
+
+		/**
+		 * File where to store autosaved values.
+		 */
+		const char *autosaveFile;
+
 	private:
 		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
 		enum { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;
