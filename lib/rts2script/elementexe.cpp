@@ -150,13 +150,20 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (paramNextString (&imagename) || paramNextString (&expandPath))
 			return;
-		std::list <Image *>::iterator iter = findImage (imagename);
-		if (iter != images.end ())
+		try
 		{
-			(*iter)->renameImageExpand (expandPath);
-			writeToProcess ((*iter)->getAbsoluteFileName ());
-			delete *iter;
-			images.erase (iter);
+			std::list <Image *>::iterator iter = findImage (imagename);
+			if (iter != images.end ())
+			{
+				(*iter)->renameImageExpand (expandPath);
+				writeToProcess ((*iter)->getAbsoluteFileName ());
+				delete *iter;
+				images.erase (iter);
+			}
+		}
+		catch (rts2core::Error &er)
+		{
+			writeToProcess ((std::string ("E failed ") + er.what ()).c_str ());
 		}
 	}
 	else if (!strcmp (cmd, "move"))
