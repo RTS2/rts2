@@ -92,11 +92,6 @@ int TGDrive::init ()
 	write2b (TGA_MASTER_CMD, 5);
 	write4b (TGA_MODE, TGA_MODE_PA);
 
-//	write4b (TGA_ACCEL, 4947850);
-//	write4b (TGA_DECEL, 4947850);
-//	write4b (TGA_VMAX, 458993459);
-
-//	write2b (TGA_DESCUR, 500);
 	write2b (TGA_MASTER_CMD, 4);
 	firmware->setValueInteger (read2b (TGA_FIRMWARE));
 	return 0;
@@ -195,8 +190,11 @@ void TGDrive::setTargetPos (int32_t pos)
 
 void TGDrive::setCurrentPos (int32_t pos)
 {
+	write2b (TGA_MASTER_CMD, 1);
+
 	write4b (TGA_CURRPOS, pos);
 	usleep (USEC_SEC / 10);
+
 	reset ();
 }
 
