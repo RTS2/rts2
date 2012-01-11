@@ -658,7 +658,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (raMovingEnd, "ra_moving_end", "time of end of last RA movement", false);
 	createValue (decMovingEnd, "dec_moving_end", "time of end of last DEC movement", false);
 
-	createValue (wormRa, "ra_worm", "RA worm drive", false, RTS2_VALUE_WRITABLE);
+	createValue (wormRa, "TRACKING", "RA worm drive", false, RTS2_VALUE_WRITABLE);
 	wormRa->setValueBool (false);
 
 	createValue (raWormStart, "ra_worm_start", "RA worm start time", false);
