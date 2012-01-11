@@ -80,6 +80,7 @@ class Hlohovec:public GEM
 		virtual int stopMove ();
 		virtual int setTo (double set_ra, double set_dec);
 		virtual int startPark ();
+		virtual int isParking () { return isMoving (); }
 		virtual int endPark ();
 
 		virtual void setDiffTrack (double dra, double ddec);
@@ -317,6 +318,8 @@ int Hlohovec::resetMount ()
 int Hlohovec::startResync ()
 {
 	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
+	if (getState () & TEL_MOVING)
+		tracking->setValueBool (true);
 	int32_t dc;
 	int ret = sky2counts (tAc, dc);
 	if (ret)
@@ -329,6 +332,8 @@ int Hlohovec::startResync ()
 int Hlohovec::isMoving ()
 {
 	callAutosave ();
+	if (getState () & TEL_MOVING)
+		tracking->setValueBool (true);
 	if (tracking->getValueBool () && raDrive->isMovingPos ())
 	{
 		if (raDrive->isMoving ())
@@ -392,6 +397,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 
 int Hlohovec::startPark ()
 {
+	tracking->setValueBool (false);
 	if (parkPos)
 	{
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
@@ -409,11 +415,17 @@ int Hlohovec::endPark ()
 
 void Hlohovec::setDiffTrack (double dra, double ddec)
 {
-	if (tracking->getValueBool ())
-		raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
-	else
-		raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);
-	decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
+	if (!raDrive->isMovingPos ())
+	{
+		if (tracking->getValueBool ())
+			raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
+		else
+			raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);
+	}
+	if (!decDrive->isMovingPos ())
+	{
+		decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
+	}
 }
 
 int Hlohovec::updateLimits ()
