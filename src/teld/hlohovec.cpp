@@ -368,7 +368,7 @@ int Hlohovec::isMoving ()
 int Hlohovec::endMove ()
 {
 	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
-	return 0;
+	return Telescope::endMove ();
 }
 
 int Hlohovec::stopMove ()
