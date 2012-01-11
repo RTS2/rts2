@@ -353,8 +353,7 @@ int Hlohovec::isMoving ()
 				return 0;
 			}
 		}
-		// set to speed mode when tracking and move was finished..
-		raDrive->setMode (TGA_MODE_DS);
+		raDrive->setTargetSpeed (TRACK_SPEED);
 	}
 	if ((tracking->getValueBool () && raDrive->isMovingPos ()) || (!tracking->getValueBool () && raDrive->isMoving ()) || decDrive->isMoving ())
 		return 0;
@@ -415,14 +414,16 @@ int Hlohovec::endPark ()
 
 void Hlohovec::setDiffTrack (double dra, double ddec)
 {
-	if (!raDrive->isMovingPos ())
+	if (info ())
+		throw rts2core::Error ("cannot call info in setDiffTrack");
+	if (!raDrive->isMovingPos () || !raDrive->isMoving ())
 	{
 		if (tracking->getValueBool ())
 			raDrive->setTargetSpeed (TRACK_SPEED + dra * SPEED_ARCDEGSEC);
 		else
 			raDrive->setTargetSpeed (dra * SPEED_ARCDEGSEC);
 	}
-	if (!decDrive->isMovingPos ())
+	if (!decDrive->isMovingPos () || !decDrive->isMoving ())
 	{
 		decDrive->setTargetSpeed (ddec * SPEED_ARCDEGSEC);
 	}
