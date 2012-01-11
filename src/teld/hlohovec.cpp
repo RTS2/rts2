@@ -33,6 +33,8 @@
 #define RTS2_HLOHOVEC_TSTOPRG    RTS2_LOCAL_EVENT + 1212
 #define RTS2_HLOHOVEC_TSTOPDG    RTS2_LOCAL_EVENT + 1213
 
+#define RTS2_HLOHOVEC_AUTOSAVE   RTS2_LOCAL_EVENT + 1214
+
 // steps per full RA and DEC revolutions (360 degrees)
 #define RA_TICKS                 (-14350 * 65535)
 #define DEC_TICKS                (-10400 * 65535)
@@ -100,6 +102,8 @@ class Hlohovec:public GEM
 
 		void matchGuideRa (int rag);
 		void matchGuideDec (int decg);
+
+		void callAutosave ();
 };
 
 }
@@ -162,6 +166,14 @@ void Hlohovec::postEvent (Rts2Event *event)
 			if (decDrive->checkStop ())
 			{
 				addTimer (0.1, event);
+				return;
+			}
+			break;
+		case RTS2_HLOHOVEC_AUTOSAVE:
+			callAutosave ();
+			if ((getState () & TEL_MASK_MOVING) == TEL_OBSERVING)
+			{
+				addTimer (5, event);
 				return;
 			}
 			break;
@@ -265,6 +277,8 @@ int Hlohovec::init ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 
+	addTimer (1, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
+
 	return 0;
 }
 
@@ -302,6 +316,7 @@ int Hlohovec::resetMount ()
 
 int Hlohovec::startResync ()
 {
+	deleteTimers (RTS2_HLOHOVEC_AUTOSAVE);
 	int32_t dc;
 	int ret = sky2counts (tAc, dc);
 	if (ret)
@@ -313,8 +328,7 @@ int Hlohovec::startResync ()
 
 int Hlohovec::isMoving ()
 {
-	if (info ())
-		return -1;
+	callAutosave ();
 	if (tracking->getValueBool () && raDrive->isMovingPos ())
 	{
 		if (raDrive->isMoving ())
@@ -331,24 +345,26 @@ int Hlohovec::isMoving ()
 			{
 				raDrive->setTargetPos (ac);
 				tAc = ac;
-				return USEC_SEC / 100;
+				return 0;
 			}
 		}
 		// set to speed mode when tracking and move was finished..
 		raDrive->setMode (TGA_MODE_DS);
 	}
-	if (raDrive->isMovingPos () || decDrive->isMoving ())
-		return USEC_SEC / 100;
+	if ((tracking->getValueBool () && raDrive->isMovingPos ()) || (!tracking->getValueBool () && raDrive->isMoving ()) || decDrive->isMoving ())
+		return 0;
 	return -2;
 }
 
 int Hlohovec::endMove ()
 {
+	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
 	return 0;
 }
 
 int Hlohovec::stopMove ()
 {
+	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
 	raDrive->stop ();
 	decDrive->stop ();
 	return 0;
@@ -368,6 +384,7 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 		return -1;
 	raDrive->setCurrentPos (ac);
 	decDrive->setCurrentPos (dc);
+	callAutosave ();
 	if (tracking->getValueBool ())
 		raDrive->setTargetSpeed (TRACK_SPEED);
 	return 0;
@@ -386,6 +403,7 @@ int Hlohovec::startPark ()
 
 int Hlohovec::endPark ()
 {
+	callAutosave ();
 	return 0;
 }
 
@@ -441,6 +459,13 @@ void Hlohovec::matchGuideDec (int deg)
 		decDrive->setTargetPos (decDrive->getPosition () + ((deg == 1 ? -1 : 1) * DEGSTEP));
 		addTimer (1, new Rts2Event (RTS2_HLOHOVEC_TIMERDG));
 	}
+}
+
+void Hlohovec::callAutosave ()
+{
+	if (info ())
+		return;
+	autosaveValues ();
 }
 
 int Hlohovec::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
