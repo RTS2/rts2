@@ -97,6 +97,7 @@ class Telescope:public rts2core::Device
 		virtual int scriptEnds ();
 
 		int setTo (rts2core::Connection * conn, double set_ra, double set_dec);
+		int setToPark (rts2core::Connection * conn);
 
 		int startPark (rts2core::Connection * conn);
 
@@ -623,6 +624,13 @@ class Telescope:public rts2core::Device
 		 * @return -1 on error, otherwise 0
 		 */
 		virtual int setTo (double set_ra, double set_dec) { return -1; }
+
+		/**
+		 * Set telescope to park position.
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
+		virtual int setToPark () { return -1; }
 
 		/**
 		 * Called when park command is issued. Moves telescope to park position. Target

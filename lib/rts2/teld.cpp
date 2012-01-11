@@ -1132,6 +1132,16 @@ int Telescope::setTo (rts2core::Connection * conn, double set_ra, double set_dec
 	return ret;
 }
 
+int Telescope::setToPark (rts2core::Connection * conn)
+{
+	int ret;
+	ret = setToPark ();
+	if (ret)
+		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set to park");
+	sendValueAll (telRaDec);
+	return ret;
+}
+
 int Telescope::startPark (rts2core::Connection * conn)
 {
 	if (blockMove->getValueBool () == true)
@@ -1299,6 +1309,12 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		return setTo (conn, obj_ra, obj_dec);
+	}
+	else if (conn->isCommand ("settopark"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return setToPark (conn);
 	}
 	else if (conn->isCommand ("synccorr"))
 	{

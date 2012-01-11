@@ -79,6 +79,7 @@ class Hlohovec:public GEM
 		virtual int endMove ();
 		virtual int stopMove ();
 		virtual int setTo (double set_ra, double set_dec);
+		virtual int setToPark ();
 		virtual int startPark ();
 		virtual int isParking () { return isMoving (); }
 		virtual int endPark ();
@@ -105,6 +106,8 @@ class Hlohovec:public GEM
 		void matchGuideDec (int decg);
 
 		void callAutosave ();
+
+		bool parking;
 };
 
 }
@@ -128,6 +131,8 @@ Hlohovec::Hlohovec (int argc, char **argv):GEM (argc, argv, true, true)
 	acMargin = haCpd;
 	
 	haZero = decZero = 0;
+
+	parking = false;
 
 	createRaGuide ();
 	createDecGuide ();
@@ -369,6 +374,7 @@ int Hlohovec::endMove ()
 int Hlohovec::stopMove ()
 {
 	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
+	parking = false;
 	raDrive->stop ();
 	decDrive->stop ();
 	return 0;
@@ -394,13 +400,34 @@ int Hlohovec::setTo (double set_ra, double set_dec)
 	return 0;
 }
 
+int Hlohovec::setToPark ()
+{
+	if (parkPos == NULL)
+		return -1;
+
+	struct ln_equ_posn epark;
+	struct ln_hrz_posn park;
+	struct ln_lnlat_posn observer;
+
+	parkPos->getAltAz (&park);
+
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
+
+	ln_get_equ_from_hrz (&park, &observer, ln_get_julian_from_sys (), &epark);
+
+	return setTo (epark.ra, epark.dec);
+}
+
 int Hlohovec::startPark ()
 {
 	tracking->setValueBool (false);
 	if (parkPos)
 	{
+		parking = true;
 		setTargetAltAz (parkPos->getAlt (), parkPos->getAz ());
-		return moveAltAz ();
+		int ret = moveAltAz ();
+		return ret;
 	}
 	else
 		return -1;
@@ -409,11 +436,14 @@ int Hlohovec::startPark ()
 int Hlohovec::endPark ()
 {
 	callAutosave ();
+	parking = false;
 	return 0;
 }
 
 void Hlohovec::setDiffTrack (double dra, double ddec)
 {
+	if (parking)
+		return;
 	if (info ())
 		throw rts2core::Error ("cannot call info in setDiffTrack");
 	if (!raDrive->isMovingPos () || !raDrive->isMoving ())
