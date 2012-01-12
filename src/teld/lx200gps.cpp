@@ -44,7 +44,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <termios.h>
 // uncomment following line, if you want all tel_desc read logging (will
@@ -152,8 +152,7 @@ using namespace rts2teld;
  *
  * @return -1 on failure, otherwise number of read data
  */
-int
-LX200::tel_read (char *buf, int count)
+int LX200::tel_read (char *buf, int count)
 {
 	int readed;
 
@@ -178,7 +177,6 @@ LX200::tel_read (char *buf, int count)
 	return readed;
 }
 
-
 /*!
  * Will read from tel_desc till it encoutered # character.
  *
@@ -186,8 +184,7 @@ LX200::tel_read (char *buf, int count)
  *
  * @see tel_read() for description
  */
-int
-LX200::tel_read_hash (char *buf, int count)
+int LX200::tel_read_hash (char *buf, int count)
 {
 	int readed;
 	buf[0] = 0;
@@ -206,7 +203,6 @@ LX200::tel_read_hash (char *buf, int count)
 	return readed;
 }
 
-
 /*!
  * Will write on telescope tel_desc string.
  *
@@ -217,15 +213,12 @@ LX200::tel_read_hash (char *buf, int count)
  *
  * @return -1 on failure, count otherwise
  */
-
-int
-LX200::tel_write (const char *buf, int count)
+int LX200::tel_write (const char *buf, int count)
 {
 	logStream (MESSAGE_DEBUG) << "LX200 tel_write :will write: " << buf <<
 		sendLog;
 	return write (tel_desc, buf, count);
 }
-
 
 /*!
  * Combine write && read together.
@@ -241,9 +234,7 @@ LX200::tel_write (const char *buf, int count)
  *
  * @return -1 and set errno on failure, rcount otherwise
  */
-
-int
-LX200::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
+int LX200::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 	char *buf;
@@ -272,14 +263,12 @@ LX200::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
 	return tmp_rcount;
 }
 
-
 /*!
  * Combine write && read_hash together.
  *
  * @see tel_write_read for definition
  */
-int
-LX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
+int LX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 
@@ -293,7 +282,6 @@ LX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount
 	return tmp_rcount;
 }
 
-
 /*!
  * Reads some value from LX200 in hms format.
  *
@@ -303,8 +291,7 @@ LX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-LX200::tel_read_hms (double *hmsptr, const char *command)
+int LX200::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -315,14 +302,12 @@ LX200::tel_read_hms (double *hmsptr, const char *command)
 	return 0;
 }
 
-
 /*!
  * Reads LX200 right ascenation.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-LX200::tel_read_ra ()
+int LX200::tel_read_ra ()
 {
 	double new_ra;
 	if (tel_read_hms (&new_ra, "#:GR#"))
@@ -332,14 +317,12 @@ LX200::tel_read_ra ()
 	return 0;
 }
 
-
 /*!
  * Reads LX200 declination.
  *
  * @return -1 and set errno on error, otherwise 0
  */
-int
-LX200::tel_read_dec ()
+int LX200::tel_read_dec ()
 {
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
@@ -348,7 +331,6 @@ LX200::tel_read_dec ()
 	setTelDec (t_telDec);
 	return 0;
 }
-
 
 /*!
  * Reads LX200 latitude.
@@ -359,12 +341,10 @@ LX200::tel_read_dec ()
  *
  * Hardcode latitude and return 0
  */
-int
-LX200::tel_read_latitude ()
+int LX200::tel_read_latitude ()
 {
 	return 0;
 }
-
 
 /*!
  * Reads LX200 longtitude.
@@ -375,12 +355,10 @@ LX200::tel_read_latitude ()
  *
  * Hardcode longtitude and return 0
  */
-int
-LX200::tel_read_longtitude ()
+int LX200::tel_read_longtitude ()
 {
 	return 0;
 }
-
 
 /*!
  * Repeat LX200 write.
@@ -390,8 +368,7 @@ LX200::tel_read_longtitude ()
  *
  * @param command	command to write on tel_desc
  */
-int
-LX200::tel_rep_write (char *command)
+int LX200::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -414,7 +391,6 @@ LX200::tel_rep_write (char *command)
 	return 0;
 }
 
-
 /*!
  * Normalize ra and dec,
  *
@@ -423,8 +399,7 @@ LX200::tel_rep_write (char *command)
  *
  * @return 0
  */
-void
-LX200::tel_normalize (double *ra, double *dec)
+void LX200::tel_normalize (double *ra, double *dec)
 {
 	if (*ra < 0)
 								 //normalize ra
@@ -439,7 +414,6 @@ LX200::tel_normalize (double *ra, double *dec)
 		*dec = *dec - floor (*dec / 90) * 90;
 }
 
-
 /*!
  * Set LX200 right ascenation.
  *
@@ -447,8 +421,7 @@ LX200::tel_normalize (double *ra, double *dec)
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-LX200::tel_write_ra (double ra)
+int LX200::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -463,7 +436,6 @@ LX200::tel_write_ra (double ra)
 	return tel_rep_write (command);
 }
 
-
 /*!
  * Set LX200 declination.
  *
@@ -471,8 +443,7 @@ LX200::tel_write_ra (double ra)
  *
  * @return -1 and errno on error, otherwise 0
  */
-int
-LX200::tel_write_dec (double dec)
+int LX200::tel_write_dec (double dec)
 {
 	char command[15];
 	int h, m, s;
@@ -486,9 +457,7 @@ LX200::tel_write_dec (double dec)
 	return tel_rep_write (command);
 }
 
-
-LX200::LX200 (int in_argc, char **in_argv):Telescope (in_argc,
-in_argv)
+LX200::LX200 (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
 	device_file = "/dev/ttyS0";
 
@@ -500,15 +469,12 @@ in_argv)
 	move_state = NOTMOVE;
 }
 
-
 LX200::~LX200 (void)
 {
 	close (tel_desc);
 }
 
-
-int
-LX200::processOption (int in_opt)
+int LX200::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -521,7 +487,6 @@ LX200::processOption (int in_opt)
 	return 0;
 }
 
-
 /*!
  * Init telescope, connect on given tel_desc.
  *
@@ -530,8 +495,7 @@ LX200::processOption (int in_opt)
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int
-LX200::init ()
+int LX200::init ()
 {
 	struct termios tel_termios;
 	char rbuf[10];
@@ -595,17 +559,15 @@ LX200::init ()
 	return 0;
 }
 
-
 /*!
  * Reads information about telescope.
  *
  */
-int
-LX200::initValues ()
+int LX200::initValues ()
 {
 	int ret = -1 ;
 
-        Rts2Config *config = Rts2Config::instance ();
+        rts2core::Configuration *config = rts2core::Configuration::instance ();
         ret = config->loadFile ();
         if (ret)
 	  return -1;
@@ -625,16 +587,13 @@ LX200::initValues ()
 	return Telescope::initValues ();
 }
 
-
-int
-LX200::info ()
+int LX200::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
 	return Telescope::info ();
 }
-
 
 /*!
  * Set slew rate. For completness?
@@ -650,17 +609,14 @@ LX200::info ()
  *
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
-int
-LX200::tel_set_rate (char new_rate)
+int LX200::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
 	return tel_write (command, 5);
 }
 
-
-int
-LX200::telescope_start_move (char direction)
+int LX200::telescope_start_move (char direction)
 {
 	char command[6];
 	tel_set_rate (RATE_FIND);
@@ -668,15 +624,12 @@ LX200::telescope_start_move (char direction)
 	return tel_write (command, 5) == 1 ? -1 : 0;
 }
 
-
-int
-LX200::telescope_stop_move (char direction)
+int LX200::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
 	return tel_write (command, 5) < 0 ? -1 : 0;
 }
-
 
 /*!
  * Slew (=set) LX200 to new coordinates.
@@ -686,8 +639,7 @@ LX200::telescope_stop_move (char direction)
  *
  * @return -1 on error, otherwise 0
  */
-int
-LX200::tel_slew_to (double ra, double dec)
+int LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
@@ -768,9 +720,7 @@ LX200::set_move_timeout (time_t plus_time)
 	move_timeout = now + plus_time;
 }
 
-
-int
-LX200::startResync ()
+int LX200::startResync ()
 {
 	int ret;
 
@@ -789,9 +739,7 @@ LX200::startResync ()
 	return 0;
 }
 
-
-int
-LX200::isMoving ()
+int LX200::isMoving ()
 {
 	int ret;
 
@@ -836,9 +784,7 @@ LX200::isMoving ()
 	return -1;
 }
 
-
-int
-LX200::stopMove ()
+int LX200::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
@@ -849,7 +795,6 @@ LX200::stopMove ()
 	}
 	return 0;
 }
-
 
 /*!
  * Set telescope to match given coordinates
@@ -863,9 +808,7 @@ LX200::stopMove ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-
-int
-LX200::setTo (double ra, double dec)
+int LX200::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
@@ -883,7 +826,6 @@ LX200::setTo (double ra, double dec)
 	return ret == 1;
 }
 
-
 /*!
  * Correct telescope coordinates.
  *
@@ -895,44 +837,34 @@ LX200::setTo (double ra, double dec)
  *
  * @return -1 and set errno on error, 0 otherwise.
  */
-int
-LX200::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
+int LX200::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 {
 	if (setTo (real_ra, real_dec))
 		return -1;
 	return 0;
 }
 
-
 /*!
  * Park telescope to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-LX200::startPark ()
+int LX200::startPark ()
 {
 	return tel_slew_to (0, 0);
 }
 
-
-int
-LX200::isParking ()
+int LX200::isParking ()
 {
 	return -2;
 }
 
-
-int
-LX200::endPark ()
+int LX200::endPark ()
 {
 	return 0;
 }
 
-
-int
-LX200::startDir (char *dir)
+int LX200::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -946,9 +878,7 @@ LX200::startDir (char *dir)
 	return -2;
 }
 
-
-int
-LX200::stopDir (char *dir)
+int LX200::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -961,9 +891,7 @@ LX200::stopDir (char *dir)
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	LX200 device = LX200 (argc, argv);
 	return device.run ();

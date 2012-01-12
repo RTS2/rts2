@@ -20,7 +20,7 @@
 #include "augerset.h"
 #include "sqlerror.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2db;
 
@@ -277,7 +277,7 @@ void AugerSet::load (double _from, double _to)
 		if (sqlca.sqlcode)
 			break;
 
-		TargetAuger tarAuger (d_auger_t3id, d_auger_date, d_auger_ra, d_auger_dec, Rts2Config::instance ()->getObserver ());
+		TargetAuger tarAuger (d_auger_t3id, d_auger_date, d_auger_ra, d_auger_dec, rts2core::Configuration::instance ()->getObserver ());
 
 		tarAuger.cut = db_cut;
 		tarAuger.Eye = db_Eye;

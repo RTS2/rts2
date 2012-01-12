@@ -18,7 +18,7 @@
  */
 
 #include "genfoc.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2fits/memimage.h"
 
 #include <iostream>
@@ -380,14 +380,14 @@ rts2core::DevClient *Rts2GenFocClient::createOtherType (rts2core::Connection * c
 
 int Rts2GenFocClient::init ()
 {
-	Rts2Config *config;
+	rts2core::Configuration *config;
 	int ret;
 
 	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 	ret = config->loadFile (configFile);
 	if (ret)
 	{

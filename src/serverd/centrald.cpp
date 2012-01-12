@@ -458,7 +458,7 @@ void Rts2Centrald::openLog ()
 int Rts2Centrald::reloadConfig ()
 {
 	int ret;
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 	ret = config->loadFile (configFile);
 	if (ret)
 		return ret;
@@ -527,8 +527,8 @@ int Rts2Centrald::init ()
 		return ret;
 
 	// only set morning_off and morning_standby values at firts config load
-	morning_off->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_off", true));
-	morning_standby->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_standby", true));
+	morning_off->setValueBool (Configuration::instance ()->getBoolean ("centrald", "morning_off", true));
+	morning_standby->setValueBool (Configuration::instance ()->getBoolean ("centrald", "morning_standby", true));
 
 	centraldConnRunning (NULL);
 
@@ -563,7 +563,7 @@ int Rts2Centrald::initValues ()
 		dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 		morningTime->getValueInteger ());
 
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 
 	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
@@ -927,7 +927,7 @@ int Rts2Centrald::statusInfo (rts2core::Connection * conn)
 		{
 			if (conn->getType () == DEVICE_SERVER)
 			{
-				if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
+				if (Configuration::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 					continue;
 			}
 			rts2core::CommandStatusInfo *cs = new rts2core::CommandStatusInfo (this, c_conn);
@@ -960,7 +960,7 @@ int Rts2Centrald::getStateForConnection (rts2core::Connection * conn)
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		rts2core::Connection *test_conn = *iter;
-		if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
+		if (Configuration::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 			continue;
 		sta |= test_conn->getBopState ();
 	}

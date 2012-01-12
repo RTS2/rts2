@@ -27,7 +27,7 @@
 #include <fstream>
 
 #include "nmonitor.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #ifdef HAVE_XCURSES
 char *XCursesProgramName = "rts2-mon";
@@ -418,7 +418,7 @@ int NMonitor::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config::instance ()->loadFile ();
+	rts2core::Configuration::instance ()->loadFile ();
 
 	// init ncurses
 	cursesWin = initscr ();

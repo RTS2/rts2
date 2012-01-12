@@ -18,7 +18,7 @@
  */
 
 #include "teld.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "tcsutils.h"
 
 #define OPT_TCSHOST     OPT_LOCAL + 520
@@ -166,8 +166,8 @@ int MDM::processOption (int opt)
 
 int MDM::initValues ()
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	Configuration *config;
+	config = Configuration::instance ();
 	config->loadFile ();
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);

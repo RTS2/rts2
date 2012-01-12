@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -32,6 +32,8 @@
 #include <libnova/utility.h>
 #include "objectcheck.h"
 #include "libnova_cpp.h"
+
+using namespace rts2core;
 
 ObjectCheck::ObjectCheck (const char *horizon_file)
 {
@@ -62,7 +64,7 @@ int ObjectCheck::load_horizon (const char *horizon_file)
 
 	inf.open (horizon_file);
 
-	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+	struct ln_lnlat_posn *observer = Configuration::instance ()->getObserver ();
 
 	if (inf.fail ())
 	{

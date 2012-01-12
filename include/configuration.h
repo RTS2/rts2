@@ -19,18 +19,21 @@
 
 /**
  * @file
- * Holds RTS2 extension of Rts2ConfigRaw class. This class is used to acess
+ * Holds RTS2 extension of IniParser class. This class is used to acess
  * RTS2-specific values from the configuration file.
  */
 
 #ifndef __RTS2_CONFIG__
 #define __RTS2_CONFIG__
 
-#include "rts2configraw.h"
+#include "iniparser.h"
 #include "objectcheck.h"
 
 #include <libnova/libnova.h>
 #include <algorithm>
+
+namespace rts2core
+{
 
 /**
  * Represent full Config class, which includes support for Libnova types and
@@ -44,27 +47,27 @@
  *
  * @ingroup RTS2Block
  */
-class Rts2Config:public Rts2ConfigRaw
+class Configuration:public IniParser
 {
 	public:
 		/**
 		 * Construct RTS2 class. 
 		 */
-		Rts2Config (bool defaultSection = false);
+		Configuration (bool defaultSection = false);
 
 		/**
 		 * Deletes object checker.
 		 */
-		virtual ~ Rts2Config (void);
+		virtual ~ Configuration (void);
 
 		/**
-		 * Returns Rts2Config instance loaded by default application block.
+		 * Returns Configuration instance loaded by default application block.
 		 *
 		 * @callergraph
 		 *
-		 * @return Rts2Config instance.
+		 * @return Configuration instance.
 		 */
-		static Rts2Config *instance ();
+		static Configuration *instance ();
 
 		/**
 		 * Returns airmass callibration distance, which is used for callibartion observations.
@@ -92,7 +95,7 @@ class Rts2Config:public Rts2ConfigRaw
 		/**
 		 * Return observing processing timeout.
 		 *
-		 * @see Rts2Config::getAstrometryTimeout()
+		 * @see Configuration::getAstrometryTimeout()
 		 *
 		 * @return number of seconds for timeout.
 		 */
@@ -104,7 +107,7 @@ class Rts2Config:public Rts2ConfigRaw
 		/**
 		 * Returns number of seconds for dark processing timeout.
 		 *
-		 * @see Rts2Config::getAstrometryTimeout()
+		 * @see Configuration::getAstrometryTimeout()
 		 */
 		int getDarkProcessTimeout ()
 		{
@@ -114,7 +117,7 @@ class Rts2Config:public Rts2ConfigRaw
 		/**
 		 * Returns number of seconds for flat processing timeout.
 		 *
-		 * @see Rts2Config::getAstrometryTimeout
+		 * @see Configuration::getAstrometryTimeout
 		 */
 		int getFlatProcessTimeout ()
 		{
@@ -394,7 +397,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 */
 		time_t getNight (time_t _in)
 		{
-			return _in + time_t (Rts2Config::instance ()->getObservatoryLongitude () * (86400.0 / 360.0) - 86400 / 2);
+			return _in + time_t (Configuration::instance ()->getObservatoryLongitude () * (86400.0 / 360.0) - 86400 / 2);
 		}
 
 		/**
@@ -419,7 +422,7 @@ class Rts2Config:public Rts2ConfigRaw
 		virtual int getSpecialValues ();
 
 	private:
-		static Rts2Config *pInstance;
+		static Configuration *pInstance;
 		struct ln_lnlat_posn observer;
 		double observatoryAltitude;
 		ObjectCheck *checker;
@@ -454,4 +457,6 @@ class Rts2Config:public Rts2ConfigRaw
 		std::string nightDir;
 		std::string masterConsFile;
 };
+
+}
 #endif							 /* !__RTS2_CONFIG__ */

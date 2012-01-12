@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/statvfs.h>
 #include <iostream>
-#include "rts2config.h"
+#include "configuration.h"
 
 #define OPT_STORAGE         OPT_LOCAL + 601
 
@@ -204,7 +204,7 @@ void System::loadPaths ()
 
 void System::scheduleStore ()
 {
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	time_t t = config->getNight () - time (NULL);
 	if (t < 20)
 		t += 86400;

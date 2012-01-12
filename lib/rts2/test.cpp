@@ -25,8 +25,10 @@
 #include "utilsfunc.h"
 
 #include "app.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "expander.h"
+
+using namespace rts2core;
 
 /**
  * Test application.
@@ -54,7 +56,7 @@ int Rts2TestApp::run ()
 	assert (mkpath ("test/test1/test2/test3/", 0777) == -1);
 	assert (mkpath ("aa/bb/cc/dd", 0777) == 0);
 
-	Rts2Config *conf = Rts2Config::instance ();
+	Configuration *conf = Configuration::instance ();
 
 	std::cout << "ret " << conf->loadFile ("test.ini") << std::endl;
 
@@ -85,12 +87,12 @@ int Rts2TestApp::run ()
 		<< std::endl;
 
 	// step throught sections..
-	for (Rts2Config::iterator iter = conf->begin (); iter != conf->end ();
+	for (Configuration::iterator iter = conf->begin (); iter != conf->end ();
 		iter++)
 	{
-		Rts2ConfigSection *sect = *iter;
+		IniSection *sect = *iter;
 		std::cout << std::endl << "[" << sect->getName () << "]" << std::endl;
-		for (Rts2ConfigSection::iterator viter = sect->begin ();
+		for (IniSection::iterator viter = sect->begin ();
 			viter != sect->end (); viter++)
 		std::cout << *viter << std::endl;
 	}

@@ -20,11 +20,13 @@
 #include <math.h>
 #include <string.h>
 
-#include "rts2config.h"
+#include "configuration.h"
 
-Rts2Config *Rts2Config::pInstance = NULL;
+using namespace rts2core;
 
-int Rts2Config::getSpecialValues ()
+Configuration *Configuration::pInstance = NULL;
+
+int Configuration::getSpecialValues ()
 {
 	int ret = 0;
 	std::string horizon_file;
@@ -74,10 +76,10 @@ int Rts2Config::getSpecialValues ()
 	if (ret)
 		return -1;
 
-	return Rts2ConfigRaw::getSpecialValues ();
+	return IniParser::getSpecialValues ();
 }
 
-Rts2Config::Rts2Config (bool defaultSection):Rts2ConfigRaw (defaultSection)
+Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 {
 	observer.lat = 0;
 	observer.lng = 0;
@@ -86,41 +88,41 @@ Rts2Config::Rts2Config (bool defaultSection):Rts2ConfigRaw (defaultSection)
 	astrometryTimeout = 120;
 }
 
-Rts2Config::~Rts2Config (void)
+Configuration::~Configuration (void)
 {
 	delete checker;
 }
 
-Rts2Config * Rts2Config::instance ()
+Configuration * Configuration::instance ()
 {
 	if (!pInstance)
-		pInstance = new Rts2Config ();
+		pInstance = new Configuration ();
 	return pInstance;
 }
 
-struct ln_lnlat_posn * Rts2Config::getObserver ()
+struct ln_lnlat_posn * Configuration::getObserver ()
 {
 	return &observer;
 }
 
-ObjectCheck * Rts2Config::getObjectChecker ()
+ObjectCheck * Configuration::getObjectChecker ()
 {
 	return checker;
 }
 
-int Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
+int Configuration::getDeviceMinFlux (const char *device, double &minFlux)
 {
 	return getDouble (device, "minflux", minFlux);
 }
 
-time_t Rts2Config::getNight ()
+time_t Configuration::getNight ()
 {
 	time_t now = getNight (time (NULL));
 	struct tm *tm_s = gmtime (&now);
 	return getNight (tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday);
 }
 
-time_t Rts2Config::getNight (int year, int month, int day)
+time_t Configuration::getNight (int year, int month, int day)
 {
 	struct tm _tm;
 

@@ -26,7 +26,7 @@
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2db/targetset.h"
 #include "../../lib/rts2/rts2askchoice.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2format.h"
 
 #include <iostream>
@@ -135,7 +135,7 @@ class TargetApp:public Rts2AppDb
 
 		char *defaultCamera;
 
-		Rts2Config *config;
+		Configuration *config;
 
 		const char *pi;
 		const char *program;
@@ -370,7 +370,7 @@ int TargetApp::init ()
 	if (ret)
 		return ret;
 
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 
 	std::string cam;
 	if (config->getString ("observatory", "default_camera", cam) == 0)

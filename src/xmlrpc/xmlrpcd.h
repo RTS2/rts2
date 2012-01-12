@@ -28,7 +28,7 @@
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/rts2devicedb.h"
 #else
-#include "rts2config.h"
+#include "configuration.h"
 #include "device.h"
 #endif /* HAVE_PGSQL */
 

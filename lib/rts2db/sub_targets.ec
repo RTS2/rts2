@@ -21,7 +21,7 @@
 #include "target.h"
 #include "plan.h"
 #include "sqlerror.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "timestamp.h"
 #include "../rts2/infoval.h"
 #include "utilsfunc.h"
@@ -346,7 +346,7 @@ void FlatTarget::load ()
 		d_tar.dec = d_tar_dec;
 		// we should be at least 10 deg above horizon to be considered..
 		ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
-		if (hrz.alt < Rts2Config::instance ()->getMinFlatHeigh ())
+		if (hrz.alt < rts2core::Configuration::instance ()->getMinFlatHeigh ())
 			continue;
 		// and of course we should be above horizon..
 		if (!isAboveHorizon (&hrz))
@@ -483,7 +483,7 @@ void CalibrationTarget::load ()
 		pos.dec = db_tar_dec;
 		struct ln_hrz_posn hrz;
 		ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
-		if (Rts2Config::instance ()->getObjectChecker ()->is_good (&hrz))
+		if (rts2core::Configuration::instance ()->getObjectChecker ()->is_good (&hrz))
 		{
 			PosCalibration *newCal = new PosCalibration (db_tar_id, db_tar_ra, db_tar_dec, db_type_id,
 				db_tar_name.arr, observer, JD);
@@ -529,7 +529,7 @@ void CalibrationTarget::load ()
 	EXEC SQL OPEN cur_airmass_cal_images;
 	obs_target_id = -1;
 	time (&now);
-	valid = now - Rts2Config::instance()->getCalibrationValidTime();
+	valid = now - rts2core::Configuration::instance()->getCalibrationValidTime();
 	while (1)
 	{
 		EXEC SQL FETCH next FROM cur_airmass_cal_images
@@ -546,7 +546,7 @@ void CalibrationTarget::load ()
 			if (calib->getCurrAirmass () >= d_airmass_start
 				&& calib->getCurrAirmass () < d_airmass_end)
 			{
-				if (calib->getLunarDistance (JD) < Rts2Config::instance()->getCalibrationLunarDist())
+				if (calib->getLunarDistance (JD) < rts2core::Configuration::instance()->getCalibrationLunarDist())
 				{
 					bad_list.push_back (calib);
 				}
@@ -657,10 +657,10 @@ float CalibrationTarget::getBonus (double JD)
 	time_t now;
 	time_t t_diff;
 
-	int validTime = Rts2Config::instance()->getCalibrationValidTime();
-	int maxDelay = Rts2Config::instance()->getCalibrationMaxDelay();
-	float minBonus = Rts2Config::instance()->getCalibrationMinBonus();
-	float maxBonus = Rts2Config::instance()->getCalibrationMaxBonus();
+	int validTime = rts2core::Configuration::instance()->getCalibrationValidTime();
+	int maxDelay = rts2core::Configuration::instance()->getCalibrationMaxDelay();
+	float minBonus = rts2core::Configuration::instance()->getCalibrationMinBonus();
+	float maxBonus = rts2core::Configuration::instance()->getCalibrationMaxBonus();
 	if (obs_target_id <= 0)
 		return -1;
 	ln_get_timet_from_julian (JD, &now);
@@ -678,7 +678,7 @@ float CalibrationTarget::getBonus (double JD)
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 	modelStepType = 2;
-	Rts2Config::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
+	rts2core::Configuration::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
 }
 
 void ModelTarget::load ()
@@ -814,14 +814,14 @@ int ModelTarget::calPosition ()
 		case -2:
 			hrz_poz.az = (az_stop - az_start) * random_num ();
 			hrz_poz.alt = 0;
-			m_alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
+			m_alt = rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
 			if (m_alt < alt_start)
 				m_alt = alt_start;
 			if (m_alt < getMinObsAlt ())
 				m_alt = getMinObsAlt ();
  			hrz_poz.alt = m_alt + (alt_stop - m_alt) * asin (random_num ()) / (M_PI / 2.0);
 			if (!isAboveHorizon (&hrz_poz))
-				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2;
+				hrz_poz.alt = rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2;
 			ra_noise = 0;
 			dec_noise = 0;
 			break;
@@ -833,7 +833,7 @@ int ModelTarget::calPosition ()
 			dec_noise = 2 * noise * random_num ();
 			dec_noise -= noise;
 			if (!isAboveHorizon (&hrz_poz))
-				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2 * noise;
+				hrz_poz.alt = rts2core::Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2 * noise;
 	}
 	// null ra + dec .. for recurent call do getPosition (JD..)
 	equ_poz.ra = -1000;
@@ -1049,11 +1049,11 @@ void TargetSwiftFOV::load ()
 		testEqu.ra = d_swift_ra;
 		testEqu.dec = d_swift_dec;
 		ln_get_hrz_from_equ (&testEqu, observer, JD, &testHrz);
-		if (testHrz.alt > Rts2Config::instance ()->getSwiftMinHorizon ())
+		if (testHrz.alt > rts2core::Configuration::instance ()->getSwiftMinHorizon ())
 		{
-			if (testHrz.alt < Rts2Config::instance ()->getSwiftSoftHorizon ())
+			if (testHrz.alt < rts2core::Configuration::instance ()->getSwiftSoftHorizon ())
 			{
-				testHrz.alt = Rts2Config::instance ()->getSwiftSoftHorizon ();
+				testHrz.alt = rts2core::Configuration::instance ()->getSwiftSoftHorizon ();
 				// get equ coordinates we will observe..
 				ln_get_equ_from_hrz (&testHrz, observer, JD, &testEqu);
 			}
@@ -1581,8 +1581,8 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
 {
 	selectedPlan = NULL;
 	nextPlan = NULL;
-	Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch, 16.0);
-	Rts2Config::instance ()->getFloat ("selector", "consider_plan", hourConsiderPlans, 1.0);
+	rts2core::Configuration::instance ()->getFloat ("selector", "last_search", hourLastSearch, 16.0);
+	rts2core::Configuration::instance ()->getFloat ("selector", "consider_plan", hourConsiderPlans, 1.0);
 	nextTargetRefresh = 0;
 }
 

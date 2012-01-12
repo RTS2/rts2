@@ -28,7 +28,7 @@
 #include "altaz.h"
 #include "altplot.h"
 #endif // HAVE_LIBJPEG
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
@@ -239,7 +239,7 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 		struct ln_hrz_posn hrz;
 		try
 		{
-			(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
+			(*iter)->getCoordBestAltAz (hrz, Configuration::instance ()->getObserver ());
 			(*iter)->closeFile ();
 			altaz.plotCross (&hrz, NULL, "green");
 		}

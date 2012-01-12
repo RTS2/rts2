@@ -31,7 +31,7 @@
 #include <Magick++.h>
 #include "valueplot.h"
 #endif // HAVE_LIBJPEG
-#include "rts2config.h"
+#include "configuration.h"
 #else
 
 #endif // HAVE_PGSQL

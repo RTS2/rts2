@@ -1,5 +1,5 @@
 #include "cupola.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <math.h>
 
@@ -45,8 +45,8 @@ int Cupola::init ()
 		return ret;
 
 	// get config values..
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 	config->loadFile ();
 	observer = config->getObserver ();
 	return 0;

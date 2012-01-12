@@ -74,7 +74,7 @@ void EmailAction::run (XmlRpcd *_master)
 	if (_master->sendEmails ())
 	{
 		int ret;
-		rts2core::ConnFork *cf = new rts2core::ConnFork (_master, Rts2Config::instance ()->getStringDefault ("xmlrpcd", "mail", "/usr/bin/mail"), true, true, 100);
+		rts2core::ConnFork *cf = new rts2core::ConnFork (_master, Configuration::instance ()->getStringDefault ("xmlrpcd", "mail", "/usr/bin/mail"), true, true, 100);
 		std::list <std::string>::iterator iter;
 		if (bcc.size () != 0)
 		{

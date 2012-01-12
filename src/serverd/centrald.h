@@ -26,7 +26,7 @@
 
 #include <config.h>
 #include "daemon.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "status.h"
 
 using namespace rts2core;

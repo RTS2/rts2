@@ -167,7 +167,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 
 			if (!(isnan (pos.ra) || isnan (pos.dec)))
 			{
-				ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
+				ln_get_hrz_from_equ (&pos, Configuration::instance ()->getObserver (), JD, &hrz);
 				altaz.plotCross (&hrz, NULL, "blue");
 			}
 		}
@@ -181,7 +181,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 		val = conn->getValue ("current");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);
@@ -192,7 +192,7 @@ void CurrentPosition::authorizedExecute (std::string path, XmlRpc::HttpParams *p
 		val = conn->getValue ("next");
 		if (val && val->getValueInteger () >= 0)
 		{
-			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (val->getValueInteger (), Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (tar)
 			{
 				tar->getAltAz (&hrz, JD);

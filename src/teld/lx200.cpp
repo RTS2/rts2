@@ -13,7 +13,7 @@
  */
 
 #include "tellx200.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #define RATE_FIND 'M'
 #define DIR_NORTH 'n'
@@ -106,7 +106,7 @@ int LX200::initValues ()
 {
 	int ret = -1 ;
 
-        Rts2Config *config = Rts2Config::instance ();
+        rts2core::Configuration *config = rts2core::Configuration::instance ();
         ret = config->loadFile ();
         if (ret)
 	  return -1;

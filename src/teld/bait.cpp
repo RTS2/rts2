@@ -18,7 +18,7 @@
  */
 
 #include "teld.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2/connbait.h"
 #include "tcsutils.h"
 
@@ -165,8 +165,8 @@ int BAIT::processOption (int opt)
 
 int BAIT::initValues ()
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	Configuration *config;
+	config = Configuration::instance ();
 	config->loadFile ();
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);

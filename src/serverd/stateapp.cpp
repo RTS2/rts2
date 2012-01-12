@@ -26,7 +26,7 @@
 #include "riseset.h"
 #include "libnova_cpp.h"
 #include "app.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2/rts2centralstate.h"
 
 #define OPT_LAT              OPT_LOCAL + 230
@@ -125,7 +125,7 @@ void StateApp::printAltTable (std::ostream & _os, double jd_start, double h_star
 	for (i = h_start; i <= h_end; i += h_step, jd += h_step / 24.0)
 	{
 		ln_get_solar_equ_coords (jd, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd, &hrz);
+		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), jd, &hrz);
 		_os << " " << std::setw (3) << hrz.alt;
 		_os3 << " " << std::setw (3) << hrz.az;
 	}
@@ -157,7 +157,7 @@ void StateApp::printDayStates (std::ostream & _os)
 
 	while (curr_time < (currTime + 87000.0))
 	{
-		if (next_event (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
+		if (next_event (rts2core::Configuration::instance ()->getObserver (), &curr_time, &curr_type, &next_type, &ev_time, night_horizon, day_horizon, eve_time, mor_time, verbose))
 		{
 			std::cerr << "Error getting next type" << std::endl;
 			return;
@@ -261,7 +261,7 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 
 int StateApp::init ()
 {
-	Rts2Config *config;
+	rts2core::Configuration *config;
 	int ret;
 
 	ret = rts2core::App::init ();
@@ -270,7 +270,7 @@ int StateApp::init ()
 
 	JD = ln_get_julian_from_timet (&currTime);
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 
 	if (config->loadFile (conff) == -1)
 	{
@@ -284,14 +284,14 @@ int StateApp::init ()
 		config->getObserver ()->lat = lat;
 
 	night_horizon = -10;
-	Rts2Config::instance ()->getDouble ("observatory", "night_horizon", night_horizon);
+	rts2core::Configuration::instance ()->getDouble ("observatory", "night_horizon", night_horizon);
 	day_horizon = 0;
-	Rts2Config::instance ()->getDouble ("observatory", "day_horizon", day_horizon);
+	rts2core::Configuration::instance ()->getDouble ("observatory", "day_horizon", day_horizon);
 
 	eve_time = 7200;
-	Rts2Config::instance ()->getInteger ("observatory", "evening_time", eve_time);
+	rts2core::Configuration::instance ()->getInteger ("observatory", "evening_time", eve_time);
 	mor_time = 1800;
-	Rts2Config::instance ()->getInteger ("observatory", "morning_time", mor_time);
+	rts2core::Configuration::instance ()->getInteger ("observatory", "morning_time", mor_time);
 
 	return 0;
 }
@@ -308,7 +308,7 @@ int StateApp::run ()
 	if (ret)
 		return ret;
 
-	obs = Rts2Config::instance ()->getObserver ();
+	obs = rts2core::Configuration::instance ()->getObserver ();
 
 	if (verbose > 0)
 		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << Timestamp (currTime) << std::endl;
@@ -318,7 +318,7 @@ int StateApp::run ()
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
 		ln_get_solar_equ_coords (JD, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
+		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
 		if (calculateSun == SUN_ALT || calculateSun == SUN_AZ)
 		{

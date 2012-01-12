@@ -26,7 +26,7 @@
 #include <sstream>
 
 #include "libnova_cpp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2db;
 
@@ -500,7 +500,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	const char *group_by;
 	std::ostringstream _where;
 
-	double lng = Rts2Config::instance ()->getObserver ()->lng;
+	double lng = rts2core::Configuration::instance ()->getObserver ()->lng;
 
 	if (year == -1)
 	{

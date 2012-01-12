@@ -18,7 +18,7 @@
  */
 
 #include "rts2appdb.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <ecpgtype.h>
 
@@ -403,7 +403,7 @@ int Rts2AppDb::initDB ()
 	EXEC SQL END DECLARE SECTION;
 	// try to connect to DB
 
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	std::string db_username;
 	std::string db_password;
@@ -461,7 +461,7 @@ int Rts2AppDb::initDB ()
 
 int Rts2AppDb::init ()
 {
-	Rts2Config *config;
+	rts2core::Configuration *config;
 	int ret;
 
 	ret = Rts2CliApp::init ();
@@ -470,7 +470,7 @@ int Rts2AppDb::init ()
 
 	// load config..
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 	ret = config->loadFile (configFile);
 	if (ret)
 		return ret;

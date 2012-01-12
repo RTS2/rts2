@@ -629,7 +629,7 @@ int Paramount::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)
 		return -1;

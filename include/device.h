@@ -27,7 +27,7 @@
 #include "hoststring.h"
 #include "command.h"
 #include "daemon.h"
-#include "rts2configraw.h"
+#include "iniparser.h"
 
 namespace rts2core
 {
@@ -421,7 +421,7 @@ class Device:public Daemon
 
 		// mode related variable
 		char *modefile;
-		Rts2ConfigRaw *modeconf;
+		IniParser *modeconf;
 		rts2core::ValueSelection *modesel;
 
 		bool doCheck;
@@ -449,7 +449,7 @@ class Device:public Daemon
 		 */
 		int setMode (int new_mode);
 
-		int setSectionValues (Rts2ConfigSection *sect, int new_mode);
+		int setSectionValues (IniSection *sect, int new_mode);
 
 		int blockState;
 		CommandDeviceStatusInfo *deviceStatusCommand;

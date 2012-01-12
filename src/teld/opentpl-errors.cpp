@@ -19,7 +19,7 @@
 
 #include "../../lib/rts2/connopentpl.h"
 #include "../../lib/rts2/rts2cliapp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <sstream>
 #include <iomanip>
@@ -270,7 +270,7 @@ AppOpenTPLError::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 	config->loadFile (NULL);
 	// try to get default from config file
 	if (ir_ip.length () == 0)

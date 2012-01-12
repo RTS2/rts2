@@ -21,7 +21,7 @@
 #include "../../lib/rts2script/execcli.h"
 #include "rts2devcliphot.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <iostream>
 #include <fstream>
@@ -199,7 +199,7 @@ int ScriptExec::init ()
 
 	// load config..
 
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 	ret = config->loadFile (configFile);
 	if (ret)
 		return ret;
@@ -217,7 +217,7 @@ int ScriptExec::init ()
 	if (defaultScript)
 	{
 		std::string devName;
-		ret = Rts2Config::instance ()->getString ("scriptexec", "default_device", devName);
+		ret = Configuration::instance ()->getString ("scriptexec", "default_device", devName);
 		if (ret)
 		{
 			std::cerr << "neither -d nor default_device configuration option was not provided" << std::endl;

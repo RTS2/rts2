@@ -619,9 +619,9 @@ std::string FitsFile::expandPath (std::string pathEx)
 	return ret;
 }
 
-void FitsFile::writeTemplate (Rts2ConfigSection *hc, const char *devname)
+void FitsFile::writeTemplate (rts2core::IniSection *hc, const char *devname)
 {
-	for (Rts2ConfigSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
+	for (rts2core::IniSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
 	{
 		std::string v = iter->getValue ();
 		std::string com;
@@ -660,7 +660,7 @@ void FitsFile::writePrimaryHeader (const char *devname)
 {
 	if (templateFile)
 	{
-		Rts2ConfigSection *hc = templateFile->getSection ("PRIMARY", false);
+		rts2core::IniSection *hc = templateFile->getSection ("PRIMARY", false);
 		if (hc)
 			writeTemplate (hc, devname);
 	}
@@ -702,7 +702,7 @@ void FitsFile::fitsStatusGetValue (const char *valname, bool required)
 
 void FitsFile::loadTemlate (const char *fn)
 {
-	templateFile = new Rts2ConfigRaw ();
+	templateFile = new rts2core::IniParser ();
 
 	int ret = templateFile->loadFile (fn);
 	if (ret)

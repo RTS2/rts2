@@ -19,7 +19,7 @@
 
 #include "ticket.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2db/sqlerror.h"
 
 using namespace rts2sched;
@@ -85,7 +85,7 @@ void Ticket::load ()
 	if (sqlca.sqlcode)
 		throw rts2db::SqlError ();
 
-	target = createTarget (d_tar_id, Rts2Config::instance ()->getObserver ());
+	target = createTarget (d_tar_id, rts2core::Configuration::instance ()->getObserver ());
 	if (target == NULL)
 		throw rts2db::SqlError ();
 

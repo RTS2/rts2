@@ -20,7 +20,8 @@
 #include <ctype.h>
 
 #include "devcliimg.h"
-#include "rts2config.h"
+#include "iniparser.h"
+#include "configuration.h"
 #include "valuerectangle.h"
 #include "timestamp.h"
 
@@ -33,7 +34,7 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 
 	fitsTemplate = NULL;
 
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	xoa = rts2_nan ("f");
 	yoa = rts2_nan ("f");
@@ -59,7 +60,7 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 
 	if (templateFile.length () > 0)
 	{
-		fitsTemplate = new Rts2ConfigRaw ();
+		fitsTemplate = new rts2core::IniParser ();
 		if (fitsTemplate->loadFile (templateFile.c_str (), true))
 		{
 			delete fitsTemplate;

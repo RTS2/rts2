@@ -28,7 +28,7 @@
 #include <iostream>
 
 #include "../../lib/rts2/rts2cliapp.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2format.h"
 #include "../../lib/rts2fits/image.h"
 
@@ -193,8 +193,8 @@ void TPM::usage ()
 
 int TPM::headline (rts2image::Image * image, std::ostream & _os)
 {
-	obs.lat = Rts2Config::instance ()->getObserver ()->lat;
-	obs.lng = Rts2Config::instance ()->getObserver ()->lng;
+	obs.lat = rts2core::Configuration::instance ()->getObserver ()->lat;
+	obs.lng = rts2core::Configuration::instance ()->getObserver ()->lng;
 	// try to get latitude from image
 	image->getValue ("LATITUDE", obs.lat);
 	image->getValue ("LONGITUD", obs.lng);

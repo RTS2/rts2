@@ -18,8 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_CONFIG_RAW__
-#define __RTS2_CONFIG_RAW__
+#ifndef __RTS2_INIPARSER__
+#define __RTS2_INIPARSER__
 /**
  * @file
  * Classes for access to configuration file.
@@ -38,6 +38,9 @@
 
 #define SEP " "
 
+namespace rts2core
+{
+
 /**
  * This class represent section value. Section value have name, possible sufix
  * which is separated from name by ".", and value, which is after value name
@@ -45,10 +48,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConfigValue
+class IniValue
 {
 	public:
-		Rts2ConfigValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value)
+		IniValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value)
 		{
 			valueName = in_valueName;
 			valueSuffix = in_valueSuffix;
@@ -93,7 +96,14 @@ class Rts2ConfigValue
 		 */
 		double getValueDouble () { return atof (value.c_str ()); }
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
+		friend std::ostream & operator << (std::ostream & _os, IniValue val)
+		{
+			_os << val.valueName;
+			if (val.valueSuffix.length () > 0)
+				_os << "." << val.valueSuffix;
+			_os << " = " << val.value;
+			return _os;
+		}
 
 	private:
 		std::string valueName;
@@ -101,7 +111,7 @@ class Rts2ConfigValue
 		std::string value;
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
+std::ostream & operator << (std::ostream & _os, IniValue val);
 
 /**
  * This class represent section of configuration file.
@@ -109,11 +119,11 @@ std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConfigSection:public std::list <Rts2ConfigValue >
+class IniSection:public std::list <IniValue >
 {
 	public:
-		Rts2ConfigSection (const char *name);
-		~Rts2ConfigSection (void);
+		IniSection (const char *name);
+		~IniSection (void);
 
 		/**
 		 * Return true if section have given name.
@@ -132,9 +142,9 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 		 * @param valueName Name of value.
 		 * @param verbose   When true (default), warning message will be printed for missing value.
 		 *
-		 * @return NULL if value cannot be found, otherwise return Rts2ConfigValue valid pointer.
+		 * @return NULL if value cannot be found, otherwise return IniValue valid pointer.
 		 */
-		Rts2ConfigValue *getValue (const char *valueName, bool verbose = true);
+		IniValue *getValue (const char *valueName, bool verbose = true);
 
 		/**
 		 * Create blockedBy vector from string.
@@ -166,20 +176,20 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
  *
  * It is raw as it does not contain any call to Libnova function. For full
  * config, which depends on Libnova functions and provides ObjectChecker,
- * \see Rts2Config.
+ * \see Configuration.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
+class IniParser: public std::vector < IniSection * >
 {
 	public:
 		/**
 		 *
 		 * @param defaultSection  if values without section will be added to default section (e.g. with empty name).
 		 */
-		Rts2ConfigRaw (bool defaultSection = false);
-		virtual ~ Rts2ConfigRaw (void);
+		IniParser (bool defaultSection = false);
+		virtual ~ IniParser (void);
 		int loadFile (const char *filename = NULL, bool parseFullLine = false);
 
 		/**
@@ -190,7 +200,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 *
 		 * @return NULL if section cannot be found
 		 */
-		Rts2ConfigSection *getSection (const char *section, bool verbose=true);
+		IniSection *getSection (const char *section, bool verbose=true);
 
 		/**
 		 * Get string from configuration file.
@@ -315,6 +325,8 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		// sections which are know to be missing
 		std::vector <std::string> missingSections;
 
-		Rts2ConfigValue *getValue (const char *section, const char *valueName);
+		IniValue *getValue (const char *section, const char *valueName);
 };
-#endif							 /*! __RTS2_CONFIG_RAW__ */
+
+}
+#endif							 /*! __RTS2_INIPARSER__ */

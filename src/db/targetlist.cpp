@@ -19,7 +19,7 @@
 
 #include "../../lib/rts2db/rts2appdb.h"
 #include "../../lib/rts2db/targetset.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2format.h"
 
 #include <iostream>
@@ -47,8 +47,7 @@ class Rts2TargetList:public Rts2AppDb
 		virtual ~ Rts2TargetList (void);
 };
 
-Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	list = LIST_ALL;
 	targetType = NULL;
@@ -65,9 +64,7 @@ Rts2TargetList::~Rts2TargetList ()
 {
 }
 
-
-int
-Rts2TargetList::processOption (int in_opt)
+int Rts2TargetList::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -89,16 +86,12 @@ Rts2TargetList::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2TargetList::processArgs (const char *arg)
+int Rts2TargetList::processArgs (const char *arg)
 {
 	return Rts2AppDb::processArgs (arg);
 }
 
-
-int
-Rts2TargetList::init ()
+int Rts2TargetList::init ()
 {
 	int ret;
 
@@ -106,15 +99,13 @@ Rts2TargetList::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 
 	return 0;
 }
 
-
-int
-Rts2TargetList::doProcessing ()
+int Rts2TargetList::doProcessing ()
 {
 	rts2db::TargetSetGrb *tar_set_grb;
 	rts2db::TargetSet *tar_set;
@@ -142,9 +133,7 @@ Rts2TargetList::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2TargetList app = Rts2TargetList (argc, argv);
 	return app.run ();

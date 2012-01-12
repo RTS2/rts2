@@ -22,7 +22,7 @@
 #include "../rts2db/rts2camlist.h"
 #include "../rts2db/target.h"
 #include "../rts2db/observationset.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2format.h"
 #include "libnova_cpp.h"
 #include "script.h"

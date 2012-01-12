@@ -23,7 +23,7 @@
 #include "rts2taruser.h"
 #include "libnova_cpp.h"
 #include "timestamp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <iostream>
 #include <iomanip>

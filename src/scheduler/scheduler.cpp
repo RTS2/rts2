@@ -19,7 +19,7 @@
 
 #include "../../lib/rts2db/rts2appdb.h"
 #include "../../lib/rts2db/sqlerror.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "rts2schedbag.h"
 

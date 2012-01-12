@@ -74,6 +74,7 @@ class NSelWindow:public NWindow
 		}
 		void setLineOffset (int new_lineOffset) { lineOffset = new_lineOffset; }
 		int getPadoffY () { return padoff_y; }
+
 	protected:
 		int selrow;
 		int maxrow;

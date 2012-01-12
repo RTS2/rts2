@@ -22,7 +22,7 @@
 
 #include "camd.h"
 #include "valuearray.h"
-#include "rts2configraw.h"
+#include "iniparser.h"
 
 // only constants; class is kept in reflex.cpp
 #include "reflex.h"
@@ -206,7 +206,7 @@ class Reflex:public Camera
 
 		// related to configuration file..
 		const char *configFile;
-		Rts2ConfigRaw *config;
+		IniParser *config;
 
 		void reloadConfig ();
 
@@ -836,7 +836,7 @@ void Reflex::reloadConfig ()
 
 	delete config;
 
-	config = new Rts2ConfigRaw ();
+	config = new IniParser ();
 	if (config->loadFile (configFile, true))
 	{
 		config = NULL;

@@ -131,7 +131,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		std::vector < rts2core::DevClient * > prematurelyReceived;
 
 		// template for headers.
-		Rts2ConfigRaw *fitsTemplate;
+		rts2core::IniParser *fitsTemplate;
 };
 
 class DevClientTelescopeImage:public rts2core::DevClientTelescope

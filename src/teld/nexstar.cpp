@@ -19,7 +19,7 @@
 
 #include "teld.h"
 #include "../../lib/rts2/connserial.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 /*!
  * NexStar teld for testing purposes.
@@ -177,8 +177,8 @@ int NexStar::init ()
 
 int NexStar::initValues ()
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 	config->loadFile ();
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);

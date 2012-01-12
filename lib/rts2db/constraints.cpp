@@ -19,7 +19,7 @@
 
 #include "constraints.h"
 #include "utilsfunc.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #ifndef HAVE_DECL_LN_GET_ALT_FROM_AIRMASS
 double ln_get_alt_from_airmass (double X, double airmass_scale)
@@ -463,7 +463,7 @@ bool ConstraintLunarAltitude::satisfy (Target *tar, double JD)
 	struct ln_equ_posn eq_lun;
 	struct ln_hrz_posn hrz_lun;
 	ln_get_lunar_equ_coords (JD, &eq_lun);
-	ln_get_hrz_from_equ (&eq_lun, Rts2Config::instance ()->getObserver (), JD, &hrz_lun);
+	ln_get_hrz_from_equ (&eq_lun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_lun);
 	return isBetween (hrz_lun.alt);
 }
 
@@ -485,7 +485,7 @@ bool ConstraintSunAltitude::satisfy (Target *tar, double JD)
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn hrz_sun;
 	ln_get_solar_equ_coords (JD, &eq_sun);
-	ln_get_hrz_from_equ (&eq_sun, Rts2Config::instance ()->getObserver (), JD, &hrz_sun);
+	ln_get_hrz_from_equ (&eq_sun, rts2core::Configuration::instance ()->getObserver (), JD, &hrz_sun);
 	return isBetween (hrz_sun.alt);
 }
 
@@ -842,7 +842,7 @@ Constraints & MasterConstraints::getConstraint ()
 	if (masterCons)
 		return *masterCons;
 	masterCons = new Constraints ();
-	masterCons->load (Rts2Config::instance ()->getMasterConstraintFile ());
+	masterCons->load (rts2core::Configuration::instance ()->getMasterConstraintFile ());
 	return *masterCons;
 }
 

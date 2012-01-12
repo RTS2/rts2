@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 #include "plan.h"
 #include "sqlerror.h"
@@ -266,7 +266,7 @@ Target * Plan::getTarget ()
 {
 	if (target)
 		return target;
-	target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
+	target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver ());
 	return target;
 }
 

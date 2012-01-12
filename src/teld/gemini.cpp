@@ -29,7 +29,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "../../lib/rts2/connserial.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "utilsfunc.h"
 
 #define RATE_SLEW                'S'
@@ -1123,7 +1123,7 @@ int Gemini::initValues ()
 		char command[20];
 		struct ln_dms dlat;
 		char sign = '+';
-		Rts2Config *config = Rts2Config::instance ();
+		rts2core::Configuration *config = rts2core::Configuration::instance ();
 		ret = config->loadFile ();
 		if (ret)
 			return ret;

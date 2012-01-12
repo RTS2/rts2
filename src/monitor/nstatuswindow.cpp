@@ -19,7 +19,7 @@
 
 #include "nmonitor.h"
 #include "nstatuswindow.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2ncurses;
 
@@ -56,7 +56,7 @@ void NStatusWindow::draw ()
 	if (COLS > 40)
 	{
 		double JD = ln_get_julian_from_sys ();
-		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + Rts2Config::instance ()->getObserver ()->lng;
+		double lst = ln_get_apparent_sidereal_time (JD) * 15.0 + rts2core::Configuration::instance ()->getObserver ()->lng;
 		struct ln_hms hms;
 		ln_deg_to_hms (lst, &hms);
 		std::map <rts2core::Connection *, std::vector < rts2core::Value *> > failed = master->failedValues ();

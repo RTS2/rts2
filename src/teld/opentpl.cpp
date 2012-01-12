@@ -20,7 +20,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "teld.h"
 #include "../../lib/rts2/connopentpl.h"
@@ -444,7 +444,7 @@ int OpenTPL::initOpenTplDevice ()
 	}
 	else
 	{
-		Rts2Config *config = Rts2Config::instance ();
+		rts2core::Configuration *config = rts2core::Configuration::instance ();
 		config->loadFile (NULL);
 		// try to get default from config file
 		config->getString ("opentpl", "ip", ir_ip);

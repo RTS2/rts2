@@ -15,7 +15,7 @@ lib_LTLIBRARIES = librts2.la
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp option.cpp \
 	rts2address.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
-	devclient.cpp utilsfunc.cpp rts2configraw.cpp rts2config.cpp connnosend.cpp \
+	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
 	rts2message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp rts2logstream.cpp rts2centralstate.cpp \
 	rts2target.cpp rts2displayvalue.cpp scriptdevice.cpp \

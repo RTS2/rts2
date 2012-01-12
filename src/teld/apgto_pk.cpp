@@ -18,7 +18,7 @@
  */
 
 #include "libnova_cpp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "tellx200.h"
 #include "hms.h"
@@ -1587,7 +1587,7 @@ int APGTO::initValues ()
 
 	strcpy (telType, "APGTO");
 
-	Rts2Config *config = Rts2Config::instance ();
+	Configuration *config = Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)
 		return -1;

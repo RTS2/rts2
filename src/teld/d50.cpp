@@ -21,7 +21,7 @@
 
 #include "../../lib/rts2/fork.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2/connserial.h"
 #include "libnova_cpp.h"
 
@@ -291,7 +291,7 @@ int D50::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)
 		return -1;

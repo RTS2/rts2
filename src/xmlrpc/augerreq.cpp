@@ -25,7 +25,7 @@
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include "altaz.h"
 #endif // HAVE_LIBJPEG
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
@@ -62,7 +62,7 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 
 void Auger::printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length)
 {
-	rts2db::TargetAuger ta (-1, Rts2Config::instance ()->getObserver (), -1);
+	rts2db::TargetAuger ta (-1, rts2core::Configuration::instance ()->getObserver (), -1);
 
 	ta.load (auger_id);
 
@@ -87,7 +87,7 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 
 	for (std::vector <struct ln_equ_posn>::iterator iter = pos.begin (); iter != pos.end (); iter++)
 	{
-		ln_get_hrz_from_equ (&(*iter), Rts2Config::instance ()->getObserver (), JD, &hrz);
+		ln_get_hrz_from_equ (&(*iter), rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 
 		std::ostringstream _os;
 		_os << i;

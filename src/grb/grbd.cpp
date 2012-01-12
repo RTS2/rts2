@@ -130,12 +130,12 @@ int Grbd::processOption (int in_opt)
 int Grbd::reloadConfig ()
 {
 	int ret;
-	Rts2Config *config;
+	rts2core::Configuration *config;
 	ret = Rts2DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 
 	observer = config->getObserver ();
 

@@ -18,6 +18,7 @@
  */
 
 #include "rts2devicedb.h"
+#include "configuration.h"
 
 #define OPT_DEBUGDB    OPT_LOCAL + 201
 
@@ -85,11 +86,11 @@ int Rts2DeviceDb::processOption (int in_opt)
 
 int Rts2DeviceDb::reloadConfig ()
 {
-	Rts2Config *config;
+	rts2core::Configuration *config;
 
 	// load config..
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 	return config->loadFile (configFile);
 }
 
@@ -104,11 +105,11 @@ int Rts2DeviceDb::initDB ()
 	EXEC SQL END DECLARE SECTION;
 	// try to connect to DB
 
-	Rts2Config *config;
+	rts2core::Configuration *config;
 
 	ret = reloadConfig();
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 
 	if (ret)
 		return ret;

@@ -21,7 +21,7 @@
 #define __RTS2_DEVICEDB__
 
 #include "device.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "rts2camlist.h"
 

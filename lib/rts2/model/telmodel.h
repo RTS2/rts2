@@ -32,7 +32,7 @@ namespace rts2telmodel
 };
 
 #include "teld.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "modelterm.h"
 

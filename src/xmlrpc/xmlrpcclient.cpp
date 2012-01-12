@@ -26,7 +26,7 @@
 #include <iomanip>
 
 #include "r2x.h"
-#include "rts2configraw.h"
+#include "iniparser.h"
 #include "libnova_cpp.h"
 
 using namespace XmlRpc;
@@ -791,7 +791,7 @@ int Client::init ()
 		strcpy (configFile + homeLen, "/.rts2");
 	}
 
-	Rts2ConfigRaw config = Rts2ConfigRaw ();
+	rts2core::IniParser config = rts2core::IniParser ();
 	config.loadFile (configFile);
 	if (xmlUsername == NULL)
 	{

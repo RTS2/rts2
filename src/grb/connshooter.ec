@@ -239,7 +239,7 @@ int ConnShooter::processAuger ()
 
 	struct ln_equ_posn equ;
 
-	ln_get_equ_from_hrz (&hrz, Rts2Config::instance ()->getObserver (), JD, &equ);
+	ln_get_equ_from_hrz (&hrz, rts2core::Configuration::instance ()->getObserver (), JD, &equ);
 
 	db_ra = equ.ra;
 	db_dec = equ.dec;

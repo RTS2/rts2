@@ -19,7 +19,7 @@
 
 #include "block.h"
 #include "expander.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <iomanip>
 #include <sstream>
@@ -305,7 +305,7 @@ void Expander::setExpandDate (const struct timeval *tv)
 	localtime_r (&expandTv.tv_sec, &localDate);
 	gmtime_r (&expandTv.tv_sec, &utDate);
 	
-	time_t nightT = Rts2Config::instance ()->getNight (expandTv.tv_sec);
+	time_t nightT = Configuration::instance ()->getNight (expandTv.tv_sec);
 	gmtime_r (&nightT, &nightDate);
 
 	expandDate = &utDate;

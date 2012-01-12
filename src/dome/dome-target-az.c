@@ -53,7 +53,7 @@ int    LDCheckHorizon( double HA, double dec, double phi) ;
 /* East: DECaxis== HA - M_PI/2, RA=RA, DEC= DEC + M_PI */
 double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
 {
-  double ret ;
+  double ret;
   double target_az ;
   double target_ZD ;
   struct ln_equ_posn tmp_equ ;

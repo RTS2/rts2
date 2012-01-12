@@ -20,7 +20,7 @@
 
 #include "rts2selector.h"
 #include "../../lib/rts2script/script.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "utilsfunc.h"
 #include "../../lib/rts2db/sqlerror.h"
 
@@ -45,11 +45,11 @@ Selector::~Selector (void)
 
 void Selector::init ()
 {
-	Rts2Config *config;
+	Configuration *config;
 	std::string doNotObserve;
 	double val;
 
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 
 	config->getString ("selector", "night_do_not_consider", doNotObserve);
 

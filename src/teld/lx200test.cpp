@@ -34,7 +34,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2/clicupola.h"
 #include "pier-collision.h"
 
@@ -605,12 +605,11 @@ LX200TEST::init ()
  * Reads information about telescope.
  *
  */
-int
-LX200TEST::initValues ()
+int LX200TEST::initValues ()
 {
 	int ret = -1 ;
 
-        Rts2Config *config = Rts2Config::instance ();
+        rts2core::Configuration *config = rts2core::Configuration::instance ();
         ret = config->loadFile ();
         if (ret)
 	  return -1;
@@ -630,16 +629,13 @@ LX200TEST::initValues ()
 	return Telescope::initValues ();
 }
 
-
-int
-LX200TEST::info ()
+int LX200TEST::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
 	return Telescope::info ();
 }
-
 
 /*!
  * Set slew rate. For completness?
@@ -655,17 +651,14 @@ LX200TEST::info ()
  *
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
-int
-LX200TEST::tel_set_rate (char new_rate)
+int LX200TEST::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
 	return tel_write (command, 5);
 }
 
-
-int
-LX200TEST::telescope_start_move (char direction)
+int LX200TEST::telescope_start_move (char direction)
 {
 	char command[6];
 	tel_set_rate (RATE_FIND);
@@ -673,15 +666,12 @@ LX200TEST::telescope_start_move (char direction)
 	return tel_write (command, 5) == 1 ? -1 : 0;
 }
 
-
-int
-LX200TEST::telescope_stop_move (char direction)
+int LX200TEST::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
 	return tel_write (command, 5) < 0 ? -1 : 0;
 }
-
 
 /*!
  * Slew (=set) LX200 to new coordinates.
@@ -691,8 +681,7 @@ LX200TEST::telescope_stop_move (char direction)
  *
  * @return -1 on error, otherwise 0
  */
-int
-LX200TEST::tel_slew_to (double ra, double dec)
+int LX200TEST::tel_slew_to (double ra, double dec)
 {
   int ret ;
   char retstr;
@@ -746,7 +735,6 @@ LX200TEST::tel_slew_to (double ra, double dec)
   return -1;
 }
 
-
 /*!
  * Check, if telescope match given coordinates.
  *
@@ -755,8 +743,7 @@ LX200TEST::tel_slew_to (double ra, double dec)
  *
  * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
-int
-LX200TEST::tel_check_coords (double ra, double dec)
+int LX200TEST::tel_check_coords (double ra, double dec)
 {
 	// ADDED BY JF
 	double JD;
@@ -801,9 +788,7 @@ LX200TEST::tel_check_coords (double ra, double dec)
 	return 1;
 }
 
-
-void
-LX200TEST::set_move_timeout (time_t plus_time)
+void LX200TEST::set_move_timeout (time_t plus_time)
 {
 	time_t now;
 	time (&now);
@@ -811,9 +796,7 @@ LX200TEST::set_move_timeout (time_t plus_time)
 	move_timeout = now + plus_time;
 }
 
-
-int
-LX200TEST::startResync ()
+int LX200TEST::startResync ()
 {
 	int ret;
 
@@ -828,8 +811,7 @@ LX200TEST::startResync ()
 	return 0 ; 
 }
 
-int
-LX200TEST::isMoving ()
+int LX200TEST::isMoving ()
 {
   int ret;
   
@@ -856,9 +838,7 @@ LX200TEST::isMoving ()
   return -1;
 }
 
-
-int
-LX200TEST::stopMove ()
+int LX200TEST::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
@@ -869,7 +849,6 @@ LX200TEST::stopMove ()
 	}
 	return 0;
 }
-
 
 /*!
  * Set telescope to match given coordinates
@@ -883,9 +862,7 @@ LX200TEST::stopMove ()
  *
  * @return -1 and set errno on error, otherwise 0
  */
-
-int
-LX200TEST::setTo (double ra, double dec)
+int LX200TEST::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
@@ -903,7 +880,6 @@ LX200TEST::setTo (double ra, double dec)
 	return ret == 1;
 }
 
-
 /*!
  * Correct telescope coordinates.
  *
@@ -915,23 +891,19 @@ LX200TEST::setTo (double ra, double dec)
  *
  * @return -1 and set errno on error, 0 otherwise.
  */
-int
-LX200TEST::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
+int LX200TEST::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 {
 	if (setTo (real_ra, real_dec))
 		return -1;
 	return 0;
 }
 
-
 /*!
  * Park telescope to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
-int
-LX200TEST::startPark ()
+int LX200TEST::startPark ()
 {
   double JD= ln_get_julian_from_sys ();
   double local_sidereal_time= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble ();  // longitude positive to the East
@@ -939,23 +911,17 @@ LX200TEST::startPark ()
   return tel_slew_to (local_sidereal_time, -(90. -telLatitude->getValueDouble()));
 }
 
-
-int
-LX200TEST::isParking ()
+int LX200TEST::isParking ()
 {
 	return -2;
 }
 
-
-int
-LX200TEST::endPark ()
+int LX200TEST::endPark ()
 {
 	return 0;
 }
 
-
-int
-LX200TEST::startDir (char *dir)
+int LX200TEST::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -969,9 +935,7 @@ LX200TEST::startDir (char *dir)
 	return -2;
 }
 
-
-int
-LX200TEST::stopDir (char *dir)
+int LX200TEST::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -984,9 +948,7 @@ LX200TEST::stopDir (char *dir)
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	LX200TEST device = LX200TEST (argc, argv);
 	return device.run ();

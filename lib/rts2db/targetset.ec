@@ -19,7 +19,7 @@
 
 #include "targetset.h"
 #include "sqlerror.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 
 #include "targetgrb.h"
@@ -226,7 +226,7 @@ TargetSet::TargetSet (struct ln_lnlat_posn * in_obs): std::map <int, Target *> (
 {
 	obs = in_obs;
 	if (!obs)
-		obs = Rts2Config::instance ()->getObserver ();
+		obs = rts2core::Configuration::instance ()->getObserver ();
 	where = std::string ("true");
 	order_by = std::string ("tar_id ASC");
 }
@@ -244,7 +244,7 @@ TargetSet::TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_po
 	order_os << " ASC";
 	obs = in_obs;
 	if (!obs)
-		obs = Rts2Config::instance ()->getObserver ();
+		obs = rts2core::Configuration::instance ()->getObserver ();
 	where = where_os.str ();
 	order_by = order_os.str ();
 }
@@ -253,7 +253,7 @@ TargetSet::TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs)
 {
 	obs = in_obs;
 	if (!obs)
-		obs = Rts2Config::instance ()->getObserver ();
+		obs = rts2core::Configuration::instance ()->getObserver ();
 
 	std::ostringstream os;
 	printTypeWhere (os, target_type);
@@ -467,7 +467,7 @@ TargetSetCalibration::TargetSetCalibration (Target *in_masterTarget, double JD, 
 		<< in_masterTarget->getObserver ()->lat << ", "
 		<< JD << ") - " << airmass << ")";
 	if (isnan (airmdis))
-		airmdis = Rts2Config::instance()->getCalibrationAirmassDistance ();
+		airmdis = rts2core::Configuration::instance()->getCalibrationAirmassDistance ();
 	os << func.str () << " < " << airmdis
 		<< " AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
 	ord << func.str () << " ASC";
@@ -479,7 +479,7 @@ TargetSetGrb::TargetSetGrb (struct ln_lnlat_posn * in_obs)
 {
 	obs = in_obs;
 	if (!obs)
-		obs = Rts2Config::instance ()->getObserver ();
+		obs = rts2core::Configuration::instance ()->getObserver ();
 }
 
 TargetSetGrb::~TargetSetGrb (void)
@@ -564,7 +564,7 @@ sortByAltitude::sortByAltitude (struct ln_lnlat_posn *_obs, double _jd)
 	if (!_obs)
 		observer = _obs;
 	else
-		observer = Rts2Config::instance ()->getObserver ();
+		observer = rts2core::Configuration::instance ()->getObserver ();
 	if (isnan (_jd))
 		JD = ln_get_julian_from_sys ();
 	else
@@ -584,7 +584,7 @@ sortWestEast::sortWestEast (struct ln_lnlat_posn *_obs, double _jd)
 	if (!_obs)
 		observer = _obs;
 	else
-		observer = Rts2Config::instance ()->getObserver ();
+		observer = rts2core::Configuration::instance ()->getObserver ();
 	if (isnan (_jd))
 		JD = ln_get_julian_from_sys ();
 	else

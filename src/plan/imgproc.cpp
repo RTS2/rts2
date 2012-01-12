@@ -33,7 +33,7 @@
 #include "../../lib/rts2db/rts2devicedb.h"
 #else
 #include "device.h"
-#include "rts2config.h"
+#include "configuration.h"
 #endif
 
 namespace rts2plan
@@ -210,12 +210,12 @@ int ImageProc::reloadConfig ()
 {
 	int ret;
 	
-	Rts2Config *config;
+	Configuration *config;
 #ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::reloadConfig ();
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 #else
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 	ret = config->loadFile (configFile);
 #endif
 	if (ret)
@@ -525,14 +525,14 @@ int ImageProc::que (ConnProcess * newProc)
 int ImageProc::queImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Configuration::instance ()->getAstrometryTimeout ());
 	return que (newImageConn);
 }
 
 int ImageProc::doImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Configuration::instance ()->getAstrometryTimeout ());
 	changeRunning (newImageConn);
 	infoAll ();
 	return 0;
@@ -541,7 +541,7 @@ int ImageProc::doImage (const char *_path)
 int ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
-	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, Rts2Config::instance ()->getObsProcessTimeout ());
+	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (), obsId, Configuration::instance ()->getObsProcessTimeout ());
 	return que (newObsConn);
 }
 
@@ -550,8 +550,8 @@ int ImageProc::checkNotProcessed ()
 	std::string image_glob;
 	int ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	Configuration *config;
+	config = Configuration::instance ();
 
 	ret = config->getString ("imgproc", "imageglob", image_glob);
 	if (ret || image_glob.length () == 0)
@@ -588,7 +588,7 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 		if (conn->paramNextString (&in_imageName))
 			return -2;
 		ConnProcess *newConn;
-		newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), in_imageName, Rts2Config::instance ()->getAstrometryTimeout ());
+		newConn = new ConnImgOnlyProcess (this, defaultImgProcess.c_str (), in_imageName, Configuration::instance ()->getAstrometryTimeout ());
 
 		while (!conn->paramNextString (&in_imageName))
 			newConn->addArg (in_imageName);

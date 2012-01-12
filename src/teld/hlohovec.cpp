@@ -20,7 +20,7 @@
 #include "../../lib/rts2/tgdrive.h"
 #include "../../lib/rts2/gem.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 
 #define OPT_RA                OPT_LOCAL + 2201
 #define OPT_DEC               OPT_LOCAL + 2202
@@ -274,7 +274,7 @@ int Hlohovec::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	ret = config->loadFile ();
 	if (ret)
 		return -1;

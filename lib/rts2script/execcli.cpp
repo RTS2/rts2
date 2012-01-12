@@ -25,7 +25,7 @@
 #include "../rts2fits/image.h"
 #include "../rts2db/target.h"
 #include "command.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2script;
 
@@ -285,13 +285,13 @@ void DevClientCameraExec::queImage (rts2image::Image * image, bool run_after)
 {
 	// try immediately processing..
 	std::string after_command;
-	if (run_after && Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
+	if (run_after && Configuration::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
 	{
 		int timeout = 60;
 		std::string arg;
-		Rts2Config::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
+		Configuration::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
 		rts2plan::ConnImgProcess *afterCommand = new rts2plan::ConnImgProcess (getMaster (), after_command.c_str (), image->getAbsoluteFileName (), timeout, EVENT_AFTER_COMMAND_FINISHED);
-		Rts2Config::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
+		Configuration::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
 		afterCommand->addArg (image->expand (arg));
 		int ret = afterCommand->init ();
 		if (ret)

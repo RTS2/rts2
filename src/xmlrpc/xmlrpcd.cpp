@@ -23,7 +23,7 @@
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/messagedb.h"
 #else
-#include "rts2config.h"
+#include "configuration.h"
 #include "device.h"
 #endif /* HAVE_PGSQL */
 
@@ -75,8 +75,8 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 
 XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
-	Rts2Config::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
-	Rts2Config::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
+	Configuration::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
+	Configuration::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
 
 	createOrReplaceValue (lastFilename, conn, RTS2_VALUE_STRING, "_lastimage", "last image from camera", false, RTS2_VALUE_WRITABLE);
 	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false);
@@ -306,15 +306,15 @@ int XmlRpcd::init ()
 		addTimer (30, new Rts2Event (EVENT_XMLRPC_BB));
 
 #ifndef HAVE_PGSQL
-	ret = Rts2Config::instance ()->loadFile (config_file);
+	ret = Configuration::instance ()->loadFile (config_file);
 	if (ret)
 		return ret;
 #endif
 	// get page prefix
-	Rts2Config::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
+	Configuration::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
 
 	// auth_localhost
-	auth_localhost = Rts2Config::instance ()->getBoolean ("xmlrpcd", "auth_localhost", auth_localhost);
+	auth_localhost = Configuration::instance ()->getBoolean ("xmlrpcd", "auth_localhost", auth_localhost);
 
 #ifdef HAVE_LIBJPEG
 	Magick::InitializeMagick (".");

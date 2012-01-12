@@ -21,7 +21,7 @@
 #include "elementacquire.h"
 
 #include "../rts2fits/devclifoc.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2plan;
 using namespace rts2script;
@@ -33,7 +33,7 @@ ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float i
 	lastPrecision = rts2_nan ("f");
 	expTime = in_expTime;
 	processingState = NEED_IMAGE;
-	Rts2Config::instance ()->getString ("imgproc", "astrometry",
+	Configuration::instance ()->getString ("imgproc", "astrometry",
 		defaultImgProccess);
 	obsId = -1;
 	imgId = -1;
@@ -176,7 +176,7 @@ int ElementAcquire::processImage (Image * image)
 	}
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
-	processor = new ConnImgProcess (script->getMaster (), defaultImgProccess.c_str (), image->getFileName (), Rts2Config::instance ()->getAstrometryTimeout ());
+	processor = new ConnImgProcess (script->getMaster (), defaultImgProccess.c_str (), image->getFileName (), Configuration::instance ()->getAstrometryTimeout ());
 	// save image before processing..
 	image->saveImage ();
 	ret = processor->init ();
@@ -214,10 +214,10 @@ ElementAcquireStar::ElementAcquireStar (Script * in_script, int in_maxRetries, d
 	spiral_scale_dec = in_spiral_scale_dec;
 	minFlux = 5000;
 
-	Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
+	Configuration::instance ()->getString (in_script->getDefaultDevice (),
 		"sextractor", defaultImgProccess);
 
-	Rts2Config::instance ()->getDeviceMinFlux (in_script->getDefaultDevice (),
+	Configuration::instance ()->getDeviceMinFlux (in_script->getDefaultDevice (),
 		minFlux);
 	spiral = new Rts2Spiral ();
 }

@@ -721,7 +721,7 @@ int PrintTarget::printTargets (rts2db::TargetSet & set)
 			{
 				double jd = jd_start + i / 24.0;
 				((*(set.begin ())).second)->getAltAz (&hor, jd);
-				std::cout << i << " " << Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hor, 0) << " " << hor.az << std::endl;
+				std::cout << i << " " << Configuration::instance ()->getObjectChecker ()->getHorizonHeight (&hor, 0) << " " << hor.az << std::endl;
 			}
 			std::cout << "e" << std::endl;
 		}
@@ -751,8 +751,8 @@ int PrintTarget::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	Configuration *config;
+	config = Configuration::instance ();
 
 	if (!obs)
 	{

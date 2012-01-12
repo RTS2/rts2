@@ -591,7 +591,7 @@ int Device::loadAutosave ()
 	if (autosaveFile == NULL)
 		return 0;
 	
-	Rts2ConfigRaw *autosave = new Rts2ConfigRaw (true);
+	IniParser *autosave = new IniParser (true);
 	int ret = autosave->loadFile (autosaveFile);
 	if (ret)
 	{
@@ -613,7 +613,7 @@ int Device::loadModefile ()
 	int ret;
 	
 	delete modeconf;
-	modeconf = new Rts2ConfigRaw ();
+	modeconf = new IniParser ();
 	ret = modeconf->loadFile (modefile);
 	if (ret)
 		return ret;
@@ -623,7 +623,7 @@ int Device::loadModefile ()
 	else
 		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
 
-	for (Rts2ConfigRaw::iterator iter = modeconf->begin (); iter != modeconf->end (); iter++)
+	for (IniParser::iterator iter = modeconf->begin (); iter != modeconf->end (); iter++)
 	{
 		modesel->addSelVal ((*iter)->getName ());
 	}
@@ -643,15 +643,15 @@ int Device::setMode (int new_mode)
 			<< "." << sendLog;
 		return -1;
 	}
-	Rts2ConfigSection *sect = (*modeconf)[new_mode];
+	IniSection *sect = (*modeconf)[new_mode];
 
 	return setSectionValues (sect, new_mode);
 }
 
-int Device::setSectionValues (Rts2ConfigSection *sect, int new_mode)
+int Device::setSectionValues (IniSection *sect, int new_mode)
 {
 	// setup values
-	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
+	for (IniSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
 		rts2core::Value *val = getOwnValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)

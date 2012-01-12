@@ -19,7 +19,7 @@
 
 #include "dome.h"
 #include "../../lib/rts2/connopentpl.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <libnova/libnova.h>
 
@@ -248,9 +248,7 @@ int OpenTpl::setDomeTrack (bool new_auto)
 	return status;
 }
 
-
-int
-OpenTpl::initOpenTplDevice ()
+int OpenTpl::initOpenTplDevice ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -261,7 +259,7 @@ OpenTpl::initOpenTplDevice ()
 	}
 	else
 	{
-		Rts2Config *config = Rts2Config::instance ();
+		rts2core::Configuration *config = rts2core::Configuration::instance ();
 		config->loadFile (NULL);
 		// try to get default from config file
 		config->getString ("ir", "ip", ir_ip);

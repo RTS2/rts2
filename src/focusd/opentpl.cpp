@@ -21,7 +21,7 @@
 #define DEBUG_EXTRA
 
 #include "../../lib/rts2/connopentpl.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "focusd.h"
 
@@ -104,7 +104,7 @@ OpenTpl::initOpenTplDevice ()
 	}
 	else
 	{
-		Rts2Config *config = Rts2Config::instance ();
+		rts2core::Configuration *config = rts2core::Configuration::instance ();
 		config->loadFile (NULL);
 		// try to get default from config file
 		config->getString ("ir", "ip", ir_ip);

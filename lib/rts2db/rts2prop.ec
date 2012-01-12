@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2prop.h"
 #include "sqlerror.h"
 
@@ -65,7 +65,7 @@ Target * Rts2Prop::getTarget ()
 		return target;
 	try
 	{
-		target = createTarget (tar_id, Rts2Config::instance ()->getObserver());
+		target = createTarget (tar_id, rts2core::Configuration::instance ()->getObserver());
 	}
 	catch (SqlError err)
 	{

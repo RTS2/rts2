@@ -766,7 +766,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			d_grb_errorbox_ind = 0;
 		}
 		// do not insert if it's know source and follow transient is false
-		if (grb_is_grb == false && Rts2Config::instance()->grbdFollowTransients () == false)
+		if (grb_is_grb == false && rts2core::Configuration::instance()->grbdFollowTransients () == false)
 		{
 			logStream (MESSAGE_INFO) << "Ignoring know source target creation" << sendLog;
 			return 0;
@@ -997,7 +997,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	addGcnRaw (grb_id, grb_seqn, grb_type);
 
 	// do not follow if it's know transient and FollowTransients is false
-	if (grb_is_grb == false && Rts2Config::instance ()->grbdFollowTransients () == false)
+	if (grb_is_grb == false && rts2core::Configuration::instance ()->grbdFollowTransients () == false)
 	{
 		logStream (MESSAGE_INFO) << "Disabling know source." << sendLog;
 		EXEC SQL

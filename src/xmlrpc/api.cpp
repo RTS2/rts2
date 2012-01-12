@@ -454,7 +454,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (jd != jd_from)
 				os << ",";
 			ln_get_solar_equ_coords (jd, &equ);
-			ln_get_hrz_from_equ (&equ, Rts2Config::instance ()->getObserver (), jd, &hrz);
+			ln_get_hrz_from_equ (&equ, Configuration::instance ()->getObserver (), jd, &hrz);
 			os << "[" << hrz.alt << "," << hrz.az << "]";
 		}
 		os << "]";
@@ -469,7 +469,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		if (cname[0] == '\0')
 			throw JSONException ("empty camera name");
 		
-		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+		rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		rts2script::Script script = rts2script::Script ();
 		script.setTarget (cname, target);
 		script.prettyPrint (os, rts2script::PRINT_JSON);
@@ -484,7 +484,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		time_t to = params->getInteger ("to", from + 86400);
 		const int steps = params->getInteger ("steps", 1000);
 
-		rts2db::Target *target = createTarget (id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+		rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		const double jd_from = ln_get_julian_from_timet (&from);
 		const double jd_to = ln_get_julian_from_timet (&to);
 
@@ -572,7 +572,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		{
 			double ns = params->getDouble ("day", time (NULL));
 			time_t ns_t = ns;
-			Rts2Night n (ln_get_julian_from_timet (&ns_t), Rts2Config::instance ()->getObserver ());
+			Rts2Night n (ln_get_julian_from_timet (&ns_t), Configuration::instance ()->getObserver ());
 			os << "\"from\":" << *(n.getFrom ()) << ",\"to\":" << *(n.getTo ());
 		}
 		// get variable
@@ -723,7 +723,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			double radius = params->getDouble ("radius", NAN);
 			if (isnan (pos.ra) || isnan (pos.dec) || isnan (radius))
 				throw JSONException ("invalid ra, dec or radius parameter");
-			rts2db::TargetSet ts (&pos, radius, Rts2Config::instance ()->getObserver ());
+			rts2db::TargetSet ts (&pos, radius, Configuration::instance ()->getObserver ());
 			ts.load ();
 			jsonTargets (ts, os, params, &pos);
 		}
@@ -743,7 +743,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (nearest >= 0)
 			{
 				os << ",\"nearest\":{";
-				rts2db::TargetSet ts (&pos, nearest, Rts2Config::instance ()->getObserver ());
+				rts2db::TargetSet ts (&pos, nearest, Configuration::instance ()->getObserver ());
 				ts.load ();
 				jsonTargets (ts, os, params, &pos);
 				os << "}";
@@ -776,7 +776,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tid = params->getInteger ("id", -1);
 			if (tid <= 0)
 				throw JSONException ("empty target ID");
-			rts2db::Target *target = createTarget (tid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *target = createTarget (tid, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			target->getConstraints ()->printJSON (os);
 		}
 		// violated constrainsts..
@@ -793,7 +793,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			// 60 sec = 1 minute step (by default)
 			double step = params->getDouble ("step", 60);
 
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), master->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), master->getNotifyConnection ());
 			rts2db::Constraints *cons = tar->getConstraints ();
 
 			os << '"' << cn << "\":[";
@@ -827,7 +827,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			double length = params->getDouble ("length", NAN);
 			int step = params->getInteger ("step", 60);
 
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			if (isnan (length))
 				length = 1800;
 			rts2db::interval_arr_t si;
@@ -849,7 +849,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 
 			std::map <std::string, std::vector <rts2db::ConstraintDoubleInterval> > ac;
 
@@ -891,7 +891,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			steps = double ((to - from)) / steps;
 
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 
 			std::map <std::string, rts2db::ConstraintPtr> cons;
 
@@ -952,7 +952,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *t = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *t = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			switch (t->getTargetType ())
 			{
 				case TYPE_OPORTUNITY:
@@ -1012,7 +1012,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			const char *cam = params->getString ("c", NULL);
 			if (strlen (cam) == 0)
 				throw JSONException ("unknow camera");
@@ -1028,7 +1028,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			const char *cn = params->getString ("cn", NULL);
 			const char *ci = params->getString ("ci", NULL);
 			if (cn == NULL)
@@ -1047,7 +1047,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			int ltype = params->getInteger ("ltype", -1);
 			if (ltype < 0)
 				throw JSONException ("unknow/missing label type");
@@ -1059,7 +1059,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int tar_id = params->getInteger ("id", -1);
 			if (tar_id < 0)
 				throw JSONException ("unknow target ID");
-			rts2db::Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 			int ltype = params->getInteger ("ltype", -1);
 			if (ltype < 0)
 				throw JSONException ("unknow/missing label type");

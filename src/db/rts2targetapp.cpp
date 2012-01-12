@@ -18,7 +18,7 @@
  */
 
 #include "rts2targetapp.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 
 #include "../../lib/rts2db/simbadtarget.h"
@@ -92,8 +92,8 @@ int Rts2TargetApp::init ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 
 	if (!obs)
 	{

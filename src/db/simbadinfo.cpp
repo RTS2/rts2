@@ -21,7 +21,7 @@
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2db/simbadtarget.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 #include "../../lib/rts2/rts2askchoice.h"
 

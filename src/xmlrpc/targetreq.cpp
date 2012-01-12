@@ -72,7 +72,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
 		if (*endptr != '\0')
 		{
-			rts2db::TargetSet ts (Rts2Config::instance()->getObserver ());
+			rts2db::TargetSet ts (Configuration::instance()->getObserver ());
 			ts.loadByName (vals[0].c_str ());
 			if (ts.size () != 1)
 				throw rts2core::Error ("Cannot find target with name" + vals[0]);
@@ -84,7 +84,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 			if (tar_id < 0)
 				throw rts2core::Error ("Target id < 0");
 
-			tar = createTarget (tar_id, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 		}	
 		if (tar == NULL)
 			throw rts2core::Error ("Cannot find target with given ID");
@@ -166,7 +166,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"var st = ln_get_mean_sidereal_time(jd);\n"
 			"hAz = new DMS();\n"
 			"hAlt = new DMS();\n"
-			"observer = new LngLat(" << Rts2Config::instance ()->getObserver ()->lng << "," << Rts2Config::instance ()->getObserver ()->lat << ")\n;"
+			"observer = new LngLat(" << Configuration::instance ()->getObserver ()->lng << "," << Configuration::instance ()->getObserver ()->lat << ")\n;"
 			"for (var i in this.data) {\n"
 				"var t = this.data[i];\n"
 				"var radec = new RaDec(table.data[i][2],table.data[i][3], observer);\n"
@@ -554,7 +554,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 	tar->getPosition (&tradec);
 
 	_os << "<script type='text/javascript'>\n"
-	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ", new LngLat(" << Rts2Config::instance ()->getObserver ()->lng << "," << Rts2Config::instance ()->getObserver ()->lat << "));\n"
+	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ", new LngLat(" << Configuration::instance ()->getObserver ()->lng << "," << Configuration::instance ()->getObserver ()->lat << "));\n"
 	"hAlt = new DMS();\n"
 	"hAz = new DMS();\n"
 	"hSt = new HMS();\n"
@@ -1157,7 +1157,7 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 {
 	std::ostringstream _os;
 
-	rts2db::Target *tar = createTarget (tarid, Rts2Config::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+	rts2db::Target *tar = createTarget (tarid, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 
 	if (tar == NULL)
 		throw XmlRpcException ("Cannot find target with given ID!");

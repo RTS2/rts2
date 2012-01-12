@@ -1,6 +1,6 @@
 #include "rts2count.h"
 #include "timestamp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <iomanip>
 

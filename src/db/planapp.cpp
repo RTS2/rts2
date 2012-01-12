@@ -22,7 +22,7 @@
 #include "../../lib/rts2db/plan.h"
 #include "../../lib/rts2db/planset.h"
 #include "libnova_cpp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <signal.h>
 #include <iostream>

@@ -244,11 +244,11 @@ int Executor::reloadConfig ()
 {
 	int ret;
 	double f;
-	Rts2Config *config;
+	Configuration *config;
 	ret = Rts2DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 	observer = config->getObserver ();
 	f = 0;
 	config->getDouble ("grbd", "seplimit", f);
@@ -676,7 +676,7 @@ int Executor::setGrb (int grbId)
 	}
 	try
 	{
-		if (Rts2Config::instance ()->grbdValidity () == 0)
+		if (Configuration::instance ()->grbdValidity () == 0)
 		{
 			logStream (MESSAGE_INFO) << "GRB event with target id " << grbId << " ignored, will be scheduled from selector" << sendLog;
 			return 0;

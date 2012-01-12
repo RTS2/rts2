@@ -20,7 +20,7 @@
 #include "targetgrb.h"
 #include "sqlerror.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 #include "../rts2/infoval.h"
 #include "../rts2fits/image.h"
@@ -196,7 +196,7 @@ void TargetGRB::checkValidity ()
 		return;
 
 	bool autodisable = false;
-	if (isGrb () == false && Rts2Config::instance()->grbdFollowTransients () == false)
+	if (isGrb () == false && rts2core::Configuration::instance()->grbdFollowTransients () == false)
 	{
 		if (getTargetEnabled () == true)
 		{
@@ -204,7 +204,7 @@ void TargetGRB::checkValidity ()
 			autodisable = true;
 		}
 	}
-	if (Rts2Config::instance()->grbdValidity () > 0 && getPostSec () > Rts2Config::instance()->grbdValidity ())
+	if (rts2core::Configuration::instance()->grbdValidity () > 0 && getPostSec () > rts2core::Configuration::instance()->grbdValidity ())
 	{
 		if (getTargetEnabled () == true)
 		{

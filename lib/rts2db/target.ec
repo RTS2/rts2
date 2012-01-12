@@ -31,7 +31,7 @@
 
 #include "../rts2/infoval.h"
 #include "app.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 #include "timestamp.h"
 
@@ -259,8 +259,8 @@ void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 
 	watchConn = NULL;
 
@@ -296,8 +296,8 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 
 Target::Target ()
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 
 	watchConn = NULL;
 
@@ -899,8 +899,8 @@ void Target::getDBScript (const char *camera_name, std::string &script)
 bool Target::getScript (const char *device_name, std::string &buf)
 {
 	int ret;
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 
 	try
 	{
@@ -1278,7 +1278,7 @@ bool Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 		return true;
 	if (hrz->alt < getMinObsAlt ())
 		return false;
-	return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
+	return rts2core::Configuration::instance ()->getObjectChecker ()->is_good (hrz);
 }
 
 int Target::considerForObserving (double JD)
@@ -2010,7 +2010,7 @@ void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaDeg180> ("LUNAR RA DIST.", LibnovaDeg180 (getLunarRaDistance (JD)))
 		<< InfoVal<LibnovaDeg360> ("LUNAR PHASE", LibnovaDeg360 (ln_get_lunar_phase (JD)))
 		<< std::endl
-		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", Rts2Config::instance ()->getMasterConstraintFile ())
+		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", rts2core::Configuration::instance ()->getMasterConstraintFile ())
 		<< InfoVal<const char*> ("SYSTEM CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_SYSTEM) ? "used" : "empy/not used")
 		<< InfoVal<const char*> ("GROUP CONSTRAINTS", getGroupConstraintFile ())
 		<< InfoVal<const char*> ("GROUP CONSTRAINTS", (constraintsLoaded & CONSTRAINTS_GROUP) ? "used" : "empty/not used")
@@ -2192,7 +2192,7 @@ const char *Target::getConstraintFile ()
 		return constraintFile;
 
 	std::ostringstream os;
-	os << Rts2Config::instance ()->getTargetDir () << "/" << getTargetID () << "/constraints.xml";
+	os << rts2core::Configuration::instance ()->getTargetDir () << "/" << getTargetID () << "/constraints.xml";
 	constraintFile = new char[os.str ().length () + 1];
 	strcpy (constraintFile, os.str ().c_str ());
 	return constraintFile;
@@ -2204,7 +2204,7 @@ const char *Target::getGroupConstraintFile ()
 		return groupConstraintFile;
 	
 	std::ostringstream os;
-	os << Rts2Config::instance ()->getTargetDir () << "/groups/" << getTargetType () << ".xml";
+	os << rts2core::Configuration::instance ()->getTargetDir () << "/groups/" << getTargetType () << ".xml";
 	groupConstraintFile = new char[os.str ().length () + 1];
 	strcpy (groupConstraintFile, os.str ().c_str ());
 	return groupConstraintFile;
@@ -2225,7 +2225,7 @@ Constraints * Target::getConstraints ()
 	{
 		constraints = new Constraints (MasterConstraints::getConstraint ());
 		constraintsLoaded |= CONSTRAINTS_SYSTEM;
-		addWatch (Rts2Config::instance ()->getMasterConstraintFile ());
+		addWatch (rts2core::Configuration::instance ()->getMasterConstraintFile ());
 	}
 	catch (XmlError er)
 	{

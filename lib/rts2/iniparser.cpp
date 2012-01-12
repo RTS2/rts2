@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-#include "rts2configraw.h"
+#include "iniparser.h"
 #include "utilsfunc.h"
 #include "app.h"
 
@@ -34,16 +34,9 @@
 
 #include <libnova/libnova.h>
 
-std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val)
-{
-	_os << val.valueName;
-	if (val.valueSuffix.length () > 0)
-		_os << "." << val.valueSuffix;
-	_os << " = " << val.value;
-	return _os;
-}
+using namespace rts2core;
 
-Rts2ConfigSection::Rts2ConfigSection (const char *name)
+IniSection::IniSection (const char *name)
 {
 	sectName = std::string (name);
 	blockedBy = NULL;
@@ -52,17 +45,17 @@ Rts2ConfigSection::Rts2ConfigSection (const char *name)
 	#endif						 /* DEBUG_EXTRA */
 }
 
-Rts2ConfigSection::~Rts2ConfigSection (void)
+IniSection::~IniSection (void)
 {
 	delete blockedBy;
 }
 
-Rts2ConfigValue * Rts2ConfigSection::getValue (const char *valueName, bool verbose)
+IniValue * IniSection::getValue (const char *valueName, bool verbose)
 {
 	std::string name (valueName);
-	for (Rts2ConfigSection::iterator iter = begin (); iter != end (); iter++)
+	for (IniSection::iterator iter = begin (); iter != end (); iter++)
 	{
-		Rts2ConfigValue *val = &(*iter);
+		IniValue *val = &(*iter);
 		if (val->isValue (name))
 			return val;
 	}
@@ -76,7 +69,7 @@ Rts2ConfigValue * Rts2ConfigSection::getValue (const char *valueName, bool verbo
 	return NULL;
 }
 
-void Rts2ConfigSection::createBlockedBy (std::string val)
+void IniSection::createBlockedBy (std::string val)
 {
 	delete blockedBy;
 	blockedBy = new std::vector < std::string >;
@@ -113,7 +106,7 @@ void Rts2ConfigSection::createBlockedBy (std::string val)
 	}
 }
 
-const bool Rts2ConfigSection::containedInBlockedBy (const char *querying_device)
+const bool IniSection::containedInBlockedBy (const char *querying_device)
 {
 	if (blockedBy == NULL)
 		return true;
@@ -121,9 +114,9 @@ const bool Rts2ConfigSection::containedInBlockedBy (const char *querying_device)
 		std::string (querying_device)) != blockedBy->end ();
 }
 
-void Rts2ConfigRaw::clearSections ()
+void IniParser::clearSections ()
 {
-	for (Rts2ConfigRaw::iterator iter = begin (); iter != end (); iter++)
+	for (IniParser::iterator iter = begin (); iter != end (); iter++)
 	{
 		delete *iter;
 	}
@@ -131,10 +124,10 @@ void Rts2ConfigRaw::clearSections ()
 	clear ();
 }
 
-int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
+int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 {
 	int ln = 0;
-	Rts2ConfigSection *sect = NULL;
+	IniSection *sect = NULL;
 	std::string line;
 	while (!configStream->fail ())
 	{
@@ -161,7 +154,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 			}
 			if (sect)
 				push_back (sect);
-			sect = new Rts2ConfigSection (line.substr (top - line.begin () + 1, el-1).c_str ());
+			sect = new IniSection (line.substr (top - line.begin () + 1, el-1).c_str ());
 		}
 		else
 		{
@@ -172,7 +165,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 					logStream (MESSAGE_ERROR) << "value without section on line " << ln << ": " << line <<  sendLog;
 					return -1;
 				}
-				sect = new Rts2ConfigSection ("");
+				sect = new IniSection ("");
 			}
 			// now create value..
 			enum { NAME, SUFF, VAL, VAL_QUT, VAL_END }
@@ -282,7 +275,7 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 			#ifdef DEBUG_EXTRA
 			std::cout << "Pushing " << valName << " " << valSuffix << " " << val << std::endl;
 			#endif				 /* DEBUG_EXTRA */
-			sect->push_back (Rts2ConfigValue (valName, valSuffix, val));
+			sect->push_back (IniValue (valName, valSuffix, val));
 			if (valName == "blocked_by")
 			{
 				sect->createBlockedBy (val);
@@ -294,18 +287,18 @@ int Rts2ConfigRaw::parseConfigFile (const char *filename, bool parseFullLine)
 	return 0;
 }
 
-Rts2ConfigRaw::Rts2ConfigRaw (bool defaultSection)
+IniParser::IniParser (bool defaultSection)
 {
 	verboseEntry = true;
 	configStream = NULL;
 	addDefaultSection = defaultSection;
 }
 
-Rts2ConfigRaw::~Rts2ConfigRaw (void)
+IniParser::~IniParser (void)
 {
 }
 
-int Rts2ConfigRaw::loadFile (const char *filename, bool parseFullLine)
+int IniParser::loadFile (const char *filename, bool parseFullLine)
 {
 	clearSections ();
 
@@ -339,12 +332,12 @@ int Rts2ConfigRaw::loadFile (const char *filename, bool parseFullLine)
 	return 0;
 }
 
-Rts2ConfigSection * Rts2ConfigRaw::getSection (const char *section, bool verbose)
+IniSection * IniParser::getSection (const char *section, bool verbose)
 {
 	std::string name (section);
-	for (Rts2ConfigRaw::iterator iter = begin (); iter != end (); iter++)
+	for (IniParser::iterator iter = begin (); iter != end (); iter++)
 	{
-		Rts2ConfigSection *sect = *iter;
+		IniSection *sect = *iter;
 		if (sect->isSection (name))
 			return sect;
 	}
@@ -356,9 +349,9 @@ Rts2ConfigSection * Rts2ConfigRaw::getSection (const char *section, bool verbose
 	return NULL;
 }
 
-Rts2ConfigValue * Rts2ConfigRaw::getValue (const char *section, const char *valueName)
+IniValue * IniParser::getValue (const char *section, const char *valueName)
 {
-	Rts2ConfigSection *sect = getSection (section, verboseEntry);
+	IniSection *sect = getSection (section, verboseEntry);
 	if (!sect)
 	{
 		return NULL;
@@ -366,9 +359,9 @@ Rts2ConfigValue * Rts2ConfigRaw::getValue (const char *section, const char *valu
 	return sect->getValue (valueName, verboseEntry);
 }
 
-int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf)
+int IniParser::getString (const char *section, const char *valueName, std::string & buf)
 {
-	Rts2ConfigValue *val = getValue (section, valueName);
+	IniValue *val = getValue (section, valueName);
 	if (!val)
 	{
 		return -1;
@@ -377,7 +370,7 @@ int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::s
 	return 0;
 }
 
-int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
+int IniParser::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
 {
 	int ret;
  	clearVerboseEntry ();
@@ -390,10 +383,10 @@ int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::s
 	return ret;
 }
 
-const char * Rts2ConfigRaw::getStringDefault (const char *section, const char *valueName, const char *defVal)
+const char * IniParser::getStringDefault (const char *section, const char *valueName, const char *defVal)
 {
 	clearVerboseEntry ();
-	Rts2ConfigValue *val = getValue (section, valueName);
+	IniValue *val = getValue (section, valueName);
 	if (!val)
 	{
 		return defVal;
@@ -402,7 +395,7 @@ const char * Rts2ConfigRaw::getStringDefault (const char *section, const char *v
 	return val->getValue ().c_str ();
 }
 
-int Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
+int IniParser::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
 {
 	std::string valbuf;
 	int ret;
@@ -416,7 +409,7 @@ int Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, 
 	return 0;
 }
 
-int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value)
+int IniParser::getInteger (const char *section, const char *valueName, int &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -436,7 +429,7 @@ int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &
 	return 0;
 }
 
-int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value, int defVal)
+int IniParser::getInteger (const char *section, const char *valueName, int &value, int defVal)
 {
   	int ret;
 	clearVerboseEntry ();
@@ -449,7 +442,7 @@ int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &
 	return ret;
 }
 
-int Rts2ConfigRaw::getIntegerDefault (const char *section, const char *valueName, int defVal)
+int IniParser::getIntegerDefault (const char *section, const char *valueName, int defVal)
 {
 	int ret;
 	int value;
@@ -461,7 +454,7 @@ int Rts2ConfigRaw::getIntegerDefault (const char *section, const char *valueName
 	return value;
 }
 
-int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value)
+int IniParser::getFloat (const char *section, const char *valueName, float &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -485,7 +478,7 @@ int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &
 	return 0;
 }
 
-int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value, float defVal)
+int IniParser::getFloat (const char *section, const char *valueName, float &value, float defVal)
 {
 	int ret;
 	clearVerboseEntry ();
@@ -498,7 +491,7 @@ int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &
 	return ret;
 }
 
-double Rts2ConfigRaw::getDoubleDefault (const char *section, const char *valueName, double val)
+double IniParser::getDoubleDefault (const char *section, const char *valueName, double val)
 {
 	int ret;
 	double value;
@@ -510,7 +503,7 @@ double Rts2ConfigRaw::getDoubleDefault (const char *section, const char *valueNa
 	return value;
 }
 
-int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value)
+int IniParser::getDouble (const char *section, const char *valueName, double &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -530,7 +523,7 @@ int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double
 	return 0;
 }
 
-int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value, double defVal)
+int IniParser::getDouble (const char *section, const char *valueName, double &value, double defVal)
 {
   	int ret;
 	clearVerboseEntry ();
@@ -543,7 +536,7 @@ int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double
 	return ret;
 }
 
-bool Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool def)
+bool IniParser::getBoolean (const char *section, const char *valueName, bool def)
 {
 	std::string valbuf;
 	int ret;
@@ -561,9 +554,9 @@ bool Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool
 	return def;
 }
 
-const bool Rts2ConfigRaw::blockDevice (const char *device_name, const char *querying_device)
+const bool IniParser::blockDevice (const char *device_name, const char *querying_device)
 {
-	Rts2ConfigSection *sect = getSection (device_name, false);
+	IniSection *sect = getSection (device_name, false);
 	if (!sect)
 		return true;
 	return sect->containedInBlockedBy (querying_device);

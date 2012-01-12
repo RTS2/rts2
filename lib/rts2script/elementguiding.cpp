@@ -19,7 +19,7 @@
 
 #include "elementguiding.h"
 #include "execcli.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "../rts2fits/image.h"
 #include "../rts2fits/devclifoc.h"
 
@@ -31,7 +31,7 @@ ElementGuiding::ElementGuiding (Script * in_script, float init_exposure, int in_
 	expTime = init_exposure;
 	endSignal = in_endSignal;
 	processingState = NO_IMAGE;
-	Rts2Config::instance ()->getString (in_script->getDefaultDevice (),
+	Configuration::instance ()->getString (in_script->getDefaultDevice (),
 		"sextractor", defaultImgProccess);
 	obsId = -1;
 	imgId = -1;
@@ -43,10 +43,10 @@ ElementGuiding::ElementGuiding (Script * in_script, float init_exposure, int in_
 	last_dec = rts2_nan ("f");
 
 	min_change = 0.001;
-	Rts2Config::instance ()->getDouble ("guiding", "minchange", min_change);
+	Configuration::instance ()->getDouble ("guiding", "minchange", min_change);
 
 	bad_change = min_change * 4;
-	Rts2Config::instance ()->getDouble ("guiding", "badchange", bad_change);
+	Configuration::instance ()->getDouble ("guiding", "badchange", bad_change);
 }
 
 ElementGuiding::~ElementGuiding (void)

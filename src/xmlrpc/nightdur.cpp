@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2config.h"
+#include "configuration.h"
 
 void getNightDuration (int year, int month, int day, time_t &from, int64_t &duration)
 {
@@ -41,5 +41,5 @@ void getNightDuration (int year, int month, int day, time_t &from, int64_t &dura
 	{
 		duration = 86400;
 	}
-	from = Rts2Config::instance ()->getNight (year, month, day);
+	from = rts2core::Configuration::instance ()->getNight (year, month, day);
 }

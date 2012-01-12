@@ -2,7 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "rts2config.h"
+#include "configuration.h"
 #include <fitsio.h>
 
 #include <dirent.h>
@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-Rts2Config *config;
+rts2core::Configuration *config;
 
 int verbose = 0;
 int do_unlink = 1;
@@ -252,7 +252,7 @@ main (int argc, char **argv)
 		exit (EXIT_FAILURE);
 	}
 
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 	config->loadFile ();
 
 	for (argv = &argv[optind++]; *argv; argv++)

@@ -18,7 +18,7 @@
  */
 
 #include "imgdisplay.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
 #include "../../lib/rts2db/rts2appdb.h"
@@ -200,15 +200,15 @@ int Rts2NightReport::init ()
 		return ret;
 
 	if (t_from == 0)
-		t_from = Rts2Config::instance ()->getNight ();
+		t_from = rts2core::Configuration::instance ()->getNight ();
 	if (t_to == 0)
-	  	t_to = Rts2Config::instance ()->getNight () + 86400;
+	  	t_to = rts2core::Configuration::instance ()->getNight () + 86400;
 
 	if (tm_night)
 	{
 		// let's calculate time from..t_from will contains start of night
 		// local 12:00 will be at ~ give time..
-		Rts2Night night = Rts2Night (tm_night, Rts2Config::instance ()->getObserver ());
+		Rts2Night night = Rts2Night (tm_night, rts2core::Configuration::instance ()->getObserver ());
 		t_from = *(night.getFrom ());
 		t_to = *(night.getTo ());
 	}
@@ -294,9 +294,9 @@ void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEm
 int Rts2NightReport::doProcessing ()
 {
 	//  char *whereStr;
-	Rts2Config *config;
+	rts2core::Configuration *config;
 	//  Rts2SqlColumnObsState *obsState;
-	config = Rts2Config::instance ();
+	config = rts2core::Configuration::instance ();
 
 	int totalNights = 0;
 

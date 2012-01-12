@@ -18,7 +18,7 @@
  */
 
 #include "planset.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "libnova_cpp.h"
 
 #include <sstream>
@@ -133,7 +133,7 @@ PlanSetTarget::PlanSetTarget (int tar_id)
 
 PlanSetNight::PlanSetNight (double JD)
 {
-	Rts2Night night (JD, Rts2Config::instance ()->getObserver ());
+	Rts2Night night (JD, rts2core::Configuration::instance ()->getObserver ());
 	from = *(night.getFrom ());
 	to = *(night.getTo ());
 	planFromTo (from, to);

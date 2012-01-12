@@ -19,7 +19,7 @@
  */
 
 #include "teld.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #define OPT_MOVE_FAST    OPT_LOCAL + 510
 
@@ -45,8 +45,8 @@ class Dummy:public Telescope
         	virtual int processOption (int in_opt);
 		virtual int initValues ()
 		{
-			Rts2Config *config;
-			config = Rts2Config::instance ();
+			rts2core::Configuration *config;
+			config = rts2core::Configuration::instance ();
 			config->loadFile ();
 			telLatitude->setValueDouble (config->getObserver ()->lat);
 			telLongitude->setValueDouble (config->getObserver ()->lng);
@@ -154,7 +154,7 @@ int Dummy::startResync ()
 
 	setTarget (tar.ra, tar.dec);
 
-	ln_get_hrz_from_equ (&tar, Rts2Config::instance ()->getObserver (), JD, &hrz);
+	ln_get_hrz_from_equ (&tar, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot move to negative altitude (" << hrz.alt << ")" << sendLog;

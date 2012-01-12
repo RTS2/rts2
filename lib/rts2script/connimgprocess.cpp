@@ -21,7 +21,7 @@
 #include "script.h"
 
 #include "command.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "utilsfunc.h"
 #include "../rts2db/rts2taruser.h"
 
@@ -227,7 +227,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 						rts2core::ValueBool *apply_correction = (rts2core::ValueBool *) ((rts2core::Daemon *) master)->getOwnValue ("apply_correction");
 
 						// correction error should be in degrees
-						if (telConn && Rts2Config::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
+						if (telConn && Configuration::instance ()->isAstrometryDevice (image->getCameraName ()) && (apply_correction == NULL || apply_correction->getValueBool ()))
 						{
 							struct ln_equ_posn pos1, pos2;
 							pos1.ra = ra;

@@ -20,7 +20,7 @@
 #include "../rts2/expander.h"
 #include "error.h"
 #include "valuearray.h"
-#include "rts2configraw.h"
+#include "iniparser.h"
 
 #include <fitsio.h>
 
@@ -149,7 +149,7 @@ class FitsFile: public rts2core::Expander
 		 */
 		void loadTemlate (const char *fn);
 
-		void setTemplate (Rts2ConfigRaw *temp) { templateFile = temp; }
+		void setTemplate (rts2core::IniParser *temp) { templateFile = temp; }
 
 		/**
 		 * Return absolute filename. As filename is created in
@@ -222,7 +222,7 @@ class FitsFile: public rts2core::Expander
 		 *
 		 * @param hc     config section holding template to write
 		 */
-		void writeTemplate (Rts2ConfigSection *hc, const char *devname);
+		void writeTemplate (rts2core::IniSection *hc, const char *devname);
 
 		/**
 		 * Write image primary header from template.
@@ -278,7 +278,7 @@ class FitsFile: public rts2core::Expander
 		int flags;
 
 		// template - header config file
-		Rts2ConfigRaw *templateFile;
+		rts2core::IniParser *templateFile;
 
 		void setFileName (const char *_filename);
 

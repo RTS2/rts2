@@ -43,8 +43,8 @@ class ModelTest:public Telescope
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
 			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
 
-			telLongitude->setValueDouble (Rts2Config::instance ()->getObserver ()->lng);
-			telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->lat);
+			telLongitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lng);
+			telLatitude->setValueDouble (rts2core::Configuration::instance ()->getObserver ()->lat);
 		}
 
 		void setObserverLat (double in_lat) { telLatitude->setValueDouble (in_lat); }
@@ -95,8 +95,8 @@ using namespace rts2teld;
 
 TelModelTest::TelModelTest (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
 {
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 	modelFile = NULL;
 	model = NULL;
 	telescope = NULL;
@@ -429,9 +429,7 @@ void TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 	}
 }
 
-
-int
-TelModelTest::doProcessing ()
+int TelModelTest::doProcessing ()
 {
 	if (rpoint)
 	{
@@ -440,7 +438,7 @@ TelModelTest::doProcessing ()
 		hrz.alt = 90 - 85 * (((double) random ()) / RAND_MAX);
 		hrz.az = 360 * (((double) random ()) / RAND_MAX);
 		struct ln_equ_posn equ;
-		ln_get_equ_from_hrz (&hrz, Rts2Config::instance ()->getObserver (), ln_get_julian_from_sys (), &equ);
+		ln_get_equ_from_hrz (&hrz, rts2core::Configuration::instance ()->getObserver (), ln_get_julian_from_sys (), &equ);
 		std::cout << equ.ra << " " << equ.dec << std::endl;
 		return 0;
 	}

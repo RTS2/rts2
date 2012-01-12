@@ -172,10 +172,10 @@ int SelectorApp::doProcessing ()
 {
 	int next_tar;
 
-	Rts2Config *config;
+	Configuration *config;
 	struct ln_lnlat_posn *observer;
 
-	config = Rts2Config::instance ();
+	config = Configuration::instance ();
 	observer = config->getObserver ();
 
 	sel.setObserver (observer);

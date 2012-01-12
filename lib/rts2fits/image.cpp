@@ -23,7 +23,7 @@
 #include "imghdr.h"
 
 #include "../rts2/expander.h"
-#include "rts2config.h"
+#include "configuration.h"
 #include "timestamp.h"
 #include "utilsfunc.h"
 #include "../rts2/rts2target.h"
@@ -250,7 +250,7 @@ Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const
 	}
 	else
 	{
-		in_filename = expandPath (Rts2Config::instance ()->observatoryQuePath ());
+		in_filename = expandPath (rts2core::Configuration::instance ()->observatoryQuePath ());
 	}
 
 	createImage (in_filename);
@@ -308,7 +308,7 @@ std::string Image::expandVariable (char expression, size_t beg)
 	switch (expression)
 	{
 		case 'b':
-			return Rts2Config::instance ()->observatoryBasePath ();
+			return rts2core::Configuration::instance ()->observatoryBasePath ();
 		case 'c':
 			return getCameraName ();
 		case 'E':
@@ -534,28 +534,28 @@ int Image::closeFile ()
 
 int Image::toQue ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryQuePath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryQuePath ());
 }
 
 int Image::toAcquisition ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryAcqPath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryAcqPath ());
 }
 
 int Image::toArchive ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryArchivePath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryArchivePath ());
 }
 
 // move to dark images area..
 int Image::toDark ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryDarkPath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryDarkPath ());
 }
 
 int Image::toFlat ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryFlatPath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryFlatPath ());
 }
 
 int Image::toMasterFlat ()
@@ -565,7 +565,7 @@ int Image::toMasterFlat ()
 
 int Image::toTrash ()
 {
-	return renameImageExpand (Rts2Config::instance ()->observatoryTrashPath ());
+	return renameImageExpand (rts2core::Configuration::instance ()->observatoryTrashPath ());
 }
 
 img_type_t Image::getImageType ()
@@ -799,7 +799,7 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 		std::ostringstream sec;
 		sec << ntohs (im_h->channel);
 
-		Rts2ConfigSection *hc = templateFile->getSection (sec.str ().c_str (), false);
+		rts2core::IniSection *hc = templateFile->getSection (sec.str ().c_str (), false);
 		if (hc)
 			writeTemplate (hc, NULL);
 	}
@@ -2304,14 +2304,14 @@ void Image::setEnvironmentalValues ()
 {
 	// record any environmental variables..
 	std::vector <std::string> envWrite;
-	Rts2Config::instance ()->deviceWriteEnvVariables (getCameraName (), envWrite);
+	rts2core::Configuration::instance ()->deviceWriteEnvVariables (getCameraName (), envWrite);
 	for (std::vector <std::string>::iterator iter = envWrite.begin (); iter != envWrite.end (); iter++)
 	{
 		char *value = getenv ((*iter).c_str ());
 		std::string comment;
 		std::string section =  std::string ("env_") + (*iter) + std::string ("_comment");
 		// check for comment
-		if (Rts2Config::instance ()->getString (getCameraName (), section.c_str (), comment) != 0)
+		if (rts2core::Configuration::instance ()->getString (getCameraName (), section.c_str (), comment) != 0)
 			comment = std::string ("enviromental variable");
 
 		if (value != NULL)

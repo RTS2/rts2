@@ -18,7 +18,7 @@
  */
 
 #include "rts2cliapp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <iostream>
 
@@ -92,7 +92,7 @@ HorizonApp::init ()
 	if (ret)
 		return ret;
 
-	ret = Rts2Config::instance ()->loadFile (configFile);
+	ret = rts2core::Configuration::instance ()->loadFile (configFile);
 	if (ret)
 		return ret;
 
@@ -109,7 +109,7 @@ HorizonApp::doProcessing ()
 	hrz.alt = 0;
 
 	if (!horizonFile)
-		checker = Rts2Config::instance ()->getObjectChecker ();
+		checker = rts2core::Configuration::instance ()->getObjectChecker ();
 	else
 		checker = new ObjectCheck (horizonFile);
 

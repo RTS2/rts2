@@ -44,7 +44,7 @@
 #include "hms.h"
 #include "status.h"
 #include "../../lib/rts2/clicupola.h"
-#include "rts2config.h" 
+#include "configuration.h" 
 #include "pier-collision.h"
 
 #include <termios.h>
@@ -2637,7 +2637,7 @@ APGTO::initValues ()
 
   strcpy (telType, "APGTO");
 
-  Rts2Config *config = Rts2Config::instance ();
+  rts2core::Configuration *config = rts2core::Configuration::instance ();
   ret = config->loadFile ();
   if (ret)
     return -1;

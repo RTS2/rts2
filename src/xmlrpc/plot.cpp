@@ -25,7 +25,7 @@
 
 #include "../../lib/rts2/expander.h"
 #include "libnova_cpp.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 using namespace rts2xmlrpc;
 
@@ -210,11 +210,11 @@ void Plot::plotXSunAlt ()
 		struct ln_equ_posn pos;
 		struct ln_hrz_posn hrz;
 		ln_get_solar_equ_coords (j, &pos);
-		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), j, &hrz);
+		ln_get_hrz_from_equ (&pos, rts2core::Configuration::instance ()->getObserver (), j, &hrz);
 		double nh;
 		double dh;
-		Rts2Config::instance ()->getDouble ("observatory", "night_horizon", nh, -10);
-		Rts2Config::instance ()->getDouble ("observatory", "day_horizon", dh, 0);
+		rts2core::Configuration::instance ()->getDouble ("observatory", "night_horizon", nh, -10);
+		rts2core::Configuration::instance ()->getDouble ("observatory", "day_horizon", dh, 0);
 
 		if (hrz.alt < dh)
 		{

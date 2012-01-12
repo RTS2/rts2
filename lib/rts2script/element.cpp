@@ -21,7 +21,7 @@
 
 #include "script.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "utilsfunc.h"
 #include "../rts2fits/image.h"
 #include "../rts2fits/devclifoc.h"

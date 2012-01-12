@@ -25,7 +25,7 @@
 #else
 #include "../../lib/rts2fits/appimage.h"
 #endif							 /* HAVE_PGSQL */
-#include "rts2config.h"
+#include "configuration.h"
 #include "rts2format.h"
 
 #include <iostream>

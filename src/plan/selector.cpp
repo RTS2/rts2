@@ -255,8 +255,8 @@ int SelectorDev::reloadConfig ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
+	Configuration *config;
+	config = Configuration::instance ();
 	observer = config->getObserver ();
 
 	delete sel;

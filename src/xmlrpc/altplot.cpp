@@ -23,7 +23,7 @@
 
 #ifdef HAVE_LIBJPEG
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "../../lib/rts2/expander.h"
 #include "libnova_cpp.h"
 
@@ -69,7 +69,7 @@ Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::ImageSet *img
 		struct ln_hrz_posn hrz;
 		try
 		{
-			(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
+			(*iter)->getCoordBestAltAz (hrz, rts2core::Configuration::instance ()->getObserver ());
 			(*iter)->closeFile ();
 			plotRange ((*iter)->getMidExposureJD (), hrz.alt, (*iter)->getMidExposureJD (), hrz.alt);
 		}

@@ -191,7 +191,7 @@ int DevAugerShooter::reloadConfig ()
 	if (ret)
 		return ret;
 
-	Rts2Config *config = Rts2Config::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 	minEnergy->setValueDouble (config->getDoubleDefault ("augershooter", "minenergy", minEnergy->getValueDouble ()));
 
 	maxTime->setValueInteger (config->getIntegerDefault ("augershooter", "maxtime", maxTime->getValueInteger ()));

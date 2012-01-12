@@ -38,7 +38,7 @@
 #include "../scheduler/ticket.h"
 #include "../../lib/rts2fits/imagedb.h"
 #else
-#include "rts2config.h"
+#include "configuration.h"
 #include "device.h"
 #endif /* HAVE_PGSQL */
 
@@ -865,7 +865,7 @@ void TargetAltitude::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		throw XmlRpcException ("Invalid number of parameters");
 	if (((int) params[0]) < 0)
 		throw XmlRpcException ("Target id < 0");
-	rts2db::Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+	rts2db::Target *tar = createTarget ((int) params[0], Configuration::instance()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
 	if (tar == NULL)
 	{
 		throw XmlRpcException ("Cannot create target");
@@ -921,8 +921,8 @@ void ListMonthObservations::sessionExecute (XmlRpcValue& params, XmlRpcValue& re
 	XmlRpcValue retVar;
 	rts2db::ObservationSet obs_set;
 
-	time_t from = Rts2Config::instance ()->getNight (y, m, 1);
-	time_t to = Rts2Config::instance ()->getNight (y, m + 1, 1);
+	time_t from = Configuration::instance ()->getNight (y, m, 1);
+	time_t to = Configuration::instance ()->getNight (y, m + 1, 1);
 	obs_set.loadTime (&from, &to);
 
 	int i = 0;

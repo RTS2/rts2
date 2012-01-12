@@ -18,7 +18,7 @@
  */
 
 #include "fork.h"
-#include "rts2config.h"
+#include "configuration.h"
 
 #include "libnova_cpp.h"
 
@@ -52,7 +52,7 @@ int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, doubl
 
 	ls = getLstDeg (JD);
 
-	ln_get_hrz_from_equ (pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
+	ln_get_hrz_from_equ (pos, rts2core::Configuration::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < -1)
 	{
 		logStream (MESSAGE_ERROR) << "object is bellow horizont, azimuth is "

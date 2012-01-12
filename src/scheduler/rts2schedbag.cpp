@@ -19,7 +19,7 @@
 
 #include "rts2schedbag.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 #include "utilsfunc.h"
 
 #include <algorithm>
@@ -205,7 +205,7 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	JDstart = _JDstart;
 	JDend = _JDend;
 
-	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+	struct ln_lnlat_posn *observer = rts2core::Configuration::instance ()->getObserver ();
 
 	tarSet = new rts2db::TargetSet (observer);
 	tarSet->load ();
@@ -250,7 +250,7 @@ Rts2SchedBag::~Rts2SchedBag (void)
 
 int Rts2SchedBag::constructSchedules (int num)
 {
-	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+	struct ln_lnlat_posn *observer = rts2core::Configuration::instance ()->getObserver ();
 
 	ticketSet->load (tarSet);
 	if (ticketSet->size () == 0)
@@ -278,7 +278,7 @@ int Rts2SchedBag::constructSchedules (int num)
 
 int Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
 {
-  	Rts2Night night = Rts2Night (obsNight, Rts2Config::instance ()->getObserver ());
+  	Rts2Night night = Rts2Night (obsNight, rts2core::Configuration::instance ()->getObserver ());
 
 	rts2db::ObservationSet obsSet = rts2db::ObservationSet ();
 	obsSet.loadTime (night.getFrom (), night.getTo ());
@@ -298,7 +298,7 @@ int Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNigh
 		return -1;
 	}
 
-	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+	struct ln_lnlat_posn *observer = rts2core::Configuration::instance ()->getObserver ();
 
 	ticketSet->constructFromObsSet (tarSet, obsSet);
 	if (ticketSet->size () == 0)

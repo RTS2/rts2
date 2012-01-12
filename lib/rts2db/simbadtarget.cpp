@@ -23,7 +23,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/urlencoding.h"
 
-#include "rts2config.h"
+#include "configuration.h"
 
 #include <sstream>
 #include <libxml/parser.h>
@@ -249,7 +249,7 @@ Target *createTargetByString (const char *tar_string)
 		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
 		std::ostringstream os;
 
-		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix, "RTS2");
+		rts2core::Configuration::instance ()->getString ("newtarget", "prefix", new_prefix, "RTS2");
 		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
 		constTarget->setTargetName (os.str ().c_str ());
 		constTarget->setTargetType (TYPE_OPORTUNITY);

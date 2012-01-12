@@ -19,7 +19,7 @@
  */
 
 #include "cupola.h"
-#include "rts2config.h" 
+#include "configuration.h" 
 
 
 // Obs. Vermes specific 
@@ -57,7 +57,7 @@ namespace rts2dome
   class Vermes:public Cupola
   {
   private:
-    Rts2Config *config ;
+    rts2core::Configuration *config ;
     rts2core::ValueDouble  *target_azimut_cupola ;
     rts2core::ValueInteger *barcode_reader_state ;
     rts2core::ValueDouble  *azimut_difference ;
@@ -282,7 +282,7 @@ int Vermes::initValues ()
   int ret ;
   pthread_t  move_to_target_azimuth_id;
 
-  config = Rts2Config::instance ();
+  config = rts2core::Configuration::instance ();
 
   ret = config->loadFile ();
   if (ret) {
