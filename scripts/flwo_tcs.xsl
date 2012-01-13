@@ -182,8 +182,8 @@ if ( $continue == 1 ) then
 	if ( $diff_l != 0 ) then
 		set diff=`printf '%+0f' $diff_l`
 	        set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
-		rts2-logcom "Offseting focus to $diff ( $defoc_toffs - $defoc_current ), guider $gdiff"
 		set diff_f=`printf '%+02f' $diff`
+		rts2-logcom "Offseting focus to $diff_f ( $defoc_toffs - $defoc_current ), guider $gdiff"
 		tele hfocus $diff_f
 		#tele gfocus $gdiff
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
