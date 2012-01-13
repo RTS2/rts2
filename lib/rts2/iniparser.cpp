@@ -168,13 +168,13 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 				sect = new IniSection ("");
 			}
 			// now create value..
-			enum { NAME, SUFF, VAL, VAL_QUT, VAL_END }
-			pstate = NAME;
+			enum { NAME, SUFF, VAL, VAL_QUT, VAL_END, LINE_END} pstate = NAME;
 			std::string valName;
 			std::string valSuffix;
 			std::string val;
+			std::string comment;
 			std::string::iterator es = top;
-			for (; es != line.end () && pstate != VAL_END; es++)
+			for (; es != line.end () && pstate != LINE_END; es++)
 			{
 				switch (pstate)
 				{
@@ -237,7 +237,6 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 									es--;
 							}	
 							val = line.substr (top - line.begin (), es - top);
-							es = line.end ();
 						}
 						break;
 					case VAL_QUT:
@@ -248,10 +247,26 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 								val = std::string ("");
 							else
 								val = line.substr (top - line.begin (), es - top);
-							es = line.end ();
 						}
 						break;
 					case VAL_END:
+						if (*es == ';')
+						{
+							do
+							{
+								es++;
+							}
+							while (es != line.end () && isspace (*es));
+
+							if (es != line.end ())
+							{
+								comment = line.substr (es - line.begin ());
+								es = line.end ();
+							}
+							pstate = LINE_END;
+						}
+						break;
+					case LINE_END:
 						break;
 				}
 			}
@@ -266,16 +281,15 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 				val = line.substr (top - line.begin (), es - top);
 				pstate = VAL_END;
 			}
-			if (pstate != VAL_END)
+			if (!(pstate == VAL_END || pstate == LINE_END))
 			{
-				logStream (MESSAGE_ERROR) << "invalid configuration line " << ln 
-					<< " of file " << filename << sendLog;
+				logStream (MESSAGE_ERROR) << "invalid configuration line " << ln << " of file " << filename << sendLog;
 				return -1;
 			}
 			#ifdef DEBUG_EXTRA
 			std::cout << "Pushing " << valName << " " << valSuffix << " " << val << std::endl;
 			#endif				 /* DEBUG_EXTRA */
-			sect->push_back (IniValue (valName, valSuffix, val));
+			sect->push_back (IniValue (valName, valSuffix, val, comment));
 			if (valName == "blocked_by")
 			{
 				sect->createBlockedBy (val);

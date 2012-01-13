@@ -1288,24 +1288,14 @@ int Daemon::createSectionValues (IniSection *sect)
 		std::string suffix = iter->getSuffix ();
 		Value *val = NULL;
 
-		std::string strv = iter->getValue ();
-		std::string comment;
-
-		int i = strv.find ('/');
-		if (i != std::string::npos)
-		{
-			comment = strv.substr (i + 1);
-			strv = strv.substr (0, i);
-		}
-
 		if (suffix.length () > 0)
 		{
 			if (!strcasecmp (suffix.c_str (), "i"))
-				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else if (!strcasecmp (suffix.c_str (), "d"))
-				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else if (!strcasecmp (suffix.c_str (), "da"))
-				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else
 			{
 				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
@@ -1314,22 +1304,22 @@ int Daemon::createSectionValues (IniSection *sect)
 		}
 		else
 		{
-			createValue ((ValueString *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+			createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 		}
 		// create and set new value
 		rts2core::Value *new_value = duplicateValue (val);
 		int ret;
-		ret = new_value->setValueCharArr (strv.c_str ());
+		ret = new_value->setValueCharArr (iter->getValue().c_str ());
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName () << " with value '" << strv << "'." << sendLog;
+			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName () << " with value '" << iter->getValue () << "'." << sendLog;
 			return -1;
 		}
 		CondValue *cond_val = getCondValue (val->getName ().c_str ());
 		ret = setCondValue (cond_val, '=', new_value);
 		if (ret == -2)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " value '" << strv << "'." << sendLog;
+			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " value '" << iter->getValue () << "'." << sendLog;
 			return -1;
 		}
 	}

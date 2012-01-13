@@ -51,11 +51,12 @@ namespace rts2core
 class IniValue
 {
 	public:
-		IniValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value)
+		IniValue (std::string in_valueName, std::string in_valueSuffix, std::string in_value, std::string in_comment)
 		{
 			valueName = in_valueName;
 			valueSuffix = in_valueSuffix;
 			value = in_value;
+			comment = in_comment;
 		}
 		
 		/**
@@ -96,6 +97,8 @@ class IniValue
 		 */
 		double getValueDouble () { return atof (value.c_str ()); }
 
+		const char *getComment () { return comment.c_str (); }
+
 		friend std::ostream & operator << (std::ostream & _os, IniValue val)
 		{
 			_os << val.valueName;
@@ -109,6 +112,7 @@ class IniValue
 		std::string valueName;
 		std::string valueSuffix;
 		std::string value;
+		std::string comment;
 };
 
 std::ostream & operator << (std::ostream & _os, IniValue val);
@@ -185,6 +189,7 @@ class IniParser: public std::vector < IniSection * >
 {
 	public:
 		/**
+		 * Constructs parser for .ini files.
 		 *
 		 * @param defaultSection  if values without section will be added to default section (e.g. with empty name).
 		 */
