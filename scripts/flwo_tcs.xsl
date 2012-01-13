@@ -181,11 +181,11 @@ if ( $continue == 1 ) then
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff_l != 0 ) then
 		set diff=`printf '%+0f' $diff_l`
-	        set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
 		set diff_f=`printf '%+02f' $diff`
+	        set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
 		rts2-logcom "Offseting focus to $diff_f ( $defoc_toffs - $defoc_current ), guider $gdiff"
 		tele hfocus $diff_f
-		#tele gfocus $gdiff
+		tele gfoc $gdiff
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	<xsl:if test='$debug != 0'>
 	else
@@ -202,18 +202,24 @@ if ( $continue == 1 ) then
 			set guidestatus = "OFF"
 		endif
 		if ( $guidestatus != $autog ) then
-			rts2-logcom "System should guide, but autoguider is in $guidestatus."
-			set nowdate=`date +%s`
-			if ( $nextautog &lt; $nowdate ) then
-				rts2-logcom "Grabing autoguider image"
-				tele grab
-				set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-				set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
-				mkdir -p $dir
-				set autof=$dir/`date +%H%M%S`.fits
-				cp $lastgrab $autof
-				rts2-logcom "Autoguider image saved in $autof; trying to guide again"
+			if ( $nextautog &lt; 0 ) then
+				rts2-logcom "Commanding autoguiding to ON"
+				set nowdate=`date +%s`
 				<xsl:copy-of select='$guidetest'/>
+			else
+				rts2-logcom "System should guide, but autoguider is in $guidestatus."
+				set nowdate=`date +%s`
+				if ( $nextautog &lt; $nowdate ) then
+					rts2-logcom "Grabing autoguider image"
+					tele grab
+					set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
+					set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
+					mkdir -p $dir
+					set autof=$dir/`date +%H%M%S`.fits
+					cp $lastgrab $autof
+					rts2-logcom "Autoguider image saved in $autof; trying to guide again"
+					<xsl:copy-of select='$guidetest'/>
+				endif
 			endif
 		endif
 	endif
@@ -313,9 +319,14 @@ if ( $continue == 1 ) then
 		endif
 		if ( $guidestatus != $new_guide ) then
 			if ( $new_guide == "ON" ) then
-				rts2-logcom "Commanding autoguiding to ON"
-				set nowdate=`date +%s`
-				<xsl:copy-of select='$guidetest'/>
+				if ( $defoc_toffs == 0 ) then
+					rts2-logcom "Commanding autoguiding to ON"
+					set nowdate=`date +%s`
+					<xsl:copy-of select='$guidetest'/>
+				else
+					<xsl:copy-of select='$printd'/> 'stored defocus, will start guiding later'
+					@ nextautog = -1
+				endif
 			else
 				rts2-logcom "Set guiding to OFF"
 				tele autog OFF
