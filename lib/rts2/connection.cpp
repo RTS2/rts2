@@ -479,7 +479,6 @@ void Connection::postMaster (Rts2Event * event)
 
 int Connection::idle ()
 {
-	int ret;
 	if (connectionTimeout > 0)
 	{
 		time_t now;
@@ -487,10 +486,12 @@ int Connection::idle ()
 		if (now > lastData + getConnTimeout ()
 			&& now > lastSendReady + getConnTimeout () / 4)
 		{
-			ret = sendMsg (PROTO_TECHNICAL " ready");
 			#ifdef DEBUG_EXTRA
+			int ret = sendMsg (PROTO_TECHNICAL " ready");
 			std::cout << "Send T ready ret: " << ret <<
 				" name: " << getName () << " type: " << type << std::endl;
+			#else
+			sendMsg (PROTO_TECHNICAL " ready");
 			#endif				 /* DEBUG_EXTRA */
 			time (&lastSendReady);
 		}
@@ -1199,7 +1200,6 @@ int Connection::message ()
 void Connection::sendCommand ()
 {
 	CommandDeviceStatus *statInfoCall;
-	Connection *conn;
 	// we require some special state before command can be executed
 	if (runningCommand->getBopMask ())
 	{
@@ -1240,7 +1240,6 @@ void Connection::sendCommand ()
 		{
 			case CIP_NOT_CALLED:
 				statInfoCall = new CommandDeviceStatus (getMaster (), this);
-				conn = runningCommand->getConnection ();
 				// we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
 				statInfoCall->setConnection (this);
 				statInfoCall->setStatusCallProgress (CIP_RETURN);
