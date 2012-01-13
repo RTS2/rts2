@@ -65,6 +65,8 @@ endif
 <!-- called after guider is set to ON. Wait for some time for guider to settle down,
   and either find guide star, or give up-->
 <xsl:variable name='guidetest'>
+	tele ggain On
+	tele glev 100
 	tele autog ON
 	@ retr = 5
 	while ( $retr &gt;= 0 )
@@ -105,7 +107,7 @@ if ( $continue == 1 ) then
 	set ora=`printf "%.0f" $ora_l`
 	set odec=`printf "%.0f" $odec_l`
 	if ( $cname == $name ) then
-		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -500 &amp;&amp; $ora &lt; 500 &amp;&amp; $odec &gt; -500 &amp;&amp; $odec &lt; 500 ) then
+		if ( ${%ora} &gt; 0 &amp;&amp; ${%odec} &gt; 0 &amp;&amp; $ora &gt; -800 &amp;&amp; $ora &lt; 800 &amp;&amp; $odec &gt; -700 &amp;&amp; $odec &lt; 700 ) then
 			set apply=`$xmlrpc --quiet -G IMGP.apply_corrections`
 			set imgnum=`$xmlrpc --quiet -G IMGP.img_num`
 
@@ -179,9 +181,11 @@ if ( $continue == 1 ) then
 	set diff_l=`echo $defoc_toffs - $defoc_current | bc`
 	if ( $diff_l != 0 ) then
 		set diff=`printf '%+0f' $diff_l`
-		rts2-logcom "Offseting focus to $diff ( $defoc_toffs - $defoc_current )"
+	        set gdiff=`echo $diff_f | awk '{ printf "%+i",$1*(-4313); }'`
+		rts2-logcom "Offseting focus to $diff ( $defoc_toffs - $defoc_current ), guider $gdiff"
 		set diff_f=`printf '%+02f' $diff`
 		tele hfocus $diff_f
+		#tele gfocus $gdiff
 		set defoc_current=`echo $defoc_current + $diff_l | bc`
 	<xsl:if test='$debug != 0'>
 	else
@@ -310,6 +314,7 @@ if ( $continue == 1 ) then
 			else
 				rts2-logcom "Set guiding to OFF"
 				tele autog OFF
+				#tele ggain Off
 			endif
 		<xsl:if test='$debug != 0'>	
 		else
@@ -351,7 +356,8 @@ if ( $last_acq_obs_id != $obs_id ) then
 		tele autog OFF
 		$autog = 'OFF'
 	endif
-	@ pre = `echo "<xsl:value-of select='@precision'/> * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
+	set pre_l = `echo "<xsl:value-of select='@precision'/> * 3600.0" | bc`
+	@ pre = `printf '%.0f' $pre_l`
 	@ err = $pre + 1
 	@ maxattemps = 5
 	@ attemps = $maxattemps
@@ -375,9 +381,10 @@ if ( $last_acq_obs_id != $obs_id ) then
 					set l=`echo $line`
 					set ora_l = `echo "$l[5] * 3600.0" | bc`
 					set odec_l = `echo "$l[6] * 3600.0" | bc`
-					set ora = `echo $ora_l | sed 's#^\([-+0-9]*\).*#\1#'`
-					set odec = `echo $odec_l | sed 's#^\([-+0-9]*\).*#\1#'`
-					@ err = `echo "$l[7] * 3600.0" | bc | sed 's#^\([-+0-9]*\).*#\1#'`
+					set ora = `printf '%.0f' $ora_l`
+					set odec = `printf '%.0f' $odec_l`
+					set err = `echo "$l[7] * 3600.0" | bc`
+					set err = `printf '%.0f' $err`
 					if ( $err > $pre ) then
 						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
 						tele offset $ora $odec
