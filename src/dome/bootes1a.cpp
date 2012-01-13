@@ -170,21 +170,13 @@ Bootes1A::info ()
 
 bool Bootes1A::isMoving ()
 {
-	int ret;
-	ret = zjisti_stav_portu ();
+	zjisti_stav_portu ();
 
 	// the roof may have nine ( [open, closed, running = 3], [two halves=2]
 	// 3^2=9) distinct port states. Of these, only full open and full close
 	// mean no activity of the housing.
 
-	return  
-		!(
-			(
-			( getPortState (CLOSE_END_1) && getPortState (CLOSE_END_2) ) 
-			||
-			( getPortState (OPEN_END_1)  && getPortState (OPEN_END_2) )
-			)	 
-		);
+	return  !( ( (getPortState (CLOSE_END_1) && getPortState (CLOSE_END_2)) || ( getPortState (OPEN_END_1)  && getPortState (OPEN_END_2)) )	);
 }
 
 // Florentinos new FEATURE! - the dome must not be touched if not in
