@@ -102,7 +102,7 @@ void ConnTCP::sendData (const void *data, int len, bool binary)
 				continue;
 			if (debug)
 			{
-				Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+				LogStream ls = logStream (MESSAGE_DEBUG);
 				ls << "failed to send ";
 				if (binary)
 					ls.logArrAsHex ((char *) data, len);
@@ -116,7 +116,7 @@ void ConnTCP::sendData (const void *data, int len, bool binary)
 	}
 	if (debug)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "send ";
 		if (binary)
 			ls.logArrAsHex ((char *) data, len);
@@ -167,7 +167,7 @@ void ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 
 	if (debug)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "recv ";
 		if (binary)
 			ls.logArrAsHex ((char *)data, len);

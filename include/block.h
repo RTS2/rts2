@@ -82,7 +82,7 @@
 
 class Rts2ClientTCPDataConn;
 
-class Rts2LogStream;
+class LogStream;
 
 namespace rts2core
 {
@@ -297,7 +297,7 @@ class Block: public rts2core::App
 		void sendValueAll (char *val_name, char *value);
 
 		// only used in centrald!
-		void sendMessageAll (Rts2Message & msg);
+		void sendMessageAll (Message & msg);
 
 		/**
 		 * Set timeout for idle calls. Timeout is in
@@ -542,7 +542,7 @@ class Block: public rts2core::App
 		 *
 		 * @param msg Message which is received.
 		 */
-		virtual void message (Rts2Message & msg);
+		virtual void message (Message & msg);
 
 		/**
 		 * Clear all connections from pending commands.

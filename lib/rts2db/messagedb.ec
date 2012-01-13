@@ -28,11 +28,11 @@ EXEC SQL include sqlca;
 
 using namespace rts2db;
 
-MessageDB::MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString): Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
+MessageDB::MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString): rts2core::Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
 {
 }
 
-MessageDB::MessageDB (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString):Rts2Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
+MessageDB::MessageDB (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString): rts2core::Message (in_messageTime, in_messageOName, in_messageType, in_messageString)
 {
 }
 

@@ -291,7 +291,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
 
-		virtual void message (Rts2Message & msg);
+		virtual void message (Message & msg);
 
 		/**
 		 * Create new session for given user.
@@ -323,7 +323,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		/**
 		 * Returns messages buffer.
 		 */
-		std::deque <Rts2Message> & getMessages () { return messages; }
+		std::deque <Message> & getMessages () { return messages; }
 
 		/**
 		 * Return prefix for generated pages - usefull for pages behind proxy.
@@ -380,7 +380,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		const char *defLabel;
 		std::map <std::string, Session*> sessions;
 
-		std::deque <Rts2Message> messages;
+		std::deque <Message> messages;
 
 		std::vector <Directory *> directories;
 		std::list <AsyncAPI *> asyncAPIs;

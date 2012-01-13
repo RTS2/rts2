@@ -206,7 +206,7 @@ int ConnSerial::writePort (const char *wbuf, int b_len)
 	int wlen = 0;
 	if (debugPortComm)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "will write to port: '";
 		logBuffer (ls, wbuf, b_len);
 		ls <<  "'" << sendLog;
@@ -290,7 +290,7 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 		{
 			if (ntries == 0)
 			{
-				Rts2LogStream ls = logStream (MESSAGE_ERROR);
+				LogStream ls = logStream (MESSAGE_ERROR);
 				ls << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully '";
 				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
@@ -307,7 +307,7 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 		char *tmp_b = new char[rlen + 1];
 		memcpy (tmp_b, rbuf, rlen);
 		tmp_b[rlen] = '\0';
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "readed from port '";
 		logBuffer (ls, rbuf, rlen);
 		ls << "'" << sendLog;
@@ -332,7 +332,7 @@ size_t ConnSerial::readPortNoBlock (char *rbuf, size_t b_len)
 	}
 	if (debugPortComm)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "readed from port '";
 		logBuffer (ls, rbuf, ret);
 		ls << "'" << sendLog;
@@ -375,7 +375,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 			rlen += ret;
 			if (debugPortComm)
 			{
-				Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+				LogStream ls = logStream (MESSAGE_DEBUG);
 				ls << "readed from port '";
 				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
@@ -384,7 +384,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		}
 		rlen += ret;
 	}
-	Rts2LogStream ls = logStream (MESSAGE_ERROR);
+	LogStream ls = logStream (MESSAGE_ERROR);
 	ls << "did not find end char '" << endChar
 		<< "', readed '";
 	logBuffer (ls, rbuf, rlen);

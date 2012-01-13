@@ -23,7 +23,7 @@
 #include "message.h"
 
 #include "block.h"
-#include "rts2logstream.h"
+#include "logstream.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>

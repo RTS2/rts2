@@ -713,11 +713,11 @@ void GetMessages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 {
 	int i = 0;
 	XmlRpcValue retVar;
-	for (std::deque <Rts2Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin ();
+	for (std::deque <Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin ();
 		iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++, i++)
 	{
 		XmlRpcValue val;
-		Rts2Message msg = *iter;
+		Message msg = *iter;
 		time_t t;
 		val["type"] = msg.getTypeString ();
 		val["origin"] = msg.getMessageOName ();

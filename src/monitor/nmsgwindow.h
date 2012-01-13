@@ -21,7 +21,7 @@
 #define __RTS2_NMSGWINDOW__
 
 #include "daemonwindow.h"
-#include "rts2message.h"
+#include "message.h"
 
 #include <list>
 
@@ -39,16 +39,16 @@ class NMsgWindow:public NSelWindow
 		NMsgWindow ();
 		virtual ~ NMsgWindow (void);
 		virtual void draw ();
-		friend NMsgWindow & operator << (NMsgWindow & msgwin, Rts2Message & msg)
+		friend NMsgWindow & operator << (NMsgWindow & msgwin, rts2core::Message & msg)
 		{
 			msgwin.add (msg);
 			return msgwin;
 		}
 
-		void add (Rts2Message & msg);
+		void add (rts2core::Message & msg);
 		void setMsgMask (int new_msgMask) { msgMask = new_msgMask; }
 	private:
-		std::list < Rts2Message > messages;
+		std::list < rts2core::Message > messages;
 		int msgMask;
 };
 

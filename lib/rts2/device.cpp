@@ -780,7 +780,7 @@ void Device::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	Daemon::sendMessage (in_messageType, in_messageString);
 	for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 	{
-		Rts2Message msg = Rts2Message (getDeviceName (), in_messageType, in_messageString);
+		Message msg = Message (getDeviceName (), in_messageType, in_messageString);
 		(*iter)->sendMessage (msg);
 	}
 }

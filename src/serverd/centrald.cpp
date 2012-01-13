@@ -73,7 +73,7 @@ int Rts2ConnCentrald::sendDeviceKey ()
 	return 0;
 }
 
-int Rts2ConnCentrald::sendMessage (Rts2Message & msg)
+int Rts2ConnCentrald::sendMessage (Message & msg)
 {
 	if (msg.passMask (messageMask))
 		return rts2core::Connection::sendMessage (msg);
@@ -769,17 +769,17 @@ void Rts2Centrald::deviceReady (rts2core::Connection * conn)
 
 void Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
-	Rts2Message msg = Rts2Message ("centrald", in_messageType, in_messageString);
+	Message msg = Message ("centrald", in_messageType, in_messageString);
 	Daemon::sendMessage (in_messageType, in_messageString);
 	processMessage (msg);
 }
 
-void Rts2Centrald::message (Rts2Message & msg)
+void Rts2Centrald::message (Message & msg)
 {
 	processMessage (msg);
 }
 
-void Rts2Centrald::processMessage (Rts2Message & msg)
+void Rts2Centrald::processMessage (Message & msg)
 {
 	// log it
 	if (fileLog)
@@ -846,7 +846,7 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 	setWeatherState (failedArr.size () > 0 ? false : true, "weather state update from weatherChanged");
 	if (failedArr.size () > 0)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "failed devices:";
 		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
 			ls << " " << (*namIter);
@@ -891,7 +891,7 @@ void Rts2Centrald::stopChanged (const char * device, const char * msg)
 	setStopState (failedArr.size () > 0 ? true : false, "stop state update from stopChanged");
 	if (failedArr.size () > 0)
 	{
-		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "failed devices:";
 		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
 			ls << " " << (*namIter);

@@ -552,7 +552,7 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 	}
 }
 
-void XmlRpcd::message (Rts2Message & msg)
+void XmlRpcd::message (Message & msg)
 {
 // log message to DB, if database is present
 #ifdef HAVE_PGSQL

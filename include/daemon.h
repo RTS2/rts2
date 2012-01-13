@@ -22,7 +22,7 @@
 
 #include "block.h"
 #include "iniparser.h"
-#include "rts2logstream.h"
+#include "logstream.h"
 #include "value.h"
 #include "valuelist.h"
 #include "valuestat.h"

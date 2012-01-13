@@ -214,7 +214,7 @@ void Block::sendValueAll (char *val_name, char *value)
 		(*iter)->sendValue (val_name, value);
 }
 
-void Block::sendMessageAll (Rts2Message & msg)
+void Block::sendMessageAll (Message & msg)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -833,7 +833,7 @@ int Block::getCentraldIdAtNum (int centrald_num)
 	return -1;
 }
 
-void Block::message (Rts2Message & msg)
+void Block::message (Message & msg)
 {
 }
 

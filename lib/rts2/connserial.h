@@ -75,7 +75,7 @@ class ConnSerial: public ConnNoSend
 		 * @param lbuf  Buffer which will be logged.
 		 * @param blen  Length of buffer to log.
 		 */
-		void logBuffer (Rts2LogStream &ls, const char *lbuf, int blen)
+		void logBuffer (LogStream &ls, const char *lbuf, int blen)
 		{
 			if (logTrafficAsHex)
 				ls.logArrAsHex (lbuf, blen);

@@ -39,11 +39,11 @@ void NMsgWindow::draw ()
 	werase (getWriteWindow ());
 	maxrow = 0;
 	int i = 0;
-	for (std::list < Rts2Message >::iterator iter = messages.begin ();
+	for (std::list < rts2core::Message >::iterator iter = messages.begin ();
 		iter != messages.end () && maxrow < (padoff_y + getScrollHeight ());
 		iter++, i++)
 	{
-		Rts2Message msg = *iter;
+		rts2core::Message msg = *iter;
 		if (!msg.passMask (msgMask))
 			continue;
 		if (maxrow < padoff_y)
@@ -99,7 +99,7 @@ void NMsgWindow::draw ()
 	winrefresh ();
 }
 
-void NMsgWindow::add (Rts2Message & msg)
+void NMsgWindow::add (rts2core::Message & msg)
 {
 	for (int tr = 0; tr < ((int) messages.size () - getScrollHeight ()); tr++)
 	{

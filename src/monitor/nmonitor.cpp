@@ -543,7 +543,7 @@ int NMonitor::deleteConnection (rts2core::Connection * conn)
 	return rts2core::Client::deleteConnection (conn);
 }
 
-void NMonitor::message (Rts2Message & msg)
+void NMonitor::message (rts2core::Message & msg)
 {
 	*msgwindow << msg;
 }

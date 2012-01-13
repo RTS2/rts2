@@ -18,11 +18,13 @@
  */
 
 #include "app.h"
-#include "rts2logstream.h"
+#include "logstream.h"
 
 #include <iomanip>
 
-void Rts2LogStream::logArr (const char *arr, int len)
+using namespace rts2core;
+
+void LogStream::logArr (const char *arr, int len)
 {
 	bool lastIsHex = false;
 	for (int i = 0; i < len; i++)
@@ -43,7 +45,7 @@ void Rts2LogStream::logArr (const char *arr, int len)
 	}
 }
 
-void Rts2LogStream::logArrAsHex (const char *arr, int len)
+void LogStream::logArrAsHex (const char *arr, int len)
 {
 	for (int i = 0; i < len; i++)
 	{
@@ -52,23 +54,23 @@ void Rts2LogStream::logArrAsHex (const char *arr, int len)
 	}
 }
 
-void Rts2LogStream::sendLog ()
+void LogStream::sendLog ()
 {
 	masterApp->sendMessage (messageType, ls.str ().c_str ());
 }
 
-void Rts2LogStream::sendLogNoEndl ()
+void LogStream::sendLogNoEndl ()
 {
 	masterApp->sendMessageNoEndl (messageType, ls.str ().c_str ());
 }
 
-Rts2LogStream & sendLog (Rts2LogStream & _ls)
+LogStream & sendLog (LogStream & _ls)
 {
 	_ls.sendLog ();
 	return _ls;
 }
 
-Rts2LogStream & sendLogNoEndl (Rts2LogStream & _ls)
+LogStream & sendLogNoEndl (LogStream & _ls)
 {
 	_ls.sendLogNoEndl ();
 	return _ls;

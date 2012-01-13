@@ -26,8 +26,8 @@
 
 #include "rts2object.h"
 #include "option.h"
-#include "rts2message.h"
-#include "rts2logstream.h"
+#include "message.h"
+#include "logstream.h"
 
 namespace rts2core
 {
@@ -189,7 +189,7 @@ class App:public Rts2Object
 		 */
 		inline void sendMessage (messageType_t in_messageType, std::ostringstream & _os);
 
-		virtual Rts2LogStream logStream (messageType_t in_messageType);
+		virtual LogStream logStream (messageType_t in_messageType);
 
 		/**
 		 * Called on SIGHUP signal.
@@ -336,5 +336,5 @@ rts2core::App *getMasterApp ();
  * @param in_messageType Message type.
  * @return Message stream.
  */
-Rts2LogStream logStream (messageType_t in_messageType);
+rts2core::LogStream logStream (messageType_t in_messageType);
 #endif							 /* !__RTS2_APP__ */

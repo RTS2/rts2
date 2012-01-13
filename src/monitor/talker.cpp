@@ -34,7 +34,7 @@ class Talker:public rts2core::Client
 	public:
 		Talker (int argc, char **argv);
 		
-		virtual void message (Rts2Message & msg);
+		virtual void message (rts2core::Message & msg);
 	protected:
 		virtual int processOption (int opt);
 		virtual int processArgs (const char *arg);
@@ -56,7 +56,7 @@ Talker::Talker (int argc, char **argv):rts2core::Client (argc, argv)
 	addOption ('e', NULL, 0, "print only error message");
 }
 
-void Talker::message (Rts2Message & msg)
+void Talker::message (rts2core::Message & msg)
 {
 	if (devices.size () == 0 || std::find (devices.begin (), devices.end (),  std::string (msg.getMessageOName ())) != devices.end ())
 		std::cout << msg << std::endl;

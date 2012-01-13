@@ -31,7 +31,7 @@
 #include "block.h"
 #include "client.h"
 #include "devclient.h"
-#include "rts2logstream.h"
+#include "logstream.h"
 
 #include <config.h>
 

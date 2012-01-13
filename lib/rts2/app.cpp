@@ -47,9 +47,9 @@ App *getMasterApp ()
 	return masterApp;
 }
 
-Rts2LogStream logStream (messageType_t in_messageType)
+LogStream logStream (messageType_t in_messageType)
 {
-	Rts2LogStream ls (masterApp, in_messageType);
+	LogStream ls (masterApp, in_messageType);
 	return ls;
 }
 
@@ -433,7 +433,7 @@ void App::sendMessage (messageType_t in_messageType, const char *in_messageStrin
 {
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
-	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
+	Message msg = Message (getAppName (), in_messageType, in_messageString);
 	std::cerr << msg << std::endl;
 }
 
@@ -441,7 +441,7 @@ void App::sendMessageNoEndl (messageType_t in_messageType, const char *in_messag
 {
   	if (debug == 0 && in_messageType == MESSAGE_DEBUG)
 	  	return;
-	Rts2Message msg = Rts2Message (getAppName (), in_messageType, in_messageString);
+	Message msg = Message (getAppName (), in_messageType, in_messageString);
 	std::cerr << msg;
 }
 
@@ -450,9 +450,9 @@ void App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
 	sendMessage (in_messageType, _os.str ().c_str ());
 }
 
-Rts2LogStream App::logStream (messageType_t in_messageType)
+LogStream App::logStream (messageType_t in_messageType)
 {
-	Rts2LogStream ls (this, in_messageType);
+	LogStream ls (this, in_messageType);
 	return ls;
 }
 

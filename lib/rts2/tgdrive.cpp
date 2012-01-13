@@ -365,7 +365,7 @@ void TGDrive::ecRead (char *msg, int len)
 
 	if ((0x00ff & msg[len - 1]) != cs)
 	{
-	  	Rts2LogStream ls = logStream (MESSAGE_ERROR);
+	  	rts2core::LogStream ls = logStream (MESSAGE_ERROR);
 		ls << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (0x00ff & ((int) msg[len - 1])) << ":";
 		for (int j = 0; j < len; j++)
 			ls << std::hex << (int) msg[j] << " ";

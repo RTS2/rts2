@@ -125,7 +125,7 @@ class Rts2Centrald:public Daemon
 		void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
 
-		virtual void message (Rts2Message & msg);
+		virtual void message (Message & msg);
 
 		/**
 		 * Called when conditions which determines weather state changed.
@@ -279,7 +279,7 @@ class Rts2Centrald:public Daemon
 		rts2core::ValueTime *moonRise;
 		rts2core::ValueTime *moonSet;
 
-		void processMessage (Rts2Message & msg);
+		void processMessage (Message & msg);
 };
 
 /**
@@ -334,7 +334,7 @@ class Rts2ConnCentrald:public rts2core::Connection
 		 * memory.
 		 */
 		virtual ~ Rts2ConnCentrald (void);
-		virtual int sendMessage (Rts2Message & msg);
+		virtual int sendMessage (Message & msg);
 		int sendConnectedInfo (rts2core::Connection * conn);
 
 		virtual void updateStatusWait (rts2core::Connection * conn);

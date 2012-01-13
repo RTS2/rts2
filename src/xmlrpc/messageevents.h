@@ -21,7 +21,7 @@
 #define __RTS2_MESSAGEEVENTS__
 
 #include "emailaction.h"
-#include "rts2message.h"
+#include "message.h"
 
 namespace rts2xmlrpc
 {
@@ -35,12 +35,12 @@ class MessageEvent
 	public:
 		MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type);
 
-		bool isForMessage (Rts2Message *message) { return deviceName == message->getMessageOName () && message->passMask (type); }
+		bool isForMessage (rts2core::Message *message) { return deviceName == message->getMessageOName () && message->passMask (type); }
 
 		/**
 		 * Triggered when message with given type is received. Throws Errors on error.
 		 */
-		virtual void run (Rts2Message *message) = 0;
+		virtual void run (rts2core::Message *message) = 0;
 
 	protected:
 		XmlRpcd *master;
@@ -63,7 +63,7 @@ class MessageCommand: public MessageEvent
 			commandName = _commandName;
 		}
 
-		virtual void run (Rts2Message *msg);
+		virtual void run (rts2core::Message *msg);
 	private:
 		std::string commandName;
 };
@@ -78,7 +78,7 @@ class MessageEmail: public MessageEvent, public EmailAction
 	public:
 		MessageEmail (XmlRpcd *_master, std::string _deviceName, int _type):MessageEvent (_master, _deviceName, _type), EmailAction () {}
 
-		virtual void run (Rts2Message *message);
+		virtual void run (rts2core::Message *message);
 };
 
 /**

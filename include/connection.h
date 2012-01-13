@@ -37,8 +37,8 @@
 #include "rts2data.h"
 #include "rts2object.h"
 #include "rts2serverstate.h"
-#include "rts2message.h"
-#include "rts2logstream.h"
+#include "message.h"
+#include "logstream.h"
 #include "valuelist.h"
 
 #define MAX_DATA    200
@@ -230,7 +230,7 @@ class Connection:public Rts2Object
 
 		int endSharedData (int key);
 
-		virtual int sendMessage (Rts2Message & msg);
+		virtual int sendMessage (Message & msg);
 		int sendValue (std::string val_name, int value);
 		int sendValue (std::string val_name, int val1, double val2);
 		int sendValue (std::string val_name, const char *value);

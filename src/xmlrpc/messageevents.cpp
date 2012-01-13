@@ -32,7 +32,7 @@ MessageEvent::MessageEvent (XmlRpcd *_master, std::string _deviceName, int _type
 	type = _type;
 }
 
-void MessageCommand::run (Rts2Message *message)
+void MessageCommand::run (rts2core::Message *message)
 {
 	int ret;
 	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
@@ -47,7 +47,7 @@ void MessageCommand::run (Rts2Message *message)
 	master->addConnection (cf);
 }
 
-void MessageEmail::run (Rts2Message *message)
+void MessageEmail::run (rts2core::Message *message)
 {
 	EmailAction::run (master);
 }

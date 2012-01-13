@@ -20,7 +20,7 @@
 #ifndef __RTS2_MESSAGEDB__
 #define __RTS2_MESSAGEDB__
 
-#include "rts2message.h"
+#include "message.h"
 #include "timelog.h"
 
 #include <vector>
@@ -33,10 +33,10 @@ namespace rts2db
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class MessageDB:public Rts2Message
+class MessageDB:public rts2core::Message
 {
 	public:
-		MessageDB (Rts2Message & msg):Rts2Message (msg) {}
+		MessageDB (Message & msg):rts2core::Message (msg) {}
 		MessageDB (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString);
 		MessageDB (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString);
 		virtual ~ MessageDB (void);

@@ -1188,7 +1188,7 @@ int Connection::message ()
 		|| paramNextString (&messageOName) || paramNextInteger (&messageType))
 		return -2;
 
-	Rts2Message rts2Message = Rts2Message
+	Message rts2Message = Message
 		(messageTime, std::string (messageOName), messageType,
 		std::string (paramNextWholeString ()));
 
@@ -1496,7 +1496,7 @@ void Connection::connectionError (int last_data_size)
 		master->deleteAddress (getCentraldNum (), getName ());
 }
 
-int Connection::sendMessage (Rts2Message & msg)
+int Connection::sendMessage (Message & msg)
 {
 	return sendMsg (msg.toConn ());
 }

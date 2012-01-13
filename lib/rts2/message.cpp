@@ -17,14 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2message.h"
+#include "message.h"
 #include "block.h"
 
 #include <sys/time.h>
 #include <time.h>
 #include <sstream>
 
-Rts2Message::Rts2Message (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString)
+using namespace rts2core;
+
+Message::Message (const struct timeval &in_messageTime, std::string in_messageOName, messageType_t in_messageType, std::string in_messageString)
 {
 	messageTime = in_messageTime;
 	messageOName = in_messageOName;
@@ -32,7 +34,7 @@ Rts2Message::Rts2Message (const struct timeval &in_messageTime, std::string in_m
 	messageString = in_messageString;
 }
 
-Rts2Message::Rts2Message (const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
+Message::Message (const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
 {
 	gettimeofday (&messageTime, NULL);
 	messageOName = std::string (in_messageOName);
@@ -40,7 +42,7 @@ Rts2Message::Rts2Message (const char *in_messageOName, messageType_t in_messageT
 	messageString = std::string (in_messageString);
 }
 
-Rts2Message::Rts2Message (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
+Message::Message (double in_messageTime, const char *in_messageOName, messageType_t in_messageType, const char *in_messageString)
 {
 #ifdef HAVE_TRUNC
 	messageTime.tv_sec = trunc (in_messageTime);
@@ -53,11 +55,11 @@ Rts2Message::Rts2Message (double in_messageTime, const char *in_messageOName, me
 	messageString = std::string (in_messageString);
 }
 
-Rts2Message::~Rts2Message ()
+Message::~Message ()
 {
 }
 
-std::string Rts2Message::toConn ()
+std::string Message::toConn ()
 {
 	std::ostringstream os;
 	// replace \r\n

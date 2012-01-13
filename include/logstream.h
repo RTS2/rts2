@@ -27,7 +27,6 @@
 namespace rts2core
 {
 class App;
-}
 
 /**
  * Class used for streaming log messages. This class provides operators which
@@ -39,7 +38,7 @@ class App;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2LogStream
+class LogStream
 {
 	private:
 		rts2core::App * masterApp;
@@ -47,7 +46,7 @@ class Rts2LogStream
 		std::ostringstream ls;
 	public:
 
-		Rts2LogStream (rts2core::App * in_master, messageType_t in_type)
+		LogStream (rts2core::App * in_master, messageType_t in_type)
 		{
 			masterApp = in_master;
 			messageType = in_type;
@@ -55,7 +54,7 @@ class Rts2LogStream
 			ls.precision (6);
 		}
 
-		Rts2LogStream (const Rts2LogStream &_logStream)
+		LogStream (const LogStream &_logStream)
 		{
 			masterApp = _logStream.masterApp;
 			messageType = _logStream.messageType;
@@ -64,7 +63,7 @@ class Rts2LogStream
 		}
 
 
-		Rts2LogStream (Rts2LogStream & _logStream)
+		LogStream (LogStream & _logStream)
 		{
 			masterApp = _logStream.masterApp;
 			messageType = _logStream.messageType;
@@ -72,12 +71,12 @@ class Rts2LogStream
 			ls.precision (6);
 		}
 
-		Rts2LogStream & operator << (Rts2LogStream & (*func) (Rts2LogStream &))
+		LogStream & operator << (LogStream & (*func) (LogStream &))
 		{
 			return func (*this);
 		}
 
-		template < typename _charT > Rts2LogStream & operator << (_charT value)
+		template < typename _charT > LogStream & operator << (_charT value)
 		{
 			ls << value;
 			return *this;
@@ -118,14 +117,16 @@ class Rts2LogStream
 		inline void sendLogNoEndl ();
 };
 
+}
+
 /**
  * Send log. Use it as manipulator for stream to send it through the system.
  */
-Rts2LogStream & sendLog (Rts2LogStream & _ls);
+rts2core::LogStream & sendLog (rts2core::LogStream & _ls);
 
 /**
  * Send log. Use it as manipulator for stream to send it through the system without adding line feed at the end.
  */
-Rts2LogStream & sendLogNoEndl (Rts2LogStream & _ls);
+rts2core::LogStream & sendLogNoEndl (rts2core::LogStream & _ls);
 
 #endif							 /* ! __RTS2_LOGSTREAM__ */
