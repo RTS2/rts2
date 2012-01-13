@@ -1294,6 +1294,8 @@ int Daemon::createSectionValues (IniSection *sect)
 				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else if (!strcasecmp (suffix.c_str (), "d"))
 				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
+			else if (!strcasecmp (suffix.c_str (), "ia"))
+				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else if (!strcasecmp (suffix.c_str (), "da"))
 				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
 			else

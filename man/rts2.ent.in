@@ -194,7 +194,7 @@
       Specify modefile. Modefiles are used to set different device modes.  They
       contains name of modes, followed by list of variables and desired values.
       They are used to quickly change between different device modes. Please see
-      <citerefentry><refentrytitle>rts2.modelfiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      <citerefentry><refentrytitle>rts2.modefile</refentrytitle><manvolnum>5</manvolnum></citerefentry>
       for modefiles description.
     </para>
   </listitem>
@@ -205,7 +205,7 @@
     <para>
       Load file which specify addional variables the component should create.
       Value file format is similar to the .ini template files, please see
-      <citerefentry><refentrytitle>rts2.valuefiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      <citerefentry><refentrytitle>rts2.valuefile</refentrytitle><manvolnum>5</manvolnum></citerefentry>
       for details.
     </para>
   </listitem>

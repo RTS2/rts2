@@ -47,7 +47,9 @@ EXTRA_DIST = \
     rts2-queue.xml \
     rts2.queue.xml \
     rts2-imgproc.xml \
-    rts2.fitstemplate.xml
+    rts2.fitstemplate.xml \
+    rts2.valuefile.xml
+
 
 CLEANFILES = *.1 *.5 *.7
 
@@ -99,7 +101,8 @@ man_MANS = \
     rts2-queue.1 \
     rts2.queue.5 \
     rts2-imgproc.7 \
-    rts2.fitstemplate.5
+    rts2.fitstemplate.5 \
+    rts2.valuefile.5
 
 XP=xsltproc --nonet
 

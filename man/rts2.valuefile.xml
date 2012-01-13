@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2012-01-13</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.valuefile">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2012</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Structure of file with additonal device's variables</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      Value file can be used to specify an aribitary number of additional
+      variables. Provided values are added as writable values to a RTS2 component
+      variables. This way any device can be customized.
+    </para>
+
+    <para>
+      Added variables are not used in device code. They can be accesed through
+      scripting and various other external interfaces, but they are not
+      designed to change preprogrammed device behaviour.
+    </para>
+
+    <para>
+      Value list format is similar to <emphasis>.ini</emphasis> files.
+      Everything after ; (semicolon) is considered as comment. If comment is
+      provided on line with variable definition, it is considered as comment to
+      the variable. Variables are written on line separated by =. 
+
+      Please see the following example:
+
+      <literallayout>
+; file demonstrating how to create arbitary values
+; load to any RTS2 component with --valuefile option
+
+test1.d = -12.3 ; test double value
+test2.da = "1.2 3.4 -5.6" ; test double array
+test3.i = 98 ; test integer
+test4.ia="1 3 -5" ; test integer array
+test5 = "string aa" ; test string
+test6 = only_test
+; this is a comment
+      </literallayout>
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Value formatting</title>
+
+    <para>
+      Variables without formatting are considered as string. This might have
+      some unwanted consequences - for example if one specify variable as
+      string, put it equal to "1.2" and then tries to increase it by 1 with
+      +=1.0 operation. String variable will not be changed, only an error will
+      be reported.
+    </para>
+
+    <para>
+      Following format specifier can be added after variable name, separated
+      with <emphasis>.</emphasis> (dot) - please see example above.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>d</option>
+	</term>
+	<listitem>
+	  <para>
+	    Float (double) number. Value should be formated as number with optional decimal point.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>i</option>
+	</term>
+	<listitem>
+	  <para>
+	    Integer number. Integer variable will be added to the component.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>da</option>
+	</term>
+	<listitem>
+	  <para>
+	    Double array. Double array variable will added to the component. Variable value is parsed
+	    as an array, its member shoudl be separated with space (" ").
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>ia</option>
+	</term>
+	<listitem>
+	  <para>
+	    Integer array. Similar to double array, only of course variable
+	    members are integer numbers.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
