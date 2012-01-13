@@ -253,6 +253,10 @@ void ConnExecute::processCommand (char *cmd)
 		os << masterElement->getScript ()->getLoopCount ();
 		writeToProcess (os.str ().c_str ());
 	}
+	else if (!strcmp (cmd, "run_device"))
+	{
+		writeToProcess (masterElement->getConnection ()->getName ());
+	}
 	else
 	{
 		ConnExe::processCommand (cmd);

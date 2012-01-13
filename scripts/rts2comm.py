@@ -54,6 +54,16 @@ class Rts2Comm:
 		sys.stdout.flush()
 		return sys.stdin.readline().rstrip('\n')
 
+	def getLoopCount(self):
+		print 'loopcount'
+		sys.stdout.flush()
+		return int(sys.stdin.readline().rstrip('\n'))
+
+	def getRunDevice(self):
+		print 'run_device'
+		sys.stdout.flush()
+		return sys.stdin.readline().rstrip('\n')
+
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
 		return float(self.getValue(value,device).split(" ")[0])

@@ -721,7 +721,13 @@ echo value WINDOW = 0 0 10 10
 	  Print current loopcount. It is 0 when target script is executed for
 	  the first time.
 	</para></listitem>
-      </varlistentry>	
+      </varlistentry>
+      <varlistentry>
+        <term><option>run_device</option></term>
+	<listitem><para>
+	  Return name of the device on which the script is running.
+	</para></listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>? {value name}</option></term>
 	<listitem><para>
