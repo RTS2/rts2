@@ -49,11 +49,11 @@ class ValueDoubleMinMax:public ValueDouble
 			max = from->getMax ();
 		}
 
-		void setMin (double in_min) { min = in_min; }
+		void setMin (double in_min) { min = in_min; changed (); }
 
 		double getMin () { return min; }
 
-		void setMax (double in_max) { max = in_max; }
+		void setMax (double in_max) { max = in_max; changed (); }
 
 		double getMax () { return max; }
 

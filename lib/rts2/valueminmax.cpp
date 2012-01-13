@@ -49,8 +49,7 @@ int ValueDoubleMinMax::setValue (Connection * connection)
 		setValueDouble (new_val);
 		return 0;
 	}
-	if (connection->paramNextDouble (&min)
-		|| connection->paramNextDouble (&max) || !connection->paramEnd ())
+	if (connection->paramNextDouble (&min) || connection->paramNextDouble (&max) || !connection->paramEnd ())
 		return -2;
 	if (new_val < min || new_val > max)
 		return -2;

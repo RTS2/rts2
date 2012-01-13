@@ -1336,7 +1336,6 @@ void Camera::setExposureMinMax (double exp_min, double exp_max)
 {
 	exposure->setMin (exp_min);
 	exposure->setMax (exp_max);
-	updateMetaInformations (exposure);
 }
 
 int Camera::getFilterNum (const char *fn)
