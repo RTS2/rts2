@@ -225,7 +225,12 @@ if ( $continue == 1 ) then
 	dstore
 	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
 	set flux=`$xmlrpc --quiet -G IMGP.source_flux`
-	rts2-logcom "Exposure done; offsets" `echo $ora_l $odec_l $fwhm2 $flux | awk '{ printf "%+0.2f\" %+0.2f\" FWHM %.2f\" FL %d",$1,$2,$3*0.675,$4;}'`
+	set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
+	if ( $last_obs_id == $obs_id ) then
+		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f' $ora_l $odec_l $fwhm2 $flux`
+	else
+		rts2-logcom "Exposure done; last flux " `printf '%.0f' $flux`
+	endif
 	$xmlrpc -c SEL.next
 	if ( ${?imgdir} == 0 ) set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
 	set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
