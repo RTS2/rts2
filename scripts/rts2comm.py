@@ -176,6 +176,14 @@ class Rts2Comm:
 		"""Add to device boolean value with on/off display type."""
 		print "onoff",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
+	
+	def doubleArrayValue(self,name,desc,values):
+		print "double_array",name,'"{0}"'.format(desc),' '.join(map(str,values))
+		sys.stdout.flush()
+
+	def doubleArrayAdd(self,name,values):
+		print "double_array_add",name,' '.join(map(str,values))
+		sys.stdout.flush()
 
 	def log(self,level,text):
 		print "log",level,text

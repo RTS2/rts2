@@ -58,6 +58,9 @@ void ConnExe::processCommand (char *cmd)
 	char *operand;
 	char *comm;
 
+	char *vname, *desc;
+	rts2core::Value *v;
+
 	if (!strcmp (cmd, "C"))
 	{
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
@@ -146,12 +149,11 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "double"))
 	{
-		char *vname, *desc;
 		double val;
 		char *rts2_type = NULL;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextDouble (&val) || (!paramEnd () && ( paramNextString (&rts2_type) || !paramEnd () )) )
 			throw rts2core::Error ("invalid double string");
-		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
@@ -176,11 +178,10 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "integer"))
 	{
-		char *vname, *desc;
 		int val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextInteger (&val) || !paramEnd ())
 			throw rts2core::Error ("invalid integer string");
-		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
@@ -205,10 +206,10 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "string"))
 	{
-		char *vname, *desc, *val;
+		char *val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
 			throw rts2core::Error ("invalid string");
-		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
@@ -233,10 +234,10 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "bool") || !strcasecmp (cmd, "onoff"))
 	{
-		char *vname, *desc, *val;
+		char *val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
-			throw rts2core::Error ("invalid string");
-		rts2core::Value *v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+			throw rts2core::Error ("missing variable name or description");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
 		// either variable with given name exists..
 		if (v)
 		{
@@ -261,6 +262,53 @@ void ConnExe::processCommand (char *cmd)
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);
 		}
+	}
+	else if (!strcasecmp (cmd, "double_array"))
+	{
+		if (paramNextString (&vname) || paramNextString (&desc))
+			throw rts2core::Error ("missing variable name or description");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		rts2core::DoubleArray *vad;
+		if (v)
+		{
+			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+				throw rts2core::Error (std::string ("value is not double array") + vname);
+			vad = (rts2core::DoubleArray *) v;
+			vad->clear ();
+		}
+		else
+		{
+			((rts2core::Daemon *) master)->createValue (vad, vname, desc, false);
+			master->updateMetaInformations (vad);
+		}
+		while (!paramEnd ())
+		{
+			double vd;
+			if (paramNextDouble (&vd))
+				throw rts2core::Error ("invalid double value");
+			vad->addValue (vd);
+		}
+		((rts2core::Daemon *) master)->sendValueAll (vad);
+	}
+	else if (!strcasecmp (cmd, "double_array_add"))
+	{
+		if (paramNextString (&vname))
+			throw rts2core::Error ("missing variable name or description");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		if (v == NULL)
+			throw rts2core::Error (std::string ("variable with name ") + vname + "does not exists");
+		
+		if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+			throw rts2core::Error (std::string ("value is not double array") + vname);
+		rts2core::DoubleArray *vad = (rts2core::DoubleArray *) v;
+		while (!paramEnd ())
+		{
+			double vd;
+			if (paramNextDouble (&vd))
+				throw rts2core::Error ("invalid double value");
+			vad->addValue (vd);
+		}
+		((rts2core::Daemon *) master)->sendValueAll (vad);
 	}
 	else
 	{
