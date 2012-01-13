@@ -178,6 +178,16 @@
   </listitem>
 </varlistentry>
 <varlistentry>
+  <term><option>--autosave</option></term>
+  <listitem>
+    <para>
+      Save and load values to given file. Values are auto loaded on device startup, then saved anytime
+      autosave command is issued (or device thinks it is good to save values). Values must be marked with
+      RTS2_VALUE_AUTOSAVE flag to be include in autosave file.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
   <term><option>--modefile</option> <replaceable class='parameter'>filename</replaceable></term>
   <listitem>
     <para>
@@ -186,6 +196,17 @@
       They are used to quickly change between different device modes. Please see
       <citerefentry><refentrytitle>rts2.modelfiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
       for modefiles description.
+    </para>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><option>--valuefile</option></term>
+  <listitem>
+    <para>
+      Load file which specify addional variables the component should create.
+      Value file format is similar to the .ini template files, please see
+      <citerefentry><refentrytitle>rts2.valuefiles</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      for details.
     </para>
   </listitem>
 </varlistentry>

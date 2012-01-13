@@ -54,6 +54,8 @@
 
 #define OPT_AUTOSAVE        1013
 
+#define OPT_VALUEFILE       1014
+
 /**
  * Start of local option number playground.
  */

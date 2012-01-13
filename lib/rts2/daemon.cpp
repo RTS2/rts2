@@ -78,6 +78,12 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	doHupIdleLoop = false;
 
+	modefile = NULL;
+	modeconf = NULL;
+	modesel = NULL;
+
+	valueFile = NULL;
+
 	autosaveFile = NULL;
 
 	state = _init_state;
@@ -91,6 +97,9 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	addOption (OPT_LOCALPORT, "local-port", 1, "define local port on which we will listen to incoming requests");
 	addOption (OPT_LOCKPREFIX, "lock-prefix", 1, "prefix for lock file");
 	addOption (OPT_RUNAS, "run-as", 1, "run under specified user (and group, if it's provided after .)");
+	addOption (OPT_VALUEFILE, "valuefile", 1, "file with values which should be created on the device");
+	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
+	addOption (OPT_AUTOSAVE, "autosave", 1, "autosave file");
 }
 
 Daemon::~Daemon (void)
@@ -101,6 +110,7 @@ Daemon::~Daemon (void)
 		close (lock_file);
 	delete info_time;
 	closelog ();
+	delete modeconf;
 }
 
 int Daemon::processOption (int in_opt)
@@ -121,6 +131,15 @@ int Daemon::processOption (int in_opt)
 			break;
 		case OPT_RUNAS:
 			runAs = optarg;
+			break;
+		case OPT_MODEFILE:
+			modefile = optarg;
+			break;
+		case OPT_AUTOSAVE:
+			autosaveFile = optarg;
+			break;
+		case OPT_VALUEFILE:
+			valueFile = optarg;
 			break;
 		default:
 			return rts2core::Block::processOption (in_opt);
@@ -318,7 +337,14 @@ int Daemon::init ()
 
 int Daemon::initValues ()
 {
-	return 0;
+	int ret = loadCreateFile ();
+	if (ret)
+		return ret;
+
+	ret = loadModefile ();
+	if (ret)
+		return ret;
+	return loadAutosave ();
 }
 
 void Daemon::initDaemon ()
@@ -333,8 +359,7 @@ void Daemon::initDaemon ()
 	ret = initValues ();
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "cannot init values in daemon, exiting" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "cannot init values in daemon, exiting" << sendLog;
 		exit (ret);
 	}
 }
@@ -696,6 +721,10 @@ void Daemon::addConstValue (const char *in_name, int in_value)
 
 int Daemon::setValue (Value * old_value, Value * newValue)
 {
+	if (old_value == modesel)
+	{
+		return setMode (newValue->getValueInteger ())? -2 : 0;
+	}
 	// if for some reason writable value makes it there, it means that it was not caught downstream, and it can be set
 	if (old_value->isWritable ())
 		return 0;
@@ -1077,7 +1106,7 @@ void Daemon::maskState (int state_mask, int new_state, const char *description, 
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
-		<< "Device::maskState state: state_mask: " << std::hex << state_mask
+		<< "Daemon::maskState state: state_mask: " << std::hex << state_mask
 		<< " new_state: " << std::hex << new_state
 		<< " desc: " << description
 		<< " start: " << start
@@ -1096,12 +1125,215 @@ void Daemon::maskState (int state_mask, int new_state, const char *description, 
 
 void Daemon::signaledHUP ()
 {
-	// empty here, shall be supplied in descendants..
+	loadModefile ();
 }
 
 void Daemon::sigHUP (int sig)
 {
 	doHupIdleLoop = true;
+}
+
+int Daemon::loadCreateFile ()
+{
+	if (valueFile == NULL)
+		return 0;
+	
+	IniParser *created = new IniParser (true);
+	int ret = created->loadFile (valueFile);
+	if (ret)
+	{
+		logStream (MESSAGE_WARNING) << "cannot open values file " << valueFile << ", probable cause " << strerror (errno) << sendLog;
+		return -1;
+	}
+
+	if (created->size () == 0)
+	{
+		logStream (MESSAGE_WARNING) << "cannot find any value to create" << sendLog;
+		return 0;
+	}
+
+	ret = createSectionValues ((*created)[0]);
+
+	delete created;
+	return ret;
+}
+
+int Daemon::loadAutosave ()
+{
+	if (autosaveFile == NULL)
+		return 0;
+	
+	IniParser *autosave = new IniParser (true);
+	int ret = autosave->loadFile (autosaveFile);
+	if (ret)
+	{
+		logStream (MESSAGE_WARNING) << "cannot open autosave file " << autosaveFile << ", ignoring the error" << sendLog;
+		return 0;
+	}
+
+	if (autosave->size () == 0)
+	{
+		logStream (MESSAGE_WARNING) << "empty autosave file. Perharps you should set some values with RTS2_VALUE_AUTOSAVE flag?" << sendLog;
+		return 0;
+	}
+
+	ret = setSectionValues ((*autosave)[0], 0);
+
+	delete autosave;
+	return ret;
+}
+
+int Daemon::loadModefile ()
+{
+	if (!modefile)
+		return 0;
+	
+	int ret;
+	
+	delete modeconf;
+	modeconf = new IniParser ();
+	ret = modeconf->loadFile (modefile);
+	if (ret)
+		return ret;
+
+	if (modesel)
+		modesel->clear ();
+	else
+		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
+
+	for (IniParser::iterator iter = modeconf->begin (); iter != modeconf->end (); iter++)
+	{
+		modesel->addSelVal ((*iter)->getName ());
+	}
+	return setMode (0);
+}
+
+int Daemon::setMode (int new_mode)
+{
+	if (modesel == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "Called setMode without modesel." << sendLog;
+		return -1;
+	}
+	if (new_mode < 0 || new_mode >= modesel->selSize ())
+	{
+		logStream (MESSAGE_ERROR) << "Invalid new mode " << new_mode
+			<< "." << sendLog;
+		return -1;
+	}
+	IniSection *sect = (*modeconf)[new_mode];
+
+	return setSectionValues (sect, new_mode);
+}
+
+int Daemon::setSectionValues (IniSection *sect, int new_mode)
+{
+	// setup values
+	for (IniSection::iterator iter = sect->begin (); iter != sect->end (); iter++)
+	{
+		rts2core::Value *val = getOwnValue (iter->getValueName ().c_str ());
+		if (val == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot find value with name '" << iter->getValueName () << "'." << sendLog;
+			return -1;
+		}
+		// test for suffix
+		std::string suffix = iter->getSuffix ();
+		if (suffix.length () > 0)
+		{
+			if (val->getValueExtType () == RTS2_VALUE_MMAX)
+			{
+				if (!strcasecmp (suffix.c_str (), "min"))
+				{
+					((rts2core::ValueDoubleMinMax *) val)->setMin (iter->getValueDouble ());
+					sendValueAll (val);
+					continue;
+				}
+				else if (!strcasecmp (suffix.c_str (), "max"))
+				{
+					((rts2core::ValueDoubleMinMax *) val)->setMax (iter->getValueDouble ());
+					sendValueAll (val);
+					continue;
+				}
+			}
+			logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
+			return -1;
+		}
+		// create and set new value
+		rts2core::Value *new_value = duplicateValue (val);
+		int ret;
+		ret = new_value->setValueCharArr (iter->getValue ().c_str ());
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName () << " for mode " << new_mode << " with value '" << iter->getValue () << "'." << sendLog;
+			return -1;
+		}
+		CondValue *cond_val = getCondValue (val->getName ().c_str ());
+		ret = setCondValue (cond_val, '=', new_value);
+		if (ret == -2)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " mode " << new_mode << " value '" << iter->getValue () << "'." << sendLog;
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int Daemon::createSectionValues (IniSection *sect)
+{
+	// setup values
+	for (IniSection::iterator iter = sect->begin (); iter != sect->end (); iter++)
+	{
+		// test for suffix
+		std::string suffix = iter->getSuffix ();
+		Value *val = NULL;
+
+		std::string strv = iter->getValue ();
+		std::string comment;
+
+		int i = strv.find ('/');
+		if (i != std::string::npos)
+		{
+			comment = strv.substr (i + 1);
+			strv = strv.substr (0, i);
+		}
+
+		if (suffix.length () > 0)
+		{
+			if (!strcasecmp (suffix.c_str (), "i"))
+				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+			else if (!strcasecmp (suffix.c_str (), "d"))
+				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+			else if (!strcasecmp (suffix.c_str (), "da"))
+				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+			else
+			{
+				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
+				return -1;
+			}
+		}
+		else
+		{
+			createValue ((ValueString *&) val, iter->getValueName ().c_str (), comment, false, RTS2_VALUE_WRITABLE);
+		}
+		// create and set new value
+		rts2core::Value *new_value = duplicateValue (val);
+		int ret;
+		ret = new_value->setValueCharArr (strv.c_str ());
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName () << " with value '" << strv << "'." << sendLog;
+			return -1;
+		}
+		CondValue *cond_val = getCondValue (val->getName ().c_str ());
+		ret = setCondValue (cond_val, '=', new_value);
+		if (ret == -2)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName () << " value '" << strv << "'." << sendLog;
+			return -1;
+		}
+	}
+	return 0;
 }
 
 int Daemon::autosaveValues ()

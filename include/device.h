@@ -27,7 +27,6 @@
 #include "hoststring.h"
 #include "command.h"
 #include "daemon.h"
-#include "iniparser.h"
 
 namespace rts2core
 {
@@ -292,8 +291,6 @@ class Device:public Daemon
 			}
 		}
 
-		virtual void signaledHUP ();
-
 		/**
 		 * Returns true if device connection must be authorized.
 		 */
@@ -307,7 +304,6 @@ class Device:public Daemon
 		 */
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int initValues ();
 
 		/**
 		 * Init hardware. This method shall close any opened connection
@@ -413,22 +409,15 @@ class Device:public Daemon
 		virtual void stateChanged (int new_state, int old_state, const char *description, Connection *commandedConn);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
+
 	private:
 		std::list <HostString> centraldHosts;
 
 		// device current full BOP state
 		int fullBopState;
 
-		// mode related variable
-		char *modefile;
-		IniParser *modeconf;
-		rts2core::ValueSelection *modesel;
-
 		bool doCheck;
 		bool doAuth;
-
-		int loadAutosave ();
-		int loadModefile ();
 
 		int device_port;
 		const char *device_name;
@@ -437,19 +426,6 @@ class Device:public Daemon
 		int log_option;
 
 		char *device_host;
-
-		/**
-		 * Set mode from modefile.
-		 *
-		 * Values for each device can be specified in modefiles.
-		 *
-		 * @param new_mode       New mode number.
-		 *
-		 * @return -1 on error, 0 if sucessful.
-		 */
-		int setMode (int new_mode);
-
-		int setSectionValues (IniSection *sect, int new_mode);
 
 		int blockState;
 		CommandDeviceStatusInfo *deviceStatusCommand;

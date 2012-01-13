@@ -21,6 +21,7 @@
 #define __RTS2_DAEMON__
 
 #include "block.h"
+#include "iniparser.h"
 #include "rts2logstream.h"
 #include "value.h"
 #include "valuelist.h"
@@ -540,9 +541,17 @@ class Daemon:public rts2core::Block
 		int autosaveValues ();
 
 		/**
-		 * File where to store autosaved values.
+		 * Set mode from modefile.
+		 *
+		 * Values for each device can be specified in modefiles.
+		 *
+		 * @param new_mode       New mode number.
+		 *
+		 * @return -1 on error, 0 if sucessful.
 		 */
-		const char *autosaveFile;
+		int setMode (int new_mode);
+
+		rts2core::ValueSelection *modesel;
 
 	private:
 		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
@@ -571,10 +580,21 @@ class Daemon:public rts2core::Block
 
 		bool doHupIdleLoop;
 
+		// mode related variable
+		const char *modefile;
+		IniParser *modeconf;
+
+		const char *valueFile;
+
 		/**
 		 * Prefix (directory) for lock file.
 		 */
 		const char *lockPrefix;
+
+		/**
+		 * File where to store autosaved values.
+		 */
+		const char *autosaveFile;
 
 		/**
 		 * Switch running user to new user (and group, if provided with .)
@@ -582,6 +602,19 @@ class Daemon:public rts2core::Block
 		 * @param usrgrp user and possibly group, separated by .
 		 */
 		void switchUser (const char *usrgrp);
+
+		int loadCreateFile ();
+		int loadAutosave ();
+		int loadModefile ();
+
+		int setSectionValues (IniSection *sect, int new_mode);
+
+		/**
+		 * Create section values.
+		 *
+		 * @param sect section which holds new values
+		 */
+		int createSectionValues (IniSection *sect);
 };
 
 }

@@ -498,10 +498,6 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 	fullBopState = 0;
 
-	modefile = NULL;
-	modeconf = NULL;
-	modesel = NULL;
-
 	log_option = 0;
 
 	device_type = in_device_type;
@@ -518,14 +514,11 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 	addOption (OPT_NOTCHECKNULL, "notcheck", 0, "ignore if some recomended values are not set");
 	addOption (OPT_LOCALHOST, "localhost", 1, "hostname, if it different from return of gethostname()");
 	addOption (OPT_SERVER, "server", 1, "hostname (and possibly port number, separated by :) of central server");
-	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
-	addOption (OPT_AUTOSAVE, "autosave", 1, "autosave file");
 	addOption ('d', NULL, 1, "name of device");
 }
 
 Device::~Device (void)
 {
-	delete modeconf;
 }
 
 DevConnection * Device::createConnection (int in_sock)
@@ -586,132 +579,6 @@ int Device::commandAuthorized (Connection * conn)
 	return -5;
 }
 
-int Device::loadAutosave ()
-{
-	if (autosaveFile == NULL)
-		return 0;
-	
-	IniParser *autosave = new IniParser (true);
-	int ret = autosave->loadFile (autosaveFile);
-	if (ret)
-	{
-		logStream (MESSAGE_WARNING) << "cannot open autosave file " << autosaveFile << ", ignoring the error" << sendLog;
-		return 0;
-	}
-
-	ret = setSectionValues ((*autosave)[0], 0);
-
-	delete autosave;
-	return ret;
-}
-
-int Device::loadModefile ()
-{
-	if (!modefile)
-		return 0;
-	
-	int ret;
-	
-	delete modeconf;
-	modeconf = new IniParser ();
-	ret = modeconf->loadFile (modefile);
-	if (ret)
-		return ret;
-
-	if (modesel)
-		modesel->clear ();
-	else
-		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0);
-
-	for (IniParser::iterator iter = modeconf->begin (); iter != modeconf->end (); iter++)
-	{
-		modesel->addSelVal ((*iter)->getName ());
-	}
-	return setMode (0);
-}
-
-int Device::setMode (int new_mode)
-{
-	if (modesel == NULL)
-	{
-		logStream (MESSAGE_ERROR) << "Called setMode without modesel." << sendLog;
-		return -1;
-	}
-	if (new_mode < 0 || new_mode >= modesel->selSize ())
-	{
-		logStream (MESSAGE_ERROR) << "Invalid new mode " << new_mode
-			<< "." << sendLog;
-		return -1;
-	}
-	IniSection *sect = (*modeconf)[new_mode];
-
-	return setSectionValues (sect, new_mode);
-}
-
-int Device::setSectionValues (IniSection *sect, int new_mode)
-{
-	// setup values
-	for (IniSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
-	{
-		rts2core::Value *val = getOwnValue ((*iter).getValueName ().c_str ());
-		if (val == NULL)
-		{
-			logStream (MESSAGE_ERROR)
-				<< "Cannot find value with name '"
-				<< (*iter).getValueName ()
-				<< "'." << sendLog;
-			return -1;
-		}
-		// test for suffix
-		std::string suffix = (*iter).getSuffix ();
-		if (suffix.length () > 0)
-		{
-			if (val->getValueExtType () == RTS2_VALUE_MMAX)
-			{
-				if (!strcasecmp (suffix.c_str (), "min"))
-				{
-					((rts2core::ValueDoubleMinMax *) val)->setMin ((*iter).getValueDouble ());
-					sendValueAll (val);
-					continue;
-				}
-				else if (!strcasecmp (suffix.c_str (), "max"))
-				{
-					((rts2core::ValueDoubleMinMax *) val)->setMax ((*iter).getValueDouble ());
-					sendValueAll (val);
-					continue;
-				}
-			}
-			logStream (MESSAGE_ERROR)
-				<< "Do not know what to do with suffix " << suffix << "."
-				<< sendLog;
-			return -1;
-		}
-		// create and set new value
-		rts2core::Value *new_value = duplicateValue (val);
-		int ret;
-		ret = new_value->setValueCharArr ((*iter).getValue ().c_str ());
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName ()
-				<< " for mode " << new_mode
-				<< " with value '" << (*iter).getValue ()
-				<< "'." << sendLog;
-			return -1;
-		}
-		CondValue *cond_val = getCondValue (val->getName ().c_str ());
-		ret = setCondValue (cond_val, '=', new_value);
-		if (ret == -2)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName ()
-				<< " mode " << new_mode
-				<< " value '" << (*iter).getValue ().c_str ()
-				<< "'." << sendLog;
-			return -1;
-		}
-	}
-	return 0;
-}
-
 int Device::processOption (int in_opt)
 {
 	switch (in_opt)
@@ -721,12 +588,6 @@ int Device::processOption (int in_opt)
 			break;
 		case OPT_SERVER:
 			centraldHosts.push_back (HostString (optarg));
-			break;
-		case OPT_MODEFILE:
-			modefile = optarg;
-			break;
-		case OPT_AUTOSAVE:
-			autosaveFile = optarg;
 			break;
 		case OPT_NOTCHECKNULL:
 			doCheck = false;
@@ -765,10 +626,6 @@ void Device::queDeviceStatusCommand (Connection *in_owner_conn)
 
 int Device::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
-	if (old_value == modesel)
-	{
-		return setMode (new_value->getValueInteger ())? -2 : 0;
-	}
 	return Daemon::setValue (old_value, new_value);
 }
 
@@ -864,14 +721,6 @@ int Device::init ()
 	}
 
 	return initHardware ();
-}
-
-int Device::initValues ()
-{
-	int ret = loadModefile ();
-	if (ret)
-		return ret;
-	return loadAutosave ();
 }
 
 void Device::beforeRun ()
@@ -993,9 +842,4 @@ rts2core::Value * Device::getValue (const char *_device_name, const char *value_
 int Device::maskQueValueBopState (int new_state, int valueQueCondition)
 {
 	return new_state;
-}
-
-void Device::signaledHUP ()
-{
-	loadModefile ();
 }

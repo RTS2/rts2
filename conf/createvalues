@@ -1,0 +1,7 @@
+; file demonstrating how to create arbitary values
+; load to any RTS2 component with --valuefile option
+
+test1.d = -12.3 / test double value
+test2.da = "1.2 3.4 -5.6 / test array"
+test3.i = 98 / test integer
+test4 = "string / test string"
