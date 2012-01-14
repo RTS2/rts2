@@ -10,7 +10,42 @@ Please provide password for sudo if you will be asked for it. You
 can review the script before running it from its source code.
 
 (C) 2011 Petr Kubanek, Institute of Physics, Prague <kubanek@fzu.cz>
+(C) 2012 Petr Kubanek, <petr@kubanek.net>
 EOF
+
+with_db=1
+download_dir=/tmp
+
+# process arguments
+while [ "x$1" != "x" ]; do
+	arg=$1
+	shift
+	case $arg in
+		--help)
+			cat <<EOF
+
+This script will configure RTS2 on Ubuntu. The following options can be added to modify script behaviour:
+	--help,-h       print this help
+	--without-db    do not configure database, compile without PostgreSQL database bindings
+	--download-dir  download packages to the given directory
+
+EOF
+			exit
+			;;
+		--without-db)
+			with_db=0
+			;;
+		--download-dir)
+			download_dir=$1
+			if [ "x$download_dir" == "x" ]; then
+				echo "Empty download dir argument, exiting"
+				exit
+			fi
+			shift
+			;;
+esac
+
+done
 
 cpuarch=`uname -m`
 eval `cat /etc/lsb-release`
@@ -32,44 +67,47 @@ if [ x$cpuarch != x ]; then
 
 echo "Adding extra repositories"
 
-case $DISTRIB_CODENAME in
-	natty)
-		extra_p=postgresql-server-dev-8.4
-		;;
-	oneiric)
-		extra_p=postgresql-server-dev-9.1
-		;;
-	*)
-		extra_p=postgresql-server-dev-8.3
-		;;
-esac		
+if [ $with_db == 1 ]; then
+	extra_p="postgresql libecpg-dev"
+	case $DISTRIB_CODENAME in
+		natty)
+			extra_p="$extra_p postgresql-server-dev-8.4"
+			;;
+		oneiric)
+			extra_p="$extra_p postgresql-server-dev-9.1"
+			;;
+		*)
+			extra_p="$extra_p postgresql-server-dev-8.3"
+			;;
+	esac		
+fi
 
 sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu $DISTRIB_CODENAME restricted multiverse universe"
 sudo apt-get -y update
 
 echo "Installing required debian packages"
 
-sudo apt-get -y install subversion postgresql $extra_p libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-pyfits python-matplotlib gdb valgrind libxt-dev libfftw3-dev liblapack-dev libatlas-dev libatlas-base-dev
+sudo apt-get -y install subversion $extra_p automake libtool libcfitsio3-dev libnova-dev gcc g++ libncurses5-dev libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev python-numpy python-pyfits python-matplotlib libxt-dev libfftw3-dev liblapack-dev libatlas-dev libatlas-base-dev
 
 echo "Downloading DS9"
 
 case $cpuarch in
 	'x86_64')
-		wget -O /tmp/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux64/ds9.linux64.6.2.tar.gz
+		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux64/ds9.linux64.6.2.tar.gz
 		;;
 	*)
-		wget -O /tmp/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux/ds9.linux.6.2.tar.gz
+		wget -O ${download_dir}/ds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/linux/ds9.linux.6.2.tar.gz
 		;;
 esac
 
 echo "Installing DS9"
-cd /tmp
-tar xzf /tmp/ds9.tar.gz
-sudo cp /tmp/ds9 /usr/bin
+cd $download_dir
+tar xzf ${download_dir}/ds9.tar.gz
+sudo cp ${download_dir}/ds9 /usr/bin
 
 echo "Retrievening, configuring, compiling and installing pyds9"
-wget -O /tmp/pyds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/python/pyds9-1.3.tar.gz
-tar xzf /tmp/pyds9.tar.gz
+wget -O ${download_dir}/pyds9.tar.gz http://hea-www.harvard.edu/saord/download/ds9/python/pyds9-1.3.tar.gz
+tar xzf ${download_dir}/pyds9.tar.gz
 cd pyds9-1.3
 sudo python ./setup.py install
 
@@ -77,10 +115,10 @@ echo "Installing XPA library"
 cd xpa-*
 sudo make install
 
-cd /tmp
+cd ${download_dir}
 echo "Retrieving, configuring, compiling and installing sextractor"
-wget -O /tmp/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
-tar xzf /tmp/sextractor.tar.gz
+wget -O ${download_dir}/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
+tar xzf ${download_dir}/sextractor.tar.gz
 cd sextractor-*
 ./configure --disable-threads --prefix=/usr
 make
@@ -88,11 +126,13 @@ sudo make install
 
 cd ~
 
-echo "Granting root access to postgresql database"
-sudo sudo -u postgres createuser -s root
+if [ $with_db == 1 ]; then
+	echo "Granting root access to postgresql database"
+	sudo sudo -u postgres createuser -s root
 
-echo "Creating local user"
-sudo sudo -u postgres createuser -SDR $USER
+	echo "Creating local user"
+	sudo sudo -u postgres createuser -SDR $USER
+fi
 
 echo "Source files will be downloaded and configured in `pwd`."
 
@@ -128,7 +168,11 @@ echo "Compiling RTS2"
 
 cd rts2
 ./autogen.sh
-./configure --without-wcs
+if [ $with_db == 1 ]; then
+	./configure --without-wcs
+else
+	./configure --without-wcs --without-pgsql
+fi
 make
 sudo make install
 
@@ -145,32 +189,35 @@ sudo ./rts2-init
 
 echo "Creating proper rts2.ini configuration file"
 
-cat conf/rts2.ini | sed -e "s/altitude = xxxx/altitude = 600/" -e "s/longitude = xxxx/longitude = 15/" -e "s/latitude = xxxx/latitude = 50/" > /tmp/rts2.ini
+cat conf/rts2.ini | sed -e "s/altitude = xxxx/altitude = 600/" -e "s/longitude = xxxx/longitude = 15/" -e "s/latitude = xxxx/latitude = 50/" > ${download_dir}/rts2.ini
 
-sudo cp /tmp/rts2.ini /etc/rts2/rts2.ini
+sudo cp ${download_dir}/rts2.ini /etc/rts2/rts2.ini
 
-echo "Creating postgresql database"
+if [ $with_db == 1 ]; then
 
-sudo createdb stars
-sudo psql stars <<EOF
+	echo "Creating postgresql database"
+
+	sudo createdb stars
+	sudo psql stars <<EOF
 alter group observers add user $USER;
 EOF
 
-echo "Building postgresql database"
-cd src/sql/
-sudo ./rts2-builddb stars
+	echo "Building postgresql database"
+	cd src/sql/
+	sudo ./rts2-builddb stars
 
-echo "Adding rts2test user"
-rts2-user -a rts2test --password 1234
+	echo "Adding rts2test user"
+	rts2-user -a rts2test --password 1234
 
-echo "Adding T0 telescope"
-./rts2-configdb stars -t T0
+	echo "Adding T0 telescope"
+	./rts2-configdb stars -t T0
 
-echo "Adding C0 camera"
-./rts2-configdb stars -c C0
+	echo "Adding C0 camera"
+	./rts2-configdb stars -c C0
 
-echo "Adding W0 filter wheel"
-./rts2-configdb stars -f W0
+	echo "Adding W0 filter wheel"
+	./rts2-configdb stars -f W0
+fi
 
 cd ~
 
@@ -178,8 +225,10 @@ echo "Starting RTS2"
 
 sudo /etc/init.d/rts2 start
 
-echo "Running queues API. Use localhost:8889 as URI, rts2test as user and 1234 as password."
-./pyrts2/widgets/queues.py
+if [ $with_db == 1 ]; then
+	echo "Running queues API. Use localhost:8889 as URI, rts2test as user and 1234 as password."
+	./pyrts2/widgets/queues.py
+fi
 
 echo "Running rts2-mon. Please exit it with ctrl+c"
 rts2-mon
