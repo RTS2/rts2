@@ -23,6 +23,9 @@
 #include "value.h"
 #include "libnova_cpp.h"
 
+namespace rts2core
+{
+
 /**
  * Get value as string usefull for displaying it. It does all the pretty
  * printing conversions, using value flags.
@@ -36,4 +39,6 @@
  * @author Petr Kubanek <petr@kubanek.net>
  */
 std::string getDisplayValue (rts2core::Value * value);
+
+}
 #endif							 /* !__RTS2_DISPLAYVALUE__ */

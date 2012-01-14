@@ -20,7 +20,7 @@
 #include "xmlrpcd.h"
 
 #include "connfork.h"
-#include "../../lib/rts2/rts2displayvalue.h"
+#include "../../lib/rts2/displayvalue.h"
 
 using namespace rts2xmlrpc;
 

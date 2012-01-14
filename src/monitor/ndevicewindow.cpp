@@ -1,6 +1,7 @@
 /* 
  * Device window display.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,7 +22,7 @@
 #include "ndevicewindow.h"
 
 #include "timestamp.h"
-#include "../../lib/rts2/rts2displayvalue.h"
+#include "../../lib/rts2/displayvalue.h"
 #include "riseset.h"
 
 using namespace rts2ncurses;
@@ -44,7 +45,7 @@ void NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-	mvwprintw (window, 0, 2, "%s %s (%x) %x", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState ());
+	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (connection->getMaster ()->getNow ()));
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
 }

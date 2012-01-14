@@ -22,7 +22,7 @@
 
 #include "xmlstream.h"
 
-#include "../../lib/rts2/rts2displayvalue.h"
+#include "../../lib/rts2/displayvalue.h"
 
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/recvals.h"

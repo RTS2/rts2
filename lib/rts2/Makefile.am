@@ -18,7 +18,7 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp opti
 	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
 	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp logstream.cpp rts2centralstate.cpp \
-	rts2target.cpp rts2displayvalue.cpp scriptdevice.cpp \
+	rts2target.cpp displayvalue.cpp scriptdevice.cpp \
 	rts2cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp rts2data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
@@ -46,7 +46,7 @@ endif
 
 noinst_HEADERS = client.h rts2askchoice.h infoval.h \
 	conntcp.h connudp.h rts2centralstate.h rts2target.h \
-	rts2displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
+	displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
 	connserial.h connmodbus.h domeford.h \
 	connopentpl.h connepics.h connford.h counted_ptr.h expression.h \
 	gem.h fork.h tgdrive.h \

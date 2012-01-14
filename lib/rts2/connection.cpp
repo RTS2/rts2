@@ -1578,7 +1578,7 @@ int Connection::sendValueTime (std::string val_name, time_t * value)
 int Connection::sendProgress (double start, double end)
 {
 	std::ostringstream _os;
-	_os << PROTO_PROGRESS << " " << start << " " << end;
+	_os << PROTO_PROGRESS << " " << std::fixed << start << " " << end;
 	return sendMsg (_os);
 }
 
@@ -2001,8 +2001,8 @@ double Connection::getProgress (double now)
 	if (isnan (statusStart) || isnan (statusExpectedEnd))
 		return NAN;
 	if (now > statusExpectedEnd)
-		return 1;
-	return (now - statusStart) / (statusExpectedEnd - statusStart);
+		return 100;
+	return 100 * ((now - statusStart) / (statusExpectedEnd - statusStart));
 }
 
 double Connection::getInfoTime ()

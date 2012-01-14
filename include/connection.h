@@ -591,6 +591,8 @@ class Connection:public Rts2Object
 		/**
 		 * Returns operation/state progress. Returns NAN if state progress parameter
 		 * is not available.
+		 *
+		 * @return percents (0-100) of the progress, NAN if state progress is not available
 		 */
 		double getProgress (double now);
 

@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2displayvalue.h"
+#include "displayvalue.h"
 #include <sstream>
 #include <iomanip>
 
-std::string getDisplayValue (rts2core::Value * value)
+std::string rts2core::getDisplayValue (rts2core::Value * value)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
@@ -50,7 +50,7 @@ std::string getDisplayValue (rts2core::Value * value)
 			_os << std::setw (6) << value->getValueDouble () << "%";
 			break;
 		case RTS2_DT_HEX:
-			_os << std::setw(8) << std::hex << value->getValueInteger ();
+			_os << "0x" << std::setw (8) << std::hex << value->getValueInteger ();
 			break;
 		case RTS2_DT_BYTESIZE:
 			sval = value->getValueDouble ();

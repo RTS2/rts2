@@ -282,4 +282,25 @@ template <class T> bool from_string (T& t, const std::string& s, std::ios_base& 
 	return !(iss >> f >> t).fail();
 }
 
+/**
+ * Send progress to ostream.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ProgressIndicator
+{
+	public:
+		ProgressIndicator (double progress) { pr = progress; };
+		friend std::ostream & operator << (std::ostream &os, ProgressIndicator p)
+		{
+			for (int cp = 0; cp < 100; cp += 5)
+			{
+				os << ((cp < p.pr) ? '#' : '-');
+			}
+			return os;
+		}
+	private:
+		double pr;
+};
+
 #endif							 /* !__RTS_UTILSFUNC__ */

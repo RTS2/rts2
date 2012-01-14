@@ -31,6 +31,8 @@
 #define OPT_NOSYNC          OPT_LOCAL + 53
 #define OPT_DARK            OPT_LOCAL + 54
 
+#define CHECK_TIMER         0.1
+
 FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
@@ -64,6 +66,22 @@ void FocusCameraClient::exposureStarted ()
 		queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 	}
 	rts2image::DevClientCameraFoc::exposureStarted ();
+}
+
+void FocusCameraClient::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_EXP_CHECK:
+			if (getConnection ()->getState () & CAM_EXPOSING)
+			{
+				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
+				std::cout << "EXPOSING " << ProgressIndicator (fr) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+				std::cout.flush ();
+			}
+			break;
+	}
+	rts2image::DevClientCameraFoc::postEvent (event);
 }
 
 void FocusCameraClient::stateChanged (Rts2ServerState * state)
@@ -396,5 +414,17 @@ int FocusClient::init ()
 			<< ")" << std::endl;
 		return ret;
 	}
+	addTimer (CHECK_TIMER, new Rts2Event (EVENT_EXP_CHECK));
 	return 0;
+}
+
+void FocusClient::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_EXP_CHECK:
+			addTimer (CHECK_TIMER, new Rts2Event (event));
+			break;
+	}
+	rts2core::Client::postEvent (event);
 }
