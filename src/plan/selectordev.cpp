@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2selector.h"
+#include "selector.h"
 #include "../../lib/rts2script/connselector.h"
 #include "../../lib/rts2script/executorque.h"
 #include "../../lib/rts2script/simulque.h"

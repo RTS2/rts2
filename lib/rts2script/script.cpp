@@ -916,7 +916,7 @@ int Script::getExpectedImages ()
 	return ret;
 }
 
-double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel)
+double rts2script::getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel)
 {
   	double md = 0;
 	for (Rts2CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)

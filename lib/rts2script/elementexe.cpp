@@ -64,6 +64,13 @@ void ConnExecute::processCommand (char *cmd)
 		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 		exposure_started = true;
 	}
+	else if (!strcasecmp (cmd, "progress"))
+	{
+		double start,end;
+		if (paramNextDouble (&start) || paramNextDouble (&end) || !paramEnd ())
+			return;
+		((DevClientCameraExec *) masterElement->getClient ())->scriptProgress (start, end);
+	}
 	else if (!strcasecmp (cmd, "radec"))
 	{
 		struct ln_equ_posn radec;

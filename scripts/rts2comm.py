@@ -106,6 +106,10 @@ class Rts2Comm:
 		image,fn = a.split()
 		return fn
 
+	def progressUpdate(self,expected_end,start=time.time()):
+		print "progress",start,expected_end
+		sys.stdout.flush()
+
 	def radec(self,ra,dec):
 		print "radec",ra,dec
 		sys.stdout.flush()

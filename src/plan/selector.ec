@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2selector.h"
+#include "selector.h"
 #include "../../lib/rts2script/script.h"
 #include "configuration.h"
 #include "utilsfunc.h"
@@ -300,7 +300,7 @@ int Selector::selectNextNight (int in_bonusLimit, bool verbose, double length)
 		rts2db::Target *tar = (*target_list)->target;
 		if (cameraList && !isnan (length))
 		{
-			if (getMaximalScriptDuration (tar, *cameraList) > length)
+			if (rts2script::getMaximalScriptDuration (tar, *cameraList) > length)
 			{
 				logStream (MESSAGE_DEBUG) << "script for target " << tar->getTargetName () << " (# " << tar->getTargetID () << ") is longer than " << length << " seconds, ignoring the target" << sendLog;
 				continue;

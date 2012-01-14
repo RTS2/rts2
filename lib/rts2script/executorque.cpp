@@ -132,7 +132,7 @@ double TargetQueue::getMaximalDuration (rts2db::Target *tar, struct ln_equ_posn 
 {
 	try
 	{
-		return getMaximalScriptDuration (tar, master->cameras, currentp);
+		return rts2script::getMaximalScriptDuration (tar, master->cameras, currentp);
 	}
 	catch (rts2core::Error &er)
 	{
@@ -395,7 +395,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 					cameras->load ();
 				}
 				// calculate target script length..
-				double tl = getMaximalScriptDuration (iter->target, *cameras);
+				double tl = rts2script::getMaximalScriptDuration (iter->target, *cameras);
 				// if target length is smaller then horizon, and target isAbove..
 				if (tl < maxLength && isAboveHorizon (*iter, tjd))
 					return;
@@ -543,7 +543,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 			else
 			{
 				// calculate target script length..
-				double tl = getMaximalScriptDuration (front ().target, master->cameras);
+				double tl = rts2script::getMaximalScriptDuration (front ().target, master->cameras);
 				if (tl < next_length)
 				{
 					pid = front ().planid;

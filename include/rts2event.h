@@ -96,17 +96,17 @@
 // local events are defined in local headers!
 // so far those offeset ranges (from RTS2_LOCAL_EVENT) are reserved for:
 //
-// rts2execcli.h            50- 99
-// rts2script.h            200-249
-// rts2scriptelement.h     250-299
-// rts2devclifoc.h         500-549
-// rts2devclicop.h         550-599
+// execcli.h                50- 99
+// script.h                200-249
+// scriptelement.h         250-299
+// devclifoc.h             500-549
+// devclicop.h             550-599
 // grbd.h                  600-649
-// rts2devcliwheel.h       650-675
+// devcliwheel.h           650-675
 // camd.h                  676-699
 // augershooter.h          700-749
-// rts2devclifocuser.h     750-799
-// rts2loggerbase.h        800-849
+// devclifocuser.h         750-799
+// loggerbase.h            800-849
 // xmlrpcd                 850-900
 // telds                  1200-1249
 // phot                   1250-1299

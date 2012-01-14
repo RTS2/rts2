@@ -595,6 +595,19 @@
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>progress {start} {expected end}</option></term>
+	<para>
+	  Report script progress. Script start and end times (in ctime, e.g.
+	  seconds from 1-1-1970) are the only allowed arguments. Expected end
+	  should be in future, start should be some time ago.
+	</para>
+	<para>
+	  Issuing such command will update script_end and script_start
+	  variables. Maximal/minimal times of all running scripts are used for
+	  end/start times progress of the scripting device state.
+	</para>
+      </varlistentry>
+      <varlistentry>
         <term><option>rename {image name} {expression}</option></term>
 	<listitem><para>
 	  Renames image to given by an expression. Updates image record in database. Please see

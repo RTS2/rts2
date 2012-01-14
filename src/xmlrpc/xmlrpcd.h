@@ -162,6 +162,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 
+		virtual void scriptProgress (double start, double end);
+
 		/**
 		 * Set flag indicating if before script should be called script_ends.
 		 *
@@ -238,6 +240,9 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 * Call scriptends before new script is started.
 		 */
 		rts2core::ValueBool *callScriptEnds;
+
+		rts2core::ValueTime *scriptStart;
+		rts2core::ValueTime *scriptEnd;
 
 		/**
 		 * True/false if script is running.
@@ -351,6 +356,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		const char *getDefaultImageLabel ();
 
 		rts2core::ConnNotify * getNotifyConnection () { return notifyConn; }
+
+		void scriptProgress (double start, double end);
 
 		/**
 		 * Register asynchronous API call.

@@ -18,7 +18,7 @@
  */
 
 #include "../../lib/rts2script/printtarget.h"
-#include "rts2selector.h"
+#include "selector.h"
 
 #define OPT_FILTERS             OPT_LOCAL + 630
 #define OPT_FILTER_FILE         OPT_LOCAL + 631

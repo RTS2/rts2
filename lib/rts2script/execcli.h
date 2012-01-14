@@ -83,6 +83,12 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual void exposureFailed (int status);
+
+		/**
+		 * Called to report script progress.
+		 */
+		virtual void scriptProgress (double start, double end) {};
+
 	protected:
 		ScriptPtr exposureScript;
 		virtual void unblockWait () { rts2image::DevClientCameraImage::unblockWait (); }

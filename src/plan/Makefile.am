@@ -1,10 +1,10 @@
 bin_PROGRAMS = rts2-scriptexec rts2-scriptor rts2-imgproc
-noinst_HEADERS = rts2devcliphot.h scriptexec.h rts2selector.h
+noinst_HEADERS = rts2devcliphot.h scriptexec.h selector.h
 		 
 
-EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
+EXTRA_DIST = selector.ec rts2devcliphot.ec
 
-CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
+CLEANFILES = selector.cpp rts2devcliphot.cpp
 
 PLAN_STDLIBS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 
@@ -36,12 +36,12 @@ rts2_imgproc_SOURCES = imgproc.cpp
 rts2_imgproc_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_imgproc_LDADD = ${PG_LDADD}
 
-nodist_rts2_selector_SOURCES = rts2selector.cpp
-rts2_selector_SOURCES = selector.cpp
+nodist_rts2_selector_SOURCES = selector.cpp
+rts2_selector_SOURCES = selectordev.cpp
 rts2_selector_CXXFLAGS = ${PLAN_STDLIBS}
 rts2_selector_LDADD = ${PG_LDADD}
 
-nodist_rts2_seltest_SOURCES = rts2selector.cpp
+nodist_rts2_seltest_SOURCES = selector.cpp
 rts2_seltest_SOURCES = seltest.cpp
 rts2_seltest_CXXFLAGS = @LIBNCURSES_CFLAGS@ ${PLAN_STDLIBS}
 rts2_seltest_LDADD = ${PG_LDADD}
@@ -62,6 +62,6 @@ rts2_imgproc_SOURCES = imgproc.cpp
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_imgproc_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
-EXTRA_DIST += executor.cpp selector.cpp seltest.cpp marchive.cpp
+EXTRA_DIST += executor.cpp selectordev.cpp seltest.cpp marchive.cpp
 
 endif

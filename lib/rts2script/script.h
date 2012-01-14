@@ -60,6 +60,7 @@
 #define EVENT_NOT_ASTROMETRY            RTS2_LOCAL_EVENT + 201
 #define EVENT_ALL_PROCESSED             RTS2_LOCAL_EVENT + 202
 #define EVENT_AFTER_COMMAND_FINISHED    RTS2_LOCAL_EVENT + 203
+#define EVENT_SCRIPT_PROGRESS           RTS2_LOCAL_EVENT + 204
 
 namespace rts2script
 {
@@ -312,8 +313,6 @@ template < typename T > int Script::nextCommand (T & device, Command ** new_comm
 
 typedef counted_ptr <Script> ScriptPtr;
 
-}
-
 /**
  * Return maximal script duration. Computes script's length for
  * all cameras, and return maximal duration.
@@ -323,5 +322,7 @@ typedef counted_ptr <Script> ScriptPtr;
  * @param tel     current telescope position, used to estimate time needed for telescope movement
  */
 double getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel = NULL);
+
+}
 
 #endif							 /* ! __RTS2_SCRIPT__ */
