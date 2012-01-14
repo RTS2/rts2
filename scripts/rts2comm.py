@@ -167,9 +167,19 @@ class Rts2Comm:
 		print "double",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
 
+	def doubleVariable(self,name,desc,value):
+		"""Add to device double writable variable."""
+		print "double_w",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
 	def integerValue(self,name,desc,value):
 		"""Add to device integer value."""
 		print "integer",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
+	def integerVariable(self,name,desc,value):
+		"""Add to device integer writable variable."""
+		print "integer_w",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
 	
 	def stringValue(self,name,desc,value):
@@ -177,18 +187,37 @@ class Rts2Comm:
 		print "string",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
 
+	def stringVariable(self,name,desc,value):
+		"""Add to device string writable variable."""
+		print "string_w",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
 	def boolValue(self,name,desc,value):
 		"""Add to device boolean value."""
 		print "bool",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
+
+	def boolVariable(self,name,desc,value):
+		"""Add to device boolean writable variable."""
+		print "bool_w",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
 
 	def onoffValue(self,name,desc,value):
 		"""Add to device boolean value with on/off display type."""
 		print "onoff",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
+
+	def onoffVariable(self,name,desc,value):
+		"""Add to device boolean writable variable with on/off display type."""
+		print "onoff_w",name,'"{0}"'.format(desc),value
+		sys.stdout.flush()
 	
 	def doubleArrayValue(self,name,desc,values):
 		print "double_array",name,'"{0}"'.format(desc),' '.join(map(str,values))
+		sys.stdout.flush()
+
+	def doubleArrayVariable(self,name,desc,values):
+		print "double_array_w",name,'"{0}"'.format(desc),' '.join(map(str,values))
 		sys.stdout.flush()
 
 	def doubleArrayAdd(self,name,values):
