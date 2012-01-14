@@ -29,6 +29,8 @@
 #include "nmonitor.h"
 #include "configuration.h"
 
+#define MONITOR_REFRESH   0.1
+
 #ifdef HAVE_XCURSES
 char *XCursesProgramName = "rts2-mon";
 #endif
@@ -503,15 +505,21 @@ int NMonitor::init ()
 
 	resize ();
 
-	return repaint ();
+	addTimer (MONITOR_REFRESH, new Rts2Event (EVENT_MONITOR_REFRESH));
+
+	return 0;
 }
 
-int NMonitor::idle ()
+void NMonitor::postEvent (Rts2Event *event)
 {
-	int ret = rts2core::Client::idle ();
-	repaint ();
-	setTimeout (USEC_SEC);
-	return ret;
+	switch (event->getType ())
+	{
+		case EVENT_MONITOR_REFRESH:
+			repaint ();
+			addTimer (MONITOR_REFRESH, event);
+			return;
+	}
+	rts2core::Client::postEvent (event);
 }
 
 rts2core::ConnClient * NMonitor::createClientConnection (int _centrald_num, char *_deviceName)

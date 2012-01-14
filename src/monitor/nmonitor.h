@@ -34,6 +34,8 @@
 #include "../../lib/rts2db/simbadtarget.h"
 #endif
 
+#define EVENT_MONITOR_REFRESH      RTS2_LOCAL_EVENT + 1450
+
 #include "nlayout.h"
 #include "daemonwindow.h"
 #include "ndevicewindow.h"
@@ -91,7 +93,7 @@ class NMonitor:public rts2core::Client
 		virtual ~ NMonitor (void);
 
 		virtual int init ();
-		virtual int idle ();
+		virtual void postEvent (Rts2Event *event);
 
 		virtual rts2core::ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);

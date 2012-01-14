@@ -45,7 +45,18 @@ void NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
+#ifdef DEBUG	
 	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (connection->getMaster ()->getNow ()));
+#else
+	mvwprintw (window, 0, 2, "%s %s ", connection->getName (), connection->getStateString ().c_str ());
+	double p = connection->getProgress (connection->getMaster ()->getNow ());
+	if (!isnan (p))
+	{
+		std::ostringstream os;
+		os << ProgressIndicator (p, getWidth () - getWindowX () - 7) << std::fixed << std::setw (5) << std::setprecision (1) << p << "%";
+		wprintw (window, "%s", os.str ().c_str ());
+	}
+#endif
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
 }

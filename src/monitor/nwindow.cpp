@@ -88,6 +88,16 @@ int NWindow::getCurY ()
 	return getcury (getWriteWindow ());
 }
 
+int NWindow::getWindowX ()
+{
+	return getcurx (window);
+}
+
+int NWindow::getWindowY ()
+{
+	return getcury (window);
+}
+
 int NWindow::getWidth ()
 {
 	return getmaxx (window);

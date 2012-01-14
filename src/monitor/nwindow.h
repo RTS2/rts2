@@ -61,6 +61,8 @@ class NWindow:public Layout
 		int getY ();
 		int getCurX ();
 		int getCurY ();
+		int getWindowX ();
+		int getWindowY ();
 		int getWidth ();
 		int getHeight ();
 		int getWriteWidth ();
