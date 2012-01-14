@@ -1,3 +1,7 @@
+2012-01-14
+ * progresses
+ * migrates objects to rts2core namespace
+
 2012-01-13
  * --valuefile option
  * run_device in scripts
