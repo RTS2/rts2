@@ -62,9 +62,7 @@ class NSelWindow:public NWindow
 
 		int getScrollWidth ()
 		{
-			int w, h;
-			getmaxyx (scrolpad, h, w);
-			return w;
+			return getmaxx (scrolpad);
 		}
 		int getScrollHeight ()
 		{

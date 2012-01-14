@@ -70,44 +70,32 @@ void NWindow::draw ()
 
 int NWindow::getX ()
 {
-	int x, y;
-	getbegyx (window, y, x);
-	return x;
+	return getbegx (window);
 }
 
 int NWindow::getY ()
 {
-	int x, y;
-	getbegyx (window, y, x);
-	return y;
+	return getbegy (window);
 }
 
 int NWindow::getCurX ()
 {
-	int x, y;
-	getyx (getWriteWindow (), y, x);
-	return x;
+	return getcurx (getWriteWindow ());
 }
 
 int NWindow::getCurY ()
 {
-	int x, y;
-	getyx (getWriteWindow (), y, x);
-	return y;
+	return getcury (getWriteWindow ());
 }
 
 int NWindow::getWidth ()
 {
-	int w, h;
-	getmaxyx (window, h, w);
-	return w;
+	return getmaxx (window);
 }
 
 int NWindow::getHeight ()
 {
-	int w, h;
-	getmaxyx (window, h, w);
-	return h;
+	return getmaxy (window);
 }
 
 int NWindow::getWriteWidth ()
