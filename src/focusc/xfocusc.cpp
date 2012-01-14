@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "genfoc.h"
+#include "focusclient.h"
 #include "utilsfunc.h"
 
 #include <X11/Xlib.h>
@@ -46,7 +46,7 @@ using namespace rts2core;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2xfocus:public Rts2GenFocClient
+class XFocusClient:public FocusClient
 {
 	private:
 		XColor rgb[260];		 // <= 255 - images, 256 - red line
@@ -64,7 +64,7 @@ class Rts2xfocus:public Rts2GenFocClient
 		// initially in arcsec, but converted (and used) in degrees
 		double changeVal;
 
-		virtual Rts2GenFocCamera * createFocCamera (rts2core::Connection * conn);
+		virtual FocusCameraClient * createFocCamera (rts2core::Connection * conn);
 	protected:
 		/**
 		 * Add XWin connection socket, obtained by ConnectionNumber macro.
@@ -76,8 +76,8 @@ class Rts2xfocus:public Rts2GenFocClient
 		 */
 		virtual void selectSuccess ();
 	public:
-		Rts2xfocus (int argc, char **argv);
-		virtual ~ Rts2xfocus (void);
+		XFocusClient (int argc, char **argv);
+		virtual ~ XFocusClient (void);
 
 		virtual int processOption (int in_opt);
 
@@ -115,11 +115,11 @@ class Rts2xfocus:public Rts2GenFocClient
 		bool GoNine;
 };
 
-class Rts2xfocusCamera:public Rts2GenFocCamera
+class XFocusClientCamera:public FocusCameraClient
 {
 	public:
-		Rts2xfocusCamera (rts2core::Connection * in_connection, double in_change_val, Rts2xfocus * in_master);
-		virtual ~ Rts2xfocusCamera (void);
+		XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master);
+		virtual ~ XFocusClientCamera (void);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -133,7 +133,7 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 		virtual void printFWHMTable ();
 	private:
-		Rts2xfocus * master;
+		XFocusClient * master;
 
 		// X11 stuff
 		Window window;
@@ -205,7 +205,7 @@ int cmpuint16_t (const void *a, const void *b)
 #undef B
 }
 
-double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, double *sigma, double sf)
+double XFocusClientCamera::classical_median (void *q, int16_t dataType, int n, double *sigma, double sf)
 {
 	int i;
 	double M,S;
@@ -277,7 +277,7 @@ double Rts2xfocusCamera::classical_median (void *q, int16_t dataType, int n, dou
 	return M;
 }
 
-Rts2xfocusCamera::Rts2xfocusCamera (rts2core::Connection * in_connection, double in_change_val, Rts2xfocus * in_master):Rts2GenFocCamera (in_connection, in_master)
+XFocusClientCamera::XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master):FocusCameraClient (in_connection, in_master)
 {
 	master = in_master;
 
@@ -305,11 +305,11 @@ Rts2xfocusCamera::Rts2xfocusCamera (rts2core::Connection * in_connection, double
 	mouseTelChange_y = INT_MAX;
 }
 
-Rts2xfocusCamera::~Rts2xfocusCamera (void)
+XFocusClientCamera::~XFocusClientCamera (void)
 {
 }
 
-void Rts2xfocusCamera::buildWindow ()
+void XFocusClientCamera::buildWindow ()
 {
 	XTextProperty window_title;
 	char *cameraName;
@@ -329,7 +329,7 @@ void Rts2xfocusCamera::buildWindow ()
 }
 
 // called to rebuild window on the screen
-void Rts2xfocusCamera::rebuildWindow ()
+void XFocusClientCamera::rebuildWindow ()
 {
 	if (gc)
 		XFreeGC (master->getDisplay (), gc);
@@ -345,7 +345,7 @@ void Rts2xfocusCamera::rebuildWindow ()
 	gc = XCreateGC (master->getDisplay (), pixmap, 0, &gvc);
 }
 
-void Rts2xfocusCamera::drawCenterCross (int xc, int yc)
+void XFocusClientCamera::drawCenterCross (int xc, int yc)
 {
 	// draw cross at center
 	XDrawLine (master->getDisplay (), pixmap, gc, xc - 10, yc, xc - 2, yc);
@@ -354,7 +354,7 @@ void Rts2xfocusCamera::drawCenterCross (int xc, int yc)
 	XDrawLine (master->getDisplay (), pixmap, gc, xc, yc + 10, xc, yc + 2);
 }
 
-void Rts2xfocusCamera::drawCross1 ()
+void XFocusClientCamera::drawCross1 ()
 {
 	XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
 	int rectNum;
@@ -388,7 +388,7 @@ void Rts2xfocusCamera::drawCross1 ()
 	delete[]rectangles;
 }
 
-void Rts2xfocusCamera::drawCross2 ()
+void XFocusClientCamera::drawCross2 ()
 {
 	XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
 	int arcNum;
@@ -424,7 +424,7 @@ void Rts2xfocusCamera::drawCross2 ()
 	delete[]arcs;
 }
 
-void Rts2xfocusCamera::drawCross3 ()
+void XFocusClientCamera::drawCross3 ()
 {
 	static XPoint points[5];
 	int xc, yc;
@@ -462,7 +462,7 @@ void Rts2xfocusCamera::drawCross3 ()
 	XDrawLine (master->getDisplay (), pixmap, gc, xc, yc - pixmapHeight / 15, xc, yc + pixmapHeight / 15);
 }
 
-void Rts2xfocusCamera::drawStars (rts2image::Image * image)
+void XFocusClientCamera::drawStars (rts2image::Image * image)
 {
 	struct rts2image::stardata *sr;
 	if (!image)
@@ -474,7 +474,7 @@ void Rts2xfocusCamera::drawStars (rts2image::Image * image)
 	}
 }
 
-void Rts2xfocusCamera::printInfo ()
+void XFocusClientCamera::printInfo ()
 {
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
 	std::ostringstream _os;
@@ -493,7 +493,7 @@ void Rts2xfocusCamera::printInfo ()
 	}
 }
 
-void Rts2xfocusCamera::printMouse ()
+void XFocusClientCamera::printMouse ()
 {
 	char stringBuf[20];
 	int len;
@@ -505,13 +505,13 @@ void Rts2xfocusCamera::printMouse ()
 		drawCenterCross (buttonX, buttonY);
 }
 
-void Rts2xfocusCamera::redrawMouse ()
+void XFocusClientCamera::redrawMouse ()
 {
 	XClearArea (master->getDisplay (), window, 0, 0, 200, 40, False);
 	XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20, 20, False);
 }
 
-void Rts2xfocusCamera::redraw ()
+void XFocusClientCamera::redraw ()
 {
 	// do some line-drawing etc..
 	switch (crossType)
@@ -541,7 +541,7 @@ void Rts2xfocusCamera::redraw ()
 	XClearWindow (master->getDisplay (), window);
 }
 
-void Rts2xfocusCamera::XeventLoop ()
+void XFocusClientCamera::XeventLoop ()
 {
 	XEvent event;
 	KeySym ks;
@@ -704,7 +704,7 @@ void Rts2xfocusCamera::XeventLoop ()
 	}
 }
 
-void Rts2xfocusCamera::postEvent (Rts2Event * event)
+void XFocusClientCamera::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -712,22 +712,22 @@ void Rts2xfocusCamera::postEvent (Rts2Event * event)
 			XeventLoop ();
 			break;
 	}
-	Rts2GenFocCamera::postEvent (event);
+	FocusCameraClient::postEvent (event);
 }
 
-void Rts2xfocusCamera::printFWHMTable ()
+void XFocusClientCamera::printFWHMTable ()
 {
-	Rts2GenFocCamera::printFWHMTable ();
+	FocusCameraClient::printFWHMTable ();
 	if (master->getStarsType ())
 		redraw ();
 }
 
-void Rts2xfocusCamera::idle ()
+void XFocusClientCamera::idle ()
 {
-	Rts2GenFocCamera::idle ();
+	FocusCameraClient::idle ();
 }
 
-void Rts2xfocusCamera::cameraImageReady (rts2image::Image * image)
+void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 {
 	int i, j;
 
@@ -960,12 +960,12 @@ void Rts2xfocusCamera::cameraImageReady (rts2image::Image * image)
 	XFlush (master->getDisplay ());
 }
 
-void Rts2xfocusCamera::setCrossType (int in_crossType)
+void XFocusClientCamera::setCrossType (int in_crossType)
 {
 	crossType = in_crossType;
 }
 
-Rts2xfocus::Rts2xfocus (int in_argc, char **in_argv):Rts2GenFocClient (in_argc, in_argv)
+XFocusClient::XFocusClient (int in_argc, char **in_argv):FocusClient (in_argc, in_argv)
 {
 	displayName = NULL;
 
@@ -985,13 +985,13 @@ Rts2xfocus::Rts2xfocus (int in_argc, char **in_argv):Rts2GenFocClient (in_argc, 
 	addOption ('9', NULL, 0, "Nine sectors from different places of the CCD");
 }
 
-Rts2xfocus::~Rts2xfocus (void)
+XFocusClient::~XFocusClient (void)
 {
 	if (display)
 		XCloseDisplay (display);
 }
 
-void Rts2xfocus::usage ()
+void XFocusClient::usage ()
 {
 	std::cout
 		<< "\t" << getAppName () << " -d C2 --nosync -e 10    .. takes 10 sec exposures on device C2. Exposures are not synchronize (blocked by unresposible devices,..)" << std::endl
@@ -1000,7 +1000,7 @@ void Rts2xfocus::usage ()
 		<< "\t" << getAppName () << " -d C2 -a -e 10          .. takes 10 sec exposures on device C2. Takes darks and use them" << std::endl;
 }
 
-void Rts2xfocus::help ()
+void XFocusClient::help ()
 {
 	rts2core::Client::help ();
 	std::cout << "Keys:" << std::endl
@@ -1017,7 +1017,7 @@ void Rts2xfocus::help ()
 		<< "\t+-    .. change zoom" << std::endl;
 }
 
-int Rts2xfocus::processOption (int in_opt)
+int XFocusClient::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -1047,15 +1047,15 @@ int Rts2xfocus::processOption (int in_opt)
 			changeVal = atof (optarg);
 			break;
 		default:
-			return Rts2GenFocClient::processOption (in_opt);
+			return FocusClient::processOption (in_opt);
 	}
 	return 0;
 }
 
-int Rts2xfocus::init ()
+int XFocusClient::init ()
 {
 	int ret;
-	ret = Rts2GenFocClient::init ();
+	ret = FocusClient::init ();
 	if (ret)
 		return ret;
 
@@ -1097,31 +1097,31 @@ int Rts2xfocus::init ()
 	return 0;
 }
 
-Rts2GenFocCamera * Rts2xfocus::createFocCamera (rts2core::Connection * conn)
+FocusCameraClient * XFocusClient::createFocCamera (rts2core::Connection * conn)
 {
-	Rts2xfocusCamera *cam;
-	cam = new Rts2xfocusCamera (conn, changeVal, this);
+	XFocusClientCamera *cam;
+	cam = new XFocusClientCamera (conn, changeVal, this);
 	cam->setCrossType (crossType);
 	return cam;
 }
 
-void Rts2xfocus::addSelectSocks ()
+void XFocusClient::addSelectSocks ()
 {
 	FD_SET (ConnectionNumber (display), &read_set);
-	Rts2GenFocClient::addSelectSocks ();
+	FocusClient::addSelectSocks ();
 }
 
-void Rts2xfocus::selectSuccess ()
+void XFocusClient::selectSuccess ()
 {
 	if (FD_ISSET (ConnectionNumber (display), &read_set))
 	{
 		postEvent (new Rts2Event (EVENT_XWIN_SOCK));
 	}
-	Rts2GenFocClient::selectSuccess ();
+	FocusClient::selectSuccess ();
 }
 
 int main (int argc, char **argv)
 {
-	Rts2xfocus masterFocus = Rts2xfocus (argc, argv);
+	XFocusClient masterFocus = XFocusClient (argc, argv);
 	return masterFocus.run ();
 }

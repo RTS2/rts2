@@ -30,13 +30,15 @@
 
 #define EVENT_XWIN_SOCK            RTS2_LOCAL_EVENT + 304
 
-class Rts2GenFocCamera;
+#define EVENT_EXP_CHECK            RTS2_LOCAL_EVENT + 305
 
-class Rts2GenFocClient:public rts2core::Client
+class FocusCameraClient;
+
+class FocusClient:public rts2core::Client
 {
 	public:
-		Rts2GenFocClient (int argc, char **argv);
-		virtual ~ Rts2GenFocClient (void);
+		FocusClient (int argc, char **argv);
+		virtual ~ FocusClient (void);
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual int init ();
@@ -55,8 +57,8 @@ class Rts2GenFocClient:public rts2core::Client
 
 		char *focExe;
 
-		virtual Rts2GenFocCamera *createFocCamera (rts2core::Connection * conn);
-		Rts2GenFocCamera *initFocCamera (Rts2GenFocCamera * cam);
+		virtual FocusCameraClient *createFocCamera (rts2core::Connection * conn);
+		FocusCameraClient *initFocCamera (FocusCameraClient * cam);
 
 	private:
 		float defExposure;
@@ -101,11 +103,11 @@ class fwhmData
 		}
 };
 
-class Rts2GenFocCamera:public rts2image::DevClientCameraFoc
+class FocusCameraClient:public rts2image::DevClientCameraFoc
 {
 	public:
-		Rts2GenFocCamera (rts2core::Connection * in_connection, Rts2GenFocClient * in_master);
-		virtual ~ Rts2GenFocCamera (void);
+		FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master);
+		virtual ~ FocusCameraClient (void);
 
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
@@ -131,7 +133,7 @@ class Rts2GenFocCamera:public rts2image::DevClientCameraFoc
 		virtual void exposureStarted ();
 
 	private:
-		Rts2GenFocClient * master;
+		FocusClient * master;
 		int bop;
 };
 #endif							 /* !__RTS2_GENFOC__ */

@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "genfoc.h"
+#include "focusclient.h"
 #include "configuration.h"
 #include "../../lib/rts2fits/memimage.h"
 
@@ -31,7 +31,7 @@
 #define OPT_NOSYNC          OPT_LOCAL + 53
 #define OPT_DARK            OPT_LOCAL + 54
 
-Rts2GenFocCamera::Rts2GenFocCamera (rts2core::Connection * in_connection, Rts2GenFocClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
+FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master):rts2image::DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
 
@@ -45,7 +45,7 @@ Rts2GenFocCamera::Rts2GenFocCamera (rts2core::Connection * in_connection, Rts2Ge
 }
 
 
-Rts2GenFocCamera::~Rts2GenFocCamera (void)
+FocusCameraClient::~FocusCameraClient (void)
 {
 	std::list < fwhmData * >::iterator fwhm_iter;
 	for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end (); fwhm_iter++)
@@ -57,7 +57,7 @@ Rts2GenFocCamera::~Rts2GenFocCamera (void)
 	fwhmDatas.clear ();
 }
 
-void Rts2GenFocCamera::exposureStarted ()
+void FocusCameraClient::exposureStarted ()
 {
 	if (exe == NULL)
 	{
@@ -66,7 +66,7 @@ void Rts2GenFocCamera::exposureStarted ()
 	rts2image::DevClientCameraFoc::exposureStarted ();
 }
 
-void Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
+void FocusCameraClient::stateChanged (Rts2ServerState * state)
 {
 	std::cout << "State changed (" << getName () << "): "
 		<< " value:" << getConnection()->getStateString ()
@@ -75,7 +75,7 @@ void Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 	rts2image::DevClientCameraFoc::stateChanged (state);
 }
 
-rts2image::Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
+rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart)
 {
 	rts2image::Image *image;
 	if (autoSave)
@@ -98,7 +98,7 @@ rts2image::Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	return image;
 }
 
-rts2image::imageProceRes Rts2GenFocCamera::processImage (rts2image::Image * image)
+rts2image::imageProceRes FocusCameraClient::processImage (rts2image::Image * image)
 {
 	rts2image::imageProceRes res = rts2image::DevClientCameraFoc::processImage (image);
 	std::cout << "Camera " << getName () << " image_type:";
@@ -118,7 +118,7 @@ rts2image::imageProceRes Rts2GenFocCamera::processImage (rts2image::Image * imag
 	return res;
 }
 
-void Rts2GenFocCamera::printFWHMTable ()
+void FocusCameraClient::printFWHMTable ()
 {
 	std::list < fwhmData * >::iterator dat;
 	std::cout << "=======================" << std::endl;
@@ -133,7 +133,7 @@ void Rts2GenFocCamera::printFWHMTable ()
 	std::cout << "=======================" << std::endl;
 }
 
-void Rts2GenFocCamera::focusChange (rts2core::Connection * focus)
+void FocusCameraClient::focusChange (rts2core::Connection * focus)
 {
 	if (getActualImage()->sexResultNum)
 	{
@@ -186,12 +186,12 @@ void Rts2GenFocCamera::focusChange (rts2core::Connection * focus)
 	queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 }
 
-void Rts2GenFocCamera::center (int centerWidth, int centerHeight)
+void FocusCameraClient::center (int centerWidth, int centerHeight)
 {
 	connection->queCommand (new rts2core::CommandCenter (this, centerWidth, centerHeight));
 }
 
-Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
+FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
 {
 	defExposure = rts2_nan ("f");
 	defCenter = 0;
@@ -241,12 +241,12 @@ Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):rts2core::Clien
 	addOption (OPT_SKIP_FILTER, "skip_filter", 1, "Skip that filter number");
 }
 
-Rts2GenFocClient::~Rts2GenFocClient (void)
+FocusClient::~FocusClient (void)
 {
 
 }
 
-int Rts2GenFocClient::processOption (int in_opt)
+int FocusClient::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -313,12 +313,12 @@ int Rts2GenFocClient::processOption (int in_opt)
 	return 0;
 }
 
-Rts2GenFocCamera * Rts2GenFocClient::createFocCamera (rts2core::Connection * conn)
+FocusCameraClient * FocusClient::createFocCamera (rts2core::Connection * conn)
 {
-	return new Rts2GenFocCamera (conn, this);
+	return new FocusCameraClient (conn, this);
 }
 
-Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
+FocusCameraClient *FocusClient::initFocCamera (FocusCameraClient * cam)
 {
 	std::vector < char *>::iterator cam_iter;
 	cam->setSaveImage (autoSave || focExe);
@@ -355,12 +355,12 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	return cam;
 }
 
-rts2core::DevClient *Rts2GenFocClient::createOtherType (rts2core::Connection * conn, int other_device_type)
+rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_CCD:
-			Rts2GenFocCamera * cam;
+			FocusCameraClient * cam;
 			cam = createFocCamera (conn);
 			return initFocCamera (cam);
 		case DEVICE_TYPE_MOUNT:
@@ -378,7 +378,7 @@ rts2core::DevClient *Rts2GenFocClient::createOtherType (rts2core::Connection * c
 	}
 }
 
-int Rts2GenFocClient::init ()
+int FocusClient::init ()
 {
 	rts2core::Configuration *config;
 	int ret;
