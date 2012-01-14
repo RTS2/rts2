@@ -21,6 +21,9 @@
 #include "configuration.h"
 #include "../../lib/rts2fits/memimage.h"
 
+#include <curses.h>
+#include <term.h>
+
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -76,7 +79,7 @@ void FocusCameraClient::postEvent (Rts2Event *event)
 			if (getConnection ()->getState () & CAM_EXPOSING)
 			{
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
-				std::cout << "EXPOSING " << ProgressIndicator (fr) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+				std::cout << "EXPOSING " << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 				std::cout.flush ();
 			}
 			break;
@@ -86,10 +89,11 @@ void FocusCameraClient::postEvent (Rts2Event *event)
 
 void FocusCameraClient::stateChanged (Rts2ServerState * state)
 {
-	std::cout << "State changed (" << getName () << "): "
-		<< " value:" << getConnection()->getStateString ()
-		<< " (" << state->getValue () << ")"
-		<< std::endl;
+	if (master->printChanges ())
+		std::cout << "State changed (" << getName () << "): "
+			<< " value:" << getConnection()->getStateString ()
+			<< " (" << state->getValue () << ")"
+			<< std::endl;
 	rts2image::DevClientCameraFoc::stateChanged (state);
 }
 
@@ -226,6 +230,8 @@ FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc
 
 	focExe = NULL;
 
+	printStateChanges = false;
+
 	query = 0;
 	tarRa = -999.0;
 	tarDec = -999.0;
@@ -261,7 +267,7 @@ FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc
 
 FocusClient::~FocusClient (void)
 {
-
+	std::cout << std::endl << "Ending program." << std::endl;
 }
 
 int FocusClient::processOption (int in_opt)
@@ -404,6 +410,8 @@ int FocusClient::init ()
 	ret = rts2core::Client::init ();
 	if (ret)
 		return ret;
+
+	setupterm (NULL, 2, NULL);
 
 	config = rts2core::Configuration::instance ();
 	ret = config->loadFile (configFile);

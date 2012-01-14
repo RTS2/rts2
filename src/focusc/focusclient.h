@@ -51,6 +51,8 @@ class FocusClient:public rts2core::Client
 		int getFocusingQuery () { return query; }
 		int getAutoDark () { return autoDark; }
 
+		bool printChanges () { return printStateChanges; };
+
 	protected:
 		int autoSave;
 
@@ -89,6 +91,7 @@ class FocusClient:public rts2core::Client
 
 		char *configFile;
 		int bop;
+		bool printStateChanges;
 };
 
 class fwhmData
