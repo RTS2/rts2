@@ -19,6 +19,8 @@ if ( ! (${?imgid}) ) @ imgid = 1
 if ( ! (${?lastoffimage}) ) set lastoffimage=-1
 
 if ( ! (${?last_offtarget}) ) set last_offtarget=-1
+
+if ( ! (${?gdiff}) ) set gdiff=0
 	
 # next autoguider attempt
 if ( ! (${?nextautog}) ) set nextautog=`date +%s`
@@ -102,6 +104,7 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 if ( $continue == 1 ) then
   	<xsl:copy-of select='$printd'/> "starting pre-exposure checks"
         set cname=`$xmlrpc --quiet -G IMGP.object`
+	set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
 	set ora_l=`$xmlrpc --quiet -G IMGP.ora`
 	set odec_l=`$xmlrpc --quiet -G IMGP.odec`
 	set ora=`printf "%.0f" $ora_l`
@@ -202,23 +205,20 @@ if ( $continue == 1 ) then
 			set guidestatus = "OFF"
 		endif
 		if ( $guidestatus != $autog ) then
-			if ( $nextautog &lt; 0 ) then
-				rts2-logcom "Commanding autoguiding to ON"
-				set nowdate=`date +%s`
+			rts2-logcom "System should guide, but autoguider is in $guidestatus."
+			set nowdate=`date +%s`
+			if ( $nextautog &lt; $nowdate ) then
+				rts2-logcom "Grabing autoguider image"
+				tele grab
+				set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
+				set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
+				mkdir -p $dir
+				set autof=$dir/`date +%H%M%S`.fits
+				cp $lastgrab $autof
+				rts2-logcom "Autoguider image saved in $autof; trying to guide again"
 				<xsl:copy-of select='$guidetest'/>
-			else
-				rts2-logcom "System should guide, but autoguider is in $guidestatus."
-				set nowdate=`date +%s`
-				if ( $nextautog &lt; $nowdate ) then
-					rts2-logcom "Grabing autoguider image"
-					tele grab
-					set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-					set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
-					mkdir -p $dir
-					set autof=$dir/`date +%H%M%S`.fits
-					cp $lastgrab $autof
-					rts2-logcom "Autoguider image saved in $autof; trying to guide again"
-					<xsl:copy-of select='$guidetest'/>
+				if ( $gdiff != 0 ) then
+					tele gfoc $gdiff
 				endif
 			endif
 		endif
@@ -231,7 +231,6 @@ if ( $continue == 1 ) then
 	dstore
 	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
 	set flux=`$xmlrpc --quiet -G IMGP.source_flux`
-	set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
 	if ( $last_obs_id == $obs_id ) then
 		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f' $ora_l $odec_l $fwhm2 $flux`
 	else
@@ -319,14 +318,9 @@ if ( $continue == 1 ) then
 		endif
 		if ( $guidestatus != $new_guide ) then
 			if ( $new_guide == "ON" ) then
-				if ( $defoc_toffs == 0 ) then
-					rts2-logcom "Commanding autoguiding to ON"
-					set nowdate=`date +%s`
-					<xsl:copy-of select='$guidetest'/>
-				else
-					<xsl:copy-of select='$printd'/> 'stored defocus, will start guiding later'
-					@ nextautog = -1
-				endif
+				rts2-logcom "Commanding autoguiding to ON"
+				set nowdate=`date +%s`
+				<xsl:copy-of select='$guidetest'/>
 			else
 				rts2-logcom "Set guiding to OFF"
 				tele autog OFF
