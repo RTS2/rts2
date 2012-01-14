@@ -77,10 +77,10 @@ void FocusCameraClient::postEvent (Rts2Event *event)
 	switch (event->getType ())
 	{
 		case EVENT_EXP_CHECK:
-			if (getConnection ()->getState () & CAM_EXPOSING)
+			if (getConnection ()->getState () & (CAM_EXPOSING | CAM_READING))
 			{
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
-				std::cout << "EXPOSING " << " " << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+				std::cout << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING ")  << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 				std::cout.flush ();
 			}
 			break;

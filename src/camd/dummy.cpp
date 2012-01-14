@@ -48,6 +48,9 @@ class Dummy:public Camera
 			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			readoutSleep->setValueDouble (0);
 
+			createValue (callReadoutSize, "readout_size", "[pixels] number of pixels send on a single read", false, RTS2_VALUE_WRITABLE);
+			callReadoutSize->setValueLong (4096);
+
 			createValue (expMin, "exp_min", "[s] minimal exposure time", false, RTS2_VALUE_WRITABLE);
 			createValue (expMax, "exp_max", "[s] maximal exposure time", false, RTS2_VALUE_WRITABLE);
 			tempMin = tempMax = NULL;
@@ -218,6 +221,7 @@ class Dummy:public Camera
 		bool supportFrameT;
 		int infoSleep;
 		rts2core::ValueDouble *readoutSleep;
+		rts2core::ValueLong *callReadoutSize;
 		rts2core::ValueSelection *genType;
 		rts2core::ValueDouble *noiseRange;
 		rts2core::ValueBool *hasError;
@@ -282,10 +286,14 @@ int Dummy::doReadout ()
 			if (channels && (*channels)[ch] == false)
 				continue;
 			generateImage (usedSize);
-			ret = sendReadoutData (dataBuffer, usedSize, nch);
+			for (long written = 0; written < usedSize;)
+			{
+				ret = sendReadoutData (dataBuffer + written, usedSize - written > callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong (), nch);
+				if (ret < 0)
+					return ret;
+				written += ret;
+			}
 			nch++;
-			if (ret < 0)
-				return ret;
 		}
 	}
 	else

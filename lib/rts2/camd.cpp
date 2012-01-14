@@ -1248,7 +1248,8 @@ int Camera::camReadout (rts2core::Connection * conn)
 		// open data connection - wait socket
 		// end exposure as well..
 		// do not signal BOP_TEL_MOVE down if there are exposures in que
-		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_READING, "readout started", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+		double now = getNow ();
+		maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_READING, "readout started", now, now + (double) chipUsedSize () / pixelsSecond->getValueDouble (), exposureConn);
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)	
 			currentImageData = -1;
 		else

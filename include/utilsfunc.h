@@ -282,6 +282,10 @@ template <class T> bool from_string (T& t, const std::string& s, std::ios_base& 
 	return !(iss >> f >> t).fail();
 }
 
+static int __curp = 0;
+
+const char __screenSymbols[4] = {'-','\\','|','/'};
+
 /**
  * Send progress to ostream.
  *
@@ -290,17 +294,23 @@ template <class T> bool from_string (T& t, const std::string& s, std::ios_base& 
 class ProgressIndicator
 {
 	public:
-		ProgressIndicator (double progress) { pr = progress; };
+		ProgressIndicator (double progress, int width = 20) { pr = progress; w = width; };
 		friend std::ostream & operator << (std::ostream &os, ProgressIndicator p)
 		{
-			for (int cp = 0; cp < 100; cp += 5)
+			__curp++;
+			__curp %= 4;
+			for (int cp = 0; cp < p.w; cp ++)
 			{
-				os << ((cp < p.pr) ? '#' : '-');
+				if (100.0 * cp / p.w < p.pr)
+					os << "#";
+				else
+					os << __screenSymbols [__curp];
 			}
 			return os;
 		}
 	private:
 		double pr;
+		int w;
 };
 
 #endif							 /* !__RTS_UTILSFUNC__ */
