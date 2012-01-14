@@ -127,7 +127,7 @@ void Rts2DevClientLogger::idle ()
 	}
 }
 
-void Rts2DevClientLogger::postEvent (Rts2Event * event)
+void Rts2DevClientLogger::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{

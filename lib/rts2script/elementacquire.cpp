@@ -50,7 +50,7 @@ ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float i
 	}
 }
 
-void ElementAcquire::postEvent (Rts2Event * event)
+void ElementAcquire::postEvent (rts2core::Event * event)
 {
 	Image *image;
 	AcquireQuery *ac;
@@ -120,7 +120,7 @@ int ElementAcquire::nextCommand (rts2core::DevClientCamera * camera, rts2core::C
 			if (isnan (lastPrecision))
 			{
 				bool en = false;
-				script->getMaster ()->postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+				script->getMaster ()->postEvent (new rts2core::Event (EVENT_QUICK_ENABLE, (void *) &en));
 			}
 
 			camera->getConnection ()->queCommand (new rts2core::CommandChangeValue (camera, "SHUTTER", '=', 0));
@@ -190,7 +190,7 @@ int ElementAcquire::processImage (Image * image)
 	{
 		script->getMaster ()->addConnection (processor);
 		processingState = WAITING_ASTROMETRY;
-		script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
+		script->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUIRE_WAIT));
 	}
 	return 0;
 }
@@ -227,7 +227,7 @@ ElementAcquireStar::~ElementAcquireStar (void)
 	delete spiral;
 }
 
-void ElementAcquireStar::postEvent (Rts2Event * event)
+void ElementAcquireStar::postEvent (rts2core::Event * event)
 {
 	ConnFocus *focConn;
 	Image *image;
@@ -269,7 +269,7 @@ void ElementAcquireStar::postEvent (Rts2Event * event)
 						offset.dec = spiral_scale_dec * next_y;
 						script->getMaster ()->
 							postEvent (new
-							Rts2Event (EVENT_ADD_FIXED_OFFSET,
+							rts2core::Event (EVENT_ADD_FIXED_OFFSET,
 							(void *) &offset));
 						break;
 					case 0:
@@ -292,7 +292,7 @@ void ElementAcquireStar::postEvent (Rts2Event * event)
 						processingState = PRECISION_BAD;
 						script->getMaster ()->
 							postEvent (new
-							Rts2Event (EVENT_ADD_FIXED_OFFSET,
+							rts2core::Event (EVENT_ADD_FIXED_OFFSET,
 							(void *) &offset));
 						break;
 				}
@@ -333,7 +333,7 @@ int ElementAcquireStar::processImage (Image * image)
 	{
 		script->getMaster ()->addConnection (processor);
 		processingState = WAITING_ASTROMETRY;
-		script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
+		script->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUIRE_WAIT));
 		return 1;
 	}
 }

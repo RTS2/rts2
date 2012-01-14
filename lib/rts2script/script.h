@@ -100,7 +100,7 @@ typedef enum { PRINT_TEXT, PRINT_XML, PRINT_SCRIPT, PRINT_JSON } printType;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Script:public Rts2Object, public std::list <Element *>
+class Script:public Object, public std::list <Element *>
 {
 	public:
 		Script (int scriptLoopCount = 0, rts2core::Block * _master = NULL);
@@ -131,7 +131,7 @@ class Script:public Rts2Object, public std::list <Element *>
 		 */
 		int setTarget (const char *cam_name, Rts2Target *target);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		template < typename T > int nextCommand (T & device, Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()

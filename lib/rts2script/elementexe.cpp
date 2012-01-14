@@ -35,7 +35,7 @@ ConnExecute::~ConnExecute ()
 	if (masterElement != NULL)
 	{
 		if (masterElement->getClient () != NULL)
-			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+			masterElement->getClient ()->postEvent (new rts2core::Event (EVENT_COMMAND_OK));
 		masterElement->deleteExecConn ();
 	}
 
@@ -76,28 +76,28 @@ void ConnExecute::processCommand (char *cmd)
 		struct ln_equ_posn radec;
 		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
 			return;
-		master->postEvent (new Rts2Event (EVENT_CHANGE_TARGET, (void *) &radec));
+		master->postEvent (new rts2core::Event (EVENT_CHANGE_TARGET, (void *) &radec));
 	}
 	else if (!strcasecmp (cmd, "newobs"))
 	{
 		struct ln_equ_posn radec;
 		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
 			return;
-		master->postEvent (new Rts2Event (EVENT_NEW_TARGET, (void *) &radec));
+		master->postEvent (new rts2core::Event (EVENT_NEW_TARGET, (void *) &radec));
 	}
 	else if (!strcasecmp (cmd, "altaz"))
 	{
 		struct ln_hrz_posn hrz;
 		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
 			return;
-		master->postEvent (new Rts2Event (EVENT_CHANGE_TARGET_ALTAZ, (void *) &hrz));
+		master->postEvent (new rts2core::Event (EVENT_CHANGE_TARGET_ALTAZ, (void *) &hrz));
 	}
 	else if (!strcasecmp (cmd, "newaltaz"))
 	{
 		struct ln_hrz_posn hrz;
 		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
 			return;
-		master->postEvent (new Rts2Event (EVENT_NEW_TARGET_ALTAZ, (void *) &hrz));
+		master->postEvent (new rts2core::Event (EVENT_NEW_TARGET_ALTAZ, (void *) &hrz));
 	}
 	else if (!strcmp (cmd, "dark"))
 	{
@@ -277,7 +277,7 @@ void ConnExecute::connectionError (int last_data_size)
 	if (masterElement != NULL)
 	{
 		if (masterElement->getClient () != NULL)
-			masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+			masterElement->getClient ()->postEvent (new rts2core::Event (EVENT_COMMAND_OK));
 		masterElement->deleteExecConn ();
 	}
 	masterElement = NULL;

@@ -63,7 +63,7 @@ class Hlohovec:public GEM
 		Hlohovec (int argc, char **argv);
 		virtual ~Hlohovec ();
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 	protected:
@@ -151,7 +151,7 @@ Hlohovec::~Hlohovec ()
 	delete decDrive;
 }
 
-void Hlohovec::postEvent (Rts2Event *event)
+void Hlohovec::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
@@ -283,7 +283,7 @@ int Hlohovec::init ()
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telAltitude->setValueDouble (config->getObservatoryAltitude ());
 
-	addTimer (1, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
+	addTimer (1, new rts2core::Event (RTS2_HLOHOVEC_AUTOSAVE));
 
 	return 0;
 }
@@ -367,13 +367,13 @@ int Hlohovec::isMoving ()
 
 int Hlohovec::endMove ()
 {
-	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
+	addTimer (5, new rts2core::Event (RTS2_HLOHOVEC_AUTOSAVE));
 	return Telescope::endMove ();
 }
 
 int Hlohovec::stopMove ()
 {
-	addTimer (5, new Rts2Event (RTS2_HLOHOVEC_AUTOSAVE));
+	addTimer (5, new rts2core::Event (RTS2_HLOHOVEC_AUTOSAVE));
 	parking = false;
 	raDrive->stop ();
 	decDrive->stop ();
@@ -480,12 +480,12 @@ void Hlohovec::matchGuideRa (int rag)
 	if (rag == 0)
 	{
 		raDrive->stop ();
-		addTimer (0.1, new Rts2Event (RTS2_HLOHOVEC_TSTOPRG));
+		addTimer (0.1, new rts2core::Event (RTS2_HLOHOVEC_TSTOPRG));
 	}
 	else
 	{
 		raDrive->setTargetPos (raDrive->getPosition () + ((rag == 1 ? -1 : 1) * RAGSTEP));
-		addTimer (1, new Rts2Event (RTS2_HLOHOVEC_TIMERRG));
+		addTimer (1, new rts2core::Event (RTS2_HLOHOVEC_TIMERRG));
 	}
 }
 
@@ -495,12 +495,12 @@ void Hlohovec::matchGuideDec (int deg)
 	if (deg == 0)
 	{
 		decDrive->stop ();
-		addTimer (0.1, new Rts2Event (RTS2_HLOHOVEC_TSTOPDG));
+		addTimer (0.1, new rts2core::Event (RTS2_HLOHOVEC_TSTOPDG));
 	}
 	else
 	{
 		decDrive->setTargetPos (decDrive->getPosition () + ((deg == 1 ? -1 : 1) * DEGSTEP));
-		addTimer (1, new Rts2Event (RTS2_HLOHOVEC_TIMERDG));
+		addTimer (1, new rts2core::Event (RTS2_HLOHOVEC_TIMERDG));
 	}
 }
 

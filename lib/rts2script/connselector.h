@@ -37,7 +37,7 @@ class ConnSelector:public ConnProcess
 	public:
 		ConnSelector (rts2core::Block * in_master, const char *in_exe, int in_timeout);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 	protected:
 		virtual void processCommand (char *cmd);

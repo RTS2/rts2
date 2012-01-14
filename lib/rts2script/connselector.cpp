@@ -26,7 +26,7 @@ ConnSelector::ConnSelector (rts2core::Block * in_master, const char *in_exe, int
 	waitNext = false;
 }
 
-void ConnSelector::postEvent (Rts2Event *event)
+void ConnSelector::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

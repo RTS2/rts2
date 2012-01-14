@@ -20,7 +20,7 @@
 #ifndef __RTS2_DEVCLIENT__
 #define __RTS2_DEVCLIENT__
 
-#include "rts2object.h"
+#include "object.h"
 #include "block.h"
 #include "value.h"
 
@@ -37,13 +37,13 @@ class Command;
  * specify devices classes, which e.g. allow X11 printout of device
  * information etc..
  */
-class DevClient:public Rts2Object
+class DevClient:public Object
 {
 	public:
 		DevClient (Connection * in_connection);
 		virtual ~ DevClient (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (Event * event);
 
 		/**
 		 * Called when new data connection is created.
@@ -178,7 +178,7 @@ class DevClientTelescope:public DevClient
 			moveWasCorrecting = false;
 		}
 		virtual void stateChanged (Rts2ServerState * state);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (Event * event);
 };
 
 class DevClientDome:public DevClient

@@ -74,7 +74,7 @@ void ElementBlock::addElement (Element * element)
 		curr_element = blockElements.begin ();
 }
 
-void ElementBlock::postEvent (Rts2Event * event)
+void ElementBlock::postEvent (rts2core::Event * event)
 {
 	std::list < Element * >::iterator el_iter_sig;
 	switch (event->getType ())
@@ -84,12 +84,12 @@ void ElementBlock::postEvent (Rts2Event * event)
 			for (el_iter_sig = blockElements.begin ();
 				el_iter_sig != blockElements.end (); el_iter_sig++)
 			{
-				(*el_iter_sig)->postEvent (new Rts2Event (event));
+				(*el_iter_sig)->postEvent (new rts2core::Event (event));
 			}
 			break;
 		default:
 			if (curr_element != blockElements.end ())
-				(*curr_element)->postEvent (new Rts2Event (event));
+				(*curr_element)->postEvent (new rts2core::Event (event));
 			break;
 	}
 	Element::postEvent (event);
@@ -334,7 +334,7 @@ void ElementAcquired::checkState ()
 	if (state == NOT_CALLED)
 	{
 		int acquireState = 0;
-		script->getMaster ()->postEvent (new Rts2Event (EVENT_GET_ACQUIRE_STATE, (void *) &acquireState));
+		script->getMaster ()->postEvent (new rts2core::Event (EVENT_GET_ACQUIRE_STATE, (void *) &acquireState));
 		if (acquireState == 1)
 			state = ACQ_OK;
 		else
@@ -342,7 +342,7 @@ void ElementAcquired::checkState ()
 	}
 }
 
-void ElementAcquired::postEvent (Rts2Event * event)
+void ElementAcquired::postEvent (rts2core::Event * event)
 {
 	switch (state)
 	{

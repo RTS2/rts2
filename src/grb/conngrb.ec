@@ -1591,7 +1591,7 @@ int ConnGrb::receive (fd_set *set)
 					break;
 			}
 			// enable others to catch-up (FW connections will forward packet to their sockets)
-			getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_GRB_PACKET, nbuf));
+			getMaster ()->postEvent (new rts2core::Event (RTS2_EVENT_GRB_PACKET, nbuf));
 		}
 		catch (rts2core::Error er)
 		{

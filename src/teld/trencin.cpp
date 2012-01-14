@@ -1073,7 +1073,6 @@ void Trencin::valueChanged (rts2core::Value *changed_value)
 
 int Trencin::info ()
 {
-	int ret;
 	double t_telRa;
 	double t_telDec;
 
@@ -1198,7 +1197,7 @@ int Trencin::info ()
 	if (decMoving->getValueInteger () == 0 && raMoving->getValueInteger () == 0 && isnan (raWormStart->getValueDouble ()))
 		setIdleInfoInterval (60);
 
-	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
+	counts2sky (u_ra, u_dec, t_telRa, t_telDec);
 	setTelRaDec (t_telRa, t_telDec);
 
 	return Fork::info ();

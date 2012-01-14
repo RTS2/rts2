@@ -33,7 +33,7 @@ DevClientCameraFoc::~DevClientCameraFoc (void)
 		focConn->nullCamera ();
 }
 
-void DevClientCameraFoc::postEvent (Rts2Event * event)
+void DevClientCameraFoc::postEvent (rts2core::Event * event)
 {
 	rts2core::Connection *focus;
 	DevClientFocusFoc *focuser;
@@ -100,7 +100,7 @@ void DevClientCameraFoc::focusChange (rts2core::Connection * focus)
 	{
 		return;
 	}
-	focus->postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &change));
+	focus->postEvent (new rts2core::Event (EVENT_START_FOCUSING, (void *) &change));
 	isFocusing = 1;
 }
 
@@ -108,7 +108,7 @@ DevClientFocusFoc::DevClientFocusFoc (rts2core::Connection * in_connection):DevC
 {
 }
 
-void DevClientFocusFoc::postEvent (Rts2Event * event)
+void DevClientFocusFoc::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -122,7 +122,7 @@ void DevClientFocusFoc::postEvent (Rts2Event * event)
 void DevClientFocusFoc::focusingEnd ()
 {
 	rts2core::DevClientFocus::focusingEnd ();
-	connection->getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSING_END, (void *) this));
+	connection->getMaster ()->postEvent (new rts2core::Event (EVENT_FOCUSING_END, (void *) this));
 }
 
 ConnFocus::ConnFocus (rts2core::Block * in_master, Image * in_image, const char *in_exe, int in_endEvent):rts2core::ConnFork (in_master, in_exe, false, false)
@@ -137,7 +137,7 @@ ConnFocus::ConnFocus (rts2core::Block * in_master, Image * in_image, const char 
 ConnFocus::~ConnFocus (void)
 {
 	if (change == INT_MAX)		 // we don't get focus change, let's try next image..
-		getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
+		getMaster ()->postEvent (new rts2core::Event (endEvent, (void *) this));
 	delete[]img_path;
 	delete image;
 }
@@ -180,7 +180,7 @@ void ConnFocus::processLine ()
 			sendLog;
 		if (change == INT_MAX)
 			return;			 // that's not expected .. ignore it
-		getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
+		getMaster ()->postEvent (new rts2core::Event (endEvent, (void *) this));
 		// post it to focuser
 	}
 	else

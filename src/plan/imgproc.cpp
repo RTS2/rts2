@@ -54,7 +54,7 @@ class ImageProc:public rts2core::Device
 		ImageProc (int argc, char **argv);
 		virtual ~ ImageProc (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual int idle ();
 
 		virtual int info ();
@@ -265,7 +265,7 @@ int ImageProc::init ()
 }
 #endif
 
-void ImageProc::postEvent (Rts2Event * event)
+void ImageProc::postEvent (rts2core::Event * event)
 {
 	int obsId;
 	switch (event->getType ())

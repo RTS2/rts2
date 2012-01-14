@@ -88,7 +88,7 @@ void DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 	actRaDec.ra = -1000;
 	actRaDec.dec = -1000;
 
-	getMaster ()->postEvent (new Rts2Event (EVENT_GET_RADEC, (void *) &actRaDec));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_GET_RADEC, (void *) &actRaDec));
 
 	d_obs_id = currentTarget->getObsId ();
 	d_count_date = now.tv_sec + now.tv_usec / USEC_SEC;
@@ -146,9 +146,9 @@ int DevClientPhotExec::getNextCommand ()
 	return getScript()->nextCommand (*this, &nextComd, cmd_device);
 }
 
-void DevClientPhotExec::postEvent (Rts2Event * event)
+void DevClientPhotExec::postEvent (rts2core::Event * event)
 {
-	DevScript::postEvent (new Rts2Event (event));
+	DevScript::postEvent (new rts2core::Event (event));
 	DevClientPhot::postEvent (event);
 }
 

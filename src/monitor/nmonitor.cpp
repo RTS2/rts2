@@ -505,12 +505,12 @@ int NMonitor::init ()
 
 	resize ();
 
-	addTimer (MONITOR_REFRESH, new Rts2Event (EVENT_MONITOR_REFRESH));
+	addTimer (MONITOR_REFRESH, new rts2core::Event (EVENT_MONITOR_REFRESH));
 
 	return 0;
 }
 
-void NMonitor::postEvent (Rts2Event *event)
+void NMonitor::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

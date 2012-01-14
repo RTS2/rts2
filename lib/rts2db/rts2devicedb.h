@@ -38,7 +38,7 @@ class Rts2DeviceDb:public rts2core::Device
 		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
 		virtual ~ Rts2DeviceDb (void);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		Rts2CamList cameras;
 

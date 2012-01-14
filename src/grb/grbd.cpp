@@ -188,7 +188,7 @@ int Grbd::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Grbd::init cannot init conngrb, waiting for 60 sec" << sendLog;
-		addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
+		addTimer (60, new rts2core::Event (EVENT_TIMER_GCNCNN_INIT, this));
 	}
 	else
 	{
@@ -246,7 +246,7 @@ int Grbd::info ()
 	return Rts2DeviceDb::info ();
 }
 
-void Grbd::postEvent (Rts2Event * event)
+void Grbd::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -257,7 +257,7 @@ void Grbd::postEvent (Rts2Event * event)
 			if (gcncnn->init () != 0)
 			{
 				logStream (MESSAGE_ERROR) << "Cannot init GCN connection, waiting for 60 seconds" << sendLog;
-				addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
+				addTimer (60, new rts2core::Event (EVENT_TIMER_GCNCNN_INIT, this));
 			}
 			break;
 	}

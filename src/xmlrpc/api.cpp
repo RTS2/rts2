@@ -254,7 +254,7 @@ digraph "JSON API calls handling" {
 
 using namespace rts2xmlrpc;
 
-AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):Rts2Object ()
+AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):Object ()
 {
 	// that's legal - requests are statically allocated and will cease exists with the end of application
 	req = _req;
@@ -263,7 +263,7 @@ AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnecti
 	ext = _ext;
 }
 
-void AsyncAPI::postEvent (Rts2Event *event)
+void AsyncAPI::postEvent (Event *event)
 {
 	std::ostringstream os;
 	switch (event->getType ())
@@ -281,7 +281,7 @@ void AsyncAPI::postEvent (Rts2Event *event)
 			req->sendAsyncJSON (os, source);
 			break;
 	}
-	Rts2Object::postEvent (event);
+	Object::postEvent (event);
 }
 
 class AsyncAPIExpose:public AsyncAPI
@@ -289,7 +289,7 @@ class AsyncAPIExpose:public AsyncAPI
 	public:
 		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (Event *event);
 	private:
 		enum {waitForExpReturn, waitForImage} callState;
 };
@@ -299,7 +299,7 @@ AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcSe
 	callState = waitForExpReturn;
 }
 
-void AsyncAPIExpose::postEvent (Rts2Event *event)
+void AsyncAPIExpose::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
@@ -316,7 +316,7 @@ void AsyncAPIExpose::postEvent (Rts2Event *event)
 			}
 			break;
 	}
-	Rts2Object::postEvent (event);
+	Object::postEvent (event);
 }
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)

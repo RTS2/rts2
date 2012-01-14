@@ -781,7 +781,7 @@ int Telescope::idle ()
 	return rts2core::Device::idle ();
 }
 
-void Telescope::postEvent (Rts2Event * event)
+void Telescope::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -942,7 +942,7 @@ void Telescope::startCupolaSync ()
 {
 	struct ln_equ_posn tar;
 	getTarget (&tar);
-	postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tar));
+	postEvent (new rts2core::Event (EVENT_CUP_START_SYNC, (void*) &tar));
 }
 
 int Telescope::endMove ()

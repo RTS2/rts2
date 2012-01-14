@@ -208,7 +208,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
 	protected:
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (Event *event);
 
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 
@@ -323,7 +323,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 */
 		bool sendEmails () { return send_emails->getValueBool (); }
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (Event *event);
 
 		/**
 		 * Returns messages buffer.

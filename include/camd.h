@@ -162,7 +162,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual void deviceReady (rts2core::Connection * conn);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void changeMasterState (int old_state, int new_state);
 

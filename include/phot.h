@@ -59,7 +59,7 @@ class Rts2DevPhot:public ScriptDevice
 		const char *photType;
 		char *serial;
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 

@@ -35,7 +35,7 @@
 
 #include "error.h"
 #include "rts2data.h"
-#include "rts2object.h"
+#include "object.h"
 #include "rts2serverstate.h"
 #include "message.h"
 #include "logstream.h"
@@ -75,10 +75,10 @@ typedef enum
 
 class Rts2Address;
 
-class Rts2Event;
-
 namespace rts2core
 {
+class Event;
+
 class Connection;
 
 class Value;
@@ -116,14 +116,14 @@ class ConnError: public Error
  *
  * @ingroup RTS2Block
  */
-class Connection:public Rts2Object
+class Connection:public Object
 {
 	public:
 		Connection (rts2core::Block * in_master);
 		Connection (int in_sock, rts2core::Block * in_master);
 		virtual ~ Connection (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		/**
 		 * Add to read/write/exception sets sockets identifiers which
@@ -183,7 +183,7 @@ class Connection:public Rts2Object
 		std::string getCameraChipState (int chipN);
 		std::string getStateString ();
 		virtual int init () { return -1; }
-		void postMaster (Rts2Event * event);
+		void postMaster (rts2core::Event * event);
 		virtual int idle ();
 
 		virtual void endConnection () { connectionError (-1); }
@@ -329,7 +329,7 @@ class Connection:public Rts2Object
 		 *
 		 * @callergraph
 		 */
-		void queCommand (rts2core::Command * cmd, int notBop, Rts2Object * originator = NULL);
+		void queCommand (rts2core::Command * cmd, int notBop, Object * originator = NULL);
 
 		/**
 		 * Que command on connection.
@@ -389,8 +389,8 @@ class Connection:public Rts2Object
 		 *
 		 * @return True if in connectionQue isn't any command with originator set to testOriginator.
 		 */
-		bool queEmptyForOriginator (Rts2Object *testOriginator);
-		bool commandOriginatorPending (Rts2Object *originator) { return !queEmptyForOriginator (originator); }
+		bool queEmptyForOriginator (Object *testOriginator);
+		bool commandOriginatorPending (Object *originator) { return !queEmptyForOriginator (originator); }
 
 
 		/**

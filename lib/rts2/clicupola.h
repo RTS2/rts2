@@ -37,7 +37,7 @@ class ClientCupola:public rts2core::DevClientCupola
 		virtual ~ ClientCupola ();
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 	protected:
 		virtual void syncEnded ();
 };

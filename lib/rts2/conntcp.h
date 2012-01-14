@@ -169,7 +169,7 @@ class ConnTCP:public ConnNoSend
 		 */
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar, int wtime = 5);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (Event * event);
 
 	protected:
 		virtual bool canDelete () { return false; }

@@ -115,7 +115,7 @@ int Script::getNextParamInteger (int *val)
 	return 0;
 }
 
-Script::Script (int scriptLoopCount, rts2core::Block * _master):Rts2Object ()
+Script::Script (int scriptLoopCount, rts2core::Block * _master):Object ()
 {
 	defaultDevice[0] = '\0';
 	master = _master;
@@ -133,7 +133,7 @@ Script::Script (int scriptLoopCount, rts2core::Block * _master):Rts2Object ()
 	telescopeSpeed = 0;
 }
 
-Script::Script (const char *script):Rts2Object ()
+Script::Script (const char *script):Object ()
 {
 	defaultDevice[0] = '\0';
 	master = NULL;
@@ -277,7 +277,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	return 0;
 }
 
-void Script::postEvent (Rts2Event * event)
+void Script::postEvent (rts2core::Event * event)
 {
 	std::list < Element * >::iterator el_iter_sig;
 	Element *el;
@@ -304,15 +304,15 @@ void Script::postEvent (Rts2Event * event)
 				el_iter_sig++)
 			{
 				el = *el_iter_sig;
-				el->postEvent (new Rts2Event (event));
+				el->postEvent (new rts2core::Event (event));
 			}
 			break;
 		default:
 			if (el_iter != end ())
-				(*el_iter)->postEvent (new Rts2Event (event));
+				(*el_iter)->postEvent (new rts2core::Event (event));
 			break;
 	}
-	Rts2Object::postEvent (event);
+	Object::postEvent (event);
 }
 
 Element *Script::parseBuf (Rts2Target * target)

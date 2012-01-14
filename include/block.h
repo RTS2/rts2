@@ -38,8 +38,8 @@
 #include <sys/inotify.h>
 #endif
 
-#include "rts2event.h"
-#include "rts2object.h"
+#include "event.h"
+#include "object.h"
 #include "connection.h"
 #include "rts2address.h"
 #include "connuser.h"
@@ -186,12 +186,12 @@ class Block: public rts2core::App
 		 *
 		 * Send Event to all connections which are members of Block structure.
 		 *
-		 * @see Rts2Event
-		 * @see Rts2Object::postEvent
+		 * @see Event
+		 * @see Object::postEvent
 		 *
 		 * @param event Event which is passed to postEvent method.
 		 */
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (Event * event);
 
 		/**
 		 * Create new connection.
@@ -623,7 +623,7 @@ class Block: public rts2core::App
 		 *
 		 * @callergraph
 		 */
-		bool commandOriginatorPending (Rts2Object * object, Connection * exclude_conn);
+		bool commandOriginatorPending (Object * object, Connection * exclude_conn);
 
 		/**
 		 * Add new user timer.
@@ -631,9 +631,9 @@ class Block: public rts2core::App
 		 * @param timer_time  Timer time in seconds, counted from now.
 		 * @param event       Event which will be posted for triger. Event argument
 		 *
-		 * @see Rts2Event
+		 * @see Event
 		 */
-		void addTimer (double timer_time, Rts2Event *event)
+		void addTimer (double timer_time, Event *event)
 		{
 			timers[getNow () + timer_time] = event;
 		}
@@ -793,7 +793,7 @@ class Block: public rts2core::App
 		long int idle_timeout;	 // in nsec
 
 		// timers - time when they should be executed, event which should be triggered
-		std::map <double, Rts2Event*> timers;
+		std::map <double, Event*> timers;
 
 		connections_t connections;
 		

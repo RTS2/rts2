@@ -42,7 +42,7 @@ class ClientFocusCamera:public rts2core::DevClientFocus
 	public:
 		ClientFocusCamera (rts2core::Connection * in_connection);
 		virtual ~ ClientFocusCamera (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual void focusingFailed (int status);
 	protected:
 		virtual void focusingEnd ();

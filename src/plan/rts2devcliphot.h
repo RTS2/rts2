@@ -30,7 +30,7 @@ class DevClientPhotExec:public rts2core::DevClientPhot, public DevScript
 	public:
 		DevClientPhotExec (rts2core::Connection * in_connection);
 		virtual ~ DevClientPhotExec (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual void integrationFailed (int status);
 
 		virtual void filterMoveFailed (int status);

@@ -100,7 +100,7 @@ class Zelio:public Dome
 
 		virtual int info ();
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -276,7 +276,7 @@ int Zelio::startOpen ()
 		return -1;
 	}
 	deadManNum = 0;
-	addTimer (deadTimeout->getValueInteger () / 5.0, new Rts2Event (EVENT_DEADBUT, this));
+	addTimer (deadTimeout->getValueInteger () / 5.0, new rts2core::Event (EVENT_DEADBUT, this));
 	return 0;
 }
 
@@ -481,7 +481,7 @@ int Zelio::processOption (int in_opt)
 	return 0;
 }
 
-void Zelio::postEvent (Rts2Event *event)
+void Zelio::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
@@ -757,7 +757,7 @@ int Zelio::init ()
 		case ZELIO_UNKNOW:
 			return -1;
 	}
-	addTimer (1, new Rts2Event (EVENT_DEADBUT, this));
+	addTimer (1, new rts2core::Event (EVENT_DEADBUT, this));
 	return 0;
 }
 

@@ -22,7 +22,7 @@
 
 #include "script.h"
 
-#include "rts2object.h"
+#include "object.h"
 #include "block.h"
 #include "../rts2/rts2target.h"
 
@@ -39,7 +39,7 @@ class DevScript
 	public:
 		DevScript (rts2core::Connection * in_script_connection);
 		virtual ~ DevScript (void);
-		void postEvent (Rts2Event * event);
+		void postEvent (rts2core::Event * event);
 		virtual void nextCommand () = 0;
 
 		void setScript (ScriptPtr _script) { script = _script; }

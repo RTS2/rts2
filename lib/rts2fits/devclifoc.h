@@ -21,7 +21,7 @@ class DevClientCameraFoc:public DevClientCameraImage
 	public:
 		DevClientCameraFoc (rts2core::Connection * in_connection, const char *in_exe);
 		virtual ~ DevClientCameraFoc (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual imageProceRes processImage (Image * image);
 		// will cause camera to change focus by given steps BEFORE exposition
 		// when change == INT_MAX, focusing don't converge
@@ -41,7 +41,7 @@ class DevClientFocusFoc:public DevClientFocusImage
 {
 	public:
 		DevClientFocusFoc (rts2core::Connection * in_connection);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 	protected:
 		virtual void focusingEnd ();

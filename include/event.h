@@ -112,17 +112,21 @@
 // phot                   1250-1299
 // clouds                 1300-1349
 // zelio                  1350-1399
-// executorque.h          1400-1450
+// executorque.h          1400-1449
+// nmonitor.h             1450-1499
+
+namespace rts2core
+{
 
 /**
  * Event class.
  *
- * This class defines event, which is passed by Rts2Object::postEvent through all
+ * This class defines event, which is passed by Object::postEvent through all
  * classes in RTS2.
  * 
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Event
+class Event
 {
 	private:
 		int type;
@@ -134,7 +138,7 @@ class Rts2Event
 		 * @param in_type Event type.
 		 * @param in_arg  Optional pointer to event argument.
 		 */
-		Rts2Event (int in_type, void *in_arg = NULL)
+		Event (int in_type, void *in_arg = NULL)
 		{
 			type = in_type;
 			arg = in_arg;
@@ -146,7 +150,7 @@ class Rts2Event
 		 *
 		 * @param event  Event which will be copied.
 		 */
-		Rts2Event (Rts2Event * event)
+		Event (Event * event)
 		{
 			type = event->getType ();
 			arg = event->getArg ();
@@ -182,4 +186,6 @@ class Rts2Event
 			arg = in_arg;
 		}
 };
+
+}
 #endif							 /*! __RTS2_EVENT__ */

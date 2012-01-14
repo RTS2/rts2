@@ -230,7 +230,7 @@ int ConnTCP::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char e
 	return is.str ().length ();
 }
 
-void ConnTCP::postEvent (Rts2Event *event)
+void ConnTCP::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
@@ -244,7 +244,7 @@ void ConnTCP::postEvent (Rts2Event *event)
 			catch (ConnError &er)
 			{
 				logStream (MESSAGE_INFO) << "Error during reconnecting: " << er << sendLog;
-				getMaster()->addTimer (60, new Rts2Event (EVENT_TCP_RECONECT_TIMER, this));
+				getMaster()->addTimer (60, new Event (EVENT_TCP_RECONECT_TIMER, this));
 			}
 			break;
 	}
@@ -254,6 +254,6 @@ void ConnTCP::postEvent (Rts2Event *event)
 void ConnTCP::connectionError (int last_data_size)
 {
 	if (sock > 0)
-		getMaster()->addTimer (60, new Rts2Event (EVENT_TCP_RECONECT_TIMER, this));
+		getMaster()->addTimer (60, new Event (EVENT_TCP_RECONECT_TIMER, this));
 	ConnNoSend::connectionError (last_data_size);
 }

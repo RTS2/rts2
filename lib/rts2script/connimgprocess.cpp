@@ -255,14 +255,14 @@ void ConnImgProcess::connectionError (int last_data_size)
 		}
 		if (end_event > 0)
 		{
-			master->postEvent (new Rts2Event (end_event, (void *) image));
+			master->postEvent (new rts2core::Event (end_event, (void *) image));
 		}
 		else
 		{
 			if (astrometryStat == GET)
-				master->postEvent (new Rts2Event (EVENT_OK_ASTROMETRY, (void *) image));
+				master->postEvent (new rts2core::Event (EVENT_OK_ASTROMETRY, (void *) image));
 			else
-				master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
+				master->postEvent (new rts2core::Event (EVENT_NOT_ASTROMETRY, (void *) image));
 		}
 		delete image;
 	}

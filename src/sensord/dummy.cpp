@@ -22,7 +22,7 @@
 namespace rts2sensord
 {
 
-//* Event number for timer event.
+//* rts2core::Event number for timer event.
 #define EVENT_TIMER_TEST     RTS2_LOCAL_EVENT + 5060
 
 /**
@@ -77,7 +77,7 @@ class Dummy:public Sensor
 		/**
 		 * Handles event send by RTS2 core. We use it there only to catch timer messages.
 		 */
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 
 		/** Handles logic of BOP_WILL_EXPOSE and BOP_TRIG_EXPOSE. */
@@ -120,7 +120,7 @@ class Dummy:public Sensor
 				if (((rts2core::ValueBool *) newValue)->getValueBool () == true)
 				{
 					deleteTimers (EVENT_TIMER_TEST);
-					addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+					addTimer (5, new rts2core::Event (EVENT_TIMER_TEST));
 				}
 				return 0;
 			}
@@ -193,7 +193,7 @@ class Dummy:public Sensor
 
 using namespace rts2sensord;
 
-void Dummy::postEvent (Rts2Event *event)
+void Dummy::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
@@ -238,7 +238,7 @@ int Dummy::init ()
 	if (ret)
 		return ret;
 	// initialize timer
-	addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+	addTimer (5, new rts2core::Event (EVENT_TIMER_TEST));
 	maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
 	return 0;
 }

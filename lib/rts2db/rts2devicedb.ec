@@ -48,7 +48,7 @@ Rts2DeviceDb::~Rts2DeviceDb (void)
 		delete connectString;
 }
 
-void Rts2DeviceDb::postEvent (Rts2Event *event)
+void Rts2DeviceDb::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

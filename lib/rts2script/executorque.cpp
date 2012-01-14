@@ -568,7 +568,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 			double t_start = front ().t_start;
 			if (!isnan (t_start) && (isnan (timerAdded) || t_start != timerAdded) && t_start > t)
 			{
-				master->addTimer (t_start - t, new Rts2Event (EVENT_NEXT_START));
+				master->addTimer (t_start - t, new rts2core::Event (EVENT_NEXT_START));
 				timerAdded = t_start;
 			}
 			else
@@ -576,7 +576,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 				double t_end = front ().t_end;
 				if (!isnan (t_end) && (isnan (timerAdded) || t_end != timerAdded) && t_end > t)
 				{
-					master->addTimer (t_end - t, new Rts2Event (EVENT_NEXT_END));
+					master->addTimer (t_end - t, new rts2core::Event (EVENT_NEXT_END));
 					timerAdded = t_end;
 				}
 			}

@@ -293,10 +293,7 @@ void Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEm
 
 int Rts2NightReport::doProcessing ()
 {
-	//  char *whereStr;
-	rts2core::Configuration *config;
-	//  Rts2SqlColumnObsState *obsState;
-	config = rts2core::Configuration::instance ();
+	rts2core::Configuration::instance ();
 
 	int totalNights = 0;
 

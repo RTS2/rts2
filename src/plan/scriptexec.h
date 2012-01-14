@@ -48,7 +48,7 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void deviceReady (rts2core::Connection * conn);
 

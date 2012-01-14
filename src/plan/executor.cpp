@@ -45,7 +45,7 @@ class Executor:public Rts2DeviceDb
 		virtual ~ Executor (void);
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void deviceReady (rts2core::Connection * conn);
 
@@ -201,7 +201,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 Executor::~Executor (void)
 {
-	postEvent (new Rts2Event (EVENT_KILL_ALL));
+	postEvent (new rts2core::Event (EVENT_KILL_ALL));
 	delete currentTarget;
 	clearNextTargets ();
 }
@@ -295,7 +295,7 @@ rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, in
 	}
 }
 
-void Executor::postEvent (Rts2Event * event)
+void Executor::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -403,20 +403,20 @@ void Executor::postEvent (Rts2Event * event)
 		case EVENT_MOVE_OK:
 			if (waitState)
 			{
-				postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 				break;
 			}
-			postEvent (new Rts2Event (EVENT_OBSERVE));
+			postEvent (new rts2core::Event (EVENT_OBSERVE));
 			break;
 		case EVENT_CORRECTING_OK:
 			if (waitState)
 			{
-				postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 			}
 			else
 			{
 				// we aren't waiting, let's observe target again..
-				postEvent (new Rts2Event (EVENT_OBSERVE));
+				postEvent (new rts2core::Event (EVENT_OBSERVE));
 			}
 			break;
 		case EVENT_MOVE_FAILED:
@@ -424,10 +424,10 @@ void Executor::postEvent (Rts2Event * event)
 			{
 				break;
 			}
-			postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
+			postEvent (new rts2core::Event (EVENT_STOP_OBSERVATION));
 			if (waitState)
 			{
-				postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 			}
 			else if (currentTarget)
 			{
@@ -456,7 +456,7 @@ void Executor::postEvent (Rts2Event * event)
 void Executor::deviceReady (rts2core::Connection * conn)
 {
 	if (currentTarget)
-		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+		conn->postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
 
 int Executor::info ()
@@ -647,11 +647,11 @@ int Executor::setNow (rts2db::Target * newTarget)
 	clearNextTargets ();
 
 	clearAll ();
-	postEvent (new Rts2Event (EVENT_KILL_ALL));
+	postEvent (new rts2core::Event (EVENT_KILL_ALL));
 	queAll (new rts2core::CommandKillAll (this));
 
-	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET_NOW));
+	postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
+	postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET_NOW));
 
 	infoAll ();
 
@@ -750,8 +750,8 @@ int Executor::stop ()
 	flatsDone->setValueBool (false);
 	sendValueAll (flatsDone);
 	clearNextTargets ();
-	postEvent (new Rts2Event (EVENT_KILL_ALL));
-	postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
+	postEvent (new rts2core::Event (EVENT_KILL_ALL));
+	postEvent (new rts2core::Event (EVENT_STOP_OBSERVATION));
 	updateScriptCount ();
 	if (scriptCount->getValueInteger () == 0)
 		switchTarget ();
@@ -808,8 +808,8 @@ void Executor::doSwitch ()
 	{
 		// send script_ends to all devices..
 		queAll (new rts2core::CommandScriptEnds (this));
-		postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-		postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+		postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
+		postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET));
 		// send note to selector..
 		connections_t::iterator c = getConnections ()->begin ();
 		getOpenConnectionType (DEVICE_TYPE_SELECTOR, c);
@@ -835,7 +835,7 @@ int Executor::switchTarget ()
 		|| (autoLoop->getValueBool () == false && getActiveQueue ()->size () == 0))
 	{
 		maskState (EXEC_MASK_END, EXEC_NOT_END);
-		postEvent (new Rts2Event (EVENT_KILL_ALL));
+		postEvent (new rts2core::Event (EVENT_KILL_ALL));
 		if (currentTarget)
 		{
 			currentTarget->endObservation (-1);
@@ -913,7 +913,7 @@ void Executor::processTarget (rts2db::Target * in_target)
 void Executor::updateScriptCount ()
 {
 	int scriptRunning = 0;
-	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &scriptRunning));
+	postEvent (new rts2core::Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &scriptRunning));
 	scriptCount->setValueInteger (scriptRunning);
 }
 
@@ -1009,7 +1009,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 			return -1;
 		rts2image::Image image;
 		image.openFile (imgn, false, true);
-		postEvent (new Rts2Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));
+		postEvent (new rts2core::Event (EVENT_WRITE_ONLY_IMAGE, (void *) &image));
 		image.saveImage ();
 		return 0;
 	}

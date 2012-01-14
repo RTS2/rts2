@@ -83,7 +83,7 @@ class Telescope:public rts2core::Device
 		Telescope (int argc, char **argv, bool diffTrack = false, bool hasTracking = false);
 		virtual ~ Telescope (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void changeMasterState (int old_state, int new_state);
 

@@ -25,7 +25,7 @@
 
 #include "connnotify.h"
 #include "devclient.h"
-#include "rts2event.h"
+#include "event.h"
 #include "command.h"
 #include "../../lib/rts2db/rts2devicedb.h"
 #include "../../lib/rts2db/planset.h"
@@ -48,7 +48,7 @@ class Rts2DevClientTelescopeSel:public rts2core::DevClientTelescope
 		virtual void moveEnd ()
 		{
 			if (!moveWasCorrecting)
-				connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+				connection->getMaster ()->postEvent (new rts2core::Event (EVENT_IMAGE_OK));
 			rts2core::DevClientTelescope::moveEnd ();
 		}
 };
@@ -61,7 +61,7 @@ class Rts2DevClientExecutorSel:public rts2core::DevClientExecutor
 	protected:
 		virtual void lastReadout ()
 		{
-			connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+			connection->getMaster ()->postEvent (new rts2core::Event (EVENT_IMAGE_OK));
 			rts2core::DevClientExecutor::lastReadout ();
 		}
 };
@@ -73,7 +73,7 @@ class SelectorDev:public Rts2DeviceDb
 		virtual ~ SelectorDev (void);
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual void changeMasterState (int old_state, int new_state);
 
 #ifdef HAVE_SYS_INOTIFY_H
@@ -283,7 +283,7 @@ int SelectorDev::reloadConfig ()
 	nightDisabledTypes->setValueCharArr (sel->getNightDisabledTypes ().c_str ());
 
 	deleteTimers (EVENT_SELECT_NEXT);
-	addTimer (idle_select->getValueInteger (), new Rts2Event (EVENT_SELECT_NEXT));
+	addTimer (idle_select->getValueInteger (), new rts2core::Event (EVENT_SELECT_NEXT));
 
 	return 0;
 }
@@ -359,7 +359,7 @@ rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, 
 	}
 }
 
-void SelectorDev::postEvent (Rts2Event * event)
+void SelectorDev::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{

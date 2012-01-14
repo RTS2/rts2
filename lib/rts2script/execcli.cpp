@@ -53,7 +53,7 @@ rts2image::Image * DevClientCameraExec::createImage (const struct timeval *expSt
 	return DevClientCameraImage::createImage (expStart);
 }
 
-void DevClientCameraExec::postEvent (Rts2Event * event)
+void DevClientCameraExec::postEvent (rts2core::Event * event)
 {
 	rts2image::Image *image;
 	int type = event->getType ();
@@ -379,7 +379,7 @@ void DevClientCameraExec::exposureEnd ()
 		)
 	{
 		deleteScript ();
-		getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
+		getMaster ()->postEvent (new rts2core::Event (EVENT_LAST_READOUT));
 	}
 	// execute value change, if we do not execute that during exposure
 	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
@@ -423,7 +423,7 @@ DevClientTelescopeExec::DevClientTelescopeExec (rts2core::Connection * _connecti
 	fixedOffset.dec = 0;
 }
 
-void DevClientTelescopeExec::postEvent (Rts2Event * event)
+void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 {
 	int ret;
 	struct ln_equ_posn *offset;
@@ -459,7 +459,7 @@ void DevClientTelescopeExec::postEvent (Rts2Event * event)
 				switch (ret)
 				{
 					case OBS_DONT_MOVE:
-						getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
+						getMaster ()->postEvent (new rts2core::Event (EVENT_OBSERVE, (void *) currentTarget));
 						break;
 					case OBS_MOVE:
 						fixedOffset.ra = 0;
@@ -490,7 +490,7 @@ void DevClientTelescopeExec::postEvent (Rts2Event * event)
 				ret = syncTarget ();
 				if (ret == OBS_DONT_MOVE)
 				{
-					postEvent (new Rts2Event (EVENT_MOVE_OK));
+					postEvent (new rts2core::Event (EVENT_MOVE_OK));
 				}
 			}
 			break;
@@ -569,9 +569,9 @@ int DevClientTelescopeExec::syncTarget (bool now)
 void DevClientTelescopeExec::checkInterChange ()
 {
 	int waitNum = 0;
-	getMaster ()->postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_QUERY_WAIT, (void *) &waitNum));
 	if (waitNum == 0)
-		getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+		getMaster ()->postEvent (new rts2core::Event (EVENT_ENTER_WAIT));
 }
 
 void DevClientTelescopeExec::moveEnd ()
@@ -580,13 +580,13 @@ void DevClientTelescopeExec::moveEnd ()
 	{
 		if (currentTarget)
 			currentTarget->moveEnded ();
-		getMaster ()->postEvent (new Rts2Event (EVENT_CORRECTING_OK));
+		getMaster ()->postEvent (new rts2core::Event (EVENT_CORRECTING_OK));
 	}
 	else
 	{
 		if (currentTarget)
 			currentTarget->moveEnded ();
-		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
+		getMaster ()->postEvent (new rts2core::Event (EVENT_MOVE_OK));
 	}
 	DevClientTelescopeImage::moveEnd ();
 }
@@ -601,5 +601,5 @@ void DevClientTelescopeExec::moveFailed (int status)
 	if (currentTarget && currentTarget->moveWasStarted ())
 		currentTarget->moveFailed ();
 	DevClientTelescopeImage::moveFailed (status);
-	getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_MOVE_FAILED, (void *) &status));
 }

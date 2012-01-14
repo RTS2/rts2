@@ -52,7 +52,7 @@ class APGTO:public TelLX200 {
 		APGTO (int argc, char **argv);
 		virtual ~APGTO (void);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -478,7 +478,7 @@ int APGTO::recoverLimits (int ral, int rah, int dech)
 			return -1;
 		if (tel_slew_to (getTelRa () + 2, getTelDec ()))
 			return -1;
-		addTimer (10, new Rts2Event (EVENT_TELESCOPE_LIMITS));
+		addTimer (10, new rts2core::Event (EVENT_TELESCOPE_LIMITS));
 		setBlockMove ();
 		return 0;
 	}
@@ -1014,7 +1014,7 @@ void APGTO::applyCorrections (double &tar_ra, double &tar_dec)
 
 void APGTO::notMoveCupola ()
 {
-  postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
+  postEvent (new rts2core::Event (EVENT_CUP_NOT_MOVE));
 }
 
 int APGTO::isMoving ()
@@ -1619,7 +1619,7 @@ APGTO::~APGTO (void)
 {
 }
 
-void APGTO::postEvent (Rts2Event *event)
+void APGTO::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

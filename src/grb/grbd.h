@@ -56,7 +56,7 @@ class Grbd:public Rts2DeviceDb
 			return 0;
 		}
 		virtual int info ();
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		int newGcnGrb (int tar_id);
 

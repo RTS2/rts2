@@ -99,21 +99,21 @@ int Command::commandReturn (int status, Connection * conn)
 int Command::commandReturnOK (Connection * conn)
 {
 	if (originator)
-		originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
+		originator->postEvent (new Event (EVENT_COMMAND_OK, (void *) this));
 	return -1;
 }
 
 int Command::commandReturnQued (Connection * conn)
 {
 	if (originator)
-		originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
+		originator->postEvent (new Event (EVENT_COMMAND_OK, (void *) this));
 	return commandReturnOK (conn);
 }
 
 int Command::commandReturnFailed (int status, Connection * conn)
 {
 	if (originator)
-		originator->postEvent (new Rts2Event (EVENT_COMMAND_FAILED, (void *) this));
+		originator->postEvent (new Event (EVENT_COMMAND_FAILED, (void *) this));
 	return -1;
 }
 

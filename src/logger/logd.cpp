@@ -63,7 +63,7 @@ int Rts2Logd::setLogConfig (const char *new_config)
 
 int Rts2Logd::setLogFile (const char *new_file)
 {
-	postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void *) new_file));
+	postEvent (new rts2core::Event (EVENT_SET_LOGFILE, (void *) new_file));
 	return 0;
 }
 
@@ -120,7 +120,7 @@ rts2core::DevClient *Rts2Logd::createOtherType (rts2core::Connection * conn, int
 	rts2core::DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)
 	{
-		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));
+		cli->postEvent (new rts2core::Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));
 		return cli;
 	}
 	return rts2core::Device::createOtherType (conn, other_device_type);

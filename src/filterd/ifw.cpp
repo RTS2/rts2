@@ -71,13 +71,11 @@ int Ifw::homeFilter ()
 
 void Ifw::shutdown (void)
 {
-	int n;
-
 	if (ifwConn == NULL)
 		return;
 
 	/* shutdown filter wheel communications */
-	n = ifwConn->writeRead ("WEXITS", 6, filter_buff, 6, '\r');
+	ifwConn->writeRead ("WEXITS", 6, filter_buff, 6, '\r');
 
 	/* Check for correct response from filter wheel */
 	if (strcmp (filter_buff, "END"))

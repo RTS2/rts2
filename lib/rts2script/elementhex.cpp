@@ -85,7 +85,7 @@ void ElementHex::afterBlockEnd ()
 	ElementBlock::afterBlockEnd ();
 	path.rewindPath ();
 	bool en = true;
-	script->getMaster ()->postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+	script->getMaster ()->postEvent (new rts2core::Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 ElementHex::ElementHex (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size):ElementBlock (in_script)
@@ -116,7 +116,7 @@ void ElementHex::beforeExecuting ()
 
 	bool en = false;
 	if (script->getMaster ())
-		script->getMaster ()->postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+		script->getMaster ()->postEvent (new rts2core::Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 void ElementFxF::constructPath ()

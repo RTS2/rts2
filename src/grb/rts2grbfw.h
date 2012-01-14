@@ -47,7 +47,7 @@ class Rts2GrbForwardClientConn:public rts2core::ConnNoSend
 		void forwardPacket (int32_t *nbuf);
 	public:
 		Rts2GrbForwardClientConn (int in_sock, rts2core::Block * in_master);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual int receive (fd_set * set);
 };

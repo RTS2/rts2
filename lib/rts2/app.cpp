@@ -53,7 +53,7 @@ LogStream logStream (messageType_t in_messageType)
 	return ls;
 }
 
-App::App (int argc, char **argv):Rts2Object ()
+App::App (int argc, char **argv):Object ()
 {
 	app_argc = argc;
 	app_argv = argv;

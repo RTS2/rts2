@@ -42,7 +42,7 @@ class System:public Sensor
 	public:
 		System (int in_argc, char **in_argv);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -208,7 +208,7 @@ void System::scheduleStore ()
 	time_t t = config->getNight () - time (NULL);
 	if (t < 20)
 		t += 86400;
-	addTimer (t, new Rts2Event (EVENT_STORE_PATHS));
+	addTimer (t, new rts2core::Event (EVENT_STORE_PATHS));
 }
 
 System::System (int argc, char **argv):Sensor (argc, argv)
@@ -229,7 +229,7 @@ System::System (int argc, char **argv):Sensor (argc, argv)
 	setIdleInfoInterval (300);
 }
 
-void System::postEvent (Rts2Event *event)
+void System::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

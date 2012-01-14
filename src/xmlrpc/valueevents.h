@@ -37,7 +37,7 @@ namespace rts2xmlrpc
 /**
  * Class triggered on value change.
  */
-class ValueChange:public Rts2Object
+class ValueChange:public rts2core::Object
 {
 	public:
 		ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *test);
@@ -45,9 +45,9 @@ class ValueChange:public Rts2Object
 		/**
 		 * Catch EVENT_XMLRPC_VALUE_TIMER events.
 		 *
-		 * @see Rts2Object::postEvent(Rts2Event*)
+		 * @see rts2core::Object::postEvent(rts2core::Event*)
 		 */
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		bool isForValue (std::string _deviceName, std::string _valueName, double infoTime)
 		{

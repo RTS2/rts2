@@ -72,7 +72,7 @@ void FocusCameraClient::exposureStarted ()
 	rts2image::DevClientCameraFoc::exposureStarted ();
 }
 
-void FocusCameraClient::postEvent (Rts2Event *event)
+void FocusCameraClient::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
@@ -430,16 +430,16 @@ int FocusClient::init ()
 			<< ")" << std::endl;
 		return ret;
 	}
-	addTimer (CHECK_TIMER, new Rts2Event (EVENT_EXP_CHECK));
+	addTimer (CHECK_TIMER, new rts2core::Event (EVENT_EXP_CHECK));
 	return 0;
 }
 
-void FocusClient::postEvent (Rts2Event *event)
+void FocusClient::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
 		case EVENT_EXP_CHECK:
-			addTimer (CHECK_TIMER, new Rts2Event (event));
+			addTimer (CHECK_TIMER, new rts2core::Event (event));
 			break;
 	}
 	rts2core::Client::postEvent (event);

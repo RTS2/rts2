@@ -93,7 +93,7 @@ class NMonitor:public rts2core::Client
 		virtual ~ NMonitor (void);
 
 		virtual int init ();
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual rts2core::ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);

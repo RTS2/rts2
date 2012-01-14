@@ -81,7 +81,7 @@ void ElementGuiding::checkGuidingSign (double &last, double &mult, double act)
 		<< last << " mult: " << mult << " act: " << act << sendLog;
 }
 
-void ElementGuiding::postEvent (Rts2Event * event)
+void ElementGuiding::postEvent (rts2core::Event * event)
 {
 	ConnFocus *focConn;
 	Image *image;
@@ -133,7 +133,7 @@ void ElementGuiding::postEvent (Rts2Event * event)
 								new GuidingParams (DIR_NORTH, star_dec * dec_mult);
 							script->getMaster ()->
 								postEvent (new
-								Rts2Event (EVENT_TEL_START_GUIDING,
+								rts2core::Event (EVENT_TEL_START_GUIDING,
 								(void *) pars));
 							delete pars;
 						}
@@ -143,7 +143,7 @@ void ElementGuiding::postEvent (Rts2Event * event)
 							pars = new GuidingParams (DIR_EAST, star_ra * ra_mult);
 							script->getMaster ()->
 								postEvent (new
-								Rts2Event (EVENT_TEL_START_GUIDING,
+								rts2core::Event (EVENT_TEL_START_GUIDING,
 								(void *) pars));
 							delete pars;
 						}
@@ -153,7 +153,7 @@ void ElementGuiding::postEvent (Rts2Event * event)
 			}
 			// queue us for processing
 			image->saveImage ();
-			script->getMaster ()-> postEvent (new Rts2Event (EVENT_QUE_IMAGE, (void *) image));
+			script->getMaster ()-> postEvent (new rts2core::Event (EVENT_QUE_IMAGE, (void *) image));
 			break;
 	}
 	Element::postEvent (event);
@@ -171,7 +171,7 @@ int ElementGuiding::nextCommand (rts2core::DevClientCamera * camera, rts2core::C
 			return NEXT_COMMAND_KEEP;
 		case NO_IMAGE:
 			script->getMaster ()->
-				postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+				postEvent (new rts2core::Event (EVENT_SIGNAL_QUERY, (void *) &ret));
 			if (ret != -1)
 				return NEXT_COMMAND_NEXT;
 		case NEED_IMAGE:
@@ -184,9 +184,7 @@ int ElementGuiding::nextCommand (rts2core::DevClientCamera * camera, rts2core::C
 			return NEXT_COMMAND_NEXT;
 	}
 	// should not happen!
-	logStream (MESSAGE_DEBUG)
-		<< "ElementGuiding::nextCommand invalid state: "
-		<< (int) processingState << sendLog;
+	logStream (MESSAGE_DEBUG) << "ElementGuiding::nextCommand invalid state: " << (int) processingState << sendLog;
 	return NEXT_COMMAND_NEXT;
 }
 
@@ -194,22 +192,16 @@ int ElementGuiding::processImage (Image * image)
 {
 	int ret;
 	ConnFocus *processor;
-	logStream (MESSAGE_DEBUG) <<
-		"ElementGuiding::processImage state: " << (int) processingState
-		<< sendLog;
+	logStream (MESSAGE_DEBUG) << "ElementGuiding::processImage state: " << (int) processingState << sendLog;
 	if (processingState != WAITING_IMAGE)
 	{
-		logStream (MESSAGE_ERROR)
-			<< "ElementGuiding::processImage invalid processingState: "
-			<< (int) processingState << sendLog;
+		logStream (MESSAGE_ERROR) << "ElementGuiding::processImage invalid processingState: " << (int) processingState << sendLog;
 		processingState = FAILED;
 		return -1;
 	}
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
-	logStream (MESSAGE_DEBUG)
-		<< "ElementGuiding::processImage defaultImgProccess: "
-		<< defaultImgProccess << sendLog;
+	logStream (MESSAGE_DEBUG) << "ElementGuiding::processImage defaultImgProccess: " << defaultImgProccess << sendLog;
 	processor = new ConnFocus (script->getMaster (), image, defaultImgProccess.c_str (), EVENT_GUIDING_DATA);
 	image->saveImage ();
 	ret = processor->init ();
@@ -225,8 +217,7 @@ int ElementGuiding::processImage (Image * image)
 		script->getMaster ()->addConnection (processor);
 		processingState = NEED_IMAGE;
 	}
-	logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::processImage executed processor " << ret
-		<< " processor " << processor << sendLog;
+	logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::processImage executed processor " << ret << " processor " << processor << sendLog;
 	return 1;
 }
 

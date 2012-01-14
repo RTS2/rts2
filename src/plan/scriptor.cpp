@@ -62,7 +62,7 @@ class Scriptor:public rts2core::Device, public ScriptInterface
 		Scriptor (int argc, char **argv);
 		virtual ~Scriptor (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual int findScript (std::string in_deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *posn, double JD);
@@ -147,19 +147,19 @@ void Scriptor::deviceReady (rts2core::Connection * conn)
 	updateMetaInformations (stringVal);
 	scriptVar[std::string (conn->getName ())] = stringVal;
 
-	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-//	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
+	conn->postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
+//	conn->postEvent (new rts2core::Event (EVENT_OBSERVE));
 }
 
-void Scriptor::postEvent (Rts2Event * event)
+void Scriptor::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
 		case EVENT_SCRIPT_ENDED:
-			postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+			postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
 			break;
 		case EVENT_SCRIPT_STARTED:
-//			postEvent (new Rts2Event (EVENT_OBSERVE));
+//			postEvent (new rts2core::Event (EVENT_OBSERVE));
 			break;
 	}
 	rts2core::Device::postEvent (event);

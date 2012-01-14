@@ -121,7 +121,7 @@ class XFocusClientCamera:public FocusCameraClient
 		XFocusClientCamera (rts2core::Connection * in_connection, double in_change_val, XFocusClient * in_master);
 		virtual ~ XFocusClientCamera (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		void setCrossType (int in_crossType);
 
@@ -596,10 +596,10 @@ void XFocusClientCamera::XeventLoop ()
 						connection->queCommand (new rts2core::Command (master, "center 0"));
 						break;
 					case XK_p:
-						master->postEvent (new Rts2Event (EVENT_INTEGRATE_START));
+						master->postEvent (new rts2core::Event (EVENT_INTEGRATE_START));
 						break;
 					case XK_o:
-						master->postEvent (new Rts2Event (EVENT_INTEGRATE_STOP));
+						master->postEvent (new rts2core::Event (EVENT_INTEGRATE_STOP));
 						break;
 					case XK_y:
 						setSaveImage (1);
@@ -612,25 +612,25 @@ void XFocusClientCamera::XeventLoop ()
 					case XK_Left:
 						change.ra = -1 * change_val;
 						change.dec = 0;
-						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_j:
 					case XK_Down:
 						change.ra = 0;
 						change.dec = -1 * change_val;
-						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_k:
 					case XK_Up:
 						change.ra = 0;
 						change.dec = change_val;
-						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_l:
 					case XK_Right:
 						change.ra = change_val;
 						change.dec = 0;
-						master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+						master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
 					case XK_Escape:
 						master->endRunLoop ();
@@ -704,7 +704,7 @@ void XFocusClientCamera::XeventLoop ()
 	}
 }
 
-void XFocusClientCamera::postEvent (Rts2Event * event)
+void XFocusClientCamera::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -951,7 +951,7 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 		change.dec -= getActualImage ()->getCenterDec ();
 
 		logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" << mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.dec << sendLog;
-		master->postEvent (new Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
+		master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
 		mouseTelChange_x = INT_MAX;
 		mouseTelChange_y = INT_MAX;
 	}
@@ -1115,7 +1115,7 @@ void XFocusClient::selectSuccess ()
 {
 	if (FD_ISSET (ConnectionNumber (display), &read_set))
 	{
-		postEvent (new Rts2Event (EVENT_XWIN_SOCK));
+		postEvent (new rts2core::Event (EVENT_XWIN_SOCK));
 	}
 	FocusClient::selectSuccess ();
 }

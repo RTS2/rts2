@@ -31,28 +31,28 @@ ClientCupola::ClientCupola (rts2core::Connection * conn):rts2core::DevClientCupo
 
 ClientCupola::~ClientCupola (void)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_ENDED, this));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_ENDED, this));
 }
 
 void ClientCupola::syncEnded ()
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_SYNCED));
 	rts2core::DevClientCupola::syncEnded ();
 }
 
 void ClientCupola::syncFailed (int status)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_SYNCED));
 	rts2core::DevClientCupola::syncFailed (status);
 }
 
 void ClientCupola::notMoveFailed (int status)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_NOT_MOVE));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_CUP_NOT_MOVE));
 	rts2core::DevClientCupola::notMoveFailed (status);
 }
 
-void ClientCupola::postEvent (Rts2Event * event)
+void ClientCupola::postEvent (rts2core::Event * event)
 {
 	struct ln_equ_posn *dome_position;
 	switch (event->getType ())

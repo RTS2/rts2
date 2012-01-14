@@ -95,8 +95,7 @@ using namespace rts2teld;
 
 TelModelTest::TelModelTest (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
 {
-	rts2core::Configuration *config;
-	config = rts2core::Configuration::instance ();
+	rts2core::Configuration::instance ();
 	modelFile = NULL;
 	model = NULL;
 	telescope = NULL;

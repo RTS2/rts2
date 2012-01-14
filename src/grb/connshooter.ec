@@ -57,10 +57,10 @@ int ConnShooter::processAuger ()
 	int    db_Eye;            /// FD eye Id
 	int    db_Run;            /// FD run number
 	int    db_Event;          /// FD event number
-	VARCHAR db_AugerId[50];   /// Event Auger Id after SD/FD merger
+	VARCHAR db_AugerId[50];   /// rts2core::Event Auger Id after SD/FD merger
 	int    db_GPSSec;         /// GPS second (SD)
 	int    db_GPSNSec;        /// GPS nano second (SD)
-	int    db_SDId;           /// SD Event Id
+	int    db_SDId;           /// SD rts2core::Event Id
 
 	int    db_NPix;           /// Num. pixels with a pulse after FdPulseFinder
 
@@ -694,7 +694,7 @@ int ConnShooter::receive (fd_set * set)
 				logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::processing data: " << nbuf << sendLog;
 				processAuger ();
 				// enable others to catch-up (FW connections will forward packet to their sockets)
-				getMaster ()->postEvent (new Rts2Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
+				getMaster ()->postEvent (new rts2core::Event (RTS2_EVENT_AUGER_SHOWER, nbuf));
 
 				// move unprocessed to begging
 				it++;

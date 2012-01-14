@@ -108,14 +108,14 @@ bool Block::commandQueEmpty ()
 	return true;
 }
 
-void Block::postEvent (Rts2Event * event)
+void Block::postEvent (Event * event)
 {
 	// send to all connections
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
-		(*iter)->postEvent (new Rts2Event (event));
+		(*iter)->postEvent (new Event (event));
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
-		(*iter)->postEvent (new Rts2Event (event));
+		(*iter)->postEvent (new Event (event));
 	return rts2core::App::postEvent (event);
 }
 
@@ -287,8 +287,8 @@ int Block::idle ()
 	}
 
 	// test for any pending timers..
-	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
-	std::vector <std::map <double, Rts2Event *>::iterator> toDelete;
+	std::map <double, Event *>::iterator iter_t = timers.begin ();
+	std::vector <std::map <double, Event *>::iterator> toDelete;
 	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
 		toDelete.push_back (iter_t);
@@ -296,11 +296,11 @@ int Block::idle ()
 	}
 
 	// delete timers queue for delete
-	for (std::vector <std::map <double, Rts2Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
+	for (std::vector <std::map <double, Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
 	{
-		Rts2Event *sec = (*iter_d)->second;
+		Event *sec = (*iter_d)->second;
 	 	if (sec->getArg () != NULL)
-		  	((Rts2Object *)sec->getArg ())->postEvent (sec);
+		  	((Object *)sec->getArg ())->postEvent (sec);
 		else
 			postEvent (sec);
 		timers.erase (*iter_d);
@@ -934,7 +934,7 @@ int Block::statusInfo (Connection * conn)
 	return 0;
 }
 
-bool Block::commandOriginatorPending (Rts2Object * object, Connection * exclude_conn)
+bool Block::commandOriginatorPending (Object * object, Connection * exclude_conn)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -962,8 +962,8 @@ bool Block::commandOriginatorPending (Rts2Object * object, Connection * exclude_
 
 void Block::deleteTimers (int event_type)
 {
-	std::vector <std::map <double, Rts2Event *>::iterator> toDelete;
-	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
+	std::vector <std::map <double, Event *>::iterator> toDelete;
+	for (std::map <double, Event *>::iterator iter = timers.begin (); iter != timers.end (); )
 	{
 		if (iter->second->getType () == event_type)
 		{
@@ -974,7 +974,7 @@ void Block::deleteTimers (int event_type)
 	}
 
 	// delete timers queue for delete
-	for (std::vector <std::map <double, Rts2Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
+	for (std::vector <std::map <double, Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
 		timers.erase (*iter_d);
 }
 

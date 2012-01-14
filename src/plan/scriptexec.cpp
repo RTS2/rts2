@@ -79,11 +79,11 @@ int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 bool ScriptExec::isScriptRunning ()
 {
 	int runningScripts = 0;
-	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
+	postEvent (new rts2core::Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
 	// if there are some images which need to be written
-	postEvent (new Rts2Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
+	postEvent (new rts2core::Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
 	if (runningScripts > 0)
 		return true;
 	// if we still have some commands in que, wait till they finish
@@ -264,7 +264,7 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 	return cli;
 }
 
-void ScriptExec::postEvent (Rts2Event * event)
+void ScriptExec::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -273,10 +273,10 @@ void ScriptExec::postEvent (Rts2Event * event)
 		case EVENT_MOVE_OK:
 			if (waitState)
 			{
-				postEvent (new Rts2Event (EVENT_CLEAR_WAIT));
+				postEvent (new rts2core::Event (EVENT_CLEAR_WAIT));
 				break;
 			}
-			//      postEvent (new Rts2Event (EVENT_OBSERVE));
+			//      postEvent (new rts2core::Event (EVENT_OBSERVE));
 			break;
 		case EVENT_MOVE_FAILED:
 			//endRunLoop ();
@@ -297,8 +297,8 @@ void ScriptExec::postEvent (Rts2Event * event)
 
 void ScriptExec::deviceReady (rts2core::Connection * conn)
 {
-	conn->postEvent (new Rts2Event (callScriptEnd ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) currentTarget));
-	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
+	conn->postEvent (new rts2core::Event (callScriptEnd ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) currentTarget));
+	conn->postEvent (new rts2core::Event (EVENT_OBSERVE));
 }
 
 int ScriptExec::idle ()

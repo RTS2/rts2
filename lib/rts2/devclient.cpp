@@ -25,7 +25,7 @@
 
 using namespace rts2core;
 
-DevClient::DevClient (Connection * in_connection):Rts2Object ()
+DevClient::DevClient (Connection * in_connection):Object ()
 {
 	connection = in_connection;
 	processedBaseInfo = NOT_PROCESED;
@@ -40,7 +40,7 @@ DevClient::~DevClient ()
 	unblockWait ();
 }
 
-void DevClient::postEvent (Rts2Event * event)
+void DevClient::postEvent (Event * event)
 {
 	switch (event->getType ())
 	{
@@ -55,7 +55,7 @@ void DevClient::postEvent (Rts2Event * event)
 			clearWait ();
 			break;
 	}
-	Rts2Object::postEvent (event);
+	Object::postEvent (event);
 }
 
 void DevClient::newDataConn (int data_conn)
@@ -93,10 +93,10 @@ void DevClient::unblockWait ()
 		int numNonWaits = 0;
 		waiting = NOT_WAITING;
 		connection->getMaster ()->
-			postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &numNonWaits));
+			postEvent (new Event (EVENT_QUERY_WAIT, (void *) &numNonWaits));
 		if (numNonWaits == 0)	 // still zero, enter wait
 			connection->getMaster ()->
-				postEvent (new Rts2Event (EVENT_ENTER_WAIT));
+				postEvent (new Event (EVENT_ENTER_WAIT));
 	}
 }
 
@@ -260,7 +260,7 @@ void DevClientTelescope::moveEnd ()
 	moveWasCorrecting = false;
 }
 
-void DevClientTelescope::postEvent (Rts2Event * event)
+void DevClientTelescope::postEvent (Event * event)
 {
 	bool qe;
 	switch (event->getType ())

@@ -45,7 +45,7 @@ class Cloud4: public SensorWeather
 		Cloud4 (int in_argc, char **in_argv);
 		virtual ~Cloud4 (void);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual void changeMasterState (int old_state, int new_state);
 
@@ -257,7 +257,7 @@ Cloud4::~Cloud4 (void)
 	delete mrakConn;
 }
 
-void Cloud4::postEvent (Rts2Event * event)
+void Cloud4::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -276,7 +276,7 @@ void Cloud4::postEvent (Rts2Event * event)
 					else
 						t_diff = heatDuration->getValueInteger ();
 					heater->setValueBool (!heater->getValueBool ());
-					addTimer (t_diff, new Rts2Event (EVENT_CLOUD_HEATER, this));
+					addTimer (t_diff, new rts2core::Event (EVENT_CLOUD_HEATER, this));
 					heatStateChangeTime->setValueDouble (getNow () + t_diff);
 				}
 				readSensor (false);
@@ -298,7 +298,7 @@ void Cloud4::changeMasterState (int old_state, int new_state)
 			case SERVERD_DUSK:
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
-				addTimer (heatInterval->getValueInteger (), new Rts2Event (EVENT_CLOUD_HEATER, this));
+				addTimer (heatInterval->getValueInteger (), new rts2core::Event (EVENT_CLOUD_HEATER, this));
 				break;
 			default:
 				heater->setValueBool (false);
@@ -415,7 +415,7 @@ void Cloud4::valueChanged (rts2core::Value *value)
 		deleteTimers (EVENT_CLOUD_HEATER);
 		if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
 		{
-			addTimer (heatDuration->getValueInteger (), new Rts2Event (EVENT_CLOUD_HEATER, this));
+			addTimer (heatDuration->getValueInteger (), new rts2core::Event (EVENT_CLOUD_HEATER, this));
 		}
 		else
 		{

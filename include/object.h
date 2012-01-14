@@ -20,44 +20,47 @@
 #ifndef __RTS2_OBJECT__
 #define __RTS2_OBJECT__
 
-#include "rts2event.h"
+#include "event.h"
+
+namespace rts2core
+{
 
 /**
  * Base RTS2 class.
  *
- * Its only important method is Rts2Object::postEvent, which works as
+ * Its only important method is Object::postEvent, which works as
  * event hook for descenadands.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Object
+class Object
 {
 	public:
 		/**
 		 * Default object constructor.
 		 */
-		Rts2Object ()
+		Object ()
 		{
 		}
 
 		/**
 		 * Default object destructor.
 		 */
-		virtual ~ Rts2Object (void)
+		virtual ~ Object (void)
 		{
 		}
 
 		/**
 		 * Distribute event throught class.
 		 *
-		 * This method is hook for descendands to distribute Rts2Event. Every descendand
+		 * This method is hook for descendands to distribute Event. Every descendand
 		 * overwriting it should call ancestor postEvent method at the end, so the event object
 		 * will be deleted.
 		 *
 		 * Ussuall implementation looks like:
 		 *
 		@code
-		void MyObject::postEvent (Rts2Event * event)
+		void MyObject::postEvent (Event * event)
 		{
 		// test for event type..
 		switch (event->getType ())
@@ -79,9 +82,9 @@ class Rts2Object
 		 *
 		 * @param event Event to process.
 		 *
-		 * @see Rts2Event::getType
+		 * @see Event::getType
 		 */
-		virtual void postEvent (Rts2Event * event)
+		virtual void postEvent (Event * event)
 		{
 			// discard event..
 			delete event;
@@ -95,4 +98,6 @@ class Rts2Object
 		{
 		}
 };
+
+}
 #endif							 /*! __RTS2_OBJECT__ */

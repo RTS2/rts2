@@ -51,7 +51,7 @@ class Rts2DevClientLogger:public rts2core::DevClient
 
 		virtual void idle ();
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 	protected:
 		/**
 		 * Change expansion pattern to new filename.

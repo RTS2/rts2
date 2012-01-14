@@ -24,7 +24,7 @@
 
 using namespace rts2xmlrpc;
 
-ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):Rts2Object ()
+ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):Object ()
 {
 	master = _master;
 	deviceName = ci_string (_deviceName.c_str ());
@@ -35,10 +35,10 @@ ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string
 	test = _test;
 
 	if (cadency > 0)
-		master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));
+		master->addTimer (cadency, new Event (EVENT_XMLRPC_VALUE_TIMER, this));
 }
 
-void ValueChange::postEvent (Rts2Event *event)
+void ValueChange::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
@@ -50,10 +50,10 @@ void ValueChange::postEvent (Rts2Event *event)
 					conn->queCommand (new rts2core::CommandInfo (master));
 			}
 			if (cadency > 0)
-				master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));
+				master->addTimer (cadency, new Event (EVENT_XMLRPC_VALUE_TIMER, this));
 			break;
 	}
-	Rts2Object::postEvent (event);
+	Object::postEvent (event);
 }
 
 #ifndef HAVE_PGSQL

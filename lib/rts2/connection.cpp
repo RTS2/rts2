@@ -54,7 +54,7 @@ ConnError::ConnError (Connection *conn, const char *_msg, int _errn): Error ()
 	conn->connectionError (-1);
 }
 
-Connection::Connection (Block * in_master):Rts2Object ()
+Connection::Connection (Block * in_master):Object ()
 {
 	buf = new char[MAX_DATA + 1];
 	buf_size = MAX_DATA;
@@ -97,7 +97,7 @@ Connection::Connection (Block * in_master):Rts2Object ()
 	activeSharedMem = NULL;
 }
 
-Connection::Connection (int in_sock, Block * in_master):Rts2Object ()
+Connection::Connection (int in_sock, Block * in_master):Object ()
 {
 	buf = new char[MAX_DATA + 1];
 	buf_size = MAX_DATA;
@@ -476,14 +476,14 @@ std::string Connection::getStateString ()
 	return _os.str ();
 }
 
-void Connection::postEvent (Rts2Event * event)
+void Connection::postEvent (Event * event)
 {
 	if (otherDevice)
-		otherDevice->postEvent (new Rts2Event (event));
-	Rts2Object::postEvent (event);
+		otherDevice->postEvent (new Event (event));
+	Object::postEvent (event);
 }
 
-void Connection::postMaster (Rts2Event * event)
+void Connection::postMaster (Event * event)
 {
 	master->postEvent (event);
 }
@@ -1011,7 +1011,7 @@ void Connection::setCentraldId (int in_centrald_id)
 	centrald_id = in_centrald_id;
 }
 
-void Connection::queCommand (Command * cmd, int notBop, Rts2Object * originator)
+void Connection::queCommand (Command * cmd, int notBop, Object * originator)
 {
 	cmd->setBopMask (notBop);
 	cmd->setOriginator (originator);
@@ -1066,7 +1066,7 @@ void Connection::commandReturn (Command * cmd, int in_status)
 		otherDevice->commandReturn (cmd, in_status);
 }
 
-bool Connection::queEmptyForOriginator (Rts2Object *testOriginator)
+bool Connection::queEmptyForOriginator (Object *testOriginator)
 {
 	if (runningCommand && runningCommandStatus != RETURNING && runningCommand->isOriginator (testOriginator))
 		return false;

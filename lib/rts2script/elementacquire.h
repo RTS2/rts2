@@ -32,7 +32,7 @@ class ElementAcquire:public Element
 {
 	public:
 		ElementAcquire (Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn *in_center_pos);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual int nextCommand (rts2core::DevClientCamera * camera, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int processImage (rts2image::Image * image);
 		virtual void cancelCommands ();
@@ -67,7 +67,7 @@ class ElementAcquireStar:public ElementAcquire
 		 */
 		ElementAcquireStar (Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec, struct ln_equ_posn *in_center_pos);
 		virtual ~ ElementAcquireStar (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual int processImage (rts2image::Image * image);
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_STAR_SEARCH << " " << maxRetries << " " << minFlux; }

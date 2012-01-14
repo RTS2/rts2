@@ -125,7 +125,7 @@ class Command
 		 *
 		 * @callergraph
 		 */
-		void setOriginator (Rts2Object * _originator) { originator = _originator; }
+		void setOriginator (Object * _originator) { originator = _originator; }
 
 		/**
 		 * Return true if testOriginator is originator
@@ -136,7 +136,7 @@ class Command
 		 * @return True if testOriginator is command
 		 * originator.
 		 */
-		bool isOriginator (Rts2Object * testOriginator) { return originator == testOriginator; }
+		bool isOriginator (Object * testOriginator) { return originator == testOriginator; }
 
 		/**
 		 * Returns status of info call, issued against central server.
@@ -218,7 +218,7 @@ class Command
 		char * text;
 	private:
 		int bopMask;
-		Rts2Object * originator;
+		Object * originator;
 };
 
 /**

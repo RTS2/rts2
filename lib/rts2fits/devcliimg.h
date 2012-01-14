@@ -20,7 +20,7 @@
 #ifndef __RTS2_DEVCLIENT_IMG__
 #define __RTS2_DEVCLIENT_IMG__
 
-#include "rts2object.h"
+#include "object.h"
 #include "devclient.h"
 #include "command.h"
 
@@ -44,7 +44,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 	public:
 		DevClientCameraImage (rts2core::Connection * in_connection, std::string templateFile = std::string (""));
 		virtual ~DevClientCameraImage (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void newDataConn (int data_conn);
 		virtual void fullDataReceived (int data_conn, rts2core::DataChannels *data);
@@ -138,7 +138,7 @@ class DevClientTelescopeImage:public rts2core::DevClientTelescope
 {
 	public:
 		DevClientTelescopeImage (rts2core::Connection * in_connection);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		/**
 		 * Get target coordinates.
 		 */
@@ -152,14 +152,14 @@ class DevClientFocusImage:public rts2core::DevClientFocus
 {
 	public:
 		DevClientFocusImage (rts2core::Connection * in_connection);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 };
 
 class DevClientWriteImage:public rts2core::DevClient
 {
 	public:
 		DevClientWriteImage (rts2core::Connection * in_connection);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual void infoOK ();
 		virtual void infoFailed ();

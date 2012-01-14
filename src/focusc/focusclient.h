@@ -43,7 +43,7 @@ class FocusClient:public rts2core::Client
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual int init ();
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		float defaultExpousure () { return defExposure; }
 		const char *getExePath () { return focExe; }
@@ -114,7 +114,7 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 		FocusCameraClient (rts2core::Connection * in_connection, FocusClient * in_master);
 		virtual ~ FocusCameraClient (void);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);

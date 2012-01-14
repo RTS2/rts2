@@ -41,7 +41,7 @@ class ElementGuiding:public Element
 		ElementGuiding (Script * in_script, float init_exposure, int in_endSignal);
 		virtual ~ ElementGuiding (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual int nextCommand (rts2core::DevClientCamera * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 

@@ -29,11 +29,11 @@ ClientFocusCamera::ClientFocusCamera (rts2core::Connection * in_connection):rts2
 
 ClientFocusCamera::~ClientFocusCamera (void)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FOCUSER_END_MOVE, activeConn));
 	activeConn = NULL;
 }
 
-void ClientFocusCamera::postEvent (Rts2Event * event)
+void ClientFocusCamera::postEvent (rts2core::Event * event)
 {
 	struct focuserMove *fm;
 	fm = (focuserMove *) event->getArg ();
@@ -65,13 +65,13 @@ void ClientFocusCamera::postEvent (Rts2Event * event)
 
 void ClientFocusCamera::focusingEnd ()
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FOCUSER_END_MOVE, activeConn));
 	rts2core::DevClientFocus::focusingEnd ();
 }
 
 void ClientFocusCamera::focusingFailed (int status)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FOCUSER_END_MOVE, activeConn));
 	activeConn = NULL;
 	rts2core::DevClientFocus::focusingFailed (status);
 }

@@ -203,10 +203,10 @@ void Rts2DevPhot::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
 	exp->setValueFloat (req_time);
-	addTimer (in_req_time, new Rts2Event (PHOT_EVENT_CHECK, this));
+	addTimer (in_req_time, new rts2core::Event (PHOT_EVENT_CHECK, this));
 }
 
-void Rts2DevPhot::postEvent (Rts2Event *event)
+void Rts2DevPhot::postEvent (rts2core::Event *event)
 {
 	int ret;
 	switch (event->getType ())
@@ -214,7 +214,7 @@ void Rts2DevPhot::postEvent (Rts2Event *event)
 		case PHOT_EVENT_CHECK:
 			ret = getCount ();
 			if (ret >= 0 && req_count->getValueInteger () > 0)
-				addTimer (ret, new Rts2Event (PHOT_EVENT_CHECK, this));
+				addTimer (ret, new rts2core::Event (PHOT_EVENT_CHECK, this));
 			else if (ret < 0)
 				endIntegrate ();
 			break;	

@@ -221,7 +221,6 @@ int Rts2BckImageApp::doProcessing ()
 	{
 		double tmp_count = 0;
 		int move_files_count = 1;
-		int done = 1;
 		EXEC SQL FETCH next FROM images_to_move
 			INTO:old_path,:new_path,:camera_name,:mount_name,:img_date,:img_id;
 		if (sqlca.sqlcode < 0)
@@ -318,7 +317,6 @@ int Rts2BckImageApp::doProcessing ()
 
 					if (rename (tmvf->old_path, tmvf->new_path))
 					{
-						done = 0;
 						printf ("..failed\n");
 						perror ("mv failed");
 						exit (EXIT_FAILURE);
@@ -328,7 +326,6 @@ int Rts2BckImageApp::doProcessing ()
 				}
 				else
 				{
-					done = 0;
 					printf ("..not done\n");
 				}
 				file_move_count++;

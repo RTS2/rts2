@@ -85,7 +85,7 @@ class Daemon:public rts2core::Block
 			info_time->setValueDouble (getNow ());
 		}
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (Event *event);
 
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);

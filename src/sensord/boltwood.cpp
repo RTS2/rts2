@@ -33,7 +33,7 @@ class CloudSensorII:public SensorWeather, public BWCSII_Listener
 		CloudSensorII (int in_argc, char **in_argv);
 		virtual ~ CloudSensorII (void);
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		//virtual int changeMasterState (int new_state);
 
@@ -239,7 +239,7 @@ int CloudSensorII::commandAuthorized (rts2core::Connection *conn)
 }
 
 
-void CloudSensorII::postEvent (Rts2Event *event)
+void CloudSensorII::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{

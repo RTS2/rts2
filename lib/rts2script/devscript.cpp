@@ -88,10 +88,10 @@ void DevScript::startTarget (bool callScriptEnds)
 		getObsTargetID () << sendLog;
 	#endif
 
-	script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
+	script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_STARTED));
 }
 
-void DevScript::postEvent (Rts2Event * event)
+void DevScript::postEvent (rts2core::Event * event)
 {
 	int sig;
 	int acqEnd;
@@ -178,7 +178,7 @@ void DevScript::postEvent (Rts2Event * event)
 		case EVENT_STAR_DATA:
 			if (script.get ())
 			{
-				script->postEvent (new Rts2Event (event));
+				script->postEvent (new rts2core::Event (event));
 				if (isWaitMove ())
 					// get a chance to process updates..
 					nextCommand ();
@@ -187,7 +187,7 @@ void DevScript::postEvent (Rts2Event * event)
 		case EVENT_MIRROR_FINISH:
 			if (script.get () && waitScript == WAIT_MIRROR)
 			{
-				script->postEvent (new Rts2Event (event));
+				script->postEvent (new rts2core::Event (event));
 				waitScript = NO_WAIT;
 				nextCommand ();
 			}
@@ -240,13 +240,13 @@ void DevScript::postEvent (Rts2Event * event)
 			// scripts for processing
 		case EVENT_SIGNAL_QUERY:
 			if (script.get ())
-				script->postEvent (new Rts2Event (event));
+				script->postEvent (new rts2core::Event (event));
 			break;
 		case EVENT_SIGNAL:
 			if (script.get () == 0)
 				break;
 			sig = *(int *) event->getArg ();
-			script->postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+			script->postEvent (new rts2core::Event (EVENT_SIGNAL, (void *) &sig));
 			if (sig == -1)
 			{
 				waitScript = NO_WAIT;
@@ -301,7 +301,7 @@ void DevScript::deleteScript ()
 			sendLog;
 		#endif
 		script_connection->getMaster ()->
-			postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &acqRet));
+			postEvent (new rts2core::Event (EVENT_ACQUSITION_END, (void *) &acqRet));
 	}
 	// make sure we don't left any garbage for start of observation
 	waitScript = NO_WAIT;
@@ -343,7 +343,7 @@ void DevScript::deleteScript ()
 		// that can result in call to startTarget and
 		// therefore nextCommand, which will set nextComd - so we
 		// don't want to touch it after that
-		script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
+		script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_ENDED));
 	}
 }
 
@@ -383,7 +383,7 @@ int DevScript::nextPreparedCommand ()
 			setWaitMove ();
 			break;
 		case NEXT_COMMAND_RESYNC:
-			script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SCRIPT_RESYNC));
+			script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_TEL_SCRIPT_RESYNC));
 			setWaitMove ();
 			break;
 		case NEXT_COMMAND_PRECISION_OK:
@@ -395,7 +395,7 @@ int DevScript::nextPreparedCommand ()
 				<< "DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END "
 				<< script_connection->getName () << " " << ret << sendLog;
 		#endif
-			script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
+			script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUSITION_END, (void *) &ret));
 			if (ret == NEXT_COMMAND_PRECISION_OK)
 			{
 				// there wouldn't be a recursion, as Element->nextCommand
@@ -414,7 +414,7 @@ int DevScript::nextPreparedCommand ()
 		case NEXT_COMMAND_ACQUSITION_IMAGE:
 			currentTarget->acqusitionStart ();
 			script_connection->getMaster ()->
-				postEvent (new Rts2Event (EVENT_ACQUIRE_START));
+				postEvent (new rts2core::Event (EVENT_ACQUIRE_START));
 			waitScript = WAIT_MASTER;
 			break;
 		case NEXT_COMMAND_WAIT_SIGNAL:
@@ -464,7 +464,7 @@ int DevScript::haveNextCommand (rts2core::DevClient *devClient)
 								 // some telescope command..
 	if (!strcmp (cmd_device, "TX"))
 	{
-		script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
+		script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
 		// postEvent have to create copy (in case we will serve more devices) .. so we have to delete command
 		delete nextComd;
 		nextComd = NULL;

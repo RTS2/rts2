@@ -136,12 +136,12 @@ bool XmlDevCameraClient::isScriptRunning ()
 	int runningScripts = 0;
 
 
-	connection->postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
+	connection->postEvent (new Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
 
 	// if there are some images which need to be written
-	connection->postEvent (new Rts2Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
+	connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
 	if (runningScripts > 0)
 		return true;
 	return false;
@@ -172,12 +172,12 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 	{
 		if (scriptRunning->getValueBool ())
 			logStream (MESSAGE_INFO) << "killing currently running script" << sendLog;
-		postEvent (new Rts2Event (EVENT_KILL_ALL));
+		postEvent (new Event (EVENT_KILL_ALL));
 		connection->queCommand (new rts2core::CommandKillAll (connection->getMaster ()));
 	}
 
-	connection->postEvent (new Rts2Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
-	connection->postEvent (new Rts2Event (EVENT_OBSERVE));
+	connection->postEvent (new Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
+	connection->postEvent (new Event (EVENT_OBSERVE));
 }
 
 void XmlDevCameraClient::setNextExpand (const char *fe)
@@ -194,7 +194,7 @@ void XmlDevCameraClient::setScriptExpand (const char *fe)
 	nexpand = std::string ("");
 }
 
-void XmlDevCameraClient::postEvent (Rts2Event *event)
+void XmlDevCameraClient::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
@@ -316,7 +316,7 @@ int XmlRpcd::init ()
 	setMessageMask (MESSAGE_MASK_ALL);
 
 	if (events.bbServers.size () != 0)
-		addTimer (30, new Rts2Event (EVENT_XMLRPC_BB));
+		addTimer (30, new Event (EVENT_XMLRPC_BB));
 
 #ifndef HAVE_PGSQL
 	ret = Configuration::instance ()->loadFile (config_file);
@@ -617,7 +617,7 @@ bool XmlRpcd::existsSession (std::string sessionId)
 	return true;
 }
 
-void XmlRpcd::postEvent (Rts2Event *event)
+void XmlRpcd::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{

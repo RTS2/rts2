@@ -100,7 +100,7 @@ Image * DevClientCameraImage::setImage (Image * old_img, Image * new_image)
 	return NULL;
 }
 
-void DevClientCameraImage::postEvent (Rts2Event * event)
+void DevClientCameraImage::postEvent (rts2core::Event * event)
 {
 	bool ret_all,ret_actual;
 	switch (event->getType ())
@@ -326,7 +326,7 @@ void DevClientCameraImage::exposureStarted ()
 		logStream (MESSAGE_ERROR) << "cannot create image for exposure " << ex << sendLog;
 		return;
 	}
-	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
+	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, actualImage));
 	rts2core::DevClientCamera::exposureStarted ();
 }
 
@@ -337,7 +337,7 @@ void DevClientCameraImage::exposureEnd ()
 	if (actualImage)
 	{
 		actualImage->setExEnd (getMaster ()->getNow ());
-		connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 	}
 
 	rts2core::DevClientCamera::exposureEnd ();
@@ -364,7 +364,7 @@ DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_conn
 {
 }
 
-void DevClientTelescopeImage::postEvent (Rts2Event * event)
+void DevClientTelescopeImage::postEvent (rts2core::Event * event)
 {
 	struct ln_equ_posn *change;	 // change in degrees
 	CameraImage * ci;
@@ -444,7 +444,7 @@ DevClientFocusImage::DevClientFocusImage (rts2core::Connection * in_connection):
 {
 }
 
-void DevClientFocusImage::postEvent (Rts2Event * event)
+void DevClientFocusImage::postEvent (rts2core::Event * event)
 {
 	CameraImage * ci;
 	Image *image;
@@ -477,7 +477,7 @@ DevClientWriteImage::DevClientWriteImage (rts2core::Connection * in_connection):
 {
 }
 
-void DevClientWriteImage::postEvent (Rts2Event * event)
+void DevClientWriteImage::postEvent (rts2core::Event * event)
 {
 	CameraImage *ci;
 	Image *image;
@@ -512,19 +512,19 @@ void DevClientWriteImage::postEvent (Rts2Event * event)
 void DevClientWriteImage::infoOK ()
 {
 	// see if somebody cares..
-	connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_OK, this));
+	connection->postMaster (new rts2core::Event (EVENT_INFO_DEVCLI_OK, this));
 }
 
 void DevClientWriteImage::infoFailed ()
 {
-	connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_FAILED, this));
+	connection->postMaster (new rts2core::Event (EVENT_INFO_DEVCLI_FAILED, this));
 }
 
 void DevClientWriteImage::stateChanged (Rts2ServerState * state)
 {
 	rts2core::DevClient::stateChanged (state);
 	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE) && !(state->getOldValue () & DEVICE_NOT_READY))
-		connection->postMaster (new Rts2Event (EVENT_TRIGGERED, this));
+		connection->postMaster (new rts2core::Event (EVENT_TRIGGERED, this));
 }
 
 CommandQueImage::CommandQueImage (rts2core::Block * in_owner, Image * image):rts2core::Command (in_owner)

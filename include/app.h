@@ -24,7 +24,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "rts2object.h"
+#include "object.h"
 #include "option.h"
 #include "message.h"
 #include "logstream.h"
@@ -54,7 +54,7 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class App:public Rts2Object
+class App:public Object
 {
 	public:
 		/**

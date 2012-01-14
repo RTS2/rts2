@@ -111,7 +111,7 @@ void Rts2GrbForwardClientConn::forwardPacket (int32_t *nbuf)
 	}
 }
 
-void Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
+void Rts2GrbForwardClientConn::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{

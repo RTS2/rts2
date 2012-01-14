@@ -24,7 +24,7 @@
 #include "devscript.h"
 
 #include "../rts2fits/devcliimg.h"
-#include "rts2event.h"
+#include "event.h"
 #include "../rts2/rts2target.h"
 
 #define EVENT_SCRIPT_STARTED               RTS2_LOCAL_EVENT+50
@@ -77,7 +77,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		DevClientCameraExec (rts2core::Connection * in_connection, rts2core::ValueString * in_expandPath = NULL, std::string templateFile = std::string (""));
 		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual void nextCommand ();
 		void queImage (rts2image::Image * image, bool run_after = true);
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
@@ -140,7 +140,7 @@ class DevClientTelescopeExec:public rts2image::DevClientTelescopeImage
 		virtual void moveEnd ();
 	public:
 		DevClientTelescopeExec (rts2core::Connection * in_connection);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual void moveFailed (int status);
 };
 

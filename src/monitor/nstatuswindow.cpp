@@ -39,15 +39,13 @@ void NStatusWindow::draw ()
 	time_t now;
 	time (&now);
 
-	int x, y;
-
 	NWindow::draw ();
 	werase (window);
 
 	wcolor_set (window, CLR_STATUS, NULL);
 	mvwhline (window, 0, 0, ' ', getWidth ());
 	mvwprintw (window, 0, 0, "%s %x", master->getMasterStateString ().c_str (), master->getMasterState ());
-	getyx (window, y, x);
+	int x = getcurx (window);
 	if (x + 22  <= COLS - 19)
 		mvwprintw (window, 0, x + 1, "| F9 menu F10 exit |");
 

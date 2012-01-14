@@ -23,7 +23,7 @@
 #include "operands.h"
 #include "rts2spiral.h"
 #include "../rts2fits/image.h"
-#include "rts2object.h"
+#include "object.h"
 #include "block.h"
 #include "../rts2db/scriptcommands.h"
 
@@ -90,7 +90,7 @@ class Script;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Element:public Rts2Object
+class Element:public Object
 {
 	public:
 		Element (Script * _script);
@@ -322,7 +322,7 @@ class ElementSendSignal:public Element
 	public:
 		ElementSendSignal (Script * _script, int in_sig);
 		virtual ~ ElementSendSignal (void);
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual void printScript (std::ostream &os) { os << COMMAND_SEND_SIGNAL << " " << sig; }

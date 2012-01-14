@@ -59,12 +59,12 @@ class API;
  *
  * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  */
-class AsyncAPI:public Rts2Object
+class AsyncAPI:public rts2core::Object
 {
 	public:
 		AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext);
 		
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (rts2core::Event *event);
 
 		/**
 		 * Check if the request is for connection or source..

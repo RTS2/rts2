@@ -11,8 +11,7 @@ class Rts2MoveArchive:public Rts2AppDbImage
 	public:
 		Rts2MoveArchive (int in_argc, char **in_argv):Rts2AppDbImage (in_argc, in_argv, true)
 		{
-			rts2core::Configuration *config;
-			config = rts2core::Configuration::instance ();
+			rts2core::Configuration::instance ();
 		}
 
 	protected:

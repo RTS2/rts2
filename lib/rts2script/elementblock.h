@@ -41,7 +41,7 @@ class ElementBlock:public Element
 
 		virtual void addElement (Element * element);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
@@ -126,7 +126,7 @@ class ElementAcquired:public ElementBlock
 		ElementAcquired (Script * _script, int _tar_id);
 		virtual ~ ElementAcquired (void);
 
-		virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (rts2core::Event * event);
 
 		virtual int defnextCommand (rts2core::DevClient * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 

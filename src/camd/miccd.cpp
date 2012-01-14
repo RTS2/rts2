@@ -38,7 +38,7 @@ class MICCD:public Camera
 		MICCD (int argc, char **argv);
 		virtual ~MICCD ();
 
-		virtual void postEvent (Rts2Event *event);
+		virtual void postEvent (Event *event);
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
@@ -137,7 +137,7 @@ MICCD::~MICCD ()
 	miccd_close (&camera);
 }
 
-void MICCD::postEvent (Rts2Event *event)
+void MICCD::postEvent (Event *event)
 {
 	float change = 0;
 	switch (event->getType ())
@@ -319,7 +319,7 @@ int MICCD::setCoolTemp (float new_temp)
 	}
 	deleteTimers (EVENT_TE_RAMP);
 	tempTarget->setValueFloat (val);
-	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
+	addTimer (1, new Event (EVENT_TE_RAMP));
 	return Camera::setCoolTemp (new_temp);
 }
 

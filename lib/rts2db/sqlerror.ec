@@ -19,7 +19,7 @@
 
 #include "sqlerror.h"
 #include "app.h"
-#include "rts2event.h"
+#include "event.h"
 
 #include <sstream>
 
@@ -31,7 +31,7 @@ SqlError::SqlError ()
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
 	if (sqlca.sqlcode == ECPG_PGSQL)
-		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));
+		getMasterApp ()->postEvent (new rts2core::Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
 
@@ -41,7 +41,7 @@ SqlError::SqlError (const char *sqlmsg)
 	_os << sqlmsg << ":" << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	setMsg (_os.str ());
 	if (sqlca.sqlcode == ECPG_PGSQL)
-		getMasterApp ()->postEvent (new Rts2Event (EVENT_DB_LOST_CONN));
+		getMasterApp ()->postEvent (new rts2core::Event (EVENT_DB_LOST_CONN));
 	EXEC SQL ROLLBACK;
 }
 

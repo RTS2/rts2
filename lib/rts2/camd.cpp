@@ -804,7 +804,7 @@ int Camera::initValues ()
 
 	if (tempCCDHistory != NULL)
 	{
-		addTimer (tempCCDHistoryInterval->getValueInteger (), new Rts2Event (EVENT_TEMP_CHECK));
+		addTimer (tempCCDHistoryInterval->getValueInteger (), new rts2core::Event (EVENT_TEMP_CHECK));
 	}
 
 	return rts2core::ScriptDevice::initValues ();
@@ -985,7 +985,7 @@ void Camera::deviceReady (rts2core::Connection * conn)
 	}
 }
 
-void Camera::postEvent (Rts2Event * event)
+void Camera::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -1283,7 +1283,7 @@ int Camera::setFilterNum (int new_filter, const char *fn)
 
 		fs.filter = new_filter;
 		fs.arg = this;
-		postEvent (new Rts2Event (EVENT_FILTER_START_MOVE, (void *) &fs));
+		postEvent (new rts2core::Event (EVENT_FILTER_START_MOVE, (void *) &fs));
 		// filter move will be performed
 		if (fs.filter == -1)
 		{
@@ -1318,7 +1318,7 @@ void Camera::offsetForFilter (int new_filter, int fn)
 	}
 	fm.focuserName = focuserDevice;
 	fm.conn = this;
-	postEvent (new Rts2Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
+	postEvent (new rts2core::Event (EVENT_FOCUSER_OFFSET, (void *) &fm));
 	if (fm.focuserName)
 		return;
 	if (focuserMoving)
@@ -1350,7 +1350,7 @@ int Camera::getFilterNum (const char *fn)
 		else
 			fs.filterName = fn;
 		fs.filter = -1;
-		postEvent (new Rts2Event (EVENT_FILTER_GET, (void *) &fs));
+		postEvent (new rts2core::Event (EVENT_FILTER_GET, (void *) &fs));
 		return fs.filter;
 	}
 	else if (camFilterVal != NULL)
@@ -1370,7 +1370,7 @@ int Camera::setFocuser (int new_set)
 	fm.focuserName = focuserDevice;
 	fm.value = new_set;
 	fm.conn = this;
-	postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
+	postEvent (new rts2core::Event (EVENT_FOCUSER_SET, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
 	if (focuserMoving)
@@ -1387,7 +1387,7 @@ int Camera::getFocPos ()
 		return -1;
 	struct focuserMove fm;
 	fm.focuserName = focuserDevice;
-	postEvent (new Rts2Event (EVENT_FOCUSER_GET, (void *) &fm));
+	postEvent (new rts2core::Event (EVENT_FOCUSER_GET, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
 	return fm.value;

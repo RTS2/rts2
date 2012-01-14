@@ -260,7 +260,7 @@ int ElementWaitAcquire::defnextCommand (rts2core::DevClient * client, rts2core::
 {
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
-	script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
+	script->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
 		<< "ElementWaitAcquire::defnextCommand " << ac.count
@@ -295,10 +295,10 @@ ElementSendSignal::~ElementSendSignal ()
 {
 	if (askedFor)
 		script->getMaster ()->
-			postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+			postEvent (new rts2core::Event (EVENT_SIGNAL, (void *) &sig));
 }
 
-void ElementSendSignal::postEvent (Rts2Event * event)
+void ElementSendSignal::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
@@ -318,7 +318,7 @@ int ElementSendSignal::defnextCommand (rts2core::DevClient * client, rts2core::C
 	// when some else script will wait reach point when it has to wait for
 	// this signal, it will not wait as it will ask before enetring wait
 	// if some script will send required signal
-	script->getMaster ()->postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
+	script->getMaster ()->postEvent (new rts2core::Event (EVENT_SIGNAL, (void *) &sig));
 	askedFor = false;
 	return NEXT_COMMAND_NEXT;
 }
@@ -338,7 +338,7 @@ int ElementWaitSignal::defnextCommand (rts2core::DevClient * client, rts2core::C
 
 	// nobody will send us a signal..end script
 	ret = sig;
-	script->getMaster ()->postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
+	script->getMaster ()->postEvent (new rts2core::Event (EVENT_SIGNAL_QUERY, (void *) &ret));
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "ElementWaitSignal::defnextCommand " << ret << " (" << script->getDefaultDevice () << ")" << sendLog;
 #endif

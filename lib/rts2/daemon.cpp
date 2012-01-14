@@ -371,7 +371,7 @@ void Daemon::setIdleInfoInterval (double interval)
 	{
 		if (idleInfoInterval > 0)
 			deleteTimers (EVENT_TIMER_INFOALL);
-		addTimer (interval, new Rts2Event (EVENT_TIMER_INFOALL, this));
+		addTimer (interval, new Event (EVENT_TIMER_INFOALL, this));
 	}
 	idleInfoInterval = interval;
 }
@@ -457,7 +457,7 @@ void Daemon::setInfoTime (struct tm *_date)
 	putenv (p_tz);
 }
 
-void Daemon::postEvent (Rts2Event *event)
+void Daemon::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
