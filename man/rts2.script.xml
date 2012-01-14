@@ -781,11 +781,16 @@ G W0 filter
       </varlistentry>
       <varlistentry>
         <term><option>double {variable name} {variable description} {value} [{rts2 type}]</option></term>
+        <term><option>double_w {variable name} {variable description} {value} [{rts2 type}]</option></term>
 	<listitem><para>
 	  Creates or update device double value. If variable with given name
 	  and double type is not in the device, it is created, populated with
 	  description, value type and value. If the variable is found and is of double
 	  type, its value is updated.
+	</para><para>
+	  The second form, <emphasis>double_w</emphasis>, creates writable variable. The first form
+          creates variable which can be update only from a script. If the value already exists, it
+	  is not altered and a warning is issued.
 	</para><para>
 	  This way, the script can permanently inform users about values it
 	  found. Assuming there is a <emphasis>FWHM</emphasis> measuring sctipt, echoing

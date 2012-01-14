@@ -48,6 +48,8 @@ class ConnExe:public rts2core::ConnFork
 	
 	private:
 		std::vector <std::string> tempentries;
+
+		void testWritableVariable (const char *cmd, int32_t vflags, rts2core::Value *v);
 };
 
 }

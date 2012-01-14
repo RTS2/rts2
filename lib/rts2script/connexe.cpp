@@ -50,6 +50,36 @@ int32_t typeFromString (const char *dt_string)
 	throw rts2core::Error (std::string ("invalid data type ") + dt_string);
 }
 
+void ConnExe::testWritableVariable (const char *cmd, int32_t vflags, rts2core::Value *v)
+{
+	if (vflags & RTS2_VALUE_WRITABLE)
+	{
+		if (!v->isWritable ())
+			logStream (MESSAGE_WARNING) << "updating constant variable " << v->getName () << " with " << cmd << " command" << sendLog;
+	}
+	else if (v->isWritable ())
+	{
+		logStream (MESSAGE_WARNING) << "updating writable double variable " << v->getName () << " with " << cmd << " command" << sendLog;
+	}
+}
+
+bool isValueCommand (const char *cmd, const char *expected, int32_t &flags)
+{
+	flags = 0;
+	int el = strlen (expected);
+	if (!strncasecmp (cmd, expected, el))
+	{
+		if ((cmd[el] == '\0'))
+			return true;
+		if (!(strcasecmp (cmd + el, "_w")))
+		{
+			flags = RTS2_VALUE_WRITABLE;
+			return true;
+		}
+	}
+	return false;
+}
+
 void ConnExe::processCommand (char *cmd)
 {
 	char *device;
@@ -60,6 +90,8 @@ void ConnExe::processCommand (char *cmd)
 
 	char *vname, *desc;
 	rts2core::Value *v;
+
+	int32_t vflags;
 
 	if (!strcmp (cmd, "C"))
 	{
@@ -147,7 +179,7 @@ void ConnExe::processCommand (char *cmd)
 			return;
 		tempentries.push_back (std::string (value));
 	}
-	else if (!strcasecmp (cmd, "double"))
+	else if (isValueCommand (cmd, "double", vflags))
 	{
 		double val;
 		char *rts2_type = NULL;
@@ -157,26 +189,22 @@ void ConnExe::processCommand (char *cmd)
 		// either variable with given name exists..
 		if (v)
 		{
-			if (v->getValueBaseType () == RTS2_VALUE_DOUBLE)
-			{
-				((rts2core::ValueDouble *) v)->setValueDouble (val);
-				((rts2core::Daemon *) master)->sendValueAll (v);
-			}
-			else
-			{
+			if (v->getValueBaseType () != RTS2_VALUE_DOUBLE)
 				throw rts2core::Error (std::string ("value is not double ") + vname);
-			}
+			testWritableVariable (cmd, vflags, v);
+			((rts2core::ValueDouble *) v)->setValueDouble (val);
+			((rts2core::Daemon *) master)->sendValueAll (v);
 		}
 		// or create it and distribute it..
 		else
 		{
 			rts2core::ValueDouble *vd;
-			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, typeFromString (rts2_type));
+			((rts2core::Daemon *) master)->createValue (vd, vname, desc, false, vflags | typeFromString (rts2_type));
 			vd->setValueDouble (val);
 			master->updateMetaInformations (vd);
 		}
 	}
-	else if (!strcasecmp (cmd, "integer"))
+	else if (isValueCommand (cmd, "integer", vflags))
 	{
 		int val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextInteger (&val) || !paramEnd ())
@@ -185,26 +213,22 @@ void ConnExe::processCommand (char *cmd)
 		// either variable with given name exists..
 		if (v)
 		{
-			if (v->getValueBaseType () == RTS2_VALUE_INTEGER)
-			{
-				((rts2core::ValueInteger *) v)->setValueInteger (val);
-				((rts2core::Daemon *) master)->sendValueAll (v);
-			}
-			else
-			{
+			if (v->getValueBaseType () != RTS2_VALUE_INTEGER)
 				throw rts2core::Error (std::string ("value is not double ") + vname);
-			}
+			testWritableVariable (cmd, vflags, v);
+			((rts2core::ValueInteger *) v)->setValueInteger (val);
+			((rts2core::Daemon *) master)->sendValueAll (v);
 		}
 		// or create it and distribute it..
 		else
 		{
 			rts2core::ValueInteger *vi;
-			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false);
+			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
 			vi->setValueInteger (val);
 			master->updateMetaInformations (vi);
 		}
 	}
-	else if (!strcasecmp (cmd, "string"))
+	else if (isValueCommand (cmd, "string", vflags))
 	{
 		char *val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
@@ -213,26 +237,22 @@ void ConnExe::processCommand (char *cmd)
 		// either variable with given name exists..
 		if (v)
 		{
-			if (v->getValueBaseType () == RTS2_VALUE_STRING)
-			{
-				((rts2core::ValueInteger *) v)->setValueCharArr (val);
-				((rts2core::Daemon *) master)->sendValueAll (v);
-			}
-			else
-			{
+			if (v->getValueBaseType () != RTS2_VALUE_STRING)
 				throw rts2core::Error (std::string ("value is not double ") + vname);
-			}
+			testWritableVariable (cmd, vflags, v);
+			((rts2core::ValueInteger *) v)->setValueCharArr (val);
+			((rts2core::Daemon *) master)->sendValueAll (v);
 		}
 		// or create it and distribute it..
 		else
 		{
 			rts2core::ValueString *vi;
-			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false);
+			((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);
 		}
 	}
-	else if (!strcasecmp (cmd, "bool") || !strcasecmp (cmd, "onoff"))
+	else if (isValueCommand (cmd, "bool", vflags) || isValueCommand (cmd, "onoff", vflags))
 	{
 		char *val;
 		if (paramNextString (&vname) || paramNextString (&desc) || paramNextString (&val) || !paramEnd ())
@@ -241,29 +261,25 @@ void ConnExe::processCommand (char *cmd)
 		// either variable with given name exists..
 		if (v)
 		{
-			if (v->getValueBaseType () == RTS2_VALUE_BOOL)
-			{
-				((rts2core::ValueInteger *) v)->setValueCharArr (val);
-				((rts2core::Daemon *) master)->sendValueAll (v);
-			}
-			else
-			{
+			if (v->getValueBaseType () != RTS2_VALUE_BOOL)
 				throw rts2core::Error (std::string ("value is not boolean ") + vname);
-			}
+			testWritableVariable (cmd, vflags, v);
+			((rts2core::ValueInteger *) v)->setValueCharArr (val);
+			((rts2core::Daemon *) master)->sendValueAll (v);
 		}
 		// or create it and distribute it..
 		else
 		{
 			rts2core::ValueBool *vi;
 			if (!strcasecmp (cmd, "bool"))
-				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, RTS2_VALUE_WRITABLE);
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags);
 			else
-				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+				((rts2core::Daemon *) master)->createValue (vi, vname, desc, false, vflags | RTS2_DT_ONOFF);
 			vi->setValueCharArr (val);
 			master->updateMetaInformations (vi);
 		}
 	}
-	else if (!strcasecmp (cmd, "double_array"))
+	else if (isValueCommand (cmd, "double_array", vflags))
 	{
 		if (paramNextString (&vname) || paramNextString (&desc))
 			throw rts2core::Error ("missing variable name or description");
@@ -273,12 +289,13 @@ void ConnExe::processCommand (char *cmd)
 		{
 			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
 				throw rts2core::Error (std::string ("value is not double array") + vname);
+			testWritableVariable (cmd, vflags, v);
 			vad = (rts2core::DoubleArray *) v;
 			vad->clear ();
 		}
 		else
 		{
-			((rts2core::Daemon *) master)->createValue (vad, vname, desc, false);
+			((rts2core::Daemon *) master)->createValue (vad, vname, desc, false, vflags);
 			master->updateMetaInformations (vad);
 		}
 		while (!paramEnd ())
