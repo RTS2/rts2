@@ -27,6 +27,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <signal.h>
 
 #define OPT_CHANGE_FILTER   OPT_LOCAL + 50
 #define OPT_SKIP_FILTER     OPT_LOCAL + 51
@@ -79,7 +80,7 @@ void FocusCameraClient::postEvent (Rts2Event *event)
 			if (getConnection ()->getState () & CAM_EXPOSING)
 			{
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
-				std::cout << "EXPOSING " << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+				std::cout << "EXPOSING " << " " << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 				std::cout.flush ();
 			}
 			break;
@@ -402,6 +403,11 @@ rts2core::DevClient *FocusClient::createOtherType (rts2core::Connection * conn, 
 	}
 }
 
+void signal_winch (int sig)
+{
+	setupterm (NULL, 2, NULL);
+}
+
 int FocusClient::init ()
 {
 	rts2core::Configuration *config;
@@ -412,6 +418,8 @@ int FocusClient::init ()
 		return ret;
 
 	setupterm (NULL, 2, NULL);
+
+	signal (SIGWINCH, signal_winch);
 
 	config = rts2core::Configuration::instance ();
 	ret = config->loadFile (configFile);
