@@ -596,6 +596,10 @@ class Connection:public Object
 		 */
 		double getProgress (double now);
 
+		double getProgressStart () { return statusStart; }
+
+		double getProgressEnd () { return statusExpectedEnd; }
+
 	protected:
 		char *buf;
 		size_t buf_size;

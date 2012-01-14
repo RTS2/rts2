@@ -141,6 +141,7 @@ int DevConnection::authorizationOK ()
 	}
 	master->sendInfo (this, true);
 	master->sendFullStateInfo (this);
+	master->resendProgress (this);
 	sendCommandEnd (DEVDEM_OK, "OK authorized");
 	return 0;
 }
@@ -813,6 +814,7 @@ int Device::scriptEnds ()
 int Device::statusInfo (Connection * conn)
 {
 	sendStatusMessageConn (getState (), conn);
+	resendProgress (conn);
 	return 0;
 }
 

@@ -80,9 +80,7 @@ Block::~Block (void)
 	blockUsers.clear ();
 }
 
-
-void
-Block::setPort (int in_port)
+void Block::setPort (int in_port)
 {
 	port = in_port;
 }

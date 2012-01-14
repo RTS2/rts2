@@ -1343,7 +1343,7 @@ void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * 
 		}
 	}
 
-	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"f\":" << JsonDouble (mfrom);
+	os << "},\"idle\":" << conn->isIdle () << ",\"state\":" << conn->getState () << ",\"sstart\":" << JsonDouble (conn->getProgressStart ()) << ",\"send\":" << JsonDouble (conn->getProgressEnd ()) << ",\"f\":" << JsonDouble (mfrom);
 }
 
 void API::sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended)

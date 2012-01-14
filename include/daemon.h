@@ -162,6 +162,15 @@ class Daemon:public rts2core::Block
 		 */
 		void sendValueAll (Value * value);
 
+		/**
+		 * Send progress to newly created connections.
+		 */
+		void resendProgress (rts2core::Connection *conn)
+		{
+			if (!(isnan (state_start) && isnan (state_expected_end)))
+				conn->sendProgress (state_start, state_expected_end);
+		}
+
 	protected:
 		/**
 		 * Delete all saved reference of given value.
@@ -615,6 +624,9 @@ class Daemon:public rts2core::Block
 		 * @param sect section which holds new values
 		 */
 		int createSectionValues (IniSection *sect);
+
+		double state_start;
+		double state_expected_end;
 };
 
 }

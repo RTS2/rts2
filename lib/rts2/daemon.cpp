@@ -88,6 +88,8 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 
 	state = _init_state;
 
+	state_start = state_expected_end = NAN;
+
 	info_time = new ValueTime (RTS2_VALUE_INFOTIME, "time of last update", false);
 
 	idleInfoInterval = -1;
@@ -953,6 +955,8 @@ void Daemon::sendValueAll (Value * value)
 
 void Daemon::sendProgressAll (double start, double end)
 {
+	state_start = start;
+	state_expected_end = end;
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 		(*iter)->sendProgress (start, end);
