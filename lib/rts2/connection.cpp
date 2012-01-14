@@ -393,6 +393,12 @@ std::string Connection::getStateString ()
 				default:
 					_os << " | UNKNOW ACQUSTION " << (real_state & EXEC_MASK_ACQ);
 			}
+			switch (real_state & EXEC_MASK_SCRIPT)
+			{
+				case EXEC_SCRIPT_RUNNING:
+					_os << " | SCRIPT RUNNING";
+					break;
+			}
 			break;
 		case DEVICE_TYPE_IMGPROC:
 			if (real_state & IMGPROC_RUN)
@@ -404,7 +410,12 @@ std::string Connection::getStateString ()
 			_os << "selector " << real_state;
 			break;
 		case DEVICE_TYPE_XMLRPC:
-			_os << "xmlrpc " << real_state;
+			switch (real_state & EXEC_MASK_SCRIPT)
+			{
+				case EXEC_SCRIPT_RUNNING:
+					_os << " | SCRIPT RUNNING";
+					break;
+			}
 			break;
 		case DEVICE_TYPE_INDI:
 			_os << "indi " << real_state;
