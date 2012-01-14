@@ -790,7 +790,9 @@ G W0 filter
 	</para><para>
 	  The second form, <emphasis>double_w</emphasis>, creates writable variable. The first form
           creates variable which can be update only from a script. If the value already exists, it
-	  is not altered and a warning is issued.
+	  is not altered and a warning is issued. <emphasis>_w</emphasis> suffix is used with other
+	  variable commands described below to distinguish between constant, changeable only from the script,
+	  and writable variable, which can be changed by the user.
 	</para><para>
 	  This way, the script can permanently inform users about values it
 	  found. Assuming there is a <emphasis>FWHM</emphasis> measuring sctipt, echoing
@@ -840,34 +842,39 @@ double fwhm "[pixels] current FWHM, as meassured by foo bar script" 6.32
       </varlistentry>
       <varlistentry>
         <term><option>integer {variable name} {variable description} {value}</option></term>
+        <term><option>integer_w {variable name} {variable description} {value}</option></term>
 	<listitem><para>
 	  Creates or update device integer value. Similar to
-	  <emphasis>double</emphasis> command, described above.
+	  <emphasis>double</emphasis> and <emphasis>double_w</emphasis> commands, described above.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>string {variable name} {variable description} {value}</option></term>
+        <term><option>string_w {variable name} {variable description} {value}</option></term>
 	<listitem><para>
 	  Creates or update device string value. Similar to
-	  <emphasis>double</emphasis> command, described above.
+	  <emphasis>double</emphasis> and <emphasis>double_w</emphasis> commands, described above.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>bool {variable name} {variable description} {value}</option></term>
+        <term><option>bool_w {variable name} {variable description} {value}</option></term>
 	<listitem><para>
 	  Creates or update device boolean value. Similar to
-	  <emphasis>double</emphasis> command, described above.
+	  <emphasis>double</emphasis> and <emphasis>double_w</emphasis> commands, described above.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>onoff {variable name} {variable description} {value}</option></term>
+        <term><option>onoff_w {variable name} {variable description} {value}</option></term>
 	<listitem><para>
 	  Creates or update device boolean value with ON/OFF type. Similar to
-	  <emphasis>bool</emphasis> command, described above.
+	  <emphasis>bool</emphasis> and <emphasis>bool_w</emphasis> commands, described above.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>double_array {variable name} {variable description} {values..}</option></term>
+        <term><option>double_array_w {variable name} {variable description} {values..}</option></term>
 	<listitem><para>
 	  Creates or update double array variable. If the array variable
 	  exists, its values are overwritten by specified values. Values to an
