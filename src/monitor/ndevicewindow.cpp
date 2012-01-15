@@ -25,6 +25,8 @@
 #include "../../lib/rts2/displayvalue.h"
 #include "riseset.h"
 
+#include <iomanip>
+
 using namespace rts2ncurses;
 
 NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection):NSelWindow (10, 1, COLS - 10, LINES - 25)
