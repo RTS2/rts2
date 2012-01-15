@@ -256,7 +256,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		template < typename T > void createOrReplaceValue (T * &val, rts2core::Connection *conn, int32_t expectedType, const char *suffix, const char *description, bool writeToFits = true, int32_t valueFlags = 0, int queCondition = 0)
 		{
 			std::string vn = std::string (conn->getName ()) + suffix;
-			rts2core::Value *v = conn->getValue (vn.c_str ());
+			rts2core::Value *v = ((rts2core::Daemon *) conn->getMaster ())->getOwnValue (vn.c_str ());
 
 			if (v)
 			{
