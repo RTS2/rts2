@@ -892,7 +892,7 @@ void Rts2Centrald::stopChanged (const char * device, const char * msg)
 	if (failedArr.size () > 0)
 	{
 		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
-		ls << "failed devices:";
+		ls << "devices stopping telescope:";
 		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
 			ls << " " << (*namIter);
 		ls << sendLog;

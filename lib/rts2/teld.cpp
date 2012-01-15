@@ -823,6 +823,14 @@ void Telescope::changeMasterState (int old_state, int new_state)
 		blockMove->setValueBool (true);
 		sendValueAll (blockMove);
 		stopMove ();
+		logStream (MESSAGE_WARNING) << "stoped movement of the delescope, triggered by STOP_MASK change" << sendLog;
+	}
+	// enable movement when stop state was cleared
+	else if ((old_state & STOP_MASK) == STOP_EVERYTHING && (new_state & STOP_MASK) != STOP_EVERYTHING)
+	{
+		blockMove->setValueBool (false);
+		sendValueAll (blockMove);
+		logStream (MESSAGE_DEBUG) << "reenabled movement as all stop states were cleared" << sendLog;
 	}
 
 	// park us during day..
