@@ -90,7 +90,7 @@ class Rts2CMonitor:public rts2core::Client
 
 rts2core::ConnClient * Rts2CMonitor::createClientConnection (char *_deviceName)
 {
-	Rts2Address *addr = findAddress (_deviceName);
+	rts2core::NetworkAddress *addr = findAddress (_deviceName);
 	if (addr == NULL)
 		return NULL;
 	return new Rts2CMonitorConnection (this, addr->getCentraldNum (), _deviceName);

@@ -21,7 +21,7 @@
 #include "configuration.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/messagedb.h"
 #include "../../lib/rts2db/observationset.h"
 
@@ -43,7 +43,7 @@
  *
  * @addgroup RTS2DbApps
  */
-class Rts2NightReport:public Rts2AppDb
+class Rts2NightReport:public rts2db::AppDb
 {
 	public:
 		Rts2NightReport (int argc, char **argv);
@@ -80,7 +80,7 @@ class Rts2NightReport:public Rts2AppDb
 		int messageMask;
 };
 
-Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	t_from = 0;
 	t_to = 0;
@@ -187,7 +187,7 @@ int Rts2NightReport::processOption (int in_opt)
 			messageMask = 0x0f;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -195,7 +195,7 @@ int Rts2NightReport::processOption (int in_opt)
 int Rts2NightReport::init ()
 {
 	int ret;
-	ret = Rts2AppDb::init ();
+	ret = rts2db::AppDb::init ();
 	if (ret)
 		return ret;
 

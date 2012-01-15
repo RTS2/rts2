@@ -222,14 +222,14 @@ int XmlRpcd::idle ()
 	}
 	deleteAsync.clear ();
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::idle ();
+	return DeviceDb::idle ();
 #else
 	return rts2core::Device::idle ();
 #endif
 }
 
 #ifndef HAVE_PGSQL
-int XmlRpcd::willConnect (Rts2Address *_addr)
+int XmlRpcd::willConnect (NetworkAddress *_addr)
 {
 	if (_addr->getType () < getDeviceType ()
 		|| (_addr->getType () == getDeviceType ()
@@ -254,7 +254,7 @@ int XmlRpcd::processOption (int in_opt)
 			break;
 #ifdef HAVE_PGSQL
 		default:
-			return Rts2DeviceDb::processOption (in_opt);
+			return DeviceDb::processOption (in_opt);
 #else
 		case OPT_CONFIG:
 			config_file = optarg;
@@ -270,7 +270,7 @@ int XmlRpcd::init ()
 {
 	int ret;
 #ifdef HAVE_PGSQL
-	ret = Rts2DeviceDb::init ();
+	ret = DeviceDb::init ();
 #else
 	ret = rts2core::Device::init ();
 #endif
@@ -338,7 +338,7 @@ int XmlRpcd::init ()
 void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::addSelectSocks ();
+	DeviceDb::addSelectSocks ();
 #else
 	rts2core::Device::addSelectSocks ();
 #endif
@@ -348,7 +348,7 @@ void XmlRpcd::addSelectSocks ()
 void XmlRpcd::selectSuccess ()
 {
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::selectSuccess ();
+	DeviceDb::selectSuccess ();
 #else
 	rts2core::Device::selectSuccess ();
 #endif
@@ -358,7 +358,7 @@ void XmlRpcd::selectSuccess ()
 void XmlRpcd::signaledHUP ()
 {
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::selectSuccess ();
+	DeviceDb::selectSuccess ();
 #else
 	rts2core::Device::selectSuccess ();
 #endif
@@ -375,7 +375,7 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 			iter++;
 	}
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::connectionRemoved (conn);
+	DeviceDb::connectionRemoved (conn);
 #else
 	rts2core::Device::connectionRemoved (conn);
 #endif
@@ -414,7 +414,7 @@ void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
 }
 
 #ifdef HAVE_PGSQL
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC")
 #else
 XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC")
 #endif
@@ -627,7 +627,7 @@ void XmlRpcd::postEvent (Event *event)
 			return;
 	}
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::postEvent (event);
+	DeviceDb::postEvent (event);
 #else
 	rts2core::Device::postEvent (event);
 #endif

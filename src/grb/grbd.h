@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBD__
 #define __RTS2_GRBD__
 
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "conngrb.h"
 #include "rts2grbfw.h"
 
@@ -45,7 +45,7 @@ class ConnGrb;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Grbd:public Rts2DeviceDb
+class Grbd:public rts2db::DeviceDb
 {
 	public:
 		Grbd (int argc, char **argv);

@@ -30,7 +30,7 @@ class Rts2Logd:public rts2core::Device, public Rts2LoggerBase
 		virtual int init ();
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processArgs (const char *arg);
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 	private:
 		rts2core::ValueString * logConfig;
 		rts2core::ValueString *logFile;
@@ -110,7 +110,7 @@ int Rts2Logd::processArgs (const char *arg)
 	return setLogConfig (arg);
 }
 
-int Rts2Logd::willConnect (Rts2Address * in_addr)
+int Rts2Logd::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	return Rts2LoggerBase::willConnect (in_addr);
 }

@@ -796,7 +796,7 @@ void Telescope::postEvent (rts2core::Event * event)
 	rts2core::Device::postEvent (event);
 }
 
-int Telescope::willConnect (Rts2Address * in_addr)
+int Telescope::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (in_addr->getType () == DEVICE_TYPE_CUPOLA)
 		return 1;

@@ -22,10 +22,11 @@
 #include <stdio.h>
 #include <netdb.h>
 
-#include "rts2address.h"
+#include "networkaddress.h"
 
-Rts2Address::Rts2Address (int _host_num, int _centrald_num, int _centrald_id,
-	const char *_name, const char *_host, int _port, int _type)
+using namespace rts2core;
+
+NetworkAddress::NetworkAddress (int _host_num, int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type)
 {
   	host_num = _host_num;
 	centrald_num = _centrald_num;
@@ -38,16 +39,12 @@ Rts2Address::Rts2Address (int _host_num, int _centrald_num, int _centrald_id,
 	type = _type;
 }
 
-
-Rts2Address::~Rts2Address (void)
+NetworkAddress::~NetworkAddress (void)
 {
 	delete[]host;
 }
 
-
-int
-Rts2Address::update (int _centrald_num, const char *_name,
-	const char *new_host, int new_port, int new_type)
+int NetworkAddress::update (int _centrald_num, const char *_name, const char *new_host, int new_port, int new_type)
 {
 	if (!isAddress (_centrald_num, _name))
 		return -1;
@@ -59,9 +56,7 @@ Rts2Address::update (int _centrald_num, const char *_name,
 	return 0;
 }
 
-
-int
-Rts2Address::getSockaddr (struct addrinfo **info)
+int NetworkAddress::getSockaddr (struct addrinfo **info)
 {
 	char s_port[10];
 	struct addrinfo hints = {0};

@@ -308,7 +308,7 @@ class Telescope:public rts2core::Device
 		 */
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
 
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		char telType[64];
 		rts2core::ValueAltAz *telAltAz;
 

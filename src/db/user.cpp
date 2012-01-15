@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/userset.h"
 
 #include "../../lib/rts2/rts2askchoice.h"
@@ -32,7 +32,7 @@ using namespace rts2db;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2UserApp:public Rts2AppDb
+class Rts2UserApp:public AppDb
 {
 	public:
 		Rts2UserApp (int argc, char **argv);
@@ -64,7 +64,7 @@ class Rts2UserApp:public Rts2AppDb
 		int editType ();
 };
 
-Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
+Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): AppDb (in_argc, in_argv)
 {
 	op = NOT_SET;
 	user = NULL;
@@ -152,7 +152,7 @@ int Rts2UserApp::processOption (int in_opt)
 			password = optarg;
 			return 0;
 	}
-	return Rts2AppDb::processOption (in_opt);
+	return AppDb::processOption (in_opt);
 }
 
 int Rts2UserApp::listUser ()

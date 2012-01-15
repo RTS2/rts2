@@ -65,7 +65,7 @@ double get_norm_hour (double JD)
 
 using namespace rts2plan;
 
-PrintTarget::PrintTarget (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	obs = NULL;
 	printExtended = 0;
@@ -250,7 +250,7 @@ int PrintTarget::processOption (int in_opt)
 			printVisible = atof (optarg);
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -747,7 +747,7 @@ int PrintTarget::init ()
 {
 	int ret;
 
-	ret = Rts2AppDb::init ();
+	ret = rts2db::AppDb::init ();
 	if (ret)
 		return ret;
 

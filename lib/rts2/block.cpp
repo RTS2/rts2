@@ -557,7 +557,7 @@ void Block::childReturned (pid_t child_pid)
 		(*iter)->childReturned (child_pid);
 }
 
-int Block::willConnect (Rts2Address * in_addr)
+int Block::willConnect (NetworkAddress * in_addr)
 {
 	return 0;
 }
@@ -626,13 +626,13 @@ bool Block::someCentraldRunning ()
 	return false;
 }
 
-Rts2Address * Block::findAddress (const char *blockName)
+NetworkAddress * Block::findAddress (const char *blockName)
 {
-	std::list < Rts2Address * >::iterator addr_iter;
+	std::list < NetworkAddress * >::iterator addr_iter;
 
 	for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end (); addr_iter++)
 	{
-		Rts2Address *addr = (*addr_iter);
+		NetworkAddress *addr = (*addr_iter);
 		if (addr->isAddress (blockName))
 		{
 			return addr;
@@ -641,13 +641,13 @@ Rts2Address * Block::findAddress (const char *blockName)
 	return NULL;
 }
 
-Rts2Address * Block::findAddress (int centraldNum, const char *blockName)
+NetworkAddress * Block::findAddress (int centraldNum, const char *blockName)
 {
-	std::list < Rts2Address * >::iterator addr_iter;
+	std::list < NetworkAddress * >::iterator addr_iter;
 
 	for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end (); addr_iter++)
 	{
-		Rts2Address *addr = (*addr_iter);
+		NetworkAddress *addr = (*addr_iter);
 		if (addr->isAddress (centraldNum, blockName))
 		{
 			return addr;
@@ -660,7 +660,7 @@ void Block::addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, c
 int p_device_type)
 {
 	int ret;
-	Rts2Address *an_addr;
+	NetworkAddress *an_addr;
 	an_addr = findAddress (p_centrald_num, p_name);
 	if (an_addr)
 	{
@@ -671,12 +671,12 @@ int p_device_type)
 			return;
 		}
 	}
-	an_addr = new Rts2Address (p_host_num, p_centrald_num, p_centrald_id, p_name, p_host, p_port, p_device_type);
+	an_addr = new NetworkAddress (p_host_num, p_centrald_num, p_centrald_id, p_name, p_host, p_port, p_device_type);
 	blockAddress.push_back (an_addr);
 	addAddress (an_addr);
 }
 
-int Block::addAddress (Rts2Address * in_addr)
+int Block::addAddress (NetworkAddress * in_addr)
 {
 	Connection *conn;
 	// recheck all connections waiting for our address
@@ -694,11 +694,11 @@ int Block::addAddress (Rts2Address * in_addr)
 
 void Block::deleteAddress (int p_centrald_num, const char *p_name)
 {
-	std::list < Rts2Address * >::iterator addr_iter;
+	std::list < NetworkAddress * >::iterator addr_iter;
 
 	for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end (); addr_iter++)
 	{
-		Rts2Address *addr = (*addr_iter);
+		NetworkAddress *addr = (*addr_iter);
 		if (addr->isAddress (p_centrald_num, p_name))
 		{
 			blockAddress.erase (addr_iter);
@@ -797,7 +797,7 @@ Connection * Block::getOpenConnection (int device_type)
 Connection * Block::getConnection (char *deviceName)
 {
 	Connection *conn;
-	Rts2Address *devAddr;
+	NetworkAddress *devAddr;
 
 	conn = getOpenConnection (deviceName);
 	if (conn)
@@ -847,7 +847,7 @@ void Block::clearAll ()
 int Block::queAll (Command * command)
 {
 	// go throught all adresses
-	std::list < Rts2Address * >::iterator addr_iter;
+	std::list < NetworkAddress * >::iterator addr_iter;
 	Connection *conn;
 
 	for (addr_iter = blockAddress.begin (); addr_iter != blockAddress.end ();

@@ -198,7 +198,7 @@ Rts2LogValName * Rts2LoggerBase::getLogVal (const char *name)
 	return NULL;
 }
 
-int Rts2LoggerBase::willConnect (Rts2Address * in_addr)
+int Rts2LoggerBase::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (getLogVal (in_addr->getName ()))
 		return 1;

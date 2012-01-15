@@ -20,7 +20,7 @@
 #ifndef __RTS2_AUGERSHOOTER__
 #define __RTS2_AUGERSHOOTER__
 
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "connshooter.h"
 
 #define RTS2_EVENT_AUGER_SHOWER   RTS2_LOCAL_EVENT + 700
@@ -35,7 +35,7 @@ class ConnShooter;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DevAugerShooter:public Rts2DeviceDb
+class DevAugerShooter:public rts2db::DeviceDb
 {
 	public:
 		DevAugerShooter (int in_argc, char **in_argv);

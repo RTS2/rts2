@@ -196,7 +196,7 @@ int Rts2ConnFwGrb::init_call ()
 	ret = getaddrinfo (gcn_hostname, _os.str ().c_str (), &hints, &info);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: "
+		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor: "
 			<< gai_strerror (ret) << sendLog;
 		freeaddrinfo (info);
 		return -1;
@@ -412,7 +412,7 @@ class Rts2AppFw:public rts2core::Block
 		{
 			return NULL;
 		}
-		virtual rts2core::Connection *createClientConnection (Rts2Address * in_addr)
+		virtual rts2core::Connection *createClientConnection (rts2core::NetworkAddress * in_addr)
 		{
 			return NULL;
 		}

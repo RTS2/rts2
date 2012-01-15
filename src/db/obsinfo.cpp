@@ -1,11 +1,11 @@
 #include "imgdisplay.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/observationset.h"
 
 #include <list>
 #include <iostream>
 
-class ObservationInfo:public Rts2AppDb
+class ObservationInfo:public rts2db::AppDb
 {
 	private:
 		rts2db::ObservationSet * obsset;
@@ -27,7 +27,7 @@ class ObservationInfo:public Rts2AppDb
 		virtual int doProcessing ();
 };
 
-ObservationInfo::ObservationInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+ObservationInfo::ObservationInfo (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	obsset = new rts2db::ObservationSet ();
 	imageFlag = 0;
@@ -88,7 +88,7 @@ int ObservationInfo::processOption (int in_opt)
 			imageFlag |= DISPLAY_FILENAME;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }

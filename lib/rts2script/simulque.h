@@ -58,7 +58,7 @@ class SimulQueueTargets:public TargetQueue
 class SimulQueue:public ExecutorQueue
 {
 	public:
-		SimulQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues);
+		SimulQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, Queues *_queues);
 		virtual ~SimulQueue ();
 
 		void start (double from, double to);

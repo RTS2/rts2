@@ -493,7 +493,7 @@ class Camera:public rts2core::ScriptDevice
 
 		virtual void usage ();
 
-		int willConnect (Rts2Address * in_addr);
+		int willConnect (rts2core::NetworkAddress * in_addr);
 		char *device_file;
 		// number of data channels
 		rts2core::ValueInteger *dataChannels;

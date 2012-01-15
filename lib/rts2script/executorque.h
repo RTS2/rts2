@@ -20,7 +20,7 @@
 #ifndef __RTS2_EXECUTORQUEUE__
 #define __RTS2_EXECUTORQUEUE__
 
-#include "../rts2db/rts2devicedb.h"
+#include "../rts2db/devicedb.h"
 #include "../rts2db/target.h"
 
 // queue modes
@@ -105,7 +105,7 @@ class QueuedTarget
 class TargetQueue:public std::list <QueuedTarget>
 {
 	public:  
-		TargetQueue (Rts2DeviceDb *_master, struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
+		TargetQueue (rts2db::DeviceDb *_master, struct ln_lnlat_posn **_observer):std::list <QueuedTarget> ()
 		{
 			observer = _observer;
 			master = _master;
@@ -163,7 +163,7 @@ class TargetQueue:public std::list <QueuedTarget>
 		virtual void updateVals () {}
 
 	protected:
-		Rts2DeviceDb *master;
+		rts2db::DeviceDb *master;
 		struct ln_lnlat_posn **observer;
 
 		virtual int getQueueType () = 0;
@@ -234,7 +234,7 @@ class ExecutorQueue:public TargetQueue
 		/**
 		 * If read-only is set, queue cannot be changed.
 		 */
-		ExecutorQueue (Rts2DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, bool read_only = false);
+		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));

@@ -14,7 +14,7 @@ test_LDADD = -lrts2 @LIB_NOVA@
 lib_LTLIBRARIES = librts2.la
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp option.cpp \
-	rts2address.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
+	networkaddress.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
 	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
 	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
 	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp logstream.cpp rts2centralstate.cpp \

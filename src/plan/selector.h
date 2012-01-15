@@ -24,7 +24,7 @@
 #include <algorithm>
 
 #include "../../lib/rts2db/rts2camlist.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2/rts2askchoice.h"
 

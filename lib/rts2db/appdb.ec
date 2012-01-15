@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2appdb.h"
+#include "appdb.h"
 #include "configuration.h"
 
 #include <ecpgtype.h>
@@ -28,9 +28,11 @@
 
 #define OPT_DEBUGDB    OPT_LOCAL + 201
 
+using namespace rts2db;
+
 EXEC SQL INCLUDE sql3types;
 
-Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
+SqlQuery::SqlQuery (const char *in_from)
 {
 	sql = NULL;
 	if (in_from)
@@ -45,7 +47,7 @@ Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
 	where = NULL;
 }
 
-Rts2SqlQuery::~Rts2SqlQuery (void)
+SqlQuery::~SqlQuery (void)
 {
 	std::list <Rts2SqlColumn *>::iterator col_iter1, col_iter2;
 	if (sql)
@@ -63,7 +65,7 @@ Rts2SqlQuery::~Rts2SqlQuery (void)
 		delete[] where;
 }
 
-void Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
+void SqlQuery::addColumn (Rts2SqlColumn *add_column)
 {
 	columns.push_back (add_column);
 	if (sql)
@@ -71,12 +73,12 @@ void Rts2SqlQuery::addColumn (Rts2SqlColumn *add_column)
 	sql = NULL;
 }
 
-void Rts2SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
+void SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
 {
-	Rts2SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name, in_order));
+	SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name, in_order));
 }
 
-void Rts2SqlQuery::addWhere (const char *in_where)
+void SqlQuery::addWhere (const char *in_where)
 {
 	if (!where)
 	{
@@ -94,7 +96,7 @@ void Rts2SqlQuery::addWhere (const char *in_where)
 	}
 }
 
-char * Rts2SqlQuery::genSql ()
+char * SqlQuery::genSql ()
 {
 	std::string query;
 	std::string order_by;
@@ -151,7 +153,7 @@ char * Rts2SqlQuery::genSql ()
 	return sql;
 }
 
-void Rts2SqlQuery::displayMinusPlusLine ()
+void SqlQuery::displayMinusPlusLine ()
 {
 	std::list <Rts2SqlColumn *>::iterator col_iter;
 	for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
@@ -164,7 +166,7 @@ void Rts2SqlQuery::displayMinusPlusLine ()
 	std::cout << std::endl;
 }
 
-void Rts2SqlQuery::display ()
+void SqlQuery::display ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		char *stmp;
@@ -344,7 +346,7 @@ void Rts2SqlQuery::display ()
 	EXEC SQL DEALLOCATE DESCRIPTOR disp_desc;
 }
 
-Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_argv)
+AppDb::AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_argv)
 {
 	connectString = NULL;
 	configFile = NULL;
@@ -354,13 +356,13 @@ Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_arg
 	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
-Rts2AppDb::~Rts2AppDb ()
+AppDb::~AppDb ()
 {
 	if (connectString)
 		delete connectString;
 }
 
-int Rts2AppDb::processOption (int in_opt)
+int AppDb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -380,12 +382,12 @@ int Rts2AppDb::processOption (int in_opt)
 	return 0;
 }
 
-bool Rts2AppDb::doInitDB ()
+bool AppDb::doInitDB ()
 {
 	return true;
 }
 
-void Rts2AppDb::afterProcessing ()
+void AppDb::afterProcessing ()
 {
 	if (doInitDB ())
 	{
@@ -393,7 +395,7 @@ void Rts2AppDb::afterProcessing ()
 	}
 }
 
-int Rts2AppDb::initDB ()
+int AppDb::initDB ()
 {
 	std::string cs;
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -427,7 +429,7 @@ int Rts2AppDb::initDB ()
 			EXEC SQL CONNECT TO :c_db USER  :c_username USING :c_password;
 			if (sqlca.sqlcode != 0)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2AppDb::init Cannot connect to DB '" << c_db 
+				logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db 
 					<< "' with user '" << c_username
 					<< "' and password xxxx (see rts2.ini) :"
 					<< sqlca.sqlerrm.sqlerrmc << sendLog;
@@ -439,7 +441,7 @@ int Rts2AppDb::initDB ()
 			EXEC SQL CONNECT TO :c_db USER  :c_username;
 			if (sqlca.sqlcode != 0)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2AppDb::init Cannot connect to DB '" << c_db 
+				logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db 
 					<< "' with user '" << c_username
 					<< "': " << sqlca.sqlerrm.sqlerrmc << sendLog;
 				return -1;
@@ -451,7 +453,7 @@ int Rts2AppDb::initDB ()
 		EXEC SQL CONNECT TO :c_db;
 		if (sqlca.sqlcode != 0)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2AppDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+			logStream (MESSAGE_ERROR) << "AppDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 			return -1;
 		}
 	}
@@ -459,7 +461,7 @@ int Rts2AppDb::initDB ()
 	return 0;
 }
 
-int Rts2AppDb::init ()
+int AppDb::init ()
 {
 	rts2core::Configuration *config;
 	int ret;

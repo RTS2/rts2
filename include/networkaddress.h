@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_ADDRESS__
-#define __RTS2_ADDRESS__
+#ifndef __RTS2_NETWORKADDRESS__
+#define __RTS2_NETWORKADDRESS__
 
 #include <string.h>
 
@@ -33,6 +33,8 @@
 #include "getaddrinfo.h"
 #endif
 
+namespace rts2core
+{
 
 /**
  * Class representing device TCP/IP address. It is ussed to hold device
@@ -42,22 +44,11 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Address
+class NetworkAddress
 {
-	private:
-		// our centrald number - centrald which created address record
-		int host_num;
-		// device centrald number
-		int centrald_num;
-		// device id
-		int centrald_id;
-		char name[DEVICE_NAME_SIZE];
-		char *host;
-		int port;
-		int type;
 	public:
 		/**
-		 * Construct Rts2Address object.
+		 * Construct NetworkAddress object.
 		 *
 		 * @param _host_num      Number of centrald connection which crated the record
 		 * @param _centrald_num  Number of centrald connection (usefull in scenarios with multiple centrald)
@@ -67,8 +58,8 @@ class Rts2Address
 		 * @param _port          Port on which block listen for incoming requests.
 		 * @param _type          Block type.
 		 */
-		Rts2Address (int _host_num, int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type);
-		virtual ~ Rts2Address (void);
+		NetworkAddress (int _host_num, int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type);
+		virtual ~ NetworkAddress (void);
 		int update (int _centrald_num, const char *_name, const char *new_host, int new_port, int new_type);
 
 		/**
@@ -154,5 +145,20 @@ class Rts2Address
 		{
 			return centrald_num == _centrald_num && !strcmp (_name, name);
 		}
+
+	private:
+		// our centrald number - centrald which created address record
+		int host_num;
+		// device centrald number
+		int centrald_num;
+		// device id
+		int centrald_id;
+		char name[DEVICE_NAME_SIZE];
+		char *host;
+		int port;
+		int type;
+
 };
-#endif							 /* !__RTS2_ADDRESS__ */
+
+}
+#endif							 /* !__RTS2_NETWORKADDRESS__ */

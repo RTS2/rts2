@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/sqlerror.h"
 #include "configuration.h"
 
@@ -32,7 +32,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ScheduleApp: public Rts2AppDb
+class Rts2ScheduleApp: public rts2db::AppDb
 {
 	private:
 		Rts2SchedBag *schedBag;
@@ -274,7 +274,7 @@ Rts2ScheduleApp::help ()
 	std::cout << "Create schedule for given night. The programme uses genetic algorithm scheduling, described at \
 http://rts2.org/scheduling.pdf." << std::endl
 		<< "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
-	Rts2AppDb::help ();
+	rts2db::AppDb::help ();
 }
 
 
@@ -326,7 +326,7 @@ Rts2ScheduleApp::processOption (int _opt)
 		case OPT_END_DATE:
 			return parseDate (optarg, endDate);
 		default:
-			return Rts2AppDb::processOption (_opt);
+			return rts2db::AppDb::processOption (_opt);
 	}
 	return 0;
 }
@@ -336,7 +336,7 @@ int
 Rts2ScheduleApp::init ()
 {
 	int ret;
-	ret = Rts2AppDb::init ();
+	ret = rts2db::AppDb::init ();
 	if (ret)
 		return ret;
 
@@ -380,7 +380,7 @@ Rts2ScheduleApp::init ()
 }
 
 
-Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv)
+Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): rts2db::AppDb (argc, argv)
 {
 	schedBag = NULL;
 	verbose = 0;

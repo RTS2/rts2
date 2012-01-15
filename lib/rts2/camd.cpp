@@ -426,7 +426,7 @@ Camera::~Camera ()
 	}
 }
 
-int Camera::willConnect (Rts2Address * in_addr)
+int Camera::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (in_addr->getType () == DEVICE_TYPE_FW)
 	{

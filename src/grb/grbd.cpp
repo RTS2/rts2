@@ -32,7 +32,7 @@ using namespace rts2grbd;
 #define OPT_GCN_FOLLOUPS        OPT_LOCAL + 56
 #define OPT_QUEUE               OPT_LOCAL + 57
 
-Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
+Grbd::Grbd (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
 	gcncnn = NULL;
 	gcn_host = NULL;
@@ -122,7 +122,7 @@ int Grbd::processOption (int in_opt)
 			queueName = optarg;
 			break;	
 		default:
-			return Rts2DeviceDb::processOption (in_opt);
+			return DeviceDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -131,7 +131,7 @@ int Grbd::reloadConfig ()
 {
 	int ret;
 	rts2core::Configuration *config;
-	ret = Rts2DeviceDb::reloadConfig ();
+	ret = DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 
@@ -201,7 +201,7 @@ int Grbd::reloadConfig ()
 int Grbd::init ()
 {
 	int ret;
-	ret = Rts2DeviceDb::init ();
+	ret = DeviceDb::init ();
 	if (ret)
 		return ret;
 
@@ -230,7 +230,7 @@ int Grbd::init ()
 
 void Grbd::help ()
 {
-	Rts2DeviceDb::help ();
+	DeviceDb::help ();
 	std::cout << std::endl << " Execution script, specified with --add-exec option, receives following parameters as arguments:"
 		" target-id grb-id grb-seqn grb-type grb-ra grb-dec grb-is-grb grb-date grb-errorbox." << std::endl
 		<< " Please see man page for meaning of that arguments." << std::endl;
@@ -243,7 +243,7 @@ int Grbd::info ()
 	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
 	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
-	return Rts2DeviceDb::info ();
+	return DeviceDb::info ();
 }
 
 void Grbd::postEvent (rts2core::Event * event)
@@ -261,7 +261,7 @@ void Grbd::postEvent (rts2core::Event * event)
 			}
 			break;
 	}
-	Rts2DeviceDb::postEvent (event);
+	DeviceDb::postEvent (event);
 }
 
 // that method is called when somebody want to immediatelly observe GRB
@@ -306,7 +306,7 @@ int Grbd::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return newGcnGrb (tar_id);
 	}
-	return Rts2DeviceDb::commandAuthorized (conn);
+	return DeviceDb::commandAuthorized (conn);
 }
 
 void Grbd::updateSwift (double lastTime, double ra, double dec)

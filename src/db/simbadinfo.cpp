@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2db/simbadtarget.h"
 
@@ -101,7 +101,7 @@ SimbadInfo::processOption (int in_opt)
 			visibilityPrint = true;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return AppDb::processOption (in_opt);
 	}
 	return 0;
 }

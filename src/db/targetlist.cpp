@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/targetset.h"
 #include "configuration.h"
 #include "rts2format.h"
@@ -28,7 +28,7 @@
 #define LIST_GRB  0x01
 #define LIST_SELECTABLE 0x02
 
-class Rts2TargetList:public Rts2AppDb
+class Rts2TargetList:public rts2db::AppDb
 {
 	private:
 		// which target to list
@@ -47,7 +47,7 @@ class Rts2TargetList:public Rts2AppDb
 		virtual ~ Rts2TargetList (void);
 };
 
-Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	list = LIST_ALL;
 	targetType = NULL;
@@ -81,26 +81,25 @@ int Rts2TargetList::processOption (int in_opt)
 			std::cout << pureNumbers;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
 
 int Rts2TargetList::processArgs (const char *arg)
 {
-	return Rts2AppDb::processArgs (arg);
+	return rts2db::AppDb::processArgs (arg);
 }
 
 int Rts2TargetList::init ()
 {
 	int ret;
 
-	ret = Rts2AppDb::init ();
+	ret = rts2db::AppDb::init ();
 	if (ret)
 		return ret;
 
-	rts2core::Configuration *config;
-	config = rts2core::Configuration::instance ();
+	rts2core::Configuration::instance ();
 
 	return 0;
 }

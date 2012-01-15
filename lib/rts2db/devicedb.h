@@ -25,6 +25,9 @@
 
 #include "rts2camlist.h"
 
+namespace rts2db
+{
+
 /**
  * Adds database connectivity to device class.
  * Provides parameters to specify database location,
@@ -32,18 +35,18 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DeviceDb:public rts2core::Device
+class DeviceDb:public rts2core::Device
 {
 	public:
-		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
-		virtual ~ Rts2DeviceDb (void);
+		DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
+		virtual ~ DeviceDb (void);
 
 		virtual void postEvent (rts2core::Event *event);
 
 		Rts2CamList cameras;
 
 	protected:
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
 
@@ -62,4 +65,6 @@ class Rts2DeviceDb:public rts2core::Device
 		char *connectString;
 		char *configFile;
 };
+
+}
 #endif							 /* !__RTS2_DEVICEDB__ */

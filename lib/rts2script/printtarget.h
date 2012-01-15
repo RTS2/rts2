@@ -18,7 +18,7 @@
  */
 
 #include "../rts2db/constraints.h"
-#include "../rts2db/rts2appdb.h"
+#include "../rts2db/appdb.h"
 #include "../rts2db/rts2camlist.h"
 #include "../rts2db/target.h"
 #include "../rts2db/observationset.h"
@@ -40,7 +40,7 @@ namespace rts2plan {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class PrintTarget:public Rts2AppDb
+class PrintTarget:public rts2db::AppDb
 {
 	public:
 		PrintTarget (int argc, char **argv);

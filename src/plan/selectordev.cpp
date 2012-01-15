@@ -27,7 +27,7 @@
 #include "devclient.h"
 #include "event.h"
 #include "command.h"
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "../../lib/rts2db/planset.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
@@ -66,7 +66,7 @@ class Rts2DevClientExecutorSel:public rts2core::DevClientExecutor
 		}
 };
 
-class SelectorDev:public Rts2DeviceDb
+class SelectorDev:public rts2db::DeviceDb
 {
 	public:
 		SelectorDev (int argc, char **argv);
@@ -160,7 +160,7 @@ class SelectorDev:public Rts2DeviceDb
 
 using namespace rts2selector;
 
-SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
+SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
 	sel = NULL;
 	observer = NULL;
@@ -243,7 +243,7 @@ int SelectorDev::processOption (int in_opt)
 			aliasFiles.push_back (optarg);
 			break;
 		default:
-			return Rts2DeviceDb::processOption (in_opt);
+			return rts2db::DeviceDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -251,7 +251,7 @@ int SelectorDev::processOption (int in_opt)
 int SelectorDev::reloadConfig ()
 {
 	int ret;
-	ret = Rts2DeviceDb::reloadConfig ();
+	ret = rts2db::DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 
@@ -290,7 +290,7 @@ int SelectorDev::reloadConfig ()
 
 int SelectorDev::init ()
 {
-	int ret = Rts2DeviceDb::init ();
+	int ret = rts2db::DeviceDb::init ();
 	if (ret)
 		return ret;
 
@@ -338,7 +338,7 @@ int SelectorDev::idle ()
 			sendValueAll (simulTime);
 		}
 	}
-	return Rts2DeviceDb::idle ();
+	return rts2db::DeviceDb::idle ();
 }
 
 rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, int other_device_type)
@@ -349,13 +349,13 @@ rts2core::DevClient *SelectorDev::createOtherType (rts2core::Connection * conn, 
 		case DEVICE_TYPE_MOUNT:
 			return new Rts2DevClientTelescopeSel (conn);
 		case DEVICE_TYPE_EXECUTOR:
-			ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
+			ret = rts2db::DeviceDb::createOtherType (conn, other_device_type);
 			updateNext ();
 			if (next_id->getValueInteger () > 0 && selEnabled->getValueBool ())
 				conn->queCommand (new rts2core::CommandExecNext (this, next_id->getValueInteger ()));
 			return ret;
 		default:
-			return Rts2DeviceDb::createOtherType (conn, other_device_type);
+			return rts2db::DeviceDb::createOtherType (conn, other_device_type);
 	}
 }
 
@@ -383,7 +383,7 @@ void SelectorDev::postEvent (rts2core::Event * event)
 			}
 			break;
 	}
-	Rts2DeviceDb::postEvent (event);
+	rts2db::DeviceDb::postEvent (event);
 }
 
 int SelectorDev::selectNext ()
@@ -527,7 +527,7 @@ int SelectorDev::setValue (rts2core::Value * old_value, rts2core::Value * new_va
 		return 0;
 	}
 
-	return Rts2DeviceDb::setValue (old_value, new_value);
+	return rts2db::DeviceDb::setValue (old_value, new_value);
 }
 
 void SelectorDev::valueChanged (rts2core::Value *value)
@@ -545,7 +545,7 @@ void SelectorDev::valueChanged (rts2core::Value *value)
 			}
 		}
 	}
-	Rts2DeviceDb::valueChanged (value);
+	rts2db::DeviceDb::valueChanged (value);
 }
 
 rts2plan::Queues::iterator SelectorDev::findQueue (const char *name)
@@ -708,7 +708,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 	}
 	else
 	{
-		return Rts2DeviceDb::commandAuthorized (conn);
+		return rts2db::DeviceDb::commandAuthorized (conn);
 	}
 }
 
@@ -740,7 +740,7 @@ void SelectorDev::changeMasterState (int old_state, int new_state)
 			updateSelectLength ();
 	}
 	updateNext ();
-	Rts2DeviceDb::changeMasterState (old_state, new_state);
+	rts2db::DeviceDb::changeMasterState (old_state, new_state);
 }
 
 #ifdef HAVE_SYS_INOTIFY_H

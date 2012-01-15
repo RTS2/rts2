@@ -59,7 +59,7 @@ int ConnClient::init ()
 
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor for host " << address->getHost ()
+		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor for host " << address->getHost ()
 			<< ": " << gai_strerror (ret) << sendLog;
 		return -1;
 	}
@@ -88,7 +88,7 @@ int ConnClient::init ()
 	return 0;
 }
 
-void ConnClient::setAddress (Rts2Address * in_addr)
+void ConnClient::setAddress (NetworkAddress * in_addr)
 {
 	setConnState (CONN_CONNECTING);
 	address = in_addr;
@@ -119,7 +119,7 @@ ConnClient * Client::createClientConnection (int _centrald_num, char *_deviceNam
 	return new ConnClient (this, _centrald_num, _deviceName);
 }
 
-Connection * Client::createClientConnection (Rts2Address * in_addr)
+Connection * Client::createClientConnection (NetworkAddress * in_addr)
 {
 	ConnClient *conn;
 	conn = createClientConnection (in_addr->getCentraldNum (), in_addr->getName ());
@@ -127,7 +127,7 @@ Connection * Client::createClientConnection (Rts2Address * in_addr)
 	return conn;
 }
 
-int Client::willConnect (Rts2Address * in_addr)
+int Client::willConnect (NetworkAddress * in_addr)
 {
 	return 1;
 }

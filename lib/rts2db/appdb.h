@@ -27,32 +27,35 @@
 #include "../rts2/rts2cliapp.h"
 #include "timestamp.h"
 
+namespace rts2db {
+
 // for SQL tables display on console..
 //
-class Rts2SqlQuery
+class SqlQuery
 {
-	private:
-		std::list < Rts2SqlColumn * >columns;
-		char *where;
-		char *sql;
-		char *from;
-		void displayMinusPlusLine ();
 	public:
-		Rts2SqlQuery (const char *in_from);
-		virtual ~ Rts2SqlQuery (void);
+		SqlQuery (const char *in_from);
+		virtual ~ SqlQuery (void);
 
 		void addColumn (Rts2SqlColumn * add_column);
 		void addColumn (const char *in_sql, const char *in_name, int in_order = UNORDER);
 		void addWhere (const char *in_where);
 		char *genSql ();
 		void display ();
+
+	private:
+		std::list < Rts2SqlColumn * >columns;
+		char *where;
+		char *sql;
+		char *from;
+		void displayMinusPlusLine ();
 };
 
-class Rts2AppDb:public Rts2CliApp
+class AppDb:public Rts2CliApp
 {
 	public:
-		Rts2AppDb (int argc, char **argv);
-		virtual ~ Rts2AppDb (void);
+		AppDb (int argc, char **argv);
+		virtual ~ AppDb (void);
 
 		virtual int init ();
 
@@ -71,4 +74,6 @@ class Rts2AppDb:public Rts2CliApp
 
 		int initDB ();
 };
+
+}
 #endif							 /* !__RTS2_APPDB__ */

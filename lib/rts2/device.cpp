@@ -96,7 +96,7 @@ int DevConnection::init ()
 
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor for host " << address->getHost () << ":"
+		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor for host " << address->getHost () << ":"
 			<< gai_strerror (ret) << sendLog;
 		return -1;
 	}
@@ -157,7 +157,7 @@ int DevConnection::authorizationFailed ()
 	return 0;
 }
 
-void DevConnection::setDeviceAddress (Rts2Address * in_addr)
+void DevConnection::setDeviceAddress (NetworkAddress * in_addr)
 {
 	address = in_addr;
 	setConnState (CONN_CONNECTING);
@@ -630,7 +630,7 @@ int Device::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	return Daemon::setValue (old_value, new_value);
 }
 
-Connection * Device::createClientConnection (Rts2Address * in_addres)
+Connection * Device::createClientConnection (NetworkAddress * in_addres)
 {
 	DevConnection *conn;
 	if (in_addres->isAddress (device_name))

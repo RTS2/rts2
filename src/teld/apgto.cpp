@@ -199,7 +199,7 @@ namespace rts2teld
     virtual int initValues ();
     virtual int info ();
     virtual int idle ();
-    virtual int willConnect (Rts2Address * in_addr);
+    virtual int willConnect (rts2core::NetworkAddress * in_addr);
 
     virtual int setTo (double set_ra, double set_dec);
     virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
@@ -2406,7 +2406,7 @@ APGTO::idle ()
   return Telescope::idle() ;
 }
 int 
-APGTO::willConnect (Rts2Address * in_addr)
+APGTO::willConnect (rts2core::NetworkAddress * in_addr)
 {
   if (ccdDevice && in_addr->getType () == DEVICE_TYPE_CCD) {
     logStream (MESSAGE_INFO) << "APGTO::willConnect to DEVICE_TYPE_CCD: "<< ccdDevice << sendLog;

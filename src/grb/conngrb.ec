@@ -1320,7 +1320,7 @@ int ConnGrb::init_call ()
 	ret = getaddrinfo (gcn_hostname, _os.str ().c_str (), &hints, &info);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: " << gai_strerror (ret) << sendLog;
+		logStream (MESSAGE_ERROR) << "NetworkAddress::getAddress getaddrinfor: " << gai_strerror (ret) << sendLog;
 		freeaddrinfo (info);
 		return -1;
 	}

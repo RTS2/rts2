@@ -46,7 +46,7 @@ int ElementWaitFor::idle ()
 	rts2core::Value *val = script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
 	if (!val)
 	{
-		Rts2Address *add = script->getMaster ()->findAddress (deviceName.c_str ());
+		NetworkAddress *add = script->getMaster ()->findAddress (deviceName.c_str ());
 		// we will get device..
 		if (add != NULL)
 			return NEXT_COMMAND_KEEP;

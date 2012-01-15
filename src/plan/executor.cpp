@@ -19,7 +19,7 @@
  */
 
 #include "valuearray.h"
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2script/executorque.h"
 #include "../../lib/rts2script/execcli.h"
@@ -38,7 +38,7 @@ namespace rts2plan
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Executor:public Rts2DeviceDb
+class Executor:public rts2db::DeviceDb
 {
 	public:
 		Executor (int argc, char **argv);
@@ -139,7 +139,7 @@ class Executor:public Rts2DeviceDb
 
 using namespace rts2plan;
 
-Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC"),notifyConn (this)
+Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC"),notifyConn (this)
 {
 	currentTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts", false);
@@ -221,14 +221,14 @@ int Executor::processOption (int in_opt)
 			defaultAutoLoop->setValueBool (false);
 			break;
 		default:
-			return Rts2DeviceDb::processOption (in_opt);
+			return rts2db::DeviceDb::processOption (in_opt);
 	}
 	return 0;
 }
 
 int Executor::init ()
 {
-	int ret = Rts2DeviceDb::init ();
+	int ret = rts2db::DeviceDb::init ();
 	if (ret)
 		return ret;
 	ret = notifyConn.init ();
@@ -245,7 +245,7 @@ int Executor::reloadConfig ()
 	int ret;
 	double f;
 	Configuration *config;
-	ret = Rts2DeviceDb::reloadConfig ();
+	ret = rts2db::DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 	config = Configuration::instance ();
@@ -272,7 +272,7 @@ int Executor::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	{
 		return setNext (newValue->getValueInteger ()) ? 0 : -2;
 	}
-	return Rts2DeviceDb::setValue (oldValue, newValue);
+	return rts2db::DeviceDb::setValue (oldValue, newValue);
 }
 
 rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, int other_device_type)
@@ -291,7 +291,7 @@ rts2core::DevClient * Executor::createOtherType (rts2core::Connection * conn, in
 		case DEVICE_TYPE_SENSOR:
 			return new rts2image::DevClientWriteImage (conn);
 		default:
-			return Rts2DeviceDb::createOtherType (conn, other_device_type);
+			return rts2db::DeviceDb::createOtherType (conn, other_device_type);
 	}
 }
 
@@ -495,13 +495,13 @@ int Executor::info ()
 		next_name->setValueCharArr (getActiveQueue ()->front ().target->getTargetName ());
 	}
 
-	return Rts2DeviceDb::info ();
+	return rts2db::DeviceDb::info ();
 }
 
 void Executor::changeMasterState (int old_state, int new_state)
 {
 	if (ignoreDay->getValueBool () == true)
-		return Rts2DeviceDb::changeMasterState (old_state, new_state);
+		return rts2db::DeviceDb::changeMasterState (old_state, new_state);
 
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -548,7 +548,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 			stop ();
 			break;
 	}
-	return Rts2DeviceDb::changeMasterState (old_state, new_state);
+	return rts2db::DeviceDb::changeMasterState (old_state, new_state);
 }
 
 int Executor::setNext (int nextId, const char *queue)
@@ -1013,7 +1013,7 @@ int Executor::commandAuthorized (rts2core::Connection * conn)
 		image.saveImage ();
 		return 0;
 	}
-	return Rts2DeviceDb::commandAuthorized (conn);
+	return rts2db::DeviceDb::commandAuthorized (conn);
 }
 
 int main (int argc, char **argv)

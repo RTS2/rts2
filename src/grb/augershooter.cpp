@@ -25,7 +25,7 @@ using namespace rts2grbd;
 
 #define OPT_TRIGERING     OPT_LOCAL + 707
 
-DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
+DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
 	shootercnn = NULL;
 	port = 1240;
@@ -180,14 +180,14 @@ int DevAugerShooter::processOption (int in_opt)
 			triggeringEnabled->setValueBool (false);
 			break;
 		default:
-			return Rts2DeviceDb::processOption (in_opt);
+			return DeviceDb::processOption (in_opt);
 	}
 	return 0;
 }
 
 int DevAugerShooter::reloadConfig ()
 {
-	int ret = Rts2DeviceDb::reloadConfig ();
+	int ret = DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 
@@ -202,7 +202,7 @@ int DevAugerShooter::reloadConfig ()
 int DevAugerShooter::init ()
 {
 	int ret;
-	ret = Rts2DeviceDb::init ();
+	ret = DeviceDb::init ();
 	if (ret)
 		return ret;
 

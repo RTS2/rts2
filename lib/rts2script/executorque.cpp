@@ -444,7 +444,7 @@ bool TargetQueue::frontTimeExpires (double now)
 	return !iter->notExpired (now);
 }
 
-ExecutorQueue::ExecutorQueue (Rts2DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, bool read_only):TargetQueue (_master, _observer)
+ExecutorQueue::ExecutorQueue (rts2db::DeviceDb *_master, const char *name, struct ln_lnlat_posn **_observer, bool read_only):TargetQueue (_master, _observer)
 {
 	std::string sn (name);
 	currentTarget = NULL;

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/plan.h"
 #include "../../lib/rts2db/planset.h"
 #include "libnova_cpp.h"
@@ -38,7 +38,7 @@
 #define OPT_DUMP_TARGET   OPT_LOCAL + 707
 #define OPT_FIXED_COPY    OPT_LOCAL + 708
 
-class Rts2PlanApp:public Rts2AppDb
+class Rts2PlanApp:public rts2db::AppDb
 {
 	public:
 		Rts2PlanApp (int in_argc, char **in_argv);
@@ -67,7 +67,7 @@ class Rts2PlanApp:public Rts2AppDb
 		std::vector <const char *> args;
 };
 
-Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	JD = rts2_nan ("f");
 
@@ -412,7 +412,7 @@ int Rts2PlanApp::processOption (int in_opt)
 			operation = OP_DUMP_TARGET;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -420,7 +420,7 @@ int Rts2PlanApp::processOption (int in_opt)
 int Rts2PlanApp::processArgs (const char *arg)
 {
 	if (operation != OP_ADD && operation != OP_DUMP_TARGET && operation != OP_COPY && operation != OP_DELETE && operation != OP_FIXED_COPY)
-		return Rts2AppDb::processArgs (arg);
+		return rts2db::AppDb::processArgs (arg);
 	args.push_back (arg);
 	return 0;
 }

@@ -21,7 +21,7 @@
 #include "../../lib/rts2script/elementtarget.h"
 #include "../../lib/rts2db/constraints.h"
 #include "../../lib/rts2db/observation.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2db/sqlerror.h"
 #include "../../lib/rts2db/target.h"
 #include "../../lib/rts2db/targetset.h"
@@ -93,7 +93,7 @@ class CamScript
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class TargetApp:public Rts2AppDb
+class TargetApp:public rts2db::AppDb
 {
 	public:
 		TargetApp (int argc, char **argv);
@@ -147,7 +147,7 @@ class TargetApp:public Rts2AppDb
 		bool confirmOp;
 };
 
-TargetApp::TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+TargetApp::TargetApp (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	op = OP_NONE;
 	new_priority = rts2_nan ("f");
@@ -351,7 +351,7 @@ int TargetApp::processOption (int in_opt)
 			confirmOp = false;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return AppDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -366,7 +366,7 @@ int TargetApp::init ()
 {
 	int ret;
 
-	ret = Rts2AppDb::init ();
+	ret = AppDb::init ();
 	if (ret)
 		return ret;
 

@@ -55,7 +55,7 @@ class Scriptor:public rts2core::Device, public ScriptInterface
 	protected:
 		virtual int init ();
 		virtual int processOption (int in_opt);
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (NetworkAddress * in_addr);
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection *conn, int other_device_type);
 		virtual void deviceReady (rts2core::Connection * conn);
 	public:
@@ -121,7 +121,7 @@ int Scriptor::processOption (int in_opt)
 	return 0;
 }
 
-int Scriptor::willConnect (Rts2Address * in_addr)
+int Scriptor::willConnect (NetworkAddress * in_addr)
 {
 	if (in_addr->getType () < getDeviceType ())
 		return 1;

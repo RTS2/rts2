@@ -73,10 +73,12 @@ typedef enum
 	CONN_AUTH_FAILED
 } conn_state_t;
 
-class Rts2Address;
 
 namespace rts2core
 {
+
+class NetworkAddress;
+
 class Event;
 
 class Connection;
@@ -413,7 +415,7 @@ class Connection:public Object
 		 *
 		 * @param in_addr New device address.
 		 */
-		virtual void addressUpdated (Rts2Address * in_addr) {}
+		virtual void addressUpdated (NetworkAddress * in_addr) {}
 
 		virtual void setConnState (conn_state_t new_conn_state);
 

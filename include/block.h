@@ -41,7 +41,7 @@
 #include "event.h"
 #include "object.h"
 #include "connection.h"
-#include "rts2address.h"
+#include "networkaddress.h"
 #include "connuser.h"
 #include "devclient.h"
 #include "value.h"
@@ -411,8 +411,8 @@ class Block: public rts2core::App
 		 */
 		bool someCentraldRunning ();
 
-		Rts2Address *findAddress (const char *blockName);
-		Rts2Address *findAddress (int centraldNum, const char *blockName);
+		NetworkAddress *findAddress (const char *blockName);
+		NetworkAddress *findAddress (int centraldNum, const char *blockName);
 
 		void addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
 
@@ -664,19 +664,19 @@ class Block: public rts2core::App
 
 	protected:
 
-		virtual Connection *createClientConnection (Rts2Address * in_addr) = 0;
+		virtual Connection *createClientConnection (NetworkAddress * in_addr) = 0;
 
 		virtual void childReturned (pid_t child_pid);
 
 		/**
 		 * Determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
 		 */
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (NetworkAddress * in_addr);
 
 		/***
 		 * Address list related functions.
 		 **/
-		virtual int addAddress (Rts2Address * in_addr);
+		virtual int addAddress (NetworkAddress * in_addr);
 
 		/**
 		 * Socket set containing descriptors which can be read.
@@ -805,7 +805,7 @@ class Block: public rts2core::App
 		// vector which holds connections which were recently added - idle loop will move them to connections
 		connections_t centraldConns_added;
 
-		std::list <Rts2Address *> blockAddress;
+		std::list <NetworkAddress *> blockAddress;
 		std::list <ConnUser * > blockUsers;
 
 		unsigned int masterState;

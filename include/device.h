@@ -50,7 +50,7 @@ class DevConnection:public Connection
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
 
-		virtual void setDeviceAddress (Rts2Address * in_addr);
+		virtual void setDeviceAddress (NetworkAddress * in_addr);
 		void setDeviceName (int _centrald_num, char *_name);
 
 		void setDeviceKey (int _centraldId, int _key);
@@ -62,7 +62,7 @@ class DevConnection:public Connection
 		virtual void connConnected ();
 	private:
 		// in case we know address of other side..
-		Rts2Address * address;
+		NetworkAddress * address;
 
 		Device *master;
 };
@@ -396,7 +396,7 @@ class Device:public Daemon
 		bool getNeedReload () { return getState () & DEVICE_NEED_RELOAD; }
 		void clearNeedReload () { maskState (DEVICE_NEED_RELOAD, 0, "reload cleared"); }
 
-		virtual Connection *createClientConnection (Rts2Address * in_addr);
+		virtual Connection *createClientConnection (NetworkAddress * in_addr);
 
 		/**
 		 * Loop through que values and tries to free as much of them as is possible.

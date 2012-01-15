@@ -79,7 +79,7 @@ class APGTO:public TelLX200 {
 	protected:
 		virtual int setValue (rts2core::Value * oldValue, rts2core::Value *newValue);
 
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 
 		virtual int applyCorrectionsFixed (double ra, double dec);
 		virtual void applyCorrections (double &tar_ra, double &tar_dec);
@@ -1204,7 +1204,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 	return TelLX200::setValue (oldValue, newValue);
 }
 
-int APGTO::willConnect (Rts2Address * in_addr)
+int APGTO::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (in_addr->isAddress (limitSwitchName))
 		return 1;

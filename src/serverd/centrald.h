@@ -198,7 +198,7 @@ class Rts2Centrald:public Daemon
 			return NULL;
 		}
 
-		virtual rts2core::Connection *createClientConnection (Rts2Address * in_addr)
+		virtual rts2core::Connection *createClientConnection (NetworkAddress * in_addr)
 		{
 			return NULL;
 		}

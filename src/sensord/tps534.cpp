@@ -56,7 +56,7 @@ class TPS534: public SensorWeather
 	public:
 		TPS534 (int in_argc, char **in_argv);
 		virtual ~TPS534 (void);
-                virtual int willConnect (Rts2Address * in_addr);
+                virtual int willConnect (rts2core::NetworkAddress * in_addr);
 };
 
 };
@@ -83,7 +83,7 @@ TPS534::processOption (int in_opt)
 	return 0;
 }
 int 
-TPS534::willConnect (Rts2Address * in_addr)
+TPS534::willConnect (rts2core::NetworkAddress * in_addr)
 {
     if (doorDevice && in_addr->getType () == DEVICE_TYPE_DOME) {
       logStream (MESSAGE_INFO) << "TPS534::willConnect to DEVICE_TYPE_DOME: "<< doorDevice << sendLog;

@@ -30,7 +30,7 @@
 #include <stdio.h>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #else
 #include "device.h"
 #include "configuration.h"
@@ -45,7 +45,7 @@ namespace rts2plan
  * @author Petr Kubanek <petr@kubanek.net>
  */
 #ifdef HAVE_PGSQL
-class ImageProc:public Rts2DeviceDb
+class ImageProc:public rts2db::DeviceDb
 #else
 class ImageProc:public rts2core::Device
 #endif
@@ -143,7 +143,7 @@ using namespace rts2plan;
 
 ImageProc::ImageProc (int _argc, char **_argv)
 #ifdef HAVE_PGSQL
-:Rts2DeviceDb (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
+:rts2db::DeviceDb (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #else
 :rts2core::Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
 #endif
@@ -212,7 +212,7 @@ int ImageProc::reloadConfig ()
 	
 	Configuration *config;
 #ifdef HAVE_PGSQL
-	ret = Rts2DeviceDb::reloadConfig ();
+	ret = rts2db::DeviceDb::reloadConfig ();
 	config = Configuration::instance ();
 #else
 	config = Configuration::instance ();
@@ -276,7 +276,7 @@ void ImageProc::postEvent (rts2core::Event * event)
 			break;
 	}
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::postEvent (event);
+	rts2db::DeviceDb::postEvent (event);
 #else
 	rts2core::Device::postEvent (event);
 #endif
@@ -293,7 +293,7 @@ int ImageProc::idle ()
 		changeRunning (newImage);
 	}
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::idle ();
+	return rts2db::DeviceDb::idle ();
 #else
 	return rts2core::Device::idle ();
 #endif
@@ -304,7 +304,7 @@ int ImageProc::info ()
 	queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
 	sendValueAll (queSize);
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::info ();
+	return rts2db::DeviceDb::info ();
 #else
 	return rts2core::Device::info ();
 #endif
@@ -354,7 +354,7 @@ void ImageProc::changeMasterState (int old_state, int new_state)
 	}
 	// start dark & flat processing
 #ifdef HAVE_PGSQL
-	Rts2DeviceDb::changeMasterState (old_state, new_state);
+	rts2db::DeviceDb::changeMasterState (old_state, new_state);
 #else
 	rts2core::Device::changeMasterState (old_state, new_state);
 #endif
@@ -465,7 +465,7 @@ int ImageProc::deleteConnection (rts2core::Connection * conn)
 		}
 	}
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::deleteConnection (conn);
+	return rts2db::DeviceDb::deleteConnection (conn);
 #else
 	return rts2core::Device::deleteConnection (conn);
 #endif
@@ -610,7 +610,7 @@ int ImageProc::commandAuthorized (rts2core::Connection * conn)
 		return queObs (obsId);
 	}
 #ifdef HAVE_PGSQL
-	return Rts2DeviceDb::commandAuthorized (conn);
+	return rts2db::DeviceDb::commandAuthorized (conn);
 #else
 	return rts2core::Device::commandAuthorized (conn);
 #endif

@@ -17,21 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2devicedb.h"
+#include "devicedb.h"
 #include "configuration.h"
 
 #define OPT_DEBUGDB    OPT_LOCAL + 201
 
+using namespace rts2db;
+
 EXEC SQL include sqlca;
 
-int Rts2DeviceDb::willConnect (Rts2Address * in_addr)
+int DeviceDb::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	if (in_addr->getType () < getDeviceType () || (in_addr->getType () == getDeviceType () && strcmp (in_addr->getName (), getDeviceName ()) < 0))
 		return 1;
 	return 0;
 }
 
-Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):rts2core::Device (argc, argv, in_device_type, default_name)
+DeviceDb::DeviceDb (int argc, char **argv, int in_device_type, const char *default_name):rts2core::Device (argc, argv, in_device_type, default_name)
 {
 	connectString = NULL;		 // defualt DB
 	configFile = NULL;
@@ -41,14 +43,14 @@ Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const cha
 	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
-Rts2DeviceDb::~Rts2DeviceDb (void)
+DeviceDb::~DeviceDb (void)
 {
 	EXEC SQL DISCONNECT;
 	if (connectString)
 		delete connectString;
 }
 
-void Rts2DeviceDb::postEvent (rts2core::Event *event)
+void DeviceDb::postEvent (rts2core::Event *event)
 {
 	switch (event->getType ())
 	{
@@ -64,7 +66,7 @@ void Rts2DeviceDb::postEvent (rts2core::Event *event)
 	rts2core::Device::postEvent (event);
 }
 
-int Rts2DeviceDb::processOption (int in_opt)
+int DeviceDb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -84,7 +86,7 @@ int Rts2DeviceDb::processOption (int in_opt)
 	return 0;
 }
 
-int Rts2DeviceDb::reloadConfig ()
+int DeviceDb::reloadConfig ()
 {
 	rts2core::Configuration *config;
 
@@ -94,7 +96,7 @@ int Rts2DeviceDb::reloadConfig ()
 	return config->loadFile (configFile);
 }
 
-int Rts2DeviceDb::initDB ()
+int DeviceDb::initDB ()
 {
 	int ret;
 	std::string cs;
@@ -170,7 +172,7 @@ int Rts2DeviceDb::initDB ()
 	return 0;
 }
 
-int Rts2DeviceDb::init ()
+int DeviceDb::init ()
 {
 	int ret;
 
@@ -182,14 +184,14 @@ int Rts2DeviceDb::init ()
 	return initDB ();
 }
 
-void Rts2DeviceDb::forkedInstance ()
+void DeviceDb::forkedInstance ()
 {
 	// dosn't work??
 	//  EXEC SQL DISCONNECT;
 	rts2core::Device::forkedInstance ();
 }
 
-void Rts2DeviceDb::signaledHUP ()
+void DeviceDb::signaledHUP ()
 {
 	reloadConfig();
 }

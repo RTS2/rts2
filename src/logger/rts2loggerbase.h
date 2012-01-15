@@ -137,7 +137,7 @@ class Rts2LoggerBase
 		int readDevices (std::istream & is);
 
 		Rts2LogValName *getLogVal (const char *name);
-		int willConnect (Rts2Address * in_addr);
+		int willConnect (rts2core::NetworkAddress * in_addr);
 	private:
 		std::list < Rts2LogValName > devicesNames;
 };

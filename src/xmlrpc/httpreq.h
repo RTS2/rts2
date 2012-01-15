@@ -25,7 +25,7 @@
 #ifdef HAVE_PGSQL
 #include "../../lib/rts2db/recvals.h"
 #include "../../lib/rts2db/records.h"
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "../../lib/rts2db/targetset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>

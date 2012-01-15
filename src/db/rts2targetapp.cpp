@@ -28,7 +28,7 @@
 
 using namespace rts2db;
 
-Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):AppDb (in_argc, in_argv)
 {
 	target = NULL;
 	obs = NULL;
@@ -88,7 +88,7 @@ int Rts2TargetApp::init ()
 {
 	int ret;
 
-	ret = Rts2AppDb::init ();
+	ret = AppDb::init ();
 	if (ret)
 		return ret;
 

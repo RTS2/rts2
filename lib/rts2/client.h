@@ -46,7 +46,7 @@ namespace rts2core
 class ConnClient:public Connection
 {
 	private:
-		Rts2Address * address;
+		NetworkAddress * address;
 
 	protected:
 		virtual void connConnected ();
@@ -56,7 +56,7 @@ class ConnClient:public Connection
 
 		virtual int init ();
 
-		virtual void setAddress (Rts2Address * in_addr);
+		virtual void setAddress (NetworkAddress * in_addr);
 
 		/**
 		 * Set client key.
@@ -129,8 +129,8 @@ class Client:public Block
 
 	protected:
 		virtual ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
-		virtual Connection *createClientConnection (Rts2Address * in_addr);
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual Connection *createClientConnection (NetworkAddress * in_addr);
+		virtual int willConnect (NetworkAddress * in_addr);
 
 		virtual int processOption (int in_opt);
 		virtual int init ();

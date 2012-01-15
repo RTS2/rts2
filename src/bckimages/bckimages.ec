@@ -18,7 +18,7 @@
  */
 
 #include "utilsfunc.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,16 +31,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2BckImageApp: public Rts2AppDb
+class Rts2BckImageApp: public rts2db::AppDb
 {
-	private:
-		int verbose;
-		int do_move;
-		double medium_size;
-		const char *epoch_name;
-
-		int new_med;
-		int old_med;
+	public:
+		Rts2BckImageApp (int argc, char **argv);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -52,8 +46,14 @@ class Rts2BckImageApp: public Rts2AppDb
 
 		virtual int doProcessing ();
 
-	public:
-		Rts2BckImageApp (int argc, char **argv);
+	private:
+		int verbose;
+		int do_move;
+		double medium_size;
+		const char *epoch_name;
+
+		int new_med;
+		int old_med;
 };
 
 struct move_files
@@ -62,8 +62,7 @@ struct move_files
 	char *new_path;
 };
 
-int
-Rts2BckImageApp::processOption (int in_opt)
+int Rts2BckImageApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -97,7 +96,7 @@ Rts2BckImageApp::processOption (int in_opt)
 			verbose++;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }
@@ -142,12 +141,10 @@ Rts2BckImageApp::processArgs (const char *arg)
 	return 0;
 }
 
-
-int
-Rts2BckImageApp::init ()
+int Rts2BckImageApp::init ()
 {
 	int ret;
-	ret = Rts2AppDb::init ();
+	ret = rts2db::AppDb::init ();
 	if (ret)
 		return ret;
 
@@ -350,9 +347,7 @@ int Rts2BckImageApp::doProcessing ()
 	return 0;
 }
 
-
-Rts2BckImageApp::Rts2BckImageApp (int argc, char **argv)
-:Rts2AppDb (argc, argv)
+Rts2BckImageApp::Rts2BckImageApp (int argc, char **argv):rts2db::AppDb (argc, argv)
 {
 	verbose = 0;
 	do_move = 1;
@@ -368,9 +363,7 @@ Rts2BckImageApp::Rts2BckImageApp (int argc, char **argv)
 	addOption ('i', NULL, 1, "don't do any move, just print what will be done");
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2BckImageApp app = Rts2BckImageApp (argc, argv);
 	return app.run ();

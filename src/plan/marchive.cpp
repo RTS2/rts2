@@ -1,4 +1,4 @@
-#include "../../lib/rts2fits/rts2appdbimage.h"
+#include "../../lib/rts2fits/appdbimage.h"
 #include "../../lib/rts2fits/imagedb.h"
 #include "configuration.h"
 
@@ -6,10 +6,10 @@
 
 #include <list>
 
-class Rts2MoveArchive:public Rts2AppDbImage
+class Rts2MoveArchive:public rts2image::AppDbImage
 {
 	public:
-		Rts2MoveArchive (int in_argc, char **in_argv):Rts2AppDbImage (in_argc, in_argv, true)
+		Rts2MoveArchive (int in_argc, char **in_argv):rts2image::AppDbImage (in_argc, in_argv, true)
 		{
 			rts2core::Configuration::instance ();
 		}

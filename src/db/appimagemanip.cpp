@@ -21,7 +21,7 @@
 #include <strings.h>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2fits/rts2appdbimage.h"
+#include "../../lib/rts2fits/appdbimage.h"
 #else
 #include "../../lib/rts2fits/appimage.h"
 #endif							 /* HAVE_PGSQL */
@@ -72,7 +72,7 @@ namespace rts2image
 {
 
 #ifdef HAVE_PGSQL
-class AppImage:public Rts2AppDbImage
+class AppImage:public AppDbImage
 #else
 class AppImage:public rts2image::AppImageCore
 #endif							 /* HAVE_PGSQL */
@@ -416,7 +416,7 @@ int AppImage::processOption (int in_opt)
 		default:
 
 		#ifdef HAVE_PGSQL
-			return Rts2AppDbImage::processOption (in_opt);
+			return AppDbImage::processOption (in_opt);
 		#else
 			return rts2image::AppImageCore::processOption (in_opt);
 		#endif /* HAVE_PGSQL */
@@ -428,7 +428,7 @@ int AppImage::processOption (int in_opt)
 int AppImage::init ()
 {
 #ifdef HAVE_PGSQL
-	int ret = Rts2AppDbImage::init ();
+	int ret = AppDbImage::init ();
 #else
 	int ret = rts2image::AppImageCore::init ();
 #endif /* HAVE_PGSQL */
@@ -508,7 +508,7 @@ void AppImage::usage ()
 
 AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
 #ifdef HAVE_PGSQL
-Rts2AppDbImage (in_argc, in_argv, in_readOnly)
+AppDbImage (in_argc, in_argv, in_readOnly)
 #else
 rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 #endif

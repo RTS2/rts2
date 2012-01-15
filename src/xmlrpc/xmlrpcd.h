@@ -26,7 +26,7 @@
 #include <deque>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #else
 #include "configuration.h"
 #include "device.h"
@@ -281,7 +281,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
  * @addgroup XMLRPC
  */
 #ifdef HAVE_PGSQL
-class XmlRpcd:public Rts2DeviceDb, XmlRpc::XmlRpcServer
+class XmlRpcd:public rts2db::DeviceDb, XmlRpc::XmlRpcServer
 #else
 class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 #endif
@@ -367,7 +367,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 	protected:
 		virtual int idle ();
 #ifndef HAVE_PGSQL
-		virtual int willConnect (Rts2Address * _addr);
+		virtual int willConnect (NetworkAddress * _addr);
 #endif
 		virtual int processOption (int in_opt);
 		virtual int init ();

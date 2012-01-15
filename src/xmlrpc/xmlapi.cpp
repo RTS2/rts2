@@ -28,7 +28,7 @@
 #include "../../lib/rts2db/recvals.h"
 #include "../../lib/rts2db/records.h"
 #include "../../lib/rts2db/recordsavg.h"
-#include "../../lib/rts2db/rts2devicedb.h"
+#include "../../lib/rts2db/devicedb.h"
 #include "../../lib/rts2db/imageset.h"
 #include "../../lib/rts2db/observationset.h"
 #include "../../lib/rts2db/messagedb.h"

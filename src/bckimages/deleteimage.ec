@@ -18,29 +18,30 @@
  */
 
 #include "utilsfunc.h"
-#include "../../lib/rts2db/rts2appdb.h"
+#include "../../lib/rts2db/appdb.h"
 #include "../../lib/rts2fits/imagedb.h"
 
 #include <iostream>
 #include <list>
 
-class Rts2DeleteApp: public Rts2AppDb
+class Rts2DeleteApp: public rts2db::AppDb
 {
-	private:
-		int findImages ();
-		int deleteImage (const char *in_name);
-
-		int dont_delete;
-		std::list <const char *> imageNames;
+	public:
+		Rts2DeleteApp (int argc, char **argv);
+		virtual ~Rts2DeleteApp (void);
 
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *in_arg);
 
 		virtual int doProcessing ();
-	public:
-		Rts2DeleteApp (int argc, char **argv);
-		virtual ~Rts2DeleteApp (void);
+
+	private:
+		int findImages ();
+		int deleteImage (const char *in_name);
+
+		int dont_delete;
+		std::list <const char *> imageNames;
 };
 
 int Rts2DeleteApp::findImages ()
@@ -76,7 +77,7 @@ int Rts2DeleteApp::deleteImage (const char *in_name)
 	return ret;
 }
 
-Rts2DeleteApp::Rts2DeleteApp (int argc, char **argv) : Rts2AppDb (argc, argv)
+Rts2DeleteApp::Rts2DeleteApp (int argc, char **argv) : rts2db::AppDb (argc, argv)
 {
 	addOption ('n', "notmod", 1, "don't delete anything, just show what will be done");
 	dont_delete = 0;
@@ -95,7 +96,7 @@ int Rts2DeleteApp::processOption (int in_opt)
 			dont_delete = 1;
 			break;
 		default:
-			return Rts2AppDb::processOption (in_opt);
+			return rts2db::AppDb::processOption (in_opt);
 	}
 	return 0;
 }

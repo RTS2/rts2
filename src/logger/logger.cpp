@@ -29,7 +29,7 @@ class Rts2Logger:public rts2core::Client, public Rts2LoggerBase
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int willConnect (Rts2Address * in_addr);
+		virtual int willConnect (rts2core::NetworkAddress * in_addr);
 	private:
 		std::istream * inputStream;
 };
@@ -70,7 +70,7 @@ int Rts2Logger::init ()
 	return ret;
 }
 
-int Rts2Logger::willConnect (Rts2Address * in_addr)
+int Rts2Logger::willConnect (rts2core::NetworkAddress * in_addr)
 {
 	return Rts2LoggerBase::willConnect (in_addr);
 }

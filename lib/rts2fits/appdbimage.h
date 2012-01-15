@@ -1,26 +1,22 @@
 #ifndef __RTS2_APP_DB_IMAGE__
 #define __RTS2_APP_DB_IMAGE__
 
-#include "../rts2db/rts2appdb.h"
+#include "../rts2db/appdb.h"
 #include "imagedb.h"
 
 #include <list>
 
-class Rts2AppDbImage:public Rts2AppDb
+namespace rts2image
 {
-	protected:
-		std::list < const char *>imageNames;
-		bool readOnly;
-		virtual int processImage (rts2image::ImageDb * image)
-		{
-			return 0;
-		}
+
+class AppDbImage:public rts2db::AppDb
+{
 	public:
-		Rts2AppDbImage (int in_argc, char **in_argv, bool in_readOnly):Rts2AppDb (in_argc, in_argv)
+		AppDbImage (int in_argc, char **in_argv, bool in_readOnly):rts2db::AppDb (in_argc, in_argv)
 		{
 			readOnly = in_readOnly;
 		}
-		virtual ~ Rts2AppDbImage (void)
+		virtual ~ AppDbImage (void)
 		{
 			imageNames.clear ();
 		}
@@ -56,5 +52,15 @@ class Rts2AppDbImage:public Rts2AppDb
 			}
 			return ret;
 		}
+
+	protected:
+		std::list < const char *>imageNames;
+		bool readOnly;
+		virtual int processImage (rts2image::ImageDb * image)
+		{
+			return 0;
+		}
 };
+
+}
 #endif							 /* !__RTS2_APP_DB_IMAGE__ */
