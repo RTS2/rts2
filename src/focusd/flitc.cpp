@@ -49,7 +49,7 @@ class Fli:public Focusd
 		virtual int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
-                virtual int willConnect (NetworkAddress * in_addr);
+                virtual int willConnect (rts2core::NetworkAddress * in_addr);
 		virtual int isFocusing ();
 		virtual bool isAtStartPosition ();
 
@@ -197,7 +197,7 @@ int Fli::processOption (int in_opt)
 	}
 	return 0;
 }
-int Fli::willConnect (NetworkAddress * in_addr)
+int Fli::willConnect (rts2core::NetworkAddress * in_addr)
 {
     if (meteoDevice && in_addr->getType () == DEVICE_TYPE_SENSOR) {
       logStream (MESSAGE_DEBUG) << "FLI::willConnect to DEVICE_TYPE_SENSOR: "<< meteoDevice << ", variable: "<< meteoVariable<< sendLog;
