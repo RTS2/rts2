@@ -24,8 +24,6 @@
 #include "block.h"
 #include "value.h"
 
-class Rts2ServerState;
-
 namespace rts2core
 {
 class Command;
@@ -67,7 +65,7 @@ class DevClient:public Object
 		 */
 		virtual void fullDataReceived (int data_conn, DataChannels *data);
 
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 
 		Connection *getConnection () { return connection; }
 
@@ -148,7 +146,7 @@ class DevClientCamera:public DevClient
 		 * ExposureFailed will get called even when we faild during readout
 		 */
 		virtual void exposureFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 
 		virtual void filterOK () {}
 		virtual void filterFailed (int status) {}
@@ -177,7 +175,7 @@ class DevClientTelescope:public DevClient
 		{
 			moveWasCorrecting = false;
 		}
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 		virtual void postEvent (Event * event);
 };
 
@@ -196,7 +194,7 @@ class DevClientCupola:public DevClientDome
 		DevClientCupola (Connection * in_connection);
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 };
 
 class DevClientMirror:public DevClient
@@ -208,7 +206,7 @@ class DevClientMirror:public DevClient
 		DevClientMirror (Connection * in_connection);
 		virtual ~ DevClientMirror (void);
 		virtual void moveFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 };
 
 class DevClientFocus:public DevClient
@@ -220,7 +218,7 @@ class DevClientFocus:public DevClient
 		DevClientFocus (Connection * in_connection);
 		virtual ~ DevClientFocus (void);
 		virtual void focusingFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 };
 
 class DevClientPhot:public DevClient
@@ -239,7 +237,7 @@ class DevClientPhot:public DevClient
 		virtual ~ DevClientPhot (void);
 		virtual void integrationFailed (int status);
 		virtual void filterMoveFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 
 		virtual void filterOK () {}
 
@@ -257,7 +255,7 @@ class DevClientFilter:public DevClient
 		DevClientFilter (Connection * in_connection);
 		virtual ~ DevClientFilter (void);
 		virtual void filterMoveFailed (int status);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 
 		virtual void filterOK () {}
 };
@@ -274,7 +272,7 @@ class DevClientExecutor:public DevClient
 		virtual void lastReadout ();
 	public:
 		DevClientExecutor (Connection * in_connection);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (ServerState * state);
 };
 
 class DevClientSelector:public DevClient

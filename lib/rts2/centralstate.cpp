@@ -20,10 +20,11 @@
 #include <sstream>
 #include "status.h"
 
-#include "rts2centralstate.h"
+#include "centralstate.h"
 
-const char *
-Rts2CentralState::getStringShort (int _state)
+using namespace rts2core;
+
+const char * CentralState::getStringShort (int _state)
 {
 	switch (_state & SERVERD_STATUS_MASK)
 	{
@@ -44,7 +45,7 @@ Rts2CentralState::getStringShort (int _state)
 	return "unknow";
 }
 
-std::string Rts2CentralState::getString (int _state)
+std::string CentralState::getString (int _state)
 {
 	std::ostringstream os;
 	// check for weather
@@ -83,11 +84,4 @@ std::string Rts2CentralState::getString (int _state)
 	if (_state & BOP_TEL_MOVE)
 		os << ", block telescope move";
 	return os.str ();
-}
-
-
-std::ostream & operator << (std::ostream & _os, Rts2CentralState c_state)
-{
-	_os << c_state.getStringShort ();
-	return _os;
 }

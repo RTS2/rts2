@@ -20,8 +20,8 @@
 #include "centrald.h"
 #include "libnova_cpp.h"
 #include "command.h"
-#include "../../lib/rts2/rts2centralstate.h"
 #include "timestamp.h"
+#include "centralstate.h"
 
 void Rts2ConnCentrald::setState (int in_value, char *msg)
 {
@@ -602,8 +602,8 @@ void Rts2Centrald::stateChanged (int new_state, int old_state, const char *descr
 	Daemon::stateChanged (new_state, old_state, description, commandedConn);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
 	{
-		logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
-			<< " to " << Rts2CentralState::getString (getState ())
+		logStream (MESSAGE_INFO) << "State changed from " << rts2core::CentralState::getString (old_state)
+			<< " to " << rts2core::CentralState::getString (getState ())
 			<< " description " << description
 			<< sendLog;
 		sendStatusMessage (getState (), description);
@@ -640,7 +640,7 @@ rts2core::Connection * Rts2Centrald::getConnection (int conn_num)
 
 int Rts2Centrald::changeState (int new_state, const char *user)
 {
-	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
+	logStream (MESSAGE_INFO) << "State switched to " << rts2core::CentralState::getString (new_state) << " by " <<
 		user << sendLog;
 	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;

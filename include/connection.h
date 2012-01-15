@@ -34,9 +34,9 @@
 #include <status.h>
 
 #include "error.h"
-#include "rts2data.h"
+#include "data.h"
 #include "object.h"
-#include "rts2serverstate.h"
+#include "serverstate.h"
 #include "message.h"
 #include "logstream.h"
 #include "valuelist.h"
@@ -111,7 +111,7 @@ class ConnError: public Error
  * handles various TCP/IP issues.  Connection is primary network connection,
  * but there are descendand classes which holds forked instance output.
  *
- * Connection is used primarly in @see rts2core::Block, which holds list of connections
+ * Connection is used primarly in @see Block, which holds list of connections
  * and provide function to manage them.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -121,16 +121,16 @@ class ConnError: public Error
 class Connection:public Object
 {
 	public:
-		Connection (rts2core::Block * in_master);
-		Connection (int in_sock, rts2core::Block * in_master);
+		Connection (Block * in_master);
+		Connection (int in_sock, Block * in_master);
 		virtual ~ Connection (void);
 
-		virtual void postEvent (rts2core::Event * event);
+		virtual void postEvent (Event * event);
 
 		/**
 		 * Add to read/write/exception sets sockets identifiers which
 		 * belong to current connection. Those sets are used in 
-		 * main select call of rts2core::Block.
+		 * main select call of Block.
 		 *
 		 * @param readset   Set of sockets which will be checked for new data.
 		 * @param writeset  Set of sockets which will be checked for possibility to write new data.
@@ -185,7 +185,7 @@ class Connection:public Object
 		std::string getCameraChipState (int chipN);
 		std::string getStateString ();
 		virtual int init () { return -1; }
-		void postMaster (rts2core::Event * event);
+		void postMaster (Event * event);
 		virtual int idle ();
 
 		virtual void endConnection () { connectionError (-1); }
@@ -331,7 +331,7 @@ class Connection:public Object
 		 *
 		 * @callergraph
 		 */
-		void queCommand (rts2core::Command * cmd, int notBop, Object * originator = NULL);
+		void queCommand (Command * cmd, int notBop, Object * originator = NULL);
 
 		/**
 		 * Que command on connection.
@@ -342,7 +342,7 @@ class Connection:public Object
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queCommand (rts2core::Command * cmd);
+		void queCommand (Command * cmd);
 
 		/**
 		 * Send immediatelly command to connection.
@@ -354,7 +354,7 @@ class Connection:public Object
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queSend (rts2core::Command * cmd);
+		void queSend (Command * cmd);
 
 		/**
 		 * Hook for command return.
@@ -367,7 +367,7 @@ class Connection:public Object
 		 * @param cmd Finished command.
 		 * @param in_status Command return status.
 		 */
-		virtual void commandReturn (rts2core::Command * cmd, int in_status);
+		virtual void commandReturn (Command * cmd, int in_status);
 
 		/**
 		 * Determines if que is empty and there is not any running command.
@@ -465,7 +465,7 @@ class Connection:public Object
 
 		int paramNextTimeval (struct timeval *tv);
 
-		rts2core::Block *getMaster () { return master; }
+		Block *getMaster () { return master; }
 
 		virtual void childReturned (pid_t child_pid) {}
 
@@ -476,7 +476,7 @@ class Connection:public Object
 		 *
 		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
 		 */
-		rts2core::Value *getValue (const char *value_name);
+		Value *getValue (const char *value_name);
 
 		/**
 		 * Returns value with given name and type. Throw error if such value does not exists.
@@ -486,7 +486,7 @@ class Connection:public Object
 		 *
 		 * @throw Error 
 		 */
-		rts2core::Value *getValueType (const char *value_name, int value_type);
+		Value *getValueType (const char *value_name, int value_type);
 
 		/**
 		 * Return iterator to the next failed value, starting from position
@@ -494,25 +494,25 @@ class Connection:public Object
 		 *
 		 * @param iter    starting position from which the failed value will be searched
 		 */
-		rts2core::ValueVector::iterator & getFailedValue (rts2core::ValueVector::iterator &iter);
+		ValueVector::iterator & getFailedValue (ValueVector::iterator &iter);
 
 		int getOtherType ();
 		// set to -1 if we don't need timeout checks..
 		void setConnTimeout (int new_connTimeout) { connectionTimeout = new_connTimeout; }
 		int getConnTimeout () { return connectionTimeout; }
 
-		Rts2ServerState *getStateObject () { return serverState; }
+		ServerState *getStateObject () { return serverState; }
 
 		DevClient *getOtherDevClient () { return otherDevice; }
 
 		virtual void updateStatusWait (Connection * conn);
 		virtual void masterStateChanged ();
 
-		friend class rts2core::ConnError;
+		friend class ConnError;
 
 
 		// value management functions
-		void addValue (rts2core::Value * value);
+		void addValue (Value * value);
 
 		int metaInfo (int rts2Type, std::string m_name, std::string desc);
 		int selMetaInfo (const char *value_name, char *sel_name);
@@ -525,9 +525,9 @@ class Connection:public Object
 
 		virtual int commandValue (const char *v_name);
 
-		rts2core::ValueVector::iterator valueBegin () { return values.begin (); }
-		rts2core::ValueVector::iterator valueEnd () { return values.end (); }
-		rts2core::Value *valueAt (int index)
+		ValueVector::iterator valueBegin () { return values.begin (); }
+		ValueVector::iterator valueEnd () { return values.end (); }
+		Value *valueAt (int index)
 		{
 			if ((size_t) index < values.size ())
 				return values[index];
@@ -572,7 +572,7 @@ class Connection:public Object
 		long getWriteBinaryDataSize (int data_conn)
 		{
 			// if it exists..
-			std::map <int, rts2core::DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
 			if (iter == writeChannels.end ())
 				return 0;
 			return ((*iter).second)->getDataSize ();
@@ -584,7 +584,7 @@ class Connection:public Object
 		long getWriteBinaryDataSize (int data_conn, int chan)
 		{
 			// if it exists..
-			std::map <int, rts2core::DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
 			if (iter == writeChannels.end ())
 				return 0;
 			return ((*iter).second)->getChannelSize (chan);
@@ -612,17 +612,17 @@ class Connection:public Object
 		/**
 		 * Other side of connection state.
 		 */
-		Rts2ServerState * serverState;
+		ServerState * serverState;
 
 		/**
 		 * BOP mask state.
 		 */
-		Rts2ServerState * bopState;
+		ServerState * bopState;
 
 		/**
 		 * Pointer to master object.
 		 */
-		rts2core::Block *master;
+		Block *master;
 		char *command_start;
 
 		/**
@@ -724,8 +724,8 @@ class Connection:public Object
 		in_addr addr;
 		int port;				 // local port & connection
 
-		std::list < rts2core::Command * >commandQue;
-		rts2core::Command *runningCommand;
+		std::list < Command * >commandQue;
+		Command *runningCommand;
 		enum {WAITING, SEND, RETURNING}
 		runningCommandStatus;
 
@@ -738,14 +738,14 @@ class Connection:public Object
 		double statusStart;
 		double statusExpectedEnd;
 
-		std::map <int, rts2core::DataChannels *> readChannels;
+		std::map <int, DataChannels *> readChannels;
 		int activeReadData;
 		int activeReadChannel;
 
 		int activeSharedId;
 		char *activeSharedMem;
 
-		std::map <int, rts2core::DataWrite *> writeChannels;
+		std::map <int, DataWrite *> writeChannels;
 		// ID of outgoing data connection
 		int dataConn;
 
@@ -781,7 +781,7 @@ class Connection:public Object
 		/**
 		 * Holds connection values.
 		 */
-		rts2core::ValueVector values;
+		ValueVector values;
 
 		/**
 		 * Time when last information was received.
@@ -791,7 +791,7 @@ class Connection:public Object
 		/**
 		 * Holds info_time variable.
 		 */
-		rts2core::ValueTime *info_time;
+		ValueTime *info_time;
 
 		/**
 		 * Called when new data connection is created.

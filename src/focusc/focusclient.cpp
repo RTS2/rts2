@@ -88,7 +88,7 @@ void FocusCameraClient::postEvent (rts2core::Event *event)
 	rts2image::DevClientCameraFoc::postEvent (event);
 }
 
-void FocusCameraClient::stateChanged (Rts2ServerState * state)
+void FocusCameraClient::stateChanged (rts2core::ServerState * state)
 {
 	if (master->printChanges ())
 		std::cout << "State changed (" << getName () << "): "

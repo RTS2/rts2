@@ -275,7 +275,7 @@ imageProceRes DevClientCameraImage::processImage (Image * image)
 	return IMAGE_DO_BASIC_PROCESSING;
 }
 
-void DevClientCameraImage::stateChanged (Rts2ServerState * state)
+void DevClientCameraImage::stateChanged (rts2core::ServerState * state)
 {
 	rts2core::DevClientCamera::stateChanged (state);
 	if (triggered && !(getConnection ()->getFullBopState () & BOP_TRIG_EXPOSE))
@@ -520,7 +520,7 @@ void DevClientWriteImage::infoFailed ()
 	connection->postMaster (new rts2core::Event (EVENT_INFO_DEVCLI_FAILED, this));
 }
 
-void DevClientWriteImage::stateChanged (Rts2ServerState * state)
+void DevClientWriteImage::stateChanged (rts2core::ServerState * state)
 {
 	rts2core::DevClient::stateChanged (state);
 	if ((state->getOldValue () & BOP_TRIG_EXPOSE) == 0 && (state->getValue () & BOP_TRIG_EXPOSE) && !(state->getOldValue () & DEVICE_NOT_READY))

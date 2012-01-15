@@ -54,7 +54,7 @@ using namespace XmlRpc;
 
 using namespace rts2xmlrpc;
 
-void XmlDevInterface::stateChanged (Rts2ServerState * state)
+void XmlDevInterface::stateChanged (rts2core::ServerState * state)
 {
 	(getMaster ())->stateChangedEvent (getConnection (), state);
 }
@@ -528,7 +528,7 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 	return new XmlDevClient (conn);
 }
 
-void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, Rts2ServerState * new_state)
+void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..

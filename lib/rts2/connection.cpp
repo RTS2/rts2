@@ -20,8 +20,8 @@
 #include "radecparser.h"
 
 #include "connection.h"
+#include "centralstate.h"
 #include "block.h"
-#include "rts2centralstate.h"
 #include "command.h"
 
 #include "valuestat.h"
@@ -72,8 +72,8 @@ Connection::Connection (Block * in_master):Object ()
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
 	runningCommandStatus = RETURNING;
-	serverState = new Rts2ServerState ();
-	bopState = new Rts2ServerState ();
+	serverState = new ServerState ();
+	bopState = new ServerState ();
 	otherDevice = NULL;
 	otherType = -1;
 
@@ -115,8 +115,8 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
 	runningCommandStatus = RETURNING;
-	serverState = new Rts2ServerState ();
-	bopState = new Rts2ServerState ();
+	serverState = new ServerState ();
+	bopState = new ServerState ();
 	otherDevice = NULL;
 	otherType = -1;
 
@@ -201,7 +201,7 @@ std::string Connection::getStateString ()
 	switch (getOtherType ())
 	{
 		case DEVICE_TYPE_SERVERD:
-			_os << Rts2CentralState (getState ()).getString ();
+			_os << CentralState (getState ()).getString ();
 			break;
 		case DEVICE_TYPE_MOUNT:
 			switch (real_state & TEL_MASK_MOVING)

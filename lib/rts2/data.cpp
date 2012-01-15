@@ -18,7 +18,7 @@
  */
 
 #include "connection.h"
-#include "rts2data.h"
+#include "data.h"
 
 using namespace rts2core;
 

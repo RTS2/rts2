@@ -24,6 +24,9 @@
 #include <status.h>
 #include <time.h>
 
+namespace rts2core
+{
+
 /**
  * Server state class. Holds information about current server state.
  * It also holds old server state value, so it can be used to check if
@@ -33,17 +36,17 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ServerState
+class ServerState
 {
 	public:
-		Rts2ServerState ()
+		ServerState ()
 		{
 			lastUpdate = 0;
 			oldValue = 0;
 			value = DEVICE_NOT_READY;
 		}
 
-		virtual ~ Rts2ServerState (void) {}
+		virtual ~ ServerState (void) {}
 
 		void setValue (int new_value)
 		{
@@ -62,4 +65,6 @@ class Rts2ServerState
 		unsigned int oldValue;
 		time_t lastUpdate;
 };
+
+}
 #endif							 /* !__RTS2_SERVER_STATE__ */

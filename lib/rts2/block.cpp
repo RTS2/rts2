@@ -34,9 +34,9 @@
 #include "block.h"
 #include "command.h"
 #include "client.h"
-#include "rts2centralstate.h"
 
 #include "imghdr.h"
+#include "centralstate.h"
 
 //* Null terminated list of names for different device types.
 const char *type_names[] = 
@@ -542,7 +542,7 @@ int Block::setMasterState (Connection *_conn, int new_state)
 
 std::string Block::getMasterStateString ()
 {
-	return Rts2CentralState (getMasterStateFull ()).getString ();
+	return CentralState (getMasterStateFull ()).getString ();
 }
 
 void Block::childReturned (pid_t child_pid)

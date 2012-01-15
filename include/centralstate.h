@@ -23,7 +23,10 @@
 
 #include <ostream>
 
-#include "rts2serverstate.h"
+#include "serverstate.h"
+
+namespace rts2core
+{
 
 /**
  * Class which represents state of the central daemon.
@@ -32,12 +35,10 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CentralState:public Rts2ServerState
+class CentralState:public ServerState
 {
-	private:
-
 	public:
-		Rts2CentralState (int in_state):Rts2ServerState ()
+		CentralState (int in_state):ServerState ()
 		{
 			setValue (in_state);
 		}
@@ -61,9 +62,13 @@ class Rts2CentralState:public Rts2ServerState
 		static const char *getStringShort (int _state);
 		static std::string getString (int _state);
 
-		friend std::ostream & operator << (std::ostream & _os,
-			Rts2CentralState c_state);
+		friend std::ostream & operator << (std::ostream & _os, CentralState c_state)
+		{
+			_os << c_state.getStringShort ();
+			return _os;
+		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2CentralState c_state);
+}
+
 #endif							 /* !__RTS2_CENTRALSTATE__ */

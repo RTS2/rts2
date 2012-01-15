@@ -52,7 +52,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		virtual void beforeProcess (Image * image);
 
 		void processCameraImage (CameraImages::iterator cis);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (rts2core::ServerState * state);
  
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
 
@@ -164,7 +164,7 @@ class DevClientWriteImage:public rts2core::DevClient
 		virtual void infoOK ();
 		virtual void infoFailed ();
 
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (rts2core::ServerState * state);
 };
 
 class CommandQueImage:public rts2core::Command

@@ -81,7 +81,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		virtual void nextCommand ();
 		void queImage (rts2image::Image * image, bool run_after = true);
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
-		virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (rts2core::ServerState * state);
 		virtual void exposureFailed (int status);
 
 		/**

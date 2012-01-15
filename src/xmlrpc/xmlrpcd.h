@@ -84,7 +84,7 @@ class Directory;
 class XmlDevInterface
 {
 	public:
-		void stateChanged (Rts2ServerState * state);
+		void stateChanged (rts2core::ServerState * state);
 
 		void valueChanged (rts2core::Value * value);
 
@@ -112,7 +112,7 @@ class XmlDevClient:public rts2core::DevClient, XmlDevInterface
 	public:
 		XmlDevClient (rts2core::Connection *conn):rts2core::DevClient (conn), XmlDevInterface () {}
 
-		virtual void stateChanged (Rts2ServerState * state)
+		virtual void stateChanged (rts2core::ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
 			rts2core::DevClient::stateChanged (state);
@@ -148,7 +148,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		{
 		}
 
-		virtual void stateChanged (Rts2ServerState * state)
+		virtual void stateChanged (rts2core::ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
 			rts2image::DevClientCameraImage::stateChanged (state);
@@ -292,7 +292,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 
-		void stateChangedEvent (rts2core::Connection *conn, Rts2ServerState *new_state);
+		void stateChangedEvent (rts2core::Connection *conn, rts2core::ServerState *new_state);
 
 		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
 

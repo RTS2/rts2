@@ -27,7 +27,7 @@
 #include "libnova_cpp.h"
 #include "app.h"
 #include "configuration.h"
-#include "../../lib/rts2/rts2centralstate.h"
+#include "centralstate.h"
 
 #define OPT_LAT              OPT_LOCAL + 230
 #define OPT_LONG             OPT_LOCAL + 231
@@ -164,9 +164,9 @@ void StateApp::printDayStates (std::ostream & _os)
 		}
 		if (curr_time == currTime)
 		{
-			_os << Timestamp (currTime) << " " << Rts2CentralState (curr_type) << " (current)" << std::endl;
+			_os << Timestamp (currTime) << " " << rts2core::CentralState (curr_type) << " (current)" << std::endl;
 		}
-		_os << Timestamp (ev_time) << " " << Rts2CentralState (next_type) << std::endl;
+		_os << Timestamp (ev_time) << " " << rts2core::CentralState (next_type) << std::endl;
 
 		curr_time = ev_time + 1;
 	}

@@ -71,7 +71,7 @@ void DevClient::fullDataReceived (int data_conn, DataChannels *data)
 	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }
 
-void DevClient::stateChanged (Rts2ServerState * state)
+void DevClient::stateChanged (ServerState * state)
 {
 	if (connection->getErrorState () == DEVICE_ERROR_HW)
 		incFailedCount ();
@@ -151,7 +151,7 @@ void DevClientCamera::readoutEnd ()
 {
 }
 
-void DevClientCamera::stateChanged (Rts2ServerState * state)
+void DevClientCamera::stateChanged (ServerState * state)
 {
 	if (state->maskValueChanged (CAM_MASK_EXPOSE))
 	{
@@ -223,7 +223,7 @@ DevClientTelescope::~DevClientTelescope (void)
 	moveFailed (DEVICE_ERROR_HW);
 }
 
-void DevClientTelescope::stateChanged (Rts2ServerState * state)
+void DevClientTelescope::stateChanged (ServerState * state)
 {
 	if (state->maskValueChanged (TEL_MASK_CUP_MOVING))
 	{
@@ -296,7 +296,7 @@ void DevClientCupola::notMoveFailed (int status)
 {
 }
 
-void DevClientCupola::stateChanged (Rts2ServerState * state)
+void DevClientCupola::stateChanged (ServerState * state)
 {
 	switch (state->getValue () & DOME_CUP_MASK_SYNC)
 	{
@@ -326,7 +326,7 @@ DevClientMirror::~DevClientMirror (void)
 	moveFailed (DEVICE_ERROR_HW);
 }
 
-void DevClientMirror::stateChanged (Rts2ServerState * state)
+void DevClientMirror::stateChanged (ServerState * state)
 {
 	if (connection->getErrorState ())
 	{
@@ -375,7 +375,7 @@ DevClientPhot::~DevClientPhot ()
 	integrationFailed (DEVICE_ERROR_HW);
 }
 
-void DevClientPhot::stateChanged (Rts2ServerState * state)
+void DevClientPhot::stateChanged (ServerState * state)
 {
 	if (state->maskValueChanged (PHOT_MASK_INTEGRATE))
 	{
@@ -486,7 +486,7 @@ void DevClientFilter::filterMoveFailed (int status)
 {
 }
 
-void DevClientFilter::stateChanged (Rts2ServerState * state)
+void DevClientFilter::stateChanged (ServerState * state)
 {
 	if (state->maskValueChanged (FILTERD_MASK))
 	{
@@ -531,7 +531,7 @@ void DevClientFocus::focusingFailed (int status)
 	focusingEnd ();
 }
 
-void DevClientFocus::stateChanged (Rts2ServerState * state)
+void DevClientFocus::stateChanged (ServerState * state)
 {
 	switch (state->getValue () & FOC_MASK_FOCUSING)
 	{
@@ -556,7 +556,7 @@ void DevClientExecutor::lastReadout ()
 {
 }
 
-void DevClientExecutor::stateChanged (Rts2ServerState * state)
+void DevClientExecutor::stateChanged (ServerState * state)
 {
 	switch (state->getValue () & EXEC_STATE_MASK)
 	{

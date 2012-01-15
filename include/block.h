@@ -46,7 +46,7 @@
 #include "devclient.h"
 #include "value.h"
 #include "app.h"
-#include "rts2serverstate.h"
+#include "serverstate.h"
 
 // protocol specific commands
 /** The command is variable value update. @ingroup RTS2Protocol */
