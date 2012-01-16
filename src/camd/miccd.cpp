@@ -23,7 +23,15 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define EVENT_TE_RAMP	RTS2_LOCAL_EVENT + 677
+#ifdef WITH_K8055
+
+#include <k8055.h>
+
+#define K8055_SHUTTER_OPEN    250
+#define K8055_SHUTTER_CLOSED  0
+#endif
+
+#define EVENT_TE_RAMP	      RTS2_LOCAL_EVENT + 677
 
 namespace rts2camd
 {
@@ -44,7 +52,7 @@ class MICCD:public Camera
 
 	protected:
 		virtual int processOption (int opt);
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 
 		virtual void initBinnings ()
@@ -134,6 +142,9 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 MICCD::~MICCD ()
 {
+#ifdef K8055
+	CloseDevice ();
+#endif
 	miccd_close (&camera);
 }
 
@@ -179,12 +190,8 @@ int MICCD::processOption (int opt)
 	return 0;
 }
 
-int MICCD::init ()
+int MICCD::initHardware ()
 {
-	int ret;
-	ret = Camera::init ();
-	if (ret)
-		return ret;
 	if (miccd_open (id->getValueInteger (), &camera))
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueInteger () << sendLog;
@@ -219,7 +226,10 @@ int MICCD::init ()
 			}
 			break;
 	}
-
+#ifdef WITH_K8055
+	if (OpenDevice (0) < 0)
+		logStream (MESSAGE_ERROR) << "cannot open K8055 device" << sendLog;
+#endif
 	return 0;
 }
 
@@ -391,6 +401,11 @@ int MICCD::startExposure ()
 			}
 			break;
 	}
+#ifdef WITH_K8055
+	ret = OutputAnalogChannel (1, K8055_SHUTTER_OPEN);
+	if (ret)
+		logStream (MESSAGE_ERROR) << "cannot open K8055 shutter" << sendLog;
+#endif
 	return 0;
 }
 
@@ -414,6 +429,11 @@ int MICCD::endExposure ()
 				break;
 		}
 	}
+#ifdef WITH_K8055
+	ret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
+	if (ret)
+		logStream (MESSAGE_ERROR) << "cannot close K8055 shutter" << sendLog;
+#endif
 	return Camera::endExposure ();
 }
 
@@ -437,6 +457,11 @@ int MICCD::stopExposure ()
 				return -1;
 			break;
 	}
+	#ifdef WITH_K8055
+	ret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
+	if (ret)
+		logStream (MESSAGE_ERROR) << "cannot open K8055 shutter" << sendLog;
+	#endif
 	return Camera::stopExposure ();
 }
 

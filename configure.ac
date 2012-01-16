@@ -318,6 +318,22 @@ AC_SUBST(MICCD)
 AC_SUBST(LIB_MICCD)
 AC_SUBST(INC_MICCD)
 
+AC_ARG_WITH(k8055,
+[  --with-k8055           path to Velleman k8055 library],
+K8055="${withval}";
+LIB_K8055="-lk8055 -lusb",
+[K8055=no])
+
+AH_TEMPLATE([WITH_K8055],[K8055 library is not present])
+
+if test x$K8055 != xno; then
+	AC_DEFINE_UNQUOTED(WITH_K8055, "1", [K8055 library is present])
+fi
+
+AM_CONDITIONAL(K8055, test x$K8055 != xno)
+AC_SUBST(K8055)
+AC_SUBST(LIB_K8055)
+
 # check for COMEDI
 AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
@@ -860,6 +876,7 @@ SENSOR's:
   A3200         ${A3200}
   BOLTWOOD      ${BOLTWOOD}
   BIGNG         ${BIGNG}
+  K8055         ${K8055}
 
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}

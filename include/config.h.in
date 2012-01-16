@@ -340,6 +340,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* K8055 library is present */
+#undef WITH_K8055
+
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
 
