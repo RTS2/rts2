@@ -29,7 +29,7 @@ void ConnGpibLinux::gpibWriteBuffer (const char *cmd, int len)
 	ret = ibwrt (gpib_dev, cmd, len);
 	if (debug)
 	{
-		LogStream ls = logStream (MESSAGE_DEBUG);
+		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << ":;gpibWriteBuffer write ";
 		ls.logArr (cmd, len);
 		ls << sendLog;
@@ -47,7 +47,7 @@ void ConnGpibLinux::gpibRead (void *reply, int &blen)
 	blen = ibcnt;
 	if (debug)
 	{
-		LogStream ls = logStream (MESSAGE_DEBUG);
+		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "::gpibRead dev " << gpib_dev << " read ";
 		ls.logArr ((char *) reply, blen);
 		ls << sendLog;
@@ -71,7 +71,7 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 		throw GpibLinuxError ("error while reading in write-read cycle from GPIB bus", cmd, iberr);
 	if (debug)
 	{
-		LogStream ls = logStream (MESSAGE_DEBUG);
+		rts2core::LogStream ls = logStream (MESSAGE_DEBUG);
 		ls << "::gpibWriteRead dev " << gpib_dev << " read ";
 		ls.logArr (reply, ibcnt);
 		ls << sendLog;
