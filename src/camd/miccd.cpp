@@ -107,6 +107,7 @@ class MICCD:public Camera
 		camera_info_t cami;
 
 		bool reseted_shutter;
+		bool internalTimer;
 };
 
 }
@@ -138,6 +139,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	addOption ('f', NULL, 1, "filter names (separated with :)");
 
 	reseted_shutter = false;
+	internalTimer = false;
 }
 
 MICCD::~MICCD ()
@@ -229,6 +231,7 @@ int MICCD::initHardware ()
 #ifdef WITH_K8055
 	if (OpenDevice (0) < 0)
 		logStream (MESSAGE_ERROR) << "cannot open K8055 device" << sendLog;
+	expType->addSelVal ("OPEN", NULL);
 #endif
 	return 0;
 }
@@ -372,24 +375,31 @@ int MICCD::startExposure ()
 		case G10800:
 		case G11400:
 		case G12000:
-			// G10800 does not allow > 8 sec exposures
-			ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
-			if (ret < 0)
+			if (getExposure () <= 8)
 			{
-				if (camera.model != G10800)	
-					return -1;
-				// else try to reinit..
-				logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinintiliaze it.." << sendLog;
-				if (reinitCamera ())
-					return -1;
 				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 				if (ret < 0)
 				{
-					logStream (MESSAGE_ERROR) << "reinitilization failed" << sendLog;
-					return -1;
+					if (camera.model != G10800)	
+						return -1;
+					// else try to reinit..
+					logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinintiliaze it.." << sendLog;
+					if (reinitCamera ())
+						return -1;
+					ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
+					if (ret < 0)
+					{
+						logStream (MESSAGE_ERROR) << "reinitilization failed" << sendLog;
+						return -1;
+					}
 				}
+				setExposure (((float) ret) / 8000.0);
+				internalTimer = true;
 			}
-			setExposure (((float) ret) / 8000.0);
+			else
+			{
+				internalTimer = false;
+			}
 			break;
 		case G2:
 		case G3:	
@@ -402,7 +412,7 @@ int MICCD::startExposure ()
 			break;
 	}
 #ifdef WITH_K8055
-	ret = OutputAnalogChannel (1, K8055_SHUTTER_OPEN);
+	ret = OutputAnalogChannel (1, getExpType () == 1 ? K8055_SHUTTER_CLOSED : K8055_SHUTTER_OPEN);
 	if (ret)
 		logStream (MESSAGE_ERROR) << "cannot open K8055 shutter" << sendLog;
 #endif
@@ -420,6 +430,12 @@ int MICCD::endExposure ()
 			case G10800:
 			case G11400:
 			case G12000:
+				if (internalTimer == false)
+				{
+					ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), -1);
+					if (ret)
+						return -1;
+				}
 				break;
 			case G2:
 			case G3:
@@ -430,9 +446,12 @@ int MICCD::endExposure ()
 		}
 	}
 #ifdef WITH_K8055
-	ret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
-	if (ret)
-		logStream (MESSAGE_ERROR) << "cannot close K8055 shutter" << sendLog;
+	if (getExpType () == 0)
+	{
+		ret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
+		if (ret)
+			logStream (MESSAGE_ERROR) << "cannot close K8055 shutter" << sendLog;
+	}
 #endif
 	return Camera::endExposure ();
 }
@@ -446,7 +465,10 @@ int MICCD::stopExposure ()
 		case G10800:
 		case G11400:
 		case G12000:
-			ret = miccd_abort_exposure (&camera);
+			if (internalTimer == false)
+				ret = miccd_clear (&camera);
+			else
+				ret = miccd_abort_exposure (&camera);
 			if (ret)
 				return -1;
 			break;
