@@ -48,18 +48,21 @@ class ShiftStore:
 		the sequence
 	    - run standard fit on images (from focusing.py) Parameters
 	      governing the algorithm are specified in ShiftStore constructor.
-
-	@param shifts shifts performed between exposures, in pixels. Lenght of this array is equal to ((number of sources in a row) - 1).
 	"""
 
-	def __init__(self,shifts=[50,50,50,50,50,50,50,50,50,50]):
+	def __init__(self,shifts=[100,50,50,50,50,50,50,50],horizontal=True):
+		"""
+		@param shifts      shifts performed between exposures, in pixels. Lenght of this array is equal to ((number of sources in a row) - 1).
+		@param horizontal  search for horizontal trails (paraller to Y axis). If set to False, search for veritical trails (along X axis).
+		"""
+		self.horizontal = horizontal
 		self.objects = None
 		self.sequences = []
 		self.xsep = self.ysep = 5
 		self.shifts = shifts
 		self.focpos = range(0,len(self.shifts) + 1)
 
-	def testObjects(self,x,can,i):
+	def testObjects(self,x,can,i,otherc):
 		"""
 		Test if there is sequence among candidates matching expected
 		shifts.  Candidates are stars not far in X coordinate from
@@ -71,7 +74,7 @@ class ShiftStore:
 		"""
 		ret = []
 		# here we assume y is third, and some brightnest estimate fourth member in x
-		yi = x[2]  # expected y position
+		yi = x[otherc]  # expected other axis position
 		xb = x[3]  # expected brightness
 		# calculate first expected shift..
 		for j in range(0,i):
@@ -84,12 +87,13 @@ class ShiftStore:
 		  	# if the current shift index is equal to expected source position...
 			if sh == i:
 				# append x to sequence, and increase sh (and expected Y position)
+				print sh
 				yi += self.shifts[sh]
 				sh += 1
 				ret.append(x)
 		  	# get close enough..
 			# please note that this algorithm is not looking for partial 
-			if abs(can[j][2] - yi) < self.ysep:
+			if abs(can[j][otherc] - yi) < self.ysep:
 				# find all other sources in vicinity..
 		  		k = None
 				cs = can[j] # _c_andidate _s_tar
@@ -121,18 +125,25 @@ class ShiftStore:
 		cannot be found."""
 
 		xid = x[0]   # running number
-		xcor = x[1]  # X coordinate
+		searchc = 1
+		otherc = 2
+		if not(self.horizontal):
+			searchc = 2
+			otherc = 1
+
+		xcor = x[searchc]
+
 		can = []     # canditate stars
 		for y in self.objects:
-			if xid != y[0] and abs(xcor - y[1]) < self.xsep:
+			if xid != y[0] and abs(xcor - y[searchc]) < self.xsep:
 				can.append(y)
 		# sort by Y axis..
-		can.sort(cmp=lambda x,y: cmp(x[2],y[2]))
+		can.sort(cmp=lambda x,y: cmp(x[otherc],y[otherc]))
 		# assume selected object is one in shift sequence
 		# place it at any possible position in shift sequence, and test if the sequence can be found
 		for i in range(0,len(self.shifts) + 1):
 			# test if sequence can be found..
-			ret = self.testObjects(x,can,i)
+			ret = self.testObjects(x,can,i,otherc)
 			# and if it is found, return it
 			if len(ret) == len(self.shifts) + 1:
 				return ret
@@ -155,13 +166,15 @@ class ShiftStore:
 
 		print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
 
+		d = None
 
-  		d = ds9()
-		# display in ds9
-		d.set('file {0}'.format(fn))
+		if interactive:
+	  		d = ds9()
+			# display in ds9
+			d.set('file {0}'.format(fn))
 
-		for x in self.objects:
-			d.set('regions','image; point {0} {1} # point=x 5 color=red'.format(x[1],x[2]))
+			for x in self.objects:
+				d.set('regions','image; point {0} {1} # point=x 5 color=red'.format(x[1],x[2]))
 
 		sequences = []
 		usednum = []
@@ -176,14 +189,17 @@ class ShiftStore:
 			if b is None:
 				continue
 			sequences.append(b)
-			d.set('regions select none')
-			d.set('regions','image; circle {0} {1} 20 # color=yellow tag = sel'.format(x[1],x[2]))
+			if d:
+				d.set('regions select none')
+				d.set('regions','image; circle {0} {1} 20 # color=yellow tag = sel'.format(x[1],x[2]))
 			for obj in b:
 				usednum.append(obj[0])
-				d.set('regions','image; circle {0} {1} 15 # color=blue tag = sel'.format(obj[1],obj[2]))
-			print 'best mag: ',x[3]
-			d.set('regions select group sel')
-			d.set('regions delete select')
+				if interactive:
+					d.set('regions','image; circle {0} {1} 15 # color=blue tag = sel'.format(obj[1],obj[2]))
+			if d:
+				print 'best mag: ',x[3]
+				d.set('regions select group sel')
+				d.set('regions delete select')
 			for obj in b:
 				d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
 			if len(sequences) > 15:
@@ -202,9 +218,8 @@ class ShiftStore:
 			foc = focusing.Focusing()
 
 			res,ftype = foc.doFitOnArrays(fwhm,self.focpos,focusing.H2)
-			print res,ftype
-
 			if interactive:
+				print res,ftype
 				foc.plotFit(res,ftype)
 
 if __name__ == "__main__":
