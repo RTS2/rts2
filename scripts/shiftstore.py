@@ -194,14 +194,14 @@ class ShiftStore:
 				d.set('regions','image; circle {0} {1} 20 # color=yellow tag = sel'.format(x[1],x[2]))
 			for obj in b:
 				usednum.append(obj[0])
-				if interactive:
+				if d:
 					d.set('regions','image; circle {0} {1} 15 # color=blue tag = sel'.format(obj[1],obj[2]))
 			if d:
 				print 'best mag: ',x[3]
 				d.set('regions select group sel')
 				d.set('regions delete select')
-			for obj in b:
-				d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
+				for obj in b:
+					d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
 			if len(sequences) > 15:
 				break
 		# if enough sequences were found, process them and try to fit results
