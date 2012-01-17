@@ -216,8 +216,7 @@ int ConnSerial::writePort (const char *wbuf, int b_len)
 		int ret = write (sock, wbuf, b_len);
 		if (ret == -1 && errno != EINTR)
 		{
-			logStream (MESSAGE_ERROR) << "cannot write to serial port "
-				<< strerror (errno) << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot write to serial port " << strerror (errno) << sendLog;
 			return -1;
 		}
 		if (ret == 0)
