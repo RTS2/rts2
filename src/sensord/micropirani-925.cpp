@@ -88,7 +88,7 @@ int MicroPirani925::info ()
 {
 	int ret;
 	char buf[50];
-	ret = microConn->writeRead ("@253PR1?;FF", 11, buf, 50, '\r');
+	ret = microConn->writeRead ("@253PR1?;FF", 11, buf, 50, ";FF");
 	if (ret < 0)
 		return ret;
 	std::istringstream is (buf + 7);
