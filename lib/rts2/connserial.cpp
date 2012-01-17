@@ -274,14 +274,11 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 			if (rlen > 0)
 			{
 				rbuf[rlen] = '\0';
-				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '"
-					<< rbuf << "', error is "
-					<< strerror (errno) << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '" << rbuf << "', error is " << strerror (errno) << sendLog;
 			}
 			else
 			{
-				logStream (MESSAGE_ERROR) << "cannot read from serial port "
-					<< strerror (errno) << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot read from serial port " << strerror (errno) << sendLog;
 			}
 			return -1;
 		}
@@ -389,6 +386,45 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 	return -1;
 }
 
+int ConnSerial::readPort (char *rbuf, int b_len, const char *endChar)
+{
+	int tl = 0;
+	while (true)
+	{
+		if ((b_len - tl) < strlen (endChar))
+		{
+			rbuf[tl] = '\0';
+			logStream (MESSAGE_ERROR) << "too few space in read buffer, so far readed " << rbuf << sendLog;
+			return -1;
+		}
+		// look for the first character
+		int ret = readPort (rbuf + tl, b_len - tl, *endChar);
+		if (ret < 0)
+			return ret;
+		tl += ret;
+		// look for next characters..
+		const char *ch = endChar + 1;
+		char *rl = rbuf + tl;
+		while (true)
+		{
+			// readed till end..
+		 	if (*ch == '\0')
+			{
+				return tl;
+			}
+			if (readPort (rl, 1) != 1)
+			{
+				*rl = '\0';
+				logStream (MESSAGE_ERROR) << "cannot read single character while looking for end " << endChar << ", readed " << rbuf << sendLog;
+			}
+			tl++;
+			if (*rl != *ch)
+				continue;
+			ch++;
+		}
+	}
+}
+
 void ConnSerial::dropDTR ()
 {
 	int ret;
@@ -410,6 +446,15 @@ int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
 }
 
 int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar)
+{
+	int ret;
+	ret = writePort (wbuf, wlen);
+	if (ret < 0)
+		return -1;
+	return readPort (rbuf, rlen, endChar);
+}
+
+int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, const char *endChar)
 {
 	int ret;
 	ret = writePort (wbuf, wlen);

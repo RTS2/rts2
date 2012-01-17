@@ -179,6 +179,8 @@ class ConnSerial: public ConnNoSend
 		 */
 		int readPort (char *rbuf, int b_len, char endChar);
 
+		int readPort (char *rbuf, int b_len, const char *endChar);
+
 		void dropDTR ();
 
 		/**
@@ -238,6 +240,8 @@ class ConnSerial: public ConnNoSend
 		 * @return -1 on error, size of data readed on success.
 		 */
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar);
+
+		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, const char *endChar);
 };
 
 }
