@@ -497,7 +497,7 @@ int MICCD::doReadout ()
 		case G10800:
 		case G11400:
 		case G12000:
-			ret = miccd_read_data (&camera, 2 * getUsedWidth () * getUsedHeight (), dataBuffer, camera.w, camera.h);
+			ret = miccd_read_data (&camera, getUsedWidth () * getUsedHeight (), dataBuffer, camera.w, camera.h);
 			break;
 		case G2:
 		case G3:
@@ -557,6 +557,7 @@ int MICCD::clearCCD (int nclear)
 
 int MICCD::reinitCamera ()
 {
+	logStream (MESSAGE_WARNING) << "reinitiliazing camera - this should not happen" << sendLog;
 	miccd_close (&camera);
 	if (miccd_open (id->getValueInteger (), &camera))
 		return -1;
