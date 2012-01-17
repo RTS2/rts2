@@ -62,18 +62,25 @@ class ShiftStore:
 		self.shifts = shifts
 		self.focpos = range(0,len(self.shifts) + 1)
 
-	def testObjects(self,x,can,i,otherc):
+	def testObjects(self,x,can,i,otherc,partial=False):
 		"""
 		Test if there is sequence among candidates matching expected
 		shifts.  Candidates are stars not far in X coordinate from
 		source (here we assume we are looking for vertical lines on
-		image). Those are ordered by y and searched for stars at
+		image; horizontal lines are searched just by changing otherc parameter
+		to the other axis index). Those are ordered by y and searched for stars at
 		expected positions. If multiple stars falls inside this box,
 		then the one closest in magnitude/brightness estimate is
 		selected.
+
+		@param x       star sextractor row; ID X Y brightness estimate postion are expected and used
+		@param can     catalogue of candidate stars
+		@param i       expected star index in shift pattern
+		@param otherc  index of other axis. Either 2 or 1 (for vertical or horizontal shifts)
+		@param partial allow partial matches (e.g. where stars are missing)
 		"""
 		ret = []
-		# here we assume y is third, and some brightnest estimate fourth member in x
+		# here we assume y is otherc (either second or third), and some brightnest estimate fourth member in x
 		yi = x[otherc]  # expected other axis position
 		xb = x[3]  # expected brightness
 		# calculate first expected shift..
@@ -87,11 +94,14 @@ class ShiftStore:
 		  	# if the current shift index is equal to expected source position...
 			if sh == i:
 				# append x to sequence, and increase sh (and expected Y position)
-				yi += self.shifts[sh]
+				try:
+					yi += self.shifts[sh]
+				except IndexError,ie:
+					return ret
 				sh += 1
 				ret.append(x)
 		  	# get close enough..
-			# please note that this algorithm is not looking for partial 
+			# please note that this algorithm is not looking for partial matches
 			if abs(can[j][otherc] - yi) < self.ysep:
 				# find all other sources in vicinity..
 		  		k = None
@@ -101,9 +111,12 @@ class ShiftStore:
 					if abs(can[k][otherc] - yi) < self.ysep:
 						if abs(can[k][3] - xb) < abs (cs[3] - xb):
 							cs = can[k]
+					elif partial == False:
+						# if the algorithm is looking for full match, exit
+						return None
 					else:
-						# otherwise don't care..
-						break
+						# if partial matches are OK, carry on
+						continue
 				# append candidate star
 				ret.append(cs)
 				if k is not None:
@@ -117,7 +130,7 @@ class ShiftStore:
 		return ret
 
 
-	def findRowObjects(self,x):
+	def findRowObjects(self,x,partial_len=None):
 		"""
 		Find objects in row. Search for sequence of stars, where x fit
 		as one member. Return the sequence, or None if the sequence
@@ -142,14 +155,18 @@ class ShiftStore:
 		# place it at any possible position in shift sequence, and test if the sequence can be found
 		for i in range(0,len(self.shifts) + 1):
 			# test if sequence can be found..
-			ret = self.testObjects(x,can,i,otherc)
+			ret = self.testObjects(x,can,i,otherc,partial_len is None)
 			# and if it is found, return it
-			if len(ret) == len(self.shifts) + 1:
-				return ret
+			if ret is not None:
+				if partial_len is None:
+					if len(ret) == len(self.shifts) + 1:
+						return ret
+				elif len(ret) >= partial_len:
+					return ret
 		# cannot found sequnce, so return None
 		return None
 
-	def runOnImage(self,fn,interactive=False):
+	def runOnImage(self,fn,partial_len=None,interactive=False):
 		"""
 		Run algorithm on image. Extract sources with sextractor, and
 		pass them through sequence finding algorithm, and fit focusing position.
@@ -184,7 +201,7 @@ class ShiftStore:
 				continue
 
 		  	# find object in a row..
-			b = self.findRowObjects(x)
+			b = self.findRowObjects(x,partial_len)
 			if b is None:
 				continue
 			sequences.append(b)
@@ -210,6 +227,8 @@ class ShiftStore:
 			for x in range(0,len(self.shifts) + 1):
 				fa = []
 				for o in sequences:
+					print o
+					print o[x]
 					fa.append(o[x][6])
 				m = numpy.median(fa)
 				fwhm.append(m)
@@ -226,4 +245,4 @@ if __name__ == "__main__":
 	from ds9 import *
 	sc = ShiftStore()
   	for fn in sys.argv[1:]:
-		sc.runOnImage(fn,True)
+		sc.runOnImage(fn,None,True)
