@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define MAX_AXIS      4
+#define MAX_AXIS      2
 
 using namespace rts2sensord;
 
@@ -86,7 +86,7 @@ class NIRatir:public Sensor
 
 		rts2core::BoolArray *ports;
 
-		rts2core::IntegerArray *ADCs;
+//		rts2core::IntegerArray *ADCs;
 
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
@@ -97,7 +97,7 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	for (int i = 0; i < MAX_AXIS; i++)
 	{
 		std::ostringstream pr;
-		pr << "AX" << i << "_";
+		pr << "AX" << (i + 1) << "_";
 		std::string prs = pr.str ();
 		createValue (axtarget[i], (prs + "TAR").c_str (), "axis target position", false, RTS2_VALUE_WRITABLE);
 		axtarget[i]->setValueInteger (0);
@@ -127,9 +127,9 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	for (i = 0; i < 8; i++)
 		ports->addValue (false);
 
-	createValue (ADCs, "ADCs", "I/O ADC values", false);
-	for (i = 0; i < 8; i++)
-		ADCs->addValue (0);
+//	createValue (ADCs, "ADCs", "I/O ADC values", false);
+//	for (i = 0; i < 8; i++)
+//		ADCs->addValue (0);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -191,7 +191,7 @@ int NIRatir::initHardware ()
 	}
 
 	// enable first 8 ADCs
-	flex_enable_adcs (0x00ff);
+//	flex_enable_adcs (0x00ff);
 
 	return 0;	
 }
@@ -218,12 +218,12 @@ int NIRatir::info ()
 		portS = portS >> 1;
 	}
 
-	for (i = 0; i < 8; i++)
+/*	for (i = 0; i < 8; i++)
 	{
 		int32_t v;
 		flex_read_adc16_rtn (NIMC_ADC1 + i, &v);
 		ADCs->setValueInteger (i, v);
-	}
+	} */
 
 	return Sensor::info ();
 }
@@ -303,6 +303,7 @@ int NIRatir::commandAuthorized (rts2core::Connection * conn)
 
 void NIRatir::moveAbs (int axis, int32_t pos)
 {
+	logStream (MESSAGE_INFO) << "moveAbs axis " << std::hex << axis << " to " << pos << sendLog;
 	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, 0x02);
 	flex_set_op_mode (axis, NIMC_ABSOLUTE_POSITION);
 	flex_load_target_pos (axis, pos);
