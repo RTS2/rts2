@@ -87,7 +87,6 @@ class ShiftStore:
 		  	# if the current shift index is equal to expected source position...
 			if sh == i:
 				# append x to sequence, and increase sh (and expected Y position)
-				print sh
 				yi += self.shifts[sh]
 				sh += 1
 				ret.append(x)
@@ -99,7 +98,7 @@ class ShiftStore:
 				cs = can[j] # _c_andidate _s_tar
 				for k in range(j+1,len(can)):
 				  	# something close enough..
-					if abs(can[k][2] - yi) < self.ysep:
+					if abs(can[k][otherc] - yi) < self.ysep:
 						if abs(can[k][3] - xb) < abs (cs[3] - xb):
 							cs = can[k]
 					else:
