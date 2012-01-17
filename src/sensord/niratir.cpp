@@ -304,18 +304,18 @@ int NIRatir::commandAuthorized (rts2core::Connection * conn)
 void NIRatir::moveAbs (int axis, int32_t pos)
 {
 	logStream (MESSAGE_INFO) << "moveAbs axis " << std::hex << axis << " to " << pos << sendLog;
-	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, 0x02);
+	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, (0x01 << axis));
 	flex_set_op_mode (axis, NIMC_ABSOLUTE_POSITION);
 	flex_load_target_pos (axis, pos);
-	flex_start (axis, 0x02);
+	flex_start (axis, (0x01 << axis));
 }
 
 void NIRatir::moveVelocity (int axis, int32_t velocity)
 {
-	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, 0x02);
+	flex_stop_motion (NIMC_NOAXIS, NIMC_DECEL_STOP, (0x01 << axis));
 	flex_set_op_mode (axis, NIMC_VELOCITY);
 	flex_load_velocity (axis, velocity, 0xff);
-	flex_start (axis, 0x02);
+	flex_start (axis, (0x01 << axis));
 }
 
 int main (int argc, char **argv)
