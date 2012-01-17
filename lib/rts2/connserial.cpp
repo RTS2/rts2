@@ -241,8 +241,7 @@ int ConnSerial::readPort (char &ch)
 		rlen = read (sock, &ch, 1);
 		if (rlen == -1 && errno != EINTR)
 		{
-			logStream (MESSAGE_ERROR) << "cannot read single char from serial port, error is "
-				<< strerror (errno) << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot read single char from serial port, error is " << strerror (errno) << sendLog;
 			return -1;
 		}
 		if (rlen == 0)
@@ -352,20 +351,18 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 			if (rlen > 0)
 			{
 				rbuf[rlen] = '\0';
-				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '"
-					<< rbuf << "', error is "
-					<< strerror (errno) << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '" << rbuf << "', error is " << strerror (errno) << sendLog;
 			}
 			else
-				logStream (MESSAGE_ERROR) << "cannot read from serial port "
-					<< strerror (errno) << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot read from serial port " << strerror (errno) << sendLog;
 			return -1;
 		}
 		if (ret == 0)
 		{
 			if (ntries == 0)
 			{
-				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				rbuf[rlen] = '\0';
+				logStream (MESSAGE_ERROR) << "readPort with endChar: read 0 bytes from serial port (" << rlen << ":" << rbuf << ")" << sendLog;
 				return -1;
 			}
 			ntries--;
