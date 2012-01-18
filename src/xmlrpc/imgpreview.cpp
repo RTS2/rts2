@@ -52,14 +52,30 @@
  * http://localhost:8889/preview/images/2011.1210/0001.fits?ps=200&lb=@FOC_POS
  *
  * @subsection Parameters
- *  - <i><b>ps</b> preview size in pixels. Default to 128 pixels.</i>
+ *  - <i><b>ps</b> size of the longest preview axis in pixels. Default to 128 pixels.</i>
  *  - <i><b>lb</b> label. Can include expansion characters, please see <b>man rts2</b> for details.</i>
  *  - <i><b>q</b> quantiles for image display. Default to 0.005, which means that 0.5% of pixel values will be cut before the algorithm progress to generate ADU to pixel values transformation.</i>
- *  - <i><b>chan</b> channel of multifits image. Specify which channel should be displayed, or use -1 to display all channels.</i>
+ *  - <i><b>chan</b> channel of multiple extenstion image. Specify which extension (=channel) should be displayed (counted from 0), or use -1 to display all channels.</i>
  *
  * @subsection Return
  *
  * <b>image/jpeg</b> sized to have bigger axis equal to <b>ps</b> parameter.
+ *
+ * @section XMLRPCD_filedownload_fits fits
+ *
+ * Allow access to FITS images.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/fits/images/2011.1210/0001.fits?ps=200&lb=@FOC_POS
+ *
+ * @subsection Parameters
+ *
+ * None.
+ *
+ * @subsection Return
+ *
+ * <b>image/fits</b> file with the image.
  */
 
 #ifdef __linux__
