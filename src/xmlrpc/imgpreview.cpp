@@ -67,7 +67,7 @@
  *
  * @subsection Example
  *
- * http://localhost:8889/fits/images/2011.1210/0001.fits?ps=200&lb=@FOC_POS
+ * http://localhost:8889/fits/images/2011.1210/0001.fits
  *
  * @subsection Parameters
  *
