@@ -102,7 +102,7 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		createValue (axtarget[i], (prs + "TAR").c_str (), "axis target position", false, RTS2_VALUE_WRITABLE);
 		axtarget[i]->setValueInteger (0);
 
-		createValue (axposition[i], (prs + "POS").c_str (), "current axis position", true);
+		createValue (axposition[i], (prs + "POS").c_str (), "current axis position", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 		createValue (axvelocity[i], (prs + "VEL").c_str (), "axis current velocity", false);
 
@@ -235,6 +235,11 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		if (old_value == axtarget[i])
 		{
 			moveAbs (NIMC_AXIS1 + i, new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == axposition[i])
+		{
+			flex_reset_pos (NIMC_AXIS1 + i, new_value->getValueInteger (), 0, 0xff);
 			return 0;
 		}
 		else if (old_value == axbasev[i])
