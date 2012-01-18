@@ -382,8 +382,7 @@ void DevClientCameraExec::exposureEnd ()
 		getMaster ()->postEvent (new rts2core::Event (EVENT_LAST_READOUT));
 	}
 	// execute value change, if we do not execute that during exposure
-	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
-		!isExposing () && val && val->getValueInteger () == 0)
+	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) && !isExposing () && val && val->getValueInteger () == 0)
 		nextCommand ();
 
 	// execute next command if it's null
@@ -412,6 +411,9 @@ void DevClientCameraExec::exposureFailed (int status)
 void DevClientCameraExec::readoutEnd ()
 {
 	DevClientCameraImage::readoutEnd ();
+	// already deleted script..try to query again for next one by sending EVENT_LAST_READOUT
+	if (!haveScript ())
+		getMaster ()->postEvent (new rts2core::Event (EVENT_SCRIPT_ENDED));
 	nextCommand ();
 }
 

@@ -47,6 +47,12 @@ class DevScript
 		ScriptPtr& getScript () { return script; }
 
 	protected:
+		
+		/**
+		 ( Return true if there is still script to execute.
+		 */
+		bool haveScript () { return script.get (); }
+
 		Rts2Target * currentTarget;
 		/**
 		 * Reference to next command.
