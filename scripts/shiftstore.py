@@ -48,6 +48,9 @@ class ShiftStore:
 		the sequence
 	    - run standard fit on images (from focusing.py) Parameters
 	      governing the algorithm are specified in ShiftStore constructor.
+	Please beware - when using paritial match, you need to make sure the shifts will allow
+	unique identification of the sources. It is your responsibility to make sure they allow so,
+	the algorithm does not check for this.
 	"""
 
 	def __init__(self,shifts=[100,50,50,50,50,50,50,50],horizontal=True):
@@ -62,7 +65,7 @@ class ShiftStore:
 		self.shifts = shifts
 		self.focpos = range(0,len(self.shifts) + 1)
 
-	def testObjects(self,x,can,i,otherc,partial=False):
+	def testObjects(self,x,can,i,otherc,partial_len=None):
 		"""
 		Test if there is sequence among candidates matching expected
 		shifts.  Candidates are stars not far in X coordinate from
@@ -77,7 +80,7 @@ class ShiftStore:
 		@param can     catalogue of candidate stars
 		@param i       expected star index in shift pattern
 		@param otherc  index of other axis. Either 2 or 1 (for vertical or horizontal shifts)
-		@param partial allow partial matches (e.g. where stars are missing)
+		@param partial_len allow partial matches (e.g. where stars are missing)
 		"""
 		ret = []
 		# here we assume y is otherc (either second or third), and some brightnest estimate fourth member in x
@@ -89,45 +92,71 @@ class ShiftStore:
 		# go through list, check for candidate stars..
 		cs = None
 		sh = 0
-		# now interate through candidates
-		for j in range(0,len(can)):
-		  	# if the current shift index is equal to expected source position...
-			if sh == i:
-				# append x to sequence, and increase sh (and expected Y position)
-				try:
-					yi += self.shifts[sh]
-				except IndexError,ie:
+		pl = 0  # number of partial matches..
+		while sh <= len(self.shifts):
+			# now interate through candidates
+			for j in range(0,len(can)):
+			  	# if the current shift index is equal to expected source position...
+				if sh == i:
+					# append x to sequence, and increase sh (and expected Y position)
+					try:
+						yi += self.shifts[sh]
+					except IndexError,ie:
+						break
+					sh += 1
+					ret.append(x)
+			  	# get close enough..
+				if abs(can[j][otherc] - yi) < self.ysep:
+					# find all other sources in vicinity..
+			  		k = None
+					cs = can[j] # _c_andidate _s_tar
+					for k in range(j+1,len(can)):
+					  	# something close enough..
+						if abs(can[k][otherc] - yi) < self.ysep:
+							if abs(can[k][3] - xb) < abs (cs[3] - xb):
+								cs = can[k]
+						else:
+							continue
+
+					# append candidate star
+					ret.append(cs)
+					if k is not None:
+						j = k
+					# don't exit if the algorithm make it to end of shifts
+					try:
+						yi += self.shifts[sh]
+					except IndexError,ie:
+						break
+					sh += 1
+
+			# no candiate exists
+			if partial_len is None:
+				if len(ret) == len(self.shifts) + 1:
 					return ret
-				sh += 1
-				ret.append(x)
-		  	# get close enough..
-			# please note that this algorithm is not looking for partial matches
-			if abs(can[j][otherc] - yi) < self.ysep:
-				# find all other sources in vicinity..
-		  		k = None
-				cs = can[j] # _c_andidate _s_tar
-				for k in range(j+1,len(can)):
-				  	# something close enough..
-					if abs(can[k][otherc] - yi) < self.ysep:
-						if abs(can[k][3] - xb) < abs (cs[3] - xb):
-							cs = can[k]
-					elif partial == False:
-						# if the algorithm is looking for full match, exit
-						return None
-					else:
-						# if partial matches are OK, carry on
-						continue
-				# append candidate star
-				ret.append(cs)
-				if k is not None:
-					j = k
-				# don't exit if the algorithm make it to end of shifts
-				try:
-					yi += self.shifts[sh]
-				except IndexError,ie:
+				return None
+			else:
+				if len(ret) == len(self.shifts) + 1:
 					return ret
-				sh += 1
-		return ret
+
+			# insert dummy postion..
+			if otherc == 2:
+				ret.append([None,x[1],yi,None])
+			else:
+				ret.append([None,yi,x[2],None])
+
+			pl += 1
+
+			try:
+				yi += self.shifts[sh]
+			except IndexError,ie:
+				break
+			sh += 1
+
+		# partial_len is not None
+		if (len(self.shifts) + 1 - pl) >= partial_len:
+			return ret
+
+		return None
 
 
 	def findRowObjects(self,x,partial_len=None):
@@ -153,20 +182,23 @@ class ShiftStore:
 		can.sort(cmp=lambda x,y: cmp(x[otherc],y[otherc]))
 		# assume selected object is one in shift sequence
 		# place it at any possible position in shift sequence, and test if the sequence can be found
+		max_ret = []
 		for i in range(0,len(self.shifts) + 1):
 			# test if sequence can be found..
-			ret = self.testObjects(x,can,i,otherc,partial_len is None)
+			ret = self.testObjects(x,can,i,otherc,partial_len)
 			# and if it is found, return it
 			if ret is not None:
 				if partial_len is None:
-					if len(ret) == len(self.shifts) + 1:
-						return ret
-				elif len(ret) >= partial_len:
 					return ret
+				elif len(ret) > len(max_ret):
+					max_ret = ret
+
+		if partial_len is not None and len(max_ret) >= partial_len:
+			return max_ret
 		# cannot found sequnce, so return None
 		return None
 
-	def runOnImage(self,fn,partial_len=None,interactive=False):
+	def runOnImage(self,fn,partial_len=None,interactive=False,sequences_num=15,mag_limit_num=7):
 		"""
 		Run algorithm on image. Extract sources with sextractor, and
 		pass them through sequence finding algorithm, and fit focusing position.
@@ -210,28 +242,34 @@ class ShiftStore:
 				d.set('regions','image; circle {0} {1} 20 # color=yellow tag = sel'.format(x[1],x[2]))
 			for obj in b:
 				usednum.append(obj[0])
-				if d:
-					d.set('regions','image; circle {0} {1} 15 # color=blue tag = sel'.format(obj[1],obj[2]))
 			if d:
 				print 'best mag: ',x[3]
 				d.set('regions select group sel')
 				d.set('regions delete select')
 				for obj in b:
-					d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
-			if len(sequences) > 15:
+					if obj[0] is None:
+						d.set('regions','image; point {0} {1} # point=boxcircle 15 color = red'.format(obj[1],obj[2]))
+					else:
+						d.set('regions','image; circle {0} {1} 10 # color = green'.format(obj[1],obj[2]))
+			if len(sequences) > sequences_num:
 				break
 		# if enough sequences were found, process them and try to fit results
-		if len(sequences) > 10:
+		if len(sequences) > sequences_num:
 			# get median of FWHM from each sequence
 			fwhm=[]
 			for x in range(0,len(self.shifts) + 1):
 				fa = []
 				for o in sequences:
-					print o
-					print o[x]
-					fa.append(o[x][6])
-				m = numpy.median(fa)
-				fwhm.append(m)
+					if o[x][0] is not None:
+						fa.append(o[x][6])
+				# if length of magnitude estimates is greater then limit..
+				if len(fa) >= mag_limit_num:
+					m = numpy.median(fa)
+					fwhm.append(m)
+				else:
+					if interactive:
+						print 'removing focuser position, because not enough matches were found',self.focpos[x]
+					self.focpos.remove(self.focpos[x])
 			# fit it
 			foc = focusing.Focusing()
 
@@ -243,6 +281,12 @@ class ShiftStore:
 if __name__ == "__main__":
   	# test method
 	from ds9 import *
+	# full match
 	sc = ShiftStore()
   	for fn in sys.argv[1:]:
 		sc.runOnImage(fn,None,True)
+
+	# partial match
+	#sc = ShiftStore([25,75,50,50])
+  	#for fn in sys.argv[1:]:
+	#	sc.runOnImage(fn,3,True)
