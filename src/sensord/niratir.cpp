@@ -1,6 +1,6 @@
 /* 
  * NI-Motion driver card support (PCI version).
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -174,7 +174,7 @@ int NIRatir::initHardware ()
 
 	flex_enable_axis (0, 0);
 	for (int i = 0; i < MAX_AXIS; i++)
-		flex_config_axis (NIMC_AXIS1 + i, 0, 0, NIMC_STEP_OUTPUT1, 0);
+		flex_config_axis (NIMC_AXIS1 + i, 0, 0, NIMC_STEP_OUTPUT1 + i, 0);
 	flex_enable_axis (0x1e, NIMC_PID_RATE_250);
 
 	for (int i = 0; i < MAX_AXIS; i++)
@@ -295,7 +295,8 @@ int NIRatir::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("reset"))
 	{
-		flex_reset_pos (NIMC_AXIS1, 0, 0, 0xff);
+		for (int i = 0; i < MAX_AXIS; i++)
+			flex_reset_pos (NIMC_AXIS1 + i, 0, 0, 0xff);
 		return 0;
 	}
 	return Sensor::commandAuthorized (conn);
