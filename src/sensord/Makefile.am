@@ -79,6 +79,8 @@ rts2_sensor_mdm_bait_SOURCES = mdm_bait.cpp
 
 rts2_sensor_colores_SOURCES = colores.cpp
 
+rts2_sensor_micropirani_925_SOURCES = micropirani-925.cpp
+
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
 
@@ -121,8 +123,6 @@ rts2_sensor_lakeshore_340_SOURCES = lakeshore-340.cpp
 rts2_sensor_triax_SOURCES = triax.cpp
 
 rts2_sensor_mm2500_SOURCES = mm2500.cpp
-
-rts2_sensor_micropirani_925_SOURCES = micropirani-925.cpp
 
 else
 
