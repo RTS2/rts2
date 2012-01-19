@@ -322,7 +322,8 @@ AC_ARG_WITH(k8055,
 [  --with-k8055           path to Velleman k8055 library],
 K8055="${withval}";
 LIB_K8055="-lk8055 -lusb",
-[K8055=no])
+K8055=no;
+LIB_K8055='')
 
 AH_TEMPLATE([WITH_K8055],[K8055 library is not present])
 
