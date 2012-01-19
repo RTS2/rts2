@@ -208,8 +208,8 @@ void NexStar::getDeg (char command, double &d1, double &d2)
 	{
 		throw rts2core::Error (std::string ("invalid return ") + wbuf); 
 	}
-	d1 = 360.0 * ((double) i1) / 65536.0;
-	d2 = 360.0 * ((double) i2) / 65536.0;
+	d1 = 360.0 * ((double) i1) / 0xffff;
+	d2 = 360.0 * ((double) i2) / 0xffff;
 }
 
 void NexStar::getPreciseDeg (char command, double &d1, double &d2)
@@ -224,8 +224,8 @@ void NexStar::getPreciseDeg (char command, double &d1, double &d2)
 	{
 		throw rts2core::Error (std::string ("invalid return ") + wbuf); 
 	}
-	d1 = 360.0 * ((double) i1) / 16777216.0;
-	d2 = 360.0 * ((double) i2) / 16777216.0;
+	d1 = 360.0 * ((double) i1) / 0xffffffff;
+	d2 = 360.0 * ((double) i2) / 0xffffffff;
 }
 
 int main (int argc, char **argv)
