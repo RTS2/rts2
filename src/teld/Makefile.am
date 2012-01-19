@@ -8,7 +8,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors \
 	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test rts2-teld-nexstar \
-	rts2-teld-lx200gps rts2-teld-meade
+	rts2-teld-lx200gps rts2-teld-meade rts2-teld-indi
 
 librts2tellx200_la_SOURCES = tellx200.cpp hms.c
 librts2tellx200_l_CXXFLAGS = @NOVA_CFLAGS@
@@ -33,6 +33,10 @@ rts2_teld_lx200_LDADD = -lrts2tellx200 ${LDADD}
 
 rts2_teld_meade_SOURCES = meade.cpp
 rts2_teld_meade_LDADD = -lrts2tellx200 ${LDADD}
+
+rts2_teld_indi_SOURCES = indibridge.cpp hms.c
+rts2_teld_indi_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
+rts2_teld_indi_CPPFLAGS = -I../libindi ${CPPFLAGS}
 
 rts2_teld_lx200gps_SOURCES = lx200gps.cpp
 rts2_teld_lx200gps_LDADD = -lrts2tellx200 ${LDADD}
