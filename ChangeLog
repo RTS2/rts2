@@ -1,3 +1,6 @@
+2012-01-18
+ * SBIG filter support (E. Kundra)
+
 2012-01-14
  * progresses
  * migrates objects to rts2core namespace
