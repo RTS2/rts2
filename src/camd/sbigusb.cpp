@@ -108,6 +108,7 @@ class Sbig:public Camera
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
+		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 	private:
 		CSBIGCam * pcam;
 		int checkSbigHw (PAR_ERROR ret)
@@ -141,6 +142,44 @@ class Sbig:public Camera
 }
 
 using namespace rts2camd;
+
+int Sbig::setFilterNum (int new_filter, const char *fn)
+{
+	if (fn != NULL)
+		return Camera::setFilterNum (new_filter, fn);
+
+	if (pcam == NULL && initHardware ())
+		return -1;
+
+	CFWParams cfp;
+	CFWResults cfr;
+	PAR_ERROR ret;
+	cfp.cfwModel = CFWSEL_AUTO;
+	cfp.cfwCommand = CFWC_GOTO;
+	if (new_filter == 0)
+		cfp.cfwParam1 = CFWP_1;
+	else if (new_filter == 1)
+		cfp.cfwParam1 = CFWP_2;
+	else if (new_filter == 2)
+		cfp.cfwParam1 = CFWP_3;
+	else if (new_filter == 3)
+		cfp.cfwParam1 = CFWP_4;
+	else if (new_filter == 4)
+		cfp.cfwParam1 = CFWP_5;
+	else if (new_filter == 5)
+		cfp.cfwParam1 = CFWP_6;
+	else if (new_filter == 6)
+		cfp.cfwParam1 = CFWP_7;
+	else if (new_filter == 7)
+		cfp.cfwParam1 = CFWP_8;
+	else if (new_filter == 8)
+		cfp.cfwParam1 = CFWP_9;
+	else if (new_filter == 9)
+		cfp.cfwParam1 = CFWP_10;
+	ret = pcam->SBIGUnivDrvCommand (CC_CFW, &cfp, &cfr);
+	checkQueuedExposures ();
+	return (ret == CE_NO_ERROR) ? 0 : -1;
+}
 
 int Sbig::initChips ()
 {
@@ -266,6 +305,7 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createTempAir ();
 	createTempSet ();
 	createTempCCD ();
+ 	createFilter ();
 
 	createExpType ();
 
@@ -285,6 +325,7 @@ Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	reqSerialNumber = NULL;
 	addOption (OPT_USBPORT, "usb-port", 1, "USB port number - defaults to 0");
 	addOption (OPT_SERIAL, "serial-number", 1, "SBIG serial number to accept for that camera");
+ 	addOption ('f', NULL, 1, "filter names (separated with :)");
 }
 
 Sbig::~Sbig ()
@@ -310,6 +351,9 @@ int Sbig::processOption (int in_opt)
 			if (usb_port)
 				return -1;
 			reqSerialNumber = optarg;
+			break;
+ 		case 'f':
+			addFilters (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);

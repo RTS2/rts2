@@ -262,6 +262,12 @@ class Camera:public rts2core::ScriptDevice
 		char* dataBuffer;
 		long dataBufferSize;
 
+		/**
+		 * Add : separated filters from command line (usually -F argument).
+		 *
+		 * @param *opt   command line arguments
+		 */
+		void addFilters (char *opt);
 
 		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;

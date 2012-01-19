@@ -88,7 +88,6 @@ class MICCD:public Camera
 		virtual int scriptEnds ();
 
 	private:
-		void addFilters (char *opt);
 		int clearCCD (int nclears);
 
 		int reinitCamera ();
@@ -524,23 +523,6 @@ int MICCD::scriptEnds ()
 		shift->setValueInteger (0);
 	}
 	return Camera::scriptEnds ();
-}
-
-void MICCD::addFilters (char *opt)
-{
-	char *s = opt;
-	char *o = s;
-	for (; *o != '\0'; o++)
-	{
-		if (*o == ':')
-		{
-			*o = '\0';
-			camFilterVal->addSelVal (s);
-			s = o + 1;
-		}
-	}
-	if (o != s)
-		camFilterVal->addSelVal (s);
 }
 
 int MICCD::clearCCD (int nclear)

@@ -810,6 +810,23 @@ int Camera::initValues ()
 	return rts2core::ScriptDevice::initValues ();
 }
 
+void Camera::addFilters (char *opt)
+{
+	char *s = opt;
+	char *o = s;
+	for (; *o != '\0'; o++)
+	{
+		if (*o == ':')
+		{
+			*o = '\0';
+			camFilterVal->addSelVal (s);
+			s = o + 1;
+		}
+	}
+	if (o != s)
+		camFilterVal->addSelVal (s);
+}
+
 void Camera::checkExposures ()
 {
 	long ret;
