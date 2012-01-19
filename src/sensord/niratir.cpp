@@ -196,7 +196,9 @@ int NIRatir::initHardware ()
 	}
 
 	// enable first 8 ADCs
-	flex_enable_adcs (0xf0);
+	//std::cout << "entering adcs" << std::endl;
+	//flex_enable_adcs (0xf0);
+	//std::cout << "exiting adcs" << std::endl;
 
 	return 0;	
 }
@@ -223,12 +225,12 @@ int NIRatir::info ()
 		portS = portS >> 1;
 	}
 
-	for (i = 4; i < 8; i++)
+/*	for (i = 4; i < 8; i++)
 	{
 		int32_t v;
 		flex_read_adc16_rtn (NIMC_ADC1 + i, &v);
 		ADCs->setValueInteger (i, v);
-	}
+	} */
 
 	return Sensor::info ();
 }
@@ -279,6 +281,11 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 				enable_map |= (0x02 << i);
 			flex_enable_axis (enable_map, NIMC_PID_RATE_250);
 			logStream (MESSAGE_DEBUG) << "called flex_enable with 0x" << std::hex << std::setw (2) << enable_map << sendLog;
+			if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
+			{
+				logStream (MESSAGE_DEBUG) << "call stop motion with kill_stop" << sendLog;
+				flex_stop_motion (NIMC_AXIS1 + 1, NIMC_KILL_STOP, 0x02);
+			}	
 			return 0;
 		}
 	}
