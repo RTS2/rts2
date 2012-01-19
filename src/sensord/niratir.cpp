@@ -32,6 +32,9 @@
  * http://joule.ni.com/nidu/cds/view/p/id/482/lang/en
  * http://ftp.ni.com/support/softlib/motion_control/NI-Motion%20Driver%20Development%20Kit/Driver%20Development%20Kit%206.1.5/MotionDDK615.zip
  *
+ * flex_ routines
+ * http://www.ni.com/pdf/manuals/321943b.pdf
+ *
  * You will need to quess a bit which command ID provides which function, as
  * there isn't any direct mapping. Checking name and parameters usually will
  * lead to finsing the match.
@@ -87,7 +90,7 @@ class NIRatir:public Sensor
 
 		rts2core::BoolArray *ports;
 
-//		rts2core::IntegerArray *ADCs;
+		rts2core::IntegerArray *ADCs;
 
 		void moveAbs (int axis, int32_t pos);
 		void moveVelocity (int axis, int32_t velocity);
@@ -128,9 +131,9 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 	for (i = 0; i < 8; i++)
 		ports->addValue (false);
 
-//	createValue (ADCs, "ADCs", "I/O ADC values", false);
-//	for (i = 0; i < 8; i++)
-//		ADCs->addValue (0);
+	createValue (ADCs, "ADCs", "I/O ADC values", false);
+	for (i = 0; i < 8; i++)
+		ADCs->addValue (0);
 
 	boardPCI = NULL;
 	addOption ('b', NULL, 1, "NI Motion board /proc entry");
@@ -193,7 +196,7 @@ int NIRatir::initHardware ()
 	}
 
 	// enable first 8 ADCs
-//	flex_enable_adcs (0x00ff);
+	flex_enable_adcs (0xf0);
 
 	return 0;	
 }
@@ -220,12 +223,12 @@ int NIRatir::info ()
 		portS = portS >> 1;
 	}
 
-/*	for (i = 0; i < 8; i++)
+	for (i = 4; i < 8; i++)
 	{
 		int32_t v;
 		flex_read_adc16_rtn (NIMC_ADC1 + i, &v);
 		ADCs->setValueInteger (i, v);
-	} */
+	}
 
 	return Sensor::info ();
 }
