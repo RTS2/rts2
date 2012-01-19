@@ -45,6 +45,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iomanip>
 
 #define MAX_AXIS      2
 
@@ -176,6 +177,7 @@ int NIRatir::initHardware ()
 	for (int i = 0; i < MAX_AXIS; i++)
 		flex_config_axis (NIMC_AXIS1 + i, 0, 0, NIMC_STEP_OUTPUT1 + i, 0);
 	flex_enable_axis (0x1e, NIMC_PID_RATE_250);
+	logStream (MESSAGE_DEBUG) << "called flex enable with 0x1e" << sendLog;
 
 	for (int i = 0; i < MAX_AXIS; i++)
 	{
@@ -273,6 +275,7 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 			if (((rts2core::ValueBool *) new_value)->getValueBool ())
 				enable_map |= (0x02 << i);
 			flex_enable_axis (enable_map, NIMC_PID_RATE_250);
+			logStream (MESSAGE_DEBUG) << "called flex_enable with 0x" << std::hex << std::setw (2) << enable_map << sendLog;
 			return 0;
 		}
 	}
