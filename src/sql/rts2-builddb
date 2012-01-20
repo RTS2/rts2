@@ -77,7 +77,7 @@ fi
 
 # process arguments..
 
-PSQL=psql
+PSQL="psql"
 
 PSQLDB="$PSQL $DBNAME"
 
