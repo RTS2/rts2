@@ -76,12 +76,12 @@ class NIRatir:public Sensor
 	private:
 		const char *boardPCI;
 
-		rts2core::ValueInteger *axtarget[MAX_AXIS];
-		rts2core::ValueInteger *axposition[MAX_AXIS];
+		rts2core::ValueLong *axtarget[MAX_AXIS];
+		rts2core::ValueLong *axposition[MAX_AXIS];
 
-		rts2core::ValueInteger *axvelocity[MAX_AXIS];
-		rts2core::ValueInteger *axmaxv[MAX_AXIS];
-		rts2core::ValueInteger *axbasev[MAX_AXIS];
+		rts2core::ValueLong *axvelocity[MAX_AXIS];
+		rts2core::ValueLong *axmaxv[MAX_AXIS];
+		rts2core::ValueLong *axbasev[MAX_AXIS];
 
 		rts2core::ValueLong *axacceleration[MAX_AXIS];
 		rts2core::ValueLong *axdeceleration[MAX_AXIS];
@@ -104,7 +104,7 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		pr << "AX" << (i + 1) << "_";
 		std::string prs = pr.str ();
 		createValue (axtarget[i], (prs + "TAR").c_str (), "axis target position", false, RTS2_VALUE_WRITABLE);
-		axtarget[i]->setValueInteger (0);
+		axtarget[i]->setValueLong (0);
 
 		createValue (axposition[i], (prs + "POS").c_str (), "current axis position", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
@@ -113,8 +113,8 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE);
 		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE);
 
-		axmaxv[i]->setValueInteger (2000);
-		axbasev[i]->setValueInteger (0);
+		axmaxv[i]->setValueLong (2000);
+		axbasev[i]->setValueLong (0);
 
 		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE);
 		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE);
@@ -209,10 +209,10 @@ int NIRatir::info ()
 	for (int i = 0; i < MAX_AXIS; i++)
 	{
 		flex_read_position_rtn (NIMC_AXIS1 + i, &cp);
-		axposition[i]->setValueInteger (cp);
+		axposition[i]->setValueLong (cp);
 
 		flex_read_velocity_rtn (NIMC_AXIS1 + i, &cp);
-		axvelocity[i]->setValueInteger (cp);
+		axvelocity[i]->setValueLong (cp);
 	}
 
 	uint16_t portS;
@@ -241,22 +241,22 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	{
 		if (old_value == axtarget[i])
 		{
-			moveAbs (NIMC_AXIS1 + i, new_value->getValueInteger ());
+			moveAbs (NIMC_AXIS1 + i, new_value->getValueLong ());
 			return 0;
 		}
 		else if (old_value == axposition[i])
 		{
-			flex_reset_pos (NIMC_AXIS1 + i, new_value->getValueInteger (), 0, 0xff);
+			flex_reset_pos (NIMC_AXIS1 + i, new_value->getValueLong (), 0, 0xff);
 			return 0;
 		}
 		else if (old_value == axbasev[i])
 		{
-			flex_load_base_vel (NIMC_AXIS1 + i, new_value->getValueInteger ());
+			flex_load_base_vel (NIMC_AXIS1 + i, new_value->getValueLong ());
 			return 0;
 		}
 		else if (old_value == axmaxv[i])
 		{
-			flex_load_velocity (NIMC_AXIS1 + i, new_value->getValueInteger (), 0xff);
+			flex_load_velocity (NIMC_AXIS1 + i, new_value->getValueLong (), 0xff);
 			return 0;
 		}
 		else if (old_value == axacceleration[i])
