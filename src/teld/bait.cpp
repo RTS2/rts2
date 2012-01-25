@@ -165,8 +165,8 @@ int BAIT::processOption (int opt)
 
 int BAIT::initValues ()
 {
-	Configuration *config;
-	config = Configuration::instance ();
+	rts2core::Configuration *config;
+	config = rts2core::Configuration::instance ();
 	config->loadFile ();
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 	telLongitude->setValueDouble (config->getObserver ()->lng);
