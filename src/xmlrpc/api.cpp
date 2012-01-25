@@ -218,7 +218,9 @@ digraph "JSON API calls handling" {
  *  - <i><b>propm</b> Return target(s) proper motion.</i>
  *  - <i><b>from</b> Datetime (as ctime, seconds from 1/1/1970) for which target(s) values will be calculated.</i>
  *
- * @section create_target Create target
+ * @section tbystring  Resolve position from provided string
+ *
+ * @section create_target Create new target
  *
  * @section update_target Update target informations
  *
@@ -532,17 +534,26 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *value = params->getString ("v", "");
 			int async = params->getInteger ("async", 0);
 			int ext = params->getInteger ("e", 0);
+			rts2core::Value * rts2v = NULL;
+
 			if (variable[0] == '\0')
 				throw JSONException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
 				throw JSONException ("value not set - missing or empty v parameter");
-			if (isCentraldName (device))
-				conn = master->getSingleCentralConn ();
+			if (!(strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ())))
+			{
+				rts2v = master->getOwnValue (variable);
+			}
 			else
-				conn = master->getOpenConnection (device);
-			if (conn == NULL)
-				throw JSONException ("cannot find device with given name");
-			rts2core::Value * rts2v = master->getValue (device, variable);
+			{
+				if (isCentraldName (device))
+					conn = master->getSingleCentralConn ();
+				else
+					conn = master->getOpenConnection (device);
+				if (conn == NULL)
+					throw JSONException ("cannot find device with given name");
+				rts2v = master->getValue (device, variable);
+			}
 			if (rts2v == NULL)
 				throw JSONException ("cannot find variable");
 			char op;

@@ -42,6 +42,8 @@
  * Following are description of various image related services, with their
  * parameters. Format of the documentation is similar to @ref JSON_description.
  *
+ * <hr/>
+ *
  * @section XMLRPCD_filedownload_preview preview
  *
  * Generates zoomed JPEG images. This is primary usefull for quick access to
@@ -76,6 +78,17 @@
  * @subsection Return
  *
  * <b>image/fits</b> file with the image.
+ *
+ * <hr/>
+ *
+ * @section XMLRPCD_filedownload_data data
+ *
+ * Return raw data. Properly service sockets, so it will send new data only if
+ * socket is available for read.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/data/
  */
 
 #ifdef __linux__

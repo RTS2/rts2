@@ -1,6 +1,6 @@
 /* 
  * XML-RPC daemon.
- * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2012 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
  * This program is free software; you can redistribute it and/or
@@ -80,7 +80,10 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 	createOrReplaceValue (lastFilename, conn, RTS2_VALUE_STRING, "_lastimage", "last image from camera", false, RTS2_VALUE_WRITABLE);
 	createOrReplaceValue (callScriptEnds, conn, RTS2_VALUE_BOOL, "_callscriptends", "call script ends before executing script on device", false);
+	callScriptEnds->setValueBool (false);
+
 	createOrReplaceValue (scriptRunning, conn, RTS2_VALUE_BOOL, "_scriptrunning", "if script is running on device", false);
+	scriptRunning->setValueBool (false);
 
 	createOrReplaceValue (scriptStart, conn, RTS2_VALUE_TIME, "_script_start", "script start time", false);
 	createOrReplaceValue (scriptEnd, conn, RTS2_VALUE_TIME, "_script_end", "script end time", false);
