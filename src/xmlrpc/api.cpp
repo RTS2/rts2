@@ -354,7 +354,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 {
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
   	std::ostringstream os;
-	rts2core::Connection *conn;
+	rts2core::Connection *conn = NULL;
 
 	// widgets - divs with informations
 	if (vals.size () >= 2 && vals[0] == "w")
@@ -534,15 +534,23 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *value = params->getString ("v", "");
 			int async = params->getInteger ("async", 0);
 			int ext = params->getInteger ("e", 0);
-			rts2core::Value * rts2v = NULL;
 
 			if (variable[0] == '\0')
 				throw JSONException ("variable name not set - missing or empty n parameter");
 			if (value[0] == '\0')
 				throw JSONException ("value not set - missing or empty v parameter");
+			char op;
+			if (vals[0] == "inc")
+				op = '+';
+			else if (vals[0] == "dec")
+				op = '-';
+			else
+				op = '=';
+			// own connection
 			if (!(strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ())))
 			{
-				rts2v = master->getOwnValue (variable);
+				((XmlRpcd *) getMasterApp ())->doOpValue (variable, op, value);
+				sendOwnValues (os, params, NAN, ext);
 			}
 			else
 			{
@@ -552,29 +560,22 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 					conn = master->getOpenConnection (device);
 				if (conn == NULL)
 					throw JSONException ("cannot find device with given name");
-				rts2v = master->getValue (device, variable);
-			}
-			if (rts2v == NULL)
-				throw JSONException ("cannot find variable");
-			char op;
-			if (vals[0] == "inc")
-				op = '+';
-			else if (vals[0] == "dec")
-				op = '-';
-			else
-				op = '=';
-			if (async)
-			{
-				conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
-				sendConnectionValues (os, conn, params, ext);
-			}
-			else
-			{
-				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
-				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+				rts2core::Value * rts2v = master->getValue (device, variable);
+				if (rts2v == NULL)
+					throw JSONException ("cannot find variable");
+				if (async)
+				{
+					conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true));
+					sendConnectionValues (os, conn, params, ext);
+				}
+				else
+				{
+					AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
+					((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
-				conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
-				throw XmlRpc::XmlRpcAsynchronous ();
+					conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), std::string (variable), op, std::string (value), true), 0, aa);
+					throw XmlRpc::XmlRpcAsynchronous ();
+				}
 			}
 
 		}

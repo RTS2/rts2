@@ -360,6 +360,16 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		void scriptProgress (double start, double end);
 
 		/**
+		 *
+		 * @param v_name   value name
+		 * @param oper     operator
+		 * @param operand  
+		 *
+		 * @throw rts2core::Error
+		 */
+		void doOpValue (const char *v_name, char oper, const char *operand);
+
+		/**
 		 * Register asynchronous API call.
 		 */
 		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
@@ -425,7 +435,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		ListValuesDevice listValuesDevice;
 		ListPrettyValuesDevice listPrettValuesDecice;
 		GetValue _getValue;
-		SetValue setValue;
+		SetValue _setValue;
 		SetValueByType setValueByType;
 		IncValue incValue;
 		GetMessages _getMessages;

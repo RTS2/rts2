@@ -128,6 +128,27 @@ void XmlDevCameraClient::scriptProgress (double start, double end)
 	((XmlRpcd *) getMaster ())->scriptProgress (start, end);
 }
 
+void XmlRpcd::doOpValue (const char *v_name, char oper, const char *operand)
+{
+	Value *ov = getOwnValue (v_name);
+	if (ov == NULL)
+		throw JSONException ("cannot find value");
+	Value *nv = duplicateValue (ov, false);
+	nv->setValueCharArr (operand);
+	nv->doOpValue (oper, ov);
+	int ret = setValue (ov, nv);
+	if (ret < 0)
+	{
+		delete nv;
+		throw JSONException ("cannot set value");
+	}
+	if (!ov->isEqual (nv))
+	{
+		ov->setFromValue (nv);
+		valueChanged (ov);
+	}
+}
+
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
 {
 	callScriptEnds->setValueBool (nv);
@@ -438,7 +459,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
   listValuesDevice (this),
   listPrettValuesDecice (this),
   _getValue (this),
-  setValue (this),
+  _setValue (this),
   setValueByType (this),
   incValue (this),
   _getMessages (this),
