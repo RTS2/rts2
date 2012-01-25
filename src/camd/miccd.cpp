@@ -206,10 +206,12 @@ int MICCD::initHardware ()
 		case G10800:
 		case G11400:
 		case G12000:
-			mode = NULL;
 			createValue (fan, "FAN", "camera fan", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			miccd_fan (&camera, 1);
 			fan->setValueBool (true);
+			createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+			mode->addSelVal ("NORMAL");
+			mode->addSelVal ("LOW NOISE");
 			break;
 		case G2:
 		case G3:
