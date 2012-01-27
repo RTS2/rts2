@@ -203,6 +203,7 @@ int MICCD::initHardware ()
 	switch (camera.model)
 	{
 	 	case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
@@ -265,6 +266,7 @@ void MICCD::initDataTypes ()
 	switch (camera.model)
 	{
 	 	case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
@@ -292,6 +294,7 @@ int MICCD::info ()
 		switch (camera.model)
 		{
 			case G10300:
+			case G10400:
 			case G10800:
 			case G11400:
 			case G12000:
@@ -310,6 +313,7 @@ int MICCD::info ()
 	switch (camera.model)
 	{
 		case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
@@ -406,6 +410,7 @@ int MICCD::startExposure ()
 	switch (camera.model)
 	{
 	 	case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
@@ -464,6 +469,7 @@ int MICCD::endExposure ()
 		switch (camera.model)
 		{
 			case G10300:
+			case G10400:
 			case G10800:
 			case G11400:
 			case G12000:
@@ -499,6 +505,7 @@ int MICCD::stopExposure ()
 	switch (camera.model)
 	{
 		case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
@@ -531,10 +538,11 @@ int MICCD::doReadout ()
 	switch (camera.model)
 	{
 		case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
-			ret = miccd_read_data (&camera, getUsedWidth () * getUsedHeight (), dataBuffer, camera.w, camera.h);
+			ret = miccd_read_data (&camera, (getDataType () == RTS2_DATA_USHORT) ? 2 * getUsedWidth () * getUsedHeight () : getUsedWidth () * getUsedHeight (), dataBuffer, getUsedWidth (), getUsedHeight ());
 			break;
 		case G2:
 		case G3:
@@ -584,6 +592,7 @@ int MICCD::reinitCamera ()
 	switch (camera.model)
 	{
 		case G10300:
+		case G10400:
 		case G10800:
 		case G11400:
 		case G12000:
