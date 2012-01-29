@@ -396,7 +396,10 @@ int MICCD::startExposure ()
 	{
 		ret = miccd_clear (&camera);
 		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "MICCD::startExposure error calling miccd_clear" << sendLog;
 			return -1;
+		}
 	}
 	else if (shift->getValueInteger () < 0)
 	{
@@ -416,14 +419,15 @@ int MICCD::startExposure ()
 		case G12000:
 			ret = miccd_g1_mode (&camera, getDataType () == RTS2_DATA_USHORT, mode->getValueInteger ());
 			if (ret)
+			{
+				logStream (MESSAGE_ERROR) << "MICCD::startExposure error calling miccd_g1_mode" << sendLog;
 				return ret;
+			}
 			if (getExposure () <= 8)
 			{
 				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getExposure ());
 				if (ret < 0)
 				{
-					if (camera.model != G10800)	
-						return -1;
 					// else try to reinit..
 					logStream (MESSAGE_WARNING) << "camera disappeared, trying to reinintiliaze it.." << sendLog;
 					if (reinitCamera ())
