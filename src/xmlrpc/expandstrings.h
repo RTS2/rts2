@@ -106,13 +106,27 @@ class ExpandStringValue:public ExpandString
 		char *subName;
 };
 
+class ExpandStringScript:public ExpandString
+{
+	public:
+		ExpandStringScript (const char *pagePrefix, const char *_script);
+		~ExpandStringScript () { delete []script; }
+		virtual void writeTo (std::ostream &os);
+
+	private:
+		char *script;
+};
+
 class ExpandStrings:public std::list <ExpandString *>
 {
 	public:
-		ExpandStrings () {};
+		ExpandStrings (const char *_pagePrefix = NULL) { pagePrefix = _pagePrefix; };
 		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
 		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bool ignoreUnknownTags = false);
 		std::string getString ();
+
+	private:
+		const char *pagePrefix;
 };
 
 }

@@ -76,6 +76,20 @@ void ExpandStringDevice::writeTo (std::ostream &os)
 		<< "</script>" << std::endl;
 }
 
+ExpandStringScript::ExpandStringScript (const char *pagePrefix, const char *_script)
+{
+	script = new char[strlen (pagePrefix ) + strlen (_script) + 5];
+	strcpy (script, pagePrefix);
+	strcat (script, "/js/");
+	strcat (script, _script);
+}
+
+void ExpandStringScript::writeTo (std::ostream &os)
+{
+	os << "<script type='text/javascript' src='" << script << "'/>";
+}
+
+
 ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valueName)
 {
 	deviceName = new char[strlen (_deviceName) + 1];
@@ -148,23 +162,11 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bo
 		{
 			continue;
 		}
-		else if (ptr->children == NULL)
+		else if (ptr->type == XML_TEXT_NODE)
 		{
 			if (ptr->content != NULL)
 			{
 				push_back (new ExpandStringString ((char *) ptr->content));
-			}
-			else if (ignoreUnknownTags)
-			{
-			  	if (xmlStrEqual (ptr->name, (xmlChar *) "script"))
-				{
-					push_back (new ExpandStringOpenTag (ptr));
-					push_back (new ExpandStringCloseTag (ptr));
-				}
-				else
-				{
-					push_back (new ExpandStringSingleTag (ptr));
-				}
 			}
 		}
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "value"))
@@ -187,7 +189,14 @@ void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName, bo
 		{
 			if (ptr->children == NULL)
 				throw XmlEmptyNode (ptr);
-			push_back (new ExpandStringDevice ((char *)ptr->children->content));
+			push_back (new ExpandStringDevice ((char *) ptr->children->content));
+		}
+		else if (xmlStrEqual (ptr->name, (xmlChar *) "rts2script"))
+		{
+			xmlAttrPtr script = xmlHasProp (ptr, (xmlChar *) "script");
+			if (script == NULL)
+				throw XmlMissingAttribute (ptr, "script");
+			push_back (new ExpandStringScript (pagePrefix, (char *) script->children->content));
 		}
 		else
 		{

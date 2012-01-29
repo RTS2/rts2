@@ -43,7 +43,7 @@ void parseFd (int f, char * &response, size_t &response_length)
 		throw XmlRpcException ("cannot parse RTS2 file");
 	root_element = xmlDocGetRootElement (doc);
 
-	ExpandStrings rts2file;
+	ExpandStrings rts2file (((XmlRpcd *) getMasterApp ()) -> getPagePrefix ());
 	rts2file.expandXML (root_element, "centrald", true);
 	
 	std::string es = rts2file.getString ();

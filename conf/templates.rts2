@@ -1,8 +1,8 @@
 <html>
 <head>
   <title>Template examples</title>
-  <script type='text/javascript' src='../js/setgetapi.js'></script>
-  <script type='text/javascript' src='../js/targetedit.js'></script>
+  <rts2script script='setgetapi.js'/>
+  <rts2script script='targetedit.js'/>
 </head>
 
 <body onLoad='refreshData();'>
