@@ -72,6 +72,7 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 			nextCommand ();
 			break;
 		case EVENT_COMMAND_FAILED:
+			waitForExposure = false;
 			nextCommand ();
 			//deleteScript ();
 			break;
