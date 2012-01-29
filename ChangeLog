@@ -1,4 +1,5 @@
 2012-01-29
+ * log system startup errors
  * added rts2script element to .rts2 templates
 
 2012-01-18
