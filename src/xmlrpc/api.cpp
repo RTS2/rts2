@@ -722,8 +722,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			rts2db::TargetSet tar_set;
 			int label = params->getInteger ("l", -1);
 			if (label == -1)
-			  	throw JSONException ("empty l parameter");
-			tar_set.loadByLabelId (label);
+				tar_set.loadByName ("%", false, false);
+			else	
+				tar_set.loadByLabelId (label);
 			jsonTargets (tar_set, os, params);
 		}
 		// returns targets within certain radius from given ra dec
