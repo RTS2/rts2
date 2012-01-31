@@ -294,10 +294,10 @@ void TGDrive::ecWrite (char *msg)
 	}
 
 	// checksum
-	char checksum = 0x100 - cs;
-	ec_buf[len] = checksum;
+	cs = 0x100 - cs;
+	ec_buf[len] = cs;
 	len++;
-	if (checksum == MSG_START)
+	if (cs == MSG_START)
 	{
 		ec_buf[len] = MSG_START;
 		len++;
