@@ -200,6 +200,8 @@ class Zelio:public Dome
 		void createZelioValues ();
 
 		float getHumidity (int vout) { return ((0.8 + ((float) vout) * 10.0f / 255.0f ) / 5.0f - 0.16) / 0.0062; }
+
+		void sendSwInfo (uint16_t regs[2]);
 };
 
 }
@@ -354,6 +356,7 @@ long Zelio::isOpened ()
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+		sendSwInfo (regs);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -423,6 +426,7 @@ long Zelio::isClosed ()
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+		sendSwInfo (regs);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -605,55 +609,8 @@ int Zelio::info ()
 		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
-			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
-			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
-
-			sendValueAll (swCloseRight);
-			sendValueAll (swOpenRight);
-
-			motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
-			motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
-
-			sendValueAll (motOpenRight);
-			sendValueAll (motCloseRight);
-
-			timeoOpenRight->setValueBool (regs[5] & ZO_TIMEO_OPEN);
-			timeoCloseRight->setValueBool (regs[5] & ZO_TIMEO_CLOSE);
-
-			sendValueAll (timeoOpenRight);
-			sendValueAll (timeoCloseRight);
-
-			blockOpenRight->setValueBool (regs[5] & ZO_BLOCK_OPEN);
-			blockCloseRight->setValueBool (regs[5] & ZO_BLOCK_CLOSE);
-
-			sendValueAll (blockOpenRight);
-			sendValueAll (blockCloseRight);
-
 		case ZELIO_SIMPLE:
-			swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
-			swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
-
-			sendValueAll (swOpenLeft);
-			sendValueAll (swCloseLeft);
-
-			motOpenLeft->setValueBool (regs[4] & ZO_MOT_OPEN);
-			motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
-
-			sendValueAll (motOpenLeft);
-			sendValueAll (motCloseLeft);
-
-			timeoOpenLeft->setValueBool (regs[4] & ZO_TIMEO_OPEN);
-			timeoCloseLeft->setValueBool (regs[4] & ZO_TIMEO_CLOSE);
-
-			sendValueAll (timeoOpenLeft);
-			sendValueAll (timeoCloseLeft);
-
-			blockOpenLeft->setValueBool (regs[4] & ZO_BLOCK_OPEN);
-			blockCloseLeft->setValueBool (regs[4] & ZO_BLOCK_CLOSE);
-
-			sendValueAll (blockOpenLeft);
-			sendValueAll (blockOpenRight);
-			break;
+			sendSwInfo (regs + 4);
 		case ZELIO_UNKNOW:
 			break;
 	}
@@ -955,6 +912,69 @@ int Zelio::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return -2;
 	}
 	return Dome::setValue (oldValue, newValue);
+}
+
+void Zelio::sendSwInfo (uint16_t regs[2])
+{
+	switch (zelioModel)
+	{
+	 	case ZELIO_BOOTES3_WOUTPLUGS:
+		case ZELIO_BOOTES3:
+		case ZELIO_FRAM:
+		case ZELIO_COMPRESSOR_WOUTPLUGS:
+		case ZELIO_COMPRESSOR:
+			swCloseRight->setValueBool (regs[1] & ZO_EP_CLOSE);
+			swOpenRight->setValueBool (regs[1] & ZO_EP_OPEN);
+
+			sendValueAll (swCloseRight);
+			sendValueAll (swOpenRight);
+
+			motOpenRight->setValueBool (regs[1] & ZO_MOT_OPEN);
+			motCloseRight->setValueBool (regs[1] & ZO_MOT_CLOSE);
+
+			sendValueAll (motOpenRight);
+			sendValueAll (motCloseRight);
+
+			timeoOpenRight->setValueBool (regs[1] & ZO_TIMEO_OPEN);
+			timeoCloseRight->setValueBool (regs[1] & ZO_TIMEO_CLOSE);
+
+			sendValueAll (timeoOpenRight);
+			sendValueAll (timeoCloseRight);
+
+			blockOpenRight->setValueBool (regs[1] & ZO_BLOCK_OPEN);
+			blockCloseRight->setValueBool (regs[1] & ZO_BLOCK_CLOSE);
+
+			sendValueAll (blockOpenRight);
+			sendValueAll (blockCloseRight);
+
+		case ZELIO_SIMPLE:
+			swOpenLeft->setValueBool (regs[0] & ZO_EP_OPEN);
+			swCloseLeft->setValueBool (regs[0] & ZO_EP_CLOSE);
+
+			sendValueAll (swOpenLeft);
+			sendValueAll (swCloseLeft);
+
+			motOpenLeft->setValueBool (regs[0] & ZO_MOT_OPEN);
+			motCloseLeft->setValueBool (regs[0] & ZO_MOT_CLOSE);
+
+			sendValueAll (motOpenLeft);
+			sendValueAll (motCloseLeft);
+
+			timeoOpenLeft->setValueBool (regs[0] & ZO_TIMEO_OPEN);
+			timeoCloseLeft->setValueBool (regs[0] & ZO_TIMEO_CLOSE);
+
+			sendValueAll (timeoOpenLeft);
+			sendValueAll (timeoCloseLeft);
+
+			blockOpenLeft->setValueBool (regs[0] & ZO_BLOCK_OPEN);
+			blockCloseLeft->setValueBool (regs[0] & ZO_BLOCK_CLOSE);
+
+			sendValueAll (blockOpenLeft);
+			sendValueAll (blockOpenRight);
+			break;
+		case ZELIO_UNKNOW:
+			break;
+	}
 }
 
 int main (int argc, char **argv)
