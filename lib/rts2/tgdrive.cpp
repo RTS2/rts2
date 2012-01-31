@@ -272,7 +272,7 @@ void TGDrive::write4b (int16_t address, int32_t data)
 
 void TGDrive::ecWrite (char *msg)
 {
-	char ec_buf [4 + msg[2] * 2];
+	char ec_buf [5 + msg[2] * 2];
 
   	int i;
 	for (i = 0; i < 3; i++)
@@ -294,8 +294,14 @@ void TGDrive::ecWrite (char *msg)
 	}
 
 	// checksum
-	ec_buf[len] = 0x100 - cs;
+	char checksum = 0x100 - cs;
+	ec_buf[len] = checksum;
 	len++;
+	if (checksum == MSG_START)
+	{
+		ec_buf[len] = MSG_START;
+		len++;
+	}
 
 	int ret = writePort (ec_buf, len);
 	if (ret)
