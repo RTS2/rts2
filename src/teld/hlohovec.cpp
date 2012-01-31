@@ -258,8 +258,7 @@ int Hlohovec::init ()
 	}
 
 	raDrive = new TGDrive (devRA, "RA_", this);
-	if (printDebug ())
-		raDrive->setDebug ();
+	raDrive->setDebug (getDebug ());
 	raDrive->setLogAsHex ();
 	ret = raDrive->init ();
 	if (ret)
@@ -267,8 +266,7 @@ int Hlohovec::init ()
 
 
 	decDrive = new TGDrive (devDEC, "DEC_", this);
-	if (printDebug ())
-		decDrive->setDebug ();
+	decDrive->setDebug (getDebug ());
 	decDrive->setLogAsHex ();
 	ret = decDrive->init ();
 	if (ret)
