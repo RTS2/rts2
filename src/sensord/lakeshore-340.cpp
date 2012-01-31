@@ -332,7 +332,7 @@ void Lakeshore::changeChannelValue (const char *chan, std::map <const char *, st
 			if ((*vit)->getValueBaseType () == RTS2_VALUE_SELECTION)
 				_os << nv->getValueInteger () + 1;
 			else
-				_os << nv->getValue ();
+				_os << nv->getDisplayValue ();
 		}
 	}
 	gpibWrite (_os.str ().c_str ());
