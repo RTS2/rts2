@@ -151,11 +151,14 @@ class Trencin:public Fork
 		int cycleMoveRa;
 		int cycleMoveDec;
 
-		rts2core::ValueInteger *velRa;
-		rts2core::ValueInteger *velDec;
+		rts2core::ValueInteger *defVelRa;
+		rts2core::ValueInteger *defVelDec;
 
 		rts2core::ValueInteger *accRa;
 		rts2core::ValueInteger *accDec;
+
+		rts2core::ValueInteger *velRa;
+		rts2core::ValueInteger *velDec;
 
 		rts2core::ValueInteger *qRa;
 		rts2core::ValueInteger *qDec;
@@ -679,17 +682,23 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	cycleMoveRa = 0;
 	cycleMoveDec = 0;
 
-	createValue (velRa, "vel_ra", "RA velocity", false, RTS2_VALUE_WRITABLE);
-	createValue (velDec, "vel_dec", "DEC velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (defVelRa, "vel_ra", "RA maximal velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (defVelDec, "vel_dec", "DEC maximal velocity", false, RTS2_VALUE_WRITABLE);
 
-	velRa->setValueInteger (1500);
-	velDec->setValueInteger (1500);
+	defVelRa->setValueInteger (1500);
+	defVelDec->setValueInteger (1500);
 
 	createValue (accRa, "acc_ra", "RA acceleration", false, RTS2_VALUE_WRITABLE);
 	createValue (accDec, "acc_dec", "DEC acceleration", false, RTS2_VALUE_WRITABLE);
 
 	accRa->setValueInteger (800);
 	accDec->setValueInteger (800);
+
+	createValue (velRa, "c_vel_ra", "RA current velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (velDec, "c_vel_dec", "DEC current velocity", false, RTS2_VALUE_WRITABLE);
+
+	velRa->setValueInteger (defVelRa->getValueInteger ());
+	velDec->setValueInteger (defVelDec->getValueInteger ());
 
 	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false, RTS2_VALUE_WRITABLE);
 
@@ -1215,8 +1224,8 @@ int Trencin::startResync ()
 		return -1;
 	try
 	{
-	 	setSpeedRa (1500);
-		setSpeedDec (1500);
+	 	setSpeedRa (defVelRa->getValueInteger ());
+		setSpeedDec (defVelDec->getValueInteger ());
 
 		initRa ();
 		initDec ();
