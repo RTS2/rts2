@@ -575,44 +575,84 @@ int Zelio::info ()
 		rain->setValueBool (!(regs[7] & ZS_RAIN));
 		ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
 		openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
+
+		sendValueAll (rain);
+		sendValueAll (ignoreRain);
+		sendValueAll (openingIgnoreRain);
 	}
 	automode->setValueBool (regs[7] & ZS_SW_AUTO);
+	sendValueAll (automode);
+
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
+	if (timeoutOccured->getValueBool ())
+		valueError (timeoutOccured);
+	else
+		valueGood (timeoutOccured);
+
 	weather->setValueBool (regs[7] & ZS_WEATHER);
 	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
+
+	sendValueAll (weather);
+	sendValueAll (emergencyButton);
 
 	switch (zelioModel)
 	{
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
 			onPower->setValueBool (regs[7] & ZS_POWER);
+
+			sendValueAll (onPower);
 		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
 			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
 			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
 
+			sendValueAll (swCloseRight);
+			sendValueAll (swOpenRight);
+
 			motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
 			motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
+
+			sendValueAll (motOpenRight);
+			sendValueAll (motCloseRight);
 
 			timeoOpenRight->setValueBool (regs[5] & ZO_TIMEO_OPEN);
 			timeoCloseRight->setValueBool (regs[5] & ZO_TIMEO_CLOSE);
 
+			sendValueAll (timeoOpenRight);
+			sendValueAll (timeoCloseRight);
+
 			blockOpenRight->setValueBool (regs[5] & ZO_BLOCK_OPEN);
 			blockCloseRight->setValueBool (regs[5] & ZO_BLOCK_CLOSE);
+
+			sendValueAll (blockOpenRight);
+			sendValueAll (blockCloseRight);
 
 		case ZELIO_SIMPLE:
 			swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
 			swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
 
+			sendValueAll (swOpenLeft);
+			sendValueAll (swCloseLeft);
+
 			motOpenLeft->setValueBool (regs[4] & ZO_MOT_OPEN);
 			motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
+
+			sendValueAll (motOpenLeft);
+			sendValueAll (motCloseLeft);
 
 			timeoOpenLeft->setValueBool (regs[4] & ZO_TIMEO_OPEN);
 			timeoCloseLeft->setValueBool (regs[4] & ZO_TIMEO_CLOSE);
 
+			sendValueAll (timeoOpenLeft);
+			sendValueAll (timeoCloseLeft);
+
 			blockOpenLeft->setValueBool (regs[4] & ZO_BLOCK_OPEN);
 			blockCloseLeft->setValueBool (regs[4] & ZO_BLOCK_CLOSE);
+
+			sendValueAll (blockOpenLeft);
+			sendValueAll (blockOpenRight);
 			break;
 		case ZELIO_UNKNOW:
 			break;
@@ -621,11 +661,13 @@ int Zelio::info ()
 	if (haveBatteryLevel)
 	{
 		battery->setValueFloat (regs[6] * 24.0f / 255.0f);
+		sendValueAll (battery);
 	}
 
 	if (haveHumidityOutput)
 	{
 		humidity->setValueFloat (getHumidity (regs[6]));
+		sendValueAll (humidity);
 	}
 
 	J1XT1->setValueInteger (regs[0]);
@@ -633,10 +675,20 @@ int Zelio::info ()
 	J3XT1->setValueInteger (regs[2]);
 	J4XT1->setValueInteger (regs[3]);
 
+	sendValueAll (J1XT1);
+	sendValueAll (J2XT1);
+	sendValueAll (J3XT1);
+	sendValueAll (J4XT1);
+
 	O1XT1->setValueInteger (regs[4]);
 	O2XT1->setValueInteger (regs[5]);
 	O3XT1->setValueInteger (regs[6]);
 	O4XT1->setValueInteger (regs[7]);
+
+	sendValueAll (O1XT1);
+	sendValueAll (O2XT1);
+	sendValueAll (O3XT1);
+	sendValueAll (O4XT1);
 
 	return Dome::info ();
 }
