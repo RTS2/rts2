@@ -174,7 +174,7 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 			std::string val;
 			std::string comment;
 			std::string::iterator es = top;
-			for (; es != line.end () && pstate != LINE_END; es++)
+			for (; es != line.end () && pstate != LINE_END;)
 			{
 				switch (pstate)
 				{
@@ -250,7 +250,7 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 						}
 						break;
 					case VAL_END:
-						if (*es == ';')
+						if (*es == ';' || *es == '#')
 						{
 							do
 							{
@@ -269,6 +269,8 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 					case LINE_END:
 						break;
 				}
+				if (es != line.end ())
+					es++;
 			}
 			if (pstate == VAL_QUT)
 			{
