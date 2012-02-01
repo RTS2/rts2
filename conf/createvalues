@@ -8,3 +8,4 @@ test3.i = 98 ; test integer
 test4.ias ="1 3 -5";test integer array
 test5 = "string aa" ; test string
 test6s = only_test
+test7.s = "test string"
