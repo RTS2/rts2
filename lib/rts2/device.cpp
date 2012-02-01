@@ -539,7 +539,11 @@ int Device::commandAuthorized (Connection * conn)
 	}
 	else if (conn->isCommand ("killall"))
 	{
-		return killAll ();
+		return killAll (true);
+	}
+	else if (conn->isCommand ("killall_wse"))
+	{
+		return killAll (false);
 	}
 	else if (conn->isCommand ("exit"))
 	{
@@ -786,7 +790,7 @@ void Device::sendMessage (messageType_t in_messageType, const char *in_messageSt
 	}
 }
 
-int Device::killAll ()
+int Device::killAll (bool callScriptEnd)
 {
 	// remove all queued changes - do not perform them
 	for (rts2core::ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); )
@@ -794,7 +798,11 @@ int Device::killAll ()
 		delete *iter;
 		iter = queValues.erase (iter);
 	}
-	int ret = scriptEnds ();
+	int ret;
+	if (callScriptEnd)
+		ret = scriptEnds ();
+	else
+		ret = 0;
 	// reset all errors
 	maskState (DEVICE_ERROR_HW | DEVICE_NOT_READY, 0, "reseting all errors");
 	return ret;

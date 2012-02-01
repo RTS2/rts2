@@ -168,7 +168,7 @@ int Camera::endExposure ()
 
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "chip exposure interrupted", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "chip exposure interrupted", NAN, NAN, exposureConn);
 	return 0;
 }
 
@@ -176,7 +176,7 @@ int Camera::stopExposure ()
 {
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "exposure interrupted", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, "exposure interrupted", NAN, NAN, exposureConn);
 	return 0;
 }
 
@@ -311,10 +311,10 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
-	timeReadoutStart = rts2_nan ("f");
+	timeReadoutStart = NAN;
 
-	pixelX = rts2_nan ("f");
-	pixelY = rts2_nan ("f");
+	pixelX = NAN;
+	pixelY = NAN;
 
 	nAcc = 1;
 
@@ -324,8 +324,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	xplate = NULL;
 	yplate = NULL;
 
-	defaultXplate = rts2_nan ("f");
-	defaultYplate = rts2_nan ("f");
+	defaultXplate = NAN;
+	defaultYplate = NAN;
 
 	currentImageData = -1;
 
@@ -493,7 +493,7 @@ void Camera::checkQueuedExposures ()
 	infoAll ();
 }
 
-int Camera::killAll ()
+int Camera::killAll (bool callScriptEnds)
 {
 	waitingForNotBop->setValueBool (false);
 
@@ -501,11 +501,14 @@ int Camera::killAll ()
 
 	if (isExposing ())
 		stopExposure ();
+	else
+	// call Camera::stopExposure tp clear states and queued exposure values
+		Camera::stopExposure ();
 
 	sendValueAll (waitingForNotBop);
 	sendValueAll (waitingForEmptyQue);
 
-	return rts2core::ScriptDevice::killAll ();
+	return rts2core::ScriptDevice::killAll (callScriptEnds);
 }
 
 int Camera::scriptEnds ()
@@ -853,14 +856,14 @@ void Camera::checkExposures ()
 					endExposure ();
 					// if new exposure does not start during endExposure (camReadout) call, drop exposure state
 					if (expNum == getExposureNumber ())
-						maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+						maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
 
 					// drop FT flag
 					else
-						maskState (CAM_MASK_FT, CAM_NOFT, "ft exposure chip finished", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+						maskState (CAM_MASK_FT, CAM_NOFT, "ft exposure chip finished", NAN, NAN, exposureConn);
 					break;
 				case -1:
-					maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING, "exposure finished with error", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+					maskState (DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING | BOP_TEL_MOVE, DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING, "exposure finished with error", NAN, NAN, exposureConn);
 					stopExposure ();
 					if (quedExpNumber->getValueInteger () > 0)
 					{
@@ -888,9 +891,9 @@ void Camera::checkReadouts ()
 		endReadout ();
 		afterReadout ();
 		if (ret == -2)
-			maskState (CAM_MASK_READING | CAM_MASK_HAS_IMAGE, CAM_NOTREADING | CAM_HAS_IMAGE, "readout ended", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+			maskState (CAM_MASK_READING | CAM_MASK_HAS_IMAGE, CAM_NOTREADING | CAM_HAS_IMAGE, "readout ended", NAN, NAN, exposureConn);
 		else
-			maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+			maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout ended with error", NAN, NAN, exposureConn);
 	}
 }
 
@@ -1080,7 +1083,7 @@ int Camera::camStartExposure ()
 		}
 
 		if (!((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)) && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
-			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
 
 		return 0;
 	}
@@ -1251,7 +1254,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
 		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
-		maskState (CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, "starting frame transfer", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+		maskState (CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, "starting frame transfer", NAN, NAN, exposureConn);
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;
 		else
@@ -1282,7 +1285,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 		timeReadoutStart = getNow ();
 		return readoutStart ();
 	}
-	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
 	return -1;
 }
@@ -1499,7 +1502,7 @@ void Camera::setFullBopState (int new_state)
 		if ((new_state & BOP_TRIG_EXPOSE) && !(getState () & BOP_WILL_EXPOSE))
 		{
 			// this will trigger device transition from BOP_TRIG_EXPOSE to not BOP_TRIG_EXPOSE, which will trigger this code again..
-			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", rts2_nan ("f"), rts2_nan ("f"), exposureConn);
+			maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
 		}
 		else
 		{
