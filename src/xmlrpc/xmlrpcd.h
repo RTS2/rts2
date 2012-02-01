@@ -382,6 +382,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 #endif
 		virtual int processOption (int in_opt);
 		virtual int init ();
+
+		virtual void valueChanged (rts2core::Value * value);
+
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
 

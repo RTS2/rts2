@@ -1,5 +1,6 @@
 2012-02-01
  * added killall_wse command (without script end)
+ * s in suffix for autosave values
 
 2012-01-29
  * log system startup errors

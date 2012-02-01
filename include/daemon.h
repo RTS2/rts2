@@ -604,6 +604,7 @@ class Daemon:public rts2core::Block
 		 * File where to store autosaved values.
 		 */
 		const char *autosaveFile;
+		const char *optAutosaveFile;
 
 		/**
 		 * Switch running user to new user (and group, if provided with .)
@@ -621,7 +622,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Create section values.
 		 *
-		 * @param sect section which holds new values
+		 * @param sect      section which holds new values
 		 */
 		int createSectionValues (IniSection *sect);
 

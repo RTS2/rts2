@@ -147,6 +147,7 @@ void XmlRpcd::doOpValue (const char *v_name, char oper, const char *operand)
 		ov->setFromValue (nv);
 		valueChanged (ov);
 	}
+	delete nv;
 }
 
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
@@ -361,6 +362,12 @@ int XmlRpcd::init ()
 	Magick::InitializeMagick (".");
 #endif /* HAVE_LIBJPEG */
 	return ret;
+}
+
+void XmlRpcd::valueChanged (rts2core::Value * value)
+{
+	if (value->isAutosave ())
+		autosaveValues ();
 }
 
 void XmlRpcd::addSelectSocks ()

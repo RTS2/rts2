@@ -85,6 +85,7 @@ Daemon::Daemon (int _argc, char **_argv, int _init_state):rts2core::Block (_argc
 	valueFile = NULL;
 
 	autosaveFile = NULL;
+	optAutosaveFile = NULL;
 
 	state = _init_state;
 
@@ -138,7 +139,7 @@ int Daemon::processOption (int in_opt)
 			modefile = optarg;
 			break;
 		case OPT_AUTOSAVE:
-			autosaveFile = optarg;
+			optAutosaveFile = optarg;
 			break;
 		case OPT_VALUEFILE:
 			valueFile = optarg;
@@ -346,6 +347,7 @@ int Daemon::initValues ()
 	ret = loadModefile ();
 	if (ret)
 		return ret;
+	autosaveFile = optAutosaveFile;
 	return loadAutosave ();
 }
 
@@ -1292,16 +1294,18 @@ int Daemon::createSectionValues (IniSection *sect)
 		std::string suffix = iter->getSuffix ();
 		Value *val = NULL;
 
+		int flags = strcasestr (suffix.c_str (), "s") ? (RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE) : RTS2_VALUE_WRITABLE;
+
 		if (suffix.length () > 0)
 		{
-			if (!strcasecmp (suffix.c_str (), "i"))
-				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
-			else if (!strcasecmp (suffix.c_str (), "d"))
-				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
-			else if (!strcasecmp (suffix.c_str (), "ia"))
-				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
-			else if (!strcasecmp (suffix.c_str (), "da"))
-				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
+			if (strcasestr (suffix.c_str (), "ia"))
+				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "da"))
+				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "i"))
+				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "d"))
+				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else
 			{
 				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
@@ -1310,7 +1314,7 @@ int Daemon::createSectionValues (IniSection *sect)
 		}
 		else
 		{
-			createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, RTS2_VALUE_WRITABLE);
+			createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 		}
 		// create and set new value
 		rts2core::Value *new_value = duplicateValue (val);
@@ -1346,7 +1350,7 @@ int Daemon::autosaveValues ()
 	{
 		if ((*iter)->getValue ()->isAutosave ())
 		{
-			of << (*iter)->getValue ()->getName () << " = " << (*iter)->getValue ()->getDisplayValue () << std::endl;
+			of << (*iter)->getValue ()->getName () << " = \"" << (*iter)->getValue ()->getDisplayValue () << "\"" << std::endl;
 		}
 	}
 
