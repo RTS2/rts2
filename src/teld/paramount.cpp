@@ -20,8 +20,8 @@
 
 #define DEBUG_EXTRA
 
-#include "../../lib/rts2/gem.h"
-#include "../../lib/rts2/model/telmodel.h"
+#include "gem.h"
+#include "telmodel.h"
 
 #include "libnova_cpp.h"
 

@@ -18,7 +18,7 @@
  */
 
 #include "dome.h"
-#include "../../lib/rts2/connmodbus.h"
+#include "connection/modbus.h"
 
 #define EVENT_DEADBUT    RTS2_LOCAL_EVENT + 1350
 

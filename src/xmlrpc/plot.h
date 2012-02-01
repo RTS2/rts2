@@ -25,7 +25,7 @@
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>
-#include "../../lib/rts2db/records.h"
+#include "rts2db/records.h"
 
 namespace rts2xmlrpc
 {

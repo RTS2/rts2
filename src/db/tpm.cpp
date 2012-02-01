@@ -27,12 +27,12 @@
 #include <ostream>
 #include <iostream>
 
-#include "../../lib/rts2/rts2cliapp.h"
+#include "cliapp.h"
 #include "configuration.h"
 #include "rts2format.h"
-#include "../../lib/rts2fits/image.h"
+#include "rts2fits/image.h"
 
-class TPM:public Rts2CliApp
+class TPM:public rts2core::CliApp
 {
 	public:
 		TPM (int argc, char **argv);
@@ -65,7 +65,7 @@ class TPM:public Rts2CliApp
 		enum { TARGET, BEST, MOUNT } tarCorType;
 };
 
-TPM::TPM (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
+TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
 	selFlip = -1;
@@ -132,7 +132,7 @@ int TPM::processOption (int in_opt)
 			dec_offset = atof (optarg);
 			break;
 		default:
-			return Rts2CliApp::processOption (in_opt);
+			return rts2core::CliApp::processOption (in_opt);
 	}
 	return 0;
 }
@@ -146,7 +146,7 @@ int TPM::processArgs (const char *arg)
 int TPM::init ()
 {
 	int ret;
-	ret = Rts2CliApp::init ();
+	ret = rts2core::CliApp::init ();
 	if (ret)
 		return ret;
 	if (filenames.empty ())
@@ -183,7 +183,7 @@ void TPM::help ()
 		"Without any option, prouduce file with J2000 mean coordinates. "
 		"The output produced should be sufficient to use it in TPOINT to get the pointing model."
 		<< std::endl;
-	Rts2CliApp::help ();
+	rts2core::CliApp::help ();
 }
 
 void TPM::usage ()

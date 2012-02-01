@@ -4,7 +4,7 @@
 #include <algorithm>
 
 #include "block.h"
-#include "../../lib/rts2/client.h"
+#include "client.h"
 #include "command.h"
 
 using namespace std;

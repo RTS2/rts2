@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBD__
 #define __RTS2_GRBD__
 
-#include "../../lib/rts2db/devicedb.h"
+#include "rts2db/devicedb.h"
 #include "conngrb.h"
 #include "rts2grbfw.h"
 

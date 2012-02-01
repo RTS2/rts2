@@ -18,21 +18,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "script.h"
+#include "rts2script/script.h"
+
 #include "elementexe.h"
-#include "elementtarget.h"
-#include "elementblock.h"
 #include "elementguiding.h"
 #include "elementhex.h"
 #include "elementwaitfor.h"
-#include "operands.h"
 #include "configuration.h"
 
+#include "rts2script/operands.h"
+#include "rts2script/elementblock.h"
+#include "rts2script/elementtarget.h"
+
 #ifdef HAVE_PGSQL
-#include "elementacquire.h"
+#include "rts2script/elementacquire.h"
 #endif							 /* HAVE_PGSQL */
 
-#include "../rts2db/scriptcommands.h"
+#include "rts2db/scriptcommands.h"
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
@@ -916,10 +918,10 @@ int Script::getExpectedImages ()
 	return ret;
 }
 
-double rts2script::getMaximalScriptDuration (Rts2Target *tar, Rts2CamList &cameras, struct ln_equ_posn *tel)
+double rts2script::getMaximalScriptDuration (Rts2Target *tar, rts2db::CamList &cameras, struct ln_equ_posn *tel)
 {
   	double md = 0;
-	for (Rts2CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
+	for (rts2db::CamList::iterator cam = cameras.begin (); cam != cameras.end (); cam++)
 	{
 		std::string script_buf;
 		rts2script::Script script;

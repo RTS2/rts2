@@ -19,7 +19,7 @@
  */
 
 #include "xmlrpc++/XmlRpc.h"
-#include "../../lib/rts2/rts2cliapp.h"
+#include "cliapp.h"
 #include <iostream>
 #include <vector>
 #include <string.h>
@@ -47,7 +47,7 @@ namespace rts2xmlrpc
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Client: public Rts2CliApp
+class Client: public rts2core::CliApp
 {
 	public:
 		Client (int argc, char **argv);
@@ -698,7 +698,7 @@ int Client::processOption (int opt)
 			xmlOp = HTTP_GET;
 			break;
 		default:
-			return Rts2CliApp::processOption (opt);
+			return rts2core::CliApp::processOption (opt);
 	}
 	if (xmlOp != old_op && old_op != NOOP)
 	{
@@ -778,7 +778,7 @@ int Client::doProcessing ()
 int Client::init ()
 {
 	int ret;
-	ret = Rts2CliApp::init ();
+	ret = rts2core::CliApp::init ();
 	if (ret)
 		return ret;
 
@@ -819,7 +819,7 @@ int Client::init ()
 }
 
 
-Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
+Client::Client (int in_argc, char **in_argv): rts2core::CliApp (in_argc, in_argv)
 {
 	xmlPort = 8889;
 	xmlHost = "localhost";

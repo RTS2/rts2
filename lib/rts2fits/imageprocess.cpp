@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <functional>
 
-#include "image.h"
+#include "rts2fits/image.h"
 
 #define APP_SIZE        3
 

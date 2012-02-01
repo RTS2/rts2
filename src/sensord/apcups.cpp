@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../../lib/rts2/conntcp.h"
+#include "connection/tcp.h"
 
 #include <map>
 #include <string.h>

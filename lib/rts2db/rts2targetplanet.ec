@@ -18,7 +18,7 @@
  */
 
 #include "rts2targetplanet.h"
-#include "../rts2/infoval.h"
+#include "infoval.h"
 #include "libnova_cpp.h"
 
 #define PLANETS   10

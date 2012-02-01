@@ -19,7 +19,7 @@
 #define FOCUSER_PORT "/dev/ttyS0"
 
 #include "focusd.h"
-#include "../../lib/rts2/connserial.h"
+#include "connection/serial.h"
 
 // Microfocuser commands:
 //     FMMODE    !                open PC connection

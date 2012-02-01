@@ -19,14 +19,14 @@
 
 #include <libnova/libnova.h>
 
-#include "image.h"
+#include "rts2fits/image.h"
 #include "imghdr.h"
 
-#include "../rts2/expander.h"
+#include "expander.h"
 #include "configuration.h"
 #include "timestamp.h"
 #include "utilsfunc.h"
-#include "../rts2/rts2target.h"
+#include "rts2target.h"
 #include "valuestat.h"
 #include "valuerectangle.h"
 

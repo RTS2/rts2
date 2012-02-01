@@ -25,13 +25,13 @@
 #endif
 
 #include "block.h"
-#include "../../lib/rts2/client.h"
+#include "client.h"
 #include "command.h"
 
-#include "../../lib/rts2fits/devcliimg.h"
+#include "rts2fits/devcliimg.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/simbadtarget.h"
+#include "rts2db/simbadtarget.h"
 #endif
 
 #define EVENT_MONITOR_REFRESH      RTS2_LOCAL_EVENT + 1450

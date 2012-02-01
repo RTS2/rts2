@@ -20,8 +20,8 @@
 #ifndef __RTS2_PROP__
 #define __RTS2_PROP__
 
-#include "target.h"
-#include "planset.h"
+#include "rts2db/target.h"
+#include "rts2db/planset.h"
 
 #include <iostream>
 

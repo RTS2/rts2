@@ -21,9 +21,9 @@
 #include "configuration.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2db/messagedb.h"
-#include "../../lib/rts2db/observationset.h"
+#include "rts2db/appdb.h"
+#include "rts2db/messagedb.h"
+#include "rts2db/observationset.h"
 
 #include "imgdisplay.h"
 

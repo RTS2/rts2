@@ -18,10 +18,10 @@
  */
 
 #include "elementguiding.h"
-#include "execcli.h"
 #include "configuration.h"
-#include "../rts2fits/image.h"
-#include "../rts2fits/devclifoc.h"
+#include "rts2script/execcli.h"
+#include "rts2fits/image.h"
+#include "rts2fits/devclifoc.h"
 
 using namespace rts2script;
 using namespace rts2image;

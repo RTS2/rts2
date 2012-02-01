@@ -17,12 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/fork.h"
+#include "fork.h"
 
 #include "error.h"
 #include "configuration.h"
-#include "../../lib/rts2/connserial.h"
 #include "libnova_cpp.h"
+
+#include "connection/serial.h"
 
 #define DEBUG_MOVE  1
 

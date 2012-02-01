@@ -1,9 +1,5 @@
-noinst_HEADERS = execcli.h script.h connimgprocess.h element.h devscript.h \
-		rts2spiral.h elementblock.h elementguiding.h execclidb.h elementacquire.h \
-		scripttarget.h elementtarget.h elementhex.h elementwaitfor.h \
-		scriptinterface.h operands.h elementexe.h printtarget.h connexe.h connselector.h \
-		executorque.h simulque.h
-
+noinst_HEADERS = elementguiding.h \
+		elementhex.h elementwaitfor.h elementexe.h
 
 lib_LTLIBRARIES = librts2script.la
 

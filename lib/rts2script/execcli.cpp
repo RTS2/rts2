@@ -20,10 +20,10 @@
 #include <limits.h>
 #include <iostream>
 
-#include "connimgprocess.h"
-#include "execcli.h"
-#include "../rts2fits/image.h"
-#include "../rts2db/target.h"
+#include "rts2script/connimgprocess.h"
+#include "rts2script/execcli.h"
+#include "rts2fits/image.h"
+#include "rts2db/target.h"
 #include "command.h"
 #include "configuration.h"
 

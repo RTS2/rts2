@@ -20,7 +20,7 @@
 #ifndef __RTS2_SCRIPT_GUIDING__
 #define __RTS2_SCRIPT_GUIDING__
 
-#include "script.h"
+#include "rts2script/script.h"
 
 namespace rts2script
 {

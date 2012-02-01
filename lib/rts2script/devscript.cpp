@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "devscript.h"
-#include "execcli.h"
+#include "rts2script/devscript.h"
+#include "rts2script/execcli.h"
 
 using namespace rts2script;
 

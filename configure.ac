@@ -787,6 +787,10 @@ AC_OUTPUT([Makefile
 	   man/Makefile
 	   man/rts2.ent
 	   include/Makefile
+	   include/connection/Makefile
+	   include/rts2db/Makefile
+	   include/rts2fits/Makefile
+	   include/rts2script/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   contrib/Makefile

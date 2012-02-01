@@ -26,7 +26,7 @@
 #include <deque>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/devicedb.h"
+#include "rts2db/devicedb.h"
 #else
 #include "configuration.h"
 #include "device.h"
@@ -54,9 +54,9 @@
 #include "api.h"
 #include "images.h"
 #include "connnotify.h"
-#include "../../lib/rts2script/execcli.h"
-#include "../../lib/rts2script/scriptinterface.h"
-#include "../../lib/rts2script/scripttarget.h"
+#include "rts2script/execcli.h"
+#include "rts2script/scriptinterface.h"
+#include "rts2script/scripttarget.h"
 
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 

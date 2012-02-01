@@ -20,8 +20,8 @@
 
 #include "httpreq.h"
 #include "block.h"
-#include "../../lib/rts2db/imageset.h"
-#include "../../lib/rts2db/observationset.h"
+#include "rts2db/imageset.h"
+#include "rts2db/observationset.h"
 
 /** @file api.h
  *

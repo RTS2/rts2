@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = librts2image.la 
 
-noinst_HEADERS = fitsfile.h channel.h image.h devcliimg.h cameraimage.h imagedb.h devclifoc.h appdbimage.h appimage.h memimage.h
+noinst_HEADERS = memimage.h
 
 LDADD = @LIB_M@ @LIB_NOVA@
 

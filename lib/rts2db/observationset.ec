@@ -18,9 +18,10 @@
  */
 
 #include "imgdisplay.h"
-#include "observationset.h"
-#include "sqlerror.h"
-#include "target.h"
+
+#include "rts2db/observationset.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/target.h"
 
 #include <algorithm>
 #include <sstream>

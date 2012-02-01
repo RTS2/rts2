@@ -21,16 +21,16 @@
 #include "altplot.h"
 #include "dirsupport.h"
 #include "xmlrpc++/urlencoding.h"
-#include "../../lib/rts2db/simbadtarget.h"
+#include "rts2db/simbadtarget.h"
 #include "command.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/observationset.h"
-#include "../../lib/rts2db/imageset.h"
-#include "../../lib/rts2db/targetset.h"
-#include "../../lib/rts2db/constraints.h"
-#include "../../lib/rts2db/planset.h"
-#include "../../lib/rts2db/labels.h"
+#include "rts2db/observationset.h"
+#include "rts2db/imageset.h"
+#include "rts2db/targetset.h"
+#include "rts2db/constraints.h"
+#include "rts2db/planset.h"
+#include "rts2db/labels.h"
 #endif /* HAVE_PGSQL */
 
 #include "radecparser.h"
@@ -745,7 +745,7 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 		if (cameras.empty ())
 			cameras.load ();
 
-		Rts2CamList::iterator cam_names;
+		rts2db::CamList::iterator cam_names;
 		for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
 		{
 			const char *cam_name = (*cam_names).c_str ();

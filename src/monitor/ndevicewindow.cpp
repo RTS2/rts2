@@ -22,7 +22,7 @@
 #include "ndevicewindow.h"
 
 #include "timestamp.h"
-#include "../../lib/rts2/displayvalue.h"
+#include "displayvalue.h"
 #include "riseset.h"
 
 #include <iomanip>

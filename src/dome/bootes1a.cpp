@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/domeford.h"
+#include "domeford.h"
 
 #define ROOF_TIMEOUT  120		 // in seconds
 

@@ -18,7 +18,7 @@
  */
 #include "ticket.h"
 
-#include "../../lib/rts2db/observationset.h"
+#include "rts2db/observationset.h"
 
 #include <map>
 

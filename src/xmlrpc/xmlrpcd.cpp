@@ -21,7 +21,7 @@
 #include "xmlrpcd.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/messagedb.h"
+#include "rts2db/messagedb.h"
 #else
 #include "configuration.h"
 #include "device.h"

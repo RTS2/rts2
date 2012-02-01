@@ -19,7 +19,7 @@
 
 #include "teld.h"
 #include "configuration.h"
-#include "../../lib/rts2/connbait.h"
+#include "connection/bait.h"
 #include "tcsutils.h"
 
 #define OPT_BAITHOST     OPT_LOCAL + 521

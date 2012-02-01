@@ -19,16 +19,17 @@
  */
 
 #include "selector.h"
-#include "../../lib/rts2script/script.h"
 #include "configuration.h"
 #include "utilsfunc.h"
-#include "../../lib/rts2db/sqlerror.h"
+
+#include "rts2script/script.h"
+#include "rts2db/sqlerror.h"
 
 #include <libnova/libnova.h>
 
 using namespace rts2plan;
 
-Selector::Selector (rts2core::ConnNotify *_notifyConn, Rts2CamList *cameras)
+Selector::Selector (rts2core::ConnNotify *_notifyConn, rts2db::CamList *cameras)
 {
 	observer = NULL;
 	notifyConn = _notifyConn;

@@ -2,8 +2,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include "devclifoc.h"
 #include "timestamp.h"
+
+#include "rts2fits/devclifoc.h"
 
 #include <errno.h>
 #include <algorithm>

@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "execclidb.h"
-#include "../rts2fits/imagedb.h"
+#include "rts2script/execclidb.h"
+#include "rts2fits/imagedb.h"
 
 using namespace rts2script;
 

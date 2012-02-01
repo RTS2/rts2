@@ -31,7 +31,7 @@
 #define SERIAL_SLEEP 600000 //time to sleep before sending command
 #define SERIAL_TIMEOUT 300
 
-#include "../../lib/rts2/connserial.h"
+#include "connection/serial.h"
 
 enum DomeStatus
 {

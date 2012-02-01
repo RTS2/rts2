@@ -20,7 +20,7 @@
 #ifndef __RTS2_SWAITFOR__
 #define __RTS2_WAITFOR__
 
-#include "script.h"
+#include "rts2script/script.h"
 
 namespace rts2script
 {

@@ -20,9 +20,9 @@
 #ifndef __RTS2_ELEMENTEXE__
 #define __RTS2_ELEMENTEXE__
 
-#include "connexe.h"
-#include "element.h"
-#include "connfork.h"
+#include "rts2script/connexe.h"
+#include "rts2script/element.h"
+#include "connection/fork.h"
 
 namespace rts2script
 {

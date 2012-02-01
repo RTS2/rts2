@@ -18,10 +18,10 @@
  */
 
 #include "scriptexec.h"
-#include "../../lib/rts2script/execcli.h"
 #include "rts2devcliphot.h"
-
 #include "configuration.h"
+
+#include "rts2script/execcli.h"
 
 #include <iostream>
 #include <fstream>

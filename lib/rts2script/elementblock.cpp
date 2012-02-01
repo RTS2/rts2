@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "script.h"
-#include "elementblock.h"
+#include "rts2script/script.h"
+#include "rts2script/elementblock.h"
 
 using namespace rts2script;
 using namespace rts2image;

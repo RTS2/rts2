@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "executorque.h"
-#include "simulque.h"
-#include "script.h"
-#include "../rts2db/constraints.h"
+#include "rts2script/simulque.h"
+#include "rts2script/executorque.h"
+#include "rts2script/script.h"
+#include "rts2db/constraints.h"
 
 using namespace rts2plan;
 
@@ -391,7 +391,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 			{
 				if (cameras == NULL)
 				{
-					cameras = new Rts2CamList ();
+					cameras = new rts2db::CamList ();
 					cameras->load ();
 				}
 				// calculate target script length..

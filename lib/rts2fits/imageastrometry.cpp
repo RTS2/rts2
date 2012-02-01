@@ -20,7 +20,7 @@
 #include <math.h>
 #include <libnova/libnova.h>
 
-#include "image.h"
+#include "rts2fits/image.h"
 
 using namespace rts2image;
 

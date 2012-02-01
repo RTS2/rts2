@@ -20,7 +20,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include "connserial.h"
+#include "connection/serial.h"
+
 #include "block.h"
 #include <iomanip>
 

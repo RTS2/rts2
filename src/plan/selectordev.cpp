@@ -19,16 +19,16 @@
  */
 
 #include "selector.h"
-#include "../../lib/rts2script/connselector.h"
-#include "../../lib/rts2script/executorque.h"
-#include "../../lib/rts2script/simulque.h"
+#include "rts2script/connselector.h"
+#include "rts2script/executorque.h"
+#include "rts2script/simulque.h"
 
 #include "connnotify.h"
 #include "devclient.h"
 #include "event.h"
 #include "command.h"
-#include "../../lib/rts2db/devicedb.h"
-#include "../../lib/rts2db/planset.h"
+#include "rts2db/devicedb.h"
+#include "rts2db/planset.h"
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 #define OPT_ADD_QUEUE           OPT_LOCAL + 6

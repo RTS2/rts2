@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "connbait.h"
+#include "connection/bait.h"
 
 #include <algorithm>
 #include <iomanip>

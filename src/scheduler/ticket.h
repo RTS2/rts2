@@ -19,8 +19,8 @@
 #ifndef __RTS2SCHED_TICKET__
 #define __RTS2SCHED_TICKET__
 
-#include "../../lib/rts2/infoval.h"
-#include "../../lib/rts2db/target.h"
+#include "infoval.h"
+#include "rts2db/target.h"
 
 namespace rts2sched
 {

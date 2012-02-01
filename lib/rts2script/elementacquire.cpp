@@ -17,10 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "connimgprocess.h"
-#include "elementacquire.h"
-
-#include "../rts2fits/devclifoc.h"
+#include "rts2script/elementacquire.h"
+#include "rts2script/connimgprocess.h"
+#include "rts2fits/devclifoc.h"
 #include "configuration.h"
 
 using namespace rts2plan;

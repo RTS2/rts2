@@ -18,9 +18,10 @@
  */
 
 #include "device.h"
-#include "../../lib/rts2script/execcli.h"
 #include "rts2devcliphot.h"
-#include "../../lib/rts2script/scripttarget.h"
+
+#include "rts2script/execcli.h"
+#include "rts2script/scripttarget.h"
 
 #include <map>
 #include <stdexcept>

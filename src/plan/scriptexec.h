@@ -20,11 +20,11 @@
 #ifndef __SCRIPT_EXEC__
 #define __SCRIPT_EXEC__
 
-#include "connfork.h"
-#include "../../lib/rts2script/scripttarget.h"
-#include "../../lib/rts2script/scriptinterface.h"
-#include "../../lib/rts2/client.h"
-#include "../../lib/rts2/rts2target.h"
+#include "connection/fork.h"
+#include "rts2script/scripttarget.h"
+#include "rts2script/scriptinterface.h"
+#include "client.h"
+#include "rts2target.h"
 
 namespace rts2script
 {

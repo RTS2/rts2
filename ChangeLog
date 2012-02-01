@@ -1,4 +1,5 @@
 2012-02-01
+ * finalised include directory structure
  * added killall_wse command (without script end)
  * s in suffix for autosave values
 

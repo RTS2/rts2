@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../../lib/rts2/connserial.h"
+#include "connection/serial.h"
 
 #define OPT_HEAT_ON        OPT_LOCAL + 343
 #define OPT_HEAT_DUR       OPT_LOCAL + 344

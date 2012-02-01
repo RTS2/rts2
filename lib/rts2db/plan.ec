@@ -19,8 +19,9 @@
 
 #include "configuration.h"
 #include "libnova_cpp.h"
-#include "plan.h"
-#include "sqlerror.h"
+
+#include "rts2db/plan.h"
+#include "rts2db/sqlerror.h"
 
 #include <ostream>
 #include <sstream>

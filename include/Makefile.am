@@ -1,9 +1,12 @@
 # $Id$
 
+sub_DIRS = connection rts2db rts2script rts2fits
+
 noinst_HEADERS = rts2.h config.h imghdr.h status.h telescope_info.h imgdisplay.h connection.h logstream.h \
 		message.h strtok.h xmlerror.h teld.h camd.h dome.h sensord.h focusd.h filterd.h	phot.h rotad.h \
 		mirror.h block.h daemon.h device.h scriptdevice.h devclient.h command.h event.h objectcheck.h   \
 		hoststring.h utilsfunc.h app.h getopt_own.h option.h networkaddress.h connuser.h value.h valuestat.h valuelist.h valuearray.h \
 		iniparser.h configuration.h object.h centralstate.h serverstate.h libnova_cpp.h timestamp.h rts2format.h \
-		valueminmax.h valuerectangle.h data.h error.h nan.h riseset.h nimotion.h connnosend.h connfork.h connnotify.h \
-		radecparser.h
+		valueminmax.h valuerectangle.h data.h error.h nan.h riseset.h nimotion.h connnosend.h connnotify.h \
+		radecparser.h askchoice.h cliapp.h rts2target.h domeford.h client.h displayvalue.h clicupola.h fork.h gem.h \
+		telmodel.h modelterm.h expander.h expression.h counted_ptr.h infoval.h

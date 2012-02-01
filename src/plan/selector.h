@@ -23,10 +23,11 @@
 
 #include <algorithm>
 
-#include "../../lib/rts2db/rts2camlist.h"
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2db/target.h"
-#include "../../lib/rts2/rts2askchoice.h"
+#include "askchoice.h"
+
+#include "rts2db/camlist.h"
+#include "rts2db/appdb.h"
+#include "rts2db/target.h"
 
 namespace rts2plan
 {
@@ -72,7 +73,7 @@ class Selector
 		 * @param _notifyConn  notification connection
 		 * @param cameras      list of cameras to select from
 		 */
-		Selector (rts2core::ConnNotify *_notifyConn = NULL, Rts2CamList *cameras = NULL);
+		Selector (rts2core::ConnNotify *_notifyConn = NULL, rts2db::CamList *cameras = NULL);
 		virtual ~ Selector (void);
 
 		void setObserver (struct ln_lnlat_posn *in_observer) { observer = in_observer; }
@@ -158,7 +159,7 @@ class Selector
 		double flat_sun_min;
 		double flat_sun_max;
 
-		Rts2CamList *cameraList;
+		rts2db::CamList *cameraList;
 
 		// available filters for filter command on cameras
 		std::map <std::string, std::vector < std::string > > availableFilters;

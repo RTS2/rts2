@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "userset.h"
 #include "app.h"
-#include "sqlerror.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/userset.h"
 
 using namespace rts2db;
 

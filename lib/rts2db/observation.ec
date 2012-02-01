@@ -17,10 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "observation.h"
-#include "sqlerror.h"
-#include "target.h"
-#include "rts2taruser.h"
+#include "rts2db/observation.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/target.h"
+#include "rts2db/taruser.h"
+
 #include "libnova_cpp.h"
 #include "timestamp.h"
 #include "configuration.h"

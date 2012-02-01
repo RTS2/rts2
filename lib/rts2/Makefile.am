@@ -16,10 +16,10 @@ lib_LTLIBRARIES = librts2.la
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp option.cpp \
 	networkaddress.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
 	devclient.cpp utilsfunc.cpp iniparser.cpp configuration.cpp connnosend.cpp \
-	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
+	connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp askchoice.cpp \
 	message.cpp conntcp.cpp connnotify.cpp connudp.cpp connection.cpp logstream.cpp centralstate.cpp \
 	rts2target.cpp displayvalue.cpp scriptdevice.cpp \
-	rts2cliapp.cpp valueminmax.cpp expander.cpp \
+	cliapp.cpp valueminmax.cpp expander.cpp \
 	riseset.cpp valuerectangle.cpp data.cpp radecparser.cpp \
 	connserial.cpp connmodbus.cpp rts2format.cpp valuearray.cpp \
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
@@ -44,13 +44,8 @@ else
 EXTRA_DIST += getopt_own.c
 endif
 
-noinst_HEADERS = client.h rts2askchoice.h infoval.h \
-	conntcp.h connudp.h rts2target.h \
-	displayvalue.h rts2cliapp.h getaddrinfo.h expander.h \
-	connserial.h connmodbus.h domeford.h \
-	connopentpl.h connepics.h connford.h counted_ptr.h expression.h \
-	gem.h fork.h tgdrive.h \
-	connbait.h clicupola.h cliwheel.h clifocuser.h
+noinst_HEADERS = getaddrinfo.h connepics.h \
+	cliwheel.h clifocuser.h
 
 if EPICS
 lib_LTLIBRARIES += librts2epics.la

@@ -22,7 +22,7 @@
 
 #include "tellx200.h"
 #include "hms.h"
-#include "../../lib/rts2/clicupola.h"
+#include "clicupola.h"
 #include "pier-collision.h"
 
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55

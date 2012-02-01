@@ -20,7 +20,7 @@
 
 #define DEBUG_EXTRA
 
-#include "../../lib/rts2/connopentpl.h"
+#include "connection/opentpl.h"
 #include "configuration.h"
 
 #include "focusd.h"

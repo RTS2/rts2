@@ -23,7 +23,7 @@
 #include "conngpib.h"
 
 #include "block.h"
-#include "../../lib/rts2/conntcp.h"
+#include "connection/tcp.h"
 
 
 namespace rts2sensord

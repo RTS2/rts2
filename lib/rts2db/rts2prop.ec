@@ -19,7 +19,7 @@
 
 #include "configuration.h"
 #include "rts2prop.h"
-#include "sqlerror.h"
+#include "rts2db/sqlerror.h"
 
 using namespace rts2db;
 

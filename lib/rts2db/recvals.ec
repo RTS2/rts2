@@ -17,9 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "recvals.h"
-#include "sqlerror.h"
 #include "utilsfunc.h"
+
+#include "rts2db/recvals.h"
+#include "rts2db/sqlerror.h"
 
 using namespace rts2db;
 

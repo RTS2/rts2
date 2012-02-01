@@ -18,9 +18,10 @@
  */
 
 #include "imgdisplay.h"
-#include "imagedb.h"
 #include "timestamp.h"
 #include "libnova_cpp.h"
+
+#include "rts2fits/imagedb.h"
 
 #include <iomanip>
 #include <libnova/airmass.h>

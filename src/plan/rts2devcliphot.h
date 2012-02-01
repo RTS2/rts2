@@ -20,7 +20,7 @@
 #ifndef __RTS2_DEVCLIPHOT__
 #define __RTS2_DEVCLIPHOT__
 
-#include "../../lib/rts2script/devscript.h"
+#include "rts2script/devscript.h"
 
 namespace rts2script
 {

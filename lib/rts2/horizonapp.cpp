@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2cliapp.h"
+#include "cliapp.h"
 #include "configuration.h"
 
 #include <iostream>
@@ -30,7 +30,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class HorizonApp:public Rts2CliApp
+class HorizonApp:public rts2core::CliApp
 {
 	private:
 		char *configFile;
@@ -48,8 +48,7 @@ class HorizonApp:public Rts2CliApp
 		virtual int doProcessing ();
 };
 
-HorizonApp::HorizonApp (int in_argc, char **in_argv):
-Rts2CliApp (in_argc, in_argv)
+HorizonApp::HorizonApp (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	op = 0;
 	configFile = NULL;
@@ -61,9 +60,7 @@ Rts2CliApp (in_argc, in_argv)
 	addOption ('d', NULL, 0, "dump horizon file in AZ-ALT format");
 }
 
-
-int
-HorizonApp::processOption (int in_opt)
+int HorizonApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -77,18 +74,16 @@ HorizonApp::processOption (int in_opt)
 			op = OP_DUMP;
 			break;
 		default:
-			return Rts2CliApp::processOption (in_opt);
+			return rts2core::CliApp::processOption (in_opt);
 	}
 	return 0;
 }
 
-
-int
-HorizonApp::init ()
+int HorizonApp::init ()
 {
 	int ret;
 
-	ret = Rts2CliApp::init ();
+	ret = rts2core::CliApp::init ();
 	if (ret)
 		return ret;
 
@@ -99,9 +94,7 @@ HorizonApp::init ()
 	return 0;
 }
 
-
-int
-HorizonApp::doProcessing ()
+int HorizonApp::doProcessing ()
 {
 	struct ln_hrz_posn hrz;
 	ObjectCheck *checker;
@@ -144,9 +137,7 @@ HorizonApp::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	HorizonApp app = HorizonApp (argc, argv);
 	return app.run ();

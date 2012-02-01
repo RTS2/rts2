@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../../lib/rts2/conntcp.h"
+#include "connection/tcp.h"
 
 #define OPT_MINBCHARGE   OPT_LOCAL + 221
 #define OPT_MINBRUNTIM   OPT_LOCAL + 222

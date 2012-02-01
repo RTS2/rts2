@@ -35,7 +35,7 @@
 #include "hms.h"
 #include "status.h"
 #include "configuration.h"
-#include "../../lib/rts2/clicupola.h"
+#include "clicupola.h"
 #include "pier-collision.h"
 
 #include <termios.h>

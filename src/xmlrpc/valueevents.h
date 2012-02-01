@@ -21,7 +21,7 @@
 #define __RTS2__VALUEEVENTS__
 
 #include "value.h"
-#include "../../lib/rts2/expression.h"
+#include "expression.h"
 
 #include "emailaction.h"
 

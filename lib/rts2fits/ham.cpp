@@ -6,7 +6,7 @@
  * @author Petr Kubanek <pkubanek@asu.cas.cz>
  */
 
-#include "image.h"
+#include "rts2fits/image.h"
 
 #include <math.h>
 

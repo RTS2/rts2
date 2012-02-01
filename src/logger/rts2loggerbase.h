@@ -18,9 +18,9 @@
  */
 
 #include "devclient.h"
-#include "../../lib/rts2/displayvalue.h"
+#include "displayvalue.h"
 #include "command.h"
-#include "../../lib/rts2/expander.h"
+#include "expander.h"
 #include "utilsfunc.h"
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800

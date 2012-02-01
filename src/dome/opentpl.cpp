@@ -18,7 +18,7 @@
  */
 
 #include "dome.h"
-#include "../../lib/rts2/connopentpl.h"
+#include "connection/opentpl.h"
 #include "configuration.h"
 
 #include <libnova/libnova.h>

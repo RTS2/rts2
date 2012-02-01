@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "appdb.h"
+#include "rts2db/appdb.h"
 #include "configuration.h"
 
 #include <ecpgtype.h>
@@ -49,7 +49,7 @@ SqlQuery::SqlQuery (const char *in_from)
 
 SqlQuery::~SqlQuery (void)
 {
-	std::list <Rts2SqlColumn *>::iterator col_iter1, col_iter2;
+	std::list <SqlColumn *>::iterator col_iter1, col_iter2;
 	if (sql)
 		delete sql;
 	if (from)
@@ -65,7 +65,7 @@ SqlQuery::~SqlQuery (void)
 		delete[] where;
 }
 
-void SqlQuery::addColumn (Rts2SqlColumn *add_column)
+void SqlQuery::addColumn (SqlColumn *add_column)
 {
 	columns.push_back (add_column);
 	if (sql)
@@ -75,7 +75,7 @@ void SqlQuery::addColumn (Rts2SqlColumn *add_column)
 
 void SqlQuery::addColumn (const char *in_sql, const char *in_name, int in_order)
 {
-	SqlQuery::addColumn (new Rts2SqlColumn (in_sql, in_name, in_order));
+	SqlQuery::addColumn (new SqlColumn (in_sql, in_name, in_order));
 }
 
 void SqlQuery::addWhere (const char *in_where)
@@ -100,8 +100,8 @@ char * SqlQuery::genSql ()
 {
 	std::string query;
 	std::string order_by;
-	std::list <Rts2SqlColumn *>::iterator col_iter1;
-	std::list <Rts2SqlColumn *> col_copy;
+	std::list <SqlColumn *>::iterator col_iter1;
+	std::list <SqlColumn *> col_copy;
 	if (sql)
 		return sql;
 	query = std::string ();
@@ -126,11 +126,11 @@ char * SqlQuery::genSql ()
 	}
 	order_by = std::string ();
 	// order by part..
-	col_copy = std::list <Rts2SqlColumn *> (columns);
+	col_copy = std::list <SqlColumn *> (columns);
 	col_copy.sort ();
 	for (col_iter1 = col_copy.begin (); col_iter1 != col_copy.end (); col_iter1++)
 	{
-		Rts2SqlColumn *col;
+		SqlColumn *col;
 		col = (*col_iter1);
 		if (col->getOrderBy () != 0)
 		{
@@ -155,7 +155,7 @@ char * SqlQuery::genSql ()
 
 void SqlQuery::displayMinusPlusLine ()
 {
-	std::list <Rts2SqlColumn *>::iterator col_iter;
+	std::list <SqlColumn *>::iterator col_iter;
 	for (col_iter = columns.begin (); col_iter != columns.end (); col_iter++)
 	{
 		if (col_iter != columns.begin ())
@@ -187,7 +187,7 @@ void SqlQuery::display ()
 
 	EXEC SQL END DECLARE SECTION;
 
-	std::list <Rts2SqlColumn *>::iterator col_iter;
+	std::list <SqlColumn *>::iterator col_iter;
 
 	EXEC SQL ALLOCATE DESCRIPTOR disp_desc;
 
@@ -346,7 +346,7 @@ void SqlQuery::display ()
 	EXEC SQL DEALLOCATE DESCRIPTOR disp_desc;
 }
 
-AppDb::AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_argv)
+AppDb::AppDb (int in_argc, char **in_argv) : rts2core::CliApp (in_argc, in_argv)
 {
 	connectString = NULL;
 	configFile = NULL;
@@ -377,7 +377,7 @@ int AppDb::processOption (int in_opt)
 			ECPGdebug (1, stderr);
 			break;
 		default:
-			return Rts2CliApp::processOption (in_opt);
+			return rts2core::CliApp::processOption (in_opt);
 	}
 	return 0;
 }
@@ -466,7 +466,7 @@ int AppDb::init ()
 	rts2core::Configuration *config;
 	int ret;
 
-	ret = Rts2CliApp::init ();
+	ret = rts2core::CliApp::init ();
 	if (ret)
 		return ret;
 

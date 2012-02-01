@@ -23,7 +23,7 @@
 
 #ifdef HAVE_LIBJPEG
 
-#include "../../lib/rts2/expander.h"
+#include "expander.h"
 #include "libnova_cpp.h"
 #include "configuration.h"
 

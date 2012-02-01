@@ -18,7 +18,7 @@
  */
 
 #include "augerset.h"
-#include "sqlerror.h"
+#include "rts2db/sqlerror.h"
 
 #include "configuration.h"
 

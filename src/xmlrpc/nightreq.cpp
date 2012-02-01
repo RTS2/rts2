@@ -22,8 +22,8 @@
 #include "xmlrpc++/urlencoding.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/observationset.h"
-#include "../../lib/rts2db/imageset.h"
+#include "rts2db/observationset.h"
+#include "rts2db/imageset.h"
 #ifdef HAVE_LIBJPEG
 #include "altaz.h"
 #include "altplot.h"

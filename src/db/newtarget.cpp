@@ -17,12 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2db/target.h"
-#include "../../lib/rts2db/targetset.h"
+#include "rts2db/appdb.h"
+#include "rts2db/target.h"
+#include "rts2db/targetset.h"
 #include "configuration.h"
 #include "libnova_cpp.h"
-#include "../../lib/rts2/rts2askchoice.h"
+#include "askchoice.h"
 
 #include "rts2targetapp.h"
 
@@ -282,7 +282,7 @@ int Rts2NewTarget::doProcessing ()
 	if (n_tar_id == INT_MIN)
 		return saveTarget ();
 
-	Rts2AskChoice selection (this);
+	rts2core::AskChoice selection (this);
 	selection.addChoice ('s', "Save");
 	selection.addChoice ('q', "Quit");
 	selection.addChoice ('o', "List observations around position");

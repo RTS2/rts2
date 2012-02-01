@@ -24,10 +24,10 @@
 #ifdef HAVE_LIBJPEG
 
 #include "configuration.h"
-#include "../../lib/rts2/expander.h"
+#include "expander.h"
 #include "libnova_cpp.h"
 
-#include "../../lib/rts2db/target.h"
+#include "rts2db/target.h"
 
 using namespace rts2xmlrpc;
 

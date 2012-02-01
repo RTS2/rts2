@@ -19,7 +19,7 @@
 
 #include "camd.h"
 #include "utilsfunc.h"
-#include "../../lib/rts2/conntcp.h"
+#include "connection/tcp.h"
 
 namespace rts2camd
 {

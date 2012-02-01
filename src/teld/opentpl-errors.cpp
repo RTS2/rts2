@@ -17,8 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/connopentpl.h"
-#include "../../lib/rts2/rts2cliapp.h"
+#include "connection/opentpl.h"
+
+#include "cliapp.h"
 #include "configuration.h"
 
 #include <sstream>
@@ -82,7 +83,7 @@ std::ostream & operator << (std::ostream & _os, OpenTPLAxis irax)
 }
 
 
-class AppOpenTPLError:public Rts2CliApp
+class AppOpenTPLError:public CliApp
 {
 	private:
 		std::string ir_ip;
@@ -206,8 +207,7 @@ AppOpenTPLError::doReferenced ()
 }
 
 
-AppOpenTPLError::AppOpenTPLError (int in_argc, char **in_argv):
-Rts2CliApp (in_argc, in_argv)
+AppOpenTPLError::AppOpenTPLError (int in_argc, char **in_argv):CliApp (in_argc, in_argv)
 {
 	ir_port = 0;
 	opentplConn = NULL;

@@ -18,13 +18,14 @@
  */
 
 #include <libnova/libnova.h>
-#include "target.h"
-#include "plan.h"
-#include "sqlerror.h"
 #include "configuration.h"
 #include "timestamp.h"
-#include "../rts2/infoval.h"
+#include "infoval.h"
 #include "utilsfunc.h"
+
+#include "rts2db/plan.h"
+#include "rts2db/target.h"
+#include "rts2db/sqlerror.h"
 
 #include <iomanip>
 #include <sstream>

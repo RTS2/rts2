@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/model/telmodel.h"
+#include "telmodel.h"
 #include "libnova_cpp.h"
 #include "rts2format.h"
-#include "../../lib/rts2/rts2cliapp.h"
-#include "../../lib/rts2fits/imagedb.h"
+#include "cliapp.h"
+#include "rts2fits/imagedb.h"
 
 #include <iostream>
 #include <fstream>
@@ -57,7 +57,7 @@ class ModelTest:public Telescope
 		int endPark () { return 0; }
 };
 
-class TelModelTest:public Rts2CliApp
+class TelModelTest:public rts2core::CliApp
 {
 	private:
 		char *modelFile;
@@ -93,7 +93,7 @@ class TelModelTest:public Rts2CliApp
 
 using namespace rts2teld;
 
-TelModelTest::TelModelTest (int in_argc, char **in_argv):Rts2CliApp (in_argc, in_argv)
+TelModelTest::TelModelTest (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	rts2core::Configuration::instance ();
 	modelFile = NULL;

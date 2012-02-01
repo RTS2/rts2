@@ -17,11 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "sqlerror.h"
-#include "target_auger.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/target_auger.h"
+
 #include "timestamp.h"
-#include "../rts2/infoval.h"
-#include "../rts2fits/image.h"
+#include "infoval.h"
+#include "rts2fits/image.h"
 
 using namespace rts2db;
 

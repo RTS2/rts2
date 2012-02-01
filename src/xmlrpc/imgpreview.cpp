@@ -95,7 +95,7 @@
 #define	_FILE_OFFSET_BITS 64
 #endif
 
-#include "../../lib/rts2fits/image.h"
+#include "rts2fits/image.h"
 #include "bsc.h"
 #include "dirsupport.h"
 #ifdef HAVE_LIBARCHIVE

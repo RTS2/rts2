@@ -18,9 +18,10 @@
  */
 
 #include "conngrb.h"
-#include "connfork.h"
 #include "libnova_cpp.h"
-#include "../../lib/rts2db/sqlerror.h"
+
+#include "connection/fork.h"
+#include "rts2db/sqlerror.h"
 
 #include <arpa/inet.h>
 #include <errno.h>

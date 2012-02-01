@@ -18,12 +18,13 @@
  */
 
 #include "targetgrb.h"
-#include "sqlerror.h"
 
 #include "configuration.h"
 #include "libnova_cpp.h"
-#include "../rts2/infoval.h"
-#include "../rts2fits/image.h"
+#include "infoval.h"
+
+#include "rts2db/sqlerror.h"
+#include "rts2fits/image.h"
 
 using namespace rts2db;
 

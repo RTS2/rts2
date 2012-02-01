@@ -22,7 +22,7 @@
 
 #include <ostream>
 #include "xmlrpc++/XmlRpc.h"
-#include "../../lib/rts2/infoval.h"
+#include "infoval.h"
 
 using namespace XmlRpc;
 

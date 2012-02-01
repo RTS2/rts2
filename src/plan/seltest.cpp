@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2script/printtarget.h"
+#include "rts2script/printtarget.h"
 #include "selector.h"
 
 #define OPT_FILTERS             OPT_LOCAL + 630
@@ -216,7 +216,7 @@ int SelectorApp::doProcessing ()
 
 int SelectorApp::runInteractive ()
 {
-	Rts2AskChoice main (this);
+	rts2core::AskChoice main (this);
 	main.addChoice ('p', "Print targets");
 	main.addChoice ('d', "Disable targets");
 	main.addChoice ('s', "Save targets");

@@ -18,7 +18,7 @@
  */
 
 #include "utilsfunc.h"
-#include "../../lib/rts2db/appdb.h"
+#include "rts2db/appdb.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

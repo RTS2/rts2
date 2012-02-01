@@ -19,7 +19,7 @@
 
 #include "xmlrpcd.h"
 
-#include "connfork.h"
+#include "connection/fork.h"
 #include "timestamp.h"
 
 using namespace rts2xmlrpc;

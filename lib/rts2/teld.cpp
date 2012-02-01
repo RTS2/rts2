@@ -30,7 +30,7 @@
 #include "teld.h"
 #include "clicupola.h"
 
-#include "model/telmodel.h"
+#include "telmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118

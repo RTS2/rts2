@@ -22,21 +22,21 @@
 
 #include "xmlstream.h"
 
-#include "../../lib/rts2/displayvalue.h"
+#include "displayvalue.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/recvals.h"
-#include "../../lib/rts2db/records.h"
-#include "../../lib/rts2db/recordsavg.h"
-#include "../../lib/rts2db/devicedb.h"
-#include "../../lib/rts2db/imageset.h"
-#include "../../lib/rts2db/observationset.h"
-#include "../../lib/rts2db/messagedb.h"
-#include "../../lib/rts2db/targetset.h"
-#include "../../lib/rts2db/user.h"
-#include "../../lib/rts2db/sqlerror.h"
+#include "rts2db/recvals.h"
+#include "rts2db/records.h"
+#include "rts2db/recordsavg.h"
+#include "rts2db/devicedb.h"
+#include "rts2db/imageset.h"
+#include "rts2db/observationset.h"
+#include "rts2db/messagedb.h"
+#include "rts2db/targetset.h"
+#include "rts2db/user.h"
+#include "rts2db/sqlerror.h"
 #include "../scheduler/ticket.h"
-#include "../../lib/rts2fits/imagedb.h"
+#include "rts2fits/imagedb.h"
 #else
 #include "configuration.h"
 #include "device.h"

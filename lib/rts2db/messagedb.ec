@@ -18,8 +18,8 @@
  */
 
 
-#include "messagedb.h"
-#include "sqlerror.h"
+#include "rts2db/messagedb.h"
+#include "rts2db/sqlerror.h"
 #include "block.h"
 
 #include <iostream>

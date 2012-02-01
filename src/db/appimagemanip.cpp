@@ -21,9 +21,9 @@
 #include <strings.h>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2fits/appdbimage.h"
+#include "rts2fits/appdbimage.h"
 #else
-#include "../../lib/rts2fits/appimage.h"
+#include "rts2fits/appimage.h"
 #endif							 /* HAVE_PGSQL */
 #include "configuration.h"
 #include "rts2format.h"

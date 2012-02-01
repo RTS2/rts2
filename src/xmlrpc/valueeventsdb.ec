@@ -19,8 +19,8 @@
 
 #include "xmlrpcd.h"
 
-#include "../../lib/rts2db/recvals.h"
-#include "../../lib/rts2db/sqlerror.h"
+#include "rts2db/recvals.h"
+#include "rts2db/sqlerror.h"
 
 EXEC SQL include sqlca;
 

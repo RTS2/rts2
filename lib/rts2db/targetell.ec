@@ -19,9 +19,9 @@
 
 #include "targetell.h"
 
-#include "../rts2/infoval.h"
+#include "infoval.h"
 #include "libnova_cpp.h"
-#include "../rts2fits/image.h"
+#include "rts2fits/image.h"
 
 using namespace rts2db;
 

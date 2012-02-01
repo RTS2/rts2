@@ -1,5 +1,5 @@
-#include "../../lib/rts2fits/appdbimage.h"
-#include "../../lib/rts2fits/imagedb.h"
+#include "rts2fits/appdbimage.h"
+#include "rts2fits/imagedb.h"
 #include "configuration.h"
 
 #include <iostream>

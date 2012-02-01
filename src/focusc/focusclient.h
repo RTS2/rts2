@@ -19,8 +19,8 @@
 
 #ifndef __RTS2_GENFOC__
 #define __RTS2_GENFOC__
-#include "../../lib/rts2/client.h"
-#include "../../lib/rts2fits/devclifoc.h"
+#include "client.h"
+#include "rts2fits/devclifoc.h"
 
 #include <vector>
 

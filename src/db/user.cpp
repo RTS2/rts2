@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2db/userset.h"
+#include "rts2db/appdb.h"
+#include "rts2db/userset.h"
 
-#include "../../lib/rts2/rts2askchoice.h"
-#include "../../lib/rts2/rts2target.h"
+#include "askchoice.h"
+#include "rts2target.h"
 
 #define OPT_PASSWORD   OPT_LOCAL + 321
 
@@ -56,7 +56,7 @@ class Rts2UserApp:public AppDb
 		int typesEmail ();
 
 		// menu for flags informations
-		Rts2AskChoice *flagsChoice;
+		rts2core::AskChoice *flagsChoice;
 
 		// type actions
 		int addNewType ();
@@ -73,7 +73,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): AppDb (in_argc, in_argv)
 	r2user = User ();
 
 	// construct menu for flags solution
-	flagsChoice = new Rts2AskChoice (this);
+	flagsChoice = new rts2core::AskChoice (this);
 	flagsChoice->addChoice ('1', "send at start of observation");
 	flagsChoice->addChoice ('2', "send when first image receives astrometry");
 	flagsChoice->addChoice ('3', "send when observation finishes");
@@ -241,7 +241,7 @@ int Rts2UserApp::userEmail ()
 
 int Rts2UserApp::typesEmail ()
 {
-	Rts2AskChoice typeChoice = Rts2AskChoice (this);
+	rts2core::AskChoice typeChoice = rts2core::AskChoice (this);
 	typeChoice.addChoice ('a', "Add triggers for new type");
 	typeChoice.addChoice ('r', "Remove triggers for a target type");
 	typeChoice.addChoice ('e', "Edit triggers for a target type");

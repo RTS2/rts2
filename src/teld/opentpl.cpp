@@ -23,7 +23,8 @@
 #include "configuration.h"
 
 #include "teld.h"
-#include "../../lib/rts2/connopentpl.h"
+
+#include "connection/opentpl.h"
 
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2

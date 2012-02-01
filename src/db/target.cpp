@@ -17,15 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2script/script.h"
-#include "../../lib/rts2script/elementtarget.h"
-#include "../../lib/rts2db/constraints.h"
-#include "../../lib/rts2db/observation.h"
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2db/sqlerror.h"
-#include "../../lib/rts2db/target.h"
-#include "../../lib/rts2db/targetset.h"
-#include "../../lib/rts2/rts2askchoice.h"
+#include "rts2script/script.h"
+#include "rts2script/elementtarget.h"
+#include "rts2db/constraints.h"
+#include "rts2db/observation.h"
+#include "rts2db/appdb.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/target.h"
+#include "rts2db/targetset.h"
+#include "askchoice.h"
 #include "configuration.h"
 #include "rts2format.h"
 
@@ -384,7 +384,7 @@ int TargetApp::init ()
 
 int TargetApp::runInteractive ()
 {
-	Rts2AskChoice selection = Rts2AskChoice (this);
+	rts2core::AskChoice selection = rts2core::AskChoice (this);
 	selection.addChoice ('e', "Enable target(s)");
 	selection.addChoice ('d', "Disable target(s)");
 	selection.addChoice ('o', "List observations around position");

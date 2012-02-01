@@ -17,13 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "connimgprocess.h"
-#include "script.h"
+#include "rts2script/connimgprocess.h"
 
 #include "command.h"
 #include "configuration.h"
 #include "utilsfunc.h"
-#include "../rts2db/rts2taruser.h"
+
+#include "rts2script/script.h"
+#include "rts2db/taruser.h"
 
 #include <errno.h>
 #include <sys/types.h>

@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../lib/rts2/tgdrive.h"
-#include "../../lib/rts2/gem.h"
+#include "connection/tgdrive.h"
+#include "gem.h"
 
 #include "configuration.h"
 

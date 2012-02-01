@@ -18,8 +18,8 @@
  */
 
 #include "utilsfunc.h"
-#include "../../lib/rts2db/appdb.h"
-#include "../../lib/rts2fits/imagedb.h"
+#include "rts2db/appdb.h"
+#include "rts2fits/imagedb.h"
 
 #include <iostream>
 #include <list>

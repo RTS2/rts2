@@ -21,7 +21,7 @@
 #include "configuration.h"
 #include "libnova_cpp.h"
 
-#include "../../lib/rts2db/simbadtarget.h"
+#include "rts2db/simbadtarget.h"
 
 #include <sstream>
 #include <iostream>

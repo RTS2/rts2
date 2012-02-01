@@ -17,19 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "constraints.h"
-#include "target.h"
-#include "target_auger.h"
+#include "rts2db/target_auger.h"
 #include "targetell.h"
 #include "rts2targetplanet.h"
 #include "targetgrb.h"
-#include "observation.h"
-#include "observationset.h"
-#include "targetset.h"
-#include "sqlerror.h"
-#include "simbadtarget.h"
 
-#include "../rts2/infoval.h"
+#include "rts2db/constraints.h"
+#include "rts2db/target.h"
+#include "rts2db/observation.h"
+#include "rts2db/observationset.h"
+#include "rts2db/targetset.h"
+#include "rts2db/sqlerror.h"
+#include "rts2db/simbadtarget.h"
+
+#include "infoval.h"
 #include "app.h"
 #include "configuration.h"
 #include "libnova_cpp.h"

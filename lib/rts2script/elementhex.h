@@ -20,7 +20,7 @@
 #ifndef __RTS2_SEHEX__
 #define __RTS2_SEHEX__
 
-#include "elementblock.h"
+#include "rts2script/elementblock.h"
 #include <libnova/libnova.h>
 
 namespace rts2script

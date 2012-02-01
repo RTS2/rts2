@@ -20,7 +20,7 @@
 #ifndef __RTS2_MEMIMAGE__
 #define __RTS2_MEMIMAGE__
 
-#include "image.h"
+#include "rts2fits/image.h"
 
 namespace rts2image
 {

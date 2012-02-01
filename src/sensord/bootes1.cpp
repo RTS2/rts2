@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../../lib/rts2/connford.h"
+#include "connection/ford.h"
 
 namespace rts2sensord
 {

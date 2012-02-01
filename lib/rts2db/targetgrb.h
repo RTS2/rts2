@@ -20,7 +20,7 @@
 #ifndef __RTS2_TARGETGRB__
 #define __RTS2_TARGETGRB__
 
-#include "target.h"
+#include "rts2db/target.h"
 
 namespace rts2db
 {

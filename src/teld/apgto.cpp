@@ -43,7 +43,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "../../lib/rts2/clicupola.h"
+#include "clicupola.h"
 #include "configuration.h" 
 #include "pier-collision.h"
 

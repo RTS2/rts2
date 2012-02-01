@@ -284,14 +284,14 @@ digraph "JSON API calls handling" {
 
 #include "xmlrpcd.h"
 
-#include "../../lib/rts2db/constraints.h"
-#include "../../lib/rts2db/planset.h"
-#include "../../lib/rts2script/script.h"
+#include "rts2db/constraints.h"
+#include "rts2db/planset.h"
+#include "rts2script/script.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/labellist.h"
-#include "../../lib/rts2db/simbadtarget.h"
-#include "../../lib/rts2db/messagedb.h"
+#include "rts2db/labellist.h"
+#include "rts2db/simbadtarget.h"
+#include "rts2db/messagedb.h"
 #endif
 
 using namespace rts2xmlrpc;
@@ -1545,7 +1545,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		{
 			double md = -1;
 			std::ostringstream cs;
-			for (Rts2CamList::iterator cam = ((XmlRpcd *) getMasterApp ())->cameras.begin (); cam != ((XmlRpcd *) getMasterApp ())->cameras.end (); cam++)
+			for (rts2db::CamList::iterator cam = ((XmlRpcd *) getMasterApp ())->cameras.begin (); cam != ((XmlRpcd *) getMasterApp ())->cameras.end (); cam++)
 			{
 				try
 				{

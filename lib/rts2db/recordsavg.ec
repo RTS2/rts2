@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "recordsavg.h"
-#include "sqlerror.h"
+#include "rts2db/recordsavg.h"
+#include "rts2db/sqlerror.h"
 
 using namespace rts2db;
 

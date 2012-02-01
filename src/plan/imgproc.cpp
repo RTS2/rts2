@@ -18,8 +18,8 @@
  */
 
 #include "status.h"
-#include "../../lib/rts2script/connimgprocess.h"
-#include "../../lib/rts2script/script.h"
+#include "rts2script/connimgprocess.h"
+#include "rts2script/script.h"
 
 #include <glob.h>
 #include <sys/types.h>
@@ -30,7 +30,7 @@
 #include <stdio.h>
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/devicedb.h"
+#include "rts2db/devicedb.h"
 #else
 #include "device.h"
 #include "configuration.h"

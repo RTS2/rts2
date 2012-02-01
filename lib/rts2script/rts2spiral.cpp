@@ -1,4 +1,4 @@
-#include "rts2spiral.h"
+#include "rts2script/rts2spiral.h"
 
 Rts2Spiral::Rts2Spiral ()
 {

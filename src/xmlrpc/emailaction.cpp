@@ -19,8 +19,8 @@
 
 #include "xmlrpcd.h"
 
-#include "connfork.h"
-#include "../../lib/rts2/displayvalue.h"
+#include "connection/fork.h"
+#include "displayvalue.h"
 
 using namespace rts2xmlrpc;
 

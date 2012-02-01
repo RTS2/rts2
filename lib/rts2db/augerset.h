@@ -22,7 +22,7 @@
 
 #include <map>
 
-#include "target_auger.h"
+#include "rts2db/target_auger.h"
 
 namespace rts2db
 {

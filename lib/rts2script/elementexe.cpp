@@ -18,8 +18,8 @@
  */
 
 #include "elementexe.h"
-#include "execcli.h"
-#include "script.h"
+#include "rts2script/execcli.h"
+#include "rts2script/script.h"
 
 using namespace rts2script;
 using namespace rts2image;

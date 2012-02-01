@@ -25,10 +25,10 @@
 #include "dirsupport.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/observationset.h"
-#include "../../lib/rts2db/imageset.h"
-#include "../../lib/rts2db/user.h"
-#include "../../lib/rts2db/targetset.h"
+#include "rts2db/observationset.h"
+#include "rts2db/imageset.h"
+#include "rts2db/user.h"
+#include "rts2db/targetset.h"
 #endif /* HAVE_PGSQL */
 
 #include "radecparser.h"

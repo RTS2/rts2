@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "printtarget.h"
+#include "rts2script/printtarget.h"
 #include "utilsfunc.h"
 
 #define OPT_FULL_DAY              OPT_LOCAL + 200
@@ -257,7 +257,7 @@ int PrintTarget::processOption (int in_opt)
 
 void PrintTarget::printScripts (rts2db::Target *target, const char *pref)
 {
-	Rts2CamList::iterator cam_names;
+	rts2db::CamList::iterator cam_names;
 	for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
 	{
 		const char *cam_name = (*cam_names).c_str ();

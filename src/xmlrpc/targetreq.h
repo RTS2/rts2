@@ -24,8 +24,8 @@
 #include "httpreq.h"
 
 #ifdef HAVE_PGSQL
-#include "../../lib/rts2db/targetset.h"
-#include "../../lib/rts2db/rts2camlist.h"
+#include "rts2db/targetset.h"
+#include "rts2db/camlist.h"
 #if defined(HAVE_LIBJPEG)
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
@@ -65,7 +65,7 @@ class Targets: public GetRequestAuthorized
 		void printTargetObservations (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetPlan (rts2db::Target *tar, const char* &response_type, char* &response, size_t &response_length);
 
-		Rts2CamList cameras;
+		rts2db::CamList cameras;
 
 #ifdef HAVE_LIBJPEG
 		void plotTarget (rts2db::Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);

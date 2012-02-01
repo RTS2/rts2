@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "simbadtarget.h"
+#include "rts2db/simbadtarget.h"
 #include "targetell.h"
 
 #include "xmlrpc++/XmlRpc.h"

@@ -19,7 +19,7 @@
 
 #include <ctype.h>
 
-#include "devcliimg.h"
+#include "rts2fits/devcliimg.h"
 #include "iniparser.h"
 #include "configuration.h"
 #include "valuerectangle.h"

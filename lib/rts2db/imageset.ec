@@ -18,12 +18,13 @@
  */
 
 #include "imgdisplay.h"
-#include "imageset.h"
-#include "observation.h"
+
+#include "rts2db/imageset.h"
+#include "rts2db/observation.h"
 
 #include <sstream>
 
-#include "../rts2fits/imagedb.h"
+#include "rts2fits/imagedb.h"
 
 using namespace rts2db;
 

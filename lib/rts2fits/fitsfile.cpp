@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "fitsfile.h"
+#include "rts2fits/fitsfile.h"
 
 #include "block.h"
 #include "utilsfunc.h"

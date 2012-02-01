@@ -24,7 +24,7 @@
 
 #include "block.h"
 #include "connection.h"
-#include "../../lib/rts2/client.h"
+#include "client.h"
 #include "devclient.h"
 
 namespace rts2ncurses

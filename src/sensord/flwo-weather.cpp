@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../../lib/rts2/connudp.h"
+#include "connection/udp.h"
 
 #include <fstream>
 #include <sstream>
