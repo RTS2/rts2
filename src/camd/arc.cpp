@@ -59,7 +59,7 @@ class Arc:public Camera
 
 		virtual int info ();
 
-		virtual int killAll ();
+		virtual int killAll (bool callScriptEnds);
 
 	protected:
 		int processOption (int opt);
@@ -194,7 +194,7 @@ int Arc::info ()
 	return Camera::info ();
 }
 
-int Arc::killAll ()
+int Arc::killAll (bool callScriptEnds)
 {
 #ifdef ARC_API_1_7
 
@@ -222,7 +222,7 @@ int Arc::killAll ()
                 //long lReply = controller.Command (arc::TIM_ID, 0x0202);
                 //controller.CheckReply (lReply);
 	}
-	return Camera::killAll ();
+	return Camera::killAll (callScriptEnds);
 }
 
 int Arc::processOption (int opt)

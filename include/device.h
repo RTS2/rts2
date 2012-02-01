@@ -244,9 +244,11 @@ class Device:public Daemon
 		 * interruption. The device shall react by switching back to
 		 * initial state and be ready for next commands.
 		 *
+		 * @param callScriptEnd  whenever to call script end
+		 *
 		 * @return -1 on error.
 		 */
-		virtual int killAll ();
+		virtual int killAll (bool callScriptEnd);
 
 		/**
 		 * This is called from sequencer to let device know that scripts

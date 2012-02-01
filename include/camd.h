@@ -171,7 +171,7 @@ class Camera:public rts2core::ScriptDevice
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
 		virtual int info ();
 
-		virtual int killAll ();
+		virtual int killAll (bool callScriptEnds);
 		virtual int scriptEnds ();
 
 		virtual long camWaitExpose ();
