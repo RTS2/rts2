@@ -176,6 +176,25 @@ digraph "JSON API calls handling" {
  *
  * Set variable on server.
  *
+ * Can set complex values, for example <b>camera ROI</b> (4 integers), through string containing new value as can be understand with
+ * <b>X</b> command from <b>rts2-mon</b>.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/set?d=C0&n=exposure&v=200
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data from rts2-centrald.
+ * - <b>n</b> Variable name.
+ * - <b>v</b> New value.
+ * - <i><b>async</b> Asynchronous call. Asynchronous call return before value is confirmed set by the device driver.</i>
+ *
+ * @subsection Return
+ *
+ * Return values in same format as @ref JSON_device_get call, augumented with return status. Return status is
+ * 0 if no error occured durring set call, and is obviously available only for non-asynchronous calls.
+ *
  * @section JSON_device_script runscript
  *
  * Run script on device. Optionally kill previously running script, or don't call script end, which 
@@ -196,6 +215,27 @@ digraph "JSON API calls handling" {
           Please See man rts2.ini and man rts2 for details about configuration (xmlrpcd/images_name) and expansion characters.</i>
  *
  * @subsection Return
+ *
+ * @section JSON_device_selval selval
+ *
+ * Return array with names of selection values. It is only possible to call this function on selection variables, otherwise the call return an error message. Variable type 
+ * can be decoded from @ref JSON_device_get call with <b>e</b> parameter set to 1. The returned extended format contains flags. If <i>(flags & 0x0f)</i> is equal to
+ * 7 (RTS2_VALUE_SELECTION), then the selval call will succeed.
+ *
+ * @see RTS2_VALUE_SELECTION
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/selval?d=C0&n=binning
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data from rts2-centrald.
+ * - <b>n</b> Variable name.
+ *
+ * @subsection Return
+ *
+ * JSON array with strings representing possible values of the selection.
  * 
  * @page JSON_sql JSON database API
  *
@@ -593,11 +633,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *device = params->getString ("d","");
 			bool ext = params->getInteger ("e", 0);
 			double from = params->getDouble ("from", 0);
-			if (!(strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ())))
-			{
-				sendOwnValues (os, params, from, ext);
-			}
-			else
+			if (strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ()))
 			{
 				if (isCentraldName (device))
 					conn = master->getSingleCentralConn ();
@@ -606,6 +642,10 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if (conn == NULL)
 					throw JSONException ("cannot find device");
 				sendConnectionValues (os, conn, params, from, ext);
+			}
+			else
+			{
+				sendOwnValues (os, params, from, ext);
 			}
 		}
 		// execute command on server
@@ -617,24 +657,35 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			bool ext = params->getInteger ("e", 0);
 			if (cmd[0] == '\0')
 				throw JSONException ("empty command");
-			if (isCentraldName (device))
-				conn = master->getSingleCentralConn ();
-			else
-				conn = master->getOpenConnection (device);
-			if (conn == NULL)
-				throw JSONException ("cannot find device");
-			if (async)
+			if (strcmp (device, ((XmlRpcd *) getMasterApp ())->getDeviceName ()))
 			{
-				conn->queCommand (new rts2core::Command (master, cmd));
-				sendConnectionValues (os, conn, params, NAN, ext);
+				if (isCentraldName (device))
+					conn = master->getSingleCentralConn ();
+				else
+					conn = master->getOpenConnection (device);
+				if (conn == NULL)
+					throw JSONException ("cannot find device");
+				if (async)
+				{
+					conn->queCommand (new rts2core::Command (master, cmd));
+					sendConnectionValues (os, conn, params, NAN, ext);
+				}
+				else
+				{
+					AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
+					((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+	
+					conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
+					throw XmlRpc::XmlRpcAsynchronous ();
+				}
 			}
 			else
 			{
-				AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
-				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
-
-				conn->queCommand (new rts2core::Command (master, cmd), 0, aa);
-				throw XmlRpc::XmlRpcAsynchronous ();
+				if (!strcmp (cmd, "autosave"))
+					((XmlRpcd *) getMasterApp ())->autosaveValues ();
+				else
+					throw JSONException ("invalid command");
+				sendOwnValues (os, params, NAN, ext);
 			}
 		}
 		// start exposure, return from server image
