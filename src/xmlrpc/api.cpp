@@ -273,13 +273,13 @@ void AsyncAPI::postEvent (Event *event)
 		case EVENT_COMMAND_OK:
 			os << "{";
 			req->sendConnectionValues (os, conn, NULL, NAN, ext);
-			os << ",\"ret\":0 }";
+			os << ",\"ret\":0}";
 			req->sendAsyncJSON (os, source);
 			break;
 		case EVENT_COMMAND_FAILED:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL, NAN, ext);
-			os << ", \"ret\":-1 }";
+			req->sendConnectionValues (os, conn, NULL, -1, ext);
+			os << ",\"ret\":-1}";
 			req->sendAsyncJSON (os, source);
 			break;
 	}
@@ -1323,7 +1323,7 @@ void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * 
 
 	for (iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		if (conn->getOtherDevClient ())
+		if ((isnan (from) || from > 0) && conn->getOtherDevClient ())
 		{
 			double ch = ((XmlDevInterface *) (conn->getOtherDevClient ()))->getValueChangedTime (*iter);
 			if (isnan (mfrom) || ch > mfrom)

@@ -84,6 +84,7 @@ class Directory;
 class XmlDevInterface
 {
 	public:
+		XmlDevInterface ():changedTimes () {}
 		void stateChanged (rts2core::ServerState * state);
 
 		void valueChanged (rts2core::Value * value);
