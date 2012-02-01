@@ -603,6 +603,12 @@ class CommandKillAll:public Command
 		CommandKillAll (Block * _master);
 };
 
+class CommandKillAllWithoutScriptEnds:public Command
+{
+	public:
+		CommandKillAllWithoutScriptEnds (Block * _master);
+};
+
 /**
  * Sends script end command.
  *

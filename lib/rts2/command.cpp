@@ -588,6 +588,11 @@ CommandKillAll::CommandKillAll (Block *_master):Command (_master)
 	setCommand ("killall");
 }
 
+CommandKillAllWithoutScriptEnds::CommandKillAllWithoutScriptEnds (Block *_master):Command (_master)
+{
+	setCommand ("killall_wse");
+}
+
 CommandScriptEnds::CommandScriptEnds (Block *_master):Command (_master)
 {
 	setCommand ("script_ends");
