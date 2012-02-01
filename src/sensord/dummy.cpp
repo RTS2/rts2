@@ -159,7 +159,7 @@ class Dummy:public Sensor
 			return Sensor::commandAuthorized (conn);
 		}
 	protected:
-		virtual int init ();
+		virtual int initHardware ();
 
 	private:
 		rts2core::ValueInteger *testInt;
@@ -232,11 +232,8 @@ void Dummy::setFullBopState (int new_state)
 }
 
 
-int Dummy::init ()
+int Dummy::initHardware ()
 {
-	int ret = Sensor::init ();
-	if (ret)
-		return ret;
 	// initialize timer
 	addTimer (5, new rts2core::Event (EVENT_TIMER_TEST));
 	maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
