@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = rts2-mirror-dummy
 
-EXTRA_DIST = mirror.cpp
+EXTRA_DIST = 
 
 LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
