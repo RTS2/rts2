@@ -171,6 +171,11 @@ class Daemon:public rts2core::Block
 				conn->sendProgress (state_start, state_expected_end);
 		}
 
+		/**
+		 * Autosave values marked for autosaving.
+		 */
+		int autosaveValues ();
+
 	protected:
 		/**
 		 * Delete all saved reference of given value.
@@ -543,11 +548,6 @@ class Daemon:public rts2core::Block
 		 * @see setIdleInfoInterval()
 		 */
 		virtual bool canCallInfoFromTimer () { return true; }
-
-		/**
-		 * Autosave values marked for autosaving.
-		 */
-		int autosaveValues ();
 
 		/**
 		 * Set mode from modefile.
