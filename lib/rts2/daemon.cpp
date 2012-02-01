@@ -1306,6 +1306,8 @@ int Daemon::createSectionValues (IniSection *sect)
 				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "d"))
 				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (!strcasecmp (suffix.c_str (), "s"))
+				createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else
 			{
 				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
