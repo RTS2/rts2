@@ -1,7 +1,7 @@
 #ifndef __RTS2_APP_IMAGE__
 #define __RTS2_APP_IMAGE__
 
-#include "../rts2/rts2cliapp.h"
+#include "cliapp.h"
 #include "image.h"
 
 #include <list>
@@ -9,14 +9,10 @@
 namespace rts2image
 {
 
-class AppImageCore:public Rts2CliApp
+class AppImageCore:public rts2core::CliApp
 {
-	protected:
-		std::list < const char *>imageNames;
-		bool readOnly;
-		virtual int processImage (Image * image) { return 0; }
 	public:
-		AppImageCore (int in_argc, char **in_argv, bool in_readOnly):Rts2CliApp (in_argc, in_argv)
+		AppImageCore (int in_argc, char **in_argv, bool in_readOnly):rts2core::CliApp (in_argc, in_argv)
 		{
 			readOnly = in_readOnly;
 		}
@@ -46,6 +42,11 @@ class AppImageCore:public Rts2CliApp
 			}
 			return ret;
 		}
+
+	protected:
+		std::list < const char *>imageNames;
+		bool readOnly;
+		virtual int processImage (Image * image) { return 0; }
 };
 
 }
