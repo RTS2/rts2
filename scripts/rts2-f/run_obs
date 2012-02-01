@@ -55,6 +55,38 @@ $xmlrpc -c SEL.next
 
 if ( $tar_id > 0 ) then
 	if ( $last_tar_id != $tar_id ) then
+		set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
+
+		set ora=`$xmlrpc -G IMGP.ora`
+		set odec=`$xmlrpc -G IMGP.odec`
+	
+		set rra=`printf "%.0f" $ora`
+		set rdec=`printf "%.0f" $odec`
+		#echo "initial offsets $rra $rdec $last_obs_id $obs_id"
+		if ( $rra > -30 && $rra < 30 ) then
+			set rra = 0
+		endif
+		if ( $rdec > -30 && $rdec < 30 ) then
+			set rdec = 0
+		endif
+		if ( ( $rra != 0 || $rdec != 0 ) && $last_obs_id == $obs_id ) then
+			# offset by xoff/yoff
+			set xoff=`$xmlrpc -G TELE.offs_x`
+			set yoff=`$xmlrpc -G TELE.offs_y`
+			set tel=`$xmlrpc -G TELE.TEL`
+			set teldec=`echo $tel | awk '{print cos($1*3.14159265/180);}'`
+			set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2;}'`
+			#set of_ra=`echo $rra $xoff | awk '{printf "%d",$1 - $2;}'`
+			set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
+			#rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
+			#tele offset $of_ra $of_dec
+			#sleep 6
+			#rts2-logcom "executing tele set"
+			#tele set
+		#else
+		#	rts2-logcom "initial offsets are zero or not available, not offseting ($rra $rdec; $last_obs_id $obs_id)"
+		endif
+	
 		setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
 		echo $tar_id $obs_id > $lasttarget
 		@ imgid=1
@@ -91,35 +123,6 @@ if ( $tar_id > 0 ) then
 		echo -n "Track on, DOME ON"
 		tele trackon
 		tele domeon
-	
-		set oldoffs=`$xmlrpc -G TELE.OFFS`
-	
-		set rra=`echo "$oldoffs" | awk '{printf "%d",$1 * 3600.0;}'`
-		set rdec=`echo "$oldoffs" | awk '{printf "%d",$2 * 3600.0;}'`
-		# echo "initial offsets $rra $rdec"
-		if ( $rra > -30 && $rra < 30 ) then
-			set rra = 0
-		endif
-		if ( $rdec > -30 && $rdec < 30 ) then
-			set rdec = 0
-		endif
-		if ( $rra != 0 || $rdec != 0 ) then
-			# offset by xoff/yoff
-			set xoff=`$xmlrpc -G TELE.offs_x`
-			set yoff=`$xmlrpc -G TELE.offs_y`
-			set tel=`$xmlrpc -G TELE.TEL`
-			set teldec=`echo $tel | awk '{print cos($1*3.14159265/180);}'`
-			set of_ra=`echo $rra $xoff $teldec | awk '{printf "%d",$1 - $2/$3;}'`
-			#set of_ra=`echo $rra $xoff | awk '{printf "%d",$1 - $2;}'`
-			set of_dec=`echo $rdec $yoff | awk '{printf "%d",$1 - $2;}'`
-			#rts2-logcom "initial offseting $of_ra $of_dec ($rra $rdec)"
-			#tele offset $of_ra $of_dec
-			#sleep 6
-			#rts2-logcom "executing tele set"
-			#tele set
-		#else
-		#	rts2-logcom "initial offsets are zero, not offseting ($rra $rdec)"
-		endif
 	
 		$xmlrpc -c "TELE.move $ra $dec"
 	
