@@ -203,7 +203,6 @@ int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &
 		logStream (MESSAGE_ERROR) << "error calling '" << methodName << "' with arguments " << ((std::string) in) << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "output of method '" << methodName << "':'" << ((std::string) result) << "'" << sendLog;
 	return 0;
 }
 
