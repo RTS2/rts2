@@ -170,6 +170,9 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 
 		(*(loops[i]))["CSET"].push_back (loopValue (vb, "CSET_ST", "state, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
 		(*(loops[i]))["CSET"].push_back (loopValue (vb, "CSET_IS", "state after powerup, loop", j, true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE));
+
+		(*(loops[i]))["MOUT"].push_back (loopValue (vd, "MOUT", "[%] control loop manual output", j, true, RTS2_VALUE_WRITABLE));
+
 		(*(loops[i]))["PID"].push_back (loopValue (vd, "PID_P", "PID p value, loop", j, true, RTS2_VALUE_WRITABLE));
 		(*(loops[i]))["PID"].push_back (loopValue (vd, "PID_I", "PID i value, loop", j, true, RTS2_VALUE_WRITABLE));
 		(*(loops[i]))["PID"].push_back (loopValue (vi, "PID_D", "PID d value, loop", j, true, RTS2_VALUE_WRITABLE));
