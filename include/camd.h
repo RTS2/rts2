@@ -774,7 +774,7 @@ class Camera:public rts2core::ScriptDevice
 			createValue (coolingOnOff, "COOLING", "camera cooling start/stop", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false, RTS2_VALUE_WRITABLE);
-			nightCoolTemp->setValueFloat (rts2_nan("f"));
+			nightCoolTemp->setValueFloat (NAN);
 			addOption ('c', NULL, 1, "night cooling temperature");
 		}
 
@@ -856,6 +856,20 @@ class Camera:public rts2core::ScriptDevice
 
 		rts2core::ValueLong *computedPix;
 
+		/**
+		 * Calculate image center statistics.
+		 */
+		rts2core::ValueBool *calculateCenter;
+
+		/**
+		 * Center box. Statistics is not calculated and values
+		 * set to nan if the box is outside WINDOW.
+		 */
+		rts2core::ValueRectangle *centerBox;
+
+		rts2core::DoubleArray *sumsX;
+		rts2core::DoubleArray *sumsY;
+
 		// update statistics
 		template <typename t> int updateStatistics (t *data, size_t dataSize)
 		{
@@ -883,7 +897,66 @@ class Camera:public rts2core::ScriptDevice
 			return pixNum;
 		}
 
-								 // DARK of LIGHT frames
+		// update center box
+		template <typename t> int updateCenter (t *data, size_t dataSize)
+		{
+			// check if box is inside window
+			int x = centerBox->getXInt ();
+			if (x < 0)
+				x = getUsedX ();
+			int y = centerBox->getYInt ();
+			if (y < 0)
+				y = getUsedY ();
+			int w = centerBox->getWidthInt () / binningHorizontal ();
+			if (w < 0)
+				w = (getUsedWidth () - (x - getUsedX ())) / binningHorizontal ();
+			int h = centerBox->getHeightInt () / binningVertical ();
+			if (h < 0)
+				h = (getUsedHeight () - (y - getUsedY ())) / binningVertical ();
+			
+			x -= getUsedX ();
+			y -= getUsedY ();
+
+			if (x < 0 || y < 0 || (w + ceil ((double) x / binningHorizontal ())) > getUsedWidthBinned () || (h + ceil ((double) y / binningVertical ())) > getUsedHeightBinned ())
+				return -1;
+
+			t *tData = data;
+			// move to the first calculated pixel
+			tData += y * getUsedWidthBinned () + x;
+
+			int i;
+
+			double sx[w];
+			for (i = 0; i < w; i++)
+				sx[i] = 0;
+
+			sumsY->clear ();
+
+			for (int row = 0; row < h; row++)
+			{
+				double rs = 0;
+				for (int col = 0; col < w; col++)
+				{
+					sx[col] += *tData;
+					rs += *tData;
+					tData++;
+				}
+
+				sumsY->addValue (rs);
+			}
+
+			sumsX->clear ();
+
+			for (i = 0; i < w; i++)
+				sumsX->addValue (sx[i]);
+
+			sendValueAll (sumsX);
+			sendValueAll (sumsY);
+
+			return 0;
+		}
+
+		// DARK of LIGHT frames
 		rts2core::ValueInteger *flip;
 		bool defaultFlip;
 

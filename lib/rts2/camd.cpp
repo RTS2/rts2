@@ -342,6 +342,15 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	createValue (computedPix, "computed", "number of pixels so far computed", false);
 
+	createValue (calculateCenter, "center_cal", "calculate center box statistics", false, RTS2_VALUE_WRITABLE);
+	calculateCenter->setValueBool (false);
+
+	createValue (centerBox, "center_box", "calculate center box coordinates", false, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE);
+	centerBox->setInts (-1, -1, -1, -1);
+
+	createValue (sumsX, "center_Xs", "sums along X axis", false, RTS2_VALUE_DOUBLE);
+	createValue (sumsY, "center_Ys", "sums along Y axis", false, RTS2_VALUE_DOUBLE);
+
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
 
@@ -676,6 +685,40 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 	}
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize -= dataSize;
+
+	if (calculateCenter->getValueBool ())
+	{
+		switch (getDataType ())
+		{
+			case RTS2_DATA_BYTE:
+				updateCenter ((uint8_t *) data, dataSize);
+				break;
+			case RTS2_DATA_SHORT:
+				updateCenter ((int16_t *) data, dataSize);
+				break;
+			case RTS2_DATA_LONG:
+				updateCenter ((int32_t *) data, dataSize);
+				break;
+			case RTS2_DATA_LONGLONG:
+				updateCenter ((int64_t *) data, dataSize);
+				break;
+			case RTS2_DATA_FLOAT:
+				updateCenter ((float *) data, dataSize);
+				break;
+			case RTS2_DATA_DOUBLE:
+				updateCenter ((double *) data, dataSize);
+				break;
+			case RTS2_DATA_SBYTE:
+				updateCenter ((int8_t *) data, dataSize);
+				break;
+			case RTS2_DATA_USHORT:
+				updateCenter ((uint16_t *) data, dataSize);
+				break;
+			case RTS2_DATA_ULONG:
+				updateCenter ((uint32_t *) data, dataSize);
+				break;
+		}
+	}
 
 	if (shmBuffer != NULL)
 		*((unsigned long *) shmBuffer) += dataSize;
