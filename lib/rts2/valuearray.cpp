@@ -212,7 +212,7 @@ double DoubleArray::calculateMedianIndex ()
 	}
 	if (ret > 0)
 	{
-		ret -= value[(int)ret - 1] / (value[(int)ret - 1] + value[(int)ret]);
+		ret -= -1 * sum / ((value[(int)ret - 1] + value[(int)ret]) / 2);
 	}
 	return ret;
 }

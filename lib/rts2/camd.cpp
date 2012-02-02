@@ -342,7 +342,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	createValue (computedPix, "computed", "number of pixels so far computed", false);
 
-	createValue (calculateCenter, "center_cal", "calculate center box statistics", false, RTS2_VALUE_WRITABLE);
+	createValue (calculateCenter, "center_cal", "calculate center box statistics", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	calculateCenter->setValueBool (false);
 
 	createValue (centerBox, "center_box", "calculate center box coordinates", false, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE);
