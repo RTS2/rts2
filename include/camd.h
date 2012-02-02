@@ -870,6 +870,10 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::DoubleArray *sumsX;
 		rts2core::DoubleArray *sumsY;
 
+		// center values
+		rts2core::ValueDouble *centerX;
+		rts2core::ValueDouble *centerY;
+
 		// update statistics
 		template <typename t> int updateStatistics (t *data, size_t dataSize)
 		{
@@ -952,6 +956,12 @@ class Camera:public rts2core::ScriptDevice
 
 			sendValueAll (sumsX);
 			sendValueAll (sumsY);
+
+			centerX->setValueDouble (sumsX->calculateMedianIndex ());
+			centerY->setValueDouble (sumsY->calculateMedianIndex ());
+
+			sendValueAll (centerX);
+			sendValueAll (centerY);
 
 			return 0;
 		}

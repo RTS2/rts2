@@ -197,6 +197,26 @@ bool DoubleArray::isEqual (rts2core::Value *other_val)
 	return false;
 }
 
+double DoubleArray::calculateMedianIndex ()
+{
+	double sum = 0;
+	std::vector <double>::iterator iter = value.begin ();
+	for (; iter != value.end (); iter++)
+		sum += *iter;
+	sum /= 2.0;
+	double ret = 0;
+	for (iter = value.begin (); iter != value.end () && sum > 0; iter++)
+	{
+		ret++;
+		sum -= *iter;
+	}
+	if (ret > 0)
+	{
+		ret -= value[(int)ret - 1] / (value[(int)ret - 1] + value[(int)ret]);
+	}
+	return ret;
+}
+
 TimeArray::TimeArray (std::string in_val_name):DoubleArray (in_val_name)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_ARRAY | RTS2_VALUE_TIME;

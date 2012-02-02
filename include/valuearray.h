@@ -154,13 +154,21 @@ class DoubleArray: public ValueArray
 			changed ();
 		}
 
+		/**
+		 * Calculate index where sum of preceding values is equal to half of the sum.
+		 */
+		double calculateMedianIndex ();
+
 		std::vector <double>::iterator valueBegin () { return value.begin (); }
 
 		std::vector <double>::iterator valueEnd () { return value.end (); }
 
 		size_t size () { return value.size (); }
 
-		void clear () { value.clear (); }
+		void clear () {
+			value.clear ();
+			changed ();
+		}
 
 		const std::vector <double> & getValueVector () { return value; }
 

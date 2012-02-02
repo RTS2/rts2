@@ -348,8 +348,11 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (centerBox, "center_box", "calculate center box coordinates", false, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE);
 	centerBox->setInts (-1, -1, -1, -1);
 
-	createValue (sumsX, "center_Xs", "sums along X axis", false, RTS2_VALUE_DOUBLE);
-	createValue (sumsY, "center_Ys", "sums along Y axis", false, RTS2_VALUE_DOUBLE);
+	createValue (sumsX, "sums_Xs", "sums along X axis", false, RTS2_VALUE_DOUBLE);
+	createValue (sumsY, "sums_Ys", "sums along Y axis", false, RTS2_VALUE_DOUBLE);
+
+	createValue (centerX, "center_X", "center pixel in X", false);
+	createValue (centerY, "center_Y", "center pixel in Y", false);
 
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
