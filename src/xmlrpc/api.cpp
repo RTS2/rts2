@@ -312,7 +312,7 @@ void AsyncAPI::postEvent (Event *event)
 	{
 		case EVENT_COMMAND_OK:
 			os << "{";
-			req->sendConnectionValues (os, conn, NULL, NAN, ext);
+			req->sendConnectionValues (os, conn, NULL, -1, ext);
 			os << ",\"ret\":0}";
 			req->sendAsyncJSON (os, source);
 			break;
