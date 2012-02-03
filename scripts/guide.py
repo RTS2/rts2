@@ -14,11 +14,12 @@ import sys
 import subprocess
 import os
 import rts2comm
+import sextractor
 
 class GuideScript (rts2comm.Rts2Comm):
 	"""Guiding script."""
 	def __init__(self):
-		self.detect4g = "/home/mates/detect4g"
+		self.sextractor = sextractor.Sextractor(None)
 		# size of big window - taken at the beginning of guiding to find bright star for guiding
 		self.big_x = 324
 		self.big_y = 69
@@ -40,12 +41,6 @@ class GuideScript (rts2comm.Rts2Comm):
 		self.ra_aggresivity = 0.7
 		self.dec_aggresivity = 0.7
 
-	def runProgrammeGetArray(self,command):
-		"""Execute programme, wait for its one-line output, assume it is space separated list of values, and return them as array."""
-		sb=subprocess.Popen(command,stdout=subprocess.PIPE)
-		sb.wait()
-		return sb.stdout.readline().split();
-
 	def doGuiding(self,x,y):
 		"""Guide the star on position x,y."""
 		self.setValue('SHUTTER','LIGHT')
@@ -53,6 +48,7 @@ class GuideScript (rts2comm.Rts2Comm):
 		winfmt="%d %d %d %d" % (x-int(self.w / 2),y-int(self.h / 2),self.w,self.h)
 		self.log('I','guiding in CCD window ' + winfmt)
 		self.setValue('WINDOW',winfmt)
+		self.setValue('center_box',True)
 			
 		tar_SNR=10;  # target star errorbar in magnitude (for exposure optimization)
 
@@ -69,17 +65,15 @@ class GuideScript (rts2comm.Rts2Comm):
 			self.setValue('exposure',self.exptime) 
 			image = self.exposure()
 
-			# now run sextractor to get the star center
-			values = self.runProgrammeGetArray([self.detect4g,image])
-			x = float(values[0])
-			y = float(values[1])
+			# now get star center from camera driver
+			x = self.getValueFloat('center_X')
+			y = self.getValueFloat('center_Y')
 
 			if (abs(x - 15) < self.x_sensitivity and abs (y - 15) < self.y_sensitivity):
 				self.log('I','autoguiding below sensitivity %f %f' % (x,y))
 				self.delete(image)
 				continue
 
-			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-%f:%f' % (x,y,self.w / 2, self.h / 2), image])
 			ch_ra = float(change[0]) * self.ra_aggresivity
 			ch_dec = float(change[1]) * self.dec_aggresivity
 
@@ -104,7 +98,7 @@ class GuideScript (rts2comm.Rts2Comm):
 
 		image = self.exposure()
 
-		values = self.runProgrammeGetArray([self.detect4g,image])
+		self.sextractor.runSExtractor(image)
 		x = int(float(values[0])) + self.big_x
 		y = int(float(values[1])) + self.big_y
 		self.log('I','values for autoguiding %d %d' % (x, y))
