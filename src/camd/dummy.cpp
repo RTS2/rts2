@@ -61,7 +61,14 @@ class Dummy:public Camera
 			genType->addSelVal ("linear shifted");
 			genType->addSelVal ("flats dusk");
 			genType->addSelVal ("flats dawn");
+			genType->addSelVal ("astar");
 			genType->setValueInteger (0);
+
+			createValue (astarX, "astar_x", "[x] artificial star position", false, RTS2_VALUE_WRITABLE);
+			astarX->setValueDouble (5);
+
+			createValue (astarY, "astar_y", "[y] artificial star position", false, RTS2_VALUE_WRITABLE);
+			astarY->setValueDouble (5);
 
 			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
 			noiseRange->setValueDouble (300);
@@ -230,6 +237,10 @@ class Dummy:public Camera
 		rts2core::ValueDouble *expMax;
 		rts2core::ValueDouble *tempMin;
 		rts2core::ValueDouble *tempMax;
+
+		rts2core::ValueDouble *astarX;
+		rts2core::ValueDouble *astarY;
+
 		int width;
 		int height;
 
@@ -285,7 +296,7 @@ int Dummy::doReadout ()
 		{
 			if (channels && (*channels)[ch] == false)
 				continue;
-			generateImage (usedSize);
+			generateImage (usedSize / 2);
 			for (long written = 0; written < usedSize;)
 			{
 				ret = sendReadoutData (dataBuffer + written, usedSize - written > callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong (), nch);
@@ -298,7 +309,7 @@ int Dummy::doReadout ()
 	}
 	else
 	{
-		generateImage (usedSize);
+		generateImage (usedSize / 2);
 		ret = sendReadoutData (dataBuffer, usedSize, 0);
 	}
 
@@ -309,9 +320,20 @@ int Dummy::doReadout ()
 
 void Dummy::generateImage (long usedSize)
 {
-	for (int i = 0; i < usedSize; i += 2)
+	// artifical star center
+	int ax = random_num () * getUsedWidthBinned ();
+	int ay = random_num () * getUsedHeightBinned ();
+
+	double sx = astarX->getValueDouble ();
+	sx *= sx;
+
+	double sy = astarY->getValueDouble ();
+	sy *= sy;
+
+	uint16_t *d = (uint16_t *) dataBuffer;
+
+	for (int i = 0; i < usedSize; i++, d++)
 	{
-		uint16_t *d = (uint16_t* ) (dataBuffer + i);
 		double n;
 		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
 			n = noiseRange->getValueDouble ();
@@ -319,6 +341,7 @@ void Dummy::generateImage (long usedSize)
 		switch (genType->getValueInteger ())
 		{
 			case 0:  // random
+			case 5:  // artificial star
 				*d = 20000 + n * random_num () - n / 2;
 				break;
 			case 1:  // linear
@@ -344,6 +367,23 @@ void Dummy::generateImage (long usedSize)
 				  	*d += 55000;
 				*d -= n / 2;
 				break;
+		}
+		// genarate artificial star - using cos
+		if (genType->getValueInteger () == 5)
+		{
+			int x = i % getUsedWidthBinned ();
+			int y = i / getUsedWidthBinned ();
+
+			double aax = x - ax;
+			double aay = y - ay;
+
+			if (fabs (aax) < astarX->getValueDouble () * 5 && fabs (aay) < astarY->getValueDouble () * 5)
+			{
+				aax *= aax;
+				aay *= aay;
+
+				*d += 20000 * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+			}
 		}
 	}
 }
