@@ -70,6 +70,9 @@ class Dummy:public Camera
 			createValue (astarY, "astar_y", "[y] artificial star position", false, RTS2_VALUE_WRITABLE);
 			astarY->setValueDouble (5);
 
+			createValue (aamp, "astar_amp", "[adu] asrtificial star amplitude", false, RTS2_VALUE_WRITABLE);
+			aamp->setValueInteger (20000);
+
 			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
 			noiseRange->setValueDouble (300);
 
@@ -241,6 +244,8 @@ class Dummy:public Camera
 		rts2core::ValueDouble *astarX;
 		rts2core::ValueDouble *astarY;
 
+		rts2core::ValueDouble *aamp;
+
 		int width;
 		int height;
 
@@ -325,9 +330,11 @@ void Dummy::generateImage (long usedSize)
 	int ay = random_num () * getUsedHeightBinned ();
 
 	double sx = astarX->getValueDouble ();
+	int xmax = sx * 10;
 	sx *= sx;
 
 	double sy = astarY->getValueDouble ();
+	int ymax = sy * 10;
 	sy *= sy;
 
 	uint16_t *d = (uint16_t *) dataBuffer;
@@ -377,12 +384,12 @@ void Dummy::generateImage (long usedSize)
 			double aax = x - ax;
 			double aay = y - ay;
 
-			if (fabs (aax) < astarX->getValueDouble () * 5 && fabs (aay) < astarY->getValueDouble () * 5)
+			if (fabs (aax) < xmax && fabs (aay) < ymax)
 			{
 				aax *= aax;
 				aay *= aay;
 
-				*d += 20000 * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+				*d += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
 			}
 		}
 	}
