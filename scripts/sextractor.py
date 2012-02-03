@@ -38,8 +38,7 @@ import tempfile
 
 class Sextractor:
     """Class for a catalogue (SExtractor result)"""
-    def __init__(self, filename, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
-        self.filename = filename
+    def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
 	self.sexpath = sexpath
 	self.sexconfig = sexconfig
 	self.starnnw = starnnw
@@ -50,7 +49,7 @@ class Sextractor:
 	self.deblendmin = deblendmin
 	self.saturlevel = saturlevel
 
-    def runSExtractor(self):
+    def runSExtractor(self,filename):
     	pf,pfn = tempfile.mkstemp()
 	ofd,output = tempfile.mkstemp()
 	pfi = os.fdopen(pf,'w')
@@ -58,14 +57,16 @@ class Sextractor:
 		pfi.write(f + '\n')
 	pfi.flush()
 
-	cmd = [self.sexpath, self.filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
+	cmd = [self.sexpath, filename, '-c', self.sexconfig, '-PARAMETERS_NAME', pfn, '-DETECT_THRESH', str(self.threshold), '-DEBLEND_MINCONT', str(self.deblendmin), '-SATUR_LEVEL', str(self.saturlevel), '-FILTER', 'N', '-STARNNW_NAME', self.starnnw, '-CATALOG_NAME', output, '-VERBOSE_TYPE', 'QUIET']
 	try:
 		proc = subprocess.Popen(cmd)
 		proc.wait()
 	except OSError,err:
 		print >> sys.stderr, 'canot run command: "', ' '.join(cmd), '", error ',err
+		raise err
 
 	# parse output
+	self.objects = []
 	of = os.fdopen(ofd,'r')
 	while (True):
 	 	x=of.readline()
@@ -134,9 +135,9 @@ if __name__ == "__main__":
   	# test method
 	from ds9 import *
   	d = ds9()
+	c = Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
   	for fn in sys.argv[1:]:
-		c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
-		c.runSExtractor()
+		c.runSExtractor(fn)
 
 		# sort by magnitude
 		c.sortObjects(2)
