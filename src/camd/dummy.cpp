@@ -73,6 +73,9 @@ class Dummy:public Camera
 			createValue (aamp, "astar_amp", "[adu] asrtificial star amplitude", false, RTS2_VALUE_WRITABLE);
 			aamp->setValueInteger (20000);
 
+			createValue (noiseBias, "noise_bias", "[ADU] noise base level", false, RTS2_VALUE_WRITABLE);
+			noiseBias->setValueDouble (400);
+
 			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
 			noiseRange->setValueDouble (300);
 
@@ -234,6 +237,7 @@ class Dummy:public Camera
 		rts2core::ValueLong *callReadoutSize;
 		rts2core::ValueSelection *genType;
 		rts2core::ValueDouble *noiseRange;
+		rts2core::ValueDouble *noiseBias;
 		rts2core::ValueBool *hasError;
 
 		rts2core::ValueDouble *expMin;
@@ -349,7 +353,7 @@ void Dummy::generateImage (long usedSize)
 		{
 			case 0:  // random
 			case 5:  // artificial star
-				*d = 20000 + n * random_num () - n / 2;
+				*d = noiseBias->getValueDouble () + n * random_num () - n / 2;
 				break;
 			case 1:  // linear
 				*d = i;
