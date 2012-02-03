@@ -488,6 +488,11 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		rts2core::ConnNotify *notifyConn;
 };
 
+#ifndef HAVE_PGSQL
+bool verifyUser (std::string username, std::string pass, bool &executePermission);
+#endif
+
 };
+
 
 #endif /* __RTS2_XMLRPCD__ */

@@ -55,19 +55,11 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 		}
 	}
 
-#ifdef HAVE_PGSQL
 	if (verifyUser (getUsername (), getPassword (), executePermission) == false)
 	{
 		authorizePage (http_code, response_type, response, response_length);
 		return;
 	}
-#else
-	if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-	{
-		authorizePage (http_code, response_type, response, response_length);
-		return;
-	}
-#endif /* HAVE_PGSQL */
 	http_code = HTTP_OK;
 
 	authorizedExecute (path, params, response_type, response, response_length);

@@ -162,15 +162,10 @@ void SessionMethod::execute (struct sockaddr_in *saddr, XmlRpcValue& params, Xml
 			}
 		}
 
-#ifdef HAVE_PGSQL
 		if (verifyUser (getUsername (), getPassword (), executePermission) == false)
 		{
 			throw XmlRpcException ("Invalid login or password");
 		}
-#else
-		if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-			throw XmlRpcException ("Login not supported");
-#endif /* HAVE_PGSQL */
 	}
 
 	sessionExecute (params, result);
@@ -183,15 +178,10 @@ void Login::execute (struct sockaddr_in *saddr, XmlRpcValue& params, XmlRpcValue
 		throw XmlRpcException ("Invalid number of parameters");
 	}
 
-#ifdef HAVE_PGSQL
 	if (verifyUser (params[0], params[1], executePermission) == false)
 	{
 		throw XmlRpcException ("Invalid login or password");
 	}
-#else
-	if (! (params[0] ==  std::string ("petr") && params[1] == std::string ("test")))
-		throw XmlRpcException ("Login not supported");
-#endif /* HAVE_PGSQL */
 
 	result = ((XmlRpcd *) getMasterApp ())->addSession (params[0], 3600);
 }

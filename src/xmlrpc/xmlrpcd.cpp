@@ -54,6 +54,13 @@ using namespace XmlRpc;
 
 using namespace rts2xmlrpc;
 
+#ifndef HAVE_PGSQL
+bool verifyUser (std::string username, std::string pass, bool &executePermission)
+{
+	return (username ==  std::string ("petr") && pass == std::string ("test"));
+}
+#endif /* HAVE_PGSQL */
+
 void XmlDevInterface::stateChanged (rts2core::ServerState * state)
 {
 	(getMaster ())->stateChangedEvent (getConnection (), state);
