@@ -301,7 +301,7 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
 	{
 		tv.tv_sec = from + x;
-		ex.setExpandDate (&tv);
+		ex.setExpandDate (&tv, localdate);
 		image->draw (Magick::DrawableText (x * scaleX, size.height () - 10, ex.expand (tick_format).c_str ()));
 	}
 

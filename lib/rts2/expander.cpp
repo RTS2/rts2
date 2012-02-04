@@ -297,7 +297,7 @@ void Expander::setExpandDate ()
 	setExpandDate (&tv);
 }
 
-void Expander::setExpandDate (const struct timeval *tv)
+void Expander::setExpandDate (const struct timeval *tv, bool localdate)
 {
 	expandTv.tv_sec = tv->tv_sec;
 	expandTv.tv_usec = tv->tv_usec;
@@ -308,7 +308,10 @@ void Expander::setExpandDate (const struct timeval *tv)
 	time_t nightT = Configuration::instance ()->getNight (expandTv.tv_sec);
 	gmtime_r (&nightT, &nightDate);
 
-	expandDate = &utDate;
+	if (localdate)
+		expandDate = &localDate;
+	else
+		expandDate = &utDate;
 }
 
 double Expander::getExpandDateCtime ()

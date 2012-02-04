@@ -53,16 +53,19 @@ class Expander
 		 */
 		void setExpandDate ();
 
-		void useLocalDate () { expandDate = &localDate; }
-		void useUtDate () { expandDate = &utDate; }
-		
 		/**
 		 * Sets expanding date. This date is used in construction of
 		 * the filename (for %y%d.. expansions).
 		 *
 		 * @param tv Timeval holding date to set.
 		 */
-		void setExpandDate (const struct timeval *tv);
+		void setExpandDate (const struct timeval *tv) { setExpandDate (tv, false); }
+
+		void setExpandDate (const struct timeval *tv, bool localdate);
+
+		void useLocalDate () { expandDate = &localDate; }
+		void useUtDate () { expandDate = &utDate; }
+	
 		double getExpandDateCtime ();
 		const struct timeval *getExpandDate ();
 
