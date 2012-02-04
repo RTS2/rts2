@@ -51,10 +51,12 @@ class ValuePlot:public Plot
 		 * @param to         Plot to this time.
 		 * @param plotType   Type of value plot.
 		 * @param plotSun    Plot sun altitude (dark/white background)
+		 * @param plotShadow Plot Sun shadow (night/day, twilight)
+		 * @param localDate  Use local date
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5, bool plotSun = true);
+		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5, bool plotSun = true, bool plotShadow = true, bool localDate = true);
 	
 	private:
 		int recvalId;

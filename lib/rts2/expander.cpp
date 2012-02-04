@@ -186,10 +186,10 @@ std::string Expander::expandVariable (char var, size_t beg)
 			ret += getMSecString ();
 			break;
 		case 'U':
-			expandDate = &utDate;
+			useUtDate ();
 			break;
 		case 'L':
-			expandDate = &localDate;
+			useLocalDate ();
 			break;
 		case 'Z':
 			ret += tzname[(expandDate->tm_isdst > 0) ? 1 : 0];

@@ -34,7 +34,7 @@ ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h):Plot (w, h)
 	valueType = _valType;
 }
 
-Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow, bool plotSun)
+Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow, bool plotSun, bool plotShadow, bool localDate)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
@@ -113,7 +113,7 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 			break;
 	}
 
-	plotXDate ();
+	plotXDate (plotShadow, localDate);
 
 	if (!rs.empty ())
 	{

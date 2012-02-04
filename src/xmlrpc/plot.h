@@ -69,7 +69,13 @@ class Plot
 		 */
 		void plotXSunAlt ();
 
-		void plotXDate (bool shadowSun = true);
+		/**
+		 * Draw time labels, plot X date grid.
+		 *
+		 * @param shadowSun      shadow sun altitude
+		 * @param localdate      draw localdate labels
+		 */
+		void plotXDate (bool shadowSun = true, bool localdate = true);
 };
 
 }

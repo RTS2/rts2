@@ -52,6 +52,9 @@ class Expander
 		 * Sets expanding date to current sysdate.
 		 */
 		void setExpandDate ();
+
+		void useLocalDate () { expandDate = &localDate; }
+		void useUtDate () { expandDate = &utDate; }
 		
 		/**
 		 * Sets expanding date. This date is used in construction of

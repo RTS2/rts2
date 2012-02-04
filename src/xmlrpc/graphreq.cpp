@@ -150,7 +150,7 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	}
 
 	Magick::Image mimage (size, "white");
-	vp.getPlot (from, to, &mimage, pt, params->getInteger ("lw", 3), params->getInteger ("sh", 3), params->getBoolean ("pn", true));
+	vp.getPlot (from, to, &mimage, pt, params->getInteger ("lw", 3), params->getInteger ("sh", 3), params->getBoolean ("pn", true), params->getBoolean ("ps", true), params->getBoolean ("l", true));
 
 	Magick::Blob blob;
 	mimage.write (&blob, "jpeg");

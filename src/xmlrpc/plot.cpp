@@ -232,7 +232,7 @@ void Plot::plotXSunAlt ()
 	}
 }
 
-void Plot::plotXDate (bool shadowSun)
+void Plot::plotXDate (bool shadowSun, bool localdate)
 {
 	// scale per pixel..
 	double p_scale = 1 / fabs (scaleX);
@@ -285,6 +285,9 @@ void Plot::plotXDate (bool shadowSun)
 	struct timeval tv;
 	tv.tv_usec = 0;
 	rts2core::Expander ex = rts2core::Expander ();
+
+	if (localdate)
+		ex.useLocalDate ();
 
 	double t_diff = fabs (to - from);
 
