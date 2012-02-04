@@ -867,6 +867,8 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		rts2core::ValueRectangle *centerBox;
 
+		rts2core::ValueDouble *centerCutLevel;
+
 		rts2core::DoubleArray *sumsX;
 		rts2core::DoubleArray *sumsY;
 
@@ -939,11 +941,13 @@ class Camera:public rts2core::ScriptDevice
 			for (int row = 0; row < h; row++)
 			{
 				double rs = 0;
-				for (int col = 0; col < w; col++)
+				for (int col = 0; col < w; col++, tData++)
 				{
-					sx[col] += *tData;
-					rs += *tData;
-					tData++;
+					if (*tData >= centerCutLevel->getValueDouble ())
+					{
+						sx[col] += *tData;
+						rs += *tData;
+					}
 				}
 
 				sumsY->addValue (rs);

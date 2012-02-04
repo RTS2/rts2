@@ -348,6 +348,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (centerBox, "center_box", "calculate center box coordinates", false, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE);
 	centerBox->setInts (-1, -1, -1, -1);
 
+	createValue (centerCutLevel, "center_cut_level", "[ADU] lower limit for ADU value to be considered for pixels", false, RTS2_VALUE_WRITABLE);
+	centerCutLevel->setValueDouble (0);
+
 	createValue (sumsX, "sums_Xs", "sums along X axis", false, RTS2_VALUE_DOUBLE);
 	createValue (sumsY, "sums_Ys", "sums along Y axis", false, RTS2_VALUE_DOUBLE);
 
