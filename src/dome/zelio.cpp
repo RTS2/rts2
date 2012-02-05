@@ -970,7 +970,7 @@ void Zelio::sendSwInfo (uint16_t regs[2])
 			blockCloseLeft->setValueBool (regs[0] & ZO_BLOCK_CLOSE);
 
 			sendValueAll (blockOpenLeft);
-			sendValueAll (blockOpenRight);
+			sendValueAll (blockCloseLeft);
 			break;
 		case ZELIO_UNKNOW:
 			break;
