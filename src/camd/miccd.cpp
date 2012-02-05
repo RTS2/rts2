@@ -397,8 +397,10 @@ int MICCD::startExposure ()
 		ret = miccd_clear (&camera);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "MICCD::startExposure error calling miccd_clear" << sendLog;
-			return -1;
+			logStream (MESSAGE_ERROR) << "MICCD::startExposure error calling miccd_clear, trying reinit" << sendLog;
+			ret = initHardware ();
+			if (ret)
+				return -1;
 		}
 	}
 	else if (shift->getValueInteger () < 0)
