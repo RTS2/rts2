@@ -245,6 +245,14 @@ void flex_read_port_rtn (int8_t port, uint16_t *portData);
 void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff); 
 
 /**
+ * Set ADC range.
+ *
+ * @param ADC    adc channel to set
+ * @param range  ADC range (0=-5..5V,..)
+ */
+void flex_set_adc_range (uint8_t ADC, uint16_t range);
+
+/**
  * Read ADCs.
  *
  * @param ADC      ADC channel to read

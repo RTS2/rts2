@@ -387,6 +387,12 @@ void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff)
 	checkStatus ();
 }
 
+void flex_set_adc_range (uint8_t ADC, uint16_t range)
+{
+	writePacket (ADC, 401, 1, &range);
+	checkStatus ();
+}
+
 void flex_read_adc16_rtn (uint8_t ADC, int32_t *ADCValue)
 {
 	writePacket (ADC, 480, 0, NULL);
