@@ -19,7 +19,7 @@
 
 #include "xmlrpcd.h"
 
-#include "connection/fork.h"
+#include "rts2script/connexe.h"
 #include "timestamp.h"
 
 using namespace rts2xmlrpc;
@@ -68,7 +68,7 @@ void ValueChangeRecord::run (rts2core::Value *val, double validTime)
 void ValueChangeCommand::run (rts2core::Value *val, double validTime)
 {
 	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
+	rts2script::ConnExe *cf = new rts2script::ConnExe (master, commandName.c_str (), true, 100);
 	cf->addArg (val->getName ());
 	cf->addArg (validTime);
 	ret = cf->init ();
