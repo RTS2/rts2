@@ -334,6 +334,8 @@ void Lakeshore::changeChannelValue (const char *chan, std::map <const char *, st
 				nv = *vit;
 			if ((*vit)->getValueBaseType () == RTS2_VALUE_SELECTION)
 				_os << nv->getValueInteger () + 1;
+			else if ((*vit)->getValueBaseType () == RTS2_VALUE_BOOL)
+				_os << (nv->getValueInteger () ? "1" : "0");
 			else
 				_os << nv->getDisplayValue ();
 		}
