@@ -55,7 +55,7 @@ using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
 #ifndef HAVE_PGSQL
-bool verifyUser (std::string username, std::string pass, bool &executePermission)
+bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
 	return (username ==  std::string ("petr") && pass == std::string ("test"));
 }
