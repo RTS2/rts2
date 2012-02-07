@@ -64,13 +64,16 @@ class Dummy:public Camera
 			genType->addSelVal ("astar");
 			genType->setValueInteger (0);
 
-			createValue (astarX, "astar_x", "[x] artificial star position", false, RTS2_VALUE_WRITABLE);
+			createValue (astar_Xp, "astar_x", "[x] artificial star position", false);
+			createValue (astar_Yp, "astar_y", "[y] artificial star position", false);
+
+			createValue (astarX, "astar_sx", "[pixels] artificial star width along X axis", false, RTS2_VALUE_WRITABLE);
 			astarX->setValueDouble (5);
 
-			createValue (astarY, "astar_y", "[y] artificial star position", false, RTS2_VALUE_WRITABLE);
+			createValue (astarY, "astar_sy", "[pixels] artificial star width along Y axis", false, RTS2_VALUE_WRITABLE);
 			astarY->setValueDouble (5);
 
-			createValue (aamp, "astar_amp", "[adu] asrtificial star amplitude", false, RTS2_VALUE_WRITABLE);
+			createValue (aamp, "astar_amp", "[adu] artificial star amplitude", false, RTS2_VALUE_WRITABLE);
 			aamp->setValueInteger (20000);
 
 			createValue (noiseBias, "noise_bias", "[ADU] noise base level", false, RTS2_VALUE_WRITABLE);
@@ -245,6 +248,9 @@ class Dummy:public Camera
 		rts2core::ValueDouble *tempMin;
 		rts2core::ValueDouble *tempMax;
 
+		rts2core::ValueDouble *astar_Xp;
+		rts2core::ValueDouble *astar_Yp;
+
 		rts2core::ValueDouble *astarX;
 		rts2core::ValueDouble *astarY;
 
@@ -330,15 +336,18 @@ int Dummy::doReadout ()
 void Dummy::generateImage (long usedSize)
 {
 	// artifical star center
-	int ax = random_num () * getUsedWidthBinned ();
-	int ay = random_num () * getUsedHeightBinned ();
+	astar_Xp->setValueDouble (random_num () * getUsedWidthBinned ());
+	astar_Yp->setValueDouble (random_num () * getUsedHeightBinned ());
+
+	sendValueAll (astar_Xp);
+	sendValueAll (astar_Yp);
 
 	double sx = astarX->getValueDouble ();
-	int xmax = sx * 10;
+	int xmax = ceil (sx * 10);
 	sx *= sx;
 
 	double sy = astarY->getValueDouble ();
-	int ymax = sy * 10;
+	int ymax = ceil (sy * 10);
 	sy *= sy;
 
 	uint16_t *d = (uint16_t *) dataBuffer;
@@ -385,8 +394,8 @@ void Dummy::generateImage (long usedSize)
 			int x = i % getUsedWidthBinned ();
 			int y = i / getUsedWidthBinned ();
 
-			double aax = x - ax;
-			double aay = y - ay;
+			double aax = x - astar_Xp->getValueDouble ();
+			double aay = y - astar_Yp->getValueDouble ();
 
 			if (fabs (aax) < xmax && fabs (aay) < ymax)
 			{
