@@ -62,16 +62,13 @@ int ConnTCP::init ()
 
 	sock = socket (AF_INET, SOCK_STREAM, 0);
         if (sock == -1)
-        {
 		throw ConnCreateError (this, "cannot create socket for TCP/IP connection", errno);
-        }
 
         apc_addr.sin_family = AF_INET;
         hp = gethostbyname(hostname);
 	if (hp == NULL)
-	{
 		throw ConnCreateError (this, (std::string ("unknow hostname ") + std::string (hostname)).c_str (), errno);
-	}
+
         bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
         apc_addr.sin_port = htons(port);
 
@@ -82,7 +79,8 @@ int ConnTCP::init ()
         ret = fcntl (sock, F_SETFL, O_NONBLOCK);
         if (ret)
 		throw ConnCreateError (this, "cannot set socket non-blocking", errno);
-        setConnState (CONN_CONNECTED);
+        
+	setConnState (CONN_CONNECTED);
         return 0;
 }
 
@@ -243,8 +241,9 @@ void ConnTCP::postEvent (Event *event)
 			}
 			catch (ConnError &er)
 			{
-				logStream (MESSAGE_INFO) << "Error during reconnecting: " << er << sendLog;
-				getMaster()->addTimer (60, new Event (EVENT_TCP_RECONECT_TIMER, this));
+				logStream (MESSAGE_WARNING) << "error during reconnecting: " << er << sendLog;
+				getMaster()->addTimer (60, event);
+				return;
 			}
 			break;
 	}
