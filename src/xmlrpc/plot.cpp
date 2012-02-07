@@ -243,38 +243,38 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 	if (p_scale <= 1)
 	{
 		tick_scale = 60;
-		tick_format = "%H:%M:%S";
+		tick_format = "%H:%M:%S %Z";
 	}
 	// 1/2 minute..
 	else if (p_scale <= 30)
 	{
 	  	tick_scale = 1800;
-		tick_format = "%H:%M:%S";
+		tick_format = "%H:%M:%S\n%Z";
 	}
 	else if (p_scale <= 60)
 	{
 		tick_scale = 3600;
-		tick_format = "%d %H:%M";
+		tick_format = "%d %H:%M\n%Z";
 	}
 	else if (p_scale <= 300)
 	{
 		tick_scale = 7200;
-		tick_format = "%d %H:%M";
+		tick_format = "%d %H:%M\n%Z";
 	}
 	else if (p_scale <= 600)
 	{
 		tick_scale = 36000;
-		tick_format = "c %d %H:%M";
+		tick_format = "%d %H:%M\n%Z";
 	}
 	else if (p_scale <= 1800)
 	{
 		tick_scale = 86400;
-		tick_format = "%d %H:%M";
+		tick_format = "%d %H:%M\n%Z";
 	}
 	else if (p_scale <= 3600)
 	{
 		tick_scale = 172800;
-		tick_format = "%d %H:%M";
+		tick_format = "%d %H:%M\n%Z";
 	}
 	else
 	{
@@ -298,18 +298,28 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 	image->fillColor ("black");
 	image->strokeColor ("white");
 
-	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
+	double x;
+
+	for (x = (ceil (from / tick_scale) + 0.1) * tick_scale - from; x < t_diff; x += tick_scale)
 	{
 		tv.tv_sec = from + x;
 		ex.setExpandDate (&tv, localdate);
-		image->draw (Magick::DrawableText (x * scaleX, size.height () - 10, ex.expand (tick_format).c_str ()));
+
+		image->transformOrigin (x * scaleX, size.height () - 10);
+		image->transformRotation (45);
+		//image->draw (Magick::DrawableText (x * scaleX, size.height () - 10, ex.expand (tick_format).c_str ()));
+		image->draw (Magick::DrawableText (0, 0, ex.expand (tick_format).c_str ()));
+
+		image->transformReset ();
 	}
+
+	image->transformReset ();
 
 	Magick::Image pat2 ("1x2", Magick::Color ());
 	pat2.pixelColor (0,0, "white");
 	image->strokePattern (pat2);
 
-	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
+	for (x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
 	{
 		plotXGrid (x * scaleX);
 	}
