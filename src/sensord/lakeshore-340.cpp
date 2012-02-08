@@ -47,7 +47,8 @@ class TempChannel:public std::map < const char*, std::list <rts2core::Value *> >
 };
 
 /**
- * Driver for Lakeshore 340 temperature controller.
+ * Driver for Lakeshore 340 temperature controller. Based on
+ * http://www.sal.wisc.edu/whirc/archive/public/datasheets/lakeshore/340_Manual.pdf
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -219,6 +220,9 @@ int Lakeshore::info ()
 			lname[0] = '1' + i;
 			readChannelValues (lname, loops[i]);
 		}
+		readValue ("HTR", htr);
+		readValue ("HTRST", htrst);
+		readValue ("RANGE", range);
 	}
 	catch (rts2core::Error er)
 	{
@@ -256,6 +260,12 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 		const char *chan;
 		std::map <const char *, std::list <rts2core::Value *> >::iterator it;
 
+		if (oldValue == range)
+		{
+			std::ostringstream os;
+			os << "RANGE " << range->getDisplayValue ();
+			gpibWrite (os.str ().c_str ());
+		}
 		for (i = 0, chan = channames[0]; i < NUM_CHAN; i++, chan = channames[i])
 		{
 			it = temps[i]->findValue (oldValue);
@@ -319,7 +329,6 @@ void Lakeshore::changeChannelValue (const char *chan, std::map <const char *, st
 		_os << ",";
 		if ((*vit)->getName () == "CSET_IN_1" || (*vit)->getName () == "CSET_IN_2")
 		{
-			std::cout << "CSET_IN" << (*vit)->getDisplayValue () << std::endl;
 			if (*vit == oldValue)
 				_os << newValue->getDisplayValue ();
 			else
