@@ -42,8 +42,8 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 
 	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER']
 
-	c = sextractor.Sextractor(fn,sexcols,threshold=threshold)
-	c.runSExtractor()
+	c = sextractor.Sextractor(sexcols,threshold=threshold)
+	c.runSExtractor(fn)
 	c.sortObjects(2)
 
 	# dump Sextractor to DS9 catalogue
