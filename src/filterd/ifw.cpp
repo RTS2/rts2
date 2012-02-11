@@ -26,6 +26,8 @@ namespace rts2filterd
 /**
  * Class for OPTEC filter wheel.
  *
+ * http://www.optecinc.com/astronomy/catalog/ifw/images/17350_manual.pdf
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  * @author John French
  */
