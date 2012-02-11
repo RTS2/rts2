@@ -83,6 +83,7 @@
 #define OPT_Q8_NAME      OPT_LOCAL + 502
 #define OPT_Q9_NAME      OPT_LOCAL + 503
 #define OPT_QA_NAME      OPT_LOCAL + 504
+#define OPT_NO_POWER     OPT_LOCAL + 505
 
 namespace rts2dome
 {
@@ -145,6 +146,8 @@ class Zelio:public Dome
 		rts2core::ValueBool *ignoreAutomode;
 		rts2core::ValueBool *timeoutOccured;
 		rts2core::ValueBool *onPower;
+		bool createonPower;
+
 		rts2core::ValueBool *weather;
 		rts2core::ValueBool *emergencyButton;
 
@@ -252,7 +255,7 @@ int Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
 			return -1;
 		}
-		if ((zelioModel == ZELIO_BOOTES3_WOUTPLUGS || zelioModel == ZELIO_BOOTES3) && !(reg & ZS_POWER))
+		if ((zelioModel == ZELIO_BOOTES3_WOUTPLUGS || zelioModel == ZELIO_BOOTES3) && onPower && !(reg & ZS_POWER))
 		{
 			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
 			return -1;
@@ -467,6 +470,9 @@ int Zelio::processOption (int in_opt)
 		case 'z':
 			host = new HostString (optarg, "502");
 			break;
+		case OPT_NO_POWER:
+			createonPower = false;
+			break;
 		case OPT_BATTERY:
 			batteryMin->setValueCharArr (optarg);
 			break;
@@ -537,6 +543,9 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	battery = NULL;
 	batteryMin = NULL;
 
+	onPower = NULL;
+	createonPower = true;
+
 	humidity = NULL;
 
 	Q8 = NULL;
@@ -548,6 +557,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	QA_name = "QA_switch";
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
+	addOption (OPT_NO_POWER, "without-on-power", 0, "do not create onPower value (some Zelios does not support it)");
 	addOption (OPT_BATTERY, "min-battery", 1, "minimal battery level [V])");
 
 	addOption (OPT_Q8_NAME, "Q8-name", 1, "name of the Q8 switch");
@@ -603,9 +613,12 @@ int Zelio::info ()
 	{
 	 	case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
-			onPower->setValueBool (regs[7] & ZS_POWER);
+			if (onPower)
+			{
+				onPower->setValueBool (regs[7] & ZS_POWER);
 
-			sendValueAll (onPower);
+				sendValueAll (onPower);
+			}
 		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
@@ -790,7 +803,8 @@ void Zelio::createZelioValues ()
 	
 		case ZELIO_BOOTES3_WOUTPLUGS:
 		case ZELIO_BOOTES3:
-			createValue (onPower, "on_power", "true if power is connected", false);
+			if (createonPower)
+				createValue (onPower, "on_power", "true if power is connected", false);
 		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR_WOUTPLUGS:
 		case ZELIO_COMPRESSOR:
