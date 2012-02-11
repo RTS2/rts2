@@ -106,7 +106,17 @@
 	  </para>
 	</listitem>
       </varlistentry>
-
+      <varlistentry>
+        <term>
+	  <option>seq {filter} {exposure} {repeat}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Sequence of observations in given filter. Set filter to value specified with <emphasis>{filter}</emphasis>,
+	    and do <emphasis>{repeat}</emphasis> <emphasis>{exposure}</emphasis> second exposures.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term>
 	  <option>D {exposure_time}</option>
@@ -764,6 +774,23 @@ G W0 filter
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>S {device name}</option></term>
+	<listitem><para>
+	  Retrieves device state. Can retrieve centrald state if
+	  <emphasis>device name</emphasis> parameter is
+	  <emphasis>"centrald"</emphasis>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>waitidle {device name} {timeout}</option></term>
+	<listitem><para>
+	  Waits for <emphasis>timeout</emphasis> number of seconds for
+	  specified device to enter idle state. This function is equvivalent to
+	  calling <emphasis>S</emphasis> command, compare status and return if
+	  status is 0 for maximaum of <emphasis>timeout</emphasis> seconds.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>C {device name} {command..}</option></term>
 	<listitem><para>
 	  Executes an arbitary command on device. Please see device
@@ -1072,6 +1099,16 @@ done
     </para>
 
     <para>filter=C for 10 { E 10 E 20 filter+=1 }</para>
+
+    <para>
+      Following scripts are equal, both take 5 20 seconds exposures in i filter.
+    </para>
+
+    <para>filter=i for 5 { E 20 }</para>
+
+    <para>filter=i E 20 E 20 E 20 E 20 E 20</para>
+
+    <para>seq i 20 5</para>
 
     <para>
       Set full boolean array to false.

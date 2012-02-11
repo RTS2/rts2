@@ -76,6 +76,13 @@ int ConnFork::writeToProcess (const char *msg)
 	return 0;	
 }
 
+int ConnFork::writeToProcessInt (int msg)
+{
+	std::ostringstream os;
+	os << msg;
+	return writeToProcess (os.str ().c_str ());
+}
+
 int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (sockerr > 0)

@@ -57,6 +57,7 @@ class ConnFork:public ConnNoSend
 		}
 
 		int writeToProcess (const char *msg);
+		int writeToProcessInt (int msg);
 
 		void setInput (std::string _input) { input = _input; }
 

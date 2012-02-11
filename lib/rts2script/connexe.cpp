@@ -143,9 +143,41 @@ void ConnExe::processCommand (char *cmd)
 			writeToProcess ("ERR");
 		}
 	}
+	else if (!strcmp (cmd, "S"))
+	{
+		if (paramNextString (&device))
+			return;
+
+		rts2core::Connection *conn = getConnectionForScript (device);
+		if (conn)
+			writeToProcessInt (conn->getState ());
+		else
+			writeToProcess ("ERR");
+	}
 	else if (!strcmp (cmd, "waitidle"))
 	{
-
+		int tom;
+		if (paramNextString (&device) || paramNextInteger (&tom))
+			return;
+		rts2core::Connection *conn = getConnectionForScript (device);
+		if (conn)
+		{
+			tom += time (NULL);
+			while (time (NULL) < tom)
+			{
+				if (conn->isIdle ())
+				{
+					writeToProcess ("1");
+					break;
+				}
+				getMaster ()->oneRunLoop ();
+			}
+			writeToProcess ("0");
+		}
+		else
+		{
+			writeToProcess ("ERR");
+		}
 	}
 	else if (!strcmp (cmd, "log"))
 	{
