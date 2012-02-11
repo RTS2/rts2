@@ -32,6 +32,20 @@ DEVICE_CUPOLA      = "CUPOLA"
 DEVICE_FW          = "FW"
 DEVICE_SENSOR      = "SENSOR"
 
+# constants for dataypes
+
+DT_RA              = "DT_RA"
+DT_DEC             = "DT_DEC"
+DT_DEGREES         = "DT_DEGREES"
+DT_DEG_DIST        = "DT_DEG_DIST"
+DT_PERCENTS        = "DT_PERCENTS"
+DT_ROTANG          = "DT_ROTANG"
+DT_HEX             = "DT_HEX"
+DT_BYTESIZE        = "DT_BYTESIZE"
+DT_KMG             = "DT_KMG"
+DT_INTERVAL        = "DT_INTERVAL"
+DT_ONOFF           = "DT_ONOFF"
+
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
@@ -91,8 +105,20 @@ class Rts2Comm:
 
 	def setValueByType(self,device,name,new_value):
 		"""Set value for all devices of given type. Please use DEVICE_xx constants to specify device type."""
-		print "VT",name,'-',new_value
+		print "VT",device,name,'=',new_value
 		sys.stdout.flush()
+
+	def getState(self,device):
+		"""Retrieve device state"""
+		print 'S',device
+		sys.stdout.flush()
+		return int(sys.stdin.readline().rstrip('\n'))
+	
+	def waitIdle(self,device,timeout):
+		"""Wait for idle state (with timeout)"""
+		print 'waitidle',device,timeout
+		sys.stdout.flush()
+		return int(sys.stdin.readline().rstrip('\n'))
 
 	def exposure(self, before_readout_callback = None):
 		print "exposure"
@@ -166,9 +192,9 @@ class Rts2Comm:
 		print "process",imagename
 		sys.stdout.flush()
 
-	def doubleValue(self,name,desc,value):
+	def doubleValue(self,name,desc,value,rts2_type=0):
 		"""Add to device double value."""
-		print "double",name,'"{0}"'.format(desc),value
+		print "double",name,'"{0}"'.format(desc),value,rts2_type
 		sys.stdout.flush()
 
 	def doubleVariable(self,name,desc,value):
@@ -215,7 +241,12 @@ class Rts2Comm:
 		"""Add to device boolean writable variable with on/off display type."""
 		print "onoff_w",name,'"{0}"'.format(desc),value
 		sys.stdout.flush()
-	
+
+	def raDecValue(self,name,desc,ra,dec):
+		"""Add RA/DEC value pair"""
+		print "radec",name,'"{0}"'.format(desc),ra,dec
+		sys.stdout.flush()
+
 	def doubleArrayValue(self,name,desc,values):
 		print "double_array",name,'"{0}"'.format(desc),' '.join(map(str,values))
 		sys.stdout.flush()
