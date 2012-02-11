@@ -19,12 +19,16 @@ import sextractor
 class GuideScript (rts2comm.Rts2Comm):
 	"""Guiding script."""
 	def __init__(self):
-		self.sextractor = sextractor.Sextractor(None)
+		self.sextractor = sextractor.Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
 		# size of big window - taken at the beginning of guiding to find bright star for guiding
 		self.big_x = 324
 		self.big_y = 69
 		self.big_w = 1210
 		self.big_h = 955
+
+		# pixel scale in X and Y, arcsec/pixel
+		self.ps_x = 0.5
+		self.ps_y = 0.5
 
 		# exposure time
 		self.exptime = 2
@@ -48,7 +52,7 @@ class GuideScript (rts2comm.Rts2Comm):
 		winfmt="%d %d %d %d" % (x-int(self.w / 2),y-int(self.h / 2),self.w,self.h)
 		self.log('I','guiding in CCD window ' + winfmt)
 		self.setValue('WINDOW',winfmt)
-		self.setValue('center_box',True)
+		self.setValue('center_cal',True)
 			
 		tar_SNR=10;  # target star errorbar in magnitude (for exposure optimization)
 
@@ -69,16 +73,19 @@ class GuideScript (rts2comm.Rts2Comm):
 			x = self.getValueFloat('center_X')
 			y = self.getValueFloat('center_Y')
 
-			if (abs(x - 15) < self.x_sensitivity and abs (y - 15) < self.y_sensitivity):
+			ch_x = abs(x - self.w / 2.0) * self.ps_x
+			ch_y = abs(y - self.h / 2.0) * self.ps_y
+
+			if (ch_x < self.x_sensitivity and ch_y < self.y_sensitivity):
 				self.log('I','autoguiding below sensitivity %f %f' % (x,y))
 				self.delete(image)
 				continue
 
-			ch_ra = float(change[0]) * self.ra_aggresivity
-			ch_dec = float(change[1]) * self.dec_aggresivity
+			ch_ra = ch_x * self.ra_aggresivity
+			ch_dec = ch_y * self.dec_aggresivity
 
-			self.log('I','guiding * center %f %f change %.1f %.1f (%f %f)' % (x,y,ch_ra*3600,ch_dec*3600,ch_ra,ch_dec))
-			self.incrementValueType(rts2comm.TELESCOPE,'OFFS','%f %f' % (ch_ra, ch_dec))
+			self.log('I','guiding * center {0:+} {1:+} change {2:.3}" {3:.2}"'.format(x,y,ch_ra,ch_dec))
+			self.incrementValueType(rts2comm.DEVICE_TELESCOPE,'OFFS','%f %f' % (ch_ra / 3600.0, ch_dec / 3600.0))
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
 
@@ -94,13 +101,23 @@ class GuideScript (rts2comm.Rts2Comm):
 				
 		self.setValue('exposure',self.exptime)
 
-		self.setValueType(rts2comm.TELESCOPE,'OFFS','0 0')
+		self.setValueByType(rts2comm.DEVICE_TELESCOPE,'OFFS','0 0')
 
 		image = self.exposure()
 
 		self.sextractor.runSExtractor(image)
-		x = int(float(values[0])) + self.big_x
-		y = int(float(values[1])) + self.big_y
+		self.sextractor.sortObjects(2)
+		sy = sx = None
+		for x in self.sextractor.objects:
+			if x[3] == 0 and x[4] != 0:
+				sx = float(x[0])
+				sy = float(x[1])
+				break
+		if sx is None:
+			self.log('E','cannot find guiding star')
+			return
+		x = int(round(sx + self.big_x))
+		y = int(round(sy + self.big_y))
 		self.log('I','values for autoguiding %d %d' % (x, y))
 				
 		# while we are current target
