@@ -76,7 +76,7 @@ class OpenTPL:public Telescope
 
 		virtual int processOption (int in_opt);
 
-		virtual int init ();
+		virtual int initHardware ();
 		virtual int initValues ();
 		virtual int idle ();
 
@@ -150,8 +150,6 @@ class OpenTPL:public Telescope
 		rts2core::ValueBool *standbyPoweroff;
 
 		double derOff;
-
-		int initOpenTplDevice ();
 
 		int startMoveReal (double ra, double dec);
 };
@@ -343,7 +341,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	opentplConn = NULL;
 
-	irTracking = 4;
+	irTracking = -1;
 
 	derOff = 0;
 	derotatorOffset = NULL;
@@ -434,7 +432,7 @@ int OpenTPL::processOption (int in_opt)
 	return 0;
 }
 
-int OpenTPL::initOpenTplDevice ()
+int OpenTPL::initHardware ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -469,20 +467,6 @@ int OpenTPL::initOpenTplDevice ()
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
-
-	return 0;
-}
-
-int OpenTPL::init ()
-{
-	int ret;
-	ret = Telescope::init ();
-	if (ret)
-		return ret;
-
-	ret = initOpenTplDevice ();
-	if (ret)
-		return ret;
 
 	return 0;
 }
@@ -523,6 +507,8 @@ int OpenTPL::initValues ()
 		modelParams.push_back (modelP);
 		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
+		if (irTracking < 0)
+			irTracking = 2;
 	}
 	else if (config_mount == "AZ-ZD")
 	{
@@ -554,6 +540,8 @@ int OpenTPL::initValues ()
 		modelParams.push_back (modelP);
 		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
+		if (irTracking < 0)
+			irTracking = 4;
 	}
 	else
 	{
