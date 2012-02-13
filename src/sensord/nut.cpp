@@ -96,7 +96,7 @@ namespace rts2sensord
 			virtual int processOption (int opt);
 			virtual int info ();
 
-			virtual int init ();
+			virtual int initHardware ();
 
 		public:
 			NUT (int argc, char **argv);
@@ -220,7 +220,7 @@ int NUT::processOption (int opt)
 			p = strchr (optarg, '@');
 			if (p == NULL)
 			{
-				logStream (MESSAGE_ERROR) << "cannot locate @ at -n parameter (" << optarg << ")" << sendLog;
+				std::cerr << "cannot locate @ at -n parameter (" << optarg << ")" << std::endl;
 				return -1;
 			}
 			*p = '\0';
@@ -242,19 +242,25 @@ int NUT::processOption (int opt)
 	return 0;
 }
 
-int NUT::init ()
+int NUT::initHardware ()
 {
   	int ret;
 	int vi;
 	float vf;
-	ret = SensorWeather::init ();
-	if (ret)
-		return ret;
+
+	if (upsName == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "you must specify UPS name with -n parameter" << sendLog;
+		return -1;
+	}
 	
 	connNUT = new ConnNUT (this, host->getHostname (), host->getPort (), upsName);
 	ret = connNUT->init ();
 	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot connect to UPS " << upsName << " on host " << host->getHostname () << " port " << host->getPort () << sendLog;
 		return ret;
+	}
 
 	try {
 		connNUT->getVal ("ups.load", vf);
