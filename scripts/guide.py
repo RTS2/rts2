@@ -73,10 +73,10 @@ class GuideScript (rts2comm.Rts2Comm):
 			x = self.getValueFloat('center_X')
 			y = self.getValueFloat('center_Y')
 
-			ch_x = abs(x - self.w / 2.0) * self.ps_x
-			ch_y = abs(y - self.h / 2.0) * self.ps_y
+			ch_x = x - self.w / 2.0 * self.ps_x
+			ch_y = y - self.h / 2.0 * self.ps_y
 
-			if (ch_x < self.x_sensitivity and ch_y < self.y_sensitivity):
+			if (abs(ch_x) < self.x_sensitivity and abs(ch_y) < self.y_sensitivity):
 				self.log('I','autoguiding below sensitivity %f %f' % (x,y))
 				self.delete(image)
 				continue
