@@ -43,12 +43,12 @@ int Configuration::getSpecialValues ()
 	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
 
 	getString ("observatory", "base_path", obs_basePath, "/images/");
-	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
-	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
-	getString ("observatory", "archive_path", obs_archive, "%b/archive/%t/%c/object/%f");
-	getString ("observatory", "trash_path", obs_trash, "%b/trash/%t/%c/%f");
-	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
-	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
+	getString ("observatory", "que_path", obs_quePath, "%b/queue/%c/%f");
+	getString ("observatory", "acq_path", obs_acqPath, "");
+	getString ("observatory", "archive_path", obs_archive, "");
+	getString ("observatory", "trash_path", obs_trash, "");
+	getString ("observatory", "flat_path", obs_flats, "");
+	getString ("observatory", "dark_path", obs_darks, "");
 
 	getString ("observatory", "target_path", targetDir, RTS2_PREFIX "/etc/rts2/targets");
 	masterConsFile = targetDir + "/constraints.xml";
