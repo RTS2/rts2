@@ -628,6 +628,8 @@ int Image::renameImage (const char *new_filename)
 
 int Image::renameImageExpand (std::string new_ex)
 {
+	if (new_ex.length () == 0)
+		return -1;
 	std::string new_filename;
 
 	if (!getFileName ())
