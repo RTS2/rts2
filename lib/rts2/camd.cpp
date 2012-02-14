@@ -410,8 +410,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	exposureConn = NULL;
 
-	createValue (filterMoving, "fw_moving", "if filter wheel is moving", false);
-	filterMoving->setValueBool (false);
+	createValue (filterMoving, "fw_moving", "number of moving filter wheel(s)", false);
+	filterMoving->setValueInteger (0);
 
 	createValue (focuserMoving, "foc_moving", "if focuser is moving", false);
 	focuserMoving->setValueBool (false);
@@ -511,8 +511,8 @@ void Camera::checkQueuedExposures ()
 int Camera::killAll (bool callScriptEnds)
 {
 	waitingForNotBop->setValueBool (false);
-
 	waitingForEmptyQue->setValueBool (false);
+	filterMoving->setValueInteger (0);
 
 	if (isExposing ())
 		stopExposure ();
@@ -522,6 +522,7 @@ int Camera::killAll (bool callScriptEnds)
 
 	sendValueAll (waitingForNotBop);
 	sendValueAll (waitingForEmptyQue);
+	sendValueAll (filterMoving);
 
 	return rts2core::ScriptDevice::killAll (callScriptEnds);
 }
@@ -1000,7 +1001,7 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	}
 	if (old_value == exposure)
 	{
-		setExposure(((rts2core::ValueDoubleMinMax *) new_value)->getValueDouble());
+		setExposure (new_value->getValueDouble ());
 		return 0;
 	}
 	return rts2core::ScriptDevice::setValue (old_value, new_value);
@@ -1013,6 +1014,7 @@ void Camera::valueChanged (rts2core::Value *changed_value)
 		Binning2D *bin = (Binning2D *) binning->getData ();
 		setBinning (bin->horizontal, bin->vertical);
 	}
+	ScriptDevice::valueChanged (changed_value);
 }
 
 void Camera::addTempCCDHistory (float temp)
@@ -1059,10 +1061,11 @@ void Camera::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			if (event->getArg () == this && filterMoving && filterMoving->getValueBool ())
+			if (event->getArg () == this && filterMoving && filterMoving->getValueInteger () > 0)
 			{
-				filterMoving->setValueBool (false);
-				checkQueuedExposures ();
+				filterMoving->dec ();
+				if (filterMoving->getValueInteger () == 0)
+					checkQueuedExposures ();
 			}
 			break;
 		case EVENT_FOCUSER_END_MOVE:
@@ -1117,7 +1120,7 @@ int Camera::camStartExposure ()
 			|| (getMasterStateFull () & BOP_EXPOSURE)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
-			|| (filterMoving && filterMoving->getValueBool () == true)
+			|| (filterMoving && filterMoving->getValueInteger () > 0)
 			|| (focuserMoving && focuserMoving->getValueBool () == true)
 		))
 	{
@@ -1356,7 +1359,7 @@ int Camera::setFilterNum (int new_filter, const char *fn)
 		// filter move will be performed
 		if (fs.filter == -1)
 		{
-			filterMoving->setValueBool (true);
+			filterMoving->inc ();
 			sendValueAll (filterMoving);
 			ret = 0;
 		}
@@ -1523,13 +1526,6 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 				return -2;
 		}
 		return camCenter (conn, w, h);
-	}
-	else if (conn->isCommand ("readout"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		//TODO send data
-		return -2;
 	}
 	return rts2core::ScriptDevice::commandAuthorized (conn);
 }

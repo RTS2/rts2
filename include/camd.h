@@ -105,6 +105,38 @@ class DataType: public rts2core::Rts2SelData
  * them during exposure cycle. The changes are put to que and executed once
  * camera enters IDLE cycle.
  *
+ * @section rts2core_Camera_commands Accepted commands
+ *
+ * @subsection expose
+ *
+ * Start new exposition. If exposition or readout is in progress, queues new
+ * exposition into exposure queue. Exposition parameters must be set before exposure
+ * command is called.
+ *
+ * @subsection stopexpo
+ *
+ * Stop current exposure. If camera hardware allows it, the image is preserved on 
+ * the chip, so it can be readout later.
+ *
+ * @subsection box
+ *
+ * Specifies chip window. This command is kept for backward compatibility,
+ * use of WINDOW variable to set readout are is preffered.
+ *
+ * @subsubsection Parameters
+ *
+ *  - x,y,w,h  integer numbers specifing window edges
+ *
+ * @subsection center
+ *
+ * Set readout area to an area at the chip center, with width and height given
+ * as the parameters.
+ *
+ * @subsubsection Parameters
+ *
+ *  - w,h  width and height of the readout area. The area is placed so its
+ *  center pixel is aligned to center pixel of the CCD.
+ *
  * Folowing state diagram depict possible state transation inside
  * Camera.
  *
@@ -1002,7 +1034,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueTime *exposureEnd;
 
 		// filter wheel is moving
-		rts2core::ValueBool *filterMoving;
+		rts2core::ValueInteger *filterMoving;
 		rts2core::ValueBool *focuserMoving;
 
 		// set chipUsedSize size

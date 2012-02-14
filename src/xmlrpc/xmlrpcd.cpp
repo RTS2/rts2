@@ -371,12 +371,6 @@ int XmlRpcd::init ()
 	return ret;
 }
 
-void XmlRpcd::valueChanged (rts2core::Value * value)
-{
-	if (value->isAutosave ())
-		autosaveValues ();
-}
-
 void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL

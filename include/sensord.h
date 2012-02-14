@@ -71,6 +71,8 @@ class SensorWeather:public Sensor
 	protected:
 		virtual int idle ();
 
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
 		virtual bool isGoodWeather ();
 	private:
 		rts2core::ValueTime *nextGoodWeather;

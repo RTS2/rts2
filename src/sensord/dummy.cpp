@@ -30,10 +30,10 @@ namespace rts2sensord
  *
  * @author Petr Kubánek <petr@kubanek.net>
  */
-class Dummy:public Sensor
+class Dummy:public SensorWeather
 {
 	public:
-		Dummy (int argc, char **argv):Sensor (argc, argv)
+		Dummy (int argc, char **argv):SensorWeather (argc, argv)
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_AUTOSAVE, 0);
 			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
@@ -132,7 +132,7 @@ class Dummy:public Sensor
 				}
 				return 0;
 			}
-			return Sensor::setValue (old_value, newValue);
+			return SensorWeather::setValue (old_value, newValue);
 		}
 
 		virtual int commandAuthorized (rts2core::Connection * conn)
@@ -156,7 +156,7 @@ class Dummy:public Sensor
 				infoAll ();
 				return 0;
 			}
-			return Sensor::commandAuthorized (conn);
+			return SensorWeather::commandAuthorized (conn);
 		}
 	protected:
 		virtual int initHardware ();
@@ -204,7 +204,7 @@ void Dummy::postEvent (rts2core::Event *event)
 				timerCount->inc ();
 				// send out value to all connections
 				sendValueAll (timerCount);
-				// reschedule us and return - ascending up to Sensor::postEvent will delete event object, we would like to avoid this
+				// reschedule us and return - ascending up to SensorWeather::postEvent will delete event object, we would like to avoid this
 				addTimer (5, event);
 				if (timerCount->getValueLong () % 12 == 0)
 					logStream (MESSAGE_INFO) << "60 seconds timer: " << timerCount->getValueLong () << sendLog;
@@ -214,7 +214,7 @@ void Dummy::postEvent (rts2core::Event *event)
 			}
 			break;
 	}
-	Sensor::postEvent (event);
+	SensorWeather::postEvent (event);
 }
 
 void Dummy::setFullBopState (int new_state)
@@ -228,7 +228,7 @@ void Dummy::setFullBopState (int new_state)
 	{
 		maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "waiting for next exposure");
 	}
- 	Sensor::setFullBopState (new_state);
+ 	SensorWeather::setFullBopState (new_state);
 }
 
 

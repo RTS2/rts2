@@ -280,6 +280,15 @@ digraph "JSON API calls handling" {
  *  - <i><b>pm_dec></b> New target proper motion in DEC, in arcdeg/year.</i>
  *  - <i><b>enabled</b> New value of target enabled bit. If set to 1, target will be considered by autonomouse selector.</i>
  *  - <i><b>desc</b> Target description.</i>
+ *
+ * @section labels
+ *
+ * Return lables list.
+ *
+ * @section consts
+ *
+ * Retrieve target constraints. Constraints are stored in XML files specified 
+
  */
 
 #include "xmlrpcd.h"

@@ -803,12 +803,14 @@ int Trencin::setTo (double set_ra, double set_dec)
 	// calculate expected RA and DEC ticsk..
 	int32_t u_ra;
 	int32_t u_dec;
+	int32_t off;
+	getHomeOffset (off);
 
 	struct ln_equ_posn pos;
 	pos.ra = set_ra;
 	pos.dec = set_dec;
 
-	applyCorrections (&pos, ln_get_julian_from_sys ());
+	double JD = ln_get_julian_from_sys ();
 
 	setTarget (pos.ra, pos.dec);
 	ret = sky2counts (u_ra, u_dec);

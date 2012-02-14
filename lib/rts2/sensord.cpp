@@ -50,6 +50,18 @@ int SensorWeather::idle ()
 	return Sensor::idle ();
 }
 
+int SensorWeather::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("reset_next"))
+	{
+		double n = getNow ();
+		if (nextGoodWeather->getValueDouble () > n)
+			nextGoodWeather->setValueInteger (n);
+		return 0;
+	}
+	return Sensor::commandAuthorized (conn);
+}
+
 bool SensorWeather::isGoodWeather ()
 {
 	if (getNextGoodWeather () >= getNow ())

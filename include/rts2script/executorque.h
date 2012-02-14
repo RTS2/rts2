@@ -221,6 +221,9 @@ class TargetQueue:public std::list <QueuedTarget>
 
 class SimulQueueTargets;
 
+enum first_ordering_t
+{ ORDER_NONE, ORDER_HA, ORDER_SETFIRST };
+
 /**
  * Executor queue. Used to freely create queue inside executor
  * for queue execution. Allow users to define rules how the queue
@@ -239,6 +242,11 @@ class ExecutorQueue:public TargetQueue
 
 		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
 		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
+
+		/**
+		 * Add target to the first possible position.
+		 */
+		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
 
 		/**
 		 * Do not delete pointer to this target, as it is used somewhere else.
@@ -263,7 +271,12 @@ class ExecutorQueue:public TargetQueue
 		 */
 		int selectNextSimulation (SimulQueueTargets &sq, double from, double to, double &e_end, struct ln_equ_posn *currentp, struct ln_equ_posn *nextp);
 
-		int queueFromConn (rts2core::Connection *conn, bool withTimes = false, rts2core::ConnNotify *watchConn = NULL);
+		/**
+		 *
+		 * @param tryFirstPossible     try to set observation on the first possible place
+		 * @param n_start              start of the night
+		 */
+		int queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start);
 
 		void setSkipBelowHorizon (bool skip) { skipBelowHorizon->setValueBool (skip); master->sendValueAll (skipBelowHorizon); }
 

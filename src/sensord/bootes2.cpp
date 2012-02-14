@@ -351,6 +351,7 @@ void Bootes2::valueChanged (rts2core::Value *v)
 			comedi_dio_write (comediDevice, 2, 4 + i, (*vb)[i]);
 		}
 	}
+	SensorWeather::valueChanged (v);
 }
 
 void Bootes2::changeMasterState (int old_state, int new_state)

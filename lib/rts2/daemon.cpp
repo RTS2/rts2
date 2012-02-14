@@ -829,6 +829,8 @@ err:
 
 void Daemon::valueChanged (Value *changed_value)
 {
+	if (changed_value->isAutosave ())
+		autosaveValues ();
 }
 
 int Daemon::baseInfo ()
