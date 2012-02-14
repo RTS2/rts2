@@ -220,9 +220,9 @@ int Lakeshore::info ()
 			lname[0] = '1' + i;
 			readChannelValues (lname, loops[i]);
 		}
-		readValue ("HTR", htr);
-		readValue ("HTRST", htrst);
-		readValue ("RANGE", range);
+		readValue ("HTR?", htr);
+		readValue ("HTRST?", htrst);
+		readValue ("RANGE?", range);
 	}
 	catch (rts2core::Error er)
 	{
@@ -263,7 +263,7 @@ int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
 		if (oldValue == range)
 		{
 			std::ostringstream os;
-			os << "RANGE " << range->getDisplayValue ();
+			os << "RANGE " << newValue->getDisplayValue ();
 			gpibWrite (os.str ().c_str ());
 		}
 		for (i = 0, chan = channames[0]; i < NUM_CHAN; i++, chan = channames[i])
