@@ -73,7 +73,9 @@
         <arg choice='plain'><option>-t</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>device</replaceable></arg></arg>
         <arg choice='plain'><option>-u</option> <arg choice='req' rep='repeat'><replaceable class='parameter'>url</replaceable></arg></arg>
         <arg choice='plain'><option>--test</option></arg>
-      </group>	
+      </group>
+      <arg choice='plain'><option>-P</option></arg>
+      <arg choice='plain'><option>-p</option></arg>
       <arg choice='opt'><option>--hostname <replaceable class='parameter'>XML-RPCd host</replaceable></option></arg>
       <arg choice='opt'><option>--port <replaceable class='parameter'>XML-RPCd port number</replaceable></option></arg>
       <arg choice='opt'><option>--user <replaceable class='parameter'>username</replaceable></option></arg>
