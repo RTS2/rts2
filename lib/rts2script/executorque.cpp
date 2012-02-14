@@ -249,7 +249,7 @@ void TargetQueue::sortWestEastMeridian (double jd)
 
 		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
 		{
-		  	// std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+		  	// std::cout << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
 			// skip target if it's not above horizon
 			ExecutorQueue::iterator qi = findTarget (*iter);
 			double tjd = jd;
@@ -260,7 +260,7 @@ void TargetQueue::sortWestEastMeridian (double jd)
 			}
 
 			jd = tjd;	
-			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
+			if ((*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
 				break;  
 		}
 		// If such target does not exists, select front..
@@ -302,7 +302,7 @@ void TargetQueue::sortOutOfLimits (double jd)
 
 		for (iter = preparedTargets.begin (); iter != preparedTargets.end (); iter++)
 		{
-		  	std::cout << "sort out of limits " << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
+		  	std::cout << "sort out of limits " << (*iter)->getTargetName () << " " << (*iter)->getHourAngle (jd, *observer) << " " << getMaximalDuration (*iter) << " " << (*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 << std::endl; 
 			// skip target if it's not above horizon
 			ExecutorQueue::iterator qi = findTarget (*iter);
 			double tjd = jd;
@@ -313,7 +313,7 @@ void TargetQueue::sortOutOfLimits (double jd)
 			}
 
 			jd = tjd;	
-			if ((*iter)->getHourAngle (jd) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
+			if ((*iter)->getHourAngle (jd, *observer) / 15.0 + getMaximalDuration (*iter) / 3600.0 > 0)
 				break;  
 		}
 		// If such target does not exists, select front..
@@ -511,6 +511,55 @@ int ExecutorQueue::addTarget (rts2db::Target *nt, double t_start, double t_end, 
 	return 0;
 }
 
+int ExecutorQueue::addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start, double t_end, int plan_id, bool hard)
+{
+	// find entry in queue to put target
+	double now = n_start;
+	if (!isnan (t_start))
+		now = t_start;
+	// total script length
+	double tl = rts2script::getMaximalScriptDuration (nt, master->cameras);
+	if (tl <= 0)
+		tl = 60;
+	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
+	{
+		time_t tnow = now;
+		double JD = ln_get_julian_from_timet (&tnow);
+
+		double to;
+		if (!isnan (iter->t_start))
+			to = iter->t_start + tl;
+		else
+			to = now + tl;
+		double satDuration = nt->getSatisfiedDuration (now, to, tl, 60);
+
+		// first check if we should insert after the current target
+		bool skip = false;
+		switch (fo)
+		{
+			case ORDER_HA:
+				skip = nt->getHourAngle (JD, *observer) < iter->target->getHourAngle (JD, *observer);
+				break;
+			case ORDER_SETFIRST:
+				skip = satDuration > iter->target->getSatisfiedDuration (now, to, tl, 60);
+				break;
+			case ORDER_NONE:
+				break;
+		}
+		if (skip == false && (isinf (satDuration) || satDuration))
+		{
+			insert (iter, QueuedTarget (nt, t_start, t_end, plan_id, hard));
+			updateVals ();
+			return 0;
+		}
+		now = to;
+	}
+	// if everything fails, add target to the end
+	addTarget (nt, t_start, t_end, plan_id, hard);
+	updateVals ();
+	return 0;
+}
+
 void ExecutorQueue::clearNext ()
 {
 	for (ExecutorQueue::iterator iter = begin (); iter != end (); iter++)
@@ -627,12 +676,30 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 	return -1;
 }
 
-int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn)
+int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start)
 {
 	double t_start = rts2_nan ("f");
 	double t_end = rts2_nan ("f");
 	int tar_id;
 	int failed = 0;
+	first_ordering_t fo = ORDER_NONE;
+	if (tryFirstPossible)
+	{
+		int fo_i;
+		conn->paramNextInteger (&fo_i);
+		switch (fo_i)
+		{
+			case ORDER_HA:
+				fo = ORDER_HA;
+				break;
+			case ORDER_SETFIRST:
+				fo = ORDER_SETFIRST;
+				break;
+			case ORDER_NONE:
+			default:
+				fo = ORDER_NONE;
+		}
+	}
 	while (!conn->paramEnd ())
 	{
 		if (conn->paramNextInteger (&tar_id))
@@ -654,7 +721,10 @@ int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rt
 			failed++;
 			continue;
 		}
-		addTarget (nt, t_start, t_end);
+		if (tryFirstPossible)
+			addFirst (nt, fo, n_start, t_start, t_end);
+		else
+			addTarget (nt, t_start, t_end);
 	}
 	return failed;
 }
