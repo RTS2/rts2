@@ -433,6 +433,7 @@ double Fli::tcOffset ()
 	  logStream (MESSAGE_DEBUG) << "Fli::tcOffset " << sendLog;
 	  return 0. ;
 }
+
 void Fli::valueChanged (rts2core::Value *changed_value)
 {
   long steps= 0  ;
@@ -456,7 +457,6 @@ void Fli::valueChanged (rts2core::Value *changed_value)
     }
     target->setValueDouble (positionTc) ;
     sendValueAll (target);
-    return ;
   }
 
   Focusd::valueChanged (changed_value);
