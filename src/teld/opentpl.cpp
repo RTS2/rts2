@@ -590,6 +590,8 @@ int OpenTPL::initValues ()
 
 void OpenTPL::checkErrors ()
 {
+	if (!opentplConn->isConnState (CONN_CONNECTED))
+		return;
 	int status = TPL_OK;
 	std::string list;
 
@@ -957,6 +959,8 @@ void OpenTPL::setDiffTrack (double dra, double ddec)
 
 int OpenTPL::info ()
 {
+	if (!opentplConn->isConnState (CONN_CONNECTED))
+		return -1;
 	double zd, az;
 	#ifdef DEBUG_EXTRA
 	double zd_speed, az_speed;
@@ -1376,7 +1380,7 @@ int OpenTPL::moveCheck (bool park)
 	{
 		logStream (MESSAGE_WARNING) << "Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
 		setTelescopeTrack (irTracking);
-		sleep (1);
+		sleep (10);
 		return USEC_SEC / 100;
 	}
 	if (fabs (poin_dist) <= goodSep->getValueDouble ()) 
