@@ -84,8 +84,8 @@ int Selector::selectNext (int masterState, double length)
 			break;
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
-			// if flats were requested..
-			if (flat_sun_min < flat_sun_max)
+			// if flats were requested and system is in ON
+			if (!(masterState & BAD_WEATHER) && flat_sun_min < flat_sun_max)
 			{
 				JD = ln_get_julian_from_sys ();
 				ln_get_solar_equ_coords (JD, &eq_sun);

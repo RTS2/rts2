@@ -625,7 +625,7 @@ int SelectorDev::commandAuthorized (rts2core::Connection * conn)
 		}
 		try
 		{
-			if (q->queueFromConn (conn, withTimes, notifyConn))
+			if (q->queueFromConn (conn, withTimes, notifyConn, false, NAN))
 				return -2;
 			if (getMasterState () == SERVERD_NIGHT)
 			{
