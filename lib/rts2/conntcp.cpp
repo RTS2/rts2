@@ -27,9 +27,8 @@
 
 using namespace rts2core;
 
-ConnTCP::ConnTCP (rts2core::Block *_master, const char *_hostname, int _port):ConnNoSend (_master)
+ConnTCP::ConnTCP (rts2core::Block *_master, const char *_hostname, int _port):ConnNoSend (_master), hostname (_hostname)
 {
-	hostname = _hostname;
 	port = _port;
 	debug = false;
 }
@@ -65,9 +64,9 @@ int ConnTCP::init ()
 		throw ConnCreateError (this, "cannot create socket for TCP/IP connection", errno);
 
         apc_addr.sin_family = AF_INET;
-        hp = gethostbyname(hostname);
+        hp = gethostbyname(hostname.c_str ());
 	if (hp == NULL)
-		throw ConnCreateError (this, (std::string ("unknow hostname ") + std::string (hostname)).c_str (), errno);
+		throw ConnCreateError (this, (std::string ("unknow hostname ") + hostname).c_str (), errno);
 
         bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
         apc_addr.sin_port = htons(port);
@@ -81,6 +80,7 @@ int ConnTCP::init ()
 		throw ConnCreateError (this, "cannot set socket non-blocking", errno);
         
 	setConnState (CONN_CONNECTED);
+	logStream (MESSAGE_INFO) << "connected to " << hostname << ":" << port << sendLog;
         return 0;
 }
 

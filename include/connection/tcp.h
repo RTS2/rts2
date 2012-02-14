@@ -179,7 +179,7 @@ class ConnTCP:public ConnNoSend
 		bool getDebug () { return debug; }
 
 	private:
-		const char *hostname;
+		std::string hostname;
 		int port;
 
 		bool debug;
