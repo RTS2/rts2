@@ -49,6 +49,12 @@
 // mapped memory location
 uint16_t *mem;
 
+#define DEBUG_LOG
+
+#ifdef DEBUG_LOG
+FILE *fLog;
+#endif
+
 // enables printout of low level debug
 #define DEBUG
 
@@ -82,7 +88,7 @@ int writeWord (uint16_t pd)
  *
  * @see readPacket
  */
-int16_t readData ()
+uint16_t readData ()
 {
 	// wait for RDB
 	while ((mem[4] & NIMC_DATA_IN_RDB) == 0x00)
@@ -99,9 +105,14 @@ int16_t readData ()
 		}
 		usleep (1000);
 	}
-	int16_t r = mem[0];
+	uint16_t r = mem[0];
 #ifdef DEBUG
 	printf ("readData %04x (%d)\n", r, r);
+#endif
+
+#ifdef DEBUG_LOG
+	fprintf (fLog, "readData %04x (%d)\n", r, r);
+	fflush(fLog);
 #endif
 	return r;
 }
@@ -143,10 +154,20 @@ void writePacketWithIOVector (uint8_t resource, uint16_t command, uint8_t size, 
 #ifdef DEBUG
 		printf ("wait for command %d csr %04x\r", command, mem[4]);
 #endif
+
+#ifdef DEBUG_LOG
+		fprintf (fLog, "wait for command %d csr %04x\r", command, mem[4]);
+		fflush(fLog);
+#endif
 		usleep (1000);
 	}
 #ifdef DEBUG
 	printf ("wait ends csr %04x                                         \n", mem[4]);
+#endif
+
+#ifdef DEBUG_LOG
+	fprintf (fLog, "wait ends csr %04x                                         \n", mem[4]);
+	fflush(fLog);
 #endif
 }
 
@@ -310,12 +331,18 @@ void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t pol
 }
 
 // swap 2 bytes..
-void btol32 (int32_t *b)
+void btol32 (uint32_t *b)
 {
-	int32_t r = *b & 0xffff;
+	uint32_t r = *b & 0xffff;
 	r = r << 16;
 	r |= (*b >> 16);
 	*b = r;
+
+#ifdef DEBUG_LOG
+	unsigned char *p = (unsigned char*) b;
+	fprintf (fLog, "btol %x %x %x %x %d\n", p[0], p[1], p[2], p[3], r);
+	fflush (fLog);
+#endif
 }
 
 void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity)
@@ -323,7 +350,7 @@ void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity)
 	writePacket (axis, 392, 0, NULL);
 	int16_t c;
 	readPacket (&c, 2, (uint16_t *) velocity);
-	btol32 (velocity);
+	btol32 ((uint32_t *) velocity);
 }
 
 void flex_read_rpm (uint8_t axis, int64_t *rpm)
@@ -335,10 +362,19 @@ void flex_read_rpm (uint8_t axis, int64_t *rpm)
 
 void flex_read_position_rtn (uint8_t axis, int32_t *position)
 {
+#ifdef DEBUG_LOG
+	fprintf(fLog, "read position, axis=%d\n", axis);
+	fflush(stdout);
+#endif
 	writePacket (axis, 41, 0, NULL);
 	int16_t c;
 	readPacket (&c, 2, (uint16_t *) position);
-	btol32 (position);
+	btol32 ((uint32_t *) position);
+
+#ifdef DEBUG_LOG
+	fprintf(fLog, "read position, axis=%d\n", *position);
+	fflush(stdout);
+#endif
 }
 
 void flex_set_op_mode (uint8_t resource, uint16_t operationMode)
@@ -398,7 +434,7 @@ void flex_read_adc16_rtn (uint8_t ADC, int32_t *ADCValue)
 	writePacket (ADC, 480, 0, NULL);
 	int16_t c;
 	readPacket (&c, 2, (uint16_t *) ADCValue);
-	btol32 (ADCValue);
+	btol32 ((uint32_t *) ADCValue);
 }
 
 void flex_enable_adcs (uint16_t ADCMap)
@@ -407,8 +443,22 @@ void flex_enable_adcs (uint16_t ADCMap)
 	checkStatus ();
 }
 
+#ifdef DEBUG_LOG
+void openLog()
+{
+	fLog = fopen("/tmp/nimotion.log", "w");
+}
+#endif
+
 int initMotion (const char *path)
 {
+#ifdef DEBUG_LOG
+	printf ("Opening log\n");
+	openLog ();
+	
+	fprintf (fLog, "initMotion %s\n", path);
+#endif
+
 	int16_t c, r;
 	int32_t e;
 
@@ -463,7 +513,7 @@ int initMotion (const char *path)
 		bar1 |= ((uint32_t) (barp[i])) << (i * 8);
 	}
 
-	printf ("bar1 is 0x%08x\n", bar1);
+	printf ("(gsfc) bar1 is 0x%08x\n", bar1);
 
 
 	*((int32_t *) (mem0 + 0xc0)) = bar1 | 0x80;
