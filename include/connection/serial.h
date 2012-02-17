@@ -51,40 +51,6 @@ typedef enum {NONE, ODD, EVEN} parityT;
  */
 class ConnSerial: public ConnNoSend
 {
-	private:
-		struct termios s_termios;
-
-		bSpeedT baudSpeed;
-
-		cSizeT cSize;
-		parityT parity;
-
-		int vMin;
-		int vTime;
-
-		// if we will preint port communication
-		bool debugPortComm;
-
-		// if debugging will be in hex only
-		bool logTrafficAsHex;
-
-		/**
-		 * Log buffer read from port, honest selection between hex and standard debugging.
-		 *
-		 * @param ls    Log stream used for debugging.
-		 * @param lbuf  Buffer which will be logged.
-		 * @param blen  Length of buffer to log.
-		 */
-		void logBuffer (LogStream &ls, const char *lbuf, int blen)
-		{
-			if (logTrafficAsHex)
-				ls.logArrAsHex (lbuf, blen);
-			else
-			  	ls.logArr (lbuf, blen);
-		}
-
-		// set s_termios to port..
-		int setAttr ();
 	public:
 		/**
 		 * Create connection to serial port.
@@ -95,8 +61,9 @@ class ConnSerial: public ConnNoSend
 		 * @param _cSize     Character bits size (7 or 8 bits)
 		 * @param _parity    Device parity.
 		 * @param _vTime     Time to wait for single read before giving up.
+		 * @param _flushSleepTime  Time to sleep before flushing after an error.
 		 */
-		ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
+		ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40, int _flushSleepTime = -1);
 
 		/**
 		 * Init serial port.
@@ -122,6 +89,8 @@ class ConnSerial: public ConnNoSend
 		 * @param _vtime New VTIME value (in decaseconds).
 		 */
 		int setVTime (int _vtime);
+
+		void setFlushSleepTime (int fst) { flushSleepTime = fst; }
 
 		/**
 		 * Write single character to serial port.
@@ -242,6 +211,47 @@ class ConnSerial: public ConnNoSend
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar);
 
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, const char *endChar);
+
+	private:
+		struct termios s_termios;
+
+		bSpeedT baudSpeed;
+
+		cSizeT cSize;
+		parityT parity;
+
+		int vMin;
+		int vTime;
+
+		// sleep seconds before flushing after an error
+		int flushSleepTime;
+
+		// if we will preint port communication
+		bool debugPortComm;
+
+		// if debugging will be in hex only
+		bool logTrafficAsHex;
+
+		/**
+		 * Log buffer read from port, honest selection between hex and standard debugging.
+		 *
+		 * @param ls    Log stream used for debugging.
+		 * @param lbuf  Buffer which will be logged.
+		 * @param blen  Length of buffer to log.
+		 */
+		void logBuffer (LogStream &ls, const char *lbuf, int blen)
+		{
+			if (logTrafficAsHex)
+				ls.logArrAsHex (lbuf, blen);
+			else
+			  	ls.logArr (lbuf, blen);
+		}
+
+		// set s_termios to port..
+		int setAttr ();
+
+		void flushError ();
+
 };
 
 }

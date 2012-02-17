@@ -65,7 +65,7 @@ int TelLX200::init ()
 	if (ret)
 		return ret;
 
-	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5);
+	serConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 5, 5);
 	if (connDebug == true)
 		serConn->setDebug (true);
 	ret = serConn->init ();

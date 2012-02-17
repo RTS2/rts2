@@ -37,7 +37,16 @@ int ConnSerial::setAttr ()
 	return 0;
 }
 
-ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime):ConnNoSend (_master)
+void ConnSerial::flushError ()
+{
+	if (flushSleepTime >= 0)
+	{
+		sleep (flushSleepTime);
+		flushPortIO ();
+	}
+}
+
+ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime, int _flushSleepTime):ConnNoSend (_master)
 {
 	sock = open (_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
@@ -52,6 +61,8 @@ ConnSerial::ConnSerial (const char *_devName, rts2core::Block * _master, bSpeedT
 
 	vMin = 0;
 	vTime = _vTime;
+
+	flushSleepTime = _flushSleepTime;
 
 	debugPortComm = false;
 	logTrafficAsHex = false;
@@ -180,21 +191,21 @@ int ConnSerial::writePort (char ch)
 	int wlen = 0;
 	if (debugPortComm)
 	{
-		logStream (MESSAGE_DEBUG) << "write char " << std::hex
-			<< std::setfill ('0') << std::setw (2)<< ((int) ch) << sendLog;
+		logStream (MESSAGE_DEBUG) << "write char " << std::hex << std::setfill ('0') << std::setw (2)<< ((int) ch) << sendLog;
 	}
 	while (wlen < 1)
 	{
 		int ret = write (sock, &ch, 1);
 		if (ret == -1 && errno != EINTR)
 		{
-			logStream (MESSAGE_ERROR) << "cannot write to serial port "
-				<< strerror (errno) << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot write to serial port " << strerror (errno) << sendLog;
+			flushError ();
 			return -1;
 		}
 		if (ret == 0)
 		{
 			logStream (MESSAGE_ERROR) << "write 0 bytes to serial port" << sendLog;
+			flushError ();
 			return -1;
 		}
 		wlen += ret;
@@ -218,11 +229,13 @@ int ConnSerial::writePort (const char *wbuf, int b_len)
 		if (ret == -1 && errno != EINTR)
 		{
 			logStream (MESSAGE_ERROR) << "cannot write to serial port " << strerror (errno) << sendLog;
+			flushError ();
 			return -1;
 		}
 		if (ret == 0)
 		{
 			logStream (MESSAGE_ERROR) << "write 0 bytes to serial port" << sendLog;
+			flushError ();
 			return -1;
 		}
 		wlen += ret;
@@ -242,6 +255,7 @@ int ConnSerial::readPort (char &ch)
 		if (rlen == -1 && errno != EINTR)
 		{
 			logStream (MESSAGE_ERROR) << "cannot read single char from serial port, error is " << strerror (errno) << sendLog;
+			flushError ();
 			return -1;
 		}
 		if (rlen == 0)
@@ -249,6 +263,7 @@ int ConnSerial::readPort (char &ch)
 			if (ntries == 0)
 			{
 				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				flushError ();
 				return -1;
 			}
 			ntries--;
@@ -256,8 +271,7 @@ int ConnSerial::readPort (char &ch)
 	}
 	if (debugPortComm)
 	{
-		logStream (MESSAGE_DEBUG) << "readed from port 0x"
-			<< std::hex << std::setfill ('0') << std::setw(2) << ((int) ch) << sendLog;
+		logStream (MESSAGE_DEBUG) << "readed from port 0x" << std::hex << std::setfill ('0') << std::setw(2) << ((int) ch) << sendLog;
 	}
 	return 1;
 }
@@ -280,6 +294,7 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 			{
 				logStream (MESSAGE_ERROR) << "cannot read from serial port " << strerror (errno) << sendLog;
 			}
+			flushError ();
 			return -1;
 		}
 		if (ret == 0)
@@ -290,7 +305,8 @@ int ConnSerial::readPort (char *rbuf, int b_len)
 				ls << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully '";
 				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
-
+				
+				flushError ();
 				return -1;
 			}
 			ntries--;
@@ -351,7 +367,10 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '" << rbuf << "', error is " << strerror (errno) << sendLog;
 			}
 			else
+			{
 				logStream (MESSAGE_ERROR) << "cannot read from serial port " << strerror (errno) << sendLog;
+			}
+			flushError ();
 			return -1;
 		}
 		if (ret == 0)
@@ -360,6 +379,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 			{
 				rbuf[rlen] = '\0';
 				logStream (MESSAGE_ERROR) << "readPort with endChar: read 0 bytes from serial port (" << rlen << ":" << rbuf << ")" << sendLog;
+				flushError ();
 				return -1;
 			}
 			ntries--;
@@ -383,6 +403,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		<< "', readed '";
 	logBuffer (ls, rbuf, rlen);
 	ls << "'" << sendLog;
+	flushError ();
 	return -1;
 }
 
@@ -395,6 +416,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, const char *endChar)
 		{
 			rbuf[tl] = '\0';
 			logStream (MESSAGE_ERROR) << "too few space in read buffer, so far readed " << rbuf << sendLog;
+			flushError ();
 			return -1;
 		}
 		// look for the first character
