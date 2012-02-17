@@ -89,14 +89,23 @@ class Davis: public SensorWeather
 		void setAvgWindSpeed (float _avgWindSpeed)
 		{
 			avgWindSpeed->setValueFloat (_avgWindSpeed);
-			if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
+			avgWindSpeedStat->addValue (_avgWindSpeed, 20);
+			avgWindSpeedStat->calculate ();
+			if (!isnan (avgWindSpeedStat->getValueFloat ()) && avgWindSpeedStat->getValueFloat () >= maxWindSpeed->getValueFloat ())
 			{
 				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high average wind");
 				valueError (avgWindSpeed);
+				valueError (avgWindSpeedStat);
+			}
+			else if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
+			{
+				valueError (avgWindSpeed);
+				valueWarning (avgWindSpeedStat);
 			}
 			else
 			{
 				valueGood (avgWindSpeed);
+				valueGood (avgWindSpeedStat);
 			}
 		}
 
@@ -159,6 +168,7 @@ class Davis: public SensorWeather
 		rts2core::ValueBool *rain;
 
 		rts2core::ValueFloat *avgWindSpeed;
+		rts2core::ValueDoubleStat *avgWindSpeedStat;
 		rts2core::ValueFloat *peekWindSpeed;
 
 		rts2core::ValueFloat *rainRate;

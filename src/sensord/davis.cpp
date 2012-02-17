@@ -90,6 +90,7 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 	rain->setValueInteger (true);
 
 	createValue (avgWindSpeed, "AVGWIND", "average windspeed", true);
+	createValue (avgWindSpeedStat, "AVGWINDS", "average windspeed statistic", false);
 	createValue (peekWindSpeed, "PEEKWIND", "peek windspeed", true);
 
 	createValue (rainRate, "rain_rate", "rain rate from bucket sensor", false);
