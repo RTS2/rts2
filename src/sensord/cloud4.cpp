@@ -382,14 +382,14 @@ int Cloud4::info ()
 		// trips..
 		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
 		{
+			setWeatherTimeout (300, "crossed TRIGBAD");
 			if (getWeatherState () == true)
 			{
 				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
-				valueError (tempDiff);
 			}
-			setWeatherTimeout (300, "crossed TRIGBAD");
+			valueError (tempDiff);
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
