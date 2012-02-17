@@ -381,6 +381,7 @@ int Cloud4::info ()
 				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
+				valueError (tempDiff);
 			}
 			setWeatherTimeout (300, "crossed TRIGBAD");
 		}
@@ -391,12 +392,14 @@ int Cloud4::info ()
 				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerGood->getValueDouble ()
 					<< sendLog;
+				valueGood (tempDiff);
 			}
 		}
 		// gray zone - if it's bad weather, keep it bad
 		else if (getWeatherState () == false)
 		{
 			setWeatherTimeout (300, "do not rised above TRIGGOOD");
+			valueWarning (tempDiff);
 		}
 	}
 	else
