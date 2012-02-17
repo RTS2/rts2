@@ -89,18 +89,17 @@ class ValueDoubleStat:public ValueDouble
 		}
 
 		/**
-		 * Add value to the measurement values. If que size is greater then
-		 * maxQueSize, delete first entry.
+		 * Add value to the measurement values. If queue size is greater than
+		 * maxQueSize, delete the first entry.
 		 *
 		 * @param in_val        Value which will be added.
-		 * @param maxQueSize    Maximal que size.
+		 * @param maxQueSize    Maximal queue size.
 		 */
 		void addValue (double in_val, size_t maxQueSize)
 		{
 			while (valueList.size () >= maxQueSize)
 				valueList.pop_front ();
 			addValue (in_val);
-			changed ();
 		}
 		std::deque <double>::iterator valueBegin () { return valueList.begin (); }
 		std::deque <double>::iterator valueEnd () { return valueList.end (); }
