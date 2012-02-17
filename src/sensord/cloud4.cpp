@@ -125,6 +125,11 @@ int Cloud4::readSensor (bool update)
 			logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '" << buf << "', return " << x << sendLog;
 			return -1;
 		}
+		if (baseTemp->getValueInteger () == 1)
+		{
+			logStream (MESSAGE_ERROR) << "version 4.0 doesn't have ambient sensor, switched back to TEMP_IN" << sendLog;
+			baseTemp->setValueInteger (0);
+		}
 	}
 	else if (strncmp (buf_start, "$M4.1", 5) == 0)
 	{
@@ -155,14 +160,15 @@ int Cloud4::readSensor (bool update)
 	if (!isnan (tempamb))
 		tempamb /= 100.0;
 
-	if (tempAmb && baseTemp->getValueInteger () == 1 && !isnan (tempamb))
+	if (baseTemp->getValueInteger () == 1)
 	{
-		tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
+		if (!isnan (tempamb) && !isnan (temp1))
+			tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb - temp1, 20);
 	}
 	else
 	{
-		baseTemp->setValueInteger (0);
-		tempDiff->addValue (tempInCoeff->getValueDouble () * tempamb - temp1, 20);
+		if (!isnan (temp0) && !isnan (temp1))
+			tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
 	}
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
