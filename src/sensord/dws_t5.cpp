@@ -31,16 +31,8 @@ namespace rts2sensord
 class DWST5:public Sensor
 {
 	public:
-		DWST5(int argc, char **argv):Sensor (argc, argv)
-		{
-			createValue (temperature, "TEMPERATURE", "[C] sensor temperature", true);
-			createValue (humidity, "HUMIDITY", "[%] sensor relative humidity", true);
-
-			serial = NULL;
-			serialConn = NULL;
-		
-			addOption ('f', NULL, 1, "serial port of the device");	
-		}
+		DWST5 (int argc, char **argv);
+		virtual ~DWST5 ();
 
 	protected:
 		virtual int processOption (int opt);
@@ -58,6 +50,22 @@ class DWST5:public Sensor
 }
 
 using namespace rts2sensord;
+
+DWST5::DWST5(int argc, char **argv):Sensor (argc, argv)
+{
+	createValue (temperature, "TEMPERATURE", "[C] sensor temperature", true);
+	createValue (humidity, "HUMIDITY", "[%] sensor relative humidity", true);
+
+	serial = NULL;
+	serialConn = NULL;
+
+	addOption ('f', NULL, 1, "serial port of the device");	
+}
+
+DWST5::~DWST5 ()
+{
+	delete serialConn;
+}
 
 int DWST5::processOption (int opt)
 {
