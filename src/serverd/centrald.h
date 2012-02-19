@@ -213,6 +213,8 @@ class Rts2Centrald:public Daemon
 
 		virtual void connectionRemoved (rts2core::Connection * conn);
 
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+
 		virtual void stateChanged (int new_state, int old_state, const char *description, rts2core::Connection *commandedConn);
 
 		virtual void signaledHUP ();

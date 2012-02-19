@@ -483,6 +483,13 @@ int Rts2Centrald::reloadConfig ()
 	nightHorizon->setValueDouble (t_h);
 
 	config->getDouble ("observatory", "day_horizon", t_h, 0);
+	if (t_h < nightHorizon->getValueDouble ())
+	{
+		t_h = 0;
+		if (t_h < nightHorizon->getValueDouble ())
+			t_h = nightHorizon->getValueDouble () + 1;
+		logStream (MESSAGE_ERROR) << "day_horizon must be higher then night_horizon, setting it to " << t_h << sendLog;
+	}
 	dayHorizon->setValueDouble (t_h);
 
 	eveningTime->setValueInteger (config->getIntegerDefault ("observatory", "evening_time", 7200));
@@ -595,6 +602,21 @@ void Rts2Centrald::connectionRemoved (rts2core::Connection * conn)
 	{
 		(*iter)->updateStatusWait (NULL);
 	}
+}
+
+int Rts2Centrald::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	if (old_value == dayHorizon)
+	{
+		if (new_value->getValueDouble () < nightHorizon->getValueDouble ())
+			return -2;
+	}
+	else if (old_value == nightHorizon)
+	{
+		if (new_value->getValueDouble () > dayHorizon->getValueDouble ())
+			return -2;
+	}
+	return rts2core::Daemon::setValue (old_value, new_value);
 }
 
 void Rts2Centrald::stateChanged (int new_state, int old_state, const char *description, rts2core::Connection *commandedConn)
