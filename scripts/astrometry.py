@@ -33,27 +33,67 @@ import time
 import pyfits
 import tempfile
 import pynova
+import numpy
+import math
 
 import dms
 
+class WCSAxisProjection:
+	def __init__(self,fkey):
+		self.wcs_axis = None
+		self.projection_type = None
+		self.sip = False
+
+		for x in fkey.split('-'):
+			if x == 'RA' or x == 'DEC':
+				self.wcs_axis = x
+			elif x == 'TAN':
+				self.projection_type = x
+			elif x == 'SIP':
+				self.sip = True
+		if self.wcs_axis is None or self.projection_type is None:
+			raise Exception('uknown projection type {0}'.format(fkey))
+
 def xy2wcs(x,y,fitsh):
 	"""Transform XY pixel coordinates to WCS coordinates"""
-	pass
+	wcs1 = WCSAxisProjection(fitsh['CTYPE1'])
+	wcs2 = WCSAxisProjection(fitsh['CTYPE2'])
+	# retrieve CD matrix
+	cd = numpy.array([[fitsh['CD1_1'],fitsh['CD1_2']],[fitsh['CD2_1'],fitsh['CD2_2']]])
+	# subtract reference pixel
+	xy = numpy.array([x,y]) - numpy.array([fitsh['CRPIX1'],fitsh['CRPIX2']])
+	xy = numpy.dot(cd,xy)
 
-class imgAstrometryScript:
+	if wcs1.wcs_axis == 'RA' and wcs2.wcs_axis == 'DEC':
+		if wcs1.projection_type == 'TAN':
+			if fitsh['CRVAL2'] < 90:
+				xy[0] /= math.cos(math.radians(fitsh['CRVAL2']))
+				pass
+		return [xy[0] + fitsh['CRVAL1'],xy[1] + fitsh['CRVAL2']]
+
+	if wcs1.wcs_axis == 'DEC' and wcs2.wcs_axis == 'RA':
+		if wcs2.projection_type == 'TAN':
+			if fitsh['CRVAL1'] < 90:
+				xy[1] /= math.cos(math.radians(fitsh['CRVAL1']))
+				pass
+		return [xy[1] + fitsh['CRVAL2'],xy[0] + fitsh['CRVAL1']]
+	raise Exception('unsuported axis combination {0} {1]'.format(wcs1.wcs_axis,wcs2.wcs_axis))
+
+class AstrometryScript:
 	"""calibrate a fits image with astrometry.net."""
 	def __init__(self,fits_file,odir=None,scale_relative_error=0.05,astrometry_bin='/usr/local/astrometry/bin'):
 		self.scale_relative_error=scale_relative_error
 		self.astrometry_bin=astrometry_bin
 
+		self.fits_file = fits_file
 		self.odir = odir
 		if self.odir is None:
 			self.odir=tempfile.mkdtemp()
 
 		self.infpath=self.odir + '/input.fits'
-		shutil.copy(fits_file, self.infpath)
+		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self,scale=None,ra=None,dec=None):
+	def run(self,scale=None,ra=None,dec=None,replace=False):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -91,6 +131,8 @@ class imgAstrometryScript:
 			match=radecline.match(a)
 			if match:
 				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
+		if replace:
+			shutil.move(self.odir+'/input.new',self.fits_file)
 	       
 		# cleanup
 		shutil.rmtree(self.odir)
@@ -102,22 +144,25 @@ if __name__ == '__main__':
 		print 'Usage: %s <fits filename>' % (sys.argv[0])
 		sys.exit(1)
 
-	a = imgAstrometryScript(sys.argv[1])
+	a = AstrometryScript(sys.argv[1])
 
 	ra = dec = None
 
 	ff=pyfits.fitsopen(sys.argv[1],'readonly')
+	fh=ff[0].header
 	ra=ff[0].header['TELRA']
 	dec=ff[0].header['TELDEC']
 	object=ff[0].header['OBJECT']
 	num=ff[0].header['IMGID']
 	ff.close()
 
-    	ret=a.run(scale=0.6,ra=ra,dec=dec)
+    	ret=a.run(scale=0.6,ra=ra,dec=dec,replace=True)
 
 	if ret:
 		raorig=ra
 		decorig=dec
+
+		print xy2wcs(fh['NAXIS1']/2.0,fh['NAXIS2']/2.0,fh)
 
 		raastr=float(ret[0])*15.0
 		decastr=float(ret[1])
