@@ -160,9 +160,7 @@ AppOpenTPLError::getAxisStatus (const char *ax_name)
 		power, power_state, version);
 }
 
-
-int
-AppOpenTPLError::doReferenced ()
+int AppOpenTPLError::doReferenced ()
 {
 	int status = 0;
 	int track;
@@ -190,8 +188,27 @@ AppOpenTPLError::doReferenced ()
 	status = opentplConn->get ("POINTING.TARGET.DEC", fpar, &status);
 	std::cout << "POINTING.TARGET.DEC " << fpar << std::endl;
 
-	std::cout << getAxisStatus ("ZD");
-	std::cout << getAxisStatus ("AZ");
+	std::string config_mount;
+	status = opentplConn->get ("CONFIG.MOUNT", config_mount, &status);
+	if (status != TPL_OK)
+		return -1;
+
+	if (config_mount == "RA-DEC")
+	{
+		std::cout << getAxisStatus ("HA");
+		std::cout << getAxisStatus ("DEC");
+	}
+	else if (config_mount == "AZ-ZD")
+	{
+		std::cout << getAxisStatus ("AZ");
+		std::cout << getAxisStatus ("ZD");
+	}
+	else
+	{
+		std::cerr << "unkown mount type " << config_mount << std::endl;
+		return -1;
+	}
+
 	std::cout << getAxisStatus ("FOCUS");
 	std::cout << getAxisStatus ("MIRROR");
 	std::cout << getAxisStatus ("DEROTATOR[3]");
@@ -335,51 +352,93 @@ AppOpenTPLError::doProcessing ()
 			return doReferenced ();
 	}
 
-	// dump model
-	double aoff, zoff, ae, an, npae, ca, flex;
 	int recordcount;
 	int track;
 	std::string dumpfile;
+	std::string config_mount;
+
+	status = opentplConn->get ("CONFIG.MOUNT", config_mount, &status);
+	if (status != TPL_OK)
+		return -1;
 
 	status = opentplConn->get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = opentplConn->get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.DUMPFILE " << dumpfile << std::endl;
-	std::cout.precision (20);
-	std::cout << "AOFF = " << aoff << std::endl;
-	std::cout << "ZOFF = " << zoff << std::endl;
-	std::cout << "AE = " << ae << std::endl;
-	std::cout << "AN = " << an << std::endl;
-	std::cout << "NPAE = " << npae << std::endl;
-	std::cout << "CA = " << ca << std::endl;
-	std::cout << "FLEX = " << flex << std::endl;
-	// dump offsets
-	status = opentplConn->get ("AZ.OFFSET", aoff, &status);
-	status = opentplConn->get ("ZD.OFFSET", zoff, &status);
 
-	std::cout << "AZ.OFFSET " << aoff << std::endl;
-	std::cout << "ZD.OFFSET " << zoff << std::endl;
+	// dump model
+	if (config_mount == "RA-DEC")
+	{
+		double doff, hoff, me, ma, nphd, ch, flex;
 
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.DOFF", doff, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.HOFF", hoff, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.ME", me, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.MA", ma, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.NPHD", nphd, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.CH", ch, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+	
+		std::cout.precision (20);
+		std::cout << "DOFF = " << doff << std::endl;
+		std::cout << "HOFF = " << hoff << std::endl;
+		std::cout << "ME = " << me << std::endl;
+		std::cout << "MA = " << ma << std::endl;
+		std::cout << "NPHD = " << nphd << std::endl;
+		std::cout << "CH = " << ch << std::endl;
+		std::cout << "FLEX = " << flex << std::endl;
+		// dump offsets
+		status = opentplConn->get ("HA.OFFSET", hoff, &status);
+		status = opentplConn->get ("DEC.OFFSET", doff, &status);
+
+		std::cout << "HA.OFFSET " << hoff << std::endl;
+		std::cout << "DEC.OFFSET " << doff << std::endl;
+
+	}
+	else if (config_mount == "AZ-ZD")
+	{
+		double aoff, zoff, ae, an, npae, ca, flex;
+
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.AN", an, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+		status = opentplConn->get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+	
+		std::cout.precision (20);
+		std::cout << "AOFF = " << aoff << std::endl;
+		std::cout << "ZOFF = " << zoff << std::endl;
+		std::cout << "AE = " << ae << std::endl;
+		std::cout << "AN = " << an << std::endl;
+		std::cout << "NPAE = " << npae << std::endl;
+		std::cout << "CA = " << ca << std::endl;
+		std::cout << "FLEX = " << flex << std::endl;
+		// dump offsets
+		status = opentplConn->get ("AZ.OFFSET", aoff, &status);
+		status = opentplConn->get ("ZD.OFFSET", zoff, &status);
+
+		std::cout << "AZ.OFFSET " << aoff << std::endl;
+		std::cout << "ZD.OFFSET " << zoff << std::endl;
+	}
+	else
+	{
+		std::cerr << "unkown mount type " << config_mount << std::endl;
+		return -1;
+	}
+	
 	status = opentplConn->get ("POINTING.TRACK ", track, &status);
 	std::cout << "POINTING.TRACK " << track << std::endl;
+	
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
 
-	status =
-		opentplConn->get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
-
-	std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
-		endl;
+	std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::endl;
 
 	status = opentplConn->get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.CALCULATE " << fparam << std::endl;
 
-	return 0;
+	return status == TPL_OK ? 0 : -1;
 }
 
 
