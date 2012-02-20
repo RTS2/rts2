@@ -144,9 +144,15 @@ void Scriptor::deviceReady (rts2core::Connection * conn)
 {
 	// add variable for this device..
 	rts2core::ValueString *stringVal;
-	createValue (stringVal, (std::string (DEV_SCRIPT_PREFIX) + std::string (conn->getName())).c_str (), std::string ("Script value for ") + std::string (conn->getName ()), true);
-	updateMetaInformations (stringVal);
-	scriptVar[std::string (conn->getName ())] = stringVal;
+	try
+	{
+		createValue (stringVal, (std::string (DEV_SCRIPT_PREFIX) + std::string (conn->getName())).c_str (), std::string ("Script value for ") + std::string (conn->getName ()), true);
+		updateMetaInformations (stringVal);
+		scriptVar[std::string (conn->getName ())] = stringVal;
+	}
+	catch (rts2core::Error (&er))
+	{
+	}
 
 	conn->postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
 //	conn->postEvent (new rts2core::Event (EVENT_OBSERVE));
