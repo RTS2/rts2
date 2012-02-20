@@ -65,18 +65,18 @@ def xy2wcs(x,y,fitsh):
 	xy = numpy.dot(cd,xy)
 
 	if wcs1.wcs_axis == 'RA' and wcs2.wcs_axis == 'DEC':
+		dec = xy[1] + fitsh['CRVAL2']
 		if wcs1.projection_type == 'TAN':
 			if fitsh['CRVAL2'] < 90:
-				xy[0] /= math.cos(math.radians(fitsh['CRVAL2']))
-				pass
-		return [xy[0] + fitsh['CRVAL1'],xy[1] + fitsh['CRVAL2']]
+				xy[0] /= math.cos(math.radians(dec))
+		return [xy[0] + fitsh['CRVAL1'],dec]
 
 	if wcs1.wcs_axis == 'DEC' and wcs2.wcs_axis == 'RA':
+		dec = xy[0] + fitsh['CRVAL1']
 		if wcs2.projection_type == 'TAN':
-			if fitsh['CRVAL1'] < 90:
-				xy[1] /= math.cos(math.radians(fitsh['CRVAL1']))
-				pass
-		return [xy[1] + fitsh['CRVAL2'],xy[0] + fitsh['CRVAL1']]
+			if dec != 90:
+				xy[1] /= math.cos(math.radians(dec))
+		return [xy[1] + fitsh['CRVAL2'],dec]
 	raise Exception('unsuported axis combination {0} {1]'.format(wcs1.wcs_axis,wcs2.wcs_axis))
 
 class AstrometryScript:
