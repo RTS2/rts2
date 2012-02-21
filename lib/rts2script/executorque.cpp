@@ -426,7 +426,10 @@ bool TargetQueue::isAboveHorizon (QueuedTarget &qt, double &JD)
 	if (!isnan (qt.t_start))
 	{
 		time_t t = qt.t_start;
-		JD = ln_get_julian_from_timet (&t);
+		double njd = ln_get_julian_from_timet (&t);
+		// only change time to calculate conditions when start time is in future
+		if (njd > JD)
+			JD = njd;
 	}
 	qt.target->getAltAz (&hrz, JD, *observer);
 	rts2db::ConstraintsList violated;

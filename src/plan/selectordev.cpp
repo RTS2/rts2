@@ -420,9 +420,10 @@ int SelectorDev::selectNext ()
 					sendValueAll (queueSelectUntil);
 					return id;
 				}
-				if (!isnan (next_time))
+				double n = getNow ();
+				if (!isnan (next_time) && next_time > n)
 				{
-					next_length = next_time - getNow ();
+					next_length = next_time - n;
 				}
 				queueSelectUntil->setValueDouble (next_time);
 			}
