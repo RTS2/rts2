@@ -92,8 +92,11 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 	createValue (avgWindSpeed, "AVGWIND", "average windspeed", true);
 	createValue (avgWindSpeedStat, "AVGWINDS", "average windspeed statistic", false);
 	createValue (peekWindSpeed, "PEEKWIND", "peek windspeed", true);
+	createValue (windDir, "WINDDIR", "wind direction", true, RTS2_DT_DEGREES);
 
 	createValue (rainRate, "rain_rate", "rain rate from bucket sensor", false);
+
+	createValue (pressure, "BAR_PRESS", "barometric pressure", true);
         
 	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false, RTS2_VALUE_WRITABLE);
 	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false, RTS2_VALUE_WRITABLE);

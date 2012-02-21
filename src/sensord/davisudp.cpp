@@ -167,6 +167,8 @@ int DavisUdp::receive (fd_set * set)
 	float rtCloudBottom;
 	float rtOutsideHum;
 	float rtOutsideTemp;
+	float rtBaroCurr;
+	float rtWindDir;
 	double cloud = rts2_nan ("f");
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
@@ -205,12 +207,14 @@ int DavisUdp::receive (fd_set * set)
 		weather->getValue ("rtRainRate", rtRainRate, ret);
 		weather->getValue ("rtWindSpeed", peekwindspeed, ret);
 		weather->getValue ("rtWindAvgSpeed", avgWindSpeed, ret);
+		weather->getValue ("rtWindDir", rtWindDir, ret);
 		weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
 		weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
+		weather->getValue ("rtBaroCurr", rtBaroCurr, ret);
 		if (ret)
 		{
 			rain = 1;
-			setWeatherTimeout (conn_timeout, "cannot parse rain, wind, humidity or temperature data - check the logs");
+			setWeatherTimeout (conn_timeout, "cannot parse rain, wind, humidity, temperature or barometric pressure data - check the logs");
 			return data_size;
 		}
 		// get information about cloud cover
@@ -277,6 +281,8 @@ int DavisUdp::receive (fd_set * set)
 		master->setHumidity (rtOutsideHum);
 		master->setAvgWindSpeed (avgWindSpeed);
 		master->setPeekWindSpeed (peekwindspeed);
+		master->setWindDir (rtWindDir);
+		master->setBaroCurr (rtBaroCurr);
 		master->updateInfoTime ();
 		if (!isnan (cloud))
 		{

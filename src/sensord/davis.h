@@ -123,6 +123,9 @@ class Davis: public SensorWeather
 			}
 		}
 
+		void setWindDir (float _windDir) { windDir->setValueFloat (_windDir); }
+		void setBaroCurr (float _baroCurr) { pressure->setValueFloat (_baroCurr); }
+
 		void setRainRate (float _rainRate)
 		{
 			rainRate->setValueFloat (_rainRate);
@@ -166,10 +169,12 @@ class Davis: public SensorWeather
 		rts2core::ValueFloat *temperature;
 		rts2core::ValueFloat *humidity;
 		rts2core::ValueBool *rain;
+		rts2core::ValueFloat *pressure;
 
 		rts2core::ValueFloat *avgWindSpeed;
 		rts2core::ValueDoubleStat *avgWindSpeedStat;
 		rts2core::ValueFloat *peekWindSpeed;
+		rts2core::ValueFloat *windDir;
 
 		rts2core::ValueFloat *rainRate;
 
