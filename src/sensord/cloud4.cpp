@@ -407,6 +407,10 @@ int Cloud4::info ()
 			setWeatherTimeout (300, "do not rised above TRIGGOOD");
 			valueWarning (tempDiff);
 		}
+		else
+		{
+			valueGood (tempDiff);
+		}
 	}
 	else
 	{
