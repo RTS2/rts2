@@ -61,7 +61,7 @@ char htonum (char n)
 	throw std::exception ();
 }
 
-void XmlRpc::urldecode (std::string &url)
+void XmlRpc::urldecode (std::string &url, bool path)
 {
 	std::string ret;
 	for (std::string::iterator iter = url.begin (); iter != url.end (); iter++)
@@ -83,7 +83,7 @@ void XmlRpc::urldecode (std::string &url)
 			{
 			}
 		}
-		else if (*iter == '+')
+		else if (*iter == '+' && !path)
 		{
 			ret += ' ';
 		}

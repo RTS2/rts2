@@ -30,5 +30,5 @@ namespace XmlRpc
 	/**
 	 * Decode string from URL percent encoding.
 	 */
-	void urldecode (std::string &url);
+	void urldecode (std::string &url, bool path = false);
 }

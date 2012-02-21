@@ -361,7 +361,7 @@ bool XmlRpcServerConnection::writeResponse()
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::writeResponse: wrote %d of %d bytes.", _bytesWritten, _response.length());
 
 	// Prepare to read the next request
-	if (_bytesWritten == int(_response.length()))
+	if (_bytesWritten == _response.length())
 		prepareForNext ();
 
 	return _keepAlive;			 // Continue monitoring this source if true
@@ -456,9 +456,9 @@ void XmlRpcServerConnection::executeGet()
 				params.parse (_request);
 			}
 
-			request->setConnection (this);
+			urldecode (path, true);
 
-			urldecode (path);
+			request->setConnection (this);
 
 			// check for ..
 			if (path.find ("..") != std::string::npos)
