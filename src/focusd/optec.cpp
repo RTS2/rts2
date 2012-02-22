@@ -33,6 +33,19 @@ namespace rts2focusd
  */
 class Optec:public Focusd
 {
+	public:
+		Optec (int argc, char **argv);
+		~Optec (void);
+		virtual int info ();
+		virtual int setTo (double num);
+		virtual double tcOffset () {return 0.;};
+		virtual int isFocusing ();
+
+	protected:
+		virtual bool isAtStartPosition ();
+		virtual int processOption (int in_opt);
+		virtual int initHardware ();
+		virtual int initValues ();
 	private:
 		const char *device_file;
 		rts2core::ConnSerial *optecConn;
@@ -43,18 +56,7 @@ class Optec:public Focusd
 		// high-level I/O functions
 		int getPos ();
 		int getTemp ();
-	protected:
-		virtual bool isAtStartPosition ();
-	public:
-		Optec (int argc, char **argv);
-		~Optec (void);
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual int initValues ();
-		virtual int info ();
-		virtual int setTo (double num);
-		virtual double tcOffset () {return 0.;};
-		virtual int isFocusing ();
+
 };
 
 };
@@ -71,15 +73,12 @@ Optec::Optec (int argc, char **argv):Focusd (argc, argv)
 		"if focuser have damaged temp sensor");
 }
 
-
 Optec::~Optec ()
 {
 	delete optecConn;
 }
 
-
-int
-Optec::processOption (int in_opt)
+int Optec::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -101,16 +100,10 @@ Optec::processOption (int in_opt)
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int
-Optec::init ()
+int Optec::initHardware ()
 {
 	char rbuf[10];
 	int ret;
-
-	ret = Focusd::init ();
-
-	if (ret)
-		return ret;
 
 	if (!damagedTempSens)
 	{
@@ -130,13 +123,12 @@ Optec::init ()
 		return -1;
 	if (rbuf[0] != '!')
 		return -1;
+	sleep (5);
 
 	return ret;
 }
 
-
-int
-Optec::getPos ()
+int Optec::getPos ()
 {
 	char rbuf[9];
 
@@ -152,12 +144,11 @@ Optec::getPos ()
 		#endif
 		position->setValueInteger (atoi ((rbuf + 2)));
 	}
+	sleep (2);
 	return 0;
 }
 
-
-int
-Optec::getTemp ()
+int Optec::getTemp ()
 {
 	char rbuf[10];
 
@@ -173,9 +164,9 @@ Optec::getTemp ()
 		rbuf[7] = '\0';
 		temperature->setValueFloat (atof ((rbuf + 2)));
 	}
+	sleep (1);
 	return 0;
 }
-
 
 bool Optec::isAtStartPosition ()
 {
@@ -186,17 +177,13 @@ bool Optec::isAtStartPosition ()
 	return (getPosition () == 3500);
 }
 
-
-int
-Optec::initValues ()
+int Optec::initValues ()
 {
 	focType = std::string ("OPTEC_TCF");
 	return Focusd::initValues ();
 }
 
-
-int
-Optec::info ()
+int Optec::info ()
 {
 	int ret;
 	ret = getPos ();
@@ -251,18 +238,14 @@ int Optec::setTo (double num)
 	return 0;
 }
 
-
-int
-Optec::isFocusing ()
+int Optec::isFocusing ()
 {
 	// stepout command waits till focusing end
 	return -2;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Optec device = Optec (argc, argv);
+	Optec device (argc, argv);
 	return device.run ();
 }
