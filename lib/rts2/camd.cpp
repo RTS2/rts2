@@ -1061,7 +1061,7 @@ void Camera::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			if (event->getArg () == this && filterMoving && filterMoving->getValueInteger () > 0)
+			if (filterMoving && filterMoving->getValueInteger () > 0)
 			{
 				filterMoving->dec ();
 				if (filterMoving->getValueInteger () == 0)
