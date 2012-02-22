@@ -123,7 +123,6 @@ int Optec::initHardware ()
 		return -1;
 	if (rbuf[0] != '!')
 		return -1;
-	sleep (5);
 
 	return ret;
 }
@@ -144,7 +143,6 @@ int Optec::getPos ()
 		#endif
 		position->setValueInteger (atoi ((rbuf + 2)));
 	}
-	sleep (2);
 	return 0;
 }
 
@@ -164,7 +162,6 @@ int Optec::getTemp ()
 		rbuf[7] = '\0';
 		temperature->setValueFloat (atof ((rbuf + 2)));
 	}
-	sleep (1);
 	return 0;
 }
 
