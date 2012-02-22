@@ -94,7 +94,8 @@ int DWST5::info ()
 {
 	char buf[8] = { 0x01, 0x04, 0x00, 0x00, 0x00, 0x02, 0x71, 0xCB };
 	char repl[9];
-	serialConn->writeRead (buf, 8, repl, 9);
+	if (serialConn->writeRead (buf, 8, repl, 9) != 9)
+		return -1;
 
 	temperature->setValueFloat ((float) ((((int16_t) repl[3]) << 8) | (0x00ff & repl[4])) / 10.0);
 
