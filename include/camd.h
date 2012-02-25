@@ -1,6 +1,6 @@
 /* 
- * Basic camera daemon
- * Copyright (C) 2001-2010 Petr Kubanek <petr@kubanek.net>
+ * Basic camera daemon.
+ * Copyright (C) 2001-2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -95,6 +95,30 @@ class DataType: public rts2core::Rts2SelData
 		{
 			type = in_type;
 		}
+};
+
+class Camera;
+
+/**
+ * Contains values for camera-filter client. This class is created
+ * in camera init function and destroyed when destructor is called.
+ *
+ * Please note that those values shall not be directly stored in
+ * ClientFilterCamera, as this is created and destroyed when filter
+ * wheel appears and disappers.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class FilterVal
+{
+	public:
+		FilterVal (Camera *master, const char *n, char fil);
+		// values are registered in class, hence autodeleted when class holding them is deleted - so there isn't class destructor
+		rts2core::ValueSelection *filter;
+		rts2core::DoubleArray *offsets;
+		rts2core::ValueBool *moving;
+
+		const char *name;
 };
 
 /**
@@ -305,8 +329,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::DoubleArray *camFilterOffsets;
 
 		// for multiple filter wheels
-		std::vector <rts2core::ValueSelection *> camFilterVals;
-		std::vector <rts2core::DoubleArray *> camFiltersOffsets;
+		std::list <FilterVal> camFilterVals;
 
 		/**
 		 * Return exected exposure end.
@@ -842,7 +865,7 @@ class Camera:public rts2core::ScriptDevice
 		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 		virtual int getFilterNum (const char *fn = NULL);
 
-		void offsetForFilter (int new_filter, int fn = -1);
+		void offsetForFilter (int new_filter, std::list <FilterVal>::iterator fvi);
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
@@ -1034,7 +1057,6 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueTime *exposureEnd;
 
 		// filter wheel is moving
-		rts2core::ValueInteger *filterMoving;
 		rts2core::ValueBool *focuserMoving;
 
 		// set chipUsedSize size
@@ -1067,6 +1089,8 @@ class Camera:public rts2core::ScriptDevice
 		long calculateDataSize;
 
 		void setFilterOffsets (char *opt);
+
+		bool filterMoving ();
 };
 
 }

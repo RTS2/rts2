@@ -1,6 +1,6 @@
 /* 
  * Client for filter wheel attached to the camera.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008,2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,32 +18,30 @@
  */
 
 #include "cliwheel.h"
+#include "camd.h"
 #include "command.h"
 
 using namespace rts2camd;
 
-ClientFilterCamera::ClientFilterCamera (rts2core::Connection * conn):rts2core::DevClientFilter (conn)
+ClientFilterCamera::ClientFilterCamera (rts2core::Connection * conn, FilterVal *fv):rts2core::DevClientFilter (conn)
 {
-	activeConn = NULL;
+	filterVal = fv;
 }
 
 ClientFilterCamera::~ClientFilterCamera (void)
 {
-	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, activeConn));
-	activeConn = NULL;
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, filterVal));
 }
 
 void ClientFilterCamera::filterMoveEnd ()
 {
-	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, activeConn));
-	activeConn = NULL;
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, filterVal));
 	rts2core::DevClientFilter::filterMoveEnd ();
 }
 
 void ClientFilterCamera::filterMoveFailed (int status)
 {
-	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, activeConn));
-	activeConn = NULL;
+	getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, filterVal));
 	rts2core::DevClientFilter::filterMoveFailed (status);
 }
 
@@ -58,7 +56,8 @@ void ClientFilterCamera::postEvent (rts2core::Event * event)
 			{
 				connection->queCommand (new rts2core::CommandFilter (this, fs->filter));
 				fs->filter = -1;
-				activeConn = fs->arg;
+				filterVal->moving->setValueBool (true);
+				((rts2core::Daemon *) getMaster ())->sendValueAll (filterVal->moving);
 			}
 			break;
 		case EVENT_FILTER_GET:
@@ -74,8 +73,7 @@ void  ClientFilterCamera::valueChanged (rts2core::Value * value)
 {
 	if (value->getName () == "filter")
 	{
-		getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, activeConn));
-		activeConn = NULL;
+		getMaster ()->postEvent (new rts2core::Event (EVENT_FILTER_MOVE_END, filterVal));
 	}
 	rts2core::DevClientFilter::valueChanged (value);
 }

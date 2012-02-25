@@ -1,6 +1,6 @@
 /* 
  * Client for filter wheel attached to the camera.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008,2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +29,8 @@
 namespace rts2camd
 {
 
+class FilterVal;
+
 struct filterStart
 {
 	const char *filterName;
@@ -39,7 +41,7 @@ struct filterStart
 class ClientFilterCamera:public rts2core::DevClientFilter
 {
 	public:
-		ClientFilterCamera (rts2core::Connection * conn);
+		ClientFilterCamera (rts2core::Connection * conn, FilterVal *fv);
 		virtual ~ ClientFilterCamera (void);
 		virtual void filterMoveFailed (int status);
 		virtual void postEvent (rts2core::Event * event);
@@ -47,7 +49,7 @@ class ClientFilterCamera:public rts2core::DevClientFilter
 	protected:
 		virtual void filterMoveEnd ();
 	private:
-		void *activeConn;
+		FilterVal *filterVal;
 };
 
 }

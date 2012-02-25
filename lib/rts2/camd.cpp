@@ -44,6 +44,15 @@
 
 using namespace rts2camd;
 
+FilterVal::FilterVal (Camera *master, const char *n, char fil)
+{
+	master->createValue (filter, (std::string ("FILT") + fil).c_str (), "used filter number", true, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+	master->createValue (offsets, (std::string ("filter_offsets_") + fil).c_str (), "filter offsets", false, RTS2_VALUE_WRITABLE);
+	master->createValue (moving, (std::string ("filter_moving_") + fil).c_str (), "if filter wheel is moving", false);
+
+	name = n;
+}
+
 int Camera::setPlate (const char *arg)
 {
 	double x, y;
@@ -410,9 +419,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	exposureConn = NULL;
 
-	createValue (filterMoving, "fw_moving", "number of moving filter wheel(s)", false);
-	filterMoving->setValueInteger (0);
-
 	createValue (focuserMoving, "foc_moving", "if focuser is moving", false);
 	focuserMoving->setValueBool (false);
 
@@ -461,9 +467,15 @@ rts2core::DevClient *Camera::createOtherType (rts2core::Connection * conn, int o
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_FW:
-			return new ClientFilterCamera (conn);
+			for (std::list <FilterVal>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++)
+			{
+				if (!strcmp (iter->name, conn->getName ()))
+					return new ClientFilterCamera (conn, &(*iter));
+			}
+			break;
 		case DEVICE_TYPE_FOCUS:
-			return new ClientFocusCamera (conn);
+			if (!strcmp (focuserDevice, conn->getName ()))
+				return new ClientFocusCamera (conn);
 	}
 	return rts2core::ScriptDevice::createOtherType (conn, other_device_type);
 }
@@ -512,7 +524,12 @@ int Camera::killAll (bool callScriptEnds)
 {
 	waitingForNotBop->setValueBool (false);
 	waitingForEmptyQue->setValueBool (false);
-	filterMoving->setValueInteger (0);
+
+	for (std::list <FilterVal>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++)
+	{
+		iter->moving->setValueBool (false);
+		sendValueAll (iter->moving);
+	}
 
 	if (isExposing ())
 		stopExposure ();
@@ -522,7 +539,6 @@ int Camera::killAll (bool callScriptEnds)
 
 	sendValueAll (waitingForNotBop);
 	sendValueAll (waitingForEmptyQue);
-	sendValueAll (filterMoving);
 
 	return rts2core::ScriptDevice::killAll (callScriptEnds);
 }
@@ -565,11 +581,11 @@ int Camera::info ()
         if (camFilterVal)
         	camFilterVal->setValueInteger (getFilterNum ());
 
-	std::vector <rts2core::ValueSelection *>::iterator viter;
+	std::list <FilterVal>::iterator viter;
 	std::vector <const char *>::iterator niter;
 	for (viter = camFilterVals.begin (), niter = wheelDevices.begin (); viter != camFilterVals.end (); viter++, niter++)
 	{
-		(*viter)->setValueInteger (getFilterNum (*niter));
+		viter->filter->setValueInteger (getFilterNum (*niter));
 	}
 	camFocVal->setValueInteger (getFocPos ());
 	return rts2core::ScriptDevice::info ();
@@ -807,13 +823,7 @@ int Camera::initValues ()
 		fil = 'A';
 		for (iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, fil++)
 		{
-			rts2core::ValueSelection *filvals;
-			rts2core::DoubleArray *offsetsval;
-			createValue (filvals, (std::string ("FILT") + fil).c_str (), "used filter number", (wheelDevices.size () == 1) ? false : true, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
-			createValue (offsetsval, (std::string ("filter_offsets_") + fil).c_str (), "filter offsets", false, RTS2_VALUE_WRITABLE);
-
-			camFilterVals.push_back (filvals);
-			camFiltersOffsets.push_back (offsetsval);
+			camFilterVals.push_back (FilterVal (this, *iter, fil));
 		}
 	}
 
@@ -962,17 +972,17 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	{
 		int ret = setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
 		if (ret == 0)
-			offsetForFilter (new_value->getValueInteger ());
+			offsetForFilter (new_value->getValueInteger (), camFilterVals.end ());
 		return ret;
 	}
 	int i = 0;
-	for (std::vector <rts2core::ValueSelection *>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++, i++)
+	for (std::list <FilterVal>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++, i++)
 	{
-		if (*iter == old_value)
+		if (iter->filter == old_value)
 		{
 			int ret = setFilterNum (new_value->getValueInteger (), wheelDevices[i]) == 0 ? 0 : -2;
 			if (ret == 0)
-				offsetForFilter (new_value->getValueInteger (), i);
+				offsetForFilter (new_value->getValueInteger (), iter);
 			return ret;
 		}
 	}
@@ -1031,8 +1041,9 @@ void Camera::deviceReady (rts2core::Connection * conn)
 	if (wheelDevices.size () > 0 && conn->getOtherDevClient ())
 	{
 		// find filter wheel for which device connected..
-		int i = 0;
-		for (std::vector <const char *>::iterator iter = wheelDevices.begin (); iter != wheelDevices.end (); iter++, i++)
+		std::list <FilterVal>::iterator fiter;
+		std::vector <const char *>::iterator iter;
+		for (fiter = camFilterVals.begin (), iter = wheelDevices.begin (); fiter != camFilterVals.end () && iter != wheelDevices.end (); fiter++, iter++)
 		{
 			if (!strcmp (conn->getName (), *iter))
 			{
@@ -1041,9 +1052,9 @@ void Camera::deviceReady (rts2core::Connection * conn)
 				// it's filter and it's correct type
 				if (val != NULL && val->getValueType () == RTS2_VALUE_SELECTION)
 				{
-					camFilterVals[i]->duplicateSelVals ((rts2core::ValueSelection *) val);
+					fiter->filter->duplicateSelVals ((rts2core::ValueSelection *) val);
 					// sends filter metainformations to all connected devices
-					updateMetaInformations (camFilterVals[i]);
+					updateMetaInformations (fiter->filter);
 					if (iter == wheelDevices.begin ())
 					{
 						camFilterVal->duplicateSelVals ((rts2core::ValueSelection *) val);
@@ -1061,12 +1072,9 @@ void Camera::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			if (filterMoving && filterMoving->getValueInteger () > 0)
-			{
-				filterMoving->dec ();
-				if (filterMoving->getValueInteger () == 0)
-					checkQueuedExposures ();
-			}
+			((FilterVal *) (event->getArg ()))->moving->setValueBool (false);
+			if (!filterMoving ())
+				checkQueuedExposures ();
 			break;
 		case EVENT_FOCUSER_END_MOVE:
 			if (event->getArg () == this && focuserMoving && focuserMoving->getValueBool ())
@@ -1120,7 +1128,7 @@ int Camera::camStartExposure ()
 			|| (getMasterStateFull () & BOP_EXPOSURE)
 			|| (getDeviceBopState () & BOP_TRIG_EXPOSE)
 			|| (getMasterStateFull () & BOP_TRIG_EXPOSE)
-			|| (filterMoving && filterMoving->getValueInteger () > 0)
+			|| filterMoving ()
 			|| (focuserMoving && focuserMoving->getValueBool () == true)
 		))
 	{
@@ -1356,11 +1364,9 @@ int Camera::setFilterNum (int new_filter, const char *fn)
 		fs.filter = new_filter;
 		fs.arg = this;
 		postEvent (new rts2core::Event (EVENT_FILTER_START_MOVE, (void *) &fs));
-		// filter move will be performed
 		if (fs.filter == -1)
+		// filter move will be performed
 		{
-			filterMoving->inc ();
-			sendValueAll (filterMoving);
 			ret = 0;
 		}
 		else
@@ -1371,12 +1377,12 @@ int Camera::setFilterNum (int new_filter, const char *fn)
 	return ret;
 }
 
-void Camera::offsetForFilter (int new_filter, int fn)
+void Camera::offsetForFilter (int new_filter, std::list <FilterVal>::iterator fvi)
 {
 	if (!focuserDevice)
 		return;
 	struct focuserMove fm;
-	if (fn < 0)
+	if (fvi == camFilterVals.end ())
 	{
 		if ((size_t) new_filter >= camFilterOffsets->size ())
 			return;
@@ -1384,9 +1390,9 @@ void Camera::offsetForFilter (int new_filter, int fn)
 	}
 	else
 	{
-		if ((size_t) new_filter >= camFiltersOffsets[fn]->size ())
+		if ((size_t) new_filter >= fvi->offsets->size ())
 			return;
-		fm.value = (*(camFiltersOffsets[fn]))[new_filter];
+		fm.value = (*(fvi->offsets))[new_filter];
 	}
 	fm.focuserName = focuserDevice;
 	fm.conn = this;
@@ -1574,4 +1580,14 @@ void Camera::setFilterOffsets (char *opt)
 	}
 	if (s != 0)
 		camFilterOffsets->addValue (atof (s));
+}
+
+bool Camera::filterMoving ()
+{
+	for (std::list <FilterVal>::iterator iter = camFilterVals.begin (); iter != camFilterVals.end (); iter++)
+	{
+		if (iter->moving->getValueBool ())
+			return true;
+	}
+	return false;
 }
