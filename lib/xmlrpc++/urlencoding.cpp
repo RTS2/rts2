@@ -27,12 +27,12 @@
 
 char hex[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-void XmlRpc::urlencode (std::string &url)
+void XmlRpc::urlencode (std::string &url, bool path)
 {
 	std::string ret;
 	for (std::string::iterator iter = url.begin (); iter != url.end (); iter++)
 	{
-		if (isalnum (*iter) || *iter == '/')
+		if (isalnum (*iter) || *iter == '/' || (path && *iter == ' '))
 		{
 			ret += *iter;
 		}

@@ -25,7 +25,7 @@ namespace XmlRpc
 	/**
 	 * Encode string to URL percent encoding. Escape all unsafe characters to URL percent encoding.
 	 */
-	void urlencode (std::string &url);
+	void urlencode (std::string &url, bool path = false);
 
 	/**
 	 * Decode string from URL percent encoding.
