@@ -22,6 +22,8 @@
 
 #include "connection/serial.h"
 
+#define MAX_ROTA_PREC    0xFFFFFFFF
+
 /*!
  * NexStar teld for testing purposes.
  */
@@ -42,10 +44,7 @@ class NexStar:public Telescope
 		~NexStar ();
 
         	virtual int processOption (int in_opt);
-		virtual int startResync ()
-		{
-			return 0;
-		}
+		virtual int startResync ();
 
 		virtual int startMoveFixed (double tar_az, double tar_alt)
 		{
@@ -73,10 +72,9 @@ class NexStar:public Telescope
 
 		virtual int info ();
 
-		virtual int isMoving ()
-		{
-			return -2;
-		}
+		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
+
+		virtual int isMoving ();
 
 		virtual int isMovingFixed ()
 		{
@@ -102,6 +100,9 @@ class NexStar:public Telescope
 
 		// retrieve precise degrees
 		void getPreciseDeg (char command, double &d1, double &d2);
+
+		// set precise degrees
+		void setPreciseDeg (char command, double d1, double d2);
 
 		char vmajor, vminor;
 
@@ -137,6 +138,16 @@ int NexStar::processOption (int in_opt)
 		default:
 			return Telescope::processOption (in_opt);
 	}
+	return 0;
+}
+
+int NexStar::startResync ()
+{
+	struct ln_equ_posn pos;
+	getTarget (&pos);
+
+	setPreciseDeg ('r', pos.ra, pos.dec);
+
 	return 0;
 }
 
@@ -197,6 +208,20 @@ int NexStar::info ()
 	return Telescope::info ();
 }
 
+void NexStar::getTelAltAz (struct ln_hrz_posn *hrz)
+{
+	getPreciseDeg ('z', hrz->az, hrz->alt);
+}
+
+int NexStar::isMoving ()
+{
+	char buf[2];
+	int ret = serial->writeRead ("L", 1, buf, 2, '#');
+	if (ret < 0)
+		return -1;
+	return buf[0] == '0' ? -2 : 100;
+}
+
 void NexStar::getDeg (char command, double &d1, double &d2)
 {
 	char wbuf[50];
@@ -209,8 +234,8 @@ void NexStar::getDeg (char command, double &d1, double &d2)
 	{
 		throw rts2core::Error (std::string ("invalid return ") + wbuf); 
 	}
-	d1 = 360.0 * ((double) i1) / 0xffff;
-	d2 = 360.0 * ((double) i2) / 0xffff;
+	d1 = 360.0 * ((double) i1) / 0xFFFF;
+	d2 = 360.0 * ((double) i2) / 0xFFFF;
 }
 
 void NexStar::getPreciseDeg (char command, double &d1, double &d2)
@@ -225,8 +250,17 @@ void NexStar::getPreciseDeg (char command, double &d1, double &d2)
 	{
 		throw rts2core::Error (std::string ("invalid return ") + wbuf); 
 	}
-	d1 = 360.0 * ((double) i1) / 0xffffffff;
-	d2 = 360.0 * ((double) i2) / 0xffffffff;
+	d1 = 360.0 * ((double) i1) / MAX_ROTA_PREC;
+	d2 = 360.0 * ((double) i2) / MAX_ROTA_PREC;
+}
+
+void NexStar::setPreciseDeg (char command, double d1, double d2)
+{
+	char wbuf[50];
+	int l = snprintf (wbuf, 50, "%c%08X,%08X", command, uint32_t (MAX_ROTA_PREC * (d1 / 360.0)), int32_t (MAX_ROTA_PREC * (d2 / 360.0)));
+	int ret = serial->writeRead (wbuf, l, wbuf, 1, '#');
+	if (ret < 0)
+		throw rts2core::Error ("cannot set precise degrees");
 }
 
 int main (int argc, char **argv)
