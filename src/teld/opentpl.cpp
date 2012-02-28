@@ -124,6 +124,8 @@ class OpenTPL:public Telescope
 		rts2core::ValueBool *derotatorPower;
 
 		rts2core::ValueDouble *targetDist;
+		rts2core::ValueDouble *targetDist1;
+		rts2core::ValueDouble *targetDist2;
 		rts2core::ValueDouble *targetTime;
 
 		rts2core::ValueDouble *cover;
@@ -144,8 +146,7 @@ class OpenTPL:public Telescope
 		rts2core::ValueDouble *goodSep;
 
 		// modeling offsets
-		rts2core::ValueRaDec *om_radec;
-		rts2core::ValueAltAz *om_altaz;
+		rts2core::ValueRaDec *om_offsets;
 
 		rts2core::ValueBool *standbyPoweroff;
 
@@ -491,7 +492,10 @@ int OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+		createValue (targetDist1, "target_dist_az", "[deg] target distance in AZimuth axis", false, RTS2_DT_DEGREES);
+		createValue (targetDist2, "target_dist_alt", "[deg] target distance in ALTitude axis", false, RTS2_DT_DEGREES);
+
+		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
 
 		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
@@ -524,7 +528,7 @@ int OpenTPL::initValues ()
  */
 		setPointingModel (POINTING_ALTAZ);
 
-		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
 
 		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
@@ -1029,7 +1033,7 @@ int OpenTPL::info ()
 			if (status != TPL_OK)
 				return -1;
 
-			om_radec->setValueRaDec (va1, va2);
+			om_offsets->setValueRaDec (va1, va2);
 			break;
 		case POINTING_ALTAZ:
 			status = opentplConn->get ("POINTING.CURRENT.DA", va1, &status);
@@ -1038,7 +1042,7 @@ int OpenTPL::info ()
 			if (status != TPL_OK)
 				return -1;
 
-			om_altaz->setValueAltAz (va1, va2);
+			om_offsets->setValueRaDec (va1, va2);
 			break;
 	}
 
@@ -1096,14 +1100,27 @@ int OpenTPL::info ()
 	mountTrack->setValueInteger (track);
 
 	status = TPL_OK;
-	double point_dist;
+	double point_dist, point_dist1, point_dist2;
 	double point_time;
 	status = opentplConn->get ("POINTING.TARGETDISTANCE", point_dist, &status);
 	status = opentplConn->get ("POINTING.SLEWINGTIME", point_time, &status);
+	switch (getPointingModel ())
+	{
+		case POINTING_RADEC:
+			status = opentplConn->get ("HA.TARGETDISTANCE", point_dist1, &status);
+			status = opentplConn->get ("DEC.TARGETDISTANCE", point_dist2, &status);
+			break;
+		case POINTING_ALTAZ:
+			status = opentplConn->get ("ZD.TARGETDISTANCE", point_dist1, &status);
+			status = opentplConn->get ("AZ.TARGETDISTANCE", point_dist2, &status);
+			break;
+	}
 	if (status == TPL_OK)
 	{
 		targetDist->setValueDouble (point_dist);
 		targetTime->setValueDouble (point_time);
+		targetDist1->setValueDouble (point_dist1);
+		targetDist2->setValueDouble (point_dist2);
 	}
 
 	return Telescope::info ();
