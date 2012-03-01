@@ -86,7 +86,7 @@ ExpandStringScript::ExpandStringScript (const char *pagePrefix, const char *_scr
 
 void ExpandStringScript::writeTo (std::ostream &os)
 {
-	os << "<script type='text/javascript' src='" << script << "'/>";
+	os << "<script type='text/javascript' src='" << script << "'></script>";
 }
 
 
