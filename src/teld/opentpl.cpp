@@ -492,10 +492,10 @@ int OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (targetDist1, "target_dist_az", "[deg] target distance in AZimuth axis", false, RTS2_DT_DEGREES);
-		createValue (targetDist2, "target_dist_alt", "[deg] target distance in ALTitude axis", false, RTS2_DT_DEGREES);
+		createValue (targetDist1, "target_dist_ha", "[deg] target distance in HA axis", false, RTS2_DT_DEGREES);
+		createValue (targetDist2, "target_dist_dec", "[deg] target distance in DEC axis", false, RTS2_DT_DEGREES);
 
-		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
+		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
 
 		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
@@ -528,7 +528,10 @@ int OpenTPL::initValues ()
  */
 		setPointingModel (POINTING_ALTAZ);
 
-		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
+		createValue (targetDist1, "target_dist_az", "[deg] target distance in azimuth axis", false, RTS2_DT_DEGREES);
+		createValue (targetDist2, "target_dist_alt", "[deg] target distance in altitude axis", false, RTS2_DT_DEGREES);
+
+		createValue (om_offsets, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
 
 		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
