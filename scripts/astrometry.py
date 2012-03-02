@@ -158,6 +158,10 @@ if __name__ == '__main__':
     	ret=a.run(scale=0.6,ra=ra,dec=dec,replace=True)
 
 	if ret:
+                ff=pyfits.fitsopen(sys.argv[1],'readonly')
+                fh=ff[0].header
+                ff.close()
+
 		raorig=ra
 		decorig=dec
 
