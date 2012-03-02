@@ -360,6 +360,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		void scriptProgress (double start, double end);
 
+#ifndef HAVE_PGSQL
+		bool verifyUser (std::string username, std::string pass, bool &executePermission);
+#endif
+
 		/**
 		 *
 		 * @param v_name   value name
@@ -414,8 +418,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		// user - login fields
 		std::map <std::string, std::string> userLogins;
-
-		bool verifyUser (std::string username, std::string pass, bool &executePermission);
 #endif
 
 		bool auth_localhost;
@@ -490,6 +492,11 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		rts2core::ConnNotify *notifyConn;
 };
+
+
+#ifndef HAVE_PGSQL
+bool verifyUser (std::string username, std::string pass, bool &executePermission);
+#endif
 
 };
 

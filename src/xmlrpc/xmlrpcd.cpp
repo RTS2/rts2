@@ -726,11 +726,17 @@ void XmlRpcd::reloadEventsFile ()
 #ifndef HAVE_PGSQL
 bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
-	if (userLogins.at (username) == )
+	if (userLogins.find (username) == userLogins.end ())
 		return false;
 	// crypt password using salt..
 	char *crp = crypt (pass.c_str (), userLogins[username].c_str ());
 	return userLogins[username] == crp;
+}
+
+
+bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
+{
+	return ((XmlRpcd *) getMasterApp ())->verifyUser (username, pass, executePermission);
 }
 #endif /* HAVE_PGSQL */
 
