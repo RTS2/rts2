@@ -381,7 +381,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		virtual int willConnect (NetworkAddress * _addr);
 #endif
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
@@ -411,6 +411,11 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 #ifndef HAVE_PGSQL
 		const char *config_file;
+
+		// user - login fields
+		std::map <std::string, std::string> userLogins;
+
+		bool verifyUser (std::string username, std::string pass, bool &executePermission);
 #endif
 
 		bool auth_localhost;
@@ -485,10 +490,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		rts2core::ConnNotify *notifyConn;
 };
-
-#ifndef HAVE_PGSQL
-bool verifyUser (std::string username, std::string pass, bool &executePermission);
-#endif
 
 };
 

@@ -49,6 +49,11 @@
 double random_num ();
 
 /**
+ * Random salt for crypt function
+ */
+void random_salt (char *buf, int len);
+
+/**
  * Create directory recursively.
  *
  * @param path Path that will be created.

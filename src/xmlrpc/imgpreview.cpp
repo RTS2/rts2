@@ -262,9 +262,15 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		Blob blob;
 
 		Magick::Image mimage = image.getMagickImage (NULL, quantiles, chan);
-		mimage.zoom (Magick::Geometry (prevsize, prevsize));
-
-		image.writeLabel (mimage, 1, prevsize - 2, 10, label);
+		if (prevsize > 0)
+		{
+			mimage.zoom (Magick::Geometry (prevsize, prevsize));
+			image.writeLabel (mimage, 1, prevsize - 2, 10, label);
+		}
+		else
+		{
+			image.writeLabel (mimage, 1, mimage.rows () - 2, 10, label);
+		}
 
 		cacheMaxAge (CACHE_MAX_STATIC);
 

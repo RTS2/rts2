@@ -37,6 +37,25 @@ double random_num ()
 #endif
 }
 
+void random_salt (char *buf, int len)
+{
+	for (; len > 0; len--, buf++)
+	{
+		// 2 * 25 + 10 + 2
+#ifndef sun
+		int rn = random () * 62.0 / RAND_MAX;
+#else
+		int rn = random () * 62.0 / INT_MAX;
+#endif
+		if (rn < 12)
+			*buf = '.' + rn;
+		else if (rn < 37)
+			*buf = 'A' - 12 + rn;
+		else
+			*buf = 'a' - 37 + rn;
+	}
+}
+
 int mkpath (const char *path, mode_t mode)
 {
 	char *cp_path;

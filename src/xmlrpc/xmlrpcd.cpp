@@ -54,13 +54,6 @@ using namespace XmlRpc;
 
 using namespace rts2xmlrpc;
 
-#ifndef HAVE_PGSQL
-bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
-{
-	return (username ==  std::string ("petr") && pass == std::string ("test"));
-}
-#endif /* HAVE_PGSQL */
-
 void XmlDevInterface::stateChanged (rts2core::ServerState * state)
 {
 	(getMaster ())->stateChangedEvent (getConnection (), state);
@@ -302,18 +295,9 @@ int XmlRpcd::processOption (int in_opt)
 	return 0;
 }
 
-int XmlRpcd::init ()
+int XmlRpcd::initHardware ()
 {
-	int ret;
-#ifdef HAVE_PGSQL
-	ret = DeviceDb::init ();
-#else
-	ret = rts2core::Device::init ();
-#endif
-	if (ret)
-		return ret;
-
-	ret = notifyConn->init ();
+	int ret = notifyConn->init ();
 	if (ret)
 		return ret;
 
@@ -358,6 +342,31 @@ int XmlRpcd::init ()
 	ret = Configuration::instance ()->loadFile (config_file);
 	if (ret)
 		return ret;
+	// load users-login pairs
+	std::string lf;
+	Configuration::instance ()->getString ("xmlrpcd", "logins", lf, RTS2_PREFIX "/etc/rts2/logins");
+	std::ifstream ifs (lf.c_str ());
+	if (ifs.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "cannot open logins file " << lf << sendLog;
+		return -1;
+	}
+	int ln = 0;
+	while (!ifs.eof ())
+	{
+		std::string line;
+		getline (ifs, line);
+		ln++;
+		std::vector <std::string> logins = SplitStr (line, ":");
+		if (logins.size () == 2)
+		{
+			userLogins[logins[0]] = logins[1];
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "invalid line in logins " << lf << "file on line " << ln << ", expected two entries separated with :, got " << logins.size () << " entries" << sendLog;
+		}
+	}
 #endif
 	// get page prefix
 	Configuration::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
@@ -713,6 +722,17 @@ void XmlRpcd::reloadEventsFile ()
 			defLabel = "%Y-%m-%d %H:%M:%S @OBJECT";
 	}
 }
+
+#ifndef HAVE_PGSQL
+bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
+{
+	if (userLogins.at (username) == )
+		return false;
+	// crypt password using salt..
+	char *crp = crypt (pass.c_str (), userLogins[username].c_str ());
+	return userLogins[username] == crp;
+}
+#endif /* HAVE_PGSQL */
 
 int main (int argc, char **argv)
 {

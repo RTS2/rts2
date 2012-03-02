@@ -680,7 +680,20 @@ EOF
 	AC_SUBST(INC_EPICS)
 fi
 
-AC_MSG_CHECKING(for date)
+AH_TEMPLATE([HAVE_CRYPT],[If crypt library is installed])
+
+AC_CHECK_LIB([crypt], [crypt],
+[LIB_CRYPT="-lcrypt"
+AC_SUBST(LIB_CRYPT)
+AC_DEFINE_UNQUOTED([HAVE_CRYPT],1,[If crypt library is installed])],
+[cat << EOF
+**** You don't have crypt library.
+**** All passwords will be stored in plaintext
+EOF
+LIB_CRYPT="no"
+])
+
+AC_MSG_CHECKING(for build date)
 DATE=`date +%Y-%m-%d`
 if test "z"$DATE = "z" ; then
 	AC_MSG_RESULT(none found)
@@ -858,6 +871,7 @@ echo "
   graphicsmagic ${GRAPHICSMAGICK_VERS}
   CERN ROOT     ${ROOT_VERS}
   libarchive    ${libarchive}
+  crypt         ${LIB_CRYPT}
 
 
 CCD's:
