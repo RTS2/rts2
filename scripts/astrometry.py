@@ -130,7 +130,7 @@ class AstrometryScript:
 			match=radecline.match(a)
 			if match:
 				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
-		if replace:
+		if replace and ret is not None:
 			shutil.move(self.odir+'/input.new',self.fits_file)
 	       
 		# cleanup
@@ -148,7 +148,6 @@ if __name__ == '__main__':
 	ra = dec = None
 
 	ff=pyfits.fitsopen(sys.argv[1],'readonly')
-	fh=ff[0].header
 	ra=ff[0].header['TELRA']
 	dec=ff[0].header['TELDEC']
 	object=ff[0].header['OBJECT']
@@ -158,12 +157,12 @@ if __name__ == '__main__':
     	ret=a.run(scale=0.6,ra=ra,dec=dec,replace=True)
 
 	if ret:
-                ff=pyfits.fitsopen(sys.argv[1],'readonly')
-                fh=ff[0].header
-                ff.close()
-
 		raorig=ra
 		decorig=dec
+
+		ff=pyfits.fitsopen(sys.argv[1],'readonly')
+		fh=ff[0].header
+		ff.close()
 
 		rastrxy = xy2wcs(fh['NAXIS1']/2.0,fh['NAXIS2']/2.0,fh)
 
