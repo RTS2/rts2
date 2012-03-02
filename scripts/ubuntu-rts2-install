@@ -120,9 +120,120 @@ echo "Retrieving, configuring, compiling and installing sextractor"
 wget -O ${download_dir}/sextractor.tar.gz http://www.astromatic.net/download/sextractor/sextractor-2.8.6.tar.gz
 tar xzf ${download_dir}/sextractor.tar.gz
 cd sextractor-*
+
+
+echo -n "Patching acx_atlas detection.. "
+patch <<'EOF'
+*** acx_atlas.m4	2009-01-29 14:52:02.000000000 +0100
+--- acx_atlas.m4	2012-01-14 11:07:23.169345901 +0100
+*************** dnl --------------------
+*** 22,59 ****
+  acx_atlas_ok=no
+  if test x$2 = x; then
+    if test x$1 = x; then
+!     AC_CHECK_HEADERS([cblas.h clapack.h],[acx_atlas_ok=yes])
+!     if test x$acx_atlas_ok = xyes; then
+        AC_DEFINE(ATLAS_BLAS_H, "cblas.h", [BLAS header filename.])
+-       AC_DEFINE(ATLAS_LAPACK_H, "clapack.h", [CLAPACK header filename.])
+      else
+!       AC_CHECK_HEADERS([atlas/cblas.h atlas/clapack.h],[acx_atlas_ok=yes])
+!       if test x$acx_atlas_ok = xyes; then
+          AC_DEFINE(ATLAS_BLAS_H, "atlas/cblas.h", [BLAS header filename.])
+          AC_DEFINE(ATLAS_LAPACK_H, "atlas/clapack.h", [CLAPACK header filename.])
+        else
+!         atlas_def=/usr/local/atlas
+          AC_CHECK_HEADERS(
+! 		[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+! 		[acx_atlas_ok=yes])
+          if test x$acx_atlas_ok = xyes; then
+            AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+! 		[BLAS header filename.])
+            AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+! 		[CLAPACK header filename.])
+          else
+!           atlas_def=/usr/atlas
+!           AC_CHECK_HEADERS(
+! 		[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+! 		[acx_atlas_ok=yes])
+!           if test x$acx_atlas_ok = xyes; then
+!             AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+! 		[BLAS header filename.])
+!             AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+! 		[CLAPACK header filename.])
+!           else
+!             ATLAS_ERROR="CBLAS/LAPack include files not found!"
+!           fi
+          fi
+        fi
+      fi
+--- 22,74 ----
+  acx_atlas_ok=no
+  if test x$2 = x; then
+    if test x$1 = x; then
+!     acx_cblas_ok=no
+!     AC_CHECK_HEADERS([cblas.h],[acx_cblas_ok=yes])
+!     if test x$acx_cblas_ok = xyes; then
+        AC_DEFINE(ATLAS_BLAS_H, "cblas.h", [BLAS header filename.])
+      else
+!       AC_CHECK_HEADERS([atlas/cblas.h],[acx_cblas_ok=yes])
+!       if test x$acx_cblas_ok = xyes; then
+          AC_DEFINE(ATLAS_BLAS_H, "atlas/cblas.h", [BLAS header filename.])
++       fi
++     fi
++ 
++     acx_clapack_ok=no
++     AC_CHECK_HEADERS([clapack.h],[acx_clapack_ok=yes])
++     if test x$acx_clapack_ok = xyes; then
++       AC_DEFINE(ATLAS_LAPACK_H, "clapack.h", [CLAPACK header filename.])
++     else
++       AC_CHECK_HEADERS([atlas/clapack.h],[acx_clapack_ok=yes])
++       if test x$acx_clapack_ok = xyes; then
+          AC_DEFINE(ATLAS_LAPACK_H, "atlas/clapack.h", [CLAPACK header filename.])
++       fi
++     fi
++ 
++     if test x$acx_cblas_ok = xyes -a x$acx_clapack_ok = xyes; then
++       AC_MSG_NOTICE(Found both clapack and cblas in standard directories.)
++       acx_atlas_ok=yes
++     else  
++       atlas_def=/usr/local/atlas
++       AC_CHECK_HEADERS(
++       	[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
++       	[acx_atlas_ok=yes])
++       if test x$acx_atlas_ok = xyes; then
++         AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
++       	[BLAS header filename.])
++         AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
++       	[CLAPACK header filename.])
+        else
+!         atlas_def=/usr/atlas
+          AC_CHECK_HEADERS(
+!       	[$atlas_def/include/cblas.h $atlas_def/include/clapack.h],
+!       	[acx_atlas_ok=yes])
+          if test x$acx_atlas_ok = xyes; then
+            AC_DEFINE_UNQUOTED(ATLAS_BLAS_H, "$atlas_def/include/cblas.h",
+!       	[BLAS header filename.])
+            AC_DEFINE_UNQUOTED(ATLAS_LAPACK_H, "$atlas_def/include/clapack.h",
+!       	[CLAPACK header filename.])
+          else
+!           ATLAS_ERROR="CBLAS/LAPack include files not found!"
+          fi
+        fi
+      fi
+EOF
+
+if [ $? == 0 ]; then
+	echo 'ok'
+else
+	echo 'failed'
+	exit 1
+fi
+
 ./configure --disable-threads --prefix=/usr
 make
 sudo make install
+
+sudo mv /usr/bin/sex /usr/bin/sextractor
 
 cd ~
 
