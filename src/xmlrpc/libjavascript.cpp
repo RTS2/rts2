@@ -1071,6 +1071,22 @@ const char *setGetApi =
   "}\n"
   "hr.send(null);\n"
 "}\n"
+
+
+"function deviceGetAll(device, func){\n"
+ "var hr = new XMLHttpRequest();\n"
+ "hr.open('GET','../api/get?d=' + device, true);\n"
+ "hr.func = func;\n"
+ "hr.onreadystatechange = function(){\n"
+    "if (this.readyState != 4 || this.status != 200) { return; }\n"
+    "var t = JSON.parse(this.responseText);\n"
+    "this.func(t);\n"
+  "}\n"
+ "hr.send(null);\n"
+ "}\n"
+
+
+
 ;
 
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
