@@ -42,8 +42,7 @@ class Keithley:public Gpib
 	protected:
 		virtual int processOption (int opt);
 
-		virtual int init ();
-		virtual int initValues ();
+		virtual int initHardware ();
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
@@ -172,9 +171,9 @@ int Keithley::processOption (int opt)
 	return 0;
 }
 
-int Keithley::init ()
+int Keithley::initHardware ()
 {
-	int ret = Gpib::init ();
+	int ret = Gpib::initHardware ();
 	if (ret)
 		return ret;
 
