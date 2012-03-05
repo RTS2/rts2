@@ -206,7 +206,7 @@ class Reflex:public Camera
 
 		// related to configuration file..
 		const char *configFile;
-		IniParser *config;
+		rts2core::IniParser *config;
 
 		void reloadConfig ();
 
@@ -836,7 +836,7 @@ void Reflex::reloadConfig ()
 
 	delete config;
 
-	config = new IniParser ();
+	config = new rts2core::IniParser ();
 	if (config->loadFile (configFile, true))
 	{
 		config = NULL;

@@ -20,7 +20,7 @@
 #include "camd.h"
 #include "edtsao/interface.h"
 
-#include "connfork.h"
+#include "connection/fork.h"
 #include "valuearray.h"
 
 #define OPT_NOTIMEOUT  OPT_LOCAL + 73
