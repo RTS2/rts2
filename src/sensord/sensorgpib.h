@@ -79,7 +79,8 @@ class Gpib:public Sensor
 		void settmo (float _sec) { connGpib->settmo (_sec); }
 
 		virtual int processOption (int in_opt);
-		virtual int init ();
+		virtual int initValues ();
+		virtual int initHardware ();
 	
 	private:
 		int pad;
@@ -89,6 +90,7 @@ class Gpib:public Sensor
 		HostString *enet_addr;
 
 		ConnGpib *connGpib;
+		
 		bool debug;
 };
 

@@ -61,14 +61,16 @@ int Gpib::processOption (int _opt)
 	return 0;
 }
 
-
-int Gpib::init ()
+int Gpib::initValues ()
 {
-	int ret;
-	ret = Sensor::init ();
-	if (ret)
-		return ret;
+	rts2core::ValueString *idn = new rts2core::ValueString ("IDN", "identification string", true);
+	readValue ("*IDN?", idn);
+	addConstValue (idn);
+	return Sensor::initValues ();
+}
 
+int Gpib::initHardware ()
+{
 	// create connGpin
 	if (enet_addr != NULL)
 	{
@@ -102,7 +104,6 @@ int Gpib::init ()
 	return 0;
 }
 
-
 Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
 	minor = 0;
@@ -117,7 +118,6 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
 	addOption ('v', NULL, 0, "verbose debugging");
 }
-
 
 Gpib::~Gpib (void)
 {

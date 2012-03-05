@@ -239,14 +239,6 @@ int Keithley::init ()
 	return 0;
 }
 
-int Keithley::initValues ()
-{
-	rts2core::ValueString *model = new rts2core::ValueString ("model");
-	readValue ("*IDN?", model);
-	addConstValue (model);
-	return Gpib::initValues ();
-}
-
 int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == triggerMode)
