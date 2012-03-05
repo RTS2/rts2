@@ -1,7 +1,7 @@
 /* 
  * API access for RTS2.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -287,8 +287,58 @@ digraph "JSON API calls handling" {
  *
  * @section consts
  *
- * Retrieve target constraints. Constraints are stored in XML files specified 
-
+ * Retrieve target constraints. Constraints are stored in XML files specified
+ * in rts2.ini file (observatory/target_path).
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/consts?id=1000
+ *
+ * @subsection Parameters
+ *
+ *  - <b>id</b> Target ID. 
+ *
+ * @subsection Return
+ *
+ * Array of target constraints in JSON format.
+ *
+ * @section JSON_db_violated violated
+ *
+ * Return constraints violated in given time interval.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/violated?cn=airmass&id=1000
+ *
+ * @subsection Parameters
+ *
+ *  - <b>const</b> Constraint name. Please see rts2db/constraints.h for list of allowed constraint names.
+ *  - <b>id></b> Target ID.
+ *  - <i><b>from</b> Check constraints from this time (in ctime, seconds from 1/1/1970). Default to current time.</i>
+ *  - <i><b>to</b> Check to this time. Default to next day (from + 24 hours).</i>
+ *  - <i><b>step</b> Checking of most of the constraints is done by checking constraint in steps from "from" time. This parameter specifies step size (in seconds). Default to 60 seconds.</i>
+ *
+ * @subsection Return
+ *
+ * Array of time intervales when the target violates given constrain.
+ *
+ * @section JSON_db_satisfied satisfied
+ *
+ * Return intervals when a target satisfies all constraints.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/satisfied?id=1000&length=1800
+ *
+ * @subsection Parameters
+ *
+ *  - <b>id</b> Target ID.
+ *  - <i><b>from</b> From time. Search for satisified intervals from this time (in ctime, seconds from 1/1/1970). Default to current time.</i>
+ *  - <i><b>to</b> To time. Default to from + 24 hours.</i>
+ *  - <i><b>length</b> Return only intervals longer then specified lengths (in seconds). Default to 1800.</i>
+ *  - <i><b>step</b> Step size (in seconds). Default to 60.</i>
+ *
+ * @section JSON_db_cnst_alt cnst_alt
  */
 
 #include "xmlrpcd.h"
@@ -329,6 +379,36 @@ void AsyncAPI::postEvent (Event *event)
 			os << "{";
 			req->sendConnectionValues (os, conn, NULL, -1, ext);
 			os << ",\"ret\":-1}";
+			req->sendAsyncJSON (os, source);
+			break;
+	}
+	Object::postEvent (event);
+}
+
+class AsyncMSet:public AsyncAPI
+{
+	public:
+
+		virtual void postEvent (Event * event);
+
+		void addCommand (rts2core::Command *command) { commands.push_back (command); }
+
+	private:
+		// commands send by this connection
+		std::vector <rts2core::Command *> commands;
+};
+
+void AsyncMSet::postEvent (Event *event)
+{
+	std::ostringstream os;
+	switch (event->getType ())
+	{
+		case EVENT_COMMAND_OK:
+			os << "\"ret\":0";
+			req->sendAsyncJSON (os, source);
+			break;
+		case EVENT_COMMAND_FAILED:
+			os << "\"ret\":-1";
 			req->sendAsyncJSON (os, source);
 			break;
 	}
@@ -628,6 +708,15 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 
 		}
+		// set multiple values
+		else if (vals[0] == "mset")
+		{
+			for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+			{
+
+			}
+			throw XmlRpc::XmlRpcAsynchronous ();
+		}
 		// return night start and end
 		else if (vals[0] == "night")
 		{
@@ -897,12 +986,10 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				throw JSONException ("unknow target ID");
 			time_t from = params->getDouble ("from", master->getNow ());
 			time_t to = params->getDouble ("to", from + 86400);
-			double length = params->getDouble ("length", NAN);
+			double length = params->getDouble ("length", 1800);
 			int step = params->getInteger ("step", 60);
 
 			rts2db::Target *tar = createTarget (tar_id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
-			if (isnan (length))
-				length = 1800;
 			rts2db::interval_arr_t si;
 			from -= from % step;
 			to += step - (to % step);
