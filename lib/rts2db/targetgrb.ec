@@ -280,7 +280,7 @@ void TargetGRB::getDBScript (const char *camera_name, std::string &script)
 		throw rts2db::SqlError ();
 	}
 	sc_script.arr[sc_script.len] = '\0';
-	script = std::string (script);
+	script = std::string (sc_script.arr);
 	EXEC SQL CLOSE find_grb_script;
 	EXEC SQL COMMIT;
 }
