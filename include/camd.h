@@ -359,8 +359,6 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void nullExposureConn () { exposureConn = NULL; }
 
-		rts2core::ValueDouble *pixelsSecond;
-
 		//! number of connection waiting to be executed
 		rts2core::ValueInteger *quedExpNumber;
 
@@ -525,6 +523,9 @@ class Camera:public rts2core::ScriptDevice
 		 * @return Chip size in pixels.
 		 */
 		virtual long chipUsedSize () { return getUsedWidthBinned () * getUsedHeightBinned (); }
+
+		long getReadoutPixels () { return readoutPixels; }
+
 
 		/**
 		 * Retuns size of chip in bytes.
@@ -869,9 +870,44 @@ class Camera:public rts2core::ScriptDevice
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
+		/**
+		 * Mark start time of physical chip readout.
+		 */
+		void markReadoutStart () { timeReadoutStart = getNow (); }
+
+		/**
+		 * Mark end of physical chip readout.
+		 */
+		void updateReadoutSpeed (long computedPixels)
+		{
+			if (!isnan (timeReadoutStart))
+			{
+				readoutTime->setValueDouble (getNow () - timeReadoutStart);
+				sendValueAll (readoutTime);
+
+				pixelsSecond->setValueDouble (computedPixels / readoutTime->getValueDouble ());
+				sendValueAll (pixelsSecond);
+
+				// end computation of readout time
+				if (computedPixels >= readoutPixels)
+					timeReadoutStart = NAN;
+			}
+		}
+
 	private:
 		long readoutPixels;
+
+		// readout - ideally time for data->computer. Camera driver should start markReadoutStart and markReadoutEnd to mark start/end times
 		double timeReadoutStart;
+		// readout time including transfer (TCP/IP,..) overhead
+		double timeTransferStart;
+
+		// physical readout time from device
+		rts2core::ValueDouble *pixelsSecond;
+		rts2core::ValueDouble *readoutTime;
+
+		// data time including transfer overhead
+		rts2core::ValueDouble *transferTime;
 
 		// connection which requries data to be send after end of exposure
 		rts2core::Connection *exposureConn;

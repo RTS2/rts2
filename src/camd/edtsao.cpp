@@ -1085,6 +1085,9 @@ int EdtSao::doReadout ()
 		<< " height " << pdv_get_height (pd)
 		<< " depth " << pdv_get_depth (pd)
 		<< sendLog;
+
+	markReadoutStart ();
+
 	int tb = pdv_timeouts (pd);
 
 	pdv_start_image (pd);
@@ -1095,6 +1098,8 @@ int EdtSao::doReadout ()
 
 	/* READ AND PROCESS ONE BUFFER = IMAGE */
 	bufs[0] = pdv_wait_image (pd);
+
+	updateReadoutSpeed (getReadoutPixels ());
 
 	pdv_flush_fifo (pd);
 	int ta = pdv_timeouts (pd);

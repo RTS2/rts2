@@ -205,12 +205,16 @@ int Camera::deleteConnection (rts2core::Connection * conn)
 
 int Camera::endReadout ()
 {
-	TimeDiff td (timeReadoutStart, getNow ());
-	pixelsSecond->setValueDouble (readoutPixels / td.getTimeDiff ());
-	sendValueAll (pixelsSecond);
+	// that will do anything only if the end was not marked
+	updateReadoutSpeed (readoutPixels);
 
-	logStream (MESSAGE_INFO) << "readout " <<  readoutPixels << " pixels in " << td
-		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueFloat () << " pixels per second)" << sendLog;
+	transferTime->setValueDouble (getNow () - timeTransferStart);
+	sendValueAll (transferTime);
+
+	double transferSecond = readoutPixels / transferTime->getValueDouble ();
+
+	logStream (MESSAGE_INFO) << "readout " <<  readoutPixels << " pixels in " << TimeDiff (transferSecond)
+		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueDouble () << " pixels per second)" << sendLog;
 
 	clearReadout ();
 	if (currentImageData == -2 && exposureConn)
@@ -321,6 +325,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	serialNumber[0] = '\0';
 
 	timeReadoutStart = NAN;
+	timeTransferStart = NAN;
 
 	pixelX = NAN;
 	pixelY = NAN;
@@ -404,6 +409,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	sendOkInExposure = false;
 
 	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);
+	createValue (readoutTime, "readout_time", "[s] data readout time", false, RTS2_DT_TIMEINTERVAL);
+	createValue (transferTime, "transfer_time", "[s] data transfer time, including overhead", false, RTS2_DT_TIMEINTERVAL);
 
 	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
@@ -696,7 +703,6 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 				break;
 		}
 		computedPix->setValueLong (computedPix->getValueLong () + totPix);
-		pixelsSecond->setValueDouble (computedPix->getValueLong () / (getNow () - timeReadoutStart));
 		average->setValueDouble (sum->getValueDouble () / computedPix->getValueLong ());
 
 		sendValueAll (average);
@@ -704,8 +710,16 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		sendValueAll (min);
 		sendValueAll (sum);
 		sendValueAll (computedPix);
-		sendValueAll (pixelsSecond);
 	}
+	else
+	{
+		computedPix->setValueLong (computedPix->getValueLong () + dataSize / usedPixelByteSize ());
+		sendValueAll (computedPix);
+	}
+
+	// will update only if some data still need to be transfered
+	updateReadoutSpeed (computedPix->getValueLong ());
+
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize -= dataSize;
 
@@ -1310,6 +1324,7 @@ int Camera::readoutStart ()
 
 int Camera::camReadout (rts2core::Connection * conn)
 {
+	timeTransferStart = getNow ();
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
@@ -1342,7 +1357,8 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (currentImageData != -1 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
-		timeReadoutStart = getNow ();
+		if (isnan (timeReadoutStart))
+			timeReadoutStart = getNow ();
 		return readoutStart ();
 	}
 	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);
