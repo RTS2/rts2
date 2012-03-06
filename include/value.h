@@ -180,7 +180,7 @@
 #define RTS2_DT_HEX                   0x00070000
 #define RTS2_DT_BYTESIZE              0x00080000
 #define RTS2_DT_KMG                   0x00090000
-#define RTS2_DT_INTERVAL              0x000a0000
+#define RTS2_DT_TIMEINTERVAL          0x000a0000
 #define RTS2_DT_ONOFF                 0x000b0000
 // degrees distance in -180..180 range
 #define RTS2_DT_DEG_DIST_180          0x000c0000

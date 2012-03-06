@@ -18,6 +18,8 @@
  */
 
 #include "displayvalue.h"
+#include "timestamp.h"
+
 #include <sstream>
 #include <iomanip>
 
@@ -69,6 +71,9 @@ std::string rts2core::getDisplayValue (rts2core::Value * value)
 				sind++;
 			}
 			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << munits[sind];
+			break;
+		case RTS2_DT_TIMEINTERVAL:
+			_os << TimeDiff (value->getValueDouble ());
 			break;
 		case RTS2_DT_ONOFF:
 			if (!(value->getFlags () & RTS2_VALUE_ARRAY))

@@ -190,10 +190,10 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (interrupt, "interrupt", "if next target soft-interrupt current observations", false, RTS2_VALUE_WRITABLE);
 	interrupt->setValueBool (false);
 
-	createValue (idle_select, "idle_select", "delay in sec for selection", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
+	createValue (idle_select, "idle_select", "delay in sec for selection", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	idle_select->setValueInteger (300);
 
-	createValue (night_idle_select, "night_idle_select", "delay in sec for selection of next target during night", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
+	createValue (night_idle_select, "night_idle_select", "delay in sec for selection of next target during night", false, RTS2_VALUE_WRITABLE | RTS2_DT_TIMEINTERVAL);
 	night_idle_select->setValueInteger (300);
 
 	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false, RTS2_VALUE_WRITABLE);
