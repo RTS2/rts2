@@ -40,7 +40,8 @@ class ThorLaser:public Sensor
 
 	protected:
 		virtual int processOption (int opt);
-		virtual int init ();
+		virtual int initHardware ();
+		virtual int initValues ();
 		virtual int info ();
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
@@ -50,7 +51,6 @@ class ThorLaser:public Sensor
 
 		int currentChannel;
 
-		rts2core::ValueString *id;
 		rts2core::ValueFloat *version;
 
 		rts2core::ValueBool *systemEnable;
@@ -97,13 +97,8 @@ int ThorLaser::processOption (int opt)
 	return 0;
 }
 
-int ThorLaser::init ()
+int ThorLaser::initHardware ()
 {
-	int ret;
-	ret = Sensor::init ();
-	if (ret)
-		return ret;
-
 	if (device_file == NULL)
 	{
 		logStream (MESSAGE_ERROR) << "you must specify device file (TTY port)" << sendLog;
@@ -111,24 +106,32 @@ int ThorLaser::init ()
 	}
 
 	laserConn = new rts2core::ConnSerial (device_file, this, rts2core::BS115200, rts2core::C8, rts2core::NONE, 10);
-	ret = laserConn->init ();
+	int ret = laserConn->init ();
 	if (ret)
 		return ret;
 	
 	laserConn->flushPortIO ();
 	laserConn->setDebug (false);
 
-	getValue (0, "id", id);
+	return 0;
+}
+
+int ThorLaser::initValues ()
+{
+	rts2core::ValueString *idn = new rts2core::ValueString ("IDN", "identification string", true);
+	getValue (0, "*idn", idn);
+	addConstValue (idn);
+
 	const char *vers;
-	vers = strstr (id->getValue (), "vers");
+	vers = strstr (idn->getValue (), "vers");
 	if (vers == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot find version in ID reply: " << id->getValue () << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot find version in ID reply: " << idn->getValue () << sendLog;
 		return -1;
 	}
 	version->setValueCharArr (vers + 5);
 
-	return 0;
+	return Sensor::initValues ();
 }
 
 int ThorLaser::info ()
@@ -170,7 +173,6 @@ ThorLaser::ThorLaser (int argc, char **argv): Sensor (argc, argv)
 
 	currentChannel = -1;
 
-	createValue (id, "id", "system ID", false);
 	createValue (version, "version", "firmware version", false);
 
 	createValue (systemEnable, "system_enable", "system power state", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
