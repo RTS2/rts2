@@ -110,17 +110,17 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 
 		createValue (axvelocity[i], (prs + "VEL").c_str (), "axis current velocity", false);
 
-		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE);
-		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE);
+		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axmaxv[i]->setValueLong (2000);
+		axmaxv[i]->setValueLong (2500);
 		axbasev[i]->setValueLong (0);
 
-		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE);
-		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE);
+		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axacceleration[i]->setValueLong (20);
-		axdeceleration[i]->setValueLong (20);
+		axacceleration[i]->setValueLong (5000);
+		axdeceleration[i]->setValueLong (5000);
 
 		createValue (axenabled[i], (prs + "ENB").c_str (), "axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		axenabled[i]->setValueBool (true);
@@ -322,7 +322,7 @@ int NIRatir::commandAuthorized (rts2core::Connection * conn)
 
 void NIRatir::moveAbs (int axis, int32_t pos)
 {
-	logStream (MESSAGE_INFO) << "moveAbs axis " << std::hex << axis << " to " << pos << sendLog;
+	logStream (MESSAGE_INFO) << "moveAbs axis num " << std::hex << axis << " to " << pos << sendLog;
 	flex_stop_motion (axis, NIMC_DECEL_STOP, 0x02);
 	flex_set_op_mode (axis, NIMC_ABSOLUTE_POSITION);
 	flex_load_target_pos (axis, pos);
