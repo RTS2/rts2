@@ -276,6 +276,9 @@ int Andor::doReadout ()
 		return -1;
 	}
 	int ret;
+
+	markReadoutStart ();
+
 	switch (getDataType ())
 	{
 		case RTS2_DATA_FLOAT:
@@ -289,6 +292,9 @@ int Andor::doReadout ()
 			ret = GetAcquiredData16 ((short unsigned *)dataBuffer, chipUsedSize ());
 			break;
 	}
+
+	updateReadoutSpeed (getReadoutPixels ());
+
 	if (ret != DRV_SUCCESS)
 	{
 		// acquisition in progress is NOT and error if it occurs early
@@ -296,8 +302,7 @@ int Andor::doReadout ()
 		{
 			return 100;
 		}
-		logStream (MESSAGE_ERROR) << "andor GetAcquiredXXXX "
-			<< getDataType () << " return " << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "andor GetAcquiredXXXX " << getDataType () << " return " << ret << sendLog;
 		return -1;
 	}
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
