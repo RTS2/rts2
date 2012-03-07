@@ -245,13 +245,17 @@ long Andor::isExposing ()
 		return 100;
 	}
 	if ((ret = Camera::isExposing ()) != 0)
+	{
+		markReadoutStart ();
 		return ret;
+	}
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
 	if (status == DRV_ACQUIRING)
 	{
 		return 0;
 	}
+	markReadoutStart ();
 	return 0;
 }
 
@@ -276,8 +280,6 @@ int Andor::doReadout ()
 		return -1;
 	}
 	int ret;
-
-	markReadoutStart ();
 
 	switch (getDataType ())
 	{
