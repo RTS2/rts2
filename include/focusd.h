@@ -41,9 +41,7 @@ class Focusd:public rts2core::Device
 	public:
 		Focusd (int argc, char **argv);
 
-		void checkState ();
 		int setPosition (float num);
-		int autoFocus (rts2core::Connection * conn);
 
 		float getPosition ()
 		{

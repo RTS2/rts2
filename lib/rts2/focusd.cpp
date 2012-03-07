@@ -53,7 +53,31 @@ int Focusd::processOption (int in_opt)
 	return 0;
 }
 
-void Focusd::checkState ()
+int Focusd::initValues ()
+{
+	addConstValue ("FOC_TYPE", "focuser type", focType);
+
+	if (isnan (defaultPosition->getValueDouble ()))
+	{
+		// refresh position values
+		if (info ())
+			return -1;
+		target->setValueDouble (getPosition ());
+		defaultPosition->setValueDouble (getPosition ());
+	}
+	else if (isAtStartPosition () == false)
+	{
+		setPosition (defaultPosition->getValueDouble ());
+	}
+	else
+	{
+		target->setValueDouble (getPosition ());
+	}
+
+	return rts2core::Device::initValues ();
+}
+
+int Focusd::idle ()
 {
 	if ((getState () & FOC_MASK_FOCUSING) == FOC_FOCUSING)
 	{
@@ -81,35 +105,6 @@ void Focusd::checkState ()
 			}
 		}
 	}
-}
-
-int Focusd::initValues ()
-{
-	addConstValue ("FOC_TYPE", "focuser type", focType);
-
-	if (isnan (defaultPosition->getValueDouble ()))
-	{
-		// refresh position values
-		if (info ())
-			return -1;
-		target->setValueDouble (getPosition ());
-		defaultPosition->setValueDouble (getPosition ());
-	}
-	else if (isAtStartPosition () == false)
-	{
-		setPosition (defaultPosition->getValueDouble ());
-	}
-	else
-	{
-		target->setValueDouble (getPosition ());
-	}
-
-	return rts2core::Device::initValues ();
-}
-
-int Focusd::idle ()
-{
-	checkState ();
 	return rts2core::Device::idle ();
 }
 
@@ -134,17 +129,6 @@ int Focusd::setPosition (float num)
 		return ret;
 	}
 	return ret;
-}
-
-int Focusd::autoFocus (rts2core::Connection * conn)
-{
-	/* ask for priority */
-
-	maskState (FOC_MASK_FOCUSING, FOC_FOCUSING, "autofocus started");
-
-	// command ("priority 50");
-
-	return 0;
 }
 
 int Focusd::isFocusing ()
