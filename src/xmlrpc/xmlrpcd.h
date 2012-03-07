@@ -385,7 +385,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		virtual int willConnect (NetworkAddress * _addr);
 #endif
 		virtual int processOption (int in_opt);
-		virtual int initHardware ();
+		virtual int init ();
 
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
