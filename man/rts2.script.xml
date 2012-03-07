@@ -339,23 +339,6 @@
 
       <varlistentry>
         <term>
-	  <option>star {repeat_number} {precision} {exposure} {min_flux}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Try to find stars with (raw) flux larger than
-	    {min_flux} on the image. Exposure length and required precision  from
-	    star center can be specified. {repeat_number} specifies
-	    how many time will be search performed. If star brighter
-	    than {min_flux} is not found on the taken image, telescope is
-	    moved on the spiral path around target coordinates 
-            in order to find a bright star.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
 	  <option>PS {radius} {speed}</option>
 	</term>
 	<listitem>
@@ -374,21 +357,6 @@
 	<listitem>
 	  <para>
 	    Execute next block only if given signal arrives.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-	  <option>guiding {exposure_time} {end_signal}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Start guiding on given camera. Exposure of {exposure_time}
-	    length is taken, brightest stars on the image are identified, and
-	    correction commands are then feed to the telescope. When
-	    {end_signal} is sended (using SS command), guiding loop is
-	    stopped.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -488,18 +456,6 @@
 	<listitem>
 	  <para>
 	    Wait for device to enter idle state.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-	  <option>HAM {repeat_number} {exposure_time}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Search for terrestrial light source (HAM). It is similar as searching for
-	    stars, but terrestrial movement commands are used.
 	  </para>
 	</listitem>
       </varlistentry>

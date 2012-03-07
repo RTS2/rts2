@@ -1,3 +1,6 @@
+2012-03-07
+ * removed guding, HAM and star acquistions (should be replaced by I/O scripting)
+
 2012-03-02
  * login files for non-DB XML-RPCDs.
 

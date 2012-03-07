@@ -21,7 +21,6 @@
 #include "rts2script/script.h"
 
 #include "elementexe.h"
-#include "elementguiding.h"
 #include "elementhex.h"
 #include "elementwaitfor.h"
 #include "configuration.h"
@@ -436,25 +435,6 @@ Element *Script::parseBuf (Rts2Target * target)
 			return new ElementNone (this);
 		return new ElementAcquire (this, precision, expTime, &target_pos);
 	}
-	else if (!strcmp (commandStart, COMMAND_HAM))
-	{
-		int repNumber;
-		float exposure;
-		if (getNextParamInteger (&repNumber) || getNextParamFloat (&exposure))
-			return NULL;
-		return new ElementAcquireHam (this, repNumber, exposure, &target_pos);
-	}
-	else if (!strcmp (commandStart, COMMAND_STAR_SEARCH))
-	{
-		int repNumber;
-		double precision;
-		float exposure;
-		double scale;
-		if (getNextParamInteger (&repNumber) || getNextParamDouble (&precision)
-			|| getNextParamFloat (&exposure) || getNextParamDouble (&scale))
-			return NULL;
-		return new ElementAcquireStar (this, repNumber, precision, exposure, scale, scale, &target_pos);
-	}
 	#endif						 /* HAVE_PGSQL */
 	else if (!strcmp (commandStart, COMMAND_BLOCK_WAITSIG))
 	{
@@ -509,15 +489,6 @@ Element *Script::parseBuf (Rts2Target * target)
 	else if (!strcmp (commandStart, "}"))
 	{
 		return NULL;
-	}
-	else if (!strcmp (commandStart, COMMAND_GUIDING))
-	{
-		float init_exposure;
-		int end_signal;
-		if (getNextParamFloat (&init_exposure)
-			|| getNextParamInteger (&end_signal))
-			return NULL;
-		return new ElementGuiding (this, init_exposure, end_signal);
 	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_FOR))
 	{

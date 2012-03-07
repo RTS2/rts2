@@ -36,9 +36,7 @@
 #define COMMAND_ACQUIRE         "A"
 #define COMMAND_WAIT_ACQUIRE    "Aw"
 #define COMMAND_PHOTOMETER      "P"
-#define COMMAND_STAR_SEARCH     "star"
 #define COMMAND_BLOCK_WAITSIG   "block_waitsig"
-#define COMMAND_GUIDING         "guiding"
 #define COMMAND_BLOCK_ACQ       "ifacq"
 #define COMMAND_BLOCK_ELSE      "else"
 #define COMMAND_BLOCK_FOR       "for"
@@ -55,9 +53,6 @@
 #define COMMAND_HEX             "hex"
 // 5x5 pattern
 #define COMMAND_FXF             "fxf"
-
-// HAM acqusition - only on FRAM telescope
-#define COMMAND_HAM             "HAM"
 
 // signal handling..
 #define COMMAND_SEND_SIGNAL     "SS"

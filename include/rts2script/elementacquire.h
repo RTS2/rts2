@@ -55,57 +55,5 @@ class ElementAcquire:public Element
 		struct ln_equ_posn center_pos;
 };
 
-/**
- * Class for bright source acquistion
- */
-class ElementAcquireStar:public ElementAcquire
-{
-	public:
-		/**
-		 * @param in_spiral_scale_ra  RA scale in degrees
-		 * @param in_spiral_scale_dec DEC scale in degrees
-		 */
-		ElementAcquireStar (Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec, struct ln_equ_posn *in_center_pos);
-		virtual ~ ElementAcquireStar (void);
-		virtual void postEvent (rts2core::Event * event);
-		virtual int processImage (rts2image::Image * image);
-
-		virtual void printScript (std::ostream &os) { os << COMMAND_STAR_SEARCH << " " << maxRetries << " " << minFlux; }
-	protected:
-		/**
-		 * Decide, if image contains source of interest...
-		 *
-		 * It's called from processImage to decide what to do.
-		 *
-		 * @return -1 when we should continue in spiral search, 0 when source is in expected position,
-		 * 1 when source is in field, but offset was measured; in that case it fills ra_offset and dec_offset.
-		 */
-		virtual int getSource (rts2image::Image * image, double &ra_off, double &dec_off);
-	private:
-		int maxRetries;
-		int retries;
-		double spiral_scale_ra;
-		double spiral_scale_dec;
-		double minFlux;
-		Rts2Spiral *spiral;
-};
-
-/**
- * Some special handling for HAM..
- */
-class ElementAcquireHam:public ElementAcquireStar
-{
-	public:
-		ElementAcquireHam (Script * in_script, int in_maxRetries, float in_expTime, struct ln_equ_posn *in_center_pos);
-		virtual ~ ElementAcquireHam (void);
-
-		virtual void printScript (std::ostream &os) { os << COMMAND_HAM << " " << maxRetries; }
-	protected:
-		virtual int getSource (rts2image::Image * image, double &ra_off, double &dec_off);
-	private:
-		int maxRetries;
-		int retries;
-};
-
 }
 #endif							 /* !__RTS2_SCRIPT_ELEMENT_ACQUIRE__ */
