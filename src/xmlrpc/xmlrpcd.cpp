@@ -295,9 +295,17 @@ int XmlRpcd::processOption (int in_opt)
 	return 0;
 }
 
-int XmlRpcd::initHardware ()
+int XmlRpcd::init ()
 {
-	int ret = notifyConn->init ();
+#ifdef HAVE_PGSQL
+	int ret = DeviceDb::init ();
+#else
+	int ret = rts2core::Device::init ();
+#endif
+	if (ret)
+		return ret;
+
+	ret = notifyConn->init ();
 	if (ret)
 		return ret;
 
