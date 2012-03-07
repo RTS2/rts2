@@ -118,7 +118,6 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 
 		virtual void stateChanged (rts2core::ServerState * state);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
-		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 		virtual void focusChange (rts2core::Connection * focus);
 		void center (int centerWidth, int centerHeight);
 

@@ -20,6 +20,8 @@
 #include "focusclient.h"
 #include "utilsfunc.h"
 
+#include <curses.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -765,7 +767,6 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 		windowHeight = pixmapHeight;
 		rebuildWindow ();
 	}
-	std::cout << "Get data : [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "x" << image->getPixelByteSize () << "]" << std::endl;
 	// draw window with image..
 	if (!ximage)
 	{
@@ -863,6 +864,21 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 	low = (short unsigned int) (median - 3 * sigma);
 	hig = (short unsigned int) (median + 5 * sigma);
 
+	// clear progress indicator
+	std::cout << std::setw (COLS) << "x" << '\r';
+
+	if (image->getChannelSize () > 1)
+	{
+		std:: cout << Timestamp () << " multiple channel image" << std::endl;
+		for (int ch = 0; ch < image->getChannelSize (); ch++)
+		{
+			std::cout << "channel " << (ch + 1) << " image [" << image->getChannelWidth (ch) << "x" << image->getChannelHeight (ch) << "x" << image->getPixelByteSize () << "]" << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << Timestamp () << " single channel image [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "x" << image->getPixelByteSize () << "]" << std::endl;
+	}
 	std::cout << "Window median:" << median << " sigma " << sigma << " low:" << low << " hig:" << hig << std::endl;
 	// transfer iP to pixmap, zoom it on fly
 	for (i = 0; i < pixmapHeight; i++)

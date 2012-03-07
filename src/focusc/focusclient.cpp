@@ -121,26 +121,6 @@ rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart
 	return image;
 }
 
-rts2image::imageProceRes FocusCameraClient::processImage (rts2image::Image * image)
-{
-	rts2image::imageProceRes res = rts2image::DevClientCameraFoc::processImage (image);
-	std::cout << "Camera " << getName () << " image_type:";
-	switch (image->getShutter ())
-	{
-		case rts2image::SHUT_CLOSED:
-			std::cout << "dark";
-			break;
-		case rts2image::SHUT_OPENED:
-			std::cout << "object";
-			break;
-		default:
-			std::cout << "unknow";
-			break;
-	}
-	std::cout << std::endl;
-	return res;
-}
-
 void FocusCameraClient::printFWHMTable ()
 {
 	std::list < fwhmData * >::iterator dat;
