@@ -59,7 +59,10 @@ class SimbadTarget:public ConstTarget
 }
 
 /**
- * Return new target object, created from string. String might contain RA DEC pair, MPEC coordinates or any Simbad name.
+ * Return new target object, created from string. String might contain RA DEC pair, MPEC one-line or any Simbad or MPEC name.
+ *
+ * @param tar_string  String containing target name, RA DEC position, MPEC one-line or anything else that can be usefull to
+ *               identify target.
  *
  * @return new target object. Caller must deallocate target object (delete it).
  */
