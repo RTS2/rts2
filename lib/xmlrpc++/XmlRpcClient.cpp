@@ -452,6 +452,7 @@ bool XmlRpcClient::readHeader()
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 	char *te = 0;				 // Transfer-encoding
+	char *co = 0;				 // Connection
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
@@ -459,6 +460,8 @@ bool XmlRpcClient::readHeader()
 			lp = cp + 16;
 		else if ((ep - cp > 19 ) && (strncasecmp(cp, "Transfer-Encoding: ", 19) == 0))
 			te = cp + 19;
+		else if ((ep - cp > 12 ) && (strncasecmp(cp, "Connection: ", 12) == 0))
+			co = cp + 12;
 		else if ((ep - cp > 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
 		else if ((ep - cp > 2) && (strncmp(cp, "\n\n", 2) == 0))
@@ -480,7 +483,22 @@ bool XmlRpcClient::readHeader()
 	// Decode content length
 	if (lp == 0)
 	{
-		if (te != 0 && strncasecmp(te, "chunked", 7) != 0)
+		if (te == 0)
+		{
+			// close connection?
+			if (co && strncasecmp (co, "close", 5) == 0)
+			{
+				_contentLength = -2;
+				_chunkLength = -2;
+				_chunkReceivedLength = 0;
+			}
+			else
+			{
+				XmlRpcUtil::error ("Transfer encoding, lenght or connection close not specified");
+				return false;
+			}
+		}
+		if (strncasecmp(te, "chunked", 7) != 0)
 		{
 			XmlRpcUtil::error("Unknow transfer encoding: %s", te);
 			return false;
@@ -520,7 +538,7 @@ bool XmlRpcClient::readHeader()
 
 bool XmlRpcClient::readResponse()
 {
-	if (_contentLength == -1)
+	if (_contentLength == -1 || _contentLength == -2)
 	{
 		// not full chunk..
 		XmlRpcSocket::nbRead(this->getfd(), _response_buf, _response_length, &_eof);
@@ -529,44 +547,61 @@ bool XmlRpcClient::readResponse()
 			XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: do not received any data");
 			return false;
 		}
-		_chunkStart = _response_buf + _chunkReceivedLength;
-		while (true)
+		// wait for close
+		if (_contentLength == -2)
 		{
-			for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
-			// chunk end not yet found..
-			if (_chunkEnd == _response_buf + _response_length + 2)
-				return true;
-			// get chunkLenght
-			*_chunkEnd = '\0';
-			char *baseEnd;
-			_chunkLength = strtol (_chunkStart, &baseEnd, 16);
-			if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r'))
+			if (!_eof)
 			{
-				XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
-				return false;
-			}
-			// end of chunk transfer
-			if (_chunkLength == 0)
-			{
-				*_chunkStart = '\0';
-				break;
-			}
-			if (_chunkLength < 0)
-			{
-				XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: negative chunk length specified (%d)", _chunkLength);
-				return false;
-			}
-			if (_chunkEnd + 1 + _chunkLength > _response_buf + _response_length)
-			{
+				if (_response_length < 50000)
+				{
+					XmlRpcUtil::error ("Data without content-length longer than 50k - aborting connection");
+					return false;
+				}
 				return true;
 			}
-			// delete chunk..
-			memmove (_chunkStart, _chunkEnd + 1, _response_buf + _response_length - _chunkEnd - 1);
-			_response_length -= _chunkEnd + 1 - _chunkStart;
-			_chunkStart += _chunkLength;
-			_chunkReceivedLength += _chunkLength;
-			memmove (_chunkStart, _chunkStart + 2, _response_buf + _response_length - _chunkStart - 2);
-			_response_length -= 2;
+			// eof received, connection closed,.. - process data received
+		}
+		else
+		{
+			_chunkStart = _response_buf + _chunkReceivedLength;
+			while (true)
+			{
+				for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
+				// chunk end not yet found..
+				if (_chunkEnd == _response_buf + _response_length + 2)
+					return true;
+				// get chunkLenght
+				*_chunkEnd = '\0';
+				char *baseEnd;
+				_chunkLength = strtol (_chunkStart, &baseEnd, 16);
+				if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r'))
+				{
+					XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
+					return false;
+				}
+				// end of chunk transfer
+				if (_chunkLength == 0)
+				{
+					*_chunkStart = '\0';
+					break;
+				}
+				if (_chunkLength < 0)
+				{
+					XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: negative chunk length specified (%d)", _chunkLength);
+					return false;
+				}
+				if (_chunkEnd + 1 + _chunkLength > _response_buf + _response_length)
+				{
+					return true;
+				}
+				// delete chunk..
+				memmove (_chunkStart, _chunkEnd + 1, _response_buf + _response_length - _chunkEnd - 1);
+				_response_length -= _chunkEnd + 1 - _chunkStart;
+				_chunkStart += _chunkLength;
+				_chunkReceivedLength += _chunkLength;
+				memmove (_chunkStart, _chunkStart + 2, _response_buf + _response_length - _chunkStart - 2);
+				_response_length -= 2;
+			}
 		}
 	}
 	// If we dont have the entire response yet, read available data
