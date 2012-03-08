@@ -480,12 +480,7 @@ bool XmlRpcClient::readHeader()
 	// Decode content length
 	if (lp == 0)
 	{
-		if (te == 0)
-		{
-			XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-Length specified");
-			return false;			 // We could try to figure it out by parsing as we read, but for now...
-		}
-		if (strncasecmp(te, "chunked", 7) != 0)
+		if (te != 0 && strncasecmp(te, "chunked", 7) != 0)
 		{
 			XmlRpcUtil::error("Unknow transfer encoding: %s", te);
 			return false;
