@@ -204,8 +204,8 @@ class ShiftStore:
 		pass them through sequence finding algorithm, and fit focusing position.
 		"""
 
-		c = sextractor.Sextractor(fn,['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
-		c.runSExtractor()
+		c = sextractor.Sextractor(['NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+		c.runSExtractor(fn)
 
 
 		self.objects = c.objects

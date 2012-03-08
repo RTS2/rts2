@@ -94,8 +94,8 @@ class Sextractor:
 
 def getFWHM(fn,starsn,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 	"""Returns average FWHM of first starsn stars from the image"""
-	c = Sextractor(fn,['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],threshold=threshold,deblendmin=deblendmin)
-	c.runSExtractor()
+	c = Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],threshold=threshold,deblendmin=deblendmin)
+	c.runSExtractor(fn)
 
 	# sort by magnitude
 	c.sortObjects(2)
