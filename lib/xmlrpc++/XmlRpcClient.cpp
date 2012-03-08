@@ -404,7 +404,7 @@ bool XmlRpcClient::writeRequest()
 	XmlRpcUtil::log(3, "XmlRpcClient::writeRequest: wrote %d of %d bytes.", _bytesWritten, _request.length());
 
 	// Wait for the result
-	if (_bytesWritten == int(_request.length()))
+	if (_bytesWritten == _request.length())
 	{
 		if (_header)
 			free(_header);
@@ -498,14 +498,17 @@ bool XmlRpcClient::readHeader()
 				return false;
 			}
 		}
-		if (strncasecmp(te, "chunked", 7) != 0)
+		else
 		{
-			XmlRpcUtil::error("Unknow transfer encoding: %s", te);
-			return false;
+			if (strncasecmp(te, "chunked", 7) != 0)
+			{
+				XmlRpcUtil::error("Unknow transfer encoding: %s", te);
+				return false;
+			}
+			_contentLength = -1;
+			_chunkLength = -1;
+			_chunkReceivedLength = 0;
 		}
-		_contentLength = -1;
-		_chunkLength = -1;
-		_chunkReceivedLength = 0;
 	}
 	else
 	{
@@ -552,7 +555,7 @@ bool XmlRpcClient::readResponse()
 		{
 			if (!_eof)
 			{
-				if (_response_length < 50000)
+				if (_response_length > 50000)
 				{
 					XmlRpcUtil::error ("Data without content-length longer than 50k - aborting connection");
 					return false;
