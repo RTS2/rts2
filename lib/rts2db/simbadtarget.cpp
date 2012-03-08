@@ -18,7 +18,7 @@
  */
 
 #include "rts2db/simbadtarget.h"
-#include "targetell.h"
+#include "rts2db/mpectarget.h"
 
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlrpc++/urlencoding.h"
@@ -62,8 +62,11 @@ void SimbadTarget::load ()
 	std::string name (getTargetName ());
 	urlencode (name);
 
-	os << "http://cdsws.u-strasbg.fr/axis/services/Sesame?method=sesame&name="
-		<< name << "&resultType=ui&all=true&service=NS";
+	std::string simbadurl;
+
+	rts2core::Configuration::instance ()->getString ("database", "simbadurl", simbadurl, "http://cdsws.u-strasbg.fr/axis/services/Sesame?method=sesame&resultType=ui&all=true&service=NS&name=");
+
+	os << simbadurl << name;
 
 	char url[os.str ().length () + 1];
 	strcpy (url, os.str ().c_str ());
@@ -110,8 +113,8 @@ void SimbadTarget::load ()
 		throw rts2core::Error (err.str ());
 	}
 
-	istringstream *iss = new istringstream ();
-	iss->str ((char *) xpathObj->nodesetval->nodeTab[0]->children->content);
+	istringstream iss;
+	iss.str ((char *) xpathObj->nodesetval->nodeTab[0]->children->content);
 
 	//std::cout << (char *) xpathObj->nodesetval->nodeTab[0]->children->content << std::endl;
 
@@ -120,35 +123,35 @@ void SimbadTarget::load ()
 	xmlFreeDoc (xml);
 
 	string str_type;
-	while (*iss >> str_type)
+	while (iss >> str_type)
 	{
 		if (str_type == "%J")
 		{
 			double ra, dec;
-			*iss >> ra >> dec;
-			iss->getline (buf, LINEBUF);
+			iss >> ra >> dec;
+			iss.getline (buf, LINEBUF);
 			setPosition (ra, dec);
 		}
 		else if (str_type == "#=Simbad:")
 		{
 			int nobj;
-			*iss >> nobj;
+			iss >> nobj;
 			if (nobj != 1)
 			  	throw rts2core::Error ("More then 1 object found!");
 		}
 		else if (str_type == "%C")
 		{
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 			simbadType = string (buf);
 		}
 		else if (str_type == "#B")
 		{
-			*iss >> simbadBMag;
+			iss >> simbadBMag;
 			simbadBMag /= 100;
 		}
 		else if (str_type == "%I")
 		{
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 			aliases.push_back (string (buf));
 		}
 		else if (str_type.substr (0, 3) == "#!E")
@@ -158,33 +161,33 @@ void SimbadTarget::load ()
 		}
 		else if (str_type == "%J.E")
 		{
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 			references = string (buf);
 		}
 		else if (str_type == "%I.0")
 		{
 			// eat whitespace
-			*iss >> std::ws;
+			iss >> std::ws;
 
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 			setTargetName (buf);
 		}
 		else if (str_type == "%@")
 		{
 			// most probably simbad version, ignore
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 		}
 		else if (str_type == "%P")
 		{
-			*iss >> propMotions.ra >> propMotions.dec;
+			iss >> propMotions.ra >> propMotions.dec;
 			// it's in masec/year
 			propMotions.ra /= 360000.0;
 			propMotions.dec /= 360000.0;
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 		}
 		else if (str_type == "#!")
 		{
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 			if (strcasestr (buf, "nothing found"))
 			{
 				// errrors;;
@@ -195,12 +198,12 @@ void SimbadTarget::load ()
 		else if (str_type.c_str ()[0] == '#')
 		{
 			// ignore comments
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 		}
 		else
 		{
 			cerr << "Unknow " << str_type << endl;
-			iss->getline (buf, LINEBUF);
+			iss.getline (buf, LINEBUF);
 		}
 	}
 	#undef LINEBUF
@@ -266,8 +269,18 @@ Target *createTargetByString (const char *tar_string)
 	delete rtar;
 
 	// try to get target from SIMBAD
-	rtar = new rts2db::SimbadTarget (tar_string);
-	rtar->load ();
-	rtar->setTargetType (TYPE_OPORTUNITY);
-	return rtar;
+	try
+	{
+		rtar = new rts2db::SimbadTarget (tar_string);
+		rtar->load ();
+		rtar->setTargetType (TYPE_OPORTUNITY);
+		return rtar;
+	}
+	catch (rts2core::Error &er)
+	{
+		// MPEC fallback
+		rtar = new rts2db::MPECTarget (tar_string);
+		rtar->load ();
+		return rtar;
+	}
 }

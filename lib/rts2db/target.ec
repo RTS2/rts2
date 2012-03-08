@@ -18,7 +18,7 @@
  */
 
 #include "rts2db/target_auger.h"
-#include "targetell.h"
+#include "rts2db/targetell.h"
 #include "rts2targetplanet.h"
 #include "targetgrb.h"
 
@@ -874,27 +874,37 @@ void Target::getDBScript (const char *camera_name, std::string &script)
 	d_camera_name.len = strlen (camera_name);
 	strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
 
-	EXEC SQL
+	EXEC SQL DECLARE find_script CURSOR FOR
 		SELECT
 			script
-		INTO
-			:sc_script :sc_indicator
 		FROM
 			scripts
 		WHERE
-			tar_id = :tar_id
-		AND camera_name = :d_camera_name;
+			tar_id = :tar_id AND camera_name = :d_camera_name;
+	EXEC SQL OPEN find_script;
+	EXEC SQL FETCH next FROM find_script INTO
+		:sc_script :sc_indicator;
+
 	if (sqlca.sqlcode == ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE find_script;
+		EXEC SQL ROLLBACK;
 		throw SqlError ();
+	}
 
 	if (sqlca.sqlcode || sc_indicator < 0)
 	{
 		logStream (MESSAGE_ERROR) << "while loading script for device " << camera_name << " and target " << tar_id << " : " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL CLOSE find_script;
+		EXEC SQL ROLLBACK;
 		throw SqlError ();
 	}
 
 	sc_script.arr[sc_script.len] = '\0';
 	script = std::string (sc_script.arr);
+
+	EXEC SQL CLOSE find_script;
+	EXEC SQL ROLLBACK;
 }
 
 bool Target::getScript (const char *device_name, std::string &buf)

@@ -20,7 +20,7 @@
 #ifndef __RTS2_TARGETELL__
 #define __RTS2_TARGETELL__
 
-#include "rts2db/target.h"
+#include "target.h"
 
 namespace rts2db
 {
@@ -32,11 +32,6 @@ namespace rts2db
  */
 class EllTarget:public Target
 {
-	private:
-		struct ln_ell_orbit orbit;
-
-		std::string designation;
-		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 	public:
 		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		EllTarget (std::string _tar_info):Target () { setTargetInfo (_tar_info); }
@@ -61,6 +56,12 @@ class EllTarget:public Target
 
 		double getEarthDistance (double JD);
 		double getSolarDistance (double JD);
+
+	private:
+		struct ln_ell_orbit orbit;
+
+		std::string designation;
+		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 };
 
 }
