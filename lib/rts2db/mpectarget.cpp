@@ -66,5 +66,11 @@ void MPECTarget::load ()
 	  	err << "error requesting " << url;
 		throw rts2core::Error (err.str ());
 	}
-	orbitFromMPC (reply);
+	ret = orbitFromMPC (reply);
+	if (!ret)
+	{
+		std::ostringstream err;
+		err << "cannot parse " << reply;
+		throw rts2core::Error (err.str ());
+	}
 }
