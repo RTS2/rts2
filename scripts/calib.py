@@ -446,10 +446,19 @@ if __name__ == "__main__":
 
 	parser = OptionParser()
 
-	parser.add_option('-o',help='name of output file',action='store',dest='outf',default='master.fits')
+	class Operations:
+		"""Class holding an array of operations (with possible parameters) to perform on file"""
+		def __init__(self):
+			self.operations=[]
+		def add_op(self,option,opt_str,value,parser):
+			print option,opt_str,value
+
+	ope = Operations()
+
+	parser.add_option('-o',help='name of output file',action='store',dest='outf',default='master.fits',type='str')
 	parser.add_option('--debug',help='write normalized files to disk',action='store_true',dest='debug',default=False)
-	parser.add_option('--dpoint',help='print values of medianed files and master at given point (x:y)',action='store',dest='dpoint')
-	parser.add_option('--histogram',help='plot histograms',action='append',dest='histogram',default=[])
+	parser.add_option('--dpoint',help='print values of medianed files and master at given point (x:y)',action='store',dest='dpoint',type='str')
+	parser.add_option('--histogram',help='plot histograms',action='append',dest='histogram',default=[],type='str')
 	parser.add_option('--result-histogram',help='plot histogram of result (by channels)',action='store_true',dest='result_histogram',default=False)
 	parser.add_option('--square',help='plot histogram of channel squares',action='store',dest='square',default=None)
 	parser.add_option('--median',help='produce median of images - usefull for master dark procession',action='store_true',dest='median',default=False)
@@ -458,10 +467,10 @@ if __name__ == "__main__":
 	parser.add_option('--masterflat',help='produce master flat file',action='store_true',dest='masterflat',default=False)
 	parser.add_option('--masterdark',help='produce master dark file',action='store_true',dest='masterdark',default=False)
 	# file operations, producing set of files
-	parser.add_option('--add',help='add to all images (arguments) image provided as option',action='store',dest='add')
-	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as option',action='store',dest='subtract')
-	parser.add_option('--multiply',help='multiply all images (arguments) by image provided as option',action='store',dest='multiple')
-	parser.add_option('--divide',help='divide all images (arguments) by image provided as option',action='store',dest='divide')
+	parser.add_option('--add',help='add to all images (arguments) image provided as option',action='callback',callback=ope.add_op,type='str')
+	parser.add_option('--subtract',help='subtract from all images (arguments) image provided as option',action='store',dest='subtract',type='str')
+	parser.add_option('--multiply',help='multiply all images (arguments) by image provided as option',action='store',dest='multiple',type='str')
+	parser.add_option('--divide',help='divide all images (arguments) by image provided as option',action='store',dest='divide',type='str')
 
 	(options,args) = parser.parse_args()
 
@@ -510,7 +519,7 @@ if __name__ == "__main__":
 		
 		c.write_files('%f-res.fits')
 	else:
-		if options.median or options.masterdark:
+		if options.median:
 			c.median()
 		elif options.mean:
 			c.mean()
@@ -518,6 +527,8 @@ if __name__ == "__main__":
 			c.op_channels(Channels.OP_MEDIAN_NORMALIZE)
 			c.median()
 			c.op_result(Channels.OP_MEDIAN_NORMALIZE)
+		elif options.masterdark:
+			c.median()
 
 		if options.result_histogram:
 			p = multiprocessing.Process(target=c.plot_result)
