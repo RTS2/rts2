@@ -48,9 +48,17 @@ DevClientCameraExec::~DevClientCameraExec ()
 rts2image::Image * DevClientCameraExec::createImage (const struct timeval *expStart)
 {
 	exposureScript = getScript ();
+	rts2image::Image *ret;
 	if (expandPath)
-		return new rts2image::Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
-	return DevClientCameraImage::createImage (expStart);
+	{
+		ret = new rts2image::Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
+		ret->setWriteConnnection (writeConnection, writeRTS2Values);
+	}
+	else
+	{
+		ret = DevClientCameraImage::createImage (expStart);
+	}
+	return ret;
 }
 
 void DevClientCameraExec::postEvent (rts2core::Event * event)

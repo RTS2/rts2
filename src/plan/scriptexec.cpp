@@ -30,6 +30,8 @@
 using namespace rts2plan;
 using namespace rts2image;
 
+#define OPT_NO_WRITE    OPT_LOCAL + 710
+
 // ScriptExec class
 
 /**
@@ -40,7 +42,10 @@ using namespace rts2image;
 class ClientCameraScript:public rts2script::DevClientCameraExec
 {
 	public:
-		ClientCameraScript (rts2core::Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile):rts2script::DevClientCameraExec (conn, _expandPath, templateFile) {};
+		ClientCameraScript (rts2core::Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile, bool write_conn, bool write_rts2):rts2script::DevClientCameraExec (conn, _expandPath, templateFile)
+		{
+			setWriteConnnection (write_conn, write_rts2);
+		}
 		virtual imageProceRes processImage (Image * image);
 };
 
@@ -132,6 +137,9 @@ int ScriptExec::processOption (int in_opt)
 		case 't':
 			templateFile = std::string (optarg);
 			break;
+		case OPT_NO_WRITE:
+			writeConnection = writeRTS2Values = false;
+			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
 	}
@@ -173,8 +181,11 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 
 	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");
 	addOption ('t', NULL, 1, "template filename for FITS keys");
+	addOption (OPT_NO_WRITE, "no-metadata", 0, "don't write RTS2 metadata, use only template");
 
 	srandom (time (NULL));
+
+	writeConnection = writeRTS2Values = true;
 }
 
 ScriptExec::~ScriptExec (void)
@@ -246,7 +257,7 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 			cli = new rts2script::DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
-			cli = new ClientCameraScript (conn, expandPath, templateFile);
+			cli = new ClientCameraScript (conn, expandPath, templateFile, writeConnection, writeRTS2Values);
 			break;
 		case DEVICE_TYPE_FOCUS:
 			cli = new rts2image::DevClientFocusImage (conn);

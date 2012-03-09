@@ -56,12 +56,14 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 		virtual void deviceIdle (rts2core::Connection * conn);
 
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void usage ();
 
 		virtual int init ();
 		virtual int doProcessing ();
+
 	private:
 		rts2core::ValueString *expandPath;
 		std::string templateFile;
@@ -83,6 +85,9 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 		bool callScriptEnd;
 
 		rts2core::ConnFork *afterImage;
+
+		bool writeConnection;
+		bool writeRTS2Values;
 };
 
 }

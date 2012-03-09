@@ -33,8 +33,8 @@
 #include "clifocuser.h"
 #include "timestamp.h"
 
-#define OPT_FLIP              OPT_LOCAL + 401
-#define OPT_PLATE             OPT_LOCAL + 402
+#define OPT_WCS_CRPIX         OPT_LOCAL + 401
+#define OPT_WCS_CD            OPT_LOCAL + 402
 #define OPT_FOCUS             OPT_LOCAL + 403
 #define OPT_WHEEL             OPT_LOCAL + 404
 #define OPT_WITHSHM           OPT_LOCAL + 405
@@ -53,32 +53,6 @@ FilterVal::FilterVal (Camera *master, const char *n, char fil)
 	name = n;
 }
 
-int Camera::setPlate (const char *arg)
-{
-	double x, y;
-	int ret = sscanf (arg, "%lf:%lf", &x, &y);
-	if (ret != 2)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot parse plate - expected two numbers separated by :" << sendLog;
-		return -1;
-	}
-	setDefaultPlate (x, y);
-	return 0;
-}
-
-void Camera::setDefaultPlate (double x, double y)
-{
-	if (xplate == NULL)
-		createValue (xplate, "XPLATE", "[arcsec] X plate scale", true, RTS2_VALUE_WRITABLE);
-	if (yplate == NULL)
-	  	createValue (yplate, "YPLATE", "[arcsec] Y plate scale", true, RTS2_VALUE_WRITABLE);
-	xplate->setValueDouble (x);
-	yplate->setValueDouble (y);
-
-	defaultXplate = x;
-	defaultYplate = y;
-}
-
 void Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY)
 {
 	setSize (in_width, in_height, 0, 0);
@@ -88,15 +62,26 @@ void Camera::initCameraChip (int in_width, int in_height, double in_pixelX, doub
 
 int Camera::setBinning (int in_vert, int in_hori)
 {
-	if (xplate)
+	// scale WCS parameters
+	if (wcs_crpix1)
 	{
-		xplate->setValueDouble (defaultXplate * in_hori);
-		sendValueAll (xplate);
+		wcs_crpix1->setValueDouble (default_crpix[0] / in_vert);
+		wcs_crpix2->setValueDouble (default_crpix[1] / in_hori);
+
+		sendValueAll (wcs_crpix1);
+		sendValueAll (wcs_crpix2);
 	}
-	if (yplate)
+	if (wcs_cd1_1)
 	{
-		yplate->setValueDouble (defaultYplate * in_vert);
-		sendValueAll (yplate);
+		wcs_cd1_1->setValueDouble (default_cd[0] / in_vert);
+		wcs_cd1_2->setValueDouble (default_cd[1] / in_vert);
+		wcs_cd2_1->setValueDouble (default_cd[2] / in_hori);
+		wcs_cd2_2->setValueDouble (default_cd[3] / in_hori);
+
+		sendValueAll (wcs_cd1_1);
+		sendValueAll (wcs_cd1_2);
+		sendValueAll (wcs_cd2_1);
+		sendValueAll (wcs_cd2_2);
 	}
 	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
 	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
@@ -327,6 +312,13 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
 
+	wcs_crpix1 = wcs_crpix2 = NULL;
+	default_crpix[0] = default_crpix[1] = 0;
+
+	wcs_cd1_1 = wcs_cd1_2 = wcs_cd2_1 = wcs_cd2_2 = NULL;
+	default_cd[0] = default_cd[2] = 1;
+	default_cd[1] = default_cd[3] = 0;
+
 	pixelX = NAN;
 	pixelY = NAN;
 
@@ -334,12 +326,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	shmBuffer = NULL;
 	sharedMemId = -2;
-
-	xplate = NULL;
-	yplate = NULL;
-
-	defaultXplate = NAN;
-	defaultYplate = NAN;
 
 	currentImageData = -1;
 
@@ -403,9 +389,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (exposure, "exposure", "current exposure time", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	exposure->setValueDouble (1);
 
-	createValue (flip, "FLIP", "camera flip (since most astrometry devices works as mirrors", true);
-	setDefaultFlip (1);
-
 	sendOkInExposure = false;
 
 	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);
@@ -413,9 +396,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (transferTime, "transfer_time", "[s] data transfer time, including overhead", false, RTS2_DT_TIMEINTERVAL);
 
 	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
-
-	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
-	rotang->setValueDouble (0);
 
         camFilterVal = NULL;
 	camFilterOffsets = NULL;
@@ -435,9 +415,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
-	addOption ('r', NULL, 1, "camera rotang");
-	addOption (OPT_FLIP, "flip", 1, "camera flip (default to 1)");
-	addOption (OPT_PLATE, "plate", 1, "camera plate scale, x:y");
+	addOption (OPT_WCS_CD, "wcs-cd", 1, "WCS CD matrix (CD1_1:CD1_2:CD2_1:CD2_2 in default, unbinned configuration)");
+	addOption (OPT_WCS_CRPIX, "wcs-crpix", 1, "WCS reference pixels (x:y, default to CCD center)");
 	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
 }
 
@@ -600,6 +579,7 @@ int Camera::info ()
 
 int Camera::processOption (int in_opt)
 {
+	std::vector <std::string> params;
 	switch (in_opt)
 	{
 		case OPT_FOCUS:
@@ -623,14 +603,50 @@ int Camera::processOption (int in_opt)
 				return rts2core::ScriptDevice::processOption (in_opt);
 			nightCoolTemp->setValueCharArr (optarg);
 			break;
-		case 'r':
-			rotang->setValueCharArr (optarg);
+		case OPT_WCS_CRPIX:
+			if (wcs_crpix1 == NULL)
+			{
+				createValue (wcs_crpix1, "CRPIX1", "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crpix2, "CRPIX2", "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
+			}
+			params = SplitStr (optarg, ":");
+			if (params.size () != 2)
+			{
+				std::cerr << "cannot parse --wcs-crpix parameter " << optarg << std::endl;
+				return -1;
+			}
+
+			for (int i = 0; i < 2; i++)
+				default_crpix[i] = atof (params[i].c_str ());
+
+			wcs_crpix1->setValueDouble (default_crpix[0]);
+			wcs_crpix2->setValueDouble (default_crpix[1]);
+
 			break;
-		case OPT_FLIP:
-			flip->setValueCharArr (optarg);
+		case OPT_WCS_CD:
+			// create WCS parameters..
+			if (wcs_cd1_1 == NULL)
+			{
+				createValue (wcs_cd1_1, "CD1_1", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd1_2, "CD1_2", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd2_1, "CD2_1", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd2_2, "CD2_2", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+			}
+			params = SplitStr (optarg, ":");
+			if (params.size () != 4)
+			{
+				std::cerr << "cannot parse --wcs-cd parameter " << optarg << std::endl;
+				return -1;
+			}
+
+			for (int i = 0; i < 4; i++)
+				default_cd[i] = atof (params[i].c_str ());
+
+			wcs_cd1_1->setValueDouble (default_cd[0]);
+			wcs_cd1_2->setValueDouble (default_cd[1]);
+			wcs_cd2_1->setValueDouble (default_cd[2]);
+			wcs_cd2_2->setValueDouble (default_cd[3]);
 			break;
-		case OPT_PLATE:
-			return setPlate (optarg);
 		case OPT_WITHSHM:
 			sharedMemId = -1;
 			break;
@@ -1008,16 +1024,6 @@ int Camera::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	{
 		rts2core::ValueRectangle *rect = (rts2core::ValueRectangle *) new_value;
 		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt (), rect) == 0 ? 0 : -2;
-	}
-	if (old_value == xplate)
-	{
-		setDefaultPlate (new_value->getValueDouble (), yplate->getValueDouble ());
-		return 0;
-	}
-	if (old_value == yplate)
-	{
-		setDefaultPlate (xplate->getValueDouble (), new_value->getValueDouble ());
-		return 0;
 	}
 	if (old_value == coolingOnOff)
 	{

@@ -368,28 +368,6 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueSelection *expType;
 
 		/**
-		 * Change flip of the camera. This is usually done when chaning
-		 * readout channel on devices with tho channels.
-		 *
-		 * @param bool True if flip is changed, false if it should be
-		 * reset to default.
-		 */
-		void changeFlip (bool change)
-		{
-			flip->setValueInteger (change ? !defaultFlip : defaultFlip);
-			sendValueAll (flip);
-		}
-
-		/**
-		 * Set flip and default flip.
-		 */
-		void setDefaultFlip (int _flip)
-		{
-			flip->setValueInteger (_flip);
-			defaultFlip = _flip;
-		}
-
-		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.
 		 *
 		 * @return Exposure number.
@@ -1061,17 +1039,20 @@ class Camera:public rts2core::ScriptDevice
 			return 0;
 		}
 
-		// DARK of LIGHT frames
-		rts2core::ValueInteger *flip;
-		bool defaultFlip;
+		// WCS CRPIX
+		rts2core::ValueDouble *wcs_crpix1;
+		rts2core::ValueDouble *wcs_crpix2;
 
-		rts2core::ValueDouble *xplate;
-		rts2core::ValueDouble *yplate;
-		double defaultXplate;
-		double defaultYplate;
+		double default_crpix[2];
 
-		int setPlate (const char *arg);
-		void setDefaultPlate (double x, double y);
+		// WCS CD matrix
+		rts2core::ValueDouble *wcs_cd1_1;
+		rts2core::ValueDouble *wcs_cd1_2;
+		rts2core::ValueDouble *wcs_cd2_1;
+		rts2core::ValueDouble *wcs_cd2_2;
+
+		// 1:1 binning, default rotation matrix - cd1_1,cd1_2,cd2_1,cd2_2
+		double default_cd[4];
 
 		rts2core::ValueRectangle *chipSize;
 
@@ -1079,7 +1060,6 @@ class Camera:public rts2core::ScriptDevice
 		int camStartExposureWithoutCheck ();
 
 		rts2core::ValueInteger *camFocVal;
-		rts2core::ValueDouble *rotang;
 
 		int getStateChip (int chip);
 

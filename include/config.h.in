@@ -27,6 +27,9 @@
 /* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
 
+/* If crypt library is installed */
+#undef HAVE_CRYPT
+
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 

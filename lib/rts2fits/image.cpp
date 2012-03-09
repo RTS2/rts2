@@ -83,9 +83,7 @@ void Image::initData ()
 	focName = NULL;
 	filter_i = -1;
 	filter = NULL;
-	average = 0;
-	stdev = 0;
-	bg_stdev = 0;
+	avg_stdev = 0;
 	min = max = mean = 0;
 	dataType = RTS2_DATA_USHORT;
 	sexResults = NULL;
@@ -109,10 +107,8 @@ void Image::initData ()
 
 	flags = 0;
 
-	xoa = rts2_nan ("f");
-	yoa = rts2_nan ("f");
-
-	mnt_flip = 0;
+	writeConnection = true;
+	writeRTS2Values = true;
 }
 
 
@@ -136,9 +132,7 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	focPos = in_image->focPos;
 	signalNoise = in_image->signalNoise;
 	getFailed = in_image->getFailed;
-	average = in_image->average;
-	stdev = in_image->stdev;
-	bg_stdev = in_image->bg_stdev;
+	avg_stdev = in_image->avg_stdev;
 	min = in_image->min;
 	max = in_image->max;
 	mean = in_image->mean;
@@ -174,11 +168,6 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	// other image will be saved!
 	flags = in_image->flags;
 	in_image->flags &= ~IMAGE_SAVE;
-
-	xoa = in_image->xoa;
-	yoa = in_image->yoa;
-
-	mnt_flip = in_image->mnt_flip;
 }
 
 Image::Image (const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
@@ -445,21 +434,13 @@ void Image::getHeaders ()
 	filter = new char[5];
 	getValue ("FILTER", filter, 5, "UNK", verbose);
 	getValue ("AVERAGE", average, false);
-	getValue ("STDEV", stdev, false);
-	getValue ("BGSTDEV", bg_stdev, false);
+	getValue ("AVGSTDEV", avg_stdev, false);
 	getValue ("RA_ERR", ra_err, false);
 	getValue ("DEC_ERR", dec_err, false);
 	getValue ("POS_ERR", img_err, false);
 	// astrometry get !!
 	getValue ("CRVAL1", pos_astr.ra, false);
 	getValue ("CRVAL2", pos_astr.dec, false);
-	// xoa..
-	xoa = yoa = 0;
-	getValue ("CAM_XOA", xoa, false);
-	getValue ("CAM_YOA", yoa, false);
-
-	mnt_flip = 0;
-	getValue ("MNT_FLIP", mnt_flip, false);
 }
 
 void Image::getTargetHeaders ()
@@ -766,28 +747,16 @@ int Image::linkImageExpand (std::string link_ex)
 	return linkImage (link_filename.c_str ());
 }
 
-/*int Image::saveImageData (const char *save_filename, unsigned short *in_data)
-{
-	fitsfile *fp;
-	fits_status = 0;
-
-	fits_open_file (&fp, save_filename, READWRITE, &fits_status);
-	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
-	{
-		fits_write_img (fp, TUSHORT, 1, iter->getNPixels (), in_data, &fits_status);
-	}
-	fits_close_file (fp, &fits_status);
-
-	return 0;
-}*/
-
 int Image::writeExposureStart ()
 {
-	setValue ("CTIME", getCtimeSec (), "exposure start (seconds since 1.1.1970)");
-	setValue ("USEC", getCtimeUsec (), "exposure start micro seconds");
-	time_t tim = getCtimeSec ();
-	setValue ("JD", getExposureJD (), "exposure JD");
-	setValue ("DATE-OBS", &tim, getCtimeUsec (), "start of exposure");
+	if (writeRTS2Values)
+	{
+		setValue ("CTIME", getCtimeSec (), "exposure start (seconds since 1.1.1970)");
+		setValue ("USEC", getCtimeUsec (), "exposure start micro seconds");
+		time_t tim = getCtimeSec ();
+		setValue ("JD", getExposureJD (), "exposure JD");
+		setValue ("DATE-OBS", &tim, getCtimeUsec (), "start of exposure");
+	}
 	return 0;
 }
 
@@ -805,7 +774,7 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 		if (hc)
 			writeTemplate (hc, NULL);
 	}
-	else
+	else if (writeRTS2Values)
 	{
 		writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
 	}
@@ -820,35 +789,34 @@ void Image::writePhysical (int x, int y, int bin_x, int bin_y)
 	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
-void Image::writeMetaData (struct imghdr *im_h, double _xoa, double _yoa)
+void Image::writeMetaData (struct imghdr *im_h)
 {
-	if (!getFitsFile () || !(flags & IMAGE_SAVE))
+	if (writeRTS2Values)
 	{
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "not saving data " << getFitsFile () << " "
-			<< (flags & IMAGE_SAVE) << sendLog;
-		#endif					 /* DEBUG_EXTRA */
-		return;
-	}
+		if (!getFitsFile () || !(flags & IMAGE_SAVE))
+		{
+			#ifdef DEBUG_EXTRA
+			logStream (MESSAGE_DEBUG) << "not saving data " << getFitsFile () << " " << (flags & IMAGE_SAVE) << sendLog;
+			#endif					 /* DEBUG_EXTRA */
+			return;
+		}
 
-	setXoA ((_xoa - ntohs (im_h->x)) / ntohs (im_h->binnings[0]));
-	setYoA ((_yoa - ntohs (im_h->y)) / ntohs (im_h->binnings[1]));
+		filter_i = ntohs (im_h->filter);
 
-	filter_i = ntohs (im_h->filter);
-
-	setValue ("CAM_FILT", filter_i, "filter used for image");
-	setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
-	// dark images don't need to wait till imgprocess will pick them up for reprocessing
-	switch (ntohs (im_h->shutter))
-	{
-		case 0:
-			shutter = SHUT_OPENED;
-			break;
-		case 1:
-			shutter = SHUT_CLOSED;
-			break;
-		default:
-			shutter = SHUT_UNKNOW;
+		setValue ("CAM_FILT", filter_i, "filter used for image");
+		setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
+		// dark images don't need to wait till imgprocess will pick them up for reprocessing
+		switch (ntohs (im_h->shutter))
+		{
+			case 0:
+				shutter = SHUT_OPENED;
+				break;
+			case 1:
+				shutter = SHUT_CLOSED;
+				break;
+			default:
+				shutter = SHUT_UNKNOW;
+		}
 	}
 }
 
@@ -858,8 +826,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	int ret;
 
 	average = 0;
-	stdev = 0;
-	bg_stdev = 0;
+	avg_stdev = 0;
 
 	// we have to copy data to FITS anyway, so let's do it right now..
 	if (ntohs (im_h->naxes) != 2)
@@ -881,16 +848,14 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 
 	if (flags & IMAGE_KEEP_DATA)
 	{
-		ch = new Channel (pixelData, dataSize, 2, sizes);
+		ch = new Channel (pixelData, dataSize, 2, sizes, dataType);
 	}
 	else
 	{
-		ch = new Channel (pixelData, 2, sizes, false);
+		ch = new Channel (pixelData, 2, sizes, dataType, false);
 	}
 
 	channels.push_back (ch);
-
-	computeStatistics ();
 
 	if (!getFitsFile () || !(flags & IMAGE_SAVE))
 	{
@@ -979,12 +944,13 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 		logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors () << sendLog;
 		return -1;
 	}
-	setValue ("AVERAGE", average, "average value of image");
-	setValue ("STDEV", stdev, "standard deviation value of image");
-	setValue ("BGSTDEV", stdev, "standard deviation value of background");
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "writeDate returns " << ret << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+	if (writeRTS2Values)
+	{
+		ch->computeStatistics ();
+
+		setValue ("AVERAGE", ch->getAverage (), "average value of image");
+		setValue ("STDEV", ch->getStDev (), "standard deviation value of image");
+	}
 	return ret;
 }
 
@@ -1322,7 +1288,8 @@ void Image::setMountName (const char *in_mountName)
 	delete[]mountName;
 	mountName = new char[strlen (in_mountName) + 1];
 	strcpy (mountName, in_mountName);
-	setValue ("MNT_NAME", mountName, "name of mount");
+	if (writeRTS2Values)
+		setValue ("MNT_NAME", mountName, "name of mount");
 }
 
 void Image::setCameraName (const char *new_name)
@@ -1418,7 +1385,8 @@ void Image::setFilter (const char *in_filter)
 {
 	filter = new char[strlen (in_filter) + 1];
 	strcpy (filter, in_filter);
-	setValue ("FILTER", filter, "camera filter as string");
+	if (writeRTS2Values)
+		setValue ("FILTER", filter, "camera filter as string");
 }
 
 void Image::computeStatistics ()
@@ -1426,88 +1394,24 @@ void Image::computeStatistics ()
 	if (channels.size () == 0)
 		loadChannels ();
 
-	const char *pixel;
-	const char *fullTop;
-
+	long double pixelSum = 0;
 	long totalSize = 0;
 
-	// calculate average of all channels..
+	avg_stdev = 0;
+
 	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
-		pixel = (*iter)->getData ();
-		switch (dataType)
-		{
-			case RTS2_DATA_BYTE:
-				fullTop = pixel + (*iter)->getNPixels ();
-				totalSize += (*iter)->getNPixels ();
-				while (pixel < fullTop)
-				{
-					average += * ((uint8_t *) pixel);
-					pixel++;
-				}
-				break;
-			case RTS2_DATA_USHORT:
-				fullTop = pixel + sizeof (uint16_t) * (*iter)->getNPixels ();
-				totalSize += (*iter)->getNPixels ();
-				while (pixel < fullTop)
-				{
-					average += * ((uint16_t *) pixel);
-					pixel += sizeof (uint16_t);
-				}
-				break;
-		}
-	}
+		(*iter)->computeStatistics ();
 
-	int bg_size = 0;
+		totalSize += (*iter)->getNPixels ();
+		pixelSum += (*iter)->getPixelSum ();
+		avg_stdev += (*iter)->getStDev ();
+	}
 
 	if (totalSize > 0)
 	{
-		average /= totalSize;
-		// calculate stdev
-		for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
-		{
-			pixel = (*iter)->getData ();
-			switch (dataType)
-			{
-				case RTS2_DATA_BYTE:
-					fullTop = pixel + sizeof (uint8_t) * (*iter)->getNPixels ();
-					while (pixel < fullTop)
-					{
-						long double tmp_s = * ((uint8_t*) pixel) - average;
-						long double tmp_ss = tmp_s * tmp_s;
-						if (fabs (tmp_s) < average / 10)
-						{
-							bg_stdev += tmp_ss;
-							bg_size++;
-						}
-						stdev += tmp_ss;
-						pixel++;
-					}
-					break;
-				case RTS2_DATA_USHORT:
-					fullTop = pixel + sizeof (uint16_t) * (*iter)->getNPixels ();
-					while (pixel < fullTop)
-					{
-						long double tmp_s = * ((uint16_t *) pixel) - average;
-						long double tmp_ss = tmp_s * tmp_s;
-						if (fabs (tmp_s) < average / 10)
-						{
-							bg_stdev += tmp_ss;
-							bg_size++;
-						}
-						stdev += tmp_ss;
-						pixel += sizeof (uint16_t);
-					}
-					break;
-			}
-		}
-		stdev = sqrt (stdev / totalSize);
-		bg_stdev = sqrt (bg_stdev / bg_size);
-	}
-	else
-	{
-		average = 0;
-		stdev = 0;
+		average = pixelSum / totalSize;
+		avg_stdev /= channels.size ();
 	}
 }
 
@@ -1634,7 +1538,7 @@ void Image::loadChannels ()
 		}
 		fitsStatusGetValue ("image loadChannels", true);
 
-		channels.push_back (new Channel (imageData, naxis, sizes, true));
+		channels.push_back (new Channel (imageData, naxis, sizes, dataType, true));
 	}
 	moveHDU (1);
 }
@@ -1666,35 +1570,6 @@ unsigned short * Image::getChannelDataUShortInt (int chan)
 	// convert type to ushort int
 	return NULL;
 }
-
-/*void Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
-{
-	imageData = (char *) in_data;
-	dataType = RTS2_DATA_USHORT;
-	naxis[0] = in_naxis[0];
-	naxis[1] = in_naxis[1];
-	flags |= IMAGE_DONT_DELETE_DATA;
-} */
-
-/*int Image::substractDark (Image * darkImage)
-{
-	unsigned short *img_data;
-	unsigned short *dark_data;
-	if (getWidth () != darkImage->getWidth ()
-		|| getHeight () != darkImage->getHeight ())
-		return -1;
-	img_data = getDataUShortInt ();
-	dark_data = darkImage->getDataUShortInt ();
-	for (long i = 0; i < (getWidth () * getHeight ());
-		i++, img_data++, dark_data++)
-	{
-		if (*img_data <= *dark_data)
-			*img_data = 0;
-		else
-			*img_data = *img_data - *dark_data;
-	}
-	return 0;
-}*/
 
 int Image::setAstroResults (double in_ra, double in_dec, double in_ra_err, double in_dec_err)
 {
@@ -1729,46 +1604,6 @@ int Image::addStarData (struct stardata *sr)
 	return 0;
 }
 
-/* static int
-sdcompare (struct stardata *x1, struct stardata *x2)
-{
-  if (x1->fwhm < x2->fwhm)
-	return 1;
-  if (x1->fwhm > x2->fwhm)
-	return -1;
-  return 0;
-} */
-int Image::isGoodForFwhm (struct stardata *sr)
-{
-	return (sr->flags == 0 && sr->F > signalNoise * sr->Fe);
-}
-
-double Image::getFWHM ()
-{
-	double avg;
-	struct stardata *sr;
-	int i;
-	int numStars;
-	if (sexResultNum < 4)
-		return rts2_nan ("f");
-
-	// qsort (sexResults, sexResultNum, sizeof (struct stardata), sdcompare);
-	// get average
-	avg = 0;
-	numStars = 0;
-	sr = sexResults;
-	for (i = 0; i < sexResultNum; i++, sr++)
-	{
-		if (isGoodForFwhm (sr))
-		{
-			avg += sr->fwhm;
-			numStars++;
-		}
-	}
-	avg /= numStars;
-	return avg;
-}
-
 static int shortcompare (const void *val1, const void *val2)
 {
 	return (*(unsigned short *) val1 < *(unsigned short *) val2) ? -1 :
@@ -1782,171 +1617,6 @@ unsigned short getShortMean (unsigned short *averageData, int sub)
 		return averageData[sub / 2];
 	return (averageData[(sub / 2) - 1] + averageData[(sub / 2)]) / 2;
 }
-
-/*
-int Image::getCenterRow (long row, int row_width, double &x)
-{
-	unsigned short *tmp_data;
-	tmp_data = getDataUShortInt ();
-	unsigned short *rowData;
-	unsigned short *averageData;
-	unsigned short data_max;
-	long i;
-	long j;
-	// long k;
-	long maxI;
-	if (!tmp_data)
-		return -1;
-	// compute average collumn
-	rowData = new unsigned short[getWidth ()];
-	averageData = new unsigned short[row_width];
-	tmp_data += row * getWidth ();
-	if (row_width < 2)
-	{
-		return -1;
-	}
-	for (j = 0; j < getWidth (); j++)
-	{
-		for (i = 0; i < row_width; i++)
-		{
-			averageData[i] = tmp_data[j + i * getWidth ()];
-		}
-		rowData[j] = getShortMean (averageData, row_width);
-	}
-	// bin data in row..
-	/ i = j = k = 0;
-	   while (j < getWidth ())
-	   {
-	   // last bit..
-	   k += row_width;
-	   rowData[i] =
-	   getShortMean (rowData + j,
-	   (k > getWidth ())? (k - getWidth ()) : row_width);
-	   i++;
-	   j = k;
-	   } /
-	// decide, which part of slope we are in
-	// i hold size of reduced rowData array
-	// find maximum..
-	data_max = rowData[0];
-	maxI = 0;
-	for (j = 1; j < i; j++)
-	{
-		if (rowData[j] > data_max)
-		{
-			data_max = rowData[j];
-			maxI = j;
-		}
-	}
-	// close to left border - left
-	if (maxI < (i / 10))
-		x = -1;
-	// close to right border - right
-	else if (maxI > (i - (i / 10)))
-		x = getWidth () + 1;
-	// take value in middle
-	else
-		x = (maxI * row_width) + row_width / 2;
-	delete[]rowData;
-	delete[]averageData;
-	return 0;
-}
-
-int Image::getCenterCol (long col, int col_width, double &y)
-{
-	unsigned short *tmp_data;
-	tmp_data = getDataUShortInt ();
-	unsigned short *colData;
-	unsigned short *averageData;
-	unsigned short data_max;
-	long i;
-	long j;
-	// long k;
-	long maxI;
-	if (!tmp_data)
-		return -1;
-	// smooth image..
-	colData = new unsigned short[getHeight ()];
-	averageData = new unsigned short[col_width];
-	tmp_data += col * getHeight ();
-	if (col_width < 2)
-	{
-		// special handling..
-		return -1;
-	}
-	for (j = 0; j < getHeight (); j++)
-	{
-		for (i = 0; i < col_width; i++)
-		{
-			averageData[i] = tmp_data[j + i * getHeight ()];
-		}
-		colData[j] = getShortMean (averageData, col_width);
-	}
-	// bin data in row..
-	/ i = j = k = 0;
-	   while (j < getHeight ())
-	   {
-	   // last bit..
-	   k += col_width;
-	   colData[i] =
-	   getShortMean (colData + j,
-	   (k > getHeight ())? (k - getHeight ()) : col_width);
-	   i++;
-	   j = k;
-	   }
-	 /
-	// find gauss on image..
-	//ret = findGauss (colData, i, y);
-	data_max = colData[0];
-	maxI = 0;
-	for (j = 1; j < i; j++)
-	{
-		if (colData[j] > data_max)
-		{
-			data_max = colData[j];
-			maxI = j;
-		}
-	}
-	// close to left border - left
-	if (maxI < (i / 10))
-		y = -1;
-	// close to right border - right
-	else if (maxI > (i - (i / 10)))
-		y = getHeight () + 1;
-	// take value in middle
-	else
-		y = (maxI * col_width) + col_width / 2;
-	delete[]colData;
-	delete[]averageData;
-	return 0;
-}
-
-int Image::getCenter (double &x, double &y, int bin)
-{
-	int ret;
-	long i;
-	i = 0;
-	while ((i + bin) < getHeight ())
-	{
-		ret = getCenterRow (i, bin, x);
-		if (ret)
-			return -1;
-		if (x > 0 && x < getWidth ())
-			break;
-		i += bin;
-	}
-	i = 0;
-	while ((i + bin) < getWidth ())
-	{
-		ret = getCenterCol (i, bin, y);
-		if (ret)
-			return -1;
-		if (y > 0 && y < getHeight ())
-			break;
-		i += bin;
-	}
-	return 0;
-}*/
 
 long Image::getSumNPixels ()
 {
@@ -2323,37 +1993,36 @@ void Image::setEnvironmentalValues ()
 
 void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
 {
-	for (rts2core::ValueVector::iterator iter = conn->valueBegin ();
-		iter != conn->valueEnd (); iter++)
+	if (writeConnection)
 	{
-		rts2core::Value *val = *iter;
-		if (val->getWriteToFits ())
+		for (rts2core::ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 		{
-			switch (which)
+			rts2core::Value *val = *iter;
+			if (val->getWriteToFits ())
 			{
-				case EXPOSURE_START:
-					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
-						writeConnValue (conn, val);
-					val->resetValueChanged ();
-					if (val->getValueDisplayType () == RTS2_DT_ROTANG)
-						addRotang (val->getValueDouble ());
-					break;
-				case INFO_CALLED:
-					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
-						writeConnValue (conn, val);
-					break;
-				case TRIGGERED:
-					if (val->getValueWriteFlags () == RTS2_VWHEN_TRIGGERED)
-					  	writeConnValue (conn, val);
-					break;
-				case EXPOSURE_END:
-					// check to write change of value
-					if (val->writeWhenChanged ())
-						recordChange (conn, val);
-					break;
+				switch (which)
+				{
+					case EXPOSURE_START:
+						if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
+							writeConnValue (conn, val);
+						val->resetValueChanged ();
+						break;
+					case INFO_CALLED:
+						if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
+							writeConnValue (conn, val);
+						break;
+					case TRIGGERED:
+						if (val->getValueWriteFlags () == RTS2_VWHEN_TRIGGERED)
+						  	writeConnValue (conn, val);
+						break;
+					case EXPOSURE_END:
+						// check to write change of value
+						if (val->writeWhenChanged ())
+							recordChange (conn, val);
+						break;
+				}
 			}
 		}
-
 	}
 }
 
@@ -2383,8 +2052,8 @@ std::ostream & Image::printImage (std::ostream & _os)
 	_os << "C " << getCameraName ()
 		<< " [" << getChannelWidth (0) << ":"
 		<< getChannelHeight (0) << "]"
-		<< " RA " << getCenterRa () << " (" << LibnovaDegArcMin (ra_err)
-		<< ") DEC " << getCenterDec () << " (" << LibnovaDegArcMin (dec_err)
+		<< " RA (" << LibnovaDegArcMin (ra_err)
+		<< ") DEC (" << LibnovaDegArcMin (dec_err)
 		<< ") IMG_ERR " << LibnovaDegArcMin (img_err);
 	return _os;
 }

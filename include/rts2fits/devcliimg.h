@@ -61,6 +61,12 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		 */
 		Image *getActualImage () { return lastImage; }
 
+		void setWriteConnnection (bool write_conn, bool write_rts2)
+		{
+			writeConnection = write_conn;
+			writeRTS2Values = write_rts2;
+		}
+
 	protected:
 
 		/**
@@ -95,10 +101,6 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		int saveImage;
 
 		// some camera characteristics..
-		double xoa;
-		double yoa;
-		double ter_xoa;
-		double ter_yoa;
 		std::string instrume;
 		std::string telescop;
 		std::string origin;
@@ -108,6 +110,10 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		bool waitForMetaData ();
 		void setTriggered () { triggered = true; }
+
+		// if values should be written
+		bool writeConnection;
+		bool writeRTS2Values;
 
 	private:
 		void writeFilter (Image *img);

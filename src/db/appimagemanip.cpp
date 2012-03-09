@@ -48,13 +48,10 @@
 #define IMAGEOP_COPY      0x0020
 #define IMAGEOP_SYMLINK	  0x0040
 #define IMAGEOP_MOVE      0x0080
-#define IMAGEOP_EVAL      0x0100
-#define IMAGEOP_CREATEWCS 0x0200
 #define IMAGEOP_ADDHELIO  0x0400
 #define IMAGEOP_MODEL     0x0800
 #define IMAGEOP_JPEG      0x1000
 #define IMAGEOP_STAT      0x2000
-#define IMAGEOP_DISTANCE  0x4000
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 #define OPT_ADDHELIO  OPT_LOCAL + 6
@@ -104,9 +101,6 @@ class AppImage:public rts2image::AppImageCore
 		int insert (rts2image::ImageDb * image);
 #endif
 		void testImage (rts2image::Image * image);
-		void pointDistance (rts2image::Image * image);
-		void testEval (rts2image::Image * image);
-		void createWCS (rts2image::Image * image);
 		void printModel (rts2image::Image * image);
 		void printStat (rts2image::Image * image);
 
@@ -141,30 +135,7 @@ using namespace rts2image;
 
 void AppImage::printOffset (double x, double y, Image * image)
 {
-	double sep;
-	double x_out;
-	double y_out;
-	double ra, dec;
-
-	image->getOffset (x, y, x_out, y_out, sep);
-	image->getRaDec (x, y, ra, dec);
-
-	std::ios_base::fmtflags old_settings =
-		std::cout.setf (std::ios_base::fixed, std::ios_base::floatfield);
-
-	int old_p = std::cout.precision (2);
-
-	std::cout << "Image::getOffset ("
-		<< std::setw (10) << x << ", "
-		<< std::setw (10) << y << "): "
-		<< "RA " << LibnovaRa (ra) << " "
-		<< LibnovaDegArcMin (x_out)
-		<< " DEC " << LibnovaDec (dec) << " "
-		<< LibnovaDegArcMin (y_out) << " ("
-		<< LibnovaDegArcMin (sep) << ")" << std::endl;
-
-	std::cout.precision (old_p);
-	std::cout.setf (old_settings);
+	std::cout << "not implemented" << std::endl;
 }
 
 int AppImage::addDate (Image * image)
@@ -198,65 +169,18 @@ int AppImage::insert (ImageDb * image)
 
 void AppImage::testImage (Image * image)
 {
-	double ra, dec; //, x, y;
 	std::cout
 		<< image << std::endl
 		<< "average " << image->getAverage () << std::endl
-		<< "stdev " << image->getStdDev () << std::endl
-		<< "bg_stdev " << image->getBgStdDev () << std::endl
-		<< "Image XoA and Yoa: [" << image->getXoA ()
-		<< ":" << image->getYoA () << "]" << std::endl
-		<< "[XoA:YoA] RA: " << image->getCenterRa ()
-		<< " DEC: " << image->getCenterDec () << std::endl
-		<< "FLIP: " << image->getFlip () << std::endl
-		<< image->getRaDec (image->getXoA (), image->getYoA (), ra, dec)
-		<< "ROTANG: " << ln_rad_to_deg (image->getRotang ())
-		<< " (deg) XPLATE: " << image->getXPlate ()
-		<< " YPLATE: " << image->getYPlate () << std::endl
-		<< "RA and DEC of [XoA:YoA]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (0, 0, ra, dec) << "RA and DEC of [0:0]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (image->getChannelWidth (0), 0, ra, dec) << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (0, image->getChannelHeight (0), ra, dec) << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
-		<< image->getRaDec (image->getChannelWidth (0), image->getChannelHeight (0), ra, dec) << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
+		<< "stdev " << image->getAvgStdDev () << std::endl
+		//<< image->getRaDec (0, 0, ra, dec) << "RA and DEC of [0:0]: " << ra << ", " << dec << std::endl
+		//<< image->getRaDec (image->getChannelWidth (0), 0, ra, dec) << "RA and DEC of [W:0]: " << ra << ", " << dec << std::endl
+		//<< image->getRaDec (0, image->getChannelHeight (0), ra, dec) << "RA and DEC of [0:H]: " << ra << ", " << dec << std::endl
+		//<< image->getRaDec (image->getChannelWidth (0), image->getChannelHeight (0), ra, dec) << "RA and DEC of [W:H]: " << ra << ", " << dec << std::endl
 		// << "Image::getCenterRow " << image->getCenter (x, y, 3) << " " << x << ":" << y << std::endl
 		<< "Expression %b/%t/%i/%c/%f '" << image->expandPath (std::string ("%b/%t/%i/%c/%f")) << '\'' << std::endl
 		<< "Expression $DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits '" << image->expandPath (std::string ("$DATE-OBS$/%b/%e/%E/%f/%F/%t/%i/%y/%m/%d/%D/%H/%M/%S/%s.fits")) << '\'' << std::endl
 		<< "Target Type " << image->getTargetType () << std::endl;
-
-	printOffset (image->getXoA () + 50, image->getYoA (), image);
-	printOffset (image->getXoA (), image->getYoA () + 50, image);
-	printOffset (image->getXoA () - 50, image->getYoA (), image);
-	printOffset (image->getXoA (), image->getYoA () - 50, image);
-
-	printOffset (152, 150, image);
-}
-
-void AppImage::pointDistance (Image * image)
-{
-	double ra, dec, sep;
-	int ret;
-
-	ret = image->getOffset (d_x1, d_y1, d_x2, d_y2, ra, dec, sep);
-	if (ret)
-		return;
-	std::cout << LibnovaDegArcMin (ra) << " " << LibnovaDegArcMin (dec) << std::endl;
-}
-
-void AppImage::testEval (Image * image)
-{
-	float value, error;
-
-	image->evalAF (&value, &error);
-
-	std::cout << "value: " << value << " error: " << error << std::endl;
-}
-
-void AppImage::createWCS (Image * image)
-{
-	int ret = image->createWCS (off_x, off_y);
-
-	if (ret)
-		std::cerr << "create WCS returned with error " << ret << std::endl;
 }
 
 void AppImage::printModel (Image *image)
@@ -282,7 +206,7 @@ void AppImage::printStat (Image *image)
 	image->computeStatistics ();
 	std::cout << image->getFileName ()
 		<< " " << image->getAverage ()
-		<< " " << image->getStdDev () << std::endl;
+		<< " " << image->getAvgStdDev () << std::endl;
 }
 
 int AppImage::processOption (int in_opt)
@@ -316,17 +240,6 @@ int AppImage::processOption (int in_opt)
 				return -1;
 			operation |= IMAGEOP_COPY;
 			copy_expr = optarg;
-			break;
-		case 'd':
-			if (distance_expr)
-				return -1;
-			operation |= IMAGEOP_DISTANCE;
-			distance_expr = optarg;
-			if (sscanf (distance_expr, "%lf:%lf-%lf:%lf", &d_x1, &d_y1, &d_x2, &d_y2) != 4)
-			{
-				std::cerr << "cannot parse distancei argument: " << distance_expr << std::endl;
-				return -1;
-			}
 			break;
 		case OPT_ADDDATE:
 			operation |= IMAGEOP_ADDDATE;
@@ -376,13 +289,6 @@ int AppImage::processOption (int in_opt)
 			break;
 		case 't':
 			operation |= IMAGEOP_TEST;
-			break;
-		case 'e':
-			operation |= IMAGEOP_EVAL;
-			break;
-		case 'w':
-			operation |= IMAGEOP_CREATEWCS;
-			readOnly = false;
 			break;
 		case 'o':
 			off_sep = index (optarg, ':');
@@ -479,16 +385,10 @@ int AppImage::processImage (Image * image)
 	  	printStat (image);
 	if (operation & IMAGEOP_COPY)
 		image->copyImageExpand (copy_expr);
-	if (operation & IMAGEOP_DISTANCE)
-	  	pointDistance (image);
 	if (operation & IMAGEOP_MOVE)
 		image->renameImageExpand (move_expr);
 	if (operation & IMAGEOP_SYMLINK)
 	  	image->symlinkImageExpand (link_expr);
-	if (operation & IMAGEOP_EVAL)
-		testEval (image);
-	if (operation & IMAGEOP_CREATEWCS)
-		createWCS (image);
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
@@ -543,7 +443,6 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('s', NULL, 0, "print image statistics - average, median, min & max values,...");
 	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
-	addOption ('d', NULL, 1, "print distance in RA and DEC degrees between two points, specified as X1:Y1-X2:Y2");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentrict time)");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
@@ -556,9 +455,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption (OPT_ERR, "err", 1, "force image position error");
 	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
-	addOption ('e', NULL, 0, "image evaluation for AF purpose");
 	addOption ('t', NULL, 0, "test various image routines");
-	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");

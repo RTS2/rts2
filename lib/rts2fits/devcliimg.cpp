@@ -36,16 +36,6 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 
 	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
-	xoa = rts2_nan ("f");
-	yoa = rts2_nan ("f");
-	ter_xoa = rts2_nan ("f");
-	ter_yoa = rts2_nan ("f");
-
-	config->getDouble (connection->getName (), "xoa", xoa);
-	config->getDouble (connection->getName (), "yoa", yoa);
-	config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
-	config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
-
 	telescop[0] = '\0';
 	instrume[0] = '\0';
 	origin[0] = '\0';
@@ -79,6 +69,9 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 	expNum = 0;
 
 	triggered = false;
+
+	writeConnection = true;
+	writeRTS2Values = true;
 }
 
 DevClientCameraImage::~DevClientCameraImage (void)
@@ -183,29 +176,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 	{
 		CameraImage *ci = (*iter).second;
 
-		if (ci->image->getTargetType (false) == TYPE_TERESTIAL && !isnan (ter_xoa) && !isnan (ter_yoa))
-		{
-			ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()), ter_xoa, ter_yoa);
-		}
-		else
-		{
-			if (isnan (xoa) || isnan (yoa))
-			{
-				rts2core::Value *v = getConnection ()->getValue ("SIZE");
-				if (v && v->getValueExtType () == RTS2_VALUE_RECTANGLE)
-				{
-					if (isnan (xoa))
-						xoa = ((rts2core::ValueRectangle *) v)->getWidthInt () / 2;
-					if (isnan (yoa))
-						yoa = ((rts2core::ValueRectangle *) v)->getHeightInt () / 2;
-				}
-				else
-				{
-					logStream (MESSAGE_ERROR) << "xoa or yoa not specified, and camera does not have SIZE?" << sendLog;
-				}	 
-			}
-			ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()), xoa, yoa);
-		}
+		ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()));
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
@@ -231,7 +202,9 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 Image * DevClientCameraImage::createImage (const struct timeval *expStart)
 {
-	return new Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
+	Image * ret = new Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
+	ret->setWriteConnnection (writeConnection, writeRTS2Values);
+	return ret;
 }
 
 void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
@@ -315,7 +288,7 @@ void DevClientCameraImage::exposureStarted ()
 		actualImage = new CameraImage (image, getMaster ()->getNow (), prematurelyReceived);
 
 		prematurelyReceived.clear ();
-
+		
 		actualImage->image->writePrimaryHeader (getName ());
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 	
@@ -380,17 +353,18 @@ void DevClientTelescopeImage::postEvent (rts2core::Event * event)
 			ci = (CameraImage *) event->getArg ();
 			image = ci->image;
 			image->setMountName (connection->getName ());
+			image->writeConn (getConnection (), EXPOSURE_START);
+
 			getEqu (&object);
 			getObs (&obs);
-			image->writeConn (getConnection (), EXPOSURE_START);
-			infotime = getConnection ()->getValueDouble ("infotime");
-			image->setValue ("MNT_INFO", infotime, "time when mount informations were collected");
 
-			image->setMountFlip (getMountFlip ());
+			infotime = getConnection ()->getValueDouble ("infotime");
+			image->setRTS2Value ("MNT_INFO", infotime, "time when mount informations were collected");
+
 			ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
 			ln_get_hrz_from_equ (&suneq, &obs, image->getExposureJD (), &sunhrz);
-			image->setValue ("SUN_ALT", sunhrz.alt, "solar altitude");
-			image->setValue ("SUN_AZ", sunhrz.az, "solar azimuth");
+			image->setRTS2Value ("SUN_ALT", sunhrz.alt, "solar altitude");
+			image->setRTS2Value ("SUN_AZ", sunhrz.az, "solar azimuth");
 			break;
 		case EVENT_WRITE_ONLY_IMAGE:
 			image = (Image *) event->getArg ();
@@ -420,11 +394,6 @@ void DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 
 	tel->ra = vradec->getRa ();
 	tel->dec = vradec->getDec ();
-}
-
-int DevClientTelescopeImage::getMountFlip ()
-{
-	return getConnection ()->getValueInteger ("MNT_FLIP");
 }
 
 void DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
@@ -459,7 +428,9 @@ void DevClientFocusImage::postEvent (rts2core::Event * event)
 				|| strcmp (image->getFocuserName (), connection->getName ()))
 				break;
 			image->writeConn (getConnection (), EXPOSURE_START);
+
 			image->setFocPos (getConnection ()->getValue ("FOC_POS")->getValueInteger ());
+
 			break;
 		case EVENT_WRITE_ONLY_IMAGE:
 			image = (Image *) event->getArg ();

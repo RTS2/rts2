@@ -53,14 +53,6 @@ FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, Focu
 
 FocusCameraClient::~FocusCameraClient (void)
 {
-	std::list < fwhmData * >::iterator fwhm_iter;
-	for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end (); fwhm_iter++)
-	{
-		fwhmData *dat;
-		dat = *fwhm_iter;
-		delete dat;
-	}
-	fwhmDatas.clear ();
 }
 
 void FocusCameraClient::exposureStarted ()
@@ -119,74 +111,6 @@ rts2image::Image *FocusCameraClient::createImage (const struct timeval *expStart
 	// memory-only image
 	image = new rts2image::MemImage (expStart);
 	return image;
-}
-
-void FocusCameraClient::printFWHMTable ()
-{
-	std::list < fwhmData * >::iterator dat;
-	std::cout << "=======================" << std::endl;
-	std::cout << "# stars | focPos | fwhm" << std::endl;
-	for (dat = fwhmDatas.begin (); dat != fwhmDatas.end (); dat++)
-	{
-		fwhmData *d;
-		d = *dat;
-		std::cout << std::setw (8) << d->num << "| "
-			<< std::setw (7) << d->focPos << "| " << d->fwhm << std::endl;
-	}
-	std::cout << "=======================" << std::endl;
-}
-
-void FocusCameraClient::focusChange (rts2core::Connection * focus)
-{
-	if (getActualImage()->sexResultNum)
-	{
-		double fwhm;
-		int focPos;
-		fwhm = getActualImage ()->getFWHM ();
-		focPos = getActualImage ()->getFocPos ();
-		fwhmDatas.push_back (new fwhmData (getActualImage ()->sexResultNum, focPos, fwhm));
-	}
-
-	printFWHMTable ();
-
-	// if we should query..
-	if (master->getFocusingQuery ())
-	{
-		int change;
-		int cons_change;
-		char c[12];
-		char *end_c;
-		change = focConn->getChange ();
-		if (change == INT_MAX)
-		{
-			std::
-				cout << "Focusing algorithm for camera " << getName () <<
-				" did not converge." << std::endl;
-			std::
-				cout << "Write new value, otherwise hit enter for no change " <<
-				std::endl;
-			change = 0;
-		}
-		else
-		{
-			std::cout << "Focusing algorithm for camera " << getName () <<
-				" recommends to change focus by " << change << std::endl;
-			std::cout << "Hit enter to confirm, or write new value." << std::
-				endl;
-		}
-		std::cin.getline (c, 200);
-		cons_change = strtol (c, &end_c, 10);
-		if (end_c != c)
-			change = cons_change;
-		std::cout << std::endl;
-		focConn->setChange (change);
-		if (change != 0)
-		{
-			std::cout << "Will change by: " << change << std::endl;
-		}
-	}
-	rts2image::DevClientCameraFoc::focusChange (focus);
-	queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 }
 
 void FocusCameraClient::center (int centerWidth, int centerHeight)

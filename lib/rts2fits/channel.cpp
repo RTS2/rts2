@@ -18,34 +18,45 @@
  */
 
 #include "rts2fits/channel.h"
+#include "error.h"
+#include "imghdr.h"
 
 #include <malloc.h>
 #include <string.h>
+#include <math.h>
 
 using namespace rts2image;
 
-Channel::Channel ()
+Channel::Channel (int16_t _dataType)
 {
 	data = NULL;
 	allocated = false;
 
+	dataType = _dataType;
+
 	naxis = 0;
 	sizes = NULL;
+
+	pixelSum = average = stdev = NAN;
 }
 
-Channel::Channel (char *_data, int _naxis, long *_sizes, bool dealloc)
+Channel::Channel (char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc)
 {
 	data = _data;
 	allocated = dealloc;
 
 	naxis = _naxis;
 
+	dataType = _dataType;
+
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
+
+	pixelSum = average = stdev = NAN;
 }
 
 
-Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes)
+Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType)
 {
 	data = new char [dataSize];
 	memcpy (data, _data, dataSize);
@@ -53,8 +64,12 @@ Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes)
 
 	naxis = _naxis;
 
+	dataType = _dataType;
+
 	sizes = new long [naxis];
 	memcpy (sizes, _sizes, naxis * sizeof (long));
+
+	pixelSum = average = stdev = NAN;
 }
 
 Channel::~Channel ()
@@ -62,6 +77,77 @@ Channel::~Channel ()
 	if (allocated)
 		delete[] data;
 	delete[] sizes;
+}
+
+template <typename pixel_type> void computeDataStatistics (pixel_type *data, long totalPixels, long double &pixelSum, double &average, double &stdev)
+{
+	// calculate average of all channels..
+	pixel_type *pixel = data;
+	pixel_type *fullTop = pixel + totalPixels;
+
+	pixelSum = 0;
+
+	while (pixel < fullTop)
+	{
+		pixelSum += *pixel;
+		pixel++;
+	}
+	if (totalPixels > 0)
+	{
+		average = pixelSum / totalPixels;
+		// calculate stdev
+		pixel = data;
+		stdev = 0;
+		while (pixel < fullTop)
+		{
+			long double tmp_s = *pixel - average;
+			long double tmp_ss = tmp_s * tmp_s;
+			stdev += tmp_ss;
+			pixel++;
+		}
+		stdev = sqrt (stdev / totalPixels);
+	}
+	else
+	{
+		average = 0;
+		stdev = 0;
+	}
+}
+
+void Channel::computeStatistics ()
+{
+	switch (dataType)
+	{
+		case RTS2_DATA_BYTE:
+			computeDataStatistics ((unsigned char *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_SHORT:
+			computeDataStatistics ((int16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_LONG:
+			computeDataStatistics ((int32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_LONGLONG:
+			computeDataStatistics ((int64_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_FLOAT:
+			computeDataStatistics ((float *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_DOUBLE:
+			computeDataStatistics ((double *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_SBYTE:
+			computeDataStatistics ((signed char *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_USHORT:
+			computeDataStatistics ((short uint16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		case RTS2_DATA_ULONG:
+			computeDataStatistics ((unsigned int32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			break;
+		default:
+			throw rts2core::Error ("unknow dataType");
+	}
 }
 
 Channels::Channels ()

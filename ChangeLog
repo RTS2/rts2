@@ -1,3 +1,7 @@
+2012-03-09
+ * removed FWHM extimates, HAM (should be handled by external scripts)
+ * removed XPLATE, YPLATE (transation to WCS only metadata
+
 2012-03-07
  * removed guding, HAM and star acquistions (should be replaced by I/O scripting)
  * MPEC name resolving

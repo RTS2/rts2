@@ -1,6 +1,6 @@
 /* 
  * Image channel class.
- * Copyright (C) 2010 Petr Kubánek <petr@kubanek.net>
+ * Copyright (C) 2010,2012 Petr Kubánek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <malloc.h>
+#include <sys/types.h>
 
 namespace rts2image
 {
@@ -34,23 +35,38 @@ namespace rts2image
 class Channel
 {
 	public:
-		Channel ();
-		Channel (char *_data, int _naxis, long *_sizes, bool dealloc);
-		Channel (char *_data, long dataSize, int _naxis, long *_sizes);
+		Channel (int16_t _dataType);
+		Channel (char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc);
+		Channel (char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType);
+
 		~Channel ();
+		
+		// those values will become available after call to computeStatistics
+		long double getPixelSum () { return pixelSum; }
+		double getAverage () { return average; }
+		double getStDev () { return stdev; }
 
 		const long getWidth () { return naxis > 0 ? sizes[0] : 0; }
 		const long getHeight () { return naxis > 1 ? sizes[1] : 0; }
 		const long getNPixels () { return getWidth () * getHeight (); }
 
-		const char *getData () { return data; }
+		const char *getData () { return (char *) data; }
 
 		void deallocate () { data = NULL; }
+
+		void computeStatistics ();
+
 	private:
 		char *data;
 		int naxis;
 		long *sizes;
 		bool allocated;
+
+		int16_t dataType;
+
+		long double pixelSum;
+		double average;
+		double stdev;
 };
 
 class Channels:public std::vector<Channel *>
@@ -58,12 +74,10 @@ class Channels:public std::vector<Channel *>
 	public:
 		Channels ();
 		~Channels ();
-
+		
 		void deallocate ();
 };
 
 }
 
 #endif /* __RTS2_CHANNEL__ */
-
-

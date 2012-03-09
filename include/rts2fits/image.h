@@ -201,9 +201,18 @@ class Image:public FitsFile
 		 */
 		int linkImageExpand (std::string link_ex);
 
-		// int saveImageData (const char *save_filename, unsigned short *in_data);
+		void writeMetaData (struct imghdr *im_h);
 
-		void writeMetaData (struct imghdr *im_h, double xoa, double yoa);
+		void setRTS2Value (const char *name, int value, const char *comment)
+		{
+			if (writeRTS2Values)
+				setValue (name, value, comment);
+		}
+		void setRTS2Value (const char *name, double value, const char *comment)
+		{
+			if (writeRTS2Values)
+				setValue (name, value, comment);
+		}
 
 		int writeData (char *in_data, char *fullTop, int nchan);
 
@@ -321,8 +330,11 @@ class Image:public FitsFile
 		void setExposureLength (float in_exposureLength)
 		{
 			exposureLength = in_exposureLength;
-			setValue ("EXPOSURE", exposureLength, "exposure length in seconds");
-			setValue ("EXPTIME", exposureLength, "exposure length in seconds");
+			if (writeRTS2Values)
+			{
+				setValue ("EXPOSURE", exposureLength, "exposure length in seconds");
+				setValue ("EXPTIME", exposureLength, "exposure length in seconds");
+			}
 		}
 
 		float getExposureLength () { return exposureLength; }
@@ -363,12 +375,7 @@ class Image:public FitsFile
 
 		double getAverage () { return average; }
 
-		double getStdDev () { return stdev; }
-
-		/**
-		 * Return
-		 */
-		double getBgStdDev () { return bg_stdev; }
+		double getAvgStdDev () { return avg_stdev; }
 
 		int getFocPos () { return focPos; }
 
@@ -410,7 +417,6 @@ class Image:public FitsFile
 		int setAstroResults (double ra, double dec, double ra_err, double dec_err);
 
 		int addStarData (struct stardata *sr);
-		double getFWHM ();
 
 		double getPrecision ()
 		{
@@ -458,21 +464,10 @@ class Image:public FitsFile
 		 * to decrease RA.
 		 */
 
-		int getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle);
+		// int getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle);
 
 		// returns pixels [x1,y1] and [x2,y2] offset in ra and dec degrees
-		int getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle);
-
-		/**
-		 * This function is good only for HAM source detection on FRAM telescope in Argentina.
-		 * HAM is calibration source, which is used test target for photometer to measure it's sesitivity
-		 * (and other things, such as athmospheric dispersion..).
-		 * You most probably don't need it.
-		 */
-		int getHam (double &x, double &y);
-
-		// return offset & flux of the brightest star in field
-		int getBrightestOffset (double &x, double &y, float &flux);
+		// int getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle);
 
 		/**
 		 * Computes RA DEC of given pixel. Uses telescope information. This method does not use WCS,
@@ -485,54 +480,7 @@ class Image:public FitsFile
 		 *
 		 * @return -1 on errror, 0 on success
 		 */
-		int getRaDec (double x, double y, double &ra, double &dec);
-
-		// get xoa and yoa coeficients
-		double getXoA ();
-		double getYoA ();
-
-		void setXoA (double in_xoa);
-		void setYoA (double in_yoa);
-
-		// get rotang - get value from WCS when available; ROTANG is in radians, and is true rotang of image
-		// (assumig top is N, left is E - e.g. is corrected for telescope flip)
-		// it's WCS style - counterclockwise
-		double getRotang ();
-
-		double getCenterRa ();
-		double getCenterDec ();
-
-		// get xplate and yplate coeficients - in degrees!
-		double getXPlate ();
-		double getYPlate ();
-
-		/**
-		 * Set mount flip value.
-		 *
-		 * @param in_mnt_flip New mount flip value (0 or 1).
-		 */
-		void setMountFlip (int in_mnt_flip) { mnt_flip = in_mnt_flip; }
-
-		/**
-		 * Increase image rotang.
-		 */
-		void addRotang (double rotAdd)
-		{
-			if (isnan (total_rotang))
-				total_rotang = rotAdd;
-			else
-				total_rotang += rotAdd;
-		}
-
-		/**
-		 * Return image mount flip.
-		 *
-		 * @return Image mount flip.
-		 */
-		int getMountFlip ();
-
-		// image flip value - ussually 1
-		int getFlip ();
+		// int getRaDec (double x, double y, double &ra, double &dec);
 
 		int getError (double &eRa, double &eDec, double &eRad);
 
@@ -598,22 +546,26 @@ class Image:public FitsFile
 
 		void setInstrument (const char *instr)
 		{
-			setValue ("INSTRUME", instr, "name of the data acqusition instrument");
+			if (writeRTS2Values)
+				setValue ("INSTRUME", instr, "name of the data acqusition instrument");
 		}
 
 		void setTelescope (const char *tel)
 		{
-			setValue ("TELESCOP", tel, "name of the data acqusition telescope");
+			if (writeRTS2Values)
+				setValue ("TELESCOP", tel, "name of the data acqusition telescope");
 		}
 
 		void setObserver ()
 		{
-			setValue ("OBSERVER", "RTS2 " VERSION, "observer");
+			if (writeRTS2Values)
+				setValue ("OBSERVER", "RTS2 " VERSION, "observer");
 		}
 
 		void setOrigin (const char *orig)
 		{
-			setValue ("ORIGIN", orig, "organisation responsible for data");
+			if (writeRTS2Values)
+				setValue ("ORIGIN", orig, "organisation responsible for data");
 		}
 
 		/**
@@ -622,16 +574,6 @@ class Image:public FitsFile
 		void setEnvironmentalValues ();
 
 		void writeConn (rts2core::Connection * conn, imageWriteWhich_t which = EXPOSURE_START);
-
-		/**
-		 * This will create WCS from record available at the FITS file.
-		 *
-		 * @param x_off  offset of the X coordinate (most probably computed from bright star location)
-		 * @param y_off  offset of the Y coordinate (most probably computed from bright star location)
-		 *
-		 * @return 0 on success, -1 on error.
-		 */
-		int createWCS (double x_off = 0, double y_off = 0);
 
 		/**
 		 * Sets image errors.
@@ -673,10 +615,21 @@ class Image:public FitsFile
 		int centroid (unsigned short *data, struct pixel pix, float *px, float *py);
 		int radius (unsigned short *data, double px, double py, int rmax);
 		int integrate (unsigned short *data, double px, double py, int size, float *ret);
-		int evalAF (float *result, float *error);
 
 		std::vector < pixel > list;
 		double median, sigma;
+
+		/**
+		 * Sets which values should be written to the image.
+		 *
+		 * @param write_conn   Write all connection values (values marked as RTS2_FITS_WRITE)
+		 * @param rts2_write   Write extra RTS2 values (exposure time,..)
+		 */
+		void setWriteConnnection (bool write_conn, bool rts2_write)
+		{
+			writeConnection = write_conn;
+			writeRTS2Values = rts2_write;
+		}
 
 	protected:
 		char *cameraName;
@@ -694,13 +647,17 @@ class Image:public FitsFile
 
 		int writeExposureStart ();
 
-		virtual int isGoodForFwhm (struct stardata *sr);
-
 		// expand expression to image path
 		virtual std::string expandVariable (char expression, size_t beg);
 		virtual std::string expandVariable (std::string expression);
 
 	private:
+		// if connection values should be written to FITS file. Connection values can also be written by template mechanism
+		bool writeConnection;
+
+		// if write RTS2 extended values
+		bool writeRTS2Values;
+
 		int targetId;
 		int targetIdSel;
 		char targetType;
@@ -728,8 +685,7 @@ class Image:public FitsFile
 		float signalNoise;
 		int getFailed;
 		double average;
-		double stdev;
-		double bg_stdev;
+		double avg_stdev;
 		short int min;
 		short int max;
 		short int mean;
@@ -738,11 +694,6 @@ class Image:public FitsFile
 		// it is calculated as sum of partial rotangs.
 		// For change of total rotang, addRotang function is provided.
 		double total_rotang;
-
-		double xoa;
-		double yoa;
-
-		int mnt_flip;
 
 		int expNum;
 

@@ -133,7 +133,6 @@ class XFocusClientCamera:public FocusCameraClient
 		virtual void cameraImageReady (rts2image::Image * image);
 
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
-		virtual void printFWHMTable ();
 	private:
 		XFocusClient * master;
 
@@ -717,13 +716,6 @@ void XFocusClientCamera::postEvent (rts2core::Event * event)
 	FocusCameraClient::postEvent (event);
 }
 
-void XFocusClientCamera::printFWHMTable ()
-{
-	FocusCameraClient::printFWHMTable ();
-	if (master->getStarsType ())
-		redraw ();
-}
-
 void XFocusClientCamera::idle ()
 {
 	FocusCameraClient::idle ();
@@ -865,7 +857,7 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 	hig = (short unsigned int) (median + 5 * sigma);
 
 	// clear progress indicator
-	std::cout << std::setw (COLS) << "x" << '\r';
+	std::cout << std::setw (COLS) << " " << '\r';
 
 	if (image->getChannelSize () > 1)
 	{
@@ -960,16 +952,16 @@ void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 
 	if (mouseTelChange_x != INT_MAX && mouseTelChange_y != INT_MAX && getActualImage ())
 	{
-		struct ln_equ_posn change;
-		getActualImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra, change.dec);
+		//struct ln_equ_posn change;
+		//getActualImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra, change.dec);
 
-		change.ra -= getActualImage ()->getCenterRa ();
-		change.dec -= getActualImage ()->getCenterDec ();
+		//change.ra -= getActualImage ()->getCenterRa ();
+		//change.dec -= getActualImage ()->getCenterDec ();
 
-		logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" << mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.dec << sendLog;
-		master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
-		mouseTelChange_x = INT_MAX;
-		mouseTelChange_y = INT_MAX;
+		//logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" << mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.dec << sendLog;
+		//master->postEvent (new rts2core::Event (EVENT_MOUNT_CHANGE, (void *) &change));
+		//mouseTelChange_x = INT_MAX;
+		//mouseTelChange_y = INT_MAX;
 	}
 
 	redraw ();

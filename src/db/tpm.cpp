@@ -52,8 +52,6 @@ class TPM:public rts2core::CliApp
 		std::vector < std::string > filenames;
 		int headline (rts2image::Image * image, std::ostream & _os);
 		int printImage (rts2image::Image * image, std::ostream & _os);
-		// select images with given flip; -1 for all flip, 0 or 1 for given flip
-		int selFlip;
 
 		struct ln_lnlat_posn obs;
 
@@ -68,13 +66,11 @@ class TPM:public rts2core::CliApp
 TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
-	selFlip = -1;
 	ra_step = rts2_nan ("f");
 	ra_offset = 0;
 	dec_step = rts2_nan ("f");
 	dec_offset = 0;
 	addOption ('t', NULL, 1, "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
-	addOption ('f', NULL, 1, "select images with given flip (0 or 1)");
 	addOption ('r', NULL, 1, "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
 	addOption ('R', NULL, 1, "ra offset in raw counts");
 	addOption ('d', NULL, 1, "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
@@ -105,18 +101,6 @@ int TPM::processOption (int in_opt)
 				default:
 					std::cerr << "Invalit coordinates type (" << *optarg << "), expected t, b or m" << std::endl;
 					return -1;
-			}
-			break;
-		case 'f':
-			if (!strcmp (optarg, "1"))
-				selFlip = 1;
-			else if (!strcmp (optarg, "0"))
-				selFlip = 0;
-			else
-			{
-				std::cout << "You entered invalid flip, please select either 0 or 1" << std::endl;
-				help ();
-				return -1;
 			}
 			break;
 		case 'r':
@@ -258,11 +242,6 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	image->getValue ("CTIME", ct);
 	image->getValue ("EXPOSURE", expo);
 
-	imageFlip = image->getMountFlip ();
-	// don't process images with invalid flip
-	if (selFlip != -1 && imageFlip != selFlip)
-		return 0;
-
 	aux1 = -2;
 	image->getValue ("MNT_AX1", aux1, false);
 
@@ -280,12 +259,6 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	{
 		image->getValue ("MNT_AX1", aux1, true);
 		actual.setDec ((aux1 - dec_offset) / dec_step);
-	}
-
-	// change DEC to 90-180, and RA by 180 degs
-	if (selFlip == -1 && imageFlip != 0)
-	{
-		target.flip (&obs);
 	}
 
 	LibnovaHaM lst (mean_sidereal);
