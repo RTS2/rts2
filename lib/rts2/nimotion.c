@@ -414,6 +414,12 @@ void flex_read_port_rtn (int8_t port, uint16_t *portData)
 	readPacket (&c, 1, portData);
 }
 
+void flex_set_port_direction (uint8_t port, uint16_t directionMap)
+{
+	writePacket (port, 398, 1, &directionMap);
+	checkStatus ();
+}
+
 void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff)
 {
 	uint16_t data;

@@ -230,17 +230,25 @@ void flex_reset_pos (uint8_t axis, int32_t position1, int32_t position2, uint8_t
 /**
  * Read I/O port status.
  *
- * @param port     NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
- * @param portData bitmasked state of 8 I/O port; upper 8 bits should be unused
+ * @param port           NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
+ * @param portData       bitmasked state of 8 I/O port; upper 8 bits should be unused
  */
 void flex_read_port_rtn (int8_t port, uint16_t *portData);
 
 /**
+ * Set I/O port direction.
+ *
+ * @param port           NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
+ * @param directionMap   0 - output, 1 - input (default)
+ */
+void flex_set_port_direction (uint8_t port, uint16_t directionMap);
+
+/**
  * Set I/O port.
  *
- * @param port     NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
- * @param mustOn   bitmask of outputs which must turn on
- * @param mustOff  bitmask of outputs which must turn off
+ * @param port           NIMC_IO_PORTn, NIMC_DIGITAL_OUTPUT_PORTn
+ * @param mustOn         bitmask of outputs which must turn on
+ * @param mustOff        bitmask of outputs which must turn off
  */
 void flex_set_port (uint8_t port, uint8_t mustOn, uint8_t mustOff); 
 
