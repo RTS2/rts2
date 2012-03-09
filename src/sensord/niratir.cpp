@@ -294,14 +294,15 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		rts2core::BoolArray *nv = (rts2core::BoolArray *) new_value;
 		uint8_t mon = 0;
 		uint8_t moff = 0;
-		for (int i = 0; i < 8; i++)
+		for (int i = 8; i >= 0; i--)
 		{
+			mon <<= 1;
+			moff <<= 1;
+
 			if ((*nv)[i])
 				mon |= 0x01;
 			else
 				moff |= 0x01;
-			mon = mon << 1;
-			moff = moff << 1;
 		}
 		flex_set_port (NIMC_IO_PORT1, mon, moff);
 		return 0;
