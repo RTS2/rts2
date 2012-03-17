@@ -880,8 +880,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 		}
 		if (fits_status)
 		{
-			logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
-				<< "dataType " << dataType << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors () << "dataType " << dataType << sendLog;
 			return -1;
 		}
 	}
@@ -897,8 +896,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 		}
 		if (fits_status)
 		{
-			logStream (MESSAGE_ERROR) << "cannot create new image: " << getFitsErrors ()
-				<< "dataType " << dataType << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot create image: " << getFitsErrors () << "dataType " << dataType << sendLog;
 			return -1;
 		}
 	}
@@ -1085,7 +1083,6 @@ template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &bu
 	}
 }
 
-
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 Magick::Image Image::getMagickImage (const char *label, float quantiles, int chan)
 {
@@ -1187,12 +1184,12 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 		Magick::Image image (tw, th, "K", Magick::CharPixel, buf);
 
-		image.font("helvetica");
-		image.strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-		image.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-
-		if (label)
+		if (label && label[0] != '\0')
 		{
+			image.font("helvetica");
+			image.strokeColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			image.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+
 			writeLabel (image, 2, image.size ().height () - 2, 20, label);
 		}
 

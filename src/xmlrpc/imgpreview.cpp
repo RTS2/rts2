@@ -52,10 +52,11 @@
  * @subsection Example
  *
  * http://localhost:8889/preview/images/2011.1210/0001.fits?ps=200&lb=@FOC_POS
+ * http://localhost:8889/preview/images/2011.1210/0001.fits?ps=200&lb=&q=0.005
  *
  * @subsection Parameters
  *  - <i><b>ps</b> size of the longest preview axis in pixels. Default to 128 pixels.</i>
- *  - <i><b>lb</b> label. Can include expansion characters, please see <b>man rts2</b> for details.</i>
+ *  - <i><b>lb</b> label. Can include expansion characters, please see <b>man rts2</b> for details. If it is ommited, default label specified in events XML configuration file is used. If empty, e.g. if URL containts lb=& string, don't draw label.</i>
  *  - <i><b>q</b> quantiles for image display. Default to 0.005, which means that 0.5% of pixel values will be cut before the algorithm progress to generate ADU to pixel values transformation.</i>
  *  - <i><b>chan</b> channel of multiple extenstion image. Specify which extension (=channel) should be displayed (counted from 0), or use -1 to display all channels.</i>
  *
