@@ -45,16 +45,9 @@ class NexStar:public Telescope
 
         	virtual int processOption (int in_opt);
 		virtual int startResync ();
+		virtual int moveAltAz ();
 
-		virtual int startMoveFixed (double tar_az, double tar_alt)
-		{
-			return 0;
-		}
-
-		virtual int stopMove ()
-		{
-			return 0;
-		}
+		virtual int stopMove ();
 
 		virtual int startPark ()
 		{
@@ -149,6 +142,21 @@ int NexStar::startResync ()
 	setPreciseDeg ('r', pos.ra, pos.dec);
 
 	return 0;
+}
+
+int NexStar::moveAltAz ()
+{
+	struct ln_hrz_posn hrz;
+	telAltAz->getAltAz (&hrz);
+	setPreciseDeg ('b', hrz.az, hrz.alt);
+	maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
+	return 0;
+}
+
+int NexStar::stopMove ()
+{
+	char buf[2];
+	return serial->writeRead ("M", 1, buf, 1, '#') == 1 ? 0 : -1;
 }
 
 int NexStar::init ()
