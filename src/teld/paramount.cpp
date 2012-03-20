@@ -145,6 +145,9 @@ class Paramount:public GEM
 		virtual int initValues ();
 
 		virtual int processOption (int in_opt);
+
+		virtual int commandAuthorized (rts2core::Connection *conn);
+
 		virtual int isMoving ();
 		virtual int isParking ();
 
@@ -726,6 +729,18 @@ int Paramount::init ()
 	return ret;
 }
 
+int Paramount::commandAuthorized (rts2core::Connection *conn)
+{
+	if (conn->isCommand ("sleep"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		sleep (120);
+		return 0;
+	}
+	return Telescope::commandAuthorized (conn);
+}
+
 int Paramount::initValues ()
 {
 	// ignore corrections bellow 5 arcsec
@@ -1009,7 +1024,6 @@ int Paramount::startResync ()
 
 int Paramount::isMoving ()
 {
-	int ret;
 	// we were called from idle loop
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
 	{
@@ -1024,10 +1038,10 @@ int Paramount::isMoving ()
 	{
 		sleep (10);
 		// switch motor off
-		ret = MKS3MotorOff (axis0);
+		MKS3MotorOff (axis0);
 		sleep (10);
-		ret = MKS3MotorOn (axis0);
-		ret = MKS3Home (axis0, 0);
+		MKS3MotorOn (axis0);
+		MKS3Home (axis0, 0);
 		moveState |= TEL_FORCED_HOMING0;
 		setParkTimeNow ();
 		return USEC_SEC / 10;
@@ -1036,10 +1050,10 @@ int Paramount::isMoving ()
 	{
 		sleep (10);
 		// switch motor off
-		ret = MKS3MotorOff (axis1);
+		MKS3MotorOff (axis1);
 		sleep (10);
-		ret = MKS3MotorOn (axis1);
-		ret = MKS3Home (axis1, 0);
+		MKS3MotorOn (axis1);
+		MKS3Home (axis1, 0);
 		moveState |= TEL_FORCED_HOMING1;
 		setParkTimeNow ();
 		return USEC_SEC / 10;
