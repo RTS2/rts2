@@ -129,6 +129,25 @@ digraph "JSON API calls handling" {
  *
  * <hr/>
  *
+ * @section JSON_expand expand
+ *
+ * Expand string expression for FITS headers.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/expand?fn=/images/xx.fits&e=%H:%M @OBJECT
+ *
+ * @subsection Parameters
+ *
+ * - <b>fn</b> Filename of the image to expand.
+ * - <b>e></b> Expression.
+ *
+ * @subsection Return
+ *
+ * Expanded value as JSON string in expanded member.
+ *
+ * <hr/>
+ *
  * @section JSON_device_get get
  *
  * Retrieve values from given device.
@@ -816,6 +835,19 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
+		}
+		else if (vals[0] == "expand")
+		{
+			const char *fn = params->getString ("fn", NULL);
+			if (!fn)
+				throw JSONException ("empty image name");
+			const char *e = params->getString ("e", NULL);
+			if (!e)
+				throw JSONException ("empty expand parameter");
+			rts2image::Image image;
+			image.openFile (fn, true, false);
+
+			os << "\"expanded\":\"" << image.expandPath (std::string (e)) << "\"";
 		}
 		else if (vals[0] == "runscript")
 		{
