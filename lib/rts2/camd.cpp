@@ -193,13 +193,18 @@ int Camera::endReadout ()
 	// that will do anything only if the end was not marked
 	updateReadoutSpeed (readoutPixels);
 
-	transferTime->setValueDouble (getNow () - timeTransferStart);
+	double n = getNow ();
+
+	double tr = readoutTime->getValueDouble ();
+	double tt = n - timeTransferStart;
+
+	transferTime->setValueDouble (tt);
 	sendValueAll (transferTime);
 
-	double transferSecond = readoutPixels / transferTime->getValueDouble ();
+	double transferSecond = readoutPixels / tt;
 
-	logStream (MESSAGE_INFO) << "readout " <<  readoutPixels << " pixels in " << TimeDiff (transferSecond)
-		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueDouble () << " pixels per second)" << sendLog;
+	logStream (MESSAGE_INFO) << "readout " <<  readoutPixels << " pixels in " << TimeDiff (tr)
+		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueDouble () << " pixels per second, transfered with " << transferSecond << " pixels per second)" << sendLog;
 
 	clearReadout ();
 	if (currentImageData == -2 && exposureConn)
@@ -658,7 +663,7 @@ int Camera::processOption (int in_opt)
 
 void Camera::usage ()
 {
-	std::cout << "To sepcify multiple filter wheels, add multiple --wheeldev options." << std::endl
+	std::cout << "Add multiple --wheeldev options to specify multiple filter wheels:" << std::endl
 		<< "  " << getAppName () << " --wheldev W0 --wheeldev W1" << std::endl;
 }
 
