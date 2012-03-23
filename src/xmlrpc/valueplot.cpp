@@ -96,7 +96,7 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 				image->fontPointsize (15);
 				image->draw (Magick::DrawableText (0, size.height () - x_axis_height - (scaleY * -min) - 4, "0"));
 				image->strokeWidth (3);
-				plotYGrid (size.height () - (scaleY * -min));
+				plotYGrid (size.height () - x_axis_height - (scaleY * -min));
 			}
 			if (plotType == PLOTTYPE_AUTO)
 				plotType = PLOTTYPE_LINE;
