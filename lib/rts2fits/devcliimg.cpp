@@ -172,6 +172,11 @@ void DevClientCameraImage::newDataConn (int data_conn)
 void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChannels *data)
 {
 	CameraImages::iterator iter = images.find (data_conn);
+	if (data_conn == -1 && iter == images.end ())
+	{
+		newDataConn (data_conn);
+		iter = images.find (data_conn);
+	}
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;
