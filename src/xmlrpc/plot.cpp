@@ -34,6 +34,9 @@ Plot::Plot (int w, int h)
 	size.width (w);
 	size.height (h);
 
+	x_axis_height = 70;
+	y_axis_width = 50;
+
 	image = NULL;
 }
 
@@ -204,7 +207,7 @@ void Plot::plotXSunAlt ()
 
 	double JD = ln_get_julian_from_timet (&f);
 
-	for (unsigned int x = 0; x < size.width (); x++)
+	for (unsigned int x = 0; x < size.width () - y_axis_width; x++)
 	{
 		double j = JD + (x * p_scale) / 86400;
 		struct ln_equ_posn pos;
@@ -227,13 +230,16 @@ void Plot::plotXSunAlt ()
 				double p = (hrz.alt - nh) / (dh - nh);
 				image->strokeColor (Magick::Color (MaxRGB * p, MaxRGB * p, MaxRGB * p));
 			}
-			image->draw (Magick::DrawableLine (x, 0, x, size.height () - 22));
+			image->draw (Magick::DrawableLine (y_axis_width + x, 0, y_axis_width + x, size.height () - x_axis_height));
 		}
 	}
 }
 
 void Plot::plotXDate (bool shadowSun, bool localdate)
 {
+	if (x_axis_height <= 0)
+		return;
+
 	// scale per pixel..
 	double p_scale = 1 / fabs (scaleX);
 	double tick_scale;
@@ -305,9 +311,8 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 		tv.tv_sec = from + x;
 		ex.setExpandDate (&tv, localdate);
 
-		image->transformOrigin (x * scaleX, size.height () - 10);
+		image->transformOrigin (y_axis_width + x * scaleX, size.height () - 10);
 		image->transformRotation (45);
-		//image->draw (Magick::DrawableText (x * scaleX, size.height () - 10, ex.expand (tick_format).c_str ()));
 		image->draw (Magick::DrawableText (0, 0, ex.expand (tick_format).c_str ()));
 
 		image->transformReset ();
@@ -321,7 +326,7 @@ void Plot::plotXDate (bool shadowSun, bool localdate)
 
 	for (x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
 	{
-		plotXGrid (x * scaleX);
+		plotXGrid (y_axis_width + x * scaleX);
 	}
 }
 

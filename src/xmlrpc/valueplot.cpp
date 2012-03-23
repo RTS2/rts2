@@ -69,8 +69,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 		max += 0.1;
 	}
 
-	scaleY = size.height () / (max - min);
-	scaleX = size.width () / (to - from); 
+	scaleY = (size.height () - x_axis_height) / (max - min);
+	scaleX = (size.width () - y_axis_width) / (to - from); 
 
 	image->font("helvetica");
 	image->strokeAntiAlias (true);
@@ -140,15 +140,27 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 	while (iter != rs.end () && (isnan (x) || isnan (y)))
 	{
 		iter++;
-		x = scaleX * (iter->getRecTime () - from) + shadow;
-		y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+		x = y_axis_width + scaleX * (iter->getRecTime () - from) + shadow;
+		y = size.height () - x_axis_height - scaleY * (iter->getValue () - min) + shadow;
 	}
 
 	for (; iter != rs.end (); )
 	{
 		iter++;
-		double x_end = (iter == rs.end ()) ? size.width (): scaleX * (iter->getRecTime () - from) + shadow;
-		double y_end = (iter == rs.end ()) ? y : size.height () - scaleY * (iter->getValue () - min) + shadow;
+
+		double x_end;
+		double y_end;
+
+		if (iter == rs.end ())
+		{
+			x_end = x + 1;
+			y_end = y;
+		}
+		else
+		{
+			x_end = y_axis_width + scaleX * (iter->getRecTime () - from) + shadow;
+			y_end = size.height () - x_axis_height - scaleY * (iter->getValue () - min) + shadow;
+		}
 		// don't accept nan values
 		if (isnan (x_end) || isnan (y_end))
 			continue;
@@ -176,10 +188,10 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 			case PLOTTYPE_FILL:
 			case PLOTTYPE_FILL_SHARP:
 				std::list <Magick::Coordinate> pol;
-				pol.push_back (Magick::Coordinate (x, size.height ()));
+				pol.push_back (Magick::Coordinate (x, size.height () - x_axis_height));
 				pol.push_back (Magick::Coordinate (x, y));
 				pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
-				pol.push_back (Magick::Coordinate (x_end - 1, size.height ()));
+				pol.push_back (Magick::Coordinate (x_end - 1, size.height () - x_axis_height));
 				image->draw (Magick::DrawablePolygon (pol));
 		}
 		x = x_end;

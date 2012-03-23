@@ -76,6 +76,10 @@ class Plot
 		 * @param localdate      draw localdate labels
 		 */
 		void plotXDate (bool shadowSun = true, bool localdate = true);
+
+		// height of axis in pixels
+		int x_axis_height;
+		int y_axis_width;
 };
 
 }
