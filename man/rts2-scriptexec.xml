@@ -57,6 +57,7 @@
       </arg>
       <arg choice="opt"><option>-e</option> <replaceable>expand string</replaceable></arg>
       <arg choice="opt"><option>-t</option> <replaceable>template filename</replaceable></arg>
+      <arg choice="opt"><option>--no-metadata</option></arg>
       &configapp;
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -133,6 +134,17 @@
 	    Specify template for FITS cards.
 	  </para>
 	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--no-metadata</option></term>
+        <listitem>
+          <para>
+	    Do not record automatic header metadata. If specified alone, resulting
+	    FITS image will have only a few basic header entries. Most usefull
+            with template specified with <option>-t</option>. as this enables you
+	    to record predefined values and do not populate header with unwanted entries.
+          </para>
+        </listitem>
       </varlistentry>
       &configapplist;
     </variablelist>
