@@ -342,18 +342,20 @@ void TargetQueue::filterExpired (double now)
 		return;
 	TargetQueue::iterator iter = begin ();
 	// first: in FIFO, remove any requests which are before request with start or end time in the past 
-	if (getQueueType () == QUEUE_FIFO)
+	switch (getQueueType ())
 	{
-		for (;iter != end ();iter++)
-		{
-			double t_start = iter->t_start;
-			double t_end = iter->t_end;
-			if ((!isnan (t_start) && t_start <= now) || (!isnan (t_end) && t_end <= now))
+		case QUEUE_FIFO:
+			for (;iter != end ();iter++)
 			{
-				for (TargetQueue::iterator irem = begin (); irem != iter;)
-					irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
+				double t_start = iter->t_start;
+				double t_end = iter->t_end;
+				if ((!isnan (t_start) && t_start <= now) || (!isnan (t_end) && t_end <= now))
+				{
+					for (TargetQueue::iterator irem = begin (); irem != iter;)
+						irem = removeEntry (irem, REMOVED_NEXT_NEEDED);
+				}
 			}
-		}
+			break;
 	}
 	// second: check if requests must be removed, either because their end time is in past
 	// or they were observed and should be observed only once
@@ -382,7 +384,13 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 		{
 			// isAboveHorizon changes jd parameter - we would like to keep the current time
 		  	double tjd = JD;
-			if (isnan (maxLength))
+			bool shift_circular = false;
+			if (getQueueType () == QUEUE_CIRCULAR && !isnan (iter->t_start) && iter->t_start > now)
+			{
+				// don't do anything, just make sure we will get to horizon check
+				shift_circular = true;
+			}
+			else if (isnan (maxLength))
 			{
 				if (isAboveHorizon (*iter, tjd))
 					return;
@@ -401,7 +409,7 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 					return;
 			}	
 
-			if (getSkipBelowHorizon ())
+			if (getSkipBelowHorizon () || shift_circular)
 			{
 				if (firsttar == NULL)
 					firsttar = iter->target;
