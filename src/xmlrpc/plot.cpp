@@ -1,6 +1,7 @@
 /* 
  * Variable plotting library.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -135,6 +136,10 @@ void Plot::plotYDouble ()
 
 	while (grid_y_step * scaleY > 100)
 		grid_y_step /= 2.0;
+
+	Magick::Image pat ("1x1", "red");
+	// 0 label..
+	image->strokePattern (pat);
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);
@@ -153,14 +158,14 @@ void Plot::plotYDouble ()
 		_os << y + min;
 		if (!crossed0 && y + min > 0)
 		{
-			image->fillColor ("blue");
+			pat.pixelColor (0, 0, "blue");
+			image->strokePattern (pat);
 			crossed0 = true;
 		}
-		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
+		image->draw (Magick::DrawableText (0, size.height () - x_axis_height - scaleY * y - 5, _os.str ().c_str ()));
 	}
 
-	Magick::Image pat ("2x1", Magick::Color ());
-	pat.pixelColor (1,0, "red");
+	pat.pixelColor (0,0, "red");
 	image->strokePattern (pat);
 
 	crossed0 = false;
@@ -170,11 +175,11 @@ void Plot::plotYDouble ()
 	{
 		if (!crossed0 && y + min > 0)
 		{
-			pat.pixelColor (1,0, "blue");
+			pat.pixelColor (0,0, "blue");
 			crossed0 = true;
 		}
 		image->strokePattern (pat);
-		plotYGrid (size.height () - scaleY * y);
+		plotYGrid (size.height () - x_axis_height - scaleY * y);
 	}
 }
 

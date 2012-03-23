@@ -1,6 +1,7 @@
 /* 
  * Variable plotting library.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -93,7 +94,7 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 			{
 				// draw 0 line
 				image->fontPointsize (15);
-				image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
+				image->draw (Magick::DrawableText (0, size.height () - x_axis_height - (scaleY * -min) - 4, "0"));
 				image->strokeWidth (3);
 				plotYGrid (size.height () - (scaleY * -min));
 			}
