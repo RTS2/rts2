@@ -247,7 +247,28 @@ void Expander::getFormating (const std::string &expression, std::string::iterato
 		ret << std::setw (length);
 }
 
-std::string Expander::expand (std::string expression)
+// helper functions to get rid of non-alpha characters
+inline bool isAlphaNum (char ch, bool pathChar)
+{
+	return isalnum (ch) || isspace (ch) || strchr ("_+-.|(){}:='\",`|[]", ch) || (pathChar == true && isgraph (ch));
+}
+
+std::string replaceNonAlpha (std::string in, bool onlyAlphaNum, bool pathChar)
+{
+	if (!onlyAlphaNum)
+		return in;
+	std::string ret;
+	for (std::string::iterator iter = in.begin (); iter != in.end (); iter++)
+	{
+		if (isAlphaNum (*iter, pathChar))
+			ret += *iter;
+		else
+			ret += '_';
+	}
+	return ret;
+}
+
+std::string Expander::expand (std::string expression, bool onlyAlphaNum)
 {
 	num_pos = -1;
 
@@ -268,7 +289,7 @@ std::string Expander::expand (std::string expression)
 				{
 					std::string ex = expandVariable (*iter, ret.str ().length ());
 					if (ex.length () > 0)
-						ret << ex;
+						ret << replaceNonAlpha (ex, onlyAlphaNum, false);
 					else
 						ret << std::setw (0);
 				}
@@ -281,10 +302,13 @@ std::string Expander::expand (std::string expression)
 				for (; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.'); iter++)
 					exp += *iter;
 				iter--;
-				ret << expandVariable (exp);
+				ret << replaceNonAlpha (expandVariable (exp), onlyAlphaNum, false);
 				break;
 			default:
-				ret << *iter;
+				if (isAlphaNum (*iter, true))
+					ret << *iter;
+				else
+					ret << '_';
 		}
 	}
 	return ret.str ();

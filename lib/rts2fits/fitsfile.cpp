@@ -595,9 +595,9 @@ void FitsFile::getValues (const char *name, char **values, int num, bool require
 	fitsStatusGetValue (name, required);
 }
 
-std::string FitsFile::expandPath (std::string pathEx)
+std::string FitsFile::expandPath (std::string pathEx, bool onlyAlNum)
 {
-	std::string ret = expand (pathEx);
+	std::string ret = expand (pathEx, onlyAlNum);
 	if (num_pos >= 0)
 	{
 		for (int n = 1; n < INT_MAX; n++)

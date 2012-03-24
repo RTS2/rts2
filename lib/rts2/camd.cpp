@@ -33,6 +33,7 @@
 #include "clifocuser.h"
 #include "timestamp.h"
 
+#define OPT_WCS_MULTI         OPT_LOCAL + 400
 #define OPT_WCS_CRPIX         OPT_LOCAL + 401
 #define OPT_WCS_CD            OPT_LOCAL + 402
 #define OPT_FOCUS             OPT_LOCAL + 403
@@ -317,6 +318,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	timeReadoutStart = NAN;
 	timeTransferStart = NAN;
 
+	multi_wcs = '\0';
+
 	wcs_crpix1 = wcs_crpix2 = NULL;
 	default_crpix[0] = default_crpix[1] = 0;
 
@@ -420,6 +423,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
+	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
 	addOption (OPT_WCS_CD, "wcs-cd", 1, "WCS CD matrix (CD1_1:CD1_2:CD2_1:CD2_2 in default, unbinned configuration)");
 	addOption (OPT_WCS_CRPIX, "wcs-crpix", 1, "WCS reference pixels (x:y, default to CCD center)");
 	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
@@ -608,11 +612,19 @@ int Camera::processOption (int in_opt)
 				return rts2core::ScriptDevice::processOption (in_opt);
 			nightCoolTemp->setValueCharArr (optarg);
 			break;
+		case OPT_WCS_MULTI:
+			if (strlen (optarg) != 1 || optarg[0] < 'A' || optarg[0] > 'Z')
+			{
+				std::cerr << "invalid multiple WCS - only letters are allowed" << std::endl;
+				return -1;
+			}
+			multi_wcs = optarg[0];
+			break;
 		case OPT_WCS_CRPIX:
 			if (wcs_crpix1 == NULL)
 			{
-				createValue (wcs_crpix1, "CRPIX1", "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_crpix2, "CRPIX2", "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crpix1, multiWCS ("CRPIX1", multi_wcs), "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crpix2, multiWCS ("CRPIX2", multi_wcs), "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
 			}
 			params = SplitStr (optarg, ":");
 			if (params.size () != 2)
@@ -632,10 +644,10 @@ int Camera::processOption (int in_opt)
 			// create WCS parameters..
 			if (wcs_cd1_1 == NULL)
 			{
-				createValue (wcs_cd1_1, "CD1_1", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd1_2, "CD1_2", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd2_1, "CD2_1", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd2_2, "CD2_2", "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd1_1, multiWCS ("CD1_1", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd1_2, multiWCS ("CD1_2", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd2_1, multiWCS ("CD2_1", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cd2_2, multiWCS ("CD2_2", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
 			}
 			params = SplitStr (optarg, ":");
 			if (params.size () != 4)

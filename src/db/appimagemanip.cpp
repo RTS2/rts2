@@ -376,9 +376,9 @@ int AppImage::processImage (Image * image)
 	if (operation & IMAGEOP_TEST)
 		testImage (image);
 	if (operation & IMAGEOP_PRINT)
-		std::cout << image->expandPath (print_expr) << std::endl;
+		std::cout << image->expandPath (print_expr, false) << std::endl;
 	if (operation & IMAGEOP_FPRINT)
-	  	std::cout << image->getFileName () << " " << image->expandPath (print_expr) << std::endl;
+	  	std::cout << image->getFileName () << " " << image->expandPath (print_expr, false) << std::endl;
 	if (operation & IMAGEOP_MODEL)
 	  	printModel (image);
 	if (operation & IMAGEOP_STAT)

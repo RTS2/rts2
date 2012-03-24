@@ -35,6 +35,7 @@
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118
 #define OPT_CORRECTION        OPT_LOCAL + 119
+#define OPT_WCS_MULTI         OPT_LOCAL + 120
 
 #define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
 
@@ -101,6 +102,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 
 	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
 	modelRaDec->setValueRaDec (0, 0);
+
+	wcs_crval1 = wcs_crval2 = NULL;
 
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
@@ -212,6 +215,8 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	horizonFile = NULL;
 	hardHorizon = NULL;
 
+	wcs_multi = '!';
+
 	addOption ('m', NULL, 1, "name of file holding model parameters, calculated by T-Point");
 	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
 	addOption ('g', NULL, 1, "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
@@ -224,6 +229,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	addOption ('r', NULL, 1, "telescope rotang");
 	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
 	addOption (OPT_CORRECTION, "max-correction", 1, "correction limit (in arcsec)");
+	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z,-)");
 
 	// send telescope position every 60 seconds
 	setIdleInfoInterval (60);
@@ -293,6 +299,17 @@ int Telescope::processOption (int in_opt)
 			break;
 		case OPT_CORRECTION:
 			correctionLimit->setValueCharArr (optarg);
+			break;
+		case OPT_WCS_MULTI:
+			if (strlen (optarg) != 1 || optarg[0] != '-' || optarg[0] < 'A' || optarg[0] > 'Z')
+			{
+				std::cerr << "invalid --wcs-multi option " << optarg << std::endl;
+				return -1;
+			}
+			if (optarg[0] == '-')
+				wcs_multi = '\0';
+			else
+				wcs_multi = optarg[0];
 			break;
 		default:
 			return rts2core::Device::processOption (in_opt);
@@ -653,6 +670,12 @@ int Telescope::init ()
 	ret = rts2core::Device::init ();
 	if (ret)
 		return ret;
+
+	if (wcs_multi != '!')
+	{
+		createValue (wcs_crval1, multiWCS ("CRVAL1", wcs_multi), "first reference value", true);
+		createValue (wcs_crval2, multiWCS ("CRVAL2", wcs_multi), "second reference value", true);
+	}
 
 	if (modelFile)
 	{

@@ -21,7 +21,7 @@
 
 using namespace rts2sensord;
 
-Sensor::Sensor (int argc, char **argv):rts2core::Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
+Sensor::Sensor (int argc, char **argv, const char *sn):rts2core::Device (argc, argv, DEVICE_TYPE_SENSOR, sn)
 {
 	setIdleInfoInterval (60);
 }
@@ -69,7 +69,7 @@ bool SensorWeather::isGoodWeather ()
 	return true;
 }
 
-SensorWeather::SensorWeather (int argc, char **argv, int _timeout):Sensor (argc, argv)
+SensorWeather::SensorWeather (int argc, char **argv, int _timeout, const char *sn):Sensor (argc, argv, sn)
 {
 	createValue (nextGoodWeather, "next_good_weather", "date and time of next good weather");
 	setWeatherTimeout (_timeout, "initial bad weather state");

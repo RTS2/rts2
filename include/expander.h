@@ -45,8 +45,13 @@ class Expander
 		/**
 		 * Expand variables encoded in string. Iterates through string,
 		 * do some actions if it encounters % or @ expansion characters.
+		 *
+		 * @param expression      string to expand. % and @ starts expression characters
+		 * @param onlyAlphaNum    filter result of the expansion, so any non-alphaNumerical character will be replaced with _
+		 *
+		 * @return expanded string
 		 */
-		std::string expand (std::string expression);
+		std::string expand (std::string expression, bool onlyAlphaNum = false);
 
 		/**
 		 * Sets expanding date to current sysdate.

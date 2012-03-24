@@ -847,7 +847,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			rts2image::Image image;
 			image.openFile (fn, true, false);
 
-			os << "\"expanded\":\"" << image.expandPath (std::string (e)) << "\"";
+			os << "\"expanded\":\"" << image.expandPath (std::string (e), false) << "\"";
 		}
 		else if (vals[0] == "runscript")
 		{

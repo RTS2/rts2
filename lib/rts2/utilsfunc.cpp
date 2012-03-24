@@ -372,3 +372,16 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 	return *n; 
 }
 #endif
+
+const char * multiWCS (const char *name, char multi_wcs)
+{
+	static char ret[50];
+	strcpy (ret, name);
+	if (multi_wcs != '\0')
+	{
+		int l = strlen (ret);
+		ret[l] = multi_wcs;
+		ret[l+1] = '\0';
+	}
+	return ret;
+}
