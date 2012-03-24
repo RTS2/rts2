@@ -75,8 +75,11 @@ void Plot::plotYDegrees ()
 		grid_y_step = 10;
 	else
 		grid_y_step = 50;
+
+	Magick::Image pat ("1x1", "red");
+	image->strokePattern (pat);
 	
-	image->strokeWidth (10);
+	image->strokeWidth (1);
 	image->fontPointsize (12);
 	image->fillColor ("red");
 	image->strokeColor ("white");
@@ -86,23 +89,18 @@ void Plot::plotYDegrees ()
 	// round start and plot grid..
 	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
 	{
-		if (fabs (y + min) < grid_y_step / 2.0)
-			continue;
 	  	std::ostringstream _os;
 		_os << LibnovaDegDist (y + min);
 		if (!crossed0 && y + min > 0)
 		{
-			image->fillColor ("blue");
+			pat.pixelColor (0,0, "blue");
+			image->strokePattern (pat);
 			crossed0 = true;
 		}
-		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
+		image->draw (Magick::DrawableText (0, size.height () - x_axis_height - scaleY * y - 5, _os.str ().c_str ()));
 	}
 
-	Magick::Image pat (Magick::Geometry (9, 1), Magick::Color (MaxRGB, MaxRGB, MaxRGB, 0));
-	pat.pixelColor (3,0, "red");
-	pat.pixelColor (4,0, "red");
-	pat.pixelColor (5,0, "red");
-	pat.pixelColor (6,0, "red");
+	pat.pixelColor (0,0, "red");
 	image->strokePattern (pat);
 
 	crossed0 = false;
@@ -112,14 +110,12 @@ void Plot::plotYDegrees ()
 	{
 		if (!crossed0 && y + min > 0)
 		{
-			pat.pixelColor (3,0, "blue");
-			pat.pixelColor (4,0, "blue");
-			pat.pixelColor (5,0, "blue");
-			pat.pixelColor (6,0, "blue");
+			pat.pixelColor (0,0, "blue");
+			image->strokePattern (pat);
 			crossed0 = true;
 		}
 		image->strokePattern (pat);
-		plotYGrid (size.height () - scaleY * y);
+		plotYGrid (size.height () - x_axis_height - scaleY * y);
 	}
 }
 
