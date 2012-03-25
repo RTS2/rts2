@@ -1,6 +1,7 @@
 /* 
  * NCurses based monitoring
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -108,12 +109,12 @@ class NMonitor:public rts2core::Client
 
 		void commandReturn (rts2core::Command * cmd, int cmd_status);
 
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
-
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
 
 		virtual rts2core::ConnCentraldClient *createCentralConn ();
 
@@ -183,6 +184,10 @@ class NMonitor:public rts2core::Client
 		 * @return NULL if connection with given number does not exists, or @see rts2core::Connection reference if it does.
 		 */
 		rts2core::Connection *connectionAt (unsigned int i);
+
+		double refresh_rate;
+
+		std::map <std::string, std::list <std::string> > initCommands;
 };
 
 /**

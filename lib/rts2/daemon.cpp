@@ -541,13 +541,13 @@ void Daemon::centraldConnBroken (Connection *conn)
 	}
 }
 
-void Daemon::addSelectSocks ()
+void Daemon::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	FD_SET (listen_sock, &read_set);
-	rts2core::Block::addSelectSocks ();
+	rts2core::Block::addSelectSocks (read_set, write_set, exp_set);
 }
 
-void Daemon::selectSuccess ()
+void Daemon::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	int client;
 	// accept connection on master
@@ -555,8 +555,7 @@ void Daemon::selectSuccess ()
 	{
 		struct sockaddr_in other_side;
 		socklen_t addr_size = sizeof (struct sockaddr_in);
-		client =
-			accept (listen_sock, (struct sockaddr *) &other_side, &addr_size);
+		client = accept (listen_sock, (struct sockaddr *) &other_side, &addr_size);
 		if (client == -1)
 		{
 			logStream (MESSAGE_DEBUG) << "client accept: " << strerror (errno)
@@ -567,7 +566,7 @@ void Daemon::selectSuccess ()
 			addConnectionSock (client);
 		}
 	}
-	rts2core::Block::selectSuccess ();
+	rts2core::Block::selectSuccess (read_set, write_set, exp_set);
 }
 
 void Daemon::addValue (Value * value, int queCondition)

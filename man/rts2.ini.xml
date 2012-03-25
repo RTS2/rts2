@@ -619,7 +619,7 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Optional binary, which will be passed various parameters about GRB. On command line, this program will receive values (in following order) of
+	      Optional executable, which will be passed various parameters about GRB. On command line, this program will receive values (in following order) of
 	      tar_id grb_id grb_seqn grb_type grb_ra grb_dec grb_is_grb grb_date grb_errorbox and grb_isnew. Those values are:
 	      <variablelist>
 	        <varlistentry>

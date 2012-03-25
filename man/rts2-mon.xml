@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2010-04-22</date>">
+  <!ENTITY dhdate      "<date>2012-03-25</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -47,7 +47,9 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      <arg><option>-c</option></arg>
+      <arg choice="opt"><option>--command <replaceable>device</replaceable>.<replaceable>command</replaceable></option></arg>
+      <arg choice="opt"><option>-r <replaceable>refresh rate</replaceable></option></arg>
+      <arg choice="opt"><option>-c</option></arg>
       &clientapp;
     </cmdsynopsis>
 
@@ -346,6 +348,27 @@
 
     <variablelist>
       <varlistentry>
+        <term><option>--command <replaceable>device</replaceable>.<replaceable>command</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Allows user to specify commands to send to connected device(s) once
+	    they will become available.  Can be used for example to send
+	    reset_next to all connected weather devices.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-r <replaceable>refresh rate</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Specify refresh rate in seconds. This parameter is usefull if the
+	    user wish to limit refreshing of the devices. Defaults to 0.1, e.g.
+	    monitor will try to referesh data (and user screen) 10 times per
+	    second. Should by used when user wish to limit amount of transmitted data.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>	
         <term><option>-c</option></term>
         <listitem>
           <para>Switch off colors. Usefull for terminals which have problems with colors.</para>

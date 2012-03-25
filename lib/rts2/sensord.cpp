@@ -56,7 +56,10 @@ int SensorWeather::commandAuthorized (rts2core::Connection *conn)
 	{
 		double n = getNow ();
 		if (nextGoodWeather->getValueDouble () > n)
+		{
 			nextGoodWeather->setValueInteger (n);
+			sendValueAll (nextGoodWeather);
+		}
 		return 0;
 	}
 	return Sensor::commandAuthorized (conn);

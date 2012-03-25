@@ -104,6 +104,9 @@ class Daemon:public rts2core::Block
 
 		int sendMetaInfo (Connection * conn);
 
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void selectSuccess (fd_set &_read_set, fd_set &_write_set, fd_set &_exp_set);
+
 		virtual int setValue (Connection * conn);
 
 		/**
@@ -250,9 +253,6 @@ class Daemon:public rts2core::Block
 		 * @return 0 on success, -1 on error.
 		 */
 		int lockFile ();
-
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
 
 		ValueQueVector queValues;
 

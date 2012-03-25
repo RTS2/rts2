@@ -1,4 +1,5 @@
 2012-03-25
+ * rts2-mon can send command(s) with --command option
  * use crypt for DB passwords
 
 2012-03-24

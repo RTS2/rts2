@@ -84,8 +84,8 @@ class Trencin:public Fork
 		virtual int startWorm ();
 		virtual int stopWorm ();
 
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
 
 	private:
 		const char *device_nameRa;
@@ -315,16 +315,16 @@ int Trencin::stopWorm ()
 	return 0;
 }
 
-void Trencin::addSelectSocks ()
+void Trencin::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	if (raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ()))
 		trencinConnRa->add (&read_set, &write_set, &exp_set);
 	if (decMoving->getValueInteger () != 0)
 		trencinConnDec->add (&read_set, &write_set, &exp_set);
-	Telescope::addSelectSocks ();
+	Telescope::addSelectSocks (read_set, write_set, exp_set);
 }
 
-void Trencin::selectSuccess ()
+void Trencin::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	// old axis value
 	if ((raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (&read_set))
@@ -382,7 +382,7 @@ void Trencin::selectSuccess ()
 		}
 	}
 
-	Telescope::selectSuccess ();
+	Telescope::selectSuccess (read_set, write_set, exp_set);
 }
 
 int Trencin::readAxis (rts2core::ConnSerial *conn, rts2core::ValueInteger *value, bool write_axis)

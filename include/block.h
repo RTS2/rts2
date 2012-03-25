@@ -170,6 +170,29 @@ class Block: public rts2core::App
 			return connections.size ();
 		}
 
+		/** 
+		 * Adds sockets for select call.
+		 *
+		 * Enable application to add arbitary sockets.
+		 * This hook is usefull for various applications that gets input
+		 * from other then connection sockets, and for which creating
+		 * extra Connection instance will be too heavy solution.
+		 *
+		 * @param _read_set      read set for select call
+		 * @param _write_set     write set for select call
+		 * @param _exp_set       exceptin set for select call
+		 */
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
+		/**
+		 * Called when select call suceed.
+		 *
+		 * This method is called when select call on registered sockects succeed.
+		 */
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
+		int callIdle () { return idle (); }
+
 		/**
 		 * Ask if command que is empty.
 		 *
@@ -536,7 +559,6 @@ class Block: public rts2core::App
 			return *(centraldConns.begin ());
 		}
 
-
 		/**
 		 * Called when new message is received.
 		 *
@@ -677,36 +699,6 @@ class Block: public rts2core::App
 		 * Address list related functions.
 		 **/
 		virtual int addAddress (NetworkAddress * in_addr);
-
-		/**
-		 * Socket set containing descriptors which can be read.
-		 */
-		fd_set read_set;
-
-		/**
-		 * Socket set containing descriptors which can be write.
-		 */
-		fd_set write_set;
-
-		/**
-		 * Socket set containing descriptors which can produce exception.
-		 */
-		fd_set exp_set;
-
-		/**
-		 * Enable application to add arbitary sockets.
-		 *
-		 * This hook is usefull for various applications that gets input from other then connection sockets,
-		 * and for which creating extra Connection instance will be too heavy solution.
-		 */
-		virtual void addSelectSocks ();
-
-		/**
-		 * Called when select call suceed.
-		 *
-		 * This method is called when select call on registered sockects succeed.
-		 */
-		virtual void selectSuccess ();
 
 		/**
 		 * Set which messages will be accepted by connection.

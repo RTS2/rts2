@@ -1,6 +1,7 @@
 /* 
  * NCurses based monitoring
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +30,9 @@
 #include "nmonitor.h"
 #include "configuration.h"
 
+#define OPT_MONITOR_COMMAND    OPT_LOCAL + 307
+
+//default refresh rate
 #define MONITOR_REFRESH   0.1
 
 #ifdef HAVE_XCURSES
@@ -115,6 +119,22 @@ int NMonitor::processOption (int in_opt)
 		case 'c':
 			colorsOff = true;
 			break;
+		case 'r':
+			refresh_rate = atof (optarg);
+			break;
+		case OPT_MONITOR_COMMAND:
+			// try to find . to split device and command
+			{
+				char *ch = strchr (optarg, '.');
+				if (ch == NULL)
+				{
+					std::cerr << "cannot find . separating device and command" << std::cerr;
+					return -1;
+				}
+				*ch = '\0';
+				initCommands[std::string (optarg)].push_back (std::string (ch+1));
+			}
+			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
 	}
@@ -145,11 +165,11 @@ int NMonitor::processArgs (const char *arg)
 #endif
 }
 
-void NMonitor::addSelectSocks ()
+void NMonitor::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	// add stdin for ncurses input
 	FD_SET (1, &read_set);
-	rts2core::Client::addSelectSocks ();
+	rts2core::Client::addSelectSocks (read_set, write_set, exp_set);
 }
 
 rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
@@ -157,9 +177,9 @@ rts2core::ConnCentraldClient * NMonitor::createCentralConn ()
 	return new NMonCentralConn (this, getCentralLogin (), getCentralPassword (), getCentralHost (), getCentralPort ());
 }
 
-void NMonitor::selectSuccess ()
+void NMonitor::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
-	rts2core::Client::selectSuccess ();
+	rts2core::Client::selectSuccess (read_set, write_set, exp_set);
 	while (1)
 	{
 		int input = getch ();
@@ -355,6 +375,8 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 #endif
 
 	addOption ('c', NULL, 0, "don't use colors");
+	addOption ('r', NULL, 1, "refersh rate (in seconds)");
+	addOption (OPT_MONITOR_COMMAND, "command", 1, "send command to device; separate command and device with .");
 
 	char buf[HOST_NAME_MAX];
 
@@ -364,6 +386,8 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	_os << "rts2-mon@" << buf;
 
 	setXtermTitle (_os.str ());
+
+	refresh_rate = MONITOR_REFRESH;
 }
 
 NMonitor::~NMonitor (void)
@@ -503,9 +527,8 @@ int NMonitor::init ()
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
-	resize ();
-
-	addTimer (MONITOR_REFRESH, new rts2core::Event (EVENT_MONITOR_REFRESH));
+	if (!isnan (refresh_rate) && refresh_rate >= 0)
+		addTimer (refresh_rate, new rts2core::Event (EVENT_MONITOR_REFRESH));
 
 	return 0;
 }
@@ -516,7 +539,8 @@ void NMonitor::postEvent (rts2core::Event *event)
 	{
 		case EVENT_MONITOR_REFRESH:
 			repaint ();
-			addTimer (MONITOR_REFRESH, event);
+			if (!isnan (refresh_rate) && refresh_rate >= 0)
+				addTimer (refresh_rate, event);
 			return;
 	}
 	rts2core::Client::postEvent (event);
@@ -538,6 +562,13 @@ rts2core::DevClient * NMonitor::createOtherType (rts2core::Connection * conn, in
 		conn->queCommand (new rts2core::CommandMove (this, (rts2core::DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
 	}
 #endif
+	// queue in commands
+	std::map <std::string, std::list <std::string> >::iterator iter = initCommands.find (conn->getName ());
+	if (iter != initCommands.end ())
+	{
+		for (std::list <std::string>::iterator ci = iter->second.begin (); ci != iter->second.end (); ci++)
+			conn->queCommand (new rts2core::Command (this, ci->c_str ()));
+	}
 	return retC;
 }
 
@@ -548,7 +579,9 @@ int NMonitor::deleteConnection (rts2core::Connection * conn)
 		// that will trigger daemonWindow reregistration before repaint
 		daemonWindow = NULL;
 	}
-	return rts2core::Client::deleteConnection (conn);
+	int ret = rts2core::Client::deleteConnection (conn);
+	repaint ();
+	return ret;
 }
 
 void NMonitor::message (rts2core::Message & msg)
@@ -693,12 +726,16 @@ void NMonitor::processKey (int key)
 			leaveMenu ();
 		}
 	}
+	repaint ();
 }
 
 void NMonitor::commandReturn (rts2core::Command * cmd, int cmd_status)
 {
 	if (oldCommand == cmd)
+	{
 		comWindow->commandReturn (cmd, cmd_status);
+		repaint ();
+	}
 }
 
 int main (int argc, char **argv)

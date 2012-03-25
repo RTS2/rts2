@@ -248,6 +248,8 @@ class Dummy:public Camera
 		rts2core::ValueDouble *tempMin;
 		rts2core::ValueDouble *tempMax;
 
+		rts2core::ValueRectangle *astarLimits;
+
 		rts2core::ValueDouble *astar_Xp;
 		rts2core::ValueDouble *astar_Yp;
 

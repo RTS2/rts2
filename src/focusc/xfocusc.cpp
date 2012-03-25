@@ -50,33 +50,6 @@ using namespace rts2core;
  */
 class XFocusClient:public FocusClient
 {
-	private:
-		XColor rgb[260];		 // <= 255 - images, 256 - red line
-		Colormap colormap;
-		char * displayName;
-
-		// X11 stuff
-		Display * display;
-		Visual * visual;
-		int depth;
-
-		int crossType;
-		int starsType;
-
-		// initially in arcsec, but converted (and used) in degrees
-		double changeVal;
-
-		virtual FocusCameraClient * createFocCamera (rts2core::Connection * conn);
-	protected:
-		/**
-		 * Add XWin connection socket, obtained by ConnectionNumber macro.
-		 */
-		virtual void addSelectSocks ();
-
-		/**
-		 * Query and process possible XWin event from top of XWin event loop.
-		 */
-		virtual void selectSuccess ();
 	public:
 		XFocusClient (int argc, char **argv);
 		virtual ~ XFocusClient (void);
@@ -84,6 +57,16 @@ class XFocusClient:public FocusClient
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
+
+		/**
+		 * Add XWin connection socket, obtained by ConnectionNumber macro.
+		 */
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
+		/**
+		 * Query and process possible XWin event from top of XWin event loop.
+		 */
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
 
 		virtual void usage ();
 		virtual void help ();
@@ -115,6 +98,24 @@ class XFocusClient:public FocusClient
 		}
 		double zoom;
 		bool GoNine;
+
+	private:
+		XColor rgb[260];		 // <= 255 - images, 256 - red line
+		Colormap colormap;
+		char * displayName;
+
+		// X11 stuff
+		Display * display;
+		Visual * visual;
+		int depth;
+
+		int crossType;
+		int starsType;
+
+		// initially in arcsec, but converted (and used) in degrees
+		double changeVal;
+
+		virtual FocusCameraClient * createFocCamera (rts2core::Connection * conn);
 };
 
 class XFocusClientCamera:public FocusCameraClient
@@ -1113,19 +1114,19 @@ FocusCameraClient * XFocusClient::createFocCamera (rts2core::Connection * conn)
 	return cam;
 }
 
-void XFocusClient::addSelectSocks ()
+void XFocusClient::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	FD_SET (ConnectionNumber (display), &read_set);
-	FocusClient::addSelectSocks ();
+	FocusClient::addSelectSocks (read_set, write_set, exp_set);
 }
 
-void XFocusClient::selectSuccess ()
+void XFocusClient::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	if (FD_ISSET (ConnectionNumber (display), &read_set))
 	{
 		postEvent (new rts2core::Event (EVENT_XWIN_SOCK));
 	}
-	FocusClient::selectSuccess ();
+	FocusClient::selectSuccess (read_set, write_set, exp_set);
 }
 
 int main (int argc, char **argv)

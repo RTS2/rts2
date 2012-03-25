@@ -158,8 +158,8 @@
           <para>
 	     ncurses (3ncurses) based rts2-mon, console based rts2-cmon, X-Window image
 	     grabber rts2-xfocusc, console grabber rts2-focusc, and
-	     rts2-soapd, which enables access to the RTS2 system through
-	     the Simple Object Access Protocol (SOAP).
+	     rts2-xmlrpcclient, which enables access to the RTS2 system through
+	     the XML/RPC.
           </para>
 	</listitem>
       </varlistentry>
@@ -835,7 +835,11 @@
 	<manvolnum>1</manvolnum>
       </citerefentry>
       <citerefentry>
-        <refentrytitle>rts2-soapd</refentrytitle>
+        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-xmlrpcclient</refentrytitle>
 	<manvolnum>1</manvolnum>
       </citerefentry>
       <citerefentry>

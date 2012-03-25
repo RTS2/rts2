@@ -388,22 +388,22 @@ int XmlRpcd::init ()
 	return ret;
 }
 
-void XmlRpcd::addSelectSocks ()
+void XmlRpcd::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 #ifdef HAVE_PGSQL
-	DeviceDb::addSelectSocks ();
+	DeviceDb::addSelectSocks (read_set, write_set, exp_set);
 #else
-	rts2core::Device::addSelectSocks ();
+	rts2core::Device::addSelectSocks (read_set, write_set, exp_set);
 #endif
 	XmlRpcServer::addToFd (&read_set, &write_set, &exp_set);
 }
 
-void XmlRpcd::selectSuccess ()
+void XmlRpcd::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 #ifdef HAVE_PGSQL
-	DeviceDb::selectSuccess ();
+	DeviceDb::selectSuccess (read_set, write_set, exp_set);
 #else
-	rts2core::Device::selectSuccess ();
+	rts2core::Device::selectSuccess (read_set, write_set, exp_set);
 #endif
 	XmlRpcServer::checkFd (&read_set, &write_set, &exp_set);
 }
@@ -411,9 +411,9 @@ void XmlRpcd::selectSuccess ()
 void XmlRpcd::signaledHUP ()
 {
 #ifdef HAVE_PGSQL
-	DeviceDb::selectSuccess ();
+	DeviceDb::signaledHUP ();
 #else
-	rts2core::Device::selectSuccess ();
+	rts2core::Device::signaledHUP ();
 #endif
 	reloadEventsFile ();
 }

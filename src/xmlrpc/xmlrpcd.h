@@ -297,6 +297,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		void valueChangedEvent (rts2core::Connection *conn, rts2core::Value *new_value);
 
+		virtual void addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+		virtual void selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set);
+
 		virtual void message (Message & msg);
 
 		/**
@@ -386,9 +389,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 #endif
 		virtual int processOption (int in_opt);
 		virtual int init ();
-
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
 
 		virtual void signaledHUP ();
 

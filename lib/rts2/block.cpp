@@ -90,6 +90,15 @@ int Block::getPort (void)
 	return port;
 }
 
+void Block::addSelectSocks (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
+{
+	connections_t::iterator iter;
+	for (iter = connections.begin (); iter != connections.end (); iter++)
+		(*iter)->add (&read_set, &write_set, &exp_set);
+	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
+		(*iter)->add (&read_set, &write_set, &exp_set);
+}
+
 bool Block::commandQueEmpty ()
 {
 	connections_t::iterator iter;
@@ -307,16 +316,7 @@ int Block::idle ()
 	return 0;
 }
 
-void Block::addSelectSocks ()
-{
-	connections_t::iterator iter;
-	for (iter = connections.begin (); iter != connections.end (); iter++)
-		(*iter)->add (&read_set, &write_set, &exp_set);
-	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
-		(*iter)->add (&read_set, &write_set, &exp_set);
-}
-
-void Block::selectSuccess ()
+void Block::selectSuccess (fd_set &read_set, fd_set &write_set, fd_set &exp_set)
 {
 	Connection *conn;
 	int ret;
@@ -387,7 +387,11 @@ void Block::oneRunLoop ()
 	struct timeval read_tout;
 	double t_diff;
 
-	if (timers.begin () != timers.end () && (USEC_SEC * (t_diff = timers.begin ()->first - getNow ())) < idle_timeout)
+	fd_set read_set;
+	fd_set write_set;
+	fd_set exp_set;
+
+	if (timers.begin () != timers.end () && (USEC_SEC * (t_diff = (timers.begin ()->first - getNow ()))) < idle_timeout)
 	{
 		read_tout.tv_sec = t_diff;
 		read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
@@ -402,10 +406,9 @@ void Block::oneRunLoop ()
 	FD_ZERO (&write_set);
 	FD_ZERO (&exp_set);
 
-	addSelectSocks ();
-	ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
-	if (ret > 0)
-		selectSuccess ();
+	addSelectSocks (read_set, write_set, exp_set);
+	if (select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout) > 0)
+		selectSuccess (read_set, write_set, exp_set);
 	ret = idle ();
 	if (ret == -1)
 		endRunLoop ();
