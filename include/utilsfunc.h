@@ -318,4 +318,9 @@ class ProgressIndicator
 		int w;
 };
 
+/**
+ * Creates multiple WCS name from value name and suffix.
+ */
+const char * multiWCS (const char *name, char multi_wcs);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
