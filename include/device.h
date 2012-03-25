@@ -191,6 +191,8 @@ class CommandDeviceStatusInfo:public Command
 		Connection * owner_conn;
 };
 
+class MultiDev;
+
 /**
  * Represents RTS2 device. From this class, different devices are
  * derived.
@@ -297,6 +299,9 @@ class Device:public Daemon
 		 * Returns true if device connection must be authorized.
 		 */
 		bool requireAuthorization () { return doAuth; }
+
+		friend class MultiDev;
+
 	protected:
 		/**
 		 * Process on option, when received from getopt () call.

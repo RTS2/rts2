@@ -456,33 +456,18 @@ class Image:public FitsFile
 		 */
 		long getSumNPixels ();
 
-		/**
-		 * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)
-		 *
-		 * Hint: if you want to guide telescope, you need to use that value.
-		 * If target is W from telescope axis, it will be negative, and you need to move to W, so you need
-		 * to decrease RA.
-		 */
-
-		// int getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle);
-
-		// returns pixels [x1,y1] and [x2,y2] offset in ra and dec degrees
-		// int getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle);
-
-		/**
-		 * Computes RA DEC of given pixel. Uses telescope information. This method does not use WCS,
-		 * point RA DEC is computed from telescope coordinates recorded at image headers.
-		 *
-		 * @param x    X coordinate of the pixel
-		 * @param y    Y coordinate of the pixel
-		 * @param ra   resulted RA
-		 * @param dec  resulted DEC
-		 *
-		 * @return -1 on errror, 0 on success
-		 */
-		// int getRaDec (double x, double y, double &ra, double &dec);
-
 		int getError (double &eRa, double &eDec, double &eRad);
+
+		/**
+		 * Increase image rotang.
+		 */
+		void addRotang (double rotAdd)
+		{
+			if (isnan (total_rotang))
+				total_rotang = rotAdd;
+			else
+				total_rotang += rotAdd;
+		}
 
 		/**
 		 * Returns coordinates, which are stored in two FITS keys, as struct ln_equ_posn.
