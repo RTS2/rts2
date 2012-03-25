@@ -829,6 +829,9 @@ class Telescope:public rts2core::Device
 		 */
 		struct ln_hrz_posn corrAltAz;
 
+		rts2core::ValueDouble *wcs_crval1;
+		rts2core::ValueDouble *wcs_crval2;
+
 		/**
 		 * Telescope RA and DEC. In perfect world readed from sensors.
 		 * target + model + corrRaDec = requested position -> telRaDec
@@ -926,6 +929,8 @@ class Telescope:public rts2core::Device
 		rts2core::ValueRaDec *diffRaDec;
 
 		void recalculateMpecDIffs ();
+
+		char wcs_multi;
 };
 
 };
