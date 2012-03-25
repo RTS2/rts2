@@ -679,6 +679,8 @@ class Image:public FitsFile
 		// it is calculated as sum of partial rotangs.
 		// For change of total rotang, addRotang function is provided.
 		double total_rotang;
+		// Multiple WCS to add rotang to
+		char wcs_multi_rotang;
 
 		int expNum;
 

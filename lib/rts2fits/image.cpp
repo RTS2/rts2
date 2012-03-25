@@ -65,7 +65,7 @@ double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
 
 void Image::initData ()
 {
-	exposureLength = rts2_nan ("f");
+	exposureLength = NAN;
 
 	loadHeader = false;
 	verbose = true;
@@ -93,15 +93,16 @@ void Image::initData ()
 	getFailed = 0;
 	expNum = 1;
 
-	pos_astr.ra = rts2_nan ("f");
-	pos_astr.dec = rts2_nan ("f");
-	ra_err = rts2_nan ("f");
-	dec_err = rts2_nan ("f");
-	img_err = rts2_nan ("f");
+	pos_astr.ra = NAN;
+	pos_astr.dec = NAN;
+	ra_err = NAN;
+	dec_err = NAN;
+	img_err = NAN;
 
 	isAcquiring = 0;
 
-	total_rotang = rts2_nan ("f");
+	total_rotang = NAN;
+	wcs_multi_rotang = '\0';
 
 	shutter = SHUT_UNKNOW;
 
@@ -138,6 +139,7 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	mean = in_image->mean;
 	isAcquiring = in_image->isAcquiring;
 	total_rotang = in_image->total_rotang;
+	wcs_multi_rotang = in_image->wcs_multi_rotang;
 
 	targetId = in_image->targetId;
 	targetIdSel = in_image->targetIdSel;
@@ -441,6 +443,7 @@ void Image::getHeaders ()
 	// astrometry get !!
 	getValue ("CRVAL1", pos_astr.ra, false);
 	getValue ("CRVAL2", pos_astr.dec, false);
+	getValue ("CROTA2", total_rotang, false);
 }
 
 void Image::getTargetHeaders ()
@@ -492,7 +495,7 @@ int Image::closeFile ()
 			}
 			if (!isnan (total_rotang))
 			{
-				setValue ("ROTANG", total_rotang, "Image rotang over X axis");
+				setValue (multiWCS ("CROTA2", wcs_multi_rotang) , total_rotang, "Image rotang over X axis");
 			}
 			// save array data
 			for (std::map <int, TableData *>::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
@@ -1206,7 +1209,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 void Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText)
 {
 	// no label, no work
-	if (labelText == NULL)
+	if (labelText == NULL || labelText[0] == '\0')
 		return;
 	mimage.fontPointsize (fs);
 	mimage.fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
@@ -2019,13 +2022,20 @@ void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
 						break;
 				}
 			}
+			// record rotang even if it is not writable
+			if (which == EXPOSURE_START && val->getValueDisplayType () == RTS2_DT_ROTANG)
+			{
+				addRotang (val->getValueDouble ());
+				if (strncmp (val->getName ().c_str (), "CROTA2", 6) == 0)
+					wcs_multi_rotang = val->getName ()[6];
+			}
 		}
 	}
 }
 
 double Image::getLongtitude ()
 {
-	double lng = rts2_nan ("f");
+	double lng = NAN;
 	getValue ("LONGITUD", lng, true);
 	return lng;
 }
