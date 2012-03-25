@@ -152,6 +152,7 @@ class Configuration:
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
         self.cp[('focuser properties', 'FOCUSER_SPEED')]= 100.
         self.cp[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
+        self.cp[('focuser properties', 'FOCUSER_SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
 
         self.cp[('acceptance circle', 'CENTER_OFFSET_X')]= 0.
         self.cp[('acceptance circle', 'CENTER_OFFSET_Y')]= 0.
@@ -174,6 +175,7 @@ class Configuration:
         self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'rts2af-fit.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
+        self.cp[('analysis', 'SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
         
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
@@ -1042,7 +1044,7 @@ class Catalogue():
             if( (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > runTimeConfig.value('MATCHED_RATIO')):
                 return True
             else:
-                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required are %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.variableHeaderElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required ratio is %f" % ( runTimeConfig.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.variableHeaderElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
                 return False
         else:
             logging.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
