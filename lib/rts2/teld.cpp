@@ -301,7 +301,7 @@ int Telescope::processOption (int in_opt)
 			correctionLimit->setValueCharArr (optarg);
 			break;
 		case OPT_WCS_MULTI:
-			if (strlen (optarg) != 1 || optarg[0] != '-' || optarg[0] < 'A' || optarg[0] > 'Z')
+			if (strlen (optarg) != 1 || ! (optarg[0] == '-' || (optarg[0] >= 'A' || optarg[0] <= 'Z')))
 			{
 				std::cerr << "invalid --wcs-multi option " << optarg << std::endl;
 				return -1;
@@ -1041,6 +1041,14 @@ int Telescope::startResyncMove (rts2core::Connection * conn, bool onlyCorrect)
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
+
+	if (wcs_crval1 && wcs_crval2)
+	{
+		wcs_crval1->setValueDouble (pos.ra);
+		sendValueAll (wcs_crval1);
+		wcs_crval2->setValueDouble (pos.dec);
+		sendValueAll (wcs_crval2);
+	}
 
 	// apply corrections
 	double JD = ln_get_julian_from_sys ();
