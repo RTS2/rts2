@@ -55,8 +55,15 @@ class FlwoWeather:public SensorWeather
 		int me_port;
 		MEarthWeather *mearth;
 
+		// wait values
+		rts2core::ValueFloat *wait_nodata;
+		rts2core::ValueFloat *wait_humidity;
+		rts2core::ValueFloat *wait_wind;
+		rts2core::ValueFloat *wait_skytemp;
+
 		rts2core::ValueFloat *outsideTemp;
-		rts2core::ValueFloat *windSpeed;
+		rts2core::ValueDoubleStat *windSpeed;
+		rts2core::ValueInteger *windSpeedAvg;
 		rts2core::ValueFloat *windSpeed_limit;
 		rts2core::ValueFloat *windGustSpeed;
 		rts2core::ValueFloat *windGustSpeed_limit;
@@ -167,8 +174,20 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 
 FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 {
+	createValue (wait_nodata, "wait_nodata", "[s] set bad weather when data are not refreshed after this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (wait_humidity, "wait_humidity", "[s] set bad weather when humidity is over limit for this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (wait_wind, "wait_wind", "[s] set bad weather when wind is over limit for this number of seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (wait_skytemp, "wait_skytemp", "[s] wait for this number of seconds if skytemp is outside limit", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+
+	wait_nodata->setValueFloat (300);
+	wait_humidity->setValueFloat (300);
+	wait_wind->setValueFloat (300);
+	wait_skytemp->setValueFloat (900);
+
 	createValue (outsideTemp, "outside_temp", "[C] outside temperature", false);
 	createValue (windSpeed, "wind_speed", "[mph] windspeed", false);
+	createValue (windSpeedAvg, "wind_speed_avg", "number of measurements to average", false, RTS2_VALUE_WRITABLE);
+	windSpeedAvg->setValueInteger (20);
 	createValue (windSpeed_limit, "wind_speed_limit", "[mph] windspeed limit", false, RTS2_VALUE_WRITABLE);
 	windSpeed_limit->setValueFloat (40);
 
@@ -307,8 +326,13 @@ int FlwoWeather::info ()
 			}
 			else if (strstr (name, "wind_speed") == name)
 			{
-			  	windSpeed->setValueCharArr (ch);
-				processed |= 1 << 1;
+				char *endptr;
+				double v = strtod (ch, &endptr);
+				if (endptr != ch && *endptr != '\0')
+				{
+					windSpeed->addValue (v, windSpeedAvg->getValueInteger ());
+					processed |= 1 << 1;
+				}
 			}
 			else if (strstr (name, "wind_gust_speed") == name)
 			{
@@ -376,12 +400,12 @@ bool FlwoWeather::isGoodWeather ()
 {
 	if (getLastInfoTime () > 60)
   	{
-	  	setWeatherTimeout (30, "weather data not recived");
+	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not recived");
 		return false;
 	}
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
-	  	setWeatherTimeout (600, "humidity is above limit");
+	  	setWeatherTimeout (wait_humidity->getValueInteger (), "humidity is above limit");
 	  	valueError (humidity);
 		return false;
 	}
@@ -391,7 +415,7 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (windSpeed->getValueFloat () > windSpeed_limit->getValueFloat ())
 	{
-		setWeatherTimeout (600, "windspeed is above limit");
+		setWeatherTimeout (wait_wind->getValueInteger (), "windspeed is above limit");
 		valueError (windSpeed);
 		return false;
 	}
@@ -401,7 +425,7 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (windGustSpeed->getValueFloat () > windGustSpeed_limit->getValueFloat ())
 	{
-		setWeatherTimeout (600, "wind gust speed is above limit");
+		setWeatherTimeout (wait_wind->getValueInteger (), "wind gust speed is above limit");
 		valueError (windGustSpeed);
 		return false;
 	}
@@ -411,7 +435,7 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
 	{
-		setWeatherTimeout (600, "skytemp is above limit");
+		setWeatherTimeout (wait_skytemp->getValueInteger (), "skytemp is above limit");
 		valueError (me_sky_temp);
 		return false;
 	}
