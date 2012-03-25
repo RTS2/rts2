@@ -35,7 +35,7 @@
 
 #define OPT_WCS_MULTI         OPT_LOCAL + 400
 #define OPT_WCS_CRPIX         OPT_LOCAL + 401
-#define OPT_WCS_CD            OPT_LOCAL + 402
+#define OPT_WCS_CDELT         OPT_LOCAL + 402
 #define OPT_FOCUS             OPT_LOCAL + 403
 #define OPT_WHEEL             OPT_LOCAL + 404
 #define OPT_WITHSHM           OPT_LOCAL + 405
@@ -72,17 +72,13 @@ int Camera::setBinning (int in_vert, int in_hori)
 		sendValueAll (wcs_crpix1);
 		sendValueAll (wcs_crpix2);
 	}
-	if (wcs_cd1_1)
+	if (wcs_cdelta1 && wcs_cdelta2)
 	{
-		wcs_cd1_1->setValueDouble (default_cd[0] / in_vert);
-		wcs_cd1_2->setValueDouble (default_cd[1] / in_vert);
-		wcs_cd2_1->setValueDouble (default_cd[2] / in_hori);
-		wcs_cd2_2->setValueDouble (default_cd[3] / in_hori);
+		wcs_cdelta1->setValueDouble (default_cd[0] / in_vert);
+		wcs_cdelta2->setValueDouble (default_cd[1] / in_vert);
 
-		sendValueAll (wcs_cd1_1);
-		sendValueAll (wcs_cd1_2);
-		sendValueAll (wcs_cd2_1);
-		sendValueAll (wcs_cd2_2);
+		sendValueAll (wcs_cdelta1);
+		sendValueAll (wcs_cdelta2);
 	}
 	binningX->setValueInteger (((Binning2D *)(binning->getData ()))->horizontal);
 	binningY->setValueInteger (((Binning2D *)(binning->getData ()))->vertical);
@@ -320,12 +316,13 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	multi_wcs = '\0';
 
+	wcs_ctype1 = wcs_ctype2 = NULL;
 	wcs_crpix1 = wcs_crpix2 = NULL;
 	default_crpix[0] = default_crpix[1] = 0;
 
-	wcs_cd1_1 = wcs_cd1_2 = wcs_cd2_1 = wcs_cd2_2 = NULL;
-	default_cd[0] = default_cd[2] = 1;
-	default_cd[1] = default_cd[3] = 0;
+	wcs_cdelta1 = wcs_cdelta2 = wcs_crota1 = wcs_crota2 = NULL;
+	default_cd[0] = default_cd[1] = 1;
+	default_cd[2] = default_cd[3] = 0;
 
 	pixelX = NAN;
 	pixelY = NAN;
@@ -424,7 +421,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
-	addOption (OPT_WCS_CD, "wcs-cd", 1, "WCS CD matrix (CD1_1:CD1_2:CD2_1:CD2_2 in default, unbinned configuration)");
+	addOption (OPT_WCS_CDELT, "wcs-cd", 1, "WCS CD matrix (CDELT1:CDELT2:CROTA1:CROTA2 in default, unbinned configuration)");
 	addOption (OPT_WCS_CRPIX, "wcs-crpix", 1, "WCS reference pixels (x:y, default to CCD center)");
 	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
 }
@@ -623,6 +620,10 @@ int Camera::processOption (int in_opt)
 		case OPT_WCS_CRPIX:
 			if (wcs_crpix1 == NULL)
 			{
+				createValue (wcs_ctype1, multiWCS ("CTYPE1", multi_wcs), "WCS transformation type", true);
+				createValue (wcs_ctype2, multiWCS ("CTYPE2", multi_wcs), "WCS transformation type", true);
+				wcs_ctype1->setValueCharArr ("RA---TAN");
+				wcs_ctype2->setValueCharArr ("DEC--TAN");
 				createValue (wcs_crpix1, multiWCS ("CRPIX1", multi_wcs), "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
 				createValue (wcs_crpix2, multiWCS ("CRPIX2", multi_wcs), "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
 			}
@@ -640,14 +641,14 @@ int Camera::processOption (int in_opt)
 			wcs_crpix2->setValueDouble (default_crpix[1]);
 
 			break;
-		case OPT_WCS_CD:
+		case OPT_WCS_CDELT:
 			// create WCS parameters..
-			if (wcs_cd1_1 == NULL)
+			if (wcs_cdelta1 == NULL)
 			{
-				createValue (wcs_cd1_1, multiWCS ("CD1_1", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd1_2, multiWCS ("CD1_2", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd2_1, multiWCS ("CD2_1", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cd2_2, multiWCS ("CD2_2", multi_wcs), "[deg] WCS transformation matrix", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cdelta1, multiWCS ("CDELTA1", multi_wcs), "[deg] WCS delta along 1st axis", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cdelta2, multiWCS ("CDELTA2", multi_wcs), "[deg] WCS delta along 2nd axis", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crota1, multiWCS ("CROTA1", multi_wcs), "[deg] WCS rotation", true, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
+				createValue (wcs_crota2, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", true, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
 			}
 			params = SplitStr (optarg, ":");
 			if (params.size () != 4)
@@ -659,10 +660,10 @@ int Camera::processOption (int in_opt)
 			for (int i = 0; i < 4; i++)
 				default_cd[i] = atof (params[i].c_str ());
 
-			wcs_cd1_1->setValueDouble (default_cd[0]);
-			wcs_cd1_2->setValueDouble (default_cd[1]);
-			wcs_cd2_1->setValueDouble (default_cd[2]);
-			wcs_cd2_2->setValueDouble (default_cd[3]);
+			wcs_cdelta1->setValueDouble (default_cd[0]);
+			wcs_cdelta2->setValueDouble (default_cd[1]);
+			wcs_crota1->setValueDouble (default_cd[2]);
+			wcs_crota2->setValueDouble (default_cd[3]);
 			break;
 		case OPT_WITHSHM:
 			sharedMemId = -1;
