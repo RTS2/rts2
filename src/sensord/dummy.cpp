@@ -90,11 +90,6 @@ class Dummy:public SensorWeather
 				maskState (DEVICE_ERROR_MASK, ((rts2core::ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
 				return 0;
 			}
-			if (old_value == goodWeather)
-			{
-			  	setWeatherState (((rts2core::ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
-				return 0;
-			}
 			if (old_value == stopMove)
 			{
 				setStopState (((rts2core::ValueBool *)newValue)->getValueBool (), "move state set from stop_move value");
@@ -160,7 +155,7 @@ class Dummy:public SensorWeather
 		}
 	protected:
 		virtual int initHardware ();
-
+		virtual bool isGoodWeather ();
 	private:
 		rts2core::ValueInteger *testInt;
 		rts2core::ValueDouble *testDouble;
@@ -238,6 +233,14 @@ int Dummy::initHardware ()
 	addTimer (5, new rts2core::Event (EVENT_TIMER_TEST));
 	maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
 	return 0;
+}
+
+bool Dummy::isGoodWeather ()
+{
+	if (goodWeather->getValueBool () == true)
+		return SensorWeather::isGoodWeather ();
+	setWeatherTimeout (60, "waiting for next good weather");
+	return false;
 }
 
 int main (int argc, char **argv)
