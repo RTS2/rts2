@@ -1052,11 +1052,10 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueString *wcs_ctype2;
 		rts2core::ValueDouble *wcs_cdelta1;
 		rts2core::ValueDouble *wcs_cdelta2;
-		rts2core::ValueDouble *wcs_crota1;
-		rts2core::ValueDouble *wcs_crota2;
+		rts2core::ValueDouble *wcs_crota;
 
-		// 1:1 binning, default WCS - cdelta1,cdelta2,crota2
-		double default_cd[4];
+		// 1:1 binning, default WCS - cdelta1,cdelta2,crota
+		double default_cd[3];
 
 		rts2core::ValueRectangle *chipSize;
 

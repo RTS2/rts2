@@ -34,7 +34,7 @@
 #include "timestamp.h"
 
 #define OPT_WCS_MULTI         OPT_LOCAL + 400
-#define OPT_WCS_CRPIX         OPT_LOCAL + 401
+//#define OPT_WCS_CRPIX         OPT_LOCAL + 401
 #define OPT_WCS_CDELT         OPT_LOCAL + 402
 #define OPT_FOCUS             OPT_LOCAL + 403
 #define OPT_WHEEL             OPT_LOCAL + 404
@@ -320,9 +320,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	wcs_crpix1 = wcs_crpix2 = NULL;
 	default_crpix[0] = default_crpix[1] = 0;
 
-	wcs_cdelta1 = wcs_cdelta2 = wcs_crota1 = wcs_crota2 = NULL;
+	wcs_cdelta1 = wcs_cdelta2 = wcs_crota = NULL;
 	default_cd[0] = default_cd[1] = 1;
-	default_cd[2] = default_cd[3] = 0;
+	default_cd[2] = 0;
 
 	pixelX = NAN;
 	pixelY = NAN;
@@ -421,8 +421,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
-	addOption (OPT_WCS_CDELT, "wcs-cd", 1, "WCS CD matrix (CDELT1:CDELT2:CROTA1:CROTA2 in default, unbinned configuration)");
-	addOption (OPT_WCS_CRPIX, "wcs-crpix", 1, "WCS reference pixels (x:y, default to CCD center)");
+	addOption (OPT_WCS_CDELT, "wcs", 1, "WCS CD matrix (CRPIX1:CRPIX2:CDELT1:CDELT2:CROTA in default, unbinned configuration)");
 	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
 }
 
@@ -617,8 +616,9 @@ int Camera::processOption (int in_opt)
 			}
 			multi_wcs = optarg[0];
 			break;
-		case OPT_WCS_CRPIX:
-			if (wcs_crpix1 == NULL)
+		case OPT_WCS_CDELT:
+			// create WCS parameters..
+			if (wcs_cdelta1 == NULL)
 			{
 				createValue (wcs_ctype1, multiWCS ("CTYPE1", multi_wcs), "WCS transformation type", true);
 				createValue (wcs_ctype2, multiWCS ("CTYPE2", multi_wcs), "WCS transformation type", true);
@@ -626,44 +626,31 @@ int Camera::processOption (int in_opt)
 				wcs_ctype2->setValueCharArr ("DEC--TAN");
 				createValue (wcs_crpix1, multiWCS ("CRPIX1", multi_wcs), "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
 				createValue (wcs_crpix2, multiWCS ("CRPIX2", multi_wcs), "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
+
+				createValue (wcs_cdelta1, multiWCS ("CDELT1", multi_wcs), "[deg] WCS delta along 1st axis", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_cdelta2, multiWCS ("CDELT2", multi_wcs), "[deg] WCS delta along 2nd axis", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crota, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", false, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
 			}
 			params = SplitStr (optarg, ":");
-			if (params.size () != 2)
+			if (params.size () != 5)
 			{
-				std::cerr << "cannot parse --wcs-crpix parameter " << optarg << std::endl;
+				std::cerr << "cannot parse --wcs parameter " << optarg << std::endl;
 				return -1;
 			}
 
-			for (int i = 0; i < 2; i++)
-				default_crpix[i] = atof (params[i].c_str ());
+			int i;
 
+			for (i = 0; i < 2; i++)
+				default_crpix[i] = atof (params[i].c_str ());
 			wcs_crpix1->setValueDouble (default_crpix[0]);
 			wcs_crpix2->setValueDouble (default_crpix[1]);
 
-			break;
-		case OPT_WCS_CDELT:
-			// create WCS parameters..
-			if (wcs_cdelta1 == NULL)
-			{
-				createValue (wcs_cdelta1, multiWCS ("CDELTA1", multi_wcs), "[deg] WCS delta along 1st axis", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cdelta2, multiWCS ("CDELTA2", multi_wcs), "[deg] WCS delta along 2nd axis", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_crota1, multiWCS ("CROTA1", multi_wcs), "[deg] WCS rotation", true, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
-				createValue (wcs_crota2, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", true, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
-			}
-			params = SplitStr (optarg, ":");
-			if (params.size () != 4)
-			{
-				std::cerr << "cannot parse --wcs-cd parameter " << optarg << std::endl;
-				return -1;
-			}
-
-			for (int i = 0; i < 4; i++)
-				default_cd[i] = atof (params[i].c_str ());
+			for (i = 2; i < 5; i++)
+				default_cd[i - 2] = atof (params[i].c_str ());
 
 			wcs_cdelta1->setValueDouble (default_cd[0]);
 			wcs_cdelta2->setValueDouble (default_cd[1]);
-			wcs_crota1->setValueDouble (default_cd[2]);
-			wcs_crota2->setValueDouble (default_cd[3]);
+			wcs_crota->setValueDouble (default_cd[2]);
 			break;
 		case OPT_WITHSHM:
 			sharedMemId = -1;

@@ -707,6 +707,9 @@ int Telescope::initValues ()
 	objRaDec->setFromValue (telRaDec);
 	modelRaDec->setValueRaDec (0, 0);
 
+	wcs_crval1->setValueDouble (objRaDec->getRa ());
+	wcs_crval2->setValueDouble (objRaDec->getDec ());
+
 	return rts2core::Device::initValues ();
 }
 
