@@ -399,6 +399,7 @@ int Rts2UserApp::editType ()
 
 int Rts2UserApp::doProcessing ()
 {
+	srandom (time (NULL));
 	switch (op)
 	{
 		case NOT_SET:
