@@ -186,7 +186,7 @@ int NIRatir::initHardware ()
 	{
 		flex_configure_stepper_output (NIMC_AXIS1 + i, NIMC_STEP_AND_DIRECTION, NIMC_ACTIVE_HIGH, 0);
 		flex_load_counts_steps_rev (NIMC_AXIS1 + i, NIMC_STEPS, 24);
-		flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
+		flex_config_inhibit_output (NIMC_AXIS1 + i, 1, 0, 0);
 
 		flex_load_base_vel (NIMC_AXIS1 + i, axbasev[i]->getValueInteger ());
 		flex_load_velocity (NIMC_AXIS1 + i, axmaxv[i]->getValueInteger (), 0xff);
