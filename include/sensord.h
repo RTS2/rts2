@@ -40,7 +40,7 @@ namespace rts2sensord
 class Sensor:public rts2core::Device
 {
 	public:
-		Sensor (int argc, char **argv);
+		Sensor (int argc, char **argv, const char *sn = "S1");
 		virtual ~ Sensor (void);
 };
 
@@ -60,7 +60,7 @@ class SensorWeather:public Sensor
 		 * @param _timeout Weather timeout when device is started. Shall be set to value above
 		 * readout of first data from device.
 		 */
-		SensorWeather (int argc, char **argv, int _timeout = 120);
+		SensorWeather (int argc, char **argv, int _timeout = 120, const char *sn = "S1");
 
 		double getNextGoodWeather ()
 		{
