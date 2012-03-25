@@ -1039,6 +1039,8 @@ class Camera:public rts2core::ScriptDevice
 			return 0;
 		}
 
+		char multi_wcs;
+
 		// WCS CRPIX
 		rts2core::ValueDouble *wcs_crpix1;
 		rts2core::ValueDouble *wcs_crpix2;
@@ -1046,12 +1048,14 @@ class Camera:public rts2core::ScriptDevice
 		double default_crpix[2];
 
 		// WCS CD matrix
-		rts2core::ValueDouble *wcs_cd1_1;
-		rts2core::ValueDouble *wcs_cd1_2;
-		rts2core::ValueDouble *wcs_cd2_1;
-		rts2core::ValueDouble *wcs_cd2_2;
+		rts2core::ValueString *wcs_ctype1;
+		rts2core::ValueString *wcs_ctype2;
+		rts2core::ValueDouble *wcs_cdelta1;
+		rts2core::ValueDouble *wcs_cdelta2;
+		rts2core::ValueDouble *wcs_crota1;
+		rts2core::ValueDouble *wcs_crota2;
 
-		// 1:1 binning, default rotation matrix - cd1_1,cd1_2,cd2_1,cd2_2
+		// 1:1 binning, default WCS - cdelta1,cdelta2,crota2
 		double default_cd[4];
 
 		rts2core::ValueRectangle *chipSize;
