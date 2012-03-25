@@ -60,3 +60,6 @@ WHERE
 
 GRANT ALL ON records_integer TO GROUP observers;
 GRANT ALL ON recvals_integer_statistics TO GROUP observers;
+
+ALTER TABLE users DROP COLUMN usr_passwd;
+ALTER TABLE users ADD COLUMN usr_passwd varchar(100);

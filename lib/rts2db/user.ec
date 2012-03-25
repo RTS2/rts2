@@ -20,6 +20,8 @@
 #include "rts2db/user.h"
 #include "app.h"
 
+#include <unistd.h>
+
 using namespace rts2db;
 
 TypeUser::TypeUser (char in_type, int in_eventMask)
@@ -252,20 +254,29 @@ int User::setPassword (std::string newPass)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
-	VARCHAR db_passwd[25];
+	VARCHAR db_passwd[100];
 	EXEC SQL END DECLARE SECTION;
 
 	strncpy (db_login.arr, login.c_str (), 25);
 	db_login.len = login.length ();
 
-	if (newPass.length () > 25)
+	if (newPass.length () > 100)
 	{
 		logStream (MESSAGE_ERROR) << "too long password" << sendLog;
 		return -1;
 	}
 
-	strncpy (db_passwd.arr, newPass.c_str (), 25);
+#ifdef HAVE_CRYPT
+	char salt[100];
+	strcpy (salt, "$6$");
+	random_salt (salt + 3, 8);
+	strcpy (salt + 11, "$");
+	strncpy (db_passwd.arr, crypt (newPass.c_str (), salt), 100);
+	db_passwd.len = strlen (db_passwd.arr);
+#else
+	strncpy (db_passwd.arr, newPass.c_str (), 100);
 	db_passwd.len = newPass.length ();
+#endif
 
 	EXEC SQL UPDATE
 		users
@@ -327,38 +338,44 @@ int User::setEmail (std::string newEmail)
 bool verifyUser (std::string username, std::string pass, bool &executePermission)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		VARCHAR db_username[25];
-		VARCHAR db_pass[25];
-		bool d_executePermission;
+	VARCHAR db_username[25];
+	VARCHAR d_passwd[100];
+	int d_pass_ind;
+	bool d_executePermission;
 	EXEC SQL END DECLARE SECTION;
+
 	db_username.len = username.length ();
 	db_username.len = db_username.len > 25 ? 25 : db_username.len;
 	strncpy (db_username.arr, username.c_str (), db_username.len);
-
-	db_pass.len = pass.length ();
-	db_pass.len = db_pass.len > 25 ? 25 : db_pass.len;
-	strncpy (db_pass.arr, pass.c_str (), db_pass.len);
 
 	EXEC SQL BEGIN TRANSACTION;
 
 	EXEC SQL DECLARE verify_cur CURSOR FOR
 		SELECT
+			usr_passwd,
 			usr_execute_permission
 		FROM
 			users
 		WHERE
-			usr_login = :db_username
-		AND usr_passwd = :db_pass;
+			usr_login = :db_username;
 
 	EXEC SQL OPEN verify_cur;
 
-	EXEC SQL FETCH next FROM verify_cur INTO :d_executePermission;
+	EXEC SQL FETCH next FROM verify_cur INTO :d_passwd :d_pass_ind, :d_executePermission;
 
 	if (sqlca.sqlcode == 0)
 	{
 		executePermission = d_executePermission;
+		// empty password - all passwords are allowed
+		if (d_pass_ind > 0)
+			return true;
+		d_passwd.arr[d_passwd.len] = '\0';
 		EXEC SQL ROLLBACK;
-		return true;
+#ifdef HAVE_CRYPT
+		return strcmp (crypt (pass.c_str (), d_passwd.arr), d_passwd.arr) == 0;
+#else
+		return pass == std::string (d_passwd.arr);
+#endif
 	}
 	executePermission = false;
 	EXEC SQL ROLLBACK;

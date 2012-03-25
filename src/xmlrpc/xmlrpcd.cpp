@@ -737,8 +737,12 @@ bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executeP
 	if (userLogins.find (username) == userLogins.end ())
 		return false;
 	// crypt password using salt..
+#ifdef HAVE_CRYPT
 	char *crp = crypt (pass.c_str (), userLogins[username].c_str ());
-	return userLogins[username] == crp;
+	return userLogins[username] == std::string(crp);
+#else
+	return strcmp (userLogins[username], pass) == 0;
+#endif
 }
 
 

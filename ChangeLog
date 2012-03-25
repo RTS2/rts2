@@ -1,3 +1,6 @@
+2012-03-25
+ * use crypt for DB passwords
+
 2012-03-24
  * replace /\ etc. in expanded variables with _, fix path problems with targets containting / in name
 
