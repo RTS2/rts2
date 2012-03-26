@@ -442,6 +442,11 @@ class Image:public FitsFile
 		 */
 		int getChannelSize () { return channels.size (); }
 
+		/**
+		 * Return physical channel number of virtual channel.
+		 */
+		int getChannelNumber (int chan) { return channels[chan]->getChannelNumber (); }
+
 		long getChannelWidth (int chan) { return channels[chan]->getWidth (); }
 
 		long getChannelHeight (int chan) { return channels[chan]->getHeight (); }

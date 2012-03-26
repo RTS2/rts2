@@ -29,6 +29,7 @@ using namespace rts2image;
 
 Channel::Channel (int16_t _dataType)
 {
+	channelnum = 0;
 	data = NULL;
 	allocated = false;
 
@@ -40,8 +41,10 @@ Channel::Channel (int16_t _dataType)
 	pixelSum = average = stdev = NAN;
 }
 
-Channel::Channel (char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc)
+Channel::Channel (int ch, char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc)
 {
+	channelnum = ch;
+
 	data = _data;
 	allocated = dealloc;
 
@@ -56,8 +59,10 @@ Channel::Channel (char *_data, int _naxis, long *_sizes, int16_t _dataType, bool
 }
 
 
-Channel::Channel (char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType)
+Channel::Channel (int ch, char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType)
 {
+	channelnum = ch;
+
 	data = new char [dataSize];
 	memcpy (data, _data, dataSize);
 	allocated = true;

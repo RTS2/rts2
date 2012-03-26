@@ -111,7 +111,8 @@ class XFocusClientCamera:public FocusCameraClient
 
 	private:
 		XFocusClient * master;
-		std::list <XFitsImage> ximages;
+		// key is channel number
+		std::map <int, XFitsImage> ximages;
 
 		int lastImage;
 

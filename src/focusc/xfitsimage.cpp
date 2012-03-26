@@ -245,6 +245,8 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 
 	average = image->getAverage ();
 
+	channelnum = image->getChannelNumber (chan);
+
 	crossType = _crossType;
 
 	int i, j;

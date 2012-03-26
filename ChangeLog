@@ -1,3 +1,6 @@
+2012-03-26
+ * support for multi channel devices
+
 2012-03-25
  * rts2-mon can send command(s) with --command option
  * use crypt for DB passwords

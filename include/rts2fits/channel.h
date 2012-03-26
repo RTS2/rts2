@@ -36,10 +36,39 @@ class Channel
 {
 	public:
 		Channel (int16_t _dataType);
-		Channel (char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc);
-		Channel (char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType);
+
+		/**
+                 * Creates channel data. Can deallocate data if needed.
+		 *
+		 * @param ch         channel number
+		 * @param _data      channel data
+		 * @param _naxis     number of axis in channel
+		 * @param _sizes     size of image (size of this array must be equal to _naxis parameter)
+		 * @param _dataType  type of data in channel. Uses FITS datatype notation
+		 * @param dealloc    whenever to deallocate data at desctruction
+		 */
+		Channel (int ch, char *_data, int _naxis, long *_sizes, int16_t _dataType, bool dealloc);
+
+		/**
+                 * Creates channel data. Can deallocate data if needed.
+		 *
+		 * @param ch         channel number
+		 * @param _data      channel data
+		 * @param dataSize   size of channel data
+		 * @param _naxis     number of axis in channel
+		 * @param _sizes     size of image (size of this array must be equal to _naxis parameter)
+		 * @param _dataType  type of data in channel. Uses FITS datatype notation
+		 */
+		Channel (int ch, char *_data, long dataSize, int _naxis, long *_sizes, int16_t _dataType);
 
 		~Channel ();
+
+		/**
+		 * Returns channel number.
+		 *
+		 * @return channel number
+		 */
+		int getChannelNumber () { return channelnum; }
 		
 		// those values will become available after call to computeStatistics
 		long double getPixelSum () { return pixelSum; }
@@ -67,6 +96,9 @@ class Channel
 		long double pixelSum;
 		double average;
 		double stdev;
+
+		// channel number
+		int channelnum;
 };
 
 class Channels:public std::vector<Channel *>

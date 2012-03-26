@@ -771,7 +771,7 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 	{
 		// write header from template..
 		std::ostringstream sec;
-		sec << ntohs (im_h->channel);
+		sec << "CHANNEL" << ntohs (im_h->channel);
 
 		rts2core::IniSection *hc = templateFile->getSection (sec.str ().c_str (), false);
 		if (hc)
@@ -851,11 +851,11 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 
 	if (flags & IMAGE_KEEP_DATA)
 	{
-		ch = new Channel (pixelData, dataSize, 2, sizes, dataType);
+		ch = new Channel (ntohs (im_h->channel), pixelData, dataSize, 2, sizes, dataType);
 	}
 	else
 	{
-		ch = new Channel (pixelData, 2, sizes, dataType, false);
+		ch = new Channel (ntohs (im_h->channel), pixelData, 2, sizes, dataType, false);
 	}
 
 	channels.push_back (ch);
@@ -1538,7 +1538,9 @@ void Image::loadChannels ()
 		}
 		fitsStatusGetValue ("image loadChannels", true);
 
-		channels.push_back (new Channel (imageData, naxis, sizes, dataType, true));
+		int ch;
+		getValue ("CHANNEL", ch, 0);
+		channels.push_back (new Channel (ch, imageData, naxis, sizes, dataType, true));
 	}
 	moveHDU (1);
 }

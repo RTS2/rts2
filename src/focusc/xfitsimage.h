@@ -52,6 +52,8 @@ class XFitsImage
 		 */
 		void drawImage (rts2image::Image * image, int channel, Display * _display, Visual *_visual, int _depth, double zoom, int _crossType, bool GoNine);
 
+		int getChannelNumber () { return channelnum; }
+
 	private:
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);
 
@@ -114,6 +116,9 @@ class XFitsImage
 		// image statistics
 		int low, high, max, min;
 		double median, average;
+
+		// image channel
+		int channelnum;
 };
 
 #endif // __RTS2_XFITSIMAGE__
