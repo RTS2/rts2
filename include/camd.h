@@ -368,6 +368,14 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueSelection *expType;
 
 		/**
+		 * Set X and Y axis directions.
+		 *
+		 * @param x_orig    If true, X axis orientation is as specified with --wcs
+		 * @param y_orig    If true, Y axis orientation is as specified with --wcs
+		 */
+		void changeAxisDirections (bool x_orig, bool y_orig);
+
+		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.
 		 *
 		 * @return Exposure number.

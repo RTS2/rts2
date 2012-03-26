@@ -1237,10 +1237,10 @@ void Andor::updateFlip ()
 		switch (ADChannel->getValueInteger ())
 		{
 			case 0:
-				changeFlip (false);
+				changeAxisDirections (true, true);
 				break;
 			case 1:
-				changeFlip (true);
+				changeAxisDirections (false, false);
 				break;
 		}
 	}
@@ -1249,10 +1249,10 @@ void Andor::updateFlip ()
 		switch (ADChannel->getValueInteger ())
 		{
 			case 0:
-				changeFlip (true);
+				changeAxisDirections (true, true);
 				break;
 			case 1:
-				changeFlip (false);
+				changeAxisDirections (false, false);
 				break;
 		}
 	}

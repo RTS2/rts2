@@ -66,15 +66,15 @@ int Camera::setBinning (int in_vert, int in_hori)
 	// scale WCS parameters
 	if (wcs_crpix1)
 	{
-		wcs_crpix1->setValueDouble (default_crpix[0] / in_vert);
-		wcs_crpix2->setValueDouble (default_crpix[1] / in_hori);
+		wcs_crpix1->setValueDouble (default_crpix[0] / in_hori);
+		wcs_crpix2->setValueDouble (default_crpix[1] / in_vert);
 
 		sendValueAll (wcs_crpix1);
 		sendValueAll (wcs_crpix2);
 	}
 	if (wcs_cdelta1 && wcs_cdelta2)
 	{
-		wcs_cdelta1->setValueDouble (default_cd[0] / in_vert);
+		wcs_cdelta1->setValueDouble (default_cd[0] / in_hori);
 		wcs_cdelta2->setValueDouble (default_cd[1] / in_vert);
 
 		sendValueAll (wcs_cdelta1);
@@ -670,6 +670,15 @@ void Camera::usage ()
 int Camera::initChips ()
 {
 	return 0;
+}
+
+void Camera::changeAxisDirections (bool x_orig, bool y_orig)
+{
+	wcs_cdelta1->setValueDouble ((x_orig ? 1 : -1) * default_cd[0] / binningHorizontal ());
+	wcs_cdelta2->setValueDouble ((y_orig ? 1 : -1) * default_cd[1] / binningVertical ());
+
+	sendValueAll (wcs_cdelta1);
+	sendValueAll (wcs_cdelta2);
 }
 
 int Camera::sendImage (char *data, size_t dataSize)
