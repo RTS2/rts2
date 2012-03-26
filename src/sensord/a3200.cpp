@@ -42,7 +42,7 @@ class A3200:public Sensor
 		virtual int init ();
 		virtual int info ();
 
-		int commandAuthorized (Rts2Conn * conn);
+		int commandAuthorized (rts2core::Connection * conn);
 
 	protected:
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
@@ -345,7 +345,7 @@ int A3200::info ()
 }
 
 
-int A3200::commandAuthorized (Rts2Conn * conn)
+int A3200::commandAuthorized (rts2core::Connection * conn)
 {
 	if (conn->isCommand ("home"))
 	{
