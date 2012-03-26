@@ -44,7 +44,7 @@ else
 EXTRA_DIST += getopt_own.c
 endif
 
-noinst_HEADERS = getaddrinfo.h connepics.h \
+noinst_HEADERS = connepics.h \
 	cliwheel.h clifocuser.h
 
 if EPICS
