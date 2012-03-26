@@ -41,10 +41,6 @@ FocusCameraClient::FocusCameraClient (rts2core::Connection * in_connection, Focu
 {
 	master = in_master;
 
-	average = 0;
-
-	low = med = hig = 0;
-
 	bop = BOP_EXPOSURE;
 
 	autoSave = master->getAutoSave ();

@@ -128,8 +128,6 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 		void setBop (int _bop) { bop = _bop; }
 
 	protected:
-		unsigned short low, med, hig, max, min;
-		double average;
 		int autoSave;
 
 		virtual void exposureStarted ();
