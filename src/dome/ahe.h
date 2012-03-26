@@ -27,8 +27,12 @@
 #define POLL_B_OPENED 'y'
 #define POLL_A_CLOSED 'X'
 #define POLL_B_CLOSED 'Y'
-#define MAX_COMMANDS 50 //think of this as a timeout
-#define SERIAL_SLEEP 600000 //time to sleep before sending command
+#define STATUS_AB_OPEN '3'
+#define STATUS_A_OPEN '2'
+#define STATUS_B_OPEN '1'
+#define STATUS_AB_CLOSED '0'
+#define MAX_COMMANDS 500 //think of this as a timeout
+#define SERIAL_SLEEP 450000 //time to sleep before sending command
 #define SERIAL_TIMEOUT 300
 
 #include "connection/serial.h"
@@ -45,23 +49,23 @@ namespace rts2dome
 class AHE:public Dome
 {
     private:
-        const char * dev;
+        const char * devFile;
         int fd, cmdSent;
         DomeStatus status;
+        char junk[21];
 
         int openALeaf();
         int openBLeaf();
         int closeALeaf();
         int closeBLeaf();
-
+        int readSerial(const char send, char reply, const char exitState);
+        char getHeartBeat();
         rts2core::ValueString * domeStatus;
-        rts2core::ValueBool * closeDome;
-        rts2core::ValueBool * leafA;
-        rts2core::ValueBool * leafB;
+        rts2core::ValueSelection* closeDome;
 
         rts2core::ConnSerial *sconn;
 
-        char response, junk;
+        char response;
 
     protected:
         virtual int processOption(int opt);
@@ -74,6 +78,7 @@ class AHE:public Dome
         virtual int startClose();
         virtual long isClosed();
         virtual int endClose();
+
 
     public:
         AHE(int argc, char ** argv);

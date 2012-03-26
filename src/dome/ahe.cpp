@@ -1,5 +1,5 @@
 /* 
- * Dome driver for 7 Foot Astrohaven Enterprise Domes
+ * Dome driver for 7 Foot Astrohaven Enterprise Domes w/ Vision 130 controller
  * Should work for 12', 16', and 20' domes (untested)
  * Copyright (C) 2011 Lee Hicks 
  *
@@ -25,112 +25,71 @@ using namespace rts2dome;
 
 int AHE::openALeaf()
 {
-    cmdSent=0;
-    response = '\x00';
-
-	while(response != POLL_A_OPENED && cmdSent < MAX_COMMANDS)
-	{
-		sconn->writePort(CMD_A_OPEN);
-		usleep(SERIAL_SLEEP);
-		sconn->readPort(response);
-		cmdSent++;
-
-	}
-
-    if(cmdSent < MAX_COMMANDS)
+    if(readSerial(CMD_A_OPEN, response, POLL_A_OPENED) > MAX_COMMANDS)
     {
-       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
-        return 1;
-    }
-    else
-    {
-		logStream(MESSAGE_ERROR) << "Opening of leaf A exceeded max commands." << sendLog;
         return -1;
     }
+
+    return 1;
 }
 
 int AHE::openBLeaf()
 {
-    cmdSent=0;
-    response = '\x00';
-
-    while(response != POLL_B_OPENED && cmdSent < MAX_COMMANDS)
+    if(readSerial(CMD_B_OPEN, response, POLL_B_OPENED) > MAX_COMMANDS) 
     {
-        sconn->writePort(CMD_B_OPEN);
-		usleep(SERIAL_SLEEP);
-        sconn->readPort(response);
-        cmdSent++;
-    }
-
-    if(cmdSent < MAX_COMMANDS)
-    {
-       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
-        return 1;
-    }
-    else
-    {
-		logStream(MESSAGE_ERROR) << "Opening of leaf B exceeded max commands." << sendLog;
         return -1;
     }
+
+    return 1;
 }
 
 int AHE::closeALeaf()
 {
-   cmdSent=0; 
-   response = '\x00';
+    if(readSerial(CMD_A_CLOSE, response, POLL_A_CLOSED) > MAX_COMMANDS) 
+    {
+        return -1;
+    }
 
-   while(response != POLL_A_CLOSED && cmdSent < MAX_COMMANDS)
-   {
-       sconn->writePort(CMD_A_CLOSE);
-       usleep(SERIAL_SLEEP);
-       sconn->readPort(response);
-       cmdSent++;
-   }
-
-
-   if(cmdSent < MAX_COMMANDS)
-   {
-       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
-       return 1;
-   }
-   else
-   {
-	   logStream(MESSAGE_ERROR) << "Closing of leaf A exceeded max commands." << sendLog;
-       return -1;
-   }
+    return 1;
 }
 
 int AHE::closeBLeaf()
 {
-    
-   cmdSent=0;
-   response = '\x00';
+    if(readSerial(CMD_B_CLOSE, response, POLL_B_CLOSED) > MAX_COMMANDS) 
+    {
+        return -1;
+    }
 
-   while(response != POLL_B_CLOSED && cmdSent < MAX_COMMANDS)
-   {
-       sconn->writePort(CMD_B_CLOSE);
-       usleep(SERIAL_SLEEP);
-       sconn->readPort(response);
-       cmdSent++;
-   }
-
-
-   if(cmdSent < MAX_COMMANDS)
-   {
-       logStream(MESSAGE_DEBUG) << "Leaf closed in " << cmdSent << " less than " << MAX_COMMANDS << sendLog;
-       return 1;
-   }
-   else
-   {
-	   logStream(MESSAGE_ERROR) << "Closing of leaf B exceeded max commands." << sendLog;
-       return -1;
-   }
+    return 1;
 }
+
+int AHE::readSerial(const char send, char reply, const char exitState)
+{//since the controller write a heart beat have to iterate through it
+ //all to find what we are looking for, reason why whe couldn't cleanly
+ //use readPort (char *rbuf, int b_len, char endChar)
+    
+    cmdSent = 0;
+    reply = 'L';
+
+    while(reply != exitState && cmdSent < MAX_COMMANDS)
+    {
+        sconn->writePort(send);
+        usleep(SERIAL_SLEEP); 
+        sconn->readPort(reply);
+        logStream(MESSAGE_DEBUG) << "Just read port" << sendLog;
+        cmdSent ++;
+    }
+
+    return cmdSent;
+}
+
 
 int AHE::processOption(int opt)
 {
     switch (opt)
     {
+        case 'f':
+            devFile = optarg;
         default:
             return Dome::processOption (opt);
     }
@@ -141,41 +100,16 @@ int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 {
     if(old_value == closeDome)
     {
-        if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
+        logStream(MESSAGE_DEBUG) << "New VALUE" << new_value->getValueInteger() << sendLog;
+        if(new_value->getValueInteger() == 1)
         {
             logStream(MESSAGE_DEBUG) << "Told to open dome" << sendLog;
             startOpen();
         }
-        else
+        else if(new_value->getValueInteger() == 0)
         {
             logStream(MESSAGE_DEBUG) << "Told to close dome" << sendLog;
             startClose();
-        }
-    }
-    else if(old_value == leafA)
-    {
-        if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
-        { 
-            logStream(MESSAGE_DEBUG) << "Told leaf A to open" << sendLog;
-            openALeaf();
-        }
-        else
-        {
-            logStream(MESSAGE_DEBUG) << "Told leaf A to close" << sendLog;
-            closeALeaf();
-        }
-    }
-    else if(old_value == leafB)
-    {
-        if(((rts2core::ValueBool*) new_value)->getValueBool() == true)
-        { 
-            logStream(MESSAGE_DEBUG) << "Told leaf B to open" << sendLog;
-            openBLeaf();
-        }
-        else
-        {
-            logStream(MESSAGE_DEBUG) << "Told leaf B to close" << sendLog;
-            closeBLeaf();
         }
     }
 
@@ -187,7 +121,8 @@ int AHE::init()
 
     logStream (MESSAGE_DEBUG) << "AHE Dome initing..." << sendLog;
     
-    sconn = new rts2core::ConnSerial(dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 10);
+    sconn = new rts2core::ConnSerial(devFile, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 50);
+    sconn->init();
 
     int ret = Dome::init();
     if(ret)
@@ -198,46 +133,111 @@ int AHE::init()
     return 0;
 }
 
+char AHE::getHeartBeat()
+{
+    response = '\x00';
+    while(sconn->readPort(response) == -1)
+    {
+    //    usleep(SERIAL_SLEEP);
+    }
+
+    logStream(MESSAGE_DEBUG) << "RESPONSE from heartbeat serial:" << response << sendLog;
+    return response;
+
+}
+
 int AHE::info()
 {
+    logStream(MESSAGE_DEBUG) << "Running idle" << sendLog;
+    response = getHeartBeat();
+
+    switch(response){
+        case STATUS_AB_CLOSED:
+            domeStatus->setValueString("Closed");
+            status = CLOSED;
+            break;
+        case STATUS_A_OPEN:
+            domeStatus->setValueString("A Open");
+            status = OPENED;
+            break;
+        case STATUS_B_OPEN:
+            domeStatus->setValueString("B Open");
+            status = OPENED;
+            break;
+        case STATUS_AB_OPEN:
+            domeStatus->setValueString("Open");
+            status = OPENED;
+    }
+
     return Dome::info();
 }
 
 
 int AHE::startOpen()
 {
+    logStream(MESSAGE_DEBUG) << "SYTEM TOLD TO OPEN DOME" << sendLog;
     status = OPENING;
     domeStatus->setValueString("Opening....");
+    sendValueAll(domeStatus);
     if(openALeaf() && openBLeaf())
     {
         status = OPENED;
         domeStatus->setValueString("Opened");
+        closeDome->setValueString("Open");
+        
         return 0;
     }
     else
     {
         status = ERROR;
         domeStatus->setValueString("Error opening");
-        return 1;
     }
 
     return 1;
 }
 
+int AHE::startClose()
+{
+    logStream(MESSAGE_DEBUG) << "SYTEM TOLD TO CLOSE DOME" << sendLog;
+    status = CLOSING;
+    domeStatus->setValueString("Closing....");
+    sendValueAll(domeStatus);
+    logStream(MESSAGE_DEBUG) << "Closing leafs..." << sendLog;
+    if(closeALeaf() && closeBLeaf())
+    {
+        status = CLOSED;
+        domeStatus->setValueString("Closed");
+        closeDome->setValueString("Close");
+        return 0;
+    }
+    else
+    {
+        status = ERROR;
+        domeStatus->setValueString("Error closing");
+    }
+
+    return 1;
+
+}
+
 long AHE::isOpened()
 {
-	if(status == ERROR)
-	{
-		return -1;
-	}
-    else if(status != OPENED)
-	{
-		return 5000;
-	}    
-	else
-	{
-		return -2;
-	}
+    if (status == OPENED)
+    {
+        return -2;
+    }
+
+    return 2000;
+}
+
+long AHE::isClosed()
+{
+    if (status == CLOSED)
+    {
+        return -2;
+    }
+
+    return 2000;
 }
 
 int AHE::endOpen()
@@ -246,64 +246,30 @@ int AHE::endOpen()
    return 0;
 }
 
-int AHE::startClose()
-{
-    status = CLOSING;
-    domeStatus->setValueString("Closing....");
-    logStream(MESSAGE_DEBUG) << "Closing leafs..." << sendLog;
-    if(closeALeaf() && closeBLeaf())
-    {
-        status = CLOSED;
-        domeStatus->setValueString("Closed");
-        return 0;
-    }
-    else
-    {
-        status = ERROR;
-        domeStatus->setValueString("Error closing");
-        return 1;
-    }
 
-}
-
-long AHE::isClosed()
-{
-
-	if(status == ERROR)
-	{
-		return -1;
-	}
-    else if(status != CLOSED)
-	{
-		return 5000;
-	}    
-	else
-	{
-		return -2;
-	}
-    
-}
 
 int AHE::endClose()
 {
    //do nothing
+   domeStatus->setValueString("Closed");
    return 0;
 }
+
 
 AHE::AHE(int argc, char **argv):Dome(argc, argv)
 {
     logStream (MESSAGE_DEBUG) << "AHE Dome constructor called" << sendLog;
-    dev = "/dev/ttyS0";
+    devFile = "/dev/ttyS0";
     response = '\x00';
 
-    createValue(domeStatus, "DOME_STAT", "dome status", true);
-    createValue(closeDome, "DOME_OPEN", "Dome open?", false, RTS2_VALUE_WRITABLE);
-    createValue(leafA, "Leaf_A_Opn", "Leaf A open?", false, RTS2_VALUE_WRITABLE);
-    createValue(leafB, "Leaf_B_Opn", "Leaf B open?", false, RTS2_VALUE_WRITABLE);
 
-    closeDome->setValueBool(true);
-    leafA->setValueBool(false);
-    leafB->setValueBool(false);
+    createValue(domeStatus, "status", "current dome status", true);
+    createValue(closeDome, "state", "switch state of dome", false, RTS2_VALUE_WRITABLE);
+    addOption('f',NULL,1, "path to device, default is /dev/ttyUSB0");
+    closeDome->addSelVal("Close");
+    closeDome->addSelVal("Open");
+
+    setIdleInfoInterval(5);
 }
 
 AHE::~AHE()
