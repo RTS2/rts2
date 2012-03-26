@@ -66,6 +66,7 @@ XFitsImage::XFitsImage ()
 
 	low = high = min = max = 0;
 	median = average = 0;
+	binningsX = binningsY = 0;
 }
 
 XFitsImage::~XFitsImage ()
@@ -461,8 +462,8 @@ void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _displ
 	image->getValue ("Y", lastY);
 	lastSizeX = image->getChannelWidth (chan);
 	lastSizeY = image->getChannelHeight (chan);
-	image->getValue ("BIN_V", binningsX);
-	image->getValue ("BIN_H", binningsY);
+	image->getValue ("BINX", binningsX);
+	image->getValue ("BINY", binningsY);
 
 	exposureStart.tv_sec = image->getExposureSec ();
 	exposureStart.tv_usec = image->getExposureUsec ();
