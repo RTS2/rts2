@@ -67,10 +67,13 @@ void XFocusClientCamera::postEvent (Event * event)
 
 void XFocusClientCamera::cameraImageReady (rts2image::Image * image)
 {
-	if (ximages.size () == 0)
+	int ch;
+	for (ch = ximages.size (); ch < image->getChannelSize (); ch++)
 		ximages.push_back (XFitsImage ());
 
-	ximages.front ().drawImage (image, master->getDisplay (), master->getVisual (), master->getDepth (), master->zoom, crossType, master->GoNine);
+	ch = 0;
+	for (std::list <XFitsImage>::iterator iter = ximages.begin (); iter != ximages.end (); iter++, ch++)
+		iter->drawImage (image, ch, master->getDisplay (), master->getVisual (), master->getDepth (), master->zoom, crossType, master->GoNine);
 }
 
 void XFocusClientCamera::setCrossType (int in_crossType)

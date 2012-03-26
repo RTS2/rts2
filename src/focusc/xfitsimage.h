@@ -47,9 +47,10 @@ class XFitsImage
 		 * Draw RTS2 image.
 		 *
 		 * @param image    RTS2 image to draw
+		 * @param channel  Image channel
 		 * @param GoNine   Make 9-style matrix of the image (center + borders)
 		 */
-		void drawImage (rts2image::Image * image, Display * _display, Visual *_visual, int _depth, double zoom, int _crossType, bool GoNine);
+		void drawImage (rts2image::Image * image, int channel, Display * _display, Visual *_visual, int _depth, double zoom, int _crossType, bool GoNine);
 
 	private:
 		double classical_median (void *q, int16_t dataType, int n, double *sigma, double sf = 0.6745);

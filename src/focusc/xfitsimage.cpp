@@ -236,7 +236,7 @@ void XFitsImage::XeventLoop ()
 	}
 }
 
-void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual * _visual, int _depth, double zoom, int _crossType, bool GoNine)
+void XFitsImage::drawImage (rts2image::Image * image, int chan, Display * _display, Visual * _visual, int _depth, double zoom, int _crossType, bool GoNine)
 {
 	display = _display;
 	visual = _visual;
@@ -251,7 +251,7 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 	if (window == 0L)
 		buildWindow ();
 
-	if (ximage && (pixmapWidth < image->getChannelWidth (0) || pixmapHeight < image->getChannelHeight (0)))
+	if (ximage && (pixmapWidth < image->getChannelWidth (chan) || pixmapHeight < image->getChannelHeight (chan)))
 	{
 		XDestroyImage (ximage);
 		ximage = NULL;
@@ -265,15 +265,15 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 		pixmapHeight = wa.height / 2;
 
 		// if window is too large, set to 1/4 of required size, so we will see nine effect
-		if (pixmapWidth > image->getChannelWidth (0) * zoom)
-			pixmapWidth = (int) ceil (image->getChannelWidth (0) * zoom);
-		if (pixmapHeight > image->getChannelHeight (0) * zoom)
-		  	pixmapHeight = (int) ceil (image->getChannelHeight (0) * zoom);
+		if (pixmapWidth > image->getChannelWidth (chan) * zoom)
+			pixmapWidth = (int) ceil (image->getChannelWidth (chan) * zoom);
+		if (pixmapHeight > image->getChannelHeight (chan) * zoom)
+		  	pixmapHeight = (int) ceil (image->getChannelHeight (chan) * zoom);
 	}
 	else
 	{
-		pixmapWidth = (int) ceil (image->getChannelWidth (0) * zoom);
-		pixmapHeight = (int) ceil (image->getChannelHeight (0) * zoom);
+		pixmapWidth = (int) ceil (image->getChannelWidth (chan) * zoom);
+		pixmapHeight = (int) ceil (image->getChannelHeight (chan) * zoom);
 	}
 
 	if (pixmapWidth != windowWidth || pixmapHeight != windowHeight)
@@ -291,8 +291,8 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 	}
 
 	// default vertical and horizontal image origins - center image
-	int vorigin = (int) floor (zoom * (double) image->getChannelWidth (0) / 2.0) - pixmapWidth / 2;
-	int horigin = (int) floor (zoom * (double) image->getChannelHeight (0) / 2.0) - pixmapHeight / 2;
+	int vorigin = (int) floor (zoom * (double) image->getChannelWidth (chan) / 2.0) - pixmapWidth / 2;
+	int horigin = (int) floor (zoom * (double) image->getChannelHeight (chan) / 2.0) - pixmapHeight / 2;
 
 	// create array which will hold the image
 	// this will be then zoomed to pixmap array
@@ -306,9 +306,9 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 	char *iP = (char *) malloc (iW * iH * iPixelByteSize);
 	char *iTop = iP;
 	// pointer to top line of square image subset
-	const char *iNineTop = (const char *) image->getChannelData (0);
+	const char *iNineTop = (const char *) image->getChannelData (chan);
 	// prepare the image data to be processed
-	const char *im_ptr = (const char *) image->getChannelData (0) + iPixelByteSize * (vorigin + horigin * image->getChannelWidth (0));
+	const char *im_ptr = (const char *) image->getChannelData (chan) + iPixelByteSize * (vorigin + horigin * image->getChannelWidth (chan));
 
 	// fill IP
 	// copy image center..
@@ -325,28 +325,28 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 			memcpy (iTop, im_ptr + iPixelByteSize * (iW / 3), iPixelByteSize * (int) ceil ((double) iW / 3.0));
 			iTop += iPixelByteSize * ((int) ceil ((double) iW / 3.0));
 
-			memcpy (iTop, iNineTop + iPixelByteSize * (image->getChannelWidth (0) - 2 * iW / 3), iPixelByteSize * (iW / 3));
+			memcpy (iTop, iNineTop + iPixelByteSize * (image->getChannelWidth (chan) - 2 * iW / 3), iPixelByteSize * (iW / 3));
 			iTop += iPixelByteSize * (iW / 3);
 
-			iNineTop += iPixelByteSize * image->getChannelWidth (0);
+			iNineTop += iPixelByteSize * image->getChannelWidth (chan);
 		}
 		else
 		{
 			memcpy (iTop, im_ptr, iPixelByteSize * iW);
 			iTop += iPixelByteSize * iW;
 		}
-		im_ptr += iPixelByteSize * image->getChannelWidth (0);
+		im_ptr += iPixelByteSize * image->getChannelWidth (chan);
 	}
 	// only center in all cases..
 	for (;i < 2 * iH / 3; i++)
 	{
 		memcpy (iTop, im_ptr, iPixelByteSize * iW);
-		im_ptr += iPixelByteSize * image->getChannelWidth (0);
+		im_ptr += iPixelByteSize * image->getChannelWidth (chan);
 		iTop += iPixelByteSize * iW;
 	}
 
 	if (GoNine)
-		iNineTop += iPixelByteSize * (image->getChannelWidth (0) * (image->getChannelHeight (0) - (int) floor (2 * iH / 3.0)));
+		iNineTop += iPixelByteSize * (image->getChannelWidth (chan) * (image->getChannelHeight (chan) - (int) floor (2 * iH / 3.0)));
 
 	// followed again by edge squares for end..
 	for (;i < iH; i++)
@@ -361,16 +361,16 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 			memcpy (iTop, im_ptr + 2 * iW / 3, iPixelByteSize * ((int) ceil ((double) iW / 3.0)));
 			iTop += iPixelByteSize * ((int) ceil ((double) iW / 3.0));
 
-			memcpy (iTop, iNineTop + (image->getChannelWidth (0) - 2 * iW / 3), iPixelByteSize * (iW / 3));
+			memcpy (iTop, iNineTop + (image->getChannelWidth (chan) - 2 * iW / 3), iPixelByteSize * (iW / 3));
 			iTop += iPixelByteSize  * (iW / 3);
-			iNineTop += iPixelByteSize * image->getChannelWidth (0);
+			iNineTop += iPixelByteSize * image->getChannelWidth (chan);
 		}
 		else
 		{
 			memcpy (iTop, im_ptr, iPixelByteSize * iW);
 			iTop += iPixelByteSize * iW;
 		}
-		im_ptr += iPixelByteSize * image->getChannelWidth (0);
+		im_ptr += iPixelByteSize * image->getChannelWidth (chan);
 	}
 
 	// get cuts
@@ -392,7 +392,7 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 	}
 	else
 	{
-		std::cout << Timestamp () << " single channel image [" << image->getChannelWidth (0) << "x" << image->getChannelHeight (0) << "x" << image->getPixelByteSize () << "]" << std::endl;
+		std::cout << Timestamp () << " single channel image [" << image->getChannelWidth (chan) << "x" << image->getChannelHeight (chan) << "x" << image->getPixelByteSize () << "]" << std::endl;
 	}
 	std::cout << "Window median:" << median << " sigma " << sigma << " low:" << low << " high:" << high << std::endl;
 	// transfer iP to pixmap, zoom it on fly
@@ -459,8 +459,8 @@ void XFitsImage::drawImage (rts2image::Image * image, Display * _display, Visual
 	// some info values
 	image->getValue ("X", lastX);
 	image->getValue ("Y", lastY);
-	lastSizeX = image->getChannelWidth (0);
-	lastSizeY = image->getChannelHeight (0);
+	lastSizeX = image->getChannelWidth (chan);
+	lastSizeY = image->getChannelHeight (chan);
 	image->getValue ("BIN_V", binningsX);
 	image->getValue ("BIN_H", binningsY);
 
