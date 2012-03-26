@@ -100,15 +100,12 @@ int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 {
     if(old_value == closeDome)
     {
-        logStream(MESSAGE_DEBUG) << "New VALUE" << new_value->getValueInteger() << sendLog;
         if(new_value->getValueInteger() == 1)
         {
-            logStream(MESSAGE_DEBUG) << "Told to open dome" << sendLog;
             startOpen();
         }
         else if(new_value->getValueInteger() == 0)
         {
-            logStream(MESSAGE_DEBUG) << "Told to close dome" << sendLog;
             startClose();
         }
     }
@@ -119,8 +116,6 @@ int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
 int AHE::init()
 {
 
-    logStream (MESSAGE_DEBUG) << "AHE Dome initing..." << sendLog;
-    
     sconn = new rts2core::ConnSerial(devFile, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 50);
     sconn->init();
 
@@ -141,14 +136,12 @@ char AHE::getHeartBeat()
     //    usleep(SERIAL_SLEEP);
     }
 
-    logStream(MESSAGE_DEBUG) << "RESPONSE from heartbeat serial:" << response << sendLog;
     return response;
 
 }
 
 int AHE::info()
 {
-    logStream(MESSAGE_DEBUG) << "Running idle" << sendLog;
     response = getHeartBeat();
 
     switch(response){
@@ -175,7 +168,6 @@ int AHE::info()
 
 int AHE::startOpen()
 {
-    logStream(MESSAGE_DEBUG) << "SYTEM TOLD TO OPEN DOME" << sendLog;
     status = OPENING;
     domeStatus->setValueString("Opening....");
     sendValueAll(domeStatus);
@@ -198,11 +190,9 @@ int AHE::startOpen()
 
 int AHE::startClose()
 {
-    logStream(MESSAGE_DEBUG) << "SYTEM TOLD TO CLOSE DOME" << sendLog;
     status = CLOSING;
     domeStatus->setValueString("Closing....");
     sendValueAll(domeStatus);
-    logStream(MESSAGE_DEBUG) << "Closing leafs..." << sendLog;
     if(closeALeaf() && closeBLeaf())
     {
         status = CLOSED;
