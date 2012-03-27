@@ -138,6 +138,23 @@ class AstrometryScript:
 		
 		return ret
 
+	# return offset from 
+	def getOffset(self,x=None,y=None):
+		ff=pyfits.fitsopen(self.fits_file,'readonly')
+		fh=ff[0].header
+		ff.close()
+
+		if x is None:
+			x=fh['NAXIS1']/2.0
+		if y is None:
+			y=fh['NAXIS2']/2.0
+
+		rastrxy = xy2wcs(x,y,fh)
+		ra=fh['OBJRA']
+		dec=fh['OBJDEC']
+
+		return (ra-rastrxy[0],dec-rastrxy[1])
+
 if __name__ == '__main__':
 	if len(sys.argv) <= 1:
 		print 'Usage: %s <fits filename>' % (sys.argv[0])
