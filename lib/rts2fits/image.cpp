@@ -324,7 +324,7 @@ std::string Image::expandVariable (char expression, size_t beg, bool &replaceNon
 		case 'n':
 			return getExposureNumberString ();
 		default:
-			return rts2core::Expander::expandVariable (expression, beg);
+			return rts2core::Expander::expandVariable (expression, beg, replaceNonAlpha);
 	}
 }
 
