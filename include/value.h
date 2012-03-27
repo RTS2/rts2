@@ -170,7 +170,7 @@
 #define RTS2_VWHEN_AFTER_END          0x00003000
 #define RTS2_VWHEN_TRIGGERED          0x00004000
 
-#define RTS2_TYPE_MASK                0x00ff0000
+#define RTS2_TYPE_MASK                0x003f0000
 #define RTS2_DT_RA                    0x00010000
 #define RTS2_DT_DEC                   0x00020000
 #define RTS2_DT_DEGREES               0x00030000
@@ -184,13 +184,19 @@
 #define RTS2_DT_ONOFF                 0x000b0000
 // degrees distance in -180..180 range
 #define RTS2_DT_DEG_DIST_180          0x000c0000
-// write values to FITS headers, even if it is an array
-#define RTS2_FITS_HEADERS             0x00100000
+/**
+ * Script value, when we will display it, we might look for scriptPosition and
+ * scriptLen, which will show current script position.
+ */
+#define RTS2_DT_SCRIPT                0x000d0000
+
+// direct system to write values to FITS headers, even if it is an array
+#define RTS2_FITS_HEADERS             0x00400000
 
 /**
- * Array value, writen to header as string.
+ * If set, value will be recorded to disk file created with autosave command, or when a value is changed.
  */
-#define RTS2_DT_SIMPLE_ARRAY          0x00100000
+#define RTS2_VALUE_AUTOSAVE           0x00800000
 
 /**
  * Sets when value was modified and needs to be send during infoAll call.
@@ -200,22 +206,11 @@
 #define RTS2_VALUE_INFOTIME           "infotime"
 
 /**
- * Script value, when we will display it, we might look for scriptPosition and
- * scriptLen, which will show current script position.
- */
-#define RTS2_DT_SCRIPT                0x00100000
-
-/**
  * Group number - specify in which extension value should be recorded. Usefull primary for arrays.
  */
 #define RTS2_WR_GROUP_NR_MASK         0x006f0000
 
 #define RTS2_WR_GROUP_NUMBER(x)       (((0x20 + x) << 16) & 0x006f0000)
-
-/**
- * If set, value will be auto-recorded to disk.
- */
-#define RTS2_VALUE_AUTOSAVE           0x00800000
 
 /**
  * If set. value is read-write. When not set, value is read only.
@@ -375,6 +370,8 @@ class Value
 		const int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
 
 		const int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
+
+		bool onlyFitsHeader () { return rts2Type & RTS2_FITS_HEADERS; }
 
 		bool isAutosave () { return rts2Type & RTS2_VALUE_AUTOSAVE; }
 

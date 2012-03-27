@@ -763,7 +763,7 @@ class Camera:public rts2core::ScriptDevice
 		void createDataChannels ()
 		{ 
 			createValue (dataChannels, "DATA_CHANNELS", "total number of data channels", true);
-			createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_DT_SIMPLE_ARRAY, CAM_WORKING);
+			createValue (channels, "CHAN", "channels on/off", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE | RTS2_FITS_HEADERS, CAM_WORKING);
 		}
 
 		void setNumChannels (int num)

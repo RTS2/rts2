@@ -174,10 +174,10 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 
 FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 {
-	createValue (wait_nodata, "wait_nodata", "[s] set bad weather when data are not refreshed after this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
-	createValue (wait_humidity, "wait_humidity", "[s] set bad weather when humidity is over limit for this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
-	createValue (wait_wind, "wait_wind", "[s] set bad weather when wind is over limit for this number of seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
-	createValue (wait_skytemp, "wait_skytemp", "[s] wait for this number of seconds if skytemp is outside limit", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE);
+	createValue (wait_nodata, "wait_nodata", "[s] set bad weather when data are not refreshed after this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (wait_humidity, "wait_humidity", "[s] set bad weather when humidity is over limit for this seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (wait_wind, "wait_wind", "[s] set bad weather when wind is over limit for this number of seconds", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	createValue (wait_skytemp, "wait_skytemp", "[s] wait for this number of seconds if skytemp is outside limit", false, RTS2_DT_TIMEINTERVAL | RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
 	wait_nodata->setValueFloat (300);
 	wait_humidity->setValueFloat (300);
@@ -188,17 +188,17 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (windSpeed, "wind_speed", "[mph] windspeed", false);
 	createValue (windSpeedAvg, "wind_speed_avg", "number of measurements to average", false, RTS2_VALUE_WRITABLE);
 	windSpeedAvg->setValueInteger (20);
-	createValue (windSpeed_limit, "wind_speed_limit", "[mph] windspeed limit", false, RTS2_VALUE_WRITABLE);
+	createValue (windSpeed_limit, "wind_speed_limit", "[mph] windspeed limit", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	windSpeed_limit->setValueFloat (40);
 
 	createValue (windGustSpeed, "wind_gust", "[mph] wind gust speed", false);
-	createValue (windGustSpeed_limit, "wind_gust_limit", "[mph] wind gust speed limit", false, RTS2_VALUE_WRITABLE);
-	windGustSpeed_limit->setValueFloat (45);
+	createValue (windGustSpeed_limit, "wind_gust_limit", "[mph] wind gust speed limit", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+	windGustSpeed_limit->setValueFloat (50);
 
 	createValue (windDir, "wind_direction", "[deg] wind direction", false);
 	createValue (pressure, "pressure", "[mB] atmospheric pressure", false);
 	createValue (humidity, "humidity", "[%] outside humidity", false);
-	createValue (humidity_limit, "humidity_limit", "[%] humidity limit for bad weather", false, RTS2_VALUE_WRITABLE);
+	createValue (humidity_limit, "humidity_limit", "[%] humidity limit for bad weather", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	humidity_limit->setValueFloat (90);
 	createValue (rain, "rain", "[inch] total accumulated rain", false);
 	createValue (dewpoint, "dewpoint", "[C] dewpoint", false);
@@ -218,7 +218,7 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (me_hail_duration, "me_hail_duration", "MEarth hail duration", false);
 	createValue (me_hail_intensity, "me_hail_intensity", "MEarth hail intensity", false);
 	createValue (me_sky_temp, "me_sky_temp", "MEarth sky temperature", false);
-	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false, RTS2_VALUE_WRITABLE);
+	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	me_sky_limit->setValueFloat (-20);
 
 	weatherFile = NULL;
@@ -328,7 +328,7 @@ int FlwoWeather::info ()
 			{
 				char *endptr;
 				double v = strtod (ch, &endptr);
-				if (endptr != ch && *endptr != '\0')
+				if (endptr != ch && *endptr == '\0')
 				{
 					windSpeed->addValue (v, windSpeedAvg->getValueInteger ());
 					processed |= 1 << 1;
@@ -392,6 +392,8 @@ int FlwoWeather::info ()
 
 	if (et > 0 && processed == 0x1ff)
 		setInfoTime (et);
+	else
+		return -1;
 
 	return 0;
 }

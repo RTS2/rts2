@@ -1795,7 +1795,7 @@ ColumnData *getColumnData (const char *name, rts2core::Value * val)
 void Image::prepareArrayData (const char *name, rts2core::Connection *conn, rts2core::Value *val)
 {
 	// if it's simple array, just write as header cards
-	if (val->getValueDisplayType () & RTS2_DT_SIMPLE_ARRAY)
+	if (val->onlyFitsHeader ())
 	{
 		int s = (int)(((rts2core::ValueArray *)val)->size ());
 		if (!val->prefixWithDevice ())
