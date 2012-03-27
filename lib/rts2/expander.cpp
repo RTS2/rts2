@@ -144,7 +144,7 @@ std::string Expander::getNightString ()
 	return _os.str ();
 }
 
-std::string Expander::expandVariable (char var, size_t beg)
+std::string Expander::expandVariable (char var, size_t beg, bool &replaceNonAlpha)
 {
 	std::string ret = "";
 	switch (var)
@@ -287,9 +287,10 @@ std::string Expander::expand (std::string expression, bool onlyAlphaNum)
 				// don't expand last %
 				if (iter != expression.end ())
 				{
-					std::string ex = expandVariable (*iter, ret.str ().length ());
+					bool rep = onlyAlphaNum;
+					std::string ex = expandVariable (*iter, ret.str ().length (), rep);
 					if (ex.length () > 0)
-						ret << replaceNonAlpha (ex, onlyAlphaNum);
+						ret << replaceNonAlpha (ex, rep);
 					else
 						ret << std::setw (0);
 				}

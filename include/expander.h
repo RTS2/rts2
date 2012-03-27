@@ -108,7 +108,7 @@ class Expander
 		int num_lenght;
 		char num_fill;
 
-		virtual std::string expandVariable (char var, size_t beg);
+		virtual std::string expandVariable (char var, size_t beg, bool &replaceNonAlpha);
 		virtual std::string expandVariable (std::string expression);
 
 	private:

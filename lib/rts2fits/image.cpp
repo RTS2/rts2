@@ -294,11 +294,12 @@ Image::~Image (void)
 		free (sexResults);
 }
 
-std::string Image::expandVariable (char expression, size_t beg)
+std::string Image::expandVariable (char expression, size_t beg, bool &replaceNonAlpha)
 {
 	switch (expression)
 	{
 		case 'b':
+			replaceNonAlpha = false;
 			return rts2core::Configuration::instance ()->observatoryBasePath ();
 		case 'c':
 			return getCameraName ();

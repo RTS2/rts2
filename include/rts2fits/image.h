@@ -638,7 +638,7 @@ class Image:public FitsFile
 		int writeExposureStart ();
 
 		// expand expression to image path
-		virtual std::string expandVariable (char expression, size_t beg);
+		virtual std::string expandVariable (char expression, size_t beg, bool &replaceNonAlpha);
 		virtual std::string expandVariable (std::string expression);
 
 	private:
