@@ -1432,7 +1432,7 @@ int EdtSao::init ()
 			break;
 	} */
 
-	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE | RTS2_DT_SIMPLE_ARRAY, CAM_WORKING);
+	createValue (ADoffsets, "ADO", "[ADU] channels A/D offsets", true, RTS2_VALUE_WRITABLE | RTS2_FITS_HEADERS, CAM_WORKING);
 
 	dataChannels->setValueInteger (totalChannels);
 
