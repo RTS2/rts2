@@ -300,7 +300,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createRegister (0x00000000, "int.error_code", "holds the error code fomr the most recent error", false, true, true);
 	createRegister (0x00000001, "int.error_source", "holds an integer identifying the source of the most recent error", false, true, false);
 	createRegister (0x00000002, "int.error_line", "holds the line number in the interface CPUs", false, true, false);
-	createRegister (0x00000003, "int.status_index", "a counter that increments every time the interface CPU polss the system for its status", false, true, false);
+	createRegister (0x00000003, "int.status_index", "a counter that increments every time the interface CPU polls the system for its status", false, true, false);
 	createRegister (0x00000004, "int.power", "current CCD power state", true, true, false);
 
 	createRegister (0x00000005, "int.backplane_type", "board type field for the backplane board", false, false, true);
@@ -476,6 +476,7 @@ int Reflex::processOption (int in_opt)
 
 int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
+	int ret;
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
 		if (old_value == iter->second)
@@ -485,7 +486,11 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			{
 				// special registers first
 				case 0x00000004:
-					return interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000) ? -2 : 0;
+					ret = interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000) ? -2 : 0;
+					if (ret)
+						return -2;
+					info ();
+					return interfaceCommand (">TS\r", s, 5000) ? -2 : 0;
 				default:	
 					return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
 			}
