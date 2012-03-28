@@ -328,8 +328,8 @@ int ImageSkyDb::updateAstrometry ()
 	double crota[2];
 	double equinox;
 
-	ctype[0] = (char *) malloc (10);
-	ctype[1] = (char *) malloc (10);
+	ctype[0] = (char *) malloc (50);
+	ctype[1] = (char *) malloc (50);
 
 	ctype[0][0] = ctype[1][0] = '\0';
 
