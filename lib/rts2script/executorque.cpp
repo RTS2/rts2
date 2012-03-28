@@ -149,8 +149,8 @@ void TargetQueue::beforeChange (double now)
 		case QUEUE_FIFO:
 			break;
 		case QUEUE_CIRCULAR:
-			// shift only if queue is not empty and time for first observation already expires or its start and end time is not specified..
-			if (!empty () && (frontTimeExpires (now) || (isnan (begin ()->t_start) && isnan (begin ()->t_end))))
+			// shift only if queue is not empty 
+			if (!empty ())
 			{
 				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
 				delete front ().target;
