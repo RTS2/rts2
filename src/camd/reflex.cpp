@@ -1063,6 +1063,7 @@ void Reflex::parseParameters ()
 		uint32_t value = strtol (token.c_str (), &endptr,0);
 		if (*endptr)
 			throw rts2core::Error ("Invalid number " + token);
+		std::transform (pname.begin(), pname.end(), pname.begin(), (int(*)(int)) std::toupper);
 		parameters.push_back (std::pair <std::string, uint32_t> (pname, value));
 	}
 }
@@ -1433,7 +1434,7 @@ void Reflex::createBoards ()
 				createRegister (ba++, "pwrB.m15VA_V", "[mV] -15V analog supply voltage reading", false, true, false);
 				createRegister (ba++, "pwrB.m15VA_A", "[mA] -15V analog supply current reading", false, true, false);
 
-				createRegister (ba++, "pwrB.TEC_set", "[mK] monitored value of TEC setpoint", false, true, false);
+				createRegister (ba++, "pwrB.TEC_mon", "[mK] monitored value of TEC setpoint", false, true, false);
 				createRegister (ba, "pwrB.TEC_actual", "[mK] current TEC temperature", false, true, false);
 
 				ba = 0x10040000;
