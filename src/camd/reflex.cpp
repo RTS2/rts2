@@ -442,11 +442,25 @@ int Reflex::doReadout ()
 #ifdef CL_EDT
 	unsigned char * buf = pdv_wait_image (CLHandle);
 	int i,j;
+	int lw = getUsedWidth () * 2;
+	int dw = lw * channels->size ();
+	// buffer for a single channel
+	unsigned char chanbuf[lw * getUsedHeight ()];
 	for (i = 0, j = 0; i < dataChannels->getValueInteger (); i++)
 	{
 		if ((*channels)[i])
 		{
-			int ret = sendChannel (i, buf, j, dataChannels->getValueInteger ());
+			// copy channel to channel buffer
+			// line start pointer
+			unsigned char *ls = buf + lw * i;
+			unsigned char *ds = chanbuf;
+			for (int l = 0; l < getUsedHeight (); l++)
+			{
+				memcpy (ds, ls, lw);
+				ls += dw;
+				ds += lw;
+			}
+			int ret = sendChannel (i, chanbuf, j, dataChannels->getValueInteger ());
 			if (ret < 0)
 				return -1;
 			j++;
