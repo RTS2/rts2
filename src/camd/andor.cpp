@@ -253,9 +253,9 @@ long Andor::isExposing ()
 		return -1;
 	if (status == DRV_ACQUIRING)
 	{
-		return 0;
+		markReadoutStart ();
+		return 100;
 	}
-	markReadoutStart ();
 	return 0;
 }
 
