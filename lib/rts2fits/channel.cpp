@@ -24,6 +24,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
+#include <iostream>
 
 using namespace rts2image;
 
@@ -95,6 +96,8 @@ template <typename pixel_type> void computeDataStatistics (pixel_type *data, lon
 	while (pixel < fullTop)
 	{
 		pixelSum += *pixel;
+		if (*pixel < 0)
+			std::cout << "< 0" << *pixel << std::endl;
 		pixel++;
 	}
 	if (totalPixels > 0)
@@ -145,10 +148,10 @@ void Channel::computeStatistics ()
 			computeDataStatistics ((signed char *) (getData ()), getNPixels (), pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_USHORT:
-			computeDataStatistics ((short uint16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((uint16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_ULONG:
-			computeDataStatistics ((unsigned int32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((uint32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
 			break;
 		default:
 			throw rts2core::Error ("unknow dataType");
