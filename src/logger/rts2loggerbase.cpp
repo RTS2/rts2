@@ -77,7 +77,7 @@ void Rts2DevClientLogger::changeOutputStream ()
 	getConnection ()->getInfoTime (tv);
 	if (tv.tv_sec < nextFileCreationCheck)
 		return;
-	exp->setExpandDate (&tv);
+	exp->setExpandDate (&tv, false);
 	std::string expanded = exp->expand (expandPattern);
 	// if filename was not changed
 	if (expanded == expandedFilename)

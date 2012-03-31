@@ -23,8 +23,6 @@
 #ifdef HAVE_PGSQL
 #include "rts2db/messagedb.h"
 #else
-#include "configuration.h"
-#include "device.h"
 #endif /* HAVE_PGSQL */
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
@@ -353,28 +351,8 @@ int XmlRpcd::init ()
 	// load users-login pairs
 	std::string lf;
 	Configuration::instance ()->getString ("xmlrpcd", "logins", lf, RTS2_PREFIX "/etc/rts2/logins");
-	std::ifstream ifs (lf.c_str ());
-	if (ifs.fail ())
-	{
-		logStream (MESSAGE_ERROR) << "cannot open logins file " << lf << sendLog;
-		return -1;
-	}
-	int ln = 0;
-	while (!ifs.eof ())
-	{
-		std::string line;
-		getline (ifs, line);
-		ln++;
-		std::vector <std::string> logins = SplitStr (line, ":");
-		if (logins.size () == 2)
-		{
-			userLogins[logins[0]] = logins[1];
-		}
-		else
-		{
-			logStream (MESSAGE_ERROR) << "invalid line in logins " << lf << "file on line " << ln << ", expected two entries separated with :, got " << logins.size () << " entries" << sendLog;
-		}
-	}
+
+	userLogins.load (lf.c_str ());
 #endif
 	// get page prefix
 	Configuration::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
@@ -734,17 +712,8 @@ void XmlRpcd::reloadEventsFile ()
 #ifndef HAVE_PGSQL
 bool XmlRpcd::verifyUser (std::string username, std::string pass, bool &executePermission)
 {
-	if (userLogins.find (username) == userLogins.end ())
-		return false;
-	// crypt password using salt..
-#ifdef HAVE_CRYPT
-	char *crp = crypt (pass.c_str (), userLogins[username].c_str ());
-	return userLogins[username] == std::string(crp);
-#else
-	return strcmp (userLogins[username], pass) == 0;
-#endif
+	return userLogins.verifyUser (username, pass, executePermission);
 }
-
 
 bool rts2xmlrpc::verifyUser (std::string username, std::string pass, bool &executePermission)
 {

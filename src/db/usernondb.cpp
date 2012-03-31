@@ -17,86 +17,75 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2/app.h"
+#include "app.h"
+#include "configuration.h"
+#include "userlogins.h"
+
+#include <iostream>
 
 #define OPT_PASSWORD   OPT_LOCAL + 321
-
-using namespace rts2db;
 
 /**
  * Application for user management.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class User:public App
+class UserApp:public rts2core::App
 {
 	public:
-		Rts2UserApp (int argc, char **argv);
-		virtual ~Rts2UserApp (void);
+		UserApp (int argc, char **argv);
+		virtual ~UserApp (void);
+
+		virtual int run ();
 	protected:
 		virtual void usage ();
 		virtual int processOption (int in_opt);
-		virtual int doProcessing ();
 	private:
 		enum {NOT_SET, LIST_USER, NEW_USER, DELETE_USER, USER_PASSWORD} op;
 		const char *user;
 		const char *password;
-		//User r2user;
+
+		char *userfile;
+
+		rts2core::UserLogins logins;
+		
 
 		int listUser ();
 		int newUser ();
 		int deleteUser ();
 		int userPassword ();
-		int userEmail ();
-		int typesEmail ();
-
-		// menu for flags informations
-		rts2core::AskChoice *flagsChoice;
 };
 
-Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): AppDb (in_argc, in_argv)
+UserApp::UserApp (int in_argc, char **in_argv): rts2core::App (in_argc, in_argv)
 {
 	op = NOT_SET;
 	user = NULL;
 	password = NULL;
 
+	userfile = NULL;
+
 	//r2user = User ();
 
-	// construct menu for flags solution
-	flagsChoice = new rts2core::AskChoice (this);
-	flagsChoice->addChoice ('1', "send at start of observation");
-	flagsChoice->addChoice ('2', "send when first image receives astrometry");
-	flagsChoice->addChoice ('3', "send when observation finishes");
-	flagsChoice->addChoice ('4', "send when observation is processed");
-	flagsChoice->addChoice ('5', "send at the end of night");
-
-	flagsChoice->addChoice ('s', "save");
-	flagsChoice->addChoice ('q', "quit");
-
-	addOption ('l', NULL, 0, "list user stored in the database");
+	addOption ('l', NULL, 0, "list user stored in user file");
 	addOption ('a', NULL, 1, "add new user");
 	addOption ('d', NULL, 1, "delete user");
 	addOption ('p', NULL, 1, "set user password");
-	addOption ('e', NULL, 1, "set user email");
-	addOption ('m', NULL, 1, "edit user mailing preferences");
 	addOption (OPT_PASSWORD, "password", 1, "user password");
 }
 
-Rts2UserApp::~Rts2UserApp (void)
+UserApp::~UserApp (void)
 {
-	delete flagsChoice;
+	delete[] userfile;
 }
 
-void Rts2UserApp::usage ()
+void UserApp::usage ()
 {
 	std::cout << "\t" << getAppName () << " -l" << std::endl
 		<< "\t" << getAppName () << " -a <user_name>" << std::endl
-		<< "\t" << getAppName () << " -p <user_name>" << std::endl
-		<< "\t" << getAppName () << " -e <user_name>" << std::endl
-		<< "\t" << getAppName () << " -m <user_name>" << std::endl;
+		<< "\t" << getAppName () << " -p <user_name>" << std::endl;
 }
 
-int Rts2UserApp::processOption (int in_opt)
+int UserApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -104,11 +93,9 @@ int Rts2UserApp::processOption (int in_opt)
 		case 'a':
 		case 'd':
 		case 'p':
-		case 'e':
-		case 'm':
 			if (op != NOT_SET)
 			{
-				std::cerr << "Cannot specify two operations together" << std::endl;
+				std::cerr << "multiple operations are not allowed" << std::endl;
 				return -1;
 			}
 			switch (in_opt)
@@ -134,18 +121,20 @@ int Rts2UserApp::processOption (int in_opt)
 			password = optarg;
 			return 0;
 	}
-	return AppDb::processOption (in_opt);
+	return rts2core::App::processOption (in_opt);
 }
 
-int Rts2UserApp::listUser ()
+int UserApp::listUser ()
 {
-//	UserSet userSet = UserSet ();
-//	std::cout << userSet;
+	logins.load (userfile);
+	logins.listUser (std::cout);
 	return 0;
 }
 
-int Rts2UserApp::newUser ()
+int UserApp::newUser ()
 {
+	logins.load (userfile);
+
 	std::string passwd;
 
 	if (password)
@@ -158,23 +147,24 @@ int Rts2UserApp::newUser ()
 		if (ret)
 			return ret;
 	}
-//	return createUser (std::string (user), passwd, email);
+	
+	logins.setUserPassword (std::string (user), passwd);
+	logins.save (userfile);
+	return 0;
 }
 
-int Rts2UserApp::deleteUser ()
+int UserApp::deleteUser ()
 {
 	int ret;
 	bool ch = false;
 	std::ostringstream os;
 	os << "Delete user " << user;
-	ret = askForBoolean (os.str ().c_str (), ch);
-	if (ret < 0)
-		return ret;
+	ch = askForBoolean (os.str ().c_str (), ch);
 	if (ch == true)
 	{
-//		ret = removeUser (std::string (user));
-		if (ret == 0)
-			std::cout << "Deleted user " << user << "." << std::endl;
+		logins.load (userfile);
+		logins.deleteUser (user);
+		logins.save (userfile);
 	}
 	else
 	{
@@ -183,24 +173,38 @@ int Rts2UserApp::deleteUser ()
 	return ret;
 }
 
-int Rts2UserApp::userPassword ()
+int UserApp::userPassword ()
 {
+	logins.load (userfile);
+
 	std::string passwd;
 
 	int ret;
 
-//	ret = r2user.load (user);
-//	if (ret)
-//		return ret;
-	
 	ret = askForPassword ("New user password", passwd);
 	if (ret)
 		return ret;
-//	return r2user.setPassword (passwd);
+
+	logins.setUserPassword (std::string (user), passwd);
+	logins.save (userfile);
+	return 0;
 }
 
-int Rts2UserApp::doProcessing ()
+int UserApp::run ()
 {
+	int ret;
+	ret = init ();
+	if (ret)
+		return ret;
+	
+	if (userfile == NULL)
+	{
+		std::string lf;
+		rts2core::Configuration::instance ()->getString ("observatory", "logins", lf, RTS2_PREFIX "/etc/rts2/logins");
+		userfile = new char[lf.length() + 1];
+		strcpy (userfile, lf.c_str ());
+	}
+
 	switch (op)
 	{
 		case NOT_SET:
@@ -220,6 +224,6 @@ int Rts2UserApp::doProcessing ()
 
 int main (int argc, char **argv)
 {
-	Rts2UserApp app = Rts2UserApp (argc, argv);
+	UserApp app = UserApp (argc, argv);
 	return app.run ();
 }

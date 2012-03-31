@@ -1,3 +1,6 @@
+2012-03-31
+ * rts2-user can edit login files, not only database
+
 2012-03-26
  * support for multi channel devices
 

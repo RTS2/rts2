@@ -411,6 +411,20 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term><option>logins</option></term>
+	  <listitem>
+	    <para>
+	      Login files for non-DB instances of RTS2. Please check carefuly
+	      how RTS2 was build, e.g. if with database support or without it.
+	      This value will have effect only if RTS2 was build without
+	      database.
+	    </para><para>  
+	      The file contains : separated login names and passwords. Default
+	      is RTS2_PREFIX/etc/rts2/logins.
+	    </para>
+	  </listitem>  
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>

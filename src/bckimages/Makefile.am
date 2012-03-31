@@ -8,7 +8,7 @@ AM_CFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@
 AM_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@
 
 rts2_flatprocess_SOURCES = flatprocess.cpp
-rts2_flatprocess_LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2 -lrts2 @LIB_CFITSIO@ @LIB_NOVA@ @LIB_M@
+rts2_flatprocess_LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2 -lrts2 @LIB_CFITSIO@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_M@
 
 if PGSQL
 

@@ -55,12 +55,12 @@ rts2_marchive_LDADD = ${PG_LDADD}
 
 else
 
-rts2_scriptexec_LDFLAGS = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
-rts2_scriptor_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptexec_LDFLAGS = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptor_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 rts2_imgproc_SOURCES = imgproc.cpp 
 rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
-rts2_imgproc_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_imgproc_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 EXTRA_DIST += executor.cpp selectordev.cpp seltest.cpp marchive.cpp
 

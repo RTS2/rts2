@@ -30,6 +30,7 @@
 #else
 #include "configuration.h"
 #include "device.h"
+#include "userlogins.h"
 #endif /* HAVE_PGSQL */
 
 #include "directory.h"
@@ -417,7 +418,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		const char *config_file;
 
 		// user - login fields
-		std::map <std::string, std::string> userLogins;
+		rts2core::UserLogins userLogins;
 #endif
 
 		bool auth_localhost;

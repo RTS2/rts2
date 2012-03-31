@@ -1,6 +1,6 @@
 bin_PROGRAMS = rts2-rotad-dummy rts2-rotad-pyxis
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_rotad_dummy_SOURCES = dummy.cpp

@@ -9,4 +9,4 @@ noinst_HEADERS = rts2.h config.h imghdr.h status.h telescope_info.h imgdisplay.h
 		iniparser.h configuration.h object.h centralstate.h serverstate.h libnova_cpp.h timestamp.h rts2format.h \
 		valueminmax.h valuerectangle.h data.h error.h nan.h riseset.h nimotion.h connnosend.h connnotify.h \
 		radecparser.h askchoice.h cliapp.h rts2target.h domeford.h client.h displayvalue.h clicupola.h fork.h gem.h \
-		telmodel.h modelterm.h expander.h expression.h counted_ptr.h infoval.h
+		telmodel.h modelterm.h expander.h expression.h counted_ptr.h infoval.h userlogins.h

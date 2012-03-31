@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy
 
 EXTRA_DIST = 
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_filterd_ifw_SOURCES = ifw.cpp

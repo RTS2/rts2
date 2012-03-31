@@ -2,7 +2,7 @@ SUBDIRS =
 
 bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl rts2-focusd-atc2 rts2-focusd-microfocuser
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_focusd_optec_SOURCES = optec.cpp
