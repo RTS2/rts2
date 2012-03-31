@@ -98,11 +98,23 @@ int createUser (std::string login, std::string password, std::string email)
 		return -1;
 	}
 
-	if (password.length () > 25)
+#ifdef HAVE_CRYPT
+	char salt[100];
+	strcpy (salt, "$6$");
+	random_salt (salt + 3, 8);
+	strcpy (salt + 11, "$");
+	strncpy (db_password.arr, crypt (password.c_str (), salt), 100);
+	db_password.len = strlen (db_password.arr);
+#else
+	if (password.length () > 100)
 	{
 		logStream (MESSAGE_ERROR) << "password is too long" << sendLog;
 		return -1;
 	}
+
+	strncpy (db_password.arr, password.c_str (), 100);
+	db_password.len = password.length ();
+#endif
 
 	if (email.length () > 25)
 	{
@@ -112,9 +124,6 @@ int createUser (std::string login, std::string password, std::string email)
 
 	strncpy (db_login.arr, login.c_str (), 25);
 	db_login.len = login.length ();
-
-	strncpy (db_password.arr, password.c_str (), 25);
-	db_password.len = password.length ();
 
 	strncpy (db_email.arr, email.c_str (), 200);
 	db_email.len = email.length ();
