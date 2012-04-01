@@ -683,6 +683,8 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 			}
 			return sq.front ().target->getTargetID ();
 		}
+		// if target is not visible, put its start time as cutoff to possible next queue simulation
+		e_end = sq.front ().target.t_start;
 	}
 	return -1;
 }

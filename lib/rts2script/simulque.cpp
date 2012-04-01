@@ -78,6 +78,8 @@ double SimulQueue::step ()
 {
 	std::vector <SimulQueueTargets>::iterator sq;
 
+	double e_end = NAN;
+
 	if (t < to)
 	{
 	  	sq = sqs.begin ();
@@ -86,10 +88,11 @@ double SimulQueue::step ()
 		{
 			sq->filter (t);
 			struct ln_equ_posn nextp;
-			int n_id = qi->selectNextSimulation (*sq, t, to, t, &currentp, &nextp);
+			int n_id = qi->selectNextSimulation (*sq, t, to, e_end, &currentp, &nextp);
 			// remove target from simulation..
 			if (n_id > 0)
 			{
+				t = e_end;
 				rts2db::Target *tar = createTarget (n_id, *observer, NULL);
 				addTarget (tar, from, t);
 				logStream (MESSAGE_DEBUG) << "adding to simulation:" << n_id << " " << tar->getTargetName () << " from " << LibnovaDateDouble (from) << " to " << LibnovaDateDouble (t) << sendLog;
@@ -100,10 +103,19 @@ double SimulQueue::step ()
 				currentp.dec = nextp.dec;
 				break;
 			}
+			// e_end holds possible start of next target..
+			if (!isnan (e_end) && e_end < to)
+				to = e_end;
 			sq++;
 		}
 		if (!found)
-			t += 60;
+		{
+			// something is ready in the queue, use its start time as next time..
+			if (!isnan (e_end))
+				t = e_end;
+			else
+				t += 60;
+		}
 		from = t;
 		return (t - from) / (to - from);
 	}
