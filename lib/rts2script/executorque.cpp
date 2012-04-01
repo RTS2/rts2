@@ -659,12 +659,13 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 		double JD = ln_get_julian_from_timet (&tn);
 		sq.front ().target->getPosition (nextp, JD);
 		ln_get_hrz_from_equ (nextp, *observer, JD, &hrz);
-		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (from))
+		double md = getMaximalDuration (sq.front ().target, currentp);
+		if (sq.front ().target->isAboveHorizon (&hrz) && sq.front ().notExpired (from) && from + md < to)
 		{
 		  	// single execution?
 			if (removeAfterExecution->getValueBool ())
 			{
-				e_end = from + getMaximalDuration (sq.front ().target, currentp);
+				e_end = from + md;
 			}
 			// otherwise, put end to either time_end, 
 			else
@@ -676,7 +677,7 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 				// or to time when target will become unacessible
 				else
 				{
-					e_end = sq.front ().target->getSatisfiedDuration (from, to, getMaximalDuration (sq.front ().target, currentp), 60);
+					e_end = sq.front ().target->getSatisfiedDuration (from, to, md, 60);
 					if (isnan (e_end))
 						e_end = to;
 				}
