@@ -217,11 +217,11 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 	CameraImage *ci = (*cis).second;
 	try
 	{
+		writeFilter (ci->image);
 		// move to the first HDU before writing data
 		beforeProcess (ci->image);
 		if (saveImage)
 		{
-			writeFilter (ci->image);
 			// set filter..
 			// save us to the disk..
 			ci->image->saveImage ();
