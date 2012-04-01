@@ -359,7 +359,6 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (EMOn, "EMON", "Electron Multipliing status", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF, CAM_WORKING);
 	EMOn->setValueBool (false);
-	setDefaultFlip (0);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	HSpeed->setValueInteger (0);
