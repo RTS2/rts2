@@ -421,7 +421,7 @@ int SelectorDev::selectNext ()
 					return id;
 				}
 				double n = getNow ();
-				if (!isnan (next_time) && next_time > n)
+				if (!isnan (next_time) && next_time > n && next_length > next_time - n)
 				{
 					next_length = next_time - n;
 				}
