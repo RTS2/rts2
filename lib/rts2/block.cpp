@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <algorithm>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -295,21 +296,22 @@ int Block::idle ()
 
 	// test for any pending timers..
 	std::map <double, Event *>::iterator iter_t = timers.begin ();
-	std::vector <std::map <double, Event *>::iterator> toDelete;
 	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
-		toDelete.push_back (iter_t);
+		if (pushToDelete (iter_t))
+		{
+			Event *sec = iter_t->second;
+		 	if (sec->getArg () != NULL)
+			  	((Object *)sec->getArg ())->postEvent (sec);
+			else
+				postEvent (sec);
+		}
 		iter_t++;
 	}
 
 	// delete timers queue for delete
-	for (std::vector <std::map <double, Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
+	for (std::vector <std::map <double, Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d = toDelete.erase (iter_d))
 	{
-		Event *sec = (*iter_d)->second;
-	 	if (sec->getArg () != NULL)
-		  	((Object *)sec->getArg ())->postEvent (sec);
-		else
-			postEvent (sec);
 		timers.erase (*iter_d);
 	}
 
@@ -963,20 +965,15 @@ bool Block::commandOriginatorPending (Object * object, Connection * exclude_conn
 
 void Block::deleteTimers (int event_type)
 {
-	std::vector <std::map <double, Event *>::iterator> toDelete;
 	for (std::map <double, Event *>::iterator iter = timers.begin (); iter != timers.end (); )
 	{
 		if (iter->second->getType () == event_type)
 		{
-			delete (iter->second);
-			toDelete.push_back (iter);
+			if (pushToDelete (iter))
+				delete (iter->second);
 		}
 		iter++;
 	}
-
-	// delete timers queue for delete
-	for (std::vector <std::map <double, Event *>::iterator>::iterator iter_d = toDelete.begin (); iter_d != toDelete.end (); iter_d++)
-		timers.erase (*iter_d);
 }
 
 void Block::valueMaskError (Value *val, int32_t err)
@@ -986,6 +983,17 @@ void Block::valueMaskError (Value *val, int32_t err)
 		val->maskError (err);
 		updateMetaInformations (val);
 	}
+}
+
+bool Block::pushToDelete (const std::map <double, Event *>::iterator &iter)
+{
+	// only push unique iterators
+	if (std::find (toDelete.begin (), toDelete.end (), iter) == toDelete.end ())
+	{
+		toDelete.push_back (iter);
+		return true;
+	}
+	return false;
 }
 
 bool isCentraldName (const char *_name)

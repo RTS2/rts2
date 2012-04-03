@@ -794,6 +794,9 @@ class Block: public rts2core::App
 
 		connections_t centraldConns;
 
+		// entries to delete from timers map; delete will happen in idle call
+		std::vector <std::map <double, Event *>::iterator> toDelete;
+
 		// vector which holds connections which were recently added - idle loop will move them to connections
 		connections_t centraldConns_added;
 
@@ -809,6 +812,12 @@ class Block: public rts2core::App
 		 * @param err error bits to set
 		 */
 		void valueMaskError (Value *val, int32_t err);
+
+		/**
+                 *
+                 * @return true if timer entry was deleted, false if it was already found in vector to delete.
+		 */
+		bool pushToDelete (const std::map <double, Event *>::iterator &iter);
 };
 
 }
