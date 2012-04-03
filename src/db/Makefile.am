@@ -1,4 +1,4 @@
-LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
+LDADD = -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 AM_CXXFLAGS = @LIBXML_CFLAGS@ @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 bin_PROGRAMS = rts2-image rts2-user
@@ -64,7 +64,7 @@ else
 rts2_image_LDADD = ${LDADD}
 
 rts2_user_SOURCES = usernondb.cpp
-rts2_user_LDADD = ${LDADD} @LIB_CRYPT@
+rts2_user_LDADD = -lrts2users ${LDADD} @LIB_CRYPT@
 
 EXTRA_DIST += targetinfo.cpp nightreport.cpp targetlist.cpp target.cpp tpm.cpp obsinfo.cpp user.cpp newtarget.cpp rts2targetapp.cpp simbadinfo.cpp planapp.cpp airmasscale.ec
 

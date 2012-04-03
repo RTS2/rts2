@@ -6,7 +6,7 @@ SUBDIRS = zelio
 
 EXTRA_DIST = 
 
-LDADD = -lrts2 -L../../lib/rts2 @LIB_CRYPT@ @LIB_NOVA@
+LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 AM_CFLAGS = @NOVA_CFLAGS@
 

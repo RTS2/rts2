@@ -6,7 +6,7 @@ bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-dummy rts2-camd-
 
 noinst_HEADERS = ccd_msg.h reflex.h
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_camd_miniccd_SOURCES = miniccd.cpp
@@ -64,7 +64,7 @@ endif
 if FLI
 bin_PROGRAMS += rts2-camd-fli
 rts2_camd_fli_SOURCES = fli.cpp
-rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_CRYPT@ @LIB_M@
+rts2_camd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_camd_fli_CXXFLAGS = @INC_FLI@
 else
 EXTRA_DIST += fli.cpp
@@ -73,7 +73,7 @@ endif
 if MICCD
 bin_PROGRAMS += rts2-camd-miccd
 rts2_camd_miccd_SOURCES = miccd.cpp
-rts2_camd_miccd_LDFLAGS = @LIB_MICCD@ @LIB_K8055@ @LIB_CRYPT@
+rts2_camd_miccd_LDFLAGS = @LIB_MICCD@ @LIB_K8055@
 rts2_camd_miccd_CXXFLAGS = @INC_MICCD@
 else
 EXTRA_DIST += miccd.cpp
@@ -83,7 +83,7 @@ if EDTPDV
 bin_PROGRAMS += rts2-camd-edtsao rts2-camd-reflex
 
 rts2_camd_edtsao_SOURCES = edtsao.cpp
-rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@  @LIB_CRYPT@
+rts2_camd_edtsao_LDFLAGS = edtsao/libedtsao.a @LIB_PTHREAD@ @LIB_EDTPDV@
 rts2_camd_edtsao_CXXFLAGS = @INC_EDTPDV@
 
 rts2_camd_reflex_SOURCES = reflex.cpp

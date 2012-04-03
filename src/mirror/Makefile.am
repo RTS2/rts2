@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-mirror-dummy
 
 EXTRA_DIST = 
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 if SUNOS

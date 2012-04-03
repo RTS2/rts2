@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-phot-ssp5 rts2-phot-dummy
 
 noinst_HEADERS = kernel/phot.h
 
-LDADD = -lrts2 -L../../lib/rts2 @LIB_CRYPT@ @LIB_NOVA@
+LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@
 

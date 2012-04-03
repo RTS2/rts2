@@ -11,7 +11,7 @@ noinst_HEADERS = davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h t
 
 EXTRA_DIST = 
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_sensor_dummy_SOURCES = dummy.cpp

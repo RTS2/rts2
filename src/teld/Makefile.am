@@ -16,7 +16,7 @@ librts2tellx200_l_CXXFLAGS = @NOVA_CFLAGS@
 librts2pier_collision_la_SOURCES = pier-collision.cpp
 librts2pier_collision_la_CXXFLAGS = @NOVA_CFLAGS@
 
-LDADD = -L../../lib/rts2 -lrts2 @LIB_CRYPT@ @LIB_M@ @LIB_NOVA@
+LDADD = -L../../lib/rts2 -lrts2 @LIB_M@ @LIB_NOVA@
 
 AM_CXXFLAGS=@NOVA_CFLAGS@
 

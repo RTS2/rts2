@@ -41,4 +41,4 @@ EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec graphreq.cpp
 
 rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@ ${AM_CXXFLAGS}
-rts2_xmlrpcclient_LDADD = -L../../lib/rts2 -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIB_NOVA@ $(AM_LDADD)
+rts2_xmlrpcclient_LDADD = -L../../lib/rts2 -lrts2users -lrts2 -L../../lib/xmlrpc++ -lrts2xmlrpc @LIB_NOVA@ $(AM_LDADD)
