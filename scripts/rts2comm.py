@@ -19,6 +19,7 @@
 
 import sys
 import time
+import re
 
 # constants for device types
 DEVICE_TELESCOPE   = "TELESCOPE"
@@ -46,11 +47,16 @@ DT_KMG             = "DT_KMG"
 DT_INTERVAL        = "DT_INTERVAL"
 DT_ONOFF           = "DT_ONOFF"
 
+class Rts2Exception:
+	"""Thrown on exceptions on communicated over stdin/stdout connection."""
+	def __init__(self,message):
+		self.message = message
+
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
-		return
-	
+		self.exception_re = re.compile('\S (\S+)')
+
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
 		if device is None:
@@ -59,6 +65,21 @@ class Rts2Comm:
 		  	print 'C',device,command
 		sys.stdout.flush()
 
+	def readline(self):
+		"""Reads single line from standard input. Checks for exceptions."""
+		ex = None
+		while True:
+			a = sys.stdin.readline().rstrip('\n')
+			# handle exceptions
+			m = self.exception_re.match(a)
+			if m and m.group(1) == '!':
+				self.log('W','exception from device: {0}'.format(m.group(1)))
+				ex = Rts2Exception(m.group(1))
+			elif ex:
+				raise ex
+			else:
+				return a
+
 	def getValue(self,value,device = None):
 		"""Returns given value."""
 		if device is None:
@@ -66,17 +87,17 @@ class Rts2Comm:
 		else:
 			print 'G',device,value
 		sys.stdout.flush()
-		return sys.stdin.readline().rstrip('\n')
+		return self.readline()
 
 	def getLoopCount(self):
 		print 'loopcount'
 		sys.stdout.flush()
-		return int(sys.stdin.readline().rstrip('\n'))
+		return int(self.readline())
 
 	def getRunDevice(self):
 		print 'run_device'
 		sys.stdout.flush()
-		return sys.stdin.readline().rstrip('\n')
+		return self.readline()
 
 	def getValueFloat(self,value,device = None):
 		"""Return value as float number."""
@@ -112,23 +133,23 @@ class Rts2Comm:
 		"""Retrieve device state"""
 		print 'S',device
 		sys.stdout.flush()
-		return int(sys.stdin.readline().rstrip('\n'))
+		return int(self.readline())
 	
 	def waitIdle(self,device,timeout):
 		"""Wait for idle state (with timeout)"""
 		print 'waitidle',device,timeout
 		sys.stdout.flush()
-		return int(sys.stdin.readline().rstrip('\n'))
+		return int(self.readline())
 
 	def exposure(self, before_readout_callback = None):
 		print "exposure"
 		sys.stdout.flush()
-		a = sys.stdin.readline()
-		if (a != "exposure_end\n"):
+		a = self.readline()
+		if (a != "exposure_end"):
 			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
 		if (not (before_readout_callback is None)):
 			before_readout_callback()
-		a = sys.stdin.readline()
+		a = self.readline()
 		image,fn = a.split()
 		return fn
 
@@ -155,18 +176,18 @@ class Rts2Comm:
 	def __imageAction(self,action,imagename):
 		print action,imagename
 		sys.stdout.flush()
-		return sys.stdin.readline()
+		return self.readline()
 
 	def rename(self,imagename,pattern):
 		print "rename",imagename,pattern
 		sys.stdout.flush()
-		return sys.stdin.readline()
+		return self.readline()
 
 	def move(self,imagename,pattern):
 		"""Move image to new path, delete it from the database."""
 		print "move",imagename, pattern
 		sys.stdout.flush()
-		return sys.stdin.readline()
+		return self.readline()
 	
 	def toFlat(self,imagename):
 		return self.__imageAction("flat",imagename)
