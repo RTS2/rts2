@@ -87,6 +87,12 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 	createOrReplaceValue (scriptEnd, conn, RTS2_VALUE_TIME, "_script_end", "script end time", false);
 }
 
+XmlDevCameraClient::~XmlDevCameraClient ()
+{
+	scriptRunning->setValueBool (false);
+	getMaster ()->sendValueAll (scriptRunning);
+}
+
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
 {
  	exposureScript = getScript ();

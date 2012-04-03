@@ -146,9 +146,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 	public:
 		XmlDevCameraClient (rts2core::Connection *conn);
 
-		virtual ~XmlDevCameraClient ()
-		{
-		}
+		virtual ~XmlDevCameraClient ();
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
