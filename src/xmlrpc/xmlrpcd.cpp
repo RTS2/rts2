@@ -212,6 +212,14 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 	connection->postEvent (new Event (EVENT_OBSERVE));
 }
 
+void XmlDevCameraClient::killScript ()
+{
+	if (scriptRunning->getValueBool ())
+		logStream (MESSAGE_INFO) << "killing currently running script" << sendLog;
+	postEvent (new Event (EVENT_KILL_ALL));
+	scriptRunning->setValueBool (false);
+}
+
 void XmlDevCameraClient::setNextExpand (const char *fe)
 {
 	if (nexpand.length () != 0)

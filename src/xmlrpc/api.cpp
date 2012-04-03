@@ -235,6 +235,18 @@ digraph "JSON API calls handling" {
  *
  * @subsection Return
  *
+ * @section JNSON_device_killscript killscript
+ *
+ * Kill script running on device. Force device to idle, set empty script for it.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/killscript?d=C0
+ *
+ * @subsection Parameters
+ *
+ *  - <b>d</b> Device name. Device must be CCD/camera.
+ *
  * @section JSON_device_selval selval
  *
  * Return array with names of selection values. It is only possible to call this function on selection variables, otherwise the call return an error message. Variable type 
@@ -873,6 +885,18 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 			camdev->executeScript (script, kills);
 			os << "\"d\":\"" << d << "\",\"s\":\"" << script << "\"";
+		}
+		else if (vals[0] == "killscript")
+		{
+			const char *d = params->getString ("d","");
+			conn = master->getOpenConnection (d);
+			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
+				throw JSONException ("cannot find camera with given name");
+
+			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
+
+			camdev->killScript ();
+			os << "\"d\":\"" << d << "\",\"s\":\"\"";
 		}
 #ifdef HAVE_PGSQL
 		// returns target information specified by target name

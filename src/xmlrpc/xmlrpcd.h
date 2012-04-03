@@ -189,6 +189,11 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		void executeScript (const char *scriptbuf, bool killScripts = false);
 
 		/**
+		 * Kill script on device.
+		 */
+		void killScript ();
+
+		/**
 		 * Set expansion for the next file. Throws error if there is an expansion
 		 * filled in, which was not yet used. This probably signal two consequtive
 		 * calls to this method, without camera going to EXPOSE state.
