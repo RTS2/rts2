@@ -297,6 +297,7 @@ fi
 
 echo "Configuring RTS2"
 sudo ./rts2-init
+sudo cp rts2.logrotate /etc/logrotate.d/rts2
 
 echo "Creating proper rts2.ini configuration file"
 
