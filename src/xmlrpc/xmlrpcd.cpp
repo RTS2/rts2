@@ -217,6 +217,10 @@ void XmlDevCameraClient::killScript ()
 	if (scriptRunning->getValueBool ())
 		logStream (MESSAGE_INFO) << "killing currently running script" << sendLog;
 	postEvent (new Event (EVENT_KILL_ALL));
+	if (callScriptEnds->getValueBool ())
+		connection->queCommand (new rts2core::CommandKillAll (connection->getMaster ()));
+	else
+		connection->queCommand (new rts2core::CommandKillAllWithoutScriptEnds (connection->getMaster ()));
 	scriptRunning->setValueBool (false);
 }
 
