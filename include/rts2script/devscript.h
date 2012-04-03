@@ -46,6 +46,11 @@ class DevScript
 
 		ScriptPtr& getScript () { return script; }
 
+		/**
+		 * Called when device state changes. Propagates error to the script.
+		 */
+		void stateChanged (rts2core::ServerState *state);
+
 	protected:
 		
 		/**

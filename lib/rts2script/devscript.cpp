@@ -256,6 +256,12 @@ void DevScript::postEvent (rts2core::Event * event)
 	}
 }
 
+void DevScript::stateChanged (rts2core::ServerState *state)
+{
+	if ((state->getValue () & DEVICE_ERROR_MASK) && state->maskValueChanged (DEVICE_ERROR_MASK) && script.get ())
+		script->errorReported (state->getValue (), state->getOldValue ());
+}
+
 void DevScript::scriptBegin ()
 {
 	rts2core::DevClient *cli = script_connection->getOtherDevClient ();

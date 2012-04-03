@@ -151,13 +151,13 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
-			rts2image::DevClientCameraImage::stateChanged (state);
+			rts2script::DevClientCameraExec::stateChanged (state);
 		}
 
 		virtual void valueChanged (rts2core::Value * value)
 		{
 			XmlDevInterface::valueChanged (value);
-			rts2image::DevClientCameraImage::valueChanged (value);
+			rts2script::DevClientCameraExec::valueChanged (value);
 		}
 		
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
@@ -219,10 +219,10 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		virtual XmlRpcd *getMaster ()
 		{
-			return (XmlRpcd *) rts2image::DevClientCameraImage::getMaster ();
+			return (XmlRpcd *) rts2script::DevClientCameraExec::getMaster ();
 		}
 
-		virtual rts2core::Connection *getConnection () { return rts2image::DevClientCameraImage::getConnection (); }
+		virtual rts2core::Connection *getConnection () { return rts2script::DevClientCameraExec::getConnection (); }
 
 	private:
 		// path for storing XMLRPC produced images

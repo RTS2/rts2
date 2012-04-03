@@ -132,6 +132,12 @@ class Script:public Object, public std::list <Element *>
 		int setTarget (const char *cam_name, Rts2Target *target);
 
 		virtual void postEvent (rts2core::Event * event);
+
+		/**
+		 * Report error to current element.
+		 */
+		void errorReported (int current_state, int old_state);
+ 
 		template < typename T > int nextCommand (T & device, Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()

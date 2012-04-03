@@ -1,3 +1,6 @@
+2012-04-03
+ * errorReported in Element, error propagation through script
+
 2012-03-31
  * rts2-user can edit login files, not only database
 

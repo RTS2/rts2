@@ -105,6 +105,11 @@ class Element:public Object
 		virtual int nextCommand (rts2core::DevClientPhot * phot, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		/**
+		 * Called when an error on connection is detected.
+		 */
+		virtual void errorReported (int current_state, int old_state) {};
+
+		/**
 		 * Called after end of exposure.
 		 */
 		virtual void exposureEnd () {}

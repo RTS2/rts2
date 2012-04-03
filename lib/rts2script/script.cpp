@@ -286,8 +286,7 @@ void Script::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_SIGNAL:
-			for (el_iter_sig = el_iter; el_iter_sig != end ();
-				el_iter_sig++)
+			for (el_iter_sig = el_iter; el_iter_sig != end (); el_iter_sig++)
 			{
 				el = *el_iter_sig;
 				ret = el->waitForSignal (*(int *) event->getArg ());
@@ -301,8 +300,7 @@ void Script::postEvent (rts2core::Event * event)
 			break;
 		case EVENT_ACQUIRE_QUERY:
 		case EVENT_SIGNAL_QUERY:
-			for (el_iter_sig = el_iter; el_iter_sig != end ();
-				el_iter_sig++)
+			for (el_iter_sig = el_iter; el_iter_sig != end (); el_iter_sig++)
 			{
 				el = *el_iter_sig;
 				el->postEvent (new rts2core::Event (event));
@@ -314,6 +312,12 @@ void Script::postEvent (rts2core::Event * event)
 			break;
 	}
 	Object::postEvent (event);
+}
+
+void Script::errorReported (int current_state, int old_state)
+{
+	if (el_iter != end ())
+		(*el_iter)->errorReported (current_state, old_state);
 }
 
 Element *Script::parseBuf (Rts2Target * target)

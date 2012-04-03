@@ -164,6 +164,13 @@ int ElementBlock::nextCommand (rts2core::DevClientPhot * client, rts2core::Comma
 	return blockScriptRet (ret);
 }
 
+void ElementBlock::errorReported (int current_state, int old_state)
+{
+	if (curr_element != blockElements.end ())
+		(*curr_element)->errorReported (current_state, old_state);
+	Element::errorReported (current_state, old_state);
+}
+
 void ElementBlock::exposureEnd ()
 {
 	if (curr_element != blockElements.end ())

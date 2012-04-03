@@ -42,6 +42,7 @@ class ConnExecute:public ConnExe
 
 		void nullMasterElement () { masterElement = NULL; }
 
+		virtual void errorReported (int current_state, int old_state);
 		virtual void exposureEnd ();
 
 		virtual int processImage (rts2image::Image *image);
@@ -79,6 +80,7 @@ class Execute:public Element
 		rts2core::Connection *getConnection () { return client->getConnection (); }
 		rts2core::DevClient *getClient () { return client; }
 
+		virtual void errorReported (int current_state, int old_state);
 		virtual void exposureEnd ();
 
 		virtual int processImage (rts2image::Image *image);

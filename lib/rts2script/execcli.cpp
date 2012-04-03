@@ -405,6 +405,7 @@ void DevClientCameraExec::exposureEnd ()
 void DevClientCameraExec::stateChanged (rts2core::ServerState * state)
 {
 	DevClientCameraImage::stateChanged (state);
+	DevScript::stateChanged (state);
 	if (nextComd && cmdConn && !(state->getValue () & BOP_TEL_MOVE) && !(getConnection ()->getFullBopState () & BOP_TEL_MOVE))
 		nextCommand ();
 }

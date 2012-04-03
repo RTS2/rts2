@@ -283,6 +283,11 @@ void ConnExecute::connectionError (int last_data_size)
 	masterElement = NULL;
 }
 
+void ConnExecute::errorReported (int current_state, int old_state)
+{
+	writeToProcess ("! error detected while running script");
+}
+
 void ConnExecute::exposureEnd ()
 {
 	if (exposure_started)  
@@ -337,6 +342,16 @@ Execute::~Execute ()
 		deleteExecConn ();
 	}
 	client = NULL;
+}
+
+
+void Execute::errorReported (int current_state, int old_state)
+{
+	if (connExecute)
+	{
+		connExecute->errorReported (current_state, old_state);
+	}
+	Element::errorReported (current_state, old_state);
 }
 
 void Execute::exposureEnd ()

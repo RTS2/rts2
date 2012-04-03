@@ -49,6 +49,8 @@ class ElementBlock:public Element
 
 		virtual int nextCommand (rts2core::DevClientPhot * client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
+		virtual void errorReported (int current_state, int old_state);
+
 		virtual void exposureEnd ();
 		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int _sig);
