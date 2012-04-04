@@ -27,7 +27,7 @@ using namespace rts2image;
 ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, const char *_exec):ConnExe (_master, _exec, true)
 {
 	masterElement = _masterElement;
-	exposure_started = false;
+	exposure_started = 0;
 }
 
 ConnExecute::~ConnExecute ()
@@ -59,10 +59,12 @@ void ConnExecute::processCommand (char *cmd)
 	
 	if (!strcmp (cmd, "exposure"))
 	{
+		if (!checkActive (true))
+			return;
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
-		exposure_started = true;
+		exposure_started = 1;
 	}
 	else if (!strcasecmp (cmd, "progress"))
 	{
@@ -73,6 +75,8 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "radec"))
 	{
+		if (!checkActive ())
+			return;
 		struct ln_equ_posn radec;
 		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
 			return;
@@ -80,6 +84,8 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "newobs"))
 	{
+		if (!checkActive ())
+			return;
 		struct ln_equ_posn radec;
 		if (paramNextHMS (&radec.ra) || paramNextDMS (&radec.dec) || !paramEnd ())
 			return;
@@ -87,6 +93,8 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "altaz"))
 	{
+		if (!checkActive (false))
+			return;
 		struct ln_hrz_posn hrz;
 		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
 			return;
@@ -94,6 +102,8 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "newaltaz"))
 	{
+		if (!checkActive (false))
+			return;
 		struct ln_hrz_posn hrz;
 		if (paramNextDMS (&hrz.alt) || paramNextDMS (&hrz.az) || !paramEnd ())
 			return;
@@ -236,12 +246,16 @@ void ConnExecute::processCommand (char *cmd)
 	}
 	else if (!strcmp (cmd, "command"))
 	{
+		if (!checkActive (false))
+			return;
 		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new rts2core::Command (getMaster (), comm));
 	}
 	else if (!strcmp (cmd, "VT"))
 	{
+		if (!checkActive (false))
+			return;
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
@@ -286,36 +300,63 @@ void ConnExecute::connectionError (int last_data_size)
 void ConnExecute::errorReported (int current_state, int old_state)
 {
 	writeToProcess ("! error detected while running script");
+	switch (exposure_started)
+	{
+		case 1:
+			writeToProcess ("exposure_failed");
+			exposure_started = -1;
+			break;
+		case 2:
+			writeToProcess ("! device failed");
+			writeToProcess ("ERR");
+			exposure_started = -2;
+			break;
+	}
 }
 
 void ConnExecute::exposureEnd ()
 {
-	if (exposure_started)  
+	if (exposure_started == 1)
+	{
 		writeToProcess ("exposure_end");
+		exposure_started = 2;
+	}
 	else
+	{
 		logStream (MESSAGE_WARNING) << "script received end-of-exposure without starting it. This probably signal out-of-sync communication between executor and camera" << sendLog;
+	}
 }
 
 void ConnExecute::exposureFailed ()
 {
-	if (exposure_started)
-		writeToProcess ("exposure_failed");
-	else
-		logStream (MESSAGE_WARNING) << "script received failure of exposure without starting one. This probably signal out-of-sync communication" << sendLog;
+	switch (exposure_started)
+	{
+		case 1:
+			writeToProcess ("exposure_failed");
+			exposure_started = -3;
+			break;
+		case 2:
+			writeToProcess ("! exposure failed");
+			writeToProcess ("ERR");
+			exposure_started = -4;
+			break;
+		default:
+			logStream (MESSAGE_WARNING) << "script received failure of exposure without starting one. This probably signal out-of-sync communication" << sendLog;
+	}
 }
 
 int ConnExecute::processImage (Image *image)
 {
-	if (exposure_started)
+	if (exposure_started == 2)
 	{
 		images.push_back (image);
 		image->saveImage ();
 		writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
-		exposure_started = false;
+		exposure_started = 0;
 	}
 	else
 	{
-		logStream (MESSAGE_WARNING) << "script executes method to start image processing without trigerring an exposure" << sendLog;
+		logStream (MESSAGE_WARNING) << "script executes method to start image processing without trigerring an exposure (" << exposure_started << ")" << sendLog;
 		return -1;
 	} 
 	return 1;
@@ -345,6 +386,7 @@ Execute::~Execute ()
 {
 	if (connExecute)
 	{
+		errno = 0;
 		connExecute->nullMasterElement ();
 		connExecute->endConnection ();
 		deleteExecConn ();
@@ -380,6 +422,12 @@ void Execute::exposureFailed ()
 		return;
 	}
 	Element::exposureFailed ();
+}
+
+void Execute::notActive ()
+{
+	if (connExecute)
+		connExecute->notActive ();
 }
 
 int Execute::processImage (Image *image)

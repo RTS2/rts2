@@ -155,6 +155,8 @@ class Script:public Object, public std::list <Element *>
 		void exposureEnd ();
 		void exposureFailed ();
 
+		void notActive ();
+
 		int processImage (rts2image::Image * image);
 
 		rts2core::Block *getMaster ()	{ return master; }
@@ -175,7 +177,7 @@ class Script:public Object, public std::list <Element *>
 
 		void prettyPrint (std::ostream &os, printType pt);
 
-		std::list <Element *>::iterator findElement (const char *name, std::list <Element *>::iterator start);
+		Script::iterator findElement (const char *name, Script::iterator start);
 
 		/**
 		 * Return expected script duration in seconds.
@@ -230,7 +232,7 @@ class Script:public Object, public std::list <Element *>
 		 */
 		rts2operands::Operand *parseOperand (Rts2Target * target, rts2operands::Operand *op = NULL);
 
-		std::list < Element * >::iterator el_iter;
+		Script::iterator el_iter;
 		rts2core::Block *master;
 
 		// counts comments

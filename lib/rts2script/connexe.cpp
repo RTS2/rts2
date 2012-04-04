@@ -25,6 +25,7 @@ using namespace rts2script;
 
 ConnExe::ConnExe (rts2core::Block *_master, const char *_exec, bool fillConnEnv, int timeout):rts2core::ConnFork (_master, _exec, fillConnEnv, true, timeout)
 {
+	active = true;
 }
 
 ConnExe::~ConnExe ()
@@ -95,6 +96,8 @@ void ConnExe::processCommand (char *cmd)
 
 	if (!strcmp (cmd, "C"))
 	{
+		if (!checkActive ())
+			return;
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
 			return;
 		rts2core::Connection *conn = getConnectionForScript (device);
@@ -105,6 +108,8 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcmp (cmd, "CT"))
 	{
+		if (!checkActive ())
+			return;
 		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
@@ -113,6 +118,8 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcmp (cmd, "V"))
 	{
+		if (!checkActive ())
+			return;
 		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
 		rts2core::Connection *conn = getConnectionForScript (device);
@@ -417,4 +424,13 @@ int ConnExe::getDeviceType (const char *_name)
 	else if (!strcasecmp (_name, "SENSOR"))
 	  	return DEVICE_TYPE_SENSOR;
 	throw rts2core::Error (std::string ("unknow device type ") + _name);
+}
+
+bool ConnExe::checkActive (bool report)
+{
+	if (active)
+		return true;
+	if (report)
+		writeToProcess ("& script is not active");
+	return false;
 }

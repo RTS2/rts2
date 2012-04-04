@@ -52,10 +52,14 @@ class Rts2Exception(Exception):
 	def __init__(self,message):
 		Exception.__init__(self,message)
 
+class Rts2NotActive(Exception):
+	def __init__(self):
+		Exception.__init__(self,'script is not active')
+
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
-		self.exception_re = re.compile('(\S) (\S.*)')
+		self.exception_re = re.compile('([!&]) (\S.*)')
 
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
@@ -72,9 +76,12 @@ class Rts2Comm:
 			a = sys.stdin.readline().rstrip('\n')
 			# handle exceptions
 			m = self.exception_re.match(a)
-			if m and m.group(1) == '!':
-				self.log('W','exception from device: {0}'.format(m.group(2)))
-				ex = Rts2Exception(m.group(2))
+			if m:
+				if m.group(1) == '!':
+					self.log('W','exception from device: {0}'.format(m.group(2)))
+					ex = Rts2Exception(m.group(2))
+				elif m.group(1) == '&':
+					raise Rts2NotActive()
 			elif ex:
 				raise ex
 			else:
@@ -146,8 +153,7 @@ class Rts2Comm:
 		sys.stdout.flush()
 		a = self.readline()
 		if a == 'exposure_failed':
-			self.log('E', "exposure failed")
-			raise rts2comm.Rts2Exception("exposure failed")
+			raise Rts2Exception("exposure failed")
 		if a != "exposure_end":
 			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
 		if not (before_readout_callback is None):

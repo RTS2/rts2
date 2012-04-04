@@ -107,6 +107,8 @@ void DevScript::postEvent (rts2core::Event * event)
 			// stop actual observation..
 			unsetWait ();
 			waitScript = NO_WAIT;
+			if (script.get ())
+				script.get ()->notActive ();
 			script.null ();
 			delete nextComd;
 			nextComd = NULL;
@@ -344,6 +346,8 @@ void DevScript::deleteScript ()
 			dont_execute_for = currentTarget->getTargetID ();
 			dont_execute_for_obsid = currentTarget->getObsId ();
 		}
+		if (script.get ())
+			script.get ()->notActive ();
 		script.null ();
 		currentTarget = NULL;
 		// that can result in call to startTarget and

@@ -139,12 +139,17 @@ int ConnFork::writable (fd_set * writeset)
 	 	if (FD_ISSET (sockwrite, writeset))
 		{
 			int write_size = write (sockwrite, input.c_str (), input.length ());
-			if (write_size < 0 && errno != EINTR)
+			if (write_size < 0)
 			{
-				logStream (MESSAGE_ERROR) << "rts2core::ConnFork while writing to sockwrite: " << strerror (errno) << sendLog;
-				close (sockwrite);
-				sockwrite = -1;
-				return -1;
+				if (errno == EINTR)
+				{
+					logStream (MESSAGE_ERROR) << "rts2core::ConnFork while writing to sockwrite: " << strerror (errno) << sendLog;
+					close (sockwrite);
+					sockwrite = -1;
+					return -1;
+				}
+				logStream (MESSAGE_WARNING) << "rts2core::ConnFork cannot write to process, will try again: " << strerror (errno) << sendLog;
+				return 0;
 			}
 			input = input.substr (write_size);
 			if (input.length () == 0)
@@ -161,9 +166,9 @@ int ConnFork::writable (fd_set * writeset)
 
 void ConnFork::connectionError (int last_data_size)
 {
-	if (last_data_size < 0 && errno == EAGAIN)
+	if (last_data_size < 0 && errno == EAGAIN && sockwrite > 0)
 	{
-		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it" << sendLog;
+		logStream (MESSAGE_DEBUG) << "ConnFork::connectionError reported EAGAIN - that should not happen, ignoring it " << getpid () << sendLog;
 		return;
 	}
 	Connection::connectionError (last_data_size);

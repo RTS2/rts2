@@ -119,6 +119,9 @@ class Element:public Object
 		 */
 		virtual void exposureFailed () {}
 
+		// signal that the script is no longer active
+		virtual void notActive () {}
+
 		/**
 		 * Query image processing.
 		 *

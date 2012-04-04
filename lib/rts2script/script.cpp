@@ -149,6 +149,7 @@ Script::Script (const char *script):Object ()
 
 Script::~Script (void)
 {
+	notActive ();
 	// all operations with elements list should be ignored
 	executedCount = -1;
 	for (el_iter = begin (); el_iter != end (); el_iter++)
@@ -280,7 +281,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 
 void Script::postEvent (rts2core::Event * event)
 {
-	std::list < Element * >::iterator el_iter_sig;
+	Script::iterator el_iter_sig;
 	Element *el;
 	int ret;
 	switch (event->getType ())
@@ -800,6 +801,12 @@ void Script::exposureFailed ()
 	return (*el_iter)->exposureFailed ();
 }
 
+void Script::notActive ()
+{
+	for (Script::iterator iter = begin (); iter != end (); iter++)
+		(*iter)->notActive ();
+}
+
 int Script::processImage (Image * image)
 {
 	if (executedCount < 0 || el_iter == end ())
@@ -858,9 +865,9 @@ void Script::prettyPrint (std::ostream &os, printType pt)
 	}
 }
 
-std::list <Element *>::iterator Script::findElement (const char *name, std::list <Element *>::iterator start)
+Script::iterator Script::findElement (const char *name, Script::iterator start)
 {
-	std::list <Element *>::iterator iter;
+	Script::iterator iter;
 	for (iter = start; iter != end (); iter++)
 	{
 		std::ostringstream os;
@@ -879,7 +886,7 @@ double Script::getExpectedDuration (struct ln_equ_posn *tel)
 		double dist = ln_get_angular_separation (tel, &target_pos);
 		ret += dist * getTelescopeSpeed ();
 	}
-	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+	for (Script::iterator iter = begin (); iter != end (); iter++)
 		ret += (*iter)->getExpectedDuration ();
 	return ret;
 }
@@ -887,7 +894,7 @@ double Script::getExpectedDuration (struct ln_equ_posn *tel)
 double Script::getExpectedLightTime ()
 {
 	double ret = 0;
-	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+	for (Script::iterator iter = begin (); iter != end (); iter++)
 		ret += (*iter)->getExpectedLightTime ();
 	return ret;
 }
@@ -895,7 +902,7 @@ double Script::getExpectedLightTime ()
 int Script::getExpectedImages ()
 {
 	int ret = 0;
-	for (std::list <Element *>::iterator iter = begin (); iter != end (); iter++)
+	for (Script::iterator iter = begin (); iter != end (); iter++)
 		ret += (*iter)->getExpectedImages ();
 	return ret;
 }

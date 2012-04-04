@@ -414,7 +414,7 @@ void DevClientCameraExec::exposureFailed (int status)
 {
 	// in case of an error..
 	DevClientCameraImage::exposureFailed (status);
-	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script" << sendLog;
+	logStream (MESSAGE_WARNING) << "detected exposure failure. Continuing with the script, script " << exposureScript.get () << sendLog;
 	if (exposureScript.get ())
 		exposureScript->exposureFailed ();
 	nextCommand ();

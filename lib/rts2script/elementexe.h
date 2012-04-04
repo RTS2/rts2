@@ -61,7 +61,7 @@ class ConnExecute:public ConnExe
 
 		std::list <rts2image::Image *>::iterator findImage (const char *path);
 
-		bool exposure_started;
+		int exposure_started;
 };
 
 /**
@@ -84,6 +84,8 @@ class Execute:public Element
 		virtual void errorReported (int current_state, int old_state);
 		virtual void exposureEnd ();
 		virtual void exposureFailed ();
+
+		virtual void notActive ();
 
 		virtual int processImage (rts2image::Image *image);
 

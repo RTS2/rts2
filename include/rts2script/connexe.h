@@ -36,6 +36,8 @@ class ConnExe:public rts2core::ConnFork
 		ConnExe (rts2core::Block * _master, const char *_exec, bool fillConnEnv, int timeout = 0);
 		virtual ~ConnExe ();
 
+		void notActive () { active = false; }
+
 		virtual void processLine ();
 
 	protected:
@@ -45,11 +47,14 @@ class ConnExe:public rts2core::ConnFork
 
 		rts2core::Connection *getConnectionForScript (const char *name);
 		int getDeviceType (const char *name);
+
+		bool checkActive (bool report = false);
 	
 	private:
 		std::vector <std::string> tempentries;
 
 		void testWritableVariable (const char *cmd, int32_t vflags, rts2core::Value *v);
+		bool active;
 };
 
 }
