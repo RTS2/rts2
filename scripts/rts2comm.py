@@ -47,10 +47,10 @@ DT_KMG             = "DT_KMG"
 DT_INTERVAL        = "DT_INTERVAL"
 DT_ONOFF           = "DT_ONOFF"
 
-class Rts2Exception:
+class Rts2Exception(Exception):
 	"""Thrown on exceptions on communicated over stdin/stdout connection."""
 	def __init__(self,message):
-		self.message = message
+		Exception.__init__(self,message)
 
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
@@ -145,9 +145,12 @@ class Rts2Comm:
 		print "exposure"
 		sys.stdout.flush()
 		a = self.readline()
-		if (a != "exposure_end"):
+		if a == 'exposure_failed':
+			self.log('E', "exposure failed")
+			raise rts2comm.Rts2Exception("exposure failed")
+		if a != "exposure_end":
 			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
-		if (not (before_readout_callback is None)):
+		if not (before_readout_callback is None):
 			before_readout_callback()
 		a = self.readline()
 		image,fn = a.split()
