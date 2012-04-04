@@ -222,6 +222,7 @@ void XmlDevCameraClient::killScript ()
 	else
 		connection->queCommand (new rts2core::CommandKillAllWithoutScriptEnds (connection->getMaster ()));
 	scriptRunning->setValueBool (false);
+	getMaster ()->sendValueAll (scriptRunning);
 }
 
 void XmlDevCameraClient::setNextExpand (const char *fe)
