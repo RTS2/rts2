@@ -573,9 +573,21 @@ XmlRpcd::~XmlRpcd ()
 
 rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int other_device_type)
 {
-	if (other_device_type == DEVICE_TYPE_CCD)
-		return new XmlDevCameraClient (conn);
-	return new XmlDevClient (conn);
+	switch (other_device_type)
+	{
+		case DEVICE_TYPE_MOUNT:
+			return new rts2image::DevClientTelescopeImage (conn);
+		case DEVICE_TYPE_CCD:
+			return new XmlDevCameraClient (conn);
+		case DEVICE_TYPE_FOCUS:
+			return new rts2image::DevClientFocusImage (conn);
+		case DEVICE_TYPE_PHOT:
+		case DEVICE_TYPE_DOME:
+		case DEVICE_TYPE_SENSOR:
+			return new rts2image::DevClientWriteImage (conn);
+		default:
+			return new XmlDevClient (conn);
+	}
 }
 
 void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)
