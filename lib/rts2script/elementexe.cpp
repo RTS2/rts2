@@ -296,6 +296,14 @@ void ConnExecute::exposureEnd ()
 		logStream (MESSAGE_WARNING) << "script received end-of-exposure without starting it. This probably signal out-of-sync communication between executor and camera" << sendLog;
 }
 
+void ConnExecute::exposureFailed ()
+{
+	if (exposure_started)
+		writeToProcess ("exposure_failed");
+	else
+		logStream (MESSAGE_WARNING) << "script received failure of exposure without starting one. This probably signal out-of-sync communication" << sendLog;
+}
+
 int ConnExecute::processImage (Image *image)
 {
 	if (exposure_started)
@@ -362,6 +370,16 @@ void Execute::exposureEnd ()
 		return;
 	}
 	Element::exposureEnd ();
+}
+
+void Execute::exposureFailed ()
+{
+	if (connExecute)
+	{
+		connExecute->exposureFailed ();
+		return;
+	}
+	Element::exposureFailed ();
 }
 
 int Execute::processImage (Image *image)

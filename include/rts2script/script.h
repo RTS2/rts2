@@ -153,6 +153,7 @@ class Script:public Object, public std::list <Element *>
 		char *getDefaultDevice () { return defaultDevice; }
 		
 		void exposureEnd ();
+		void exposureFailed ();
 
 		int processImage (rts2image::Image * image);
 

@@ -793,6 +793,13 @@ void Script::exposureEnd ()
 	return (*el_iter)->exposureEnd ();
 }
 
+void Script::exposureFailed ()
+{
+	if (executedCount < 0 || el_iter == end ())
+		return;
+	return (*el_iter)->exposureFailed ();
+}
+
 int Script::processImage (Image * image)
 {
 	if (executedCount < 0 || el_iter == end ())

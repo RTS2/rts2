@@ -42,10 +42,11 @@ class ConnExecute:public ConnExe
 
 		void nullMasterElement () { masterElement = NULL; }
 
-		virtual void errorReported (int current_state, int old_state);
-		virtual void exposureEnd ();
+		void errorReported (int current_state, int old_state);
+		void exposureEnd ();
+		void exposureFailed ();
 
-		virtual int processImage (rts2image::Image *image);
+		int processImage (rts2image::Image *image);
 
 	protected:
 		virtual void processCommand (char *cmd);
@@ -82,6 +83,7 @@ class Execute:public Element
 
 		virtual void errorReported (int current_state, int old_state);
 		virtual void exposureEnd ();
+		virtual void exposureFailed ();
 
 		virtual int processImage (rts2image::Image *image);
 
