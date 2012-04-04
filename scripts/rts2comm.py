@@ -55,7 +55,7 @@ class Rts2Exception:
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
-		self.exception_re = re.compile('\S (\S+)')
+		self.exception_re = re.compile('(\S) (\S.*)')
 
 	def sendCommand(self,command,device = None):
 		"""Send command to device."""
@@ -73,8 +73,8 @@ class Rts2Comm:
 			# handle exceptions
 			m = self.exception_re.match(a)
 			if m and m.group(1) == '!':
-				self.log('W','exception from device: {0}'.format(m.group(1)))
-				ex = Rts2Exception(m.group(1))
+				self.log('W','exception from device: {0}'.format(m.group(2)))
+				ex = Rts2Exception(m.group(2))
 			elif ex:
 				raise ex
 			else:
