@@ -19,6 +19,7 @@ import sextractor
 class GuideScript (rts2comm.Rts2Comm):
 	"""Guiding script."""
 	def __init__(self):
+		rts2comm.Rts2Comm.__init__(self)
 		self.sextractor = sextractor.Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
 		# size of big window - taken at the beginning of guiding to find bright star for guiding
 		self.big_x = 324
