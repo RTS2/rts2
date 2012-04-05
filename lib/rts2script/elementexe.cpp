@@ -46,6 +46,23 @@ ConnExecute::~ConnExecute ()
 	}
 }
 
+void ConnExecute::notActive ()
+{
+	// waiting for image - this will not be returned
+	switch (exposure_started)
+	{
+		case 1:
+			writeToProcess ("& exposure interrupted");
+			exposure_started = -5;
+			break;
+		case 2:
+			writeToProcess ("& readout interruped");
+			exposure_started = -6;
+			break;
+	}
+	ConnExe::notActive ();
+}
+
 void ConnExecute::processCommand (char *cmd)
 {
 	char *imagename;

@@ -40,6 +40,8 @@ class ConnExecute:public ConnExe
 		ConnExecute (Execute *_masterElement, rts2core::Block * _master, const char *_exec);
 		virtual ~ConnExecute ();
 
+		virtual void notActive ();
+
 		void nullMasterElement () { masterElement = NULL; }
 
 		void errorReported (int current_state, int old_state);
