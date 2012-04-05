@@ -36,7 +36,7 @@ double parseDMS (const char *hptr, double *mul)
 	int m_sign;
 
 	if (!(locptr = strdup (hptr)))
-		return rts2_nan ("f");
+		return NAN;
 
 	*mul = 1;
 
@@ -61,7 +61,8 @@ double parseDMS (const char *hptr, double *mul)
 		if (isnan (n) || isinf (n))
 		{
 			errno = ERANGE;
-			return rts2_nan ("f");
+			free (locptr);
+			return NAN;
 		}
 		// check if the last character specify multiplication - "'smdh..
 		if (*endptr)
@@ -89,11 +90,13 @@ double parseDMS (const char *hptr, double *mul)
 		}
 		ret += n * *mul;
 		if (errno == ERANGE)
-			return rts2_nan ("f");
+			free (locptr);
+			return NAN;
 		// we get sucessfuly to end
 		if (!*endptr)
 		{
 			errno = 0;
+			free (locptr);
 			return ret * m_sign;
 		}
 
@@ -101,7 +104,8 @@ double parseDMS (const char *hptr, double *mul)
 		if (locptr == endptr)
 		{
 			errno = EINVAL;
-			return rts2_nan ("f");
+			free (locptr);
+			return NAN;
 		}
 
 		*mul /= 60;
@@ -109,6 +113,7 @@ double parseDMS (const char *hptr, double *mul)
 	}
 
 	errno = 0;
+	free (locptr);
 	return ret * m_sign;
 }
 
