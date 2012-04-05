@@ -1,5 +1,5 @@
 /* 
- i Class which represents image.
+ * Class which represents image.
  * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -1002,21 +1002,21 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins)
 }
 
 
-template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles, size_t offset)
+template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y)
 {
 	long hist[65535];
 	getChannelHistogram (chan, hist, 65535);
 
 	long psum = 0;
-	int low = -1;
-	int high = -1;
+	dt low = minval;
+	dt high = minval;
 
-	int i;
+	uint32_t i;
 
-	int s = getChannelNPixels (chan);
+	long s = getChannelNPixels (chan);
 
 	// find quantiles
-	for (i = 0; i < 65535; i++)
+	for (i = 0; (dt) i < mval; i++)
 	{
 		psum += hist[i];
 		if (psum > s * quantiles)
@@ -1026,14 +1026,14 @@ template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &bu
 		}
 	}
 
-	if (low == -1)
+	if (low == minval)
 	{
-		low = 65535;
-		high = 65535;
+		low = minval;
+		high = mval;
 	}
 	else
 	{
-		for (; i < 65535; i++)
+		for (; (dt) i < mval; i++)
 		{
 			psum += hist[i];
 			if (psum > s * (1 - quantiles))
@@ -1042,25 +1042,28 @@ template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &bu
 				break;
 			}
 		}
-		if (high == -1)
+		if (high == minval)
 		{
-			high = 65535;
+			high = mval;
 		}
 	}
 
 	if (buf == NULL)
 		buf = new bt[s];
 
-	long k = 0;
+	bt *k = buf;
+
+	if (invert_y)
+		k += getChannelWidth (chan) * (getChannelHeight (chan) - 1);
 
 	const void *imageData = getChannelData (chan);
 
 	int j = getChannelWidth (chan);
 
-	for (i = 0; i < s; i++)
+	for (i = 0; (long) i < s; i++)
 	{
 		bt n;
-		uint16_t pix = ((uint16_t *)imageData)[i];
+		dt pix = ((dt *)imageData)[i];
 		if (pix <= low)
 		{
 			n = black;
@@ -1074,14 +1077,17 @@ template <typename bt> void Image::getChannelGrayscaleBuffer (int chan, bt * &bu
 			// linear scaling
 			n = black - black * ((double (pix - low)) / (high - low));
 		}
-		buf[k++] = n;
-		if (offset != 0)
+		*k = n;
+		k++;
+		if (offset != 0 || invert_y)
 		{
 			j--;
 			if (j == 0)
 			{
 			  	k += offset;
 				j = getChannelWidth (chan);
+				if (invert_y)
+					k -= 2 * j;
 			}
 		}
 	}
@@ -1104,7 +1110,38 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 			if ((size_t) chan >= channels.size ())
 				throw rts2core::Error ("invalid channel specified");
 		  	// single channel
-			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, quantiles);
+			switch (dataType)
+			{
+				case RTS2_DATA_BYTE:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int8_t) 0, (int8_t) 255, quantiles, 0, true);
+					break;
+				case RTS2_DATA_SHORT:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int16_t) SHRT_MIN, (int16_t) SHRT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_LONG:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int) INT_MIN, (int) INT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_LONGLONG:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_FLOAT:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_DOUBLE:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_SBYTE:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (signed char) SHRT_MIN, (signed char) SHRT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_USHORT:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (short unsigned int) 0, (short unsigned int) USHRT_MAX, quantiles, 0, true);
+					break;
+				case RTS2_DATA_ULONG:
+					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (unsigned int) 0, (unsigned int) UINT_MAX, quantiles, 0, true);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
+			}
 			tw = getChannelWidth (chan);
 			th = getChannelHeight (chan);
 		}
@@ -1177,7 +1214,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 				unsigned char *bstart = buf + lh * tw + loff;
 
-			  	getChannelGrayscaleBuffer (n, bstart, (unsigned char) 255, quantiles, offset);
+			  	getChannelGrayscaleBuffer (n, bstart, (unsigned char) 255, (uint16_t) 0, (uint16_t) UINT_MAX, quantiles, offset, true);
 
 				if ((*iter)->getHeight () > lw)
 				  	lw = (*iter)->getHeight ();

@@ -241,8 +241,9 @@ class Image:public FitsFile
 		 * @param black      black value.
 		 * @param quantiles  quantiles in 0-1 range for image scaling.
 		 * @param offset     offset after each line
+		 * @param invert_y   invert with Y axis (rows)
 		 */
-		template <typename bt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, float quantiles=0.005, size_t offset = 0);
+		template <typename bt, typename dt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles=0.005, size_t offset = 0, bool invert_y = false);
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		/**
