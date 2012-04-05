@@ -714,6 +714,7 @@ void XmlRpcServerConnection::prepareForNext ()
 	_get_response_header = std::string ("");
 	_extra_headers.clear ();
 	_get_response_length = 0;
+	delete[] _get_response;
 	_get_response = NULL;
 	_response = "";
 	_connectionState = READ_HEADER;
