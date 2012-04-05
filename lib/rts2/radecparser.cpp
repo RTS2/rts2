@@ -90,8 +90,10 @@ double parseDMS (const char *hptr, double *mul)
 		}
 		ret += n * *mul;
 		if (errno == ERANGE)
+		{
 			free (locptr);
 			return NAN;
+		}
 		// we get sucessfuly to end
 		if (!*endptr)
 		{
