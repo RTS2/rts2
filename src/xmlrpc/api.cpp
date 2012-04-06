@@ -539,7 +539,7 @@ AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServer
 	data = _data;
 	bytesSoFar = 0;
 
-	_req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
 	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 }
@@ -551,7 +551,8 @@ void AsyncDataAPI::dataReceived (DataAbstractRead *_data)
 		std::cout << time (NULL) << " data received " << data->getDataTop () - data->getDataBuff () << " " << bytesSoFar << std::endl;
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
-			source->asyncFinished ();
+			// mark request for removal
+			source = NULL;
 	}
 }
 

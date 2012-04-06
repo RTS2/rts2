@@ -284,6 +284,18 @@ int XmlRpcd::idle ()
 		delete *iter;
 	}
 	deleteAsync.clear ();
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	{
+		if ((*iter)->isForSource (NULL))
+		{
+			delete *iter;
+			iter = asyncAPIs.erase (iter);
+		}
+		else
+		{
+			iter++;
+		}
+	}
 #ifdef HAVE_PGSQL
 	return DeviceDb::idle ();
 #else
