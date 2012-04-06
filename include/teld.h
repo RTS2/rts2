@@ -390,10 +390,11 @@ class Telescope:public rts2core::Device
 			_ori.dec = oriRaDec->getDec ();
 		}
 	
-		void setOrigin (double ra, double dec)
+		void setOrigin (double ra, double dec, bool withObj = false)
 		{
-			oriRaDec->setRa (ra);
-			oriRaDec->setDec (dec);
+			oriRaDec->setValueRaDec (ra, dec);
+			if (withObj)
+				objRaDec->setValueRaDec (ra, dec);
 		}
 
 		/**
