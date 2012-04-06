@@ -34,7 +34,6 @@
 #define EVENT_MOVE_OK                      RTS2_LOCAL_EVENT+53
 #define EVENT_MOVE_FAILED                  RTS2_LOCAL_EVENT+54
 // to get correct scriptCount..
-#define EVENT_KILL_ALL                     RTS2_LOCAL_EVENT+57
 
 #define EVENT_SLEW_TO_TARGET               RTS2_LOCAL_EVENT+58
 

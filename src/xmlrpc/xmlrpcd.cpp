@@ -169,6 +169,7 @@ bool XmlDevCameraClient::isScriptRunning ()
 	// if there are some images which need to be written
 	connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
 	exposureWritten->setValueInteger (runningScripts);
+	getMaster ()->sendValueAll (exposureWritten);
 	if (runningScripts > 0)
 		return true;
 

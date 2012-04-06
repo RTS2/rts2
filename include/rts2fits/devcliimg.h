@@ -30,6 +30,7 @@
 #include <libnova/libnova.h>
 
 #define EVENT_ALL_IMAGES_WRITTEN      RTS2_LOCAL_EVENT + 525
+#define EVENT_KILL_ALL                RTS2_LOCAL_EVENT + 526
 
 namespace rts2image
 {

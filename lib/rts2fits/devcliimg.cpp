@@ -134,11 +134,20 @@ void DevClientCameraImage::postEvent (rts2core::Event * event)
 
 			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 			{
-				if (((*iter).second)->waitForMetaData ())
+				if (iter->second->waitForMetaData ())
 					break;
 			}
 			// before we check that no image is waiting for trigger - this is last EVENT_TRIGGERED received
 			triggered = false;
+			break;
+		case EVENT_KILL_ALL:
+			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
+			{
+				delete iter->second;
+			}
+			images.clear ();
+			delete actualImage;
+			actualImage = NULL;
 			break;
 		case EVENT_NUMBER_OF_IMAGES:
 			*((int *)event->getArg ()) += images.size ();
