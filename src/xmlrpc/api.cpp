@@ -129,6 +129,24 @@ digraph "JSON API calls handling" {
  *
  * <hr/>
  *
+ * @section JSON_device_lastimage lastimage
+ *
+ * Send data (in binary) from the last image. Data are raw client-specific data, e.g. no endiannes conversion is
+ * performed.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/lastimage?ccd=C0
+ *
+ * @subsection Parameters
+ *  - <b>ccd</b>  Name of CCD device. Required.
+ *
+ * @subsection Return
+ *
+ * JSON exception if data cannot be located. Otherwise binary dump of last image data (binary/data content type).
+ *
+ * <hr/>
+ *
  * @section JSON_expand expand
  *
  * Expand string expression for FITS headers.
@@ -475,11 +493,13 @@ class AsyncAPIExpose:public AsyncAPI
 		virtual void postEvent (Event *event);
 	private:
 		enum {waitForExpReturn, waitForImage} callState;
+		DataAbstractRead *data;
 };
 
 AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
 {
 	callState = waitForExpReturn;
+	data = NULL;
 }
 
 void AsyncAPIExpose::postEvent (Event *event)
@@ -500,6 +520,39 @@ void AsyncAPIExpose::postEvent (Event *event)
 			break;
 	}
 	Object::postEvent (event);
+}
+
+class AsyncDataAPI:public AsyncAPI
+{
+	public:
+		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
+
+		virtual void dataReceived (DataAbstractRead *_data);
+
+	private:
+		DataAbstractRead *data;
+		size_t bytesSoFar;
+};
+
+AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncAPI (_req, _conn, _source, false)
+{
+	data = _data;
+	bytesSoFar = 0;
+
+	_req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+
+	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+}
+
+void AsyncDataAPI::dataReceived (DataAbstractRead *_data)
+{
+	if (_data == data)
+	{
+		std::cout << time (NULL) << " data received " << data->getDataTop () - data->getDataBuff () << " " << bytesSoFar << std::endl;
+		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		if (data->getRestSize () == 0)
+			source->asyncFinished ();
+	}
 }
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
@@ -556,7 +609,34 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("cannot find camera with given name");
 		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
-		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
+		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+		if (image == NULL || image->getChannelSize () <= 0)
+			throw JSONException ("camera did not take a single image");
+
+		response_type = "binary/data";
+		response_length = image->getPixelByteSize () * image->getChannelNPixels (0);
+		response = new char[response_length];
+		memcpy (response, image->getChannelData (0), response_length);
+		return;
+	}
+	if (vals.size () == 1 && vals[0] == "currentimage")
+	{
+		const char *camera = params->getString ("ccd","");
+		conn = master->getOpenConnection (camera);
+		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
+			throw JSONException ("cannot find camera with given name");
+		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+		// first try if there is data connection opened, so image data should be streamed in
+		if (DataAbstractRead * lastData = conn->lastDataChannel ())
+		{
+			AsyncDataAPI *aa = new AsyncDataAPI (this, conn, connection, lastData);
+			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+			throw XmlRpc::XmlRpcAsynchronous ();
+		}
+
+		// if that fails, try to return last image
+		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
 		if (image == NULL || image->getChannelSize () <= 0)
 			throw JSONException ("camera did not take a single image");
 
@@ -866,7 +946,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
 			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
-			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getActualImage ();
+			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
 		}
 		else if (vals[0] == "expand")

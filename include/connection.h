@@ -394,7 +394,6 @@ class Connection:public Object
 		bool queEmptyForOriginator (Object *testOriginator);
 		bool commandOriginatorPending (Object *originator) { return !queEmptyForOriginator (originator); }
 
-
 		/**
 		 * Clear connection from all pending commands.
 		 * Will remove all pending commands from que. Will also
@@ -601,6 +600,9 @@ class Connection:public Object
 		double getProgressStart () { return statusStart; }
 
 		double getProgressEnd () { return statusExpectedEnd; }
+
+		// returns last active datachannel
+		DataAbstractRead *lastDataChannel ();
 
 	protected:
 		char *buf;

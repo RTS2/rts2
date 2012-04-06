@@ -344,7 +344,7 @@ std::string XmlRpcClient::generateHeader(std::string const& body)
 }
 
 // Prepare GET request header
-std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string const& body)
+std::string XmlRpcClient::generateGetHeader(std::string const& path, size_t contentLength)
 {
 	std::string header = "GET ";
 
@@ -382,11 +382,16 @@ std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string
 	}
 	header += "Content-Type: text/xml\r\nContent-Length: ";
 
-	sprintf(buff,"%i\r\n\r\n", (int) body.size());
+	sprintf(buff,"%zu\r\n\r\n", contentLength);
 
 	header += buff;
 
 	return header;
+}
+
+inline std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string const& body)
+{
+	return generateGetHeader(path, body.size());
 }
 
 bool XmlRpcClient::writeRequest()

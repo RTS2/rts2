@@ -156,6 +156,12 @@ void XmlRpcd::doOpValue (const char *v_name, char oper, const char *operand)
 	delete nv;
 }
 
+void XmlRpcd::clientDataReceived (DataAbstractRead *data)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+		(*iter)->dataReceived (data);
+}
+
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
 {
 	callScriptEnds->setValueBool (nv);
@@ -241,6 +247,12 @@ void XmlDevCameraClient::setScriptExpand (const char *fe)
 {
 	screxpand = std::string (fe);
 	nexpand = std::string ("");
+}
+
+void XmlDevCameraClient::dataReceived (DataAbstractRead *data)
+{
+	getMaster ()->clientDataReceived (data);
+	rts2script::DevClientCameraExec::dataReceived (data);
 }
 
 void XmlDevCameraClient::postEvent (Event *event)

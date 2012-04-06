@@ -174,7 +174,6 @@ namespace XmlRpc
 
 	void XmlRpcServerGetRequest::sendAsyncJSON (std::ostringstream &_os, XmlRpcServerConnection *source)
 	{
-		std::cout << "length: " << _os.str ().length () << std::endl;
 		std::string head = printHeaders (HTTP_OK, "OK", "application/json", _os.str ().length ());
 		head += "\r\n\r\n";
 		size_t i = 0;
@@ -182,5 +181,13 @@ namespace XmlRpc
 		i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), _os.str (), &i);
 		source->asyncFinished ();
+	}
+
+	void XmlRpcServerGetRequest::sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source)
+	{
+		std::string head = printHeaders (HTTP_OK, "OK", "binary/data", contentLength);
+		head += "\r\n\r\n";
+		size_t i = 0;
+		XmlRpcSocket::nbWrite (source->getfd (), head, &i);
 	}
 }								 // namespace XmlRpc

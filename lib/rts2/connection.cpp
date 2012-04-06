@@ -2016,6 +2016,13 @@ double Connection::getProgress (double now)
 	return 100 * ((now - statusStart) / (statusExpectedEnd - statusStart));
 }
 
+DataAbstractRead* Connection::lastDataChannel ()
+{
+	if (readChannels.size () == 0)
+		return NULL;
+	return (--readChannels.end ())->second->back ();
+}
+
 double Connection::getInfoTime ()
 {
 	if (info_time)

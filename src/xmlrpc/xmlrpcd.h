@@ -212,6 +212,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
+		virtual void dataReceived (DataAbstractRead *data);
+
 	protected:
 		virtual void postEvent (Event *event);
 
@@ -387,6 +389,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		 * Register asynchronous API call.
 		 */
 		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
+
+
+		void clientDataReceived (DataAbstractRead *data);
 
 	protected:
 		virtual int idle ();

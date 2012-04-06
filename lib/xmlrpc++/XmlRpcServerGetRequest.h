@@ -104,6 +104,9 @@ namespace XmlRpc
 			//! Send JSON to XmlRpcSource connection. Re-enables read mask (as async call finished)
 			void sendAsyncJSON (std::ostringstream &_os, XmlRpcServerConnection *source);
 
+			//! Send header for data with a given size. After all data are send, the calling code must call source->asyncFinished to re-enable connection for commands.
+			void sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source);
+
 		protected:
 			XmlRpcServer* _server;
 
