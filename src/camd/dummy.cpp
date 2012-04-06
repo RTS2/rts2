@@ -49,7 +49,7 @@ class Dummy:public Camera
 			readoutSleep->setValueDouble (0);
 
 			createValue (callReadoutSize, "readout_size", "[pixels] number of pixels send on a single read", false, RTS2_VALUE_WRITABLE);
-			callReadoutSize->setValueLong (4096);
+			callReadoutSize->setValueLong (100000);
 
 			createValue (expMin, "exp_min", "[s] minimal exposure time", false, RTS2_VALUE_WRITABLE);
 			createValue (expMax, "exp_max", "[s] maximal exposure time", false, RTS2_VALUE_WRITABLE);
@@ -303,7 +303,6 @@ int Dummy::doReadout ()
 {
 	int ret;
 	long usedSize = dataBufferSize;
-	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
 	int nch = 0;
@@ -316,10 +315,13 @@ int Dummy::doReadout ()
 			generateImage (usedSize / 2);
 			for (long written = 0; written < usedSize;)
 			{
-				ret = sendReadoutData (dataBuffer + written, usedSize - written > callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong (), nch);
+				usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
+				size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
+				ret = sendReadoutData (dataBuffer + written, s, nch);
+
 				if (ret < 0)
 					return ret;
-				written += ret;
+				written += s;
 			}
 			nch++;
 		}
@@ -327,7 +329,16 @@ int Dummy::doReadout ()
 	else
 	{
 		generateImage (usedSize / 2);
-		ret = sendReadoutData (dataBuffer, usedSize, 0);
+		for (long written = 0; written < usedSize;)
+		{
+			usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
+			size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
+			ret = sendReadoutData (dataBuffer + written, s, 0);
+
+			if (ret < 0)
+				return ret;
+			written += s;
+		}
 	}
 
 	if (getWriteBinaryDataSize () == 0)
