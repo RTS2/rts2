@@ -485,21 +485,59 @@ void AsyncMSet::postEvent (Event *event)
 	Object::postEvent (event);
 }
 
+class AsyncDataAPI:public AsyncAPI
+{
+	public:
+		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
+
+		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
+
+	private:
+		DataAbstractRead *data;
+		size_t bytesSoFar;
+};
+
+AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncAPI (_req, _conn, _source, false)
+{
+	data = _data;
+	bytesSoFar = 0;
+
+	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+
+	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+}
+
+void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
+{
+	if (_data == data)
+	{
+		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		if (data->getRestSize () == 0)
+			// mark request for removal
+			source = NULL;
+	}
+}
+
 class AsyncAPIExpose:public AsyncAPI
 {
 	public:
 		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
 
 		virtual void postEvent (Event *event);
+
+		virtual void dataReceived (Connection *_conn, DataAbstractRead *_data);
 	private:
 		enum {waitForExpReturn, waitForImage} callState;
+
 		DataAbstractRead *data;
+		size_t bytesSoFar;
 };
 
 AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
 {
 	callState = waitForExpReturn;
 	data = NULL;
+	bytesSoFar = 0;
 }
 
 void AsyncAPIExpose::postEvent (Event *event)
@@ -522,39 +560,29 @@ void AsyncAPIExpose::postEvent (Event *event)
 	Object::postEvent (event);
 }
 
-class AsyncDataAPI:public AsyncAPI
-{
-	public:
-		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
-
-		virtual void dataReceived (DataAbstractRead *_data);
-
-	private:
-		DataAbstractRead *data;
-		size_t bytesSoFar;
-};
-
-AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncAPI (_req, _conn, _source, false)
-{
-	data = _data;
-	bytesSoFar = 0;
-
-	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
-
-	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
-}
-
-void AsyncDataAPI::dataReceived (DataAbstractRead *_data)
+void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 {
 	if (_data == data)
 	{
-		std::cout << time (NULL) << " data received " << data->getDataTop () - data->getDataBuff () << " " << bytesSoFar << std::endl;
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
 			// mark request for removal
 			source = NULL;
 	}
+	else if (isForConnection (_conn) && callState == waitForImage)
+	{
+		data = _conn->lastDataChannel ();
+		if (data == NULL)
+		{
+			source = NULL;
+			return;
+		}
+		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+
+		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+	}
 }
+
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
@@ -620,7 +648,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		memcpy (response, image->getChannelData (0), response_length);
 		return;
 	}
-	if (vals.size () == 1 && vals[0] == "currentimage")
+	else if (vals.size () == 1 && vals[0] == "currentimage")
 	{
 		const char *camera = params->getString ("ccd","");
 		conn = master->getOpenConnection (camera);
@@ -648,7 +676,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		return;
 	}
 	// calls returning arrays
-	if (vals.size () == 1 && vals[0] == "devices")
+	else if (vals.size () == 1 && vals[0] == "devices")
 	{
 		os << "[";
 		for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
@@ -920,7 +948,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 		}
 		// start exposure, return from server image
-		else if (vals[0] == "expose")
+		else if (vals[0] == "expose" || vals[0] == "exposedata")
 		{
 			const char *camera = params->getString ("ccd","");
 			bool ext = params->getInteger ("e", 0);
@@ -934,7 +962,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			// this will throw exception if expand string was not yet used
 			camdev->setExpandPath (params->getString ("fe", camdev->getDefaultFilename ()));
 
-			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
+			AsyncAPI *aa;
+			if (vals[0] == "expose")
+				aa = new AsyncAPI (this, conn, connection, ext);
+			else
+				aa = new AsyncAPIExpose (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			conn->queCommand (new rts2core::CommandExposure (master, camdev, 0), 0, aa);

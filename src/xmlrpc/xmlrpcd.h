@@ -391,7 +391,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
 
 
-		void clientDataReceived (DataAbstractRead *data);
+		void clientDataReceived (Connection *conn, DataAbstractRead *data);
 
 	protected:
 		virtual int idle ();

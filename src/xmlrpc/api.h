@@ -66,7 +66,7 @@ class AsyncAPI:public rts2core::Object
 		
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void dataReceived (rts2core::DataAbstractRead *data) {};
+		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {};
 
 		/**
 		 * Check if the request is for connection or source..
