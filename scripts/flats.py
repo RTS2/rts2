@@ -96,6 +96,7 @@ class FlatScript (rts2comm.Rts2Comm):
 	:param expTimes: exposure times for flats attempts"""
 
 	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,maxBias=0,maxDarks=0,expTimes=range(1,20)):
+		rts2comm.Rts2Comm.__init__(self)
 		# Configuration (filters, binning, ..) for evening, we will use
 		# reverse for morning. You fill array with Flat objects, which
 		# describes configuration. If you do not have filters, use None

@@ -58,6 +58,7 @@ class Focusing (rts2comm.Rts2Comm):
 	"""Take and process focussing data."""
 
 	def __init__(self):
+		rts2comm.Rts2Comm.__init__(self)
 		self.exptime = 20 # 60 # 10
 		self.step = 50 # 0.2
 		self.attempts = 20 #30 # 20

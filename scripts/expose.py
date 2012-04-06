@@ -22,6 +22,7 @@ import rts2comm
 class FlatScript (rts2comm.Rts2Comm):
 	"""Class for taking and processing skyflats."""
 	def __init__(self):
+		rts2comm.Rts2Comm.__init__(self)
 		self.OptimalLevel = 3500
 		self.BiasLevel = 400
 

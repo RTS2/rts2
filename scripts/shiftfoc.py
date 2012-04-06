@@ -38,6 +38,7 @@ class ShiftFoc (rts2comm.Rts2Comm):
 	"""Take and process focussing data."""
 
 	def __init__(self):
+		rts2comm.Rts2Comm.__init__(self)
 		self.exptime = 10 # 60 # 10
 		self.step = 0.03 # 0.2
 		self.shifts = [50]*9  # shift in pixels
