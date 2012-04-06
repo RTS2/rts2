@@ -24,7 +24,7 @@ for x in sys.argv[1:]:
 	for p in xy:
 		d.set('regions delete all')
 		d.set('regions','image; point {0} {1} # point=cross'.format(p[0],p[1]))
-		r=d.get('regions list')
+		r=d.get('regions')
 		radec = xy2wcs(p[0],p[1],fh)
 		for l in r.split('\n'):
 			match = pmatch.match(l)

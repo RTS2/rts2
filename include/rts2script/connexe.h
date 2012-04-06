@@ -36,7 +36,7 @@ class ConnExe:public rts2core::ConnFork
 		ConnExe (rts2core::Block * _master, const char *_exec, bool fillConnEnv, int timeout = 0);
 		virtual ~ConnExe ();
 
-		void notActive () { active = false; }
+		virtual void notActive () { active = false; }
 
 		virtual void processLine ();
 

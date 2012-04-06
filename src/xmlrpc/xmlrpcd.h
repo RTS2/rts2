@@ -249,6 +249,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		rts2core::ValueTime *scriptStart;
 		rts2core::ValueTime *scriptEnd;
 
+		rts2core::ValueInteger *exposureWritten;
+
 		/**
 		 * True/false if script is running.
 		 */

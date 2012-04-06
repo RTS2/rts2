@@ -242,6 +242,9 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		lastImage = NULL;
 	delete ci;
 	images.erase (cis);
+	// send event that there aren't any images waiting to be written
+	if (images.size () == 0 && actualImage == NULL)
+		getMaster ()->postEvent (new rts2core::Event (EVENT_ALL_IMAGES_WRITTEN));
 }
 
 void DevClientCameraImage::beforeProcess (Image * image)

@@ -214,6 +214,27 @@ digraph "JSON API calls handling" {
  * Return values in same format as @ref JSON_device_get call, augumented with return status. Return status is
  * 0 if no error occured durring set call, and is obviously available only for non-asynchronous calls.
  *
+ * <hr/>
+ *
+ * @section JSON_device_cmd cmd
+ *
+ * Sends command to device.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/cmd?d=EXEC&c=queue 1234
+ *
+ * @subsection Parameters
+ *
+ *  - <b>d</b> name of device where command will be send.
+ *  - <b>c</b> Device command.
+ *  - <i><b>async</b>  </i>
+ *  - <i><b>e</b>   </i>
+ *
+ * @subsection Return
+ *
+ * <hr/>
+ *
  * @section JSON_device_script runscript
  *
  * Run script on device. Optionally kill previously running script, or don't call script end, which 
@@ -261,8 +282,8 @@ digraph "JSON API calls handling" {
  *
  * @subsection Parameters
  *
- * - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data from rts2-centrald.
- * - <b>n</b> Variable name.
+ *  - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data from rts2-centrald.
+ *  - <b>n</b> Variable name.
  *
  * @subsection Return
  *

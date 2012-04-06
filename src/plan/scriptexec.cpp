@@ -30,7 +30,7 @@
 using namespace rts2plan;
 using namespace rts2image;
 
-#define OPT_NO_WRITE    OPT_LOCAL + 710
+#define OPT_NO_WRITE              OPT_LOCAL + 710
 
 // ScriptExec class
 
@@ -279,8 +279,6 @@ void ScriptExec::postEvent (rts2core::Event * event)
 {
 	switch (event->getType ())
 	{
-		case EVENT_SCRIPT_ENDED:
-			break;
 		case EVENT_MOVE_OK:
 			if (waitState)
 			{
@@ -301,6 +299,11 @@ void ScriptExec::postEvent (rts2core::Event * event)
 		case EVENT_GET_ACQUIRE_STATE:
 			*((int *) event->getArg ()) = 1;
 			//      (currentTarget) ? currentTarget->getAcquired () : -2;
+			break;
+		case EVENT_SCRIPT_ENDED:
+		case EVENT_ALL_IMAGES_WRITTEN:
+			if (!isScriptRunning ())
+				endRunLoop ();
 			break;
 	}
 	rts2core::Client::postEvent (event);

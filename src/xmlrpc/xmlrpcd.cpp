@@ -85,6 +85,8 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 	createOrReplaceValue (scriptStart, conn, RTS2_VALUE_TIME, "_script_start", "script start time", false);
 	createOrReplaceValue (scriptEnd, conn, RTS2_VALUE_TIME, "_script_end", "script end time", false);
+
+	createOrReplaceValue (exposureWritten, conn, RTS2_VALUE_INTEGER, "_images_to_write", "number of images to write", false);
 }
 
 XmlDevCameraClient::~XmlDevCameraClient ()
@@ -164,15 +166,16 @@ bool XmlDevCameraClient::isScriptRunning ()
 {
 	int runningScripts = 0;
 
+	// if there are some images which need to be written
+	connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
+	exposureWritten->setValueInteger (runningScripts);
+	if (runningScripts > 0)
+		return true;
 
 	connection->postEvent (new Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
 	
-	// if there are some images which need to be written
-	connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
-	if (runningScripts > 0)
-		return true;
 	return false;
 }
 
@@ -246,6 +249,7 @@ void XmlDevCameraClient::postEvent (Event *event)
 		case EVENT_SCRIPT_STARTED:
 		case EVENT_SCRIPT_ENDED:
 		case EVENT_LAST_READOUT:
+		case EVENT_ALL_IMAGES_WRITTEN:
 			scriptRunning->setValueBool (isScriptRunning ());
 			getMaster ()->sendValueAll (scriptRunning);
 			break;
