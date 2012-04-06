@@ -228,7 +228,7 @@ void XmlDevCameraClient::killScript ()
 	getMaster ()->sendValueAll (scriptRunning);
 }
 
-void XmlDevCameraClient::setNextExpand (const char *fe)
+void XmlDevCameraClient::setExpandPath (const char *fe)
 {
 	if (nexpand.length () != 0)
 		throw rts2core::Error ("Cannot set file expansion, when the previous was not yet used.");

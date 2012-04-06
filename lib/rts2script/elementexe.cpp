@@ -28,6 +28,7 @@ ConnExecute::ConnExecute (Execute *_masterElement, rts2core::Block *_master, con
 {
 	masterElement = _masterElement;
 	exposure_started = 0;
+	keep_next_image = false;
 }
 
 ConnExecute::~ConnExecute ()
@@ -41,7 +42,8 @@ ConnExecute::~ConnExecute ()
 
 	for (std::list <Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
-		(*iter)->deleteImage ();
+		if (!((*iter)->hasUserFlag ()))
+			(*iter)->deleteImage ();
 		delete *iter;
 	}
 }
@@ -74,13 +76,26 @@ void ConnExecute::processCommand (char *cmd)
 	char *operand;
 	char *comm;
 	
-	if (!strcmp (cmd, "exposure"))
+	if (!strcasecmp (cmd, "exposure"))
 	{
 		if (!checkActive (true))
 			return;
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
+		exposure_started = 1;
+	}
+	else if (!strcasecmp (cmd, "exposure_wfn"))
+	{
+		if (!checkActive (true))
+			return;
+		if (paramNextString (&imagename))
+			return;
+		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
+			return;
+		((rts2script::DevClientCameraExec *) masterElement->getClient ())->setExpandPath (imagename);
+		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
+		keep_next_image = true;
 		exposure_started = 1;
 	}
 	else if (!strcasecmp (cmd, "progress"))
@@ -368,6 +383,11 @@ int ConnExecute::processImage (Image *image)
 	{
 		images.push_back (image);
 		image->saveImage ();
+		if (keep_next_image)
+		{
+			image->setUserFlag ();
+			keep_next_image = false;
+		}
 		writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
 		exposure_started = 0;
 	}

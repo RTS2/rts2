@@ -34,6 +34,9 @@
 #define IMAGE_DONT_DELETE_DATA  0x08
 #define IMAGE_CANNOT_LOAD       0x10
 
+// user defined flag
+#define IMAGE_FLAG_USER1        0x20
+
 namespace rts2image
 {
 

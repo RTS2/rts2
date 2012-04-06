@@ -200,11 +200,11 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 *
 		 * @param fe              next filename expand string
 		 */
-		void setNextExpand (const char *fe);
+		virtual void setExpandPath (const char *fe);
 
 		/**
 		 * Set expansion for duration of script. This is not reset by next exposure, but
-		 * is reset by setNextExpand call.
+		 * is reset by setExpandPath call.
 		 *
 		 * @param fe               next filename expand string
 		 */

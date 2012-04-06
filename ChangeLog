@@ -1,3 +1,6 @@
+2012-04-06
+ * expand_wfn with expand path
+
 2012-04-03
  * errorReported in Element, error propagation through script
 

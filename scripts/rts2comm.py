@@ -148,8 +148,12 @@ class Rts2Comm:
 		sys.stdout.flush()
 		return int(self.readline())
 
-	def exposure(self, before_readout_callback = None):
-		print "exposure"
+	def exposure(self, before_readout_callback = None, fileexpand = None):
+		"""Start new exposure. Allow user to specify fallback function to call after end of exposure and expand pattern for new file."""
+		if fileexpand:
+			print "exposure_wfn", fileexpand
+		else:
+			print "exposure"
 		sys.stdout.flush()
 		a = self.readline()
 		if a == 'exposure_failed':

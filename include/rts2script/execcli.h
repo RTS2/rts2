@@ -90,6 +90,16 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		 */
 		virtual void scriptProgress (double start, double end) {};
 
+		/**
+		 * Set new temoprary expand path.
+		 */
+		virtual void setExpandPath (const char *ep) { expandPathString = std::string (ep); }
+
+		/**
+		 * Null temporary expand path.
+		 */
+		void nullExpandPath () { setExpandPath (""); }
+
 	protected:
 		ScriptPtr exposureScript;
 		virtual void unblockWait () { rts2image::DevClientCameraImage::unblockWait (); }
@@ -121,7 +131,8 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		virtual bool canEndScript ();
 	private:
-		rts2core::ValueString *expandPath;
+		rts2core::ValueString *expandPathValue;
+		std::string expandPathString;
 		bool waitForExposure;
 		bool waitMetaData;
 };

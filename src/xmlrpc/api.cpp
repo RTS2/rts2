@@ -851,7 +851,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			XmlDevCameraClient *camdev = (XmlDevCameraClient *) conn->getOtherDevClient ();
 
 			// this will throw exception if expand string was not yet used
-			camdev->setNextExpand (params->getString ("fe", camdev->getDefaultFilename ()));
+			camdev->setExpandPath (params->getString ("fe", camdev->getDefaultFilename ()));
 
 			AsyncAPI *aa = new AsyncAPI (this, conn, connection, ext);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);

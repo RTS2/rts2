@@ -386,6 +386,9 @@ class Image:public FitsFile
 
 		void keepImage () { flags |= IMAGE_KEEP_DATA; }
 
+		void setUserFlag () { flags |= IMAGE_FLAG_USER1; }
+		bool hasUserFlag () { return flags & IMAGE_FLAG_USER1; }
+
 		void closeData () { channels.clear (); }
 
 		// remove pointer to camera dataa

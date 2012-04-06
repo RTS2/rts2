@@ -561,6 +561,14 @@
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>exposure_wfn {pattern}</option></term>
+        <listitem><para>
+          Allow user to provide filename for the next exposure(s). Works similarly to
+          exposure command, with the exception that the file is not accesible after exposure
+          is finished. Pattern, the only argument, is the RTS2 expand pattern for new filename.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>progress {start} {expected end}</option></term>
 	<para>
 	  Report script progress. Script start and end times (in ctime, e.g.

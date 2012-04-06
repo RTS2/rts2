@@ -64,6 +64,8 @@ class ConnExecute:public ConnExe
 		std::list <rts2image::Image *>::iterator findImage (const char *path);
 
 		int exposure_started;
+		// if set, don't autodelete next acquired image
+		bool keep_next_image;
 };
 
 /**
