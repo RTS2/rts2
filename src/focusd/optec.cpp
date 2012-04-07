@@ -28,6 +28,8 @@ namespace rts2focusd
 /**
  * Class for Optec focuser.
  *
+ * http://www.optecinc.com/astronomy/catalog/tcf/images/17670_manual.pdf
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Stanislav Vitek
  */
@@ -36,12 +38,15 @@ class Optec:public Focusd
 	public:
 		Optec (int argc, char **argv);
 		~Optec (void);
+
+		virtual int commandAuthorized (rts2core::Connection * conn);
+
+	protected:
 		virtual int info ();
 		virtual int setTo (double num);
 		virtual double tcOffset () {return 0.;};
 		virtual int isFocusing ();
 
-	protected:
 		virtual bool isAtStartPosition ();
 		virtual int processOption (int in_opt);
 		virtual int initHardware ();
@@ -125,6 +130,21 @@ int Optec::initHardware ()
 		return -1;
 
 	return ret;
+}
+
+int Optec::commandAuthorized (rts2core::Connection * conn)
+{
+	if (conn->isCommand ("home"))
+	{
+		char rbuf[10];
+		if (optecConn->writeRead ("FHOME", 5, rbuf, 10, '\r') < 0)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
+			return -1;
+		}
+		return 0;
+	}
+	return Focusd::commandAuthorized (conn);
 }
 
 int Optec::getPos ()
