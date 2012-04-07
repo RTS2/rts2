@@ -145,7 +145,6 @@ Connection::~Connection (void)
 		close (sock);
 	delete serverState;
 	delete bopState;
-	delete otherDevice;
 	queClear ();
 	delete[]buf;
 	if (activeSharedMem != NULL)
@@ -1100,10 +1099,14 @@ void Connection::deleteConnection (Connection *conn)
 	// look if connection isn't entered among originators or controll connections..
 	if (runningCommand)
 		runningCommand->deleteConnection (conn);
-	for (std::list < Command * >::iterator iter = commandQue.begin ();
-		iter != commandQue.end (); iter++)
+	for (std::list < Command * >::iterator iter = commandQue.begin (); iter != commandQue.end (); iter++)
 	{
 		(*iter)->deleteConnection (conn);
+	}
+	if (conn == this)
+	{
+		delete otherDevice;
+		otherDevice = NULL;
 	}
 }
 
