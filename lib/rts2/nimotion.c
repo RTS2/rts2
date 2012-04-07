@@ -330,12 +330,12 @@ void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t pol
 	checkStatus ();
 }
 
-void flex_set_inhibit_output_momo (uint8_t resource, uint16_t mustOn, uint16_t mustOff)
+void flex_set_inhibit_output_momo (uint16_t mustOn, uint16_t mustOff)
 {
 	uint16_t data[2];
 	data[0] = mustOn;
 	data[1] = mustOff;
-	writePacket (resource, 443, 2, data);
+	writePacket (NIMC_NOAXIS, 443, 2, data);
 	checkStatus ();
 }
 

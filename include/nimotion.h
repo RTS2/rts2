@@ -203,9 +203,23 @@ void flex_load_acceleration (uint8_t axis, uint16_t accelerationType, uint32_t a
 
 void flex_load_target_pos (uint8_t axis, uint32_t position);
 
+/**
+ * Configure inhibit output.
+ *
+ * @param resource       Resource to control (usually axis)
+ * @param enable         Enable/disables selected board inhibit output
+ * @param polarity       Inhibit polarity. Low/high inhibits
+ * @param driverMode     Open Collector or Totem Pole mode
+ */
 void flex_config_inhibit_output (uint8_t resource, uint16_t enable, uint16_t polarity, uint16_t driveMode);
 
-void flex_set_inhibit_output_momo(uint8_t resource, uint16_t mustOn, uint16_t mustOff);
+/**
+ * Turns inhibit signals on/off.
+ *
+ * @param mustOn         Axis which must turn on
+ * @param mustOff        Axis which must turn off
+ */ 
+void flex_set_inhibit_output_momo(uint16_t mustOn, uint16_t mustOff);
 
 void flex_read_velocity_rtn (uint8_t axis, int32_t *velocity);
 
