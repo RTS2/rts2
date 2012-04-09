@@ -149,6 +149,7 @@ Connection::~Connection (void)
 	delete[]buf;
 	if (activeSharedMem != NULL)
 		shmdt (activeSharedMem);
+	delete otherDevice;
 }
 
 int Connection::add (fd_set * readset, fd_set * writeset, fd_set * expset)
@@ -1103,11 +1104,8 @@ void Connection::deleteConnection (Connection *conn)
 	{
 		(*iter)->deleteConnection (conn);
 	}
-	if (conn == this)
-	{
-		delete otherDevice;
-		otherDevice = NULL;
-	}
+	if (otherDevice)
+		otherDevice->deleteConnection (conn);
 }
 
 // high-level commands, used to pass variables etc..

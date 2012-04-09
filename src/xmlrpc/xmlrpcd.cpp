@@ -93,10 +93,16 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 XmlDevCameraClient::~XmlDevCameraClient ()
 {
-	scriptRunning->setValueBool (false);
-	getMaster ()->sendValueAll (scriptRunning);
-
 	delete previmage;
+}
+
+void XmlDevCameraClient::deleteConnection (Connection *_conn)
+{
+	if (_conn == getConnection ())
+	{
+		scriptRunning->setValueBool (false);
+		getMaster ()->sendValueAll (scriptRunning);
+	}
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)

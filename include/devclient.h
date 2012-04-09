@@ -73,7 +73,7 @@ class DevClient:public Object
 
 		int getOtherType () { return connection->getOtherType (); }
 
-		rts2core::Block *getMaster () { return connection->getMaster (); }
+		Block *getMaster () { return connection->getMaster (); }
 
 		void queCommand (Command * cmd) { connection->queCommand (cmd); }
 
@@ -102,7 +102,9 @@ class DevClient:public Object
 
 		virtual void idle ();
 
-		virtual void valueChanged (rts2core::Value * value) {}
+		virtual void valueChanged (Value * value) {}
+
+		virtual void deleteConnection (Connection *conn) {};
 
 	protected:
 		Connection * connection;
@@ -243,7 +245,7 @@ class DevClientPhot:public DevClient
 
 		bool isIntegrating ();
 
-		virtual void valueChanged (rts2core::Value * value);
+		virtual void valueChanged (Value * value);
 };
 
 class DevClientFilter:public DevClient

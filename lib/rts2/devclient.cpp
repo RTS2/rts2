@@ -449,18 +449,18 @@ bool DevClientPhot::isIntegrating ()
 	return integrating;
 }
 
-void DevClientPhot::valueChanged (rts2core::Value * value)
+void DevClientPhot::valueChanged (Value * value)
 {
 	if (value->isValue ("count"))
 	{
-		rts2core::Value *v_count = getConnection ()->getValue ("count");
-		rts2core::Value *v_exp = getConnection ()->getValue ("exposure");
-		rts2core::Value *v_is_ov = getConnection ()->getValue ("is_ov");
+		Value *v_count = getConnection ()->getValue ("count");
+		Value *v_exp = getConnection ()->getValue ("exposure");
+		Value *v_is_ov = getConnection ()->getValue ("is_ov");
 		if (v_count && v_exp && v_is_ov
 			&& v_is_ov->getValueType () == RTS2_VALUE_BOOL)
 		{
 			addCount (v_count->getValueInteger (), v_exp->getValueFloat (),
-				((rts2core::ValueBool *) v_is_ov)->getValueBool ());
+				((ValueBool *) v_is_ov)->getValueBool ());
 		}
 	}
 	DevClient::valueChanged (value);

@@ -148,6 +148,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		virtual ~XmlDevCameraClient ();
 
+		virtual void deleteConnection (Connection *_conn);
+
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
