@@ -91,6 +91,8 @@ class Dummy:public Camera
 			height = 100;
 			dataSize = -1;
 
+			written = -1;
+
 			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
 			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
 			addOption ('r', NULL, 1, "device will sleep <parame> seconds before each readout");
@@ -193,7 +195,11 @@ class Dummy:public Camera
 			}
 			return Camera::info ();
 		}
-		virtual int startExposure () { return 0; }
+		virtual int startExposure ()
+		{
+			written = -1;
+			return 0;
+		}
 		virtual long suggestBufferSize ()
 		{
 			if (dataSize < 0)
@@ -266,6 +272,9 @@ class Dummy:public Camera
 		bool showTemp;
 
 		void generateImage (long usedSize);
+
+		// data written during readout
+		long written;
 };
 
 };
@@ -313,7 +322,7 @@ int Dummy::doReadout ()
 			if (channels && (*channels)[ch] == false)
 				continue;
 			generateImage (usedSize / 2);
-			for (long written = 0; written < usedSize;)
+			for (written = 0; written < usedSize;)
 			{
 				usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 				size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
@@ -328,11 +337,15 @@ int Dummy::doReadout ()
 	}
 	else
 	{
-		generateImage (usedSize / 2);
-		for (long written = 0; written < usedSize;)
+		if (written == -1)
 		{
-			usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-			size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
+			generateImage (usedSize / 2);
+			written = 0;
+		}
+		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
+		if (written < chipByteSize ())
+		{
+			size_t s = chipByteSize () - written < callReadoutSize->getValueLong () ? chipByteSize () - written : callReadoutSize->getValueLong ();
 			ret = sendReadoutData (dataBuffer + written, s, 0);
 
 			if (ret < 0)
