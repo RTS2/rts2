@@ -139,7 +139,7 @@ if ( $continue == 1 ) then
 				set yoffs=`$xmlrpc --quiet -G IMGP.yoffs`
 
 				$xmlrpc --quiet -c TELE.info
-				set currg=`$xmlrpc --quiet -G TELE.autog`
+				set currg=`$xmlrpc --quiet -G TELE.guider_working`
 
 				if ( $currg != '1' ) then
 					if ( $imgnum &gt; $lastoffimage ) then
