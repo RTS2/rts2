@@ -804,7 +804,7 @@ int Device::killAll (bool callScriptEnd)
 	else
 		ret = 0;
 	// reset all errors
-	maskState (DEVICE_ERROR_HW | DEVICE_NOT_READY, 0, "reseting all errors");
+	maskState (DEVICE_ERROR_KILL | DEVICE_ERROR_HW | DEVICE_NOT_READY, DEVICE_ERROR_KILL, "reseting all errors");
 	return ret;
 }
 

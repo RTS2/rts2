@@ -213,6 +213,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
 		virtual void dataReceived (DataAbstractRead *data);
+		virtual void exposureFailed (int status);
 
 	protected:
 		virtual void postEvent (Event *event);
@@ -392,6 +393,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 
 		void clientDataReceived (Connection *conn, DataAbstractRead *data);
+		void clientExposureFailed (Connection *conn, int status);
 
 	protected:
 		virtual int idle ();

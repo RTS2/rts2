@@ -501,6 +501,7 @@ class AsyncDataAPI:public AsyncAPI
 		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
 
 		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
+		virtual void exposureFailed (rts2core::Connection *_conn, int status);
 
 	private:
 		DataAbstractRead *data;
@@ -528,6 +529,18 @@ void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *
 	}
 }
 
+void AsyncDataAPI::exposureFailed (rts2core::Connection *_conn, int status)
+{
+	if (isForConnection (_conn))
+	{
+		if (source)
+		{
+			source->close ();
+		}
+		asyncFinished ();
+	}
+}
+
 class AsyncAPIExpose:public AsyncAPI
 {
 	public:
@@ -536,8 +549,9 @@ class AsyncAPIExpose:public AsyncAPI
 		virtual void postEvent (Event *event);
 
 		virtual void dataReceived (Connection *_conn, DataAbstractRead *_data);
+		virtual void exposureFailed (rts2core::Connection *_conn, int status);
 	private:
-		enum {waitForExpReturn, waitForImage} callState;
+		enum {waitForExpReturn, waitForImage, receivingImage} callState;
 
 		DataAbstractRead *data;
 		size_t bytesSoFar;
@@ -582,6 +596,7 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 	}
 	else if (isForConnection (_conn) && callState == waitForImage)
 	{
+		callState = receivingImage;
 		data = _conn->lastDataChannel ();
 		if (data == NULL)
 		{
@@ -594,6 +609,28 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 	}
 }
 
+void AsyncAPIExpose::exposureFailed (rts2core::Connection *_conn, int status)
+{
+	if (isForConnection (_conn))
+	{
+		switch (callState)
+		{
+			case waitForExpReturn:
+			case waitForImage:
+				{
+					std::ostringstream os;
+					os << "{\"failed\"}";
+					req->sendAsyncJSON (os, source);
+				}
+				break;
+			case receivingImage:
+				if (source)
+					source->close ();
+				break;
+		}
+		asyncFinished ();
+	}
+}
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {

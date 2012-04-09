@@ -162,6 +162,12 @@ void XmlRpcd::clientDataReceived (rts2core::Connection *conn, rts2core::DataAbst
 		(*iter)->dataReceived (conn, data);
 }
 
+void XmlRpcd::clientExposureFailed (Connection *conn, int status)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+		(*iter)->exposureFailed (conn, status);
+}
+
 void XmlDevCameraClient::setCallScriptEnds (bool nv)
 {
 	callScriptEnds->setValueBool (nv);
@@ -253,6 +259,12 @@ void XmlDevCameraClient::dataReceived (DataAbstractRead *data)
 {
 	getMaster ()->clientDataReceived (getConnection (), data);
 	rts2script::DevClientCameraExec::dataReceived (data);
+}
+
+void XmlDevCameraClient::exposureFailed (int status)
+{
+	rts2script::DevClientCameraExec::exposureFailed (status);
+	getMaster ()->clientExposureFailed (getConnection (), status);
 }
 
 void XmlDevCameraClient::postEvent (Event *event)
