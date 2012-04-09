@@ -59,11 +59,6 @@ class DevClientCameraImage:public rts2core::DevClientCamera
  
 		void setSaveImage (int in_saveImage) { saveImage = in_saveImage; }
 
-		/**
-		 * Return image on top of the image queue.
-		 */
-		Image *getLastImage () { return lastImage; }
-
 		void setWriteConnnection (bool write_conn, bool write_rts2)
 		{
 			writeConnection = write_conn;
@@ -127,9 +122,6 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		// current image
 		CameraImage *actualImage;
-
-		// last image
-		Image *lastImage;
 
 		// number of exposure
 		int expNum;

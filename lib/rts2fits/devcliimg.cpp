@@ -64,7 +64,6 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 	}
 
 	actualImage = NULL;
-	lastImage = NULL;
 
 	expNum = 0;
 
@@ -247,8 +246,6 @@ void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
 
-	if (lastImage == ci->image)
-		lastImage = NULL;
 	delete ci;
 	images.erase (cis);
 	// send event that there aren't any images waiting to be written
@@ -308,8 +305,6 @@ void DevClientCameraImage::exposureStarted ()
 		
 		actualImage->image->writePrimaryHeader (getName ());
 		actualImage->image->writeConn (getConnection (), EXPOSURE_START);
-	
-		lastImage = image;
 	}
 	catch (rts2core::Error &ex)
 	{

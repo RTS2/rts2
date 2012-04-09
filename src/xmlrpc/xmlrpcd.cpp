@@ -95,6 +95,8 @@ XmlDevCameraClient::~XmlDevCameraClient ()
 {
 	scriptRunning->setValueBool (false);
 	getMaster ()->sendValueAll (scriptRunning);
+
+	delete previmage;
 }
 
 rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStart)
