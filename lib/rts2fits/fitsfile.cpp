@@ -214,7 +214,7 @@ std::string FitsFile::getFitsErrors ()
 
 	fits_get_errstatus (fits_status, buf);
 	fits_read_errmsg (errmsg);
-	os << " file " << getFileName () << " " << buf << " message: " << errmsg;
+	os << "file " << getFileName () << " " << buf << " message: " << errmsg;
 	return os.str ();
 }
 

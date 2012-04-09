@@ -80,6 +80,13 @@ class AsyncAPI:public rts2core::Object
 		 */
 		void nullSource () { source = NULL; }
 
+		void asyncFinished ()
+		{
+			if (source)
+				source->asyncFinished ();
+			nullSource ();
+		}
+
 	protected:
 		API *req;
 		XmlRpcServerConnection *source;

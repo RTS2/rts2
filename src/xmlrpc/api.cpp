@@ -450,12 +450,14 @@ void AsyncAPI::postEvent (Event *event)
 			req->sendConnectionValues (os, conn, NULL, -1, ext);
 			os << ",\"ret\":0}";
 			req->sendAsyncJSON (os, source);
+			asyncFinished ();
 			break;
 		case EVENT_COMMAND_FAILED:
 			os << "{";
 			req->sendConnectionValues (os, conn, NULL, -1, ext);
 			os << ",\"ret\":-1}";
 			req->sendAsyncJSON (os, source);
+			asyncFinished ();
 			break;
 	}
 	Object::postEvent (event);
@@ -482,10 +484,12 @@ void AsyncMSet::postEvent (Event *event)
 		case EVENT_COMMAND_OK:
 			os << "\"ret\":0";
 			req->sendAsyncJSON (os, source);
+			asyncFinished ();
 			break;
 		case EVENT_COMMAND_FAILED:
 			os << "\"ret\":-1";
 			req->sendAsyncJSON (os, source);
+			asyncFinished ();
 			break;
 	}
 	Object::postEvent (event);
@@ -519,11 +523,8 @@ void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *
 	{
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
-		{
-			source->asyncFinished ();
 			// mark request for removal
-			source = NULL;
-		}
+			asyncFinished ();
 	}
 }
 
@@ -563,6 +564,7 @@ void AsyncAPIExpose::postEvent (Event *event)
 				std::ostringstream os;
 				os << "{\"failed\"}";
 				req->sendAsyncJSON (os, source);
+				asyncFinished ();
 			}
 			break;
 	}
@@ -575,19 +577,15 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 	{
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
-		{
 			// mark request for removal
-			source->asyncFinished ();
-			source = NULL;
-		}
+			asyncFinished ();
 	}
 	else if (isForConnection (_conn) && callState == waitForImage)
 	{
 		data = _conn->lastDataChannel ();
 		if (data == NULL)
 		{
-			source->asyncFinished ();
-			source = NULL;
+			asyncFinished ();
 			return;
 		}
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
