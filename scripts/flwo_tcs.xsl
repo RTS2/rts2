@@ -68,6 +68,17 @@ if ( $? == 0 &amp;&amp; $in == 1 ) then
 endif
 </xsl:variable>
 
+<!-- grab guider image -->
+<xsl:variable name="grabguide">
+	rts2-logcom "Grabing autoguider image"
+	tele grab
+	set lllastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
+	set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
+	mkdir -p $dir
+	set lastgrab=$dir/`date +%H%M%S`.fits
+	cp $lllastgrab $lastgrab
+</xsl:variable>
+
 <!-- called after guider is set to ON. Wait for some time for guider to settle down,
   and either find guide star, or give up-->
 <xsl:variable name='guidetest'>
@@ -93,7 +104,9 @@ endif
 		@ nextautog = $nowdate + 300
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
 		rts2-logcom "Autoguider command failed, will try again on $textdate"
-	endif	
+	endif
+	<xsl:copy-of select="$grabguide"/>
+	rts2-logcom "Current guider image saved to $lastgrab"
 </xsl:variable>
 
 <xsl:template match="disable">
@@ -202,24 +215,19 @@ if ( $continue == 1 ) then
 
 	if ( $autog == 'ON' ) then
 		$xmlrpc --quiet -c TELE.info
-		set guidestatus=`$xmlrpc --quiet -G TELE.autog`
+		set guidestatus=`$xmlrpc --quiet -G TELE.guider_working`
 		if ( $guidestatus == 1 ) then
 			set guidestatus = "ON"
 		else
 			set guidestatus = "OFF"
 		endif
 		if ( $guidestatus != $autog ) then
-			rts2-logcom "System should guide, but autoguider is in $guidestatus."
+			set lastmiss=`$xmlrpc --quiet -G TELE.guide_miss`
+			rts2-logcom "System should guide, but guider_status is $guidestatus (missed $lastmiss)."
 			set nowdate=`date +%s`
 			if ( $nextautog &lt; $nowdate ) then
-				rts2-logcom "Grabing autoguider image"
-				tele grab
-				set lastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-				set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
-				mkdir -p $dir
-				set autof=$dir/`date +%H%M%S`.fits
-				cp $lastgrab $autof
-				rts2-logcom "Autoguider image saved in $autof; trying to guide again"
+				<xsl:copy-of select="$grabguide"/>
+				rts2-logcom "Autoguider image saved in $lastgrab; trying to guide again"
 				<xsl:copy-of select='$guidetest'/>
 				if ( $gdiff != 0 ) then
 					tele gfoc $gdiff
