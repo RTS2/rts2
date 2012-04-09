@@ -69,11 +69,20 @@ class Channel
 		 * @return channel number
 		 */
 		int getChannelNumber () { return channelnum; }
-		
+
 		// those values will become available after call to computeStatistics
 		long double getPixelSum () { return pixelSum; }
 		double getAverage () { return average; }
 		double getStDev () { return stdev; }
+
+		const int16_t getDataType () { return dataType; }
+
+		/**
+		 * Return number of axes in channel.
+		 */
+		const int getNaxis () { return naxis; }
+
+		const long getSize (int nax) { return sizes[nax]; }
 
 		const long getWidth () { return naxis > 0 ? sizes[0] : 0; }
 		const long getHeight () { return naxis > 1 ? sizes[1] : 0; }

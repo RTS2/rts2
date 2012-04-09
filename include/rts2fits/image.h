@@ -217,6 +217,11 @@ class Image:public FitsFile
 		int writeData (char *in_data, char *fullTop, int nchan);
 
 		/**
+		 * Fill image header structure.
+		 */
+		void getImgHeader (struct imghdr *im_h, int chan);
+
+		/**
 		 * Build image histogram.
 		 *
 		 * @param histogram array for calculated histogram

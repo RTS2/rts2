@@ -956,6 +956,48 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	return ret;
 }
 
+void Image::getImgHeader (struct imghdr *im_h, int chan)
+{
+	int i;
+
+	moveHDU (1);
+
+	Channel *cha = channels[chan];
+
+	im_h->data_type = htons (cha->getDataType ());
+
+	int naxes = cha->getNaxis ();
+	im_h->naxes = htons (naxes);
+
+	for (i = 0; i < naxes; i++)
+	{
+		im_h->sizes[i] = htonl(cha->getSize (i));
+	}
+
+	int ti;
+
+	ti = 1;
+	getValue ("LTM1_1", ti, false);
+	im_h->binnings[0] = htons (1 / ti);
+
+	ti = 1;
+	getValue ("LTM2_1", ti, false);
+	im_h->binnings[1] = htons (1 / ti);
+
+	im_h->filter = ntohs (filter_i);
+	im_h->shutter = 0;
+
+	ti = 0;
+	getValue ("LTV1", ti, false);
+	im_h->x = htons (ti);
+
+	ti = 0;
+	getValue ("LTV2", ti, false);
+	im_h->y = htons (ti);
+
+	im_h->channel = htons (chan);
+}
+
 void Image::getHistogram (long *histogram, long nbins)
 {
 	memset (histogram, 0, nbins * sizeof(int));
