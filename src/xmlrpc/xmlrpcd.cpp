@@ -73,6 +73,8 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 
 XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
+	previmage = NULL;
+
 	Configuration::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Configuration::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
 
@@ -286,7 +288,9 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 {
 	if (exposureScript.get ())
 		exposureScript->processImage (image);
-	return rts2image::IMAGE_DO_BASIC_PROCESSING;
+	delete previmage;
+	previmage = image;
+	return rts2image::IMAGE_KEEP_COPY;
 }
 
 int XmlRpcd::idle ()

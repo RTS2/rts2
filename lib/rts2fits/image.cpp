@@ -960,7 +960,7 @@ void Image::getImgHeader (struct imghdr *im_h, int chan)
 {
 	int i;
 
-	moveHDU (1);
+	moveHDU (0);
 
 	Channel *cha = channels[chan];
 

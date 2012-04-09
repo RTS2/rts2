@@ -215,6 +215,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		virtual void dataReceived (DataAbstractRead *data);
 		virtual void exposureFailed (int status);
 
+		rts2image::Image *getPreviousImage () { return previmage; }
+
 	protected:
 		virtual void postEvent (Event *event);
 
@@ -258,6 +260,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 * True/false if script is running.
 		 */
 		rts2core::ValueBool *scriptRunning;
+
+		rts2image::Image *previmage;
 
 		std::string currentscript;
 

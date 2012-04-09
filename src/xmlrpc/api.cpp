@@ -686,7 +686,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("cannot find camera with given name");
 		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
-		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 		if (image == NULL || image->getChannelSize () <= 0)
 			throw JSONException ("camera did not take a single image");
 
@@ -717,7 +717,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 
 		// if that fails, try to return last image
-		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 		if (image == NULL || image->getChannelSize () <= 0)
 			throw JSONException ("camera did not take a single image");
 
@@ -1035,7 +1035,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 				throw JSONException ("cannot find camera with given name");
 			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
-			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getLastImage ();
+			rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 			os << "\"hasimage\":" << ((image == NULL) ? "false" : "true");
 		}
 		else if (vals[0] == "expand")
