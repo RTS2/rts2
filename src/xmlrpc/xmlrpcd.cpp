@@ -274,7 +274,7 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 {
 	if (exposureScript.get ())
 		exposureScript->processImage (image);
-	return rts2image::IMAGE_KEEP_COPY;
+	return rts2image::IMAGE_DO_BASIC_PROCESSING;
 }
 
 int XmlRpcd::idle ()
