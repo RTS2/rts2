@@ -87,7 +87,7 @@ int App::initOptions ()
 
 	struct option *long_option, *an_option;
 
-	long_option = (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
+	long_option = new struct option[options.size () + 1]; //(struct option *) malloc (sizeof (struct option) * (options.size () + 1));
 
 	char *opt_char = new char[options.size () * 3 + 1];
 
@@ -123,6 +123,7 @@ int App::initOptions ()
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Error processing option " << c << " " << (char) c << sendLog;
+			delete[] long_option;
 			return ret;
 		}
 	}
@@ -134,8 +135,8 @@ int App::initOptions ()
 		ret = processArgs (app_argv[optind]);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Error processing arg " << app_argv[optind]
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "Error processing arg " << app_argv[optind] << sendLog;
+			delete[] long_option;
 			return ret;
 		}
 		optind++;
@@ -146,6 +147,8 @@ int App::initOptions ()
 		std::cout << localTime;
 		std::cerr << localTime;
 	}
+
+	delete[] long_option;
 
 	return 0;
 }

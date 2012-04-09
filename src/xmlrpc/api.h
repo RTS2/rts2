@@ -75,6 +75,11 @@ class AsyncAPI:public rts2core::Object
 		bool isForSource (XmlRpcServerConnection *_source) { return source == _source; }
 		bool isForConnection (rts2core::Connection *_conn) { return conn == _conn; }
 
+		/**
+		 * Null XMLRPC source. This also marks source for deletion.
+		 */
+		void nullSource () { source = NULL; }
+
 	protected:
 		API *req;
 		XmlRpcServerConnection *source;

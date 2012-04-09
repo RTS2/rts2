@@ -418,7 +418,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		std::vector <Directory *> directories;
 		std::list <AsyncAPI *> asyncAPIs;
-		std::list <AsyncAPI *> deleteAsync;
 
 		Events events;
 

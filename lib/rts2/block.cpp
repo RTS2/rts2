@@ -77,7 +77,11 @@ Block::~Block (void)
 		iter = centraldConns.erase (iter);
 		delete conn;
 	}
+	for (std::list <NetworkAddress *>::iterator ia = blockAddress.begin (); ia != blockAddress.end (); ia++)
+		delete *ia;
 	blockAddress.clear ();
+	for (std::list <ConnUser *>::iterator iu = blockUsers.begin (); iu != blockUsers.end (); iu++)
+		delete *iu;
 	blockUsers.clear ();
 }
 
@@ -661,8 +665,7 @@ NetworkAddress * Block::findAddress (int centraldNum, const char *blockName)
 	return NULL;
 }
 
-void Block::addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port,
-int p_device_type)
+void Block::addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type)
 {
 	int ret;
 	NetworkAddress *an_addr;

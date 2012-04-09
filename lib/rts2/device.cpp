@@ -277,12 +277,10 @@ void DevConnectionMaster::connConnected ()
 		ret = gethostname (device_host, HOST_NAME_MAX);
 		if (ret < 0)
 		{
-			logStream (MESSAGE_ERROR)
-				<< "Cannot get hostname : "
-				<< strerror (errno)
-				<< " (" << errno << "), exiting."
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "Cannot get hostname : " << strerror (errno) << " (" << errno << "), exiting." << sendLog;
 			connectionError (-1);
+			delete device_host;
+			device_host = NULL;
 			return;
 		}
 	}
@@ -520,6 +518,8 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 Device::~Device (void)
 {
+	delete deviceStatusCommand;
+	delete device_host;
 }
 
 DevConnection * Device::createConnection (int in_sock)

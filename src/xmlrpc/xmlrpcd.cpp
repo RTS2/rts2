@@ -279,11 +279,6 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 
 int XmlRpcd::idle ()
 {
-	for (std::list <AsyncAPI *>::iterator iter = deleteAsync.begin (); iter != deleteAsync.end (); iter++)
-	{
-		delete *iter;
-	}
-	deleteAsync.clear ();
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->isForSource (NULL))
@@ -462,32 +457,20 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 
 void XmlRpcd::asyncFinished (XmlRpcServerConnection *source)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 	{
 		if ((*iter)->isForSource (source))
-		{
-			deleteAsync.push_back (*iter);
-			iter = asyncAPIs.erase (iter);
-		}
-		else
-		{
-			iter++;
-		}
+			(*iter)->nullSource ();
 	}
 	XmlRpcServer::asyncFinished (source);
 }
 
 void XmlRpcd::removeConnection (XmlRpcServerConnection *source)
 {
-	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 	{
 		if ((*iter)->isForSource (source))
-		{
-			deleteAsync.push_back (*iter);
-			iter = asyncAPIs.erase (iter);
-		}
-		else
-			iter++;
+			(*iter)->nullSource ();
 	}
 	XmlRpcServer::removeConnection (source);
 }
