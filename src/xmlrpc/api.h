@@ -63,6 +63,7 @@ class AsyncAPI:public rts2core::Object
 {
 	public:
 		AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext);
+		virtual ~AsyncAPI ();
 		
 		virtual void postEvent (rts2core::Event *event);
 

@@ -180,7 +180,6 @@ namespace XmlRpc
 		XmlRpcSocket::nbWrite (source->getfd (), head, &i);
 		i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), _os.str (), &i);
-		source->asyncFinished ();
 	}
 
 	void XmlRpcServerGetRequest::sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source)

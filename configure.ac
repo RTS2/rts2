@@ -788,7 +788,6 @@ AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
 
 AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
-AX_PREFIX_CONFIG_H(include/rts2core-config.h,RTS2CORE)
 
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)

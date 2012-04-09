@@ -434,6 +434,12 @@ AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnecti
 	ext = _ext;
 }
 
+AsyncAPI::~AsyncAPI ()
+{
+	if (source)
+		source->asyncFinished ();
+}
+
 void AsyncAPI::postEvent (Event *event)
 {
 	std::ostringstream os;
@@ -513,8 +519,11 @@ void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *
 	{
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
+		{
+			source->asyncFinished ();
 			// mark request for removal
 			source = NULL;
+		}
 	}
 }
 
@@ -566,14 +575,18 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 	{
 		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 		if (data->getRestSize () == 0)
+		{
 			// mark request for removal
+			source->asyncFinished ();
 			source = NULL;
+		}
 	}
 	else if (isForConnection (_conn) && callState == waitForImage)
 	{
 		data = _conn->lastDataChannel ();
 		if (data == NULL)
 		{
+			source->asyncFinished ();
 			source = NULL;
 			return;
 		}
@@ -643,9 +656,13 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("camera did not take a single image");
 
 		response_type = "binary/data";
-		response_length = image->getPixelByteSize () * image->getChannelNPixels (0);
+		response_length = sizeof (imghdr) + image->getPixelByteSize () * image->getChannelNPixels (0);
 		response = new char[response_length];
-		memcpy (response, image->getChannelData (0), response_length);
+
+		imghdr im_h;
+		image->getImgHeader (&im_h, 0);
+		memcpy (response, &im_h, sizeof (imghdr));
+		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length);
 		return;
 	}
 	else if (vals.size () == 1 && vals[0] == "currentimage")
@@ -670,9 +687,13 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("camera did not take a single image");
 
 		response_type = "binary/data";
-		response_length = image->getPixelByteSize () * image->getChannelNPixels (0);
+		response_length = sizeof (imghdr) + image->getPixelByteSize () * image->getChannelNPixels (0);
 		response = new char[response_length];
-		memcpy (response, image->getChannelData (0), response_length);
+
+		imghdr im_h;
+		image->getImgHeader (&im_h, 0);
+		memcpy (response, &im_h, sizeof (imghdr));
+		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length);
 		return;
 	}
 	// calls returning arrays
