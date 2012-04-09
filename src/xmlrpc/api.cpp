@@ -697,7 +697,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		imghdr im_h;
 		image->getImgHeader (&im_h, 0);
 		memcpy (response, &im_h, sizeof (imghdr));
-		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length);
+		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length - sizeof (imghdr));
 		return;
 	}
 	else if (vals.size () == 1 && vals[0] == "currentimage")
@@ -728,7 +728,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		imghdr im_h;
 		image->getImgHeader (&im_h, 0);
 		memcpy (response, &im_h, sizeof (imghdr));
-		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length);
+		memcpy (response + sizeof (imghdr), image->getChannelData (0), response_length - sizeof (imghdr));
 		return;
 	}
 	// calls returning arrays
