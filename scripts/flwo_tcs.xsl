@@ -46,6 +46,10 @@ if ( ! (${?autog}) ) set autog='UNKNOWN'
 if ( -e $rts2abort ) then
 	rts2-logcom 'Aborting observations. Please wait'
 	source $RTS2/bin/.rts2-runabort
+	if ( $autog == "ON" ) then
+		rts2-logcom 'Switching off guiding'
+		tele autog OFF
+	endif
 	rm -f $lasttarget
 	exit
 endif
@@ -103,8 +107,8 @@ $RTS2/bin/rts2-target -n +<xsl:value-of select='.'/> $tar_id
 <xsl:template match="exposure">
 if ( $continue == 1 ) then
   	<xsl:copy-of select='$printd'/> "starting pre-exposure checks"
-        set cname=`$xmlrpc --quiet -G IMGP.object`
 	set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
+        set cname=`$xmlrpc --quiet -G IMGP.object`
 	set ora_l=`$xmlrpc --quiet -G IMGP.ora`
 	set odec_l=`$xmlrpc --quiet -G IMGP.odec`
 	set ora=`printf "%.0f" $ora_l`
@@ -398,6 +402,7 @@ if ( $last_acq_obs_id != $obs_id ) then
 					if ( $err > $pre ) then
 						rts2-logcom "Acquiring: offseting by $ora $odec ( $ora_l $odec_l ), error is $err arcsecs"
 						tele offset $ora $odec
+						@ err = 0
 					else
 						rts2-logcom "Error is less than $pre arcsecs ( $ora_l $odec_l ), stop acquistion"
 						@ err = 0
