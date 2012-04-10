@@ -782,6 +782,11 @@ void Executor::doSwitch ()
 		// create again our target..since conditions changed, we will get different target id
 		getActiveQueue ()->addFront (createTarget (currentTarget->getTargetID (), observer, notifyConn));
 	}
+	if (autoLoop->getValueBool () == false && currentTarget && currentTarget->observationStarted ())
+	{
+		// don't execute already started observation, if auto loop is off
+		currentTarget = NULL;
+	}
 	if (getActiveQueue ()->size () != 0)
 	{
 		// go to post-process
@@ -837,7 +842,9 @@ int Executor::switchTarget ()
 		|| (autoLoop->getValueBool () == false && getActiveQueue ()->size () == 0))
 	{
 		maskState (EXEC_MASK_END, EXEC_NOT_END);
-		postEvent (new rts2core::Event (EVENT_KILL_ALL));
+		if (autoLoop->getValueBool () == true)
+			postEvent (new rts2core::Event (EVENT_KILL_ALL));
+
 		if (currentTarget)
 		{
 			currentTarget->endObservation (-1);
