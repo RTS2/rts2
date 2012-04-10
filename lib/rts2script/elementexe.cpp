@@ -334,7 +334,8 @@ void ConnExecute::connectionError (int last_data_size)
 	{
 		if (masterElement->getClient () != NULL)
 			masterElement->getClient ()->postEvent (new rts2core::Event (EVENT_COMMAND_OK));
-		masterElement->deleteExecConn ();
+		if (masterElement)
+			masterElement->deleteExecConn ();
 	}
 	masterElement = NULL;
 }
@@ -515,6 +516,7 @@ int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command **
 
 	if (connExecute->getConnState () == CONN_DELETE)
 	{
+		connExecute->nullMasterElement ();
 		// connExecute will be deleted by rts2core::Block holding connection
 		connExecute = NULL;
 		client = NULL;
