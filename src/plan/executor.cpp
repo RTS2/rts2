@@ -389,7 +389,7 @@ void Executor::postEvent (rts2core::Event * event)
 					)
 				{
 					// wait, if we are in stop..don't queue it again..
-					if ((getState () & EXEC_MASK_END) != EXEC_END)
+					if ((getState () & EXEC_MASK_END) != EXEC_END && autoLoop->getValueBool () == true)
 						event->setArg ((void *) currentTarget);
 					// that will eventually hit devclient which post that message, which
 					// will set currentTarget to this value and handle it same way as EVENT_OBSERVE,
