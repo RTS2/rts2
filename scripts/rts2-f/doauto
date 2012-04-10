@@ -41,6 +41,7 @@
 # Version 18
 # updated 02/24/12 EF: fixed startnight/firstnight for restart
 # updated 02/24/12 EF: fixed tracking after restart
+# updated 04/10/12 PK: better skyflat control
 # Copyright (C) 2010-2012 Emilio Falco (FLWO) & Petr Kubanek (Institute of Physics, Czech Republic)
 
 set rts2dir="/home/observer/RTS2-F"
@@ -478,24 +479,21 @@ while (1 != 0)
 		 rts2-logcom "STOProbot called"
 		 exit
 	      endif
-#	try SKYFILT1, 2...
-	      set skyfilt = `cat $rts2dir"/FLATS/SKYFILT1"`
-	      source $rts2dir/rts2.skyflats $skyfilt
-	      set skyflatstat = $status
-	      if ( -e $rts2abort ) then
-		 rts2-logcom "STOProbot called"
-		 exit
-	      endif
-#
-	      set skyfilt = `cat $rts2dir"/FLATS/SKYFILT2"`
-	      if ($skyflatstat) then
-		 source $rts2dir/rts2.skyflats $skyfilt
-		 set skyflatstat = $status
-	      endif
-	      if ( -e $rts2abort ) then
-		 rts2-logcom "STOProbot called"
-		 exit
-	      endif
+#	try SKYFILT_E file
+	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFLAT_E`" )
+	         set sky_filter=`echo $skyline | cut -d' ' -f1`
+		 set sky_time-`echo $skyline | cut -d' ' -f2`
+	      	 source $rts2dir/rts2.skyflats $sky_filter
+	         set skyflatstat = $status
+# 
+		 if ($skyflatstat == 0) then
+                    break
+		 endif
+   	         if ( -e $rts2abort ) then
+		    rts2-logcom "STOProbot called"
+		    exit
+	         endif
+	      end
 	      rts2-logcom "SKYFLAT: done, stow tel..."
 # 		...stow tele at end
 	      tele stow
