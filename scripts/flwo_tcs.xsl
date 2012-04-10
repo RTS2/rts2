@@ -73,10 +73,10 @@ endif
 	rts2-logcom "Grabing autoguider image"
 	tele grab
 	set lllastgrab = `ls -rt /Realtime/guider/frames/0*.fits | tail -1`
-	set dir=/Realtime/guider/frames/ROBOT_`date +%Y%m%d`
+	set dir=/Realtime/guider/frames/ROBOT_`rts2-state -e %N`
 	mkdir -p $dir
-	set lastgrab=$dir/`date +%H%M%S`.fits
-	cp $lllastgrab $lastgrab
+	set lastgrab=`rts2-image -p "${dir}/${name}_%03u.fits" $lllastgrab`
+	mv $lllastgrab $lastgrab
 </xsl:variable>
 
 <!-- called after guider is set to ON. Wait for some time for guider to settle down,
