@@ -1,7 +1,7 @@
 /* 
  * State - display day states for rts2.
  * Copyright (C) 2003 Petr Kubanek <petr@kubanek.net>
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "expander.h"
 #include "riseset.h"
 #include "libnova_cpp.h"
 #include "app.h"
@@ -83,6 +84,8 @@ class StateApp:public rts2core::App
 		enum {NONE, SUN_ALT, SUN_AZ, SUN_ABOVE, SUN_BELOW } calculateSun;
 		bool stateOnly;
 		double sunLimit;
+
+		const char *expandString;
 };
 
 }
@@ -205,6 +208,9 @@ int StateApp::processOption (int in_opt)
 			calculateSun = SUN_ABOVE;
 			sunLimit = atof (optarg);
 			break;
+		case 'e':
+			expandString = optarg;
+			break;
 		case 'c':
 			stateOnly = true;
 			break;
@@ -243,11 +249,14 @@ StateApp::StateApp (int argc, char **argv):rts2core::App (argc, argv)
 	stateOnly = false;
 	sunLimit = 0;
 
+	expandString = NULL;
+
 	time (&currTime);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption (OPT_LAT, "latitude", 1, "set latitude (overwrites config file)");
 	addOption (OPT_LONG, "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
+	addOption ('e', NULL, 1, "expand string given as argument");
 	addOption ('c', NULL, 0,  "print current state (one number) and exits");
 	addOption ('d', NULL, 1, "print for given date (in YYYY-MM-DD[Thh:mm:ss.sss] format)");
 	addOption ('t', NULL, 1, "print for given time (in unix time)");
@@ -312,6 +321,13 @@ int StateApp::run ()
 
 	if (verbose > 0)
 		std::cout << "Position: " << LibnovaPos (obs) << " Time: " << Timestamp (currTime) << std::endl;
+
+	if (expandString)
+	{
+		rts2core::Expander ex;
+		std::cout << ex.expand (std::string (expandString), false) << std::endl;
+		return 0;
+	}
 
 	if (calculateSun != NONE)
 	{
