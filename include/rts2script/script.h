@@ -159,6 +159,11 @@ class Script:public Object, public std::list <Element *>
 
 		int processImage (rts2image::Image * image);
 
+		/**
+		 * Return true if the script or some of its elements know about the image and will delete it.
+		 */
+		bool knowImage (rts2image::Image *image);
+
 		rts2core::Block *getMaster ()	{ return master; }
 
 		int getExecutedCount () { return executedCount; }

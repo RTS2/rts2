@@ -49,6 +49,7 @@ class ConnExecute:public ConnExe
 		void exposureFailed ();
 
 		int processImage (rts2image::Image *image);
+		bool knowImage (rts2image::Image *image);
 
 	protected:
 		virtual void processCommand (char *cmd);
@@ -66,6 +67,12 @@ class ConnExecute:public ConnExe
 		int exposure_started;
 		// if set, don't autodelete next acquired image
 		bool keep_next_image;
+
+		void deleteImage (rts2image::Image *image)
+		{
+			if (!image->hasKeepImage ())
+				delete image;
+		}
 };
 
 /**
@@ -92,6 +99,7 @@ class Execute:public Element
 		virtual void notActive ();
 
 		virtual int processImage (rts2image::Image *image);
+		virtual bool knowImage (rts2image::Image *image);
 
 		void deleteExecConn () { connExecute = NULL; }
 

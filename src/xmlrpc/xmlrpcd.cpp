@@ -295,8 +295,17 @@ void XmlDevCameraClient::postEvent (Event *event)
 rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * image)
 {
 	if (exposureScript.get ())
+	{
 		exposureScript->processImage (image);
-	delete previmage;
+		if (!exposureScript->knowImage (previmage))
+			delete previmage;
+		else
+			previmage->unkeepImage ();
+	}
+	else
+	{
+		delete previmage;
+	}
 	previmage = image;
 	return rts2image::IMAGE_KEEP_COPY;
 }

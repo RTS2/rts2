@@ -44,7 +44,7 @@ ConnExecute::~ConnExecute ()
 	{
 		if (!((*iter)->hasUserFlag ()))
 			(*iter)->deleteImage ();
-		delete *iter;
+		deleteImage (*iter);
 	}
 }
 
@@ -151,7 +151,7 @@ void ConnExecute::processCommand (char *cmd)
 			(*iter)->toDark ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
 			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -165,7 +165,7 @@ void ConnExecute::processCommand (char *cmd)
 			(*iter)->toFlat ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
 			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -178,7 +178,7 @@ void ConnExecute::processCommand (char *cmd)
 		{
 			(*iter)->toArchive ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -191,7 +191,7 @@ void ConnExecute::processCommand (char *cmd)
 		{
 			(*iter)->toTrash ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -206,7 +206,7 @@ void ConnExecute::processCommand (char *cmd)
 			{
 				(*iter)->renameImageExpand (expandPath);
 				writeToProcess ((*iter)->getAbsoluteFileName ());
-				delete *iter;
+				deleteImage (*iter);
 				images.erase (iter);
 			}
 		}
@@ -225,7 +225,7 @@ void ConnExecute::processCommand (char *cmd)
 			(*iter)->renameImageExpand (expandPath);
 			writeToProcess ((*iter)->getAbsoluteFileName ());
 			(*iter)->deleteFromDB ();
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -248,7 +248,7 @@ void ConnExecute::processCommand (char *cmd)
 		if (iter != images.end ())
 		{
 			(*iter)->deleteImage ();
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -260,7 +260,7 @@ void ConnExecute::processCommand (char *cmd)
 		if (iter != images.end ())
 		{
 			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
-			delete *iter;
+			deleteImage (*iter);
 			images.erase (iter);
 		}
 	}
@@ -399,6 +399,11 @@ int ConnExecute::processImage (Image *image)
 	return 1;
 }
 
+bool ConnExecute::knowImage (Image * image)
+{
+	return (std::find (images.begin (), images.end (), image) != images.end ());
+}
+
 std::list <Image *>::iterator ConnExecute::findImage (const char *path)
 {
 	std::list <Image *>::iterator iter;
@@ -473,6 +478,14 @@ int Execute::processImage (Image *image)
 		return connExecute->processImage (image);
 
 	return Element::processImage (image);
+}
+
+bool Execute::knowImage (Image *image)
+{
+	if (connExecute)
+		return connExecute->knowImage (image);
+
+	return Element::knowImage (image);
 }
 
 int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE])

@@ -443,22 +443,25 @@ AsyncAPI::~AsyncAPI ()
 void AsyncAPI::postEvent (Event *event)
 {
 	std::ostringstream os;
-	switch (event->getType ())
+	if (source)
 	{
-		case EVENT_COMMAND_OK:
-			os << "{";
-			req->sendConnectionValues (os, conn, NULL, -1, ext);
-			os << ",\"ret\":0}";
-			req->sendAsyncJSON (os, source);
-			asyncFinished ();
-			break;
-		case EVENT_COMMAND_FAILED:
-			os << "{";
-			req->sendConnectionValues (os, conn, NULL, -1, ext);
-			os << ",\"ret\":-1}";
-			req->sendAsyncJSON (os, source);
-			asyncFinished ();
-			break;
+		switch (event->getType ())
+		{
+			case EVENT_COMMAND_OK:
+				os << "{";
+				req->sendConnectionValues (os, conn, NULL, -1, ext);
+				os << ",\"ret\":0}";
+				req->sendAsyncJSON (os, source);
+				asyncFinished ();
+				break;
+			case EVENT_COMMAND_FAILED:
+				os << "{";
+				req->sendConnectionValues (os, conn, NULL, -1, ext);
+				os << ",\"ret\":-1}";
+				req->sendAsyncJSON (os, source);
+				asyncFinished ();
+				break;
+		}
 	}
 	Object::postEvent (event);
 }
@@ -479,18 +482,21 @@ class AsyncMSet:public AsyncAPI
 void AsyncMSet::postEvent (Event *event)
 {
 	std::ostringstream os;
-	switch (event->getType ())
+	if (source)
 	{
-		case EVENT_COMMAND_OK:
-			os << "\"ret\":0";
-			req->sendAsyncJSON (os, source);
-			asyncFinished ();
-			break;
-		case EVENT_COMMAND_FAILED:
-			os << "\"ret\":-1";
-			req->sendAsyncJSON (os, source);
-			asyncFinished ();
-			break;
+		switch (event->getType ())
+		{
+			case EVENT_COMMAND_OK:
+				os << "\"ret\":0";
+				req->sendAsyncJSON (os, source);
+				asyncFinished ();
+				break;
+			case EVENT_COMMAND_FAILED:
+				os << "\"ret\":-1";
+				req->sendAsyncJSON (os, source);
+				asyncFinished ();
+				break;
+		}
 	}
 	Object::postEvent (event);
 }
@@ -566,21 +572,24 @@ AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcSe
 
 void AsyncAPIExpose::postEvent (Event *event)
 {
-	switch (event->getType ())
+	if (source)
 	{
-		case EVENT_COMMAND_OK:
-			if (callState == waitForExpReturn)
-				callState = waitForImage;
-			break;
-		case EVENT_COMMAND_FAILED:
-			if (callState == waitForExpReturn)
-			{
-				std::ostringstream os;
-				os << "{\"failed\"}";
-				req->sendAsyncJSON (os, source);
-				asyncFinished ();
-			}
-			break;
+		switch (event->getType ())
+		{
+			case EVENT_COMMAND_OK:
+				if (callState == waitForExpReturn)
+					callState = waitForImage;
+				break;
+			case EVENT_COMMAND_FAILED:
+				if (callState == waitForExpReturn)
+				{
+					std::ostringstream os;
+					os << "{\"failed\"}";
+					req->sendAsyncJSON (os, source);
+					asyncFinished ();
+				}
+				break;
+		}
 	}
 	Object::postEvent (event);
 }
@@ -613,22 +622,25 @@ void AsyncAPIExpose::exposureFailed (rts2core::Connection *_conn, int status)
 {
 	if (isForConnection (_conn))
 	{
-		switch (callState)
+		if (source)
 		{
-			case waitForExpReturn:
-			case waitForImage:
-				{
-					std::ostringstream os;
-					os << "{\"failed\"}";
-					req->sendAsyncJSON (os, source);
-				}
-				break;
-			case receivingImage:
-				if (source)
-					source->close ();
-				break;
+			switch (callState)
+			{
+				case waitForExpReturn:
+				case waitForImage:
+					{
+						std::ostringstream os;
+						os << "{\"failed\"}";
+						req->sendAsyncJSON (os, source);
+					}
+					break;
+				case receivingImage:
+					if (source)
+						source->close ();
+					break;
+			}
+			asyncFinished ();
 		}
-		asyncFinished ();
 	}
 }
 

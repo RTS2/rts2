@@ -390,6 +390,8 @@ class Image:public FitsFile
 		int getIsAcquiring () { return isAcquiring; }
 
 		void keepImage () { flags |= IMAGE_KEEP_DATA; }
+		void unkeepImage () { flags &= ~IMAGE_KEEP_DATA; }
+		bool hasKeepImage () { return flags & IMAGE_KEEP_DATA; }
 
 		void setUserFlag () { flags |= IMAGE_FLAG_USER1; }
 		bool hasUserFlag () { return flags & IMAGE_FLAG_USER1; }

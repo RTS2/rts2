@@ -814,6 +814,14 @@ int Script::processImage (Image * image)
 	return (*el_iter)->processImage (image);
 }
 
+bool Script::knowImage (Image * image)
+{
+	for (Script::iterator iter = begin (); iter != end (); iter++)
+		if ((*iter)->knowImage (image))
+			return true;
+	return false;
+}
+
 int Script::idle ()
 {
 	if (el_iter != end ())

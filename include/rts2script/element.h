@@ -130,6 +130,11 @@ class Element:public Object
 		virtual int processImage (rts2image::Image * image);
 
 		/**
+		 * Return true if element know about the image.
+		 */
+		virtual bool knowImage (rts2image::Image * image) { return false; }
+
+		/**
 		 * Returns 1 if we are waiting for that signal.
 		 * Signal is > 0
 		 */
