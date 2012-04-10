@@ -199,12 +199,20 @@ bool XmlDevCameraClient::isScriptRunning ()
 {
 	int runningScripts = 0;
 
-	// if there are some images which need to be written
-	connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
-	exposureWritten->setValueInteger (runningScripts);
-	getMaster ()->sendValueAll (exposureWritten);
-	if (runningScripts > 0)
-		return true;
+	if (exposureScript.get ())
+	{
+		// if there are some images which need to be written
+		connection->postEvent (new Event (EVENT_NUMBER_OF_IMAGES, (void *) &runningScripts));
+		exposureWritten->setValueInteger (runningScripts);
+		getMaster ()->sendValueAll (exposureWritten);
+		if (runningScripts > 0)
+			return true;
+	}
+	else
+	{
+		exposureWritten->setValueInteger (0);
+		getMaster ()->sendValueAll (exposureWritten);
+	}
 
 	connection->postEvent (new Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
@@ -335,6 +343,12 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 	else
 	{
 		delete previmage;
+		if (scriptRunning->getValueBool ())
+		{
+			logStream (MESSAGE_WARNING) << "received data for script which is not running, lowering isRunning flag" << sendLog;
+			scriptRunning->setValueBool (false);
+			getMaster ()->sendValueAll (scriptRunning);
+		}
 	}
 	previmage = image;
 	return rts2image::IMAGE_KEEP_COPY;
