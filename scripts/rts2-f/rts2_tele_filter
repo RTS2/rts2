@@ -1,26 +1,31 @@
 
-set curfilname=`tele filter ?`
-
-set curfilt=`grep -n "$curfilname" /Realtime/lib/filt.dat | cut -f1 -d:`
+$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --quiet -c W0.info
+set curfilt=`$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --quiet -G W0.filter`
+@ curfilt ++
 
 switch ($1)
 	case [1-8]:
-		if ($curfilt == $1) then
-			echo "filter $1 already set"
-		else
+		if ($curfilt != $1) then
+			rts2-logcom -n "Moving filter wheel to $1"
 			tele filter $1
+#		else
+#			rts2-logcom "Filter $1 already set"
 		endif
 		breaksw
 	default:
-		if ($curfilname == $1) then
-		  	echo "filter $1 already set"
-		else	
+		set filters=(`cat /Realtime/lib/filt.dat`)
+		set curfilname=$filters[$curfilt]
+
+		if ($curfilname != $1) then
 			set filt=`grep -n "$1" /Realtime/lib/filt.dat | cut -f1 -d:`
 			if ($? != 0) then
-				echo "filter $1 not present, ignoring the request"
+				rts2-logcom "filter $1 not present, ignoring the request"
 			else
+				rts2-logcom -n "Moving filter wheel to $1"
 				tele filter $filt
 			endif
+#		else	
+#		  	rts2-logcom "Filter $1 already set"
 		endif	
 		breaksw
 endsw
