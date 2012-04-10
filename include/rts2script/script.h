@@ -142,7 +142,7 @@ class Script:public Object, public std::list <Element *>
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()
 		{
-			if (*cmdBufTop == '\0')
+			if (cmdBufTop == NULL || *cmdBufTop == '\0')
 				return -1;
 			return (cmdBufTop - cmdBuf);
 		}
