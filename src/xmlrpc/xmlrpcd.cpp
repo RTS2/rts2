@@ -94,7 +94,17 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 XmlDevCameraClient::~XmlDevCameraClient ()
 {
-	delete previmage;
+	if (exposureScript.get ())
+	{
+		if (!exposureScript->knowImage (previmage))
+			delete previmage;
+		else
+			previmage->unkeepImage ();
+	}
+	else
+	{
+		delete previmage;
+	}
 }
 
 void XmlDevCameraClient::deleteConnection (Connection *_conn)
