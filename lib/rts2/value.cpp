@@ -224,13 +224,13 @@ int ValueInteger::checkNotNull ()
 
 ValueDouble::ValueDouble (std::string in_val_name):Value (in_val_name)
 {
-	value = rts2_nan ("f");
+	value = NAN;
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
 ValueDouble::ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = rts2_nan ("f");
+	value = NAN;
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
@@ -369,13 +369,13 @@ void ValueTime::getValueTime (struct timeval &tv)
 
 ValueFloat::ValueFloat (std::string in_val_name): Value (in_val_name)
 {
-	value = rts2_nan ("f");
+	value = NAN;
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
 ValueFloat::ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = rts2_nan ("f");
+	value = NAN;
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
@@ -674,15 +674,15 @@ bool ValueLong::isEqual (Value * other_value)
 
 ValueRaDec::ValueRaDec (std::string in_val_name):Value (in_val_name)
 {
-	ra = rts2_nan ("f");
-	decl = rts2_nan ("f");
+	ra = NAN;
+	decl = NAN;
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
 ValueRaDec::ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Value (in_val_name, in_description, writeToFits, flags)
 {
-	ra = rts2_nan ("f");
-	decl = rts2_nan ("f");
+	ra = NAN;
+	decl = NAN;
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
@@ -819,15 +819,15 @@ bool ValueRaDec::isEqual (Value *other_value)
 
 ValueAltAz::ValueAltAz (std::string in_val_name):Value (in_val_name)
 {
-	alt = rts2_nan ("f");
-	az = rts2_nan ("f");
+	alt = NAN;
+	az = NAN;
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 
 ValueAltAz::ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Value (in_val_name, in_description, writeToFits, flags)
 {
-	alt = rts2_nan ("f");
-	az = rts2_nan ("f");
+	alt = NAN;
+	az = NAN;
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 

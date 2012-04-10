@@ -26,6 +26,7 @@ DevScript::DevScript (rts2core::Connection * in_script_connection) : script ()
 {
 	currentTarget = NULL;
 	nextComd = NULL;
+	cmd_device[0] = '\0';
 	nextTarget = NULL;
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;

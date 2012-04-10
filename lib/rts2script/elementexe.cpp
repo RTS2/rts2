@@ -103,6 +103,8 @@ void ConnExecute::processCommand (char *cmd)
 		double start,end;
 		if (paramNextDouble (&start) || paramNextDouble (&end) || !paramEnd ())
 			return;
+		if (masterElement == NULL || masterElement->getClient () == NULL)
+			return;
 		((DevClientCameraExec *) masterElement->getClient ())->scriptProgress (start, end);
 	}
 	else if (!strcasecmp (cmd, "radec"))
@@ -150,7 +152,8 @@ void ConnExecute::processCommand (char *cmd)
 		{
 			(*iter)->toDark ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
-			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
+			if (masterElement != NULL && masterElement->getClient () != NULL)
+				((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
 			deleteImage (*iter);
 			images.erase (iter);
 		}
@@ -164,7 +167,8 @@ void ConnExecute::processCommand (char *cmd)
 		{
 			(*iter)->toFlat ();
 			writeToProcess ((*iter)->getAbsoluteFileName ());
-			((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
+			if (masterElement != NULL && masterElement->getClient () != NULL)
+				((DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
 			deleteImage (*iter);
 			images.erase (iter);
 		}
@@ -288,7 +292,7 @@ void ConnExecute::processCommand (char *cmd)
 	{
 		if (!checkActive (false))
 			return;
-		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
+		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getClient () == NULL)
 			return;
 		int deviceTypeNum = getDeviceType (device);
 		rts2core::CommandChangeValue cmdch (masterElement->getClient (), std::string (value), *operat, std::string (operand), true);
@@ -303,12 +307,18 @@ void ConnExecute::processCommand (char *cmd)
 	else if (!strcmp (cmd, "loopcount"))
 	{
 		std::ostringstream os;
-		os << masterElement->getScript ()->getLoopCount ();
+		if (masterElement == NULL || masterElement->getScript () == NULL)
+			os << "-1";		
+		else
+			os << masterElement->getScript ()->getLoopCount ();
 		writeToProcess (os.str ().c_str ());
 	}
 	else if (!strcmp (cmd, "run_device"))
 	{
-		writeToProcess (masterElement->getConnection ()->getName ());
+		if (masterElement == NULL || masterElement->getConnection () == NULL)
+			writeToProcess ("& not active");
+		else
+			writeToProcess (masterElement->getConnection ()->getName ());
 	}
 	else
 	{

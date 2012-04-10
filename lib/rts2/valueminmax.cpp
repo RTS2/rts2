@@ -24,15 +24,15 @@ using namespace rts2core;
 
 ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name):ValueDouble (in_val_name)
 {
-	min = rts2_nan ("f");
-	max = rts2_nan ("f");
+	min = NAN;
+	max = NAN;
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
 ValueDoubleMinMax::ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
-	min = rts2_nan ("f");
-	max = rts2_nan ("f");
+	min = NAN;
+	max = NAN;
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 

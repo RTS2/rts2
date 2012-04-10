@@ -77,8 +77,8 @@ Connection::Connection (Block * in_master):Object ()
 	otherDevice = NULL;
 	otherType = -1;
 
-	statusStart = rts2_nan ("f");
-	statusExpectedEnd = rts2_nan ("f");
+	statusStart = NAN;
+	statusExpectedEnd = NAN;
 
 	connectionTimeout = 300;	 // 5 minutes timeout
 
@@ -122,8 +122,8 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 
 	connectionTimeout = 300;	 // 5 minutes timeout (150 + 150)
 
-	statusStart = rts2_nan ("f");
-	statusExpectedEnd = rts2_nan ("f");
+	statusStart = NAN;
+	statusExpectedEnd = NAN;
 
 	commandInProgress = false;
 	info_time = NULL;
@@ -1734,7 +1734,7 @@ int Connection::paramNextDouble (double *num)
 		return -1;
 	if (!strcmp (str_num, "nan"))
 	{
-		*num = rts2_nan ("f");
+		*num = NAN;
 		return 0;
 	}
 	ret = sscanf (str_num, "%lf", num);
@@ -1751,7 +1751,7 @@ int Connection::paramNextDoubleTime (double *num)
 		return -1;
 	if (!strcmp (str_num, "nan"))
 	{
-		*num = rts2_nan ("f");
+		*num = NAN;
 		return 0;
 	}
 	ret = sscanf (str_num, "%lf", num);
@@ -1946,7 +1946,7 @@ double Connection::getValueDouble (const char *value_name)
 	val = getValue (value_name);
 	if (val)
 		return val->getValueDouble ();
-	return rts2_nan ("f");
+	return NAN;
 }
 
 int Connection::getValueInteger (const char *value_name)
