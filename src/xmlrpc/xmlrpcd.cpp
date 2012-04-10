@@ -74,6 +74,7 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::DevClientCameraExec (conn), XmlDevInterface (), nexpand (""), screxpand (""), currentTarget (this)
 {
 	previmage = NULL;
+	scriptKillCommand = NULL;
 
 	Configuration::instance ()->getString ("xmlrpcd", "images_path", path, "/tmp");
 	Configuration::instance ()->getString ("xmlrpcd", "images_name", fexpand, "xmlrpcd_%c.fits");
@@ -229,13 +230,24 @@ void XmlDevCameraClient::executeScript (const char *scriptbuf, bool killScripts)
 			logStream (MESSAGE_INFO) << "killing currently running script" << sendLog;
 		postEvent (new Event (EVENT_KILL_ALL));
 		if (callScriptEnds->getValueBool ())
-			connection->queCommand (new rts2core::CommandKillAll (connection->getMaster ()));
+			connection->queCommand (scriptKillCommand = new rts2core::CommandKillAll (connection->getMaster ()), 0, this);
 		else
-			connection->queCommand (new rts2core::CommandKillAllWithoutScriptEnds (connection->getMaster ()));
+			connection->queCommand (scriptKillCommand = new rts2core::CommandKillAllWithoutScriptEnds (connection->getMaster ()), 0, this);
 	}
-
-	connection->postEvent (new Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
-	connection->postEvent (new Event (EVENT_OBSERVE));
+	else
+	{
+		if (getScript ().get ())
+		{
+			std::ostringstream er;
+			er << "there is script running on device " << getName () << ", please kill it first";
+			throw JSONException (er.str ());
+		}
+		else
+		{
+			connection->postEvent (new Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
+			connection->postEvent (new Event (EVENT_OBSERVE));
+		}
+	}
 }
 
 void XmlDevCameraClient::killScript ()
@@ -281,6 +293,14 @@ void XmlDevCameraClient::postEvent (Event *event)
 {
 	switch (event->getType ())
 	{
+		case EVENT_COMMAND_OK:
+			if (scriptKillCommand && event->getArg () == scriptKillCommand)
+			{
+				scriptKillCommand = NULL;
+				connection->postEvent (new Event (callScriptEnds->getValueBool () ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, (void *) &currentTarget));
+				connection->postEvent (new Event (EVENT_OBSERVE));
+			}
+			break;
 		case EVENT_SCRIPT_STARTED:
 		case EVENT_SCRIPT_ENDED:
 		case EVENT_LAST_READOUT:
