@@ -1303,10 +1303,18 @@ int Daemon::createSectionValues (IniSection *sect)
 				createValue ((IntegerArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "da"))
 				createValue ((DoubleArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "ba"))
+				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "bao"))
+				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags | RTS2_DT_ONOFF);
 			else if (strcasestr (suffix.c_str (), "i"))
 				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "d"))
 				createValue ((ValueDouble *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "b"))
+				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
+			else if (strcasestr (suffix.c_str (), "b"))
+				createValue ((ValueBool *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags | RTS2_DT_ONOFF);
 			else if (!strcasecmp (suffix.c_str (), "s"))
 				createValue ((ValueString *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else

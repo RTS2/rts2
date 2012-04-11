@@ -102,6 +102,17 @@ test6 = only_test
     <variablelist>
       <varlistentry>
         <term>
+          <option>b</option>
+          <option>bo</option>
+        </term>
+        <listitem>
+          <para>
+            Boolean value. <emphasis>.bo</emphasis> creates boolean displayed as on-off.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>d</option>
 	</term>
 	<listitem>
@@ -117,6 +128,19 @@ test6 = only_test
 	<listitem>
 	  <para>
 	    Integer number. Integer variable will be added to the component.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>ba</option>
+	  <option>bao</option>
+	</term>
+	<listitem>
+	  <para>
+	    Boolean array. Boolean array variable will added to the component. Variable value is parsed
+	    as an array, its member shoudl be separated with space (" "). Use <emphasis>bao</emphasis> for
+	    array displayed as ON/OFF field.
 	  </para>
 	</listitem>
       </varlistentry>
