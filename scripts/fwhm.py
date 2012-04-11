@@ -4,6 +4,7 @@ import sextractor
 import sys
 import pyfits
 import math
+import re
 
 from optparse import OptionParser
 
@@ -32,7 +33,7 @@ class FWHM:
 		self.a /= self.i
 		self.b /= self.i	
 
-def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
+def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[]):
 	"""Process image, print its FWHM. Works with multi extension images.
 	"""
 	ff = pyfits.fitsopen(fn)
@@ -40,11 +41,16 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 	if d:
 		d.set('file mosaicimage iraf ' + fn)
 
-	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER']
+	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND']
 
 	c = sextractor.Sextractor(sexcols,threshold=threshold)
 	c.runSExtractor(fn)
 	c.sortObjects(2)
+
+	for st in stars:
+		# append distance - none and star number - to star list
+		st.append(None)
+		st.append(None)
 
 	# dump Sextractor to DS9 catalogue
 	if ds9cat:
@@ -59,6 +65,13 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 		if pr:
 			print '\t'.join(map(lambda y:str(y),x))
 		segnum = int(x[8])
+		for st in stars:
+			if st[0] == segnum:
+				dist = math.sqrt((x[0]-st[1])**2+(x[1]-st[2])**2)
+				if st[4] is None or st[4] > dist:
+					st[4] = dist
+					st[5] = x
+
 		if x[3] == 0 and x[4] != 0:
 			if d:
 				d.set('regions','tile {0}\nimage; circle {1} {2} 10 # color=green'.format(segnum,x[0],x[1]))
@@ -105,6 +118,15 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False):
 
 		print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,seg_fwhms[x].i)
 
+	# print stars
+	for st in stars:
+		suf = st[3]
+		print 'double star_x_{0} "x of star {0}" {1}'.format(suf,st[5][0])
+		print 'double star_y_{0} "y of star {0}" {1}'.format(suf,st[5][1])
+		print 'double star_d_{0} "distance of star {0}" {1}'.format(suf,st[4])
+		print 'double flux_{0} "flux of star {0}" {1}'.format(suf,st[5][9])
+		print 'double background_{0} "flux of star {0}" {1}'.format(suf,st[5][10])
+
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
 
@@ -115,6 +137,7 @@ if __name__ == '__main__':
 	parser.add_option('--print',help='print sextractor results',action='store_true',dest='pr',default=False)
 	parser.add_option('--ds9cat',help='write DS9 catalogue file',action='store',dest='ds9cat')
 	parser.add_option('--by-segments',help='calculate also FHWM values on segments',action='store_true',dest='bysegments')
+	parser.add_option('--star-flux',help='calculate star FLUX at given position (seg:x:y:name)',action='append',dest='star_flux')
 
 	(options,args)=parser.parse_args()
 
@@ -122,6 +145,17 @@ if __name__ == '__main__':
 	if options.show_ds9:
 		import ds9
 		d = ds9.ds9('fwhm')
+	stars=[]
+
+	ma = re.compile('(\d+):(\d+):(\d+):(\S+)')
+
+	for sf in options.star_flux:
+		gr = ma.match(sf)
+		if gr:
+			stars.append([int(gr.group(1)),int(gr.group(2)),int(gr.group(3)),gr.group(4)])
+		else:
+			print >> sys.stderr, "Cannot parse star flux argument", sf
+			sys.exit(1)
 
 	for fn in args:
-		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments)
+		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
