@@ -101,7 +101,7 @@ endif
 	if ( $retr &gt; 0 ) then
 		rts2-logcom "Successfully switched autoguider to ON"
 	else
-		@ nextautog = $nowdate + 300
+		@ nextautog = $nowdate + 1200
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
 		rts2-logcom "Autoguider command failed, will try again on $textdate"
 	endif
@@ -242,7 +242,7 @@ if ( $continue == 1 ) then
 	<xsl:copy-of select='$abort'/>
 	dstore
 	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
-	set flux=`$xmlrpc --quiet -G IMGP.source_flux`
+	set flux=`$xmlrpc --quiet -G IMGP.flux_A`
 	if ( $last_obs_id == $obs_id ) then
 		rts2-logcom "Exposure done; offsets " `printf '%+0.2f" %+0.2f" FWHM %.2f" FL %.0f' $ora_l $odec_l $fwhm2 $flux`
 	else
