@@ -20,28 +20,30 @@ cp $filename $tmpdir
 cd $tmpdir
 fn=`echo $filename|sed 's#.*/##'`
 
-/home/mink/bin/fitssplit $fn opath=$tmpdir
-
 # calculate fwhm
 
-for x in *IM?.fits; do
-	imnum=`echo $x | sed 's#.*IM\(.\)\.fits#\1#'`
-	/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py $x $imnum
-done
+/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py --star-flux=2:520:510:A $fn
+
+/home/mink/bin/fitssplit $fn opath=$tmpdir
+
+#for x in *IM?.fits; do
+#	imnum=`echo $x | sed 's#.*IM\(.\)\.fits#\1#'`
+#	/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py $x $imnum
+#done
 
 scale_low=0.6
 scale_high=0.7
 
 amp=-1
-offs=`rts2-image -p '@POFFS' $fn`
+offs=`$RTS2/bin/rts2-image -p '@POFFS' $fn`
 
 xoffs=0
 yoffs=0
 
 if [ "$offs" = '0 0' ]; then
-	amp=2
-	xoffs=-345
-	yoffs=-345
+	amp=3
+	xoffs=345
+	yoffs=345
 elif [ "$offs" = '345 -345' ]; then
 	amp=1
 elif [ "$offs" = '-345 -345' ]; then
