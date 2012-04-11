@@ -505,6 +505,7 @@ class AsyncDataAPI:public AsyncAPI
 {
 	public:
 		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
+		virtual ~AsyncDataAPI ();
 
 		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
@@ -512,16 +513,23 @@ class AsyncDataAPI:public AsyncAPI
 	private:
 		DataAbstractRead *data;
 		size_t bytesSoFar;
+		const char *overflow_buffer;
 };
 
 AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	bytesSoFar = 0;
+	overflow_buffer = NULL;
 
 	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
 	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+}
+
+AsyncDataAPI::~AsyncDataAPI ()
+{
+	delete[] overflow_buffer;
 }
 
 void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
@@ -551,6 +559,7 @@ class AsyncAPIExpose:public AsyncAPI
 {
 	public:
 		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
+		virtual ~AsyncAPIExpose ();
 
 		virtual void postEvent (Event *event);
 
@@ -561,6 +570,7 @@ class AsyncAPIExpose:public AsyncAPI
 
 		DataAbstractRead *data;
 		size_t bytesSoFar;
+		const char *overflow_buffer;
 };
 
 AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
@@ -568,6 +578,12 @@ AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcSe
 	callState = waitForExpReturn;
 	data = NULL;
 	bytesSoFar = 0;
+	overflow_buffer = NULL;
+}
+
+AsyncAPIExpose::~AsyncAPIExpose ()
+{
+	delete[] overflow_buffer;
 }
 
 void AsyncAPIExpose::postEvent (Event *event)
@@ -598,10 +614,28 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 {
 	if (_data == data)
 	{
-		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		size_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+		if (ret < 0)
+		{
+			logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
+			asyncFinished ();
+			return;
+		}
+		bytesSoFar += ret;
+
 		if (data->getRestSize () == 0)
+		{
+			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+			{
+				XmlRpcSocket::unsetNonBlocking (source->getfd ());
+				XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+				XmlRpcSocket::setNonBlocking (source->getfd ());
+				//overflow_buffer = new char[data->getDataTop () - data->getDataBuff () - bytesSoFar];
+			}
+			data = NULL;
 			// mark request for removal
 			asyncFinished ();
+		}
 	}
 	else if (isForConnection (_conn) && callState == waitForImage)
 	{
@@ -614,7 +648,16 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 		}
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
-		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		XmlRpcSocket::setNonBlocking (source->getfd ());
+
+		size_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+		if (ret < 0)
+		{
+			logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
+			asyncFinished ();
+			return;
+		}
+		bytesSoFar += ret;
 	}
 }
 
