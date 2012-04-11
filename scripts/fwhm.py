@@ -5,12 +5,14 @@ import sys
 import pyfits
 import math
 import re
+import atv
 
 from optparse import OptionParser
 
-FOC_POS = 'FOC_POS'
+
+#FOC_POS = 'FOC_POS'
 #non-RTS2 files usually have TELFOCUS
-#FOC_POS = 'TELFOCUS'
+FOC_POS = 'TELFOCUS'
 
 class FWHM:
 	"""Holds FWHM on segments."""
@@ -47,6 +49,8 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	c.runSExtractor(fn)
 	c.sortObjects(2)
 
+	atm = atv.ChannelsDTV(ff)
+
 	for st in stars:
 		# append distance - none and star number - to star list
 		st.append(None)
@@ -65,6 +69,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 		if pr:
 			print '\t'.join(map(lambda y:str(y),x))
 		segnum = int(x[8])
+		(dx,dy) = atm.xy2Detector('IM{0}'.format(segnum),x[0],x[1])
 		for st in stars:
 			if st[0] == segnum:
 				dist = math.sqrt((x[0]-st[1])**2+(x[1]-st[2])**2)
@@ -74,12 +79,14 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 
 		if x[3] == 0 and x[4] != 0:
 			if d:
-				d.set('regions','tile {0}\nimage; circle {1} {2} 10 # color=green'.format(segnum,x[0],x[1]))
+				d.set('regions','image; circle {1} {2} 5 # color=red'.format(segnum,dx,dy))
+				#d.set('regions','tile {0}\nimage; circle {1} {2} 10 # color=green'.format(segnum,x[0],x[1]))
 			
 			seg_fwhms[0].addFWHM(x[5],x[6],x[7])
 			seg_fwhms[segnum].addFWHM(x[5],x[6],x[7])
 		elif d:
-			d.set('regions','# tile {0}\nphysical; point {1} {2} # point = x 5 color=red'.format(segnum,x[0],x[1]))
+			d.set('regions','# point {1} {2} # point = x 5 color=red'.format(segnum,dx,dy))
+			#d.set('regions','# tile {0}\nphysical; point {1} {2} # point = x 5 color=red'.format(segnum,x[0],x[1]))
 
 	# average results
 	map(FWHM.average,seg_fwhms)
@@ -149,13 +156,14 @@ if __name__ == '__main__':
 
 	ma = re.compile('(\d+):(\d+):(\d+):(\S+)')
 
-	for sf in options.star_flux:
-		gr = ma.match(sf)
-		if gr:
-			stars.append([int(gr.group(1)),int(gr.group(2)),int(gr.group(3)),gr.group(4)])
-		else:
-			print >> sys.stderr, "Cannot parse star flux argument", sf
-			sys.exit(1)
+	if options.star_flux:
+		for sf in options.star_flux:
+			gr = ma.match(sf)
+			if gr:
+				stars.append([int(gr.group(1)),int(gr.group(2)),int(gr.group(3)),gr.group(4)])
+			else:
+				print >> sys.stderr, "Cannot parse star flux argument", sf
+				sys.exit(1)
 
 	for fn in args:
 		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
