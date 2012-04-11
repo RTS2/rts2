@@ -39,6 +39,9 @@ namespace XmlRpc
 			//! Sets a stream (TCP) socket to perform non-blocking IO. Returns false on failure.
 			static bool setNonBlocking(int socket);
 
+			//! unSets a stream (TCP) socket to perform blocking IO. Returns false on failure.
+			static bool unsetNonBlocking(int socket);
+
 			//! Read text from the specified socket. Returns false on error.
 			static bool nbRead(int socket, char* &s, int &l, bool *eof);
 

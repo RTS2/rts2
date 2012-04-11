@@ -78,7 +78,6 @@ XmlRpcSocket::close(int fd)
 	#endif						 // _WINDOWS
 }
 
-
 bool
 XmlRpcSocket::setNonBlocking(int fd)
 {
@@ -90,6 +89,16 @@ XmlRpcSocket::setNonBlocking(int fd)
 	#endif						 // _WINDOWS
 }
 
+bool
+XmlRpcSocket::unsetNonBlocking(int fd)
+{
+	#if defined(_WINDOWS)
+	unsigned long flag = 1;
+	return (ioctlsocket((SOCKET)fd, 0, &flag) == 0);
+	#else
+	return (fcntl(fd, F_SETFL, 0) == 0);
+	#endif						 // _WINDOWS
+}
 
 bool
 XmlRpcSocket::setReuseAddr(int fd)
