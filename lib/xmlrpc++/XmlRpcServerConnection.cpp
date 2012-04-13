@@ -68,6 +68,8 @@ XmlRpcServerConnection::~XmlRpcServerConnection()
 {
 	XmlRpcUtil::log(4,"XmlRpcServerConnection dtor.");
 	_server->removeConnection(this);
+
+	delete[] _get_response;
 }
 
 // Handle input on the server socket by accepting the connection
