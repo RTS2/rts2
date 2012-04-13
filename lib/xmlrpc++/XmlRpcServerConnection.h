@@ -81,6 +81,9 @@ namespace XmlRpc
 			// Set response mask - for create asynchronous call
 			void setSourceEvents(unsigned eventMask);
 
+			// Set response
+			void setResponse(char *_response, size_t _response_length);
+
 		protected:
 
 			bool readHeader();
@@ -88,6 +91,7 @@ namespace XmlRpc
 			bool handleGet();
 			bool handlePost();
 			bool writeResponse();
+			bool writeAsyncReponse();
 
 			// Parses the request, runs the method, generates the response xml.
 			virtual void executeRequest();
@@ -114,7 +118,7 @@ namespace XmlRpc
 			XmlRpcServer* _server;
 
 			// Possible IO states for the connection
-			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC };
+			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, POST_REQUEST, WRITE_RESPONSE, WAIT_ASYNC, WRITE_ASYNC_RESPONSE };
 			ServerConnectionState _connectionState;
 
 			// Request headers

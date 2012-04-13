@@ -49,7 +49,7 @@ namespace XmlRpc
 			static size_t nbWrite(int socket, std::string s, size_t *bytesSoFar, bool sendfull = true);
 
 			//! Write buffer to the specified socket. Returns false on error.
-			static size_t nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull = true);
+			static size_t nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull = true, bool retry = true);
 
 			// The next four methods are appropriate for servers.
 
