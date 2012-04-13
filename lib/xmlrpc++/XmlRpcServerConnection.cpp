@@ -321,12 +321,17 @@ bool XmlRpcServerConnection::handleGet()
 	}
 	if (_getHeaderWritten == _get_response_header.length () && _getWritten != _get_response_length)
 	{
-		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten) != 0 )
+		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten, false, false) != 0 )
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
 		}
 		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getWritten, _get_response_length);
+		if (_getWritten != _get_response_length)
+		{
+			_connectionState = WRITE_ASYNC_RESPONSE;
+			_server->setSourceEvents(this, XmlRpcDispatch::WritableEvent);
+		}
 	}
 
 	// Prepare to read the next request
