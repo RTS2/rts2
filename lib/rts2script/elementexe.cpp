@@ -342,9 +342,11 @@ void ConnExecute::connectionError (int last_data_size)
 
 void ConnExecute::errorReported (int current_state, int old_state)
 {
-	writeToProcess ("! error detected while running script");
 	switch (exposure_started)
 	{
+		case 0:
+			writeToProcess ("! error detected while running the script");
+			break;
 		case 1:
 			writeToProcess ("exposure_failed");
 			exposure_started = -1;
