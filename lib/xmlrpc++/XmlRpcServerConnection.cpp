@@ -89,8 +89,11 @@ unsigned XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 
 	if (_connectionState == WRITE_RESPONSE)
 		if ( ! writeResponse()) return 0;
+	
+	if (_connectionState == WRITE_ASYNC_RESPONSE)
+		if ( ! writeAsyncReponse()) return 0;
 
-	return (_connectionState == WRITE_RESPONSE)
+	return (_connectionState == WRITE_RESPONSE || _connectionState == WRITE_ASYNC_RESPONSE)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
@@ -318,12 +321,17 @@ bool XmlRpcServerConnection::handleGet()
 	}
 	if (_getHeaderWritten == _get_response_header.length () && _getWritten != _get_response_length)
 	{
-		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten) != 0 )
+		if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten, false, false) != 0 )
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
 		}
 		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getWritten, _get_response_length);
+		if (_getWritten != _get_response_length)
+		{
+			_connectionState = WRITE_ASYNC_RESPONSE;
+			_server->setSourceEvents(this, XmlRpcDispatch::WritableEvent);
+		}
 	}
 
 	// Prepare to read the next request
@@ -355,7 +363,7 @@ bool XmlRpcServerConnection::writeResponse()
 	// Try to write the response
 	if ( XmlRpcSocket::nbWrite(this->getfd(), _response, &_bytesWritten) != 0 )
 	{
-		XmlRpcUtil::error("XmlRpcServerConnection::writeResponse: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+		XmlRpcUtil::error("XmlRpcServerConnection::writeResponse: write error (%s).", XmlRpcSocket::getErrorMsg().c_str());
 		return false;
 	}
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::writeResponse: wrote %d of %d bytes.", _bytesWritten, _response.length());
@@ -365,6 +373,20 @@ bool XmlRpcServerConnection::writeResponse()
 		prepareForNext ();
 
 	return _keepAlive;			 // Continue monitoring this source if true
+}
+
+bool XmlRpcServerConnection::writeAsyncReponse()
+{
+	if ( XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten, false, false) != 0 )
+	{
+		XmlRpcUtil::error("XmlRpcServerConnection::writeAsyncReponse %i: write error (%s).",this->getfd(), XmlRpcSocket::getErrorMsg().c_str());
+		return false;
+	}
+	XmlRpcUtil::log(3, "XmlRpcServerConnection::writeAsyncReponse %i: wrote %d of %d bytes.",this->getfd(), _getWritten, _get_response_length);
+	if ( _get_response_length == _getWritten )
+		prepareForNext ();
+
+	return _keepAlive;
 }
 
 // Run the method, generate _response string
@@ -633,6 +655,17 @@ std::string XmlRpcServerConnection::generateHeader(std::string const& body)
 void XmlRpcServerConnection::setSourceEvents(unsigned eventMask)
 {
 	_server->setSourceEvents(this, eventMask);
+}
+
+void XmlRpcServerConnection::setResponse(char *_set_response, size_t _response_length)
+{
+	_getWritten = 0;
+	_get_response_length = _response_length;
+	_get_response = new char[_response_length];
+	memcpy(_get_response, _set_response, _response_length);
+	_connectionState = WRITE_ASYNC_RESPONSE;
+
+	_server->setSourceEvents(this, XmlRpcDispatch::WritableEvent);
 }
 
 void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, int errorCode)

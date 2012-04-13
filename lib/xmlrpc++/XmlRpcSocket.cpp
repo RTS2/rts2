@@ -78,7 +78,6 @@ XmlRpcSocket::close(int fd)
 	#endif						 // _WINDOWS
 }
 
-
 bool
 XmlRpcSocket::setNonBlocking(int fd)
 {
@@ -90,6 +89,16 @@ XmlRpcSocket::setNonBlocking(int fd)
 	#endif						 // _WINDOWS
 }
 
+bool
+XmlRpcSocket::unsetNonBlocking(int fd)
+{
+	#if defined(_WINDOWS)
+	unsigned long flag = 1;
+	return (ioctlsocket((SOCKET)fd, 0, &flag) == 0);
+	#else
+	return (fcntl(fd, F_SETFL, 0) == 0);
+	#endif						 // _WINDOWS
+}
 
 bool
 XmlRpcSocket::setReuseAddr(int fd)
@@ -233,7 +242,7 @@ XmlRpcSocket::nbWrite(int fd, std::string s, size_t *bytesSoFar, bool sendfull)
 
 // Write text to the specified socket. Returns false on error.
 size_t
-XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull)
+XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull, bool retry)
 {
 	size_t nToWrite = buf_len - *bytesSoFar;
 
@@ -246,9 +255,13 @@ XmlRpcSocket::nbWriteBuf(int fd, const char *buf, size_t buf_len, size_t *bytesS
 		{
 			*bytesSoFar += n;
 			nToWrite -= n;
+			if (retry == false)
+				return 0;
 		}
 		else if (nonFatalError())
 		{
+			if (retry == false)
+				return 0;
 			if (!sendfull)
 				return n;
 		}

@@ -39,6 +39,9 @@ namespace XmlRpc
 			//! Sets a stream (TCP) socket to perform non-blocking IO. Returns false on failure.
 			static bool setNonBlocking(int socket);
 
+			//! unSets a stream (TCP) socket to perform blocking IO. Returns false on failure.
+			static bool unsetNonBlocking(int socket);
+
 			//! Read text from the specified socket. Returns false on error.
 			static bool nbRead(int socket, char* &s, int &l, bool *eof);
 
@@ -46,7 +49,7 @@ namespace XmlRpc
 			static size_t nbWrite(int socket, std::string s, size_t *bytesSoFar, bool sendfull = true);
 
 			//! Write buffer to the specified socket. Returns false on error.
-			static size_t nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull = true);
+			static size_t nbWriteBuf(int socket, const char *buf, size_t buf_len, size_t *bytesSoFar, bool sendfull = true, bool retry = true);
 
 			// The next four methods are appropriate for servers.
 

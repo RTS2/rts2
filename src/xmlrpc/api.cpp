@@ -505,6 +505,7 @@ class AsyncDataAPI:public AsyncAPI
 {
 	public:
 		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
+		virtual ~AsyncDataAPI ();
 
 		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
@@ -524,14 +525,42 @@ AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServer
 	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 }
 
+AsyncDataAPI::~AsyncDataAPI ()
+{
+}
+
 void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
 {
 	if (_data == data)
 	{
-		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+		if (ret < 0)
+		{
+			if (errno != EAGAIN && errno != EINTR)
+			{
+				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
+				asyncFinished ();
+				return;
+			}
+		}
+		else
+		{
+			bytesSoFar += ret;
+		}
+
 		if (data->getRestSize () == 0)
-			// mark request for removal
-			asyncFinished ();
+		{
+			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+			{
+				source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
+				nullSource ();
+			}
+			else
+			{
+				asyncFinished ();
+			}
+			data = NULL;
+		}
 	}
 }
 
@@ -551,10 +580,12 @@ class AsyncAPIExpose:public AsyncAPI
 {
 	public:
 		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
+		virtual ~AsyncAPIExpose ();
 
 		virtual void postEvent (Event *event);
 
 		virtual void dataReceived (Connection *_conn, DataAbstractRead *_data);
+
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
 	private:
 		enum {waitForExpReturn, waitForImage, receivingImage} callState;
@@ -568,6 +599,10 @@ AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcSe
 	callState = waitForExpReturn;
 	data = NULL;
 	bytesSoFar = 0;
+}
+
+AsyncAPIExpose::~AsyncAPIExpose ()
+{
 }
 
 void AsyncAPIExpose::postEvent (Event *event)
@@ -598,10 +633,34 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 {
 	if (_data == data)
 	{
-		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+		if (ret < 0)
+		{
+			if (errno != EAGAIN && errno != EINTR)
+			{
+				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
+				asyncFinished ();
+				return;
+			}
+		}
+		else
+		{
+			bytesSoFar += ret;
+		}
+
 		if (data->getRestSize () == 0)
-			// mark request for removal
-			asyncFinished ();
+		{
+			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+			{
+				source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
+				nullSource ();
+			}
+			else
+			{
+				asyncFinished ();
+			}
+			data = NULL;
+		}
 	}
 	else if (isForConnection (_conn) && callState == waitForImage)
 	{
@@ -614,7 +673,20 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 		}
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
-		XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
+		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+		if (ret < 0)
+		{
+			if (errno != EAGAIN && errno != EINTR)
+			{
+				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
+				asyncFinished ();
+				return;
+			}
+		}
+		else
+		{
+			bytesSoFar += ret;
+		}
 	}
 }
 
