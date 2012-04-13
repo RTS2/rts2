@@ -64,6 +64,9 @@ class Dummy:public Camera
 			genType->addSelVal ("astar");
 			genType->setValueInteger (0);
 
+			createValue (astar_num, "astar_num", "number of artificial stars", false, RTS2_VALUE_WRITABLE);
+			astar_num->setValueInteger (1);
+
 			createValue (astar_Xp, "astar_x", "[x] artificial star position", false);
 			createValue (astar_Yp, "astar_y", "[y] artificial star position", false);
 
@@ -254,10 +257,12 @@ class Dummy:public Camera
 		rts2core::ValueDouble *tempMin;
 		rts2core::ValueDouble *tempMax;
 
+		rts2core::ValueInteger *astar_num;
+
 		rts2core::ValueRectangle *astarLimits;
 
-		rts2core::ValueDouble *astar_Xp;
-		rts2core::ValueDouble *astar_Yp;
+		rts2core::DoubleArray *astar_Xp;
+		rts2core::DoubleArray *astar_Yp;
 
 		rts2core::ValueDouble *astarX;
 		rts2core::ValueDouble *astarY;
@@ -362,8 +367,14 @@ int Dummy::doReadout ()
 void Dummy::generateImage (long usedSize)
 {
 	// artifical star center
-	astar_Xp->setValueDouble (random_num () * getUsedWidthBinned ());
-	astar_Yp->setValueDouble (random_num () * getUsedHeightBinned ());
+	astar_Xp->clear ();
+	astar_Yp->clear ();
+
+	for (int i = 0; i < astar_num->getValueInteger (); i++)
+	{
+		astar_Xp->addValue (random_num () * getUsedWidthBinned ());
+		astar_Yp->addValue (random_num () * getUsedHeightBinned ());
+	}
 
 	sendValueAll (astar_Xp);
 	sendValueAll (astar_Yp);
@@ -420,15 +431,18 @@ void Dummy::generateImage (long usedSize)
 			int x = i % getUsedWidthBinned ();
 			int y = i / getUsedWidthBinned ();
 
-			double aax = x - astar_Xp->getValueDouble ();
-			double aay = y - astar_Yp->getValueDouble ();
-
-			if (fabs (aax) < xmax && fabs (aay) < ymax)
+			for (int j = 0; j < astar_num->getValueInteger (); j++)
 			{
-				aax *= aax;
-				aay *= aay;
+				double aax = x - (*astar_Xp)[j];
+				double aay = y - (*astar_Yp)[j];
 
-				*d += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+				if (fabs (aax) < xmax && fabs (aay) < ymax)
+				{
+					aax *= aax;
+					aay *= aay;
+
+					*d += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+				}
 			}
 		}
 	}
