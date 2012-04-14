@@ -670,10 +670,6 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 			return new XmlDevCameraClient (conn);
 		case DEVICE_TYPE_FOCUS:
 			return new rts2image::DevClientFocusImage (conn);
-		case DEVICE_TYPE_PHOT:
-		case DEVICE_TYPE_DOME:
-		case DEVICE_TYPE_SENSOR:
-			return new rts2image::DevClientWriteImage (conn);
 		default:
 			return new XmlDevClient (conn);
 	}
@@ -686,6 +682,7 @@ void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerSt
 	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
 	{
 		StateChange *sc = (*iter);
+		std::cout << "state " << conn->getName () << " " <<  conn->getOtherType () << " " << new_state->getOldValue () << " " << new_state->getValue () << std::endl;
 		if (sc->isForDevice (conn->getName (), conn->getOtherType ()) && sc->executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
 		{
 			sc->run (this, conn, now);

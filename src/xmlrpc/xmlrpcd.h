@@ -109,21 +109,21 @@ class XmlDevInterface
  *
  * @addgroup XMLRPC
  */
-class XmlDevClient:public rts2core::DevClient, XmlDevInterface
+class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 {
 	public:
-		XmlDevClient (rts2core::Connection *conn):rts2core::DevClient (conn), XmlDevInterface () {}
+		XmlDevClient (rts2core::Connection *conn):rts2image::DevClientWriteImage (conn), XmlDevInterface () {}
 
 		virtual void stateChanged (rts2core::ServerState * state)
 		{
 			XmlDevInterface::stateChanged (state);
-			rts2core::DevClient::stateChanged (state);
+			rts2image::DevClientWriteImage::stateChanged (state);
 		}
 
 		virtual void valueChanged (rts2core::Value * value)
 		{
 			XmlDevInterface::valueChanged (value);
-			rts2core::DevClient::valueChanged (value);
+			rts2image::DevClientWriteImage::valueChanged (value);
 		}
 
 	protected:
