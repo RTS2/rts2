@@ -93,8 +93,7 @@ Connection::Connection (Block * in_master):Object ()
 	activeReadData = -1;
 	dataConn = 0;
 
-	activeSharedId = -1;
-	activeSharedMem = NULL;
+	sharedReadMemory = NULL;
 }
 
 Connection::Connection (int in_sock, Block * in_master):Object ()
@@ -135,8 +134,7 @@ Connection::Connection (int in_sock, Block * in_master):Object ()
 	activeReadData = -1;
 	dataConn = 0;
 
-	activeSharedId = -1;
-	activeSharedMem = NULL;
+	sharedReadMemory = NULL;
 }
 
 Connection::~Connection (void)
@@ -147,8 +145,7 @@ Connection::~Connection (void)
 	delete bopState;
 	queClear ();
 	delete[]buf;
-	if (activeSharedMem != NULL)
-		shmdt (activeSharedMem);
+	delete sharedReadMemory;
 	delete otherDevice;
 }
 
@@ -765,9 +762,10 @@ void Connection::processLine ()
 	}
 	else if (isCommand (PROTO_SHARED))
 	{
-		int sharedMem;
 		int dC;
-		if (paramNextInteger (&sharedMem) || paramNextInteger (&dC) || !paramEnd ())
+		int sharedMem;
+		int seg;
+		if (paramNextInteger (&dC) || paramNextInteger (&sharedMem) || paramNextInteger (&seg) || !paramEnd ())
 		{
 			connectionError (-2);
 			ret = -2;
@@ -775,47 +773,45 @@ void Connection::processLine ()
 		else
 		{
 			ret = -1;
-			if (sharedMem != activeSharedId)
+			if (sharedReadMemory && sharedMem != sharedReadMemory->getShmId ())
 			{
-				shmdt (activeSharedMem);
-				activeSharedMem = (char *) shmat (sharedMem, NULL, 0);
-				if (activeSharedMem == (void *) -1)
+				// unmap existing IPC, map new one
+				delete sharedReadMemory;
+				sharedReadMemory = NULL;
+			}
+
+			if (sharedReadMemory == NULL)
+			{
+				sharedReadMemory = new DataSharedRead ();
+				if (sharedReadMemory->attach (sharedMem))
 				{
-					logStream (MESSAGE_ERROR) << "cannot attach memory with ID " << sharedMem << sendLog;
+					connectionError (-2);
 					ret = -2;
 				}
-				else
-				{
-					activeSharedId = sharedMem;
-				}
-				newDataConn (-1);
+			}
+			if (ret == -1)
+			{
+				readChannels[dC] = new DataChannels ();
+				readChannels[dC]->push_back (new DataSharedRead (sharedReadMemory, seg));
+				newDataConn (dC);
 			}
 		}
-		std::cout << "PROTO_SHARED " << ret << std::endl;
 	}
 	else if (isCommand (PROTO_SHARED_FULL))
 	{
-		int sharedMem;
-		if (paramNextInteger (&sharedMem)
-			|| !paramEnd ())
+		int dC;
+		if (paramNextInteger (&dC) || !paramEnd ())
 		{
 			connectionError (-2);
 			ret = -2;
 		}
-		if (sharedMem != activeSharedId)
-		{
-			logStream (MESSAGE_ERROR) << "invalid shmid passed in PROTO_SHARED_FULL :" << sharedMem << " " << activeSharedId << sendLog;
-			ret = -2;
-		}
 		else
 		{
-			std::cout << "PROTO_SHARED_FULL " << otherDevice << std::endl;
 			if (otherDevice)
 			{
-				DataChannels _channel;
-				_channel.push_back (new DataShared (activeSharedMem));
-				otherDevice->fullDataReceived (-1, &_channel);
+				otherDevice->fullDataReceived (dC, readChannels[dC]);
 			}
+			readChannels.erase (dC);
 			ret = -1;
 		}
 	}
@@ -1381,7 +1377,7 @@ int Connection::sendMsg (std::ostringstream &_os)
 	return sendMsg (_os.str ().c_str ());
 }
 
-int Connection::startBinaryData (int dataType, int channum, long *chansize)
+int Connection::startBinaryData (int dataType, int channum, size_t *chansize)
 {
 	std::ostringstream _os;
 	dataConn++;
@@ -1396,7 +1392,7 @@ int Connection::startBinaryData (int dataType, int channum, long *chansize)
 	return dataConn;
 }
 
-int Connection::sendBinaryData (int data_conn, int chan, char *data, long dataSize)
+int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t dataSize)
 {
 	char *binaryWriteTop, *binaryWriteBuff;
 	binaryWriteTop = binaryWriteBuff = data;
@@ -1445,11 +1441,13 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, long dataSi
 	return 0;
 }
 
-int Connection::startSharedData (int shId)
+int Connection::startSharedData (int shId, int channum, int *segnums, size_t *chansize)
 {
 	std::ostringstream _os;
 	dataConn++;
-	_os << PROTO_SHARED " " << shId << " " << dataConn;
+	_os << PROTO_SHARED " " << shId << " " << dataConn << " " << channum;
+	for (int i = 0; i < channum; i++)
+		_os << " " << segnums[i] << " " << chansize[i];
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)

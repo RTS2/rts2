@@ -316,7 +316,7 @@ class Camera:public rts2core::ScriptDevice
 
 		// buffer used to read data
 		char* dataBuffer;
-		long dataBufferSize;
+		size_t dataBufferSize;
 
 		/**
 		 * Add : separated filters from command line (usually -F argument).
@@ -438,8 +438,6 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		long getWriteBinaryDataSize ()
 		{
-			if (currentImageData == -2)
-				return dataBufferSize - *((unsigned long*) shmBuffer);
 			if (currentImageData < 0 && calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 				// end bytes
 				return calculateDataSize;
@@ -455,8 +453,6 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		long getWriteBinaryDataSize (int chan)
 		{
-			if (currentImageData == -2)
-				return dataBufferSize - *((unsigned long*) shmBuffer);
 			if (currentImageData < 0 && calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 				// end bytes
 				return calculateDataSize;
@@ -518,7 +514,7 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return Size of pixel data from current configured CCD in bytes.
 		 */
-		virtual long chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
+		virtual size_t chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
 
 		/**
 		 * Returns size of one line in bytes.
@@ -621,7 +617,7 @@ class Camera:public rts2core::ScriptDevice
 		 *
 		 * @return Size of data buffer in bytes.
 		 */
-		virtual long suggestBufferSize () { return chipByteSize (); }
+		virtual size_t suggestBufferSize () { return chipByteSize (); }
 
 		/**
 		 * Get chip width (in pixels).
@@ -901,9 +897,8 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDoubleMinMax *exposure;
 
 		// shared memory identifier
-		int sharedMemId;
-		// shared memory buffer - this include size (unsigned long) and image header structure
-		char* shmBuffer;
+		int sharedMemNum;
+		rts2core::DataSharedWrite *sharedData;
 
 		// number of exposures camera takes
 		rts2core::ValueLong *exposureNumber;

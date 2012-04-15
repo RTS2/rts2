@@ -237,7 +237,7 @@ class EdtSao:public Camera
 		virtual long isExposing ();
 		virtual int readoutStart ();
 
-		virtual long suggestBufferSize () { return -1; }
+		virtual size_t suggestBufferSize () { return 0; }
 
 		virtual int doReadout ();
 		virtual int endReadout ();

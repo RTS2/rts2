@@ -56,7 +56,7 @@ class Alta:public Camera
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
-		virtual long suggestBufferSize ()
+		virtual size_t suggestBufferSize ()
 		{
 			return Camera::suggestBufferSize () + 4;
 		}

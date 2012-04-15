@@ -205,7 +205,7 @@ int Camera::endReadout ()
 	clearReadout ();
 	if (currentImageData == -2 && exposureConn)
 	{
-		exposureConn->endSharedData (sharedMemId);
+		exposureConn->endSharedData (sharedData->getShmId ());
 	}
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
@@ -234,18 +234,19 @@ int Camera::getPhysicalChannel (int ch)
 
 void Camera::startImageData (rts2core::Connection * conn)
 {
-	if (sharedMemId >= 0)
+	int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
+	size_t chansize[chnTot];
+	for (int i = 0; i < chnTot; i++)
+		chansize[i] = chipByteSize () + sizeof (imghdr);
+
+	if (sharedData)
 	{
 		currentImageData = -2;
-		conn->startSharedData (sharedMemId);
+		conn->startSharedData (sharedData->getShmId (), chnTot, NULL, chansize);
 		exposureConn = conn;
 	}
 	else
 	{
-		int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
-		long chansize[chnTot];
-		for (int i = 0; i < chnTot; i++)
-			chansize[i] = chipByteSize () + sizeof (imghdr);
 		currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
 		exposureConn = conn;
 	}
@@ -279,8 +280,9 @@ int Camera::sendFirstLine (int chan, int pchan)
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
-	if (shmBuffer != NULL)
-		*((unsigned long *) shmBuffer) = 0;
+	if (sharedData)
+		sharedData->dataWritten (chan, sizeof (imghdr));
+
 	// send it out - but do not include it in average etc. calculations
 	if (exposureConn && currentImageData >= 0)
 		return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
@@ -328,8 +330,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	nAcc = 1;
 
-	shmBuffer = NULL;
-	sharedMemId = -2;
+	sharedData = NULL;
+	sharedMemNum = 0;
 
 	currentImageData = -1;
 
@@ -406,7 +408,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	focuserDevice = NULL;
 
 	dataBuffer = NULL;
-	dataBufferSize = -1;
+	dataBufferSize = 0;
 
 	exposureConn = NULL;
 
@@ -426,9 +428,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 Camera::~Camera ()
 {
-	if (sharedMemId >= 0)
+	if (sharedData >= 0)
 	{
-		shmdt (dataBuffer);
+		delete sharedData;
 	}
 	else
 	{
@@ -650,7 +652,7 @@ int Camera::processOption (int in_opt)
 			wcs_crota->setValueDouble (default_cd[2]);
 			break;
 		case OPT_WITHSHM:
-			sharedMemId = -1;
+			sharedMemNum = 10;
 			break;
 		default:
 			return rts2core::ScriptDevice::processOption (in_opt);
@@ -784,8 +786,8 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		}
 	}
 
-	if (shmBuffer != NULL)
-		*((unsigned long *) shmBuffer) += dataSize;
+	if (sharedData != NULL)
+		sharedData->dataWritten (chan, dataSize);
 
 	if (exposureConn && currentImageData >= 0)
 		return exposureConn->sendBinaryData (currentImageData, chan, data, dataSize);
@@ -877,29 +879,16 @@ int Camera::initValues ()
 	initDataTypes ();
 
 	// init shared memory segment
-	if (sharedMemId == -1)
+	if (sharedMemNum > 0)
 	{
-		struct shmid_ds ds;
-		sharedMemId = shmget (IPC_PRIVATE, sizeof (unsigned long) + sizeof (imghdr) + chipByteSize (), 0666);
-		if (sharedMemId == -1)
+		dataBufferSize = chipByteSize () + sizeof (imghdr);
+		sharedData = new rts2core::DataSharedWrite ();
+		if (sharedData->create (sharedMemNum, dataBufferSize) == NULL)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot create shared memory segment: " << strerror (errno) << sendLog;
 			return -1;
 		}
-		dataBufferSize = chipByteSize ();
-		shmBuffer = (char *) shmat (sharedMemId, NULL, 0);
-		if (shmBuffer == (void *) -1)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot attach to shared memory with key " << sharedMemId << ": " << strerror (errno) << sendLog;
-			return -1;
-		}
-		if (shmctl (sharedMemId, IPC_STAT, &ds) < 0 || shmctl (sharedMemId, IPC_RMID, &ds) < 0)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot perform shmctl call: " << strerror (errno) << sendLog;
-			return -1;
-		}
-		focusingHeader = (struct imghdr*) (shmBuffer + sizeof (unsigned long));
-		dataBuffer = shmBuffer + sizeof (unsigned long) + sizeof (struct imghdr);
+		focusingHeader = NULL;
+		dataBuffer = NULL;
 	}
 	else
 	{

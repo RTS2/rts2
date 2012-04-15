@@ -203,7 +203,7 @@ class Dummy:public Camera
 			written = -1;
 			return 0;
 		}
-		virtual long suggestBufferSize ()
+		virtual size_t suggestBufferSize ()
 		{
 			if (dataSize < 0)
 				return Camera::suggestBufferSize ();

@@ -24,6 +24,9 @@
 #include <unistd.h>
 #include <vector>
 
+// maximal number of shared clients
+#define MAX_SHARED_CLIENTS       10
+
 namespace rts2core
 {
 
@@ -53,7 +56,7 @@ class DataAbstractRead
 		 *
 		 * @return Actual size of data added.
 		 */
-		virtual long addData (char *data, long data_size) = 0;
+		virtual ssize_t addData (char *data, ssize_t data_size) = 0;
 
 		/**
 		 * Receive data from socket.
@@ -70,12 +73,12 @@ class DataAbstractRead
 		 *
 		 * @return Size of data which remains to be read.
 		 */
-		virtual long getRestSize () = 0;
+		virtual size_t getRestSize () = 0;
 
 		/**
 		 * Return remaining size of chunk, which has to be read from actual data chunk.
 		 */
-		virtual long getChunkSize () = 0;
+		virtual size_t getChunkSize () = 0;
 };
 
 /**
@@ -86,7 +89,7 @@ class DataAbstractRead
 class DataRead:public DataAbstractRead
 {
 	public:
-		DataRead (long in_binaryReadDataSize, int in_type)
+		DataRead (size_t in_binaryReadDataSize, int in_type)
 		{
 			binaryReadDataSize = in_binaryReadDataSize;
 			binaryReadBuff = new char[binaryReadDataSize];
@@ -109,7 +112,7 @@ class DataRead:public DataAbstractRead
 		 */
 		virtual int getData (int sock)
 		{
-			int data_size;
+			ssize_t data_size;
 			data_size = read (sock, binaryReadTop, binaryReadChunkSize);
 			if (data_size == -1)
 			{
@@ -125,7 +128,7 @@ class DataRead:public DataAbstractRead
 			return data_size;
 		}
 
-		virtual long addData (char *data, long data_size)
+		virtual ssize_t addData (char *data, ssize_t data_size)
 		{
 			if (data_size > binaryReadChunkSize)
 				data_size = binaryReadChunkSize;
@@ -140,16 +143,16 @@ class DataRead:public DataAbstractRead
 
 		virtual char *getDataTop () { return binaryReadTop; }
 
-		virtual long getRestSize () { return binaryReadDataSize; }
+		virtual size_t getRestSize () { return binaryReadDataSize; }
 
-		virtual long getChunkSize () { return binaryReadChunkSize; }
+		virtual size_t getChunkSize () { return binaryReadChunkSize; }
 
 	private:
 		// binary data
 		// when it is positive, there are binary data to read from connection
 		// when it is 0, we should send confirmation that we received binary data
 		// when it is negative, there aren't any data waiting
-		long binaryReadDataSize;
+		size_t binaryReadDataSize;
 
 		char *binaryReadBuff;
 		char *binaryReadTop;
@@ -158,47 +161,185 @@ class DataRead:public DataAbstractRead
 		int binaryReadType;
 
 		// remaining size of binary data chunk which needed to be read
-		long binaryReadChunkSize;
+		ssize_t binaryReadChunkSize;
 };
 
 /**
- * Shared memory data - returns buffer specified in constructor.
+ * Shared data header structure.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DataShared: public DataAbstractRead
+struct SharedDataHeader
+{
+	// number of data buffers.
+	int nseg;
+	// semaphore associated with data; it has nbuffers values, each associated with a single buffer
+	int shared_sem;
+	// shared client IDs, segment sizes - SharedData - follows immediately this field
+};
+
+/**
+ * Shared data segment header. Described segments of shared data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+struct SharedDataSegment
+{
+	// ID of client connection reading data. Data cannot be reused if this field is non-empty.
+	int client_ids[MAX_SHARED_CLIENTS];
+	// segment size
+	size_t size;
+	// size of written data (so far; process can update this as new data arrives
+	size_t bytesSoFar;
+	// segment offset
+	size_t offset;
+};
+
+/**
+ * Encampulates basic shared data management functions.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataAbstractShared
 {
 	public:
-		DataShared (char *_data) { data = _data; }
+		DataAbstractShared () { data = NULL; }
+
+		int getShmId () { return shm_id; }
+
+	protected:
+		struct SharedDataSegment *getSegment (int segnum) { return (struct SharedDataSegment *) (data + sizeof (struct SharedDataHeader) + segnum * sizeof (struct SharedDataSegment)); }
+
+		// semaphore op
+		int lockSegment (int seg);
+		int unlockSegment (int seg);
+
+		struct SharedDataHeader *data;
+		int shm_id;
+};
+
+/**
+ * Shared memory data - handles both client and server side of data connections.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataSharedRead: public DataAbstractRead, public DataAbstractShared
+{
+	public:
+		/**
+		 * Crate new DataSharedRead structure, prepare it for attach call.
+		 */
+		DataSharedRead () { data = NULL; activeSegment = NULL; shm_id = -1; }
+
+
+		/**
+		 * Initialize data from existing, already mapped shared memory segment.
+		 *
+		 * @param _data   
+		 * @param _seg
+		 */
+		DataSharedRead (DataSharedRead *_data, int _seg) { data = _data->data; activeSegment = getSegment (_seg); shm_id = -1; }
+
+		virtual ~DataSharedRead ();
+
+		int attach (int _shm_id);
 
 		virtual int readDataSize (Connection *conn) { return 0; }
-		virtual long addData (char *_data, long data_size) { return -1; }
+		virtual ssize_t addData (char *_data, ssize_t _data_size) { return -1; }
 		virtual int getData (int sock) { return -1; }
-		virtual char *getDataBuff () { return data + sizeof (unsigned long); }
-		virtual char *getDataTop () { return data + *((unsigned long *) data) + sizeof (unsigned long); }
-		virtual long getRestSize () { return 0; }
-		virtual long getChunkSize () { return -1; }
+		virtual char *getDataBuff () { return ((char *) data) + activeSegment->offset; }
+		virtual char *getDataTop () { return ((char *) data) + activeSegment->offset + activeSegment->bytesSoFar; }
+		virtual size_t getRestSize () { return activeSegment->size - activeSegment->bytesSoFar; }
+		virtual size_t getChunkSize () { return getRestSize (); }
+
+		/**
+		 * Add client to reader set of given segment.
+		 */
+		int addClient (int segnum, int client_id);
+
+
+		int confirmClient (int segnum, int client_id);
+
+		/**
+		 * Remove client from reader set.
+		 */
+		int removeClient (int segnum, int client_id);
+
 	private:
-		char *data;
+		struct SharedDataHeader *data;
+		// shared data segment
+		struct SharedDataSegment *activeSegment;
+		int shm_id;
+
 };
 
 /**
- * Represents data written to connection.
+ * Abstract class for sending data.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class DataWrite
+class DataAbstractWrite
 {
 	public:
-		DataWrite (int channum, long *chansize);
-		long getDataSize ();
-		long getChannelSize (int chan) { return binaryWriteDataSize[chan]; }
+		DataAbstractWrite () {}
+		virtual size_t getDataSize () = 0;
+		virtual size_t getChannelSize (int chan) = 0;
 
-		void dataWritten (int chan, long size) { binaryWriteDataSize[chan] -= size; }
+		virtual void dataWritten (int chan, size_t size) = 0;
+};
+
+/**
+ * Represents data written to connection through socket.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataWrite:public DataAbstractWrite
+{
+	public:
+		DataWrite (int _channum, size_t *chansizes);
+		virtual ~DataWrite ();
+
+		virtual size_t getDataSize ();
+		virtual size_t getChannelSize (int chan) { return binaryWriteDataSize[chan]; }
+		virtual void dataWritten (int chan, size_t size) { binaryWriteDataSize[chan] -= size; }
 
 	private:
 		// connection data size
-		std::vector <long> binaryWriteDataSize;
+		size_t *binaryWriteDataSize;
+		int channum;
+};
+
+/**
+ * Keeps track of shared memory writes.
+ */
+class DataSharedWrite:public DataAbstractWrite, public DataAbstractShared
+{
+	public:
+		/**
+		 * Fill empty shared data structure. This constructor needs to be followed by create call.
+		 */
+		DataSharedWrite ():DataAbstractWrite () {}
+
+		/**
+		 * Create new shared data.
+		 */
+		struct SharedDataHeader *create (int numseg, size_t segsize);
+
+		virtual size_t getDataSize ();
+		virtual size_t getChannelSize (int chan) { return chan2seg[chan]->size - chan2seg[chan]->bytesSoFar; }
+		virtual void dataWritten (int chan, size_t size) { chan2seg[chan]->bytesSoFar += size; }
+
+		/**
+		 * Find unused segment.
+		 *
+		 * @param segsize   segment size
+		 * @param chan      channel for which segment is allocated
+		 */
+		int getUnusedSegment (size_t segsize, int chan);
+
+	private:
+		// maps channels to segments
+		std::map <int, struct SharedDataSegment *> chan2seg;
 };
 
 /**
@@ -227,16 +368,16 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 */
 		int readChannel (int chan, Connection *conn) { return at(chan)->readDataSize (conn); }
 
-		long addData (int chan, char *_data, long data_size) { return at(chan)->addData (_data, data_size); }
+		ssize_t addData (int chan, char *_data, ssize_t data_size) { return at(chan)->addData (_data, data_size); }
 
 		int getData (int chan, int sock) { return at(chan)->getData (sock); }
 
 		/**
 		 * Return remaining size of chunk, which has to be read from actual data chunk.
 		 */
-		long getChunkSize (int chan) { return at(chan)->getChunkSize (); }
+		size_t getChunkSize (int chan) { return at(chan)->getChunkSize (); }
 
-		long getRestSize ();
+		size_t getRestSize ();
 };
 
 }

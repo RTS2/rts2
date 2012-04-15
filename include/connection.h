@@ -43,6 +43,11 @@
 
 #define MAX_DATA    200
 
+/**
+ * Identifier of shared data connection.
+ */
+#define SHARED_DATA_CONN       -1
+
 enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
 
@@ -213,7 +218,7 @@ class Connection:public Object
 		 *
 		 * @return -1 on error, otherwise ID of data connection.
 		 */
-		int startBinaryData (int dataType, int channum, long *chansize);
+		int startBinaryData (int dataType, int channum, size_t *chansize);
 
 		/**
 		 * Sends part of binary data.
@@ -223,12 +228,15 @@ class Connection:public Object
 		 * @param data       data to send
 		 * @param dataSize   size of data to send (in bytes)
 		 */
-		int sendBinaryData (int data_conn, int chan, char *data, long dataSize);
+		int sendBinaryData (int data_conn, int chan, char *data, size_t dataSize);
 
 		/**
 		 * Image data will be transfered in shared memory, attachable by key.
+		 * Those functions are called by client. The receiving side can check in 
+		 * idle loop with sharedDataUpdate call, and get informed about shared
+		 * data start/end with newDataConn and fullDataReceived calls.
 		 */
-		int startSharedData (int key);
+		int startSharedData (int shId, int channum, int *segnums, size_t *chansize);
 
 		int endSharedData (int key);
 
@@ -568,7 +576,7 @@ class Connection:public Object
 		/**
 		 * Return size of data we have to write.
 		 */
-		long getWriteBinaryDataSize (int data_conn)
+		size_t getWriteBinaryDataSize (int data_conn)
 		{
 			// if it exists..
 			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
@@ -580,7 +588,7 @@ class Connection:public Object
 		/**
 		 * Return size of data we have to write on given channel.
 		 */
-		long getWriteBinaryDataSize (int data_conn, int chan)
+		size_t getWriteBinaryDataSize (int data_conn, int chan)
 		{
 			// if it exists..
 			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
@@ -744,8 +752,7 @@ class Connection:public Object
 		int activeReadData;
 		int activeReadChannel;
 
-		int activeSharedId;
-		char *activeSharedMem;
+		rts2core::DataSharedRead *sharedReadMemory;
 
 		std::map <int, DataWrite *> writeChannels;
 		// ID of outgoing data connection

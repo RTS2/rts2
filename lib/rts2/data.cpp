@@ -20,6 +20,11 @@
 #include "connection.h"
 #include "data.h"
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+
 using namespace rts2core;
 
 int DataRead::readDataSize (Connection *conn)
@@ -27,18 +32,215 @@ int DataRead::readDataSize (Connection *conn)
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
 
-DataWrite::DataWrite (int channum, long *chansize)
+int DataAbstractShared::lockSegment (int segnum)
 {
-	for (int i = 0; i < channum; i++)
-		binaryWriteDataSize.push_back (chansize[i]);
+	struct sembuf so;
+	so.sem_num = segnum;
+	so.sem_op = -1;
+	so.sem_flg = SEM_UNDO;
+	if (semop (data->shared_sem, &so, 1))
+	{
+		logStream (MESSAGE_ERROR) << "cannot lock segment " << segnum << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
-long DataWrite::getDataSize ()
+int DataAbstractShared::unlockSegment (int segnum)
 {
-	long ret = 0;
-	for (std::vector <long>::iterator iter = binaryWriteDataSize.begin (); iter != binaryWriteDataSize.end (); iter++)
-		ret += *iter;
+	struct sembuf so;
+	so.sem_num = segnum;
+	so.sem_op = 1;
+	so.sem_flg = SEM_UNDO;
+	if (semop (data->shared_sem, &so, 1))
+	{
+		logStream (MESSAGE_ERROR) << "cannot unlock segment " << segnum << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+DataSharedRead::~DataSharedRead ()
+{
+	if (shm_id > 0)
+	{
+		shmdt (data);
+	}
+}
+
+int DataSharedRead::attach (int _shm_id)
+{
+	data = (struct SharedDataHeader *) shmat (_shm_id, NULL, 0);
+	if (data == (void *) -1)
+	{
+		logStream (MESSAGE_ERROR) << "cannot attach to shared memory " << _shm_id << sendLog;
+		return -1;
+	}
+	shm_id = _shm_id;
+	return 0;
+}
+
+
+int DataSharedRead::addClient (int segnum, int client_id)
+{
+	if (lockSegment (segnum))
+		return -1;
+	// confirm there is already allocated client
+	struct SharedDataSegment *sseg = getSegment (segnum);
+	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
+	{
+		if (sseg->client_ids[s] == 0)
+		{
+			sseg->client_ids[s] = client_id;
+			unlockSegment (segnum);
+			return 0;
+		}
+	}
+	logStream (MESSAGE_ERROR) << "cannot find empty client slot to lock segment " << segnum << sendLog;
+	return -1;
+}
+
+int DataSharedRead::confirmClient (int segnum, int client_id)
+{
+	if (lockSegment (segnum))
+		return -1;
+	// confirm there is already allocated client
+	struct SharedDataSegment *sseg = getSegment (segnum);
+	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
+	{
+		if (sseg->client_ids[s] == client_id)
+		{
+			unlockSegment (segnum);
+			return 0;
+		}
+	}
+	logStream (MESSAGE_ERROR) << "cannot find empty client slot to lock segment " << segnum << sendLog;
+	return -1;
+}
+
+int DataSharedRead::removeClient (int segnum, int client_id)
+{
+	if (lockSegment (segnum))
+		return -1;
+	struct SharedDataSegment *sseg = getSegment (segnum);
+	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
+	{
+		if (sseg->client_ids[s] == client_id)
+		{
+			sseg->client_ids[s] = 0;
+			unlockSegment (segnum);
+			return 0;
+		}
+	}
+	unlockSegment (segnum);
+	logStream (MESSAGE_ERROR) << "cannot find locked client to remove segment " << segnum << sendLog;
+	return -1;
+}
+
+DataWrite::DataWrite (int _channum, size_t *chansizes):DataAbstractWrite ()
+{
+	channum = _channum;
+	binaryWriteDataSize = new size_t[channum];
+	for (int i = 0; i < channum; i++)
+		binaryWriteDataSize[i] = chansizes[i];
+}
+
+DataWrite::~DataWrite ()
+{
+	delete[] binaryWriteDataSize;
+}
+
+size_t DataWrite::getDataSize ()
+{
+	size_t ret = 0;
+	for (int i = 0; i < channum; i++)
+		ret += getChannelSize (i);
 	return ret;
+}
+
+struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
+{
+	shm_id = shmget (IPC_PRIVATE, sizeof (struct SharedDataHeader) + numseg * (sizeof (struct SharedDataSegment) + segsize), 0666);
+	if (shm_id < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create shared memory segment: " << strerror (errno) << sendLog;
+		return NULL;
+	}
+	data = (struct SharedDataHeader *) shmat (shm_id, NULL, 0);
+	if (data == (void *) -1)
+	{
+		shm_id = -1;
+		logStream (MESSAGE_ERROR) << "cannot attach shared memory segment: " << strerror (errno) << sendLog;
+		return NULL;
+	}
+	struct shmid_ds ds;
+	if (shmctl (shm_id, IPC_STAT, &ds) < 0 || shmctl (shm_id, IPC_RMID, &ds) < 0)
+	{
+		shmdt (data);
+		shm_id = -1;
+		logStream (MESSAGE_ERROR) << "Cannot perform shmctl call: " << strerror (errno) << sendLog;
+		return NULL;
+	}
+	// initalize shared data header
+	data->nseg = numseg;
+	// first set is for exclusive locks, second is to signal waiting locks
+	data->shared_sem = semget (IPC_PRIVATE, numseg, 0666);
+	if (data->shared_sem < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create shared semaphore" << strerror (errno) << sendLog;
+		shmdt ((void *) data);
+		return NULL;
+	}
+
+	struct SharedDataSegment *seg = (struct SharedDataSegment *) (data + sizeof (struct SharedDataHeader));
+	for (int i = 0; i < numseg; i++, seg++)
+	{
+		bzero (seg->client_ids, sizeof (int) * MAX_SHARED_CLIENTS);
+		seg->size = segsize;
+		seg->bytesSoFar = 0;
+		seg->offset = sizeof (struct SharedDataHeader) + sizeof (struct SharedDataSegment) * numseg + numseg * segsize;
+
+		struct sembuf so;
+		so.sem_num = i;
+		so.sem_op = 1;
+		so.sem_flg = SEM_UNDO;
+		semop (data->shared_sem, &so, 1);
+	}
+
+	return data;
+}
+
+size_t DataSharedWrite::getDataSize ()
+{
+	size_t ret = 0;
+	for (std::map <int, struct SharedDataSegment *>::iterator iter = chan2seg.begin (); iter != chan2seg.end (); iter++)
+		ret += getChannelSize (iter->first);
+	return ret;
+}
+
+int DataSharedWrite::getUnusedSegment (size_t segsize, int chan)
+{
+	for (int i = 0; i < data->nseg; i++)
+	{
+		lockSegment (i);
+		struct SharedDataSegment *sseg = getSegment (i);
+		int s;
+		for (s = 0; s < MAX_SHARED_CLIENTS; s++)
+		{
+			if (sseg->client_ids[s] > 0)
+				break;
+		}
+		if (s == MAX_SHARED_CLIENTS)
+		{
+			sseg->bytesSoFar = 0;
+			sseg->size = segsize;
+			chan2seg[chan] = sseg;
+			unlockSegment (i);
+			return s;
+		}
+		unlockSegment (i);
+	}
+	return -1;
 }
 
 DataChannels::~DataChannels ()
@@ -56,14 +258,14 @@ void DataChannels::initFromConnection (Connection *conn)
 	{
 		long chansize;
 		if (conn->paramNextLong (&chansize))
-			throw Error ("cannot get parse channel size");
+			throw Error ("cannot parse channel size");
 		push_back (new DataRead (chansize, data_type));
 	}
 	if (!conn->paramEnd ())
 		throw Error ("too much parameters in PROTO_BINARY data header");
 }
 
-long DataChannels::getRestSize ()
+size_t DataChannels::getRestSize ()
 {
 	long ret = 0;
 	for (DataChannels::iterator iter = begin (); iter != end (); iter++)
