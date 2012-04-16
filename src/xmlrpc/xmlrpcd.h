@@ -214,7 +214,9 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		int findScript (std::string in_deviceName, std::string & buf) { buf = currentscript; return 0; }
 
+		virtual void newDataConn (int data_conn);
 		virtual void dataReceived (DataAbstractRead *data);
+		virtual void fullDataReceived (int data_conn, DataChannels *data);
 		virtual void exposureFailed (int status);
 
 		rts2image::Image *getPreviousImage () { return previmage; }
@@ -400,7 +402,9 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
 
 
+		void clientNewDataConn (Connection *conn, int data_conn);
 		void clientDataReceived (Connection *conn, DataAbstractRead *data);
+		void clientFullDataReceived (Connection *conn, DataChannels *data);
 		void clientExposureFailed (Connection *conn, int status);
 
 	protected:

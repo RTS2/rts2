@@ -177,10 +177,22 @@ void XmlRpcd::doOpValue (const char *v_name, char oper, const char *operand)
 	delete nv;
 }
 
+void XmlRpcd::clientNewDataConn (rts2core::Connection *conn, int data_conn)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+		(*iter)->newDataConn (conn, data_conn);
+}
+
 void XmlRpcd::clientDataReceived (rts2core::Connection *conn, rts2core::DataAbstractRead *data)
 {
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
 		(*iter)->dataReceived (conn, data);
+}
+
+void XmlRpcd::clientFullDataReceived (rts2core::Connection *conn, rts2core::DataChannels *data)
+{
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+		(*iter)->fullDataReceived (conn, data);
 }
 
 void XmlRpcd::clientExposureFailed (Connection *conn, int status)
@@ -295,10 +307,22 @@ void XmlDevCameraClient::setScriptExpand (const char *fe)
 	nexpand = std::string ("");
 }
 
+void XmlDevCameraClient::newDataConn (int data_conn)
+{
+	getMaster ()->clientNewDataConn (getConnection (), data_conn);
+	rts2script::DevClientCameraExec::newDataConn (data_conn);
+}
+
 void XmlDevCameraClient::dataReceived (DataAbstractRead *data)
 {
 	getMaster ()->clientDataReceived (getConnection (), data);
 	rts2script::DevClientCameraExec::dataReceived (data);
+}
+
+void XmlDevCameraClient::fullDataReceived (int data_conn, DataChannels *data)
+{
+	getMaster ()->clientFullDataReceived (getConnection (), data);
+	rts2script::DevClientCameraExec::fullDataReceived (data_conn, data);
 }
 
 void XmlDevCameraClient::exposureFailed (int status)
@@ -356,9 +380,10 @@ rts2image::imageProceRes XmlDevCameraClient::processImage (rts2image::Image * im
 
 int XmlRpcd::idle ()
 {
+	// delete freed async, check for shared memory data
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
-		if ((*iter)->isForSource (NULL))
+		if ((*iter)->idle ())
 		{
 			delete *iter;
 			iter = asyncAPIs.erase (iter);
@@ -368,6 +393,7 @@ int XmlRpcd::idle ()
 			iter++;
 		}
 	}
+	// 
 #ifdef HAVE_PGSQL
 	return DeviceDb::idle ();
 #else

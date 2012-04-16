@@ -67,9 +67,11 @@ class AsyncAPI:public rts2core::Object
 		
 		virtual void postEvent (rts2core::Event *event);
 
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {};
-		virtual void exposureFailed (rts2core::Connection *_conn, int status) {};
-		virtual void exposureEnd (rts2core::Connection *_conn) {};
+		virtual void newDataConn (rts2core::Connection *_conn, int data_conn) {}
+		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {}
+		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data) {}
+		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
+		virtual void exposureEnd (rts2core::Connection *_conn) {}
 
 		/**
 		 * Check if the request is for connection or source..
@@ -89,12 +91,20 @@ class AsyncAPI:public rts2core::Object
 			nullSource ();
 		}
 
+		/**
+		 * Check if the connection can be deleted, check for 
+		 * shared memory segments.
+		 *
+		 * @return 0 if AsyncAPI is still active, otherwise AsyncAPI will be deleted
+		 */
+		virtual int idle () { return source == NULL; }
+
 	protected:
 		API *req;
 		XmlRpcServerConnection *source;
+		rts2core::Connection *conn;
 
 	private:
-		rts2core::Connection *conn;
 		bool ext;
 };
 

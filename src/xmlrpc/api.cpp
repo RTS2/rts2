@@ -505,50 +505,31 @@ class AsyncDataAPI:public AsyncAPI
 {
 	public:
 		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
-		virtual ~AsyncDataAPI ();
+		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
 
-		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
-		virtual void exposureFailed (rts2core::Connection *_conn, int status);
+		virtual int idle ();
 
-	private:
+	protected:
 		DataAbstractRead *data;
 		size_t bytesSoFar;
+
+		void sendData ();
 };
 
 AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	bytesSoFar = 0;
-
-	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
-
-	XmlRpcSocket::nbWriteBuf (source->getfd (), data->getDataBuff (), data->getDataTop () - data->getDataBuff (), &bytesSoFar);
 }
 
-AsyncDataAPI::~AsyncDataAPI ()
+void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
 {
-}
+	AsyncAPI::fullDataReceived (_conn, _data);
 
-void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
-{
-	if (_data == data)
+	if (isForConnection (_conn))
 	{
-		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
-		if (ret < 0)
-		{
-			if (errno != EAGAIN && errno != EINTR)
-			{
-				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
-				asyncFinished ();
-				return;
-			}
-		}
-		else
-		{
-			bytesSoFar += ret;
-		}
-
-		if (data->getRestSize () == 0)
+		rts2core::DataChannels::iterator iter = std::find (_data->begin (), _data->end (), data);
+		if (iter != _data->end ())
 		{
 			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
 			{
@@ -560,11 +541,68 @@ void AsyncDataAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *
 				asyncFinished ();
 			}
 			data = NULL;
+			return;
 		}
 	}
 }
 
-void AsyncDataAPI::exposureFailed (rts2core::Connection *_conn, int status)
+int AsyncDataAPI::idle ()
+{
+	// see new data on shared connection
+	if (data && (data->getDataTop () - data->getDataBuff ()) > bytesSoFar)
+	{
+		dataReceived (conn, data);
+	}
+	return AsyncAPI::idle ();
+}
+
+void AsyncDataAPI::sendData ()
+{
+	ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
+	if (ret < 0)
+	{
+		if (errno != EAGAIN && errno != EINTR)
+		{
+			logStream (MESSAGE_ERROR) << "cannot send data to client " << strerror (errno) << sendLog;
+			asyncFinished ();
+			return;
+		}
+	}
+	else
+	{
+		bytesSoFar += ret;
+	}
+}
+
+class AsyncCurrentAPI:public AsyncDataAPI
+{
+	public:
+		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
+		virtual ~AsyncCurrentAPI ();
+
+		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
+		virtual void exposureFailed (rts2core::Connection *_conn, int status);
+};
+
+AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data):AsyncDataAPI (_req, _conn, _source, _data)
+{
+	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+
+	// try to send data
+	sendData ();
+}
+
+AsyncCurrentAPI::~AsyncCurrentAPI ()
+{
+}
+
+void AsyncCurrentAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
+{
+	if (_data == data)
+		sendData ();
+}
+
+void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
 {
 	if (isForConnection (_conn))
 	{
@@ -576,36 +614,34 @@ void AsyncDataAPI::exposureFailed (rts2core::Connection *_conn, int status)
 	}
 }
 
-class AsyncAPIExpose:public AsyncAPI
+class AsyncExposeAPI:public AsyncDataAPI
 {
 	public:
-		AsyncAPIExpose (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, bool _ext);
-		virtual ~AsyncAPIExpose ();
+		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source);
+		virtual ~AsyncExposeAPI ();
 
 		virtual void postEvent (Event *event);
 
 		virtual void dataReceived (Connection *_conn, DataAbstractRead *_data);
-
+		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
+
+		virtual int idle ();
+
 	private:
 		enum {waitForExpReturn, waitForImage, receivingImage} callState;
-
-		DataAbstractRead *data;
-		size_t bytesSoFar;
 };
 
-AsyncAPIExpose::AsyncAPIExpose (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):AsyncAPI (_req, _conn, _source, _ext)
+AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source):AsyncDataAPI (_req, _conn, _source, NULL)
 {
 	callState = waitForExpReturn;
-	data = NULL;
-	bytesSoFar = 0;
 }
 
-AsyncAPIExpose::~AsyncAPIExpose ()
+AsyncExposeAPI::~AsyncExposeAPI ()
 {
 }
 
-void AsyncAPIExpose::postEvent (Event *event)
+void AsyncExposeAPI::postEvent (Event *event)
 {
 	if (source)
 	{
@@ -629,43 +665,14 @@ void AsyncAPIExpose::postEvent (Event *event)
 	Object::postEvent (event);
 }
 
-void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
+void AsyncExposeAPI::dataReceived (Connection *_conn, DataAbstractRead *_data)
 {
 	if (_data == data)
-	{
-		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
-		if (ret < 0)
-		{
-			if (errno != EAGAIN && errno != EINTR)
-			{
-				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
-				asyncFinished ();
-				return;
-			}
-		}
-		else
-		{
-			bytesSoFar += ret;
-		}
-
-		if (data->getRestSize () == 0)
-		{
-			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
-			{
-				source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
-				nullSource ();
-			}
-			else
-			{
-				asyncFinished ();
-			}
-			data = NULL;
-		}
-	}
-	else if (isForConnection (_conn) && callState == waitForImage)
+		sendData ();
+	else if (data == NULL && isForConnection (_conn) && callState == waitForImage)
 	{
 		callState = receivingImage;
-		data = _conn->lastDataChannel ();
+		data = _data;
 		if (data == NULL)
 		{
 			asyncFinished ();
@@ -673,24 +680,23 @@ void AsyncAPIExpose::dataReceived (Connection *_conn, DataAbstractRead *_data)
 		}
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
-		ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
-		if (ret < 0)
-		{
-			if (errno != EAGAIN && errno != EINTR)
-			{
-				logStream (MESSAGE_ERROR) << "cannot send first line to client " << strerror (errno) << sendLog;
-				asyncFinished ();
-				return;
-			}
-		}
-		else
-		{
-			bytesSoFar += ret;
-		}
+		sendData ();
 	}
 }
 
-void AsyncAPIExpose::exposureFailed (rts2core::Connection *_conn, int status)
+void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
+{
+	// in case idle loop was not called
+	if (data == NULL)
+	{
+		data = _conn->lastDataChannel ();
+		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+	}
+
+	AsyncDataAPI::fullDataReceived (_conn, _data);
+}
+
+void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
 {
 	if (isForConnection (_conn))
 	{
@@ -714,6 +720,17 @@ void AsyncAPIExpose::exposureFailed (rts2core::Connection *_conn, int status)
 			asyncFinished ();
 		}
 	}
+}
+
+int AsyncExposeAPI::idle ()
+{
+	if (data == NULL && callState == waitForImage && conn->lastDataChannel () && conn->lastDataChannel ()->getRestSize () > 0)
+	{
+		data = conn->lastDataChannel ();
+		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
+	}
+
+	return AsyncDataAPI::idle ();
 }
 
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
@@ -794,7 +811,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		// first try if there is data connection opened, so image data should be streamed in
 		if (DataAbstractRead * lastData = conn->lastDataChannel ())
 		{
-			AsyncDataAPI *aa = new AsyncDataAPI (this, conn, connection, lastData);
+			AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			throw XmlRpc::XmlRpcAsynchronous ();
@@ -1106,7 +1123,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (vals[0] == "expose")
 				aa = new AsyncAPI (this, conn, connection, ext);
 			else
-				aa = new AsyncAPIExpose (this, conn, connection, ext);
+				aa = new AsyncExposeAPI (this, conn, connection);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			conn->queCommand (new rts2core::CommandExposure (master, camdev, 0), 0, aa);
