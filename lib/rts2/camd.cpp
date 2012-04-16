@@ -236,27 +236,54 @@ void Camera::startImageData (rts2core::Connection * conn)
 {
 	int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
 	size_t chansize[chnTot];
-	for (int i = 0; i < chnTot; i++)
+	int i;
+	for (i = 0; i < chnTot; i++)
 		chansize[i] = chipByteSize () + sizeof (imghdr);
 
 	if (sharedData)
 	{
-		currentImageData = -2;
-		conn->startSharedData (sharedData->getShmId (), chnTot, NULL, chansize);
-		exposureConn = conn;
+		int segments[chnTot];
+		sharedData->clearChan2Seg ();
+		// map channels
+		for (i = 0; i < chnTot; i++)
+		{
+			segments[i] = sharedData->addClient (chansize[i], i, conn->getCentraldId ());
+			if (segments[i] < 0)
+				break;
+		}
+		// if there aren't segments left, send over TCP
+		if (i < chnTot)
+		{
+			for (int j = 0; j < i; i++)
+			{
+				sharedData->removeClient (segments[i], conn->getCentraldId ());
+			}
+			sharedData->clearChan2Seg ();
+			logStream (MESSAGE_WARNING) << "starting binary connection instead of shared data connection" << sendLog;
+			currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
+		}
+		else
+		{
+			currentImageData = -2;
+			dataBuffer = (char *) sharedData->getChannelData (0) + sizeof (imghdr);
+			conn->startSharedData (sharedData->getShmId (), chnTot, segments);
+		}
 	}
 	else
 	{
 		currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
-		exposureConn = conn;
 	}
+	exposureConn = conn;
 }
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	//int w, h;
-	// w = chipUsedReadout->getWidthInt () / binningHorizontal ();
-	// h = chipUsedReadout->getHeightInt () / binningVertical ();
+	if (sharedData && currentImageData == -2)
+	{
+		std::cerr << "sendFirstLine " << chan << " " << sharedData->getChannelData (chan) << std::endl;
+		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
+	}
+
 	focusingHeader->data_type = htons (getDataType ());
 	focusingHeader->naxes = htons (2);
 	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
@@ -280,7 +307,7 @@ int Camera::sendFirstLine (int chan, int pchan)
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
-	if (sharedData)
+	if (sharedData && currentImageData == -2)
 		sharedData->dataWritten (chan, sizeof (imghdr));
 
 	// send it out - but do not include it in average etc. calculations
@@ -786,7 +813,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		}
 	}
 
-	if (sharedData != NULL)
+	if (sharedData && currentImageData == -2)
 		sharedData->dataWritten (chan, dataSize);
 
 	if (exposureConn && currentImageData >= 0)

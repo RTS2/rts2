@@ -207,8 +207,13 @@ class DataAbstractShared
 
 		int getShmId () { return shm_id; }
 
+		/**
+		 * Remove client from reader set.
+		 */
+		int removeClient (int segnum, int client_id);
+
 	protected:
-		struct SharedDataSegment *getSegment (int segnum) { return (struct SharedDataSegment *) (data + sizeof (struct SharedDataHeader) + segnum * sizeof (struct SharedDataSegment)); }
+		struct SharedDataSegment *getSegment (int segnum) { return (struct SharedDataSegment *) (((char *) data) + sizeof (struct SharedDataHeader) + segnum * sizeof (struct SharedDataSegment)); }
 
 		// semaphore op
 		int lockSegment (int seg);
@@ -252,21 +257,9 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 		virtual size_t getRestSize () { return activeSegment->size - activeSegment->bytesSoFar; }
 		virtual size_t getChunkSize () { return getRestSize (); }
 
-		/**
-		 * Add client to reader set of given segment.
-		 */
-		int addClient (int segnum, int client_id);
-
-
 		int confirmClient (int segnum, int client_id);
 
-		/**
-		 * Remove client from reader set.
-		 */
-		int removeClient (int segnum, int client_id);
-
 	private:
-		struct SharedDataHeader *data;
 		// shared data segment
 		struct SharedDataSegment *activeSegment;
 		int shm_id;
@@ -330,12 +323,16 @@ class DataSharedWrite:public DataAbstractWrite, public DataAbstractShared
 		virtual void dataWritten (int chan, size_t size) { chan2seg[chan]->bytesSoFar += size; }
 
 		/**
-		 * Find unused segment.
+		 * Find unused segment, allocate it for a single client.
 		 *
 		 * @param segsize   segment size
 		 * @param chan      channel for which segment is allocated
 		 */
-		int getUnusedSegment (size_t segsize, int chan);
+		int addClient (size_t segsize, int chan, int client);
+
+		void clearChan2Seg () { chan2seg.clear (); }
+
+		void *getChannelData (int chan) { return ((char *) data) + chan2seg[chan]->offset; }
 
 	private:
 		// maps channels to segments
@@ -359,6 +356,11 @@ class DataChannels:public std::vector <DataAbstractRead *>
 		 * @param conn connection from which data channel will be initialized
 		 */
 		void initFromConnection (Connection *conn);
+
+		/**
+		 * Initiliaze shared channels. Expect to find channels and shared memory segments.
+		 */
+		void initSharedFromConnection (Connection *conn, DataSharedRead *shm);
 
 		/**
 		 * Read data for given channel.

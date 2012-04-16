@@ -764,8 +764,7 @@ void Connection::processLine ()
 	{
 		int dC;
 		int sharedMem;
-		int seg;
-		if (paramNextInteger (&dC) || paramNextInteger (&sharedMem) || paramNextInteger (&seg) || !paramEnd ())
+		if (paramNextInteger (&dC) || paramNextInteger (&sharedMem))
 		{
 			connectionError (-2);
 			ret = -2;
@@ -791,8 +790,9 @@ void Connection::processLine ()
 			}
 			if (ret == -1)
 			{
-				readChannels[dC] = new DataChannels ();
-				readChannels[dC]->push_back (new DataSharedRead (sharedReadMemory, seg));
+				DataChannels * chann = new DataChannels ();
+				chann->initSharedFromConnection (this, sharedReadMemory);
+				readChannels[dC] = chann;
 				newDataConn (dC);
 			}
 		}
@@ -1441,13 +1441,13 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t data
 	return 0;
 }
 
-int Connection::startSharedData (int shId, int channum, int *segnums, size_t *chansize)
+int Connection::startSharedData (int shId, int channum, int *segnums)
 {
 	std::ostringstream _os;
 	dataConn++;
-	_os << PROTO_SHARED " " << shId << " " << dataConn << " " << channum;
+	_os << PROTO_SHARED " " << dataConn << " " << shId << " " << channum;
 	for (int i = 0; i < channum; i++)
-		_os << " " << segnums[i] << " " << chansize[i];
+		_os << " " << segnums[i];
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)

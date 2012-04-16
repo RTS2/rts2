@@ -236,7 +236,7 @@ class Connection:public Object
 		 * idle loop with sharedDataUpdate call, and get informed about shared
 		 * data start/end with newDataConn and fullDataReceived calls.
 		 */
-		int startSharedData (int shId, int channum, int *segnums, size_t *chansize);
+		int startSharedData (int shId, int channum, int *segnums);
 
 		int endSharedData (int key);
 

@@ -32,6 +32,25 @@ int DataRead::readDataSize (Connection *conn)
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
 
+int DataAbstractShared::removeClient (int segnum, int client_id)
+{
+	if (lockSegment (segnum))
+		return -1;
+	struct SharedDataSegment *sseg = getSegment (segnum);
+	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
+	{
+		if (sseg->client_ids[s] == client_id)
+		{
+			sseg->client_ids[s] = 0;
+			unlockSegment (segnum);
+			return 0;
+		}
+	}
+	unlockSegment (segnum);
+	logStream (MESSAGE_ERROR) << "cannot find locked client to remove segment " << segnum << sendLog;
+	return -1;
+}
+
 int DataAbstractShared::lockSegment (int segnum)
 {
 	struct sembuf so;
@@ -64,6 +83,7 @@ DataSharedRead::~DataSharedRead ()
 {
 	if (shm_id > 0)
 	{
+		semctl (data->shared_sem, IPC_RMID, 0);
 		shmdt (data);
 	}
 }
@@ -81,25 +101,6 @@ int DataSharedRead::attach (int _shm_id)
 }
 
 
-int DataSharedRead::addClient (int segnum, int client_id)
-{
-	if (lockSegment (segnum))
-		return -1;
-	// confirm there is already allocated client
-	struct SharedDataSegment *sseg = getSegment (segnum);
-	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
-	{
-		if (sseg->client_ids[s] == 0)
-		{
-			sseg->client_ids[s] = client_id;
-			unlockSegment (segnum);
-			return 0;
-		}
-	}
-	logStream (MESSAGE_ERROR) << "cannot find empty client slot to lock segment " << segnum << sendLog;
-	return -1;
-}
-
 int DataSharedRead::confirmClient (int segnum, int client_id)
 {
 	if (lockSegment (segnum))
@@ -115,25 +116,6 @@ int DataSharedRead::confirmClient (int segnum, int client_id)
 		}
 	}
 	logStream (MESSAGE_ERROR) << "cannot find empty client slot to lock segment " << segnum << sendLog;
-	return -1;
-}
-
-int DataSharedRead::removeClient (int segnum, int client_id)
-{
-	if (lockSegment (segnum))
-		return -1;
-	struct SharedDataSegment *sseg = getSegment (segnum);
-	for (int s = 0; s < MAX_SHARED_CLIENTS; s++)
-	{
-		if (sseg->client_ids[s] == client_id)
-		{
-			sseg->client_ids[s] = 0;
-			unlockSegment (segnum);
-			return 0;
-		}
-	}
-	unlockSegment (segnum);
-	logStream (MESSAGE_ERROR) << "cannot find locked client to remove segment " << segnum << sendLog;
 	return -1;
 }
 
@@ -192,13 +174,13 @@ struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
 		return NULL;
 	}
 
-	struct SharedDataSegment *seg = (struct SharedDataSegment *) (data + sizeof (struct SharedDataHeader));
+	struct SharedDataSegment *seg = getSegment (0);
 	for (int i = 0; i < numseg; i++, seg++)
 	{
 		bzero (seg->client_ids, sizeof (int) * MAX_SHARED_CLIENTS);
 		seg->size = segsize;
 		seg->bytesSoFar = 0;
-		seg->offset = sizeof (struct SharedDataHeader) + sizeof (struct SharedDataSegment) * numseg + numseg * segsize;
+		seg->offset = sizeof (struct SharedDataHeader) + sizeof (struct SharedDataSegment) * numseg + i * segsize;
 
 		struct sembuf so;
 		so.sem_num = i;
@@ -218,7 +200,7 @@ size_t DataSharedWrite::getDataSize ()
 	return ret;
 }
 
-int DataSharedWrite::getUnusedSegment (size_t segsize, int chan)
+int DataSharedWrite::addClient (size_t segsize, int chan, int client)
 {
 	for (int i = 0; i < data->nseg; i++)
 	{
@@ -234,7 +216,9 @@ int DataSharedWrite::getUnusedSegment (size_t segsize, int chan)
 		{
 			sseg->bytesSoFar = 0;
 			sseg->size = segsize;
-			chan2seg[chan] = sseg;
+			sseg->client_ids[0] = client;
+			chan2seg[chan] = sseg; 
+			std::cerr << "chan2seg " << chan << " " << i << std::endl;
 			unlockSegment (i);
 			return s;
 		}
@@ -263,6 +247,22 @@ void DataChannels::initFromConnection (Connection *conn)
 	}
 	if (!conn->paramEnd ())
 		throw Error ("too much parameters in PROTO_BINARY data header");
+}
+
+void DataChannels::initSharedFromConnection (Connection *conn, DataSharedRead *shm)
+{
+	int channum;
+	if (conn->paramNextInteger (&channum))
+		throw Error ("cannot read number of channels");
+	for (int i = 0; i < channum; i++)
+	{
+		int seg;
+		if (conn->paramNextInteger (&seg))
+			throw Error ("cannot parse channel segment or size");
+		push_back (new DataSharedRead (shm, seg));
+	}
+	if (!conn->paramEnd ())
+		throw Error ("too much parameters in PROTO_SHARED command");
 }
 
 size_t DataChannels::getRestSize ()
