@@ -110,6 +110,7 @@ int DataSharedRead::confirmClient (int segnum, int client_id)
 			return 0;
 		}
 	}
+	unlockSegment (segnum);
 	logStream (MESSAGE_ERROR) << "cannot find empty client slot to lock segment " << segnum << sendLog;
 	return -1;
 }
@@ -180,7 +181,6 @@ struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
 		struct sembuf so;
 		so.sem_num = i;
 		so.sem_op = 1;
-		so.sem_flg = SEM_UNDO;
 		semop (data->shared_sem, &so, 1);
 	}
 
