@@ -81,11 +81,6 @@ int DataAbstractShared::unlockSegment (int segnum)
 
 DataSharedRead::~DataSharedRead ()
 {
-	if (shm_id > 0)
-	{
-		semctl (data->shared_sem, IPC_RMID, 0);
-		shmdt (data);
-	}
 }
 
 int DataSharedRead::attach (int _shm_id)
@@ -192,6 +187,15 @@ struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
 	return data;
 }
 
+DataSharedWrite::~DataSharedWrite ()
+{
+	if (shm_id > 0)
+	{
+		semctl (data->shared_sem, IPC_RMID, 0);
+		shmdt (data);
+	}
+}
+
 size_t DataSharedWrite::getDataSize ()
 {
 	size_t ret = 0;
@@ -218,9 +222,8 @@ int DataSharedWrite::addClient (size_t segsize, int chan, int client)
 			sseg->size = segsize;
 			sseg->client_ids[0] = client;
 			chan2seg[chan] = sseg; 
-			std::cerr << "chan2seg " << chan << " " << i << std::endl;
 			unlockSegment (i);
-			return s;
+			return i;
 		}
 		unlockSegment (i);
 	}

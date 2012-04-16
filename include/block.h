@@ -519,18 +519,6 @@ class Block: public rts2core::App
 		Connection *getConnection (char *deviceName);
 
 		/**
-		 * Return centrald id of device at given centrald
-		 * num server.
-		 *
-		 * @param centrald_num  Number at centrald.
-		 * 
-		 * @return -1 on error, otherwise centrald id of
-		 * device which holds this connection on centrald
-		 * server with number centrald_num.
-		 */
-		int getCentraldIdAtNum (int centrald_num);
-
-		/**
 		 * Return vector of active connections to devices and clients.
 		 *
 		 */

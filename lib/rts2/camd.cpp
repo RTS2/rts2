@@ -280,7 +280,6 @@ int Camera::sendFirstLine (int chan, int pchan)
 {
 	if (sharedData && currentImageData == -2)
 	{
-		std::cerr << "sendFirstLine " << chan << " " << sharedData->getChannelData (chan) << std::endl;
 		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
 	}
 

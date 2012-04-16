@@ -811,6 +811,10 @@ void Connection::processLine ()
 			{
 				otherDevice->fullDataReceived (dC, readChannels[dC]);
 			}
+			for (DataChannels::iterator iter = readChannels[dC]->begin (); iter != readChannels[dC]->end (); iter++)
+			{
+				((DataSharedRead *) (*iter))->removeActiveClient (getMaster ()->getSingleCentralConn ()->getCentraldId ());
+			}
 			readChannels.erase (dC);
 			ret = -1;
 		}
@@ -1458,7 +1462,7 @@ int Connection::startSharedData (int shId, int channum, int *segnums)
 int Connection::endSharedData (int shId)
 {
 	std::ostringstream _os;
-	_os << PROTO_SHARED_FULL " " << shId;
+	_os << PROTO_SHARED_FULL " " << dataConn;
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)

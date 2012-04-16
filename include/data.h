@@ -234,7 +234,7 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 		/**
 		 * Crate new DataSharedRead structure, prepare it for attach call.
 		 */
-		DataSharedRead () { data = NULL; activeSegment = NULL; shm_id = -1; }
+		DataSharedRead () { data = NULL; segment = -1; activeSegment = NULL; shm_id = -1; }
 
 
 		/**
@@ -243,7 +243,7 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 		 * @param _data   
 		 * @param _seg
 		 */
-		DataSharedRead (DataSharedRead *_data, int _seg) { data = _data->data; activeSegment = getSegment (_seg); shm_id = -1; }
+		DataSharedRead (DataSharedRead *_data, int _seg) { data = _data->data; segment = _seg; activeSegment = getSegment (_seg); shm_id = -1; }
 
 		virtual ~DataSharedRead ();
 
@@ -258,12 +258,12 @@ class DataSharedRead: public DataAbstractRead, public DataAbstractShared
 		virtual size_t getChunkSize () { return getRestSize (); }
 
 		int confirmClient (int segnum, int client_id);
+		int removeActiveClient (int client_id) { return removeClient (segment, client_id); }
 
 	private:
 		// shared data segment
 		struct SharedDataSegment *activeSegment;
-		int shm_id;
-
+		int segment;
 };
 
 /**
@@ -312,6 +312,8 @@ class DataSharedWrite:public DataAbstractWrite, public DataAbstractShared
 		 * Fill empty shared data structure. This constructor needs to be followed by create call.
 		 */
 		DataSharedWrite ():DataAbstractWrite () {}
+
+		virtual ~DataSharedWrite ();
 
 		/**
 		 * Create new shared data.

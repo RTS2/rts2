@@ -828,17 +828,6 @@ Connection * Block::getConnection (char *deviceName)
 	return conn;
 }
 
-int Block::getCentraldIdAtNum (int centrald_num)
-{
-	connections_t::iterator iter;
-	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-	{
-		if ((*iter)->getCentraldNum () == centrald_num)
-			return (*iter)->getCentraldId ();
-	}
-	return -1;
-}
-
 void Block::message (Message & msg)
 {
 }
