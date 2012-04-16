@@ -279,7 +279,7 @@ class Dummy:public Camera
 		void generateImage (long usedSize);
 
 		// data written during readout
-		long written;
+		ssize_t written;
 };
 
 };
@@ -348,9 +348,9 @@ int Dummy::doReadout ()
 			written = 0;
 		}
 		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		if (written < chipByteSize ())
+		if (written < (ssize_t) chipByteSize ())
 		{
-			size_t s = chipByteSize () - written < callReadoutSize->getValueLong () ? chipByteSize () - written : callReadoutSize->getValueLong ();
+			size_t s = (ssize_t) chipByteSize () - written < callReadoutSize->getValueLong () ? chipByteSize () - written : callReadoutSize->getValueLong ();
 			ret = sendReadoutData (dataBuffer + written, s, 0);
 
 			if (ret < 0)
