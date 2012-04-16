@@ -203,7 +203,7 @@ int Camera::endReadout ()
 		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueDouble () << " pixels per second, transfered with " << transferSecond << " pixels per second)" << sendLog;
 
 	clearReadout ();
-	if (currentImageData == -2 && exposureConn)
+	if (currentImageShared && exposureConn)
 	{
 		exposureConn->endSharedData (sharedData->getShmId ());
 	}
@@ -261,24 +261,26 @@ void Camera::startImageData (rts2core::Connection * conn)
 			sharedData->clearChan2Seg ();
 			logStream (MESSAGE_WARNING) << "starting binary connection instead of shared data connection" << sendLog;
 			currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
+			currentImageShared = false;
 		}
 		else
 		{
-			currentImageData = -2;
-			dataBuffer = (char *) sharedData->getChannelData (0) + sizeof (imghdr);
-			conn->startSharedData (sharedData->getShmId (), chnTot, segments);
+			dataBuffer = ((char *) sharedData->getChannelData (0)) + sizeof (imghdr);
+			currentImageData = conn->startSharedData (sharedData, chnTot, segments);
+			currentImageShared = true;
 		}
 	}
 	else
 	{
 		currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
+		currentImageShared = false;
 	}
 	exposureConn = conn;
 }
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	if (sharedData && currentImageData == -2)
+	if (sharedData && currentImageShared)
 	{
 		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
 	}
@@ -306,11 +308,11 @@ int Camera::sendFirstLine (int chan, int pchan)
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
-	if (sharedData && currentImageData == -2)
+	if (sharedData && currentImageShared)
 		sharedData->dataWritten (chan, sizeof (imghdr));
 
 	// send it out - but do not include it in average etc. calculations
-	if (exposureConn && currentImageData >= 0)
+	if (exposureConn && currentImageShared == false)
 		return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
 	return 0;
 }
@@ -360,6 +362,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	sharedMemNum = 0;
 
 	currentImageData = -1;
+	currentImageShared = false;
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
@@ -812,10 +815,10 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		}
 	}
 
-	if (sharedData && currentImageData == -2)
+	if (sharedData && currentImageShared)
 		sharedData->dataWritten (chan, dataSize);
 
-	if (exposureConn && currentImageData >= 0)
+	if (exposureConn && currentImageShared == false)
 		return exposureConn->sendBinaryData (currentImageData, chan, data, dataSize);
 	return 0;
 }

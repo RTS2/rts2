@@ -916,6 +916,8 @@ class Camera:public rts2core::ScriptDevice
 		int lastFilterNum;
 
 		int currentImageData;
+		// true if current image is send over shared connection
+		bool currentImageShared;
 
 		// whenewer statistics should be calculated
 		rts2core::ValueSelection *calculateStatistics;

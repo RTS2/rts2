@@ -236,7 +236,7 @@ class Connection:public Object
 		 * idle loop with sharedDataUpdate call, and get informed about shared
 		 * data start/end with newDataConn and fullDataReceived calls.
 		 */
-		int startSharedData (int shId, int channum, int *segnums);
+		int startSharedData (DataSharedWrite *data, int channum, int *segnums);
 
 		int endSharedData (int key);
 
@@ -579,7 +579,7 @@ class Connection:public Object
 		size_t getWriteBinaryDataSize (int data_conn)
 		{
 			// if it exists..
-			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			std::map <int, DataAbstractWrite *>::iterator iter = writeChannels.find (data_conn);
 			if (iter == writeChannels.end ())
 				return 0;
 			return ((*iter).second)->getDataSize ();
@@ -591,7 +591,7 @@ class Connection:public Object
 		size_t getWriteBinaryDataSize (int data_conn, int chan)
 		{
 			// if it exists..
-			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			std::map <int, DataAbstractWrite *>::iterator iter = writeChannels.find (data_conn);
 			if (iter == writeChannels.end ())
 				return 0;
 			return ((*iter).second)->getChannelSize (chan);
@@ -754,7 +754,7 @@ class Connection:public Object
 
 		rts2core::DataSharedRead *sharedReadMemory;
 
-		std::map <int, DataWrite *> writeChannels;
+		std::map <int, DataAbstractWrite *> writeChannels;
 		// ID of outgoing data connection
 		int dataConn;
 

@@ -203,7 +203,8 @@ struct SharedDataSegment
 class DataAbstractShared
 {
 	public:
-		DataAbstractShared () { data = NULL; }
+		DataAbstractShared () { data = NULL; shm_id = -1; }
+		DataAbstractShared (DataAbstractShared *d) { data = d->data; shm_id = -1; }
 
 		int getShmId () { return shm_id; }
 
@@ -311,7 +312,12 @@ class DataSharedWrite:public DataAbstractWrite, public DataAbstractShared
 		/**
 		 * Fill empty shared data structure. This constructor needs to be followed by create call.
 		 */
-		DataSharedWrite ():DataAbstractWrite () {}
+		DataSharedWrite ():DataAbstractWrite (), DataAbstractShared () {}
+
+		/**
+		 * Shallow copy from existing data connection.
+		 */
+		DataSharedWrite (DataSharedWrite *d):DataAbstractWrite (), DataAbstractShared (d) { chan2seg = d->chan2seg; }
 
 		virtual ~DataSharedWrite ();
 

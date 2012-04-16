@@ -1430,7 +1430,7 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t data
 		{
 			binaryWriteTop += ret;
 			dataSize -= ret;
-			std::map <int, DataWrite *>::iterator iter = writeChannels.find (data_conn);
+			std::map <int, DataAbstractWrite *>::iterator iter = writeChannels.find (data_conn);
 			if (iter != writeChannels.end ())
 			{
 				((*iter).second)->dataWritten (chan, ret);
@@ -1445,17 +1445,18 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t data
 	return 0;
 }
 
-int Connection::startSharedData (int shId, int channum, int *segnums)
+int Connection::startSharedData (DataSharedWrite *data, int channum, int *segnums)
 {
 	std::ostringstream _os;
 	dataConn++;
-	_os << PROTO_SHARED " " << dataConn << " " << shId << " " << channum;
+	_os << PROTO_SHARED " " << dataConn << " " << data->getShmId () << " " << channum;
 	for (int i = 0; i < channum; i++)
 		_os << " " << segnums[i];
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)
 		return -1;
+	writeChannels[dataConn] = new DataSharedWrite (data);
 	return dataConn;
 }
 
