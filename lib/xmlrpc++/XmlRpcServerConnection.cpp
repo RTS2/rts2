@@ -386,9 +386,12 @@ bool XmlRpcServerConnection::writeAsyncReponse()
 	}
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::writeAsyncReponse %i: wrote %d of %d bytes.",this->getfd(), _getWritten, _get_response_length);
 	if ( _get_response_length == _getWritten )
+	{
 		prepareForNext ();
+		return _keepAlive;
+	}
 
-	return _keepAlive;
+	return true;
 }
 
 // Run the method, generate _response string
