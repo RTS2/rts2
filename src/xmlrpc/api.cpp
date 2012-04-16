@@ -724,7 +724,7 @@ void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
 
 int AsyncExposeAPI::idle ()
 {
-	if (data == NULL && callState == waitForImage && conn->lastDataChannel () && conn->lastDataChannel ()->getRestSize () > 0)
+	if (data == NULL && source && callState == waitForImage && conn->lastDataChannel () && conn->lastDataChannel ()->getRestSize () > 0)
 	{
 		data = conn->lastDataChannel ();
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
