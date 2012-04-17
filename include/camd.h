@@ -196,6 +196,9 @@ digraph "Camera states" {
 class Camera:public rts2core::ScriptDevice
 {
 	public:
+		Camera (int argc, char **argv);
+		virtual ~ Camera (void);
+
 		virtual int deleteConnection (rts2core::Connection * conn);
 		/**
 		 * If chip support frame transfer.
@@ -207,9 +210,6 @@ class Camera:public rts2core::ScriptDevice
 		virtual bool supportFrameTransfer ();
 
 		// end of CameraChip
-
-		Camera (int argc, char **argv);
-		virtual ~ Camera (void);
 
 		virtual int initChips ();
 		virtual int initValues ();

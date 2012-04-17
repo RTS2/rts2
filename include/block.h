@@ -235,6 +235,13 @@ class Block: public rts2core::App
 		 */
 		Connection *findName (const char *in_name);
 
+		/**
+		 * Find connection with a given centrald ID.
+		 *
+		 * @param in_id     centrald ID
+		 *
+		 * @return    connection with the given ID, or NULL if such connection does not exists
+		 */
 		Connection *findCentralId (int in_id);
 
 		/**

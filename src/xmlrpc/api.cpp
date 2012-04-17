@@ -507,6 +507,8 @@ class AsyncDataAPI:public AsyncAPI
 		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data);
 		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
 
+		virtual void nullSource () { data = NULL; AsyncAPI::nullSource (); }
+
 		virtual int idle ();
 
 	protected:
@@ -540,7 +542,6 @@ void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Data
 			{
 				asyncFinished ();
 			}
-			data = NULL;
 			return;
 		}
 	}
@@ -640,7 +641,7 @@ AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcSe
 AsyncExposeAPI::~AsyncExposeAPI ()
 {
 }
-
+ 
 void AsyncExposeAPI::postEvent (Event *event)
 {
 	if (source)

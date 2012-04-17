@@ -211,7 +211,7 @@ class DataAbstractShared
 		/**
 		 * Remove client from reader set.
 		 */
-		int removeClient (int segnum, int client_id);
+		int removeClient (int segnum, int client_id, bool verbose = true);
 
 	protected:
 		struct SharedDataSegment *getSegment (int segnum) { return (struct SharedDataSegment *) (((char *) data) + sizeof (struct SharedDataHeader) + segnum * sizeof (struct SharedDataSegment)); }

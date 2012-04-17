@@ -32,7 +32,7 @@ int DataRead::readDataSize (Connection *conn)
 	return conn->paramNextLong (&binaryReadChunkSize);
 }
 
-int DataAbstractShared::removeClient (int segnum, int client_id)
+int DataAbstractShared::removeClient (int segnum, int client_id, bool verbose)
 {
 	if (lockSegment (segnum))
 		return -1;
@@ -47,7 +47,8 @@ int DataAbstractShared::removeClient (int segnum, int client_id)
 		}
 	}
 	unlockSegment (segnum);
-	logStream (MESSAGE_ERROR) << "cannot find locked client to remove segment " << segnum << sendLog;
+	if (verbose)
+		logStream (MESSAGE_ERROR) << "cannot find locked client with ID " << client_id << " to remove segment " << segnum << sendLog;
 	return -1;
 }
 

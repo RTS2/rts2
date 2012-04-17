@@ -181,6 +181,15 @@ int Camera::deleteConnection (rts2core::Connection * conn)
 	{
 		exposureConn = NULL;
 	}
+	// delete connection in shared data
+	if (sharedData)
+	{
+		// unmap client from all connectons
+		for (int i = 0; i < sharedMemNum; i++)
+		{
+			sharedData->removeClient (i, conn->getCentraldId (), false);
+		}
+	}
 	return rts2core::ScriptDevice::deleteConnection (conn);
 }
 
@@ -205,7 +214,7 @@ int Camera::endReadout ()
 	clearReadout ();
 	if (currentImageShared && exposureConn)
 	{
-		exposureConn->endSharedData (sharedData->getShmId ());
+		exposureConn->endSharedData (currentImageData);
 	}
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
@@ -254,6 +263,7 @@ void Camera::startImageData (rts2core::Connection * conn)
 		// if there aren't segments left, send over TCP
 		if (i < chnTot)
 		{
+			// clear allocation we did with addClient above
 			for (int j = 0; j < i; i++)
 			{
 				sharedData->removeClient (segments[i], conn->getCentraldId ());
@@ -543,6 +553,8 @@ void Camera::checkQueuedExposures ()
 
 int Camera::killAll (bool callScriptEnds)
 {
+	timeReadoutStart = NAN;
+
 	waitingForNotBop->setValueBool (false);
 	waitingForEmptyQue->setValueBool (false);
 

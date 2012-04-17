@@ -82,7 +82,7 @@ class AsyncAPI:public rts2core::Object
 		/**
 		 * Null XMLRPC source. This also marks source for deletion.
 		 */
-		void nullSource () { source = NULL; }
+		virtual void nullSource () { source = NULL; }
 
 		void asyncFinished ()
 		{
