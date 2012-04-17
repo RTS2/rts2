@@ -687,8 +687,9 @@ void AsyncExposeAPI::dataReceived (Connection *_conn, DataAbstractRead *_data)
 void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
 {
 	// in case idle loop was not called
-	if (data == NULL)
+	if (isForConnection (_conn) && callState == waitForImage && data == NULL)
 	{
+		callState = receivingImage;
 		data = _conn->lastDataChannel ();
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 	}
@@ -724,8 +725,9 @@ void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
 
 int AsyncExposeAPI::idle ()
 {
-	if (data == NULL && source && callState == waitForImage && conn->lastDataChannel () && conn->lastDataChannel ()->getRestSize () > 0)
+	if (data == NULL && callState == waitForImage && conn->lastDataChannel () && conn->lastDataChannel ()->getRestSize () > 0)
 	{
+		callState = receivingImage;
 		data = conn->lastDataChannel ();
 		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 	}
