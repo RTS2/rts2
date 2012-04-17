@@ -74,10 +74,14 @@
 #define PROTO_BINARY           "C"
 /** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
-/** Shared memory segment key, which holds data */
-#define PROTO_SHARED           "H"
-/** Full shared data received */
-#define PROTO_SHARED_FULL      "I"
+//** Kill binary connection prematurely. @ingroup RTS2Protocol */
+#define PROTO_BINARY_KILLED    "H"
+/** Shared memory segment key, which holds data. @ingroup RTS2Protocol */
+#define PROTO_SHARED           "I"
+/** Full shared data received. @ingroup RTS2Protocol */
+#define PROTO_SHARED_FULL      "J"
+/** Shared memory segment ends prematurely. @ingroup RTS2Protocol */
+#define PROTO_SHARED_KILLED    "K"
 
 
 class Rts2ClientTCPDataConn;

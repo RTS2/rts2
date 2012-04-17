@@ -214,7 +214,11 @@ int Camera::endReadout ()
 	clearReadout ();
 	if (currentImageShared && exposureConn)
 	{
-		exposureConn->endSharedData (currentImageData);
+		if (currentImageData >= 0)
+		{
+			exposureConn->endSharedData (currentImageData, true);
+			currentImageData = -1;
+		}
 	}
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
@@ -290,7 +294,7 @@ void Camera::startImageData (rts2core::Connection * conn)
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	if (sharedData && currentImageShared)
+	if (currentImageShared)
 	{
 		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
 	}
@@ -318,12 +322,16 @@ int Camera::sendFirstLine (int chan, int pchan)
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
-	if (sharedData && currentImageShared)
+	if (currentImageShared)
+	{
 		sharedData->dataWritten (chan, sizeof (imghdr));
-
-	// send it out - but do not include it in average etc. calculations
-	if (exposureConn && currentImageShared == false)
-		return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+	}
+	else
+	{
+		// send it out - but do not include it in average etc. calculations
+		if (exposureConn)
+			return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+	}
 	return 0;
 }
 
@@ -562,6 +570,22 @@ int Camera::killAll (bool callScriptEnds)
 	{
 		iter->moving->setValueBool (false);
 		sendValueAll (iter->moving);
+	}
+
+
+	if (exposureConn && currentImageData >= 0)
+	{
+		// end actual data connections
+		if (currentImageShared)
+		{
+			exposureConn->endSharedData (currentImageData, false);
+			currentImageShared = false;
+		}
+		else
+		{
+			exposureConn->endBinaryData (currentImageData);
+		}
+		currentImageData = -1;
 	}
 
 	stopExposure ();

@@ -280,6 +280,8 @@ class DataAbstractWrite
 		virtual size_t getChannelSize (int chan) = 0;
 
 		virtual void dataWritten (int chan, size_t size) = 0;
+
+		virtual void endChannels () {}
 };
 
 /**
@@ -338,6 +340,7 @@ class DataSharedWrite:public DataAbstractWrite, public DataAbstractShared
 		 */
 		int addClient (size_t segsize, int chan, int client);
 
+		virtual void endChannels ();
 		void clearChan2Seg () { chan2seg.clear (); }
 
 		void *getChannelData (int chan) { return ((char *) data) + chan2seg[chan]->offset; }

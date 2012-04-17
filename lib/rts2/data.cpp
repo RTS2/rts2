@@ -231,6 +231,14 @@ int DataSharedWrite::addClient (size_t segsize, int chan, int client)
 	return -1;
 }
 
+void DataSharedWrite::endChannels ()
+{
+	for (std::map <int, struct SharedDataSegment *>::iterator iter = chan2seg.begin (); iter != chan2seg.end (); iter++)
+	{
+		iter->second->bytesSoFar = iter->second->size;
+	}
+}
+
 DataChannels::~DataChannels ()
 {
 	for (DataChannels::iterator iter = begin (); iter != end (); iter++)

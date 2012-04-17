@@ -230,6 +230,8 @@ class Connection:public Object
 		 */
 		int sendBinaryData (int data_conn, int chan, char *data, size_t dataSize);
 
+		void endBinaryData (int data_conn);
+
 		/**
 		 * Image data will be transfered in shared memory, attachable by key.
 		 * Those functions are called by client. The receiving side can check in 
@@ -238,7 +240,7 @@ class Connection:public Object
 		 */
 		int startSharedData (DataSharedWrite *data, int channum, int *segnums);
 
-		int endSharedData (int key);
+		void endSharedData (int data_conn, bool complete);
 
 		virtual int sendMessage (Message & msg);
 		int sendValue (std::string val_name, int value);

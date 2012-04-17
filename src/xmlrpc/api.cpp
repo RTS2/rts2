@@ -533,14 +533,24 @@ void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Data
 		rts2core::DataChannels::iterator iter = std::find (_data->begin (), _data->end (), data);
 		if (iter != _data->end ())
 		{
-			if (source && bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+			if (source)
 			{
-				source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
-				nullSource ();
-			}
-			else
-			{
-				asyncFinished ();
+				if (data->getRestSize () > 0)
+				{
+					// incomplete image was received, close outbond connection..
+					source->close ();
+					nullSource ();
+				}
+				else if (bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+				{
+					// full image was received, let's make sure it will be send
+					source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
+					nullSource ();
+				}
+				else
+				{
+					asyncFinished ();
+				}
 			}
 			return;
 		}

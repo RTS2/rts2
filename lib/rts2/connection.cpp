@@ -760,6 +760,29 @@ void Connection::processLine ()
 			ret = -1;
 		}
 	}
+	else if (isCommand (PROTO_BINARY_KILLED))
+	{
+		int dC;
+		if (paramNextInteger (&dC))
+		{
+			connectionError (-2);
+			ret = -2;
+		}
+		else
+		{
+			std::map <int, DataChannels *>::iterator iter = readChannels.find (dC);
+			if (iter != readChannels.end ())
+			{
+				if (otherDevice)
+				{
+					otherDevice->fullDataReceived (dC, iter->second);
+				}
+				delete iter->second;
+				readChannels.erase (iter);
+			}
+			ret = -1;
+		}
+	}
 	else if (isCommand (PROTO_SHARED))
 	{
 		int dC;
@@ -797,7 +820,7 @@ void Connection::processLine ()
 			}
 		}
 	}
-	else if (isCommand (PROTO_SHARED_FULL))
+	else if (isCommand (PROTO_SHARED_FULL) || isCommand (PROTO_SHARED_KILLED))
 	{
 		int dC;
 		if (paramNextInteger (&dC) || !paramEnd ())
@@ -807,15 +830,20 @@ void Connection::processLine ()
 		}
 		else
 		{
-			if (otherDevice)
+			std::map <int, DataChannels *>::iterator iter = readChannels.find (dC);
+			if (iter != readChannels.end ())
 			{
-				otherDevice->fullDataReceived (dC, readChannels[dC]);
+				if (otherDevice)
+				{
+					otherDevice->fullDataReceived (dC, iter->second);
+				}
+				for (DataChannels::iterator dch_iter = iter->second->begin (); dch_iter != iter->second->end (); dch_iter++)
+				{
+					((DataSharedRead *) (*dch_iter))->removeActiveClient (getMaster ()->getSingleCentralConn ()->getCentraldId ());
+				}
+				delete iter->second;
+				readChannels.erase (iter);
 			}
-			for (DataChannels::iterator iter = readChannels[dC]->begin (); iter != readChannels[dC]->end (); iter++)
-			{
-				((DataSharedRead *) (*iter))->removeActiveClient (getMaster ()->getSingleCentralConn ()->getCentraldId ());
-			}
-			readChannels.erase (dC);
 			ret = -1;
 		}
 	}
@@ -1445,6 +1473,15 @@ int Connection::sendBinaryData (int data_conn, int chan, char *data, size_t data
 	return 0;
 }
 
+void Connection::endBinaryData (int data_conn)
+{
+	std::ostringstream _os;
+	_os << PROTO_BINARY_KILLED " " << data_conn;
+	delete writeChannels[data_conn];
+	writeChannels.erase (data_conn);
+	sendMsg (_os);
+}
+
 int Connection::startSharedData (DataSharedWrite *data, int channum, int *segnums)
 {
 	std::ostringstream _os;
@@ -1460,15 +1497,23 @@ int Connection::startSharedData (DataSharedWrite *data, int channum, int *segnum
 	return dataConn;
 }
 
-int Connection::endSharedData (int shId)
+void Connection::endSharedData (int data_conn, bool complete)
 {
 	std::ostringstream _os;
-	_os << PROTO_SHARED_FULL " " << dataConn;
-	int ret;
-	ret = sendMsg (_os);
-	if (ret == -1)
-		return -1;
-	return 0;
+	if (complete)
+	{
+		_os << PROTO_SHARED_FULL " ";
+	}
+	else
+	{
+		_os << PROTO_SHARED_KILLED " ";
+		writeChannels[data_conn]->endChannels ();
+	}
+		
+	_os << data_conn;
+	delete writeChannels[data_conn];
+	writeChannels.erase (data_conn);
+	sendMsg (_os);
 }
 
 void Connection::successfullSend ()
@@ -2022,7 +2067,7 @@ double Connection::getProgress (double now)
 
 DataAbstractRead* Connection::lastDataChannel ()
 {
-	if (readChannels.size () == 0)
+	if (readChannels.size () == 0 || (--readChannels.end ())->second->size () == 0)
 		return NULL;
 	return (--readChannels.end ())->second->back ();
 }

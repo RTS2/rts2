@@ -1,3 +1,6 @@
+2012-04-17
+ * PROTO_BINARY_KILLED, functional shared memory readout
+
 2012-04-10
  * rts2-state supports -e option
 

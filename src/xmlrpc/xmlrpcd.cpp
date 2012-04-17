@@ -295,8 +295,6 @@ void XmlDevCameraClient::killScript ()
 
 void XmlDevCameraClient::setExpandPath (const char *fe)
 {
-	if (nexpand.length () != 0)
-		throw rts2core::Error ("Cannot set file expansion, when the previous was not yet used.");
 	nexpand = std::string (fe);
 	screxpand = std::string ("");
 }
