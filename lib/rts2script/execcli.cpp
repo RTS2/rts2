@@ -35,6 +35,8 @@ using namespace rts2script;
 DevClientCameraExec::DevClientCameraExec (rts2core::Connection * _connection, rts2core::ValueString *_expandPath, std::string templateFile):rts2image::DevClientCameraImage (_connection, templateFile), DevScript (_connection)
 {
 	expandPathValue = _expandPath;
+	expandPathString = std::string ("");
+	expandOverwrite = false;
 	waitForExposure = false;
 	waitMetaData = false;
 	imgCount = 0;
@@ -51,12 +53,12 @@ rts2image::Image * DevClientCameraExec::createImage (const struct timeval *expSt
 	rts2image::Image *ret;
 	if (expandPathString.length () > 0)
 	{
-		ret = new rts2image::Image (expandPathString.c_str (), getExposureNumber (), expStart, connection);
+		ret = new rts2image::Image (expandPathString.c_str (), getExposureNumber (), expStart, connection, expandOverwrite);
 		ret->setWriteConnnection (writeConnection, writeRTS2Values);
 	}
 	else if (expandPathValue)
 	{
-		ret = new rts2image::Image (expandPathValue->getValue (), getExposureNumber (), expStart, connection);
+		ret = new rts2image::Image (expandPathValue->getValue (), getExposureNumber (), expStart, connection, expandOverwrite);
 		ret->setWriteConnnection (writeConnection, writeRTS2Values);
 	}
 	else

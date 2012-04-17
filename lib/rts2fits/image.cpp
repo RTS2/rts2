@@ -205,13 +205,13 @@ Image::Image (char *_filename, const struct timeval *in_exposureStart):FitsFile 
 	writeExposureStart ();
 }
 
-Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection):FitsFile (in_exposureStart)
+Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite):FitsFile (in_exposureStart)
 {
 	initData ();
 	setCameraName (in_connection->getName ());
 	expNum = in_expNum;
 
-	createImage (expandPath (in_expression));
+	createImage (expandPath (in_expression), _overwrite);
 	writeExposureStart ();
 }
 
@@ -345,9 +345,9 @@ std::string Image::expandVariable (std::string expression)
 	return std::string (valB);
 }
 
-int Image::createImage ()
+int Image::createImage (bool _overwrite)
 {
-	if (createFile ())
+	if (createFile (_overwrite))
 		return -1;
 
 	flags = IMAGE_NOT_SAVE;
@@ -379,18 +379,18 @@ int Image::createImage ()
 	return 0;
 }
 
-int Image::createImage (std::string in_filename)
+int Image::createImage (std::string in_filename, bool _overwrite)
 {
 	setFileName (in_filename.c_str ());
 
-	return createImage ();
+	return createImage (_overwrite);
 }
 
-int Image::createImage (char *in_filename)
+int Image::createImage (char *in_filename, bool _overwrite)
 {
 	setFileName (in_filename);
 
-	return createImage ();
+	return createImage (_overwrite);
 }
 
 void Image::getHeaders ()

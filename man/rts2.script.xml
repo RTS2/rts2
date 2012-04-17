@@ -573,6 +573,13 @@
         </para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>exposure_overwrite {pattern}</option></term>
+        <listitem><para>
+	  Similar to <emphasis>exposure_wfn</emphasis>, but overwites existing file if pattern
+	  expand to an existing file.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>progress {start} {expected end}</option></term>
 	<para>
 	  Report script progress. Script start and end times (in ctime, e.g.

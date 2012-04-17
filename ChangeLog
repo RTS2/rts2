@@ -1,4 +1,5 @@
 2012-04-17
+ * exposure_overwrite command to overwrite created files
  * PROTO_BINARY_KILLED, functional shared memory readout
 
 2012-04-10

@@ -112,7 +112,8 @@ class Image:public FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection);
+		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite = false);
+
 		// create image in que
 		Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart);
 		virtual ~ Image (void);
@@ -644,7 +645,7 @@ class Image:public FitsFile
 		double dec_err;
 		double img_err;
 
-		int createImage ();
+		int createImage (bool _overwrite = false);
 
 		int writeExposureStart ();
 
@@ -670,8 +671,8 @@ class Image:public FitsFile
 		char *filter;
 		float exposureLength;
 		
-		int createImage (std::string in_filename);
-		int createImage (char *in_filename);
+		int createImage (std::string in_filename, bool _overwrite = false);
+		int createImage (char *in_filename, bool _overwrite = false);
 
 		void getHeaders ();
 

@@ -121,7 +121,7 @@ class FitsFile: public rts2core::Expander
 		 *
 		 * @param _filename Filename of the image.
 		 */
-		FitsFile (const char *_filename);
+		FitsFile (const char *_filename, bool _overwrite);
 
 		/**
 		 * Set only expansion date.
@@ -137,7 +137,7 @@ class FitsFile: public rts2core::Expander
 		 * @param _expression Input expression.
 		 * @param _tv Timeval used for expansio of time-related keywords in expression.
 		 */
-		FitsFile (const char *_expression, const struct timeval *_tv);
+		FitsFile (const char *_expression, const struct timeval *_tv, bool _overwrite);
 
 		virtual ~FitsFile (void);
 
@@ -286,9 +286,12 @@ class FitsFile: public rts2core::Expander
 
 		void setFileName (const char *_filename);
 
-		virtual int createFile ();
-		int createFile (const char *_filename);
-		int createFile (std::string _filename);
+		/**
+		 * @param _overwrite   if true, existing file will be overwritten
+		 */
+		virtual int createFile (bool _overwrite = false);
+		int createFile (const char *_filename, bool _overwrite = false);
+		int createFile (std::string _filename, bool _overwrite = false);
 
 		/**
 		 * Return pointer to fitsfile structure.

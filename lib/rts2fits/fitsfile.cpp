@@ -128,7 +128,7 @@ FitsFile::FitsFile (FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 	templateFile = NULL;
 }
 
-FitsFile::FitsFile (const char *_fileName):rts2core::Expander ()
+FitsFile::FitsFile (const char *_fileName, bool _overwrite):rts2core::Expander ()
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
@@ -136,7 +136,7 @@ FitsFile::FitsFile (const char *_fileName):rts2core::Expander ()
 
 	templateFile = NULL;
 
-	createFile (_fileName);
+	createFile (_fileName, _overwrite);
 }
 
 FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
@@ -148,14 +148,14 @@ FitsFile::FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 	templateFile = NULL;
 }
 
-FitsFile::FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
+FitsFile::FitsFile (const char *_expression, const struct timeval *_tv, bool _overwrite):rts2core::Expander (_tv)
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
 	fits_status = 0;
 	templateFile = NULL;
 
-	createFile (expandPath (_expression));
+	createFile (expandPath (_expression), _overwrite);
 }
 
 FitsFile::~FitsFile (void)
@@ -266,7 +266,7 @@ void FitsFile::setFileName (const char *_fileName)
 	}
 }
 
-int FitsFile::createFile ()
+int FitsFile::createFile (bool _overwrite)
 {
 	fits_status = 0;
 	ffile = NULL;
@@ -276,6 +276,16 @@ int FitsFile::createFile ()
 	ret = mkpath (getFileName (), 0777);
 	if (ret)
 		return -1;
+
+	if (_overwrite)
+	{
+		ret = unlink (getFileName ());
+		if (ret && errno != ENOENT)
+		{
+			logStream (MESSAGE_ERROR) << "Fitsfile::createImage cannot unlink existing file: " << strerror (errno) << sendLog;
+			return -1;
+		}
+	}
 
 	fits_create_file (&ffile, getFileName (), &fits_status);
 
@@ -288,16 +298,16 @@ int FitsFile::createFile ()
 	return 0;
 }
 
-int FitsFile::createFile (const char *_fileName)
+int FitsFile::createFile (const char *_fileName, bool _overwrite)
 {
 	setFileName (_fileName);
-	return createFile ();
+	return createFile (_overwrite);
 }
 
-int FitsFile::createFile (std::string _fileName)
+int FitsFile::createFile (std::string _fileName, bool _overwrite)
 {
 	setFileName (_fileName.c_str ());
-	return createFile ();
+	return createFile (_overwrite);
 }
 
 void FitsFile::setValue (const char *name, bool value, const char *comment)

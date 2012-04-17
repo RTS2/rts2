@@ -94,6 +94,8 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		 */
 		virtual void setExpandPath (const char *ep) { expandPathString = std::string (ep); }
 
+		void setOverwrite (bool _overwrite) { expandOverwrite = _overwrite; }
+
 		/**
 		 * Null temporary expand path.
 		 */
@@ -129,9 +131,12 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		virtual int getNextCommand ();
 
 		virtual bool canEndScript ();
+
+		bool getOverwrite () { return expandOverwrite; }
 	private:
 		rts2core::ValueString *expandPathValue;
 		std::string expandPathString;
+		bool expandOverwrite;
 		bool waitForExposure;
 		bool waitMetaData;
 };

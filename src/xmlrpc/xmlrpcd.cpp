@@ -120,23 +120,30 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 {
  	exposureScript = getScript ();
 	std::string usp;
+	bool overwrite = false;
 	if (nexpand.length () == 0)
 	{
 		if (screxpand.length () == 0)
+		{
 			usp = fexpand;
+		}
 		else
+		{
 			usp = screxpand;
+		}
 	}
 	else
 	{
 		usp = nexpand;
+		overwrite = getOverwrite ();
 	}
 
 	std::string imagename = path + '/' + usp;
 	// make nexpand available for next exposure
 	nexpand = std::string ("");
+	setOverwrite (false);
 
-	rts2image::Image * ret = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection);
+	rts2image::Image * ret = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection, overwrite);
 
 	ret->keepImage ();
 

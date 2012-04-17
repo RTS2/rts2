@@ -85,7 +85,7 @@ void ConnExecute::processCommand (char *cmd)
 		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 		exposure_started = 1;
 	}
-	else if (!strcasecmp (cmd, "exposure_wfn"))
+	else if (!strcasecmp (cmd, "exposure_wfn") || !strcasecmp (cmd, "exposure_overwrite"))
 	{
 		if (!checkActive (true))
 			return;
@@ -94,6 +94,7 @@ void ConnExecute::processCommand (char *cmd)
 		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		((rts2script::DevClientCameraExec *) masterElement->getClient ())->setExpandPath (imagename);
+		((rts2script::DevClientCameraExec *) masterElement->getClient ())->setOverwrite (!strcasecmp (cmd, "exposure_overwrite"));
 		masterElement->getConnection ()->queCommand (new rts2core::CommandExposure (getMaster (), (rts2core::DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 		keep_next_image = true;
 		exposure_started = 1;
