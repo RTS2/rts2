@@ -518,7 +518,6 @@ Device::Device (int in_argc, char **in_argv, int in_device_type, const char *def
 
 Device::~Device (void)
 {
-	delete deviceStatusCommand;
 	delete device_host;
 }
 
