@@ -35,7 +35,7 @@ MemImage::~MemImage ()
 	free (imgbuf);
 }
 
-int MemImage::createFile ()
+int MemImage::createFile (bool _overwrite)
 {
 	fitsfile *fp;
 	imgsize = 2880;

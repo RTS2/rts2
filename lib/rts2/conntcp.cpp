@@ -242,8 +242,7 @@ void ConnTCP::postEvent (Event *event)
 			catch (ConnError &er)
 			{
 				logStream (MESSAGE_WARNING) << "error during reconnecting: " << er << sendLog;
-				getMaster()->addTimer (60, event);
-				return;
+				// new alarm was already created from ConnectionError
 			}
 			break;
 	}

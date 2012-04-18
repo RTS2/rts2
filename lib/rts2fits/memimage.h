@@ -42,7 +42,7 @@ class MemImage:public Image
 		virtual ~MemImage ();
 
 	protected:
-		virtual int createFile ();
+		virtual int createFile (bool _overwrite);
 
 	private:
 		void *imgbuf;
