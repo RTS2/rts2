@@ -88,14 +88,14 @@ using namespace rts2camd;
 void
 MiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 {
-	uint16_t *rtop = (uint16_t *) dataBuffer;
+	uint16_t *rtop = (uint16_t *) getDataBuffer (0);
 	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
 	{
 		memcpy (rtop, row1, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
 		rtop += 2 * chipUsedReadout->getWidthInt ();
 		row1 += chipUsedReadout->getWidthInt ();
 	}
-	rtop = (uint16_t *) dataBuffer;
+	rtop = (uint16_t *) getDataBuffer (0);
 	rtop += chipUsedReadout->getWidthInt ();
 	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
 	{
@@ -246,11 +246,11 @@ MiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 		}
 		if (num > 0)
 		{
-			dataBuffer[y * w + x] = sum / num;
+			getDataBuffer (0)[y * w + x] = sum / num;
 		}
 		else
 		{
-			dataBuffer[y * w + x] = 0;
+			getDataBuffer (0)[y * w + x] = 0;
 		}
 	}
 	delete[]img_1;
@@ -510,9 +510,7 @@ MiniccdIl::isExposing ()
 	return 0;
 }
 
-
-int
-MiniccdIl::doReadout ()
+int MiniccdIl::doReadout ()
 {
 	int ret;
 
@@ -524,7 +522,7 @@ MiniccdIl::doReadout ()
 			doBinning ((uint16_t *) (row[0]), (uint16_t *) (row[1]));
 			slaveState = SENDING;
 		case SENDING:
-			ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+			ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 			if (ret < 0)
 			{
 				slaveState = NO_ACTION;

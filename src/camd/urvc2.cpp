@@ -239,7 +239,7 @@ long Urvc2::isExposing ()
 
 int Urvc2::doReadout ()
 {
-	if (CCDReadout ((short unsigned int *) dataBuffer, C, chipUsedReadout->getXInt () / binningVertical (),
+	if (CCDReadout ((short unsigned int *) getDataBuffer (0), C, chipUsedReadout->getXInt () / binningVertical (),
 		chipUsedReadout->getYInt () / binningHorizontal (),
 		getUsedWidthBinned (), getUsedHeightBinned (), binningVertical ()))
 	{
@@ -248,7 +248,7 @@ int Urvc2::doReadout ()
 		return -1;
 	}
 	int ret;
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	return -2;

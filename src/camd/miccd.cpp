@@ -548,18 +548,18 @@ int MICCD::doReadout ()
 		case G10800:
 		case G11400:
 		case G12000:
-			ret = miccd_read_data (&camera, (getDataType () == RTS2_DATA_USHORT) ? 2 * getUsedWidth () * getUsedHeight () : getUsedWidth () * getUsedHeight (), dataBuffer, getUsedWidth (), getUsedHeight ());
+			ret = miccd_read_data (&camera, (getDataType () == RTS2_DATA_USHORT) ? 2 * getUsedWidth () * getUsedHeight () : getUsedWidth () * getUsedHeight (), getDataBuffer (0), getUsedWidth (), getUsedHeight ());
 			break;
 		case G2:
 		case G3:
-			ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
+			ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), getDataBuffer (0));
 			break;
 	}
 
 	if (ret < 0)
 		return -1;
 
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return ret;
 	if (getWriteBinaryDataSize () == 0)

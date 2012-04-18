@@ -276,7 +276,7 @@ class Dummy:public Camera
 
 		bool showTemp;
 
-		void generateImage (long usedSize);
+		void generateImage (size_t usedSize, int chan);
 
 		// data written during readout
 		ssize_t written;
@@ -316,7 +316,7 @@ int Dummy::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 int Dummy::doReadout ()
 {
 	int ret;
-	long usedSize = dataBufferSize;
+	ssize_t usedSize = chipByteSize ();
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
 	int nch = 0;
@@ -326,12 +326,12 @@ int Dummy::doReadout ()
 		{
 			if (channels && (*channels)[ch] == false)
 				continue;
-			generateImage (usedSize / 2);
+			generateImage (usedSize / 2, ch);
 			for (written = 0; written < usedSize;)
 			{
 				usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 				size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (dataBuffer + written, s, nch);
+				ret = sendReadoutData (getDataBuffer (ch) + written, s, nch);
 
 				if (ret < 0)
 					return ret;
@@ -344,14 +344,14 @@ int Dummy::doReadout ()
 	{
 		if (written == -1)
 		{
-			generateImage (usedSize / 2);
+			generateImage (usedSize / 2, 0);
 			written = 0;
 		}
 		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 		if (written < (ssize_t) chipByteSize ())
 		{
 			size_t s = (ssize_t) chipByteSize () - written < callReadoutSize->getValueLong () ? chipByteSize () - written : callReadoutSize->getValueLong ();
-			ret = sendReadoutData (dataBuffer + written, s, 0);
+			ret = sendReadoutData (getDataBuffer (0) + written, s, 0);
 
 			if (ret < 0)
 				return ret;
@@ -364,7 +364,7 @@ int Dummy::doReadout ()
 	return 0;					 // imediately send new data
 }
 
-void Dummy::generateImage (long usedSize)
+void Dummy::generateImage (size_t usedSize, int chan)
 {
 	// artifical star center
 	astar_Xp->clear ();
@@ -387,9 +387,9 @@ void Dummy::generateImage (long usedSize)
 	int ymax = ceil (sy * 10);
 	sy *= sy;
 
-	uint16_t *d = (uint16_t *) dataBuffer;
+	uint16_t *d = (uint16_t *) getDataBuffer (chan);
 
-	for (int i = 0; i < usedSize; i++, d++)
+	for (unsigned int i = 0; i < usedSize; i++, d++)
 	{
 		double n;
 		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)

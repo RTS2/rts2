@@ -177,7 +177,7 @@ int Alta::doReadout ()
 	long status;
 	unsigned short width, height;
 	unsigned long count;
-	status = alta->GetImageData ((short unsigned int *) dataBuffer, width, height, count);
+	status = alta->GetImageData ((short unsigned int *) getDataBuffer (0), width, height, count);
 	if (status != CAPNCAMERA_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "cannot read camera image " << status << ", reseting CCD" << sendLog;
@@ -188,7 +188,7 @@ int Alta::doReadout ()
 		return 0;
 	}
 
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	return -2;

@@ -256,7 +256,7 @@ int Sbig::doReadout ()
 {
 	int ret;
 
-	char *dest_top = dataBuffer;
+	char *dest_top = getDataBuffer (0);
 
 	DumpLinesParams dlp;
 	dlp.ccd = 0;
@@ -269,7 +269,7 @@ int Sbig::doReadout ()
 		SBIGUnivDrvCommand (CC_READOUT_LINE, &rlp, dest_top);
 		dest_top += rlp.pixelLength * usedPixelByteSize ();
 	}
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	return -2;

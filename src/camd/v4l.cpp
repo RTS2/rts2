@@ -332,9 +332,9 @@ int V4L::doReadout ()
 						sendReadoutData ((char *) buffers[0].start, chipByteSize ());
 						break;
 					case 1:
-						memcpy (dataBuffer, buffers[0].start, chipByteSize () * 2);
-						everyEvenByte (dataBuffer);
-						sendReadoutData (dataBuffer, chipByteSize ());
+						memcpy (getDataBuffer (0), buffers[0].start, chipByteSize () * 2);
+						everyEvenByte (getDataBuffer (0));
+						sendReadoutData (getDataBuffer (0), chipByteSize ());
 						break;
 				}
 			}

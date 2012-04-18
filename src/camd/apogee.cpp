@@ -191,11 +191,11 @@ int Apogee::doReadout ()
 	camera->m_ExposureStartY = chipUsedReadout->getYInt ();
 	camera->m_ExposureNumX = getUsedWidthBinned ();
 	camera->m_ExposureNumY = getUsedHeightBinned ();
-	status = camera->GetImage ((short unsigned int*) dataBuffer, width, height);
+	status = camera->GetImage ((short unsigned int*) getDataBuffer (0), width, height);
 	logStream (MESSAGE_DEBUG) << "apogee doReadout status " << status << sendLog;
 	if (!status)
 		return -1;
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	return -2;

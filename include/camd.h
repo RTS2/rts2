@@ -315,8 +315,7 @@ class Camera:public rts2core::ScriptDevice
 		double pixelY;
 
 		// buffer used to read data
-		char* dataBuffer;
-		size_t dataBufferSize;
+		char* getDataBuffer (int chan);
 
 		/**
 		 * Add : separated filters from command line (usually -F argument).
@@ -498,28 +497,33 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
+		 * Returns maximal possible byte size.
+		 */
+		const int maxPixelByteSize ();
+
+		/**
 		 * Returns chip size in pixels. This method must be overloaded
 		 * when camera decides to use non-standart 2D horizontal and
 		 * vertical binning.
 		 *
-		 * @return Chip size in pixels.
+		 * @return single channel size in pixels.
 		 */
-		virtual long chipUsedSize () { return getUsedWidthBinned () * getUsedHeightBinned (); }
+		size_t chipUsedSize () { return getUsedWidthBinned () * getUsedHeightBinned (); }
 
-		long getReadoutPixels () { return readoutPixels; }
+		size_t getReadoutPixels () { return readoutPixels; }
 
 
 		/**
 		 * Retuns size of chip in bytes.
 		 *
-		 * @return Size of pixel data from current configured CCD in bytes.
+		 * @return Size of pixel data from current configured single CCD channel in bytes
 		 */
 		virtual size_t chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
 
 		/**
 		 * Returns size of one line in bytes.
 		 */
-		int lineByteSize () { return usedPixelByteSize () * (chipUsedReadout->getWidthInt ()); }
+		size_t lineByteSize () { return usedPixelByteSize () * (chipUsedReadout->getWidthInt ()); }
 
 		virtual int processData (char *data, size_t size);
 
@@ -769,6 +773,13 @@ class Camera:public rts2core::ScriptDevice
 				channels->addValue (true);
 		}
 
+		int getNumChannels ()
+		{
+			if (channels == NULL)
+				return 1;
+			return channels->size ();
+		}
+
 		/**
 		 * Create value for air temperature camera sensor. Use on CCDs which
 		 * can sense air temperature.
@@ -860,7 +871,7 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Mark end of physical chip readout.
 		 */
-		void updateReadoutSpeed (long computedPixels)
+		void updateReadoutSpeed (size_t computedPixels)
 		{
 			if (!isnan (timeReadoutStart))
 			{
@@ -877,12 +888,17 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 	private:
-		long readoutPixels;
+		size_t readoutPixels;
+		// data buffers - separated for each channel
+		char** dataBuffers;
 
 		// readout - ideally time for data->computer. Camera driver should start markReadoutStart and markReadoutEnd to mark start/end times
 		double timeReadoutStart;
 		// readout time including transfer (TCP/IP,..) overhead
 		double timeTransferStart;
+
+		// focusing header data
+		struct imghdr *fhd;
 
 		// physical readout time from device
 		rts2core::ValueDouble *pixelsSecond;

@@ -203,14 +203,14 @@ int Miniccd::doReadout ()
 {
 	int ret;
 
-	ret = read (fd_chip, dataBuffer, getWriteBinaryDataSize ());
+	ret = read (fd_chip, getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret == -1)
 	{
 		logStream (MESSAGE_ERROR) << "Error during reading data" << sendLog;
 		return -1;
 	}
 
-	ret = sendReadoutData (dataBuffer, ret);
+	ret = sendReadoutData (getDataBuffer (0), ret);
 	if (ret < 0)
 		return ret;
 

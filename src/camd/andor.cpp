@@ -206,27 +206,27 @@ long Andor::isExposing ()
 		switch (getDataType ())
 		{
 			case RTS2_DATA_LONG:
-				if (GetMostRecentImage ((at_32 *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				if (GetMostRecentImage ((at_32 *) getDataBuffer (0), chipUsedSize ()) != DRV_SUCCESS)
 				{
 					logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
 					return -1;
 				}
 				break;
 			default:
-				if (GetMostRecentImage16 ((uint16_t *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				if (GetMostRecentImage16 ((uint16_t *) getDataBuffer (0), chipUsedSize ()) != DRV_SUCCESS)
 				{
 					logStream (MESSAGE_ERROR) << "Cannot get int data" << sendLog;
 					return -1;
 				}
 		}
 		logStream (MESSAGE_DEBUG) << "Image "
-			<< ((unsigned short *) dataBuffer)[0] << " " 
-			<< ((unsigned short *) dataBuffer)[1] << " "
-			<< ((unsigned short *) dataBuffer)[2] << " "
-			<< ((unsigned short *) dataBuffer)[3] << " "
-			<< ((unsigned short *) dataBuffer)[4] << sendLog;
+			<< ((unsigned short *) getDataBuffer (0))[0] << " " 
+			<< ((unsigned short *) getDataBuffer (0))[1] << " "
+			<< ((unsigned short *) getDataBuffer (0))[2] << " "
+			<< ((unsigned short *) getDataBuffer (0))[3] << " "
+			<< ((unsigned short *) getDataBuffer (0))[4] << sendLog;
 		// now send the data
-		ret = sendImage (dataBuffer, dataBufferSize);
+		ret = sendImage (getDataBuffer (0), chipUsedSize ());
 		if (ret)
 			return ret;
 		if (quedExpNumber->getValueInteger () == 0)
@@ -284,14 +284,14 @@ int Andor::doReadout ()
 	switch (getDataType ())
 	{
 		case RTS2_DATA_FLOAT:
-			ret = GetAcquiredFloatData ((float *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredFloatData ((float *) getDataBuffer (0), chipUsedSize ());
 			break;
 		case RTS2_DATA_LONG:
-			ret = GetAcquiredData ((at_32 *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredData ((at_32 *) getDataBuffer (0), chipUsedSize ());
 			break;
 			// case RTS2_DATA_SHORT:
 		default:
-			ret = GetAcquiredData16 ((short unsigned *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredData16 ((short unsigned *) getDataBuffer (0), chipUsedSize ());
 			break;
 	}
 
@@ -307,7 +307,7 @@ int Andor::doReadout ()
 		logStream (MESSAGE_ERROR) << "andor GetAcquiredXXXX " << getDataType () << " return " << ret << sendLog;
 		return -1;
 	}
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	if (getWriteBinaryDataSize () == 0)

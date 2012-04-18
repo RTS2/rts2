@@ -194,14 +194,14 @@ int Fli::stopExposure ()
 int Fli::doReadout ()
 {
 	LIBFLIAPI ret;
-	char *bufferTop = dataBuffer;
+	char *bufferTop = getDataBuffer (0);
 	for (int line = 0; line < getUsedHeightBinned (); line++, bufferTop += usedPixelByteSize () * getUsedWidthBinned ())
 	{
 		ret = FLIGrabRow (dev, bufferTop, getUsedWidthBinned ());
 		if (ret)
 			return -1;
 	}
-	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	ret = sendReadoutData (getDataBuffer (0), getWriteBinaryDataSize ());
 	if (ret < 0)
 	{
 		return ret;

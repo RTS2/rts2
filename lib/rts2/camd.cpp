@@ -268,9 +268,9 @@ void Camera::startImageData (rts2core::Connection * conn)
 		if (i < chnTot)
 		{
 			// clear allocation we did with addClient above
-			for (int j = 0; j < i; i++)
+			for (int j = 0; j < i; j++)
 			{
-				sharedData->removeClient (segments[i], conn->getCentraldId ());
+				sharedData->removeClient (segments[j], conn->getCentraldId ());
 			}
 			sharedData->clearChan2Seg ();
 			logStream (MESSAGE_WARNING) << "starting binary connection instead of shared data connection" << sendLog;
@@ -279,7 +279,6 @@ void Camera::startImageData (rts2core::Connection * conn)
 		}
 		else
 		{
-			dataBuffer = ((char *) sharedData->getChannelData (0)) + sizeof (imghdr);
 			currentImageData = conn->startSharedData (sharedData, chnTot, segments);
 			currentImageShared = true;
 		}
@@ -297,6 +296,10 @@ int Camera::sendFirstLine (int chan, int pchan)
 	if (currentImageShared)
 	{
 		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
+	}
+	else
+	{
+		focusingHeader = fhd;
 	}
 
 	focusingHeader->data_type = htons (getDataType ());
@@ -376,6 +379,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	nAcc = 1;
 
+	dataBuffers = NULL;
+
 	sharedData = NULL;
 	sharedMemNum = -1;
 
@@ -454,9 +459,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	camFilterOffsets = NULL;
 	focuserDevice = NULL;
 
-	dataBuffer = NULL;
-	dataBufferSize = 0;
-
 	exposureConn = NULL;
 
 	createValue (focuserMoving, "foc_moving", "if focuser is moving", false);
@@ -475,15 +477,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 Camera::~Camera ()
 {
-	if (sharedData >= 0)
-	{
-		delete sharedData;
-	}
-	else
-	{
-		delete[] dataBuffer;
-		free (focusingHeader);
-	}
+	delete sharedData;
+	delete focusingHeader;
+	delete fhd;
 }
 
 int Camera::willConnect (rts2core::NetworkAddress * in_addr)
@@ -855,7 +851,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		}
 	}
 
-	if (sharedData && currentImageShared)
+	if (currentImageShared)
 		sharedData->dataWritten (chan, dataSize);
 
 	if (exposureConn && currentImageShared == false)
@@ -912,6 +908,24 @@ void Camera::initDataTypes ()
 	addDataType (RTS2_DATA_USHORT);
 }
 
+
+const int Camera::maxPixelByteSize ()
+{
+	int ms = 0;
+	for (std::vector < rts2core::SelVal >::iterator iter = dataType->selBegin (); iter != dataType->selEnd (); iter++)
+	{
+		if (((DataType *) iter->data)->type == RTS2_DATA_ULONG && ms < 4)
+		{
+			ms = 4;
+			continue;
+		}
+		int ps = ((DataType *) iter->data)->type / 8;
+		if (ps > ms)
+			ms = ps;
+	}
+	return ms;
+}
+
 int Camera::initValues ()
 {
 	if (focuserDevice)
@@ -950,7 +964,7 @@ int Camera::initValues ()
 	// init shared memory segment
 	if (sharedMemNum >= 0)
 	{
-		dataBufferSize = chipByteSize () + sizeof (imghdr);
+		size_t dataBufferSize = getWidth () * getHeight () * maxPixelByteSize ();
 		// autoscale shared memory
 		if (sharedMemNum == 0)
 		{
@@ -997,18 +1011,17 @@ int Camera::initValues ()
 			return -1;
 		}
 		logStream (MESSAGE_DEBUG) << "creating shared memory with " << sharedMemNum << " segments" << sendLog;
-		focusingHeader = NULL;
-		dataBuffer = NULL;
 	}
-	else
-	{
-		focusingHeader = (struct imghdr *) malloc (sizeof (struct imghdr));
-	}
+	fhd = new struct imghdr;
+	focusingHeader = NULL;
 
 	if (tempCCDHistory != NULL)
 	{
 		addTimer (tempCCDHistoryInterval->getValueInteger (), new rts2core::Event (EVENT_TEMP_CHECK));
 	}
+
+	dataBuffers = new char*[getNumChannels ()];
+	bzero (dataBuffers, getNumChannels () * sizeof (char*));
 
 	return rts2core::ScriptDevice::initValues ();
 }
@@ -1334,14 +1347,6 @@ int Camera::camStartExposureWithoutCheck ()
 	if (new_timeout >= 0)
 	{
 		setTimeout (new_timeout);
-	}
-
-	// increas buffer size
-	if (suggestBufferSize () > 0 && dataBufferSize < suggestBufferSize ())
-	{
-		delete[] dataBuffer;
-		dataBufferSize = suggestBufferSize ();
-		dataBuffer = new char[dataBufferSize];
 	}
 
 	// check if that comes from old request
@@ -1703,6 +1708,16 @@ void Camera::setFullBopState (int new_state)
 			camStartExposureWithoutCheck ();
 		}
 	}
+}
+
+char* Camera::getDataBuffer (int chan)
+{
+	if (currentImageShared)
+		return ((char *) sharedData->getChannelData (chan)) + sizeof (imghdr);
+	// if dataBuffesr is null, allocate it
+	if (dataBuffers[chan] == NULL && suggestBufferSize () > 0)
+		dataBuffers[chan] = new char[getHeight () * getWidth () * maxPixelByteSize ()];
+	return dataBuffers[chan];
 }
 
 void Camera::setFilterOffsets (char *opt)
