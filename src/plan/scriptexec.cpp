@@ -190,14 +190,12 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 
 ScriptExec::~ScriptExec (void)
 {
-	for (std::vector < rts2script::ScriptForDevice * >::iterator iter = scripts.begin ();
-		iter != scripts.end (); iter++)
+	for (std::vector < rts2script::ScriptForDevice * >::iterator iter = scripts.begin (); iter != scripts.end (); iter++)
 	{
 		delete *iter;
 	}
 	scripts.clear ();
 
-	delete currentTarget;
 	delete expandPath;
 }
 
