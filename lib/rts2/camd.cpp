@@ -478,7 +478,6 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 Camera::~Camera ()
 {
 	delete sharedData;
-	delete focusingHeader;
 	delete fhd;
 }
 
