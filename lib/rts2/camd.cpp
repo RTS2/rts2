@@ -377,7 +377,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	nAcc = 1;
 
 	sharedData = NULL;
-	sharedMemNum = 0;
+	sharedMemNum = -1;
 
 	currentImageData = -1;
 	currentImageShared = false;
@@ -470,7 +470,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
 	addOption (OPT_WCS_CDELT, "wcs", 1, "WCS CD matrix (CRPIX1:CRPIX2:CDELT1:CDELT2:CROTA in default, unbinned configuration)");
-	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
+	addOption (OPT_WITHSHM, "with-shm", 2, "use given numbers of segments of shared memory");
 }
 
 Camera::~Camera ()
@@ -717,7 +717,11 @@ int Camera::processOption (int in_opt)
 			wcs_crota->setValueDouble (default_cd[2]);
 			break;
 		case OPT_WITHSHM:
-			sharedMemNum = 10;
+			// autoscale
+			if (optarg == NULL)
+				sharedMemNum = 0;
+			else
+				sharedMemNum = atoi (optarg);
 			break;
 		default:
 			return rts2core::ScriptDevice::processOption (in_opt);
@@ -944,14 +948,55 @@ int Camera::initValues ()
 	initDataTypes ();
 
 	// init shared memory segment
-	if (sharedMemNum > 0)
+	if (sharedMemNum >= 0)
 	{
 		dataBufferSize = chipByteSize () + sizeof (imghdr);
+		// autoscale shared memory
+		if (sharedMemNum == 0)
+		{
+#ifdef __linux__
+			// read limit
+			std::ifstream ifs ("/proc/sys/kernel/shmmax");
+			int shmax;
+			ifs >> shmax;
+			ifs.close ();
+			if (ifs.fail ())
+			{
+				logStream (MESSAGE_ERROR) << "cannot read maximal shared memory size from /proc/sys/kernel/shmmax" << sendLog;
+				sharedMemNum = 10;
+			}
+			else
+			{
+				double d = sizeof (struct rts2core::SharedDataHeader);
+				d *= d;
+				size_t a = sizeof (struct rts2core::SharedDataSegment) + dataBufferSize;
+				d += 4 * a * shmax;
+				d = (sqrt (d) - sizeof (struct rts2core::SharedDataHeader)) / (2 * a);
+				if (d > 1000)
+				{
+					sharedMemNum = 1000;
+				}
+				else if (d < 0)
+				{
+					logStream (MESSAGE_ERROR) << "invalid root of quadratic equation for maximal shared memory size " << d << sendLog;
+					return -1;
+				}
+				else
+				{
+					sharedMemNum = d;
+				}
+			}
+#else
+			logStream (MESSAGE_ERROR) << "unknow operating system, uses 10 for number of shared memory segments" << sendLog;
+			sharedMemNum = 10;
+#endif
+		}
 		sharedData = new rts2core::DataSharedWrite ();
 		if (sharedData->create (sharedMemNum, dataBufferSize) == NULL)
 		{
 			return -1;
 		}
+		logStream (MESSAGE_DEBUG) << "creating shared memory with " << sharedMemNum << " segments" << sendLog;
 		focusingHeader = NULL;
 		dataBuffer = NULL;
 	}
