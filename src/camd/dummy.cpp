@@ -93,6 +93,7 @@ class Dummy:public Camera
 			width = 200;
 			height = 100;
 			dataSize = -1;
+			written = NULL;
 
 			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
 			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
@@ -161,11 +162,17 @@ class Dummy:public Camera
 				tempSet->setMax (50);
 			}
 
-			written = new ssize_t[channels->size ()];
-			for (unsigned int i = 0; i < channels->size (); i++)
+			if (channels)
 			{
-				written[i] = -1;
+				written = new ssize_t[channels->size ()];
+				for (unsigned int i = 1; i < channels->size (); i++)
+					written[i] = -1;
 			}
+			else
+			{
+				written = new ssize_t[1];
+			}
+			written[0] = -1;
 
 			setExposureMinMax (0,3600);
 			expMin->setValueDouble (0);
@@ -205,9 +212,11 @@ class Dummy:public Camera
 		}
 		virtual int startExposure ()
 		{
-			for (unsigned int i = 0; i < channels->size (); i++)
+			written[0] = -1;
+			if (channels)
 			{
-				written[i] = -1;
+				for (unsigned int i = 1; i < channels->size (); i++)
+					written[i] = -1;
 			}
 			return 0;
 		}
