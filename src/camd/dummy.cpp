@@ -94,8 +94,6 @@ class Dummy:public Camera
 			height = 100;
 			dataSize = -1;
 
-			written = -1;
-
 			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
 			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
 			addOption ('r', NULL, 1, "device will sleep <parame> seconds before each readout");
@@ -109,6 +107,7 @@ class Dummy:public Camera
 		virtual ~Dummy (void)
 		{
 			readoutSleep = NULL;
+			delete[] written;
 		}
 
 		virtual int processOption (int in_opt)
@@ -162,6 +161,12 @@ class Dummy:public Camera
 				tempSet->setMax (50);
 			}
 
+			written = new ssize_t[channels->size ()];
+			for (unsigned int i = 0; i < channels->size (); i++)
+			{
+				written[i] = -1;
+			}
+
 			setExposureMinMax (0,3600);
 			expMin->setValueDouble (0);
 			expMax->setValueDouble (3600);
@@ -200,7 +205,10 @@ class Dummy:public Camera
 		}
 		virtual int startExposure ()
 		{
-			written = -1;
+			for (unsigned int i = 0; i < channels->size (); i++)
+			{
+				written[i] = -1;
+			}
 			return 0;
 		}
 		virtual size_t suggestBufferSize ()
@@ -279,7 +287,7 @@ class Dummy:public Camera
 		void generateImage (size_t usedSize, int chan);
 
 		// data written during readout
-		ssize_t written;
+		ssize_t *written;
 };
 
 };
@@ -317,45 +325,51 @@ int Dummy::doReadout ()
 {
 	int ret;
 	ssize_t usedSize = chipByteSize ();
-	if (usedSize > getWriteBinaryDataSize ())
-		usedSize = getWriteBinaryDataSize ();
+//	if (usedSize > getWriteBinaryDataSize ())
+//		usedSize = getWriteBinaryDataSize ();
 	int nch = 0;
 	if (channels)
 	{
-		for (size_t ch = 0; ch < channels->size (); ch++)
+		// generate image
+		if (written[0] == -1)
 		{
-			if (channels && (*channels)[ch] == false)
-				continue;
-			generateImage (usedSize / 2, ch);
-			for (written = 0; written < usedSize;)
+			for (unsigned int ch = 0; ch < channels->size (); ch++)
 			{
-				usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-				size_t s = usedSize - written < callReadoutSize->getValueLong () ? usedSize - written : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (getDataBuffer (ch) + written, s, nch);
-
-				if (ret < 0)
-					return ret;
-				written += s;
+				if (channels && (*channels)[ch] == false)
+					continue;
+				generateImage (usedSize / 2, ch);
+				written[ch] = 0;
 			}
+		}
+		// send data from channel..
+		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
+		for (unsigned int ch = 0; ch < channels->size (); ch++)
+		{
+			size_t s = usedSize - written[ch] < callReadoutSize->getValueLong () ? usedSize - written[ch] : callReadoutSize->getValueLong ();
+			ret = sendReadoutData (getDataBuffer (ch) + written[ch], s, nch);
+
+			if (ret < 0)
+				return ret;
+			written[ch] += s;
 			nch++;
 		}
 	}
 	else
 	{
-		if (written == -1)
+		if (written[0] == -1)
 		{
 			generateImage (usedSize / 2, 0);
-			written = 0;
+			written[0] = 0;
 		}
 		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		if (written < (ssize_t) chipByteSize ())
+		if (written[0] < (ssize_t) chipByteSize ())
 		{
-			size_t s = (ssize_t) chipByteSize () - written < callReadoutSize->getValueLong () ? chipByteSize () - written : callReadoutSize->getValueLong ();
-			ret = sendReadoutData (getDataBuffer (0) + written, s, 0);
+			size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
+			ret = sendReadoutData (getDataBuffer (0) + written[0], s, 0);
 
 			if (ret < 0)
 				return ret;
-			written += s;
+			written[0] += s;
 		}
 	}
 
