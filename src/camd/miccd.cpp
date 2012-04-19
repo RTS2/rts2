@@ -470,29 +470,29 @@ int MICCD::startExposure ()
 int MICCD::endExposure ()
 {
 	int ret;
-	if (getExpType () != 1)
+	switch (camera.model)
 	{
-		switch (camera.model)
-		{
-			case G10300:
-			case G10400:
-			case G10800:
-			case G11400:
-			case G12000:
-				if (internalTimer == false)
-				{
-					ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), -1);
-					if (ret)
-						return -1;
-				}
-				break;
-			case G2:
-			case G3:
+		case G10300:
+		case G10400:
+		case G10800:
+		case G11400:
+		case G12000:
+			if (internalTimer == false)
+			{
+				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), -1);
+				if (ret)
+					return -1;
+			}
+			break;
+		case G2:
+		case G3:
+			if (getExpType () != 1)
+			{
 				ret = miccd_close_shutter (&camera);
 				if (ret)
 					return ret;
-				break;
-		}
+			}
+			break;
 	}
 #ifdef WITH_K8055
 	if (getExpType () == 0)
