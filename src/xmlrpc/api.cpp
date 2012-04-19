@@ -1784,6 +1784,14 @@ void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
 				os << JsonDouble (*iter);
 			}
 			break;
+		case RTS2_VALUE_BOOL:
+			for (std::vector <int>::iterator iter = ((rts2core::BoolArray *) value)->valueBegin (); iter != ((rts2core::BoolArray *) value)->valueEnd (); iter++)
+			{
+				if (iter != ((rts2core::BoolArray *) value)->valueBegin ())
+					os << ",";
+				os << ((*iter) ? "true":"false");
+			}
+			break;
 		default:
 			os << "\"" << value->getDisplayValue () << "\"";
 			break;
