@@ -611,8 +611,12 @@ class Connection:public Object
 
 		double getProgressEnd () { return statusExpectedEnd; }
 
-		// returns last active datachannel
-		DataAbstractRead *lastDataChannel ();
+		/**
+		 * Retrieves last active data channel.
+		 *
+		 * @param chan  channel number. Channels are counted from 0.
+		 */
+		DataAbstractRead *lastDataChannel (int chan);
 
 	protected:
 		char *buf;

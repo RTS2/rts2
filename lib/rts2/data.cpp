@@ -166,7 +166,7 @@ struct SharedDataHeader *DataSharedWrite::create (int numseg, size_t segsize)
 	data->shared_sem = semget (IPC_PRIVATE, numseg, 0666);
 	if (data->shared_sem < 0)
 	{
-		logStream (MESSAGE_ERROR) << "cannot create shared semaphore" << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot create shared semaphore " << strerror (errno) << sendLog;
 		shmdt ((void *) data);
 		return NULL;
 	}

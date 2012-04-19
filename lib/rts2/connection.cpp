@@ -2065,11 +2065,11 @@ double Connection::getProgress (double now)
 	return 100 * ((now - statusStart) / (statusExpectedEnd - statusStart));
 }
 
-DataAbstractRead* Connection::lastDataChannel ()
+DataAbstractRead* Connection::lastDataChannel (int chan)
 {
-	if (readChannels.size () == 0 || (--readChannels.end ())->second->size () == 0)
+	if (readChannels.size () == 0 || (--readChannels.end ())->second->size () <= chan)
 		return NULL;
-	return (--readChannels.end ())->second->back ();
+	return (--readChannels.end ())->second->at (chan);
 }
 
 double Connection::getInfoTime ()

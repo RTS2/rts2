@@ -970,7 +970,7 @@ int Camera::initValues ()
 #ifdef __linux__
 			// read limit
 			std::ifstream ifs ("/proc/sys/kernel/shmmax");
-			int shmax;
+			size_t shmax;
 			ifs >> shmax;
 			ifs.close ();
 			if (ifs.fail ())
@@ -997,6 +997,11 @@ int Camera::initValues ()
 				else
 				{
 					sharedMemNum = d;
+					if (sharedMemNum == 0)
+					{
+						logStream (MESSAGE_ERROR) << "shared memory maximal size is insuficient for a single image. Please increase the memory limit - see man shmget for details" << sendLog;
+						return -1;
+					}
 				}
 			}
 #else
