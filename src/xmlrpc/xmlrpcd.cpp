@@ -713,8 +713,12 @@ void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerSt
 	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
 	{
 		StateChange *sc = (*iter);
-		std::cout << "state " << conn->getName () << " " <<  conn->getOtherType () << " " << new_state->getOldValue () << " " << new_state->getValue () << std::endl;
-		if (sc->isForDevice (conn->getName (), conn->getOtherType ()) && sc->executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
+		const char *name;
+		if (conn->getOtherType () == DEVICE_TYPE_SERVERD)
+			name = "centrald";
+		else
+			name = conn->getName ();
+		if (sc->isForDevice (name, conn->getOtherType ()) && sc->executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
 		{
 			sc->run (this, conn, now);
 		}
@@ -728,7 +732,12 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 	for (ValueCommands::iterator iter = events.valueCommands.begin (); iter != events.valueCommands.end (); iter++)
 	{
 		ValueChange *vc = (*iter);
-		if (vc->isForValue (conn->getName (), new_value->getName (), now))
+		const char *name;
+		if (conn->getOtherType () == DEVICE_TYPE_SERVERD)
+			name = "centrald";
+		else
+			name = conn->getName ();
+		if (vc->isForValue (name, new_value->getName (), now))
 		 
 		{
 			try
