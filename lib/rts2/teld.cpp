@@ -433,12 +433,12 @@ void Telescope::valueChanged (rts2core::Value * changed_value)
 	if (changed_value == oriRaDec)
 	{
 		mpec->setValueString ("");
-		startResyncMove (NULL, false);
+		startResyncMove (NULL, 0);
 	}
 	if (changed_value == mpec)
 	{
 		recalculateMpecDIffs ();
-		startResyncMove (NULL, false);
+		startResyncMove (NULL, 0);
 	}
 	if (changed_value == offsRaDec || changed_value == corrRaDec)
 	{
@@ -996,7 +996,7 @@ int Telescope::endMove ()
 	return 0;
 }
 
-int Telescope::startResyncMove (rts2core::Connection * conn, bool onlyCorrect)
+int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 {
 	int ret;
 
@@ -1139,17 +1139,26 @@ int Telescope::startResyncMove (rts2core::Connection * conn, bool onlyCorrect)
 		wcorrRaDec->resetValueChanged ();
 	}
 
-	if (onlyCorrect)
+	if (correction)
 	{
 		LibnovaDegDist c_ra (corrRaDec->getRa ());
 		LibnovaDegDist c_dec (corrRaDec->getDec ());
 
-		logStream (MESSAGE_INFO) << "correcting to " << syncTo
-			<< " from " << syncFrom
-			<< " distances " << c_ra << " " << c_dec << sendLog;
+		const char *cortype = "offseting and correcting";
+	
+		switch (correction)
+		{
+			case 1:
+				cortype = "offseting";
+				break;
+			case 2:
+				cortype = "correcting";
+				break;
+		}
 
-		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
-			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
+		logStream (MESSAGE_INFO) << cortype << " to " << syncTo << " from " << syncFrom << " distances " << c_ra << " " << c_dec << sendLog;
+
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	}
 	else
 	{
@@ -1271,7 +1280,7 @@ void Telescope::signaledHUP ()
 
 void Telescope::startOffseting (rts2core::Value *changed_value)
 {
-	startResyncMove (NULL, false);
+	startResyncMove (NULL, 0);
 }
 
 int Telescope::moveAltAz ()
@@ -1286,7 +1295,7 @@ int Telescope::moveAltAz ()
 	ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &target);
 
 	oriRaDec->setValueRaDec (target.ra, target.dec);
-	return startResyncMove (NULL, false);
+	return startResyncMove (NULL, 0);
 }
 
 int Telescope::commandAuthorized (rts2core::Connection * conn)
@@ -1303,7 +1312,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		return startResyncMove (conn, false);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("do_move"))
 	{
@@ -1313,7 +1322,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
 		tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
-		return startResyncMove (conn, false);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_not_model"))
 	{
@@ -1322,7 +1331,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		return startResyncMove (conn, false);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_mpec"))
 	{
@@ -1331,7 +1340,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		modelOn ();
 		mpec->setValueString (str);
-		return startResyncMove (conn, false);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("altaz"))
 	{
@@ -1346,7 +1355,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		return startResyncMove (conn, false);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("setto"))
 	{
@@ -1412,7 +1421,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			  conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction debugging phase");
 
 			  return -1;
-			  //	return startResyncMove (conn, true);
+			  //	return startResyncMove (conn, 1);
 			}
 			sendValueAll (wcorrRaDec);
 			// else set BOP_EXPOSURE, and wait for result of statusUpdate call
@@ -1445,7 +1454,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		offsRaDec->incValueRaDec (obj_ra, obj_dec);
 		woffsRaDec->incValueRaDec (obj_ra, obj_dec);
-		return startResyncMove (conn, true);
+		return startResyncMove (conn, 1);
 	}
 	else if (conn->isCommand ("save_model"))
 	{
@@ -1499,5 +1508,5 @@ void Telescope::setFullBopState (int new_state)
 {
 	rts2core::Device::setFullBopState (new_state);
 	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))
-		startResyncMove (NULL, true);
+		startResyncMove (NULL, (woffsRaDec->wasChanged () ? 1 : 0) | (wcorrRaDec->wasChanged () ? 2 : 0));
 }

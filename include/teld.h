@@ -866,7 +866,11 @@ class Telescope:public rts2core::Device
 
 		int startMove (rts2core::Connection * conn, double tar_ra, double tar_dec, bool onlyCorrect);
 
-		int startResyncMove (rts2core::Connection * conn, bool onlyCorrect);
+		/**
+		 *
+		 * @param correction   correction type bitmask - 0 for no corerction, 1 for offsets, 2 for correction
+		 */
+		int startResyncMove (rts2core::Connection * conn, int correction);
 
 		/**
 		 * Date and time when last park command was issued.
