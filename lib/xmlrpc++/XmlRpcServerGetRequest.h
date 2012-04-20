@@ -62,10 +62,11 @@ namespace XmlRpc
 			 * 
 			 * @param _name  name of variable which will be returned.
 			 * @param def_val default value. You can use time(NULL) to use current time.
+			 * @param next_midnight  if only date is specified, return next local midnight time
 			 * 
 			 * @return 
 			 */
-			double getDate (const char *_name, double def_val);
+			double getDate (const char *_name, double def_val, bool next_midnight = false);
 
 			void parseParam (const std::string& ps);
 			void parse (const std::string &ps);

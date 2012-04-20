@@ -150,7 +150,7 @@ void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpP
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
 	from = params->getDate ("from", from);
-	to = params->getDate ("to", to);
+	to = params->getDate ("to", to, true);
 
 	if (from < 0 && to == 0)
 	{

@@ -106,7 +106,7 @@ int rmdir_r (const char *dir)
 	return nftw (dir, rmfiledir, 50, FTW_DEPTH | FTW_MOUNT);
 }
 
-int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal)
+int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal, bool *only_date)
 {
 	int ret;
 	int ret2;
@@ -114,7 +114,10 @@ int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal
 	out_time->seconds = 0;
 	while (*in_date && isblank (*in_date))
 		in_date++;
-	islocal = false;	
+	islocal = false;
+
+	if (only_date)
+		*only_date = false;
 
 	if (in_date[0] == '+' || in_date[0] == '-')
 	{
@@ -153,17 +156,19 @@ int parseLocalDate (const char *in_date, struct ln_date *out_time, bool &islocal
 		// only year..
 		if (*in_date == '\0')
 		{
-			islocal = true;  
+			if (only_date)
+				*only_date = true;
+			islocal = true;
 			return 0;
 		}
 	}
 	return -1;
 }
 
-int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT)
+int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT, bool *only_date)
 {
 	bool islocal;
-	int ret = parseLocalDate (in_date, out_time, islocal);
+	int ret = parseLocalDate (in_date, out_time, islocal, only_date);
 	if (forceUT == false && islocal)
 	{
 		double JD = ln_get_julian_day (out_time);
@@ -176,22 +181,22 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT)
 }
 
 
-int parseDate (const char *in_date, double &JD, bool forceUT)
+int parseDate (const char *in_date, double &JD, bool forceUT, bool *only_date)
 {
 	struct ln_date l_date;
 	int ret;
-	ret = parseDate (in_date, &l_date, forceUT);
+	ret = parseDate (in_date, &l_date, forceUT, only_date);
 	if (ret)
 		return ret;
 	JD = ln_get_julian_day (&l_date);
 	return 0;
 }
 
-int parseDate (const char *in_date, time_t *out_time, bool forceUT)
+int parseDate (const char *in_date, time_t *out_time, bool forceUT, bool *only_date)
 {
 	int ret;
 	struct ln_date l_date;
-	ret = parseDate (in_date, &l_date, forceUT);
+	ret = parseDate (in_date, &l_date, forceUT, only_date);
 	if (ret)
 		return ret;
 	ln_get_timet_from_julian (ln_get_julian_day (&l_date), out_time);

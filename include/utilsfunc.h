@@ -80,11 +80,11 @@ int rmdir_r (const char *dir);
  *
  * @return -1 on error, 0 on succes
  */
-int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT = false);
+int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT = false, bool *only_date = NULL);
 
-int parseDate (const char *in_date, double &JD, bool forceUT = false);
+int parseDate (const char *in_date, double &JD, bool forceUT = false, bool *only_date = NULL);
 
-int parseDate (const char *in_date, time_t *out_time, bool forceUT = false);
+int parseDate (const char *in_date, time_t *out_time, bool forceUT = false, bool *only_date = NULL);
 
 /**
  * Split std::string to vector of strings.
