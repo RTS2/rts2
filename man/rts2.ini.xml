@@ -1007,50 +1007,6 @@
       <variablelist>
         <varlistentry>
 	  <term>
-	    <option>xoa</option>
-	  </term>
-	  <listitem>
-	    <para>X Optical Axis ofset in pixels. This value describes where on
-	    which CCD pixel is located telescope optical axis. Can be a float
-	    value.  Defaults to half of the X detector pixel size.</para>
-	  </listitem>
-	</varlistentry>
-         <varlistentry>
-	  <term>
-	    <option>yoa</option>
-	  </term>
-	  <listitem>
-	    <para>Y Optical Axis ofset in pixels. This value describes where on
-	    which CCD pixel is located telescope optical axis. Can be a float
-	    value. Defaults to half of the Y detector pixel size.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>flatmin</option>
-	  </term>
-	  <listitem>
-	    <para>Minimal value for good flat image.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>flatmax</option>
-	  </term>
-	  <listitem>
-	    <para>Maximal value for good flat image.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>filter</option>
-	  </term>
-	  <listitem>
-	    <para>Default filter name.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
 	    <option>script</option>
 	  </term>
 	  <listitem>
