@@ -45,6 +45,7 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				valId = atoi (vals[0].c_str ());
 			else
 				valId = 1;
+			plotValue (valId, from, to, params, response_type, response, response_length);
 			break;
 		case 3:
 			// from - to date
@@ -74,10 +75,10 @@ void Graph::printDevices (const char* &response_type, char* &response, size_t &r
 	for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++, i++)
 	{
 		_os << std::endl << "<tr><form name='fg" << i << "' action='"
-			<< iter->getDevice () << "/" << iter->getValueName () << "'><td>" << iter->getDevice () << "</td><td>"
-			<< iter->getValueName () << "</td><td><select name='t'><option value='A'>Auto</option><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='text' name='from' onfocus='showCalendarControl(this);'/></td><td><input type='text' name='to' onfocus='showCalendarControl(this);'/></td><td><input type='submit' value='Plot'/></td><td>"
-			<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
-			<< LibnovaDateDouble (iter->getTo ()) << "</td></form></tr>";
+			<< iter->second.getDevice () << "/" << iter->second.getValueName () << "'><td>" << iter->second.getDevice () << "</td><td>"
+			<< iter->second.getValueName () << "</td><td><select name='t'><option value='A'>Auto</option><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='text' name='from' onfocus='showCalendarControl(this);'/></td><td><input type='text' name='to' onfocus='showCalendarControl(this);'/></td><td><input type='submit' value='Plot'/></td><td>"
+			<< LibnovaDateDouble (iter->second.getFrom ()) << "</td><td>"
+			<< LibnovaDateDouble (iter->second.getTo ()) << "</td></form></tr>";
 	}
 	_os << std::endl << "</table>";
 	printFooter (_os);
@@ -93,10 +94,25 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
 	rts2db::Recval *rv = rs.searchByName (device, value);
-
 	if (rv == NULL)
 		throw rts2core::Error ("Cannot find device/value pair with given name");
 
+	plotValue (rv, from, to, params, response_type, response, response_length);
+}
+
+void Graph::plotValue (int valId, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
+	rs.load ();
+	rts2db::Recval *rv = &(rs.at(valId));
+	if (rv == NULL)
+		throw rts2core::Error ("Cannot find device/value pair with given name");
+
+	plotValue (rv, from, to, params, response_type, response, response_length);
+}
+
+void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
 	ValuePlot vp (rv->getId (), rv->getType ());
 
 	const char *type = params->getString ("t", "A");

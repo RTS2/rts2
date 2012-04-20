@@ -997,7 +997,7 @@ void RecordsValues::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		recvals.load ();
 		for (rts2db::RecvalsSet::iterator iter = recvals.begin (); iter != recvals.end (); iter++)
 		{
-			rts2db::Recval rv = (*iter);
+			rts2db::Recval rv = iter->second;
 			XmlRpcValue res;
 			res["id"] = rv.getId ();
 			res["device"] = rv.getDevice ();

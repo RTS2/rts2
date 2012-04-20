@@ -136,6 +136,74 @@ class XmlDevClient:public rts2image::DevClientWriteImage, XmlDevInterface
 };
 
 /**
+ * XML-RPC client class. Provides functions for XML-RPCd to react on state
+ * and value changes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class XmlDevTelescopeClient:public rts2image::DevClientTelescopeImage, XmlDevInterface
+{
+	public:
+		XmlDevTelescopeClient (rts2core::Connection *conn):rts2image::DevClientTelescopeImage (conn), XmlDevInterface () {}
+
+		virtual void stateChanged (rts2core::ServerState * state)
+		{
+			XmlDevInterface::stateChanged (state);
+			rts2image::DevClientTelescopeImage::stateChanged (state);
+		}
+
+		virtual void valueChanged (rts2core::Value * value)
+		{
+			XmlDevInterface::valueChanged (value);
+			rts2image::DevClientTelescopeImage::valueChanged (value);
+		}
+
+	protected:
+		virtual XmlRpcd *getMaster ()
+		{
+			return (XmlRpcd *) rts2image::DevClientTelescopeImage::getMaster ();
+		}
+
+		virtual rts2core::Connection *getConnection () { return rts2image::DevClientTelescopeImage::getConnection (); }
+};
+
+/**
+ * XML-RPC client class. Provides functions for XML-RPCd to react on state
+ * and value changes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class XmlDevFocusClient:public rts2image::DevClientFocusImage, XmlDevInterface
+{
+	public:
+		XmlDevFocusClient (rts2core::Connection *conn):rts2image::DevClientFocusImage (conn), XmlDevInterface () {}
+
+		virtual void stateChanged (rts2core::ServerState * state)
+		{
+			XmlDevInterface::stateChanged (state);
+			rts2image::DevClientFocusImage::stateChanged (state);
+		}
+
+		virtual void valueChanged (rts2core::Value * value)
+		{
+			XmlDevInterface::valueChanged (value);
+			rts2image::DevClientFocusImage::valueChanged (value);
+		}
+
+	protected:
+		virtual XmlRpcd *getMaster ()
+		{
+			return (XmlRpcd *) rts2image::DevClientFocusImage::getMaster ();
+		}
+
+		virtual rts2core::Connection *getConnection () { return rts2image::DevClientFocusImage::getConnection (); }
+};
+
+/**
  * Device client for Camera, which is used inside XMLRPCD. Writes images to
  * disk file, provides access to images.
  *

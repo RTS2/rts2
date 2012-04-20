@@ -65,7 +65,7 @@ void RecvalsSet::load ()
 			d_from = rts2_nan ("f");
 		if (d_to_null)
 			d_to = rts2_nan ("f");
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to));
+		insert (std::pair <int, Recval> (d_recval_id, Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to)));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -105,7 +105,7 @@ void RecvalsSet::load ()
 			d_from = rts2_nan ("f");
 		if (d_to_null)
 			d_to = rts2_nan ("f");
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
+		insert (std::pair <int, Recval> (d_recval_id, Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to)));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -140,7 +140,7 @@ void RecvalsSet::load ()
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
+		insert (std::pair <int, Recval> (d_recval_id, Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to)));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -155,10 +155,10 @@ Recval * RecvalsSet::searchByName (const char *_device_name, const char *_value_
 {
 	std::string _dn (_device_name);
 	std::string _vn (_value_name);
-	for (std::list <Recval>::iterator iter = begin (); iter != end (); iter++)
+	for (std::map <int, Recval>::iterator iter = begin (); iter != end (); iter++)
 	{
-		if (iter->getDevice () == _dn && iter->getValueName () == _vn)
-			return &(*iter);
+		if (iter->second.getDevice () == _dn && iter->second.getValueName () == _vn)
+			return &(iter->second);
 	}
 	return NULL;
 }

@@ -696,11 +696,11 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
-			return new rts2image::DevClientTelescopeImage (conn);
+			return new XmlDevTelescopeClient (conn);
 		case DEVICE_TYPE_CCD:
 			return new XmlDevCameraClient (conn);
 		case DEVICE_TYPE_FOCUS:
-			return new rts2image::DevClientFocusImage (conn);
+			return new XmlDevFocusClient (conn);
 		default:
 			return new XmlDevClient (conn);
 	}

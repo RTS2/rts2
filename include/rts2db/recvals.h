@@ -20,7 +20,7 @@
 #ifndef __RTS2_DB_RECVALS__
 #define __RTS2_DB_RECVALS__
 
-#include <list>
+#include <map>
 #include <string>
 
 #define RECVAL_STATE    0
@@ -35,13 +35,6 @@ namespace rts2db
  */
 class Recval
 {
-	private:
-		int recval_id;
-		std::string device_name;
-		std::string value_name;
-		int value_type;
-		time_t from;
-		time_t to;
 	public:
 		Recval (int _recval_id, const char* _device_name, const char* _value_name, int _value_type, time_t _from, time_t _to)
 		{
@@ -59,6 +52,14 @@ class Recval
 		std::string getValueName () { return value_name; }
 		time_t getFrom () { return from; };
 		time_t getTo () { return to; };
+
+	private:
+		int recval_id;
+		std::string device_name;
+		std::string value_name;
+		int value_type;
+		time_t from;
+		time_t to;
 };
 
 /**
@@ -66,7 +67,7 @@ class Recval
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class RecvalsSet: public std::list <Recval>
+class RecvalsSet: public std::map <int, Recval>
 {
 	public:
 		RecvalsSet ()

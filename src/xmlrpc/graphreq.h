@@ -40,6 +40,8 @@ class Graph: public GetRequestAuthorized
 		void printDevices (const char* &response_type, char* &response, size_t &response_length);
 
 		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void plotValue (int valId, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }
