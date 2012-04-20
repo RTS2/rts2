@@ -325,7 +325,7 @@ void DevScript::deleteScript ()
 			{
 				if (currentTarget->getTargetID () >= 0)
 				{
-					logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID () << " on device " << script_connection->getName () << ", because its execution count is 0" << sendLog;
+					logStream (MESSAGE_WARNING) << "disabling target " << currentTarget->getTargetID () << " on device " << script_connection->getName () << ", because its execution failed. This probably signal wrong script assigned to target - please check the target script" << sendLog;
 					dont_execute_for = currentTarget->getTargetID ();
 					dont_execute_for_obsid = currentTarget->getObsId ();
 					if (nextTarget && nextTarget->getTargetID () == dont_execute_for)
