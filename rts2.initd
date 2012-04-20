@@ -107,16 +107,16 @@ RTS2_LOG=/var/log/rts2-debug
 function rts2_log_daemon_msg
 {
 	log_daemon_msg $*
-	echo `date +'%Y-%M-%DT%H:%M:%S %Z'` '===<<<<<' $* >>$RTS2_LOG
+	echo `date +'%Y-%m-%dT%H:%M:%S %Z'` '===<<<<<' $* >>$RTS2_LOG
 }
 
 function rts2_log_end_msg
 {
 	log_end_msg $1
 	if [ $1 == 0 ]; then
-		echo `date +'%Y-%M-%DT%H:%M:%S %Z'` '===>>> ok' $2 >>$RTS2_LOG
+		echo `date +'%Y-%m-%dT%H:%M:%S %Z'` '===>>> ok' $2 >>$RTS2_LOG
 	else
-		echo `date +'%Y-%M-%DT%H:%M:%S %Z'` '===>>> failed' $2 >>$RTS2_LOG
+		echo `date +'%Y-%m-%dT%H:%M:%S %Z'` '===>>> failed' $2 >>$RTS2_LOG
 	fi
 }
 
