@@ -103,6 +103,9 @@
   	    </option>
 	  </arg>
 	  <arg choice="plain">
+	    <option>--rts2opera-fix <replaceable>WCS extension</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
 	    <option>-j <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
@@ -224,6 +227,16 @@
 	    Insert or update image record in database.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--rts2opera-fix <replaceable>WCS extension</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Fix RTS2 headers. Add headers needed for Opera processing - FLIP
+	    and ROTANG. Parameter must specify WCS multiple extension, or shall
+	    be - for default (non-multiple) WCS.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-j <replaceable>RTS2 expression</replaceable></option></term>

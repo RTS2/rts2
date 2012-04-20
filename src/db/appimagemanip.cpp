@@ -99,7 +99,9 @@ class AppImage:public rts2image::AppImageCore
 		void printOffset (double x, double y, rts2image::Image * image);
 
 		int addDate (rts2image::Image * image);
-		int writeRTS2OperaHeaders (rts2image::Image * image);
+
+		char rts2opera_ext;
+		int writeRTS2OperaHeaders (rts2image::Image * image, char ext);
 #ifdef HAVE_PGSQL
 		int insert (rts2image::ImageDb * image);
 #endif
@@ -153,13 +155,22 @@ int AppImage::addDate (Image * image)
 	return ret;
 }
 
-int AppImage::writeRTS2OperaHeaders (Image * image)
+int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 {
 	double cdelt1, cdelt2, crota2;
 	int flip = 1;
-	image->getValue ("CDELT1", cdelt1);
-	image->getValue ("CDELT2", cdelt2);
-	image->getValue ("CROTA2", crota2);
+	char buf[8];
+	memcpy (buf, "CDELT1", 7);
+	if (ext != '-')
+	{
+		buf[6] = ext;
+		buf[7] = '\0';
+	}
+	image->getValue (buf, cdelt1);
+	buf[5] = '2';
+	image->getValue (buf, cdelt2);
+	memcpy (buf, "CROTA2", 6);
+	image->getValue (buf, crota2);
 
 	if (cdelt1 < 0 && cdelt2 < 0)
 	{
@@ -348,6 +359,12 @@ int AppImage::processOption (int in_opt)
 			break;
 		case OPT_RTS2OPERA_WCS:
 			operation |= IMAGEOP_RTS2OPERA_WCS;
+			if (optarg[1] != '\0')
+			{
+				std::cerr << "WCS extension must be a single character" << std::endl;
+				return -1;
+			}
+			rts2opera_ext = optarg[0];
 			readOnly = false;
 			break;
 		#endif /* HAVE_LIBJPEG */
@@ -422,7 +439,7 @@ int AppImage::processImage (Image * image)
 	if (operation & IMAGEOP_SYMLINK)
 	  	image->symlinkImageExpand (link_expr);
 	if (operation & IMAGEOP_RTS2OPERA_WCS)
-		writeRTS2OperaHeaders (image);
+		writeRTS2OperaHeaders (image, rts2opera_ext);
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
@@ -469,6 +486,8 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	cameraName = NULL;
 	mountName = NULL;
 
+	rts2opera_ext = '-';
+
 	err_ra = err_dec = err = rts2_nan ("f");
 
 	addOption ('p', NULL, 1, "print image expression");
@@ -491,7 +510,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
-	addOption (OPT_RTS2OPERA_WCS,"rts2opera-fix", 0, "add headers necessary for RTS2opera functionality");
+	addOption (OPT_RTS2OPERA_WCS,"rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
