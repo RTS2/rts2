@@ -150,7 +150,7 @@ class Focusing (rts2comm.Rts2Comm):
 				min_fwhm = fwhm[x]
 		return self.tryFit(defaultFit)
 
-	def findBestFWHM(self,tries,rename_images=False,defaultFit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
+	def findBestFWHM(self,tries,defaultFit=H3,min_stars=15,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
 		# X is FWHM, Y is offset value
 		self.focpos=[]
 		self.fwhm=[]
@@ -159,8 +159,6 @@ class Focusing (rts2comm.Rts2Comm):
 		keys = tries.keys()
 		keys.sort()
 		for k in keys:
-			if rename_images:
-				tries[k] = self.rename(tries[k],'%b/focusing/%o/%f')
 			try:
 				fwhm,nstars = sextractor.getFWHM(tries[k],min_stars,ds9display,filterGalaxies,threshold=threshold,deblendmin=deblendmin)
 			except Exception, ex:
@@ -197,12 +195,12 @@ class Focusing (rts2comm.Rts2Comm):
 
 		for self.num in range(1,self.attempts+1):
 		  	self.log('I','starting {0}s exposure on offset {1}'.format(self.exptime,self.off))
-			img = self.exposure(self.beforeReadout)
+			img = self.exposure(self.beforeReadout,'%b/focusing/%N/%o/%f')
 			tries[self.current_focus] = img
 
 		self.log('I','all focusing exposures finished, processing data')
 
-		return self.findBestFWHM(tries,rename_images=True)
+		return self.findBestFWHM(tries)
 
 	def run(self):
 		# send to some other coordinates if you wish so, or disable this for target for fixed coordinates
