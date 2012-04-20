@@ -29,7 +29,7 @@ using namespace rts2core;
 
 int DataRead::readDataSize (Connection *conn)
 {
-	return conn->paramNextLong (&binaryReadChunkSize);
+	return conn->paramNextSSizeT (&binaryReadChunkSize);
 }
 
 int DataAbstractShared::removeClient (int segnum, int client_id, bool verbose)

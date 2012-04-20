@@ -456,6 +456,7 @@ class Connection:public Object
 		int paramNextInteger (int *num);
 		int paramNextLong (long int *num);
 		int paramNextSizeT (size_t * num);
+		int paramNextSSizeT (ssize_t * num);
 		int paramNextDouble (double *num);
 		/**
 		 * Retrieve next parameter as time. String starting with + is

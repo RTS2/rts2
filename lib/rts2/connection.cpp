@@ -1774,6 +1774,18 @@ int Connection::paramNextSizeT (size_t * num)
 	return 0;
 }
 
+int Connection::paramNextSSizeT (ssize_t * num)
+{
+	char *str_num;
+	char *num_end;
+	if (paramNextString (&str_num))
+		return -1;
+	*num = strtol (str_num, &num_end, 10);
+	if (*num_end)
+		return -1;
+	return 0;
+}
+
 int Connection::paramNextDouble (double *num)
 {
 	char *str_num;
