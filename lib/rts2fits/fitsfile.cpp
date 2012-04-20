@@ -200,7 +200,12 @@ int FitsFile::closeFile ()
 	if (getFitsFile ())
 	{
 		fits_close_file (getFitsFile (), &fits_status);
+		if (fits_status)
+		{
+			logStream (MESSAGE_ERROR) << "while saving fits file " << getFileName () << ": " << getFitsErrors () << sendLog;
+		}
 		flags &= ~IMAGE_SAVE;
+
 		setFitsFile (NULL);
 	}
 	return 0;

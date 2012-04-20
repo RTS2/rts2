@@ -37,33 +37,35 @@
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
 
-#define IMAGEOP_NOOP      0x0000
-#define IMAGEOP_ADDDATE   0x0001
+#define IMAGEOP_NOOP            0x0000
+#define IMAGEOP_ADDDATE         0x0001
 #ifdef HAVE_PGSQL
-#define IMAGEOP_INSERT    0x0002
+#define IMAGEOP_INSERT          0x0002
 #endif							 /* HAVE_PGSQL */
-#define IMAGEOP_TEST      0x0004
-#define IMAGEOP_PRINT     0x0008
-#define IMAGEOP_FPRINT    0x0010
-#define IMAGEOP_COPY      0x0020
-#define IMAGEOP_SYMLINK	  0x0040
-#define IMAGEOP_MOVE      0x0080
-#define IMAGEOP_ADDHELIO  0x0400
-#define IMAGEOP_MODEL     0x0800
-#define IMAGEOP_JPEG      0x1000
-#define IMAGEOP_STAT      0x2000
+#define IMAGEOP_TEST            0x0004
+#define IMAGEOP_PRINT           0x0008
+#define IMAGEOP_FPRINT          0x0010
+#define IMAGEOP_COPY            0x0020
+#define IMAGEOP_SYMLINK	        0x0040
+#define IMAGEOP_MOVE            0x0080
+#define IMAGEOP_ADDHELIO        0x0400
+#define IMAGEOP_MODEL           0x0800
+#define IMAGEOP_JPEG            0x1000
+#define IMAGEOP_STAT            0x2000
+#define IMAGEOP_RTS2OPERA_WCS   0x4000
 
-#define OPT_ADDDATE   OPT_LOCAL + 5
-#define OPT_ADDHELIO  OPT_LOCAL + 6
-#define OPT_OBSID     OPT_LOCAL + 7
-#define OPT_IMGID     OPT_LOCAL + 8
-#define OPT_CAMNAME   OPT_LOCAL + 9
-#define OPT_MOUNTNAME OPT_LOCAL + 10
-#define OPT_LABEL     OPT_LOCAL + 11
-#define OPT_ZOOM      OPT_LOCAL + 12
-#define OPT_ERR_RA    OPT_LOCAL + 13
-#define OPT_ERR_DEC   OPT_LOCAL + 14
-#define OPT_ERR       OPT_LOCAL + 15
+#define OPT_ADDDATE             OPT_LOCAL + 5
+#define OPT_ADDHELIO            OPT_LOCAL + 6
+#define OPT_OBSID               OPT_LOCAL + 7
+#define OPT_IMGID               OPT_LOCAL + 8
+#define OPT_CAMNAME             OPT_LOCAL + 9
+#define OPT_MOUNTNAME           OPT_LOCAL + 10
+#define OPT_LABEL               OPT_LOCAL + 11
+#define OPT_ZOOM                OPT_LOCAL + 12
+#define OPT_ERR_RA              OPT_LOCAL + 13
+#define OPT_ERR_DEC             OPT_LOCAL + 14
+#define OPT_ERR                 OPT_LOCAL + 15
+#define OPT_RTS2OPERA_WCS       OPT_LOCAL + 16
 
 namespace rts2image
 {
@@ -97,6 +99,7 @@ class AppImage:public rts2image::AppImageCore
 		void printOffset (double x, double y, rts2image::Image * image);
 
 		int addDate (rts2image::Image * image);
+		int writeRTS2OperaHeaders (rts2image::Image * image);
 #ifdef HAVE_PGSQL
 		int insert (rts2image::ImageDb * image);
 #endif
@@ -149,6 +152,31 @@ int AppImage::addDate (Image * image)
 	std::cout << (ret ? "failed" : "OK") << std::endl;
 	return ret;
 }
+
+int AppImage::writeRTS2OperaHeaders (Image * image)
+{
+	double cdelt1, cdelt2, crota2;
+	int flip = 1;
+	image->getValue ("CDELT1", cdelt1);
+	image->getValue ("CDELT2", cdelt2);
+	image->getValue ("CROTA2", crota2);
+
+	if (cdelt1 < 0 && cdelt2 < 0)
+	{
+		crota2 = ln_range_degrees (crota2 + 180);
+	}
+	else if ((cdelt1 < 0 && cdelt2 > 0) || (cdelt1 > 0 && cdelt2 < 0))
+	{
+		flip = 0;
+	}
+
+	image->setValue ("XPLATE", fabs (cdelt1), "X plate scale");
+	image->setValue ("YPLATE", fabs (cdelt2), "Y plate scale");
+	image->setValue ("FLIP", flip, "camera flip");
+	image->setValue ("ROTANG", crota2, "camera rotantion angle");
+	return image->rts2image::Image::saveImage ();
+}
+
 
 #ifdef HAVE_PGSQL
 int AppImage::insert (ImageDb * image)
@@ -318,6 +346,10 @@ int AppImage::processOption (int in_opt)
 		case OPT_ZOOM:
 			zoom = atof (optarg);
 			break;
+		case OPT_RTS2OPERA_WCS:
+			operation |= IMAGEOP_RTS2OPERA_WCS;
+			readOnly = false;
+			break;
 		#endif /* HAVE_LIBJPEG */
 		default:
 
@@ -389,6 +421,8 @@ int AppImage::processImage (Image * image)
 		image->renameImageExpand (move_expr);
 	if (operation & IMAGEOP_SYMLINK)
 	  	image->symlinkImageExpand (link_expr);
+	if (operation & IMAGEOP_RTS2OPERA_WCS)
+		writeRTS2OperaHeaders (image);
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
@@ -457,6 +491,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
+	addOption (OPT_RTS2OPERA_WCS,"rts2opera-fix", 0, "add headers necessary for RTS2opera functionality");
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
