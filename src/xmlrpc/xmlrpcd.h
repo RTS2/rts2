@@ -27,6 +27,7 @@
 
 #ifdef HAVE_PGSQL
 #include "rts2db/devicedb.h"
+#include "graphreq.h"
 #else
 #include "configuration.h"
 #include "device.h"
@@ -48,7 +49,6 @@
 #include "imgpreview.h"
 #include "devicesreq.h"
 #include "planreq.h"
-#include "graphreq.h"
 #include "switchstatereq.h"
 #include "libjavascript.h"
 #include "libcss.h"
