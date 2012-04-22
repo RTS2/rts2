@@ -49,7 +49,12 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	c.runSExtractor(fn)
 	c.sortObjects(2)
 
-	atm = atv.ChannelsDTV(ff)
+	atm = None
+
+	try:
+		atm = atv.ChannelsDTV(ff)
+	except Exception,ex:
+		pass
 
 	for st in stars:
 		# append distance - none and star number - to star list
@@ -69,7 +74,11 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 		if pr:
 			print '\t'.join(map(lambda y:str(y),x))
 		segnum = int(x[8])
-		(dx,dy) = atm.xy2Detector('IM{0}'.format(segnum),x[0],x[1])
+		if atm:
+			(dx,dy) = atm.xy2Detector('IM{0}'.format(segnum),x[0],x[1])
+		else:
+			(dx,dy) = x[0:1]
+
 		for st in stars:
 			if st[0] == segnum:
 				dist = math.sqrt((x[0]-st[1])**2+(x[1]-st[2])**2)
@@ -79,7 +88,8 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 
 		if x[3] == 0 and x[4] != 0:
 			if d:
-				d.set('regions','image; circle {1} {2} 5 # color=red'.format(segnum,dx,dy))
+				print segnum,dx,dy
+				d.set('regions','detector; circle {0} {1} 5 # color=red'.format(dx,dy))
 				#d.set('regions','tile {0}\nimage; circle {1} {2} 10 # color=green'.format(segnum,x[0],x[1]))
 			
 			seg_fwhms[0].addFWHM(x[5],x[6],x[7])
