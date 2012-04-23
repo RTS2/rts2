@@ -42,8 +42,7 @@ ConnExecute::~ConnExecute ()
 
 	for (std::list <Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
-		if (!((*iter)->hasUserFlag ()))
-			(*iter)->deleteImage ();
+		(*iter)->deleteImage ();
 		deleteImage (*iter);
 	}
 }
@@ -395,14 +394,17 @@ int ConnExecute::processImage (Image *image)
 {
 	if (exposure_started == 2)
 	{
-		images.push_back (image);
-		image->saveImage ();
+		std::string imgn = image->getAbsoluteFileName ();
 		if (keep_next_image)
 		{
-			image->setUserFlag ();
 			keep_next_image = false;
 		}
-		writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
+		else
+		{
+			images.push_back (image);
+		}
+		image->saveImage ();
+		writeToProcess ((std::string ("image ") + imgn).c_str ());
 		exposure_started = 0;
 	}
 	else
