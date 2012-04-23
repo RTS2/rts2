@@ -181,8 +181,8 @@ int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 		flip = 0;
 	}
 
-	image->setValue ("XPLATE", fabs (cdelt1), "X plate scale");
-	image->setValue ("YPLATE", fabs (cdelt2), "Y plate scale");
+	image->setValue ("XPLATE", fabs (cdelt1) * 3600.0, "X plate scale");
+	image->setValue ("YPLATE", fabs (cdelt2) * 3600.0, "Y plate scale");
 	image->setValue ("FLIP", flip, "camera flip");
 	image->setValue ("ROTANG", crota2, "camera rotantion angle");
 	return image->rts2image::Image::saveImage ();
