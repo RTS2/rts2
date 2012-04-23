@@ -118,7 +118,7 @@ class CondValue
 		~CondValue (void) { delete value; }
 
 		int getStateCondition () { return stateCondition; }
-		int setStateCondition (int new_cond) { stateCondition = new_cond; }
+		void setStateCondition (int new_cond) { stateCondition = new_cond; }
 
 		bool queValueChange (int state) { return (getStateCondition () & state); }
 		// mark that next operation value loads from que..

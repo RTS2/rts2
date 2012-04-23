@@ -264,7 +264,75 @@ digraph "JSON API calls handling" {
  *
  * @subsection Parameters
  *
- * - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data from rts2-centrald.
+ * - <b>d</b> Device name. Can be <i>centrald</i> to retrieve data of rts2-centrald.
+ * - <b>n</b> Variable name.
+ * - <b>v</b> New value.
+ * - <i><b>async</b> Asynchronous call. Asynchronous call return before value is confirmed set by the device driver.</i>
+ *
+ * @subsection Return
+ *
+ * Return values in same format as @ref JSON_device_get call, augumented with return status. Return status is
+ * 0 if no error occured durring set call, and is obviously available only for non-asynchronous calls.
+ *
+ * <hr/>
+ *
+ * @section JSON_device_inc inc
+ *
+ * Increament variable. Works similarly to @ref JSON_device_set, just instead of
+ * running = (assign) operation, runs += operation.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/inc?d=C0&n=exposure&v=20
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Can be <i>centrald</i> to set value of rts2-centrald.
+ * - <b>n</b> Variable name.
+ * - <b>v</b> New value.
+ * - <i><b>async</b> Asynchronous call. Asynchronous call return before value is confirmed set by the device driver.</i>
+ *
+ * @subsection Return
+ *
+ * Return values in same format as @ref JSON_device_get call, augumented with return status. Return status is
+ * 0 if no error occured durring set call, and is obviously available only for non-asynchronous calls.
+ *
+ * <hr/>
+ *
+ * @section JSON_device_dec dec
+ *
+ * Decrement variable. Works similarly to @ref JSON_device_set, just instead of
+ * running = (assign) operation, runs -= operation.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/dec?d=C0&n=exposure&v=20
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Can be <i>centrald</i> to set value of rts2-centrald.
+ * - <b>n</b> Variable name.
+ * - <b>v</b> New value.
+ * - <i><b>async</b> Asynchronous call. Asynchronous call return before value is confirmed set by the device driver.</i>
+ *
+ * @subsection Return
+ *
+ * Return values in same format as @ref JSON_device_get call, augumented with return status. Return status is
+ * 0 if no error occured durring set call, and is obviously available only for non-asynchronous calls.
+ *
+ * <hr/>
+ *
+ * @section JSON_device_statadd statadd
+ *
+ * Add value to statistical variable.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/dec?d=C0&n=exposure&v=20
+ *
+ * @subsection Parameters
+ *
+ * - <b>d</b> Device name. Can be <i>centrald</i> to set value of rts2-centrald.
  * - <b>n</b> Variable name.
  * - <b>v</b> New value.
  * - <i><b>async</b> Asynchronous call. Asynchronous call return before value is confirmed set by the device driver.</i>
@@ -1089,6 +1157,40 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 
 		}
+		else if (vals[0] == "statadd")
+		{
+			const char *vn = params->getString ("n","");
+			if (strlen (vn) == 0)
+				throw rts2core::Error ("empty n parameter");
+			int num = params->getInteger ("num",-1);
+			if (num <= 0)
+				throw rts2core::Error ("missing or negative num parameter");
+			double v = params->getDouble ("v", NAN);
+			if (isnan (v))
+				throw rts2core::Error ("missing or invalid v parameter");
+			rts2core::Value *val = ((XmlRpcd *) getMasterApp())->getOwnValue (vn);
+			if (val == NULL)
+				throw rts2core::Error (std::string ("cannot find variable with name ") + vn);
+			if (!(val->getValueExtType () == RTS2_VALUE_STAT && val->getValueBaseType () == RTS2_VALUE_DOUBLE))
+				throw rts2core::Error ("value is not statistical double type");
+			((rts2core::ValueDoubleStat *) val)->addValue (v, num);
+			((XmlRpcd *)getMasterApp ())->sendValueAll (val);
+			sendOwnValues (os, params, NAN, false);
+		}
+		else if (vals[0] == "statclear")
+		{
+			const char *vn = params->getString ("n","");
+			if (strlen (vn) == 0)
+				throw rts2core::Error ("empty n parameter");
+			rts2core::Value *val = ((XmlRpcd *) getMasterApp())->getOwnValue (vn);
+			if (val == NULL)
+				throw rts2core::Error (std::string ("cannot find variable with name ") + vn);
+			if (!(val->getValueExtType () == RTS2_VALUE_STAT && val->getValueBaseType () == RTS2_VALUE_DOUBLE))
+				throw rts2core::Error ("value is not statistical double type");
+			((rts2core::ValueDoubleStat *) val)->clearStat ();
+			((XmlRpcd *)getMasterApp ())->sendValueAll (val);
+			sendOwnValues (os, params, NAN, false);
+		}
 		// set multiple values
 		else if (vals[0] == "mset")
 		{
@@ -1096,7 +1198,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			{
 
 			}
-			throw XmlRpc::XmlRpcAsynchronous ();
+			throw rts2core::Error ("mset not impleted");
+			//throw XmlRpc::XmlRpcAsynchronous ();
 		}
 		// return night start and end
 		else if (vals[0] == "night")

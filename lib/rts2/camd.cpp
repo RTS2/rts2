@@ -970,7 +970,7 @@ int Camera::initValues ()
 #ifdef __linux__
 			// read limit
 			std::ifstream ifs ("/proc/sys/kernel/shmmax");
-			size_t shmax;
+			long long shmax;
 			ifs >> shmax;
 			ifs.close ();
 			if (ifs.fail ())

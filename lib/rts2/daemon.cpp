@@ -1307,6 +1307,8 @@ int Daemon::createSectionValues (IniSection *sect)
 				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "bao"))
 				createValue ((BoolArray *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags | RTS2_DT_ONOFF);
+			else if (strcasestr (suffix.c_str (), "std"))
+				createValue ((ValueDoubleStat *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "i"))
 				createValue ((ValueInteger *&) val, iter->getValueName ().c_str (), iter->getComment (), false, flags);
 			else if (strcasestr (suffix.c_str (), "d"))
