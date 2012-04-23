@@ -157,7 +157,7 @@ int AppImage::addDate (Image * image)
 
 int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 {
-	double cdelt1, cdelt2, crota2;
+	double cdelt1, cdelt2, crpix1, crpix2, crota2;
 	int flip = 1;
 	char buf[8];
 	memcpy (buf, "CDELT1", 7);
@@ -169,6 +169,10 @@ int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 	image->getValue (buf, cdelt1);
 	buf[5] = '2';
 	image->getValue (buf, cdelt2);
+	memcpy (buf, "CRPIX1", 6);
+	image->getValue (buf, crpix1);
+	buf[5] = '2';
+	image->getValue (buf, crpix2);
 	memcpy (buf, "CROTA2", 6);
 	image->getValue (buf, crota2);
 
@@ -181,10 +185,12 @@ int AppImage::writeRTS2OperaHeaders (Image * image, char ext)
 		flip = 0;
 	}
 
+	image->setValue ("CAM_XOA", crpix1, "X reference pixel");
+	image->setValue ("CAM_YOA", crpix2, "Y reference pixel");
 	image->setValue ("XPLATE", fabs (cdelt1) * 3600.0, "X plate scale");
 	image->setValue ("YPLATE", fabs (cdelt2) * 3600.0, "Y plate scale");
 	image->setValue ("FLIP", flip, "camera flip");
-	image->setValue ("ROTANG", crota2, "camera rotantion angle");
+	image->setValue ("ROTANG", ln_range_degrees (crota2), "camera rotantion angle");
 	return image->rts2image::Image::saveImage ();
 }
 
