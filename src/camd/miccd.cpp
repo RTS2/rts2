@@ -185,6 +185,7 @@ int MICCD::processOption (int opt)
 			break;
 		case 'f':
 			addFilters (optarg);
+			setFilterWorking (true);
 			break;
 		default:
 			return Camera::processOption (opt);

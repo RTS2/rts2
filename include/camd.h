@@ -740,11 +740,14 @@ class Camera:public rts2core::ScriptDevice
 
 		/**
 		 * Create filter variable.
+		 *
+		 * @param working  when true, filter value will be created working-blocked, e.g. filter will not move during exposure and readout. When false, filter will not move
+		 *     only during an exposure.
 		 */
-		void createFilter ()
+		void createFilter (bool working = false)
 		{
 			if (camFilterVal == NULL)
-				createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
+				createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, working ? CAM_WORKING : CAM_EXPOSING);
 			if (camFilterOffsets == NULL)
 				createValue (camFilterOffsets, "filter_offsets", "filter offsets", false, RTS2_VALUE_WRITABLE);
 		}
@@ -862,6 +865,8 @@ class Camera:public rts2core::ScriptDevice
 		void offsetForFilter (int new_filter, std::list <FilterVal>::iterator fvi);
 
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
+
+		void setFilterWorking (bool working) { getCondValue (camFilterVal)->setStateCondition (working ? CAM_WORKING : CAM_EXPOSING); } 
 
 		/**
 		 * Mark start time of physical chip readout.

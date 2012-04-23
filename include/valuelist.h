@@ -108,10 +108,6 @@ class ValueVector:public std::vector < Value * >
  */
 class CondValue
 {
-	private:
-		Value *value;
-		int stateCondition;
-		int save;
 	public:
 		CondValue (Value * in_value, int in_stateCondition)
 		{
@@ -122,6 +118,7 @@ class CondValue
 		~CondValue (void) { delete value; }
 
 		int getStateCondition () { return stateCondition; }
+		int setStateCondition (int new_cond) { stateCondition = new_cond; }
 
 		bool queValueChange (int state) { return (getStateCondition () & state); }
 		// mark that next operation value loads from que..
@@ -130,6 +127,11 @@ class CondValue
 		bool loadedFromQue () { return save & 0x08; }
 
 		Value *getValue () { return value; }
+
+	private:
+		Value *value;
+		int stateCondition;
+		int save;
 };
 
 /**
