@@ -34,7 +34,7 @@ class FWHM:
 		self.a /= self.i
 		self.b /= self.i	
 
-def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[]):
+def processImage(fn,d,obs_id=None,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[]):
 	"""Process image, print its FWHM. Works with multi extension images.
 	"""
 	ff = pyfits.fitsopen(fn)
@@ -128,9 +128,11 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 		rts2.doubleValue('star_y_{0}'.format(suf),"y of star {0}".format(suf),st[5][1])
 		rts2.doubleValue('star_d_{0}'.format(suf),"distance of star {0}".format(suf),st[4])
 		rts2.doubleValue('flux_{0}'.format(suf),"flux of star {0}".format(suf),st[5][9])
-		rts2.statAdd('flux_stat_{0}'.format(suf),"flux of star {0} statistics".format(suf),st[5][9])
 		rts2.doubleValue('background_{0}'.format(suf),"background of star {0}".format(suf),st[5][10])
 
+		imgp_obs_id = rts2.getValueInteger('obs_id')
+		if imgp_obs_id == obs_id:
+			rts2.statAdd('flux_stat_{0}'.format(suf),"flux of star {0} statistics".format(suf),st[5][9])
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
 
@@ -142,6 +144,7 @@ if __name__ == '__main__':
 	parser.add_option('--ds9cat',help='write DS9 catalogue file',action='store',dest='ds9cat')
 	parser.add_option('--by-segments',help='calculate also FHWM values on segments',action='store_true',dest='bysegments')
 	parser.add_option('--star-flux',help='calculate star FLUX at given position (seg:x:y:name)',action='append',dest='star_flux')
+	parser.add_option('--obs-id',help='observation ID of the frame',action='store',dest='obs_id')
 
 	(options,args)=parser.parse_args()
 
@@ -162,5 +165,7 @@ if __name__ == '__main__':
 				print >> sys.stderr, "Cannot parse star flux argument", sf
 				sys.exit(1)
 
+	obs_id = options.obs_id if options.obs_id else None
+
 	for fn in args:
-		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
+		processImage(fn,d,obs_id=obs_id,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
