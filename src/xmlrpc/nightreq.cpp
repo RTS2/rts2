@@ -279,7 +279,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		{
 			if (iter != as.begin ())
 				_os << ",";
-			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "," << iter->second.tt << "]\n";
+			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "," << JsonDouble (iter->second.tt) << "]\n";
 		}
 		_os << "]}";
 	}
@@ -293,7 +293,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"Start\",\"t\":\"tT\",\"c\":4},"
 			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":6},"
-			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":7}"
+			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":7},"
 			"{\"n\":\"Time on sky\",\"t\":\"n\",\"c\":8}"
 			"],\"d\":[";
 
@@ -322,7 +322,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 				<< JsonDouble (iter->getObsEnd ()) << ","
 				<< iter->getNumberOfImages () << ","
 				<< iter->getNumberOfGoodImages () << ","
-				<< iter->getTimeOnSky ()
+				<< JsonDouble (iter->getTimeOnSky ())
 				<< "]";
 		}
 

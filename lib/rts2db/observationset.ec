@@ -642,7 +642,6 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 				if (sqlca.sqlcode == ECPG_NOT_FOUND)
 				{
 					d_gi = 0;
-					d_tt = NAN;
 				}
 				else
 				{
