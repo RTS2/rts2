@@ -545,7 +545,8 @@ int ImageSkyDb::toTrash ()
 int ImageSkyDb::saveImage ()
 {
 	updateCalibrationDb ();
-	setValue ("PROC", processBitfiedl, "procesing status; info in DB");
+	if (shouldSaveImage ())
+		setValue ("PROC", processBitfiedl, "procesing status; info in DB");
 	return ImageDb::saveImage ();
 }
 
