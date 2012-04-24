@@ -297,6 +297,11 @@ class Rts2Comm:
 		print "double_array_add",name,' '.join(map(str,values))
 		sys.stdout.flush()
 
+	def statAdd(self,name,desc,num,value):
+		"""Add to statistics boolean value."""
+		print "stat_add",name,'"{0}"'.format(desc),num,value
+		sys.stdout.flush()
+
 	def log(self,level,text):
 		print "log",level,text
 		sys.stdout.flush()
