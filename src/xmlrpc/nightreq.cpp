@@ -269,7 +269,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":2},"
 			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":3},"
-			"{\"n\":\"Time on sky\",\"t\":\"n\",\"c\":4}"
+			"{\"n\":\"Time on sky\",\"t\":\"dur\",\"c\":4}"
 			"],\"d\":[";
 
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
@@ -294,7 +294,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":6},"
 			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":7},"
-			"{\"n\":\"Time on sky\",\"t\":\"n\",\"c\":8}"
+			"{\"n\":\"Time on sky\",\"t\":\"dur\",\"c\":8}"
 			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
