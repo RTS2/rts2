@@ -265,6 +265,11 @@ class Observation
 		 */
 		double getObsTime ();
 
+		/**
+		 * Return time spend on sky.
+		 */
+		double getTimeOnSky ();
+
 		void maskState (int newBits);
 		void unmaskState (int newBits);
 

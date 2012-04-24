@@ -495,6 +495,18 @@ int Observation::getNumberOfGoodImages ()
 	return ret;
 }
 
+double Observation::getTimeOnSky ()
+{
+	loadImages ();
+	if (!imgset)
+		return 0;
+	std::vector <rts2image::Image *>::iterator img_iter;
+	double ret = 0;
+	for (img_iter = imgset->begin (); img_iter != imgset->end (); img_iter++)
+		ret += (*img_iter)->getExposureLength ();
+	return ret;
+}
+
 int Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
 {
 	loadImages ();

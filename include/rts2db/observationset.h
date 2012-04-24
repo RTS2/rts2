@@ -173,17 +173,19 @@ class ObservationStatistics
 class DateStatistics
 {
 	public:
-		DateStatistics () { c = i = gi = 0; }
-		DateStatistics (int obscount, int images = 0, int good_images = 0)
+		DateStatistics () { c = i = gi = 0; tt = NAN;}
+		DateStatistics (int obscount, int images = 0, int good_images = 0, double _tt = NAN)
 		{
 			c = obscount;
 			i = images;
 			gi = good_images;
+			tt = _tt;
 		}
 
 		int c;
 		int i;
 		int gi;
+		double tt;
 };
 
 /**

@@ -268,7 +268,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"Date part\",\"t\":\"a\",\"c\":0,\"prefix\":\"\",\"href\":0},"
 			"{\"n\":\"Number of observations\",\"t\":\"n\",\"c\":1},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":2},"
-			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":3}"
+			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":3},"
+			"{\"n\":\"Time on sky\",\"t\":\"n\",\"c\":4}"
 			"],\"d\":[";
 
 		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
@@ -278,7 +279,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 		{
 			if (iter != as.begin ())
 				_os << ",";
-			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "]\n";
+			_os << "[" << iter->first << "," << iter->second.c << "," << iter->second.i << "," << iter->second.gi << "," << iter->second.tt << "]\n";
 		}
 		_os << "]}";
 	}
@@ -293,6 +294,7 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 			"{\"n\":\"End\",\"t\":\"tT\",\"c\":5},"
 			"{\"n\":\"Number of images\",\"t\":\"n\",\"c\":6},"
 			"{\"n\":\"Number of good images\",\"t\":\"n\",\"c\":7}"
+			"{\"n\":\"Time on sky\",\"t\":\"n\",\"c\":8}"
 			"],\"d\":[";
 
 		rts2db::ObservationSet os = rts2db::ObservationSet ();
@@ -319,7 +321,8 @@ void Night::callAPI (int year, int month, int day, char* &response, const char* 
 				<< JsonDouble (iter->getObsStart ()) << ","
 				<< JsonDouble (iter->getObsEnd ()) << ","
 				<< iter->getNumberOfImages () << ","
-				<< iter->getNumberOfGoodImages ()
+				<< iter->getNumberOfGoodImages () << ","
+				<< iter->getTimeOnSky ()
 				<< "]";
 		}
 

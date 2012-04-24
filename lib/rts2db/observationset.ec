@@ -495,6 +495,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	int d_c;
 	int d_i;
 	int d_gi;
+	double d_tt;
 	char *stmp_c;
 	EXEC SQL END DECLARE SECTION;
 
@@ -567,7 +568,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 
 	std::ostringstream _osi;
 	std::ostringstream _osig;
-	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (im_all.*) as i FROM observations, images im_all WHERE observations.obs_id = im_all.obs_id";
+	_osi << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (im_all.*) as i, sum(im_all.img_exposure) as tt FROM observations, images im_all WHERE observations.obs_id = im_all.obs_id";
 	
 	if (_where.str ().length () > 0)
 		_osi << " and " << _where.str ();
@@ -576,8 +577,6 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	_osig << " AND im_all.process_bitfield & 8 = 8 GROUP BY value ORDER BY value;";
 
 	_osi << " GROUP BY value ORDER BY value;";
-
-	std::cout << _osi.str() << std::endl;
 
 	stmp_c = new char[_osi.str ().length () + 1];
 	memcpy (stmp_c, _osi.str().c_str(), _osi.str ().length () + 1);
@@ -613,7 +612,8 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 		{
 			EXEC SQL FETCH next FROM obsdateimg_cur INTO
 				:d_value2,
-				:d_i;
+				:d_i,
+				:d_tt;
 			if (sqlca.sqlcode)
 			{
 				if (sqlca.sqlcode == ECPG_NOT_FOUND)
@@ -629,6 +629,7 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 		else
 		{
 			d_i = 0;
+			d_tt = NAN;
 		}
 
 		if (d_value2g < 0)
@@ -639,19 +640,25 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 			if (sqlca.sqlcode)
 			{
 				if (sqlca.sqlcode == ECPG_NOT_FOUND)
+				{
 					d_gi = 0;
+					d_tt = NAN;
+				}
 				else
+				{
 					break;
+				}
 			}
 		}
 		else
 		{
 			d_gi = 0;
+			d_tt = NAN;
 		}
 
 		if (d_value1 == d_value2)
 		{
-			(*this)[d_value1] = DateStatistics (d_c, d_i, d_gi);
+			(*this)[d_value1] = DateStatistics (d_c, d_i, d_gi, d_tt);
 			d_value2 = -1;
 			if (d_value2 == d_value2g)
 				d_value2g = -1;
