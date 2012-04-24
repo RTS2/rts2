@@ -366,6 +366,61 @@ void ConnExe::processCommand (char *cmd)
 		}
 		((rts2core::Daemon *) master)->sendValueAll (vad);
 	}
+	else if (isValueCommand (cmd, "stat", vflags))
+	{
+		if (paramNextString (&vname) || paramNextString (&desc))
+			throw rts2core::Error ("missing variable name or description");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		rts2core::ValueDoubleStat *vds;
+		if (v)
+		{
+			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+				throw rts2core::Error (std::string ("value is not double array") + vname);
+			testWritableVariable (cmd, vflags, v);
+			vds = (rts2core::ValueDoubleStat *) v;
+			vds->clearStat ();
+		}
+		else
+		{
+			((rts2core::Daemon *) master)->createValue (vds, vname, desc, false, vflags);
+			master->updateMetaInformations (vds);
+		}
+		int num;
+		if (paramNextInteger (&num))
+			throw rts2core::Error ("missing integer count");
+		while (!paramEnd ())
+		{
+			double vd;
+			if (paramNextDouble (&vd))
+				throw rts2core::Error ("invalid double value");
+			vds->addValue (vd, num);
+		}
+		((rts2core::Daemon *) master)->sendValueAll (vds);
+	}
+	else if (!strcasecmp (cmd, "stat_add"))
+	{
+		if (paramNextString (&vname))
+			throw rts2core::Error ("missing variable name or description");
+		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
+		if (v == NULL)
+			throw rts2core::Error (std::string ("variable with name ") + vname + "does not exists");
+		
+		if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
+			throw rts2core::Error (std::string ("value is not double stat") + vname);
+		rts2core::ValueDoubleStat *vds = (rts2core::ValueDoubleStat *) v;
+		int num;
+		if (paramNextInteger (&num))
+			throw rts2core::Error ("invalid maximal number of values");
+		while (!paramEnd ())
+		{
+			double vd;
+			if (paramNextDouble (&vd))
+				throw rts2core::Error ("invalid double value");
+			vds->addValue (vd, num);
+		}
+		((rts2core::Daemon *) master)->sendValueAll (vds);
+	}
+
 	else
 	{
 		throw rts2core::Error (std::string ("unknow command ") + cmd);
