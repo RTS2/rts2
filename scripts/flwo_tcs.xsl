@@ -236,6 +236,23 @@ if ( $continue == 1 ) then
 		endif
 	endif
 
+	set exposure_autoadjust=`$RTS2/bin/rts2-json -G XMLPRC.exposure_adjust`
+	if ( ${?exposure) &amp;&amp; $exposure_autoadjust == 1 ) then
+		set starfl=`$RTS2/bin/rts2-json --get-int IMGP.flux_A`
+		set starmin=`$RTS2/bin/rts2-json --get-int XMLRPC.starfl_min`
+		set starmax=`$RTS2/bin/rts2-json --get-int XMLRPC.starfl_max`
+		if ( $starfl &lt; $starmin ) then
+			rts2-logcom 'Lovering exposure time by 5 seconds'
+			set exposure=`echo $exposure | awk '{ printf "%i", $1 - 5 }'`
+		endif
+		if ( $starfl &gt; $starmax ) then
+			rts2-logcom 'Expanding exposure time by 5 seconds'
+			set exposure=`echo $exposure | awk '{ printf "%i", $1 + 5 }'`
+		endif
+	else
+		set exposure=<xsl:value-of select='@length'/>
+	endif
+
 	rts2-logcom "Starting $actual_filter exposure $imgid (<xsl:value-of select='@length'/> sec) at `date`"
 	<xsl:copy-of select='$abort'/>
 	ccd gowait <xsl:value-of select='@length'/>
