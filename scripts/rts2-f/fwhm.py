@@ -5,6 +5,7 @@ import sys
 import pyfits
 import math
 import re
+import rts2comm
 
 from optparse import OptionParser
 
@@ -37,6 +38,8 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	"""Process image, print its FWHM. Works with multi extension images.
 	"""
 	ff = pyfits.fitsopen(fn)
+
+	rts2 = rts2comm.Rts2Comm()
 
 	if d:
 		d.set('file mosaicimage iraf ' + fn)
@@ -99,33 +102,34 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 			try:
 				zd = 90 - ff[0].header['TEL_ALT']
 				fz = seg_fwhms[x].fwhm * (math.cos(math.radians(zd)) ** 0.6)
-				print 'double fwhm_zd{0} "[deg] zenith distance of the FWHM measurement" {1}'.format(suffix,zd)
-				print 'double fwhm_zenith{0} "estimated zenith FWHM" {1}'.format(suffix,fz)
+				rts2.doubleValue('fwhm_zd{0}'.format(suffix),"[deg] zenith distance of the FWHM measurement",zd)
+				rts2.doubleValue('fwhm_zenith{0}'.format(suffix),"estimated zenith FWHM",fz)
 			except KeyError,er:
 				pass
 			try:
-				print 'double fwhm_az{0} "[deg] azimuth of the FWHM measurement" {1}'.format(suffix,ff[0].header['TEL_AZ'])
+				rts2.doubleValue('fwhm_az{0}'.format(suffix),"[deg] azimuth of the FWHM measurement",ff[0].header['TEL_AZ'])
 			except KeyError,er:
 				pass
 			try:	
-				print 'double fwhm_airmass{0} "airmass of the FWHM measurement" {1}'.format(suffix,ff[0].header['AIRMASS'])
+				rts2.doubleValue('fwhm_airmass{0}'.format(suffix),"airmass of the FWHM measurement",ff[0].header['AIRMASS'])
 			except KeyError,er:
 				pass
 		else:
 			suffix = defsuffix + '_' + str(x)
 
-		print 'double fwhm{0} "calculated FWHM" {1}'.format(suffix,seg_fwhms[x].fwhm)
+		rts2.doubleValue('fwhm{0}'.format(suffix),"calculated FWHM",seg_fwhms[x].fwhm)
 
-		print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,seg_fwhms[x].i)
+		rts2.doubleValue('fwhm_nstars{0}'.format(suffix),"number of stars for FWHM calculation",seg_fwhms[x].i)
 
 	# print stars
 	for st in stars:
 		suf = st[3]
-		print 'double star_x_{0} "x of star {0}" {1}'.format(suf,st[5][0])
-		print 'double star_y_{0} "y of star {0}" {1}'.format(suf,st[5][1])
-		print 'double star_d_{0} "distance of star {0}" {1}'.format(suf,st[4])
-		print 'double flux_{0} "flux of star {0}" {1}'.format(suf,st[5][9])
-		print 'double background_{0} "flux of star {0}" {1}'.format(suf,st[5][10])
+		rts2.doubleValue('star_x_{0}'.format(suf),"x of star {0}".format(suf),st[5][0])
+		rts2.doubleValue('star_y_{0}'.format(suf),"y of star {0}".format(suf),st[5][1])
+		rts2.doubleValue('star_d_{0}'.format(suf),"distance of star {0}".format(suf),st[4])
+		rts2.doubleValue('flux_{0}'.format(suf),"flux of star {0}".format(suf),st[5][9])
+		rts2.statAdd('flux_stat_{0}'.format(suf),"flux of star {0} statistics".format(suf),st[5][9])
+		rts2.doubleValue('background_{0}'.format(suf),"background of star {0}".format(suf),st[5][10])
 
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
@@ -149,13 +153,14 @@ if __name__ == '__main__':
 
 	ma = re.compile('(\d+):(\d+):(\d+):(\S+)')
 
-	for sf in options.star_flux:
-		gr = ma.match(sf)
-		if gr:
-			stars.append([int(gr.group(1)),int(gr.group(2)),int(gr.group(3)),gr.group(4)])
-		else:
-			print >> sys.stderr, "Cannot parse star flux argument", sf
-			sys.exit(1)
+	if options.star_flux:
+		for sf in options.star_flux:
+			gr = ma.match(sf)
+			if gr:
+				stars.append([int(gr.group(1)),int(gr.group(2)),int(gr.group(3)),gr.group(4)])
+			else:
+				print >> sys.stderr, "Cannot parse star flux argument", sf
+				sys.exit(1)
 
 	for fn in args:
 		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
