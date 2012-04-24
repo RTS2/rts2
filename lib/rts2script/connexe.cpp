@@ -374,8 +374,8 @@ void ConnExe::processCommand (char *cmd)
 		rts2core::ValueDoubleStat *vds;
 		if (v)
 		{
-			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
-				throw rts2core::Error (std::string ("value is not double array") + vname);
+			if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
+				throw rts2core::Error (std::string ("value is not double stat") + vname);
 			testWritableVariable (cmd, vflags, v);
 			vds = (rts2core::ValueDoubleStat *) v;
 			vds->clearStat ();
@@ -405,8 +405,8 @@ void ConnExe::processCommand (char *cmd)
 		rts2core::ValueDoubleStat *vds;
 		if (v)
 		{
-			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
-				throw rts2core::Error (std::string ("value is not double array") + vname);
+			if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
+				throw rts2core::Error (std::string ("value is not double stat") + vname);
 			testWritableVariable (cmd, vflags, v);
 			vds = (rts2core::ValueDoubleStat *) v;
 			vds->clearStat ();
@@ -416,8 +416,6 @@ void ConnExe::processCommand (char *cmd)
 			((rts2core::Daemon *) master)->createValue (vds, vname, desc, false, vflags);
 			master->updateMetaInformations (vds);
 		}
-		if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
-			throw rts2core::Error (std::string ("value is not double stat") + vname);
 		int num;
 		if (paramNextInteger (&num))
 			throw rts2core::Error ("invalid maximal number of values");
