@@ -43,7 +43,7 @@ int32_t typeFromString (const char *dt_string)
 		return 0;
 	static const char *types [0xb] = {"DT_RA", "DT_DEC", "DT_DEGREES", "DT_DEG_DIST", "DT_PERCENTS", "DT_ROTANG", "DT_HEX", "DT_BYTESIZE", "DT_KMG", "DT_INTERVAL", "DT_ONOFF"};
 	const char** vn = types;
-	for (int32_t i = 0; i < 0xc; i++, vn++)
+	for (int32_t i = 0; i < 0xb; i++, vn++)
 	{
 		if (!strcasecmp (*vn, dt_string))
 			return i << 16;
@@ -399,15 +399,25 @@ void ConnExe::processCommand (char *cmd)
 	}
 	else if (!strcasecmp (cmd, "stat_add"))
 	{
-		if (paramNextString (&vname))
+		if (paramNextString (&vname) || paramNextString (&desc))
 			throw rts2core::Error ("missing variable name or description");
 		v = ((rts2core::Daemon *) master)->getOwnValue (vname);
-		if (v == NULL)
-			throw rts2core::Error (std::string ("variable with name ") + vname + "does not exists");
-		
+		rts2core::ValueDoubleStat *vds;
+		if (v)
+		{
+			if (v->getValueType () != (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+				throw rts2core::Error (std::string ("value is not double array") + vname);
+			testWritableVariable (cmd, vflags, v);
+			vds = (rts2core::ValueDoubleStat *) v;
+			vds->clearStat ();
+		}
+		else
+		{
+			((rts2core::Daemon *) master)->createValue (vds, vname, desc, false, vflags);
+			master->updateMetaInformations (vds);
+		}
 		if (v->getValueType () != (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
 			throw rts2core::Error (std::string ("value is not double stat") + vname);
-		rts2core::ValueDoubleStat *vds = (rts2core::ValueDoubleStat *) v;
 		int num;
 		if (paramNextInteger (&num))
 			throw rts2core::Error ("invalid maximal number of values");
