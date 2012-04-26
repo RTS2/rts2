@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+#
+# Minimalistics JSON client
+# (C) Petr Kubanek <petr@kubanek.net>
+
+import base64
+import json
+import httplib
+import sys
+import string
+import urllib
+
+from optparse import OptionParser
+
+class RTS2JSON:
+	def __init__(self):
+		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring('user:password'))}
+		self.hlib = httplib.HTTPConnection('localhost',8889)
+
+	def loadJson(self,req,args={}):
+		self.hlib.request('GET', req + '?' + urllib.urlencode(args), None, self.headers)
+		r = self.hlib.getresponse()
+		return json.loads(r.read())
+
+if __name__ == '__main__':
+	parser = OptionParser()
+	parser.add_option('-G',help='get value from JSON server',action='append',dest='get_array')
+	parser.add_option('--get-int',help='get value from JSON server as integer value',action='append',dest='get_int_array')
+
+	(options,args)=parser.parse_args()
+	j = RTS2JSON()
+
+	if options.get_array:
+		for g in options.get_array:
+			device,value = g.split('.')
+			print j.loadJson('/api/get',{'d':device})['d'][value]
+	if options.get_int_array:
+		for g in options.get_int_array:
+			device,value = g.split('.')
+			print int(j.loadJson('/api/get',{'d':device})['d'][value])
+
+	if not(options.get_array) and not(options.get_int_array):
+	  	for a in args:
+			try:
+				a=j.loadJson(a)
+			except Exception,ex:
+				print 'cannot parse response for {0}:{1}'.format(a,ex)
+
