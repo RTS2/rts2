@@ -63,7 +63,6 @@ class FlatAttempt:
 class Flat:
 	"""Flat class. It holds system configuration for skyflats."""
 	def __init__(self,filter,binning=None,ngood=None,window=None,expTimes=None):
-		rts2comm.Rts2Comm.__init__(self)
 		self.filter = filter
 		self.binning = binning
 		self.ngood = ngood
