@@ -13,22 +13,36 @@ import urllib
 from optparse import OptionParser
 
 class RTS2JSON:
-	def __init__(self):
-		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring('user:password'))}
+	def __init__(self,auth,verbose=False):
+		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring(auth))}
 		self.hlib = httplib.HTTPConnection('localhost',8889)
+		self.verbose = verbose
 
 	def loadJson(self,req,args={}):
-		self.hlib.request('GET', req + '?' + urllib.urlencode(args), None, self.headers)
+		url = req + '?' + urllib.urlencode(args)
+		self.hlib.request('GET', url, None, self.headers)
 		r = self.hlib.getresponse()
-		return json.loads(r.read())
+		d = r.read()
+		if self.verbose:
+			print url
+			print d
+		return json.loads(d)
 
 if __name__ == '__main__':
 	parser = OptionParser()
+	parser.add_option('--user',help='RTS2 web server username',action='store',dest='user')
+	parser.add_option('--password',help='password for web user',action='store',dest='password')
+	parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose')
 	parser.add_option('-G',help='get value from JSON server',action='append',dest='get_array')
 	parser.add_option('--get-int',help='get value from JSON server as integer value',action='append',dest='get_int_array')
 
 	(options,args)=parser.parse_args()
-	j = RTS2JSON()
+
+	# default authorization; changed if needed
+	auth = 'user:test'
+	if options.user and options.password:
+		auth = '{0}:{1}'.format(options.user,options.password)
+	j = RTS2JSON(auth,verbose=options.verbose if options.verbose else False)
 
 	if options.get_array:
 		for g in options.get_array:
