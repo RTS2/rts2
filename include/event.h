@@ -116,6 +116,8 @@
 // executorque.h          1400-1449
 // nmonitor.h             1450-1499
 
+// local (device,..)     10000-
+
 namespace rts2core
 {
 
