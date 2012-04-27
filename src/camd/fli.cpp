@@ -1,6 +1,6 @@
 /*
  * Driver for FLI CCDs.
- * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -488,7 +488,7 @@ int Fli::init ()
 	if (ret)
 	  	return -1;
 
-	if (devid == FLIUSB_PROLINE_ID || bgFlush != -1)
+	if ((devid == FLIUSB_PROLINE_ID && fwrev > 0x0100) || bgFlush != -1)
 	{
 		createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
 		useBgFlush->setValueBool (bgFlush == 1);
