@@ -31,3 +31,5 @@ create table measurements (
 alter table measurements
 	add constraint foreign_measurements
 	foreign key (obs_id,img_id) REFERENCES images(obs_id,img_id);
+
+create sequence objects_obj_id;
