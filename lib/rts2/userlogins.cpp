@@ -93,7 +93,7 @@ bool UserLogins::verifyUser (std::string username, std::string pass, bool &execu
 	char *crp = crypt (pass.c_str (), logins[username].c_str ());
 	return logins[username] == std::string(crp);
 #else
-	return strcmp (logins[username], pass) == 0;
+	return logins[username] == pass;
 #endif
 }
 
