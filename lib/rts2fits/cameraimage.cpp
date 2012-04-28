@@ -113,9 +113,7 @@ CameraImages::~CameraImages (void)
 	clear ();
 }
 
-
-void
-CameraImages::deleteOld ()
+void CameraImages::deleteOld ()
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{

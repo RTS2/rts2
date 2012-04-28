@@ -607,7 +607,7 @@ CommandMessageMask::CommandMessageMask (Block * _master, int _mask):Command (_ma
 
 CommandInfo::CommandInfo (Block * _master):Command (_master)
 {
-	setCommand ("info");
+	setCommand (COMMAND_INFO);
 }
 
 int CommandInfo::commandReturnOK (Connection * conn)

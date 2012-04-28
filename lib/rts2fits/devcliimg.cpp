@@ -185,6 +185,9 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		newDataConn (data_conn);
 		iter = images.find (data_conn);
 	}
+
+	images.deleteOld ();
+
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;

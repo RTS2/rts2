@@ -528,7 +528,7 @@ DevConnection * Device::createConnection (int in_sock)
 
 int Device::commandAuthorized (Connection * conn)
 {
-	if (conn->isCommand ("info"))
+	if (conn->isCommand (COMMAND_INFO))
 	{
 		return info (conn);
 	}

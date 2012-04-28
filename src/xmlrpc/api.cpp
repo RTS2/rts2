@@ -71,7 +71,7 @@ digraph "JSON API calls handling" {
  *
  * @section JSON_desc_example example
  *
- * Do nothigh, usefull only to test the JSON-API infrastructure.
+ * Do nothing, usefull only to test the JSON-API infrastructure.
  *
  * @subsection Example
  *
@@ -421,7 +421,7 @@ digraph "JSON API calls handling" {
  *
  * @section targets List available targets
  *
- * @section tbyname List targets by name
+ * @section JSON_db_tbyname tbyname
  *
  * Returns list (JSON table) with targets matching given name.
  *
@@ -461,9 +461,50 @@ digraph "JSON API calls handling" {
  *  - <i><b>enabled</b> New value of target enabled bit. If set to 1, target will be considered by autonomouse selector.</i>
  *  - <i><b>desc</b> Target description.</i>
  *
- * @section labels
+ * @section JSON_db_labels labels
  *
- * Return lables list.
+ * Return label ID.
+ *
+ * @see labels.h
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/labels?l=DDT&t=1
+ *
+ * @subsection Parameters
+ *
+ *  - <b>l</b> label string
+ *  - <b>t</b> label type. See labels.h for types values.
+ *
+ * Label types are currently those:
+ *  - <b>1</b< PI (Project Investigator)
+ *  - <b>2</b> PROGRAM (Program)
+ *
+ * @see labels.h
+ *
+ * @subsection Return
+ *
+ * Return label ID. Returns error if label cannot be found.
+ *
+ * <hr/>
+ *
+ * @section JSON_db_add_label add_label
+ * 
+ * Add label to target.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/add_label?id=1000&l=New Label&t=1
+ *
+ * @subsection Parameters
+ *
+ *  - <b>id</b> target ID
+ *  - <b>l</b>  label to add to the target
+ *  - <b>t</b>  label type. Please see @ref JSON_db_labels for type discussion
+ *
+ * @subsection Return
+ *
+ * List of labels with specified type currently attached to the target.
  *
  * @section consts
  *
@@ -614,7 +655,7 @@ void AsyncMSet::postEvent (Event *event)
 class AsyncDataAPI:public AsyncAPI
 {
 	public:
-		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan);
+		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax);
 		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
 
 		virtual void nullSource () { data = NULL; AsyncAPI::nullSource (); }
@@ -626,14 +667,19 @@ class AsyncDataAPI:public AsyncAPI
 		int channel;
 		size_t bytesSoFar;
 
+		long smin;
+		long smax;
+
 		void sendData ();
 };
 
-AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan):AsyncAPI (_req, _conn, _source, false)
+AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	channel = _chan;
 	bytesSoFar = 0;
+	smin = _smin;
+	smax = _smax;
 }
 
 void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
@@ -700,14 +746,14 @@ void AsyncDataAPI::sendData ()
 class AsyncCurrentAPI:public AsyncDataAPI
 {
 	public:
-		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan);
+		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax);
 		virtual ~AsyncCurrentAPI ();
 
 		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
 };
 
-AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan):AsyncDataAPI (_req, _conn, _source, _data, _chan)
+AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax)
 {
 	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
@@ -740,7 +786,7 @@ void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
 class AsyncExposeAPI:public AsyncDataAPI
 {
 	public:
-		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, int _chan);
+		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax);
 		virtual ~AsyncExposeAPI ();
 
 		virtual void postEvent (Event *event);
@@ -755,7 +801,7 @@ class AsyncExposeAPI:public AsyncDataAPI
 		enum {waitForExpReturn, waitForImage, receivingImage} callState;
 };
 
-AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, int _chan):AsyncDataAPI (_req, _conn, _source, NULL, _chan)
+AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax)
 {
 	callState = waitForExpReturn;
 }
@@ -906,7 +952,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	// calls returning binary data
 	if (vals.size () == 1 && vals[0] == "lastimage")
 	{
-		const char *camera = params->getString ("ccd","");
+		const char *camera;
+		long smin, smax;
+		scaling_type type;
+		getCameraParameters (params, camera, smin, smax, type);
+
 		conn = master->getOpenConnection (camera);
 		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 			throw JSONException ("cannot find camera with given name");
@@ -931,7 +981,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	}
 	else if (vals.size () == 1 && vals[0] == "currentimage")
 	{
-		const char *camera = params->getString ("ccd","");
+		const char *camera;
+		long smin, smax;
+		scaling_type type;
+		getCameraParameters (params, camera, smin, smax, type);
+
 		conn = master->getOpenConnection (camera);
 		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 			throw JSONException ("cannot find camera with given name");
@@ -940,7 +994,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		// first try if there is data connection opened, so image data should be streamed in
 		if (DataAbstractRead * lastData = conn->lastDataChannel (chan))
 		{
-			AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData, chan);
+			AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData, chan, smin, smax);
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			throw XmlRpc::XmlRpcAsynchronous ();
@@ -1050,6 +1104,8 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			throw JSONException ("empty camera name");
 		
 		rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+		if (target == NULL)
+			throw JSONException ("cannot find target with given ID");
 		rts2script::Script script = rts2script::Script ();
 		script.setTarget (cname, target);
 		script.prettyPrint (os, rts2script::PRINT_JSON);
@@ -1065,6 +1121,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		const int steps = params->getInteger ("steps", 1000);
 
 		rts2db::Target *target = createTarget (id, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+		if (target == NULL)
+			throw JSONException ("cannot find target with given ID");
+
 		const double jd_from = ln_get_julian_from_timet (&from);
 		const double jd_to = ln_get_julian_from_timet (&to);
 
@@ -1273,7 +1332,10 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		// start exposure, return from server image
 		else if (vals[0] == "expose" || vals[0] == "exposedata")
 		{
-			const char *camera = params->getString ("ccd","");
+			const char *camera;
+			long smin, smax;
+			scaling_type type;
+			getCameraParameters (params, camera, smin, smax, type);
 			bool ext = params->getInteger ("e", 0);
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
@@ -1292,7 +1354,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			else
 			{
 				int chan = params->getInteger ("chan", 0);
-				aa = new AsyncExposeAPI (this, conn, connection, chan);
+				aa = new AsyncExposeAPI (this, conn, connection, chan, smin, smax);
 			}
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
@@ -1450,12 +1512,34 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			rts2db::Labels lb;
 			os << lb.getLabel (label, t);
 		}
+		else if (vals[0] == "add_label")
+		{
+			int tid = params->getInteger ("id", -1);
+			if (tid <= 0)
+				throw JSONException ("empty target ID");
+			rts2db::Target *target = createTarget (tid, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (target == NULL)
+				throw JSONException ("cannot find target with given ID");
+			const char *l = params->getString ("l", "");
+			if (l[0] == '\0')
+				throw JSONException ("empty label string");
+			int t = params->getInteger ("t", -1);
+			if (t < 0)
+				throw JSONException ("invalid label type");
+			target->addLabel (l, t, true);
+		}
+		else if (vals[0] == "delete_label")
+		{
+
+		}
 		else if (vals[0] == "consts")
 		{
 			int tid = params->getInteger ("id", -1);
 			if (tid <= 0)
 				throw JSONException ("empty target ID");
 			rts2db::Target *target = createTarget (tid, Configuration::instance ()->getObserver (), ((XmlRpcd *) getMasterApp ())->getNotifyConnection ());
+			if (target == NULL)
+				throw JSONException ("cannot find target with given ID");
 			target->getConstraints ()->printJSON (os);
 		}
 		// violated constrainsts..
@@ -2299,3 +2383,10 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 	os << "]";
 }
 #endif // HAVE_PGSQL
+
+void API::getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, scaling_type &scaling)
+{
+	camera = params->getString ("ccd","");
+	smin = params->getLong ("smin", LONG_MIN);
+	smax = params->getLong ("smax", LONG_MAX);
+}

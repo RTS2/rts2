@@ -1305,7 +1305,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 
 	int ret;
 
-	if (conn->isCommand ("move"))
+	if (conn->isCommand (COMMAND_TELD_MOVE))
 	{
 		if (conn->paramNextHMS (&obj_ra) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
 			return -2;

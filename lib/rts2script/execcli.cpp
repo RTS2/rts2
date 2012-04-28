@@ -55,6 +55,7 @@ rts2image::Image * DevClientCameraExec::createImage (const struct timeval *expSt
 	{
 		ret = new rts2image::Image (expandPathString.c_str (), getExposureNumber (), expStart, connection, expandOverwrite);
 		ret->setWriteConnnection (writeConnection, writeRTS2Values);
+		nullExpandPath ();
 	}
 	else if (expandPathValue)
 	{

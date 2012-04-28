@@ -59,6 +59,11 @@ class ConnFork:public ConnNoSend
 		int writeToProcess (const char *msg);
 		int writeToProcessInt (int msg);
 
+		/**
+		 * This method will log new lines arriving if debug is turned on.
+		 */
+		virtual void processLine ();
+
 		void setInput (std::string _input) { input = _input; }
 
 		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
@@ -103,6 +108,11 @@ class ConnFork:public ConnNoSend
 
 		const char *getExePath () { return exePath; }
 
+		/**
+		 * Set debug flag. If set to true, all communication with executable will be logged.
+		 */
+		void setConnectionDebug (bool _connDebug = true) { connDebug = _connDebug; }
+
 	protected:
 		char *exePath;
 		virtual void connectionError (int last_data_size);
@@ -139,6 +149,8 @@ class ConnFork:public ConnNoSend
 		// holds write end - we can send input to this socket
 		int sockwrite;
 		bool fillConnEnvVars;
+
+		bool connDebug;
 
 		std::string input;
 

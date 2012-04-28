@@ -239,6 +239,9 @@ class Image:public FitsFile
 		 */
 		void getChannelHistogram (int chan, long *histogram, long nbins);
 
+
+		template <typename bt, typename dt> void getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y);
+
 		/**
 		 * Returns image grayscaled buffer. Black have value equal to black parameter, white is 0.
 		 *

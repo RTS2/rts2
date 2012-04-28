@@ -311,7 +311,7 @@ int CommandLogin::commandReturnOK (Connection * conn)
 			// reque..
 			return RTS2_COMMAND_REQUE;
 		case PASSWORD_SEND:
-			setCommand ("info");
+			setCommand (COMMAND_INFO);
 			state = INFO_SEND;
 			return RTS2_COMMAND_REQUE;
 		case INFO_SEND:

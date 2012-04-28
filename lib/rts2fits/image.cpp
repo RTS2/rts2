@@ -1042,6 +1042,54 @@ void Image::getChannelHistogram (int chan, long *histogram, long nbins)
 }
 
 
+template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (int chan, bt * &buf, bt black, dt low, dt high, long s, size_t offset, bool invert_y)
+{
+	if (buf == NULL)
+		buf = new bt[s];
+	
+	bt *k = buf;
+
+	if (invert_y)
+		k += getChannelWidth (chan) * (getChannelHeight (chan) - 1);
+
+	const void *imageData = getChannelData (chan);
+
+	int j = getChannelWidth (chan);
+
+	for (int i = 0; (long) i < s; i++)
+	{
+		bt n;
+		dt pix = ((dt *)imageData)[i];
+		if (pix <= low)
+		{
+			n = black;
+		}
+		else if (pix >= high)
+		{
+			n = 0;
+		}
+		else
+		{
+			// linear scaling
+			n = black - black * ((double (pix - low)) / (high - low));
+		}
+		*k = n;
+		k++;
+		if (offset != 0 || invert_y)
+		{
+			j--;
+			if (j == 0)
+			{
+			  	k += offset;
+				j = getChannelWidth (chan);
+				if (invert_y)
+					k -= 2 * j;
+			}
+		}
+	}
+}
+
+
 template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles, size_t offset, bool invert_y)
 {
 	long hist[65535];
@@ -1088,49 +1136,8 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int c
 		}
 	}
 
-	if (buf == NULL)
-		buf = new bt[s];
 
-	bt *k = buf;
-
-	if (invert_y)
-		k += getChannelWidth (chan) * (getChannelHeight (chan) - 1);
-
-	const void *imageData = getChannelData (chan);
-
-	int j = getChannelWidth (chan);
-
-	for (i = 0; (long) i < s; i++)
-	{
-		bt n;
-		dt pix = ((dt *)imageData)[i];
-		if (pix <= low)
-		{
-			n = black;
-		}
-		else if (pix >= high)
-		{
-			n = 0;
-		}
-		else
-		{
-			// linear scaling
-			n = black - black * ((double (pix - low)) / (high - low));
-		}
-		*k = n;
-		k++;
-		if (offset != 0 || invert_y)
-		{
-			j--;
-			if (j == 0)
-			{
-			  	k += offset;
-				j = getChannelWidth (chan);
-				if (invert_y)
-					k -= 2 * j;
-			}
-		}
-	}
+	getChannelGrayscaleByteBuffer (chan, buf, black, low, high, s, offset, invert_y);
 }
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1

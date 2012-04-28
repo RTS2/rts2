@@ -38,6 +38,8 @@ ConnFork::ConnFork (rts2core::Block *_master, const char *_exe, bool _fillConnEn
 	exePath = new char[strlen (_exe) + 1];
 	strcpy (exePath, _exe);
 
+	connDebug = false;
+
 	forkedTimeout = _timeout;
 	time (&startTime);
 	endTime = 0;
@@ -72,6 +74,10 @@ int ConnFork::writeToProcess (const char *msg)
 		connectionError (-1);
 		return -1;
 	}
+	else if (connDebug)
+	{
+		logStream (MESSAGE_DEBUG) << "wrote to process " << getExePath () << ":" << completeMessage.substr (0, ret) << sendLog;
+	}
 	setInput (completeMessage.substr (ret));
 	return 0;	
 }
@@ -81,6 +87,14 @@ int ConnFork::writeToProcessInt (int msg)
 	std::ostringstream os;
 	os << msg;
 	return writeToProcess (os.str ().c_str ());
+}
+
+void ConnFork::processLine ()
+{
+	if (connDebug)
+	{
+		logStream (MESSAGE_DEBUG) << "read from process: " << command_buf_top << sendLog;
+	}
 }
 
 int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)

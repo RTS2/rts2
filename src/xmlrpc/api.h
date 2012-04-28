@@ -108,6 +108,8 @@ class AsyncAPI:public rts2core::Object
 		bool ext;
 };
 
+typedef enum { SCALING_LINEAR, SCALING_LOG } scaling_type;
+
 /**
  * Class for API requests.
  *
@@ -137,6 +139,7 @@ class API:public GetRequestAuthorized
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);
 #endif
+		void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, scaling_type &scaling);
 };
 
 }

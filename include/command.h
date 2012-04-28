@@ -23,7 +23,7 @@
 #include "block.h"
 
 /**
- * @defgroup RTS2Command Command classes
+ * @defgroup RTS2Command RTS2 commands
  */
 
 /** Send command again to device. @ingroup RTS2Command */
@@ -38,6 +38,46 @@
  * Call-in-progress mask
  */
 #define BOP_CIP_MASK            0x00006000
+
+/**
+ * Info command. @ingroup RTS2Command
+ *
+ * Forces device to refresh its values and send updated values over connection
+ * before the command is finished.
+ */
+#define COMMAND_INFO            "info"
+
+
+/**
+ * Move command. @ingroup RTS2Command
+ *
+ * This command should work only on telescope (mount) devices. Its two
+ * parameters, RA and DEC, is the target RA DEC of the sky position telescope
+ * should move on. An error can be reported immediately after the command is send.
+ *
+ * RA and DEC parameters can be specified as float number, or as float numbers
+ * separated by ":". In the first case it is assumed command is in degrees, in
+ * the second the command is assuemed to be in sexadecimal format, with the
+ * highest unit being always degrees.
+ *
+ * @subsection Examples
+ *
+ * To move the telescope to 1:20 in RA, -85:21:00 in DEC, use one of the following:
+ *  - move 20.00 -85:21:00
+ *  - move 1:20 -85:21
+ *  - move 1:20:00 -85:21
+ *  - move 20 -85.35
+ */
+#define COMMAND_TELD_MOVE       "move"
+
+/**
+ * Send client location of the latest camera image. @ingroup RTS2Command
+ *
+ * This command is used when camera produces data directly written on the disk.
+ * Client can decide after receiving the data, if it would like to e.g. add
+ * something to file header.
+ */
+#define COMMAND_DATA_IN_FITS    "fits_data"
 
 /**
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2

@@ -173,7 +173,7 @@ bool Cupola::needSlitChange ()
 
 int Cupola::commandAuthorized (rts2core::Connection * conn)
 {
-	if (conn->isCommand ("move"))
+	if (conn->isCommand (COMMAND_TELD_MOVE))
 	{
 		double tar_ra;
 		double tar_dec;
