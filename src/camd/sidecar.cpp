@@ -1,6 +1,7 @@
 /* 
  * Teledyne SIDECAR driver. Needs IDL server to connect to SIDECAR hardware.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,6 +49,17 @@ class SidecarConn:public rts2core::ConnTCP
 		void sendCommand (const char *cmd, std::istringstream **_is, int wtime = 10);
 
 		void sendCommand (const char *cmd, double p1, std::istringstream **_is, int wtime = 10);
+
+		/**
+		 * Call ping command, return camera status. Camera status values:
+		 *
+		 *  - <b>0</b> The system is idle
+		 *  - <b>1</b> Exposure is in progress
+		 *  - <b>2</b> Ramp acqusition succeeded
+		 *
+		 * @return camera status. See discussion above for success codes. On error, -1 is returned.
+		 */
+		int pingCommand ();
 
 		/**
 		 * Call method on server.
@@ -100,6 +112,8 @@ class Sidecar:public Camera
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int stopExposure ();
 		virtual int doReadout ();
 	
 	private:
@@ -108,11 +122,10 @@ class Sidecar:public Camera
 
 		HostString *sidecarServer;
 		SidecarConn *sidecarConn;
-		SidecarConn *imageRetrievalConn;
 
 		// variables holders
 		rts2core::ValueSelection *fsMode;
-        rts2core::ValueInteger *nResets;
+		rts2core::ValueInteger *nResets;
 		rts2core::ValueInteger *nReads;
 		rts2core::ValueInteger *nGroups;
 		rts2core::ValueInteger *nDropFrames;
@@ -121,7 +134,7 @@ class Sidecar:public Camera
 		rts2core::ValueSelection *ktcRemoval;
 		rts2core::ValueSelection *warmTest;
 		rts2core::ValueSelection *idleMode;
-        rts2core::ValueSelection *enhancedClocking;
+		rts2core::ValueSelection *enhancedClocking;
         
 		int parseConfig (std::istringstream *is);
 };
@@ -144,6 +157,40 @@ void SidecarConn::sendCommand (const char *cmd, double p1, std::istringstream **
 	sendCommand (os.str ().c_str (), _is, wtime);
 }
 
+int SidecarConn::pingCommand ()
+{
+	std::istringstream *is;
+	sendCommand ("Ping", &is);
+
+	char lineb[200];
+	is->getline (lineb, 200);
+
+	int ret = -1;
+
+	if (is->fail ())
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse ping reply" << sendLog;
+		ret = -1;
+	}
+	else
+	{
+		const char *responses[3] = {"0:The system is idle", "-1:Exposure is in progress", "0:Ramp acquisition succeeded"};
+		for (ret = 0; ret < 3; ret++)
+		{
+			if (strcmp(responses[ret],lineb))
+				break;
+		}
+		if (ret == 3)
+		{
+			logStream (MESSAGE_ERROR) << "unknown ping response: " << lineb << sendLog;
+			return -1;
+		}
+	}
+
+	delete is;
+	return ret;
+}
+
 void SidecarConn::callMethod (const char *method, int p1, std::istringstream **_is, int wtime)
 {
 	std::ostringstream os;
@@ -155,7 +202,6 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	sidecarServer = NULL;
 	sidecarConn = NULL;
-	imageRetrievalConn = NULL;
 
 	createTempCCD ();
 	createExpType ();
@@ -199,17 +245,17 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	gain->addSelVal ("13  21dB, large Cin");
 	gain->addSelVal ("14  24dB, large Cin");
 	gain->addSelVal ("15  27dB, large Cin");
-	gain->setValueInteger(8);
+	gain->setValueInteger(13);
 
     createValue (ktcRemoval, "preamp_ktc_removal", "turn on (1) or off (0) the preamp KTC removal", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	ktcRemoval->addSelVal ("0 Off");
 	ktcRemoval->addSelVal ("1 On");
-	ktcRemoval->setValueInteger(1);
+	ktcRemoval->setValueInteger(0);
     
     createValue (warmTest, "warm_test", "set for warm (1) or cold (0)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	warmTest->addSelVal ("0 Cold");
 	warmTest->addSelVal ("1 Warm");
-	warmTest->setValueInteger(1);
+	warmTest->setValueInteger(0);
 	
 	// Not sure why, but changing the IdleModeOption in the rts2-mon does not affect a change
 	// in the HxRG Socket Server. The SS does show receiving the TCP command, though.
@@ -222,7 +268,7 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (enhancedClocking, "clocking", "normal (0) or enhanced (1)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	enhancedClocking->addSelVal ("0 Normal");
 	enhancedClocking->addSelVal ("1 Enhanced");
-	enhancedClocking->setValueInteger(0);
+	enhancedClocking->setValueInteger(1);
 	
 	width = 2048;
 	height = 2048;
@@ -269,16 +315,13 @@ int Sidecar::init ()
 		// Images are scp'd back to linux rts2 machine via a python TCP server running on the windows machine.
 		// The port address of this image retrieval server is one higher (5001) than the port of the
 		// HxRG Socket Server (5000). 
-		imageRetrievalConn = new SidecarConn (this, sidecarServer->getHostname (), sidecarServer->getPort ()+1);
 		sidecarConn->init ();
-		imageRetrievalConn->init ();
 		sidecarConn->setDebug ();
-		imageRetrievalConn->setDebug ();
 		// initialize system..
-		std::istringstream *is;
-		sidecarConn->sendCommand ("Ping", &is);
-		// sidecarConn->sendCommand ("Initialize1", &is);
-		delete is;
+		sidecarConn->pingCommand ();
+		// std::istringstream *is;
+		// sidecarConn->sendCommand ("Initialize3", &is, 45);
+		// delete is;
 	}
 	catch (rts2core::ConnError er)
 	{
@@ -328,9 +371,8 @@ int Sidecar::parseConfig (std::istringstream *is)
 
 int Sidecar::info ()
 {
-	std::istringstream *is;
-	sidecarConn->sendCommand ("Ping", &is);
-	delete is;
+	sidecarConn->pingCommand ();
+	// std::istringstream *is;
 	// sidecarConn->sendCommand ("GetConfig", &is);
 	// parseConfig (is);
 	// delete is;
@@ -427,32 +469,31 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 int Sidecar::startExposure ()
 {
 	std::istringstream *is;
-	sidecarConn->sendCommand ("AcquireRamp", &is);
-	// Maybe have image retrieval command sent as part of doReadout below.
-	imageRetrievalConn->sendCommand ("cklein@192.168.1.56:/home/cklein/Desktop/HxRG_Data", &is);
+	sidecarConn->sendCommand ("AcquireRamp", &is, 100);
+	// data are stored in local directory
+	return 0;
+}
+
+long Sidecar::isExposing ()
+{
+	int ret = sidecarConn->pingCommand ();
+	switch (ret)
+	{
+		case 1:
+			return 100;
+	}
+	return -2;
+}
+
+int Sidecar::stopExposure ()
+{
+    printf("Exposure was stopped!\n");
 	return 0;
 }
 
 int Sidecar::doReadout ()
 {
-//   std::istringstream *is;
-//    imageRetrievalConn->sendCommand ("cklein@192.168.1.56:/home/cklein/Desktop/HxRG_Data", &is);
-//	int ret;
-//	long usedSize = dataBufferSize;
-//	if (usedSize > getWriteBinaryDataSize ())
-//		usedSize = getWriteBinaryDataSize ();
-//	for (int i = 0; i < usedSize; i += 2)
-//	{
-//		uint16_t *d = (uint16_t* ) (dataBuffer + i);
-//		*d = i;
-//	}
-//	ret = sendReadoutData (dataBuffer, usedSize);
-//	if (ret < 0)
-//		return ret;
-
-//	if (getWriteBinaryDataSize () == 0)
-//		return -2;				 // no more data..
-	return 0;					 // imediately send new data
+	return -2;
 }
 
 int main (int argc, char **argv)
