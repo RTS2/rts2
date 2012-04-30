@@ -184,10 +184,10 @@ int SidecarConn::pingCommand ()
 	}
 	else
 	{
-		const char *responses[3] = {"0:The system is idle", "-1:Exposure is in progress", "0:Ramp acquisition succeeded"};
+		const char *responses[3] = {"0:The system is idle\r", "-1:Exposure is in progress\r", "0:Ramp acquisition succeeded\r"};
 		for (ret = 0; ret < 3; ret++)
 		{
-			if (strcmp(responses[ret],lineb))
+			if (strcmp(responses[ret],lineb) == 0)
 				break;
 		}
 		if (ret == 3)
@@ -498,6 +498,7 @@ int Sidecar::startExposure ()
 long Sidecar::isExposing ()
 {
 	int ret = sidecarConn->pingCommand ();
+	std::cout << "isExposing ret " << ret << std::endl;
 	switch (ret)
 	{
 		case 1:
