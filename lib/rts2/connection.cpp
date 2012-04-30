@@ -38,6 +38,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -710,8 +711,7 @@ void Connection::processLine ()
 	{
 		char *m_name;
 		char *sel_name;
-		if (paramNextString (&m_name)
-			|| paramNextString (&sel_name) || !paramEnd ())
+		if (paramNextString (&m_name) || paramNextString (&sel_name) || !paramEnd ())
 		{
 		  	ret = -2;
 		}
@@ -845,6 +845,20 @@ void Connection::processLine ()
 				readChannels.erase (iter);
 			}
 			ret = -1;
+		}
+	}
+	else if (isCommand (COMMAND_DATA_IN_FITS))
+	{
+		char *fn;
+		if (paramNextString (&fn) || !paramEnd ())
+		{
+			connectionError (-2);
+			ret = -2;
+		}
+		else
+		{
+			if (otherDevice)
+				otherDevice->fitsData (fn);
 		}
 	}
 	else if (isCommandReturn ())
@@ -1513,6 +1527,14 @@ void Connection::endSharedData (int data_conn, bool complete)
 	_os << data_conn;
 	delete writeChannels[data_conn];
 	writeChannels.erase (data_conn);
+	sendMsg (_os);
+}
+
+int Connection::fitsDataTransfer (const char *fn)
+{
+	std::ostringstream _os;
+	chmod (fn, 0666);
+	_os << COMMAND_DATA_IN_FITS " " << fn;
 	sendMsg (_os);
 }
 

@@ -144,6 +144,13 @@ class FitsFile: public rts2core::Expander
 		virtual void openFile (const char *_filename = NULL, bool readOnly = false, bool _verbose = false);
 
 		/**
+		 * Return pointer to fitsfile structure.
+		 *
+		 * @return fitsfile pointer.
+		 */
+		fitsfile *getFitsFile () { return ffile; }
+
+		/**
 		 * Load given template file. Template file specifies values
 		 * which should be written to the FITS headers, and general
 		 * FITS file conventions.
@@ -292,13 +299,6 @@ class FitsFile: public rts2core::Expander
 		virtual int createFile (bool _overwrite = false);
 		int createFile (const char *_filename, bool _overwrite = false);
 		int createFile (std::string _filename, bool _overwrite = false);
-
-		/**
-		 * Return pointer to fitsfile structure.
-		 *
-		 * @return fitsfile pointer.
-		 */
-		fitsfile *getFitsFile () { return ffile; }
 
 		void setFitsFile (fitsfile *_fitsfile) { ffile = _fitsfile; }
 

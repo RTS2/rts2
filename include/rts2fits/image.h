@@ -103,7 +103,7 @@ class Image:public FitsFile
 		// skeleton for DB image
 		Image (long in_img_date, int in_img_usec, float in_img_exposure);
 		// create image
-		Image (char *in_filename, const struct timeval *in_exposureStart);
+		Image (const char *in_filename, const struct timeval *in_exposureStart, bool _overwrite = false);
 		/**
 		 * Create image from expand path.
 		 *
@@ -425,10 +425,6 @@ class Image:public FitsFile
 		 */
 		int getDataType () { return dataType; }
 
-		//void setDataUShortInt (unsigned short *in_data, long in_naxis[2]);
-
-		//int substractDark (Image * darkImage);
-
 		int setAstroResults (double ra, double dec, double ra_err, double dec_err);
 
 		int addStarData (struct stardata *sr);
@@ -674,8 +670,8 @@ class Image:public FitsFile
 		char *filter;
 		float exposureLength;
 		
-		int createImage (std::string in_filename, bool _overwrite = false);
 		int createImage (char *in_filename, bool _overwrite = false);
+		int createImage (std::string in_filename, bool _overwrite = false);
 
 		void getHeaders ();
 

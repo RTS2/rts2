@@ -65,6 +65,13 @@ class DevClient:public Object
 		 */
 		virtual void fullDataReceived (int data_conn, DataChannels *data);
 
+		/**
+		 * Data written to FITS file on the disk are available for processing.
+		 *
+		 * @param fn full path to the file holding exposure data
+		 */
+		virtual void fitsData (const char *fn) {}
+
 		virtual void stateChanged (ServerState * state);
 
 		Connection *getConnection () { return connection; }

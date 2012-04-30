@@ -216,6 +216,24 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 	}
 }
 
+void DevClientCameraImage::fitsData (const char *fn)
+{
+	Image *img = new Image ();
+
+	try
+	{
+		img->openFile (fn, false, false);
+		writeFilter (img);
+		beforeProcess (img);
+		processImage (img);
+	}
+	catch (rts2core::Error &ex)
+	{
+		logStream (MESSAGE_ERROR) << "cannot process fits_data image " << img->getAbsoluteFileName () << " " << ex << sendLog;
+	}
+	delete img;
+}
+
 Image * DevClientCameraImage::createImage (const struct timeval *expStart)
 {
 	Image * ret = new Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);

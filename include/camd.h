@@ -429,6 +429,12 @@ class Camera:public rts2core::ScriptDevice
 		int sendImage (char *data, size_t dataSize);
 
 		int sendReadoutData (char *data, size_t dataSize, int chan = 0);
+
+		int fitsDataTransfer (const char *fn)
+		{
+			if (exposureConn)
+				exposureConn->fitsDataTransfer (fn);
+		}
 		
 		/**
 		 * Return number of bytes which are left from the image.

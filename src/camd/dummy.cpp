@@ -19,6 +19,7 @@
 
 #include "camd.h"
 #include "utilsfunc.h"
+#include "rts2fits/image.h"
 
 #define OPT_WIDTH        OPT_LOCAL + 1
 #define OPT_HEIGHT       OPT_LOCAL + 2
@@ -63,6 +64,9 @@ class Dummy:public Camera
 			genType->addSelVal ("flats dawn");
 			genType->addSelVal ("astar");
 			genType->setValueInteger (0);
+
+			createValue (fitsTransfer, "fits_transfer", "write FITS file directly in camera", false, RTS2_VALUE_WRITABLE);
+			fitsTransfer->setValueBool (false);
 
 			createValue (astar_num, "astar_num", "number of artificial stars", false, RTS2_VALUE_WRITABLE);
 			astar_num->setValueInteger (1);
@@ -286,6 +290,8 @@ class Dummy:public Camera
 
 		rts2core::ValueDouble *aamp;
 
+		rts2core::ValueBool *fitsTransfer;
+
 		int width;
 		int height;
 
@@ -337,6 +343,13 @@ int Dummy::doReadout ()
 //	if (usedSize > getWriteBinaryDataSize ())
 //		usedSize = getWriteBinaryDataSize ();
 	int nch = 0;
+	rts2image::Image *image = NULL;
+	if (fitsTransfer->getValueBool ())
+	{
+		struct timeval expStart;
+		gettimeofday (&expStart, NULL);
+		image = new rts2image::Image ("/tmp/fits_data.fits", &expStart, true);
+	}
 	if (channels)
 	{
 		// generate image
@@ -352,15 +365,40 @@ int Dummy::doReadout ()
 		}
 		// send data from channel..
 		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		for (unsigned int ch = 0; ch < channels->size (); ch++)
+		if (image == NULL)
 		{
-			size_t s = usedSize - written[ch] < callReadoutSize->getValueLong () ? usedSize - written[ch] : callReadoutSize->getValueLong ();
-			ret = sendReadoutData (getDataBuffer (ch) + written[ch], s, nch);
+			for (unsigned int ch = 0; ch < channels->size (); ch++)
+			{
+				size_t s = usedSize - written[ch] < callReadoutSize->getValueLong () ? usedSize - written[ch] : callReadoutSize->getValueLong ();
+				ret = sendReadoutData (getDataBuffer (ch) + written[ch], s, nch);
 
-			if (ret < 0)
-				return ret;
-			written[ch] += s;
-			nch++;
+				if (ret < 0)
+					return ret;
+				written[ch] += s;
+				nch++;
+			}
+		}
+		else
+		{
+			for (unsigned int ch = 0; ch < channels->size (); ch++)
+			{
+				long sizes[2];
+				sizes[0] = getUsedWidthBinned ();
+				sizes[1] = getUsedHeightBinned ();
+
+				int fits_status = 0;
+
+				fits_resize_img (image->getFitsFile (), RTS2_DATA_USHORT, 2, sizes, &fits_status);
+				fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataBuffer (ch), &fits_status);
+				if (fits_status)
+				{
+					logStream (MESSAGE_ERROR) << "cannot write channel " << ch << sendLog;
+				}
+			}
+			image->closeFile ();
+			delete image;
+			fitsDataTransfer ("/tmp/fits_data.fits");
+			return -2;
 		}
 	}
 	else
@@ -371,14 +409,36 @@ int Dummy::doReadout ()
 			written[0] = 0;
 		}
 		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-		if (written[0] < (ssize_t) chipByteSize ())
+		if (image == NULL)
 		{
-			size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
-			ret = sendReadoutData (getDataBuffer (0) + written[0], s, 0);
+			if (written[0] < (ssize_t) chipByteSize ())
+			{
+				size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
+				ret = sendReadoutData (getDataBuffer (0) + written[0], s, 0);
 
-			if (ret < 0)
-				return ret;
-			written[0] += s;
+				if (ret < 0)
+					return ret;
+				written[0] += s;
+			}
+		}
+		else
+		{
+			long sizes[2];
+			sizes[0] = getUsedWidthBinned ();
+			sizes[1] = getUsedHeightBinned ();
+
+			int fits_status = 0;
+
+			fits_resize_img (image->getFitsFile (), RTS2_DATA_USHORT, 2, sizes, &fits_status);
+			fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataBuffer (0), &fits_status);
+			if (fits_status)
+			{
+				logStream (MESSAGE_ERROR) << "cannot write FITS file" << sendLog;
+			}
+			image->closeFile ();
+			delete image;
+			fitsDataTransfer ("/tmp/fits_data.fits");
+			return -2;
 		}
 	}
 

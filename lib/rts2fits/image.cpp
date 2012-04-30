@@ -169,7 +169,7 @@ Image::Image (Image * in_image):FitsFile (in_image)
 
 	// other image will be saved!
 	flags = in_image->flags;
-	in_image->flags &= ~IMAGE_SAVE;
+	//in_image->flags &= ~IMAGE_SAVE;
 }
 
 Image::Image (const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
@@ -197,11 +197,11 @@ Image::Image (long in_img_date, int in_img_usec, float in_img_exposure):FitsFile
 	exposureLength = in_img_exposure;
 }
 
-Image::Image (char *_filename, const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
+Image::Image (const char *_filename, const struct timeval *in_exposureStart, bool _overwrite):FitsFile (in_exposureStart)
 {
 	initData ();
 
-	createImage (_filename);
+	createImage (_filename, _overwrite);
 	writeExposureStart ();
 }
 
@@ -864,8 +864,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	if (!getFitsFile () || !(flags & IMAGE_SAVE))
 	{
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "not saving data " << getFitsFile () << " "
-			<< (flags & IMAGE_SAVE) << sendLog;
+		logStream (MESSAGE_DEBUG) << "not saving data " << getFitsFile () << " " << (flags & IMAGE_SAVE) << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 		return 0;
 	}
