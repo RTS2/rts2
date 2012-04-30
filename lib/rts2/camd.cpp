@@ -737,6 +737,9 @@ int Camera::initChips ()
 
 void Camera::changeAxisDirections (bool x_orig, bool y_orig)
 {
+	if (wcs_cdelta1 == NULL || wcs_cdelta2 == NULL)
+		return;
+
 	wcs_cdelta1->setValueDouble ((x_orig ? 1 : -1) * default_cd[0] / binningHorizontal ());
 	wcs_cdelta2->setValueDouble ((y_orig ? 1 : -1) * default_cd[1] / binningVertical ());
 
