@@ -246,6 +246,8 @@ void DevClientCameraImage::fitsData (const char *fn)
 		fits2DataChannels (img, data);
 
 		images[0] = new CameraImage (img, getMaster ()->getNow (), prematurelyReceived);
+		images[0]->setExEnd (getMaster ()->getNow ());
+		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
 		fullDataReceived (0, data);
 	}
 	catch (rts2core::Error &ex)
@@ -253,7 +255,10 @@ void DevClientCameraImage::fitsData (const char *fn)
 		logStream (MESSAGE_ERROR) << "cannot process fits_data image " << img->getAbsoluteFileName () << " " << ex << sendLog;
 	}
 	delete data;
-	delete img;
+
+	delete actualImage;
+	actualImage = NULL;
+
 	images.erase (0);
 }
 
