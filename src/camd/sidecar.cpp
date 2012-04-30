@@ -484,7 +484,7 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		return 0;
 	}
 	
-	return 0;
+	return Camera::setValue (old_value, new_value);
 }
 
 void Sidecar::setExposure (double exp)
