@@ -216,6 +216,8 @@ class Dummy:public Camera
 		}
 		virtual int startExposure ()
 		{
+			if (fitsTransfer->getValueBool ())
+				setFitsTransfer ();
 			written[0] = -1;
 			if (channels)
 			{

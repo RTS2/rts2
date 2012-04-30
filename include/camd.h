@@ -433,7 +433,8 @@ class Camera:public rts2core::ScriptDevice
 		int fitsDataTransfer (const char *fn)
 		{
 			if (exposureConn)
-				exposureConn->fitsDataTransfer (fn);
+				return exposureConn->fitsDataTransfer (fn);
+			return 0;
 		}
 		
 		/**
@@ -898,6 +899,8 @@ class Camera:public rts2core::ScriptDevice
 			}
 		}
 
+		void setFitsTransfer () { currentImageTransfer = FITS; }
+
 	private:
 		size_t readoutPixels;
 		// data buffers - separated for each channel
@@ -944,7 +947,7 @@ class Camera:public rts2core::ScriptDevice
 
 		int currentImageData;
 		// true if current image is send over shared connection
-		bool currentImageShared;
+		enum { TCPIP, SHARED, FITS } currentImageTransfer;
 
 		// whenewer statistics should be calculated
 		rts2core::ValueSelection *calculateStatistics;

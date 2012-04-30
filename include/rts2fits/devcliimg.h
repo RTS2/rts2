@@ -115,6 +115,12 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		bool writeRTS2Values;
 
 	private:
+		/**
+		 * Convert FITS image to DataChannels.
+		 */
+		void fits2DataChannels (Image *img, rts2core::DataChannels *&data);
+
+
 		void writeFilter (Image *img);
 
 		// we have to allocate that field as soon as we get the knowledge of

@@ -105,6 +105,8 @@ class DataRead:public DataAbstractRead
 
 		virtual int readDataSize (Connection *conn);
 
+		void setChunkSizeFromData () { binaryReadChunkSize = binaryReadDataSize; }
+
 		/**
 		 * Receive data from socket.
 		 *

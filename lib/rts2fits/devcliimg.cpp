@@ -157,6 +157,23 @@ void DevClientCameraImage::postEvent (rts2core::Event * event)
 	rts2core::DevClientCamera::postEvent (event);
 }
 
+void DevClientCameraImage::fits2DataChannels (Image *img, rts2core::DataChannels *&data)
+{
+	data = new rts2core::DataChannels ();
+	// add channels one by one
+	for (int i = 0; i < img->getChannelSize (); i++)
+	{
+		struct imghdr imgh;
+		img->getImgHeader (&imgh, i);
+		long ts = img->getChannelNPixels (i) * img->getPixelByteSize ();
+		rts2core::DataRead *dr = new rts2core::DataRead (ts + sizeof (struct imghdr), img->getDataType ());
+		dr->setChunkSizeFromData ();
+		dr->addData ((char *) (&imgh), sizeof (struct imghdr));
+		dr->addData ((char *) img->getChannelData (i), ts);
+		data->push_back (dr);
+	}
+}
+
 void DevClientCameraImage::writeFilter (Image *img)
 {
 	int camFilter = img->getFilterNum ();
@@ -219,19 +236,25 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 void DevClientCameraImage::fitsData (const char *fn)
 {
 	Image *img = new Image ();
+	rts2core::DataChannels *data = NULL;
 
 	try
 	{
 		img->openFile (fn, false, false);
-		writeFilter (img);
-		beforeProcess (img);
-		processImage (img);
+		img->loadChannels ();
+		// convert FITS to data
+		fits2DataChannels (img, data);
+
+		images[0] = new CameraImage (img, getMaster ()->getNow (), prematurelyReceived);
+		fullDataReceived (0, data);
 	}
 	catch (rts2core::Error &ex)
 	{
 		logStream (MESSAGE_ERROR) << "cannot process fits_data image " << img->getAbsoluteFileName () << " " << ex << sendLog;
 	}
+	delete data;
 	delete img;
+	images.erase (0);
 }
 
 Image * DevClientCameraImage::createImage (const struct timeval *expStart)

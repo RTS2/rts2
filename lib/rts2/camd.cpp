@@ -212,7 +212,7 @@ int Camera::endReadout ()
 		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueDouble () << " pixels per second, transfered with " << transferSecond << " pixels per second)" << sendLog;
 
 	clearReadout ();
-	if (currentImageShared && exposureConn)
+	if (currentImageTransfer == SHARED && exposureConn)
 	{
 		if (currentImageData >= 0)
 		{
@@ -247,6 +247,9 @@ int Camera::getPhysicalChannel (int ch)
 
 void Camera::startImageData (rts2core::Connection * conn)
 {
+	if (currentImageTransfer == FITS)
+		return;
+
 	int chnTot = dataChannels ? dataChannels->getValueInteger () : 1;
 	size_t chansize[chnTot];
 	int i;
@@ -275,25 +278,25 @@ void Camera::startImageData (rts2core::Connection * conn)
 			sharedData->clearChan2Seg ();
 			logStream (MESSAGE_WARNING) << "starting binary connection instead of shared data connection" << sendLog;
 			currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
-			currentImageShared = false;
+			currentImageTransfer = TCPIP;
 		}
 		else
 		{
 			currentImageData = conn->startSharedData (sharedData, chnTot, segments);
-			currentImageShared = true;
+			currentImageTransfer = SHARED;
 		}
 	}
 	else
 	{
 		currentImageData = conn->startBinaryData (dataType->getValueInteger (), chnTot, chansize);
-		currentImageShared = false;
+		currentImageTransfer = TCPIP;
 	}
 	exposureConn = conn;
 }
 
 int Camera::sendFirstLine (int chan, int pchan)
 {
-	if (currentImageShared)
+	if (currentImageTransfer == SHARED)
 	{
 		focusingHeader = (struct imghdr*) (sharedData->getChannelData (chan));
 	}
@@ -325,15 +328,17 @@ int Camera::sendFirstLine (int chan, int pchan)
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
-	if (currentImageShared)
+	switch (currentImageTransfer)
 	{
-		sharedData->dataWritten (chan, sizeof (imghdr));
-	}
-	else
-	{
-		// send it out - but do not include it in average etc. calculations
-		if (exposureConn)
-			return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+		case SHARED:
+			sharedData->dataWritten (chan, sizeof (imghdr));
+			break;
+		case TCPIP:
+			if (exposureConn)
+				return exposureConn->sendBinaryData (currentImageData, chan, (char *) focusingHeader, sizeof (imghdr));
+			break;
+		case FITS:
+			break;
 	}
 	return 0;
 }
@@ -385,7 +390,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	sharedMemNum = -1;
 
 	currentImageData = -1;
-	currentImageShared = false;
+	currentImageTransfer = TCPIP;
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
@@ -571,14 +576,17 @@ int Camera::killAll (bool callScriptEnds)
 	if (exposureConn && currentImageData >= 0)
 	{
 		// end actual data connections
-		if (currentImageShared)
+		switch (currentImageTransfer)
 		{
-			exposureConn->endSharedData (currentImageData, false);
-			currentImageShared = false;
-		}
-		else
-		{
-			exposureConn->endBinaryData (currentImageData);
+			case SHARED:
+				exposureConn->endSharedData (currentImageData, false);
+				currentImageTransfer = TCPIP;
+				break;
+			case TCPIP:
+				exposureConn->endBinaryData (currentImageData);
+				break;
+			case FITS:
+				currentImageTransfer = TCPIP;
 		}
 		currentImageData = -1;
 	}
@@ -853,10 +861,10 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 		}
 	}
 
-	if (currentImageShared)
+	if (currentImageTransfer == SHARED)
 		sharedData->dataWritten (chan, dataSize);
 
-	if (exposureConn && currentImageShared == false)
+	if (exposureConn && currentImageTransfer == TCPIP)
 		return exposureConn->sendBinaryData (currentImageData, chan, data, dataSize);
 	return 0;
 }
@@ -1719,7 +1727,7 @@ void Camera::setFullBopState (int new_state)
 
 char* Camera::getDataBuffer (int chan)
 {
-	if (currentImageShared)
+	if (currentImageTransfer == SHARED)
 		return ((char *) sharedData->getChannelData (chan)) + sizeof (imghdr);
 	// if dataBuffesr is null, allocate it
 	if (dataBuffers[chan] == NULL && suggestBufferSize () > 0)
