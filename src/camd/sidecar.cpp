@@ -22,6 +22,11 @@
 #include "utilsfunc.h"
 #include "connection/tcp.h"
 
+#include <dirent.h>
+
+#define OPT_IMAGE_DIR     OPT_LOCAL + 727
+#define OPT_IMAGE_SUFFIX  OPT_LOCAL + 728
+
 namespace rts2camd
 {
 
@@ -123,7 +128,12 @@ class Sidecar:public Camera
 		HostString *sidecarServer;
 		SidecarConn *sidecarConn;
 
-		// variables holders
+		// path to the last data
+		rts2core::ValueString *imageDir;
+       		rts2core::ValueString *lastDataDir;
+		rts2core::ValueString *fileSuffix;
+
+		// internal variables
 		rts2core::ValueSelection *fsMode;
 		rts2core::ValueInteger *nResets;
 		rts2core::ValueInteger *nReads;
@@ -135,7 +145,7 @@ class Sidecar:public Camera
 		rts2core::ValueSelection *warmTest;
 		rts2core::ValueSelection *idleMode;
 		rts2core::ValueSelection *enhancedClocking;
-        
+ 
 		int parseConfig (std::istringstream *is);
 };
 
@@ -206,6 +216,10 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createTempCCD ();
 	createExpType ();
 
+	createValue (imageDir, "image_dir", "current image directory", false, RTS2_VALUE_WRITABLE);
+	createValue (lastDataDir, "last_data", "last data directory", false);
+	createValue (fileSuffix, "file_suffix", "file suffix (will be added to last data directory", false, RTS2_VALUE_WRITABLE);
+
 	// name for fsMode, as shown in rts2-mon, will be fs_mode, "mode of.. " is the comment.
 	// false means that it will not be recorded to FITS
 	// RTS2_VALUE_WRITABLE means you can change value from monitor
@@ -274,6 +288,8 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	height = 2048;
 
 	addOption ('t', NULL, 1, "Teledyne host name and double colon separated port (port defaults to 5000)");
+	addOption (OPT_IMAGE_DIR, "image-dir", 1, "path to images");
+	addOption (OPT_IMAGE_SUFFIX, "image-suffix", 1, "suffix to add to newly found directory to get to image");
 }
 
 Sidecar::~Sidecar ()
@@ -286,6 +302,12 @@ int Sidecar::processOption (int in_opt)
 	{
 		case 't':
 			sidecarServer = new HostString (optarg, "5000");
+			break;
+		case OPT_IMAGE_DIR:
+			imageDir->setValueCharArr (optarg);
+			break;
+		case OPT_IMAGE_SUFFIX:
+			fileSuffix->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -468,6 +490,7 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 
 int Sidecar::startExposure ()
 {
+	setFitsTransfer ();
 	std::istringstream *is;
 	sidecarConn->sendCommand ("AcquireRamp", &is, 100);
 	// data are stored in local directory
@@ -487,12 +510,37 @@ long Sidecar::isExposing ()
 
 int Sidecar::stopExposure ()
 {
-    printf("Exposure was stopped!\n");
 	return 0;
 }
 
 int Sidecar::doReadout ()
 {
+	// get filename
+	struct dirent **res;
+	int nd = scandir (imageDir->getValueString ().c_str (), &res, NULL, alphasort);
+
+	int i;
+	
+	for (i = 0; i < nd; i++)
+	{
+		if (strcoll (res[i]->d_name, lastDataDir->getValueString ().c_str ()) > 0)
+		{
+			lastDataDir->setValueCharArr (res[i]->d_name);
+		}
+		free (res[i]);
+	}
+
+	sendValueAll (lastDataDir);
+
+	// pass it as FITS data..
+
+	std::ostringstream os;
+	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << fileSuffix->getValueString ();
+
+	fitsDataTransfer (os.str ().c_str ());
+
+	free (res);
+
 	return -2;
 }
 
