@@ -115,6 +115,7 @@ class Sidecar:public Camera
 
 		// called when variable is changed
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
+		virtual void setExposure (double exp);
 
 		virtual int startExposure ();
 		virtual long isExposing ();
@@ -484,6 +485,15 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	}
 	
 	return 0;
+}
+
+void Sidecar::setExposure (double exp)
+{
+	std::istringstream *is = NULL;
+	sidecarConn->callMethod ("SetFSParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), exp, nRamps->getValueInteger (), &is);
+	delete is;
+
+	Camera::setExposure (exp);
 }
 
 int Sidecar::startExposure ()
