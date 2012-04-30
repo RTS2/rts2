@@ -1490,7 +1490,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize = chipByteSize ();
 
-	if (currentImageData != -1 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
 		if (isnan (timeReadoutStart))
