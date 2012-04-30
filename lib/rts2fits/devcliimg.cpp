@@ -240,7 +240,16 @@ void DevClientCameraImage::fitsData (const char *fn)
 
 	try
 	{
-		img->openFile (fn, false, false);
+		img->openFile (fn, true, false);
+
+		std::string abs = std::string (actualImage->image->getAbsoluteFileName ());
+		actualImage->image->deleteImage ();
+		delete actualImage;
+		actualImage = NULL;
+
+		img->copyImage (abs.c_str ());
+		img->closeFile ();
+		img->openFile (abs.c_str (), false, false);
 		img->loadChannels ();
 		// convert FITS to data
 		fits2DataChannels (img, data);
