@@ -238,11 +238,9 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (nDropFrames, "n_drop_frames", "number of drop frames", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	nDropFrames->setValueInteger(1);
 	createValue (nRamps, "n_ramps", "number of ramps", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
-    nRamps->setValueInteger(1);
+	nRamps->setValueInteger(1);
 
-
-
-    createValue (gain, "gain", "set the gain. 0-15", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (gain, "gain", "set the gain. 0-15", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	gain->addSelVal ("0   -3dB, small Cin");
 	gain->addSelVal ("1    0dB, small Cin");
 	gain->addSelVal ("2    3dB, small Cin");
@@ -261,12 +259,12 @@ Sidecar::Sidecar (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	gain->addSelVal ("15  27dB, large Cin");
 	gain->setValueInteger(13);
 
-    createValue (ktcRemoval, "preamp_ktc_removal", "turn on (1) or off (0) the preamp KTC removal", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (ktcRemoval, "preamp_ktc_removal", "turn on (1) or off (0) the preamp KTC removal", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	ktcRemoval->addSelVal ("0 Off");
 	ktcRemoval->addSelVal ("1 On");
 	ktcRemoval->setValueInteger(0);
     
-    createValue (warmTest, "warm_test", "set for warm (1) or cold (0)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (warmTest, "warm_test", "set for warm (1) or cold (0)", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	warmTest->addSelVal ("0 Cold");
 	warmTest->addSelVal ("1 Warm");
 	warmTest->setValueInteger(0);
@@ -405,7 +403,7 @@ int Sidecar::info ()
 
 int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-    std::istringstream *is = NULL;
+	std::istringstream *is = NULL;
 	if (old_value == fsMode)
 	{
 		// this will send SetFSMode(0) (or 1..) on sidecar connection
@@ -415,35 +413,35 @@ int Sidecar::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 		return 0;
 	}
 	
-    else if (old_value == nResets)
+	else if (old_value == nResets)
 	{
 		sidecarConn->callMethod ("SetRampParam", new_value->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
 	
-    else if (old_value == nReads)
+	else if (old_value == nReads)
 	{
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), new_value->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
 
-    else if (old_value == nGroups)
+	else if (old_value == nGroups)
 	{
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), new_value->getValueInteger (), nDropFrames->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
 
-    else if (old_value == nDropFrames)
+	else if (old_value == nDropFrames)
 	{
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), new_value->getValueInteger (), nRamps->getValueInteger (), &is);
 		delete is;
 		return 0;
 	}
 
-    else if (old_value == nRamps)
+	else if (old_value == nRamps)
 	{
 		sidecarConn->callMethod ("SetRampParam", nResets->getValueInteger (), nReads->getValueInteger (), nGroups->getValueInteger (), nDropFrames->getValueInteger (), new_value->getValueInteger (), &is);
 		delete is;
@@ -535,7 +533,7 @@ int Sidecar::doReadout ()
 	// pass it as FITS data..
 
 	std::ostringstream os;
-	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << fileSuffix->getValueString ();
+	os << imageDir->getValueString () << "/" << lastDataDir->getValueString () << "/" << fileSuffix->getValueString ();
 
 	fitsDataTransfer (os.str ().c_str ());
 
