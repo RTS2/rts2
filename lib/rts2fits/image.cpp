@@ -221,11 +221,6 @@ Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const
 
 	initData ();
 
-	targetId = currTarget->getTargetID ();
-	targetIdSel = currTarget->getObsTargetID ();
-	targetType = currTarget->getTargetType ();
-	obsId = currTarget->getObsId ();
-	imgId = currTarget->getNextImgId ();
 	setExposureStart (in_exposureStart);
 
 	setCameraName (camera->getName ());
@@ -248,23 +243,7 @@ Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const
 
 	writeExposureStart ();
 
-	setValue ("TARGET", targetId, "target id");
-	setValue ("TARSEL", targetIdSel, "selector target id");
-	setValue ("TARTYPE", targetType, "target type");
-	setValue ("OBSID", obsId, "observation id");
-	setValue ("IMGID", imgId, "image id");
-	setValue ("PROC", 0, "image processing status");
-
-	if (currTarget->getTargetName ())
-	{
-		targetName = new char[strlen (currTarget->getTargetName ()) + 1];
-		strcpy (targetName, currTarget->getTargetName ());
-		setValue ("OBJECT", currTarget->getTargetName (), "target name");
-	}
-	else
-	{
-		setValue ("OBJECT", "(null)", "target name was null");
-	}
+	writeTargetHeaders (currTarget);
 
 	setValue ("CCD_NAME", camera->getName (), "camera name");
 
@@ -468,6 +447,33 @@ void Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_s
 	targetName = NULL;
 	obsId = _obs_id;
 	imgId = _img_id;
+}
+
+void Image::writeTargetHeaders (Rts2Target *target)
+{
+	targetId = target->getTargetID ();
+	targetIdSel = target->getObsTargetID ();
+	targetType = target->getTargetType ();
+	obsId = target->getObsId ();
+	imgId = target->getNextImgId ();
+
+	setValue ("TARGET", targetId, "target id");
+	setValue ("TARSEL", targetIdSel, "selector target id");
+	setValue ("TARTYPE", targetType, "target type");
+	setValue ("OBSID", obsId, "observation id");
+	setValue ("IMGID", imgId, "image id");
+	setValue ("PROC", 0, "image processing status");
+
+	if (target->getTargetName ())
+	{
+		targetName = new char[strlen (target->getTargetName ()) + 1];
+		strcpy (targetName, target->getTargetName ());
+		setValue ("OBJECT", target->getTargetName (), "target name");
+	}
+	else
+	{
+		setValue ("OBJECT", "(null)", "target name was null");
+	}
 }
 
 void Image::openFile (const char *_filename, bool readOnly, bool _verbose)

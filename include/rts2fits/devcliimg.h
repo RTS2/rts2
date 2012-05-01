@@ -114,6 +114,14 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		bool writeConnection;
 		bool writeRTS2Values;
 
+		/**
+		 * Write extra data to FITS transported image.
+		 */
+		virtual void writeToFitsTransfer (Image *img)
+		{
+			connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
+		}
+
 	private:
 		/**
 		 * Convert FITS image to DataChannels.

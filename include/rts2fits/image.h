@@ -129,6 +129,7 @@ class Image:public FitsFile
 		void getTargetHeaders ();
 
 		void setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype);
+		void writeTargetHeaders (Rts2Target *target);
 
 		virtual int toQue ();
 		virtual int toAcquisition ();

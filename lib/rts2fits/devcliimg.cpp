@@ -256,7 +256,8 @@ void DevClientCameraImage::fitsData (const char *fn)
 
 		images[0] = new CameraImage (img, getMaster ()->getNow (), prematurelyReceived);
 		images[0]->setExEnd (getMaster ()->getNow ());
-		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
+		writeToFitsTransfer (img);
+
 		fullDataReceived (0, data);
 	}
 	catch (rts2core::Error &ex)

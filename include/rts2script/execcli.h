@@ -114,15 +114,22 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		virtual void queCommandFromScript (rts2core::Command * com) { queCommand (com); }
 
-		virtual int getFailedCount () { return rts2core::DevClient::getFailedCount (); }
+		virtual int getFailedCount () { return rts2image::DevClientCameraImage::getFailedCount (); }
 
-		virtual void clearFailedCount () { rts2core::DevClient::clearFailedCount (); }
+		virtual void clearFailedCount () { rts2image::DevClientCameraImage::clearFailedCount (); }
 
 		virtual void idle ();
 
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
 		virtual void readoutEnd ();
+
+		virtual void writeToFitsTransfer (rts2image::Image *img)
+		{
+			rts2image::DevClientCameraImage::writeToFitsTransfer (img);
+			if (currentTarget)
+				img->writeTargetHeaders (currentTarget);
+		}
 
 		int imgCount;
 
