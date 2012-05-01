@@ -409,7 +409,6 @@ void ConnExe::processCommand (char *cmd)
 				throw rts2core::Error (std::string ("value is not double stat") + vname);
 			testWritableVariable (cmd, vflags, v);
 			vds = (rts2core::ValueDoubleStat *) v;
-			vds->clearStat ();
 		}
 		else
 		{

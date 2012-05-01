@@ -35,6 +35,9 @@ if __name__ == '__main__':
 	parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose')
 	parser.add_option('-G',help='get value from JSON server',action='append',dest='get_array')
 	parser.add_option('--get-int',help='get value from JSON server as integer value',action='append',dest='get_int_array')
+	parser.add_option('--cmd',help='run command. Device must be specified with --device otion',action='append',dest='cmd_array')
+	parser.add_option('--run-script',help='run script on device. Device must be specified with --device option',action='store',dest='runscript')
+	parser.add_option('--device',help='device for cmd and run-script options',action='store',dest='device')
 
 	(options,args)=parser.parse_args()
 
@@ -52,6 +55,17 @@ if __name__ == '__main__':
 		for g in options.get_int_array:
 			device,value = g.split('.')
 			print int(j.loadJson('/api/get',{'d':device})['d'][value])
+	if options.cmd_array:
+		if not (options.device):
+			print >>sys.stderr,'--device argument must be specified with --cmd option'
+			sys.exit(1)
+		for g in options.cmd_array:
+			print 'executing command ',g,':',j.loadJson('/api/cmd',{'d':options.device,'c':g})
+	if options.runscript:
+		if not (options.device):
+			print >>sts.stderr,'--device argument must be specified with --run-script option'
+			sys.exit(1)
+		print 'running script',options.runscript,j.loadJson('/api/runscript',{'d':options.device,'s':options.runscript})
 
 	if not(options.get_array) and not(options.get_int_array):
 	  	for a in args:
