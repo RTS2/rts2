@@ -236,26 +236,26 @@ if ( $continue == 1 ) then
 		endif
 	endif
 
-	set exposure_autoadjust=`$RTS2/bin/rts2-json -G XMLPRC.exposure_adjust`
-	if ( ${?exposure) &amp;&amp; $exposure_autoadjust == 1 ) then
+	set exposure_autoadjust=`$RTS2/bin/rts2-json -G XMLRPC.exposure_adjust`
+	if ( ${?exposure} &amp;&amp; $exposure_autoadjust == 1 ) then
 		set starfl=`$RTS2/bin/rts2-json --get-int IMGP.flux_A`
 		set starmin=`$RTS2/bin/rts2-json --get-int XMLRPC.starfl_min`
 		set starmax=`$RTS2/bin/rts2-json --get-int XMLRPC.starfl_max`
 		if ( $starfl &lt; $starmin ) then
-			rts2-logcom 'Lovering exposure time by 5 seconds'
-			set exposure=`echo $exposure | awk '{ printf "%i", $1 - 5 }'`
-		endif
-		if ( $starfl &gt; $starmax ) then
 			rts2-logcom 'Expanding exposure time by 5 seconds'
 			set exposure=`echo $exposure | awk '{ printf "%i", $1 + 5 }'`
+		endif
+		if ( $starfl &gt; $starmax ) then
+			rts2-logcom 'Shortening exposure time by 5 seconds'
+			set exposure=`echo $exposure | awk '{ printf "%i", $1 - 5 }'`
 		endif
 	else
 		set exposure=<xsl:value-of select='@length'/>
 	endif
 
-	rts2-logcom "Starting $actual_filter exposure $imgid (<xsl:value-of select='@length'/> sec) at `date`"
+	rts2-logcom "Starting $actual_filter exposure $imgid ($exposure sec) at `date`"
 	<xsl:copy-of select='$abort'/>
-	ccd gowait <xsl:value-of select='@length'/>
+	ccd gowait $exposure
 	<xsl:copy-of select='$abort'/>
 	dstore
 	set fwhm2=`$xmlrpc --quiet -G IMGP.fwhm_KCAM_2`
@@ -312,6 +312,9 @@ endif
 if ( $continue == 1 ) then
 	<xsl:copy-of select='$printd'/> "before filter"
 	source $RTS2/bin/rts2_tele_filter <xsl:value-of select='@operands'/>
+	if ( $? == 1 ) then
+		unset exposure
+	endif	
 	set actual_filter="<xsl:value-of select='@operands'/>"
 	<xsl:copy-of select='$printd'/> "after filter"
 endif
