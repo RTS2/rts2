@@ -395,6 +395,7 @@ void ConnExe::processCommand (char *cmd)
 				throw rts2core::Error ("invalid double value");
 			vds->addValue (vd, num);
 		}
+		vds->calculate ();
 		((rts2core::Daemon *) master)->sendValueAll (vds);
 	}
 	else if (!strcasecmp (cmd, "stat_add"))
@@ -425,9 +426,9 @@ void ConnExe::processCommand (char *cmd)
 				throw rts2core::Error ("invalid double value");
 			vds->addValue (vd, num);
 		}
+		vds->calculate ();
 		((rts2core::Daemon *) master)->sendValueAll (vds);
 	}
-
 	else
 	{
 		throw rts2core::Error (std::string ("unknow command ") + cmd);
