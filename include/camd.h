@@ -324,8 +324,16 @@ class Camera:public rts2core::ScriptDevice
 		 */
 		void addFilters (char *opt);
 
+		/**
+		 * Add filter offsets from filterOffsets map.
+		 * Run through the map, check which filter offsets are available, and add them from the map or set them to 0 if offsets are not filled in.
+		 */
+		void addFilterOffsets ();
+
 		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;
+
+		rts2core::ValueString *filterOffsetFile;
 
 		// for multiple filter wheels
 		std::list <FilterVal> camFilterVals;
@@ -1145,6 +1153,10 @@ class Camera:public rts2core::ScriptDevice
 		void setFilterOffsets (char *opt);
 
 		bool filterMoving ();
+
+		void setFilterOffsetFile (const char *filename);
+
+		std::map <std::string, double> filterOffsets;
 };
 
 }

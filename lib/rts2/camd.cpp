@@ -40,6 +40,7 @@
 #define OPT_WHEEL             OPT_LOCAL + 404
 #define OPT_WITHSHM           OPT_LOCAL + 405
 #define OPT_FILTER_OFFSETS    OPT_LOCAL + 406
+#define OPT_OFFSETS_FILE      OPT_LOCAL + 407
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -392,6 +393,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	currentImageData = -1;
 	currentImageTransfer = TCPIP;
 
+	filterOffsetFile = NULL;
+
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
 	calculateStatistics->addSelVal ("only statistics");
@@ -473,6 +476,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
 	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
 	addOption (OPT_FILTER_OFFSETS, "filter-offsets", 1, "camera filter offsets, separated with :");
+	addOption (OPT_OFFSETS_FILE, "offsets-file", 1, "configuration file for camera filter offsets. Filter names are separated with space from filter offsets");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
@@ -663,6 +667,15 @@ int Camera::processOption (int in_opt)
 		case OPT_FILTER_OFFSETS:
 			createFilter ();
 			setFilterOffsets (optarg);
+			break;
+		case OPT_OFFSETS_FILE:
+			if (filterOffsetFile)
+			{
+				std::cerr << "the program does not accept two filter offsets files" << std::endl;
+				return -1;
+			}
+			createValue (filterOffsetFile, "offset_file", "filter offset file", false, RTS2_VALUE_WRITABLE);
+			setFilterOffsetFile (optarg);
 			break;
 		case 'e':
 			exposure->setValueCharArr (optarg);
@@ -1056,6 +1069,27 @@ void Camera::addFilters (char *opt)
 	}
 	if (o != s)
 		camFilterVal->addSelVal (s);
+	addFilterOffsets ();
+}
+
+void Camera::addFilterOffsets ()
+{
+	if (filterOffsets.size () == 0)
+		return;
+	camFilterOffsets->clear ();
+	for (std::vector < rts2core::SelVal >::iterator iter = camFilterVal->selBegin (); iter != camFilterVal->selEnd (); iter++)
+	{
+		std::map <std::string, double>::iterator fo = filterOffsets.find (iter->name);
+		if (fo != filterOffsets.end ())
+		{
+			camFilterOffsets->addValue (fo->second);
+		}
+		else
+		{
+			camFilterOffsets->addValue (0);
+		}
+	}
+	sendValueAll (camFilterOffsets);
 }
 
 void Camera::checkExposures ()
@@ -1216,6 +1250,7 @@ void Camera::deviceReady (rts2core::Connection * conn)
 					if (iter == wheelDevices.begin ())
 					{
 						camFilterVal->duplicateSelVals ((rts2core::ValueSelection *) val);
+						addFilterOffsets ();
 						// sends filter metainformations to all connected devices
 						updateMetaInformations (camFilterVal);
 					}
@@ -1761,4 +1796,41 @@ bool Camera::filterMoving ()
 			return true;
 	}
 	return false;
+}
+
+void Camera::setFilterOffsetFile (const char *filename)
+{
+	filterOffsets.clear ();
+	std::ifstream ifs (filename);
+	int ln = 1;
+	while (!ifs.fail ())
+	{
+		std::string line;
+		std::getline (ifs, line);
+		if (ifs.fail ())
+			break;
+		std::string fn;
+		double fo;
+		std::istringstream iifs (line);
+		iifs >> fn >> fo;
+		if (iifs.fail ())
+		{
+			std::ostringstream erros;
+			erros << "cannot parse filter offsets file " << filename << " on line " << ln;
+			throw rts2core::Error (erros.str ());
+		}
+		std::map <std::string, double>::iterator fit = filterOffsets.find (fn);
+		if (fit != filterOffsets.end ())
+			throw rts2core::Error (std::string ("multiple lines for filter ") + fn);
+		filterOffsets[fn] = fo;
+		ln++;
+	}
+
+	if (!ifs.eof ())
+	{
+		throw rts2core::Error (std::string ("cannot parse filter file ") + strerror (errno));
+	}
+
+
+	filterOffsetFile->setValueCharArr (filename);
 }
