@@ -113,14 +113,14 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axmaxv[i]->setValueLong (2500);
+		axmaxv[i]->setValueLong (1000);
 		axbasev[i]->setValueLong (0);
 
 		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axacceleration[i]->setValueLong (5000);
-		axdeceleration[i]->setValueLong (5000);
+		axacceleration[i]->setValueLong (1000);
+		axdeceleration[i]->setValueLong (1000);
 
 		createValue (axenabled[i], (prs + "ENB").c_str (), "axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		axenabled[i]->setValueBool (true);
@@ -186,7 +186,7 @@ int NIRatir::initHardware ()
 	{
 		flex_configure_stepper_output (NIMC_AXIS1 + i, NIMC_STEP_AND_DIRECTION, NIMC_ACTIVE_HIGH, 0);
 		flex_load_counts_steps_rev (NIMC_AXIS1 + i, NIMC_STEPS, 24);
-		flex_config_inhibit_output (NIMC_AXIS1 + i, 1, 1, 0);
+		flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
 
 		flex_load_base_vel (NIMC_AXIS1 + i, axbasev[i]->getValueInteger ());
 		flex_load_velocity (NIMC_AXIS1 + i, axmaxv[i]->getValueInteger (), 0xff);
@@ -199,6 +199,8 @@ int NIRatir::initHardware ()
 	//std::cout << "entering adcs" << std::endl;
 	//flex_enable_adcs (0xf0);
 	//std::cout << "exiting adcs" << std::endl;
+	
+	//flex_set_port_direction (NIMC_IO_PORT1, 0);
 
 	return 0;	
 }
@@ -279,13 +281,16 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 			}
 			if (((rts2core::ValueBool *) new_value)->getValueBool ())
 				enable_map |= (0x02 << i);
+			//flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
 			flex_enable_axis (enable_map, NIMC_PID_RATE_250);
+			flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
 			logStream (MESSAGE_DEBUG) << "called flex_enable with 0x" << std::hex << std::setw (2) << enable_map << sendLog;
 			if (((rts2core::ValueBool *) new_value)->getValueBool () == false)
 			{
 				logStream (MESSAGE_DEBUG) << "call stop motion with kill_stop" << sendLog;
+				flex_config_inhibit_output (NIMC_AXIS1 + i, 1, 1, 0);
 				flex_stop_motion (NIMC_AXIS1 + 1, NIMC_KILL_STOP, 0x02);
-			}	
+			}
 			return 0;
 		}
 	}
