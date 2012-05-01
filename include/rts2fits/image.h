@@ -114,8 +114,14 @@ class Image:public FitsFile
 		 */
 		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite = false);
 
-		// create image in que
-		Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart);
+		/**
+		 * Create image for a given target.
+		 *
+		 * 
+		 *
+		 */
+		Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart, const char *expand_path = NULL, bool overwrite = false);
+
 		virtual ~ Image (void);
 
 		virtual void openFile (const char *_filename = NULL, bool readOnly = false, bool _verbose = false);
@@ -129,7 +135,7 @@ class Image:public FitsFile
 		void getTargetHeaders ();
 
 		void setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype);
-		void writeTargetHeaders (Rts2Target *target);
+		void writeTargetHeaders (Rts2Target *target, bool set_values = true);
 
 		virtual int toQue ();
 		virtual int toAcquisition ();

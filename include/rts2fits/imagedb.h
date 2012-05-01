@@ -60,7 +60,7 @@ class ImageDb:public Image
 	public:
 		ImageDb ();
 		ImageDb (Image * in_image);
-		ImageDb (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStart);
+		ImageDb (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStart, const char *expand_path = NULL, bool overwrite = false);
 		ImageDb (int in_obs_id, int in_img_id);
 		ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
 

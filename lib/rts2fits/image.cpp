@@ -215,7 +215,7 @@ Image::Image (const char *in_expression, int in_expNum, const struct timeval *in
 	writeExposureStart ();
 }
 
-Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart):FitsFile (in_exposureStart)
+Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const struct timeval *in_exposureStart, const char *expand_path, bool overwrite):FitsFile (in_exposureStart)
 {
 	std::string in_filename;
 
@@ -228,8 +228,18 @@ Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const
 	mountName = NULL;
 	focName = NULL;
 
+	targetId = currTarget->getTargetID ();
+	targetIdSel = currTarget->getObsTargetID ();
+	targetType = currTarget->getTargetType ();
+	obsId = currTarget->getObsId ();
+	imgId = currTarget->getNextImgId ();
+
 	isAcquiring = currTarget->isAcquiring ();
-	if (isAcquiring)
+	if (expand_path != NULL)
+	{
+		in_filename = expandPath (expand_path);
+	}
+	else if (isAcquiring)
 	{
 		// put acqusition images to acqusition que
 		in_filename = expandPath ("%b/acqusition/que/%c/%f");
@@ -239,11 +249,11 @@ Image::Image (Rts2Target * currTarget, rts2core::DevClientCamera * camera, const
 		in_filename = expandPath (rts2core::Configuration::instance ()->observatoryQuePath ());
 	}
 
-	createImage (in_filename);
+	createImage (in_filename, overwrite);
 
 	writeExposureStart ();
 
-	writeTargetHeaders (currTarget);
+	writeTargetHeaders (currTarget, false);
 
 	setValue ("CCD_NAME", camera->getName (), "camera name");
 
@@ -449,13 +459,16 @@ void Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_s
 	imgId = _img_id;
 }
 
-void Image::writeTargetHeaders (Rts2Target *target)
+void Image::writeTargetHeaders (Rts2Target *target, bool set_values)
 {
-	targetId = target->getTargetID ();
-	targetIdSel = target->getObsTargetID ();
-	targetType = target->getTargetType ();
-	obsId = target->getObsId ();
-	imgId = target->getNextImgId ();
+	if (set_values)
+	{
+		targetId = target->getTargetID ();
+		targetIdSel = target->getObsTargetID ();
+		targetType = target->getTargetType ();
+		obsId = target->getObsId ();
+		imgId = target->getNextImgId ();
+	}
 
 	setValue ("TARGET", targetId, "target id");
 	setValue ("TARSEL", targetIdSel, "selector target id");

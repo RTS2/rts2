@@ -43,9 +43,18 @@ rts2image::Image * DevClientCameraExecDb::createImage (const struct timeval *exp
 {
 	imgCount++;
 	exposureScript = getScript ();
-	if (currentTarget)
+	if (expandPathString.length () > 0)
+	{
+		rts2image::ImageDb *ret = new rts2image::ImageDb (currentTarget, this, expStart, expandPathString.c_str (), getOverwrite ());
+		ret->setWriteConnnection (writeConnection, writeRTS2Values);
+		nullExpandPath ();
+		return ret;
+	}
+	else if (currentTarget)
+	{
 		// create image based on target type and shutter state
 		return new rts2image::ImageDb (currentTarget, this, expStart);
+	}
 	logStream (MESSAGE_ERROR) << "DevClientCameraExecDb::createImage creating no-target image" << sendLog;
 	return NULL;
 }

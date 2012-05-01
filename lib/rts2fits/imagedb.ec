@@ -78,8 +78,7 @@ ImageDb::ImageDb (Image * in_image): Image (in_image)
 {
 }
 
-ImageDb::ImageDb (Rts2Target *currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStart) :
-Image (currTarget, camera, expStart)
+ImageDb::ImageDb (Rts2Target *currTarget, rts2core::DevClientCamera * camera, const struct timeval *expStart, const char *expand_path, bool overwrite) : Image (currTarget, camera, expStart, expand_path, overwrite)
 {
 	initDbImage ();
 }

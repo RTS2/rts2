@@ -140,9 +140,10 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		virtual bool canEndScript ();
 
 		bool getOverwrite () { return expandOverwrite; }
+
+		std::string expandPathString;
 	private:
 		rts2core::ValueString *expandPathValue;
-		std::string expandPathString;
 		bool expandOverwrite;
 		bool waitForExposure;
 		bool waitMetaData;
