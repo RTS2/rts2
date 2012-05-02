@@ -20,6 +20,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>

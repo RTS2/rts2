@@ -20,6 +20,7 @@
 #include "connection.h"
 #include "data.h"
 
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
