@@ -406,6 +406,7 @@ bool DevClientCameraImage::waitForMetaData ()
 
 void DevClientCameraImage::writeToFitsTransfer (Image *img)
 {
+	img->setValue ("CCD_NAME", getConnection ()->getName (), "camera name");
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
 	img->writeExposureStart ();
 }
