@@ -639,6 +639,8 @@ class Image:public FitsFile
 			writeRTS2Values = rts2_write;
 		}
 
+		int writeExposureStart ();
+
 	protected:
 		char *cameraName;
 		char *mountName;
@@ -652,8 +654,6 @@ class Image:public FitsFile
 		double img_err;
 
 		int createImage (bool _overwrite = false);
-
-		int writeExposureStart ();
 
 		// expand expression to image path
 		virtual std::string expandVariable (char expression, size_t beg, bool &replaceNonAlpha);

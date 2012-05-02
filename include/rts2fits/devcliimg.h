@@ -117,10 +117,7 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		/**
 		 * Write extra data to FITS transported image.
 		 */
-		virtual void writeToFitsTransfer (Image *img)
-		{
-			connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
-		}
+		virtual void writeToFitsTransfer (Image *img);
 
 	private:
 		/**

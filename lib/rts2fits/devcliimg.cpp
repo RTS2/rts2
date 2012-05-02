@@ -404,6 +404,12 @@ bool DevClientCameraImage::waitForMetaData ()
 	return false;
 }
 
+void DevClientCameraImage::writeToFitsTransfer (Image *img)
+{
+	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
+	img->writeExposureStart ();
+}
+
 DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection)
 {
 }
