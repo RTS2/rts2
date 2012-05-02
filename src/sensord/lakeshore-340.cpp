@@ -163,6 +163,14 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 		(*(loops[i]))["CSET"].push_back (loopValue (vs, "CSET_IN", "input, loop", j, true, RTS2_VALUE_WRITABLE));
 		vs->addSelVal ("A");
 		vs->addSelVal ("B");
+		vs->addSelVal ("C1");
+		vs->addSelVal ("C2");
+		vs->addSelVal ("C3");
+		vs->addSelVal ("C4");
+		vs->addSelVal ("D1");
+		vs->addSelVal ("D2");
+		vs->addSelVal ("D3");
+		vs->addSelVal ("D4");
 
 		(*(loops[i]))["CSET"].push_back (loopValue (vs, "CSET_UN", "units, loop", j, true, RTS2_VALUE_WRITABLE));
 		vs->addSelVal ("Kelvin");

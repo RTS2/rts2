@@ -1,6 +1,7 @@
 /* 
  * NI-Motion driver card support (PCI version).
  * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ * Copyright (C) 2012 Christopher Klein, UC Berkeley
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -76,15 +77,15 @@ class NIRatir:public Sensor
 	private:
 		const char *boardPCI;
 
-		rts2core::ValueLong *axtarget[MAX_AXIS];
+		rts2core::ValueDoubleMinMax *axtarget[MAX_AXIS];
 		rts2core::ValueLong *axposition[MAX_AXIS];
 
 		rts2core::ValueLong *axvelocity[MAX_AXIS];
-		rts2core::ValueLong *axmaxv[MAX_AXIS];
-		rts2core::ValueLong *axbasev[MAX_AXIS];
+		rts2core::ValueDoubleMinMax *axmaxv[MAX_AXIS];
+		rts2core::ValueDoubleMinMax *axbasev[MAX_AXIS];
 
-		rts2core::ValueLong *axacceleration[MAX_AXIS];
-		rts2core::ValueLong *axdeceleration[MAX_AXIS];
+		rts2core::ValueDoubleMinMax *axacceleration[MAX_AXIS];
+		rts2core::ValueDoubleMinMax *axdeceleration[MAX_AXIS];
 
 		rts2core::ValueBool *axenabled[MAX_AXIS];
 
@@ -103,24 +104,24 @@ NIRatir::NIRatir (int argc, char **argv):Sensor (argc, argv)
 		std::ostringstream pr;
 		pr << "AX" << (i + 1) << "_";
 		std::string prs = pr.str ();
-		createValue (axtarget[i], (prs + "TAR").c_str (), "axis target position", false, RTS2_VALUE_WRITABLE);
-		axtarget[i]->setValueLong (0);
+		createValue (axtarget[i], (prs + "TAR").c_str (), "axis target position", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+		// axtarget[i]->setValueLong (0); // commented out when changed to ValueDoubleMinMax
 
-		createValue (axposition[i], (prs + "POS").c_str (), "current axis position", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+		createValue (axposition[i], (prs + "POS").c_str (), "current axis position", true, RTS2_VALUE_AUTOSAVE);
 
 		createValue (axvelocity[i], (prs + "VEL").c_str (), "axis current velocity", false);
 
 		createValue (axmaxv[i], (prs + "MAX_VEL").c_str (), "axis maximal velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axbasev[i], (prs + "BASE_VEL").c_str (), "axis base velocity", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axmaxv[i]->setValueLong (1000);
-		axbasev[i]->setValueLong (0);
+		// axmaxv[i]->setValueLong (1000);
+		// axbasev[i]->setValueLong (0);
 
 		createValue (axacceleration[i], (prs + "ACC").c_str (), "axis acceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 		createValue (axdeceleration[i], (prs + "DEC").c_str (), "axis deceleration", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 
-		axacceleration[i]->setValueLong (1000);
-		axdeceleration[i]->setValueLong (1000);
+		// axacceleration[i]->setValueLong (1000);
+		// axdeceleration[i]->setValueLong (1000);
 
 		createValue (axenabled[i], (prs + "ENB").c_str (), "axis enabled", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 		axenabled[i]->setValueBool (true);
@@ -179,6 +180,7 @@ int NIRatir::initHardware ()
 	flex_enable_axis (0, 0);
 	for (int i = 0; i < MAX_AXIS; i++)
 		flex_config_axis (NIMC_AXIS1 + i, 0, 0, NIMC_STEP_OUTPUT1 + i, 0);
+		
 	flex_enable_axis (0x1e, NIMC_PID_RATE_250);
 	logStream (MESSAGE_DEBUG) << "called flex enable with 0x1e" << sendLog;
 
@@ -186,6 +188,8 @@ int NIRatir::initHardware ()
 	{
 		flex_configure_stepper_output (NIMC_AXIS1 + i, NIMC_STEP_AND_DIRECTION, NIMC_ACTIVE_HIGH, 0);
 		flex_load_counts_steps_rev (NIMC_AXIS1 + i, NIMC_STEPS, 24);
+		
+		//Enable at start up
 		flex_config_inhibit_output (NIMC_AXIS1 + i, 0, 0, 0);
 
 		flex_load_base_vel (NIMC_AXIS1 + i, axbasev[i]->getValueInteger ());
@@ -201,7 +205,7 @@ int NIRatir::initHardware ()
 	//std::cout << "exiting adcs" << std::endl;
 	
 	//flex_set_port_direction (NIMC_IO_PORT1, 0);
-
+    
 	return 0;	
 }
 
@@ -289,7 +293,7 @@ int NIRatir::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 			{
 				logStream (MESSAGE_DEBUG) << "call stop motion with kill_stop" << sendLog;
 				flex_config_inhibit_output (NIMC_AXIS1 + i, 1, 1, 0);
-				flex_stop_motion (NIMC_AXIS1 + 1, NIMC_KILL_STOP, 0x02);
+				// flex_stop_motion (NIMC_AXIS1 + i, NIMC_KILL_STOP, 0x02);
 			}
 			return 0;
 		}
