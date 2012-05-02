@@ -144,6 +144,9 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
       "high_on(files,name);\n"
     "}\n"
   "}\n"
+  "else if (document.forms['download'].elements['act'][2].checked)\n"
+  "{ window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/fits' + escape(name),'FITS file');\n"
+  "}\n"
   "else\n"
   "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + escape(name) + '?lb=" << label_encoded << "&q=" << quantiles << "&chan=" << chan << "', 'Preview');\n"
     "w2.focus ();"
@@ -167,9 +170,9 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded, floa
 
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, int c, const char *label)
 {
-	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
-	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
-	<< "<form name='label' method='get' action='./'>"
+	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input><input type='radio' name='act' value='f'>Single FITS file</input>\n"
+	"<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
+	"<form name='label' method='get' action='./'>"
 #ifdef CHANNELS
 	"\nChannels <select name='chan'><option value='-1'";
 
