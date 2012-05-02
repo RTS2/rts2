@@ -98,10 +98,10 @@ endif
 		rts2-logcom "Autoguider started, but star still not acquired. FWHMS $fwhms SEG $guide_seg isguiding $isguiding"
 		@ retr --
 	end
+	@ nextautog = $nowdate + 1200
 	if ( $retr &gt; 0 ) then
 		rts2-logcom "Successfully switched autoguider to ON"
 	else
-		@ nextautog = $nowdate + 1200
 		set textdate = `awk 'BEGIN { print strftime("%T"'",$nextautog); }"`
 		rts2-logcom "Autoguider command failed, will try again on $textdate"
 	endif
