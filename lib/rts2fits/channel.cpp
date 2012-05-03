@@ -20,6 +20,7 @@
 #include "rts2fits/channel.h"
 #include "error.h"
 #include "imghdr.h"
+#include "nan.h"
 
 #include <malloc.h>
 #include <string.h>
