@@ -20,6 +20,7 @@
 #include "app.h"
 #include "configuration.h"
 #include "userlogins.h"
+#include "error.h"
 
 #include <iostream>
 
@@ -133,7 +134,14 @@ int UserApp::listUser ()
 
 int UserApp::newUser ()
 {
-	logins.load (userfile);
+	try
+	{
+		logins.load (userfile);
+	}
+	catch (rts2core::Error &er)
+	{
+		std::cerr << er << std::endl;
+	}
 
 	std::string passwd;
 

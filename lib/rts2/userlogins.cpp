@@ -22,7 +22,8 @@
 #include "userlogins.h"
 #include "utilsfunc.h"
 
-#include "unistd.h"
+#include <unistd.h>
+#include <errno.h>
 
 using namespace rts2core;
 
@@ -50,6 +51,12 @@ void UserLogins::load (const char *filename)
 		getline (ifs, line);
 		if (ifs.eof())
 			break;
+		if (ifs.fail ())
+		{
+			std::ostringstream os;
+			os << "cannot read from file " << filename << " line " << ln << ": " << strerror (errno);
+			throw rts2core::Error (os.str ());
+		}
 		ln++;
 		std::vector <std::string> login = SplitStr (line, ":");
 		if (login.size () == 2)
