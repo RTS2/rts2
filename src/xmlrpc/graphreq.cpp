@@ -104,11 +104,11 @@ void Graph::plotValue (int valId, double from, double to, XmlRpc::HttpParams *pa
 {
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
-	rts2db::Recval *rv = &(rs.at(valId));
-	if (rv == NULL)
+	rts2db::RecvalsSet::iterator iter = rs.find(valId);
+	if (iter == rs.end ())
 		throw rts2core::Error ("Cannot find device/value pair with given name");
 
-	plotValue (rv, from, to, params, response_type, response, response_length);
+	plotValue (&(iter->second), from, to, params, response_type, response, response_length);
 }
 
 void Graph::plotValue (rts2db::Recval *rv, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
