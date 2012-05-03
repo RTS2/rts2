@@ -316,6 +316,7 @@ class Camera:public rts2core::ScriptDevice
 
 		// buffer used to read data
 		char* getDataBuffer (int chan);
+		char* getDataTop (int chan);
 
 		/**
 		 * Add : separated filters from command line (usually -F argument).
@@ -913,6 +914,7 @@ class Camera:public rts2core::ScriptDevice
 		size_t readoutPixels;
 		// data buffers - separated for each channel
 		char** dataBuffers;
+		size_t *dataWritten;
 
 		// readout - ideally time for data->computer. Camera driver should start markReadoutStart and markReadoutEnd to mark start/end times
 		double timeReadoutStart;

@@ -372,7 +372,7 @@ int Dummy::doReadout ()
 			for (unsigned int ch = 0; ch < channels->size (); ch++)
 			{
 				size_t s = usedSize - written[ch] < callReadoutSize->getValueLong () ? usedSize - written[ch] : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (getDataBuffer (ch) + written[ch], s, nch);
+				ret = sendReadoutData (getDataTop (ch), s, nch);
 
 				if (ret < 0)
 					return ret;
@@ -416,7 +416,7 @@ int Dummy::doReadout ()
 			if (written[0] < (ssize_t) chipByteSize ())
 			{
 				size_t s = (ssize_t) chipByteSize () - written[0] < callReadoutSize->getValueLong () ? chipByteSize () - written[0] : callReadoutSize->getValueLong ();
-				ret = sendReadoutData (getDataBuffer (0) + written[0], s, 0);
+				ret = sendReadoutData (getDataTop (0), s, 0);
 
 				if (ret < 0)
 					return ret;
@@ -432,7 +432,7 @@ int Dummy::doReadout ()
 			int fits_status = 0;
 
 			fits_resize_img (image->getFitsFile (), RTS2_DATA_USHORT, 2, sizes, &fits_status);
-			fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataBuffer (0), &fits_status);
+			fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataTop (0), &fits_status);
 			if (fits_status)
 			{
 				logStream (MESSAGE_ERROR) << "cannot write FITS file" << sendLog;
@@ -472,7 +472,7 @@ void Dummy::generateImage (size_t usedSize, int chan)
 	int ymax = ceil (sy * 10);
 	sy *= sy;
 
-	uint16_t *d = (uint16_t *) getDataBuffer (chan);
+	uint16_t *d = (uint16_t *) getDataTop (chan);
 
 	for (unsigned int i = 0; i < usedSize; i++, d++)
 	{

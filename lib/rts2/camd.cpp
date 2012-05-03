@@ -387,6 +387,7 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	nAcc = 1;
 
 	dataBuffers = NULL;
+	dataWritten = NULL;
 
 	sharedData = NULL;
 	sharedMemNum = -1;
@@ -489,6 +490,9 @@ Camera::~Camera ()
 {
 	delete sharedData;
 	delete fhd;
+
+	delete dataBuffers;
+	delete dataWritten;
 }
 
 int Camera::willConnect (rts2core::NetworkAddress * in_addr)
@@ -877,6 +881,8 @@ int Camera::sendReadoutData (char *data, size_t dataSize, int chan)
 
 	if (currentImageTransfer == SHARED)
 		sharedData->dataWritten (chan, dataSize);
+	
+	dataWritten[chan] += dataSize;
 
 	if (exposureConn && currentImageTransfer == TCPIP)
 		return exposureConn->sendBinaryData (currentImageData, chan, data, dataSize);
@@ -1051,6 +1057,9 @@ int Camera::initValues ()
 
 	dataBuffers = new char*[getNumChannels ()];
 	bzero (dataBuffers, getNumChannels () * sizeof (char*));
+
+	dataWritten = new size_t[getNumChannels ()];
+	bzero (dataWritten, getNumChannels () * sizeof (size_t));
 
 	return rts2core::ScriptDevice::initValues ();
 }
@@ -1526,6 +1535,8 @@ int Camera::camReadout (rts2core::Connection * conn)
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize = chipByteSize ();
 
+	bzero (dataWritten, getNumChannels () * sizeof (size_t));
+
 	if (currentImageData != -1 || currentImageTransfer == FITS || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
@@ -1533,6 +1544,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 			timeReadoutStart = getNow ();
 		return readoutStart ();
 	}
+
 	maskState (DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, "readout failed", NAN, NAN, exposureConn);
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
 	return -1;
@@ -1769,6 +1781,11 @@ char* Camera::getDataBuffer (int chan)
 	if (dataBuffers[chan] == NULL && suggestBufferSize () > 0)
 		dataBuffers[chan] = new char[getHeight () * getWidth () * maxPixelByteSize ()];
 	return dataBuffers[chan];
+}
+
+char* Camera::getDataTop (int chan)
+{
+	return getDataBuffer (chan) + dataWritten[chan];
 }
 
 void Camera::setFilterOffsets (char *opt)
