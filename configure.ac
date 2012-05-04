@@ -18,6 +18,8 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
+AM_PATH_PYTHON
+
 # check for lang
 AC_LANG_CPLUSPLUS
 
@@ -815,6 +817,8 @@ AC_OUTPUT([Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
 	   lib/rts2script/Makefile
+	   python/Makefile
+	   python/lib/Makefile
 	   src/libindi/Makefile 
 	   scripts/Makefile
 	   src/Makefile

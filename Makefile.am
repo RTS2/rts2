@@ -6,8 +6,10 @@ SUBDIRS =	include \
 		doc	\
 		man	\
 		contrib \
+		python  \
 		scripts \
-		conf
+		conf   
+
 
 EXTRA_DIST = autogen.sh RUN rts2.initd \
 	INSTALL INSTALL.alta INSTALL.fli INSTALL.paramount INSTALL.andor \
