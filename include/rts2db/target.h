@@ -745,7 +745,21 @@ class Target:public Rts2Target
 
 		void deleteLabels (int ltype) { labels.deleteTargetLabels (getTargetID (), ltype); }
 
+		/**
+		 * Add label to target. Might create new label if create parameter is set to true.
+		 *
+		 * @param label  character string with label identification
+		 * @param ltype  label type
+		 * @param create if true, new label will be created
+		 */
 		void addLabel (const char *label, int ltype, bool create) { labels.addLabel (getTargetID (), label, ltype, create); }
+
+		/**
+		 * Add label identified by label ID to the target.
+		 *
+		 * @param label_id   label ID.
+		 */
+		void addLabel (int label_id) { labels.addLabel (getTargetID (), label_id); }
 
 	protected:
 		char *target_comment;
