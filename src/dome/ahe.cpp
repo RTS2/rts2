@@ -90,6 +90,7 @@ int AHE::processOption(int opt)
     {
         case 'f':
             devFile = optarg;
+            break;
         default:
             return Dome::processOption (opt);
     }
