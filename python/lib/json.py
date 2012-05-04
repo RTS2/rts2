@@ -33,8 +33,10 @@ class Rts2JSON:
 	def newConnection(self):
 		return httplib.HTTPConnection('localhost',8889)
 
-	def loadJson(self,req,args={}):
-		url = req + '?' + urllib.urlencode(args)
+	def loadJson(self,req,args=None):
+		url = req
+		if args:
+			url += '?' + urllib.urlencode(args)
 		self.hlib.request('GET', url, None, self.headers)
 		r = self.hlib.getresponse()
 		d = r.read()
