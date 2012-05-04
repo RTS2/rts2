@@ -189,8 +189,8 @@ if __name__ == '__main__':
 
 		print "corrwerr 1 {0:.10f} {1:.10f} {2:.10f} {3:.10f} {4:.10f}".format(rastrxy[0], rastrxy[1], raorig-rastrxy[0], decorig-rastrxy[1], err)
 
-		import rts2comm
-		c = rts2comm.Rts2Comm()
+		import rts2.scriptcomm
+		c = rts2.scriptcomm.Rts2Comm()
 		c.doubleValue('real_ra','[hours] image ra as calculated from astrometry',rastrxy[0])
 		c.doubleValue('real_dec','[deg] image dec as calculated from astrometry',rastrxy[1])
 

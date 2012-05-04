@@ -31,14 +31,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import rts2comm
+import rts2.scriptcomm
 import shiftstore
 
-class ShiftFoc (rts2comm.Rts2Comm):
+class ShiftFoc (rts2.scriptcomm.Rts2Comm):
 	"""Take and process focussing data."""
 
 	def __init__(self):
-		rts2comm.Rts2Comm.__init__(self)
+		rts2.scriptcomm.Rts2Comm.__init__(self)
 		self.exptime = 10 # 60 # 10
 		self.step = 0.03 # 0.2
 		self.shifts = [50]*9  # shift in pixels

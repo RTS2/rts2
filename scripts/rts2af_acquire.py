@@ -21,7 +21,7 @@
 #   (second element in the array)
 #
 #   rts2af_acquire.py's stdin, stdout and stderr are read by rts2-executor. Hence
-#   logging is done via rts2comm.py.
+#   logging is done via rts2.scriptcomm.py.
 #
 #   The configuration file /etc/rts2/rts2af/rts2af-acquire.cfg is hardwired below
 #   because EXEC can't (yet) execute scripts with arguments. 
@@ -51,10 +51,10 @@ import re
 import os
 import subprocess
 
-import rts2comm
+import rts2.scriptcomm
 import rts2af 
 
-r2c= rts2comm.Rts2Comm()
+r2c= rts2.scriptcomm.Rts2Comm()
 
 class Acquire(rts2af.AFScript):
     """control telescope and CCD, acquire a series of focuser images and eventually set the focus"""

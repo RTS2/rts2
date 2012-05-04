@@ -3,7 +3,7 @@
 # Guiding script.
 # (C) 2010 Martin Jelinek & Petr Kubanek
 #
-# rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
+# rts2.scriptcomm.py is included in RTS2 distribution. You must eithert copy it to the
 # same location as this script, or include it in PYTHONPATH.
 #
 # As with all scripts intended to be called by RTS2 exe script command, you can
@@ -13,13 +13,13 @@
 import sys
 import subprocess
 import os
-import rts2comm
+import rts2.scriptcomm
 import sextractor
 
-class GuideScript (rts2comm.Rts2Comm):
+class GuideScript (rts2.scriptcomm.Rts2Comm):
 	"""Guiding script."""
 	def __init__(self):
-		rts2comm.Rts2Comm.__init__(self)
+		rts2.scriptcomm.Rts2Comm.__init__(self)
 		self.sextractor = sextractor.Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'])
 		# size of big window - taken at the beginning of guiding to find bright star for guiding
 		self.big_x = 324
@@ -86,7 +86,7 @@ class GuideScript (rts2comm.Rts2Comm):
 			ch_dec = ch_y * self.dec_aggresivity
 
 			self.log('I','guiding * center {0:+} {1:+} change {2:.3}" {3:.2}"'.format(x,y,ch_ra,ch_dec))
-			self.incrementValueType(rts2comm.DEVICE_TELESCOPE,'OFFS','%f %f' % (ch_ra / 3600.0, ch_dec / 3600.0))
+			self.incrementValueType(rts2.scriptcomm.DEVICE_TELESCOPE,'OFFS','%f %f' % (ch_ra / 3600.0, ch_dec / 3600.0))
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
 
@@ -102,7 +102,7 @@ class GuideScript (rts2comm.Rts2Comm):
 				
 		self.setValue('exposure',self.exptime)
 
-		self.setValueByType(rts2comm.DEVICE_TELESCOPE,'OFFS','0 0')
+		self.setValueByType(rts2.scriptcomm.DEVICE_TELESCOPE,'OFFS','0 0')
 
 		image = self.exposure()
 

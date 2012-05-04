@@ -35,7 +35,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import rts2comm
+import rts2.scriptcomm
 import sextractor
 
 from pylab import *
@@ -54,11 +54,11 @@ H3 = 3
 H2 = 4
 """Fit using Hyperbola with fixed slope at infinity (two free parameters)"""
 
-class Focusing (rts2comm.Rts2Comm):
+class Focusing (rts2.scriptcomm.Rts2Comm):
 	"""Take and process focussing data."""
 
 	def __init__(self):
-		rts2comm.Rts2Comm.__init__(self)
+		rts2.scriptcomm.Rts2Comm.__init__(self)
 		self.exptime = 20 # 60 # 10
 		self.step = 50 # 0.2
 		self.attempts = 20 #30 # 20

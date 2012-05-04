@@ -10,7 +10,7 @@
 #   The first fits file is used as reference catalogue and its focuser 
 #   position must be as close as possible to the real focus.
 #   
-#   rts2af_analysis.py has no connection via rts2comm.py to rts2-centrald
+#   rts2af_analysis.py has no connection via rts2.scriptcomm.py to rts2-centrald
 #   Therefore logging must be done do a separate file.
 #
 #   This program is free software; you can redistribute it and/or modify

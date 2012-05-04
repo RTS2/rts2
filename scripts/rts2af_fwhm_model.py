@@ -44,11 +44,11 @@ import rts2af_meteodb
 
 import numpy
 import pyfits
-import rts2comm 
+import rts2.scriptcomm 
 import rts2af 
 
 
-r2c= rts2comm.Rts2Comm()
+r2c= rts2.scriptcomm.Rts2Comm()
 
 
 class main(rts2af.AFScript):
