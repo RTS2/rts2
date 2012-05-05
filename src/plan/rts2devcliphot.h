@@ -35,7 +35,7 @@ class DevClientPhotExec:public rts2core::DevClientPhot, public DevScript
 
 		virtual void filterMoveFailed (int status);
 
-		virtual void nextCommand ();
+		virtual void nextCommand (rts2core::Command *triggerCommand = NULL);
 
 
 	protected:

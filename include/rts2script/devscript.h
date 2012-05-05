@@ -40,7 +40,7 @@ class DevScript
 		DevScript (rts2core::Connection * in_script_connection);
 		virtual ~ DevScript (void);
 		void postEvent (rts2core::Event * event);
-		virtual void nextCommand () = 0;
+		virtual void nextCommand (rts2core::Command *triggerCommand = NULL) = 0;
 
 		void setScript (ScriptPtr _script) { script = _script; }
 
@@ -59,6 +59,8 @@ class DevScript
 		bool haveScript () { return script.get (); }
 
 		Rts2Target * currentTarget;
+		Rts2Target * killTarget;
+
 		/**
 		 * Reference to next command.
 		 */
@@ -122,10 +124,14 @@ class DevScript
 
 		virtual void deleteScript ();
 
+		rts2core::Command *scriptKillCommand;
+		bool scriptKillcallScriptEnds;
+
 	private:
+		Rts2Target *nextTarget;
+
 		rts2core::Connection * script_connection;
 		ScriptPtr script;
-		Rts2Target *nextTarget;
 		int dont_execute_for;
 		int dont_execute_for_obsid;
 		int scriptLoopCount;

@@ -649,10 +649,7 @@ int Executor::setNow (rts2db::Target * newTarget)
 	clearNextTargets ();
 
 	clearAll ();
-	postEvent (new rts2core::Event (EVENT_KILL_ALL));
-	queAll (new rts2core::CommandKillAll (this));
-
-	postEvent (new rts2core::Event (EVENT_SET_TARGET, (void *) currentTarget));
+	postEvent (new rts2core::Event (EVENT_SET_TARGET_KILL, (void *) currentTarget));
 	postEvent (new rts2core::Event (EVENT_SLEW_TO_TARGET_NOW));
 
 	infoAll ();

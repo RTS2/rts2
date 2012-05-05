@@ -27,14 +27,14 @@
  *
  * @param arg  rts2image::CameraImage pointer
  */
-#define EVENT_WRITE_TO_IMAGE        2
+#define EVENT_WRITE_TO_IMAGE              2
 
 /**
  * Only collect and write all headers.
  *
  * @param arg  rts2image::Image pointer
  */
-#define EVENT_WRITE_ONLY_IMAGE     25
+#define EVENT_WRITE_ONLY_IMAGE            3
 
 /**
  * Event fired at the end of exposure, when certain headers should be recorded
@@ -42,53 +42,59 @@
  *
  * @param arg  rts2image::CameraImage pointer
  */
-#define EVENT_WRITE_TO_IMAGE_ENDS  13
-#define EVENT_SET_TARGET            3
-#define EVENT_SET_TARGET_NOT_CLEAR 23
-#define EVENT_OBSERVE               4
-#define EVENT_IMAGE_OK              5
+#define EVENT_WRITE_TO_IMAGE_ENDS         4
+#define EVENT_SET_TARGET                  5
+#define EVENT_SET_TARGET_NOT_CLEAR        6 
+#define EVENT_OBSERVE                     7
+#define EVENT_IMAGE_OK                    8
 
-#define EVENT_QUERY_WAIT            6
-#define EVENT_ENTER_WAIT            7
-#define EVENT_CLEAR_WAIT            8
+#define EVENT_QUERY_WAIT                  9
+#define EVENT_ENTER_WAIT                 10
+#define EVENT_CLEAR_WAIT                 11
 
-#define EVENT_GET_RADEC            10
-#define EVENT_MOUNT_CHANGE         11
+#define EVENT_GET_RADEC                  12
+#define EVENT_MOUNT_CHANGE               13
 
-#define EVENT_QUICK_ENABLE         12
+#define EVENT_QUICK_ENABLE               14
 
 /**
  * Device info command has been sucessfully executed.
  */
-#define EVENT_INFO_DEVCLI_OK       14
+#define EVENT_INFO_DEVCLI_OK             15
 
 /**
  * Device info command execution failed.
  */
-#define EVENT_INFO_DEVCLI_FAILED   15
+#define EVENT_INFO_DEVCLI_FAILED         16
 
 /** Event issued when command return with OK state. */
-#define EVENT_COMMAND_OK           16
+#define EVENT_COMMAND_OK                 17
 /** Event issued when command failed. */
-#define EVENT_COMMAND_FAILED       17
+#define EVENT_COMMAND_FAILED             18
 
 /** Number of images which waits for processing. */
-#define EVENT_NUMBER_OF_IMAGES     18
+#define EVENT_NUMBER_OF_IMAGES           19
 
 /** Notification to refresh device information..*/
-#define EVENT_TIMER_INFOALL        19
+#define EVENT_TIMER_INFOALL              20
 
 /** Reconnect for TCP connections. */
-#define EVENT_TCP_RECONECT_TIMER   20
+#define EVENT_TCP_RECONECT_TIMER         21
 
 /** Recconect for UDP connections. */
-#define EVENT_UDP_RECONECT_TIMER   21
+#define EVENT_UDP_RECONECT_TIMER         22
 
 /** Called on change of the trigger state. */
-#define EVENT_TRIGGERED            22
+#define EVENT_TRIGGERED                  23
 
 /** Lost connection to the database. */
-#define EVENT_DB_LOST_CONN         24
+#define EVENT_DB_LOST_CONN               24
+
+/** Set target, killall command. */
+#define EVENT_SET_TARGET_KILL            25
+
+/** Set target, run killall, don't run scriptends. */
+#define EVENT_SET_TARGET_KILL_NOT_CLEAR  26
 
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000

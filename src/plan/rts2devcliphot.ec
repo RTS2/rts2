@@ -152,10 +152,17 @@ void DevClientPhotExec::postEvent (rts2core::Event * event)
 	DevClientPhot::postEvent (event);
 }
 
-void DevClientPhotExec::nextCommand ()
+void DevClientPhotExec::nextCommand (rts2core::Command *triggerCommand)
 {
-	int ret;
-	ret = haveNextCommand (this);
+	if (scriptKillCommand && triggerCommand == scriptKillCommand)
+	{
+		if (currentTarget == NULL && killTarget != NULL)
+			DevScript::postEvent (new rts2core::Event (scriptKillcallScriptEnds ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, killTarget));
+		killTarget = NULL;
+		scriptKillCommand = NULL;
+		scriptKillcallScriptEnds = false;
+	}
+	int ret = haveNextCommand (this);
 	if (!ret)
 		return;
 

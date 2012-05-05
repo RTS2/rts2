@@ -260,8 +260,7 @@ void Target::printAltTableSingleCol (std::ostream & _os, double jd_start, double
 
 Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 {
-	rts2core::Configuration *config;
-	config = rts2core::Configuration::instance ();
+	rts2core::Configuration *config = rts2core::Configuration::instance ();
 
 	watchConn = NULL;
 

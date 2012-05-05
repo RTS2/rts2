@@ -78,7 +78,7 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 		virtual ~ DevClientCameraExec (void);
 		virtual rts2image::Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (rts2core::Event * event);
-		virtual void nextCommand ();
+		virtual void nextCommand (rts2core::Command *triggerCommand = NULL);
 		void queImage (rts2image::Image * image, bool run_after = true);
 		virtual rts2image::imageProceRes processImage (rts2image::Image * image);
 		virtual void stateChanged (rts2core::ServerState * state);

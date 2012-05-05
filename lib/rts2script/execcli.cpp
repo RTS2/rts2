@@ -85,7 +85,7 @@ void DevClientCameraExec::postEvent (rts2core::Event * event)
 				queImage (image, type == EVENT_AFTER_COMMAND_FINISHED ? false : true);
 			break;
 		case EVENT_COMMAND_OK:
-			nextCommand ();
+			nextCommand ((rts2core::Command *) event->getArg ());
 			break;
 		case EVENT_COMMAND_FAILED:
 			waitForExposure = false;
@@ -149,10 +149,17 @@ bool DevClientCameraExec::canEndScript ()
 	return DevScript::canEndScript ();
 }
 
-void DevClientCameraExec::nextCommand ()
+void DevClientCameraExec::nextCommand (rts2core::Command *triggerCommand)
 {
-	int ret;
-	ret = haveNextCommand (this);
+	if (scriptKillCommand && triggerCommand == scriptKillCommand)
+	{
+		if (currentTarget == NULL && killTarget != NULL)
+			DevScript::postEvent (new rts2core::Event (scriptKillcallScriptEnds ? EVENT_SET_TARGET : EVENT_SET_TARGET_NOT_CLEAR, killTarget));
+		killTarget = NULL;
+		scriptKillCommand = NULL;
+		scriptKillcallScriptEnds = false;
+	}
+	int ret = haveNextCommand (this);
 #ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "connection " << getName () << " DevClientCameraExec::nextComd haveNextCommand " << ret << sendLog;
 #endif						 /* DEBUG_EXTRA */
@@ -456,6 +463,9 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 			clearWait ();
 			break;
 		case EVENT_SET_TARGET:
+		case EVENT_SET_TARGET_NOT_CLEAR:
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 			currentTarget = (rts2db::Target *) event->getArg ();
 			break;
 		case EVENT_NEW_TARGET:

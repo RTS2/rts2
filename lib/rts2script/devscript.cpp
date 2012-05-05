@@ -24,10 +24,14 @@ using namespace rts2script;
 
 DevScript::DevScript (rts2core::Connection * in_script_connection) : script ()
 {
+	scriptKillCommand = NULL;
+	scriptKillcallScriptEnds = false;
+
 	currentTarget = NULL;
 	nextComd = NULL;
 	cmd_device[0] = '\0';
 	nextTarget = NULL;
+	killTarget = NULL;
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;
 	dont_execute_for_obsid = -1;
@@ -100,6 +104,8 @@ void DevScript::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_KILL_ALL:
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 			currentTarget = NULL;
 			nextTarget = NULL;
 		#ifdef DEBUG_EXTRA
@@ -116,6 +122,23 @@ void DevScript::postEvent (rts2core::Event * event)
 			// null dont_execute_for
 			dont_execute_for = -1;
 			dont_execute_for_obsid = -1;
+			switch (event->getType ())
+			{
+				case EVENT_SET_TARGET_KILL:
+					scriptKillCommand = new rts2core::CommandKillAll (script_connection->getMaster ());
+					scriptKillCommand->setOriginator (script_connection);
+					scriptKillcallScriptEnds = true;
+					killTarget = (Rts2Target *) event->getArg ();
+					queCommandFromScript (scriptKillCommand);
+					break;
+				case EVENT_SET_TARGET_KILL_NOT_CLEAR:
+					scriptKillCommand = new rts2core::CommandKillAllWithoutScriptEnds (script_connection->getMaster ());
+					scriptKillCommand->setOriginator (script_connection);
+					scriptKillcallScriptEnds = false;
+					killTarget = (Rts2Target *) event->getArg ();
+					queCommandFromScript (scriptKillCommand);
+					break;
+			}
 			break;
 		case EVENT_STOP_OBSERVATION:
 			deleteScript ();
@@ -309,8 +332,7 @@ void DevScript::deleteScript ()
 			<< "DevScript::deleteScript sending EVENT_ACQUSITION_END" <<
 			sendLog;
 		#endif
-		script_connection->getMaster ()->
-			postEvent (new rts2core::Event (EVENT_ACQUSITION_END, (void *) &acqRet));
+		script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUSITION_END, (void *) &acqRet));
 	}
 	// make sure we don't left any garbage for start of observation
 	waitScript = NO_WAIT;
@@ -424,8 +446,7 @@ int DevScript::nextPreparedCommand ()
 			break;
 		case NEXT_COMMAND_ACQUSITION_IMAGE:
 			currentTarget->acqusitionStart ();
-			script_connection->getMaster ()->
-				postEvent (new rts2core::Event (EVENT_ACQUIRE_START));
+			script_connection->getMaster ()->postEvent (new rts2core::Event (EVENT_ACQUIRE_START));
 			waitScript = WAIT_MASTER;
 			break;
 		case NEXT_COMMAND_WAIT_SIGNAL:
