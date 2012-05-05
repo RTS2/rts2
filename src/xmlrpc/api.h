@@ -140,6 +140,9 @@ class API:public GetRequestAuthorized
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);
 #endif
 		void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, scaling_type &scaling);
+#ifdef HAVE_PGSQL
+		rts2db::Target * getTarget (XmlRpc::HttpParams *params);
+#endif
 };
 
 }
