@@ -983,10 +983,7 @@ void Target::setScript (const char *device_name, const char *buf)
 
 std::string Target::getPIName ()
 {
-	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PI);
-	if (l.size () != 1)
-		return std::string ("not set");
-	return *(l.begin ());
+	return labels.getTargetLabels (getTargetID (), LABEL_PI).getString ("not set", ",");
 }
 
 void Target::setPIName (const char *name)
@@ -997,10 +994,7 @@ void Target::setPIName (const char *name)
 
 std::string Target::getProgramName ()
 {
-	std::vector <std::string> l = labels.getTargetLabels (getTargetID (), LABEL_PROGRAM);
-	if (l.size () != 1)
-		return std::string ("not set");
-	return *(l.begin ());
+	return labels.getTargetLabels (getTargetID (), LABEL_PROGRAM).getString ("not set", ",");
 }
 
 void Target::setProgramName (const char *program)

@@ -682,10 +682,10 @@ void Targets::printTarget (rts2db::Target *tar, const char* &response_type, char
 		"<tr><td>Satisified constraints</td><td>" << tar->getSatisfiedConstraints (JD) << "</td></tr>";
 
 	// print target labels
-	std::vector <std::pair <int, std::string> > labels = tar->getLabels ();
-	for (std::vector <std::pair <int, std::string> >::iterator iter = labels.begin (); iter != labels.end (); iter++)
+	rts2db::LabelsVector labels = tar->getLabels ();
+	for (rts2db::LabelsVector::iterator iter = labels.begin (); iter != labels.end (); iter++)
 	{
-		_os << "<tr><td>" << getLabelName (iter->first) << "</td><td>" << iter->second << " </td></tr>";
+		_os << "<tr><td>" << getLabelName (iter->ltype) << "</td><td>" << iter->ltext << " </td></tr>";
 	}
 	if (canExecute ())
 	{

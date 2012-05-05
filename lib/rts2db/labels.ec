@@ -21,6 +21,22 @@
 #include "rts2db/sqlerror.h"
 
 using namespace rts2db;
+
+std::string LabelsVector::getString (const char *empty, const char *jstr)
+{
+	if (size () == 0)
+	{
+		return std::string (empty);
+	}
+	std::string ret;
+	for (LabelsVector::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter != begin ())
+			ret += std::string (jstr);
+		ret += std::string (iter->ltext);
+	}
+	return ret;
+}
 		
 int Labels::getLabel (const char *label, int type)
 {
@@ -118,18 +134,19 @@ void Labels::addLabel (int tar_id, const char *label, int type, bool create)
 	addLabel (tar_id, label_id);
 }
 
-std::vector <std::pair <int, std::string> > Labels::getTargetLabels (int tar_id)
+LabelsVector Labels::getTargetLabels (int tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
+	int d_lid;
 	int d_type;
 	VARCHAR label[501];
 	EXEC SQL END DECLARE SECTION;
-	std::vector <std::pair <int, std::string> > ret;
+	LabelsVector ret;
 
 	EXEC SQL DECLARE label_target_cur CURSOR FOR
 	SELECT
-		label_type, label_text
+		labels.label_id, label_type, label_text
 	FROM
 		labels, target_labels
 	WHERE
@@ -138,11 +155,11 @@ std::vector <std::pair <int, std::string> > Labels::getTargetLabels (int tar_id)
 	EXEC SQL OPEN label_target_cur;
 	while (true)
 	{
-		EXEC SQL FETCH next FROM label_target_cur INTO :d_type, :label;
+		EXEC SQL FETCH next FROM label_target_cur INTO :d_lid, :d_type, :label;
 		if (sqlca.sqlcode)
 			break; 
 		label.arr[label.len] = '\0';
-		ret.push_back (std::pair <int, std::string> (d_type, label.arr));
+		ret.push_back (Label (d_lid, d_type, label.arr));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
@@ -154,18 +171,19 @@ std::vector <std::pair <int, std::string> > Labels::getTargetLabels (int tar_id)
 	return ret;
 }
 
-std::vector <std::string> Labels::getTargetLabels (int tar_id, int type)
+LabelsVector Labels::getTargetLabels (int tar_id, int type)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id = tar_id;
 	int d_type = type;
+	int lid;
 	VARCHAR label[501];
 	EXEC SQL END DECLARE SECTION;
 
-	std::vector <std::string> ret;
+	LabelsVector ret;
 
 	EXEC SQL DECLARE label_cur CURSOR FOR
-	SELECT label_text
+	SELECT labels.label_id, label_text
 	FROM labels, target_labels
 	WHERE
 		labels.label_id = target_labels.label_id
@@ -174,11 +192,11 @@ std::vector <std::string> Labels::getTargetLabels (int tar_id, int type)
 	EXEC SQL OPEN label_cur;
 	while (true)
 	{
-		EXEC SQL FETCH next FROM label_cur INTO :label;
+		EXEC SQL FETCH next FROM label_cur INTO :lid,:label;
 		if (sqlca.sqlcode)
 			break;
 		label.arr[label.len] = '\0';
-		ret.push_back (std::string (label.arr));
+		ret.push_back (Label (lid, d_type, label.arr));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{

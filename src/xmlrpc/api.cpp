@@ -1494,9 +1494,13 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "labels")
 		{
 			const char *label = params->getString ("l", "");
+			int t = params->getInteger ("t", -1);
+			if (label[0] == '\0' && t < 0)
+			{
+
+			}
 			if (label[0] == '\0')
 				throw JSONException ("empty l parameter");
-			int t = params->getInteger ("t", -1);
 			if (t < 0)
 				throw JSONException ("invalid type parametr");
 			rts2db::Labels lb;
@@ -2312,15 +2316,15 @@ void API::jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpP
 
 void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 {
-	std::vector <std::pair <int, std::string> > tlabels = tar->getLabels ();
+	rts2db::LabelsVector tlabels = tar->getLabels ();
 	os << "\"id\":" << tar->getTargetID () << ",\"labels\":[";
-	for (std::vector <std::pair <int, std::string> >::iterator iter = tlabels.begin (); iter != tlabels.end (); iter++)
+	for (rts2db::LabelsVector::iterator iter = tlabels.begin (); iter != tlabels.end (); iter++)
 	{
 		if (iter == tlabels.begin ())
 			os << "[";
 		else
 			os << ",[";
-		os << iter->first << ",\"" << iter->second << "\"]";
+		os << iter->lid << "," << iter->ltype << ",\"" << iter->ltext << "\"]";
 	}
 	os << "]";
 }

@@ -741,7 +741,7 @@ class Target:public Rts2Target
 		/**
 		 * Retrieve list of target labels.
 		 */
-		std::vector <std::pair <int, std::string> > getLabels () { return labels.getTargetLabels (getTargetID ()); }
+		LabelsVector getLabels () { return labels.getTargetLabels (getTargetID ()); }
 
 		void deleteLabels (int ltype) { labels.deleteTargetLabels (getTargetID (), ltype); }
 

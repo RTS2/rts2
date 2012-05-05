@@ -29,6 +29,40 @@
 namespace rts2db
 {
 
+class Label
+{
+	public:
+		Label (int _lid, int _ltype, const char * _ltext)
+		{
+			lid = _lid;
+			ltype = _ltype;
+			ltext = std::string (_ltext);
+		}
+
+		int lid;
+		int ltype;
+		std::string ltext;
+};
+
+/**
+ * Vector of labels.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class LabelsVector:public std::vector <Label>
+{
+	public:
+		LabelsVector () : std::vector <Label> () {}
+
+		/**
+		 * Join labels text to string.
+		 *
+		 * @param empty   string returned if label list is empty
+		 * @param jstr    string joining entries in the list
+		 */
+		std::string getString (const char *empty = "", const char *jstr = " ");
+};
+
 /**
  * Labels manipulation class.
  *
@@ -47,7 +81,7 @@ class Labels
 		/**
 		 * Return all labels beloging to given target ID.
 		 */
-		std::vector <std::pair <int, std::string> > getTargetLabels (int tar_id);
+		LabelsVector getTargetLabels (int tar_id);
 
 		/**
 		 * Return all labels with given type for given target.
@@ -55,7 +89,7 @@ class Labels
 		 * @param tar_id  target id
 		 * @param type    label type
 		 */
-		std::vector <std::string> getTargetLabels (int tar_id, int type);
+		LabelsVector getTargetLabels (int tar_id, int type);
 
 		void deleteTargetLabels (int tar_id, int type);
 };
