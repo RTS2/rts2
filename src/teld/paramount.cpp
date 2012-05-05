@@ -190,6 +190,11 @@ class Paramount:public GEM
 		rts2core::ValueInteger *statusRa;
 		rts2core::ValueInteger *statusDec;
 
+		rts2core::ValueLong *speedRa;
+		rts2core::ValueLong *speedDec;
+		rts2core::ValueLong *accRa;
+		rts2core::ValueLong *accDec;
+
 		rts2core::ValueLong *hourRa;
 		rts2core::ValueLong *baseRa;
 		rts2core::ValueLong *baseDec;
@@ -485,6 +490,11 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
+	createValue (speedRa, "SPEED_RA", "[???] RA axis maximal speed", false, RTS2_VALUE_WRITABLE);
+	createValue (speedDec, "SPEED_DEC", "[???] DEC axis maximal speed", false, RTS2_VALUE_WRITABLE);
+	createValue (accRa, "ACC_RA", "[???] RA axis acceleration", false, RTS2_VALUE_WRITABLE);
+	createValue (accDec, "ACC_DEC", "[???] DEC axis acceleration", false, RTS2_VALUE_WRITABLE);
+
 	createValue (hourRa, "HR_RA", "[???] RA axis tracking rate", true);
 	hourRa->setValueLong (-43067265);
 	createValue (baseRa, "BR_RA", "[???] RA axis base rate", true, RTS2_VALUE_WRITABLE);
@@ -726,6 +736,14 @@ int Paramount::init ()
 		return ret;
 	snprintf (telType, 64, "Paramount %i %i %i", pMajor, pMinor, pBuild);
 
+  	ret = getParamountValue32 (CMD_VAL32_SLEW_VEL, speedRa, speedDec);
+	if (ret)
+		return ret;
+
+	ret = getParamountValue32 (CMD_VAL32_SQRT_ACCEL, accRa, accDec);
+	if (ret)
+		return ret;
+
 	return ret;
 }
 
@@ -736,6 +754,28 @@ int Paramount::commandAuthorized (rts2core::Connection *conn)
 		if (!conn->paramEnd ())
 			return -2;
 		sleep (120);
+		return 0;
+	}
+	else if (conn->isCommand ("save_flash"))
+	{
+		ret0 = MKS3ConstsStore (axis0);
+		ret1 = MKS3ConstsStore (axis1);
+		int ret = checkRet ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot store constants");
+			return -1;
+		}
+
+		ret0 = MKS3ConstsReload (axis0);
+		ret1 = MKS3ConstsReload (axis1);
+		ret = checkRet ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot reload constants");
+			return -1;
+		}
+
 		return 0;
 	}
 	return Telescope::commandAuthorized (conn);
@@ -1186,6 +1226,14 @@ int Paramount::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 		return 0;
 
 	}
+	if (oldValue == speedRa)
+		return setParamountValue32 (CMD_VAL32_SLEW_VEL, newValue, speedDec) ? -2 : 0;
+	if (oldValue == speedDec)
+		return setParamountValue32 (CMD_VAL32_SLEW_VEL, speedRa, newValue) ? -2 : 0;
+	if (oldValue == accRa)
+		return setParamountValue32 (CMD_VAL32_SQRT_ACCEL, newValue, accDec) ? -2 : 0;
+	if (oldValue == accDec)
+		return setParamountValue32 (CMD_VAL32_SQRT_ACCEL, accRa, newValue) ? -2 : 0;
 	if (oldValue == baseRa)
 		return setParamountValue32 (CMD_VAL32_BASERATE, newValue, baseDec) ? -2 : 0;
 	if (oldValue == baseDec)
