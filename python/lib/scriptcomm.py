@@ -136,6 +136,17 @@ class Rts2Comm:
 		print "VT",device,name,'=',new_value
 		sys.stdout.flush()
 
+	def getDeviceByType(self,device):
+		"""Returns name of the first device with given type."""
+		print "device_by_type",device
+		sys.stdout.flush()
+		return self.readline()
+
+	def endScript(self):
+		"""Ask controlling process to end the current script."""
+		print "end_script"
+		sys.stdout.flush()
+
 	def getState(self,device):
 		"""Retrieve device state"""
 		print 'S',device

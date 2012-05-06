@@ -16,9 +16,14 @@ class ImgProcess:
 		self.radecline1 = re.compile('^\d+\s+(\S+)\s+(\S+)\s+\((\S+),(\S+)\)')
 		self.radecline2 = re.compile('^correct\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)')
 
+		# print out logs..
+		self.logmatch = re.compile('^log')
+
 	def run(self,file_path):
 		past_call = [self.img_process, file_path]
 		proc = subprocess.Popen(past_call,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+		ret = None
 
 		while True:
 			a = proc.stdout.readline()
@@ -26,10 +31,16 @@ class ImgProcess:
 				break
 			match = self.radecline1.match(a)
 			if match:
-				return (float(match.group(1)),float(match.group(2)),float(match.group(3))/60.0,float(match.group(4))/60.0)
+				ret = (float(match.group(1)),float(match.group(2)),float(match.group(3))/60.0,float(match.group(4))/60.0)
 			match = self.radecline2.match(a)
 			if match:
-				return (float(match.group(1)),float(match.group(2)),float(match.group(3)),float(match.group(4)))
+				ret = (float(match.group(1)),float(match.group(2)),float(match.group(3)),float(match.group(4)))
+			match = self.logmatch(a)
+			# pass log commands
+			if match:
+				print a
+		if ret:
+			return ret
 		raise Exception('Astrometry did not succeed')
 
 if __name__ == '__main__':
