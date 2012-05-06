@@ -38,7 +38,14 @@ class Rts2JSON:
 		if args:
 			url += '?' + urllib.urlencode(args)
 		self.hlib.request('GET', url, None, self.headers)
-		r = self.hlib.getresponse()
+		r = None
+		try:
+			r = self.hlib.getresponse()
+		except httplib.BadStatusLine,ex:
+			# try to reload on broken connection
+			self.hlib = self.newConnection()
+			self.hlib.request('GET', url, None, self.headers)
+			r = self.hlib.getresponse()
 		d = r.read()
 		if self.verbose:
 			print url
