@@ -334,9 +334,12 @@ void DevClientCameraImage::exposureStarted ()
 	struct timeval expStart;
 	const char *focuser;
 	gettimeofday (&expStart, NULL);
+
+	Image *image = NULL;
+
 	try
 	{
-		Image *image = createImage (&expStart);
+		image = createImage (&expStart);
 		if (image == NULL)
 			return;
 		image->setTemplate (fitsTemplate);
@@ -367,7 +370,10 @@ void DevClientCameraImage::exposureStarted ()
 	}
 	catch (rts2core::Error &ex)
 	{
-		logStream (MESSAGE_ERROR) << "cannot create image for exposure " << ex << sendLog;
+		if (image)
+			logStream (MESSAGE_ERROR) << "cannot create image " << image->getAbsoluteFileName () << " for exposure " << ex << sendLog;
+		else
+			logStream (MESSAGE_ERROR) << "error creating image:" << ex << sendLog;
 		return;
 	}
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, actualImage));
