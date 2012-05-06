@@ -721,6 +721,12 @@ echo value WINDOW = 0 0 10 10
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>end_script</option></term>
+	<listitem><para>
+	  End target script. Ask controlling block to end whole script.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>loopcount</option></term>
 	<listitem><para>
 	  Print current loopcount. It is 0 when target script is executed for

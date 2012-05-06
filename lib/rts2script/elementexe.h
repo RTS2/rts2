@@ -108,6 +108,11 @@ class Execute:public Element
 		virtual void printXml (std::ostream &os) { os << "  <exe path='" << exec << "'/>"; }
 		virtual void printJson (std::ostream &os) { os << "\"cmd\":\"" << COMMAND_EXE << "\",\"path\":\"" << exec << "\""; }
 
+		/**
+		 * Ask exe block to end whole script.
+		 */
+		void requestEndScript () { endScript = true; }
+
 	private:
 		ConnExecute *connExecute;
 
@@ -115,6 +120,8 @@ class Execute:public Element
 
 		rts2core::Block *master;
 		const char *exec;
+
+		bool endScript;
 };
 
 }

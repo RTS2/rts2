@@ -315,6 +315,11 @@ void ConnExecute::processCommand (char *cmd)
 		else
 			writeToProcess ("! cannot find device with given name");
 	}
+	else if (!strcmp (cmd, "end_script"))
+	{
+		masterElement->requestEndScript ();
+		notActive ();
+	}
 	else if (!strcmp (cmd, "loopcount"))
 	{
 		std::ostringstream os;
@@ -449,6 +454,8 @@ Execute::Execute (Script * _script, rts2core::Block * _master, const char *_exec
 
 	master = _master;
 	exec = _exec;
+
+	endScript = false;
 }
 
 Execute::~Execute ()
@@ -528,6 +535,12 @@ int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command **
 		}
 		client = _client;
 		client->getMaster ()->addConnection (connExecute);
+	}
+
+	if (endScript)
+	{
+		connExecute->nullMasterElement ();
+		return NEXT_COMMAND_END_SCRIPT;
 	}
 
 	if (connExecute->getConnState () == CONN_DELETE)

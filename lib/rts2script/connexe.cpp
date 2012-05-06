@@ -179,7 +179,8 @@ void ConnExe::processCommand (char *cmd)
 				}
 				getMaster ()->oneRunLoop ();
 			}
-			writeToProcess ("0");
+			if (time (NULL) >= tom)
+				writeToProcess ("0");
 		}
 		else
 		{
