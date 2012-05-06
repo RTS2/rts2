@@ -21,6 +21,8 @@
 #include "rts2db/sqlerror.h"
 #include "rts2db/userset.h"
 
+#include <crypt.h>
+
 using namespace rts2db;
 
 int UserSet::load ()

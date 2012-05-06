@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <crypt.h>
 
 using namespace rts2core;
 
