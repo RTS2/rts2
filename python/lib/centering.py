@@ -28,7 +28,7 @@ class Centering(scriptcomm.Rts2Comm):
 		self.log('I','returned offsets {0}'.format(str(offs)))
 		self.setValue('CORR_','{0} {1}'.format(offs[2],offs[3]),self.telname)
 		self.setValue('OFFS','0 0',self.telname)
-		self.process(self.imgn)
+		self.toArchive(self.imgn)
 
 	def run(self,ra_offset,dec_offset,exptime,path=[[-1,0],[0,-1],[1,0],[0,1]]):
 		"""ra_offset - offset size in degrees"""
