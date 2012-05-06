@@ -35,7 +35,7 @@ class ImgProcess:
 			match = self.radecline2.match(a)
 			if match:
 				ret = (float(match.group(1)),float(match.group(2)),float(match.group(3)),float(match.group(4)))
-			match = self.logmatch(a)
+			match = self.logmatch.match(a)
 			# pass log commands
 			if match:
 				print a
