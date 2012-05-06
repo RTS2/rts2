@@ -540,6 +540,7 @@ int Execute::defnextCommand (rts2core::DevClient * _client, rts2core::Command **
 	if (endScript)
 	{
 		connExecute->nullMasterElement ();
+		connExecute = NULL;
 		return NEXT_COMMAND_END_SCRIPT;
 	}
 
