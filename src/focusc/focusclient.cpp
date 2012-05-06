@@ -21,8 +21,15 @@
 #include "configuration.h"
 #include "../../lib/rts2fits/memimage.h"
 
+#include <config.h>
+
+#ifdef HAVE_CURSES_H
 #include <curses.h>
 #include <term.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#include <ncurses/curses.h>
+#include <ncurses/term.h>
+#endif
 
 #include <iostream>
 #include <iomanip>

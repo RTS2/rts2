@@ -19,7 +19,13 @@
 
 #include "xfitsimage.h"
 
+#include <config.h>
+
+#ifdef HAVE_CURSES_H
 #include <curses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#include <ncurses/curses.h>
+#endif
 
 #include <iomanip>
 
