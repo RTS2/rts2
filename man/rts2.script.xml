@@ -714,6 +714,13 @@ echo value WINDOW = 0 0 10 10
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>device_by_type {device_type}</option></term>
+	<listitem><para>
+	  Retrieves name of the first device with given type. Device type is
+	  specified by strings listed in <emphasis>VT</emphasis> command.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>loopcount</option></term>
 	<listitem><para>
 	  Print current loopcount. It is 0 when target script is executed for

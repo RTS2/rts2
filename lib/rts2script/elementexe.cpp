@@ -304,6 +304,17 @@ void ConnExecute::processCommand (char *cmd)
 			return;
 		masterElement->getConnection ()->queCommand (new rts2core::CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
+	else if (!strcmp (cmd, "device_by_type"))
+	{
+		if (paramNextString (&device))
+			return;
+		rts2core::connections_t::iterator iter = getMaster ()->getConnections ()->begin ();
+		getMaster ()->getOpenConnectionType (getDeviceType (device), iter);
+		if (iter != getMaster ()->getConnections ()->end ())
+			writeToProcess ((*iter)->getName ());
+		else
+			writeToProcess ("! cannot find device with given name");
+	}
 	else if (!strcmp (cmd, "loopcount"))
 	{
 		std::ostringstream os;
