@@ -462,12 +462,15 @@ void DevClientTelescopeExec::postEvent (rts2core::Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_KILL_ALL:
-		case EVENT_SET_TARGET_KILL:
-		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
 			clearWait ();
 			break;
 		case EVENT_SET_TARGET:
 		case EVENT_SET_TARGET_NOT_CLEAR:
+			currentTarget = (rts2db::Target *) event->getArg ();
+			break;
+		case EVENT_SET_TARGET_KILL:
+		case EVENT_SET_TARGET_KILL_NOT_CLEAR:
+			clearWait ();
 			currentTarget = (rts2db::Target *) event->getArg ();
 			break;
 		case EVENT_NEW_TARGET:
