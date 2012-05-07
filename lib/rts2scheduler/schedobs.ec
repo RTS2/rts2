@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2schedobs.h"
+#include "rts2scheduler/schedobs.h"
 
 Rts2SchedObs::Rts2SchedObs (Ticket *_ticket, double _startJD, double _duration)
 {

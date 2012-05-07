@@ -1530,13 +1530,7 @@ void Image::loadChannels ()
 
 	// get number of channels
 	fits_status = 0;
-	int tothdu;
-	fits_get_num_hdus (getFitsFile (), &tothdu, &fits_status);
-	if (fits_status)
-	{
-	  	logStream (MESSAGE_ERROR) << "cannot retrieve total number of HDUs: " << getFitsErrors () << sendLog;
-		return;
-	}
+	int tothdu = getTotalHDUs ();
 	tothdu++;
 	tothdu *= -1;
 

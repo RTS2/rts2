@@ -53,6 +53,7 @@
 #define IMAGEOP_JPEG            0x1000
 #define IMAGEOP_STAT            0x2000
 #define IMAGEOP_RTS2OPERA_WCS   0x4000
+#define IMAGEOP_ADD_TEMPLATE    0x8000
 
 #define OPT_ADDDATE             OPT_LOCAL + 5
 #define OPT_ADDHELIO            OPT_LOCAL + 6
@@ -66,6 +67,7 @@
 #define OPT_ERR_DEC             OPT_LOCAL + 14
 #define OPT_ERR                 OPT_LOCAL + 15
 #define OPT_RTS2OPERA_WCS       OPT_LOCAL + 16
+#define OPT_ADD_TEMPLATE        OPT_LABEL + 17
 
 namespace rts2image
 {
@@ -79,6 +81,7 @@ class AppImage:public rts2image::AppImageCore
 	public:
 		AppImage (int in_argc, char **in_argv, bool in_readOnly);
 		virtual ~AppImage ();
+
 	protected:
 		virtual int processOption (int in_opt);
 #ifdef HAVE_LIBJPEG
@@ -93,6 +96,7 @@ class AppImage:public rts2image::AppImageCore
 #endif						 /* HAVE_PGSQL */
 
 		virtual void usage ();
+
 	private:
 		int operation;
 
@@ -132,6 +136,8 @@ class AppImage:public rts2image::AppImageCore
 		double err_ra;
 		double err_dec;
 		double err;
+
+		std::vector <rts2core::IniParser *> fitsTemplates;
 };
 
 }
@@ -363,6 +369,7 @@ int AppImage::processOption (int in_opt)
 		case OPT_ZOOM:
 			zoom = atof (optarg);
 			break;
+		#endif /* HAVE_LIBJPEG */
 		case OPT_RTS2OPERA_WCS:
 			operation |= IMAGEOP_RTS2OPERA_WCS;
 			if (optarg[1] != '\0')
@@ -373,7 +380,19 @@ int AppImage::processOption (int in_opt)
 			rts2opera_ext = optarg[0];
 			readOnly = false;
 			break;
-		#endif /* HAVE_LIBJPEG */
+		case OPT_ADD_TEMPLATE:
+			operation |= IMAGEOP_ADD_TEMPLATE;
+			{
+				rts2core::IniParser *tf = new rts2core::IniParser ();
+				fitsTemplates.push_back (tf);
+				if (tf->loadFile (optarg, true))
+				{
+					std::cerr << "cannot load FITS template from file " << optarg << std::endl;
+					return -1;
+				}
+				readOnly = false;
+			}
+			break;
 		default:
 
 		#ifdef HAVE_PGSQL
@@ -446,6 +465,11 @@ int AppImage::processImage (Image * image)
 	  	image->symlinkImageExpand (link_expr);
 	if (operation & IMAGEOP_RTS2OPERA_WCS)
 		writeRTS2OperaHeaders (image, rts2opera_ext);
+	if (operation & IMAGEOP_ADD_TEMPLATE)
+	{
+		for (std::vector <rts2core::IniParser *>::iterator iter = fitsTemplates.begin (); iter != fitsTemplates.end (); iter++)
+			image->addTemplate (*iter);
+	}
 #ifdef HAVE_LIBJPEG
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, zoom, label);
@@ -516,7 +540,8 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
-	addOption (OPT_RTS2OPERA_WCS,"rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
+	addOption (OPT_RTS2OPERA_WCS, "rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
+	addOption (OPT_ADD_TEMPLATE, "add-template", 1, "add fixed-value headers from template file specified as an argument");
 #ifdef HAVE_LIBJPEG
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 	addOption (OPT_LABEL, "label", 1, "label (expansion string) for image(s) JPEGs");
@@ -526,6 +551,10 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 
 AppImage::~AppImage ()
 {
+
+	for (std::vector <rts2core::IniParser *>::iterator iter = fitsTemplates.begin (); iter != fitsTemplates.end (); iter++)
+		delete *iter;
+
 #ifdef HAVE_LIBJPEG
   	MagickLib::DestroyMagick ();
 #endif /* HAVE_LIBJPEG */

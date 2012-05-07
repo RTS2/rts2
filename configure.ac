@@ -805,6 +805,7 @@ AC_OUTPUT([Makefile
 	   include/rts2db/Makefile
 	   include/rts2fits/Makefile
 	   include/rts2script/Makefile
+	   include/rts2scheduler/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   contrib/Makefile
@@ -817,6 +818,7 @@ AC_OUTPUT([Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
 	   lib/rts2script/Makefile
+	   lib/rts2scheduler/Makefile
 	   python/Makefile
 	   python/lib/Makefile
 	   src/libindi/Makefile 

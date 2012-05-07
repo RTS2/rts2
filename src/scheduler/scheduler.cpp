@@ -21,7 +21,7 @@
 #include "rts2db/sqlerror.h"
 #include "configuration.h"
 
-#include "rts2schedbag.h"
+#include "rts2scheduler/schedbag.h"
 
 #define OPT_START_DATE		OPT_LOCAL + 210
 #define OPT_END_DATE		OPT_LOCAL + 211

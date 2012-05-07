@@ -61,7 +61,7 @@ std::string DeviceExpander::expandVariable (std::string expression)
 	return rts2core::Expander::expandVariable (expression);
 }
 
-static DeviceExpander *masterExpander = NULL;
+static rts2core::Expander *masterExpander = NULL;
 
 ColumnData::ColumnData (std::string _name, std::vector <double> _data)
 {
@@ -527,8 +527,8 @@ void FitsFile::getValue (const char *name, char *value, int valLen, const char* 
 		}
 		else
 		{
-			if (fits_status == 0)
-				return;
+			fits_status = 0;
+			return;
 		}
 	}
 	catch (rts2core::Error &er)
@@ -649,7 +649,12 @@ void FitsFile::writeTemplate (rts2core::IniSection *hc, const char *devname)
 		}
 		// expand v and com strings..
 		if (masterExpander == NULL)
-			masterExpander = new DeviceExpander (devname);
+		{
+			if (devname == NULL)
+				masterExpander = new rts2core::Expander ();
+			else
+				masterExpander = new DeviceExpander (devname);
+		}
 		v = masterExpander->expand (v);
 		com = masterExpander->expand (com);
 		// value type based on suffix
@@ -671,6 +676,30 @@ void FitsFile::writeTemplate (rts2core::IniSection *hc, const char *devname)
 	}
 }
 
+void FitsFile::addTemplate (rts2core::IniParser *templ)
+{
+	int hdutype;
+	moveHDU (1, &hdutype);
+	rts2core::IniSection *hc = templ->getSection ("PRIMARY", false);
+	if (hc)
+		writeTemplate (hc, NULL);
+
+	for (int i = 1; i < getTotalHDUs (); i++)
+	{
+		moveHDU (i + 1, &hdutype);
+		int chan = -1;
+		getValue ("CHANNEL", chan);
+		if (chan > 0)
+		{
+			std::ostringstream channame;
+			channame << "CHANNEL" << chan;
+			hc = templ->getSection (channame.str ().c_str (), false);
+			if (hc)
+				writeTemplate (hc, NULL);
+		}
+	}
+}
+
 void FitsFile::writePrimaryHeader (const char *devname)
 {
 	if (templateFile)
@@ -679,6 +708,19 @@ void FitsFile::writePrimaryHeader (const char *devname)
 		if (hc)
 			writeTemplate (hc, devname);
 	}
+}
+
+int FitsFile::getTotalHDUs ()
+{
+	fits_status = 0;
+	int tothdu;
+	fits_get_num_hdus (getFitsFile (), &tothdu, &fits_status);
+	if (fits_status)
+	{
+	  	logStream (MESSAGE_ERROR) << "cannot retrieve total number of HDUs: " << getFitsErrors () << sendLog;
+		return -1;
+	}
+	return tothdu;
 }
 
 void FitsFile::moveHDU (int hdu, int *hdutype)

@@ -236,6 +236,13 @@ class FitsFile: public rts2core::Expander
 		void writeTemplate (rts2core::IniSection *hc, const char *devname);
 
 		/**
+		 * Add template values to already existing file.
+		 *
+		 * @param templ  template to add - PRIMARY will get to primary headers, CHANNELx will get to to extensions
+		 */
+		void addTemplate (rts2core::IniParser *templ);
+
+		/**
 		 * Write image primary header from template.
 		 */
 		void writePrimaryHeader (const char *devname);
@@ -244,6 +251,11 @@ class FitsFile: public rts2core::Expander
 		 * Move current HDU.
 		 */
 		void moveHDU (int hdu, int *hdutype = NULL);
+
+		/**
+		 * Return total number of HDUs.
+		 */
+		int getTotalHDUs ();
 
 		/**
 		 * Appends history string.

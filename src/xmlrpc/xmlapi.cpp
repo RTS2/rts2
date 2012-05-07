@@ -35,7 +35,7 @@
 #include "rts2db/targetset.h"
 #include "rts2db/user.h"
 #include "rts2db/sqlerror.h"
-#include "../scheduler/ticket.h"
+#include "rts2scheduler/ticket.h"
 #include "rts2fits/imagedb.h"
 #else
 #include "configuration.h"

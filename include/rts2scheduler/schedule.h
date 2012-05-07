@@ -20,7 +20,7 @@
 #ifndef __RTS2_SCHEDULE__
 #define __RTS2_SCHEDULE__
 
-#include "rts2schedobs.h"
+#include "schedobs.h"
 #include "ticketset.h"
 
 #include <vector>

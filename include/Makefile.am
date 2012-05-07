@@ -1,6 +1,6 @@
 # $Id$
 
-sub_DIRS = connection rts2db rts2script rts2fits
+sub_DIRS = connection rts2db rts2script rts2fits rts2scheduler
 
 noinst_HEADERS = rts2.h config.h imghdr.h status.h telescope_info.h imgdisplay.h connection.h logstream.h \
 		message.h strtok.h xmlerror.h teld.h camd.h dome.h cupola.h sensord.h focusd.h filterd.h phot.h rotad.h \
