@@ -1,3 +1,7 @@
+2012-05-07
+ * moved cupola to library file
+ * MaxDome II (Sirius dome) sceleton
+
 2012-05-04
  * Python libraries - scriptcomm.py, flats.py
 

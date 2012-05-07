@@ -1,7 +1,7 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
-	rts2-dome-maxdomeii
+	rts2-cupola-maxdomeii
 
 SUBDIRS = zelio
 
@@ -39,7 +39,7 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 rts2_dome_ahe_SOURCES = ahe.cpp 
 
-rts2_dome_maxdomeii_SOURCES = maxdomeii.cpp
+rts2_cupola_maxdomeii_SOURCES = maxdomeii.cpp
 
 if SUNCYG
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c watcher.cpp serial_ahe.c
