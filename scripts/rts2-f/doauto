@@ -214,10 +214,17 @@ else
 	tele trackon
 	tele domeoff
     else
+    	set state = `rts2-state -c`
+	if ( $state == 2 || $state == 3 || $state == 4 ) then
 # make sure we're tracking, dome on  
-	rts2-logcom "---RTS2-F: OBSERVING, track ON, dome ON."
-	tele trackon
-	tele domeon
+		rts2-logcom "---RTS2-F: OBSERVING, track ON, dome ON."
+		tele trackon
+		tele domeon
+	else
+		rts2-logcom "---RTS2-F: NOT OBSERVING, track OFF, dome OFF."
+		tele stow 
+		tele domeoff
+	endif
     endif
 endif
 
