@@ -138,6 +138,7 @@ int MaxDomeII::processOption (int opt)
 int MaxDomeII::initHardware ()
 {
 	sconn = new rts2core::ConnSerial (devFile, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, MAXDOME_TIMEOUT * 10);
+	sconn->setDebug (getDebug ());
 	sconn->init ();
 
 	return 0;

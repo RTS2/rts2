@@ -11,7 +11,7 @@ LDADD = -lrts2 -L../../lib/rts2 @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
 AM_CFLAGS = @NOVA_CFLAGS@
 
-noinst_HEADERS = cupola.h vermes.h door_vermes.h \
+noinst_HEADERS = vermes.h door_vermes.h \
 	dome-target-az.h  barcodereader_vermes.h \
 	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h \
 	oak_comm_vermes.h move-door_vermes.h OakFeatureReports.h OakHidBase.h \
