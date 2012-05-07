@@ -41,9 +41,12 @@
 # Version 18
 # updated 02/24/12 EF: fixed startnight/firstnight for restart
 # updated 02/24/12 EF: fixed tracking after restart
+# Version 19
 # updated 04/10/12 PK: better skyflat control
+# update  04/21/12 EF: use new skyflat method for both eve and morn
 # Copyright (C) 2010-2012 Emilio Falco (FLWO) & Petr Kubanek (Institute of Physics, Czech Republic)
 
+set ROBOVER="V19"
 set rts2dir="/home/observer/RTS2-F"
 set lastoffimage=-1
 echo -1 -1 > $lasttarget
@@ -203,7 +206,7 @@ endif
 
 # welcome message
 if ( $startnight == 1 ) then
-    rts2-logcom ">>>> START RTS2-F robot observations <<<<"
+    rts2-logcom ">>>> START RTS2-F $ROBOVER robot observations <<<<"
 else
     rts2-logcom ">>>> CONTINUE RTS2-F robot observations <<<<"
     if ( $ignoreDAY ) then
@@ -480,10 +483,11 @@ while (1 != 0)
 		 exit
 	      endif
 #	try SKYFILT_E file
-	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFLAT_E`" )
+#  PETR, I ADDED sky_time as an argument to rts2.skyflats. E 4/12/12
+	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFILT_E`" )
 	         set sky_filter=`echo $skyline | cut -d' ' -f1`
-		 set sky_time-`echo $skyline | cut -d' ' -f2`
-	      	 source $rts2dir/rts2.skyflats $sky_filter
+		 set sky_time=`echo $skyline | cut -d' ' -f2`
+	      	 source $rts2dir/rts2.skyflats $sky_filter $sky_time
 	         set skyflatstat = $status
 # 
 		 if ($skyflatstat == 0) then
@@ -602,11 +606,11 @@ while (1 != 0)
 	   breaksw
 # DAWN
         case 4:
-#     check to see if SKYFILT1 skyflats were done in the evening, skip if done:
-	   set skyfilt=`cat $rts2dir"/FLATS/SKYFILT1"`
+#     check to see if u skyflats were done in the evening, skip if done:
   	   set skyflog=$rts2dir"/FLATS/skies-"`date -d yesterday +%y%m%d`
 	   if ( -e $skyflog ) then
-	      set nlog = `grep -c "next $skyfilt" $skyflog`
+	      set sky_filter=`echo $skyline | cut -d' ' -f1`
+	      set nlog = `grep -c "next u" $skyflog`
 	      if ($nlog >= 5) then
 		 set dosky2 = 1
 	      endif
@@ -662,19 +666,21 @@ while (1 != 0)
 		tele domeon
 		tele seg 1
 	      endif
-#	try SKYFILT2, 1...
-	      set skyfilt=`cat $rts2dir"/FLATS/SKYFILT2"`
-	      source $rts2dir/rts2.skyflats $skyfilt
-	      set skyflatstat = $status
-	      if ( -e $rts2abort ) then
-		 rts2-logcom "STOProbot called"
-		 exit
-	      endif
-	      if ($skyflatstat) then
-		 set skyfilt=`cat $rts2dir"/FLATS/SKYFILT1"`
-		 source $rts2dir/rts2.skyflats $skyfilt
-		 set skyflatstat = $status
-	      endif
+#	try SKYFILT_M file
+	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFILT_M`" )
+	         set sky_filter=`echo $skyline | cut -d' ' -f1`
+		 set sky_time=`echo $skyline | cut -d' ' -f2`
+	      	 source $rts2dir/rts2.skyflats $sky_filter $sky_time
+	         set skyflatstat = $status
+# 
+		 if ($skyflatstat == 0) then
+                    break
+		 endif
+   	         if ( -e $rts2abort ) then
+		    rts2-logcom "STOProbot called"
+		    exit
+	         endif
+	      end
 	      setenv TTsky 0
 	      set dosky2 = 1
 	   endif
