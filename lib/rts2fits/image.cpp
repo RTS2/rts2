@@ -1659,6 +1659,67 @@ const void* Image::getChannelData (int chan)
 	return channels[chan]->getData ();
 }
 
+template <typename bt, typename dt> const bt * scaleData (dt * data, size_t numpix, dt smin, dt smax, scaling_type scaling, bt white)
+{
+	dt * end = data + numpix;
+	dt * p = data;
+	// overwrite data..
+	bt *nd = (bt *) data;
+
+	double l = smax - smin;
+
+	for (; p < end; p++, nd++)
+	{
+		if (*p < smin)
+		{
+			*nd = 0;
+			continue;
+		}
+		if (*p > smax)
+		{
+			*nd = white;
+			continue;
+		}
+		double d = *p;
+		d = white * (d - smin) / l;
+		switch (scaling)
+		{
+			case SCALING_LINEAR:
+				break;
+			case SCALING_LOG:
+				d = log (d);
+				break;
+			case SCALING_POW:
+				d *= d;
+				break; 
+			case SCALING_SQRT:
+				d = sqrt (d);
+				break;
+		}
+		*nd = (bt) d;
+	}
+	return (bt *) data;
+}
+
+const void * Image::getChannelDataScaled (int chan, long smin, long smax, scaling_type scaling, int newType)
+{
+	switch (dataType)
+	{
+		case RTS2_DATA_USHORT:
+			return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+		case RTS2_DATA_ULONG:
+			switch (newType)
+			{
+				case RTS2_DATA_BYTE:
+					return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+				case RTS2_DATA_USHORT:
+					return scaleData ((uint32_t *) getChannelData (chan), getChannelNPixels (chan), (uint32_t) smin, (uint32_t) smax, scaling, (uint16_t) 0xffff);
+			}
+			return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+	}
+	return getChannelData (chan);
+}
+
 unsigned short * Image::getChannelDataUShortInt (int chan)
 {
 	if (getChannelData (0) == NULL)

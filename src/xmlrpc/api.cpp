@@ -904,6 +904,32 @@ int AsyncExposeAPI::idle ()
 	return AsyncDataAPI::idle ();
 }
 
+void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, rts2image::scaling_type &scaling, int &newType)
+{
+	camera = params->getString ("ccd","");
+	smin = params->getLong ("smin", LONG_MIN);
+	smax = params->getLong ("smax", LONG_MAX);
+
+	const char *scalings[] = { "lin", "log", "sqrt", "pow" };
+	const char *sc = params->getString ("scaling", "");
+	scaling = rts2image::SCALING_LINEAR;
+	if (sc[0] != '\0')
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (!strcasecmp (sc, scalings[i]))
+			{
+				scaling = (rts2image::scaling_type) i;
+				break;
+			}
+		}
+	}
+
+	newType = params->getInteger ("2data", 0);
+}
+
+/** Camera API classes */
+
 API::API (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s)
 {
 }
@@ -954,8 +980,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	{
 		const char *camera;
 		long smin, smax;
-		scaling_type type;
-		getCameraParameters (params, camera, smin, smax, type);
+		rts2image::scaling_type scaling;
+		int newType;
+		getCameraParameters (params, camera, smin, smax, scaling, newType);
 
 		conn = master->getOpenConnection (camera);
 		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
@@ -969,22 +996,41 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		if (image->getChannelSize () <= chan)
 			throw JSONException ("cannot find specified channel");
 
-		response_type = "binary/data";
-		response_length = sizeof (imghdr) + image->getPixelByteSize () * image->getChannelNPixels (chan);
-		response = new char[response_length];
-
 		imghdr im_h;
 		image->getImgHeader (&im_h, chan);
+		if (abs (ntohs (im_h.data_type)) < abs (newType))
+			throw JSONException ("data type specified for scaling is bigger than actual image data type");
+		if (newType != 0 && ((ntohs (im_h.data_type) < 0 && newType > 0) || (ntohs (im_h.data_type) > 0 && newType < 0)))
+			throw JSONException ("converting from integer into float type, or from float to integer");
+
+		response_type = "binary/data";
+		response_length = image->getPixelByteSize () * image->getChannelNPixels (chan);
+		if (newType != 0)
+			response_length /= (ntohs (im_h.data_type) / newType);
+
+		response_length += sizeof (imghdr);
+
+		response = new char[response_length];
+
+		if (newType != 0)
+		{
+			memcpy (response + sizeof (imghdr), image->getChannelDataScaled (chan, smin, smax, scaling, newType), response_length - sizeof (imghdr));
+			im_h.data_type = htons (newType);
+		}
+		else
+		{
+			memcpy (response + sizeof (imghdr), image->getChannelData (chan), response_length - sizeof (imghdr));
+		}
 		memcpy (response, &im_h, sizeof (imghdr));
-		memcpy (response + sizeof (imghdr), image->getChannelData (chan), response_length - sizeof (imghdr));
 		return;
 	}
 	else if (vals.size () == 1 && vals[0] == "currentimage")
 	{
 		const char *camera;
 		long smin, smax;
-		scaling_type type;
-		getCameraParameters (params, camera, smin, smax, type);
+		rts2image::scaling_type type;
+		int newType;
+		getCameraParameters (params, camera, smin, smax, type, newType);
 
 		conn = master->getOpenConnection (camera);
 		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
@@ -1007,14 +1053,18 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		if (image->getChannelSize () <= chan)
 			throw JSONException ("cannot find specified channel");
 
+		imghdr im_h;
+		image->getImgHeader (&im_h, chan);
+
 		response_type = "binary/data";
 		response_length = sizeof (imghdr) + image->getPixelByteSize () * image->getChannelNPixels (chan);
 		response = new char[response_length];
 
-		imghdr im_h;
-		image->getImgHeader (&im_h, chan);
 		memcpy (response, &im_h, sizeof (imghdr));
 		memcpy (response + sizeof (imghdr), image->getChannelData (chan), response_length - sizeof (imghdr));
+
+		// scale data if needed..
+
 		return;
 	}
 	// calls returning arrays
@@ -1324,8 +1374,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		{
 			const char *camera;
 			long smin, smax;
-			scaling_type type;
-			getCameraParameters (params, camera, smin, smax, type);
+			rts2image::scaling_type type;
+			int newType;
+			getCameraParameters (params, camera, smin, smax, type, newType);
 			bool ext = params->getInteger ("e", 0);
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
@@ -2329,13 +2380,6 @@ void API::jsonLabels (rts2db::Target *tar, std::ostream &os)
 	os << "]";
 }
 #endif // HAVE_PGSQL
-
-void API::getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, scaling_type &scaling)
-{
-	camera = params->getString ("ccd","");
-	smin = params->getLong ("smin", LONG_MIN);
-	smax = params->getLong ("smax", LONG_MAX);
-}
 
 #ifdef HAVE_PGSQL
 rts2db::Target * API::getTarget (XmlRpc::HttpParams *params)

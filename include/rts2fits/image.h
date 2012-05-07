@@ -48,6 +48,9 @@ double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object);
 namespace rts2image
 {
 
+/** Image scaling functions. */
+typedef enum { SCALING_LINEAR, SCALING_LOG, SCALING_SQRT, SCALING_POW } scaling_type;
+
 /**
  * One pixel at the image, with coordinates and a value.
  */
@@ -418,6 +421,8 @@ class Image:public FitsFile
 		void loadChannels ();
 
 		const void *getChannelData (int chan);
+		const void *getChannelDataScaled (int chan, long smin, long smax, scaling_type scaling, int newType);
+
 		unsigned short *getChannelDataUShortInt (int chan);
 
 		int getPixelByteSize ()

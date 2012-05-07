@@ -42,6 +42,9 @@
 #define OPT_WITHSHM           OPT_LOCAL + 405
 #define OPT_FILTER_OFFSETS    OPT_LOCAL + 406
 #define OPT_OFFSETS_FILE      OPT_LOCAL + 407
+#define OPT_DETSIZE           OPT_LOCAL + 408
+#define OPT_CHANNELS_STARTS   OPT_LOCAL + 409
+#define OPT_CHANNELS_DELTAS   OPT_LOCAL + 410
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -364,6 +367,14 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	tempCCDHistorySize = NULL;
 	tempSet = NULL;
 	nightCoolTemp = NULL;
+
+	detsize = NULL;
+	chan1offset = NULL;
+	chan2offset = NULL;
+
+	chan1delta = NULL;
+	chan2delta = NULL;
+
 	ccdType[0] = '\0';
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
@@ -484,6 +495,11 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
 	addOption (OPT_WCS_CDELT, "wcs", 1, "WCS CD matrix (CRPIX1:CRPIX2:CDELT1:CDELT2:CROTA in default, unbinned configuration)");
 	addOption (OPT_WITHSHM, "with-shm", 2, "use given numbers of segments of shared memory");
+
+	// detector sizes, channel starting points and offsets
+	addOption (OPT_DETSIZE, "detsize", 1, "detector size - X:Y:W:H");
+	addOption (OPT_CHANNELS_STARTS, "chanstarts", 1, "channel starts - X1:Y1,:..");
+	addOption (OPT_CHANNELS_DELTAS, "chandeltas", 1, "channel deltas - DX1:DY1,..");
 }
 
 Camera::~Camera ()
@@ -658,6 +674,19 @@ int Camera::info ()
 	return rts2core::ScriptDevice::info ();
 }
 
+void fillPairs (rts2core::DoubleArray *a1, rts2core::DoubleArray *a2, const char *opt)
+{
+	std::vector <std::string> chans = SplitStr (optarg, ",");
+	for (std::vector <std::string>::iterator iter = chans.begin (); iter != chans.end (); iter++)
+	{
+		std::vector <std::string> xy = SplitStr (iter->c_str (), ":");
+		if (xy.size () != 2)
+			throw rts2core::Error ("invalid channel pair: " + *iter);
+		a1->addValue (atof (xy[0].c_str ()));
+		a2->addValue (atof (xy[1].c_str ()));
+	}
+}
+
 int Camera::processOption (int in_opt)
 {
 	std::vector <std::string> params;
@@ -743,6 +772,25 @@ int Camera::processOption (int in_opt)
 				sharedMemNum = 0;
 			else
 				sharedMemNum = atoi (optarg);
+			break;
+
+		case OPT_DETSIZE:
+			{
+				std::vector <std::string> dets = SplitStr (optarg, ":");
+				createValue (detsize, "DETSIZE", "[x w y h] total detector size", false);
+				for (std::vector <std::string>::iterator iter = dets.begin (); iter != dets.end (); iter++)
+					detsize->addValue (atof (iter->c_str ()));
+			}
+			break;
+		case OPT_CHANNELS_STARTS:
+			createValue (chan1offset, "CHAN1_OFFSETS", "[X1 X2 X3 ..] channels X offsets", false);
+			createValue (chan2offset, "CHAN2_OFFSETS", "[Y1 Y2 Y3 ..] channels Y offsets", false);
+			fillPairs (chan1offset, chan2offset, optarg);
+			break;
+		case OPT_CHANNELS_DELTAS:
+			createValue (chan1delta, "CHAN1_DELTA", "[X1 X2 X3 ..] channels X deltas", false);
+			createValue (chan2delta, "CHAN2_DELTA", "[Y1 Y2 Y3 ..] channels Y deltas", false);
+			fillPairs (chan1delta, chan2delta, optarg);
 			break;
 		default:
 			return rts2core::ScriptDevice::processOption (in_opt);

@@ -576,6 +576,19 @@ class Camera:public rts2core::ScriptDevice
 		// night cooling temperature
 		rts2core::ValueFloat *nightCoolTemp;
 
+		// Detector size - for DETSIZE keyword
+		rts2core::DoubleArray *detsize;
+
+		// Channel X offsets
+		rts2core::DoubleArray *chan1offset;
+		// Channel Y offsets
+		rts2core::DoubleArray *chan2offset;
+
+		// channel X deltas;
+		rts2core::DoubleArray *chan1delta;
+		// channel Y deltas;
+		rts2core::DoubleArray *chan2delta;
+
 		char ccdType[64];
 		char *ccdRealType;
 		char serialNumber[64];

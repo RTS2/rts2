@@ -1536,6 +1536,7 @@ int Connection::fitsDataTransfer (const char *fn)
 	chmod (fn, 0666);
 	_os << COMMAND_DATA_IN_FITS " " << fn;
 	sendMsg (_os);
+	return 0;
 }
 
 void Connection::successfullSend ()
