@@ -106,6 +106,9 @@
 	    <option>--rts2opera-fix <replaceable>WCS extension</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
+	    <option>--add-template <replaceable>template file</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
 	    <option>-j <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
@@ -235,6 +238,14 @@
 	    Fix RTS2 headers. Add headers needed for Opera processing - FLIP
 	    and ROTANG. Parameter must specify WCS multiple extension, or shall
 	    be - for default (non-multiple) WCS.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--add-template <replaceable>template file</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Add fixed content of the template to FITS file(s) specified as arguments.
 	  </para>
 	</listitem>
       </varlistentry>
