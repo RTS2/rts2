@@ -211,8 +211,59 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 		ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()));
 
+		// detector coordinates,..
+		rts2core::DoubleArray *detsize = getDoubleArray ("DETSIZE");
+
+		rts2core::DoubleArray *chan1_offsets = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN1_OFFSETS"));
+		rts2core::DoubleArray *chan2_offsets = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN2_OFFSETS"));
+
+		rts2core::DoubleArray *chan1_delta = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN1_DELTA"));
+		rts2core::DoubleArray *chan2_delta = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN2_DELTA"));
+
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
+		{
 			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
+
+			if (detsize)
+			{
+				struct imghdr *imgh = (struct imghdr *) ((*di)->getDataBuff ());
+
+				uint16_t chan = ntohs (imgh->channel) - 1;
+				int32_t w = ntohl (imgh->sizes[0]);
+				int32_t h = ntohl (imgh->sizes[1]);
+				int16_t bin1 = ntohs (imgh->binnings[0]);
+				int16_t bin2 = ntohs (imgh->binnings[1]);
+
+				// write detector/channel orientation
+				ci->image->setValueRectange ("DETSIZE", (*detsize)[0], (*detsize)[2], (*detsize)[1], (*detsize)[3], "unbined detector size");
+				ci->image->setValueRectange ("DATASEC", 1, w, 1, h, "data binned section");
+
+				if (chan1_delta && chan < chan1_delta->size () && chan2_delta && chan < chan2_delta->size () && chan1_offsets && chan < chan1_offsets->size () && chan2_offsets && chan < chan2_offsets->size ())
+				{
+					ci->image->setValueRectange ("DETSEC",
+						(*chan1_offsets)[chan],
+						(*chan1_offsets)[chan] + (*chan1_delta)[chan] * w * bin1,
+						(*chan2_offsets)[chan],
+						(*chan2_offsets)[chan] + (*chan2_delta)[chan] * h * bin2,
+						"unbinned section of detector");
+					ci->image->setValueRectange ("TRIMSEC",
+						(*chan1_offsets)[chan],
+						(*chan1_offsets)[chan] + (*chan1_delta)[chan] * w * bin1,
+						(*chan2_offsets)[chan],
+						(*chan2_offsets)[chan] + (*chan2_delta)[chan] * h * bin2,
+						"TRIM binned section");
+				}
+
+				if (chan1_delta && chan < chan1_delta->size ())
+					ci->image->setValue ("DTM1_1", (*chan1_delta)[chan] * bin1, "detector transformation matrix");
+				if (chan2_delta && chan < chan2_delta->size ())
+					ci->image->setValue ("DTM2_2", (*chan2_delta)[chan] * bin2, "detector transformation matrix");
+				if (chan1_offsets && chan < chan1_offsets->size ())
+					ci->image->setValue ("DTV1", (*chan1_offsets)[chan], "detector transformation vector");
+				if (chan2_offsets && chan < chan2_offsets->size ())
+					ci->image->setValue ("DTV2", (*chan2_offsets)[chan], "detector transformation vector");
+			}
+		}
 
 		ci->image->moveHDU (1);
 
@@ -415,6 +466,14 @@ void DevClientCameraImage::writeToFitsTransfer (Image *img)
 	img->setValue ("CCD_NAME", getConnection ()->getName (), "camera name");
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, images[0]));
 	img->writeExposureStart ();
+}
+
+rts2core::DoubleArray * DevClientCameraImage::getDoubleArray (const char *name)
+{
+	rts2core::Value *v = getConnection ()->getValue (name);
+	if (v == NULL || !(v->getValueExtType () == RTS2_VALUE_ARRAY && v->getValueBaseType () == RTS2_VALUE_DOUBLE))
+		return NULL;
+	return (rts2core::DoubleArray *) v;
 }
 
 DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection)

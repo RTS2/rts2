@@ -430,6 +430,13 @@ void FitsFile::setValue (const char *name, time_t * sec, long usec, const char *
 	setValue (name, buf, comment);
 }
 
+void FitsFile::setValueRectange (const char *name, double x, double y, double w, double h, const char *comment)
+{
+	std::ostringstream os;
+	os << "[" << x << ":" << y << "," << w << ":" << h << "]";
+	setValue (name, os.str ().c_str (), comment);
+}
+
 void FitsFile::setCreationDate (fitsfile * out_file)
 {
 	fitsfile *curr_ffile = getFitsFile ();

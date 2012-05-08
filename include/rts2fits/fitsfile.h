@@ -191,6 +191,9 @@ class FitsFile: public rts2core::Expander
 		void setValue (const char *name, char value, const char *comment);
 		void setValue (const char *name, const char *value, const char *comment);
 		void setValue (const char *name, time_t * sec, long usec, const char *comment);
+
+		// write rectangle in IRAF notation - e.g. as [x:y,w:h]
+		void setValueRectange (const char *name, double x, double y, double w, double h, const char *comment);
 		// that method is used to update DATE - creation date entry - for other file then ffile
 		void setCreationDate (fitsfile * out_file = NULL);
 

@@ -128,6 +128,8 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		void writeFilter (Image *img);
 
+		rts2core::DoubleArray * getDoubleArray (const char *name);
+
 		// we have to allocate that field as soon as we get the knowledge of
 		// camera chip numbers..
 		CameraImages images;
