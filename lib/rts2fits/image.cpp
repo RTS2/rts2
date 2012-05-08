@@ -795,19 +795,7 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 		if (hc)
 			writeTemplate (hc, NULL);
 	}
-	else if (writeRTS2Values)
-	{
-		writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
-	}
 	return 0;
-}
-
-void Image::writePhysical (int x, int y, int bin_x, int bin_y)
-{
-	setValue ("LTV1", -1 * (double) x / bin_x, "image beginning - detector X coordinate");
-	setValue ("LTM1_1", ((double) 1) / bin_x, "delta along X axis");
-	setValue ("LTV2", -1 * (double) y / bin_y, "image beginning - detector Y coordinate");
-	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
 void Image::writeMetaData (struct imghdr *im_h)
@@ -1024,7 +1012,7 @@ void Image::getImgHeader (struct imghdr *im_h, int chan)
 		im_h->binnings[0] = htons (1);
 
 	ti = 1;
-	getValue ("LTM2_1", ti, false);
+	getValue ("LTM2_2", ti, false);
 	if (ti != 0)
 		im_h->binnings[1] = htons (1 / ti);
 	else

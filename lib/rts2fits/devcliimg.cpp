@@ -245,6 +245,8 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 			if (detsize)
 			{
+				int16_t x = ntohs (imgh->x);
+				int16_t y = ntohs (imgh->y);
 				int32_t w = ntohl (imgh->sizes[0]);
 				int32_t h = ntohl (imgh->sizes[1]);
 				int16_t bin1 = ntohs (imgh->binnings[0]);
@@ -270,14 +272,45 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 						"TRIM binned section");
 				}
 
-				if (chan1_delta && chan < chan1_delta->size ())
-					ci->image->setValue ("DTM1_1", (*chan1_delta)[chan] * bin1, "detector transformation matrix");
-				if (chan2_delta && chan < chan2_delta->size ())
-					ci->image->setValue ("DTM2_2", (*chan2_delta)[chan] * bin2, "detector transformation matrix");
+				// TV, TM - vector, matrixes
+				// for the momemt we assume detector == physical
+				double vals[4] = {-1 * x, -1 * y, 1, 1};
+
 				if (chan1_offsets && chan < chan1_offsets->size ())
-					ci->image->setValue ("DTV1", (*chan1_offsets)[chan], "detector transformation vector");
+					vals[0] += (*chan1_offsets)[chan];
 				if (chan2_offsets && chan < chan2_offsets->size ())
-					ci->image->setValue ("DTV2", (*chan2_offsets)[chan], "detector transformation vector");
+					vals[1] += (*chan2_offsets)[chan];
+				if (chan1_delta && chan < chan1_delta->size ())
+					vals[2] *= (*chan1_delta)[chan];
+				if (chan2_delta && chan < chan2_delta->size ())
+					vals[3] *= (*chan2_delta)[chan];
+
+				if (bin1 != 0)
+				{
+					vals[0] /= bin1;
+					vals[2] /= bin1;
+				}
+
+				if (bin2 != 0)
+				{
+					vals[1] /= bin2;
+					vals[3] /= bin2;
+				}
+
+				if (vals[2] > 0)
+					vals[0] *= -1;
+				if (vals[3] > 0)
+					vals[1] *= -1;
+
+				ci->image->setValue ("LTV1", vals[0], "image beginning - detector X coordinate");
+				ci->image->setValue ("LTV2", vals[1], "image beginning - detector Y coordinate");
+				ci->image->setValue ("LTM1_1", vals[2], "delta along X axis");
+				ci->image->setValue ("LTM2_2", vals[3], "delta along Y axis");
+
+				ci->image->setValue ("DTV1", 0, "detector transformation vector");
+				ci->image->setValue ("DTV2", 0, "detector transformation vector");
+				ci->image->setValue ("DTM1_1", 1, "detector transformation matrix");
+				ci->image->setValue ("DTM2_2", 1, "detector transformation matrix");
 			}
 		}
 

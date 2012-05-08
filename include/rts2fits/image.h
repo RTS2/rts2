@@ -733,16 +733,6 @@ class Image:public FitsFile
 		 */
 		int writeImgHeader (struct imghdr *im_h, int nchan);
 
-		/**
-		 * Record image physical coordinates.
-		 *
-		 * @param x     X offset of the image.
-		 * @param y     Y offset of the image.
-		 * @param bin_x Binning along X axis.
-		 * @param bin_y Binning along Y axis.
-		 */
-		void writePhysical (int x, int y, int bin_x, int bin_y);
-
 		void writeConnBaseValue (const char *name, rts2core::Value *val, const char *desc);
 
 		/**
