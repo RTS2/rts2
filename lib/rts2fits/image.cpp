@@ -806,9 +806,9 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 
 void Image::writePhysical (int x, int y, int bin_x, int bin_y)
 {
-	setValue ("LTV1", -1 * (double) x, "image beginning - detector X coordinate");
+	setValue ("LTV1", -1 * (double) x / bin_x, "image beginning - detector X coordinate");
 	setValue ("LTM1_1", ((double) 1) / bin_x, "delta along X axis");
-	setValue ("LTV2", -1 * (double) y, "image beginning - detector Y coordinate");
+	setValue ("LTV2", -1 * (double) y / bin_y, "image beginning - detector Y coordinate");
 	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
