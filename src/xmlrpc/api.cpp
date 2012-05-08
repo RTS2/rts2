@@ -655,7 +655,7 @@ void AsyncMSet::postEvent (Event *event)
 class AsyncDataAPI:public AsyncAPI
 {
 	public:
-		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax);
+		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
 		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
 
 		virtual void nullSource () { data = NULL; AsyncAPI::nullSource (); }
@@ -670,16 +670,22 @@ class AsyncDataAPI:public AsyncAPI
 		long smin;
 		long smax;
 
+		rts2image::scaling_type scaling;
+		int newType;
+
 		void sendData ();
 };
 
-AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax):AsyncAPI (_req, _conn, _source, false)
+AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
 {
 	data = _data;
 	channel = _chan;
 	bytesSoFar = 0;
 	smin = _smin;
 	smax = _smax;
+
+	scaling = _scaling;
+	newType = _newType;
 }
 
 void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
@@ -746,14 +752,14 @@ void AsyncDataAPI::sendData ()
 class AsyncCurrentAPI:public AsyncDataAPI
 {
 	public:
-		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax);
+		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
 		virtual ~AsyncCurrentAPI ();
 
 		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
 		virtual void exposureFailed (rts2core::Connection *_conn, int status);
 };
 
-AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax)
+AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
 {
 	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 
@@ -786,7 +792,7 @@ void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
 class AsyncExposeAPI:public AsyncDataAPI
 {
 	public:
-		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax);
+		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
 		virtual ~AsyncExposeAPI ();
 
 		virtual void postEvent (Event *event);
@@ -801,7 +807,7 @@ class AsyncExposeAPI:public AsyncDataAPI
 		enum {waitForExpReturn, waitForImage, receivingImage} callState;
 };
 
-AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax)
+AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
 {
 	callState = waitForExpReturn;
 }
@@ -976,7 +982,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 
 	XmlRpcd * master = (XmlRpcd *) getMasterApp ();
 	// calls returning binary data
-	if (vals.size () == 1 && vals[0] == "lastimage")
+	if (vals.size () == 1 && (vals[0] == "currentimage" || vals[0] == "lastimage"))
 	{
 		const char *camera;
 		long smin, smax;
@@ -988,8 +994,21 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
 			throw JSONException ("cannot find camera with given name");
 		int chan = params->getInteger ("chan", 0);
-		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 
+		if (vals[0] == "currentimage")
+		{
+			// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
+			// first try if there is data connection opened, so image data should be streamed in
+			if (DataAbstractRead * lastData = conn->lastDataChannel (chan))
+			{
+				AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData, chan, smin, smax, scaling, newType);
+				((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+				throw XmlRpc::XmlRpcAsynchronous ();
+			}
+		}
+
+		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
 		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
 		if (image == NULL)
 			throw JSONException ("camera did not take a single image");
@@ -1022,49 +1041,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			memcpy (response + sizeof (imghdr), image->getChannelData (chan), response_length - sizeof (imghdr));
 		}
 		memcpy (response, &im_h, sizeof (imghdr));
-		return;
-	}
-	else if (vals.size () == 1 && vals[0] == "currentimage")
-	{
-		const char *camera;
-		long smin, smax;
-		rts2image::scaling_type type;
-		int newType;
-		getCameraParameters (params, camera, smin, smax, type, newType);
-
-		conn = master->getOpenConnection (camera);
-		if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
-			throw JSONException ("cannot find camera with given name");
-		int chan = params->getInteger ("chan", 0);
-		// XmlRpcd::createOtherType qurantee that the other connection is XmlDevCameraClient
-		// first try if there is data connection opened, so image data should be streamed in
-		if (DataAbstractRead * lastData = conn->lastDataChannel (chan))
-		{
-			AsyncCurrentAPI *aa = new AsyncCurrentAPI (this, conn, connection, lastData, chan, smin, smax);
-			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
-
-			throw XmlRpc::XmlRpcAsynchronous ();
-		}
-
-		// if that fails, try to return last image
-		rts2image::Image *image = ((XmlDevCameraClient *) (conn->getOtherDevClient ()))->getPreviousImage ();
-		if (image == NULL)
-			throw JSONException ("camera did not take a single image");
-		if (image->getChannelSize () <= chan)
-			throw JSONException ("cannot find specified channel");
-
-		imghdr im_h;
-		image->getImgHeader (&im_h, chan);
-
-		response_type = "binary/data";
-		response_length = sizeof (imghdr) + image->getPixelByteSize () * image->getChannelNPixels (chan);
-		response = new char[response_length];
-
-		memcpy (response, &im_h, sizeof (imghdr));
-		memcpy (response + sizeof (imghdr), image->getChannelData (chan), response_length - sizeof (imghdr));
-
-		// scale data if needed..
-
 		return;
 	}
 	// calls returning arrays
@@ -1374,9 +1350,9 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		{
 			const char *camera;
 			long smin, smax;
-			rts2image::scaling_type type;
+			rts2image::scaling_type scaling;
 			int newType;
-			getCameraParameters (params, camera, smin, smax, type, newType);
+			getCameraParameters (params, camera, smin, smax, scaling, newType);
 			bool ext = params->getInteger ("e", 0);
 			conn = master->getOpenConnection (camera);
 			if (conn == NULL || conn->getOtherType () != DEVICE_TYPE_CCD)
@@ -1395,7 +1371,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			else
 			{
 				int chan = params->getInteger ("chan", 0);
-				aa = new AsyncExposeAPI (this, conn, connection, chan, smin, smax);
+				aa = new AsyncExposeAPI (this, conn, connection, chan, smin, smax, scaling, newType);
 			}
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
