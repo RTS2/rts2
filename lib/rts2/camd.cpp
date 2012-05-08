@@ -734,16 +734,16 @@ int Camera::processOption (int in_opt)
 			// create WCS parameters..
 			if (wcs_cdelta1 == NULL)
 			{
-				createValue (wcs_ctype1, multiWCS ("CTYPE1", multi_wcs), "WCS transformation type", true);
-				createValue (wcs_ctype2, multiWCS ("CTYPE2", multi_wcs), "WCS transformation type", true);
+				createValue (wcs_ctype1, multiWCS ("CTYPE1", multi_wcs), "WCS transformation type", false, RTS2_DT_WCS_MASK);
+				createValue (wcs_ctype2, multiWCS ("CTYPE2", multi_wcs), "WCS transformation type", false, RTS2_DT_WCS_MASK);
 				wcs_ctype1->setValueCharArr ("RA---TAN");
 				wcs_ctype2->setValueCharArr ("DEC--TAN");
-				createValue (wcs_crpix1, multiWCS ("CRPIX1", multi_wcs), "WCS x reference pixel", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_crpix2, multiWCS ("CRPIX2", multi_wcs), "WCS y reference pixel", true, RTS2_VALUE_WRITABLE);
+				createValue (wcs_crpix1, multiWCS ("CRPIX1", multi_wcs), "WCS x reference pixel", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CRPIX1);
+				createValue (wcs_crpix2, multiWCS ("CRPIX2", multi_wcs), "WCS y reference pixel", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CRPIX2);
 
-				createValue (wcs_cdelta1, multiWCS ("CDELT1", multi_wcs), "[deg] WCS delta along 1st axis", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_cdelta2, multiWCS ("CDELT2", multi_wcs), "[deg] WCS delta along 2nd axis", true, RTS2_VALUE_WRITABLE);
-				createValue (wcs_crota, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", false, RTS2_VALUE_WRITABLE | RTS2_DT_ROTANG);
+				createValue (wcs_cdelta1, multiWCS ("CDELT1", multi_wcs), "[deg] WCS delta along 1st axis", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CDELT1);
+				createValue (wcs_cdelta2, multiWCS ("CDELT2", multi_wcs), "[deg] WCS delta along 2nd axis", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CDELT2);
+				createValue (wcs_crota, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_ROTANG);
 			}
 			params = SplitStr (optarg, ":");
 			if (params.size () != 5)

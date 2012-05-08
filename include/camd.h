@@ -747,7 +747,9 @@ class Camera:public rts2core::ScriptDevice
 		virtual int endExposure ();
 
 		/**
-		 * Hook to stop exposure.
+		 * Called every time camera is reseted (by killall or
+		 * killall_wcs commands.  Will be renamed to resetDevice or
+		 * depreciated in future releases.
 		 *
 		 * @return -1 on error, 0 on success.
 		 */

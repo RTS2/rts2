@@ -176,7 +176,7 @@
 #define RTS2_DT_DEGREES               0x00030000
 #define RTS2_DT_DEG_DIST              0x00040000
 #define RTS2_DT_PERCENTS              0x00050000
-#define RTS2_DT_ROTANG                0x00060000
+
 #define RTS2_DT_HEX                   0x00070000
 #define RTS2_DT_BYTESIZE              0x00080000
 #define RTS2_DT_KMG                   0x00090000
@@ -189,6 +189,18 @@
  * scriptLen, which will show current script position.
  */
 #define RTS2_DT_SCRIPT                0x000d0000
+
+// value is WCS
+#define RTS2_DT_WCS_MASK              0x00100000
+
+// BEWARE: if you change this, you MUST change offseting in lib/rts2fits/image.cpp - look for constants
+#define RTS2_DT_WCS_CRVAL1            0x00110000
+#define RTS2_DT_WCS_CRVAL2            0x00120000
+#define RTS2_DT_WCS_CRPIX1            0x00130000
+#define RTS2_DT_WCS_CRPIX2            0x00140000
+#define RTS2_DT_WCS_CDELT1            0x00150000
+#define RTS2_DT_WCS_CDELT2            0x00160000
+#define RTS2_DT_WCS_ROTANG            0x00170000
 
 // direct system to write values to FITS headers, even if it is an array
 #define RTS2_FITS_HEADERS             0x00400000

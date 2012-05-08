@@ -224,11 +224,27 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		{
 			ci->writeData ((*di)->getDataBuff (), (*di)->getDataTop (), data->size ());
 
+			struct imghdr *imgh = (struct imghdr *) ((*di)->getDataBuff ());
+
+			uint16_t chan = ntohs (imgh->channel) - 1;
+
+			double mods[NUM_WCS_VALUES];
+			mods[0] = mods[1] = mods[2] = mods[3] = mods[6] = 0;
+			mods[4] = mods[5] = 1;
+
+			if (chan1_offsets && chan < chan1_offsets->size ())
+				mods[2] -= (*chan1_offsets)[chan];
+			if (chan1_delta && chan < chan1_delta->size ())
+				mods[4] *= (*chan1_delta)[chan];
+			if (chan2_offsets && chan < chan2_offsets->size ())
+				mods[3] -= (*chan2_offsets)[chan];
+			if (chan2_delta && chan < chan2_delta->size ())
+				mods[5] *= (*chan2_delta)[chan];
+
+			ci->image->writeWCS (mods);
+
 			if (detsize)
 			{
-				struct imghdr *imgh = (struct imghdr *) ((*di)->getDataBuff ());
-
-				uint16_t chan = ntohs (imgh->channel) - 1;
 				int32_t w = ntohl (imgh->sizes[0]);
 				int32_t h = ntohl (imgh->sizes[1]);
 				int16_t bin1 = ntohs (imgh->binnings[0]);

@@ -163,7 +163,7 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	corrImgId->setValueInteger (0);
 
 	defaultRotang = 0;
-	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
+	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_WCS_ROTANG | RTS2_VALUE_WRITABLE);
 
 	move_connection = NULL;
 
@@ -673,8 +673,8 @@ int Telescope::init ()
 
 	if (wcs_multi != '!')
 	{
-		createValue (wcs_crval1, multiWCS ("CRVAL1", wcs_multi), "first reference value", true);
-		createValue (wcs_crval2, multiWCS ("CRVAL2", wcs_multi), "second reference value", true);
+		createValue (wcs_crval1, multiWCS ("CRVAL1", wcs_multi), "first reference value", false, RTS2_DT_WCS_CRVAL1);
+		createValue (wcs_crval2, multiWCS ("CRVAL2", wcs_multi), "second reference value", false, RTS2_DT_WCS_CRVAL2);
 	}
 
 	if (modelFile)

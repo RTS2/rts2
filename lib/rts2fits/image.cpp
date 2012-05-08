@@ -101,7 +101,8 @@ void Image::initData ()
 
 	isAcquiring = 0;
 
-	total_rotang = NAN;
+	for (int i = 0; i < NUM_WCS_VALUES; i++)
+		total_wcs[i] = NAN;
 	wcs_multi_rotang = '\0';
 
 	shutter = SHUT_UNKNOW;
@@ -138,7 +139,8 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	max = in_image->max;
 	mean = in_image->mean;
 	isAcquiring = in_image->isAcquiring;
-	total_rotang = in_image->total_rotang;
+	for (int i = 0; i < NUM_WCS_VALUES; i++)
+		total_wcs[i] = in_image->total_wcs[i];
 	wcs_multi_rotang = in_image->wcs_multi_rotang;
 
 	targetId = in_image->targetId;
@@ -433,7 +435,7 @@ void Image::getHeaders ()
 	// astrometry get !!
 	getValue ("CRVAL1", pos_astr.ra, false);
 	getValue ("CRVAL2", pos_astr.dec, false);
-	getValue ("CROTA2", total_rotang, false);
+	getValue ("CROTA2", total_wcs[4], false);
 }
 
 void Image::getTargetHeaders ()
@@ -512,10 +514,6 @@ int Image::closeFile ()
 				setValue ("RA_ERR", ra_err, "RA error in position");
 				setValue ("DEC_ERR", dec_err, "DEC error in position");
 				setValue ("POS_ERR", getAstrometryErr (), "error in position");
-			}
-			if (!isnan (total_rotang))
-			{
-				setValue (multiWCS ("CROTA2", wcs_multi_rotang) , total_rotang, "Image rotang over X axis");
 			}
 			// save array data
 			for (std::map <int, TableData *>::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
@@ -839,6 +837,32 @@ void Image::writeMetaData (struct imghdr *im_h)
 				break;
 			default:
 				shutter = SHUT_UNKNOW;
+		}
+	}
+}
+
+void Image::writeWCS (double mods[NUM_WCS_VALUES])
+{
+	// write WCS values
+	for (std::list <rts2core::ValueString>::iterator iter = string_wcs.begin (); iter != string_wcs.end (); iter++)
+		writeConnBaseValue (iter->getName ().c_str (), &(*iter), iter->getDescription ().c_str ());
+
+	const char *wcs_names[NUM_WCS_VALUES] = {"CRVAL1", "CRVAL2", "CRPIX1", "CRPIX2", "CDELT1", "CDELT2", "CROTA2"};
+	const char *wcs_desc[NUM_WCS_VALUES] = {"reference value on 1st axis", "reference value on 2nd axis", "reference pixel of the 1st axis", "reference pixel of the 2nd axis", "delta along 1st axis", "delta along 2nd axis", "rotational angle"};
+	for (int i = 0; i < NUM_WCS_VALUES; i++)
+	{
+		if (!isnan (total_wcs[i]))
+		{
+			double v = total_wcs[i];
+			if (i == 4 || i == 5)
+				v *= mods[i];
+			else
+				v += mods[i];
+			// CRPIX needs modifications based on orientation of the axis..
+			if ((i == 2 || i == 3) && (mods[i + 2]) < 0)
+				v *= -1;
+				
+			setValue (multiWCS (wcs_names[i], wcs_multi_rotang) , v, wcs_desc[i]);
 		}
 	}
 }
@@ -2189,11 +2213,28 @@ void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
 				}
 			}
 			// record rotang even if it is not writable
-			if (which == EXPOSURE_START && val->getValueDisplayType () == RTS2_DT_ROTANG)
+			if (which == EXPOSURE_START && (val->getValueDisplayType () & RTS2_DT_WCS_MASK))
 			{
-				addRotang (val->getValueDouble ());
-				if (strncmp (val->getName ().c_str (), "CROTA2", 6) == 0)
-					wcs_multi_rotang = val->getName ()[6];
+				switch (val->getValueDisplayType ())
+				{
+					case RTS2_DT_WCS_CRVAL1:
+					case RTS2_DT_WCS_CRVAL2:
+					case RTS2_DT_WCS_CRPIX1:
+					case RTS2_DT_WCS_CRPIX2:
+					case RTS2_DT_WCS_CDELT1:
+					case RTS2_DT_WCS_CDELT2:
+						addWcs (val->getValueDouble (), ((val->getValueDisplayType () & 0x000f0000) >> 16) - 1);
+						break;
+					case RTS2_DT_WCS_ROTANG:
+						addWcs (val->getValueDouble (), 6);
+						if (strncmp (val->getName ().c_str (), "CROTA2", 6) == 0)
+							wcs_multi_rotang = val->getName ()[6];
+						break;
+					default:
+						if (val->getValueBaseType () == RTS2_VALUE_STRING)
+							string_wcs.push_back (*((rts2core::ValueString *) val));
+						break;
+				}
 			}
 		}
 	}

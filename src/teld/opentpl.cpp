@@ -579,7 +579,7 @@ int OpenTPL::initValues ()
 	// nasmith derotator
 	if (opentplConn->haveModule ("DEROTATOR[3]"))
 	{
-		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE, 0);
+		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_WCS_ROTANG | RTS2_VALUE_WRITABLE, 0);
 		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 		createValue (derotatorPower, "derotatorPower", "derotator power setting", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	}

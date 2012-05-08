@@ -36,6 +36,8 @@
 #include "expander.h"
 #include "rts2target.h"
 
+#define NUM_WCS_VALUES    7
+
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
@@ -213,6 +215,13 @@ class Image:public FitsFile
 		int linkImageExpand (std::string link_ex);
 
 		void writeMetaData (struct imghdr *im_h);
+
+		/**
+		 * Write WCS headers to active channel.
+		 *
+		 * @param mods  modificators to add to WCS values (CRVALs[12], cRPIXs[12], CDELTs[12], CROTA)
+		 */
+		void writeWCS (double mods[NUM_WCS_VALUES]);
 
 		void setRTS2Value (const char *name, int value, const char *comment)
 		{
@@ -487,14 +496,14 @@ class Image:public FitsFile
 		int getError (double &eRa, double &eDec, double &eRad);
 
 		/**
-		 * Increase image rotang.
+		 * Increase WCS value 
 		 */
-		void addRotang (double rotAdd)
+		void addWcs (double delta, int i)
 		{
-			if (isnan (total_rotang))
-				total_rotang = rotAdd;
+			if (isnan (total_wcs[i]))
+				total_wcs[i] = delta;
 			else
-				total_rotang += rotAdd;
+				total_wcs[i] += delta;
 		}
 
 		/**
@@ -706,7 +715,10 @@ class Image:public FitsFile
 		// that value is nan when rotang was already set;
 		// it is calculated as sum of partial rotangs.
 		// For change of total rotang, addRotang function is provided.
-		double total_rotang;
+		// CRVALs, CRPIXs, CDELTAs, CROTAs
+		double total_wcs[NUM_WCS_VALUES];
+		std::list <rts2core::ValueString> string_wcs;
+
 		// Multiple WCS to add rotang to
 		char wcs_multi_rotang;
 
