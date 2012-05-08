@@ -990,15 +990,21 @@ void Image::getImgHeader (struct imghdr *im_h, int chan)
 		im_h->sizes[i] = htonl(cha->getSize (i));
 	}
 
-	int ti;
+	double ti;
 
 	ti = 1;
 	getValue ("LTM1_1", ti, false);
-	im_h->binnings[0] = htons (1 / ti);
+	if (ti != 0)
+		im_h->binnings[0] = htons (1 / ti);
+	else
+		im_h->binnings[0] = htons (1);
 
 	ti = 1;
 	getValue ("LTM2_1", ti, false);
-	im_h->binnings[1] = htons (1 / ti);
+	if (ti != 0)
+		im_h->binnings[1] = htons (1 / ti);
+	else
+		im_h->binnings[1] = htons (1);
 
 	im_h->filter = ntohs (filter_i);
 	im_h->shutter = 0;
