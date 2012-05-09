@@ -274,7 +274,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 				// TV, TM - vector, matrixes
 				// for the momemt we assume detector == physical
-				double vals[4] = {-1 * x, -1 * y, 1, 1};
+				double vals[4] = {0, 0, 1, 1};
 
 				if (chan1_offsets && chan < chan1_offsets->size ())
 					vals[0] += (*chan1_offsets)[chan];
@@ -284,6 +284,14 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 					vals[2] *= (*chan1_delta)[chan];
 				if (chan2_delta && chan < chan2_delta->size ())
 					vals[3] *= (*chan2_delta)[chan];
+
+				if (vals[2] > 0)
+					vals[0] *= -1;
+				if (vals[3] > 0)
+					vals[1] *= -1;
+
+				vals[0] -= x;
+				vals[1] -= y;
 
 				if (bin1 != 0)
 				{
@@ -296,11 +304,6 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 					vals[1] /= bin2;
 					vals[3] /= bin2;
 				}
-
-				if (vals[2] > 0)
-					vals[0] *= -1;
-				if (vals[3] > 0)
-					vals[1] *= -1;
 
 				ci->image->setValue ("LTV1", vals[0], "image beginning - detector X coordinate");
 				ci->image->setValue ("LTV2", vals[1], "image beginning - detector Y coordinate");

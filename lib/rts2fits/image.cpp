@@ -1672,11 +1672,17 @@ void Image::loadChannels ()
 			// extension name
 			try
 			{
-				getValue ("EXTNAME", extn, 50, NULL, true);
-				if (extn[0] == 'I' && extn[1] == 'M' && isdigit (extn[2]))
+				getValue ("EXTNAME", extn, 50, NULL, false);
+				if (extn[0] != '\0' && extn[0] == 'I' && extn[1] == 'M' && isdigit (extn[2]))
+				{
 					ch = atoi (extn + 2) - 1;
 					if (ch < 0 || ch > getTotalHDUs ())
 						ch = hdunum;
+				}
+				else
+				{
+					ch = hdunum;
+				}
 			}
 			catch (KeyNotFound &er1)
 			{
