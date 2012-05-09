@@ -488,23 +488,44 @@ digraph "JSON API calls handling" {
  *
  * <hr/>
  *
- * @section JSON_db_add_label add_label
+ * @section JSON_db_tlabs_add tlabs_add
  * 
  * Add label to target.
  *
  * @subsection Example
  *
- * http://localhost:8889/api/add_label?id=1000&l=New Label&t=1
+ * http://localhost:8889/api/tlabs_add?id=1000&ltext=New Label&ltype=1
  *
  * @subsection Parameters
  *
  *  - <b>id</b> target ID
- *  - <b>l</b>  label to add to the target
- *  - <b>t</b>  label type. Please see @ref JSON_db_labels for type discussion
+ *  - <b>ltext</b>  label to add to the target
+ *  - <b>ttype</b>  label type. Please see @ref JSON_db_labels for type discussion
  *
  * @subsection Return
  *
  * List of labels with specified type currently attached to the target.
+ *
+ * <hr/>
+ *
+ * @section JSON_db_tlabs_delete tlabs_delete
+ *
+ * Remove label from target.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/tlabs_delete?id=1000&li=2
+ *
+ * @subsection Parameters
+ *
+ *  - <b>id</b> target ID
+ *  - <b>li</b> label ID
+ *
+ * @subsection Return
+ *
+ * List of labels attached to the target after removal of the specified label.
+ *
+ * <hr/>
  *
  * @section consts
  *
