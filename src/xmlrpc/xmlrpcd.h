@@ -467,7 +467,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		/**
 		 * Register asynchronous API call.
 		 */
-		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); }
+		void registerAPI (AsyncAPI *a) { asyncAPIs.push_back (a); sumAsync->inc (); sendValueAll (sumAsync); numberAsyncAPIs->setValueInteger (asyncAPIs.size ()); sendValueAll (numberAsyncAPIs); }
 
 
 		void clientNewDataConn (Connection *conn, int data_conn);
@@ -503,7 +503,10 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		Events events;
 
+		rts2core::ValueInteger *numberAsyncAPIs;
+		rts2core::ValueInteger *sumAsync;
 		rts2core::ValueBool *send_emails;
+		rts2core::ValueInteger *bbCadency;
 
 #ifndef HAVE_PGSQL
 		const char *config_file;
@@ -517,8 +520,6 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		std::string page_prefix;
 
 		void sendBB ();
-
-		rts2core::ValueInteger *bbCadency;
 
 		void reloadEventsFile ();
 

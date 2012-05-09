@@ -392,6 +392,8 @@ int XmlRpcd::idle ()
 		{
 			delete *iter;
 			iter = asyncAPIs.erase (iter);
+			numberAsyncAPIs->setValueInteger (asyncAPIs.size ());
+			sendValueAll (numberAsyncAPIs);
 		}
 		else
 		{
@@ -552,9 +554,15 @@ void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->isForConnection (conn))
+		{
 			iter = asyncAPIs.erase (iter);
+			numberAsyncAPIs->setValueInteger (asyncAPIs.size ());
+			sendValueAll (numberAsyncAPIs);
+		}
 		else
+		{
 			iter++;
+		}
 	}
 #ifdef HAVE_PGSQL
 	DeviceDb::connectionRemoved (conn);
@@ -657,6 +665,10 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 	auth_localhost = true;
 
 	notifyConn = new rts2core::ConnNotify (this);
+
+	createValue (numberAsyncAPIs, "async_APIs", "number of active async APIs", false);
+	createValue (sumAsync, "async_sum", "total number of async APIs", false);
+	sumAsync->setValueInteger (0);
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
