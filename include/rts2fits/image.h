@@ -434,8 +434,6 @@ class Image:public FitsFile
 		const void *getChannelData (int chan);
 		const void *getChannelDataScaled (int chan, long smin, long smax, scaling_type scaling, int newType);
 
-		unsigned short *getChannelDataUShortInt (int chan);
-
 		int getPixelByteSize ()
 		{
 			if (dataType == RTS2_DATA_ULONG)

@@ -846,7 +846,7 @@ void Image::writeWCS (double mods[NUM_WCS_VALUES])
 				v *= mods[i];
 			else
 				v += mods[i];
-			// CRPIX needs modifications based on orientation of the axis..
+			// CRPIX needs modifications based on orientation of the axis.. and x/y offsets
 			if ((i == 2 || i == 3) && (mods[i + 2]) < 0)
 				v *= -1;
 				
@@ -1665,6 +1665,7 @@ void Image::loadChannels ()
 		try
 		{
 			getValue ("CHANNEL", ch, true);
+			ch -= 1;
 		}
 		catch (KeyNotFound &er)
 		{
@@ -1771,17 +1772,6 @@ const void * Image::getChannelDataScaled (int chan, long smin, long smax, scalin
 			return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
 	}
 	return getChannelData (chan);
-}
-
-unsigned short * Image::getChannelDataUShortInt (int chan)
-{
-	if (getChannelData (0) == NULL)
-		return NULL;
-	// switch by format
-	if (dataType == RTS2_DATA_USHORT)
-		return (unsigned short *) getChannelData (0);
-	// convert type to ushort int
-	return NULL;
 }
 
 int Image::setAstroResults (double in_ra, double in_dec, double in_ra_err, double in_dec_err)
