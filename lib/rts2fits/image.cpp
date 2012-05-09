@@ -1086,11 +1086,12 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 	bt *k = buf;
 
 	if (invert_y)
-		k += getChannelWidth (chan) * (getChannelHeight (chan) - 1);
+		k += (getChannelWidth (chan) + offset) * (getChannelHeight (chan) - 1);
 
 	const void *imageData = getChannelData (chan);
 
-	int j = getChannelWidth (chan);
+	int chw = getChannelWidth (chan);
+	int j = chw;
 
 	for (int i = 0; (long) i < s; i++)
 	{
@@ -1116,10 +1117,11 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleByteBuffer (i
 			j--;
 			if (j == 0)
 			{
-			  	k += offset;
-				j = getChannelWidth (chan);
 				if (invert_y)
-					k -= 2 * j;
+					k -= 2 * chw + offset;
+				else
+			  		k += offset;
+				j = chw;
 			}
 		}
 	}
@@ -1172,8 +1174,43 @@ template <typename bt, typename dt> void Image::getChannelGrayscaleBuffer (int c
 		}
 	}
 
-
 	getChannelGrayscaleByteBuffer (chan, buf, black, low, high, s, offset, invert_y);
+}
+
+void Image::getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset)
+{
+	switch (_dataType)
+	{
+		case RTS2_DATA_BYTE:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int8_t) 0, (int8_t) 255, quantiles, offset, true);
+			break;
+		case RTS2_DATA_SHORT:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int16_t) SHRT_MIN, (int16_t) SHRT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_LONG:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int) INT_MIN, (int) INT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_LONGLONG:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_FLOAT:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_DOUBLE:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_SBYTE:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (signed char) SHRT_MIN, (signed char) SHRT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_USHORT:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (short unsigned int) 0, (short unsigned int) USHRT_MAX, quantiles, offset, true);
+			break;
+		case RTS2_DATA_ULONG:
+			getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (unsigned int) 0, (unsigned int) UINT_MAX, quantiles, offset, true);
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
+	}
 }
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
@@ -1192,39 +1229,9 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 				loadChannels ();
 			if ((size_t) chan >= channels.size ())
 				throw rts2core::Error ("invalid channel specified");
+
+			getChannelGrayscaleImage (dataType, chan, buf, quantiles, 0);
 		  	// single channel
-			switch (dataType)
-			{
-				case RTS2_DATA_BYTE:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int8_t) 0, (int8_t) 255, quantiles, 0, true);
-					break;
-				case RTS2_DATA_SHORT:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int16_t) SHRT_MIN, (int16_t) SHRT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_LONG:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (int) INT_MIN, (int) INT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_LONGLONG:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (LONGLONG) LLONG_MIN, (LONGLONG) LLONG_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_FLOAT:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (float) 0, (float) INT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_DOUBLE:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (double) INT_MIN, (double) INT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_SBYTE:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (signed char) SHRT_MIN, (signed char) SHRT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_USHORT:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (short unsigned int) 0, (short unsigned int) USHRT_MAX, quantiles, 0, true);
-					break;
-				case RTS2_DATA_ULONG:
-					getChannelGrayscaleBuffer (chan, buf, (unsigned char) 255, (unsigned int) 0, (unsigned int) UINT_MAX, quantiles, 0, true);
-					break;
-				default:
-					logStream (MESSAGE_ERROR) << "Unknow dataType " << dataType << sendLog;
-			}
 			tw = getChannelWidth (chan);
 			th = getChannelHeight (chan);
 		}
@@ -1297,7 +1304,7 @@ Magick::Image Image::getMagickImage (const char *label, float quantiles, int cha
 
 				unsigned char *bstart = buf + lh * tw + loff;
 
-			  	getChannelGrayscaleBuffer (n, bstart, (unsigned char) 255, (uint16_t) 0, (uint16_t) UINT_MAX, quantiles, offset, true);
+			  	getChannelGrayscaleImage (dataType, (*iter)->getChannelNumber (), bstart, quantiles, offset);
 
 				if ((*iter)->getHeight () > lw)
 				  	lw = (*iter)->getHeight ();
@@ -1552,6 +1559,8 @@ void Image::loadChannels ()
 	tothdu++;
 	tothdu *= -1;
 
+	int hdunum = 0;
+
 	// open all channels
 	while (fits_status == 0)
 	{
@@ -1620,7 +1629,6 @@ void Image::loadChannels ()
 			case RTS2_DATA_LONG:
 				fits_read_img_int (getFitsFile (), 0, 1, pixelSize, 0, (int *) imageData, &anyNull, &fits_status);
 				break;
-	
 			case RTS2_DATA_LONGLONG:
 				fits_read_img_lnglng (getFitsFile (), 0, 1, pixelSize, 0, (LONGLONG *) imageData, &anyNull, &fits_status);
 				break;
@@ -1654,8 +1662,29 @@ void Image::loadChannels ()
 		fitsStatusGetValue ("image loadChannels", true);
 
 		int ch;
-		getValue ("CHANNEL", ch, 0);
+		try
+		{
+			getValue ("CHANNEL", ch, true);
+		}
+		catch (KeyNotFound &er)
+		{
+			char extn[50];
+			// extension name
+			try
+			{
+				getValue ("EXTNAME", extn, 50, NULL, true);
+				if (extn[0] == 'I' && extn[1] == 'M' && isdigit (extn[2]))
+					ch = atoi (extn + 2) - 1;
+					if (ch < 0 || ch > getTotalHDUs ())
+						ch = hdunum;
+			}
+			catch (KeyNotFound &er1)
+			{
+				ch = hdunum;
+			}
+		}
 		channels.push_back (new Channel (ch, imageData, naxis, sizes, dataType, true));
+		hdunum++;
 	}
 	moveHDU (1);
 }
@@ -1889,63 +1918,61 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 			setValue (name, ((rts2core::ValueLong *) val)->getValueLong (), desc);
 			break;
 		case RTS2_VALUE_RADEC:
-		{
-			// construct RADEC string and desc, write it down
-			char *v_name = new char[strlen (name) + 4];
-			char *v_desc = new char[strlen (desc) + 5];
-			// write RA
-			strcpy (v_name, name);
-			strcat (v_name, "RA");
-			strcpy (v_desc, desc);
-			strcat (v_desc, " RA");
-			setValue (v_name, ((rts2core::ValueRaDec *) val)->getRa (), v_desc);
-			// now DEC
-			strcpy (v_name, name);
-			strcat (v_name, "DEC");
-			strcpy (v_desc, desc);
-			strcat (v_desc, " DEC");
-			setValue (v_name, ((rts2core::ValueRaDec *) val)->getDec (), v_desc);
-			// if it is mount ra dec - write heliocentric time
-			if (!strcmp ("TEL", name))
 			{
-				double JD = getMidExposureJD ();
-				struct ln_equ_posn equ;
-				equ.ra = ((rts2core::ValueRaDec *) val)->getRa ();
-				equ.dec = ((rts2core::ValueRaDec *) val)->getDec ();
-				setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "helioceentric JD");
-			}
+				// construct RADEC string and desc, write it down
+				char *v_name = new char[strlen (name) + 4];
+				char *v_desc = new char[strlen (desc) + 5];
+				// write RA
+				strcpy (v_name, name);
+				strcat (v_name, "RA");
+				strcpy (v_desc, desc);
+				strcat (v_desc, " RA");
+				setValue (v_name, ((rts2core::ValueRaDec *) val)->getRa (), v_desc);
+				// now DEC
+				strcpy (v_name, name);
+				strcat (v_name, "DEC");
+				strcpy (v_desc, desc);
+				strcat (v_desc, " DEC");
+				setValue (v_name, ((rts2core::ValueRaDec *) val)->getDec (), v_desc);
+				// if it is mount ra dec - write heliocentric time
+				if (!strcmp ("TEL", name))
+				{
+					double JD = getMidExposureJD ();
+					struct ln_equ_posn equ;
+					equ.ra = ((rts2core::ValueRaDec *) val)->getRa ();
+					equ.dec = ((rts2core::ValueRaDec *) val)->getDec ();
+					setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "helioceentric JD");
+				}
 
-			// free memory
-			delete[] v_name;
-			delete[] v_desc;
-		}
-		break;
+				// free memory
+				delete[] v_name;
+				delete[] v_desc;
+			}
+			break;
 		case RTS2_VALUE_ALTAZ:
-		{
-			// construct RADEC string and desc, write it down
-			char *v_name = new char[strlen (name) + 4];
-			char *v_desc = new char[strlen (desc) + 10];
-			// write RA
-			strcpy (v_name, name);
-			strcat (v_name, "ALT");
-			strcpy (v_desc, desc);
-			strcat (v_desc, " altitude");
-			setValue (v_name, ((rts2core::ValueAltAz *) val)->getAlt (), v_desc);
-			// now DEC
-			strcpy (v_name, name);
-			strcat (v_name, "AZ");
-			strcpy (v_desc, desc);
-			strcat (v_desc, " azimuth");
-			setValue (v_name, ((rts2core::ValueAltAz *) val)->getAz (), v_desc);
-			// free memory
-			delete[] v_name;
-			delete[] v_desc;
-		}
-		break;
+			{
+				// construct RADEC string and desc, write it down
+				char *v_name = new char[strlen (name) + 4];
+				char *v_desc = new char[strlen (desc) + 10];
+				// write RA
+				strcpy (v_name, name);
+				strcat (v_name, "ALT");
+				strcpy (v_desc, desc);
+				strcat (v_desc, " altitude");
+				setValue (v_name, ((rts2core::ValueAltAz *) val)->getAlt (), v_desc);
+				// now DEC
+				strcpy (v_name, name);
+				strcat (v_name, "AZ");
+				strcpy (v_desc, desc);
+				strcat (v_desc, " azimuth");
+				setValue (v_name, ((rts2core::ValueAltAz *) val)->getAz (), v_desc);
+				// free memory
+				delete[] v_name;
+				delete[] v_desc;
+			}
+			break;
 		default:
-			logStream (MESSAGE_ERROR) <<
-				"Don't know how to write to FITS file header value '" << name
-				<< "' of type " << val->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "Don't know how to write to FITS file header value '" << name << "' of type " << val->getValueType () << sendLog;
 			break;
 	}
 }
