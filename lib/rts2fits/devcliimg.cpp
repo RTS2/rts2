@@ -258,17 +258,19 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 				if (chan1_delta && chan < chan1_delta->size () && chan2_delta && chan < chan2_delta->size () && chan1_offsets && chan < chan1_offsets->size () && chan2_offsets && chan < chan2_offsets->size ())
 				{
+					double xx = (*chan1_offsets)[chan] + ((*chan1_delta)[chan] > 0 ? 1 : -1) * x;
+					double yy = (*chan2_offsets)[chan] + ((*chan2_delta)[chan] > 0 ? 1 : -1) * y;
 					ci->image->setValueRectange ("DETSEC",
-						(*chan1_offsets)[chan],
-						(*chan1_offsets)[chan] + (*chan1_delta)[chan] * w * bin1,
-						(*chan2_offsets)[chan],
-						(*chan2_offsets)[chan] + (*chan2_delta)[chan] * h * bin2,
+						xx,
+						xx + (*chan1_delta)[chan] * w * bin1,
+						yy,
+						yy + (*chan2_delta)[chan] * h * bin2,
 						"unbinned section of detector");
 					ci->image->setValueRectange ("TRIMSEC",
-						(*chan1_offsets)[chan],
-						(*chan1_offsets)[chan] + (*chan1_delta)[chan] * w * bin1,
-						(*chan2_offsets)[chan],
-						(*chan2_offsets)[chan] + (*chan2_delta)[chan] * h * bin2,
+						xx,
+						xx + (*chan1_delta)[chan] * w * bin1,
+						yy,
+						yy + (*chan2_delta)[chan] * h * bin2,
 						"TRIM binned section");
 				}
 
