@@ -273,6 +273,8 @@ class Image:public FitsFile
 		 */
 		template <typename bt, typename dt> void getChannelGrayscaleBuffer (int chan, bt * &buf, bt black, dt minval, dt mval, float quantiles=0.005, size_t offset = 0, bool invert_y = false);
 
+		void getChannelGrayscaleImage (int _dataType, int chan, unsigned char * &buf, float quantiles, size_t offset);
+
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		/**
 		 * Return image data as Magick::Image class.
