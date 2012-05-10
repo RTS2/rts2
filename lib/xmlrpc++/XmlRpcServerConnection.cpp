@@ -766,8 +766,11 @@ std::string XmlRpc::printHeaders (int http_code, const char *http_code_string, c
 	_os << "HTTP/1.1 " << http_code << " " << http_code_string
 		<< "\r\nDate: " << XmlRpcServerConnection::getHttpDate ()
 		<< "\r\nServer: " << XMLRPC_VERSION 
-		<< "\r\nContent-Type: " << response_type
-		<< "\r\nContent-length: " << response_length;
+		<< "\r\nContent-Type: " << response_type << "\r\n";
+	if (response_length > 0)
+		_os << "Content-length: " << response_length;
+	else
+		_os << "Transfer-Encoding: chunked";
 
 	return _os.str ();
 }

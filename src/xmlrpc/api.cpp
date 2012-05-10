@@ -584,6 +584,7 @@ digraph "JSON API calls handling" {
  */
 
 #include "xmlrpcd.h"
+#include "jsonvalue.h"
 
 #include "rts2db/constraints.h"
 #include "rts2db/planset.h"
@@ -636,6 +637,38 @@ void AsyncAPI::postEvent (Event *event)
 		}
 	}
 	Object::postEvent (event);
+}
+
+AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncAPI (_req, NULL, _source, false) 
+{
+	// chunked response
+	req->sendAsyncDataHeader (0, _source, "application/json");
+
+	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+		values.push_back (std::pair <std::string, std::string> (iter->getName (), iter->getValue ()));
+}
+
+void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
+{
+	std::ostringstream os;
+	os << "{";
+	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
+	{
+		if (iter->first == _conn->getName () && iter->second == _value->getName () && source != NULL)
+		{
+			os << "\"d\":\"" << iter->first << "\",\"n\":\"" << iter->second << "\",\"v\":";
+			jsonValue (_value, false, os);
+			os << "}";
+			std::ostringstream tosend;
+			tosend << std::hex << os.str ().length () << ";\r\n" << os.str () << "\r\n";
+			if (send (source->getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
+			{
+				if (errno != EAGAIN && errno != EINTR)
+					asyncFinished ();
+			}
+			return;
+		}
+	}
 }
 
 class AsyncMSet:public AsyncAPI
@@ -1326,6 +1359,13 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				sendOwnValues (os, params, from, ext);
 			}
 		}
+		else if (vals[0] == "push")
+		{
+			AsyncValueAPI *aa = new AsyncValueAPI (this, connection, params);
+			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+
+			throw XmlRpc::XmlRpcAsynchronous ();
+		}
 		// execute command on server
 		else if (vals[0] == "cmd")
 		{
@@ -1933,135 +1973,6 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	}
 
 	returnJSON (os.str ().c_str (), response_type, response, response_length);
-}
-
-void sendArrayValue (rts2core::Value *value, std::ostringstream &os)
-{
-	os << "[";
-	switch (value->getValueBaseType ())
-	{
-		case RTS2_VALUE_INTEGER:
-			for (std::vector <int>::iterator iter = ((rts2core::IntegerArray *) value)->valueBegin (); iter != ((rts2core::IntegerArray *) value)->valueEnd (); iter++)
-			{
-			  	if (iter != ((rts2core::IntegerArray *) value)->valueBegin ())
-					os << ",";
-				os << (*iter);
-			}
-			break;
-		case RTS2_VALUE_STRING:
-			for (std::vector <std::string>::iterator iter = ((rts2core::StringArray *) value)->valueBegin (); iter != ((rts2core::StringArray *) value)->valueEnd (); iter++)
-			{
-			  	if (iter != ((rts2core::StringArray *) value)->valueBegin ())
-					os << ",";
-				os << "\"" << (*iter) << "\"";
-			}
-			break;
-		case RTS2_VALUE_DOUBLE:	
-		case RTS2_VALUE_TIME:
-			for (std::vector <double>::iterator iter = ((rts2core::DoubleArray *) value)->valueBegin (); iter != ((rts2core::DoubleArray *) value)->valueEnd (); iter++)
-			{
-				if (iter != ((rts2core::DoubleArray *) value)->valueBegin ())
-					os << ",";
-				os << JsonDouble (*iter);
-			}
-			break;
-		case RTS2_VALUE_BOOL:
-			for (std::vector <int>::iterator iter = ((rts2core::BoolArray *) value)->valueBegin (); iter != ((rts2core::BoolArray *) value)->valueEnd (); iter++)
-			{
-				if (iter != ((rts2core::BoolArray *) value)->valueBegin ())
-					os << ",";
-				os << ((*iter) ? "true":"false");
-			}
-			break;
-		default:
-			os << "\"" << value->getDisplayValue () << "\"";
-			break;
-	}
-	os << "]";
-}
-
-void sendStatValue (rts2core::Value *value, std::ostringstream &os)
-{
-	os << "[";
-	switch (value->getValueBaseType ())
-	{
-		case RTS2_VALUE_DOUBLE:
-			{
-				rts2core::ValueDoubleStat *vds = (rts2core::ValueDoubleStat *) value;
-				os << vds->getNumMes () << ","
-					<< JsonDouble (vds->getValueDouble ()) << ","
-					<< JsonDouble (vds->getMode ()) << ","
-					<< JsonDouble (vds->getStdev ()) << ","
-					<< JsonDouble (vds->getMin ()) << ","
-					<< JsonDouble (vds->getMax ());
-			}
-			break;
-		default:
-			os << "\"" << value->getDisplayValue () << "\"";
-			break;
-	}
-	os << "]";
-}
-
-void sendRectangleValue (rts2core::Value *value, std::ostringstream &os)
-{
-	rts2core::ValueRectangle *r = (rts2core::ValueRectangle *) value;
-	os << "[" << r->getXInt () << "," << r->getYInt () << "," << r->getWidthInt () << "," << r->getHeightInt () << "]";
-}
-
-void sendValue (rts2core::Value *value, std::ostringstream &os)
-{
-	switch (value->getValueBaseType ())
-	{
-		case RTS2_VALUE_STRING:
-			os << "\"" << value->getValue () << "\"";
-			break;
-		case RTS2_VALUE_DOUBLE:
-		case RTS2_VALUE_FLOAT:
-		case RTS2_VALUE_TIME:
-			os << JsonDouble (value->getValueDouble ());
-			break;
-		case RTS2_VALUE_INTEGER:
-		case RTS2_VALUE_LONGINT:
-		case RTS2_VALUE_SELECTION:
-		case RTS2_VALUE_BOOL:
-			os << value->getValue ();
-			break;
-		case RTS2_VALUE_RADEC:
-			os << "{\"ra\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getRa ()) << ",\"dec\":" << JsonDouble (((rts2core::ValueRaDec *) value)->getDec ()) << "}";
-			break;
-		case RTS2_VALUE_ALTAZ:
-			os << "{\"alt\":" << JsonDouble (((rts2core::ValueAltAz *) value)->getAlt ()) << ",\"az\":" << JsonDouble (((rts2core::ValueAltAz *) value)->getAz ()) << "}";
-			break;
-		default:
-			os << "\"" << value->getDisplayValue () << "\"";
-			break;
-	}
-}
-
-void jsonValue (rts2core::Value *value, bool extended, std::ostringstream & os)
-{
-	os << "\"" << value->getName () << "\":";
-	if (extended)
-		os << "[" << value->getFlags () << ",";
-  	if (value->getValueExtType() & RTS2_VALUE_ARRAY)
-	{
-	  	sendArrayValue (value, os);
-	}
-	else switch (value->getValueExtType())
-	{
-		case RTS2_VALUE_STAT:
-			sendStatValue (value, os);
-			break;
-		case RTS2_VALUE_RECTANGLE:
-			sendRectangleValue (value, os);
-			break;
-		default:
-	  		sendValue (value, os);
-			break;
-	}
-	if (extended)
-		os << "," << value->isError () << "," << value->isWarning () << ",\"" << value->getDescription () << "\"]";
 }
 
 void API::sendConnectionValues (std::ostringstream & os, rts2core::Connection * conn, HttpParams *params, double from, bool extended)

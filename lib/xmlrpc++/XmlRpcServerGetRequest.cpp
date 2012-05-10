@@ -185,9 +185,9 @@ namespace XmlRpc
 		XmlRpcSocket::nbWrite (source->getfd (), _os.str (), &i);
 	}
 
-	void XmlRpcServerGetRequest::sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source)
+	void XmlRpcServerGetRequest::sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source, const char *dataType)
 	{
-		std::string head = printHeaders (HTTP_OK, "OK", "binary/data", contentLength);
+		std::string head = printHeaders (HTTP_OK, "OK", dataType, contentLength);
 		head += "\r\n\r\n";
 		size_t i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), head, &i);

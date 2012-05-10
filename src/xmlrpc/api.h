@@ -32,26 +32,6 @@
 namespace rts2xmlrpc
 {
 
-/**
- * Display double value as JSON - instead of nan, write null.
- */
-class JsonDouble
-{
-	public:
-		JsonDouble (double _v) { v = _v; }
-		friend std::ostream & operator << (std::ostream &os, JsonDouble d)
-		{
-			if (isnan (d.v) || isinf (d.v))
-				os << "null";
-			else
-				os << d.v;
-			return os;
-		}
-
-	private:
-		double v;
-};
-
 class API;
 
 /**
@@ -72,6 +52,8 @@ class AsyncAPI:public rts2core::Object
 		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data) {}
 		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
 		virtual void exposureEnd (rts2core::Connection *_conn) {}
+
+		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value) {};
 
 		/**
 		 * Check if the request is for connection or source..
@@ -106,6 +88,17 @@ class AsyncAPI:public rts2core::Object
 
 	private:
 		bool ext;
+};
+
+class AsyncValueAPI:public AsyncAPI
+{
+	public:
+		AsyncValueAPI (API *_req, XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
+
+		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value);
+	
+	private:
+		std::vector <std::pair <std::string, std::string> > values;
 };
 
 /**

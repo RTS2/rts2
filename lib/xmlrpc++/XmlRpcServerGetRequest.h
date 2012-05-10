@@ -106,7 +106,7 @@ namespace XmlRpc
 			void sendAsyncJSON (std::ostringstream &_os, XmlRpcServerConnection *source);
 
 			//! Send header for data with a given size. After all data are send, the calling code must call source->asyncFinished to re-enable connection for commands.
-			void sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source);
+			void sendAsyncDataHeader (size_t contentLength, XmlRpcServerConnection *source, const char *dataType = "binary/data");
 
 		protected:
 			XmlRpcServer* _server;

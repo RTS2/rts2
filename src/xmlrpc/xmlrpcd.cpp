@@ -763,6 +763,8 @@ void XmlRpcd::valueChangedEvent (rts2core::Connection * conn, rts2core::Value * 
 			}
 		}
 	}
+	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end (); iter++)
+		(*iter)->valueChanged (conn, new_value);
 }
 
 void XmlRpcd::message (Message & msg)

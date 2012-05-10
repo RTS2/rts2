@@ -18,6 +18,7 @@
  */
 
 #include "nightdur.h"
+#include "jsonvalue.h"
 #include "xmlrpcd.h"
 #include "xmlrpc++/urlencoding.h"
 
