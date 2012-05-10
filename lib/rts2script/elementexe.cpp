@@ -42,6 +42,7 @@ ConnExecute::~ConnExecute ()
 
 	for (std::list <Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
+		logStream (MESSAGE_WARNING) << "removing image " << (*iter)->getAbsoluteFileName () << ", you probably don't want this - please make sure images are processed in script" << sendLog;
 		(*iter)->deleteImage ();
 		deleteImage (*iter);
 	}
