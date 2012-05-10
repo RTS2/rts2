@@ -35,7 +35,7 @@ class FWHM:
 		self.a /= self.i
 		self.b /= self.i	
 
-def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[]):
+def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=[],printpeak=False):
 	"""Process image, print its FWHM. Works with multi extension images.
 	"""
 	ff = pyfits.fitsopen(fn)
@@ -43,7 +43,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	if d:
 		d.set('file mosaicimage iraf ' + fn)
 
-	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND']
+	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND','XPEAK_IMAGE','YPEAK_IMAGE']
 
 	c = sextractor.Sextractor(sexcols,threshold=threshold)
 	c.runSExtractor(fn)
@@ -54,6 +54,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	try:
 		atm = atv.ChannelsDTV(ff)
 	except Exception,ex:
+#		traceback.print_exc()
 		pass
 
 	for st in stars:
@@ -143,6 +144,13 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 		print 'double star_d_{0} "distance of star {0}" {1}'.format(suf,st[4])
 		print 'double flux_{0} "flux of star {0}" {1}'.format(suf,st[5][9])
 		print 'double background_{0} "flux of star {0}" {1}'.format(suf,st[5][10])
+		# peak coordinates
+		if printpeak:
+			x = st[5][11]
+			y = st[5][12]
+			print 'integer xpeak_{0} "X peak coordinate of {0}" {1}'.format(suf,int(x))
+			print 'integer ypeak_{0} "Y peak coordinate of {0}" {1}'.format(suf,int(y))
+			print 'integer peak_{0} "peak value of star {0}" {1}'.format(suf,ff[int(st[5][8])].data[x][y])
 
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
@@ -155,6 +163,7 @@ if __name__ == '__main__':
 	parser.add_option('--ds9cat',help='write DS9 catalogue file',action='store',dest='ds9cat')
 	parser.add_option('--by-segments',help='calculate also FHWM values on segments',action='store_true',dest='bysegments')
 	parser.add_option('--star-flux',help='calculate star FLUX at given position (seg:x:y:name)',action='append',dest='star_flux')
+	parser.add_option('--peak',help='report peak XY and value',action='store_true',dest='peak',default=False)
 
 	(options,args)=parser.parse_args()
 
@@ -176,4 +185,4 @@ if __name__ == '__main__':
 				sys.exit(1)
 
 	for fn in args:
-		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars)
+		processImage(fn,d,threshold=options.threshold,pr=options.pr,ds9cat=options.ds9cat,bysegments=options.bysegments,stars=stars,printpeak=options.peak)
