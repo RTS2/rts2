@@ -6,6 +6,7 @@ import pyfits
 import math
 import re
 import atv
+import rts2
 
 from optparse import OptionParser
 
@@ -42,10 +43,12 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 
 	if d:
 		d.set('file mosaicimage iraf ' + fn)
+	
+	sc = rts2.Rts2Comm()
 
 	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND','XPEAK_IMAGE','YPEAK_IMAGE']
 
-	c = sextractor.Sextractor(sexcols,threshold=threshold,sexconfig='/home/observer/findfwhm/Sextractor/focus.sex',starnnw='/home/observer/findfwhm/Sextractor/default.nnw')
+	c = sextractor.Sextractor(sexcols,threshold=threshold)
 	c.runSExtractor(fn)
 	c.sortObjects(2)
 
@@ -111,46 +114,49 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 	  	if x == 0:
 			suffix = defsuffix
 			try:
-				print 'double fwhm_foc{0} "focuser positon" {1}'.format(suffix,ff[0].header[FOC_POS])
+				sc.doubleValue('fwhm_foc{0}'.format(suffix),"focuser positon",ff[0].header[FOC_POS])
 			except KeyError,er:
 				pass
 			try:
 				zd = 90 - ff[0].header['TEL_ALT']
 				fz = seg_fwhms[x].fwhm * (math.cos(math.radians(zd)) ** 0.6)
-				print 'double fwhm_zd{0} "[deg] zenith distance of the FWHM measurement" {1}'.format(suffix,zd)
-				print 'double fwhm_zenith{0} "estimated zenith FWHM" {1}'.format(suffix,fz)
+				sc.doubleValue('fwhm_zd{0}'.format(suffix),"[deg] zenith distance of the FWHM measurement",zd)
+				sc.doubleValue('fwhm_zenith{0}'.format(suffix),"estimated zenith FWHM",fz)
 			except KeyError,er:
 				pass
 			try:
-				print 'double fwhm_az{0} "[deg] azimuth of the FWHM measurement" {1}'.format(suffix,ff[0].header['TEL_AZ'])
+				sc.doubleValue('fwhm_az{0}'.format(suffix),"[deg] azimuth of the FWHM measurement",ff[0].header['TEL_AZ'])
 			except KeyError,er:
 				pass
 			try:	
-				print 'double fwhm_airmass{0} "airmass of the FWHM measurement" {1}'.format(suffix,ff[0].header['AIRMASS'])
+				sc.doubleValue('fwhm_airmass{0}'.format(suffix),"airmass of the FWHM measurement",ff[0].header['AIRMASS'])
 			except KeyError,er:
 				pass
 		else:
 			suffix = defsuffix + '_' + str(x)
 
-		print 'double fwhm{0} "calculated FWHM" {1}'.format(suffix,seg_fwhms[x].fwhm)
+		sc.doubleValue('fwhm{0}'.format(suffix),"calculated FWHM",seg_fwhms[x].fwhm)
 
-		print 'double fwhm_nstars{0} "number of stars for FWHM calculation" {1}'.format(suffix,seg_fwhms[x].i)
+		sc.doubleValue('fwhm_nstars{0}'.format(suffix),"number of stars for FWHM calculation",seg_fwhms[x].i)
 
 	# print stars
 	for st in stars:
 		suf = st[3]
-		print 'double star_x_{0} "x of star {0}" {1}'.format(suf,st[5][0])
-		print 'double star_y_{0} "y of star {0}" {1}'.format(suf,st[5][1])
-		print 'double star_d_{0} "distance of star {0}" {1}'.format(suf,st[4])
-		print 'double flux_{0} "flux of star {0}" {1}'.format(suf,st[5][9])
-		print 'double background_{0} "flux of star {0}" {1}'.format(suf,st[5][10])
+		sc.doubleValue('star_x_{0}'.format(suf),"x of star {0}".format(suf),st[5][0])
+		sc.doubleValue('star_y_{0}'.format(suf),"y of star {0}".format(suf),st[5][1])
+		sc.doubleValue('star_d_{0}'.format(suf),"distance of star {0}".format(suf),st[4])
+		sc.doubleValue('flux_{0}'.format(suf),"flux of star {0}".format(suf),st[5][9])
+		sc.statAdd('flux_stat_{0}'.format(suf),'flux statistics for {0}'.format(suf),5,st[5][9])
+		sc.doubleValue('background_{0}'.format(suf),"flux of star {0}".format(suf),st[5][10])
 		# peak coordinates
 		if printpeak:
 			x = st[5][11]
 			y = st[5][12]
-			print 'integer xpeak_{0} "X peak coordinate of {0}" {1}'.format(suf,int(x))
-			print 'integer ypeak_{0} "Y peak coordinate of {0}" {1}'.format(suf,int(y))
-			print 'integer peak_{0} "peak value of star {0}" {1}'.format(suf,int(ff[int(st[5][8])].data[y][x]))
+			sc.integerValue('xpeak_{0}'.format(suf),"X peak coordinate of {0}".format(suf),int(x))
+			sc.integerValue('ypeak_{0}'.format(suf),"Y peak coordinate of {0}".format(suf),int(y))
+			dat = int(ff[int(st[5][8])].data[y][x])
+			sc.integerValue('peak_{0}'.format(suf),"peak value of star {0}".format(suf),dat)
+			sc.statAdd('peak_stat_{0}'.format(suf),"peak value statistics".format(suf),5,dat)
 
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
