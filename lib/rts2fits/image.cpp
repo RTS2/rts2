@@ -844,11 +844,11 @@ void Image::writeWCS (double mods[NUM_WCS_VALUES])
 			double v = total_wcs[i];
 			if (i == 4 || i == 5)
 				v *= mods[i];
+			// CRPIX is in detector (physical) coordinates, needs to transform to image
+			else if ((i == 2 || i == 3) && mods[i + 2] != 0)
+				v = v / mods[i + 2] + mods[i];
 			else
 				v += mods[i];
-			// CRPIX needs modifications based on orientation of the axis.. and x/y offsets
-			if ((i == 2 || i == 3) && (mods[i + 2]) < 0)
-				v *= -1;
 				
 			setValue (multiWCS (wcs_names[i], wcs_multi_rotang) , v, wcs_desc[i]);
 		}

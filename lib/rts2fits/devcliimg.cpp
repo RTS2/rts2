@@ -228,30 +228,50 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 
 			uint16_t chan = ntohs (imgh->channel) - 1;
 
-			double mods[NUM_WCS_VALUES];
-			mods[0] = mods[1] = mods[2] = mods[3] = mods[6] = 0;
-			mods[4] = mods[5] = 1;
+			int16_t x = ntohs (imgh->x);
+			int16_t y = ntohs (imgh->y);
+			int32_t w = ntohl (imgh->sizes[0]);
+			int32_t h = ntohl (imgh->sizes[1]);
+			int16_t bin1 = ntohs (imgh->binnings[0]);
+			int16_t bin2 = ntohs (imgh->binnings[1]);
+
+			// TV, TM - vector, matrixes
+			// for the momemt we assume detector == physical
+			double mods[NUM_WCS_VALUES] = {0, 0, 0, 0, 1, 1, 0};
 
 			if (chan1_offsets && chan < chan1_offsets->size ())
-				mods[2] -= (*chan1_offsets)[chan];
+				mods[2] += (*chan1_offsets)[chan];
+			if (chan2_offsets && chan < chan2_offsets->size ())
+				mods[3] += (*chan2_offsets)[chan];
 			if (chan1_delta && chan < chan1_delta->size ())
 				mods[4] *= (*chan1_delta)[chan];
-			if (chan2_offsets && chan < chan2_offsets->size ())
-				mods[3] -= (*chan2_offsets)[chan];
 			if (chan2_delta && chan < chan2_delta->size ())
 				mods[5] *= (*chan2_delta)[chan];
+
+			if (mods[4] > 0)
+				mods[2] *= -1;
+			if (mods[5] > 0)
+				mods[3] *= -1;
+
+			mods[2] -= x;
+			mods[3] -= y;
+
+			if (bin1 != 0)
+			{
+				mods[2] /= bin1;
+				mods[4] /= bin1;
+			}
+
+			if (bin2 != 0)
+			{
+				mods[3] /= bin2;
+				mods[5] /= bin2;
+			}
 
 			ci->image->writeWCS (mods);
 
 			if (detsize)
 			{
-				int16_t x = ntohs (imgh->x);
-				int16_t y = ntohs (imgh->y);
-				int32_t w = ntohl (imgh->sizes[0]);
-				int32_t h = ntohl (imgh->sizes[1]);
-				int16_t bin1 = ntohs (imgh->binnings[0]);
-				int16_t bin2 = ntohs (imgh->binnings[1]);
-
 				// write detector/channel orientation
 				ci->image->setValueRectange ("DETSIZE", (*detsize)[0], (*detsize)[2], (*detsize)[1], (*detsize)[3], "unbined detector size");
 				ci->image->setValueRectange ("DATASEC", 1, w, 1, h, "data binned section");
@@ -274,43 +294,10 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 						"TRIM binned section");
 				}
 
-				// TV, TM - vector, matrixes
-				// for the momemt we assume detector == physical
-				double vals[4] = {0, 0, 1, 1};
-
-				if (chan1_offsets && chan < chan1_offsets->size ())
-					vals[0] += (*chan1_offsets)[chan];
-				if (chan2_offsets && chan < chan2_offsets->size ())
-					vals[1] += (*chan2_offsets)[chan];
-				if (chan1_delta && chan < chan1_delta->size ())
-					vals[2] *= (*chan1_delta)[chan];
-				if (chan2_delta && chan < chan2_delta->size ())
-					vals[3] *= (*chan2_delta)[chan];
-
-				if (vals[2] > 0)
-					vals[0] *= -1;
-				if (vals[3] > 0)
-					vals[1] *= -1;
-
-				vals[0] -= x;
-				vals[1] -= y;
-
-				if (bin1 != 0)
-				{
-					vals[0] /= bin1;
-					vals[2] /= bin1;
-				}
-
-				if (bin2 != 0)
-				{
-					vals[1] /= bin2;
-					vals[3] /= bin2;
-				}
-
-				ci->image->setValue ("LTV1", vals[0], "image beginning - detector X coordinate");
-				ci->image->setValue ("LTV2", vals[1], "image beginning - detector Y coordinate");
-				ci->image->setValue ("LTM1_1", vals[2], "delta along X axis");
-				ci->image->setValue ("LTM2_2", vals[3], "delta along Y axis");
+				ci->image->setValue ("LTV1", mods[2], "image beginning - detector X coordinate");
+				ci->image->setValue ("LTV2", mods[3], "image beginning - detector Y coordinate");
+				ci->image->setValue ("LTM1_1", mods[4], "delta along X axis");
+				ci->image->setValue ("LTM2_2", mods[5], "delta along Y axis");
 
 				ci->image->setValue ("DTV1", 0, "detector transformation vector");
 				ci->image->setValue ("DTV2", 0, "detector transformation vector");
