@@ -25,6 +25,8 @@ if ( ! (${?gdiff}) ) set gdiff=0
 # next autoguider attempt
 if ( ! (${?nextautog}) ) set nextautog=`date +%s`
 
+if ( ! (${?guideon}) ) set guideon=`date +%s`
+
 set continue=1
 unset imgdir
 set xpa=0
@@ -99,6 +101,7 @@ endif
 		@ retr --
 	end
 	@ nextautog = $nowdate + 1200
+	@ guideon = $nowdate + 60
 	if ( $retr &gt; 0 ) then
 		rts2-logcom "Successfully switched autoguider to ON"
 	else
@@ -223,8 +226,10 @@ if ( $continue == 1 ) then
 		endif
 		if ( $guidestatus != $autog ) then
 			set lastmiss=`$xmlrpc --quiet -G TELE.guide_miss`
-			rts2-logcom "System should guide, but guider_status is $guidestatus (missed $lastmiss)."
 			set nowdate=`date +%s`
+			if ( $guideon &lt; $nowdate ) then
+				rts2-logcom "System should guide, but guider_status is $guidestatus (missed $lastmiss)."
+			endif
 			if ( $nextautog &lt; $nowdate ) then
 				<xsl:copy-of select="$grabguide"/>
 				rts2-logcom "Autoguider image saved in $lastgrab; trying to guide again"
