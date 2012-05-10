@@ -45,7 +45,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 
 	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND','XPEAK_IMAGE','YPEAK_IMAGE']
 
-	c = sextractor.Sextractor(sexcols,threshold=threshold)
+	c = sextractor.Sextractor(sexcols,threshold=threshold,sexconfig='/home/observer/findfwhm/Sextractor/focus.sex',starnnw='/home/observer/findfwhm/Sextractor/default.nnw')
 	c.runSExtractor(fn)
 	c.sortObjects(2)
 
@@ -150,7 +150,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 			y = st[5][12]
 			print 'integer xpeak_{0} "X peak coordinate of {0}" {1}'.format(suf,int(x))
 			print 'integer ypeak_{0} "Y peak coordinate of {0}" {1}'.format(suf,int(y))
-			print 'integer peak_{0} "peak value of star {0}" {1}'.format(suf,ff[int(st[5][8])].data[x][y])
+			print 'integer peak_{0} "peak value of star {0}" {1}'.format(suf,int(ff[int(st[5][8])].data[y][x]))
 
 	if d:
 		d.set('regions','image; text 100 100 # color=red text={' + ('FWHM {0} foc {1} stars {2}').format(seg_fwhms[0].fwhm,ff[0].header[FOC_POS],seg_fwhms[0].i) + '}')
