@@ -294,6 +294,10 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 						"TRIM binned section");
 				}
 
+				std::ostringstream ccdsum;
+				ccdsum << bin1 << " " << bin2;
+				ci->image->setValue ("CCDSUM", ccdsum.str ().c_str (), "CCD binning");
+
 				ci->image->setValue ("LTV1", mods[2], "image beginning - detector X coordinate");
 				ci->image->setValue ("LTV2", mods[3], "image beginning - detector Y coordinate");
 				ci->image->setValue ("LTM1_1", mods[4], "delta along X axis");
