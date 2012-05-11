@@ -11,9 +11,9 @@ import numpy
 
 class Channel:
 	def __init__(self,he):
-		self.atv=[self.__header(he,'ATV1',0),self.__header(he,'ATV2',0)]
-		self.atm=[[self.__header(he,'ATM1_1',1),self.__header(he,'ATM1_2',0)],
-			[self.__header(he,'ATM2_1',0),self.__header(he,'ATM2_2',1)]]
+		self.atv=[self.__header(he,'DTV1',0),self.__header(he,'DTV2',0)]
+		self.atm=[[self.__header(he,'DTM1_1',1),self.__header(he,'DTM1_2',0)],
+			[self.__header(he,'DTM2_1',0),self.__header(he,'DTM2_2',1)]]
 
 	def __header(self,h,key,default):
 		"""Return default header"""

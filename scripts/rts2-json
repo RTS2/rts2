@@ -11,6 +11,7 @@ from optparse import OptionParser
 
 if __name__ == '__main__':
 	parser = OptionParser()
+	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option('--user',help='RTS2 web server username',action='store',dest='user',default=None)
 	parser.add_option('--password',help='password for web user',action='store',dest='password',default=None)
 	parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose',default=False)
@@ -22,11 +23,13 @@ if __name__ == '__main__':
 	parser.add_option('--device',help='device for cmd and run-script options',action='store',dest='device')
 	parser.add_option('--url',help='load and parse given URL. String after first ? is regarded as parameter and is escaped',action='append',dest='urls')
 
+	parser.add_option('--push',help='print value on its updates',action='store_true',dest='push',default=False)
+
 	(options,args)=parser.parse_args()
 
 	# default authorization; changed if needed
 	auth = 'user:test'
-	j = rts2.json.Rts2JSON(options.user,options.password,verbose=options.verbose)
+	j = rts2.json.Rts2JSON(options.server,options.user,options.password,verbose=options.verbose)
 
 	if options.get_array:
 		for g in options.get_array:
@@ -64,10 +67,21 @@ if __name__ == '__main__':
 			else:
 				print j.loadJson(us[0])
 
-	if not(options.get_array) and not(options.get_int_array):
+	if not(options.get_array) and not(options.get_int_array) and not(options.push):
 	  	for a in args:
 			try:
 				a=j.loadJson(a)
 			except Exception,ex:
 				print 'cannot parse response for {0}:{1}'.format(a,ex)
+
+	if options.push:
+		arg = []
+		for a in args:
+			entry = a.split('.')
+			if len(entry) != 2:
+				raise Exception('invalid argument for push: {0}'.format(a))
+			arg.append((entry[0],entry[1]))
+		r = j.getResponse('/api/push',args=arg)
+		while True:
+			print j.chunkJson(r)
 
