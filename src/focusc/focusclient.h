@@ -130,7 +130,7 @@ class FocusCameraClient:public rts2image::DevClientCameraFoc
 	protected:
 		int autoSave;
 
-		virtual void exposureStarted ();
+		virtual void exposureStarted (bool expectImage);
 
 	private:
 		FocusClient * master;

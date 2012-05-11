@@ -424,7 +424,7 @@ void DevClientCameraImage::stateChanged (rts2core::ServerState * state)
 		triggered = false;
 }
 
-void DevClientCameraImage::exposureStarted ()
+void DevClientCameraImage::exposureStarted (bool expectImage)
 {
 	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	struct timeval expStart;
@@ -432,6 +432,10 @@ void DevClientCameraImage::exposureStarted ()
 	gettimeofday (&expStart, NULL);
 
 	Image *image = NULL;
+
+	// don't create image if it is not expected
+	if (expectImage == false)
+		rts2core::DevClientCamera::exposureStarted (expectImage);
 
 	try
 	{
@@ -473,20 +477,20 @@ void DevClientCameraImage::exposureStarted ()
 		return;
 	}
 	connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE, actualImage));
-	rts2core::DevClientCamera::exposureStarted ();
+	rts2core::DevClientCamera::exposureStarted (expectImage);
 }
 
-void DevClientCameraImage::exposureEnd ()
+void DevClientCameraImage::exposureEnd (bool expectImage)
 {
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 
-	if (actualImage)
+	if (expectImage == true && actualImage)
 	{
 		actualImage->setExEnd (getMaster ()->getNow ());
 		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 	}
 
-	rts2core::DevClientCamera::exposureEnd ();
+	rts2core::DevClientCamera::exposureEnd (expectImage);
 }
 
 bool DevClientCameraImage::waitForMetaData ()

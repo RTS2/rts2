@@ -112,7 +112,7 @@ class Element:public Object
 		/**
 		 * Called after end of exposure.
 		 */
-		virtual void exposureEnd () {}
+		virtual void exposureEnd (bool expectImage) {}
 
 		/**
 		 * Called when exposure/readout failed.

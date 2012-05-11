@@ -133,13 +133,14 @@ void DevClient::idle ()
 
 DevClientCamera::DevClientCamera (Connection * _connection):DevClient (_connection)
 {
+	lastExpectImage = false;
 }
 
-void DevClientCamera::exposureStarted ()
+void DevClientCamera::exposureStarted (bool expectImage)
 {
 }
 
-void DevClientCamera::exposureEnd ()
+void DevClientCamera::exposureEnd (bool expectImage)
 {
 }
 
@@ -158,16 +159,18 @@ void DevClientCamera::stateChanged (ServerState * state)
 		switch (state->getValue () & CAM_MASK_EXPOSE)
 		{
 			case CAM_EXPOSING:
+			case CAM_EXPOSING_NOIM:
 				if (!(state->getValue () & DEVICE_SC_CURR))
 					break;
+				lastExpectImage = state->getValue () & CAM_EXPOSING;
 				if (connection->getErrorState () == DEVICE_NO_ERROR)
-					exposureStarted ();
+					exposureStarted (lastExpectImage);
 				else
 					exposureFailed (connection->getErrorState ());
 				break;
 			case CAM_NOEXPOSURE:
 				if (connection->getErrorState () == DEVICE_NO_ERROR)
-					exposureEnd ();
+					exposureEnd (lastExpectImage);
 				else
 					exposureFailed (connection->getErrorState ());
 				break;
@@ -179,12 +182,12 @@ void DevClientCamera::stateChanged (ServerState * state)
 		switch (state->getValue () & CAM_MASK_FT)
 		{
 			case CAM_FT:
-				exposureEnd ();
+				exposureEnd (lastExpectImage);
 				break;
 			case CAM_NOFT:
 				if (!(state->getValue () & DEVICE_SC_CURR))
 					break;
-				exposureStarted ();
+				exposureStarted (lastExpectImage);
 				break;
 		}
 	}

@@ -149,17 +149,25 @@ long Camera::isExposing ()
 	return ((long int) ((exposureEnd->getValueDouble () - n) * USEC_SEC));
 }
 
-int Camera::endExposure ()
+int Camera::endExposure (int ret)
 {
 	if (exposureConn)
 	{
 		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
 		return camReadout (exposureConn);
 	}
-	if (getStateChip (0) & CAM_EXPOSING)
+	if (getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM))
 	{
-		stopExposure ();
-		logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+		if (ret == -4)
+		{
+			logStream (MESSAGE_INFO) << "end exposure, readout was not commanded" << sendLog;
+			return 0;
+		}
+		else
+		{
+			stopExposure ();
+			logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+		}
 	}
 
 	quedExpNumber->setValueInteger (0);
@@ -1153,7 +1161,7 @@ void Camera::addFilterOffsets ()
 void Camera::checkExposures ()
 {
 	long ret;
-	if (getStateChip (0) & CAM_EXPOSING)
+	if ((getStateChip (0) & (CAM_EXPOSING | CAM_EXPOSING_NOIM)))
 	{
 		// try to end exposure
 		ret = isExposing ();
@@ -1168,17 +1176,19 @@ void Camera::checkExposures ()
 			{
 				case -4:
 					exposureConn = NULL;
-					endExposure ();
+					endExposure (ret);
 					maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
+					if (quedExpNumber->getValueInteger () > 0)
+						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
 					break;
 				case -3:
 					exposureConn = NULL;
-					endExposure ();
+					endExposure (ret);
 					break;
 				case -2:
 					// remember exposure number
 					expNum = getExposureNumber ();
-					endExposure ();
+					endExposure (ret);
 					// if new exposure does not start during endExposure (camReadout) call, drop exposure state
 					if (expNum == getExposureNumber ())
 						maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
@@ -1441,7 +1451,7 @@ int Camera::camStartExposureWithoutCheck ()
 	}
 
 	ret = startExposure ();
-	if (ret)
+	if (!(ret == 0 || ret == 1))
 		return ret;
 
 	double now = getNow ();
@@ -1449,9 +1459,11 @@ int Camera::camStartExposureWithoutCheck ()
 	exposureEnd->setValueDouble (now + exposure->getValueDouble ());
 	infoAll ();
 
-	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, CAM_EXPOSING | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
-
-	logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+	maskState (CAM_MASK_EXPOSE | BOP_TEL_MOVE | BOP_WILL_EXPOSE | CAM_MASK_HAS_IMAGE, (ret == 0 ? CAM_EXPOSING : CAM_EXPOSING_NOIM) | BOP_TEL_MOVE, "exposure started", now, exposureEnd->getValueDouble (), exposureConn);
+	if (ret == 0)
+		logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+	else
+		logStream (MESSAGE_INFO) << "starting " << TimeDiff (exposure->getValueFloat ()) << " exposure cycle (without image) for '" << (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
 	lastFilterNum = getFilterNum ();
 	// call us to check for exposures..
@@ -1480,6 +1492,7 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
 	// or performing other op that can block command execution
 	// or there are queued values which needs to be dealed before we can start exposing
 	if ((chipState & CAM_EXPOSING)
+	  	|| (chipState & CAM_EXPOSING_NOIM)
 		|| ((chipState & CAM_READING) && !supportFrameTransfer ())
 		|| (!queValues.empty () && fromQue == false)
 		)
@@ -1555,7 +1568,7 @@ int Camera::camReadout (rts2core::Connection * conn)
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
-		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
+		checkQueChanges (getStateChip (0) & ~ (CAM_EXPOSING | CAM_EXPOSING_NOIM));
 		maskState (CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, "starting frame transfer", NAN, NAN, exposureConn);
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;

@@ -376,12 +376,21 @@ void ConnExecute::errorReported (int current_state, int old_state)
 	}
 }
 
-void ConnExecute::exposureEnd ()
+void ConnExecute::exposureEnd (bool expectImage)
 {
 	if (exposure_started == 1)
 	{
-		writeToProcess ("exposure_end");
-		exposure_started = 2;
+		if (expectImage)
+		{
+			writeToProcess ("exposure_end");
+			exposure_started = 2;
+		}
+		else
+		{
+			writeToProcess ("exposure_end_noimage");
+			exposure_started = 0;
+		}
+
 	}
 	else
 	{
@@ -481,14 +490,14 @@ void Execute::errorReported (int current_state, int old_state)
 	Element::errorReported (current_state, old_state);
 }
 
-void Execute::exposureEnd ()
+void Execute::exposureEnd (bool expectImage)
 {
 	if (connExecute)
 	{
-		connExecute->exposureEnd ();
+		connExecute->exposureEnd (expectImage);
 		return;
 	}
-	Element::exposureEnd ();
+	Element::exposureEnd (expectImage);
 }
 
 void Execute::exposureFailed ()

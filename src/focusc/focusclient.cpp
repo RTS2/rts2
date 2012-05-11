@@ -58,13 +58,13 @@ FocusCameraClient::~FocusCameraClient (void)
 {
 }
 
-void FocusCameraClient::exposureStarted ()
+void FocusCameraClient::exposureStarted (bool expectImage)
 {
 	if (exe == NULL)
 	{
 		queCommand (new rts2core::CommandExposure (getMaster (), this, bop));
 	}
-	rts2image::DevClientCameraFoc::exposureStarted ();
+	rts2image::DevClientCameraFoc::exposureStarted (expectImage);
 }
 
 void FocusCameraClient::postEvent (rts2core::Event *event)

@@ -603,7 +603,7 @@ class Camera:public rts2core::ScriptDevice
 		 * start exposure.  Usually maps to single call to camera API
 		 * to start exposure.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @return -1 on error, 0 on success, 1 on succes if image is not expected from the exposure
 		 */
 		virtual int startExposure () = 0;
 
@@ -741,10 +741,12 @@ class Camera:public rts2core::ScriptDevice
 
 		/**
 		 * Called after isExposing returned 0.
+		 *
+		 * @param ret  return value of last isExposure call
 		 * 
 		 * @return -1 on error, 0 on success.
 		 */
-		virtual int endExposure ();
+		virtual int endExposure (int ret);
 
 		/**
 		 * Called every time camera is reseted (by killall or

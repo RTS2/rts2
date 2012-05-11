@@ -51,7 +51,7 @@ class ElementBlock:public Element
 
 		virtual void errorReported (int current_state, int old_state);
 
-		virtual void exposureEnd ();
+		virtual void exposureEnd (bool expectImage);
 		virtual int processImage (rts2image::Image * image);
 		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();

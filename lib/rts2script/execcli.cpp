@@ -375,7 +375,7 @@ void DevClientCameraExec::idle ()
 		nextCommand ();
 }
 
-void DevClientCameraExec::exposureStarted ()
+void DevClientCameraExec::exposureStarted (bool expectImage)
 {
 	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
 		nextCommand ();
@@ -387,15 +387,15 @@ void DevClientCameraExec::exposureStarted ()
 			nextCommand ();
 	}
 
-	DevClientCameraImage::exposureStarted ();
+	DevClientCameraImage::exposureStarted (expectImage);
 }
 
-void DevClientCameraExec::exposureEnd ()
+void DevClientCameraExec::exposureEnd (bool expectImage)
 {
 	rts2core::Value *val = getConnection ()->getValue ("que_exp_num");
 	// if script is running, inform it about end of exposure..
 	if (exposureScript.get ())
-		exposureScript->exposureEnd ();
+		exposureScript->exposureEnd (expectImage);
 	// if script is running and it does not have anything to do, end it
 	if (getScript ().get ()
 		&& !nextComd
@@ -416,7 +416,7 @@ void DevClientCameraExec::exposureEnd ()
 		nextCommand ();
 
 	// send readout after we deal with next command - which can be filter move
-	DevClientCameraImage::exposureEnd ();
+	DevClientCameraImage::exposureEnd (expectImage);
 }
 
 void DevClientCameraExec::stateChanged (rts2core::ServerState * state)

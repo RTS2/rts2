@@ -787,11 +787,11 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, rts2operands::
 	return op;
 }
 
-void Script::exposureEnd ()
+void Script::exposureEnd (bool expectImage)
 {
 	if (executedCount < 0 || el_iter == end ())
 		return;
-	return (*el_iter)->exposureEnd ();
+	return (*el_iter)->exposureEnd (expectImage);
 }
 
 void Script::exposureFailed ()

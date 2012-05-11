@@ -152,7 +152,7 @@ class Script:public Object, public std::list <Element *>
 
 		char *getDefaultDevice () { return defaultDevice; }
 		
-		void exposureEnd ();
+		void exposureEnd (bool expectImage);
 		void exposureFailed ();
 
 		void notActive ();

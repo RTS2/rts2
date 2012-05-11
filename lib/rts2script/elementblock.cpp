@@ -171,10 +171,10 @@ void ElementBlock::errorReported (int current_state, int old_state)
 	Element::errorReported (current_state, old_state);
 }
 
-void ElementBlock::exposureEnd ()
+void ElementBlock::exposureEnd (bool exposureEnd)
 {
 	if (curr_element != blockElements.end ())
-		(*curr_element)->exposureEnd ();
+		(*curr_element)->exposureEnd (exposureEnd);
 }
 
 int ElementBlock::processImage (Image * image)

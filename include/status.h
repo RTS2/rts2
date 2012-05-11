@@ -154,11 +154,12 @@
 #define DEVICE_IDLE         0x00000000
 
 // Camera status
-#define CAM_MASK_CHIP       0x000f
-#define CAM_MASK_EXPOSE     0x0001
+#define CAM_MASK_CHIP       0x00ff
+#define CAM_MASK_EXPOSE     0x0011
 
 #define CAM_NOEXPOSURE      0x0000
 #define CAM_EXPOSING        0x0001
+#define CAM_EXPOSING_NOIM   0x0010 
 
 #define CAM_MASK_READING    0x0002
 
@@ -173,12 +174,7 @@
 #define CAM_HAS_IMAGE       0x0008
 #define CAM_HASNOT_IMAGE    0x0000
 
-#define CAM_WORKING         (CAM_EXPOSING | CAM_READING)
-
-#define CAM_MASK_FOCUSING   0x0800
-
-#define CAM_NOFOCUSING      0x0000
-#define CAM_FOCUSING        0x0800
+#define CAM_WORKING         (CAM_EXPOSING | CAM_EXPOSING_NOIM | CAM_READING)
 
 #define CAM_MASK_SHUTTER    0x0300
 

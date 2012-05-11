@@ -73,7 +73,7 @@ class Apogee:public Camera
 		virtual int setBinning (int in_vert, int in_hori);
 		virtual int startExposure ();
 		virtual long isExposing ();
-		virtual int endExposure ();
+		virtual int endExposure (int ret);
 		virtual int stopExposure ();
 		virtual int doReadout ();
 		virtual int endReadout ();
@@ -166,10 +166,10 @@ long Apogee::isExposing ()
 	return -2;
 }
 
-int Apogee::endExposure ()
+int Apogee::endExposure (int ret)
 {
 	camera->m_WaitingforTrigger = false;
-	return Camera::endExposure ();
+	return Camera::endExposure (ret);
 }
 
 int Apogee::stopExposure ()

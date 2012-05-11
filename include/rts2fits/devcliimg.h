@@ -104,8 +104,8 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		std::string telescop;
 		std::string origin;
 
-		virtual void exposureStarted ();
-		virtual void exposureEnd ();
+		virtual void exposureStarted (bool expectImage);
+		virtual void exposureEnd (bool expectImage);
 
 		bool waitForMetaData ();
 		void setTriggered () { triggered = true; }

@@ -120,8 +120,8 @@ class DevClientCameraExec:public rts2image::DevClientCameraImage, public DevScri
 
 		virtual void idle ();
 
-		virtual void exposureStarted ();
-		virtual void exposureEnd ();
+		virtual void exposureStarted (bool expectImage);
+		virtual void exposureEnd (bool expectImage);
 		virtual void readoutEnd ();
 
 		virtual void writeToFitsTransfer (rts2image::Image *img)

@@ -32,13 +32,6 @@ DevClientCameraExecDb::~DevClientCameraExecDb (void)
 
 }
 
-void DevClientCameraExecDb::exposureStarted ()
-{
-	if (currentTarget)
-		currentTarget->startObservation ();
-	DevClientCameraExec::exposureStarted ();
-}
-
 rts2image::Image * DevClientCameraExecDb::createImage (const struct timeval *expStart)
 {
 	imgCount++;
@@ -72,4 +65,11 @@ void DevClientCameraExecDb::beforeProcess (rts2image::Image * image)
 	{
 		outimg->toFlat ();
 	}
+}
+
+void DevClientCameraExecDb::exposureStarted (bool expectImage)
+{
+	if (currentTarget)
+		currentTarget->startObservation ();
+	DevClientCameraExec::exposureStarted (expectImage);
 }

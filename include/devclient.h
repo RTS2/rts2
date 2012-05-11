@@ -165,17 +165,27 @@ class DevClientCamera:public DevClient
 		bool isIdle ();
 		bool isExposing ();
 	protected:
-		virtual void exposureStarted ();
-		virtual void exposureEnd ();
+		/**
+		 * Called when exposure start is signaled.
+		 *
+		 * @param expectImage   true if camera will send image at the end of exposure
+		 */
+		virtual void exposureStarted (bool expectImage);
+
+		/**
+		 * Called when exposure end is signaled.
+		 *
+		 * @param expectImage if true, image is expected shortly
+		 */
+		virtual void exposureEnd (bool expectImage);
 		virtual void readoutEnd ();
+	
+	private:
+		bool lastExpectImage;
 };
 
 class DevClientTelescope:public DevClient
 {
-	protected:
-		bool moveWasCorrecting;
-		virtual void moveStart (bool correcting);
-		virtual void moveEnd ();
 	public:
 		DevClientTelescope (Connection * in_connection);
 		virtual ~ DevClientTelescope (void);
@@ -186,6 +196,11 @@ class DevClientTelescope:public DevClient
 		}
 		virtual void stateChanged (ServerState * state);
 		virtual void postEvent (Event * event);
+
+	protected:
+		bool moveWasCorrecting;
+		virtual void moveStart (bool correcting);
+		virtual void moveEnd ();
 };
 
 class DevClientDome:public DevClient
@@ -196,51 +211,45 @@ class DevClientDome:public DevClient
 
 class DevClientCupola:public DevClientDome
 {
-	protected:
-		virtual void syncStarted ();
-		virtual void syncEnded ();
 	public:
 		DevClientCupola (Connection * in_connection);
 		virtual void syncFailed (int status);
 		virtual void notMoveFailed (int status);
 		virtual void stateChanged (ServerState * state);
+
+	protected:
+		virtual void syncStarted ();
+		virtual void syncEnded ();
 };
 
 class DevClientMirror:public DevClient
 {
-	protected:
-		virtual void mirrorA ();
-		virtual void mirrorB ();
 	public:
 		DevClientMirror (Connection * in_connection);
 		virtual ~ DevClientMirror (void);
 		virtual void moveFailed (int status);
 		virtual void stateChanged (ServerState * state);
+
+	protected:
+		virtual void mirrorA ();
+		virtual void mirrorB ();
 };
 
 class DevClientFocus:public DevClient
 {
-	protected:
-		virtual void focusingStart ();
-		virtual void focusingEnd ();
 	public:
 		DevClientFocus (Connection * in_connection);
 		virtual ~ DevClientFocus (void);
 		virtual void focusingFailed (int status);
 		virtual void stateChanged (ServerState * state);
+
+	protected:
+		virtual void focusingStart ();
+		virtual void focusingEnd ();
 };
 
 class DevClientPhot:public DevClient
 {
-	protected:
-		virtual void filterMoveStart ();
-		virtual void filterMoveEnd ();
-		virtual void integrationStart ();
-		virtual void integrationEnd ();
-		virtual void addCount (int count, float exp, bool is_ov);
-		int lastCount;
-		float lastExp;
-		bool integrating;
 	public:
 		DevClientPhot (Connection * in_connection);
 		virtual ~ DevClientPhot (void);
@@ -253,13 +262,20 @@ class DevClientPhot:public DevClient
 		bool isIntegrating ();
 
 		virtual void valueChanged (Value * value);
+
+	protected:
+		virtual void filterMoveStart ();
+		virtual void filterMoveEnd ();
+		virtual void integrationStart ();
+		virtual void integrationEnd ();
+		virtual void addCount (int count, float exp, bool is_ov);
+		int lastCount;
+		float lastExp;
+		bool integrating;
 };
 
 class DevClientFilter:public DevClient
 {
-	protected:
-		virtual void filterMoveStart ();
-		virtual void filterMoveEnd ();
 	public:
 		DevClientFilter (Connection * in_connection);
 		virtual ~ DevClientFilter (void);
@@ -267,6 +283,10 @@ class DevClientFilter:public DevClient
 		virtual void stateChanged (ServerState * state);
 
 		virtual void filterOK () {}
+
+	protected:
+		virtual void filterMoveStart ();
+		virtual void filterMoveEnd ();
 };
 
 class DevClientAugerShooter:public DevClient
@@ -277,11 +297,12 @@ class DevClientAugerShooter:public DevClient
 
 class DevClientExecutor:public DevClient
 {
-	protected:
-		virtual void lastReadout ();
 	public:
 		DevClientExecutor (Connection * in_connection);
 		virtual void stateChanged (ServerState * state);
+
+	protected:
+		virtual void lastReadout ();
 };
 
 class DevClientSelector:public DevClient

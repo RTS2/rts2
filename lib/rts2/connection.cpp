@@ -175,6 +175,12 @@ std::string Connection::getCameraChipState (int chipN)
 		{
 			_os << chipN << " EXPOSING";
 		}
+		if (chip_state & CAM_EXPOSING_NOIM)
+		{
+			if (_os.str ().size ())
+				_os << " | ";
+			_os << chipN << " EXPOSING NOIMG";
+		}
 		if (chip_state & CAM_READING)
 		{
 			if (_os.str ().size ())
@@ -230,8 +236,6 @@ std::string Connection::getStateString ()
 			chipN = getValueInteger ("chips");
 			for (int i = 0; i < chipN; i++)
 				_os << std::hex << getCameraChipState (i);
-			if (real_state & CAM_FOCUSING)
-				_os << " | FOCUSING";
 			if (real_state & CAM_HAS_IMAGE)
 				_os << " | IMAGE_READY";
 			switch (real_state & CAM_MASK_SHUTTER)

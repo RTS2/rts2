@@ -46,6 +46,10 @@ class Dummy:public Camera
 
 			supportFrameT = false;
 			infoSleep = 0;
+
+			createValue (callReadout, "call_readout", "call emulated readout; for tests of non-reading CCDs", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
+			callReadout->setValueBool (true);
+
 			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			readoutSleep->setValueDouble (0);
 
@@ -224,8 +228,17 @@ class Dummy:public Camera
 				for (unsigned int i = 1; i < channels->size (); i++)
 					written[i] = -1;
 			}
-			return 0;
+			return callReadout->getValueBool () ? 0 : 1;
 		}
+
+		virtual long isExposing ()
+		{
+			long ret = Camera::isExposing ();
+			if (ret == -2)
+				return (callReadout->getValueBool () == true) ? -2 : -4;
+			return ret;
+		}
+
 		virtual size_t suggestBufferSize ()
 		{
 			if (dataSize < 0)
@@ -268,6 +281,7 @@ class Dummy:public Camera
 	private:
 		bool supportFrameT;
 		int infoSleep;
+		rts2core::ValueBool *callReadout;
 		rts2core::ValueDouble *readoutSleep;
 		rts2core::ValueLong *callReadoutSize;
 		rts2core::ValueSelection *genType;

@@ -80,7 +80,7 @@ class MICCD:public Camera
 		virtual int setFilterNum (int new_filter, const char *fn = NULL);
 
 		virtual int startExposure ();
-		virtual int endExposure ();
+		virtual int endExposure (int ret);
 
 		virtual int stopExposure ();
 
@@ -468,9 +468,9 @@ int MICCD::startExposure ()
 	return 0;
 }
 
-int MICCD::endExposure ()
+int MICCD::endExposure (int ret)
 {
-	int ret;
+	int cret;
 	switch (camera.model)
 	{
 		case G10300:
@@ -480,8 +480,8 @@ int MICCD::endExposure ()
 		case G12000:
 			if (internalTimer == false)
 			{
-				ret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), -1);
-				if (ret)
+				cret = miccd_start_exposure (&camera, getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), -1);
+				if (cret)
 					return -1;
 			}
 			break;
@@ -489,21 +489,21 @@ int MICCD::endExposure ()
 		case G3:
 			if (getExpType () != 1)
 			{
-				ret = miccd_close_shutter (&camera);
-				if (ret)
-					return ret;
+				cret = miccd_close_shutter (&camera);
+				if (cret)
+					return cret;
 			}
 			break;
 	}
 #ifdef WITH_K8055
 	if (getExpType () == 0)
 	{
-		ret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
-		if (ret)
+		cret = OutputAnalogChannel (1, K8055_SHUTTER_CLOSED);
+		if (cret)
 			logStream (MESSAGE_ERROR) << "cannot close K8055 shutter" << sendLog;
 	}
 #endif
-	return Camera::endExposure ();
+	return Camera::endExposure (ret);
 }
 
 int MICCD::stopExposure ()
