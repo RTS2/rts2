@@ -22,9 +22,40 @@ import base64
 import json as sysjson
 import httplib
 import urllib
+import re
 import string
 import os
+import socket
 import threading
+
+class ChunkResponse(httplib.HTTPResponse):
+
+	read_by_chunks = False
+
+	def __init__(self, sock, debuglevel=0, strict=0, method=None, buffering=False):
+		httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method, buffering=buffering)
+
+	def _read_chunked(self,amt):
+		if not(self.read_by_chunks):
+			return httplib.HTTPResponse._read_chunked(self,amt)
+						
+		assert self.chunked != httplib._UNKNOWN
+		line = self.fp.readline(httplib._MAXLINE + 1)
+		if len(line) > httplib._MAXLINE:
+			raise httplib.LineTooLong("chunk size")
+		i = line.find(';')
+		if i >= 0:
+			line = line[:i]
+		try:
+			chunk_left = int(line, 16)
+		except ValueError:
+			self.close()
+			raise httplib.IncompleteRead('')
+		if chunk_left == 0:
+			return ''
+		ret = self._safe_read(chunk_left)
+		self._safe_read(2)
+		return ret
 
 class Rts2JSON:
 	def __init__(self,url='http://localhost:8889',username=None,password=None,verbose=False,http_proxy=None):
@@ -56,17 +87,22 @@ class Rts2JSON:
 			self.port = int(a[1])
 
 		self.headers = {'Authorization':'Basic' + string.strip(base64.encodestring('{0}:{1}'.format(username,password)))}
+		self.prefix = prefix
 		self.verbose = verbose
 		self.hlib_lock = threading.Lock()
 		self.hlib = self.newConnection()
 
 	def newConnection(self):
-		return httplib.HTTPConnection(self.host,self.port)
+		r = httplib.HTTPConnection(self.host,self.port)
+		r.response_class = ChunkResponse
+		if self.verbose:
+			r.set_debuglevel(5)
+		return r
 
 	def getResponse(self,path,args={},hlib=None):
 		url = self.prefix + path + '?' + urllib.urlencode(args)
 		if self.verbose:
-			print _('retrieving {0}'.format(url))
+			print 'retrieving {0}'.format(url)
 		try:
 			th = hlib
 			if hlib is None:
@@ -98,12 +134,14 @@ class Rts2JSON:
 				raise Exception(jr['error'])
 			return r
 		except Exception,ec:
+			import traceback
+			traceback.print_exc()
 			print 'Cannot parse',url,':',ec
 			raise ec
 		finally:
 			if hlib is None:
 				self.hlib_lock.release()
-
+	
 	def loadData(self,path,args={},hlib=None):
 		return self.getResponse(path,args,hlib).read()
 
@@ -111,7 +149,15 @@ class Rts2JSON:
 		d = self.loadData(path,args)
 		if self.verbose:
 			print d
-		return sysjson.loads()
+		return sysjson.loads(d)
+
+	def chunkJson(self,r):
+		r.read_by_chunks = True
+		d = r.read()
+		if self.verbose:
+			print d
+		r.read_by_chunks = False
+		return sysjson.loads(d)
 
 class JSONProxy(Rts2JSON):
 	"""Connection with managed cache of variables."""
