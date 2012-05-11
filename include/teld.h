@@ -411,6 +411,27 @@ class Telescope:public rts2core::Device
 		}
 
 		/**
+		 * Set WCS reference values telescope is reporting.
+		 *
+		 * @param ra  WCS RA (CRVAL1)
+		 * @param dec WCS DEC (CRVAL2)
+		 */
+		void setCRVAL (double ra, double dec)
+		{
+			if (wcs_crval1)
+			{
+				wcs_crval1->setValueDouble (ra);
+				sendValueAll (wcs_crval1);
+			}
+
+			if (wcs_crval2)
+			{
+				wcs_crval2->setValueDouble (dec);
+				sendValueAll (wcs_crval2);
+			}
+		}
+
+		/**
 		 * Sets target to nan. If startResync is called, it forced
 		 * it to recompute target positions.
 		 */

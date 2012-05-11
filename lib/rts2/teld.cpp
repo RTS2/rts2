@@ -1048,13 +1048,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
 
-	if (wcs_crval1 && wcs_crval2)
-	{
-		wcs_crval1->setValueDouble (pos.ra);
-		sendValueAll (wcs_crval1);
-		wcs_crval2->setValueDouble (pos.dec);
-		sendValueAll (wcs_crval2);
-	}
+	setCRVAL (pos.ra, pos.dec);
 
 	// apply corrections
 	double JD = ln_get_julian_from_sys ();
