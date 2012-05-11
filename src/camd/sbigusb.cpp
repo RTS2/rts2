@@ -73,7 +73,6 @@ class Sbig:public Camera
 
 		// callback functions for Camera alone
 		virtual int info ();
-		virtual long camWaitExpose ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
 		virtual int switchCooling (bool cooling);
@@ -224,7 +223,10 @@ long Sbig::isExposing ()
 	qcsp.command = CC_START_EXPOSURE;
 	SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr);
 	if ((qcsr.status & 0x03) != 0x02)
+	{
+		camStopExpose ();		 // SBIG devices are strange, there is same command for forced stop and normal stop
 		return -2;
+	}
 	return 1;
 }
 
@@ -501,18 +503,6 @@ int Sbig::info ()
 	tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
 	coolingPower->setValueInteger (qtsr.power);
 	return Camera::info ();
-}
-
-long Sbig::camWaitExpose ()
-{
-	long ret;
-	ret = Camera::camWaitExpose ();
-	if (ret == -2)
-	{
-		camStopExpose ();		 // SBIG devices are strange, there is same command for forced stop and normal stop
-		return -2;
-	}
-	return ret;
 }
 
 int Sbig::camStopExpose ()

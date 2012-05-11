@@ -171,6 +171,9 @@ long Fli::isExposing ()
 		return -1;
 	}
 
+	if (tl <= 0)
+		return -2;
+
 	return tl * 1000;			 // we get tl in msec, needs to return usec
 }
 

@@ -230,8 +230,6 @@ class Camera:public rts2core::ScriptDevice
 		virtual int killAll (bool callScriptEnds);
 		virtual int scriptEnds ();
 
-		virtual long camWaitExpose ();
-
 		/**
 		 * Start/stop cooling.
 		 */
@@ -734,8 +732,10 @@ class Camera:public rts2core::ScriptDevice
 		/**
 		 * Check if exposure has ended.
 		 *
-		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure,
+		 * @return  -1 if there wasn't any exposure, > 0 time remainning till end of exposure,
+		 *      -2 when the current exposure ends and readout call is needed
 		 * 	-3 when exposure ended because there were not any exposures in exposure que
+		 *      -4 if exposure ends, but readout is not needed - doReadout will not be called
 		 */
 		virtual long isExposing ();
 

@@ -486,7 +486,7 @@ long Arc::isExposing ()
 	if (status != READOUT)
 		return Camera::isExposing ();
 
-	return 0;
+	return -2;
 #else
 	try
 	{
@@ -502,7 +502,7 @@ long Arc::isExposing ()
 		logStream (MESSAGE_ERROR) << "error in isExposing " << er.what () << sendLog;
 		return -1;
 	}
-	return 0;
+	return -2;
 #endif
 }
 

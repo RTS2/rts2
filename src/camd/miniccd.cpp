@@ -194,7 +194,7 @@ long Miniccd::isExposing ()
 				(msgi[CCD_MSG_LENGTH_HI_INDEX] << 16) << sendLog;
 			return -1;
 		}
-		return 0;
+		return -2;
 	}
 	return 100;
 }

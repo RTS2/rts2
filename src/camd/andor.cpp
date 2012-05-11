@@ -193,7 +193,7 @@ long Andor::isExposing ()
 		status = WaitForAcquisitionTimeOut (50);
 		if (status == DRV_NO_NEW_DATA)
 		{
-			return 0;
+			return -2;
 		}
 		logStream (MESSAGE_DEBUG) << "new image " << status << sendLog;
 
@@ -256,7 +256,7 @@ long Andor::isExposing ()
 		markReadoutStart ();
 		return 100;
 	}
-	return 0;
+	return -2;
 }
 
 // For each exposure, the first time this function is called, it reads out

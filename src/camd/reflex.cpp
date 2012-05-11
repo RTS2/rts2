@@ -403,7 +403,7 @@ int Reflex::stopExposure ()
 
 long Reflex::isExposing ()
 {
-	return 0;
+	return -2;
 }
 
 int Reflex::readoutStart ()

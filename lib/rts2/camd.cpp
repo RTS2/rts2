@@ -143,7 +143,7 @@ long Camera::isExposing ()
 	double n = getNow ();
 	if (n >= exposureEnd->getValueDouble ())
 	{
-		return 0;				 // exposure ended
+		return -2;				 // exposure ends
 	}
 								 // timeout
 	return ((long int) ((exposureEnd->getValueDouble () - n) * USEC_SEC));
@@ -1156,7 +1156,7 @@ void Camera::checkExposures ()
 	if (getStateChip (0) & CAM_EXPOSING)
 	{
 		// try to end exposure
-		ret = camWaitExpose ();
+		ret = isExposing ();
 		if (ret >= 0)
 		{
 			setTimeout (ret);
@@ -1166,6 +1166,11 @@ void Camera::checkExposures ()
 			int expNum;
 			switch (ret)
 			{
+				case -4:
+					exposureConn = NULL;
+					endExposure ();
+					maskState (CAM_MASK_EXPOSE | CAM_MASK_FT | BOP_TEL_MOVE, CAM_NOEXPOSURE | CAM_NOFT, "exposure finished", NAN, NAN, exposureConn);
+					break;
 				case -3:
 					exposureConn = NULL;
 					endExposure ();
@@ -1451,7 +1456,7 @@ int Camera::camStartExposureWithoutCheck ()
 	lastFilterNum = getFilterNum ();
 	// call us to check for exposures..
 	long new_timeout;
-	new_timeout = camWaitExpose ();
+	new_timeout = isExposing ();
 	if (new_timeout >= 0)
 	{
 		setTimeout (new_timeout);
@@ -1511,13 +1516,6 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
 	{
 	}
 	return ret;
-}
-
-long Camera::camWaitExpose ()
-{
-	int ret;
-	ret = isExposing ();
-	return (ret == 0 ? -2 : ret);
 }
 
 int Camera::camBox (rts2core::Connection * conn, int x, int y, int width, int height)

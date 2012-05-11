@@ -987,7 +987,7 @@ long EdtSao::isExposing ()
 {
 	int ret;
 	ret = Camera::isExposing ();
-	if (ret)
+	if (ret != -2)
 		return ret;
 	// taken from expose.c
 	probe ();
@@ -995,7 +995,7 @@ long EdtSao::isExposing ()
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
 	writeBinFile ("e2v_unfreezesc.bin");
-	return 0;
+	return -2;
 }
 
 int EdtSao::readoutStart ()

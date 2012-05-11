@@ -377,9 +377,7 @@ MiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 	return 0;
 }
 
-
-int
-MiniccdIl::startExposure ()
+int MiniccdIl::startExposure ()
 {
 	int ret;
 
@@ -399,9 +397,7 @@ MiniccdIl::startExposure ()
 	return 0;
 }
 
-
-long
-MiniccdIl::isChipExposing (int chip_id)
+long MiniccdIl::isChipExposing (int chip_id)
 {
   	fd_set set;
 	struct timeval read_tout;
@@ -463,13 +459,12 @@ MiniccdIl::isChipExposing (int chip_id)
 			}
 		}
 		std::cout << "chip " << chip_id << " rlen " << rlen << std::endl;
-		return 0;
+		return -2;
 	}
 	return 100;
 }
 
-long
-MiniccdIl::isExposing ()
+long MiniccdIl::isExposing ()
 {
 	struct timeval now;
 	long ret;
@@ -491,7 +486,7 @@ MiniccdIl::isExposing ()
 			slaveState = SLAVE2_EXPOSING;
 		case SLAVE2_EXPOSING:
 			ret = isChipExposing (0);
-			if (ret)
+			if (ret != -2)
 				return ret;
 			// calculate firstReadoutTime
 			gettimeofday (&now, NULL);
@@ -507,7 +502,7 @@ MiniccdIl::isExposing ()
 		default:
 			return -1;
 	}
-	return 0;
+	return -2;
 }
 
 int MiniccdIl::doReadout ()
