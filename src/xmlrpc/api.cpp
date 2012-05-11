@@ -656,9 +656,9 @@ void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *
 	{
 		if (iter->first == _conn->getName () && iter->second == _value->getName () && source != NULL)
 		{
-			os << "\"d\":\"" << iter->first << "\",\"n\":\"" << iter->second << "\",\"v\":";
+			os << "\"d\":\"" << iter->first << "\",\"v\":{";
 			jsonValue (_value, false, os);
-			os << "}";
+			os << "}}";
 			std::ostringstream tosend;
 			tosend << std::hex << os.str ().length () << ";\r\n" << os.str () << "\r\n";
 			if (send (source->getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
