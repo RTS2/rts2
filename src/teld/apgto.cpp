@@ -372,7 +372,7 @@ int APGTO::setAPUTCOffset( double hours)
 	dtoints (hours, &h, &m, &s);
 	//ToDo
 	//snprintf (temp_string, sizeof(temp_string), "#:SG %+03d#", h);
-        snprintf(temp_string, sizeof( temp_string ), "#:SG %+03d:%02d:%02d#", h, m, s);
+	snprintf(temp_string, sizeof( temp_string ), "#:SG %+03d:%02d:%02d#", h, m, s);
 
 	if ((ret = serConn->writeRead (temp_string, sizeof (temp_string), retstr, 1)) < 0){
 	    logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset writing failed." << sendLog;
@@ -447,11 +447,14 @@ int APGTO::setAPSiteLongitude ()
 	//if (Long < 0)
 	//	Long += 360;
 	double APlng = fmod (360. - telLongitude->getValueDouble(), 360.0);
-
+	
 	dtoints (APlng, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
-  	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0)
+	logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLongitude :"<<temp_string << sendLog;
+
+  	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0){
 		return -1;
+	}
 	return 0;
 }
 
@@ -820,9 +823,13 @@ int APGTO::tel_check_coords (double ra, double dec)
 
   struct ln_equ_posn object, target;
 
-  if ((tel_read_ra () < 0) || (tel_read_dec () < 0))
+  if ((tel_read_ra () < 0) || (tel_read_dec () < 0)) {
+    logStream (MESSAGE_ERROR) << "APGTO::tel_check_coords read ra, dec failed" << sendLog;
     return -1;
+  } else {
+    //logStream (MESSAGE_ERROR) << "APGTO::tel_check_coords read ra:"<< getTelRa() << " dec"<<getTelDec() << sendLog;
 
+  }
   object.ra = fmod(getTelRa () + 360., 360.);
   object.dec= fmod( getTelDec (), 90.);
 
@@ -1241,15 +1248,22 @@ void APGTO::notMoveCupola ()
 
 int APGTO::isMoving ()
 {
-	int ret = tel_check_coords (getTelTargetRa (), getTelTargetDec ());
+    struct ln_equ_posn target_equ;
+    getTarget (&target_equ);
+    //logStream (MESSAGE_INFO) << "APGTO::isMoving getTarget ra:"<< target_equ.ra<<" dec:"<<  target_equ.dec<< sendLog;
+    //logStream (MESSAGE_INFO) << "APGTO::isMoving lastMoveRa:"<< lastMoveRa<<" lastMoveDec:"<<  lastMoveDec<< sendLog;
+    logStream (MESSAGE_INFO) << "APGTO::isMoving positionRa:"<< getTelRa()<<" Dec:"<<  getTelDec()<< sendLog;
+    // in case of parking  getTarget, getTelTargetRa (), getTelTargetDec () are nan
+    //	int ret = tel_check_coords (getTelTargetRa (), getTelTargetDec ());
+    int ret = tel_check_coords (lastMoveRa, lastMoveDec);
 	switch (ret)
 	{
 		case -1:
 			return -1;
-		case 1:
+	case 1: //isMoving return 1 if (sep < 0.1) 
 		        slew_state->setValueBool(false) ;
 			return -2;
-		default:
+	default: //isMoving return 0 if (sep > 0.1)  
 			return USEC_SEC / 10;
 	}
 }
@@ -1372,10 +1386,9 @@ int APGTO::startPark ()
   double JD= ln_get_julian_from_sys ();
   double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + observer.lng + 360.), 360.);  // longitude positive to the East
   double park_ra= fmod( (PARK_POSITION_RA + local_sidereal_time) + 360., 360.);
-
+  logStream (MESSAGE_ERROR) <<"APGTO::startPark "<< park_ra<<  sendLog;
   setTarget ( park_ra, PARK_POSITION_DEC);
   startCupolaSync() ;
-  logStream (MESSAGE_DEBUG) << "APGTO::startParking " << getTelTargetRa () << " dec " <<getTelTargetDec ()  << sendLog;
   return startResync ();
 }
 
@@ -1508,7 +1521,6 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
     }
     return 0 ;
   } else if (conn->isCommand ("rot")) { // move is used for a slew to a specific position
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot" << sendLog;
     char *direction ;
     if (conn->paramNextStringNull (&direction) || !conn->paramEnd ()) { 
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot failed" << sendLog;
@@ -1714,7 +1726,7 @@ int APGTO::info ()
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve ra, dec  " << sendLog;
   } else {
 
-    logStream (MESSAGE_ERROR) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
+    //logStream (MESSAGE_ERROR) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
   }
 
   if(( ret= tel_read_local_time()) != 0) {
@@ -1902,7 +1914,7 @@ int APGTO::info ()
     struct ln_date utm;
     struct ln_zonedate ltm;
     ln_get_date_from_sys( &utm) ;
-    ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
+    ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); 
 
     if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
       logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
@@ -1995,8 +2007,12 @@ int APGTO::checkSiderealTime( double limit)
 			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
 	
   if( fabs(local_sidereal_time- lst->getValueDouble()) > limit ) { // usually 30 time seconds
-    logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
-    //wINreturn -1 ;
+    logStream (MESSAGE_ERROR) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
+			    << local_sidereal_time << " mount: "
+			    << lst->getValueDouble() 
+			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
+    return -1 ;
   } 
   return 0 ;
 }
@@ -2063,11 +2079,11 @@ int APGTO::setBasicData()
 	//if the sidereal time read from the mount is correct then consider it as a warm start 
 	if (checkSiderealTime( 1./60.) == 0)
 	{
-		logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
+		logStream (MESSAGE_ERROR) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
 		//return 0 ;
 	}
 
-	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
+	logStream (MESSAGE_ERROR) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
 
 	if (setAPLongFormat() < 0)
 	{
@@ -2084,7 +2100,7 @@ int APGTO::setBasicData()
 	struct ln_zonedate ltm;
 
 	ln_get_date_from_sys( &utm) ;
-	ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight); // Adds "only" offset to JD and converts back (see DST below)
+	ln_date_to_zonedate (&utm, &ltm, -1 * timezone + 3600 * daylight); 
 	logStream (MESSAGE_ERROR) << "APGTO::setBasicData           utc time h:"<<utm.hours << " m:"<<utm.minutes<<" s:"<<utm.seconds  << sendLog;
 	logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time h:"<<ltm.hours << " m:"<<ltm.minutes<<" s:"<<ltm.seconds  << sendLog;
 	// this is local time including dst
@@ -2093,12 +2109,12 @@ int APGTO::setBasicData()
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
 		return -1;
 	}
+
 	if (setCalenderDate(ltm.days, ltm.months, ltm.years) < 0)
 	{
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
 		return -1;
 	}
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
 	// AP mount counts positive to the west, RTS2 to east
 	if (setAPSiteLongitude() < 0)
 	{ // AP mount: positive and only to the to west 
@@ -2147,13 +2163,11 @@ int APGTO::setBasicData()
         //Howard Hedlund
         //Astro-Physics, Inc.
 
-        if(( ret = setAPUTCOffset( -2)) < 0) {
-	  //if(( ret = setAPUTCOffset( -1.065)) < 0) {
+        //if(( ret = setAPUTCOffset( -2)) < 0) {
+	if(( ret = setAPUTCOffset( -2.065)) < 0) {
            logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
            return -1;
         }
-
-	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
 	if (setAPUnPark() < 0)
 	{
 		logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
@@ -2183,7 +2197,7 @@ int APGTO::init ()
 
 	tzset ();
 
-	logStream (MESSAGE_DEBUG) << "timezone " << timezone << " daylight " << daylight << sendLog;
+	logStream (MESSAGE_ERROR) << "timezone " << timezone << " daylight " << daylight << sendLog;
 
 	logStream (MESSAGE_DEBUG) << "APGTO::init RS 232 initialization complete" << sendLog;
 	return 0;
@@ -2206,8 +2220,9 @@ int APGTO::initValues ()
 
 	if(( ret= setBasicData()) != 0)
 		return -1 ;
+	sleep(10); // ToDo schroetig aber noetig
 	if (getAPVersionNumber() != 0)
-		return -1;
+	  return -1;
 	if (getAPUTCOffset() != 0)
 		return -1 ;
 	if(( ret= tel_read_local_time()) != 0)
