@@ -173,6 +173,8 @@ class Rts2Comm:
 		a = self.readline()
 		if a == 'exposure_failed':
 			raise Rts2Exception("exposure failed")
+		if a == 'exposure_end_noimage':
+			return None
 		if a != "exposure_end":
 			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
 		if not (before_readout_callback is None):
@@ -241,9 +243,9 @@ class Rts2Comm:
 		print "process",imagename
 		sys.stdout.flush()
 
-	def doubleValue(self,name,desc,value,rts2_type=0):
+	def doubleValue(self,name,desc,value,rts2_type=None):
 		"""Add to device double value."""
-		print "double",name,'"{0}"'.format(desc),value,rts2_type
+		print "double",name,'"{0}"'.format(desc),value,rts2_type if rts2_type else ''
 		sys.stdout.flush()
 
 	def doubleVariable(self,name,desc,value):
