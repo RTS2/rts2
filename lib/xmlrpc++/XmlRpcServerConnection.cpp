@@ -458,6 +458,12 @@ void XmlRpcServerConnection::executeGet()
 		{
 			XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
 			http_code = HTTP_BAD_REQUEST;
+			response_type = "text/html";
+			std::ostringstream oss;
+			oss << "<html><head><title>Cannot find request for prefix " << _get.c_str () << "</title></head><body><p>Cannot find request for prefix " << _get.c_str () << "</p></body>";
+			_get_response_length = oss.str ().length ();
+			_get_response = new char[_get_response_length];
+			memcpy (_get_response, oss.str ().c_str (), _get_response_length);
 		}
 	}
 	else
