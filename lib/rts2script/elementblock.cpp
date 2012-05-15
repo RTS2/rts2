@@ -590,8 +590,7 @@ void ElementOnce::printScript (std::ostream &os)
 
 bool ElementOnce::endLoop ()
 {
-	// only execute if both local (block) and script count are 0
-	if (script->getLoopCount () == 0 && getLoopCount () == 0)
+	if (getLoopCount () == 0)
 		return false;
 	return true;
 }
