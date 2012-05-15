@@ -1722,56 +1722,69 @@ template <typename bt, typename dt> const bt * scaleData (dt * data, size_t nump
 
 	double l = smax - smin;
 
-	for (; p < end; p++, nd++)
-	{
-		if (*p < smin)
-		{
-			*nd = 0;
-			continue;
-		}
-		if (*p > smax)
-		{
-			*nd = white;
-			continue;
-		}
-		double d = *p;
-		d = white * (d - smin) / l;
-		switch (scaling)
-		{
-			case SCALING_LINEAR:
-				break;
-			case SCALING_LOG:
-				d = log (d);
-				break;
-			case SCALING_POW:
-				d *= d;
-				break; 
-			case SCALING_SQRT:
-				d = sqrt (d);
-				break;
-		}
-		*nd = (bt) d;
+// scaling macro to keep switch outside from main loop
+#define doscaling(scaling_func)                 \
+	for (; p < end; p++, nd++)              \
+	{                                       \
+		if (*p < smin)                  \
+		{                               \
+			*nd = 0;                \
+			continue;               \
+		}                               \
+		if (*p > smax)                  \
+		{                               \
+			*nd = white;            \
+			continue;               \
+		}                               \
+		double d = *p;                  \
+		d = white * (d - smin) / l;     \
+		scaling_func;                   \
+		*nd = (bt) d;                   \
 	}
+
+	switch (scaling)
+	{
+		case SCALING_LINEAR:
+			doscaling(;)
+			break;
+		case SCALING_LOG:
+			doscaling(d=log(d))
+			break;
+		case SCALING_POW:
+			doscaling(d*=d)
+			break; 
+		case SCALING_SQRT:
+			doscaling(d=sqrt (d))
+			break;
+	}
+
+#undef doscaling
+
 	return (bt *) data;
 }
 
-const void * Image::getChannelDataScaled (int chan, long smin, long smax, scaling_type scaling, int newType)
+const void * rts2image::getScaledData (int dataType, const void *data, size_t numpix, long smin, long smax, scaling_type scaling, int newType)
 {
 	switch (dataType)
 	{
 		case RTS2_DATA_USHORT:
-			return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+			return scaleData ((uint16_t *) data, numpix, (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
 		case RTS2_DATA_ULONG:
 			switch (newType)
 			{
 				case RTS2_DATA_BYTE:
-					return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+					return scaleData ((uint16_t *) data, numpix, (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
 				case RTS2_DATA_USHORT:
-					return scaleData ((uint32_t *) getChannelData (chan), getChannelNPixels (chan), (uint32_t) smin, (uint32_t) smax, scaling, (uint16_t) 0xffff);
+					return scaleData ((uint32_t *) data, numpix, (uint32_t) smin, (uint32_t) smax, scaling, (uint16_t) 0xffff);
 			}
-			return scaleData ((uint16_t *) getChannelData (chan), getChannelNPixels (chan), (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+			return scaleData ((uint16_t *) data, numpix, (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
 	}
-	return getChannelData (chan);
+	return data;
+}
+
+const void * Image::getChannelDataScaled (int chan, long smin, long smax, scaling_type scaling, int newType)
+{
+	return getScaledData (dataType, getChannelData (chan), getChannelNPixels (chan), smin, smax, scaling, newType);
 }
 
 int Image::setAstroResults (double in_ra, double in_dec, double in_ra_err, double in_dec_err)

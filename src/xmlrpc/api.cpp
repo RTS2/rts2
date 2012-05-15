@@ -726,8 +726,28 @@ class AsyncDataAPI:public AsyncAPI
 
 		rts2image::scaling_type scaling;
 		int newType;
+		int oldType;
 
 		void sendData ();
+
+	private:
+		void doSendData (void *buf, size_t bufs)
+		{
+			ssize_t ret = send (source->getfd (), buf, bufs, 0);
+			if (ret < 0)
+			{
+				if (errno != EAGAIN && errno != EINTR)
+				{
+					logStream (MESSAGE_ERROR) << "cannot send data to client " << strerror (errno) << sendLog;
+					asyncFinished ();
+					return;
+				}
+			}
+			else
+			{
+				bytesSoFar += ret;
+			}
+		}
 };
 
 AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
@@ -740,6 +760,7 @@ AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServer
 
 	scaling = _scaling;
 	newType = _newType;
+	oldType = 0;
 }
 
 void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
@@ -762,7 +783,33 @@ void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Data
 				else if (bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
 				{
 					// full image was received, let's make sure it will be send
-					source->setResponse(data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
+					if (newType != 0 && newType != oldType)
+					{
+						char *newData = new char[data->getDataTop () - data->getDataBuff () - bytesSoFar];
+						size_t ds = data->getDataTop () - data->getDataBuff () - bytesSoFar;
+						memcpy (newData, data->getDataBuff () + bytesSoFar, ds);
+						// scale data for async
+						if (bytesSoFar < sizeof (struct imghdr))
+						{
+							struct imghdr imgh;
+							memcpy (&imgh, newData, sizeof (struct imghdr) - bytesSoFar);
+							imgh.data_type = htons (newType);
+							memcpy (newData, ((char *) &imgh) + bytesSoFar, sizeof (struct imghdr) - bytesSoFar);
+
+							getScaledData (oldType, newData + sizeof (struct imghdr) - bytesSoFar, (ds - sizeof (struct imghdr) + bytesSoFar) / (oldType / 8), smin, smax, scaling, newType);
+						}
+						else
+						{
+							// we send out pixels, so this scaling is legal
+							getScaledData (oldType, newData, ds / (oldType / 8), smin, smax, scaling, newType);
+						}
+						source->setResponse (newData, ds);
+						delete[] newData;
+					}
+					else
+					{
+						source->setResponse (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
+					}
 					nullSource ();
 				}
 				else
@@ -787,20 +834,34 @@ int AsyncDataAPI::idle ()
 
 void AsyncDataAPI::sendData ()
 {
-	ssize_t ret = send (source->getfd (), data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar, 0);
-	if (ret < 0)
+	// if scaling is needed, wait for full image header
+	if (newType != 0 && newType != oldType && bytesSoFar < sizeof (struct imghdr))
 	{
-		if (errno != EAGAIN && errno != EINTR)
+		if (bytesSoFar < sizeof (struct imghdr))
 		{
-			logStream (MESSAGE_ERROR) << "cannot send data to client " << strerror (errno) << sendLog;
-			asyncFinished ();
-			return;
+			if (data->getDataTop () - data->getDataBuff () > (ssize_t) (sizeof (struct imghdr)))
+			{
+				struct imghdr imgh;
+				memcpy (&imgh, data->getDataBuff (), sizeof (struct imghdr));
+				if (oldType == 0)
+					oldType = ntohs (imgh.data_type);
+				imgh.data_type = htons (newType);
+				doSendData (((char *) (&imgh)) + bytesSoFar, sizeof (struct imghdr) - bytesSoFar);
+			}
 		}
+		// bytesSoFar > sizeof (struct imghdr)
+		else
+		{
+			size_t ds = data->getDataTop () - data->getDataBuff () - bytesSoFar;
+			char newData[ds];
+			memcpy (newData, data->getDataBuff () + bytesSoFar, ds);
+			// scale data
+			getScaledData (oldType, newData, ds / (oldType / 8), smin, smax, scaling, newType);
+			doSendData (newData, (newType / 8) * ds / (oldType / 8));
+		}
+		return;
 	}
-	else
-	{
-		bytesSoFar += ret;
-	}
+	doSendData (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
 }
 
 class AsyncCurrentAPI:public AsyncDataAPI

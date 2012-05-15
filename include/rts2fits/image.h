@@ -83,6 +83,8 @@ typedef enum
 { EXPOSURE_START, INFO_CALLED, EXPOSURE_END, TRIGGERED }
 imageWriteWhich_t;
 
+const void * getScaledData (int dataType, const void *data, size_t numpix, long smin, long smax, scaling_type scaling, int newType);
+
 /**
  * Generic class which represents an image.
  *
