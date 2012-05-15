@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # Photometry manipulation scripts
-# Copyright (C) Petr Kubanek, Instritute of Physics <kubanek@fzu.cz>
+# Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 
 
 import psycopg2
