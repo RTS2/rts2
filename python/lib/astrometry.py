@@ -32,7 +32,6 @@ import re
 import time
 import pyfits
 import tempfile
-import pynova
 import numpy
 import math
 
