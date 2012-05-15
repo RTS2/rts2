@@ -101,7 +101,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self,scale=None,ra=None,dec=None,replace=False):
+	def run(self,scale=None,ra=None,dec=None,replace=False,verbose=False):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -124,6 +124,9 @@ class AstrometryScript:
 			solve_field.append('5')
 
 		solve_field.append(self.infpath)
+
+		if verbose:
+			print 'running',' '.join(solve_field)
 	    
 		proc=subprocess.Popen(solve_field,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
@@ -135,6 +138,8 @@ class AstrometryScript:
 			a=proc.stdout.readline()
 			if a == '':
 				break
+			if verbose:
+				print a
 			match=radecline.match(a)
 			if match:
 				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
