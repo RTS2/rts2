@@ -1,191 +1,58 @@
 #!/usr/bin/python
-# (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
-# (C) 2011-2012, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
-#   usage 
-#   astrometry.py fits_filename
-#
-#   This program is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2, or (at your option)
-#   any later version.
-#
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#
-#   Or visit http://www.gnu.org/licenses/gpl.html.
-#
 
-__author__ = 'kubanek@fzu.cz'
-
-import os
-import shutil
-import string
-import subprocess
-import sys
-import re
-import time
 import pyfits
-import tempfile
-import pynova
-import numpy
-import math
 
-import dms
+import sys
+from optparse import OptionParser
 
-class WCSAxisProjection:
-	def __init__(self,fkey):
-		self.wcs_axis = None
-		self.projection_type = None
-		self.sip = False
+def run_on_image(fn,verbose=False,blind=False):
+	import rts2.astrometry
+	import rts2.libnova
 
-		for x in fkey.split('-'):
-			if x == 'RA' or x == 'DEC':
-				self.wcs_axis = x
-			elif x == 'TAN':
-				self.projection_type = x
-			elif x == 'SIP':
-				self.sip = True
-		if self.wcs_axis is None or self.projection_type is None:
-			raise Exception('uknown projection type {0}'.format(fkey))
+	a = rts2.astrometry.AstrometryScript(fn)
 
-def xy2wcs(x,y,fitsh):
-	"""Transform XY pixel coordinates to WCS coordinates"""
-	wcs1 = WCSAxisProjection(fitsh['CTYPE1'])
-	wcs2 = WCSAxisProjection(fitsh['CTYPE2'])
-	# retrieve CD matrix
-	cd = numpy.array([[fitsh['CD1_1'],fitsh['CD1_2']],[fitsh['CD2_1'],fitsh['CD2_2']]])
-	# subtract reference pixel
-	xy = numpy.array([x,y]) - numpy.array([fitsh['CRPIX1'],fitsh['CRPIX2']])
-	xy = numpy.dot(cd,xy)
+	ff=pyfits.fitsopen(fn,'readonly')
 
-	if wcs1.wcs_axis == 'RA' and wcs2.wcs_axis == 'DEC':
-		dec = xy[1] + fitsh['CRVAL2']
-		if wcs1.projection_type == 'TAN':
-			if abs(dec) != 90:
-				xy[0] /= math.cos(math.radians(dec))
-		return [xy[0] + fitsh['CRVAL1'],dec]
+	ra = dec = scale = None
 
-	if wcs1.wcs_axis == 'DEC' and wcs2.wcs_axis == 'RA':
-		dec = xy[0] + fitsh['CRVAL1']
-		if wcs2.projection_type == 'TAN':
-			if abs(dec) != 90:
-				xy[1] /= math.cos(math.radians(dec))
-		return [xy[1] + fitsh['CRVAL2'],dec]
-	raise Exception('unsuported axis combination {0} {1]'.format(wcs1.wcs_axis,wcs2.wcs_axis))
+	ra=ff[0].header['CRVAL1']
+	dec=ff[0].header['CRVAL2']
 
-class AstrometryScript:
-	"""calibrate a fits image with astrometry.net."""
-	def __init__(self,fits_file,odir=None,scale_relative_error=0.05,astrometry_bin='/usr/local/astrometry/bin'):
-		self.scale_relative_error=scale_relative_error
-		self.astrometry_bin=astrometry_bin
+	for k in ['CDELT1','CD1_1']:
+		try:
+			scale=abs(float(ff[0].header[k]) * 3600.0)
+			break
+		except KeyError,ke:
+			pass
 
-		self.fits_file = fits_file
-		self.odir = odir
-		if self.odir is None:
-			self.odir=tempfile.mkdtemp()
+	object = None
+	num = None
 
-		self.infpath=self.odir + '/input.fits'
-		shutil.copy(self.fits_file, self.infpath)
+	try:
+		object=ff[0].header['OBJECT']
+		num=ff[0].header['IMGID']
+	except KeyError,ke:
+		pass
+			
+	ff.close()
 
-	def run(self,scale=None,ra=None,dec=None,replace=False):
+	ret=a.run(replace=True,verbose=verbose) if blind else a.run(scale=scale,ra=ra,dec=dec,replace=True,verbose=verbose)
 
-		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
-
-		if scale is not None:
-			scale_low=scale*(1-self.scale_relative_error)
-			scale_high=scale*(1+self.scale_relative_error)
-			solve_field.append('-u')
-			solve_field.append('app')
-			solve_field.append('-L')
-			solve_field.append(str(scale_low))
-			solve_field.append('-H')
-			solve_field.append(str(scale_high))
-
-		if ra is not None and dec is not None:
-			solve_field.append('--ra')
-			solve_field.append(str(ra))
-			solve_field.append('--dec')
-			solve_field.append(str(dec))
-			solve_field.append('--radius')
-			solve_field.append('5')
-
-		solve_field.append(self.infpath)
-	    
-		proc=subprocess.Popen(solve_field,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-		radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
-
-		ret = None
-
-		while True:
-			a=proc.stdout.readline()
-			if a == '':
-				break
-			match=radecline.match(a)
-			if match:
-				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
-		if replace and ret is not None:
-			shutil.move(self.odir+'/input.new',self.fits_file)
-	       
-		# cleanup
-		shutil.rmtree(self.odir)
+	if ret:
+		# script needs to reopen file 
 		
-		return ret
-
-	# return offset from 
-	def getOffset(self,x=None,y=None):
-		ff=pyfits.fitsopen(self.fits_file,'readonly')
+		ff=pyfits.fitsopen(fn,'readonly')
 		fh=ff[0].header
 		ff.close()
 
-		if x is None:
-			x=fh['NAXIS1']/2.0
-		if y is None:
-			y=fh['NAXIS2']/2.0
-
-		rastrxy = xy2wcs(x,y,fh)
-		ra=fh['OBJRA']
-		dec=fh['OBJDEC']
-
-		return (ra-rastrxy[0],dec-rastrxy[1])
-
-if __name__ == '__main__':
-	if len(sys.argv) <= 1:
-		print 'Usage: %s <fits filename>' % (sys.argv[0])
-		sys.exit(1)
-
-	a = AstrometryScript(sys.argv[1])
-
-	ra = dec = None
-
-	ff=pyfits.fitsopen(sys.argv[1],'readonly')
-	ra=ff[0].header['TELRA']
-	dec=ff[0].header['TELDEC']
-	object=ff[0].header['OBJECT']
-	num=ff[0].header['IMGID']
-	ff.close()
-
-    	ret=a.run(scale=0.6,ra=ra,dec=dec,replace=True)
-
-	if ret:
 		raorig=ra
 		decorig=dec
 
-		ff=pyfits.fitsopen(sys.argv[1],'readonly')
-		fh=ff[0].header
-		ff.close()
-
-		rastrxy = xy2wcs(fh['NAXIS1']/2.0,fh['NAXIS2']/2.0,fh)
+		rastrxy = rts2.astrometry.xy2wcs(fh['NAXIS1']/2.0,fh['NAXIS2']/2.0,fh)
 
 		#rastrxy=[float(ret[0])*15.0,float(ret[1])]
 
-		err = pynova.angularSeparation(raorig,decorig,rastrxy[0],rastrxy[1])
+		err = rts2.libnova.angularSeparation(raorig,decorig,rastrxy[0],rastrxy[1])
 
 		print "corrwerr 1 {0:.10f} {1:.10f} {2:.10f} {3:.10f} {4:.10f}".format(rastrxy[0], rastrxy[1], raorig-rastrxy[0], decorig-rastrxy[1], err)
 
@@ -202,3 +69,17 @@ if __name__ == '__main__':
 
 		c.stringValue('object','astrometry object',object)
 		c.integerValue('img_num','last astrometry number',num)
+
+
+parser = OptionParser()
+parser.add_option('--verbose',help='Be verbose, print what the script is doing',action='store_true',dest='verbose',default=False)
+parser.add_option('--blind',help='Blind solve',action='store_true',dest='blind',default=False)
+
+(options,args) = parser.parse_args()
+
+if not(len(args) == 1):
+	print 'Usage: {0} <fits filenames>'.format(sys.argv[0])
+	sys.exit(1)
+
+for x in args:
+	run_on_image(x,verbose=options.verbose,blind=options.blind)
