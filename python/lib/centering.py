@@ -54,6 +54,7 @@ class Centering(scriptcomm.Rts2Comm):
 				if self.imgn:
 					self.toTrash(self.imgn)
 		self.log('E','cannot match on given offsets, giving up')
+		self.targetTempDisable(1200)
 		self.endScript()
 
 if __name__ == '__main__':
