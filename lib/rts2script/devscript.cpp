@@ -58,21 +58,19 @@ void DevScript::startTarget (bool callScriptEnds)
 		<< " nextTarget " << (nextTarget ? nextTarget->getTargetID () : 0)
 		<< sendLog;
 	#endif						 /* DEBUG_EXTRA */
-	if (!currentTarget)
+	if (currentTarget == NULL)
 	{
-		if (!nextTarget)
+		if (nextTarget == NULL)
 			return;
 		currentTarget = nextTarget;
 		nextTarget = NULL;
-		if (lastTargetObsID == currentTarget->getObsTargetID ())
-			scriptLoopCount++;
-		else
-			scriptLoopCount = 0;
 	}
-	else
-	{
+
+	if (lastTargetObsID == currentTarget->getObsTargetID ())
 		scriptLoopCount++;
-	}
+	else
+		scriptLoopCount = 0;
+
 	scriptCount++;
 
 	counted_ptr <Script> sc (new Script (scriptLoopCount, script_connection->getMaster ()));

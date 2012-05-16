@@ -171,10 +171,10 @@ void ElementBlock::errorReported (int current_state, int old_state)
 	Element::errorReported (current_state, old_state);
 }
 
-void ElementBlock::exposureEnd (bool exposureEnd)
+void ElementBlock::exposureEnd (bool expEnd)
 {
 	if (curr_element != blockElements.end ())
-		(*curr_element)->exposureEnd (exposureEnd);
+		(*curr_element)->exposureEnd (expEnd);
 }
 
 int ElementBlock::processImage (Image * image)
@@ -590,7 +590,7 @@ void ElementOnce::printScript (std::ostream &os)
 
 bool ElementOnce::endLoop ()
 {
-	if (getLoopCount () == 0)
+	if (script->getLoopCount () == 0 && getLoopCount () == 0)
 		return false;
 	return true;
 }
