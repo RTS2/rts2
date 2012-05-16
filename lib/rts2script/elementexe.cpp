@@ -321,6 +321,25 @@ void ConnExecute::processCommand (char *cmd)
 		masterElement->requestEndScript ();
 		notActive ();
 	}
+	else if (!strcmp (cmd, "target_disable"))
+	{
+		if (masterElement->getTarget ())
+		{
+			masterElement->getTarget ()->setTargetEnabled (false);
+			masterElement->getTarget ()->save (true);
+		}
+	}
+	else if (!strcmp (cmd, "target_tempdisable"))
+	{
+		int ti;
+		if (paramNextInteger (&ti) || masterElement->getTarget () == NULL)
+			return;
+		time_t now;
+		time (&now);
+		now += ti;
+		masterElement->getTarget ()->setNextObservable (&now);
+		masterElement->getTarget ()->save (true);
+	}
 	else if (!strcmp (cmd, "loopcount"))
 	{
 		std::ostringstream os;
@@ -457,13 +476,15 @@ std::list <Image *>::iterator ConnExecute::findImage (const char *path)
 	return iter;
 }
 
-Execute::Execute (Script * _script, rts2core::Block * _master, const char *_exec): Element (_script)
+Execute::Execute (Script * _script, rts2core::Block * _master, const char *_exec, Rts2Target *_target): Element (_script)
 {
 	connExecute = NULL;
 	client = NULL;
 
 	master = _master;
 	exec = _exec;
+
+	target = _target;
 
 	endScript = false;
 }

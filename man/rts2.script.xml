@@ -721,6 +721,18 @@ echo value WINDOW = 0 0 10 10
 	</para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>target_disable</option></term>
+	<listitem><para>
+	  Disable target for autonomouse selection.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>target_tempdisable {seconds}</option></term>
+	<listitem><para>
+	  Temporary disable target for a given number of seconds.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>end_script</option></term>
 	<listitem><para>
 	  End target script. Ask controlling block to end whole script.

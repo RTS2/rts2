@@ -23,6 +23,7 @@
 #include "rts2script/connexe.h"
 #include "rts2script/element.h"
 #include "connection/fork.h"
+#include "rts2target.h"
 
 namespace rts2script
 {
@@ -84,7 +85,7 @@ class ConnExecute:public ConnExe
 class Execute:public Element
 {
 	public:
-		Execute (Script * _script, rts2core::Block * _master, const char *_exec);
+		Execute (Script * _script, rts2core::Block * _master, const char *_exec, Rts2Target *_target);
 		virtual ~Execute ();
 
 		virtual int defnextCommand (rts2core::DevClient * _client, rts2core::Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
@@ -113,6 +114,8 @@ class Execute:public Element
 		 */
 		void requestEndScript () { endScript = true; }
 
+		Rts2Target *getTarget () { return target; }
+
 	private:
 		ConnExecute *connExecute;
 
@@ -122,6 +125,7 @@ class Execute:public Element
 		const char *exec;
 
 		bool endScript;
+		Rts2Target *target;
 };
 
 }

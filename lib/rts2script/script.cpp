@@ -641,7 +641,7 @@ Element *Script::parseBuf (Rts2Target * target)
 		char *exe;
 		if (getNextParamString (&exe))
 			return NULL;
-		return new Execute (this, getMaster (), exe);
+		return new Execute (this, getMaster (), exe, target);
 	}
 
 	// setValue fallback

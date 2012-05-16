@@ -142,6 +142,16 @@ class Rts2Comm:
 		sys.stdout.flush()
 		return self.readline()
 
+	def targetDisable(self):
+		"""Disable target for autonomous selection."""
+		print "target_disable"
+		sys.stdout.flush()
+
+	def targetTempDisable(self,ti):
+		"""Temporary disable target for given number of seconds."""
+		print "target_tempdisable",ti
+		sys.stdout.flush()
+
 	def endScript(self):
 		"""Ask controlling process to end the current script."""
 		print "end_script"
