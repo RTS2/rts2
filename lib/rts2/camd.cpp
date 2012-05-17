@@ -444,6 +444,11 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	createValue (centerX, "center_X", "center pixel in X", false);
 	createValue (centerY, "center_Y", "center pixel in Y", false);
 
+	createValue (centerMax, "center_max", "maximal ADU value", false);
+	createValue (centerSums, "center_sums", "number of measurements to sum for statistics", false, RTS2_VALUE_WRITABLE);
+	centerSums->setValueInteger (5);
+	createValue (centerStat, "center_stat", "center statistics", false);
+
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
 

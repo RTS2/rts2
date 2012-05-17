@@ -1007,6 +1007,15 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDouble *centerX;
 		rts2core::ValueDouble *centerY;
 
+		// maximalADU
+		rts2core::ValueDouble *centerMax;
+
+		// number of measurements to sum
+		rts2core::ValueInteger *centerSums;
+
+		// center statistics
+		rts2core::ValueDoubleStat *centerStat;
+
 		// update statistics
 		template <typename t> int updateStatistics (t *data, size_t dataSize)
 		{
@@ -1050,6 +1059,8 @@ class Camera:public rts2core::ScriptDevice
 			int h = centerBox->getHeightInt () / binningVertical ();
 			if (h < 0)
 				h = (getUsedHeight () - (y - getUsedY ())) / binningVertical ();
+
+			double center_max = centerCutLevel->getValueDouble ();
 			
 			x -= getUsedX ();
 			y -= getUsedY ();
@@ -1078,6 +1089,8 @@ class Camera:public rts2core::ScriptDevice
 					{
 						sx[col] += *tData;
 						rs += *tData;
+						if (isnan (center_max) || *tData > center_max)
+							center_max = *tData;
 					}
 				}
 
@@ -1095,8 +1108,17 @@ class Camera:public rts2core::ScriptDevice
 			centerX->setValueDouble (sumsX->calculateMedianIndex ());
 			centerY->setValueDouble (sumsY->calculateMedianIndex ());
 
+			centerMax->setValueDouble (center_max);
+
+			centerStat->addValue (center_max, centerSums->getValueInteger ());
+
 			sendValueAll (centerX);
 			sendValueAll (centerY);
+
+			sendValueAll (centerMax);
+
+			centerStat->calculate ();
+			sendValueAll (centerStat);
 
 			return 0;
 		}
