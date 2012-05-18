@@ -449,6 +449,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	centerSums->setValueInteger (5);
 	createValue (centerStat, "center_stat", "center statistics", false);
 
+	createValue (centerAvg, "center_avg", "average of pixels above threshold", false);
+	createValue (centerAvgStat, "center_avg_stat", "statistics of average of pixels above threshold", false);
+
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0);
 	quedExpNumber->setValueInteger (0);
 

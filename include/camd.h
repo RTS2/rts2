@@ -1010,11 +1010,15 @@ class Camera:public rts2core::ScriptDevice
 		// maximalADU
 		rts2core::ValueDouble *centerMax;
 
-		// number of measurements to sum
+		// number of measurements to sum/average
 		rts2core::ValueInteger *centerSums;
 
 		// center statistics
 		rts2core::ValueDoubleStat *centerStat;
+
+		// center average
+		rts2core::ValueDouble *centerAvg;
+		rts2core::ValueDoubleStat *centerAvgStat;
 
 		// update statistics
 		template <typename t> int updateStatistics (t *data, size_t dataSize)
@@ -1061,6 +1065,8 @@ class Camera:public rts2core::ScriptDevice
 				h = (getUsedHeight () - (y - getUsedY ())) / binningVertical ();
 
 			double center_max = centerCutLevel->getValueDouble ();
+			double center_avg = 0;
+			int center_npix = 0;
 			
 			x -= getUsedX ();
 			y -= getUsedY ();
@@ -1089,12 +1095,14 @@ class Camera:public rts2core::ScriptDevice
 					{
 						sx[col] += *tData;
 						rs += *tData;
+						center_npix++;
 						if (isnan (center_max) || *tData > center_max)
 							center_max = *tData;
 					}
 				}
 
 				sumsY->addValue (rs);
+				center_avg += rs;
 			}
 
 			sumsX->clear ();
@@ -1111,6 +1119,18 @@ class Camera:public rts2core::ScriptDevice
 			centerMax->setValueDouble (center_max);
 
 			centerStat->addValue (center_max, centerSums->getValueInteger ());
+
+			if (center_npix > 0)
+			{
+				center_avg /= center_npix;
+				centerAvg->setValueDouble (center_avg);
+				centerAvgStat->addValue (center_avg, centerSums->getValueInteger ());
+			}
+			else
+			{
+				centerAvg->setValueDouble (0);
+				centerAvgStat->addValue (0, centerSums->getValueInteger ());
+			}
 
 			sendValueAll (centerX);
 			sendValueAll (centerY);
