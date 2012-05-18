@@ -1140,6 +1140,10 @@ class Camera:public rts2core::ScriptDevice
 			centerStat->calculate ();
 			sendValueAll (centerStat);
 
+			sendValueAll (centerAvg);
+			centerAvgStat->calculate ();
+			sendValueAll (centerAvgStat);
+
 			return 0;
 		}
 

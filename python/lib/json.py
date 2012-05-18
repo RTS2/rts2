@@ -131,7 +131,7 @@ class Rts2JSON:
 
 			if not(r.status == httplib.OK):
 				s = 'execution of {0} failed with status {1} {2}'.format(url,r.status,r.reason)
-				jr = json.load(r)
+				jr = sysjson.load(r)
 				raise Exception(jr['error'])
 			return r
 		except Exception,ec:
