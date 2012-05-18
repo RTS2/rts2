@@ -978,7 +978,7 @@ int Image::writeData (char *in_data, char *fullTop, int nchan)
 	}
 	if (writeRTS2Values)
 	{
-		ch->computeStatistics ();
+		ch->computeStatistics (0, pixelSize);
 
 		setValue ("AVERAGE", ch->getAverage (), "average value of image");
 		setValue ("STDEV", ch->getStDev (), "standard deviation value of image");
@@ -1517,7 +1517,7 @@ void Image::setFilter (const char *in_filter)
 		setValue ("FILTER", filter, "camera filter as string");
 }
 
-void Image::computeStatistics ()
+void Image::computeStatistics (size_t _from, size_t _dataSize)
 {
 	if (channels.size () == 0)
 		loadChannels ();
@@ -1529,7 +1529,7 @@ void Image::computeStatistics ()
 
 	for (Channels::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
-		(*iter)->computeStatistics ();
+		(*iter)->computeStatistics (_from, _dataSize);
 
 		totalSize += (*iter)->getNPixels ();
 		pixelSum += (*iter)->getPixelSum ();
@@ -1773,11 +1773,11 @@ const void * rts2image::getScaledData (int dataType, const void *data, size_t nu
 			switch (newType)
 			{
 				case RTS2_DATA_BYTE:
-					return scaleData ((uint16_t *) data, numpix, (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+					return scaleData ((uint32_t *) data, numpix, (uint32_t) smin, (uint32_t) smax, scaling, (uint8_t) 0xff);
 				case RTS2_DATA_USHORT:
 					return scaleData ((uint32_t *) data, numpix, (uint32_t) smin, (uint32_t) smax, scaling, (uint16_t) 0xffff);
 			}
-			return scaleData ((uint16_t *) data, numpix, (uint16_t) smin, (uint16_t) smax, scaling, (uint8_t) 0xff);
+			return scaleData ((uint32_t *) data, numpix, (uint32_t) smin, (uint32_t) smax, scaling, (uint8_t) 0xff);
 	}
 	return data;
 }

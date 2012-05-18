@@ -123,36 +123,38 @@ template <typename pixel_type> void computeDataStatistics (pixel_type *data, lon
 	}
 }
 
-void Channel::computeStatistics ()
+void Channel::computeStatistics (size_t _from, size_t _dataSize)
 {
+	if (_dataSize == 0)
+		_dataSize = getNPixels ();
 	switch (dataType)
 	{
 		case RTS2_DATA_BYTE:
-			computeDataStatistics ((unsigned char *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((unsigned char *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_SHORT:
-			computeDataStatistics ((int16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((int16_t *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_LONG:
-			computeDataStatistics ((int32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((int32_t *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_LONGLONG:
-			computeDataStatistics ((int64_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((int64_t *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_FLOAT:
-			computeDataStatistics ((float *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((float *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_DOUBLE:
-			computeDataStatistics ((double *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((double *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_SBYTE:
-			computeDataStatistics ((signed char *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((signed char *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_USHORT:
-			computeDataStatistics ((uint16_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((uint16_t *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		case RTS2_DATA_ULONG:
-			computeDataStatistics ((uint32_t *) (getData ()), getNPixels (), pixelSum, average, stdev);
+			computeDataStatistics ((uint32_t *) (getData ()) + _from, _dataSize, pixelSum, average, stdev);
 			break;
 		default:
 			throw rts2core::Error ("unknow dataType");

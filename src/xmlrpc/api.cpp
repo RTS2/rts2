@@ -731,6 +731,8 @@ class AsyncDataAPI:public AsyncAPI
 		void sendData ();
 
 	private:
+		bool headerSend;
+
 		void doSendData (void *buf, size_t bufs)
 		{
 			ssize_t ret = send (source->getfd (), buf, bufs, 0);
@@ -761,6 +763,8 @@ AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServer
 	scaling = _scaling;
 	newType = _newType;
 	oldType = 0;
+
+	headerSend = false;
 }
 
 void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
@@ -774,34 +778,49 @@ void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Data
 		{
 			if (source)
 			{
+				size_t bosend = bytesSoFar;
+				if (newType != 0 && newType != oldType)
+				{
+					bosend = sizeof (struct imghdr) + (oldType / 8) * (bosend - sizeof (struct imghdr)) / (newType / 8);
+				}
 				if (data->getRestSize () > 0)
 				{
 					// incomplete image was received, close outbond connection..
 					source->close ();
 					nullSource ();
 				}
-				else if (bytesSoFar < (size_t) (data->getDataTop () - data->getDataBuff ()))
+				else if (bosend < (size_t) (data->getDataTop () - data->getDataBuff ()))
 				{
 					// full image was received, let's make sure it will be send
 					if (newType != 0 && newType != oldType)
 					{
-						char *newData = new char[data->getDataTop () - data->getDataBuff () - bytesSoFar];
-						size_t ds = data->getDataTop () - data->getDataBuff () - bytesSoFar;
-						memcpy (newData, data->getDataBuff () + bytesSoFar, ds);
+						size_t ds = data->getDataTop () - data->getDataBuff () - bosend;
+						char *newData = new char[ds];
+						memcpy (newData, data->getDataBuff () + bosend, ds);
 						// scale data for async
 						if (bytesSoFar < sizeof (struct imghdr))
 						{
 							struct imghdr imgh;
 							memcpy (&imgh, newData, sizeof (struct imghdr) - bytesSoFar);
 							imgh.data_type = htons (newType);
-							memcpy (newData, ((char *) &imgh) + bytesSoFar, sizeof (struct imghdr) - bytesSoFar);
 
-							getScaledData (oldType, newData + sizeof (struct imghdr) - bytesSoFar, (ds - sizeof (struct imghdr) + bytesSoFar) / (oldType / 8), smin, smax, scaling, newType);
+							oldType = ntohs (((struct imghdr *) data->getDataBuff ())->data_type);
+							ds = (ds - sizeof (struct imghdr) + bytesSoFar) / (oldType / 8);
+
+							getScaledData (oldType, newData + sizeof (struct imghdr) - bytesSoFar, ds, smin, smax, scaling, newType);
+							ds = sizeof (struct imghdr) + (newType / 8) * ds;
+							if (bytesSoFar == 0 && headerSend == false)
+							{
+								req->sendAsyncDataHeader (ds, source);
+								headerSend = true;
+							}
 						}
 						else
 						{
+							ds /= (oldType / 8);
 							// we send out pixels, so this scaling is legal
-							getScaledData (oldType, newData, ds / (oldType / 8), smin, smax, scaling, newType);
+							getScaledData (oldType, newData, ds, smin, smax, scaling, newType);
+							ds *= (newType / 8);
 						}
 						source->setResponse (newData, ds);
 						delete[] newData;
@@ -834,17 +853,34 @@ int AsyncDataAPI::idle ()
 
 void AsyncDataAPI::sendData ()
 {
+	if (bytesSoFar == 0)
+	{
+		size_t ds = data->getDataTop () - data->getDataBuff () + data->getRestSize ();
+		if (headerSend == false && ds >= sizeof (struct imghdr))
+		{
+			if (newType != 0)
+			{
+				if (oldType == 0)
+					oldType = ntohs (((struct imghdr *) data->getDataBuff ())->data_type);
+
+				req->sendAsyncDataHeader (sizeof (struct imghdr) + (newType / 8) * (ds - sizeof (struct imghdr)) / (oldType / 8), source);
+			}
+			else
+			{
+				req->sendAsyncDataHeader (ds, source);
+			}
+			headerSend = true;
+		}
+	}
 	// if scaling is needed, wait for full image header
-	if (newType != 0 && newType != oldType && bytesSoFar < sizeof (struct imghdr))
+	if (newType != 0 && newType != oldType)
 	{
 		if (bytesSoFar < sizeof (struct imghdr))
 		{
-			if (data->getDataTop () - data->getDataBuff () > (ssize_t) (sizeof (struct imghdr)))
+			if (data->getDataTop () - data->getDataBuff () >= (ssize_t) (sizeof (struct imghdr)))
 			{
 				struct imghdr imgh;
 				memcpy (&imgh, data->getDataBuff (), sizeof (struct imghdr));
-				if (oldType == 0)
-					oldType = ntohs (imgh.data_type);
 				imgh.data_type = htons (newType);
 				doSendData (((char *) (&imgh)) + bytesSoFar, sizeof (struct imghdr) - bytesSoFar);
 			}
@@ -852,12 +888,16 @@ void AsyncDataAPI::sendData ()
 		// bytesSoFar > sizeof (struct imghdr)
 		else
 		{
-			size_t ds = data->getDataTop () - data->getDataBuff () - bytesSoFar;
-			char newData[ds];
-			memcpy (newData, data->getDataBuff () + bytesSoFar, ds);
+			// send bytes in old data lenght
+			size_t bosend = sizeof (struct imghdr) + (oldType / 8) * (bytesSoFar - sizeof (struct imghdr)) / (newType / 8);
+			size_t ds = data->getDataTop () - data->getDataBuff () - bosend;
+			char *newData = new char[ds];
+			memcpy (newData, data->getDataBuff () + bosend, ds);
 			// scale data
-			getScaledData (oldType, newData, ds / (oldType / 8), smin, smax, scaling, newType);
-			doSendData (newData, (newType / 8) * ds / (oldType / 8));
+			ds /= (oldType / 8);
+			getScaledData (oldType, newData, ds, smin, smax, scaling, newType);
+			doSendData (newData, (newType / 8) * ds);
+			delete[] newData;
 		}
 		return;
 	}
@@ -876,8 +916,6 @@ class AsyncCurrentAPI:public AsyncDataAPI
 
 AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
 {
-	req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
-
 	// try to send data
 	sendData ();
 }
@@ -968,8 +1006,6 @@ void AsyncExposeAPI::dataReceived (Connection *_conn, DataAbstractRead *_data)
 			asyncFinished ();
 			return;
 		}
-		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
-
 		sendData ();
 	}
 }
@@ -981,7 +1017,6 @@ void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Da
 	{
 		callState = receivingImage;
 		data = _conn->lastDataChannel (channel);
-		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 	}
 
 	AsyncDataAPI::fullDataReceived (_conn, _data);
@@ -1019,7 +1054,6 @@ int AsyncExposeAPI::idle ()
 	{
 		callState = receivingImage;
 		data = conn->lastDataChannel (channel);
-		req->sendAsyncDataHeader (data->getDataTop () - data->getDataBuff () + data->getRestSize (), source);
 	}
 
 	return AsyncDataAPI::idle ();
