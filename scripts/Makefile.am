@@ -1,4 +1,3 @@
-bin_SCRIPTS = rts2-autofocus rts2-queue rts2-json rts2-astrometry.net
+bin_SCRIPTS = rts2-autofocus rts2-queue rts2-json rts2-astrometry.net rts2-sextractor
 
-EXTRA_DIST = flat.py flats.py guide.py rts2-autofocus sextractor.py \
-	 masterflat.py center.py
+EXTRA_DIST = flat.py flats.py guide.py masterflat.py center.py

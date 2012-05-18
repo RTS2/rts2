@@ -1,0 +1,58 @@
+#!/usr/bin/python
+#
+# Sextractor wrapper script
+#
+# If you would like to see sextractor results, get DS9 and pyds9:
+#
+# http://hea-www.harvard.edu/saord/ds9/
+#
+# Please be aware that current sextractor Ubuntu packages does not work
+# properly. The best workaround is to install package, and the overwrite
+# sextractor binary with one compiled from sources (so you will have access
+# to sextractor configuration files, which program assumes).
+#
+# (C) 2010  Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place - Suite 330, Boston, MA  02111-1307, USA.
+
+import sys
+from optparse import OptionParser
+import rts2.sextractor
+
+parser = OptionParser()
+parser.add_option('--ds9',help='plot image and detections in DS9',action='store_true',dest='plot_ds9',default=False)
+parser.add_option('--stat',help='calculate statistics',action='store_true',dest='stat',default=False)
+
+(options,args) = parser.parse_args()
+
+d = None
+if options.plot_ds9:
+	from ds9 import *
+	d = ds9()
+
+c = rts2.sextractor.Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+for fn in args:
+	c.runSExtractor(fn)
+
+	# sort by magnitude
+	c.sortObjects(2)
+
+	print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
+	
+	if d:
+		# display in ds9
+		d.set('file mosaicimage iraf {0}'.format(fn))
+		for x in c.objects:
+			d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
