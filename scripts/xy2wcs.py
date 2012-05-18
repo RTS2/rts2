@@ -2,7 +2,7 @@
 
 # test xy2wcs - compares what we get using ds9 and xy2wcs algorithm
 
-from astrometry import xy2wcs
+from rts2.astrometry import xy2wcs
 import sys
 import ds9
 import pyfits
