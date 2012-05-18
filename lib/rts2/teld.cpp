@@ -1103,6 +1103,7 @@ int Telescope::startResyncMove (rts2core::Connection * conn, int correction)
 	ret = startResync ();
 	if (ret)
 	{
+		maskState (BOP_EXPOSURE, 0, "correction failed");
 		if (conn)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
 		return ret;
