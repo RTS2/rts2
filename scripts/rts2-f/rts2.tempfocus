@@ -10,28 +10,28 @@ if (! (${?tar_id})) set tar_id=-1
 
 if ( $tar_id != 3 ) then
 
-set ZPT = `cat /home/observer/RTS2-F/rts2.tempfocus.dat | cut -f1 -d' '`
-set SLOPE = `cat /home/observer/RTS2-F/rts2.tempfocus.dat | cut -f2 -d' '`
+  set ZPT = `cat /home/observer/RTS2-F/rts2.tempfocus.dat | cut -f1 -d' '`
+  set SLOPE = `cat /home/observer/RTS2-F/rts2.tempfocus.dat | cut -f2 -d' '`
 
-#set TEMP2 = `tail -1 /data/temps/temps.txt | awk  '{printf "%+8.3f",substr($1,1,8)}'`
-# switch to masout.txt, as first entry in temps.txt is meaningless 01/02/12
-set TEMP2 = `cat /data/temps/masout.txt | awk  '{printf "%+8.3f",$1}'`
-#
-set FOC2 = `echo $ZPT $TEMP2 $SLOPE | awk '{printf "%.3f",$1+$2*$3}'`
-# set FOCUS 
-#set FOC1 = `tele hfocus ?`
-$RTS2/bin/jt '/api/cmd?d=TELE&c=info'
-set FOC1 = `$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --quiet -G TELE.hfocus`
-set DFOC = `echo $FOC1 $FOC2 | awk '{printf "%+.3f",$2-$1}'`
-# mult by 100 to be able to compare 
-set DTEMP = `echo $FOC1 $FOC2 $SLOPE | awk '{printf "%d",int(100.*($2-$1)/$3)}'`
-if ( $DTEMP > 50 || $DTEMP < -50 ) then
+  #set TEMP2 = `tail -1 /data/temps/temps.txt | awk  '{printf "%+8.3f",substr($1,1,8)}'`
+  # switch to masout.txt, as first entry in temps.txt is meaningless 01/02/12
+  set TEMP2 = `cat /data/temps/masout.txt | awk  '{printf "%+8.3f",$1}'`
+  #
+  set FOC2 = `echo $ZPT $TEMP2 $SLOPE | awk '{printf "%.3f",$1+$2*$3}'`
+  # set FOCUS 
+  #set FOC1 = `tele hfocus ?`
+  $RTS2/bin/jt '/api/cmd?d=TELE&c=info'
+  set FOC1 = `$RTS2/bin/rts2-xmlrpcclient --config $XMLRPCCON --quiet -G TELE.hfocus`
+  set DFOC = `echo $FOC1 $FOC2 | awk '{printf "%+.3f",$2-$1}'`
+  # mult by 100 to be able to compare 
+  set DTEMP = `echo $FOC1 $FOC2 $SLOPE | awk '{printf "%d",int(100.*($2-$1)/$3)}'`
+  if ( $DTEMP > 50 || $DTEMP < -50 ) then
     rts2-logcom "Changing focus by $DFOC to $FOC2"
     tele hfocus $DFOC
     echo "new FOCUS is $FOC2"
     set DATE = `tail -2 /data/temps/temps.txt | head -1`
-endif
-
-echo $FOC2 $TEMP2 $DATE $DTEMP $FOC1 $DFOC >> /home/observer/findfwhm/tempfocus.dat
+  endif
+  if (! (${?DATE})) set DATE = `tail -2 /data/temps/temps.txt | head -1`
+  echo $FOC2 $TEMP2 $DATE $DTEMP $FOC1 $DFOC >> /home/observer/findfwhm/tempfocus.dat
 
 endif
