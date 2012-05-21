@@ -321,7 +321,7 @@ void MaxDomeII::sendMessage (uint8_t cmd, char *args, size_t len)
     }
     wbuf[3+ len] = checkSum(wbuf+1, len+ 2);
 
-    fprintf(stderr, ">sendMessagebuffer write len %d ---0x", len+4);
+    fprintf(stderr, ">sendMessagebuffer write len %ld ---0x", len+4);
     for ( int j=0; j < (int) len+4; j++){
       fprintf(stderr, "%d: %02x\n", j, (uint8_t)wbuf[j] );
     }
@@ -401,7 +401,7 @@ int MaxDomeII::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 
     azCmd->setValueInteger (newValue->getValueInteger ());
 
-    if( (int) azCmd->getData ()== HOME_CMD){
+    if( (size_t) azCmd->getData ()== HOME_CMD){
       fprintf( stderr, "HOME\n");
 	//Home_Azimuth_MaxDomeII();
     }else{
