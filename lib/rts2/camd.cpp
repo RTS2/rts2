@@ -642,6 +642,9 @@ int Camera::killAll (bool callScriptEnds)
 	centerStat->clearStat ();
 	sendValueAll (centerStat);
 
+	centerAvgStat->clearStat ();
+	sendValueAll (centerAvgStat);
+
 	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "exposure interrupted", NAN, NAN, exposureConn);
 
 	return rts2core::ScriptDevice::killAll (callScriptEnds);
@@ -1828,6 +1831,9 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		centerStat->clearStat ();
 		sendValueAll (centerStat);
+
+		centerAvgStat->clearStat ();
+		sendValueAll (centerAvgStat);
 		return 0;
 	}
 	return rts2core::ScriptDevice::commandAuthorized (conn);
