@@ -45,6 +45,7 @@
 #define OPT_DETSIZE           OPT_LOCAL + 408
 #define OPT_CHANNELS_STARTS   OPT_LOCAL + 409
 #define OPT_CHANNELS_DELTAS   OPT_LOCAL + 410
+#define OPT_WCS_AUXS          OPT_LOCAL + 420
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
 
@@ -508,8 +509,9 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 	addOption (OPT_OFFSETS_FILE, "offsets-file", 1, "configuration file for camera filter offsets. Filter names are separated with space from filter offsets");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
-	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
+	addOption (OPT_WCS_AUXS, "wcs-aux", 1, "suffixes of auxiliary WCS values, separated with :");
 	addOption (OPT_WCS_CDELT, "wcs", 1, "WCS CD matrix (CRPIX1:CRPIX2:CDELT1:CDELT2:CROTA in default, unbinned configuration)");
+	addOption (OPT_WCS_MULTI, "wcs-multi", 1, "letter for multiple WCS (A-Z)");
 	addOption (OPT_WITHSHM, "with-shm", 2, "use given numbers of segments of shared memory");
 
 	// detector sizes, channel starting points and offsets
@@ -760,6 +762,8 @@ int Camera::processOption (int in_opt)
 				createValue (wcs_cdelta1, multiWCS ("CDELT1", multi_wcs), "[deg] WCS delta along 1st axis", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CDELT1);
 				createValue (wcs_cdelta2, multiWCS ("CDELT2", multi_wcs), "[deg] WCS delta along 2nd axis", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_CDELT2);
 				createValue (wcs_crota, multiWCS ("CROTA2", multi_wcs), "[deg] WCS rotation", false, RTS2_VALUE_WRITABLE | RTS2_DT_WCS_ROTANG);
+
+				createValue (wcs_aux, "WCSAUX", "suffixes of auxiliary WCS to add", false, RTS2_VALUE_WRITABLE);
 			}
 			params = SplitStr (optarg, ":");
 			if (params.size () != 5)
@@ -781,6 +785,17 @@ int Camera::processOption (int in_opt)
 			wcs_cdelta1->setValueDouble (default_cd[0]);
 			wcs_cdelta2->setValueDouble (default_cd[1]);
 			wcs_crota->setValueDouble (default_cd[2]);
+			break;
+		case OPT_WCS_AUXS:
+			{
+				if (wcs_aux == NULL)
+				{
+					std::cerr << "Cannot specify auxiliary WCS without camera WCSs values! Please change order of options so --wcs-aux is aafter --wcs." << std::endl;
+					return -1;
+				}
+				std::vector <std::string> cwcs = SplitStr (std::string (optarg), ":");
+				wcs_aux->setValueArray (cwcs);
+			}
 			break;
 		case OPT_WITHSHM:
 			// autoscale

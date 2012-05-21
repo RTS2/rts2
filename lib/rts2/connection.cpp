@@ -2106,7 +2106,7 @@ double Connection::getProgress (double now)
 
 DataAbstractRead* Connection::lastDataChannel (int chan)
 {
-	if (readChannels.size () == 0 || (--readChannels.end ())->second->size () <= chan)
+	if (readChannels.size () == 0 || ((int) (--readChannels.end ())->second->size ()) <= chan)
 		return NULL;
 	return (--readChannels.end ())->second->at (chan);
 }

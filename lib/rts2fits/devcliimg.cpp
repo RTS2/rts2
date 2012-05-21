@@ -450,6 +450,10 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 		image->setInstrument (instrume.c_str ());
 		image->setTelescope (telescop.c_str ());
 		image->setOrigin (origin.c_str ());
+
+		rts2core::Value *wcsaux = getConnection ()->getValue ("WCSAUX");
+		if (wcsaux && wcsaux->getValueBaseType () == RTS2_VALUE_STRING && wcsaux->getValueExtType () == RTS2_VALUE_ARRAY)
+			image->setAUXWCS ((rts2core::StringArray *) wcsaux);
 	
 		image->setEnvironmentalValues ();
 

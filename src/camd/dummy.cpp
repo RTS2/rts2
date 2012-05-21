@@ -315,7 +315,9 @@ class Dummy:public Camera
 
 		bool showTemp;
 
-		void generateImage (size_t usedSize, int chan);
+		void generateImage (size_t pixelsize, int chan);
+
+		template <typename dt> void generateData (dt *data, size_t pixelsize);
 
 		// data written during readout
 		ssize_t *written;
@@ -356,8 +358,7 @@ int Dummy::doReadout ()
 {
 	int ret;
 	ssize_t usedSize = chipByteSize ();
-//	if (usedSize > getWriteBinaryDataSize ())
-//		usedSize = getWriteBinaryDataSize ();
+	size_t pixelSize = chipUsedSize ();
 	int nch = 0;
 	rts2image::Image *image = NULL;
 	if (fitsTransfer->getValueBool ())
@@ -375,7 +376,7 @@ int Dummy::doReadout ()
 			{
 				if (channels && (*channels)[ch] == false)
 					continue;
-				generateImage (usedSize / 2, ch);
+				generateImage (pixelSize, ch);
 				written[ch] = 0;
 			}
 		}
@@ -404,8 +405,41 @@ int Dummy::doReadout ()
 
 				int fits_status = 0;
 
-				fits_resize_img (image->getFitsFile (), RTS2_DATA_USHORT, 2, sizes, &fits_status);
-				fits_write_img_usht (image->getFitsFile (), 0, 1, usedSize / 2, (uint16_t *) getDataBuffer (ch), &fits_status);
+				fits_resize_img (image->getFitsFile (), getDataType (), 2, sizes, &fits_status);
+
+				switch (getDataType ())
+				{
+					case RTS2_DATA_BYTE:
+						fits_write_img_byt (image->getFitsFile (), 0, 1, pixelSize, (unsigned char *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_SHORT:
+						fits_write_img_sht (image->getFitsFile (), 0, 1, pixelSize, (int16_t *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_LONG:
+						fits_write_img_int (image->getFitsFile (), 0, 1, pixelSize, (int *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_LONGLONG:
+						fits_write_img_lnglng (image->getFitsFile (), 0, 1, pixelSize, (LONGLONG *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_FLOAT:
+						fits_write_img_flt (image->getFitsFile (), 0, 1, pixelSize, (float *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_DOUBLE:
+						fits_write_img_dbl (image->getFitsFile (), 0, 1, pixelSize, (double *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_SBYTE:
+						fits_write_img_sbyt (image->getFitsFile (), 0, 1, pixelSize, (signed char *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_USHORT:
+						fits_write_img_usht (image->getFitsFile (), 0, 1, pixelSize, (short unsigned int *) getDataBuffer (ch), &fits_status);
+						break;
+					case RTS2_DATA_ULONG:
+						fits_write_img_uint (image->getFitsFile (), 0, 1, pixelSize, (unsigned int *) getDataBuffer (ch), &fits_status);
+						break;
+					default:
+						logStream (MESSAGE_ERROR) << "Unknow dataType " << getDataType () << sendLog;
+						return -1;
+				}
 				if (fits_status)
 				{
 					logStream (MESSAGE_ERROR) << "cannot write channel " << ch << sendLog;
@@ -463,7 +497,7 @@ int Dummy::doReadout ()
 	return 0;					 // imediately send new data
 }
 
-void Dummy::generateImage (size_t usedSize, int chan)
+void Dummy::generateImage (size_t pixelsize, int chan)
 {
 	// artifical star center
 	astar_Xp->clear ();
@@ -478,6 +512,40 @@ void Dummy::generateImage (size_t usedSize, int chan)
 	sendValueAll (astar_Xp);
 	sendValueAll (astar_Yp);
 
+	switch (getDataType ())
+	{
+		case RTS2_DATA_BYTE:
+			generateData ((unsigned char *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_SHORT:
+			generateData ((uint16_t *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_LONG:
+			generateData ((int32_t *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_LONGLONG:
+			generateData ((LONGLONG *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_FLOAT:
+			generateData ((float *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_DOUBLE:
+			generateData ((double *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_SBYTE:
+			generateData ((uint8_t *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_USHORT:
+			generateData ((uint16_t *) getDataBuffer (chan), pixelsize);
+			break;
+		case RTS2_DATA_ULONG:
+			generateData ((uint32_t *) getDataBuffer (chan), pixelsize);
+			break;
+	}
+}
+
+template <typename dt> void Dummy::generateData (dt *data, size_t pixelSize)
+{
 	double sx = astarX->getValueDouble ();
 	int xmax = ceil (sx * 10);
 	sx *= sx;
@@ -486,9 +554,7 @@ void Dummy::generateImage (size_t usedSize, int chan)
 	int ymax = ceil (sy * 10);
 	sy *= sy;
 
-	uint16_t *d = (uint16_t *) getDataTop (chan);
-
-	for (unsigned int i = 0; i < usedSize; i++, d++)
+	for (size_t i = 0; i < pixelSize; i++, data++)
 	{
 		double n;
 		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
@@ -498,30 +564,30 @@ void Dummy::generateImage (size_t usedSize, int chan)
 		{
 			case 0:  // random
 			case 5:  // artificial star
-				*d = noiseBias->getValueDouble () + n * random_num () - n / 2;
+				*data = noiseBias->getValueDouble () + n * random_num () - n / 2;
 				break;
 			case 1:  // linear
-				*d = i;
+				*data = i;
 				break;
 			case 2:
 				// linear shifted
-				*d = i + (int) (getExposureNumber () * 10);
+				*data = i + (int) (getExposureNumber () * 10);
 				break;
 			case 3:
 				// flats dusk
-				*d = n * random_num ();
+				*data = n * random_num ();
 				if (getScriptExposureNumber () < 55)
-					*d += (56 - getScriptExposureNumber ()) * 1000;
-				*d -= n / 2;
+					*data += (56 - getScriptExposureNumber ()) * 1000;
+				*data -= n / 2;
 				break;
 			case 4:
 				// flats dawn
-				*d = n * random_num ();
+				*data = n * random_num ();
 				if (getScriptExposureNumber () < 55)
-					*d += getScriptExposureNumber () * 1000;
+					*data += getScriptExposureNumber () * 1000;
 				else
-				  	*d += 55000;
-				*d -= n / 2;
+				  	*data += 55000;
+				*data -= n / 2;
 				break;
 		}
 		// genarate artificial star - using cos
@@ -540,7 +606,7 @@ void Dummy::generateImage (size_t usedSize, int chan)
 					aax *= aax;
 					aay *= aay;
 
-					*d += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
+					*data += aamp->getValueDouble () * exp (-(aax / (2 * sx) + aay / (2 * sy)));
 				}
 			}
 		}

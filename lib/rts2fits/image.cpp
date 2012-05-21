@@ -781,6 +781,13 @@ int Image::writeExposureStart ()
 	return 0;
 }
 
+void Image::setAUXWCS (rts2core::StringArray * wcsaux)
+{
+	wcsauxs.clear ();
+	for (std::vector <std::string>::iterator iter = wcsaux->valueBegin (); iter != wcsaux->valueEnd (); iter++)
+		wcsauxs.push_back (*iter);
+}
+
 int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 {
 	if (nchan != 1)
@@ -2247,7 +2254,17 @@ void Image::writeConn (rts2core::Connection * conn, imageWriteWhich_t which)
 					case RTS2_DT_WCS_CRPIX2:
 					case RTS2_DT_WCS_CDELT1:
 					case RTS2_DT_WCS_CDELT2:
-						addWcs (val->getValueDouble (), ((val->getValueDisplayType () & 0x000f0000) >> 16) - 1);
+						addWcs (val->getValueDouble (), ((val->getValueDisplayType () & RTS2_DT_WCS_SUBTYPE) >> 16) - 1);
+						break;
+					case RTS2_DT_AUXWCS_CRPIX1:
+					case RTS2_DT_AUXWCS_CRPIX2:
+						// check if it is in aux WCS..
+						for (std::list <std::string>::iterator wcsi = wcsauxs.begin (); wcsi != wcsauxs.end (); wcsi++)
+						{
+							// only write if suffix matched what is in list
+							if (val->getName ().substr (val->getName ().length () - wcsi->length ()) == *wcsi)
+								addWcs (val->getValueDouble (), (((val->getValueDisplayType () & RTS2_DT_WCS_SUBTYPE) - RTS2_DT_AUXWCS_OFFSET) >> 16));
+						}
 						break;
 					case RTS2_DT_WCS_ROTANG:
 						addWcs (val->getValueDouble (), 6);

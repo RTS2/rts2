@@ -657,6 +657,8 @@ class Image:public FitsFile
 
 		int writeExposureStart ();
 
+		void setAUXWCS (rts2core::StringArray * wcsaux);
+
 	protected:
 		char *cameraName;
 		char *mountName;
@@ -720,6 +722,8 @@ class Image:public FitsFile
 		// CRVALs, CRPIXs, CDELTAs, CROTAs
 		double total_wcs[NUM_WCS_VALUES];
 		std::list <rts2core::ValueString> string_wcs;
+
+		std::list <std::string> wcsauxs;
 
 		// Multiple WCS to add rotang to
 		char wcs_multi_rotang;

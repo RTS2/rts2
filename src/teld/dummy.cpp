@@ -108,6 +108,9 @@ class Dummy:public Telescope
 
                 struct ln_equ_posn dummyPos;
                 rts2core::ValueBool *move_fast;
+
+		rts2core::ValueDouble *crpix_aux1;
+		rts2core::ValueDouble *crpix_aux2;
 };
 
 }
@@ -116,12 +119,19 @@ using namespace rts2teld;
 
 Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 {
-	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
 	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false, RTS2_VALUE_WRITABLE);
 	move_fast->setValueBool (false);
 
+	createValue (crpix_aux1, "CRPIX1AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX1 | RTS2_VALUE_WRITABLE);
+	createValue (crpix_aux2, "CRPIX2AG", "autoguider offset", false, RTS2_DT_AUXWCS_CRPIX2 | RTS2_VALUE_WRITABLE);
+
+	crpix_aux1->setValueDouble (10);
+	crpix_aux2->setValueDouble (20);
+
 	dummyPos.ra = 0;
 	dummyPos.dec = 0;
+
+	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
 }
 
 int Dummy::processOption (int in_opt)

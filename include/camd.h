@@ -1162,6 +1162,9 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueDouble *wcs_cdelta2;
 		rts2core::ValueDouble *wcs_crota;
 
+		// suffixes of auxiliary WCS to record
+		rts2core::StringArray *wcs_aux;
+
 		// 1:1 binning, default WCS - cdelta1,cdelta2,crota
 		double default_cd[3];
 

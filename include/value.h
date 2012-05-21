@@ -193,6 +193,8 @@
 // value is WCS
 #define RTS2_DT_WCS_MASK              0x00100000
 
+#define RTS2_DT_WCS_SUBTYPE           0x000f0000
+
 // BEWARE: if you change this, you MUST change offseting in lib/rts2fits/image.cpp - look for constants
 #define RTS2_DT_WCS_CRVAL1            0x00110000
 #define RTS2_DT_WCS_CRVAL2            0x00120000
@@ -201,6 +203,13 @@
 #define RTS2_DT_WCS_CDELT1            0x00150000
 #define RTS2_DT_WCS_CDELT2            0x00160000
 #define RTS2_DT_WCS_ROTANG            0x00170000
+
+/** value to subtract from auxiliary WCS */
+#define RTS2_DT_AUXWCS_OFFSET         0x00080000
+
+// auxiliary CRPIX offsets
+#define RTS2_DT_AUXWCS_CRPIX1         0x001a0000
+#define RTS2_DT_AUXWCS_CRPIX2         0x001b0000 
 
 // direct system to write values to FITS headers, even if it is an array
 #define RTS2_FITS_HEADERS             0x00400000

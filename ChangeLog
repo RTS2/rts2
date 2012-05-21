@@ -1,3 +1,6 @@
+2012-05-21
+ * WCS auxiliary values
+
 2012-05-11
  * isExposing returns -2 on exposure ends
  * removed camWaitExposure
