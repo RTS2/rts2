@@ -639,6 +639,9 @@ int Camera::killAll (bool callScriptEnds)
 	sendValueAll (waitingForNotBop);
 	sendValueAll (waitingForEmptyQue);
 
+	centerStat->clearStat ();
+	sendValueAll (centerStat);
+
 	maskState (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT | BOP_TEL_MOVE | BOP_WILL_EXPOSE | DEVICE_ERROR_KILL, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT | DEVICE_ERROR_KILL, "exposure interrupted", NAN, NAN, exposureConn);
 
 	return rts2core::ScriptDevice::killAll (callScriptEnds);
@@ -1765,14 +1768,9 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 	if (conn->isCommand ("help"))
 	{
 		conn->sendMsg ("info - information about camera");
-		conn->sendMsg ("chipinfo <chip> - information about chip");
 		conn->sendMsg ("expose - start exposition");
 		conn->sendMsg ("stopexpo <chip> - stop exposition on given chip");
-		conn->sendMsg ("progexpo <chip> - query exposition progress");
-		conn->sendMsg ("mirror <open|close> - open/close mirror");
 		conn->sendMsg ("stopread <chip> - stop reading given chip");
-		conn->sendMsg ("cooltemp <temp> - cooling temperature");
-		conn->sendMsg ("focus - try to autofocus picture");
 		conn->sendMsg ("exit - exit from connection");
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
@@ -1823,6 +1821,14 @@ int Camera::commandAuthorized (rts2core::Connection * conn)
 				return -2;
 		}
 		return camCenter (conn, w, h);
+	}
+	else if (conn->isCommand ("clear_center"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		centerStat->clearStat ();
+		sendValueAll (centerStat);
+		return 0;
 	}
 	return rts2core::ScriptDevice::commandAuthorized (conn);
 }
