@@ -33,8 +33,11 @@ import rts2.sextractor
 
 parser = OptionParser()
 parser.add_option('--ds9',help='plot image and detections in DS9',action='store_true',dest='plot_ds9',default=False)
-parser.add_option('--stat',help='calculate statistics',action='store_true',dest='stat',default=False)
+parser.add_option('--stat',help='calculate statistics (on all specified segments)',action='store_true',dest='stat',default=False)
+parser.add_option('--stat-segments',help='calculate statistics by segments',action='store_true',dest='stat_segments',default=False)
 parser.add_option('--segment',help='run statistics on given segments',action='append',dest='segments')
+parser.add_option('--max-stars',help='maximal number of stars used for statistics',action='store',dest='max_stars',default=None)
+parser.add_option('--verbose',help='produce verbose output',action='store_true',dest='verbose',default=False)
 
 (options,args) = parser.parse_args()
 
@@ -51,7 +54,8 @@ c = rts2.sextractor.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLA
 for fn in args:
 	c.runSExtractor(fn)
 
-	print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
+	if options.verbose:
+		print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
 	
 	if d:
 		# display in ds9
@@ -60,6 +64,17 @@ for fn in args:
 		i_y = c.get_field['Y_IMAGE']
 		for x in c.objects:
 			d.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
-
+	
 	if options.stat:
-		print 'stars {0} average FWHM {1}'.format(fn,c.calculate_FWHM(10,segments=options.segments))
+		print fn,c.calculate_FWHM(options.max_stars,segments=options.segments)
+	
+	if options.stat_segments:
+	  	i_ext_number = c.get_field('EXT_NUMBER')
+	  	segments = list(set(map(lambda x:x[i_ext_number],c.objects)))
+		segments.sort()
+		print fn,len(segments),
+		for s in segments:
+			res = c.calculate_FWHM(options.max_stars,segments=[s])
+			print res[1],res[0],
+		print
+			
