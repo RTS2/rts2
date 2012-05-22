@@ -50,7 +50,7 @@ class Sextractor:
 		self.deblendmin = deblendmin
 		self.saturlevel = saturlevel
 
-	def getField(self,fieldname):
+	def get_field(self,fieldname):
 		return self.fields.index(fieldname)
 
 	def runSExtractor(self,filename):
@@ -99,7 +99,7 @@ class Sextractor:
 	def filter_galaxies(self,limit=0.2):
 		"""Filter possible galaxies"""
 		try:
-			i_class = self.getField('CLASS_STAR')
+			i_class = self.get_field('CLASS_STAR')
 			ret = []
 			for x in self.objects:
 				if x[i_class] > limit:
@@ -109,7 +109,8 @@ class Sextractor:
 			print 'result does not contain CLASS_STAR'
 			traceback.print_exc()
 	
-	def calculate_FWHM(self,starsn=None,filterGalaxies=True):
+	def get_FWHM_stars(self,starsn=None,filterGalaxies=True,segments=None):
+		"""Returns candidate stars for FWHM calculations. """
 		obj = None
 		if filterGalaxies:
 			obj = self.filter_galaxies()
@@ -121,35 +122,42 @@ class Sextractor:
 
 		try:
 			# sort by magnitude
-			self.sortObjects(self.getField('MAG_BEST'))
+			i_mag_best = self.get_field('MAG_BEST')
+			obj.sort(cmp=lambda x,y: cmp(x[i_mag_best],y[i_mag_best]))
 			fwhmlist = []
 
 			a = 0
 			b = 0
 
-			i_flags = self.getField('FLAGS')
-			i_class = self.getField('CLASS_STAR')
-			i_fwhm = self.getField('FWHM_IMAGE')
-			i_a = self.getField('A_IMAGE')
-			i_b = self.getField('B_IMAGE')
+			i_flags = self.get_field('FLAGS')
+			i_class = self.get_field('CLASS_STAR')
+			i_seg = self.get_field('EXT_NUMBER')
 
-			for x in self.objects:
+			for x in obj:
+				if segments and x[i_seg] not in segments:
+					continue
 				if x[i_flags] == 0 and (filterGalaxies == False or x[i_class] != 0):
-					fwhmlist.append(x[i_fwhm])
-					a += x[i_a]
-					b += x[i_b]
+					fwhmlist.append(x)
 					if starsn and len(fwhmlist) >= starsn:
 						break
 
-			if (starsn is None and len(fwhmlist) > 0) or len(fwhmlist) >= starsn:
-				import numpy
-				return numpy.median(fwhmlist), len(fwhmlist)
-		#		return numpy.average(fwhmlist), len(fwhmlist)
-			if len(fwhmlist) > 0:
-				raise Exception('too few stars - {0}, expected {1}'.format(len(fwhmlist),starsn))
-			raise Exception('cannot find any stars on the image')
-
+			return fwhmlist
 		except ValueError,ve:
 			traceback.print_exc()
+			return []
+
+
+	def calculate_FWHM(self,starsn=None,filterGalaxies=True,segments=None):
+		obj = self.get_FWHM_stars(starsn,filterGalaxies,segments)
+		try:
+			i_fwhm = self.get_field('FWHM_IMAGE')
+			import numpy
+			fwhms = map(lambda x:x[i_fwhm],obj)
+ 			return numpy.median(fwhms), len(fwhms)
+ 		#	return numpy.average(obj), len(obj)
+		except ValueError,ve:
+			traceback.print_exc()
+			raise Exception('cannot find FWHM_IMAGE value')
+
 
 

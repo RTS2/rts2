@@ -34,6 +34,7 @@ import rts2.sextractor
 parser = OptionParser()
 parser.add_option('--ds9',help='plot image and detections in DS9',action='store_true',dest='plot_ds9',default=False)
 parser.add_option('--stat',help='calculate statistics',action='store_true',dest='stat',default=False)
+parser.add_option('--segment',help='run statistics on given segments',action='append',dest='segments')
 
 (options,args) = parser.parse_args()
 
@@ -42,20 +43,23 @@ if options.plot_ds9:
 	from ds9 import *
 	d = ds9()
 
-c = rts2.sextractor.Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+if options.segments:
+	options.segments = map(lambda x:int(x),options.segments)
+
+c = rts2.sextractor.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+
 for fn in args:
 	c.runSExtractor(fn)
-
-	# sort by magnitude
-	c.sortObjects(2)
 
 	print 'from {0} extracted {1} sources'.format(fn,len(c.objects))
 	
 	if d:
 		# display in ds9
 		d.set('file mosaicimage iraf {0}'.format(fn))
+		i_x = c.get_field['X_IMAGE']
+		i_y = c.get_field['Y_IMAGE']
 		for x in c.objects:
-			d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
+			d.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
 
 	if options.stat:
-		print 'stars {0} average FWHM {1}'.format(fn,c.calculate_FWHM(10))
+		print 'stars {0} average FWHM {1}'.format(fn,c.calculate_FWHM(10,segments=options.segments))
