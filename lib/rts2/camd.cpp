@@ -45,6 +45,8 @@
 #define OPT_DETSIZE           OPT_LOCAL + 408
 #define OPT_CHANNELS_STARTS   OPT_LOCAL + 409
 #define OPT_CHANNELS_DELTAS   OPT_LOCAL + 410
+#define OPT_TRIMS_XY          OPT_LOCAL + 411
+#define OPT_TRIMS_WH          OPT_LOCAL + 412
 #define OPT_WCS_AUXS          OPT_LOCAL + 420
 
 #define EVENT_TEMP_CHECK      RTS2_LOCAL_EVENT + 676
@@ -516,6 +518,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	// detector sizes, channel starting points and offsets
 	addOption (OPT_DETSIZE, "detsize", 1, "detector size - X:Y:W:H");
+	addOption (OPT_TRIMS_XY, "trimstart", 1, "trimmed (good data) XY section on unbinned chip - x1:y1,..");
+	addOption (OPT_TRIMS_WH, "trimsizes", 1, "trimmed (good data) width and heigh on unbinned chip - h1:w2,..");
 	addOption (OPT_CHANNELS_STARTS, "chanstarts", 1, "channel starts - X1:Y1,:..");
 	addOption (OPT_CHANNELS_DELTAS, "chandeltas", 1, "channel deltas - DX1:DY1,..");
 }
@@ -818,6 +822,16 @@ int Camera::processOption (int in_opt)
 				for (std::vector <std::string>::iterator iter = dets.begin (); iter != dets.end (); iter++)
 					detsize->addValue (atof (iter->c_str ()));
 			}
+			break;
+		case OPT_TRIMS_XY:
+			createValue (trimx, "TRIM_X", "[X1 X2 X3 ..] channel X trimmed data start", false);
+			createValue (trimy, "TRIM_Y", "[Y1 Y2 Y3 ..] channel Y trimmed data start", false);
+			fillPairs (trimx, trimy, optarg);
+			break;
+		case OPT_TRIMS_WH:
+			createValue (trimw, "TRIM_W", "[W1 W2 W3 ..] channel width trimmed data start", false);
+			createValue (trimh, "TRIM_H", "[H1 H2 H3 ..] channel height trimmed data start", false);
+			fillPairs (trimw, trimh, optarg);
 			break;
 		case OPT_CHANNELS_STARTS:
 			createValue (chan1offset, "CHAN1_OFFSETS", "[X1 X2 X3 ..] channels X offsets", false);

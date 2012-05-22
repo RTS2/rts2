@@ -587,6 +587,12 @@ class Camera:public rts2core::ScriptDevice
 		// channel Y deltas;
 		rts2core::DoubleArray *chan2delta;
 
+		// trimmed corners
+		rts2core::DoubleArray *trimx;
+		rts2core::DoubleArray *trimy;
+		rts2core::DoubleArray *trimw;
+		rts2core::DoubleArray *trimh;
+
 		char ccdType[64];
 		char *ccdRealType;
 		char serialNumber[64];

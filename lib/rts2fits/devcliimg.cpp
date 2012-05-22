@@ -214,11 +214,16 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		// detector coordinates,..
 		rts2core::DoubleArray *detsize = getDoubleArray ("DETSIZE");
 
-		rts2core::DoubleArray *chan1_offsets = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN1_OFFSETS"));
-		rts2core::DoubleArray *chan2_offsets = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN2_OFFSETS"));
+		rts2core::DoubleArray *chan1_offsets = getDoubleArray ("CHAN1_OFFSETS");
+		rts2core::DoubleArray *chan2_offsets = getDoubleArray ("CHAN2_OFFSETS");
 
-		rts2core::DoubleArray *chan1_delta = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN1_DELTA"));
-		rts2core::DoubleArray *chan2_delta = (rts2core::DoubleArray *) (getConnection ()->getValue ("CHAN2_DELTA"));
+		rts2core::DoubleArray *chan1_delta = getDoubleArray ("CHAN1_DELTA");
+		rts2core::DoubleArray *chan2_delta = getDoubleArray ("CHAN2_DELTA");
+
+		rts2core::DoubleArray *trim_x = getDoubleArray ("TRIM_X");
+		rts2core::DoubleArray *trim_y = getDoubleArray ("TRIM_Y");
+		rts2core::DoubleArray *trim_w = getDoubleArray ("TRIM_W");
+		rts2core::DoubleArray *trim_h = getDoubleArray ("TRIM_H");
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 		{
@@ -286,12 +291,50 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 						yy,
 						yy + (*chan2_delta)[chan] * h * bin2,
 						"unbinned section of detector");
-					ci->image->setValueRectange ("TRIMSEC",
-						xx,
-						xx + (*chan1_delta)[chan] * w * bin1,
-						yy,
-						yy + (*chan2_delta)[chan] * h * bin2,
-						"TRIM binned section");
+					// write trim
+					if (trim_x || trim_y || trim_w || trim_h)
+					{
+						double tx = NAN;
+						double ty = NAN;
+						double tw = NAN;
+						double th = NAN;
+
+						if (trim_x && chan < trim_x->size ())
+							tx = (*trim_x)[chan] - x;
+					 	if (trim_y && chan < trim_y->size ())
+							ty = (*trim_y)[chan] - y;
+						if (trim_w && chan < trim_w->size ())
+							tw = (*trim_w)[chan] - x;
+						if (trim_h && chan < trim_h->size ())
+							th = (*trim_h)[chan] - y;
+
+						if (tx <= 0)
+							tx = 1;
+						if (ty <= 0)
+							ty = 1;
+						if (tw <= 0)
+							tw = 1;
+						if (th <= 0)
+							th = 1;
+
+						// bin X and Y
+						tx /= bin1;
+						ty /= bin2;
+
+						tw /= bin1;
+						th /= bin2;
+
+						if (tw > w)
+							tw = w;
+						if (th > h)
+							th = h;
+
+						if (tx > tw)
+							tx = tw;
+						if (ty > th)
+							ty = th;
+						ci->image->setValueRectange ("TRIMSEC", tx, tw, ty, th, "TRIM binned section");
+					}
 				}
 
 				std::ostringstream ccdsum;
