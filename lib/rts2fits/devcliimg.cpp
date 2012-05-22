@@ -483,9 +483,12 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 	try
 	{
 		image = createImage (&expStart);
+
 		if (image == NULL)
 			return;
 		image->setTemplate (fitsTemplate);
+
+		image->setObjectName (getConnection ());
 
 		image->setExposureLength (exposureTime);
 	

@@ -419,6 +419,8 @@ Camera::Camera (int in_argc, char **in_argv):rts2core::ScriptDevice (in_argc, in
 
 	filterOffsetFile = NULL;
 
+	createValue (objectName, "OBJECT", "target object name", false, RTS2_VALUE_WRITABLE);
+
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
 	calculateStatistics->addSelVal ("only statistics");

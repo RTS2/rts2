@@ -559,6 +559,9 @@ class Camera:public rts2core::ScriptDevice
 		char *device_file;
 		// number of data channels
 		rts2core::ValueInteger *dataChannels;
+
+		// current object
+		rts2core::ValueString *objectName;
 		// which channels are off (and which are on)
 		rts2core::BoolArray *channels;
 
