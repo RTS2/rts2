@@ -56,3 +56,6 @@ for fn in args:
 		d.set('file mosaicimage iraf {0}'.format(fn))
 		for x in c.objects:
 			d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
+
+	if options.stat:
+		print 'stars {0} average FWHM {1}'.format(fn,c.calculate_FWHM(10))

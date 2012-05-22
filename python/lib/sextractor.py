@@ -35,10 +35,11 @@ import sys
 import subprocess
 import os
 import tempfile
+import traceback
 
 class Sextractor:
 	"""Class for a catalogue (SExtractor result)"""
-	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
+	def __init__(self, fields=['NUMBER', 'FLUXERR_ISO', 'FLUX_AUTO', 'X_IMAGE', 'Y_IMAGE', 'MAG_BEST', 'FLAGS', 'CLASS_STAR', 'FWHM_IMAGE', 'A_IMAGE', 'B_IMAGE'], sexpath='sextractor', sexconfig='/usr/share/sextractor/default.sex', starnnw='/usr/share/sextractor/default.nnw', threshold=2.7, deblendmin = 0.03, saturlevel=65535):
 		self.sexpath = sexpath
 		self.sexconfig = sexconfig
 		self.starnnw = starnnw
@@ -48,6 +49,9 @@ class Sextractor:
 		self.threshold = threshold
 		self.deblendmin = deblendmin
 		self.saturlevel = saturlevel
+
+	def getField(self,fieldname):
+		return self.fields.index(fieldname)
 
 	def runSExtractor(self,filename):
 	    	pf,pfn = tempfile.mkstemp()
@@ -92,41 +96,60 @@ class Sextractor:
 		self.objects.sort(cmp=lambda x,y: cmp(x[col],y[col]))
 		self.objects.reverse()
 
-def getFWHM(fn,starsn,ds9display=False,filterGalaxies=True,threshold=2.7,deblendmin=0.03):
-	"""Returns average FWHM of the brightest starsn stars from the image"""
-	c = Sextractor(['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],threshold=threshold,deblendmin=deblendmin)
-	c.runSExtractor(fn)
+	def filter_galaxies(self,limit=0.2):
+		"""Filter possible galaxies"""
+		try:
+			i_class = self.getField('CLASS_STAR')
+			ret = []
+			for x in self.objects:
+				if x[i_class] > limit:
+					ret.append(x)
+			return ret
+		except ValueError,ve:
+			print 'result does not contain CLASS_STAR'
+			traceback.print_exc()
+	
+	def calculate_FWHM(self,starsn=None,filterGalaxies=True):
+		obj = None
+		if filterGalaxies:
+			obj = self.filter_galaxies()
+		else:
+			obj = self.objects
 
-	# sort by magnitude
-	c.sortObjects(2)
+		if len(obj) == 0:
+			raise Exception('Cannot find FWHM on empty source list')
 
-	# display in ds9
-	if ds9display:
-		import ds9
-		d = ds9.ds9()
-		d.set('file {0}'.format(fn))
+		try:
+			# sort by magnitude
+			self.sortObjects(self.getField('MAG_BEST'))
+			fwhmlist = []
 
-	fwhmlist = []
+			a = 0
+			b = 0
 
-	a = 0
-	b = 0
-	for x in c.objects:
-		if x[3] == 0 and (filterGalaxies == False or x[4] != 0):
-			fwhmlist.append(x[5])
-			a += x[6]
-			b += x[7]
-			if ds9display:
-				d.set('regions', 'image; circle {0} {1} 10'.format(x[0],x[1]))
-			if len(fwhmlist) >= starsn:
-				break
-		elif ds9display:
-			d.set('regions', 'image; point {0} {1} # point=cross'.format(x[0],x[1]))
-			d.set('regions', 'image; text {0} {1} # text={{{2}}}'.format(x[0],x[1] - 15,'{0} {1}'.format(x[3],x[4])))
+			i_flags = self.getField('FLAGS')
+			i_class = self.getField('CLASS_STAR')
+			i_fwhm = self.getField('FWHM_IMAGE')
+			i_a = self.getField('A_IMAGE')
+			i_b = self.getField('B_IMAGE')
 
-	if len(fwhmlist) >= starsn:
-		import numpy
-		return numpy.median(fwhmlist), len(fwhmlist)
-#		return numpy.average(fwhmlist), len(fwhmlist)
-	if len(fwhmlist) > 0:
-		raise Exception('too few stars - {0}, expected {1}'.format(len(fwhmlist),starsn))
-	raise Exception('cannot find any stars on the image')
+			for x in self.objects:
+				if x[i_flags] == 0 and (filterGalaxies == False or x[i_class] != 0):
+					fwhmlist.append(x[i_fwhm])
+					a += x[i_a]
+					b += x[i_b]
+					if starsn and len(fwhmlist) >= starsn:
+						break
+
+			if (starsn is None and len(fwhmlist) > 0) or len(fwhmlist) >= starsn:
+				import numpy
+				return numpy.median(fwhmlist), len(fwhmlist)
+		#		return numpy.average(fwhmlist), len(fwhmlist)
+			if len(fwhmlist) > 0:
+				raise Exception('too few stars - {0}, expected {1}'.format(len(fwhmlist),starsn))
+			raise Exception('cannot find any stars on the image')
+
+		except ValueError,ve:
+			traceback.print_exc()
+
+
