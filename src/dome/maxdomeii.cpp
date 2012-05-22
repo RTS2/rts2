@@ -49,12 +49,17 @@
 #define EXIT_SHUTTER            0x04  // Command send to shutter on program exit
 #define ABORT_SHUTTER           0x07
 
-
-
-// Direction fo azimuth movement                                                                                               
+// Direction fo azimuth movement
 #define MAXDOMEII_EW_DIR 0x01
 #define MAXDOMEII_WE_DIR 0x02
 
+
+// selections for azCmd
+#define SEL_HOME      0
+#define SEL_ABORT     1
+// Shutter operation
+#define OPERATE_AT_ANY_AZIMUTH 0x00
+#define PARK_FIRST 0x01
 /**
  * MaxDome II Sirius driver.
  *
@@ -88,7 +93,7 @@ class MaxDomeII:public Cupola
 		const char *devFile;
         	rts2core::ConnSerial *sconn;
 
-		rts2core::ValueInteger *state;
+		rts2core::ValueInteger *shutterState;
 
 		/**
 		 * Calculate message checksum. Works on full buffer, assuming
@@ -115,11 +120,14 @@ class MaxDomeII:public Cupola
                 int GotoAzimuth(double newAZ);
                 double TicksToAzimuth(int nTicks);
                 int AzimuthToTicks(double nAzimuth);
-                rts2core::ValueDouble *homeAzSetPoint;
-                rts2core::ValueDouble *homeAzOffset;
+                rts2core::ValueDouble *homeAz;
                 rts2core::ValueSelection *azCmd;
-                int Home_Azimuth_MaxDomeII();
-
+                void AzimuthCmd(uint8_t cmd);
+		rts2core::ValueInteger *azState;
+		rts2core::ValueInteger *homeTicks;
+                int ParkPositionShutterOperation(int nTicks);
+                rts2core::ValueDouble *parkAz;
+                rts2core::ValueBool *shutterOperationAtAnyAZ;
 
 };
 
@@ -128,38 +136,47 @@ MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
 	devFile = "/dev/ttyS0";
 	sconn = NULL;
 
-	createValue (state, "shutter", "shutter state", false);
+	createValue (shutterState, "shutter state", "shutter state", false);
+	createValue (azState, "az state", "dome azimuth state", false);
 
 	addOption ('f', NULL, 1, "serial port (defaults to /dev/ttyS0)");
 
-	createValue (shutterCmd, "MANUAL_SHUTTER", "manual door operation", false, RTS2_VALUE_WRITABLE);
+
+	createValue (block_shutter, "BLOCK_SHUTTER", "true inhibits rts2-centrald initiated shutter commands", false, RTS2_VALUE_WRITABLE);
+	block_shutter->setValueBool (true); 
+
+	createValue (shutterCmd, "MANUAL_SHUTTER", "manual shutter operation", false, RTS2_VALUE_WRITABLE);
 	shutterCmd->addSelVal ("ABORT_SHUTTER", (rts2core::Rts2SelData *) ABORT_SHUTTER);
 	shutterCmd->addSelVal ("CLOSE_SHUTTER", (rts2core::Rts2SelData *) CLOSE_SHUTTER);
 	shutterCmd->addSelVal ("OPEN_SHUTTER", (rts2core::Rts2SelData *) OPEN_SHUTTER);
 	shutterCmd->addSelVal ("OPEN_UPPER_ONLY_SHUTTER", (rts2core::Rts2SelData *) OPEN_UPPER_ONLY_SHUTTER);
 	shutterCmd->addSelVal ("EXIT_SHUTTER", (rts2core::Rts2SelData *) EXIT_SHUTTER);
 
-	createValue (block_shutter, "BLOCK_SHUTTER", "true inhibits rts2-centrald initiated shutter movements", false, RTS2_VALUE_WRITABLE);
-	block_shutter->setValueBool (true); 
-
-	createValue (ticksPerRevolution, "ticks/revolution", "ticks perrevolution, default 228", false, RTS2_VALUE_WRITABLE);
-	ticksPerRevolution->setValueInteger(228);
-
-	createValue (manualAz, "AZsetpoint", "command the dome to azimuth", false, RTS2_VALUE_WRITABLE);
-	manualAz->setValueDouble(0.);
-
-	createValue (homeAzSetPoint, "homeAZsetpoint", "home azimuth", false, RTS2_VALUE_WRITABLE);
-	homeAzSetPoint->setValueDouble(0.);
-
-	createValue (homeAzOffset, "homeAZOffset", "home azimuth offset", false);
-	homeAzOffset->setValueDouble(0.);
-
 	createValue (azCmd, "MANUAL_AZ", "manual dome azimuth operation", false, RTS2_VALUE_WRITABLE);
 	azCmd->addSelVal ("HOME", (rts2core::Rts2SelData *) HOME_CMD);
+	azCmd->addSelVal ("ABORT", (rts2core::Rts2SelData *) ABORT_CMD);
 //ToDo:
 #define NOTHING 255
 	//ToDo:
 	azCmd->addSelVal ("NOTHING", (rts2core::Rts2SelData *) NOTHING);
+
+	createValue (manualAz, "AZsetpoint", "command the dome to azimuth", false, RTS2_VALUE_WRITABLE);
+	manualAz->setValueDouble(0.);
+
+	createValue (homeAz, "homeAZ", "home position azimuth", false, RTS2_VALUE_WRITABLE);
+	homeAz->setValueDouble(343.);
+
+	createValue (ticksPerRevolution, "ticks/revolution", "ticks per revolution, default 228", false, RTS2_VALUE_WRITABLE);
+	ticksPerRevolution->setValueInteger(228);
+
+	createValue (parkAz, "parkAZ", "azimuth park position ", false, RTS2_VALUE_WRITABLE);
+	parkAz->setValueInteger(270.);
+
+	createValue (homeTicks, "homeTicks", "ticks from maxdomeii status message", false);
+
+	createValue (shutterOperationAtAnyAZ, "shutterOperationAtAnyAZ", "park on shutter close", false, RTS2_VALUE_WRITABLE);
+	shutterOperationAtAnyAZ->setValueBool (true); 
+
 }
 
 MaxDomeII::~MaxDomeII ()
@@ -188,30 +205,47 @@ int MaxDomeII::processOption (int opt)
 
 int MaxDomeII::initHardware ()
 {
-        char buffer[MAX_BUFFER];
+        char args[MAX_BUFFER];
 
 	sconn = new rts2core::ConnSerial (devFile, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, MAXDOME_TIMEOUT);
 	sconn->setDebug (getDebug ());
 	sconn->init ();
 
- 	buffer[0] = (uint8_t)((uint16_t)ticksPerRevolution->getValueInteger ())>>8;
-	buffer[1] = (uint8_t)((uint8_t)ticksPerRevolution->getValueInteger ());
-	exchangeMessage (TICKS_CMD, buffer, 2, buffer);
+	// talk to the controller
+	exchangeMessage (ACK_CMD, NULL, 0, args);
+	// set ticks per revolution
+ 	args[0] = (uint8_t)((uint16_t)ticksPerRevolution->getValueInteger ())>>8;
+	args[1] = (uint8_t)((uint8_t)ticksPerRevolution->getValueInteger ());
+	exchangeMessage (TICKS_CMD, args, 2, args);
+	// set park position and shutter operation mode
+	int parkTicks= AzimuthToTicks((int)parkAz->getValueDouble()); //ToDo cast 
+	ParkPositionShutterOperation (parkTicks);
+	
 
 	return 0;
 }
 
 int MaxDomeII::info ()
 {
-	char buffer[MAX_BUFFER];
-	exchangeMessage (STATUS_CMD, NULL, 0, buffer);
+	char args[MAX_BUFFER];
+	exchangeMessage (STATUS_CMD, NULL, 0, args);
 
-	setCurrentAz (((uint16_t) buffer[4]) << 8 | buffer[5]); 
-	state->setValueInteger (buffer[2]);
-        int  val;
-	val= (((uint16_t) buffer[6]) << 8 | buffer[7]);
-	fprintf(stderr, "----------val %d\n", val);
-	homeAzOffset->setValueDouble((double)val);
+	shutterState->setValueInteger (args[2]);
+        azState->setValueInteger (args[3]);
+
+	double az= TicksToAzimuth( (((uint8_t)args[4])*256 + (uint8_t)args[5])) ;
+	setCurrentAz (az); 
+
+	homeTicks->setValueInteger( ((uint8_t)args[6]) *256 + (uint8_t)args[7]);// ToDo: what use case
+
+	fprintf(stderr, "----------ticks %d, off %d\n",  ((uint8_t)args[4])*256 + (uint8_t)args[5], homeTicks->getValueInteger());
+	fprintf(stderr, "----------az %lf, azoff: %lf\n", az, homeAz->getValueDouble() );
+	fprintf(stderr, ">info buffer read ---0x");
+
+	for ( int j=0; j < 8; j++){
+	  fprintf(stderr, "%02x", (uint8_t)args[j] );
+	}
+	fprintf(stderr, " end buffer\n");
 
 	return Cupola::info ();
 }
@@ -223,10 +257,10 @@ int MaxDomeII::startOpen ()
 	  return -1;
 	}  
 
-	char buffer[MAX_BUFFER];
-	buffer[0] = OPEN_SHUTTER;
+	char args[MAX_BUFFER];
+	args[0] = OPEN_SHUTTER;
 
-	exchangeMessage (SHUTTER_CMD, buffer, 1, buffer);
+	exchangeMessage (SHUTTER_CMD, args, 1, args);
 	return 0;
 }
 
@@ -240,7 +274,7 @@ long MaxDomeII::isOpened ()
 	  return -1;
         }  
 
-	return state->getValueInteger () == 1 ? -2 : USEC_SEC;
+	return shutterState->getValueInteger () == 1 ? -2 : USEC_SEC;
 }
 
 int MaxDomeII::endOpen ()
@@ -255,10 +289,10 @@ int MaxDomeII::startClose ()
 	  return -1;
 	}  
 
-	char buffer[MAX_BUFFER];
-	buffer[0] = CLOSE_SHUTTER;
+	char args[MAX_BUFFER];
+	args[0] = CLOSE_SHUTTER;
 
-	exchangeMessage (SHUTTER_CMD, buffer, 1, buffer);
+	exchangeMessage (SHUTTER_CMD, args, 1, args);
 	return 0;
 }
 
@@ -271,7 +305,7 @@ long MaxDomeII::isClosed ()
 	  return -2;
 	}  
 
-	return state->getValueInteger () == 0 ? -2 : USEC_SEC;
+	return shutterState->getValueInteger () == 0 ? -2 : USEC_SEC;
 }
 
 int MaxDomeII::endClose ()
@@ -321,7 +355,7 @@ void MaxDomeII::sendMessage (uint8_t cmd, char *args, size_t len)
     }
     wbuf[3+ len] = checkSum(wbuf+1, len+ 2);
 
-    fprintf(stderr, ">sendMessagebuffer write len %ld ---0x", len+4);
+    fprintf(stderr, ">sendMessagebuffer write len %ld ---0x", (long int)len+4); //ToDo ask Petr why changed to ld, goes away anyay
     for ( int j=0; j < (int) len+4; j++){
       fprintf(stderr, "%d: %02x\n", j, (uint8_t)wbuf[j] );
     }
@@ -378,33 +412,38 @@ void MaxDomeII::exchangeMessage (uint8_t cmd, char *args, size_t len, char *buff
 
 int MaxDomeII::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 {
-  char buffer[MAX_BUFFER];
+  char args[MAX_BUFFER];
   if (oldValue ==  shutterCmd)
   {
     shutterCmd->setValueInteger (newValue->getValueInteger ());
-    buffer[0] = (uint8_t)shutterCmd->getValueInteger ();
+    args[0] = (uint8_t)shutterCmd->getValueInteger ();
 
-    //    exchangeMessage (SHUTTER_CMD, buffer, 1, buffer);
+    //    exchangeMessage (SHUTTER_CMD, args, 1, args);
   } else if(oldValue ==  ticksPerRevolution) {
 
-        ticksPerRevolution->setValueInteger (newValue->getValueInteger ());
- 	buffer[0] = ((uint16_t)ticksPerRevolution->getValueInteger ())>>8;
-	buffer[1] = ((uint8_t)ticksPerRevolution->getValueInteger ());
-	//fprintf(stderr, "buffer %02x, %02x\n", buffer[0], buffer[1]);
-	exchangeMessage (TICKS_CMD, buffer, 2, buffer);
+    ticksPerRevolution->setValueInteger (newValue->getValueInteger ());
+    args[0] = ((uint16_t)ticksPerRevolution->getValueInteger ())>>8;
+    args[1] = ((uint8_t)ticksPerRevolution->getValueInteger ());
+    //fprintf(stderr, "args %02x, %02x\n", args[0], args[1]);
+    exchangeMessage (TICKS_CMD, args, 2, args);
 
   } else if(oldValue ==  manualAz) {
-        manualAz->setValueDouble (newValue->getValueDouble ());
-	GotoAzimuth(manualAz->getValueDouble ());
+
+    manualAz->setValueDouble (newValue->getValueDouble ());
+    GotoAzimuth(manualAz->getValueDouble ());
 
   } else if(oldValue ==  azCmd) {
 
     azCmd->setValueInteger (newValue->getValueInteger ());
 
-    if( (size_t) azCmd->getData ()== HOME_CMD){
+    if( (size_t) azCmd->getValueInteger ()== SEL_HOME){
       fprintf( stderr, "HOME\n");
-	//Home_Azimuth_MaxDomeII();
-    }else{
+      AzimuthCmd( HOME_CMD);
+    } else if( (size_t) azCmd->getValueInteger ()== SEL_ABORT){
+      fprintf( stderr, "ABORT\n");
+      AzimuthCmd( ABORT_CMD);
+    } else{
+      // ToDo 
       fprintf( stderr, "NOTHING\n");
     }
  
@@ -417,7 +456,7 @@ int MaxDomeII::GotoAzimuth(double newAZ)
 {
   double currAZ = 0;
   int newTicks = 0, nDir = 0xff;
-  char buffer[MAX_BUFFER];
+  char args[MAX_BUFFER];
 
   currAZ = getCurrentAz();
 
@@ -439,15 +478,11 @@ int MaxDomeII::GotoAzimuth(double newAZ)
   newTicks = AzimuthToTicks(newAZ);
   fprintf(stderr, " Azimut %f, %d", newAZ, newTicks);
 
-  buffer[0] = (char)nDir;
-  buffer[1] = ((uint16_t)newTicks)>>8 ;
-  buffer[2] = (uint8_t)(newTicks);
+  args[0] = (char)nDir;
+  args[1] = ((uint16_t)newTicks)>>8 ;
+  args[2] = (uint8_t)(newTicks);
 
-  exchangeMessage (GOTO_CMD, buffer, 3, buffer);
-
-
-  //ToDO  nTargetAzimuth = newPos;
-  //ToDo nTimeSinceAzimuthStart = 0;     // Init movement timer                                                                 
+  exchangeMessage (GOTO_CMD, args, 3, args);
 
   return 0; //ToDo
 }
@@ -455,7 +490,9 @@ int MaxDomeII::GotoAzimuth(double newAZ)
 double MaxDomeII::TicksToAzimuth(int nTicks)
 {
   double nAz=0.;
-  nAz = homeAzSetPoint->getValueDouble() + nTicks * 360.0 / ticksPerRevolution->getValueInteger();
+  //ToDo nAz = homeAzSetPoint->getValueDouble() + nTicks * 360.0 / ticksPerRevolution->getValueInteger();
+  nAz = homeAz->getValueDouble() + nTicks * 360.0 / ticksPerRevolution->getValueInteger();
+  //ToD why not modulo
   while (nAz < 0) nAz += 360;
   while (nAz >= 360) nAz -= 360;
 
@@ -465,21 +502,38 @@ int MaxDomeII::AzimuthToTicks(double nAzimuth)
 {
   int nTicks=0.;
 
-  nTicks = floor(0.5 + (nAzimuth - homeAzSetPoint->getValueDouble()) * ticksPerRevolution->getValueInteger() / 360.0);
+  //ToDo nTicks = floor(0.5 + (nAzimuth - homeAzSetPoint->getValueDouble()) * ticksPerRevolution->getValueInteger() / 360.0);
+  nTicks = floor(0.5 + (nAzimuth - homeAz->getValueDouble()) * ticksPerRevolution->getValueInteger() / 360.0);
+  //ToD why not modulo
   while (nTicks > ticksPerRevolution->getValueInteger()) nTicks -= ticksPerRevolution->getValueInteger();
   while (nTicks < 0) nTicks += ticksPerRevolution->getValueInteger();
 
   return nTicks;
 }
 
-int MaxDomeII::Home_Azimuth_MaxDomeII()
+void MaxDomeII::AzimuthCmd(uint8_t cmd)
 {
-  char buffer[MAX_BUFFER];
-  exchangeMessage (HOME_CMD, NULL, 0, buffer);
-  //ToDo
-  return 0 ;
+  char args[MAX_BUFFER];
+  exchangeMessage (cmd, NULL, 0, args);
 }
 
+int MaxDomeII::ParkPositionShutterOperation (int nTicks)
+{
+  char args[MAX_BUFFER];
+
+  if( shutterOperationAtAnyAZ->getValueBool()){
+    args[0]=  OPERATE_AT_ANY_AZIMUTH; 
+  } else {
+    args[0]=  PARK_FIRST; 
+  }
+  args[1] = (char)(nTicks / 256);
+  args[2] = (char)(nTicks % 256);
+
+  exchangeMessage (SETPARK_CMD, args, 3, args);
+
+  //ToDo
+  return 0;
+}
 
 int main (int argc, char **argv)
 {
