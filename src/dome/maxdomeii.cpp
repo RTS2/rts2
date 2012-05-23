@@ -2,6 +2,7 @@
     Max Dome II Driver
     Copyright (C) 2009 Ferran Casarramona (ferran.casarramona@gmail.com)
     Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
+    Copyright (C) 2012 Markus Wildi <wildi.markus@bluewin.ch>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -21,7 +22,6 @@
 
 #include "cupola.h"
 #include "connection/serial.h"
-#include "configuration.h" 
 #include "dome-target-az.h"
 
 #define MAXDOME_TIMEOUT	5		/* FD timeout in seconds */
@@ -51,9 +51,10 @@
 #define EXIT_SHUTTER            0x04  // Command send to shutter on program exit
 #define ABORT_SHUTTER           0x07
 
-// Direction fo azimuth movement
+// Direction for azimuth movement
 #define MAXDOMEII_EW_DIR 0x01
 #define MAXDOMEII_WE_DIR 0x02
+
 // Azimuth movement status
 #define  ERROR_AZ       0x05 // Error. Showed after connect (?) 
 #define  SYNCED_CROSSED 0x04 // ToDo: clarify with Ferran: Dome is stationary. Home was crossed in the previous movement.
@@ -63,23 +64,26 @@
 //ToDo make option
 #define AZ_MINIMAL_STEP 2 // ToDo unit [deg], minimal azimut step to command the dome to move
 
-
 // selections for azCmd
 #define SEL_HOME      0
 #define SEL_ABORT     1
+
 // Shutter operation
 #define OPERATE_AT_ANY_AZIMUTH 0x00
 #define PARK_FIRST 0x01
 
 // Synchronization
 //ToDo create options
-const struct geometry astrofire = {
-  -0.0684, // xd [m]
-  -0.1934, // zd [m]
-  0.338,  // rdec [m]                                                                                                         
-  1.265   // rdome [m]                                                                                                        
-} ;
 
+#define OPT_MAXDOMEII_HOMEAZ       OPT_LOCAL + 54
+#define OPT_MAXDOMEII_TICKSPERREV  OPT_LOCAL + 55
+#define OPT_MAXDOMEII_PARKAZ       OPT_LOCAL + 56
+#define OPT_MAXDOMEII_SHUTTER_OP   OPT_LOCAL + 57
+
+#define OPT_MAXDOMEII_XD     OPT_LOCAL + 60
+#define OPT_MAXDOMEII_ZD     OPT_LOCAL + 61
+#define OPT_MAXDOMEII_RDEC   OPT_LOCAL + 62
+#define OPT_MAXDOMEII_RDOME  OPT_LOCAL + 63
 
 /**
  * MaxDome II Sirius driver.
@@ -155,9 +159,13 @@ class MaxDomeII:public Cupola
                 int ParkPositionShutterOperation(int Ticks);
                 rts2core::ValueDouble *parkAz;
                 rts2core::ValueBool *shutterOperationAtAnyAZ;
-                rts2core::Configuration *config ;
                 bool needMoveStart();
                 double domeTargetAz( ln_equ_posn tel_equ);
+                struct geometry domeMountGeometry ;
+                rts2core::ValueBool *xd ;
+                rts2core::ValueBool *zd ;
+                rts2core::ValueBool *rdec ;
+                rts2core::ValueBool *rdome ;
 
 };
 
@@ -205,7 +213,18 @@ MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
 	createValue (homeTicks, "homeTicks", "ticks from maxdomeii status message", false);
 
 	createValue (shutterOperationAtAnyAZ, "shutterOperationAtAnyAZ", "park on shutter close", false, RTS2_VALUE_WRITABLE);
-	shutterOperationAtAnyAZ->setValueBool (true); 
+	shutterOperationAtAnyAZ->setValueBool (false); 
+
+
+	addOption (OPT_MAXDOMEII_HOMEAZ, "homeaz", 1, "home azimuth position");
+	addOption (OPT_MAXDOMEII_TICKSPERREV, "ticksperrevolution", 1, "ticks per revolution");
+	addOption (OPT_MAXDOMEII_PARKAZ, "parkaz", 1, "park azimuth position");
+	addOption (OPT_MAXDOMEII_SHUTTER_OP, "shutteroperation", 1, "true: operate the shutter at any azimuth angle");
+	addOption (OPT_MAXDOMEII_XD, "xd", 1, "xd, see Toshimi Taki's paper");
+	addOption (OPT_MAXDOMEII_ZD, "zd", 1, "zd");
+	addOption (OPT_MAXDOMEII_RDEC, "rdec", 1, "distance mount pivot optical axis");
+	addOption (OPT_MAXDOMEII_RDOME, "rdome", 1, "dome radius");
+
 
 }
 
@@ -213,7 +232,7 @@ MaxDomeII::~MaxDomeII ()
 {
 	delete sconn;
 }
-
+// ToDo, do I need it?
 double MaxDomeII::getSplitWidth (double alt)
 {
 	return 10;
@@ -227,6 +246,32 @@ int MaxDomeII::processOption (int opt)
 			devFile = optarg;
 
 			break;
+	        case OPT_MAXDOMEII_HOMEAZ:
+		        homeAz->setValueCharArr(optarg);
+	                break;
+	        case OPT_MAXDOMEII_TICKSPERREV:
+		        ticksPerRevolution->setValueCharArr(optarg);
+	                break;
+	        case OPT_MAXDOMEII_PARKAZ:
+		        parkAz->setValueCharArr(optarg);
+	                break;
+	        case OPT_MAXDOMEII_SHUTTER_OP:
+                	shutterOperationAtAnyAZ->setValueBool (false); 
+	                break;
+	        case OPT_MAXDOMEII_XD:
+		        xd->setValueCharArr(optarg);
+		        
+	                break;
+	        case OPT_MAXDOMEII_ZD:
+		        zd->setValueCharArr(optarg);
+	                break;
+	        case OPT_MAXDOMEII_RDEC:
+		        rdec->setValueCharArr(optarg);
+	                break;
+	        case OPT_MAXDOMEII_RDOME:
+		        rdome->setValueCharArr(optarg);
+	                break;
+
 		default:
 			return Dome::processOption (opt);
 	}
@@ -250,6 +295,12 @@ int MaxDomeII::initHardware ()
 	// set park position and shutter operation mode
 	int parkTicks= AzimuthToTicks((int)parkAz->getValueDouble()); //ToDo cast 
 	ParkPositionShutterOperation (parkTicks);
+	//ToDo n0t the place
+	domeMountGeometry.xd= xd->getValueDouble();
+	domeMountGeometry.zd= zd->getValueDouble();
+	domeMountGeometry.rdec= rdec->getValueDouble();
+	domeMountGeometry.rdome= rdome->getValueDouble();
+
 
 	return 0;
 }
@@ -662,7 +713,7 @@ double MaxDomeII::domeTargetAz( ln_equ_posn tel_equ)
 
 
   // az setpoint as function of dome geometry 
-  return dome_target_az( tel_equ, obs_location, astrofire) ; //ToDo replace astrofire
+  return dome_target_az( tel_equ, obs_location, domeMountGeometry) ; //ToDo replace astrofire
 }
 
 int MaxDomeII::moveStart ()
