@@ -35,6 +35,7 @@ parser = OptionParser()
 parser.add_option('--ds9',help='plot image and detections in DS9',action='store_true',dest='plot_ds9',default=False)
 parser.add_option('--stat',help='calculate statistics (on all specified segments)',action='store_true',dest='stat',default=False)
 parser.add_option('--stat-segments',help='calculate statistics by segments',action='store_true',dest='stat_segments',default=False)
+parser.add_option('--plot-segments',help='plot histogram of segments FWHM medians',action='store_true',dest='plot_segments',default=False)
 parser.add_option('--segment',help='run statistics on given segments',action='append',dest='segments')
 parser.add_option('--max-stars',help='maximal number of stars used for statistics',action='store',dest='max_stars',default=None)
 parser.add_option('--verbose',help='produce verbose output',action='store_true',dest='verbose',default=False)
@@ -50,6 +51,8 @@ if options.segments:
 	options.segments = map(lambda x:int(x),options.segments)
 
 c = rts2.sextractor.Sextractor(['EXT_NUMBER','X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE'],sexpath='/usr/bin/sextractor',sexconfig='/usr/share/sextractor/default.sex',starnnw='/usr/share/sextractor/default.nnw')
+
+fwhms_segments = None
 
 for fn in args:
 	c.runSExtractor(fn)
@@ -68,13 +71,49 @@ for fn in args:
 	if options.stat:
 		print fn,c.calculate_FWHM(options.max_stars,segments=options.segments)
 	
+	
 	if options.stat_segments:
 	  	i_ext_number = c.get_field('EXT_NUMBER')
 	  	segments = list(set(map(lambda x:x[i_ext_number],c.objects)))
 		segments.sort()
+
 		print fn,len(segments),
 		for s in segments:
 			res = c.calculate_FWHM(options.max_stars,segments=[s])
 			print res[1],res[0],
-		print
 			
+		print
+
+	if options.plot_segments:
+		i_ext_number = c.get_field('EXT_NUMBER')
+		i_flags = c.get_field('FLAGS')
+		i_class = c.get_field('CLASS_STAR')
+		i_fwhm = c.get_field('FWHM_IMAGE')
+
+		obj = c.filter_galaxies()
+
+	  	segments = list(set(map(lambda x:x[i_ext_number],c.objects)))
+		segments.sort()
+
+		if fwhms_segments is None:
+			fwhms_segments = range(0,len(segments))
+			fwhms_segments = map(lambda x:[],fwhms_segments)
+
+		for x in c.objects:
+			if x[i_flags] == 0 and x[i_class] != 0 and x[i_fwhm] > 0:
+				fwhms_segments[int(x[i_ext_number])-1].append(x[i_fwhm])
+
+if options.plot_segments:
+	import pylab
+	import math
+	fig = pylab.figure()
+
+	r = math.sqrt(len(fwhms_segments))
+
+	for x in range(0,len(fwhms_segments)):
+		p = fig.add_subplot(r,r,x+1,title='Channel {0} FWHM'.format(x + 1))
+		p.hist(fwhms_segments[x], 10)
+		if options.verbose:
+			print x,' '.join(map(str,fwhms_segments[x]))
+
+	pylab.show()
