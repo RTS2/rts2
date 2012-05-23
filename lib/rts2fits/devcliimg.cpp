@@ -330,9 +330,15 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 							th = h;
 
 						if (tx > tw)
-							tx = tw;
+						{
+							tx = 1;
+							tw = 0;
+						}
 						if (ty > th)
-							ty = th;
+						{
+							ty = 1;
+							th = 0;
+						}
 						ci->image->setValueRectange ("TRIMSEC", tx, tw, ty, th, "TRIM binned section");
 					}
 				}
