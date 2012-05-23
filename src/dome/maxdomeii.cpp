@@ -162,10 +162,10 @@ class MaxDomeII:public Cupola
                 bool needMoveStart();
                 double domeTargetAz( ln_equ_posn tel_equ);
                 struct geometry domeMountGeometry ;
-                rts2core::ValueBool *xd ;
-                rts2core::ValueBool *zd ;
-                rts2core::ValueBool *rdec ;
-                rts2core::ValueBool *rdome ;
+                rts2core::ValueDouble *xd ;
+                rts2core::ValueDouble *zd ;
+                rts2core::ValueDouble *rdec ;
+                rts2core::ValueDouble *rdome ;
 
 };
 
