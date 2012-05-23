@@ -40,6 +40,7 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 rts2_dome_ahe_SOURCES = ahe.cpp 
 
 rts2_cupola_maxdomeii_SOURCES = maxdomeii.cpp
+rts2_cupola_maxdomeii_LDADD = -lrts2dome-target-az ${LDADD}
 
 if SUNCYG
 EXTRA_DIST += OakFeatureReports.c OakHidBase.c move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c watcher.cpp serial_ahe.c
