@@ -410,7 +410,7 @@ int APGTO::setAPTrackingMode ()
 	if (ret != 0)
 		return -1;
 	if( !strcmp(v, ":RT9#")) {  //ToDo find a better solution
-
+	  notMoveCupola() ;
 	  on_zero_HA= fmod(localSiderealTime()- getTelRa()+ 360., 360.) ;
 	  tracking->setValueBool(false) ;
 	} else {
@@ -1208,6 +1208,8 @@ void APGTO::startCupolaSync ()
 
 void APGTO::notMoveCupola ()
 {
+  fprintf(stderr, "APGTO::notMoveCupola not move cupola");
+  logStream (MESSAGE_ERROR) << "APGTO::notMoveCupola not move cupola" << sendLog;
   postEvent (new rts2core::Event (EVENT_CUP_NOT_MOVE));
 }
 
@@ -1217,7 +1219,7 @@ int APGTO::isMoving ()
     getTarget (&target_equ);
     //logStream (MESSAGE_INFO) << "APGTO::isMoving getTarget ra:"<< target_equ.ra<<" dec:"<<  target_equ.dec<< sendLog;
     //logStream (MESSAGE_INFO) << "APGTO::isMoving lastMoveRa:"<< lastMoveRa<<" lastMoveDec:"<<  lastMoveDec<< sendLog;
-    logStream (MESSAGE_INFO) << "APGTO::isMoving positionRa:"<< getTelRa()<<" Dec:"<<  getTelDec()<< sendLog;
+    //logStream (MESSAGE_INFO) << "APGTO::isMoving positionRa:"<< getTelRa()<<" Dec:"<<  getTelDec()<< sendLog;
     // in case of parking  getTarget, getTelTargetRa (), getTelTargetDec () are nan
     //	int ret = checkAPCoords (getTelTargetRa (), getTelTargetDec ());
     int ret = checkAPCoords (lastMoveRa, lastMoveDec);
@@ -1416,6 +1418,7 @@ int APGTO::abortAnyMotion ()
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion failed: check motion and tracking now" << sendLog;
       return -1 ;
     }
+    notMoveCupola() ;
 }
 
 int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
@@ -1619,11 +1622,13 @@ int APGTO::info ()
   // ToDo see what is done by lx200
   // do not check while slewing
   if(( slew_start_time - time(&now) + TIMEOUT_SLEW_START) < 0.) {
-    if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
-      return -1;
-    } else {
-      logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to TIMEOUT_SLEW_START" << sendLog;
+    if( tracking->getValueBool()){
+      if( (abortAnyMotion () !=0)) {
+	logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+	return -1;
+      } else {
+	logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to TIMEOUT_SLEW_START" << sendLog;
+      }
     }
   }
   

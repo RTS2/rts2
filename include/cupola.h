@@ -88,6 +88,7 @@ class Cupola:public Dome
 		{
 			return observer;
 		}
+		void synced ();
 
 	private:
 		struct ln_equ_posn targetPos;
@@ -103,7 +104,6 @@ class Cupola:public Dome
 		char *configFile;
 
 		double targetDistance;
-		void synced ();
 };
 
 }
