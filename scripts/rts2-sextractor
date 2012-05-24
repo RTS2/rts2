@@ -112,7 +112,7 @@ if options.plot_segments:
 
 	for x in range(0,len(fwhms_segments)):
 		p = fig.add_subplot(r,r,x+1,title='Channel {0} FWHM'.format(x + 1))
-		p.hist(fwhms_segments[x], 10)
+		p.hist(fwhms_segments[x], range(0,5), normed=True)
 		if options.verbose:
 			print x,' '.join(map(str,fwhms_segments[x]))
 

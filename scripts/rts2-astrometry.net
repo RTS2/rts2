@@ -5,7 +5,7 @@ import pyfits
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn,verbose=False,blind=False):
+def run_on_image(fn,verbose=False,blind=False,multiwcs=''):
 	import rts2.astrometry
 	import rts2.libnova
 
@@ -15,10 +15,10 @@ def run_on_image(fn,verbose=False,blind=False):
 
 	ra = dec = scale = None
 
-	ra=ff[0].header['CRVAL1']
-	dec=ff[0].header['CRVAL2']
+	ra=ff[0].header['CRVAL1' + multiwcs]
+	dec=ff[0].header['CRVAL2' + multiwcs]
 
-	for k in ['CDELT1','CD1_1']:
+	for k in ['CDELT1' + multiwcs,'CD1_1' + multiwcs]:
 		try:
 			scale=abs(float(ff[0].header[k]) * 3600.0)
 			break
@@ -72,8 +72,9 @@ def run_on_image(fn,verbose=False,blind=False):
 
 
 parser = OptionParser()
-parser.add_option('--verbose',help='Be verbose, print what the script is doing',action='store_true',dest='verbose',default=False)
+parser.add_option('--multi-wcs',help='Multiple WCS extension',action='store',dest='multiwcs',default='')
 parser.add_option('--blind',help='Blind solve',action='store_true',dest='blind',default=False)
+parser.add_option('--verbose',help='Be verbose, print what the script is doing',action='store_true',dest='verbose',default=False)
 
 (options,args) = parser.parse_args()
 
@@ -82,4 +83,4 @@ if not(len(args) == 1):
 	sys.exit(1)
 
 for x in args:
-	run_on_image(x,verbose=options.verbose,blind=options.blind)
+	run_on_image(x,verbose=options.verbose,blind=options.blind,multiwcs=options.multiwcs)
