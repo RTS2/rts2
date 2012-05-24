@@ -593,8 +593,8 @@ class Camera:public rts2core::ScriptDevice
 		// trimmed corners
 		rts2core::DoubleArray *trimx;
 		rts2core::DoubleArray *trimy;
-		rts2core::DoubleArray *trimw;
-		rts2core::DoubleArray *trimh;
+		rts2core::DoubleArray *trimx2;
+		rts2core::DoubleArray *trimy2;
 
 		char ccdType[64];
 		char *ccdRealType;

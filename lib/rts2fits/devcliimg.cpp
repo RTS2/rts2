@@ -220,10 +220,10 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		rts2core::DoubleArray *chan1_delta = getDoubleArray ("CHAN1_DELTA");
 		rts2core::DoubleArray *chan2_delta = getDoubleArray ("CHAN2_DELTA");
 
-		rts2core::DoubleArray *trim_x = getDoubleArray ("TRIM_X");
-		rts2core::DoubleArray *trim_y = getDoubleArray ("TRIM_Y");
-		rts2core::DoubleArray *trim_w = getDoubleArray ("TRIM_W");
-		rts2core::DoubleArray *trim_h = getDoubleArray ("TRIM_H");
+		rts2core::DoubleArray *trim_x = getDoubleArray ("TRIM_X1");
+		rts2core::DoubleArray *trim_y = getDoubleArray ("TRIM_Y1");
+		rts2core::DoubleArray *trim_x2 = getDoubleArray ("TRIM_X2");
+		rts2core::DoubleArray *trim_y2 = getDoubleArray ("TRIM_Y2");
 
 		for (rts2core::DataChannels::iterator di = data->begin (); di != data->end (); di++)
 		{
@@ -292,54 +292,54 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 						yy + (*chan2_delta)[chan] * h * bin2,
 						"unbinned section of detector");
 					// write trim
-					if (trim_x || trim_y || trim_w || trim_h)
+					if (trim_x || trim_y || trim_x2 || trim_y2)
 					{
 						double tx = NAN;
 						double ty = NAN;
-						double tw = NAN;
-						double th = NAN;
+						double tx2 = NAN;
+						double ty2 = NAN;
 
 						if (trim_x && chan < trim_x->size ())
 							tx = (*trim_x)[chan] - x;
 					 	if (trim_y && chan < trim_y->size ())
 							ty = (*trim_y)[chan] - y;
-						if (trim_w && chan < trim_w->size ())
-							tw = (*trim_w)[chan] - x;
-						if (trim_h && chan < trim_h->size ())
-							th = (*trim_h)[chan] - y;
+						if (trim_x2 && chan < trim_x2->size ())
+							tx2 = (*trim_x2)[chan] - x;
+						if (trim_y2 && chan < trim_y2->size ())
+							ty2 = (*trim_y2)[chan] - y;
 
 						if (tx <= 0)
 							tx = 1;
 						if (ty <= 0)
 							ty = 1;
-						if (tw <= 0)
-							tw = 1;
-						if (th <= 0)
-							th = 1;
+						if (tx2 <= 0)
+							tx2 = 1;
+						if (ty2 <= 0)
+							ty2 = 1;
 
 						// bin X and Y
 						tx /= bin1;
 						ty /= bin2;
 
-						tw /= bin1;
-						th /= bin2;
+						tx2 /= bin1;
+						ty2 /= bin2;
 
-						if (tw > w)
-							tw = w;
-						if (th > h)
-							th = h;
+						if (tx2 > w)
+							tx2 = w;
+						if (ty2 > h)
+							ty2 = h;
 
-						if (tx > tw)
+						if (tx > tx2)
 						{
 							tx = 1;
-							tw = 0;
+							tx2 = 0;
 						}
-						if (ty > th)
+						if (ty > ty2)
 						{
 							ty = 1;
-							th = 0;
+							ty2 = 0;
 						}
-						ci->image->setValueRectange ("TRIMSEC", tx, tw, ty, th, "TRIM binned section");
+						ci->image->setValueRectange ("TRIMSEC", tx, tx2, ty, ty2, "TRIM binned section");
 					}
 				}
 
