@@ -725,8 +725,7 @@ int APGTO::tel_slew_to (double ra, double dec)
     } else if( ret== WITHIN_DANGER_ZONE){
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " dec " << target_equ.dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
     } else {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " target_equ.dec " << target_equ.dec << " invalid condition, exiting"  << sendLog;
-      exit(1) ;
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " target_equ.dec " << target_equ.dec << " invalid condition"  << sendLog;
     }
     return -1;
   }
@@ -750,7 +749,9 @@ int APGTO::tel_slew_to (double ra, double dec)
     trackingRate->setValueInteger (1); //TRACK_MODE_SIDEREAL
     if ( setAPTrackingMode() < 0 ) { 
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
-      notMoveCupola() ;
+      if( (abortAnyMotion () !=0)) {
+	logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+      }
       return -1;
     } 
     startCupolaSync ();
@@ -1149,8 +1150,12 @@ int APGTO::startResync ()
                 lastMoveDec = fmod( getTelTargetDec (), 90.);
 
 		ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
-		if (ret)
-			return -1;
+		if (ret) {
+		  if( (abortAnyMotion () !=0)) {
+		    logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+		  }
+		  return -1;
+		}
                 set_move_timeout (100);
                 slew_state->setValueBool(true) ;
 
