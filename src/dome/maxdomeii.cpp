@@ -75,7 +75,8 @@
 #define PARK_FIRST 0x01
 
 // Synchronization
-//ToDo create options
+#define TIMEOUT_SYNC_START 3600. // [second]
+
 
 #define OPT_MAXDOMEII_HOMEAZ       OPT_LOCAL + 54
 #define OPT_MAXDOMEII_TICKSPERREV  OPT_LOCAL + 55
@@ -89,6 +90,9 @@
 
 #define OPT_MAXDOMEII_COLD_START          OPT_LOCAL + 70
 #define OPT_MAXDOMEII_OPEN_LOWER_SHUTTER  OPT_LOCAL + 71
+// we are on batteries, stop if now new target is selected
+// e.g. in case teld dies
+#define OPT_MAXDOMEII_TIMEOUT_SYNC_START  OPT_LOCAL + 72
 
 /**
  * MaxDome II Sirius driver.
@@ -178,7 +182,9 @@ class MaxDomeII:public Cupola
                 int parkCupola ();
                 rts2core::ValueBool *coldStart;
                 rts2core::ValueBool *openLowerShutter;
-  
+  		time_t sync_start_time;
+                rts2core::ValueDouble *timeoutSyncStart ;
+
 };
 
 MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
@@ -255,6 +261,8 @@ MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
 	createValue (coldStart, "coldStart", "true: dome is homed before operation", false);
 	coldStart->setValueBool (false); 
 
+	createValue (timeoutSyncStart, "timeoutSync", "after that many seconds synchronization stops", false);
+	timeoutSyncStart->setValueDouble(5400.);
 
 	addOption ('f', NULL, 1, "serial port (defaults to /dev/ttyUSB0)");
 	addOption (OPT_MAXDOMEII_HOMEAZ, "homeaz", 1, "home azimuth position");
@@ -267,8 +275,7 @@ MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
 	addOption (OPT_MAXDOMEII_RDOME, "rdome", 1, "dome radius, unit [m]");
 	addOption (OPT_MAXDOMEII_COLD_START, "cold-start", 0, "present: dome is homed before operation");
 	addOption (OPT_MAXDOMEII_OPEN_LOWER_SHUTTER, "open-lower-shutter", 0, "present: lower and upper shutter are opened in unattended mode");
-
-
+	addOption (OPT_MAXDOMEII_TIMEOUT_SYNC_START, "timeout-sync", 1, "after that many seconds synchronization stops if no new target has been selected");
 }
 
 MaxDomeII::~MaxDomeII ()
@@ -366,13 +373,15 @@ int MaxDomeII::initHardware ()
 	    sleep(1);
 	  }
 	}
-
+	// set start value for timeout
+	time(&sync_start_time);
 	return 0;
 }
 
 int MaxDomeII::info ()
 {
         int ret;
+	time_t now;
 	char args[MAX_BUFFER];
 	ret= exchangeMessage (STATUS_CMD, NULL, 0, args);
 	if(ret)
@@ -396,6 +405,9 @@ int MaxDomeII::info ()
 	   double targetDifference = getCurrentAz () - target_az;
 	   //fprintf( stderr, "MaxDomeII::info difference AZ %f, abs %f, %f, RA %f %f\n", targetDifference, getCurrentAz (), target_az, tel_equ.ra, tel_equ.dec);
 	   targetAzDifference->setValueDouble( targetDifference);
+	}
+	if(( sync_start_time - time(&now) + TIMEOUT_SYNC_START) < 0.) {
+	  return moveStop();
 	}
 	return Cupola::info ();
 }
@@ -772,6 +784,8 @@ bool MaxDomeII::needSlitChange ()
 int MaxDomeII::moveStart ()
 {
        int ret;
+       static double lastRa=-9999., lastDec=-9999. ;
+
        ret = needSlitChange ();
        if (ret == 0 || ret == -1)
 	 return ret; // pretend we change..so other devices can sync on our command        
@@ -783,11 +797,14 @@ int MaxDomeII::moveStart ()
 
        double target_az= domeTargetAz( tel_equ) ;
 
-       double targetDifference = getCurrentAz () - target_az;
-
        if((ret= GotoAzimuth(target_az))==0)
        {
 	 return 0; //Cupola::moveStart () returns 0 
+       }
+       if(( lastRa != tel_equ.ra)||( lastDec != tel_equ.dec)) {
+	 lastRa = tel_equ.ra ;
+	 lastDec = tel_equ.dec ;
+	 time(&sync_start_time);
        }
        return Cupola::moveStart ();
 }
