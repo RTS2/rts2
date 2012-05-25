@@ -134,6 +134,8 @@ int Cupola::moveStart ()
 
 int Cupola::moveStop ()
 {
+	targetPos.ra = NAN;
+	targetPos.dec = NAN;
 	maskState (DOME_CUP_MASK | BOP_EXPOSURE,
 		DOME_CUP_NOT_MOVE | DOME_CUP_NOT_SYNC);
 	infoAll ();
