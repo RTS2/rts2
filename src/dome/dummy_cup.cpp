@@ -115,7 +115,7 @@ class Dummy:public Cupola
 			return Cupola::initValues ();
 		}
 
-		virtual double getSplitWidth (double alt)
+		virtual double getSlitWidth (double alt)
 		{
 			return 1;
 		}

@@ -85,7 +85,7 @@ namespace rts2dome
   public:
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
-    virtual double getSplitWidth (double alt) ;
+    virtual double getSlitWidth (double alt) ;
     virtual int info () ;
     virtual int idle ();
     virtual void valueChanged (rts2core::Value * changed_value) ;
@@ -159,7 +159,7 @@ int Vermes::moveStart ()
   return Cupola::moveStart ();
 }
 
-double Vermes::getSplitWidth (double alt)
+double Vermes::getSlitWidth (double alt)
 {
   return -1;
 }

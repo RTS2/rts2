@@ -59,7 +59,7 @@ class Cupola:public Dome
 		 */
 		virtual bool needSlitChange ();
 		// calculate split width in arcdeg for given altititude; when copula don't have split at given altitude, returns -1
-		virtual double getSplitWidth (double alt) = 0;
+		virtual double getSlitWidth (double alt) = 0;
 
 		virtual int commandAuthorized (rts2core::Connection * conn);
 

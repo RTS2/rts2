@@ -168,7 +168,7 @@ bool Cupola::needSlitChange ()
 	if (isnan (targetPos.ra) || isnan (targetPos.dec))
 		return false;
 	getTargetAltAz (&targetHrz);
-	splitWidth = getSplitWidth (targetHrz.alt);
+	splitWidth = getSlitWidth (targetHrz.alt);
 	if (splitWidth < 0)
 		return false;
 	// get current az
