@@ -298,12 +298,17 @@ int Fli::initValues ()
 		return -1;
 	}
 	focType = std::string (ft);
-        meteo() ;
+	
+	if( TCmode->getValueInteger () != NO_TC) {
+	  meteo() ;
+	}
 	return Focusd::initValues ();
 }
 int Fli::idle ()
 {
-        meteo() ;
+	if( TCmode->getValueInteger () != NO_TC) {
+	  meteo() ;
+	}
 	return Focusd::idle ();
 }
 int Fli::info ()
@@ -324,7 +329,9 @@ int Fli::info ()
 	}
 
 	position->setValueInteger ((int) steps);
-        meteo() ;
+	if( TCmode->getValueInteger () != NO_TC) {
+	  meteo() ;
+	}
 	return Focusd::info ();
 }
 void Fli::meteo()
@@ -354,6 +361,11 @@ int Fli::setTo (double num)
 	if (ret)
 		return ret;
 
+	ret= isFocusing ();
+	if( ret != -2){
+	  logStream (MESSAGE_ERROR) << "Fli::setTo ignore, still moving the focuser" << sendLog;
+	  return -1;
+	}
 	long s = num - position->getValueInteger ();
 
 	ret = FLIStepMotorAsync (dev, s);
@@ -372,9 +384,6 @@ int Fli::setTo (double num)
 		ret = FLIGetStepperPosition (dev, &s);
 		if (ret)
 			return -1;
-		//		if (s == num)
-		// ToDo:
-		// 2011-10-18T07:04:17.599 CET FOC_FLI 1 timeout during moving focuser to 3160.899902, actual position is 3161
 		// num is declared to be float, double
 		if (((s+1) > num) && ((s-1) < num))
 			return 0;
@@ -492,6 +501,11 @@ int Fli::commandAuthorized (rts2core::Connection * conn)
 	if (conn->isCommand ("home"))
 	{
 		LIBFLIAPI ret;
+		int foc= isFocusing ();
+		if( foc != -2){
+		  logStream (MESSAGE_ERROR) << "Fli::commandAuthorized ignore, still moving the focuser" << sendLog;
+		  return -1;
+		}
 		ret = FLIHomeFocuser (dev);
 		if (ret)
 		{
