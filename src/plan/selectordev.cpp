@@ -107,7 +107,8 @@ class SelectorDev:public rts2db::DeviceDb
 		rts2plan::Selector * sel;
 
 		rts2core::ValueInteger *next_id;
-		rts2core::ValueInteger *next_plan_id;
+		rts2core::ValueInteger *next_qid;
+		rts2core::ValueBool *next_started;
 		rts2core::ValueTime *selectUntil;
 		rts2core::ValueTime *queueSelectUntil;
 		rts2core::ValueTime *nextTime;
@@ -177,8 +178,11 @@ SelectorDev::SelectorDev (int argc, char **argv):rts2db::DeviceDb (argc, argv, D
 	createValue (next_id, "next_id", "ID of next target for selection", false);
 	next_id->setValueInteger (-1);
 
-	createValue (next_plan_id, "next_plan_id", "ID of next plan, if next target is from plan", false);
-	next_plan_id->setValueInteger (-1);
+	createValue (next_qid, "next_qid", "QID of next plan (only used if next target is from queue)", false);
+	next_qid->setValueInteger (-1);
+
+	createValue (next_started, "next_started", "if true, next observation was already started - queue operation is not needed", false);
+	next_started->setValueBool (false);
 
 	createValue (selectUntil, "select_until", "observations should end by this time", false, RTS2_VALUE_WRITABLE);
 	selectUntil->setValueDouble (NAN);
@@ -405,17 +409,22 @@ int SelectorDev::selectNext ()
 		{
 			int id = -1;
 			int q = 1;
-			int next_pid = -1;
+			int n_qid = -1;
 			rts2plan::Queues::iterator iter;
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
 				iter->filter (getNow (), selectLength);
 				bool hard;
-				id = iter->selectNextObservation (next_pid, hard, next_time, next_length);
+				id = iter->selectNextObservation (n_qid, hard, next_time, next_length);
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);
-					next_plan_id->setValueInteger (next_pid);
+					if (next_id->getValueInteger () != id || next_qid->getValueInteger () != n_qid)
+					{
+						next_started->setValueBool (false);
+						sendValueAll (next_started);
+					}
+					next_qid->setValueInteger (n_qid);
 					interrupt->setValueBool (hard);
 					sendValueAll (queueSelectUntil);
 					return id;
@@ -467,14 +476,14 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 				logStream (MESSAGE_INFO) << "Selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " ," << eq << sendLog;
 				eq->front ().target->startObservation ();
 				// update plan entry..
-				if (next_plan_id->getValueInteger () >= 0)
+				if (next_started->getValueBool () == false)
 				{
-					rts2db::Plan p (next_plan_id->getValueInteger ());
+					rts2db::Plan p (next_qid->getValueInteger ());
 					p.load ();
 					p.setObsId (obs_id);
 
-					next_plan_id->setValueInteger (-1);
-					sendValueAll (next_plan_id);
+					next_started->setValueBool (true);
+					sendValueAll (next_started);
 				}
 				eq->beforeChange (getNow ());
 			}
@@ -482,7 +491,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 	}
 	next_id->setValueInteger (selectNext ());
 	sendValueAll (next_id);
-	sendValueAll (next_plan_id);
+	sendValueAll (next_qid);
 	nextTime->setValueDouble (getNow ());
 	sendValueAll (nextTime);
 
