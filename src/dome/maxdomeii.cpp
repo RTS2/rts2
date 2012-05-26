@@ -52,6 +52,12 @@
 #define EXIT_SHUTTER            0x04  // Command send to shutter on program exit
 #define ABORT_SHUTTER           0x07
 
+#define SEL_ABORT_SHUTTER 0x00
+#define SEL_CLOSE_SHUTTER 0x01
+#define SEL_OPEN_SHUTTER  0x02
+#define SEL_OPEN_UPPER_ONLY_SHUTTER 0x03
+#define SEL_EXIT_SHUTTER  0x04
+
 // Direction for azimuth movement
 #define MAXDOMEII_EW_DIR 0x01
 #define MAXDOMEII_WE_DIR 0x02
@@ -212,11 +218,11 @@ MaxDomeII::MaxDomeII (int argc, char **argv):Cupola (argc, argv)
 	block_shutter->setValueBool (true); 
 
 	createValue (shutterCmd, "MANUAL_SHUTTER", "manual shutter operation", false, RTS2_VALUE_WRITABLE);
-	shutterCmd->addSelVal ("ABORT_SHUTTER", (rts2core::Rts2SelData *) ABORT_SHUTTER);
-	shutterCmd->addSelVal ("CLOSE_SHUTTER", (rts2core::Rts2SelData *) CLOSE_SHUTTER);
-	shutterCmd->addSelVal ("OPEN_SHUTTER", (rts2core::Rts2SelData *) OPEN_SHUTTER);
-	shutterCmd->addSelVal ("OPEN_UPPER_ONLY_SHUTTER", (rts2core::Rts2SelData *) OPEN_UPPER_ONLY_SHUTTER);
-	shutterCmd->addSelVal ("EXIT_SHUTTER", (rts2core::Rts2SelData *) EXIT_SHUTTER);
+	shutterCmd->addSelVal ("ABORT_SHUTTER");
+	shutterCmd->addSelVal ("CLOSE_SHUTTER");
+	shutterCmd->addSelVal ("OPEN_SHUTTER");
+	shutterCmd->addSelVal ("OPEN_UPPER_ONLY_SHUTTER");
+	shutterCmd->addSelVal ("EXIT_SHUTTER");
 
 	createValue (openLowerShutter, "openLowerShutter", "true: lower shutter opened", false, RTS2_VALUE_WRITABLE);
 	openLowerShutter->setValueBool (false); 
@@ -585,7 +591,27 @@ int MaxDomeII::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
        if (oldValue ==  shutterCmd)
        {
 	 shutterCmd->setValueInteger (newValue->getValueInteger ());
-	 args[0] = (uint8_t)shutterCmd->getValueInteger ();
+
+	 switch ((size_t)shutterCmd->getValueInteger ())
+	 {
+		case SEL_ABORT_SHUTTER:
+			args[0]= ABORT_SHUTTER;
+			break;
+		case SEL_CLOSE_SHUTTER:
+			args[0]= CLOSE_SHUTTER;
+			break;
+		case SEL_OPEN_SHUTTER:
+			args[0]= OPEN_SHUTTER;
+			break;
+		case SEL_OPEN_UPPER_ONLY_SHUTTER:
+			args[0]= OPEN_UPPER_ONLY_SHUTTER;
+			break;
+		case SEL_EXIT_SHUTTER:
+		        args[0]= EXIT_SHUTTER;
+			break;
+		default:
+			args[0]= CLOSE_SHUTTER;
+	 }
 	 ret= exchangeMessage (SHUTTER_CMD, args, 1, args);
 	 if(ret)
 	   return ret;
