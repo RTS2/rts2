@@ -166,6 +166,19 @@ test6 = only_test
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>std</option>
+	</term>
+	<listitem>
+	  <para>
+	    Double statistics array. Similar to double array, but calculate
+	    array statistics (minimal, maximal values, average, median and
+	    standard deviation) and limit the number of entries. Applications
+	    can use JSON interface to add to statistical array.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
