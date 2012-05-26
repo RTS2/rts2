@@ -9,6 +9,8 @@ else
 	setenv last_tar_id -1
 endif
 
+if ( ! (${?last_tar_qid}) ) set last_tar_qid=-2
+
 if ( ! (${?err_prinout}) ) set err_prinout=0
 
 if ( -e $rts2abort ) then
@@ -16,6 +18,7 @@ if ( -e $rts2abort ) then
 	exit
 endif
 
+set tar_qid=`$xmlrpc -G SEL.next_qid`
 set tar_id=`$xmlrpc -G SEL.next_id`
 if ( $? != 0 ) then
 	if ( $err_prinout != 1 ) then
@@ -54,8 +57,9 @@ endif
 $xmlrpc -c SEL.next
 
 if ( $tar_id > 0 ) then
-	if ( $last_tar_id != $tar_id ) then
+	if ( $last_tar_id != $tar_id  || $last_tar_qid != tar_qid ) then
 		set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
+		set last_tar_qid=$tar_qid
 
 		set ora=`$xmlrpc -G IMGP.ora`
 		set odec=`$xmlrpc -G IMGP.odec`

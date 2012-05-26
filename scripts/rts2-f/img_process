@@ -22,7 +22,7 @@ fn=`echo $filename|sed 's#.*/##'`
 
 # calculate fwhm
 
-/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py --star-flux=2:520:510:A $fn
+/home/petr/rts2-sys/usr/share/rts2/scripts/fwhm.py --star-flux=2:520:510:A $fn $obs_id
 
 /home/mink/bin/fitssplit $fn opath=$tmpdir
 
