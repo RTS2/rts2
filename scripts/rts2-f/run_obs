@@ -62,11 +62,11 @@ if ( $tar_id > 0 ) then
 	
 		set rra=`printf "%.0f" $ora`
 		set rdec=`printf "%.0f" $odec`
-		#echo "initial offsets $rra $rdec $last_obs_id $obs_id"
-		if ( $rra > -30 && $rra < 30 ) then
+		#rts2-logcom "initial offsets $rra $rdec $last_obs_id $obs_id"
+		if ( $rra > -15 && $rra < 15 ) then
 			set rra = 0
 		endif
-		if ( $rdec > -30 && $rdec < 30 ) then
+		if ( $rdec > -15 && $rdec < 15 ) then
 			set rdec = 0
 		endif
 		if ( ( $rra != 0 || $rdec != 0 ) && $last_obs_id == $obs_id ) then
@@ -84,7 +84,7 @@ if ( $tar_id > 0 ) then
 			#rts2-logcom "executing tele set"
 			#tele set
 		#else
-		#	rts2-logcom "initial offsets are zero or not available, not offseting ($rra $rdec; $last_obs_id $obs_id)"
+			#rts2-logcom "initial offsets are zero or not available, not offseting ($rra $rdec; $last_obs_id $obs_id)"
 		endif
 	
 		setenv obs_id `$RTS2/bin/rts2-target --slew $tar_id`
@@ -101,6 +101,9 @@ if ( $tar_id > 0 ) then
 	
 		# for doauto script, to report in log file:
 		setenv rts2obstarg $name
+		
+		# don't auto adjust
+		unset exposure
 	
 		rts2-logcom "Starting observation of target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
 		set autog='UNKNOW'
