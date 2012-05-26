@@ -38,7 +38,6 @@ EXTRA_DIST = \
     rts2-xmlrpcd.xml \
     rts2-xmlrpcclient.xml \
     rts2-sensor-aag.xml \
-    rts2-autofocus.xml \
     rts2-talker.xml \
     rts2.target.xml \
     rts2-newtarget.xml \
@@ -92,7 +91,6 @@ man_MANS = \
     rts2-xmlrpcd.7 \
     rts2-xmlrpcclient.1 \
     rts2-sensor-aag.1 \
-    rts2-autofocus.1 \
     rts2-talker.1 \
     rts2.target.5 \
     rts2-newtarget.1 \
