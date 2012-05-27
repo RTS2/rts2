@@ -197,13 +197,6 @@ class TargetQueue:public std::list <QueuedTarget>
 		 */
 		void filterExpired (double now);
 
-		/*
-		 * Filter or skip observations which are not observable at the moment.
-		 * if skipBelowHorizon is set to false (default), remove observations which are currently
-		 * below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
-		 */
-		void filterUnobservable (double now, double maxLength = NAN);
-
 		/**
 		 * Remove target from queue.
 		 */
@@ -216,7 +209,14 @@ class TargetQueue:public std::list <QueuedTarget>
 		bool frontTimeExpires (double now);
 
 	private:
-		rts2db::CamList *cameras;	
+		rts2db::CamList *cameras;
+
+		/*
+		 * Filter or skip observations which are not observable at the moment.
+		 * if skipBelowHorizon is set to false (default), remove observations which are currently
+		 * below horizon. If skipBelowHorizon is true, put them to back of the queue (so they will not be scheduled).
+		 */
+		void filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped);
 };
 
 class SimulQueueTargets;

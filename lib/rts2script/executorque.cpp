@@ -193,7 +193,12 @@ void TargetQueue::sortQueue (double now)
 void TargetQueue::filter (double now, double maxLength)
 {
 	filterExpired (now);
-	filterUnobservable (now, maxLength);
+	std::list <QueuedTarget> skipped;
+	filterUnobservable (now, maxLength, skipped);
+	TargetQueue::iterator it = begin ();
+	if (it != end ())
+		it++;
+	insert (it, skipped.begin (), skipped.end ());
 	updateVals ();
 }
 
@@ -372,15 +377,14 @@ void TargetQueue::filterExpired (double now)
 	}
 }
 
-void TargetQueue::filterUnobservable (double now, double maxLength)
+void TargetQueue::filterUnobservable (double now, double maxLength, std::list <QueuedTarget> &skipped)
 {
 	if (!empty ())
 	{
-		rts2db::Target *firsttar = NULL;
 		time_t n = now;
 		double JD = ln_get_julian_from_timet (&n);
 
-		for (ExecutorQueue::iterator iter = begin (); iter != end () && iter->target != firsttar;)
+		for (TargetQueue::iterator iter = begin (); iter != end ();)
 		{
 			// isAboveHorizon changes jd parameter - we would like to keep the current time
 		  	double tjd = JD;
@@ -411,12 +415,9 @@ void TargetQueue::filterUnobservable (double now, double maxLength)
 
 			if (getSkipBelowHorizon () || shift_circular)
 			{
-				if (firsttar == NULL)
-					firsttar = iter->target;
-
 				logStream (MESSAGE_WARNING) << "Target " << iter->target->getTargetName () << " (" << iter->target->getTargetID () << ") is at " << LibnovaDate (tjd) << " unobservable" << sendLog;
 
-				push_back (*iter);
+				skipped.push_back (*iter);
 				iter = erase (iter);
 			}
 			else
