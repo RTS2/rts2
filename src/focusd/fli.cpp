@@ -188,13 +188,13 @@ int Fli::initHardware ()
 			def = getPosition ();
 		}
 		// calibrate by moving to home position, then move to default position
-		//ret = FLIHomeFocuser (dev);
-		//if (ret)
-		//{
-		//	logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
-		//	return -1;
-		//}
-		//setPosition (defaultPosition->getValueInteger ());
+		ret = FLIHomeFocuser (dev);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot home focuser, return value: " << ret << sendLog;
+			return -1;
+		}
+		setPosition (defaultPosition->getValueInteger ());
 	}
 
 	return 0;
