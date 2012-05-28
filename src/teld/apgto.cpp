@@ -1443,6 +1443,8 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 		// else oldValue == APguide_rate
 
 		cmd[3] = '0' + newValue->getValueInteger ();
+		// ToDo: test 2012-05-28, could not change slew rate
+		logStream (MESSAGE_DEBUG) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
 		return serConn->writePort (cmd, 9) ? -2 : 0;
 	}
 	if (oldValue == raGuide || oldValue == decGuide)
@@ -1619,7 +1621,6 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
 int APGTO::info ()
 {
   int ret ;
-  int flip= -1 ;
   int error= -1 ;
   time_t now;
 
@@ -1659,15 +1660,14 @@ int APGTO::info ()
   }
 
   if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-    flip = 1 ;
+    telFlip->setValueInteger (1);
   } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
-    flip= 0 ;
+    telFlip->setValueInteger (0);
   } else {
     error = ERROR_IN_INFO ;
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve relative angle (declination axis, hour axis)" << sendLog;
   }
   
-  telFlip->setValueInteger (flip);
   if (tel_read_azimuth () || tel_read_altitude ()) {
     error = ERROR_IN_INFO ;
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve horizontal coordinates" << sendLog;
@@ -1676,6 +1676,16 @@ int APGTO::info ()
   if( error== ERROR_IN_INFO) {
     return -1 ;
   }
+  // check meridian transition while tracking
+  double HA= fmod( localSiderealTime()- object.ra+ 360., 360.) ;
+  if(( HA < on_set_HA)&& ( tracking->getValueBool())&& ( slew_state->getValueBool()==false)){
+    transition_while_tracking->setValueBool(true) ;
+    logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
+  } else {
+    // Do not reset here!
+    // Do that if a new successful slew occured 
+  }
+
   // while the telecope is tracking Astro-Physics controller does not
   // carry out any checks, meaning that it turns for ever
   // 
@@ -1695,24 +1705,10 @@ int APGTO::info ()
   observer.lat = telLatitude->getValueDouble ();
 
 
-  // HA= [0.,360.], HA monoton increasing, but not strictly
-  // man fmod: On success, these functions return the value x - n*y
-  // e.g. if set on_set_HA=360.: 360. - 1 * 360.= 0.
-  // after a slew HA > 0, therefore no transition occurs
-  // wildi ToDo: verify the cases
-  // move_ha_sg 00:00:00  0:
-  // move_ha_sg 24:00:00  0:
-  // with the Astro-Physics mount
-  double HA= fmod( localSiderealTime()- object.ra+ 360., 360.) ;
-  if(( HA < on_set_HA)&& ( tracking->getValueBool())&& ( slew_state->getValueBool()==false)){
-    transition_while_tracking->setValueBool(true) ;
-    logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
-  } else {
-    // Do not reset here!
-    // Do that if a new successful slew occured 
-  }
-
-  if ((getState () & TEL_MOVING) || (getState () & TEL_PARKING))
+  //check only while not slewing
+  //ToDo:  was if ((getState () & TEL_MOVING) || (getState () & TEL_PARKING))
+  // check that if it works, otherwise use slew_state->getValueBool()==false
+  if( ! (((getState () & TEL_MASK_MOVING) == TEL_MOVING) || ((getState () & TEL_MASK_MOVING) == TEL_PARKING)))
     {
       int stop= 0 ;
       if (!(strcmp("West", DECaxis_HAcoordinate->getValue())))
@@ -1775,28 +1771,6 @@ int APGTO::info ()
 		  return -1;
 		}
 	      logStream (MESSAGE_ERROR) << "APGTO::info stop tracking but not motion" << sendLog;
-	    }
-	}
-    }
-  else
-    {
-      ret = isMoving ();
-      if (ret > 0)
-	{
-			// still moving, ignore that here
-	}
-      else
-	{
-	  switch (ret)
-	    {
-	    case -2:
-	      break;
-	    case -1: // read error 
-	      logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
-	      break ;
-	    default: 
-	      logStream (MESSAGE_ERROR) << "APGTO::info no valid case :" << ret << sendLog;
-	      break ;
 	    }
 	}
     }
@@ -1974,6 +1948,7 @@ int APGTO::checkLongitudeLatitude (double limit) {
 int APGTO::setBasicData()
 {
 	// 600 slew speed, 0.25x guide, 12x centering
+        // ToDo: see if 0.25 is a good value for guiding
 	int ret = serConn->writePort (":RS0#:RG0#:RC0#", 15);
 	if (ret < 0)
 		return -1;
