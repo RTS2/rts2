@@ -1677,6 +1677,13 @@ int APGTO::info ()
     return -1 ;
   }
   // check meridian transition while tracking
+  struct ln_equ_posn object;
+  struct ln_lnlat_posn observer;
+  object.ra = fmod( getTelRa () + 360., 360.);
+  object.dec= fmod( getTelDec (), 90.);
+  observer.lng = telLongitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
+
   double HA= fmod( localSiderealTime()- object.ra+ 360., 360.) ;
   if(( HA < on_set_HA)&& ( tracking->getValueBool())&& ( slew_state->getValueBool()==false)){
     transition_while_tracking->setValueBool(true) ;
@@ -1697,12 +1704,6 @@ int APGTO::info ()
   // West:   HA < 15.
   // East:  Alt > 10.
 
-  struct ln_equ_posn object;
-  struct ln_lnlat_posn observer;
-  object.ra = fmod( getTelRa () + 360., 360.);
-  object.dec= fmod( getTelDec (), 90.);
-  observer.lng = telLongitude->getValueDouble ();
-  observer.lat = telLatitude->getValueDouble ();
 
 
   //check only while not slewing

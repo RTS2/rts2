@@ -382,14 +382,11 @@ int Fli::setTo (double num)
 	//ToDo was ret = FLIStepMotorAsync (dev, s);
 	// the async version can not travel more than 4095 steps
 	// this one can:
-	ret = FLIStepMotor (dev, s);a
+	ret = FLIStepMotor (dev, s);
 	if (ret)
 		return -1;
 
 	ret = FLIGetStepsRemaining (dev, &s);
-
-	fprintf(stderr,"rem  setto  FLI diff s=%ld, num=%ld, position=%ld\n", s, (long)num, (long)position->getValueDouble ());
-	double temp;
 
 	// wait while move starts..
 	double timeout = getNow () + 2;
