@@ -263,7 +263,7 @@ class ExecutorQueue:public TargetQueue
 		 * 
 		 * @return -1 on failure, indicating that the queue does not hold any valid targets, otherwise target id of selected observation.
 		 */
-		int selectNextObservation (int &pid, bool &hard, double &next_time, double next_length);
+		int selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length);
 
 		/**
 		 * Simulate selection of next observation from the queue. Adjust sq list if 
