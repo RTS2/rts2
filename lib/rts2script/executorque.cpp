@@ -586,7 +586,7 @@ void ExecutorQueue::clearNext ()
 	updateVals ();
 }
 
-int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_time, double next_length)
+int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double &next_time, double next_length)
 {
 	if (queueEnabled->getValueBool () == false)
 		return -1;
@@ -600,6 +600,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 			if (isnan (next_length))
 			{
 				pid = front ().planid;
+				qid = front ().qid;
 				return front ().target->getTargetID ();
 			}
 			else
@@ -609,6 +610,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 				if (tl < next_length)
 				{
 					pid = front ().planid;
+					qid = front ().qid;
 					if (isnan (front().t_start))
 					{
 						hard = false;

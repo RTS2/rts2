@@ -409,13 +409,14 @@ int SelectorDev::selectNext ()
 		{
 			int id = -1;
 			int q = 1;
+			int n_pid = -1;
 			int n_qid = -1;
 			rts2plan::Queues::iterator iter;
 			for (iter = queues.begin (); iter != queues.end (); iter++, q++)
 			{
 				iter->filter (getNow (), selectLength);
 				bool hard;
-				id = iter->selectNextObservation (n_qid, hard, next_time, next_length);
+				id = iter->selectNextObservation (n_pid, n_qid, hard, next_time, next_length);
 				if (id >= 0)
 				{
 					lastQueue->setValueInteger (q);
