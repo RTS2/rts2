@@ -1157,9 +1157,7 @@ int OpenTPL::saveModel ()
 	return 0;
 }
 
-
-int
-OpenTPL::loadModel ()
+int OpenTPL::loadModel ()
 {
 	std::ifstream ifs;
 	int status = TPL_OK;
@@ -1219,9 +1217,7 @@ int OpenTPL::resetMount ()
 	return Telescope::resetMount ();
 }
 
-
-int
-OpenTPL::startResync ()
+int OpenTPL::startResync ()
 {
 	int status = 0;
 	double sep;
@@ -1298,19 +1294,16 @@ int OpenTPL::stopMove ()
 	status = opentplConn->get ("ZD.CURRPOS", zd, &status);
 	if (status)
 	{
-		logStream (MESSAGE_DEBUG) << "stopMove cannot get ZD! (" << status <<
-			")" << sendLog;
+		logStream (MESSAGE_DEBUG) << "stopMove cannot get ZD! (" << status << ")" << sendLog;
 		return -1;
 	}
-	if (fabs (zd) < 1)
+	if (getPointingModel () == POINTING_ALTAZ && fabs (zd) < 1)
 	{
-		logStream (MESSAGE_DEBUG) << "stopMove suspicious ZD.. " << zd <<
-			sendLog;
+		logStream (MESSAGE_DEBUG) << "stopMove suspicious ZD.. " << zd << sendLog;
 		status = setTelescopeTrack (0);
 		if (status)
 		{
-			logStream (MESSAGE_DEBUG) << "stopMove cannot set track: " <<
-				status << sendLog;
+			logStream (MESSAGE_DEBUG) << "stopMove cannot set track: " << status << sendLog;
 			return -1;
 		}
 		return 0;
