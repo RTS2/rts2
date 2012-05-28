@@ -1299,7 +1299,7 @@ int OpenTPL::stopMove ()
 	}
 	if (getPointingModel () == POINTING_ALTAZ && fabs (zd) < 1)
 	{
-		logStream (MESSAGE_DEBUG) << "stopMove suspicious ZD.. " << zd << sendLog;
+		logStream (MESSAGE_DEBUG) << "stopMove suspicious ZD.. " << zd << " set TRACK to 0" << sendLog;
 		status = setTelescopeTrack (0);
 		if (status)
 		{
