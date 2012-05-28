@@ -599,6 +599,7 @@ int ExecutorQueue::selectNextObservation (int &pid, bool &hard, double &next_tim
 		{
 			if (isnan (next_length))
 			{
+				pid = front ().planid;
 				return front ().target->getTargetID ();
 			}
 			else
