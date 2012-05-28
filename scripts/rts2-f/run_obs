@@ -9,7 +9,7 @@ else
 	setenv last_tar_id -1
 endif
 
-if ( ! (${?last_tar_qid}) ) set last_tar_qid=-2
+if ( ! (${?last_tar_qid}) ) setenv last_tar_qid -2
 
 if ( ! (${?err_prinout}) ) set err_prinout=0
 
@@ -57,7 +57,7 @@ endif
 $xmlrpc -c SEL.next
 
 if ( $tar_id > 0 ) then
-	if ( $last_tar_id != $tar_id  || $last_tar_qid != tar_qid ) then
+	if ( $last_tar_id != $tar_id || $last_tar_qid != $tar_qid ) then
 		set last_obs_id=`$xmlrpc --quiet -G IMGP.obs_id`
 		set last_tar_qid=$tar_qid
 
