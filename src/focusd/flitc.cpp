@@ -81,6 +81,7 @@ class Fli:public Focusd
                 char *TCmodeStr ; 
 
                 rts2core::ValueDouble *temperatureMeteo;
+                rts2core::ValueDouble *temperatureFLI;
 };
 
 };
@@ -94,6 +95,7 @@ Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 	fliDebug = FLIDEBUG_NONE;
 	name = NULL;
 
+	createValue (temperatureFLI, "TEMP_FLI", "temperature from the FLI device", true); //go to FITS
 	createValue (temperatureMeteo, "TEMP_METEO", "temperature from the meteo device", true); //go to FITS
 	createValue (TCtemperatureRef, "TC_TEMP_REF", "temperature at the time when FOC_DEF was set", false, RTS2_VALUE_WRITABLE);
 	createValue (TCFocOffset, "FOC_TC", "absolute position or offset calculated by temperature compensation", false);
@@ -316,6 +318,7 @@ int Fli::info ()
 	LIBFLIAPI ret;
 
 	long steps;
+	double tempFLI;
 
 	ret = FLIGetStepperPosition (dev, &steps);
 	if (ret)
@@ -329,9 +332,16 @@ int Fli::info ()
 	}
 
 	position->setValueInteger ((int) steps);
+	ret= FLIReadTemperature(dev, FLI_TEMPERATURE_INTERNAL, &tempFLI) ;
+	if (ret)
+	  return -1;
+
+	temperatureFLI->setValueDouble(tempFLI);
 	if( TCmode->getValueInteger () != NO_TC) {
 	  meteo() ;
 	}
+
+
 	return Focusd::info ();
 }
 void Fli::meteo()
@@ -366,11 +376,21 @@ int Fli::setTo (double num)
 	  logStream (MESSAGE_ERROR) << "Fli::setTo ignore, still moving the focuser" << sendLog;
 	  return -1;
 	}
-	long s = num - position->getValueInteger ();
+	long s = (long)num - (long)position->getValueDouble ();
+	fprintf(stderr,"     setto  FLI diff s=%ld, num=%ld, position=%ld\n", s, (long)num, (long)position->getValueDouble ());
 
-	ret = FLIStepMotorAsync (dev, s);
+	//ToDo was ret = FLIStepMotorAsync (dev, s);
+	// the async version can not travel more than 4095 steps
+	// this one can:
+	ret = FLIStepMotor (dev, s);a
 	if (ret)
 		return -1;
+
+	ret = FLIGetStepsRemaining (dev, &s);
+
+	fprintf(stderr,"rem  setto  FLI diff s=%ld, num=%ld, position=%ld\n", s, (long)num, (long)position->getValueDouble ());
+	double temp;
+
 	// wait while move starts..
 	double timeout = getNow () + 2;
 	do
@@ -384,10 +404,10 @@ int Fli::setTo (double num)
 		ret = FLIGetStepperPosition (dev, &s);
 		if (ret)
 			return -1;
-		// num is declared to be float, double
+		
 		if (((s+1) > num) && ((s-1) < num))
 			return 0;
-			//		  logStream (MESSAGE_ERROR) << "WHILE focuser to " << num << ", actual position is " << s << " " << (s+ 1) <<" " << (s-1) << sendLog;
+
 	} while (getNow () < timeout);
 	
 	logStream (MESSAGE_ERROR) << "timeout during moving focuser to " << num << ", actual position is " << s << sendLog;
