@@ -28,9 +28,9 @@ using namespace rts2db;
 int UserSet::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_id;
-		VARCHAR db_login[25];
-		VARCHAR db_email[200];
+	int db_id;
+	VARCHAR db_login[25];
+	VARCHAR db_email[200];
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL BEGIN TRANSACTION;
@@ -90,7 +90,7 @@ int createUser (std::string login, std::string password, std::string email)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
-	VARCHAR db_password[25];
+	VARCHAR db_password[101];
 	VARCHAR db_email[200];
 	EXEC SQL END DECLARE SECTION;
 
@@ -101,7 +101,7 @@ int createUser (std::string login, std::string password, std::string email)
 	}
 
 #ifdef HAVE_CRYPT
-	char salt[100];
+	char salt[101];
 	strcpy (salt, "$6$");
 	random_salt (salt + 3, 8);
 	strcpy (salt + 11, "$");
