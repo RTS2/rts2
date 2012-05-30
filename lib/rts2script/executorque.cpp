@@ -152,7 +152,7 @@ void TargetQueue::beforeChange (double now)
 			// shift only if queue is not empty 
 			if (!empty ())
 			{
-				push_back (createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ()));
+				push_back (QueuedTarget (front (), createTarget (front ().target->getTargetID (), *observer, front ().target->getWatchConnection ())));
 				delete front ().target;
 				pop_front ();
 			}
