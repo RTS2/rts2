@@ -173,7 +173,10 @@ int parseDate (const char *in_date, struct ln_date *out_time, bool forceUT, bool
 	if (forceUT == false && islocal)
 	{
 		double JD = ln_get_julian_day (out_time);
-		JD += timezone / 86400.0;
+		struct timeval tv;
+		struct timezone tz;
+		gettimeofday (&tv, &tz);
+		JD += tz.tz_minuteswest / 1440.0;
 		ln_get_date (JD, out_time);
 		if (out_time->seconds < 0.001)
 			out_time->seconds = 0;
