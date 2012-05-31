@@ -71,9 +71,16 @@ int ConnTCP::init ()
         bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
         apc_addr.sin_port = htons(port);
 
-        ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
-        if (ret == -1)
-	 	throw ConnCreateError (this, "cannot connect socket", errno);
+	for (int i = 0; i < 3; i++)
+	{
+        	ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
+		if (ret == 0)
+			break;
+	        if (ret == -1 && errno != ENETUNREACH)
+		 	throw ConnCreateError (this, "cannot connect socket", errno);
+		logStream (MESSAGE_WARNING) << "received network unreachable, waiting 1 second to try again" << sendLog;
+		sleep (1);
+	}
 
         ret = fcntl (sock, F_SETFL, O_NONBLOCK);
         if (ret)

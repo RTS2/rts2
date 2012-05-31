@@ -51,7 +51,7 @@ ConnError::ConnError (Connection *conn, const char *_msg): Error (_msg)
 
 ConnError::ConnError (Connection *conn, const char *_msg, int _errn): Error ()
 {
-	setMsg (std::string ("connection error: ") + _msg + strerror (_errn));
+	setMsg (std::string ("connection error ") + _msg + ": " + strerror (_errn));
 	conn->connectionError (-1);
 }
 
