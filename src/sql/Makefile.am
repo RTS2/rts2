@@ -7,4 +7,6 @@ dist_sqldata_DATA =     grant.sql		\
 
 dist_sqldata_SCRIPTS = rts2-builddb
 
+EXTRA_DIST = rts2-configdb
+
 bin_SCRIPTS = rts2-configdb
