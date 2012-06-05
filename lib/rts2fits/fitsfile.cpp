@@ -22,6 +22,7 @@
 
 #include "block.h"
 #include "utilsfunc.h"
+#include "libnova_cpp.h"
 
 #include "config.h"
 
@@ -557,6 +558,48 @@ void FitsFile::getValue (const char *name, char **value, int valLen, bool requir
 
 	fits_read_key_longstr (getFitsFile (), (char *) name, value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
+}
+
+void FitsFile::getValueRa (const char *name, double &value, bool required, char *comment)
+{
+	char val[100];
+	try
+	{
+		getValue (name, val, 100, NULL, true, comment);
+		std::istringstream _ra (val);
+		LibnovaRa lra;
+		_ra >> lra;
+		if (_ra.fail ())
+			value = NAN;
+		else
+			value = lra.getRa ();
+	}
+	catch (rts2core::Error &er)
+	{
+		if (required)
+			throw (er);
+	}
+}
+
+void FitsFile::getValueDec (const char *name, double &value, bool required, char *comment)
+{
+	char val[100];
+	try
+	{
+		getValue (name, val, 100, NULL, true, comment);
+		std::istringstream _dec (val);
+		LibnovaDec ldec;
+		_dec >> ldec;
+		if (_dec.fail ())
+			value = NAN;
+		else
+			value = ldec.getDec ();
+	}
+	catch (rts2core::Error &er)
+	{
+		if (required)
+			throw (er);
+	}
 }
 
 double FitsFile::getValue (const char *name)

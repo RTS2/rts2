@@ -1931,7 +1931,19 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 			setValue (name, val->getValueDouble (), desc);
 			break;
 		case RTS2_VALUE_DOUBLE:
-			setValue (name, val->getValueDouble (), desc);
+			switch (val->getValueDisplayType ())
+			{
+				case RTS2_DT_RA:
+					{
+						std::ostringstream os;
+						os << LibnovaRa (val->getValueDouble ());
+						setValue (name, os.str ().c_str (), desc);
+					}
+					break;
+				default:
+					setValue (name, val->getValueDouble (), desc);
+					break;
+			}
 			break;
 		case RTS2_VALUE_FLOAT:
 			setValue (name, val->getValueFloat (), desc);
@@ -1955,13 +1967,17 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 				strcat (v_name, "RA");
 				strcpy (v_desc, desc);
 				strcat (v_desc, " RA");
-				setValue (v_name, ((rts2core::ValueRaDec *) val)->getRa (), v_desc);
+				std::ostringstream _ra;
+				_ra << LibnovaRa (((rts2core::ValueRaDec *) val)->getRa ());
+				setValue (v_name, _ra.str ().c_str (), v_desc);
 				// now DEC
 				strcpy (v_name, name);
 				strcat (v_name, "DEC");
 				strcpy (v_desc, desc);
 				strcat (v_desc, " DEC");
-				setValue (v_name, ((rts2core::ValueRaDec *) val)->getDec (), v_desc);
+				std::ostringstream _dec;
+				_dec << LibnovaDec (((rts2core::ValueRaDec *) val)->getDec ());
+				setValue (v_name, _dec.str ().c_str (), v_desc);
 				// if it is mount ra dec - write heliocentric time
 				if (!strcmp ("TEL", name))
 				{
@@ -1969,7 +1985,7 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 					struct ln_equ_posn equ;
 					equ.ra = ((rts2core::ValueRaDec *) val)->getRa ();
 					equ.dec = ((rts2core::ValueRaDec *) val)->getDec ();
-					setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "helioceentric JD");
+					setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "heliocentric JD");
 				}
 
 				// free memory
@@ -2303,14 +2319,13 @@ double Image::getLongtitude ()
 double Image::getExposureJD ()
 {
 	time_t tim = getCtimeSec ();
-	return ln_get_julian_from_timet (&tim) +
-		getCtimeUsec () / USEC_SEC / 86400.0;
+	return ln_get_julian_from_timet (&tim) + getCtimeUsec () / USEC_SEC / 86400.0;
 }
 
 double Image::getExposureLST ()
 {
 	double ret;
-	ret = ln_get_apparent_sidereal_time (getExposureJD () * 15.0 + getLongtitude ());
+	ret = 15.0 * ln_get_apparent_sidereal_time (getExposureJD ()) + getLongtitude ();
 	return ln_range_degrees (ret) / 15.0;
 }
 

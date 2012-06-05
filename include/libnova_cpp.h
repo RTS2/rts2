@@ -47,10 +47,6 @@ double timetFromJD (double JD);
  */
 class LibnovaRa
 {
-	protected:
-		double ra;
-		void toHms (struct ln_hms *ra_hms);
-		void fromHms (struct ln_hms *ra_hms);
 	public:
 		LibnovaRa () { ra = rts2_nan ("f"); }
 
@@ -65,6 +61,11 @@ class LibnovaRa
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 		friend std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra);
+
+	protected:
+		double ra;
+		void toHms (struct ln_hms *ra_hms);
+		void fromHms (struct ln_hms *ra_hms);
 };
 
 /**
@@ -136,17 +137,6 @@ class LibnovaRaComp:public LibnovaRa
  */
 class LibnovaDeg
 {
-	private:
-		void fromNegDouble (bool neg, double res)
-		{
-			if (neg)
-				res *= -1;
-			deg = res;
-		}
-	protected:
-		double deg;
-		void toDms (struct ln_dms *deg_dms);
-		void fromDms (struct ln_dms *deg_dms);
 	public:
 		LibnovaDeg () { deg = rts2_nan ("f"); }
 		LibnovaDeg (double in_deg) { deg = in_deg; }
@@ -168,6 +158,17 @@ class LibnovaDeg
 		 * readed as two LibnovaDeg values.
 		 */
 		friend std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
+	protected:
+		double deg;
+		void toDms (struct ln_dms *deg_dms);
+		void fromDms (struct ln_dms *deg_dms);
+	private:
+		void fromNegDouble (bool neg, double res)
+		{
+			if (neg)
+				res *= -1;
+			deg = res;
+		}
 };
 
 /**
@@ -311,9 +312,6 @@ class LibnovaDegDist:public LibnovaDeg
  */
 class LibnovaRaDec
 {
-	private:
-		LibnovaRa * ra;
-		LibnovaDec *dec;
 	public:
 		LibnovaRaDec ()
 		{
@@ -409,6 +407,9 @@ class LibnovaRaDec
 		 * Get Ra and Dec from string.
 		 */
 		int parseString (const char *radec);
+	private:
+		LibnovaRa * ra;
+		LibnovaDec *dec;
 };
 
 /**
@@ -420,9 +421,6 @@ class LibnovaRaDec
  */
 class LibnovaHrz
 {
-	private:
-		LibnovaDeg90 * alt;
-		LibnovaDeg360 *az;
 	public:
 		LibnovaHrz ()
 		{
@@ -483,6 +481,9 @@ class LibnovaHrz
 		}
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz);
+	private:
+		LibnovaDeg90 * alt;
+		LibnovaDeg360 *az;
 };
 
 /**
@@ -583,9 +584,6 @@ class LibnovaDateDouble:public LibnovaDate
  */
 class Rts2Night
 {
-	private:
-		time_t from;
-		time_t to;
 	public:
 		Rts2Night ()
 		{
@@ -604,6 +602,9 @@ class Rts2Night
 		double getJDTo () { return ln_get_julian_from_timet (&to); }
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2Night night);
+	private:
+		time_t from;
+		time_t to;
 };
 
 /**
@@ -615,8 +616,6 @@ class Rts2Night
  */
 class LibnovaPos
 {
-	private:
-		struct ln_lnlat_posn pos;
 	public:
 		LibnovaPos (const struct ln_lnlat_posn *in_pos)
 		{
@@ -633,6 +632,8 @@ class LibnovaPos
 		double getLatitude () { return pos.lat; }
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
+	private:
+		struct ln_lnlat_posn pos;
 };
 
 /**

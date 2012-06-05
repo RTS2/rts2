@@ -202,9 +202,12 @@ class FitsFile: public rts2core::Expander
 		void getValue (const char *name, long &value, bool required = false, char *comment = NULL);
 		void getValue (const char *name, float &value, bool required = false, char *comment = NULL);
 		void getValue (const char *name, double &value, bool required = false, char *comment = NULL);
-		void getValue (const char *name, char &value, bool required = false, char *command = NULL);
+		void getValue (const char *name, char &value, bool required = false, char *comment = NULL);
 		void getValue (const char *name, char *value, int valLen, const char* defVal = NULL, bool required = false, char *comment = NULL);
 		void getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
+
+		void getValueRa (const char *name, double &value, bool required = false, char *comment = NULL);
+		void getValueDec (const char *name, double &value, bool required = false, char *comment = NULL);
 
 		/**
 		 * Get double value from image.
