@@ -507,7 +507,11 @@ int Sidecar::startExposure ()
 
 long Sidecar::isExposing ()
 {
-	int ret = sidecarConn->pingCommand ();
+	int ret = Camera::isExposing ();
+	if (ret > 0)
+		return ret;
+
+	ret = sidecarConn->pingCommand ();
 	std::cout << "isExposing ret " << ret << std::endl;
 	switch (ret)
 	{
