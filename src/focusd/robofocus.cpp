@@ -39,16 +39,16 @@
 //NNNNNN: are six decimal digits with leading zeros as necessary
 //Z: is a checksum character of value 0-255. Its value is the result of adding all the previous characters
 //together and setting Z equal to the least significant byte.
-#define CMD_FIRMWARE          "FV" //FVXXXXXXZ, FVXXXXXXZ
-#define CMD_FOCUS_MOVE_IN     "FI" //FI?XXXXXZ 
-#define CMD_FOCUS_MOVE_OUT    "FO" //FO?XXXXXZ
-#define CMD_TEMP_GET          "FT" //FTXXXXXXZ, FTXXNNNNZ
-#define CMD_FOCUS_GOTO        "FG" //FG?XXXXXZ, FD?XXXXXZ, if moving: O, I foreach step
-#define CMD_SETAS_CURRENT_POS "FS" //FS?XXXXXZ, new current position (format?)
-#define CMD_BACKLASH          "FB" //FBNXXXXXZ, FBNXXXXXZ
-#define CND_Motor_SETTINGS    "FC" //FCABCDEFZ, FCABCDEFZ
-#define CMD_MAX_TRAVEL        "FL" //FL?XXXXXZ, FL?XXXXXZ
-#define CMD_IO                "FP" //FP??XXXXZ, FP??XXXXZ
+//#define CMD_FIRMWARE          "FV" //FVXXXXXXZ, FVXXXXXXZ
+//#define CMD_FOCUS_MOVE_IN     "FI" //FI?XXXXXZ, FI?XXXXXZ 
+//#define CMD_FOCUS_MOVE_OUT    "FO" //FO?XXXXXZ, FO?XXXXXZ
+//#define CMD_TEMP_GET          "FT" //FTXXXXXXZ, FTXXNNNNZ
+//#define CMD_FOCUS_GOTO        "FG" //FG?XXXXXZ, FD?XXXXXZ, if moving: O, I foreach step
+//#define CMD_SETAS_CURRENT_POS "FS" //FS?XXXXXZ, new current position (format?)
+//#define CMD_BACKLASH          "FB" //FBNXXXXXZ, FBNXXXXXZ
+//#define CND_Motor_SETTINGS    "FC" //FCABCDEFZ, FCABCDEFZ
+//#define CMD_MAX_TRAVEL        "FL" //FL?XXXXXZ, FL?XXXXXZ
+//#define CMD_IO                "FP" //FP??XXXXZ, FP??XXXXZ
 
 
 #define SEL_ABSOLUTE 0x00
@@ -60,6 +60,7 @@
 #define SEL_READ_MAX_TRAVEL  0x01
 
 // pre 3.20 versions behave differently, see robofocus manual
+// those devices are not yet supported
 #define FIRMWARE_32 "3.20"
 
 #include "focusd.h"
@@ -104,7 +105,7 @@ class Robofocus:public Focusd
                 rts2core::ValueInteger *backlashAmount;
                 int setBacklash();
                 int sendReceive( char *cmd, char *rbuf);
-                int check_checksum (char *sbuf, char *rbuf);
+                int checkReadBuffer (char *sbuf, char *rbuf);
                 rts2core::ValueSelection *calibration; 
                 int discardOI( char *rbuf) ;
 	protected:
@@ -136,11 +137,10 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 
-	//ToDo decide wht goes to FITS file
 	createValue (foc_tar_rel, "FOC_TAR_REL", "target position in relative mode", false, RTS2_VALUE_WRITABLE);
 	createValue (setAsCurrentPosition, "setAsCurrentPosition", "set value as current position (sync) [minTicks,maxTicks]", false, RTS2_VALUE_WRITABLE);
 
-	createValue (duty, "duty", "duty cycle [0,100]", false, RTS2_VALUE_WRITABLE );
+	createValue (duty, "duty", "duty cycle [0,250]", false, RTS2_VALUE_WRITABLE );
 	createValue (microStepPause, "microStepPause", "speed, pause between micro steps [msec]", false, RTS2_VALUE_WRITABLE);
 	createValue (microStepPerTick, "microStepPerTick", "fineness, steps per tick [1,255]", false, RTS2_VALUE_WRITABLE);
 	duty->setValueInteger(10);
@@ -149,8 +149,8 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 
 	createValue (minTicks, "minTicks", "lower limit [0,64000],[tick]", false, RTS2_VALUE_WRITABLE);
 	createValue (maxTicks, "maxTicks", "upper limit [0,64000],[tick]", false, RTS2_VALUE_WRITABLE);
-	minTicks->setValueInteger(100);
-	maxTicks->setValueInteger(55000);
+	minTicks->setValueInteger(2);
+	maxTicks->setValueInteger(65000);
 
 	// maxTravel not present: min and max travel are set via minTicks, maxTicks
         // 
@@ -159,17 +159,19 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
         // If option maxTravel is present, then settings are as follows:
         // minTicks= 2 
         // maxTicks= maxTravel
-        // maxTravel is transmitted to robofocus
+        // maxTravel is set and transmitted to robofocus
 	createValue (maxTravel, "maxTravel", "maximum travel either read back or set as option (see calibration procedure in robofocus manual)", false);
 	maxTravel->setValueInteger(-1);
 	createValue (gotoMode, "gotoMode", "goto mode either absolute or relative", false, RTS2_VALUE_WRITABLE);
 	gotoMode->addSelVal ("ABSOLUTE"); 
 	gotoMode->addSelVal ("RELATIVE");
-	//ToDo: better help texts
-	createValue (backlashMode, "backlashMode", "backlashMode", false, RTS2_VALUE_WRITABLE);
+	gotoMode->setValueInteger(SEL_ABSOLUTE);
+   
+	createValue (backlashMode, "backlashMode", "backlash mode add either ro In or OUT movement", false, RTS2_VALUE_WRITABLE);
 	backlashMode->addSelVal ("ADDtoIN");
 	backlashMode->addSelVal ("ADDtoOUT");
 	createValue (backlashAmount, "backlashAmount", "backlash amount", false, RTS2_VALUE_WRITABLE);
+	backlashAmount->setValueInteger(0);
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -184,10 +186,10 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 	createValue (firmware, "firmware", "firmware", false);
 	createValue (calibration, "calibration", "calibrate maximum travel, see robofocus manual", false, RTS2_VALUE_WRITABLE);
 	calibration->addSelVal ("START"); 
-	calibration->addSelVal ("READ max. travel");
+	calibration->addSelVal ("READ maxTravel");
 
 	addOption ('f', NULL, 1, "device file (usualy /dev/ttySx");
-	addOption (OPT_DUTY, "dutyCycle",  1, "duty cycle, value [0,100]");
+	addOption (OPT_DUTY, "dutyCycle",  1, "duty cycle, value [0,250]");
 	addOption (OPT_MICROSTEPPAUSE, "microStepPause",  1, "speed, pause between micro steps [msec]");
 	addOption (OPT_STEPSIZE, "stepsize",  1, "fineness, micro steps per tick  [1,255])");
 	addOption (OPT_MINTICKS, "minTicks",  1, "lower limit [tick]");
@@ -272,23 +274,62 @@ int Robofocus::init ()
 	ret = getFirmware();	
 	if (ret)
 	  	return -1;
+
 	if(strcmp(firmware->getValueString().c_str(), FIRMWARE_32)){
 	    logStream (MESSAGE_WARNING) << "Robofocus::int driver is tested with firmware revision 3.20, current: "<< firmware->getValueString()<< sendLog ;
 
 	}
+	if( minTicks->getValueInteger() < 2)
+	  minTicks->setValueInteger(2); 
+	if( minTicks->getValueInteger() > 65000)
+	  minTicks->setValueInteger(65000); 
+
+	if( maxTicks->getValueInteger() < 2)
+	  maxTicks->setValueInteger(2); 
+	if( maxTicks->getValueInteger() > 65000)
+	  maxTicks->setValueInteger(65000); 
+
+	if( maxTravel->getValueInteger() > 65000)
+	  maxTravel->setValueInteger(65000); 
+
 	// if robofocus has been calibrated
 	if(maxTravel->getValueInteger()>1){
+
 	  setFocusExtend( 2.,(double)maxTravel->getValueInteger());
-	  minTicks->setValueInteger (2.);
+	  minTicks->setValueInteger (2);
 	  maxTicks->setValueInteger( maxTravel->getValueInteger());
 	} else {
+
 	  setFocusExtend( (double)minTicks->getValueInteger(),(double)maxTicks->getValueInteger());
 	  maxTravel->setValueInteger( maxTicks->getValueInteger());
 	}
-	if( setMaxTravel ()){
+	if( setMaxTravel ())
 	  return -1 ;
-	}
 
+	if( backlashAmount->getValueInteger() > 64000)
+	   backlashAmount->setValueInteger(64000); 
+
+	if( setBacklash ())
+	  return -1;
+
+	if( duty->getValueInteger() < 0)
+	  duty->setValueInteger(0); 
+	if( duty->getValueInteger() > 250)
+	  duty->setValueInteger(250); 
+
+	if( microStepPause->getValueInteger() < 1)
+	  microStepPause->setValueInteger(1); 
+	if( microStepPause->getValueInteger() > 64) 
+	  microStepPause->setValueInteger(64); 
+
+	if( microStepPerTick->getValueInteger() < 1)
+	  microStepPerTick->setValueInteger(1); 
+	if( microStepPerTick->getValueInteger() > 64)
+	  microStepPerTick->setValueInteger(64); 
+
+	if( motorSettings ())
+	  return -1;
+       
 	return 0;
 }
 
@@ -311,13 +352,14 @@ int Robofocus::info ()
 			switches[i]->setValueBool (swstate & (1 << i));
 		}
 	}
+
 	return Focusd::info ();
 }
 
 int Robofocus::getPos ()
 {
-        char sbuf[10]="FG000000";
-        char rbuf[10];
+        char sbuf[9]="FG000000";
+        char rbuf[9];
 
 	if( sendReceive(sbuf, rbuf))
 	  return -1;
@@ -328,8 +370,8 @@ int Robofocus::getPos ()
 
 int Robofocus::getTemp ()
 {
-        char sbuf[10]="FT000000";
-        char rbuf[10];
+        char sbuf[9]="FT000000";
+        char rbuf[9];
 	if( sendReceive(sbuf, rbuf))
 	  return -1;
 
@@ -341,8 +383,8 @@ int Robofocus::getTemp ()
 int Robofocus::getSwitchState ()
 {
   int ret;
-	char sbuf[10]="FP000000";
-        char rbuf[10];
+	char sbuf[9]="FP000000";
+        char rbuf[9];
 
 	if( sendReceive(sbuf, rbuf))
 	  return -1;
@@ -358,7 +400,7 @@ int Robofocus::getSwitchState ()
 
 int Robofocus::setTo (double num)
 {
-	char sbuf[10];
+	char sbuf[9];
 	sprintf (sbuf, "FG%06i", (int) num);
 	compute_checksum (sbuf);
 	if (robofocConn->writePort (sbuf, 9))
@@ -393,15 +435,8 @@ int Robofocus::setSwitch (int switch_num, bool new_state)
 
 int Robofocus::moveRelativeInOut ()
 {
-	char sbuf[10];
+	char sbuf[9];
 	char rbuf[9];
-
-	// Number of steps moved must account for backlash compensation
-	//  if (strcmp (cmd, CMD_FOCUS_MOVE_OUT) == 0)
-	//    num_steps = steps + 40;
-	//  else
-	//    num_steps = steps;
-	// negative: inward, else outward
 
 	if( foc_tar_rel->getValueInteger () <0){
 	  sprintf (sbuf, "FI%06i", -foc_tar_rel->getValueInteger ());
@@ -426,17 +461,10 @@ int Robofocus::isFocusing ()
 	ret = robofocConn->readPort (rbuf, 1);
 	if (ret == -1)
 	  return ret;
-	// if we get F, read out end command
-	if (*rbuf == 'F')
-	{
-	  ret = robofocConn->readPort (rbuf + 1, 8);
-	  usleep (USEC_SEC/10);
-	  if (ret != 8)
-	    return -1;
-	  char sbuf[3]= "FG";
-	  check_checksum( sbuf, rbuf); //exception FG-> FD
-	  return -2;
-	}
+
+	if(discardOI( rbuf))
+	  return -1;
+
 	return 0;
 }
 
@@ -449,9 +477,10 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 			return setSwitch (i, ((rts2core::ValueBool *) newValue)->getValueBool ()) == 0 ? 0 : -2;
 		}
 	}
-	if (oldValue ==  gotoMode)
-	{
+	if (oldValue ==  gotoMode) {
+
 	  gotoMode->setValueInteger (newValue->getValueInteger ());
+	  return 0;
 
 	} else if (oldValue == foc_tar_rel) {
 
@@ -460,42 +489,73 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	    return -1 ;
 	  }
 	  foc_tar_rel->setValueInteger (newValue->getValueInteger ());
+	  return 0;
+
 	  if(moveRelativeInOut ())
 	    return -1;
 
 	} else if (oldValue == target) {
 
 	  if((gotoMode->getValueInteger ())== SEL_RELATIVE){
-
 	    logStream (MESSAGE_WARNING) << "Robofocus::setValue not in absolute goto mode"<< sendLog ;
 	    return -1 ;
 	  }
+	  //NO return 0;
           // set is done in base class
 	} else if (oldValue == setAsCurrentPosition) {
+
 	  setAsCurrentPosition->setValueInteger (newValue->getValueInteger ());
+	  if( setAsCurrentPosition->getValueInteger () < minTicks->getValueInteger() )
+	    logStream (MESSAGE_WARNING) << "Robofocus::setValue setAsCurrentPosition < minTicks"<< sendLog ;
+	 
+	  if( setAsCurrentPosition->getValueInteger () > maxTicks->getValueInteger())
+	    logStream (MESSAGE_WARNING) << "Robofocus::setValue setAsCurrentPosition > maxTicks"<< sendLog ;
+	  
 	  if( setasCurrentPosition ())
 	    return -1;
+	  return 0;
+
 	} else if (oldValue == backlashMode) {
+
 	  backlashMode->setValueInteger (newValue->getValueInteger ());
-	  
+	  return 0;
+
 	} else if (oldValue == backlashAmount) {
+
 	  backlashAmount->setValueInteger (newValue->getValueInteger ());
 	  if( setBacklash ())
 	    return -1;
+	  return 0;
 
 	} else if (oldValue == minTicks) {
 
 	  minTicks->setValueInteger (newValue->getValueInteger ());
+
+	  if( minTicks->getValueInteger() < 2)
+	    minTicks->setValueInteger(2); 
+	  if( minTicks->getValueInteger() > 65000)
+	    minTicks->setValueInteger(65000); 
+
 	  setFocusExtend((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
 	  // set maxTravel knowing limits are checked in the base class
 	  if( setMaxTravel ())
 	    return -1;
+	  return 0;
+
 	} else if (oldValue == maxTicks) {
 
 	  maxTicks->setValueInteger (newValue->getValueInteger ());
+
+	  if( maxTicks->getValueInteger() < 2)
+	    maxTicks->setValueInteger(2); 
+	  if( maxTicks->getValueInteger() > 65000)
+	    maxTicks->setValueInteger(65000); 
+
 	  setFocusExtend((double)minTicks->getValueInteger (),(double)maxTicks->getValueInteger ());
 	  if( setMaxTravel ())
 	    return -1;
+	  return 0;
+
 	} else if (oldValue == calibration) {
 
 	  calibration->setValueInteger (newValue->getValueInteger ());
@@ -506,13 +566,54 @@ int Robofocus::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
 	    // minTicks is always 2 (see rebofocus manual)
 	    // maxTravel is the result of calibration
 	    setFocusExtend( 2.,(double)maxTravel->getValueInteger());
-	    minTicks->setValueInteger (2.);
+	    minTicks->setValueInteger (2);
             maxTicks->setValueInteger( maxTravel->getValueInteger());
 	  }
+	  return 0;
+
+	} else if (oldValue == duty) {
+
+	  duty->setValueInteger (newValue->getValueInteger ());
+	  if( duty->getValueInteger() < 0)
+	    duty->setValueInteger(0); 
+	  if( duty->getValueInteger() > 250)
+	    duty->setValueInteger(250); 
+	  if( motorSettings ())
+	    return -1;
+	  sendValueAll (duty);
+	  return 0;
+
+	} else if (oldValue == microStepPause) {
+
+	  microStepPause->setValueInteger (newValue->getValueInteger ());
+	  if( microStepPause->getValueInteger() < 1)
+	    microStepPause->setValueInteger(1); 
+	  if( microStepPause->getValueInteger() > 64) 
+	    microStepPause->setValueInteger(64); 
+	  if( motorSettings ())
+	    return -1;
+	  sendValueAll (microStepPause);
+	  return 0;
+
+	} else if (oldValue == microStepPerTick) {
+
+	  microStepPerTick->setValueInteger (newValue->getValueInteger ());
+	  if( microStepPerTick->getValueInteger() < 1)
+	    microStepPerTick->setValueInteger(1); 
+
+	  if( microStepPerTick->getValueInteger() > 64){
+	    microStepPerTick->setValueInteger(64); 	
+	  }
+	    microStepPerTick->setValueInteger(100); 	
+	  
+	  if( motorSettings ())
+	    return -1;
+	  sendValueAll (microStepPerTick);
+	  return 0;
 	}
+
 	return Focusd::setValue (oldValue, newValue);
 }
-
 // Calculate checksum (according to RoboFocus spec.)
 // always 8 bytes + 1 checksum
 void  Robofocus::compute_checksum (char *cmd)
@@ -525,7 +626,7 @@ void  Robofocus::compute_checksum (char *cmd)
 
 	cmd[8]= bytesum % 256;
 }
-int  Robofocus::check_checksum (char *sbuf, char *rbuf) 
+int  Robofocus::checkReadBuffer (char *sbuf, char *rbuf) 
 {
         int i;
 	char cbuf[9];
@@ -544,50 +645,48 @@ int  Robofocus::check_checksum (char *sbuf, char *rbuf)
 	}
 	return -1;
 }
-void Robofocus::toHex( char *buf){
-  fprintf(stderr, "buffer %s\n", buf +'\0');
-
-  for( int i= 0 ; i < 9; i++){
-    fprintf(stderr, "%02d: 0x%02x %c\n", i, (uint8_t)buf[i], toascii((uint8_t)buf[i]));
-  }
-  fprintf(stderr, "\n");
-}
-
 int Robofocus::getFirmware()
 {
-  char sbuf[9]="FV000000" ;
-  char rbuf[9];
+        char sbuf[9]="FV000000" ;
+	char rbuf[9];
 
-  if( sendReceive(sbuf, rbuf))
-    return -1;
+	if( sendReceive(sbuf, rbuf))
+	  return -1;
 
-  rbuf[8]='\0' ;
-  firmware->setValueString( &rbuf[4]);
+	rbuf[8]='\0' ;
+	firmware->setValueString( &rbuf[4]);
 
-  return 0;
+	return 0;
 }
-
+// Attention:
+//FCABCDEFZ. Commands RoboFocus to set configuration. If ABCDE=0 then RoboFocus responds with
+//  current configuration settings. If non-zero, configurations be set as follows:
+//A-spare
+//B-spare
+//C-spare
+//D-Duty Cycle. This character has an ASCI value of 0-250 which corresponds to a duty cycle for the
+//...
+//the frist three bytes are not spare bytes 
 int Robofocus::motorSettings()
 {
-  char sbuf[10]= "FC000000";
-  char rbuf[9];
-  if(!(( duty->getValueInteger()== 0 ) && (microStepPause->getValueInteger()== 0) && (microStepPerTick->getValueInteger()== 0) )){
-    sprintf (sbuf, "FC%1i%1i%1i000", (uint8_t)duty->getValueInteger(), (uint8_t) microStepPause->getValueInteger(), (uint8_t)microStepPerTick->getValueInteger());
-  }
+        char sbuf[9]= "FC000000";
+	char rbuf[9];
+	sprintf (sbuf, "FC%1c%1c%1c000", (uint8_t)duty->getValueInteger(), (uint8_t) microStepPause->getValueInteger(), (uint8_t)microStepPerTick->getValueInteger());
 
-  if( sendReceive(sbuf, rbuf))
-    return -1;
+	if( sendReceive(sbuf, rbuf)){
+	  return -1;
+	}
+	//ToDo if values are out of limits (e.g. > 64) the value is not updated as seen
+	// with rts2-mon, values sent by robofocus are correct!
+	duty->setValueInteger((int)rbuf[2]) ;
+	microStepPause->setValueInteger( (int) rbuf[3]) ;
+	microStepPerTick->setValueInteger( (int) rbuf[4]) ;
 
-  duty->setValueInteger((double) rbuf[2]) ;
-  microStepPause->setValueInteger( (double) rbuf[3]) ;
-  microStepPerTick->setValueInteger( (double) rbuf[4]) ;
-
-  return 0;
+	return 0;
 }
-
 int Robofocus::setasCurrentPosition ()
 {
-	char sbuf[10];
+	char sbuf[9];
         char rbuf[9];
 
 	if(! (( setAsCurrentPosition->getValueInteger()>= getFocusMin()) && (setAsCurrentPosition->getValueInteger()<= getFocusMax ()))){
@@ -605,7 +704,7 @@ int Robofocus::setasCurrentPosition ()
 }
 int Robofocus::setMaxTravel ()
 {
-        char sbuf[10];
+        char sbuf[9];
         char rbuf[9];
 	if(maxTravel->getValueInteger()>0){
 	  sprintf (sbuf, "FL%06i", (int) maxTravel->getValueInteger());
@@ -616,7 +715,7 @@ int Robofocus::setMaxTravel ()
 }
 int Robofocus::getMaxTravel ()
 {
-        char sbuf[10]= "FL000000"; // read the result from the calibration procedure, see robofocus manual
+        char sbuf[9]= "FL000000"; // read the result from the calibration procedure, see robofocus manual
         char rbuf[9];
 	robofocConn->flushPortIO (); // many OOO or III ar sent
 
@@ -627,9 +726,22 @@ int Robofocus::getMaxTravel ()
 	maxTravel->setValueInteger(mx);
 	return 0;
 }
+//Attention: 
+// N=2 is compensation added to IN motion, N=3 is compensation added to OUT motion.
+// IN: towards 0 (home)
+// robofocus manual:
+// Direction. 
+// To check the RoboFocus direction, push the OUT button. 
+// ...
+// If the direction is wrong, turn off the RoboFocus. After about ten seconds, turn on the 
+// RoboFocus while pressing the OUT button. As the RoboFocus powers up, it will sense the 
+// OUT button, 
+// ...
+// The RoboFocus will remember this direction information for future sessions.
+//
 int Robofocus::setBacklash ()
 {
-	char sbuf[10];
+	char sbuf[9];
         char rbuf[9];
 
 	if(( backlashMode->getValueInteger ())==SEL_ADDtoIN){
@@ -643,22 +755,20 @@ int Robofocus::setBacklash ()
 }
 int Robofocus::discardOI( char *rbuf)
 {
-  int ret;
- 
+        int ret;
 	while(true){
 	  ret = robofocConn->readPort (rbuf, 1);
 	  if (ret == -1){
 	    return ret;
 	  }
-	  if (*rbuf == 'F')
-	    {
+	  if (*rbuf == 'F') {
 	      ret = robofocConn->readPort (rbuf + 1, 8);
 	      usleep (USEC_SEC/10);
 	      if (ret != 8)
 		return -1;
 
 	      return 0;
-	    }
+	  }
 	}
 	return -1;
 }
@@ -673,14 +783,23 @@ int Robofocus::sendReceive( char *sbuf, char *rbuf)
 	if ( discardOI(rbuf))
 	  return -1;
 
-	if (check_checksum(sbuf, rbuf)){
+	if (checkReadBuffer(sbuf, rbuf)){
 	  logStream (MESSAGE_ERROR) << "Robofocus::sendReceive bad answer: "<< sendLog ;
-	  toHex(rbuf);
 	  return -1;
 	}
 
 	return 0;
 }
+
+void Robofocus::toHex( char *buf){
+       fprintf(stderr, "buffer %s\n", buf +'\0');
+
+       for( int i= 0 ; i < 9; i++){
+	 fprintf(stderr, "%02d: 0x%02x %c\n", i, (uint8_t)buf[i], toascii((uint8_t)buf[i]));
+       }
+       fprintf(stderr, "\n");
+}
+
 int main (int argc, char **argv)
 {
 	Robofocus device (argc, argv);
