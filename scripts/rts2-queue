@@ -39,16 +39,18 @@ if __name__ == '__main__':
 	parser.add_option("--unique", help="only accept unique target", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
 	parser.add_option("--queue", help='provide queue name', action='store', dest='queue', default='plan')
+	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option("--user",help="user name",action="store",dest='username',default=None)
 	parser.add_option("--password",help="user password",action="store",dest='password',default=None)
+	parser.add_option('--verbose',help='print in/out communication',action='store_true',dest='verbose',default=False)
 
 	(options,args)=parser.parse_args()
 
-	q = Rts2Queue(options.queue,rts2.json.Rts2JSON(self.username,self.password))
+	q = Rts2Queue(options.queue,rts2.json.Rts2JSON(url=options.server,username=options.username,password=options.password,verbose=options.verbose))
 
 	if options.clear:
 		resp = q.clearQueue()
-		print "cleared queue {0}: {1}".format(options.queue, resp['d'][options.queue + '_ids'][1])
+		print "cleared queue {0}".format(options.queue)
 
 	for x in args:
 		tars = q.getTarget(x)
@@ -64,4 +66,4 @@ if __name__ == '__main__':
 		  	tids.append(t[0])
 			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
 		resp = q.queueTargets(tids)
-		print resp['d'][options.queue + '_ids'][1]
+		print "Queue {0}: {1}".format(options.queue,' '.join(map(str,resp['d'][options.queue + '_ids'])))
