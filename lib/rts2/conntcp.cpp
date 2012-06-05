@@ -192,8 +192,7 @@ void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 	read_tout.tv_sec = wtime;
 	read_tout.tv_usec = 0;
 
-	if (checkBufferForChar (_is, end_char))
-		return;
+	buf_top = buf;
 
 	while (true)
 	{
