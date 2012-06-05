@@ -500,7 +500,7 @@ int Sidecar::startExposure ()
 {
 	setFitsTransfer ();
 	std::istringstream *is;
-	sidecarConn->sendCommand ("AcquireRamp", &is, 100);
+	sidecarConn->sendCommand ("AcquireRamp", &is, getExposure () + 100);
 	// data are stored in local directory
 	return 0;
 }
