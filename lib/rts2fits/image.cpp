@@ -823,7 +823,7 @@ void Image::writeMetaData (struct imghdr *im_h)
 		filter_i = ntohs (im_h->filter);
 
 		setValue ("CAM_FILT", filter_i, "filter used for image");
-		setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (1 - open, 2 - closed, 3 - synchro)");
+		setValue ("SHUTTER", ntohs (im_h->shutter), "shutter state (0 - opened, 1 - closed)");
 		// dark images don't need to wait till imgprocess will pick them up for reprocessing
 		switch (ntohs (im_h->shutter))
 		{
