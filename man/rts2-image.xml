@@ -98,9 +98,7 @@
   	    <option>-t</option>
 	  </arg>
 	  <arg choice="plain">
-            <option>-w
-              <arg choice="opt"><option>-o <replaceable>X offset</replaceable>:<replaceable>Y offset</replaceable></option></arg>
-  	    </option>
+            <option>-w</option>
 	  </arg>
 	  <arg choice="plain">
 	    <option>--rts2opera-fix <replaceable>WCS extension</replaceable></option>
@@ -310,14 +308,6 @@
           <para>
 	    Add WCS information to the image, based on values of RASC and DESC
 	    for RA DEC and XPLATE and YPLATE keywords.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-o <replaceable>X offset</replaceable>:<replaceable>Y offset</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify X and Y offsets for RA DEC coordinates taken with -w option.
 	  </para>
         </listitem>
       </varlistentry>

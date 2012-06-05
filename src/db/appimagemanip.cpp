@@ -113,7 +113,6 @@ class AppImage:public rts2image::AppImageCore
 		void printModel (rts2image::Image * image);
 		void printStat (rts2image::Image * image);
 
-		double off_x, off_y;
 		double d_x1, d_y1, d_x2, d_y2;
 
 		const char* print_expr;
@@ -262,7 +261,6 @@ void AppImage::printStat (Image *image)
 
 int AppImage::processOption (int in_opt)
 {
-	char *off_sep;
 	switch (in_opt)
 	{
 		case 'p':
@@ -340,21 +338,6 @@ int AppImage::processOption (int in_opt)
 			break;
 		case 't':
 			operation |= IMAGEOP_TEST;
-			break;
-		case 'o':
-			off_sep = index (optarg, ':');
-			if (off_sep)
-			{
-				*off_sep = '\0';
-				off_sep++;
-				off_x = atof (optarg);
-				off_y = atof (off_sep);
-			}
-			else
-			{
-				off_x = atof (optarg);
-				off_y = off_x;
-			}
 			break;
 		#ifdef HAVE_LIBJPEG
 		case 'j':
@@ -496,9 +479,6 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 {
 	operation = IMAGEOP_NOOP;
 
-	off_x = 0;
-	off_y = 0;
-
 	print_expr = NULL;
 	copy_expr = NULL;
 	distance_expr = NULL;
@@ -539,7 +519,6 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('t', NULL, 0, "test various image routines");
-	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 	addOption (OPT_RTS2OPERA_WCS, "rts2opera-fix", 1, "add headers necessary for RTS2opera functionality");
 	addOption (OPT_ADD_TEMPLATE, "add-template", 1, "add fixed-value headers from template file specified as an argument");
 #ifdef HAVE_LIBJPEG
