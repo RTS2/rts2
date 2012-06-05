@@ -170,7 +170,7 @@ void SidecarConn::sendCommand (const char *cmd, double p1, std::istringstream **
 
 int SidecarConn::pingCommand ()
 {
-	std::istringstream *is;
+	std::istringstream *is = NULL;
 	sendCommand ("Ping", &is);
 
 	char lineb[200];
@@ -194,6 +194,7 @@ int SidecarConn::pingCommand ()
 		if (ret == 3)
 		{
 			logStream (MESSAGE_ERROR) << "unknown ping response: " << lineb << sendLog;
+			delete is;
 			return -1;
 		}
 	}
@@ -499,8 +500,9 @@ void Sidecar::setExposure (double exp)
 int Sidecar::startExposure ()
 {
 	setFitsTransfer ();
-	std::istringstream *is;
+	std::istringstream *is = NULL;
 	sidecarConn->sendCommand ("AcquireRamp", &is, getExposure () + 100);
+	delete is;
 	// data are stored in local directory
 	return 0;
 }
