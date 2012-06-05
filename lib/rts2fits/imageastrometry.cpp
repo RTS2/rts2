@@ -27,17 +27,17 @@ using namespace rts2image;
 void Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
  	
-	getValue (ra_name, radec.ra, true);
-	getValue (dec_name, radec.dec, true);
+	getValueRa (ra_name, radec.ra, true);
+	getValueDec (dec_name, radec.dec, true);
 }
 
 LibnovaRaDec Image::getCoord (const char *prefix)
 {
 	struct ln_equ_posn pos;
 	std::string p = std::string (prefix) + "RA";
-	getValue (p.c_str (), pos.ra, true);
+	getValueRa (p.c_str (), pos.ra, true);
 	p = std::string (prefix) + "DEC";
-	getValue (p.c_str (), pos.dec, true);
+	getValueDec (p.c_str (), pos.dec, true);
 	return LibnovaRaDec (pos.ra, pos.dec);
 }
 
