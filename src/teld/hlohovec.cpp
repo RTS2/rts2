@@ -356,7 +356,10 @@ int Hlohovec::isMoving ()
 				return 0;
 			}
 		}
-		raDrive->setTargetSpeed (TRACK_SPEED);
+		else
+		{
+			raDrive->setTargetSpeed (TRACK_SPEED);
+		}
 	}
 	if ((tracking->getValueBool () && raDrive->isMovingPos ()) || (!tracking->getValueBool () && raDrive->isMoving ()) || decDrive->isMoving ())
 		return 0;
@@ -459,10 +462,10 @@ void Hlohovec::setDiffTrack (double dra, double ddec)
 
 int Hlohovec::updateLimits ()
 {
-	acMin = RA_TICKS;
-	acMax = -RA_TICKS;
-	dcMin = DEC_TICKS;
-	dcMax = -DEC_TICKS;
+	acMin = -1 * labs (RA_TICKS);
+	acMax = labs (RA_TICKS);
+	dcMin = -1 * labs (DEC_TICKS);
+	dcMax = labs (DEC_TICKS);
 	return 0;
 }
 
