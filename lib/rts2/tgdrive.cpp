@@ -90,7 +90,7 @@ int TGDrive::init ()
 	write2b (TGA_MASTER_CMD, 2);
 	write2b (TGA_AFTER_RESET, TGA_AFTER_RESET_ENABLED);
 	write2b (TGA_MASTER_CMD, 5);
-	write4b (TGA_MODE, TGA_MODE_PA);
+	setMode (TGA_MODE_PA);
 
 	write2b (TGA_MASTER_CMD, 4);
 	firmware->setValueInteger (read2b (TGA_FIRMWARE));
@@ -183,7 +183,7 @@ void TGDrive::setMode (int32_t mode)
 
 void TGDrive::setTargetPos (int32_t pos)
 {
-	write4b (TGA_MODE, TGA_MODE_PA);
+	setMode (TGA_MODE_PA);
 	stopped = false;
 	write4b (TGA_TARPOS, pos);
 }
@@ -202,7 +202,7 @@ void TGDrive::setTargetSpeed (int32_t dspeed, bool changeMode)
 {
 	if (changeMode || (read4b (TGA_STATUS) & 0x02))
 	{
-		write4b (TGA_MODE, TGA_MODE_DS);
+		setMode (TGA_MODE_DS);
 	}
 	stopped = (dspeed == 0);
 	write4b (TGA_DSPEED, dspeed);
@@ -216,7 +216,7 @@ void TGDrive::stop ()
 	// other possibility is to switch to speed mode..
 	write4b (TGA_DSPEED, 0);
 	stoppedPosition = read4b (TGA_CURRPOS);
-	write4b (TGA_MODE, TGA_MODE_DS);
+	setMode (TGA_MODE_DS);
 	stopped = true;
 }
 
@@ -227,7 +227,7 @@ bool TGDrive::checkStop ()
 	appStatus->setValueInteger (read2b (TGA_STATUS));
 	if ((appStatus->getValueInteger () & 0x08) == 0x08)
 	{
-		write4b (TGA_MODE, TGA_MODE_PA);
+		setMode (TGA_MODE_PA);
 		write4b (TGA_TARPOS, stoppedPosition);
 		stopped = false;
 		return false;
