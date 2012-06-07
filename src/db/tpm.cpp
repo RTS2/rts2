@@ -278,17 +278,8 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 		image->getValue ("MNT_FLIP", mntFlip, true);
 		if (mntFlip)
 		{
-			if (obs.lat > 0)
-			{
-				actual.setDec (180 - actual.getDec ());
-				target.setDec (180 - target.getDec ());
-			}
-			else
-			{
-				actual.setDec (-180 - actual.getDec ());
-				target.setDec (-180 - target.getDec ());
-			}
-
+                        actual.flip (&obs);
+                        target.flip (&obs);
 		}
 	}
 

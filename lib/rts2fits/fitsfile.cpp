@@ -22,7 +22,7 @@
 
 #include "block.h"
 #include "utilsfunc.h"
-#include "libnova_cpp.h"
+#include "radecparser.h"
 
 #include "config.h"
 
@@ -563,43 +563,23 @@ void FitsFile::getValue (const char *name, char **value, int valLen, bool requir
 void FitsFile::getValueRa (const char *name, double &value, bool required, char *comment)
 {
 	char val[100];
-	try
-	{
-		getValue (name, val, 100, NULL, true, comment);
-		std::istringstream _ra (val);
-		LibnovaRa lra;
-		_ra >> lra;
-		if (_ra.fail ())
-			value = NAN;
-		else
-			value = lra.getRa ();
-	}
-	catch (rts2core::Error &er)
-	{
-		if (required)
-			throw (er);
-	}
+	val[0] = '\0';
+	getValue (name, val, 100, NULL, required, comment);
+
+	double mul = 1;
+	value = parseDMS (val, &mul);
+	if (mul != 1)
+		value *= 15.0;
 }
 
 void FitsFile::getValueDec (const char *name, double &value, bool required, char *comment)
 {
 	char val[100];
-	try
-	{
-		getValue (name, val, 100, NULL, true, comment);
-		std::istringstream _dec (val);
-		LibnovaDec ldec;
-		_dec >> ldec;
-		if (_dec.fail ())
-			value = NAN;
-		else
-			value = ldec.getDec ();
-	}
-	catch (rts2core::Error &er)
-	{
-		if (required)
-			throw (er);
-	}
+	val[0] = '\0';
+	getValue (name, val, 100, NULL, required, comment);
+
+	double mul = 1;
+	value = parseDMS (val, &mul);
 }
 
 double FitsFile::getValue (const char *name)

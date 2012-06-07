@@ -208,20 +208,15 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
 	return _os;
 }
 
-
-void
-LibnovaDeg::toDms (struct ln_dms *deg_dms)
+void LibnovaDeg::toDms (struct ln_dms *deg_dms)
 {
 	ln_deg_to_dms (deg, deg_dms);
 }
 
-
-void
-LibnovaDeg::fromDms (struct ln_dms *deg_dms)
+void LibnovaDeg::fromDms (struct ln_dms *deg_dms)
 {
 	deg = ln_dms_to_deg (deg_dms);
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 {
@@ -253,7 +248,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 	_os.fill (old_fill);
 	return _os;
 }
-
 
 /*
  * operator >>
@@ -319,7 +313,6 @@ std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 	return _is;
 }
 
-
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
 {
 	if (formatPureNumbers (_os))
@@ -351,7 +344,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
 	return _os;
 }
 
-
 std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
 {
 	if (formatPureNumbers (_os))
@@ -382,7 +374,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
 	_os.fill (old_fill);
 	return _os;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
 {
@@ -418,16 +409,13 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
 	return _os;
 }
 
-
-void
-LibnovaDec::flip (struct ln_lnlat_posn *obs)
+void LibnovaDec::flip (struct ln_lnlat_posn *obs)
 {
 	if (obs->lat > 0)
 		deg = 180 - deg;
 	else
 		deg = -180 - deg;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 {
@@ -459,7 +447,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 	_os.fill (old_fill);
 	return _os;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
 {
@@ -586,7 +573,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	return _os;
 }
 
-
 std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 {
 	double val;
@@ -645,9 +631,7 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 	}
 }
 
-
-void
-LibnovaRaDec::flip (struct ln_lnlat_posn *obs)
+void LibnovaRaDec::flip (struct ln_lnlat_posn *obs)
 {
 	if (ra)
 		ra->flip ();
@@ -655,9 +639,7 @@ LibnovaRaDec::flip (struct ln_lnlat_posn *obs)
 		dec->flip (obs);
 }
 
-
-int
-LibnovaRaDec::parseString (const char *radec)
+int LibnovaRaDec::parseString (const char *radec)
 {
 	int ret;
 	double v_ra, v_dec;
@@ -668,7 +650,6 @@ LibnovaRaDec::parseString (const char *radec)
 	setDec (v_dec);
 	return ret;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
 {
@@ -686,7 +667,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
 		_os << "nan nan";
 	return _os;
 }
-
 
 std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec)
 {
