@@ -27,7 +27,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <libnova/libnova.h>
-#include "dome-target-az.h"
+#include <slitazimuth.h>
 
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))

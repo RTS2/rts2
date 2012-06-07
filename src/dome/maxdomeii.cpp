@@ -22,7 +22,7 @@
 
 #include "cupola.h"
 #include "connection/serial.h"
-#include "dome-target-az.h"
+#include "slitazimuth.h"
 
 #define MAXDOME_TIMEOUT	5		/* FD timeout in seconds */
 

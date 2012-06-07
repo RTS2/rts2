@@ -24,7 +24,7 @@
 
 // Obs. Vermes specific 
 #include "vermes.h" 
-#include "dome-target-az.h"
+#include "slitazimuth.h"
 #include "move-to-target-az_vermes.h"
 #include "barcodereader_vermes.h"
 #include "ssd650v_comm_vermes.h"
