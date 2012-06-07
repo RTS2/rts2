@@ -112,6 +112,8 @@ class API:public GetRequestAuthorized
 		API (const char* prefix, XmlRpc::XmlRpcServer* s);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		virtual void authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length);
 		/**
 		 * Send connection values as JSON string to the client.
 		 *

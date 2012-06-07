@@ -111,7 +111,7 @@ namespace XmlRpc
 			// Construct a response from the result XML.
 			void generateResponse(std::string const& resultXml);
 			void generateFaultResponse(std::string const& msg, int errorCode = -1);
-			void generateJSONFaultResponse(std::string const& msg);
+			void generateJSONFaultResponse(std::string const& msg, int errorCode);
 			std::string generateHeader(std::string const& body);
 
 			// The XmlRpc server that accepted this connection

@@ -1,3 +1,6 @@
+2012-06-06
+ * code with XML/JSON exception - properly reply to wrong password
+
 0.9.3-1
 =====
 

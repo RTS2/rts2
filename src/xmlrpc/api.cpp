@@ -1101,6 +1101,11 @@ void API::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const
 	}
 }
 
+void API::authorizePage (int &http_code, const char* &response_type, char* &response, size_t &response_length)
+{
+	throw JSONException ("cannot authorise user", HTTP_UNAUTHORIZED);
+}
+
 void sendSelection (std::ostringstream &os, rts2core::ValueSelection *value)
 {
 	os << "[";

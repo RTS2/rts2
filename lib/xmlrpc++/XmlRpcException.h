@@ -15,6 +15,10 @@
 #include <exception>
 #include <ostream>
 
+#define HTTP_OK              200
+#define HTTP_BAD_REQUEST     400
+#define HTTP_UNAUTHORIZED    401
+
 namespace XmlRpc
 {
 
@@ -55,14 +59,16 @@ namespace XmlRpc
 	class JSONException:public std::exception
 	{
 		public:
-			explicit JSONException(const std::string& message) : std::exception (), _message(message) {}
+			explicit JSONException(const std::string& message, int code = HTTP_BAD_REQUEST) : std::exception (), _message(message), _code (code) {}
 
 			virtual ~JSONException () throw () {}
 
 			//! Return the error message.
 			const std::string& getMessage() const { return _message; }
+			const int getCode () const { return _code; }
 		private:
 			std::string _message;
+			int _code;
 	};
 }
 #endif							 // _XMLRPCEXCEPTION_H_
