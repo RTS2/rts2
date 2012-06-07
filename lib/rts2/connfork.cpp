@@ -398,7 +398,7 @@ void ConnFork::stop ()
 		kill (-childPid, SIGSTOP);
 }
 
-void ConnFork::term ()
+void ConnFork::terminate ()
 {
 	if (childPid > 0)
 		kill (-childPid, SIGKILL);
@@ -414,8 +414,8 @@ int ConnFork::idle ()
 		if (now > endTime)
 		{
 		  	endTime = now;
-			logStream (MESSAGE_WARNING) << "killing " << exePath << ", as it reached timeout" << sendLog;
-			term ();
+			logStream (MESSAGE_WARNING) << "killing " << exePath << " (" << childPid << "), as it reached timeout" << sendLog;
+			terminate ();
 			endConnection ();
 		}
 	}

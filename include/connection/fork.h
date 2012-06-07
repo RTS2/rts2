@@ -95,7 +95,7 @@ class ConnFork:public ConnNoSend
 		int run ();
 
 		virtual void stop ();
-		void term ();
+		void terminate ();
 
 		virtual int idle ();
 
