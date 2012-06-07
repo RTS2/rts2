@@ -32,6 +32,8 @@
 #include "rts2format.h"
 #include "rts2fits/image.h"
 
+#define OPT_MNT_FLIP        OPT_LOCAL + 1789
+
 class TPM:public rts2core::CliApp
 {
 	public:
@@ -61,6 +63,8 @@ class TPM:public rts2core::CliApp
 		double dec_offset;
 
 		enum { TARGET, BEST, MOUNT } tarCorType;
+
+		bool useMountFlip;
 };
 
 TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
@@ -70,11 +74,15 @@ TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 	ra_offset = 0;
 	dec_step = rts2_nan ("f");
 	dec_offset = 0;
+
+	useMountFlip = false;
+
 	addOption ('t', NULL, 1, "target coordinates type (t for TAR_RA and TAR_DEC, b for RASC and DECL, m for MNT_RA and MNT_DEC)");
 	addOption ('r', NULL, 1, "step size for mnt_ax0; if specified, HA value is taken from mnt_ax0");
 	addOption ('R', NULL, 1, "ra offset in raw counts");
 	addOption ('d', NULL, 1, "step size for mnt_ax1; if specified, DEC value is taken from mnt_ax1");
 	addOption ('D', NULL, 1, "dec offset in raw counts");
+	addOption (OPT_MNT_FLIP, "mnt-flip", 0, "uses mount flip (MNT_FLIP keyword) to adjust target and actual DEC");
 }
 
 TPM::~TPM (void)
@@ -114,6 +122,9 @@ int TPM::processOption (int in_opt)
 			break;
 		case 'D':
 			dec_offset = atof (optarg);
+			break;
+		case OPT_MNT_FLIP:
+			useMountFlip = true;
 			break;
 		default:
 			return rts2core::CliApp::processOption (in_opt);
@@ -259,6 +270,26 @@ int TPM::printImage (rts2image::Image * image, std::ostream & _os)
 	{
 		image->getValue ("MNT_AX1", aux1, true);
 		actual.setDec ((aux1 - dec_offset) / dec_step);
+	}
+
+	if (useMountFlip)
+	{
+		int mntFlip;
+		image->getValue ("MNT_FLIP", mntFlip, true);
+		if (mntFlip)
+		{
+			if (obs.lat > 0)
+			{
+				actual.setDec (180 - actual.getDec ());
+				target.setDec (180 - target.getDec ());
+			}
+			else
+			{
+				actual.setDec (-180 - actual.getDec ());
+				target.setDec (-180 - target.getDec ());
+			}
+
+		}
 	}
 
 	LibnovaHaM lst (mean_sidereal);

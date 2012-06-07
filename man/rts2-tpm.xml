@@ -49,6 +49,7 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       &basicapp;
+      <arg choice="opt"><option>--mnt-flip</option></arg>
       <arg choice="opt">
 	<arg choice="plain"><option>-t 
 	  <group choice="req">
@@ -96,6 +97,14 @@
 
     <variablelist>
       &basicapplist;
+      <varlistentry>
+        <term><option>--mnt-flip</option></term>
+	<listitem>
+	  <para>
+	    Use MNT_FLIP argument to offset DEC. Offsets DEC by 180 degrees.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term><option>-t</option></term>
 	<listitem>
