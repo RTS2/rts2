@@ -1570,9 +1570,6 @@ int Camera::camExpose (rts2core::Connection * conn, int chipState, bool fromQue)
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
 	}
-	else
-	{
-	}
 	return ret;
 }
 
