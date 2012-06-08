@@ -815,6 +815,7 @@ AC_OUTPUT([Makefile
 	   lib/xmlrpc++/Makefile
 	   lib/rts2/Makefile
 	   lib/rts2/model/Makefile
+	   lib/rts2/vermes/Makefile
 	   lib/rts2fits/Makefile
 	   lib/rts2db/Makefile
 	   lib/rts2script/Makefile

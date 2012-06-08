@@ -44,8 +44,8 @@
 #include <errno.h>
 #include <syslog.h>
 
-#include "../dome/OakHidBase.h"
-#include "../dome/OakFeatureReports.h"
+#include "OakHidBase.h"
+#include "OakFeatureReports.h"
 #include "tps534-oak.h"
 
 

@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-SUBDIRS = model
+SUBDIRS = model vermes  
 
 noinst_PROGRAMS = test
 
@@ -11,7 +11,7 @@ AM_CXXFLAGS=@NOVA_CFLAGS@
 test_SOURCES = test.cpp
 test_LDADD = -lrts2 @LIB_NOVA@
 
-lib_LTLIBRARIES = librts2.la librts2users.la
+lib_LTLIBRARIES = librts2.la librts2users.la 
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp multidev.cpp option.cpp \
 	networkaddress.cpp connuser.cpp client.cpp command.cpp value.cpp valuestat.cpp \
@@ -25,9 +25,10 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	teld.cpp camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	gem.cpp fork.cpp tgdrive.cpp \
-	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c
+	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c OakFeatureReports.c OakHidBase.c
 
 librts2_la_LIBADD = model/librts2model.la
+
 
 librts2users_la_SOURCES = userlogins.cpp
 

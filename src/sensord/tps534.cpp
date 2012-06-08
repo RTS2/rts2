@@ -87,7 +87,6 @@ TPS534::willConnect (rts2core::NetworkAddress * in_addr)
 {
     if (doorDevice && in_addr->getType () == DEVICE_TYPE_DOME) {
       logStream (MESSAGE_INFO) << "TPS534::willConnect to DEVICE_TYPE_DOME: "<< doorDevice << sendLog;
-      fprintf( stderr, "========TPS534::willConnect to DEVICE_TYPE_DOME: %s\n", doorDevice );
       return 1;
     }
     return Sensor::willConnect (in_addr);

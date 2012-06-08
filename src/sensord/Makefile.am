@@ -66,7 +66,7 @@ else
 bin_PROGRAMS += rts2-sensor-tps534 rts2-sensor-niratir
 
 rts2_sensor_tps534_SOURCES = tps534.cpp tps534-oak.c 
-rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD} -L../dome -lrts2oak
+rts2_sensor_tps534_LDADD =  @LIB_PTHREAD@ ${LDADD}
 
 rts2_sensor_niratir_SOURCES = niratir.cpp
 endif
