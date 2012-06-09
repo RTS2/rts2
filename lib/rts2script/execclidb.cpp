@@ -39,7 +39,7 @@ rts2image::Image * DevClientCameraExecDb::createImage (const struct timeval *exp
 	if (expandPathString.length () > 0)
 	{
 		rts2image::ImageDb *ret = new rts2image::ImageDb (currentTarget, this, expStart, expandPathString.c_str (), getOverwrite ());
-		ret->setWriteConnnection (writeConnection, writeRTS2Values);
+		ret->setWriteConnection (writeConnection, writeRTS2Values);
 		nullExpandPath ();
 		return ret;
 	}

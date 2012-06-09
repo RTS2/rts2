@@ -420,7 +420,7 @@ void DevClientCameraImage::fitsData (const char *fn)
 Image * DevClientCameraImage::createImage (const struct timeval *expStart)
 {
 	Image * ret = new Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
-	ret->setWriteConnnection (writeConnection, writeRTS2Values);
+	ret->setWriteConnection (writeConnection, writeRTS2Values);
 	return ret;
 }
 

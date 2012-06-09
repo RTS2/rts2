@@ -289,6 +289,10 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 
 		rts2image::Image *getPreviousImage () { return previmage; }
 
+		rts2core::ValueString *templateFile;
+
+		int setTemplateFilename (const char *fn);
+
 	protected:
 		virtual void postEvent (Event *event);
 
@@ -333,6 +337,8 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 		 */
 		rts2core::ValueBool *scriptRunning;
 
+		rts2core::ValueBool *writeMetaData;
+
 		rts2image::Image *previmage;
 
 		std::string currentscript;
@@ -355,7 +361,7 @@ class XmlDevCameraClient:public rts2script::DevClientCameraExec, rts2script::Scr
 			}
 			else
 			{
-				((rts2core::Daemon *) conn->getMaster ())->createValue (val, vn.c_str (), description, false);
+				((rts2core::Daemon *) conn->getMaster ())->createValue (val, vn.c_str (), description, false, valueFlags, queCondition);
 				((rts2core::Daemon *) conn->getMaster ())->updateMetaInformations (val);
 			}
 		}
@@ -379,6 +385,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		virtual ~XmlRpcd ();
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
+
+		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
 		void stateChangedEvent (rts2core::Connection *conn, rts2core::ServerState *new_state);
 
@@ -497,6 +505,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		std::map <std::string, Session*> sessions;
 
 		std::deque <Message> messages;
+
+		std::list <XmlDevCameraClient *> camClis;
 
 		std::vector <Directory *> directories;
 		std::list <AsyncAPI *> asyncAPIs;

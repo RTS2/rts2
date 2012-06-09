@@ -36,34 +36,6 @@
 
 using namespace rts2image;
 
-/**
- * Class to fill string with device informations.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class DeviceExpander:public rts2core::Expander
-{
-	public:
-		DeviceExpander (const char *_devname):rts2core::Expander () { devname = _devname; };
-
-	protected:
-		virtual std::string expandVariable (std::string expression);
-	
-	private:
-		const char *devname;
-};
-
-std::string DeviceExpander::expandVariable (std::string expression)
-{
-	// try to find value
-	rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, devname);
-	if (val != NULL)
-		return val->getValue ();
-	return rts2core::Expander::expandVariable (expression);
-}
-
-static rts2core::Expander *masterExpander = NULL;
-
 ColumnData::ColumnData (std::string _name, std::vector <double> _data)
 {
 	name = _name;
@@ -421,13 +393,10 @@ void FitsFile::setValue (const char *name, const char *value, const char *commen
 	fitsStatusSetValue (name);
 }
 
-void FitsFile::setValue (const char *name, time_t * sec, long usec, const char *comment)
+void FitsFile::setValue (const char *name, time_t * sec, suseconds_t usec, const char *comment)
 {
 	char buf[25];
-	struct tm t_tm;
-	gmtime_r (sec, &t_tm);
-	strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
-	snprintf (buf + 20, 4, "%03li", usec / 1000);
+	getDateObs (*sec, usec, buf);
 	setValue (name, buf, comment);
 }
 
@@ -664,7 +633,7 @@ std::string FitsFile::expandPath (std::string pathEx, bool onlyAlNum)
 	return ret;
 }
 
-void FitsFile::writeTemplate (rts2core::IniSection *hc, const char *devname)
+void FitsFile::writeTemplate (rts2core::IniSection *hc)
 {
 	for (rts2core::IniSection::iterator iter = hc->begin (); iter != hc->end (); iter++)
 	{
@@ -678,15 +647,8 @@ void FitsFile::writeTemplate (rts2core::IniSection *hc, const char *devname)
 			v = v.substr (0, cb - 1);
 		}
 		// expand v and com strings..
-		if (masterExpander == NULL)
-		{
-			if (devname == NULL)
-				masterExpander = new rts2core::Expander ();
-			else
-				masterExpander = new DeviceExpander (devname);
-		}
-		v = masterExpander->expand (v);
-		com = masterExpander->expand (com);
+		v = expand (v);
+		com = expand (com);
 		// value type based on suffix
 		std::string suff = iter->getSuffix ();
 		if (suff == "i")
@@ -712,7 +674,7 @@ void FitsFile::addTemplate (rts2core::IniParser *templ)
 	moveHDU (1, &hdutype);
 	rts2core::IniSection *hc = templ->getSection ("PRIMARY", false);
 	if (hc)
-		writeTemplate (hc, NULL);
+		writeTemplate (hc);
 
 	for (int i = 1; i < getTotalHDUs (); i++)
 	{
@@ -725,18 +687,8 @@ void FitsFile::addTemplate (rts2core::IniParser *templ)
 			channame << "CHANNEL" << chan;
 			hc = templ->getSection (channame.str ().c_str (), false);
 			if (hc)
-				writeTemplate (hc, NULL);
+				writeTemplate (hc);
 		}
-	}
-}
-
-void FitsFile::writePrimaryHeader (const char *devname)
-{
-	if (templateFile)
-	{
-		rts2core::IniSection *hc = templateFile->getSection ("PRIMARY", false);
-		if (hc)
-			writeTemplate (hc, devname);
 	}
 }
 
@@ -787,7 +739,7 @@ void FitsFile::fitsStatusGetValue (const char *valname, bool required)
 		throw KeyNotFound (this, valname);
 }
 
-void FitsFile::loadTemlate (const char *fn)
+void FitsFile::loadTemplate (const char *fn)
 {
 	templateFile = new rts2core::IniParser ();
 

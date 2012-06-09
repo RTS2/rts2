@@ -119,6 +119,9 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		 */
 		virtual void writeToFitsTransfer (Image *img);
 
+		// template for headers.
+		rts2core::IniParser *fitsTemplate;
+
 	private:
 		/**
 		 * Convert FITS image to DataChannels.
@@ -144,9 +147,6 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 
 		// already received informations from those devices..
 		std::vector < rts2core::DevClient * > prematurelyReceived;
-
-		// template for headers.
-		rts2core::IniParser *fitsTemplate;
 };
 
 class DevClientTelescopeImage:public rts2core::DevClientTelescope

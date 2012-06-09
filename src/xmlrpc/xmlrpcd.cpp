@@ -90,6 +90,11 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 	createOrReplaceValue (scriptEnd, conn, RTS2_VALUE_TIME, "_script_end", "script end time", false);
 
 	createOrReplaceValue (exposureWritten, conn, RTS2_VALUE_INTEGER, "_images_to_write", "number of images to write", false);
+
+	createOrReplaceValue (templateFile, conn, RTS2_VALUE_STRING, "_template", "FITS template to use", false, RTS2_VALUE_WRITABLE);
+
+	createOrReplaceValue (writeMetaData, conn, RTS2_VALUE_BOOL, "_write_meta_data", "write FITS meta-data", false, RTS2_VALUE_WRITABLE);
+	writeMetaData->setValueBool (true);
 }
 
 XmlDevCameraClient::~XmlDevCameraClient ()
@@ -144,6 +149,9 @@ rts2image::Image *XmlDevCameraClient::createImage (const struct timeval *expStar
 	setOverwrite (false);
 
 	rts2image::Image * ret = new rts2image::Image ((imagename).c_str (), getExposureNumber (), expStart, connection, overwrite);
+	if (fitsTemplate)
+		ret->setTemplate (fitsTemplate);
+	ret->setWriteConnection (writeMetaData->getValueBool (), writeMetaData->getValueBool ());
 
 	ret->keepImage ();
 
@@ -334,6 +342,25 @@ void XmlDevCameraClient::exposureFailed (int status)
 {
 	rts2script::DevClientCameraExec::exposureFailed (status);
 	getMaster ()->clientExposureFailed (getConnection (), status);
+}
+
+int XmlDevCameraClient::setTemplateFilename (const char *fn)
+{
+	delete fitsTemplate;
+	if (*fn == '\0')
+	{
+		fitsTemplate = NULL;
+		return 0;
+	}
+	fitsTemplate = new rts2core::IniParser ();
+	int ret = fitsTemplate->loadFile (fn);
+	if (ret)
+	{
+		delete fitsTemplate;
+		fitsTemplate = NULL;
+		return -1;
+	}
+	return ret;
 }
 
 void XmlDevCameraClient::postEvent (Event *event)
@@ -551,6 +578,13 @@ void XmlRpcd::signaledHUP ()
 
 void XmlRpcd::connectionRemoved (rts2core::Connection *conn)
 {
+	for (std::list <XmlDevCameraClient *>::iterator iter = camClis.begin (); iter != camClis.end ();)
+	{
+		if (conn->getOtherDevClient () == *iter)
+			iter = camClis.erase (iter);
+		else
+			iter++;
+	}
 	for (std::list <AsyncAPI *>::iterator iter = asyncAPIs.begin (); iter != asyncAPIs.end ();)
 	{
 		if ((*iter)->isForConnection (conn))
@@ -710,12 +744,33 @@ rts2core::DevClient * XmlRpcd::createOtherType (rts2core::Connection * conn, int
 		case DEVICE_TYPE_MOUNT:
 			return new XmlDevTelescopeClient (conn);
 		case DEVICE_TYPE_CCD:
-			return new XmlDevCameraClient (conn);
+			{
+				 XmlDevCameraClient *nc = new XmlDevCameraClient (conn);
+				 camClis.push_back (nc);
+				 return nc;
+			}
 		case DEVICE_TYPE_FOCUS:
 			return new XmlDevFocusClient (conn);
 		default:
 			return new XmlDevClient (conn);
 	}
+}
+
+int XmlRpcd::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
+{
+	// if it is a template file, load it immediately
+	for (std::list <XmlDevCameraClient *>::iterator iter = camClis.begin (); iter != camClis.end (); iter++)
+	{
+		if ((*iter)->templateFile == old_value)
+		{
+			return (*iter)->setTemplateFilename (new_value->getValue ()) ? -2 : 0;
+		}
+	}
+#ifdef HAVE_PGSQL
+	return DeviceDb::setValue (old_value, new_value);
+#else
+	return rts2core::Device::setValue (old_value, new_value);
+#endif
 }
 
 void XmlRpcd::stateChangedEvent (rts2core::Connection * conn, rts2core::ServerState * new_state)

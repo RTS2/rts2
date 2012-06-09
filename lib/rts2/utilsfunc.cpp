@@ -207,6 +207,21 @@ int parseDate (const char *in_date, time_t *out_time, bool forceUT, bool *only_d
 	return 0;
 }
 
+void getDateObs (const time_t t, const suseconds_t usec, char buf[25])
+{
+	struct tm t_tm;
+	gmtime_r (&t, &t_tm);
+	strftime (buf, 25, "%Y-%m-%dT%H:%M:%S.", &t_tm);
+	snprintf (buf + 20, 4, "%03li", usec / 1000);
+}
+
+std::string getDateObs (const time_t t, const suseconds_t usec)
+{
+	char buf[25];
+	getDateObs (t, usec, buf);
+	return std::string (buf);
+}
+
 std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter)
 {
 	std::size_t pos = 0;

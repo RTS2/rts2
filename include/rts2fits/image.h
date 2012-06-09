@@ -216,6 +216,11 @@ class Image:public FitsFile
 		 */
 		int linkImageExpand (std::string link_ex);
 
+		/**
+		 * Write image primary header from template.
+		 */
+		void writePrimaryHeader (const char *devname);
+
 		void writeMetaData (struct imghdr *im_h);
 
 		/**
@@ -650,7 +655,7 @@ class Image:public FitsFile
 		 * @param write_conn   Write all connection values (values marked as RTS2_FITS_WRITE)
 		 * @param rts2_write   Write extra RTS2 values (exposure time,..)
 		 */
-		void setWriteConnnection (bool write_conn, bool rts2_write)
+		void setWriteConnection (bool write_conn, bool rts2_write)
 		{
 			writeConnection = write_conn;
 			writeRTS2Values = rts2_write;
@@ -691,6 +696,7 @@ class Image:public FitsFile
 		int targetId;
 		int targetIdSel;
 		char targetType;
+		char *templateDeviceName;
 		char *targetName;
 		int obsId;
 		int imgId;

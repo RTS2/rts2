@@ -87,6 +87,13 @@ int parseDate (const char *in_date, double &JD, bool forceUT = false, bool *only
 int parseDate (const char *in_date, time_t *out_time, bool forceUT = false, bool *only_date = NULL);
 
 /**
+ * Return date in FITS format.
+ */
+void getDateObs (const time_t t, const suseconds_t usec, char buf[25]);
+
+std::string getDateObs (const time_t t, const suseconds_t usec);
+
+/**
  * Split std::string to vector of strings.
  *
  * @param text        String which will be splitted.
