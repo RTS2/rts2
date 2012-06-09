@@ -157,7 +157,7 @@ class FitsFile: public rts2core::Expander
 		 *
 		 * @param fn   template file path
 		 */
-		void loadTemlate (const char *fn);
+		void loadTemplate (const char *fn);
 
 		void setTemplate (rts2core::IniParser *temp) { templateFile = temp; }
 
@@ -239,7 +239,7 @@ class FitsFile: public rts2core::Expander
 		 *
 		 * @param hc     config section holding template to write
 		 */
-		void writeTemplate (rts2core::IniSection *hc, const char *devname);
+		void writeTemplate (rts2core::IniSection *hc);
 
 		/**
 		 * Add template values to already existing file.
@@ -247,11 +247,6 @@ class FitsFile: public rts2core::Expander
 		 * @param templ  template to add - PRIMARY will get to primary headers, CHANNELx will get to to extensions
 		 */
 		void addTemplate (rts2core::IniParser *templ);
-
-		/**
-		 * Write image primary header from template.
-		 */
-		void writePrimaryHeader (const char *devname);
 
 		/**
 		 * Move current HDU.

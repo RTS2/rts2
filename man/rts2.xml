@@ -413,6 +413,14 @@
     <variablelist>
       <varlistentry>
         <term>
+	  <option>A</option>
+	</term>
+	<listitem>
+	  <para>Exposure start date</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>a</option>
         </term>
         <listitem>
@@ -426,6 +434,14 @@
         <listitem>
           <para>Image base path, ussually /images/[epoch].</para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>C</option>
+	</term>
+	<listitem>
+	  <para>ctime (seconds form 1-1-1970) of exposure start.</para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term>

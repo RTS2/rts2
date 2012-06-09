@@ -69,6 +69,8 @@ void Image::initData ()
 
 	loadHeader = false;
 	verbose = true;
+
+	templateDeviceName = NULL;
 	
 	setFileName (NULL);
 	setFitsFile (NULL);
@@ -128,6 +130,12 @@ Image::Image (Image * in_image):FitsFile (in_image)
 	filter_i = in_image->filter_i;
 	filter = in_image->filter;
 	in_image->filter = NULL;
+
+	loadHeader = in_image->loadHeader;
+	verbose = in_image->verbose;
+
+	templateDeviceName = NULL;
+
 	exposureLength = in_image->exposureLength;
 	channels = in_image->channels;
 	dataType = in_image->dataType;
@@ -276,6 +284,7 @@ Image::~Image (void)
 		arrayGroups.erase (iter++);
 	}
 
+	delete[]templateDeviceName;
 	delete[]targetName;
 	delete[]cameraName;
 	delete[]mountName;
@@ -291,9 +300,17 @@ std::string Image::expandVariable (char expression, size_t beg, bool &replaceNon
 {
 	switch (expression)
 	{
+		case 'A':
+			return getDateObs (getCtimeSec (), getCtimeUsec ());
 		case 'b':
 			replaceNonAlpha = false;
 			return rts2core::Configuration::instance ()->observatoryBasePath ();
+		case 'C':
+			{
+				std::ostringstream os;
+				os << getCtimeSec ();
+				return os.str ();
+			}
 		case 'c':
 			return getCameraName ();
 		case 'E':
@@ -325,6 +342,13 @@ std::string Image::expandVariable (std::string expression)
 {
 	std::string ret;
 	char valB[200];
+
+	if (templateDeviceName)
+	{
+		rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, templateDeviceName);
+		if (val != NULL)
+			return val->getValue ();
+	}
 
 	try
 	{
@@ -803,9 +827,22 @@ int Image::writeImgHeader (struct imghdr *im_h, int nchan)
 
 		rts2core::IniSection *hc = templateFile->getSection (sec.str ().c_str (), false);
 		if (hc)
-			writeTemplate (hc, NULL);
+			writeTemplate (hc);
 	}
 	return 0;
+}
+
+void Image::writePrimaryHeader (const char *devname)
+{
+	if (templateFile)
+	{
+		templateDeviceName = new char[strlen (devname) + 1];
+		strcpy (templateDeviceName, devname);
+
+		rts2core::IniSection *hc = templateFile->getSection ("PRIMARY", false);
+		if (hc)
+			writeTemplate (hc);
+	}
 }
 
 void Image::writeMetaData (struct imghdr *im_h)
