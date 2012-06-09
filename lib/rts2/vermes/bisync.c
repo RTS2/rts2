@@ -37,9 +37,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "bisync_vermes.h"
-#include "util_vermes.h"
-#include "serial_vermes.h"
+#include <vermes/bisync.h>
+#include <vermes/util.h>
+#include <vermes/serial.h>
 
 /* the control characters relevant in the ei bisync protocol */
 #define ASCII_STX '\x02'

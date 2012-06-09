@@ -23,11 +23,11 @@
 
 
 // Obs. Vermes specific 
-#include "vermes.h" 
-#include "slitazimuth.h"
-#include "move-to-target-az_vermes.h"
-#include "barcodereader_vermes.h"
-#include "ssd650v_comm_vermes.h"
+#include <vermes.h> 
+#include <slitazimuth.h>
+#include <vermes/move_to_target_az.h>
+#include <vermes/barcodereader.h>
+#include <vermes/ssd650v_comm.h>
 // wildi ev. ToDo: pthread_mutex_t mutex1
 extern int is_synced ; // ==SYNCED if target_az reached
 extern int motorState ;

@@ -24,13 +24,13 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include "connection.h"
-#include "dome.h"
-#include "vermes.h" 
-#include "door_vermes.h" 
-#include "move-door_vermes.h"
-#include "ssd650v_comm_vermes.h"
-#include "oak_comm_vermes.h"
+#include <connection.h>
+#include <dome.h>
+#include <vermes.h> 
+#include <door_vermes.h> 
+#include <vermes/move_door.h>
+#include <vermes/ssd650v_comm.h>
+#include <vermes/oak_comm.h>
 
 extern int oak_thread_state ;
 extern int doorState;

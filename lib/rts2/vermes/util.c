@@ -58,7 +58,7 @@
 #define IS_DIR_SEP(ch) ((ch) == DIR_SEP)
 #endif
 
-#include "util_vermes.h"
+#include <vermes/util.h>
 
 #if USE_SYSLOG
 int syslog_opened = 0;

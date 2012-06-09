@@ -33,10 +33,10 @@
 #endif
 
 #include <libnova/libnova.h>
-#include "vermes.h"
-#include "slitazimuth.h"
-#include "move-to-target-az_vermes.h"
-#include "ssd650v_comm_vermes.h"
+#include <vermes.h>
+#include <slitazimuth.h>
+#include <vermes/move_to_target_az.h>
+#include <vermes/ssd650v_comm.h>
 
 int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
 int barcodereader_state ;

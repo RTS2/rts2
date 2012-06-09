@@ -46,9 +46,9 @@
 #include <syslog.h>
 #include <math.h>
 
-#include "serial_vermes.h"
-#include "util_vermes.h"
-#include "barcodereader_vermes.h"
+#include <vermes/serial.h>
+#include <vermes/util.h>
+#include <vermes/barcodereader.h>
 
 extern int barcodereader_state ;
 extern double barcodereader_az ;

@@ -37,12 +37,12 @@
 
 #endif
 
-#include "door_vermes.h"
-#include "ssd650v_comm_vermes.h"
-#include "bisync_vermes.h"
-#include "serial_vermes.h"
-#include "util_vermes.h"
-#include "move-door_vermes.h"
+#include <door_vermes.h>
+#include <vermes/ssd650v_comm.h>
+#include <vermes/bisync.h>
+#include <vermes/serial.h>
+#include <vermes/util.h>
+#include <vermes/move_door.h>
 extern int debug;
 
 // default serial port device and it's default settings

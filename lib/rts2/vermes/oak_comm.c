@@ -48,8 +48,8 @@ extern int doorState ;
 extern int motorState ; 
 extern int debug;
 
-#include "OakHidBase.h"
-#include "OakFeatureReports.h"
+#include <OakHidBase.h>
+#include <OakFeatureReports.h>
 int checkOakCall(EOakStatus status, const char *file, int line, const char* function) ;
 /// \brief wrapper function for error report that add file,
 ///        line and function in which an error occured
@@ -59,12 +59,12 @@ int checkOakCall(EOakStatus status, const char *file, int line, const char* func
 /* Set environment variable MALLOC_TRACE to a writeable file name. */
 //#include <mcheck.h>
 
-#include "vermes.h"
-#include "door_vermes.h"
-#include "oak_comm_vermes.h"
-#include "util_vermes.h"
-#include "move-door_vermes.h"
-#include "ssd650v_comm_vermes.h"
+#include <vermes.h>
+#include <door_vermes.h>
+#include <vermes/oak_comm.h>
+#include <vermes/util.h>
+#include <vermes/move_door.h>
+#include <vermes/ssd650v_comm.h>
 
 
 char date_time[256] ;

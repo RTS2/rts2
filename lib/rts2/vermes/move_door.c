@@ -26,9 +26,9 @@
 #include <signal.h>
 #endif
 
-#include "door_vermes.h"
-#include "move-door_vermes.h"
-#include "ssd650v_comm_vermes.h"
+#include <door_vermes.h>
+#include <vermes/move_door.h>
+#include <vermes/ssd650v_comm.h>
 
 int doorEvent= EVNT_DOOR_CMD_DO_NOTHING ;
 int doorState= DS_UNDEF ; 

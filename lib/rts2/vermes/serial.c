@@ -37,8 +37,8 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
-#include "serial_vermes.h"
-#include "util_vermes.h"
+#include <vermes/serial.h>
+#include <vermes/util.h>
 
 
 /* place to store dynamically allocated serial devices descriptions */

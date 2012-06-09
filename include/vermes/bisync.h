@@ -26,7 +26,7 @@
 #ifndef __bisync_h__
 #define __bisync_h__
 
-#include "serial_vermes.h"
+#include <vermes/serial.h>
 
 
 enum ENQUIRY_STYLE {
