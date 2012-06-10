@@ -93,6 +93,8 @@ XmlDevCameraClient::XmlDevCameraClient (rts2core::Connection *conn):rts2script::
 
 	createOrReplaceValue (templateFile, conn, RTS2_VALUE_STRING, "_template", "FITS template to use", false, RTS2_VALUE_WRITABLE);
 
+	setTemplateFilename (templateFile->getValue ());
+
 	createOrReplaceValue (writeMetaData, conn, RTS2_VALUE_BOOL, "_write_meta_data", "write FITS meta-data", false, RTS2_VALUE_WRITABLE);
 	writeMetaData->setValueBool (true);
 }
