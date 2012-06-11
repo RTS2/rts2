@@ -702,6 +702,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): rts2core::Device (argc, argv, DEVICE_T
 
 	notifyConn = new rts2core::ConnNotify (this);
 
+	createValue (numRequests, "num_requests", "total pages served", false);
 	createValue (numberAsyncAPIs, "async_APIs", "number of active async APIs", false);
 	createValue (sumAsync, "async_sum", "total number of async APIs", false);
 	sumAsync->setValueInteger (0);

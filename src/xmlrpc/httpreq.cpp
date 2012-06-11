@@ -63,6 +63,8 @@ void GetRequestAuthorized::execute (XmlRpc::XmlRpcSource *source, struct sockadd
 	http_code = HTTP_OK;
 
 	authorizedExecute (path, params, response_type, response, response_length);
+
+	((XmlRpcd *) getMasterApp ())->addExecutedPage ();
 }
 
 void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, const char *css, const char *cssLink, const char *onLoad)

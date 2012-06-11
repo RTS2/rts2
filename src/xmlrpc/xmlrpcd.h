@@ -483,6 +483,8 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 		void clientFullDataReceived (Connection *conn, DataChannels *data);
 		void clientExposureFailed (Connection *conn, int status);
 
+		void addExecutedPage () { numRequests->inc (); }
+
 	protected:
 		virtual int idle ();
 #ifndef HAVE_PGSQL
@@ -513,6 +515,7 @@ class XmlRpcd:public rts2core::Device, XmlRpc::XmlRpcServer
 
 		Events events;
 
+		rts2core::ValueInteger *numRequests;
 		rts2core::ValueInteger *numberAsyncAPIs;
 		rts2core::ValueInteger *sumAsync;
 		rts2core::ValueBool *send_emails;
