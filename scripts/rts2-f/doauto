@@ -44,14 +44,22 @@
 # Version 19
 # updated 04/10/12 PK: better skyflat control
 # update  04/21/12 EF: use new skyflat method for both eve and morn
+# update  05/07/12 PK,EF: check state before tracking, if not, 2-4 stow
+# Version 20
+# updated 05/08/12 EF: added AM dome flats if none PM
+# updated 05/17/12 EF: tweaked AM dome flat logic, now waits until fill-1hour
+# Version 21
+# updated 05/18/12 EF: made sure all "set x = y" use " = "
+# updated 05/19/12 EF: finally sorted out logic for AM/PM domeflats?
+###############################################################################
 # Copyright (C) 2010-2012 Emilio Falco (FLWO) & Petr Kubanek (Institute of Physics, Czech Republic)
-
-set ROBOVER="V19"
-set rts2dir="/home/observer/RTS2-F"
-set lastoffimage=-1
+###############################################################################
+set ROBOVER = "V21"
+set rts2dir = "/home/observer/RTS2-F"
+set lastoffimage = -1
 echo -1 -1 > $lasttarget
-set tar_id=-2
-set slitfile="/Realtime/lib/slit_status"
+set tar_id = -2
+set slitfile = "/Realtime/lib/slit_status"
 alias run_obs 'source /home/observer/rts2-sys/bin/run_obs'
 alias rts2-logcom 'source /home/observer/RTS2-F/rts2.logcom'
 source /home/observer/rts2-sys/bin/rts2-f-env
@@ -60,14 +68,14 @@ $RTS2/bin/rts2-unabort
 rts2-logcom "RTS2-F: script nabort command revoked."
 /bin/rm -f /home/observer/RTS2-F/.NABORT
 #  check status of RTS2-F
-set rts2status=`ps auxw | grep rts2 | grep XMLRPC`
+set rts2status = `ps auxw | grep rts2 | grep XMLRPC`
 #echo ${%rts2status}
 if ( ${%rts2status} == 0 ) then
     rts2-logcom "RTS2-F is not running, starting it now."
     /home/observer/rts2-sys/etc/init.d/rts2 start
 #    rts2-logcom "STOP weather sensing for now."
 #    /bin/killall rts2-sensor-flwo-weather
-    set rts2status=`ps auxw | grep rts2 | grep XMLRPC`
+    set rts2status = `ps auxw | grep rts2 | grep XMLRPC`
 #echo ${%rts2status}
     if ( ${%rts2status} == 0 ) then
 	echo "RTS2-F still not running, QUIT."
@@ -75,26 +83,28 @@ if ( ${%rts2status} == 0 ) then
     endif
 endif
 
-set ignoreDAY=0
+set ignoreDAY = 0
 setenv notmove 2
 umask 022
 # set firstnight to 1, in case RTS2-F will run multiple nights 
 #     firstnight = 0 means NOT first night
-set firstnight=1
+set firstnight = 1
 # set ignoreOFF=0 to skip OFF state check
-set ignoreOFF=0
+set ignoreOFF = 0
 # set dosky to 0 until we can start skyflats at dusk:
-set dosky1=0
+set dosky1 = 0
 # set dosky to 0 until we can start skyflats at dawn:
-set dosky2=0
+set dosky2 = 0
 # setenv TTsky to 0 until time to take skyflats
 setenv TTsky 0
 # setenv TTdome to 0 in case it's too late for domeflats
 setenv TTdome 0
+# Python path needed for RTS2 modules
+setenv PYTHONPATH /home/petr/rts2-sys/lib/python2.6/site-packages
 # set slit to 0 until slit is open
-set slit=0
+set slit = 0
 # set covers to 0 until they are open
-set covers=0
+set covers = 0
 # set domes to 0 until dome flats done
 set domes = 0
 # print off message
@@ -102,7 +112,7 @@ set printoff = 1
 # we haven't yet run focusing...
 setenv rts2_focusing_succ 0
 # and we haven't yet change telescope focus
-if ( ! (${?defoc_current}) ) set defoc_current=0
+if ( ! (${?defoc_current}) ) set defoc_current = 0
 # set flag to 0 until tele ref done:
 set reftele = 1
 set skipref = 1
@@ -115,7 +125,7 @@ set morningstow = 1
 #  firstnight=1 means the first night of a possible multiple-night run
 
 # set empty name for alternative domeflat list
-set domefile = ""
+set domefile = "$rts2dir/FLATS/DOMEFILT"
 # check flags first
 while ( "x$1" != "x" )
     switch ($1)
@@ -184,7 +194,7 @@ end
 source $rts2dir/rts2.setrunlog
 if ( -e $runlog ) then
     set numobs = `grep "Target:" $runlog | tail -1 | awk '{print $5}'`
-    set testn = `echo $numobs | awk '{isn=/[0-9]/; print isn}'`
+    set testn = `echo $numobs | awk '{isn = /[0-9]/; print isn}'`
     if ( $testn < 1 ) then
 	rts2-logcom "No observations found in $runlog"
 	set numobs = 0
@@ -208,7 +218,7 @@ endif
 if ( $startnight == 1 ) then
     rts2-logcom ">>>> START RTS2-F $ROBOVER robot observations <<<<"
 else
-    rts2-logcom ">>>> CONTINUE RTS2-F robot observations <<<<"
+    rts2-logcom ">>>> CONTINUE RTS2-F $ROBOVER robot observations <<<<"
     if ( $ignoreDAY ) then
 	rts2-logcom "---RTS2-F: TESTING, track ON, dome OFF." 
 	tele trackon
@@ -221,7 +231,7 @@ else
 		tele trackon
 		tele domeon
 	else
-		rts2-logcom "---RTS2-F: NOT OBSERVING, track OFF, dome OFF."
+		rts2-logcom "---RTS2-F: IDLE, track OFF, dome OFF."
 		tele stow 
 		tele domeoff
 	endif
@@ -263,7 +273,7 @@ while (1 != 0)
 	  	if ( $tar_id == -2 ) then
 			rts2-logcom "   Dome slit is open\!"
 			rts2-logcom "   CTRL-C to prevent closing dome slit"
-			set count=15
+			set count = 15
 			echo -n "Dome will close in $count seconds..."
 			while ( $count > 0 )
 				sleep 1
@@ -333,23 +343,21 @@ while (1 != 0)
 # DAY
 	case 0:
 	    rts2-logcom "---RTS2-F state: day"
-# check to see if domeflats have been done already:
-  	    set domflog=$rts2dir"/FLATS/domes-"`date +%y%m%d`
+	    set HLOC = `/home/observer/RTS2-F/rts2.getMSThm -c -h`
+	    set domflog = $rts2dir"/FLATS/domes-"`date +%y%m%d`
 	    if ( -e $domflog && $domes == 0 ) then
 		set nlog = `wc -l $domflog | awk '{print $1}'`
 		if ( $nlog < 5 ) then
 		    rts2-logcom "$domflog has $nlog entries, take a full set."
-#		    echo -n "Enter y (n) to take standard (skip domes): "
-#		    set hitcr=$<
-#		    if (hitcr != "y" && hitcr != "Y") then
-#			set domes = 1
-#		    endif
+		else
+		    rts2-logcom "Evening dome flats done for today."
+		    set domes = 1
 		endif
 	    endif
 # take domeflats if needed
-	    if ($domes ==  0) then
-# calculate whether there is enough time for domeflats: 
-#  wait until 100 min before skyflats:
+	    if ( $domes == 0 ) then
+# calculate whether there is enough time for PM domeflats 
+#  wait until about 60 min before skyflats:
 		source $rts2dir/rts2.domeflattimeWait
 		if ($TTdome) then
 #  run domeflats script that uses a list of biases and flats
@@ -395,7 +403,7 @@ while (1 != 0)
 			set state = 2
 		    end
 		else
-		    set count=0
+		    set count = 0
 		    while ($slitstatus == 0 && $count < 15)
 			@ count++
 			rts2-logcom "PROBLEM: SLIT STILL CLOSED, reattempt, sleep 1 min..."
@@ -466,7 +474,7 @@ while (1 != 0)
 # time for skyflats has arrived if TTsky is 1:
 	   if ($TTsky) then
 # 		...get telescope ready
-	      if ($slit == 0) then
+	      if ($slit  == 0) then
 	         rts2-logcom "SKYFLAT: slit CLOSED, OPEN it\!"
 		 openslit
 		 set slit = `wc -l /Realtime/lib/slit_status | awk '{print $1}'`
@@ -491,9 +499,10 @@ while (1 != 0)
 	      endif
 #	try SKYFILT_E file
 #  PETR, I ADDED sky_time as an argument to rts2.skyflats. E 4/12/12
+# SKYFILT_X have filter, initial exposure
 	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFILT_E`" )
-	         set sky_filter=`echo $skyline | cut -d' ' -f1`
-		 set sky_time=`echo $skyline | cut -d' ' -f2`
+	         set sky_filter = `echo $skyline | cut -d' ' -f1`
+		 set sky_time = `echo $skyline | cut -d' ' -f2`
 	      	 source $rts2dir/rts2.skyflats $sky_filter $sky_time
 	         set skyflatstat = $status
 # 
@@ -512,7 +521,7 @@ while (1 != 0)
 	      set dosky1 = 1
 	   endif
 # reference the tel, if -R flag SET and skyflats done or too late for them
-	   if ($reftele == 0) then
+	   if ($reftele  == 0) then
 	      rts2-logcom "Reference telescope."
 	      tele stow
 	      tele ref
@@ -536,7 +545,7 @@ while (1 != 0)
 # NIGHT
         case 3:
 # reference the tel, if -R flag SET, do this before anything else.
-	   if ($reftele == 0) then
+	   if ($reftele  == 0) then
 	      rts2-logcom "Reference telescope."
 	      tele stow
 	      tele ref
@@ -607,16 +616,17 @@ while (1 != 0)
 	   endif
 	   # run_obs $target
 	   run_obs
-	   @ numobs += 1
+	   @ numobs +=  1
 # rts2obstarg is setenv in run_obs
 	   rts2-logcom "Target: $rts2obstarg, No. $numobs"
 	   breaksw
 # DAWN
         case 4:
 #     check to see if u skyflats were done in the evening, skip if done:
-  	   set skyflog=$rts2dir"/FLATS/skies-"`date -d yesterday +%y%m%d`
+  	   set skyflog = $rts2dir"/FLATS/skies-"`date -d yesterday +%y%m%d`
 	   if ( -e $skyflog ) then
-	      set sky_filter=`echo $skyline | cut -d' ' -f1`
+	      set skyline = `cat $rts2dir/FLATS/SKYFILT_M`
+	      set sky_filter = `echo $skyline | cut -d' ' -f1`
 	      set nlog = `grep -c "next u" $skyflog`
 	      if ($nlog >= 5) then
 		 set dosky2 = 1
@@ -647,7 +657,7 @@ while (1 != 0)
 
 	   if ($TTsky) then
 # 	     ...telescope should be ready to go at this point
-	      if ($slit == 0) then
+	      if ($slit  == 0) then
 		 rts2-logcom "SKYFLAT: slit CLOSED, OPEN it\!"
 		 openslit
 	 # check again??
@@ -675,8 +685,8 @@ while (1 != 0)
 	      endif
 #	try SKYFILT_M file
 	      foreach skyline ( "`cat $rts2dir/FLATS/SKYFILT_M`" )
-	         set sky_filter=`echo $skyline | cut -d' ' -f1`
-		 set sky_time=`echo $skyline | cut -d' ' -f2`
+	         set sky_filter = `echo $skyline | cut -d' ' -f1`
+		 set sky_time = `echo $skyline | cut -d' ' -f2`
 	      	 source $rts2dir/rts2.skyflats $sky_filter $sky_time
 	         set skyflatstat = $status
 # 
@@ -693,13 +703,42 @@ while (1 != 0)
 	   endif
 # stow tele, close covers if skyflats done or too late for them
 	   source $rts2dir/rts2.shutall
-#	   rts2-logcom "PLEASE fill the Dewar now\!"
+
+# check for presence of domeflats from last night
+  	   set domflog = $rts2dir"/FLATS/domes-"`date -d yesterday +%y%m%d`
+	   if ( -e $domflog ) then
+	       set nlog = `wc -l $domflog | awk '{print $1}'`
+	       if ( $nlog < 5 ) then
+		   rts2-logcom "---RTS2-F: $domflog has only $nlog entries."
+		   set domes = 0
+	       else
+		   rts2-logcom "---RTS2-F: dawn, found evening domeflats."
+		   set domes = 1
+	       endif
+	   endif
+	   if ($domes ==  0) then
+# calculate whether there is enough time for AM domeflats 
+#  wait until about 60 min after skyflats:
+	       source $rts2dir/rts2.domeflattimeWait
+	       if ($TTdome) then
+#  run domeflats script that uses a list of biases and flats
+		   source $rts2dir/rts2.domeflats-list $domefile
+		   set domes = 1
+	       else
+		   rts2-logcom "Missed AM domeflats period."
+		   if ( -e $rts2abort ) then
+		       rts2-logcom "STOProbot called"
+		       exit
+		   endif
+	       endif
+	   endif
 # current MST hours, minutes
-	   set HLOC=`/home/observer/RTS2-F/rts2.getMSThm -c -h`
-	   set MLOC=`/home/observer/RTS2-F/rts2.getMSThm -c -m`
-	   echo ">>>> Finishing observations at $HLOC $MLOC <<<<"
-	   rts2-logcom ">>>> STOP RTS2-F robot script <<<<"
-# set firstnight=0 to allow robot to run another night if desired
+	   set HLOC = `/home/observer/RTS2-F/rts2.getMSThm -c -h`
+	   set MLOC = `/home/observer/RTS2-F/rts2.getMSThm -c -m`
+	   rts2-logcom ">>>> Finishing observations at $HLOC $MLOC <<<<"
+# wait until 15 min after AM LN2 fill
+	   source $rts2dir/rts2.LN2fillWait
+# set firstnight = 0 to allow robot to run another night if desired
 	   set firstnight = 0
 	   set startnight = 1
 	   set domes = 0
