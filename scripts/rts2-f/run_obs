@@ -119,31 +119,30 @@ if ( $tar_id > 0 ) then
 
 		$xmlrpc -c "SEL.observation $tar_id $obs_id"
 
+		#notmove is for debugging - testing during day
+		if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
+			echo -n "Track on, DOME ON"
+			tele trackon
+			tele domeon
+	
+			$xmlrpc -c "TELE.move $ra $dec"
+	
+			rts2-logcom -n "Moving to $ra $dec 2000.0 .."
+			tele coords $ra $dec 2000.0
+	
+			sleep 3
+	
+			tele enable
+	
+			echo "on coordinates"
+		endif	
+		# mark end of slew
+		$RTS2/bin/rts2-target --observe $obs_id
+
 		# save queues..
 		$RTS2/bin/autosavequeue > /dev/null
 #	else
 #		rts2-logcom "repeating script for target $name, ID $tar_id, pi $pi, program $program, observation ID $obs_id"
-	endif
-
-	#notmove is for debugging - testing during day
-	if ( $last_tar_id != $tar_id && $ra != "nan" && $dec != "nan" && $notmove != 1 ) then
-		echo -n "Track on, DOME ON"
-		tele trackon
-		tele domeon
-	
-		$xmlrpc -c "TELE.move $ra $dec"
-	
-		rts2-logcom -n "Moving to $ra $dec 2000.0 .."
-		tele coords $ra $dec 2000.0
-	
-		sleep 3
-	
-		tele enable
-	
-		echo "on coordinates"
-	
-		# mark end of slew
-		$RTS2/bin/rts2-target --observe $obs_id
 	endif
 
 	# run tempfocus only if last target was not focusing..
