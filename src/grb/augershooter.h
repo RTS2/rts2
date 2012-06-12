@@ -111,7 +111,7 @@ class DevAugerShooter:public rts2db::DeviceDb
 
  /*       fourth set of cuts         */
 		rts2core::ValueInteger *EyeId4;
-		rts2core::ValueDouble *minEnergy4;
+		rts2core::ValueDouble *minNPix4;
 		rts2core::ValueDouble *maxDGHChi2Improv4;
  /*       fourth set of cuts - end   */		
 

@@ -315,7 +315,7 @@ int ConnShooter::processAuger ()
 	cutindex = 3;
 
 	/*       fourth set of cuts         */
-	if (compare (db_Energy, CMP_GT, master->minEnergy4->getValueDouble (), "Energy")
+	if (compare (db_NPix, CMP_GT, master->minNPix4->getValueInteger (), "NPix")
 		&& compare (db_Eye, CMP_EQ, master->EyeId4->getValueInteger (), "Eye")
 		&& compare (db_DGHChi2Improv, CMP_LT, master->maxDGHChi2Improv4->getValueDouble (), "DGHChi2Improv")
 	)

@@ -151,8 +151,8 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):DeviceDb (in_argc
 	createValue (EyeId4, "Eye_Id_cut4", "Eye Id, cut4", true, RTS2_VALUE_WRITABLE);
 	EyeId4->setValueInteger (1);
 
-	createValue (minEnergy4, "min_energy_cut4", "minimal shower energy, cut4", true, RTS2_VALUE_WRITABLE);
-	minEnergy4->setValueDouble (10.);
+	createValue (minNPix4, "min_npix_cut4", "minimal number of pixels, cut4", true, RTS2_VALUE_WRITABLE);
+	minNPix4->setValueDouble (10.);
 
 	createValue (maxDGHChi2Improv4, "max_dghchi2_improv4", "maximal DGHChi2 Improv, cut4", true, RTS2_VALUE_WRITABLE);
 	maxDGHChi2Improv4->setValueDouble (-10.);
