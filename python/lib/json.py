@@ -34,7 +34,13 @@ class ChunkResponse(httplib.HTTPResponse):
 	read_by_chunks = False
 
 	def __init__(self, sock, debuglevel=0, strict=0, method=None, buffering=False):
-		httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method, buffering=buffering)
+		# Python 2.6 does not have buffering
+		try:
+			httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method, buffering=buffering)
+		except TypeError,te:
+			if self.verbose:
+				print te
+			httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel, strict=strict, method=method)
 
 	def _read_chunked(self,amt):
 		if not(self.read_by_chunks):
@@ -137,7 +143,8 @@ class Rts2JSON:
 		except Exception,ec:
 			import traceback
 			traceback.print_exc()
-			print 'Cannot parse',url,':',ec
+			if self.verbose:
+				print 'Cannot parse',url,':',ec
 			raise ec
 		finally:
 			if hlib is None:
