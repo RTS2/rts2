@@ -1,0 +1,224 @@
+#!/bin/awk -f
+
+##############################################################################################################
+# This script requires:
+#   skycalc                                       [executable]
+#   focusXX.dat                                   [list of focusing fields ]
+##############################################################################################################
+
+BEGIN{
+# FLWO: 12 mag stars: focus12.dat, 13 mag stars focus13.dat
+  focusfile   = "/home/observer/findfwhm/focus12.dat" ;
+  filterfile   = "/home/observer/findfwhm/filter.dat" ;
+  dobinfile = "/home/observer/findfwhm/dobin.dat";
+  skycalc  = "/home/observer/bin/skycalc" ;
+#DEFINE BINNED=2, UNBINNED=1
+  dobin = 2;
+  file3 = dobinfile  ;
+  getline line < file3
+  split ( line, field ) ;
+  dobin = field[1];
+# limits on observational conditions
+# maxairmass  = maximum permitted airmass
+# minmoonangle= minimum moon angle
+  maxairmass   =  2.5;
+  minmoonangle = 40;
+
+# zero point (for 1 ADU/sec) used to estimate count rates 
+  zero = 23.5;
+
+# offsets (arcsec) to use between images
+  raoff =  0;
+  dcoff = 15;
+
+# values in "line" set the focus range and number of steps
+  line = "-100 100 11";
+  split(line,field) ;
+  focmin  = field[1];
+  focmax  = field[2];
+  nfocus0 = field[3];
+  nfocus  = int(nfocus0);
+  printf("Cover range %d to %d with %d steps\n",focmin,focmax,nfocus);
+################################
+# Read all target objects
+################################
+    file = focusfile  ;
+    printf("Input file of focus star fields:  %s \n", file ) ;
+    ncal = 0;
+    while(getline line < file > 0) {
+      split ( line, field ) ;
+      if ( field[1] ~ /FOC/ ) { 
+        ncal++ ;
+        name[ncal]   = field[1] ;
+        object[ncal] = field[2] ;
+        rah[ncal]    = field[3] ;
+        ram[ncal]    = field[4] ;
+        ras[ncal]    = field[5] ;
+        decd[ncal]   = field[6] ;
+        decm[ncal]   = field[7] ;
+        decs[ncal]   = field[8] ;
+        rmag[ncal]   = field[9] ;  #R magnitude
+        radeg[ncal]  = (rah[ncal] + ram[ncal]/60.0 + ras[ncal]/3600.0)*15.0;
+        decdstr[ncal]= decd[ncal]; 
+        if ( decd[ncal] ~ /\-/ ) {
+          decdeg[ncal]  = decd[ncal]-decm[ncal]/60.0-decs[ncal]/3600.0;
+  	  decsign[ncal] = -1 ;
+        } else {
+          decdeg[ncal]  = decd[ncal]+decm[ncal]/60.0+decs[ncal]/3600.0;
+  	  decsign[ncal] = +1 ;
+          }
+        }
+      }
+    close(file);
+
+################################
+# calculate airmass using skycalc
+################################
+  file1 = "/tmp/skycalc.input" ;
+  system("/usr/bin/rm -f /tmp/skycalc.input");
+  print  ( "h" )                            > file1 ;
+  printf ( "T %2d %2d =\n", lthour, ltmin )>> file1 ;
+  print  ( "xR" )                          >> file1 ;
+  print  ( "/tmp/skycalc.dat" )            >> file1 ;
+  print  ( "x l" )                         >> file1 ;
+  printf ( "1 %3d \n",ncal)                >> file1 ;
+  print  ( "Q" )                           >> file1 ;
+  fflush(file1);
+  system("chmod 666 /tmp/skycalc.*");
+
+  file = "/tmp/skycalc.dat";
+  system("/usr/bin/rm -f /tmp/skycalc.dat");
+  for (i=1; i<=ncal; i++) {
+    printf("STDL%03d %02d %02d %04.1f %3.3s %02d %02d 2000.0\n",i,rah[i],ram[i],ras[i],decdstr[i],decm[i],decs[i]) >> file;
+    }
+  fflush(file);
+  system("chmod 666 /tmp/skycalc.dat");
+
+  execute = skycalc " < /tmp/skycalc.input | grep STD > /tmp/skycalc.out" ;
+  while ( execute | getline line1 > 0 ) {
+    printf ( "Generating skycalc data file\n");
+    }
+
+  lowestairmass = 100.0;
+  ibest         = -1;
+  file          = "/tmp/skycalc.out";
+  for (i=1; i<=ncal; i++) {
+     getline line1 < file;
+     split(line1,field1);
+     airmass[i]     = field1[12];
+     if ( airmass[i] ~ /down/ ) airmass[i] = 100.0;
+     if ((airmass[i]<lowestairmass)) { 
+       lowestairmass = airmass[i];
+       ibest         = i; 
+       }
+     }
+   close(execute);
+
+#   print ( " " ) ;
+#   printf("TARGET %d IS SELECTED\n",ibest);
+   juse = ibest;
+   if ( (juse < 1) || (juse > ncal) ) {
+     printf("bad entry == must be between 1 and %d, enter again\n",ncal);
+     getline juse < "-";
+     juse = int(juse);
+     }
+   if ( juse < 1 || juse > ncal ) {
+     printf("still bad entry == must be between 1 and %d\n",ncal);
+     printf("QUITTING -- TRY AGAIN\n");
+     exit;
+     }
+
+   print("\n\n");
+   file = "/home/observer/findfwhm/kgetstar";
+   printf("# script to find standard star\n") > file;
+
+# fix exposure at 5 sec unless binx1, 10:
+  expest = 5;
+   if (dobin==1)  expest = 10;
+	     
+# set the binning
+   setbin(dobin);
+
+   file3 = filterfile  ;
+   getline line < file3
+   split ( line, field ) ;
+   filter = field[1];
+   printf("set filter = \"%s\"\n",filter) >> file
+   print("set OFILT=`tele filter`") >> file
+#   print("echo -n \"START FILT = \" $OFILT")  >> file
+   print("set SFILT=`grep -n $OFILT /Realtime/lib/filt.dat | cut -f1 -d:`")  >> file;
+#   print("echo \" SLOT = \"$SFILT")  >> file;
+#   print("echo \" *NOTE* selecting full chip readout, selchan 0\"") >> file;
+   print("ccd selchan 0")  >> file;
+# move telescope to target
+   rause = radeg[juse] ;
+   dcuse = decdeg[juse];
+   degtocoord(rause,dcuse,ra3,dc3);
+   movescope(ra3,dc3);
+
+# use the filter in filterfile:
+  print("set nfilt=`grep -n $filter /Realtime/lib/filt.dat | cut -f1 -d: |head -1`") >> file;
+
+  print ("if ($nfilt != $SFILT) then") >> file;
+#  print ("   echo -n \"Turning Filter wheel to filter $filter\"") >> file;
+  print ("   tele filter $nfilt") >> file;
+  print ("else") >> file;
+  print ("   echo -n \"Filter wheel already at filter $filter\"") >> file;
+  print ("endif") >> file;
+
+  printf("object MATCH\n")                         >> file;
+  printf("\n")                                       >> file;
+}
+
+
+function degtocoord(ra,dc,ra3,dc3) {
+  ra24    = ra/15.0;
+  dc24    = (dc >= 0) ? dc : -dc;
+  ra3[0]  = int(ra24);
+  ra3[1]  = int(60.0*(ra24-ra3[0]));
+  ra3[2]  = 3600.0*(ra24-ra3[0]-ra3[1]/60.0);
+  dc3[0]  = int(dc24);
+  dc3[1]  = int(60.0*(dc24-dc3[0]));
+  dc3[2]  = 3600.0*(dc24-dc3[0]-dc3[1]/60.0);
+
+# check the result
+  rachk = 15.0*(ra3[0]+ra3[1]/60.0+ra3[2]/3600.0); 
+  dcchk = dc3[0]+dc3[1]/60.0+dc3[2]/3600.0; 
+  dra     = rachk-ra;
+  ddc     = dcchk-dc24;
+  if ((dra > 0.05) || (dra < -0.05)) {
+    printf("BAD RA CONVERSION: IN=%f OUT=%f\n",ra,rachk);
+    }
+  if ((ddc > 0.05) || (ddc < -0.05)) {
+    printf("BAD Dec CONVERSION: IN=%f OUT=%f\n",dc,dcchk);
+    }
+
+
+  if (dc < 0) dc3[0] = "-" dc3[0];
+  }
+
+function movescope(ra3,dc3){
+  printf("\n") >> file;
+#  printf("echo \"sending coordinates %02d:%02d:%04.1f %3d:%02d:%02d 2000.0 \"\n",        ra3[0],ra3[1],ra3[2],dc3[0],dc3[1],dc3[2]) >> file;
+  printf ( "tele coords %02d:%02d:%04.1f %3d:%02d:%02d 2000.0 \n",
+        ra3[0],ra3[1],ra3[2],dc3[0],dc3[1],dc3[2]) >> file;
+  print ("tele enable")                     >> file;
+  printf("\n") >> file;
+  }
+
+function offsetscope(dra,ddc){
+  printf("\n")                                               >> file;
+#  printf("echo -n \"offsetting by %d %d arcsec\"\n",dra,ddc) >> file;
+  printf("tele offset %d %d \n",dra,ddc)                     >> file;
+  printf("sleep 3\n")                                        >> file;
+  printf("\n")                                               >> file;
+  }
+
+function setbin(dobin) {
+  if (dobin==1) {
+    print("large") >> file;
+  } else {
+    print("small") >> file;
+    }
+
+  }

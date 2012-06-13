@@ -51,6 +51,7 @@
 # Version 21
 # updated 05/18/12 EF: made sure all "set x = y" use " = "
 # updated 05/19/12 EF: finally sorted out logic for AM/PM domeflats?
+# updated 06/11/12 PK: don't increase num_obs if target was not run
 ###############################################################################
 # Copyright (C) 2010-2012 Emilio Falco (FLWO) & Petr Kubanek (Institute of Physics, Czech Republic)
 ###############################################################################
@@ -616,9 +617,6 @@ while (1 != 0)
 	   endif
 	   # run_obs $target
 	   run_obs
-	   @ numobs +=  1
-# rts2obstarg is setenv in run_obs
-	   rts2-logcom "Target: $rts2obstarg, No. $numobs"
 	   breaksw
 # DAWN
         case 4:

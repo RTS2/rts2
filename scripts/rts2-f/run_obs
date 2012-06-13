@@ -165,4 +165,7 @@ if ( $tar_id > 0 ) then
 	
 	#echo `date` "observation $obs_id of object $name ($ra $dec) ends"
 	#rts2-logcom "script for observation $obs_id of object $name ($ra $dec) ends"
+
+	@ numobs +=  1
+	rts2-logcom "Target: $rts2obstarg, No. $numobs"
 endif
