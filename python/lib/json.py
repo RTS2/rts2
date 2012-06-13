@@ -134,14 +134,13 @@ class Rts2JSON:
 				r = th.getresponse()
 
 			if not(r.status == httplib.OK):
-				s = 'execution of {0} failed with status {1} {2}'.format(url,r.status,r.reason)
 				jr = sysjson.load(r)
 				raise Exception(jr['error'])
 			return r
 		except Exception,ec:
-			import traceback
-			traceback.print_exc()
 			if self.verbose:
+				import traceback
+				traceback.print_exc()
 				print 'Cannot parse',url,':',ec
 			raise ec
 		finally:
@@ -167,6 +166,26 @@ class Rts2JSON:
 
 class JSONProxy(Rts2JSON):
 	"""Connection with managed cache of variables."""
-	def __init__(self,username=None,password=None,verbose=False):
-		Rts2JSON.__init__(self,username,password,verbose)
+	def __init__(self,url='http://localhost:8889',username=None,password=None,verbose=False,http_proxy=None):
+		Rts2JSON.__init__(self,url,username,password,verbose,http_proxy)
 		self.devices = {}
+	
+	def refresh(self,device=None):
+		if device is None:
+			self.devices = {}
+			for x in self.loadJson('/api/devices'):
+				self.devices[x] = self.loadJson('/api/get',{'d':x})
+
+		self.devices[device] = self.loadJson('/api/get',{'d':device})['d']
+	
+	def getValue(self,device,value,refresh_not_found=False):
+		dc = None
+		try:
+			dc = self.devices[device]
+			return self.devices[device][value]
+		except KeyError,ke:
+			if refresh_not_found == False:
+				raise ke
+			self.refresh(device)
+			dc = self.devices[device]
+		return dc[value]
