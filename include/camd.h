@@ -849,7 +849,7 @@ class Camera:public rts2core::ScriptDevice
 		}
 
 		/**
-		 * Add temperature to temprature history.
+		 * Add temperature to temperature history.
 		 */
 		void addTempCCDHistory (float temp);
 

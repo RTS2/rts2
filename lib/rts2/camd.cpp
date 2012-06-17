@@ -1343,6 +1343,7 @@ void Camera::addTempCCDHistory (float temp)
 	tempCCDHistory->calculate ();
 	sendValueAll (tempCCDHistory);
 	tempCCD->setValueFloat (tempCCDHistory->getValueFloat ());
+	sendValueAll (tempCCD);
 }
 
 void Camera::deviceReady (rts2core::Connection * conn)
