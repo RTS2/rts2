@@ -49,7 +49,7 @@ class Fli:public Camera
 
 		virtual int processOption (int in_opt);
 
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
@@ -263,7 +263,7 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createTempCCDHistory ();
 	createExpType ();
 
-	createValue (coolPower, "COOL_PWR", "cooling power", true);
+	coolPower = NULL;
 
 	createValue (fliShutter, "FLISHUT", "FLI shutter state", true, RTS2_VALUE_WRITABLE);
 	fliShutter->addSelVal ("CLOSED");
@@ -353,20 +353,15 @@ int Fli::processOption (int in_opt)
 	return 0;
 }
 
-int Fli::init ()
+int Fli::initHardware ()
 {
 	LIBFLIAPI ret;
 
-	int ret_c;
 	char **names;
 	char *nam_sep;
 	char **nam;					 // current name
 
 	const char *devnam;
-
-	ret_c = Camera::init ();
-	if (ret_c)
-		return ret_c;
 
 	if (fliDebug)
 		FLISetDebugLevel (NULL, fliDebug);
@@ -505,6 +500,12 @@ int Fli::init ()
 			return -1;
 	}
 
+	double cp;
+	ret = FLIGetCoolerPower (dev, &cp);
+	if (!ret)
+	{
+		createValue (coolPower, "COOL_PWR", "cooling power", true);
+	}
 
 	// get mode..
 	createValue (fliMode, "RDOUTM", "readout mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -534,10 +535,13 @@ int Fli::info ()
 	if (ret)
 		return -1;
 	tempCCD->setValueFloat (fliTemp);
-	ret = FLIGetCoolerPower (dev, &fliTemp);
-	if (ret)
-		return -1;
-	coolPower->setValueFloat (fliTemp);
+	if (coolPower)
+	{
+		ret = FLIGetCoolerPower (dev, &fliTemp);
+		if (ret)
+			return -1;
+		coolPower->setValueFloat (fliTemp);
+	}
 	return Camera::info ();
 }
 
