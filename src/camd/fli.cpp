@@ -541,7 +541,7 @@ int Fli::info ()
 	return Camera::info ();
 }
 
-int FLI::switchCooling (bool cooling)
+int Fli::switchCooling (bool cooling)
 {
 	if (cooling)
 	{
@@ -580,6 +580,13 @@ void Fli::afterNight ()
 	setCoolTemp (40);
 	Camera::afterNight ();
 }
+
+//int Fli::idle ()
+//{
+// we want to know the current noise
+// charactristic of the chip. So we read out a sample of 256 pixels and compute
+// the noise&level
+//}
 
 int main (int argc, char **argv)
 {
