@@ -75,7 +75,6 @@ class Sbig:public Camera
 		virtual int info ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
-		virtual int switchCooling (bool cooling);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -99,6 +98,9 @@ class Sbig:public Camera
 			sbig_readout_mode = in_vert - 1;
 			return Camera::setBinning (in_vert, in_hori);
 		}
+
+		virtual int switchCooling (bool cooling);
+
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int readoutStart ();

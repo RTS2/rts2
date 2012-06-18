@@ -72,10 +72,11 @@ class Fli:public Camera
 			addBinning2D (1, 4);
 			addBinning2D (1, 8);
 			addBinning2D (1, 16);
-
 		}
 
 		virtual int info ();
+		
+		virtual int switchCooling (bool cooling);
 
 		virtual void temperatureCheck ();
 
@@ -87,6 +88,7 @@ class Fli:public Camera
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
 	private:
+		rts2core::ValueFloat *coolPower;
 		rts2core::ValueSelection *fliShutter;
 		rts2core::ValueBool *useBgFlush;
 		rts2core::ValueSelection *fliMode;
@@ -255,10 +257,13 @@ int Fli::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 
 Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
+	createTempAir ();
 	createTempSet ();
 	createTempCCD ();
 	createTempCCDHistory ();
 	createExpType ();
+
+	createValue (coolPower, "COOL_PWR", "cooling power", true);
 
 	createValue (fliShutter, "FLISHUT", "FLI shutter state", true, RTS2_VALUE_WRITABLE);
 	fliShutter->addSelVal ("CLOSED");
@@ -521,10 +526,31 @@ int Fli::info ()
 		return Camera::info ();
 	LIBFLIAPI ret;
 	double fliTemp;
-	ret = FLIGetTemperature (dev, &fliTemp);
+	ret = FLIReadTemperature (dev, FLI_TEMPERATURE_EXTERNAL, &fliTemp);
 	if (ret)
 		return -1;
+	tempAir->setValueFloat (fliTemp);
+	ret = FLIReadTemperature (dev, FLI_TEMPERATURE_INTERNAL, &fliTemp);
+	if (ret)
+		return -1;
+	tempCCD->setValueFloat (fliTemp);
+	ret = FLIGetCoolerPower (dev, &fliTemp);
+	if (ret)
+		return -1;
+	coolPower->setValueFloat (fliTemp);
 	return Camera::info ();
+}
+
+int FLI::switchCooling (bool cooling)
+{
+	if (cooling)
+	{
+		return FLISetTemperature (dev, tempSet->getValueFloat ());
+	}
+	else
+	{
+		return FLISetTemperature (dev, 100) ? -1:0;
+	}
 }
 
 void Fli::temperatureCheck ()

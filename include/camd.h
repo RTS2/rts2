@@ -231,11 +231,6 @@ class Camera:public rts2core::ScriptDevice
 		virtual int scriptEnds ();
 
 		/**
-		 * Start/stop cooling.
-		 */
-		virtual int switchCooling (bool newval) { return 0; }
-
-		/**
 		 * Sets camera cooling temperature. Descendants should call
 		 * Camera::setCoolTemp to make sure that the set temperature is
 		 * updated.
@@ -328,6 +323,11 @@ class Camera:public rts2core::ScriptDevice
 		 * Run through the map, check which filter offsets are available, and add them from the map or set them to 0 if offsets are not filled in.
 		 */
 		void addFilterOffsets ();
+
+		/**
+		 * Start/stop cooling.
+		 */
+		virtual int switchCooling (bool newval) { return 0; }
 
 		rts2core::ValueSelection * camFilterVal;
 		rts2core::DoubleArray *camFilterOffsets;
