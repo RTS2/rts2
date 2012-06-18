@@ -212,6 +212,13 @@ int Rts2NightReport::init ()
 		t_from = *(night.getFrom ());
 		t_to = *(night.getTo ());
 	}
+
+	if (t_from >= t_to)
+	{
+		std::cerr << "Time from is greater than time to. This will not produce any results. Please either switch -f and -t options, or provide other values." << std::endl;
+		return -1;
+	}
+
 	return 0;
 }
 
