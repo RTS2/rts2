@@ -1169,7 +1169,7 @@ class ReferenceCatalogue(Catalogue):
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 
         except OSError as (errno, strerror):
-            logging.error( 'ReferenceCatalogue.runSExtractor: I/O error({0}): {1}'.format(errno, strerror))
+            logging.error( 'ReferenceCatalogue.runSExtractor: I/O error({0}): {1}, {2}'.format(errno, strerror, repr(cmd)))
             sys.exit(1)
 
         except:
@@ -1726,7 +1726,7 @@ class FitsHDU():
         if( verbose):
             print "fits file path: " + self.fitsFileName
         try:
-            fitsHDU = pyfits.fitsopen(self.fitsFileName)
+            fitsHDU = pyfits.open(self.fitsFileName)
         except:
             if( self.fitsFileName):
                 logging.error('FitsHDU: file not found : ' + self.fitsFileName)
