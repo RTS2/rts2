@@ -99,10 +99,10 @@ Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):rts2db::AppDb (in
 
 	messageMask = MESSAGE_REPORTIT;
 
-	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
-	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours. Date is in YYYY-MM-DD format.");
-	addOption ('n', NULL, 1, "report for night around given date. Date format is YYYY-MM-DD.");
-	addOption ('N', NULL, 0, "prints out all values as numbers, do not pretty format them");
+	addOption ('f', NULL, 1, "period start; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
+	addOption ('t', NULL, 1, "period end; default to from + 24 hours. Date is in YYYY-MM-DD format.");
+	addOption ('n', NULL, 1, "report for night. Night date format is YYYY-MM-DD.");
+	addOption ('N', NULL, 0, "print out all values as numbers, do not pretty format them");
 	addOption ('l', NULL, 0, "print full image names");
 	addOption ('i', NULL, 0, "print image listing");
 	addOption ('I', NULL, 0, "print image summary row");
@@ -128,6 +128,7 @@ Rts2NightReport::~Rts2NightReport (void)
 void Rts2NightReport::usage ()
 {
 	std::cout << "\t" << getAppName () << " -n 2007-12-31" << std::endl
+		<< "To print observations from 15th December 2007 to 18th December 2007:" << std::endl
 		<< "\t" << getAppName () << " -f 2007-12-15 -t 2007-12-18" << std::endl;
 }
 
