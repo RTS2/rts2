@@ -151,7 +151,7 @@ class AstrometryScript:
 
 	# return offset from 
 	def getOffset(self,x=None,y=None):
-		ff=pyfits.fitsopen(self.fits_file,'readonly')
+		ff=pyfits.open(self.fits_file,'readonly')
 		fh=ff[0].header
 		ff.close()
 

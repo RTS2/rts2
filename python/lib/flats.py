@@ -421,11 +421,11 @@ class FlatScript (rts2.scriptcomm.Rts2Comm):
 		import os
 		import pyfits
 
-		f = pyfits.fitsopen(files[0])
+		f = pyfits.open(files[0])
 		d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
 		d[0] = f[0].data / numpy.mean(f[0].data)
 		for x in range(1,len(files)):
-		  	f = pyfits.fitsopen(files[x])
+		  	f = pyfits.open(files[x])
 			d[x] = f[0].data / numpy.mean(f[0].data)
 		if (os.path.exists(of)):
 	  		self.log('I',"removing %s" % (of))
