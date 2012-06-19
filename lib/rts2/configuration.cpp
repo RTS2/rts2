@@ -36,6 +36,8 @@ int Configuration::getSpecialValues ()
 	ret += getDouble ("observatory", "latitude", observer.lat);
 	ret += getDouble ("observatory", "altitude", observatoryAltitude);
 
+	storeSexadecimals = getBoolean ("observatory", "sexadecimals", false);
+
 	// load horizon file..
 	getString ("observatory", "horizon", horizon_file, "-");
 
@@ -83,6 +85,7 @@ Configuration::Configuration (bool defaultSection):IniParser (defaultSection)
 {
 	observer.lat = 0;
 	observer.lng = 0;
+	storeSexadecimals = false;
 	checker = NULL;
 	// default to 120 seconds
 	astrometryTimeout = 120;

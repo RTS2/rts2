@@ -1,3 +1,6 @@
+2012-06-19
+ * observatory/sexadecimals configuration option
+
 2012-06-09
  * template files for XML-RPC images
  * moved Obs. Vermes specific code to subdirectories

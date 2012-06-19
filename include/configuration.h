@@ -70,6 +70,11 @@ class Configuration:public IniParser
 		static Configuration *instance ();
 
 		/**
+		 * Store RA/DEC to FITS headers as sexadecimals.
+		 */
+		bool getStoreSexadecimals () { return storeSexadecimals; }
+
+		/**
 		 * Returns airmass callibration distance, which is used for callibartion observations.
 		 */
 		double getCalibrationAirmassDistance ()
@@ -425,6 +430,7 @@ class Configuration:public IniParser
 		static Configuration *pInstance;
 		struct ln_lnlat_posn observer;
 		double observatoryAltitude;
+		bool storeSexadecimals;
 		ObjectCheck *checker;
 		int astrometryTimeout;
 		double minFlatHeigh;

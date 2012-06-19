@@ -1971,12 +1971,13 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 			switch (val->getValueDisplayType ())
 			{
 				case RTS2_DT_RA:
+					if (rts2core::Configuration::instance ()->getStoreSexadecimals ())
 					{
 						std::ostringstream os;
 						os << LibnovaRa (val->getValueDouble ());
 						setValue (name, os.str ().c_str (), desc);
+						break;
 					}
-					break;
 				default:
 					setValue (name, val->getValueDouble (), desc);
 					break;
@@ -2004,17 +2005,32 @@ void Image::writeConnBaseValue (const char* name, rts2core::Value * val, const c
 				strcat (v_name, "RA");
 				strcpy (v_desc, desc);
 				strcat (v_desc, " RA");
-				std::ostringstream _ra;
-				_ra << LibnovaRa (((rts2core::ValueRaDec *) val)->getRa ());
-				setValue (v_name, _ra.str ().c_str (), v_desc);
+				if (rts2core::Configuration::instance ()->getStoreSexadecimals ())
+				{
+					std::ostringstream _ra;
+					_ra << LibnovaRa (((rts2core::ValueRaDec *) val)->getRa ());
+					setValue (v_name, _ra.str ().c_str (), v_desc);
+				}
+				else
+				{
+					setValue (v_name, ((rts2core::ValueRaDec *) val)->getRa (), v_desc);
+				}
+
 				// now DEC
 				strcpy (v_name, name);
 				strcat (v_name, "DEC");
 				strcpy (v_desc, desc);
 				strcat (v_desc, " DEC");
-				std::ostringstream _dec;
-				_dec << LibnovaDec (((rts2core::ValueRaDec *) val)->getDec ());
-				setValue (v_name, _dec.str ().c_str (), v_desc);
+				if (rts2core::Configuration::instance ()->getStoreSexadecimals ())
+				{
+					std::ostringstream _dec;
+					_dec << LibnovaDec (((rts2core::ValueRaDec *) val)->getDec ());
+					setValue (v_name, _dec.str ().c_str (), v_desc);
+				}
+				else
+				{
+					setValue (v_name, ((rts2core::ValueRaDec *) val)->getDec (), v_desc);
+				}
 				// if it is mount ra dec - write heliocentric time
 				if (!strcmp ("TEL", name))
 				{
