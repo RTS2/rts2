@@ -29,6 +29,30 @@ import os
 import socket
 import threading
 
+DEVICE_TYPE_SERVERD   = 1
+DEVICE_TYPE_MOUNT     = 2
+DEVICE_TYPE_CCD       = 3
+DEVICE_TYPE_DOME      = 4
+DEVICE_TYPE_WEATHER   = 5
+DEVICE_TYPE_ROTATOR   = 6
+DEVICE_TYPE_PHOT      = 7
+DEVICE_TYPE_PLAN      = 8
+DEVICE_TYPE_GRB       = 9
+DEVICE_TYPE_FOCUS     = 10
+DEVICE_TYPE_MIRROR    = 11
+DEVICE_TYPE_CUPOLA    = 12
+DEVICE_TYPE_FW        = 13
+DEVICE_TYPE_AUGERSH   = 14
+DEVICE_TYPE_SENSOR    = 15
+
+DEVICE_TYPE_EXECUTOR  = 20
+DEVICE_TYPE_IMGPROC   = 21
+DEVICE_TYPE_SELECTOR  = 22
+DEVICE_TYPE_XMLRPC    = 23
+DEVICE_TYPE_INDI      = 24
+DEVICE_TYPE_LOGD      = 25
+DEVICE_TYPE_SCRIPTOR  = 26
+
 class ChunkResponse(httplib.HTTPResponse):
 
 	read_by_chunks = False
@@ -189,3 +213,6 @@ class JSONProxy(Rts2JSON):
 			self.refresh(device)
 			dc = self.devices[device]
 		return dc[value]
+	
+	def getDevicesByType(self,device_type):
+		return self.loadJson('/api/devbytype',{'t':device_type})
