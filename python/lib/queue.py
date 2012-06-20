@@ -45,8 +45,9 @@ class QueueEntry:
 		self.qid = None
 
 class Queue:
-
+	"""Queue abstraction. Provides methods for operation on the queue."""
 	entries = []
+	queing = None
 	skip_below = False
 	test_constr = False
 	
@@ -55,4 +56,29 @@ class Queue:
 		self.js = js
 		self.service = service
 		if service is None:
-			service = js.getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
+			self.service = js.getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
+
+	def load(self):
+		"""Refresh queue from server"""
+		self.js.refresh(self.service)
+		self.queing = self.js.getValue(self.service,self.name + '_queing')
+		self.skip_below = self.js.getValue(self.service,self.name + '_skip_below')
+		self.test_constr = self.js.getValue(self.service,self.name + '_test_constr')
+
+		ids = self.js.getValue(self.service,self.name + '_ids')
+		start = self.js.getValue(self.service,self.name + '_start')
+		end = self.js.getValue(self.service,self.name + '_end')
+		qid = self.js.getValue(self.service,self.name + '_qid')
+
+		self.entries = []
+
+		for i in range(0,len(ids)):
+			self.entries.append(ids[i],start[i],end[i],qid[i])
+
+	def save(self):
+		"""Save queue settings to the server."""
+		self.js.setValues({
+			'{1}_queing'.format(service,self.name):self.queing,
+			'{1}_skip_below'.format(self.name):self.skip_below,
+			'{1}_test_constr'.format(self.name):self.test_constr
+		},device=self.service)
