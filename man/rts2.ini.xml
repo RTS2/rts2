@@ -256,6 +256,17 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>sexadecimals</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Governs writing of RA/DEC to FITS headers. If true, store those
+	      values as sexadecimal. Defaults to false.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>base_path</option>
 	  </term>
 	  <listitem>
