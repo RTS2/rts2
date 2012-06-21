@@ -598,467 +598,6 @@ digraph "JSON API calls handling" {
 
 using namespace rts2xmlrpc;
 
-AsyncAPI::AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext):Object ()
-{
-	// that's legal - requests are statically allocated and will cease exists with the end of application
-	req = _req;
-	conn = _conn;
-	source = _source;
-	ext = _ext;
-}
-
-AsyncAPI::~AsyncAPI ()
-{
-	if (source)
-		source->asyncFinished ();
-}
-
-void AsyncAPI::postEvent (Event *event)
-{
-	std::ostringstream os;
-	if (source)
-	{
-		switch (event->getType ())
-		{
-			case EVENT_COMMAND_OK:
-				os << "{";
-				req->sendConnectionValues (os, conn, NULL, -1, ext);
-				os << ",\"ret\":0}";
-				req->sendAsyncJSON (os, source);
-				asyncFinished ();
-				break;
-			case EVENT_COMMAND_FAILED:
-				os << "{";
-				req->sendConnectionValues (os, conn, NULL, -1, ext);
-				os << ",\"ret\":-1}";
-				req->sendAsyncJSON (os, source);
-				asyncFinished ();
-				break;
-		}
-	}
-	Object::postEvent (event);
-}
-
-AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpcServerConnection *_source, XmlRpc::HttpParams *params): AsyncAPI (_req, NULL, _source, false) 
-{
-	// chunked response
-	req->sendAsyncDataHeader (0, _source, "application/json");
-
-	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
-		values.push_back (std::pair <std::string, std::string> (iter->getName (), iter->getValue ()));
-}
-
-void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
-{
-	std::ostringstream os;
-	os << "{";
-	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
-	{
-		if (iter->first == _conn->getName () && iter->second == _value->getName () && source != NULL)
-		{
-			os << "\"d\":\"" << iter->first << "\",\"v\":{";
-			jsonValue (_value, false, os);
-			os << "}}";
-			std::ostringstream tosend;
-			tosend << std::hex << os.str ().length () << ";\r\n" << os.str () << "\r\n";
-			if (send (source->getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
-			{
-				if (errno != EAGAIN && errno != EINTR)
-					asyncFinished ();
-			}
-			return;
-		}
-	}
-}
-
-class AsyncMSet:public AsyncAPI
-{
-	public:
-
-		virtual void postEvent (Event * event);
-
-		void addCommand (rts2core::Command *command) { commands.push_back (command); }
-
-	private:
-		// commands send by this connection
-		std::vector <rts2core::Command *> commands;
-};
-
-void AsyncMSet::postEvent (Event *event)
-{
-	std::ostringstream os;
-	if (source)
-	{
-		switch (event->getType ())
-		{
-			case EVENT_COMMAND_OK:
-				os << "\"ret\":0";
-				req->sendAsyncJSON (os, source);
-				asyncFinished ();
-				break;
-			case EVENT_COMMAND_FAILED:
-				os << "\"ret\":-1";
-				req->sendAsyncJSON (os, source);
-				asyncFinished ();
-				break;
-		}
-	}
-	Object::postEvent (event);
-}
-
-class AsyncDataAPI:public AsyncAPI
-{
-	public:
-		AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
-
-		virtual void nullSource () { data = NULL; AsyncAPI::nullSource (); }
-
-		virtual int idle ();
-
-	protected:
-		DataAbstractRead *data;
-		int channel;
-		size_t bytesSoFar;
-
-		long smin;
-		long smax;
-
-		rts2image::scaling_type scaling;
-		int newType;
-		int oldType;
-
-		void sendData ();
-
-	private:
-		bool headerSend;
-
-		void doSendData (void *buf, size_t bufs)
-		{
-			ssize_t ret = send (source->getfd (), buf, bufs, 0);
-			if (ret < 0)
-			{
-				if (errno != EAGAIN && errno != EINTR)
-				{
-					logStream (MESSAGE_ERROR) << "cannot send data to client " << strerror (errno) << sendLog;
-					asyncFinished ();
-					return;
-				}
-			}
-			else
-			{
-				bytesSoFar += ret;
-			}
-		}
-};
-
-AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
-{
-	data = _data;
-	channel = _chan;
-	bytesSoFar = 0;
-	smin = _smin;
-	smax = _smax;
-
-	scaling = _scaling;
-	newType = _newType;
-	oldType = 0;
-
-	headerSend = false;
-}
-
-void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
-{
-	AsyncAPI::fullDataReceived (_conn, _data);
-
-	if (isForConnection (_conn))
-	{
-		rts2core::DataChannels::iterator iter = std::find (_data->begin (), _data->end (), data);
-		if (iter != _data->end ())
-		{
-			if (source)
-			{
-				size_t bosend = bytesSoFar;
-				if (newType != 0 && newType != oldType)
-				{
-					bosend = sizeof (struct imghdr) + (oldType / 8) * (bosend - sizeof (struct imghdr)) / (newType / 8);
-				}
-				if (data->getRestSize () > 0)
-				{
-					// incomplete image was received, close outbond connection..
-					source->close ();
-					nullSource ();
-				}
-				else if (bosend < (size_t) (data->getDataTop () - data->getDataBuff ()))
-				{
-					// full image was received, let's make sure it will be send
-					if (newType != 0 && newType != oldType)
-					{
-						size_t ds = data->getDataTop () - data->getDataBuff () - bosend;
-						char *newData = new char[ds];
-						memcpy (newData, data->getDataBuff () + bosend, ds);
-						// scale data for async
-						if (bytesSoFar < sizeof (struct imghdr))
-						{
-							struct imghdr imgh;
-							memcpy (&imgh, newData, sizeof (struct imghdr) - bytesSoFar);
-							imgh.data_type = htons (newType);
-
-							oldType = ntohs (((struct imghdr *) data->getDataBuff ())->data_type);
-							ds = (ds - sizeof (struct imghdr) + bytesSoFar) / (oldType / 8);
-
-							getScaledData (oldType, newData + sizeof (struct imghdr) - bytesSoFar, ds, smin, smax, scaling, newType);
-							ds = sizeof (struct imghdr) + (newType / 8) * ds;
-							if (bytesSoFar == 0 && headerSend == false)
-							{
-								req->sendAsyncDataHeader (ds, source);
-								headerSend = true;
-							}
-						}
-						else
-						{
-							ds /= (oldType / 8);
-							// we send out pixels, so this scaling is legal
-							getScaledData (oldType, newData, ds, smin, smax, scaling, newType);
-							ds *= (newType / 8);
-						}
-						source->setResponse (newData, ds);
-						delete[] newData;
-					}
-					else
-					{
-						source->setResponse (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
-					}
-					nullSource ();
-				}
-				else
-				{
-					asyncFinished ();
-				}
-			}
-			return;
-		}
-	}
-}
-
-int AsyncDataAPI::idle ()
-{
-	// see new data on shared connection
-	if (data && (data->getDataTop () - data->getDataBuff ()) > bytesSoFar)
-	{
-		dataReceived (conn, data);
-	}
-	return AsyncAPI::idle ();
-}
-
-void AsyncDataAPI::sendData ()
-{
-	if (bytesSoFar == 0)
-	{
-		size_t ds = data->getDataTop () - data->getDataBuff () + data->getRestSize ();
-		if (headerSend == false && ds >= sizeof (struct imghdr))
-		{
-			if (newType != 0)
-			{
-				if (oldType == 0)
-					oldType = ntohs (((struct imghdr *) data->getDataBuff ())->data_type);
-
-				req->sendAsyncDataHeader (sizeof (struct imghdr) + (newType / 8) * (ds - sizeof (struct imghdr)) / (oldType / 8), source);
-			}
-			else
-			{
-				req->sendAsyncDataHeader (ds, source);
-			}
-			headerSend = true;
-		}
-	}
-	// if scaling is needed, wait for full image header
-	if (newType != 0 && newType != oldType)
-	{
-		if (bytesSoFar < sizeof (struct imghdr))
-		{
-			if (data->getDataTop () - data->getDataBuff () >= (ssize_t) (sizeof (struct imghdr)))
-			{
-				struct imghdr imgh;
-				memcpy (&imgh, data->getDataBuff (), sizeof (struct imghdr));
-				imgh.data_type = htons (newType);
-				doSendData (((char *) (&imgh)) + bytesSoFar, sizeof (struct imghdr) - bytesSoFar);
-			}
-		}
-		// bytesSoFar > sizeof (struct imghdr)
-		else
-		{
-			// send bytes in old data lenght
-			size_t bosend = sizeof (struct imghdr) + (oldType / 8) * (bytesSoFar - sizeof (struct imghdr)) / (newType / 8);
-			size_t ds = data->getDataTop () - data->getDataBuff () - bosend;
-			char *newData = new char[ds];
-			memcpy (newData, data->getDataBuff () + bosend, ds);
-			// scale data
-			ds /= (oldType / 8);
-			getScaledData (oldType, newData, ds, smin, smax, scaling, newType);
-			doSendData (newData, (newType / 8) * ds);
-			delete[] newData;
-		}
-		return;
-	}
-	doSendData (data->getDataBuff () + bytesSoFar, data->getDataTop () - data->getDataBuff () - bytesSoFar);
-}
-
-class AsyncCurrentAPI:public AsyncDataAPI
-{
-	public:
-		AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
-		virtual ~AsyncCurrentAPI ();
-
-		virtual void dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data);
-		virtual void exposureFailed (rts2core::Connection *_conn, int status);
-};
-
-AsyncCurrentAPI::AsyncCurrentAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, _data, _chan, _smin, _smax, _scaling, _newType)
-{
-	// try to send data
-	sendData ();
-}
-
-AsyncCurrentAPI::~AsyncCurrentAPI ()
-{
-}
-
-void AsyncCurrentAPI::dataReceived (rts2core::Connection *_conn, DataAbstractRead *_data)
-{
-	if (_data == data)
-		sendData ();
-}
-
-void AsyncCurrentAPI::exposureFailed (rts2core::Connection *_conn, int status)
-{
-	if (isForConnection (_conn))
-	{
-		if (source)
-		{
-			source->close ();
-		}
-		asyncFinished ();
-	}
-}
-
-class AsyncExposeAPI:public AsyncDataAPI
-{
-	public:
-		AsyncExposeAPI (API *_req, rts2core::Connection *conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType);
-		virtual ~AsyncExposeAPI ();
-
-		virtual void postEvent (Event *event);
-
-		virtual void dataReceived (Connection *_conn, DataAbstractRead *_data);
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data);
-		virtual void exposureFailed (rts2core::Connection *_conn, int status);
-
-		virtual int idle ();
-
-	private:
-		enum {waitForExpReturn, waitForImage, receivingImage} callState;
-};
-
-AsyncExposeAPI::AsyncExposeAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncDataAPI (_req, _conn, _source, NULL, _chan, _smin, _smax, _scaling, _newType)
-{
-	callState = waitForExpReturn;
-}
-
-AsyncExposeAPI::~AsyncExposeAPI ()
-{
-}
- 
-void AsyncExposeAPI::postEvent (Event *event)
-{
-	if (source)
-	{
-		switch (event->getType ())
-		{
-			case EVENT_COMMAND_OK:
-				if (callState == waitForExpReturn)
-					callState = waitForImage;
-				break;
-			case EVENT_COMMAND_FAILED:
-				if (callState == waitForExpReturn)
-				{
-					std::ostringstream os;
-					os << "{\"failed\"}";
-					req->sendAsyncJSON (os, source);
-					asyncFinished ();
-				}
-				break;
-		}
-	}
-	Object::postEvent (event);
-}
-
-void AsyncExposeAPI::dataReceived (Connection *_conn, DataAbstractRead *_data)
-{
-	if (_data == data)
-		sendData ();
-	else if (data == NULL && isForConnection (_conn) && callState == waitForImage)
-	{
-		callState = receivingImage;
-		data = _data;
-		if (data == NULL)
-		{
-			asyncFinished ();
-			return;
-		}
-		sendData ();
-	}
-}
-
-void AsyncExposeAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *_data)
-{
-	// in case idle loop was not called
-	if (isForConnection (_conn) && callState == waitForImage && data == NULL)
-	{
-		callState = receivingImage;
-		data = _conn->lastDataChannel (channel);
-	}
-
-	AsyncDataAPI::fullDataReceived (_conn, _data);
-}
-
-void AsyncExposeAPI::exposureFailed (rts2core::Connection *_conn, int status)
-{
-	if (isForConnection (_conn))
-	{
-		if (source)
-		{
-			switch (callState)
-			{
-				case waitForExpReturn:
-				case waitForImage:
-					{
-						std::ostringstream os;
-						os << "{\"failed\"}";
-						req->sendAsyncJSON (os, source);
-					}
-					break;
-				case receivingImage:
-					if (source)
-						source->close ();
-					break;
-			}
-			asyncFinished ();
-		}
-	}
-}
-
-int AsyncExposeAPI::idle ()
-{
-	if (data == NULL && callState == waitForImage && conn->lastDataChannel (channel) && conn->lastDataChannel (channel)->getRestSize () > 0)
-	{
-		callState = receivingImage;
-		data = conn->lastDataChannel (channel);
-	}
-
-	return AsyncDataAPI::idle ();
-}
-
 void getCameraParameters (XmlRpc::HttpParams *params, const char *&camera, long &smin, long &smax, rts2image::scaling_type &scaling, int &newType)
 {
 	camera = params->getString ("ccd","");
@@ -1426,36 +965,51 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int async = params->getInteger ("async", 0);
 			int ext = params->getInteger ("e", 0);
 
-			if (async || async == 0)
+			int vcc = 0;
+
+			AsyncAPIMSet *aa = NULL;
+
+			for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 			{
-				int vcc = 0;
-				for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+				// find device.name pairs..
+				std::string dn (iter->getName ());
+				size_t dot = dn.find ('.');
+				if (dot != std::string::npos)
 				{
-					// find device.name pairs..
-					std::string dn (iter->getName ());
-					size_t dot = dn.find ('.');
-					if (dot != std::string::npos)
+					std::string devn = dn.substr (0,dot);
+					std::string vn = dn.substr (dot + 1);
+					if (isCentraldName (devn.c_str ()))
+						conn = master->getSingleCentralConn ();
+					else
+						conn = master->getOpenConnection (devn.c_str ());
+					if (conn == NULL)
+						throw JSONException ("cannot find device with name " + devn);
+					rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
+					if (rts2v == NULL)
+						throw JSONException ("cannot find variable with name " + vn);
+					if (async == 0)
 					{
-						std::string devn = dn.substr (0,dot);
-						std::string vn = dn.substr (dot + 1);
-						if (isCentraldName (devn.c_str ()))
-							conn = master->getSingleCentralConn ();
-						else
-							conn = master->getOpenConnection (devn.c_str ());
-						if (conn == NULL)
-							throw JSONException ("cannot find device with name " + devn);
-						rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
-						if (rts2v == NULL)
-							throw JSONException ("cannot find variable with name " + vn);
-						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), vn, '=', std::string (iter->getValue ()), true));
-						vcc ++;
+						if (aa == NULL)
+						{
+							aa = new AsyncAPIMSet (this, conn, connection, ext);
+							((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+						}
+						aa->incCalls ();
+
 					}
+
+					conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), vn, '=', std::string (iter->getValue ()), true), 0, aa);
+					vcc ++;
 				}
+			}
+			if (async)
+			{
 				os << "\"ret\":0,\"value_changed\":" << vcc;
 			}
 			else
 			{
-				//throw XmlRpc::XmlRpcAsynchronous ();
+				
+				throw XmlRpc::XmlRpcAsynchronous ();
 			}
 		}
 		// return night start and end

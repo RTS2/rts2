@@ -214,12 +214,17 @@ class JSONProxy(Rts2JSON):
 			dc = self.devices[device]
 		return dc[value]
 	
-	def setValue(self,device,name,value):
-		self.loadJson('/api/set',{'d':device,'n':name,'v':value})
+	def setValue(self,device,name,value,async=None):
+		values = {'d':device,'n':name,'v':value,'async':async}
+		if async:
+			values['async'] = async
+		self.loadJson('/api/set',values)
 
-	def setValues(self,values,device=None):
+	def setValues(self,values,device=None,async=None):
 		if device:
 			values = dict(map(lambda x:('{0}.{1}'.format(device,x[0]),x[1]),values.items()))
+		if async:
+			values['async'] = async
 		self.loadJson('/api/mset',values)
 	
 	def getDevicesByType(self,device_type):

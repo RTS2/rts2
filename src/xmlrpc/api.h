@@ -19,6 +19,7 @@
  */
 
 #include "httpreq.h"
+#include "asyncapi.h"
 #include "block.h"
 #include "rts2db/imageset.h"
 #include "rts2db/observationset.h"
@@ -31,76 +32,6 @@
 
 namespace rts2xmlrpc
 {
-
-class API;
-
-/**
- * Contain code exacuted when async command returns.
- *
- * @author Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
- */
-class AsyncAPI:public rts2core::Object
-{
-	public:
-		AsyncAPI (API *_req, rts2core::Connection *_conn, XmlRpcServerConnection *_source, bool _ext);
-		virtual ~AsyncAPI ();
-		
-		virtual void postEvent (rts2core::Event *event);
-
-		virtual void newDataConn (rts2core::Connection *_conn, int data_conn) {}
-		virtual void dataReceived (rts2core::Connection *_conn, rts2core::DataAbstractRead *data) {}
-		virtual void fullDataReceived (rts2core::Connection *_conn, rts2core::DataChannels *data) {}
-		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
-		virtual void exposureEnd (rts2core::Connection *_conn) {}
-
-		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value) {};
-
-		/**
-		 * Check if the request is for connection or source..
-		 */
-		bool isForSource (XmlRpcServerConnection *_source) { return source == _source; }
-		bool isForConnection (rts2core::Connection *_conn) { return conn == _conn; }
-
-		/**
-		 * Null XMLRPC source. This also marks source for deletion.
-		 */
-		virtual void nullSource () { source = NULL; }
-
-		void asyncFinished ()
-		{
-			if (source)
-				source->asyncFinished ();
-			nullSource ();
-		}
-
-		/**
-		 * Check if the connection can be deleted, check for 
-		 * shared memory segments.
-		 *
-		 * @return 0 if AsyncAPI is still active, otherwise AsyncAPI will be deleted
-		 */
-		virtual int idle () { return source == NULL; }
-
-	protected:
-		API *req;
-		XmlRpcServerConnection *source;
-		rts2core::Connection *conn;
-
-	private:
-		bool ext;
-};
-
-class AsyncValueAPI:public AsyncAPI
-{
-	public:
-		AsyncValueAPI (API *_req, XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
-
-		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value);
-	
-	private:
-		std::vector <std::pair <std::string, std::string> > values;
-};
-
 /**
  * Class for API requests.
  *
@@ -121,7 +52,7 @@ class API:public GetRequestAuthorized
 		 */
 		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"), bool extended = false);
 
-		void sendOwnValues (std::ostringstream & os, HttpParams *params, double from, bool extended);
+		void sendOwnValues (std::ostringstream & os, XmlRpc::HttpParams *params, double from, bool extended);
 	private:
 		void executeJSON (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
