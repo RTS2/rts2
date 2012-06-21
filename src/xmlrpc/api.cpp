@@ -1020,7 +1020,24 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			Rts2Night n (ln_get_julian_from_timet (&ns_t), Configuration::instance ()->getObserver ());
 			os << "\"from\":" << *(n.getFrom ()) << ",\"to\":" << *(n.getTo ());
 		}
-		// get variable
+		// get variables from all connected devices
+		else if (vals[0] == "getall")
+		{
+			bool ext = params->getInteger ("e", 0);
+			double from = params->getDouble ("from", 0);
+
+			// send own values first
+			os << '"' << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\":{";
+			sendOwnValues (os, params, from, ext);
+			os << '}';
+			for (rts2core::connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
+			{
+				os << ",\"" << (*iter)->getName () << "\":{";
+				sendConnectionValues (os, *iter, params, from, ext);
+				os << '}';
+			}
+		}
+		// get variables
 		else if (vals[0] == "get" || vals[0] == "status")
 		{
 			const char *device = params->getString ("d","");
@@ -1031,7 +1048,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				if (isCentraldName (device))
 					conn = master->getSingleCentralConn ();
 				else
-				conn = master->getOpenConnection (device);
+					conn = master->getOpenConnection (device);
 				if (conn == NULL)
 					throw JSONException ("cannot find device");
 				sendConnectionValues (os, conn, params, from, ext);
