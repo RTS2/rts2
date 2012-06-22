@@ -27,6 +27,9 @@ QUEUE_WESTEAST               = 3
 QUEUE_WESTEAST_MERIDIAN      = 4
 QUEUE_SET_TIMES              = 5
 
+def _nanNone(num):
+	return 'nan' if (num is None) else num 
+
 class QueueEntry:
 	def __init__(self, id=None, start=None, end=None, qid=None):
 		self.id = id
@@ -47,9 +50,10 @@ class QueueEntry:
 class Queue:
 	"""Queue abstraction. Provides methods for operation on the queue."""
 	entries = []
-	queing = None
-	skip_below = False
-	test_constr = False
+	queueing = None
+	skip_below = True
+	test_constr = True
+	remove_executed = True
 	
 	def __init__(self,name,js,service=None):
 		self.name = name
@@ -61,9 +65,10 @@ class Queue:
 	def load(self):
 		"""Refresh queue from server"""
 		self.js.refresh(self.service)
-		self.queing = self.js.getValue(self.service,self.name + '_queing')
+		self.queueing = self.js.getValue(self.service,self.name + '_queing')
 		self.skip_below = self.js.getValue(self.service,self.name + '_skip_below')
 		self.test_constr = self.js.getValue(self.service,self.name + '_test_constr')
+		self.remove_executed = self.js.getValue(self.service,self.name + '_remove_executed')
 
 		ids = self.js.getValue(self.service,self.name + '_ids')
 		start = self.js.getValue(self.service,self.name + '_start')
@@ -73,12 +78,21 @@ class Queue:
 		self.entries = []
 
 		for i in range(0,len(ids)):
-			self.entries.append(ids[i],start[i],end[i],qid[i])
+			self.entries.append(QueueEntry(ids[i],start[i],end[i],qid[i]))
 
 	def save(self):
 		"""Save queue settings to the server."""
+		self.js.executeCommand(self.service,'clear {0}'.format(self.name))
 		self.js.setValues({
-			'{1}_queing'.format(service,self.name):self.queing,
-			'{1}_skip_below'.format(self.name):self.skip_below,
-			'{1}_test_constr'.format(self.name):self.test_constr
+			'{0}_queing'.format(self.name):self.queueing,
+			'{0}_skip_below'.format(self.name):self.skip_below,
+			'{0}_test_constr'.format(self.name):self.test_constr
 		},device=self.service)
+		queue_cmd = ''
+		for x in self.entries:
+			queue_cmd += ' {0} {1} {2}'.format(x.id,_nanNone(x.start),_nanNone(x.end))
+		self.js.executeCommand(self.service,'queue_at {0}{1}'.format(self.name,queue_cmd))
+	
+	def addTarget(self,id,start=None,end=None):
+		"""Add target to queue."""
+		self.js.executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name,id,_nanNone(start),_nanNone(end)))
