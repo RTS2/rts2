@@ -740,9 +740,14 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	else if (vals.size () == 1 && vals[0] == "devices")
 	{
 		os << "[";
+		bool first = true;
 		for (connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 		{
-			if (iter != master->getConnections ()->begin ())
+			if ((*iter)->getName ()[0] == '\0')
+				continue;
+			if (first)
+				first = false;
+			else
 				os << ",";
 			os << '"' << (*iter)->getName () << '"';
 		}
@@ -1030,8 +1035,11 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			os << '"' << ((XmlRpcd *) getMasterApp ())->getDeviceName () << "\":{";
 			sendOwnValues (os, params, from, ext);
 			os << '}';
+
 			for (rts2core::connections_t::iterator iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 			{
+				if ((*iter)->getName ()[0] == '\0')
+					continue;
 				os << ",\"" << (*iter)->getName () << "\":{";
 				sendConnectionValues (os, *iter, params, from, ext);
 				os << '}';
