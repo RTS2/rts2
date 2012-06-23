@@ -60,9 +60,13 @@ class main():
         self.scriptPath= '/home/wildi/rts2/scripts/'
 
         self.storePath=[]
-        self.storePath.append('/home/wildi/rts2af-fits/focus/X') # X
+        # standard set of images self.storePath.append('/home/wildi/rts2af-fits/focus/X') 
+        # true baker run 
+        self.storePath.append('/home/wildi/rts2af-fits/focus/baker/C') 
         self.referenceFile=[]
-        self.referenceFile.append('20120324001509-875-RA-refernece.fits') # X
+        # standard reference file self.referenceFile.append('20120324001509-875-RA-refernece.fits') 
+        # true baker run 
+        self.referenceFile.append('20120623061642-618-RA.fits') 
         self.cmd= 'rts2af_acquire.py'
         self.focuser = 'FOC_DMY'  
         self.verbose= True
@@ -78,7 +82,7 @@ class main():
             self.fitsHDUs.append( rts2af.FitsHDU( storePath + '/' + self.referenceFile[i]))
             self.fitsHDUs[i].headerProperties()
             if(self.fitsHDUs[i].staticHeaderElements['FILTER']== 'UNK'):
-                self.filtersInUse.append('NOF')
+                self.filtersInUse.append('NOFILTER')
             else:
                 self.filtersInUse.append(self.fitsHDUs[i].staticHeaderElements['FILTER'])
                 i += 1

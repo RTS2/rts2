@@ -1516,7 +1516,7 @@ class Catalogues():
             discardedPositions= self.writeFitInputValues()
             
             if((len(self.averageFwhm) + len(self.averageFlux)- discardedPositions)< 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
-                logging.warning('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+                logging.warning('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing (see MINIMUM_FOCUSER_POSITIONS)'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
             else:
                 pass
 # ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file

@@ -110,6 +110,9 @@ class Acquire(rts2af.AFScript):
             if( self.speed > 0):
                 slt= 1. + abs(fcPos- curFocPos) / self.speed # ToDo, sleep a bit longer, ok?
                 r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
+                # Missouri
+                #time.sleep( 45) # sleep 45 seconds
+                # all others 
                 time.sleep( slt)
             else:
                 r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
@@ -356,7 +359,10 @@ class Acquire(rts2af.AFScript):
             filterExposureTime= 0
             filterStartTime=time.time()
             filter= self.runTimeConfig.filterByName( fltName)
-            
+            try:
+                r2c.log('I','rts2af_acquire: Initial setting: filter: {0}'.format(filter.name, self.runTimeConfig.configurationFileName()))
+            except:
+                r2c.log('E','rts2af_acquire: no filter configuration found for  filter: {0} in {0}'.format(fltName, self.runTimeConfig.configurationFileName()))
             if( fwhm_foc_pos_fit > 0):
                 focDef= fwhm_foc_pos_fit
                 self.prepareAcquisition( focDef, filter) # a previous run was successful
@@ -385,14 +391,14 @@ class Acquire(rts2af.AFScript):
             self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
             self.serviceFileOp.createAcquisitionBasePath( filter)
 # ToDo wildi
-            cmd= [ 'rts2af_analysis.py',
+            cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_analysis.py',
                    '--config', configFileName
                    ]
             
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
             try:
-                analysis[filter.name] = subprocess.Popen( cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                analysis[filter.name] = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             except:
                 r2c.log('E','rts2af_acquire: exiting, could not start: {0}, filter: {1}, position: {2}, exposure: {3}'.format( cmd, filter.name, filter.OffsetToClearPath, filter.exposure))
                 sys.exit(1)
