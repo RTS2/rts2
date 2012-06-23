@@ -219,11 +219,11 @@ class Acquire(rts2af.AFScript):
         temperature= None
         fwhm= None
         setFocus= False
-
+        #                            FOCUS: 3407.743919, FWHM: 2.331747,  TEMPERATURE: 9.38888931274C, OBJECTS: 20      DATAPOINTS: 14
         focusLineMatch= re.search( r'FOCUS: ([\.0-9]+), FWHM: ([\.0-9]+), TEMPERATURE: ([\-\.0-9]+)C, OBJECTS: ([0-9]+) DATAPOINTS: ([0-9]+)', focusLine)
         if( not focusLineMatch == None):
-            objs= int(lineMatch.group(4))
-            dps= int(lineMatch.group(5))
+            objs= int(focusLineMatch.group(4))
+            dps= int(focusLineMatch.group(5))
             if(objs > 5) and ( dps > 7): # ToDo adhoc
 
                 fwhmFocPos= int(float(focusLineMatch.group(1)))
