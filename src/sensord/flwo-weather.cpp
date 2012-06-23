@@ -35,7 +35,11 @@ class MEarthWeather:public rts2core::ConnUDP
 		virtual int process (size_t len, struct sockaddr_in &from);
 	private:
 		void paramNextTimeME (rts2core::ValueTime *val);
+
+		double paramNextDouble ();
+
 		void paramNextFloatME (rts2core::ValueFloat *val);
+		void paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int nv);
 };
 
 class FlwoWeather:public SensorWeather
@@ -89,7 +93,8 @@ class FlwoWeather:public SensorWeather
 		rts2core::ValueFloat *me_hail_accumulation;
 		rts2core::ValueFloat *me_hail_duration;
 		rts2core::ValueFloat *me_hail_intensity;
-		rts2core::ValueFloat *me_sky_temp;
+		rts2core::ValueDoubleStat *me_sky_temp;
+		rts2core::ValueInteger *me_sky_avg;
 		rts2core::ValueFloat *me_sky_limit;
 
 		friend class MEarthWeather;
@@ -124,24 +129,36 @@ void MEarthWeather::paramNextTimeME (rts2core::ValueTime *val)
 	throw rts2core::Error ("cannot parse " + std::string (str_num));
 }
 
-void MEarthWeather::paramNextFloatME (rts2core::ValueFloat *val)
+double MEarthWeather::paramNextDouble ()
 {
 	char *str_num;
 	char *endptr;
 	if (paramNextString (&str_num, ","))
 	{
 		throw rts2core::Error ("cannot get value");
-		return;
 	}
-	val->setValueFloat (strtod (str_num, &endptr));
+	double val = strtod (str_num, &endptr);
 	if (*endptr == '\0')
-		return;
+		return val;
 	if (strcmp (str_num, "---") == 0)
 	{
-		val->setValueDouble (rts2_nan ("f"));
-		return;
+		return NAN;
 	}
 	throw rts2core::Error ("cannot parse " + std::string (str_num));
+}
+
+void MEarthWeather::paramNextFloatME (rts2core::ValueFloat *val)
+{
+	val->setValueFloat (paramNextDouble ());
+}
+
+void MEarthWeather::paramNextDoubleStatME (rts2core::ValueDoubleStat *val, int nv)
+{
+	double v = paramNextDouble ();
+	if (isnan (v))
+		return;
+	val->addValue (v, nv);
+	val->calculate ();
 }
 
 int MEarthWeather::process (size_t len, struct sockaddr_in &from)
@@ -161,7 +178,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_accumulation);
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_duration);
 		paramNextFloatME (((FlwoWeather *) master)->me_hail_intensity);
-		paramNextFloatME (((FlwoWeather *) master)->me_sky_temp);
+		paramNextDoubleStatME (((FlwoWeather *) master)->me_sky_temp, ((FlwoWeather *) master)->me_sky_avg->getValueInteger ());
 	}
 	catch (rts2core::Error er)
 	{
@@ -218,6 +235,8 @@ FlwoWeather::FlwoWeather (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (me_hail_duration, "me_hail_duration", "MEarth hail duration", false);
 	createValue (me_hail_intensity, "me_hail_intensity", "MEarth hail intensity", false);
 	createValue (me_sky_temp, "me_sky_temp", "MEarth sky temperature", false);
+	createValue (me_sky_avg, "me_sky_avg", "number of MEarth sky temperature values to average", false);
+	me_sky_avg->setValueInteger (10);
 	createValue (me_sky_limit, "me_sky_limit", "sky limit (if sky_temp < sky_limit, there aren't clouds)", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
 	me_sky_limit->setValueFloat (-20);
 
@@ -331,6 +350,7 @@ int FlwoWeather::info ()
 				if (endptr != ch && *endptr == '\0')
 				{
 					windSpeed->addValue (v, windSpeedAvg->getValueInteger ());
+					windSpeed->calculate ();
 					processed |= 1 << 1;
 				}
 			}
