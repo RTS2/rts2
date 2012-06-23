@@ -1,0 +1,69 @@
+$RTS2/bin/rts2-unabort
+
+set exposure=10
+
+if ( ! (${?ignoreday}) ) @ ignoreday = 0
+
+# find bright star
+/home/observer/RTS2-F/rts2.findstar
+
+tele ampcen 0
+
+# move to bright star
+source /home/observer/findfwhm/kgetstar
+
+if ( ! (${?imgid}) ) @ imgid = 1
+
+if ( -e $rts2abort ) then
+	rts2-logcom 'Aborting observations. Please wait'
+	source $RTS2/bin/.rts2-runabort
+# next statement is in .rts2-runabort:
+#	rm -f $lasttarget
+	exit
+endif
+if ( $ignoreday == 0 ) then
+	set ms=`$xmlrpc --master-state rnight`
+	if ( $? != 0 || $ms == 0 ) then
+		rm -f $lasttarget
+		set continue=0
+	endif
+endif
+set in=`$xmlrpc -G SEL.interrupt`
+if ( $? == 0 && $in == 1 ) then
+	rm -f $lasttarget
+	set continue=0
+	rts2-logcom "Interrupting target $name ($tar_id)"
+endif
+
+echo ""
+
+rts2-logcom "Taking $exposure seconds image"
+
+ccd gowait $exposure
+
+dstore
+
+set imgdir=/rdata`grep "cd" /tmp/iraf_logger.cl |cut -f2 -d" "`
+
+set lastimage=`ls ${imgdir}[0-9]*.fits | tail -n 1`
+
+rts2-logcom "Image $lastimage done"
+
+set corr = `$RTS2/bin/img_process $lastimage | grep corrwerr | cut -d' ' -f 5,6`
+
+$xmlrpc -c "IMGP.only_process $lastimage $obs_id $imgid"
+
+if ( "x$corr" == "x" ) then
+	rts2-logcom "Cannot match field, matchwcs FAILED!"
+else
+
+	set of_ra=`echo $corr[1] | awk '{printf "%d",$1 * 3600.0;}'`
+	set of_dec=`echo $corr[2] | awk '{printf "%d",$1 * 3600.0;}'`
+
+	rts2-logcom "initial offseting $of_ra $of_dec ($corr)"
+	tele offset $of_ra $of_dec
+
+	#rts2-logcom "executing tele set"
+	#tele set
+	rts2-logcom "skipping tele set"
+endif

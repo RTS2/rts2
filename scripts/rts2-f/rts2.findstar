@@ -27,23 +27,11 @@ BEGIN{
 # zero point (for 1 ADU/sec) used to estimate count rates 
   zero = 23.5;
 
-# offsets (arcsec) to use between images
-  raoff =  0;
-  dcoff = 15;
-
-# values in "line" set the focus range and number of steps
-  line = "-100 100 11";
-  split(line,field) ;
-  focmin  = field[1];
-  focmax  = field[2];
-  nfocus0 = field[3];
-  nfocus  = int(nfocus0);
-  printf("Cover range %d to %d with %d steps\n",focmin,focmax,nfocus);
 ################################
 # Read all target objects
 ################################
     file = focusfile  ;
-    printf("Input file of focus star fields:  %s \n", file ) ;
+#    printf("Input file of focus star fields:  %s \n", file ) ;
     ncal = 0;
     while(getline line < file > 0) {
       split ( line, field ) ;
@@ -129,8 +117,9 @@ BEGIN{
      }
 
    print("\n\n");
+   system("/usr/bin/rm -f /home/observer/findfwhm/kgetstar");
    file = "/home/observer/findfwhm/kgetstar";
-   printf("# script to find standard star\n") > file;
+   printf("# script to find standard stars\n") > file;
 
 # fix exposure at 5 sec unless binx1, 10:
   expest = 5;
@@ -199,19 +188,11 @@ function degtocoord(ra,dc,ra3,dc3) {
 
 function movescope(ra3,dc3){
   printf("\n") >> file;
-#  printf("echo \"sending coordinates %02d:%02d:%04.1f %3d:%02d:%02d 2000.0 \"\n",        ra3[0],ra3[1],ra3[2],dc3[0],dc3[1],dc3[2]) >> file;
+  printf("rts2-logcom \"sending coordinates %02d:%02d:%04.1f %3d:%02d:%02d 2000.0 \"\n",        ra3[0],ra3[1],ra3[2],dc3[0],dc3[1],dc3[2]) >> file;
   printf ( "tele coords %02d:%02d:%04.1f %3d:%02d:%02d 2000.0 \n",
         ra3[0],ra3[1],ra3[2],dc3[0],dc3[1],dc3[2]) >> file;
   print ("tele enable")                     >> file;
   printf("\n") >> file;
-  }
-
-function offsetscope(dra,ddc){
-  printf("\n")                                               >> file;
-#  printf("echo -n \"offsetting by %d %d arcsec\"\n",dra,ddc) >> file;
-  printf("tele offset %d %d \n",dra,ddc)                     >> file;
-  printf("sleep 3\n")                                        >> file;
-  printf("\n")                                               >> file;
   }
 
 function setbin(dobin) {
