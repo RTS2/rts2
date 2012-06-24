@@ -234,3 +234,12 @@ class JSONProxy(Rts2JSON):
 	
 	def getDevicesByType(self,device_type):
 		return self.loadJson('/api/devbytype',{'t':device_type})
+
+def getProxy():
+	global __jsonProxy
+	return __jsonProxy
+
+def createProxy(url,username=None,password=None,verbose=False,http_proxy=None):
+	global __jsonProxy
+	__jsonProxy = JSONProxy(url=url,username=username,password=password,verbose=verbose,http_proxy=http_proxy)
+	return __jsonProxy
