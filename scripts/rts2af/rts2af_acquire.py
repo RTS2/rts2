@@ -215,6 +215,7 @@ class Acquire(rts2af.AFScript):
         # set the FOC_DEF for the clear optical path
         fwhmFocPos= -1
         r2c.log('I','rts2af_acquire: waiting for fitted focus position')
+
         focusLine= analysis.stdout.readline()
         r2c.log('I','rts2af_acquire: ----------------focus line: {0}'.format(focusLine))
 
@@ -250,7 +251,7 @@ class Acquire(rts2af.AFScript):
                 r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, due number of objects {1}<6 or datapoints <8 (adhoc!)'.format(fwhmFocPos, objs, dps))
         else:
             # if there is no temperature all subsequent settings of FOC will be bad positions!
-            r2c.log('E','rts2af_acquire: severe error, can not set temperature from fit results, no match for string: {0}'.format(focusLine))
+            r2c.log('E','rts2af_acquire: severe error, no match for string: {0}'.format(focusLine))
 
         if setFocus:
             # not necessary but for run time safety, 
@@ -391,9 +392,12 @@ class Acquire(rts2af.AFScript):
             self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
             self.serviceFileOp.createAcquisitionBasePath( filter)
 # ToDo wildi
-            cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_analysis.py',
-                   '--config', configFileName
-                   ]
+            if( self.test):
+                cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_feedback_acquire.py']
+            else:
+                cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_analysis.py',
+                       '--config', configFileName
+                       ]
             
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess

@@ -60,13 +60,15 @@ class main():
         self.scriptPath= '/home/wildi/rts2/scripts/'
 
         self.storePath=[]
-        # standard set of images self.storePath.append('/home/wildi/rts2af-fits/focus/X') 
+        # standard set of images 
+        self.storePath.append('/home/wildi/rts2af-fits/focus/2012-06-23T11:56:24.022192/X') 
         # true baker run 
-        self.storePath.append('/home/wildi/rts2af-fits/focus/baker/C') 
+        #self.storePath.append('/home/wildi/rts2af-fits/focus/baker/C') 
         self.referenceFile=[]
-        # standard reference file self.referenceFile.append('20120324001509-875-RA-refernece.fits') 
+        # standard reference file 
+        self.referenceFile.append('20120324001509-875-RA-refernece.fits') 
         # true baker run 
-        self.referenceFile.append('20120623061642-618-RA.fits') 
+        #self.referenceFile.append('20120623061642-618-RA.fits') 
         self.cmd= 'rts2af_acquire.py'
         self.focuser = 'FOC_DMY'  
         self.verbose= True

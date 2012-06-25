@@ -44,7 +44,6 @@ class main(rts2af.AFScript):
     """extract the catalgue of an images"""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
-        self.test = False
         self.pid= os.getpid()
 
     def main(self):
@@ -85,56 +84,55 @@ class main(rts2af.AFScript):
             sys.exit(1)
 
 
-        if( self.test== True):
-            logging.info('rts2af_analysis.py: got reference file: {0}'.format(referenceFitsFileName))
-        else:
-            logging.info('rts2af_analysis.py: pid: {0}, starting, reference file: {1}'.format(self.pid, referenceFitsFileName))
+        #
+        logging.info('rts2af_analysis.py: pid: {0}, starting, reference file: {1}'.format(self.pid, referenceFitsFileName))
 
-            hdur= rts2af.FitsHDU(referenceFitsFileName)
+        hdur= rts2af.FitsHDU(referenceFitsFileName)
 
-            HDUs= None
-            catr= None
-            cats= None
+        HDUs= None
+        catr= None
+        cats= None
 
-            if(hdur.headerProperties()):
-                HDUs= rts2af.FitsHDUs(hdur)
-                catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
-                catr.runSExtractor()
-                if(catr.createCatalogue()):
+        if(hdur.headerProperties()):
+            HDUs= rts2af.FitsHDUs(hdur)
+            catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
+            catr.runSExtractor()
+            if(catr.createCatalogue()):
 
-                    if(catr.cleanUpReference()==0):
-                        logging.error('rts2af_analysis.py: exitinging due to no objects found')
-                        print 'FOCUS: -1'
-                        sys.stdout.flush()
-                        sys.exit(1)
-
-                    catr.writeCatalogue()
-                    cats= rts2af.Catalogues(catr)
-                else:
+                if(catr.cleanUpReference()==0):
+                    logging.error('rts2af_analysis.py: exitinging due to no objects found')
                     print 'FOCUS: -1'
                     sys.stdout.flush()
-
-                    logging.error('rts2af_analysis.py: exiting due to invalid reference catalogue or file not found: {0}'.format(referenceFitsFileName))
                     sys.exit(1)
 
+                catr.writeCatalogue()
+                cats= rts2af.Catalogues(catr)
             else:
                 print 'FOCUS: -1'
                 sys.stdout.flush()
 
-                logging.error('rts2af_analysis.py: exiting due to invalid hdur.headerProperties or file not found: {0}'.format(referenceFitsFileName))
+                logging.error('rts2af_analysis.py: exiting due to invalid reference catalogue or file not found: {0}'.format(referenceFitsFileName))
                 sys.exit(1)
 
-
-            if( catr.numberReferenceObjects() < runTimeConfig.value('MINIMUM_OBJECTS')):
-                print 'FOCUS: -1'
-                sys.stdout.flush()
-
-                logging.error('rts2af_analysis.py: exiting due to too few sxObjects found: {0} of {1}'.format(catr.numberReferenceObjects(), runTimeConfig.value('MINIMUM_OBJECTS')))
-                sys.exit(1)
-            else:
-                logging.info('rts2af_analysis.py: reference catalogue created with: {0} objects'.format(catr.numberReferenceObjects()))
-            print 'info: reference catalogue created'
+        else:
+            print 'FOCUS: -1'
             sys.stdout.flush()
+
+            logging.error('rts2af_analysis.py: exiting due to invalid hdur.headerProperties or file not found: {0}'.format(referenceFitsFileName))
+            sys.exit(1)
+
+
+        if( catr.numberReferenceObjects() < runTimeConfig.value('MINIMUM_OBJECTS')):
+            print 'FOCUS: -1'
+            sys.stdout.flush()
+
+            logging.error('rts2af_analysis.py: exiting due to too few sxObjects found: {0} of {1}'.format(catr.numberReferenceObjects(), runTimeConfig.value('MINIMUM_OBJECTS')))
+            sys.exit(1)
+        else:
+            logging.info('rts2af_analysis.py: reference catalogue created with: {0} objects'.format(catr.numberReferenceObjects()))
+
+        print 'info: reference catalogue created'
+        sys.stdout.flush()
 
 # read the files sys.stdin.readline() normally rts2af_analysis.py is fed by rts2af_acquire.py
         while(True):
@@ -159,43 +157,38 @@ class main(rts2af.AFScript):
                 logging.info('rts2af_analysis.py: got short, breaking')
                 break
 
-            if( self.test== True):
-                logging.error('rts2af_analysis.py: got file >>{0}<<'.format(fits))
-            else:
-                hdu= rts2af.FitsHDU( fits, hdur)
-                if(hdu.headerProperties()):
-                    if(rts2af.verbose):
-                        logging.error('rts2af_analysis.py: append '+ hdu.fitsFileName)
-                    HDUs.fitsHDUsList.append(hdu)
+            hdu= rts2af.FitsHDU( fits, hdur)
+            if(hdu.headerProperties()):
+#                if(rts2af.verbose):
+#                    logging.info('rts2af_analysis.py: append '+ hdu.fitsFileName)
 
-                    cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
-                    cat.runSExtractor()
-                    cat.createCatalogue()
-                    cat.cleanUp()
+                HDUs.fitsHDUsList.append(hdu)
 
-                    # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
-                    if( cat.matching()):
-                        cats.CataloguesList.append(cat)
-                    else:
-                        logging.error('rts2af_analysis.py: discarded catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
+                cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
+                cat.runSExtractor()
+                cat.createCatalogue()
+                cat.cleanUp()
+
+                # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
+                if( cat.matching()):
+                    cats.CataloguesList.append(cat)
                 else:
-                    logging.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
-
-        if( self.test== True):
-            logging.error('rts2af_analysis.py: would fit now: {0}'.format(referenceFitsFileName))
-        else:
-            # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
-            fitResult= cats.fitTheValues()
-            if not (fitResult==None):
-                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints)
-                logging.info('rts2af_analysis.py: fit result {0}, reference file: {1}'.format(fitResult.minimumFocPos, referenceFitsFileName))
-                # input format for rts2af_model_analyze.py
-                # uncomment that if you need it
-                logging.info('rts2af_analysis.py: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, fitResult.temperature, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
-
+                    logging.error('rts2af_analysis.py: discarded catalogue at FOC_POS: {0}, file: {1}'.format(hdu.variableHeaderElements['FOC_POS'], hdu.fitsFileName))
             else:
-                print 'FOCUS: fit did not converge'
-                logging.error('rts2af_analysis.py: fit did not converge, reference file: {0}'.format(referenceFitsFileName))
+                logging.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
+
+        # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
+        fitResult= cats.fitTheValues()
+        if not (fitResult==None):
+            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints)
+            logging.info('rts2af_analysis.py: fit result {0}, reference file: {1}'.format(fitResult.minimumFocPos, referenceFitsFileName))
+            # input format for rts2af_model_analyze.py
+            # uncomment that if you need it
+            logging.info('rts2af_analysis.py: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, fitResult.temperature, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
+
+        else:
+            print 'FOCUS: fit did not converge'
+            logging.error('rts2af_analysis.py: fit did not converge, reference file: {0}'.format(referenceFitsFileName))
                 
 
         logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
