@@ -876,8 +876,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				<< d_tar_id
 				<< " grb_id: " << d_grb_id
 				<< " grb_seqn: " << d_grb_seqn
-				<< " ra: " << d_grb_ra
-				<< " dec: " << d_grb_dec << sendLog;
+				<< " ra dec: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << sendLog;
 			EXEC SQL COMMIT;
 		}
 	}
@@ -909,13 +908,16 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 					targets
 				SET
 					tar_ra = :d_grb_ra,
-					tar_dec = :d_grb_dec
+					tar_dec = :d_grb_dec,
+					tar_enabled = :d_tar_enabled
 				WHERE
 					tar_id = :d_tar_id;
 			if (sqlca.sqlcode)
 			{
 			  	throw rts2db::SqlError ("cannot update GRB target coordinates");
 			}
+			logStream (MESSAGE_INFO) << "Update target #" << d_tar_id << " RA DEC: " << LibnovaRaDec (d_grb_ra, d_grb_dec) << ", set state to " << (d_tar_enabled ? "enabled" : "disabled") << sendLog;
+
 			// update grb informations..
 			// do updates only when new position is better then old one
 			if (gcnContainsGrbPos (d_grb_type)
