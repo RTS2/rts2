@@ -85,6 +85,9 @@ class main(rts2af.AFScript):
             if( not quit_match==None): 
                 logging.info('rts2af_feedback_acquire.py: got Q, breaking')
                 break
+            if( len(fits)==0): 
+                logging.error('rts2af_feedback_acquire.py: got a zero length input from stdin, exiting')
+                sys.exit(1)
 
             logging.info('rts2af_feedback_acquire.py: got fits file >>{0}<<'.format(fits))
 
