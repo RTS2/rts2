@@ -117,15 +117,20 @@ class Acquire(rts2af.AFScript):
             else:
                 r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
 
-    def focuserVaules(self):
+    def focuserValues(self):
         curFocPos      =r2c.getValueFloat('FOC_POS', self.focuser)
         curFocTar      =r2c.getValueFloat('FOC_TAR', self.focuser)
         curFocDef      =r2c.getValueFloat('FOC_DEF', self.focuser)
         curFocFoff     =r2c.getValueFloat('FOC_FOFF',self.focuser)
         curFocToff     =r2c.getValueFloat('FOC_TOFF',self.focuser)
-        curFocTc       =r2c.getValueFloat('FOC_TC',  self.focuser)
-        curFocTempMeteo=r2c.getValueFloat('TEMP_METEO', self.focuser)
-        curFocTcMode   =r2c.getValueFloat('TCMODE',     self.focuser)
+        if(self.temperatureCompensation):
+            curFocTc       =r2c.getValueFloat('FOC_TC',  self.focuser)
+            curFocTempMeteo=r2c.getValueFloat('TEMP_METEO', self.focuser)
+            curFocTcMode   =r2c.getValueFloat('TCMODE',     self.focuser)
+        else:
+            curFocTc       = None
+            curFocTempMeteo= None
+            curFocTcMode   = None
 
         return (curFocPos, curFocTar, curFocDef, curFocFoff, curFocToff, curFocTc, curFocTempMeteo, curFocTcMode)
 
@@ -148,14 +153,14 @@ class Acquire(rts2af.AFScript):
                         r2c.log('I','rts2af_acquire: target position reached, current foc_pos: {0}, target position: {1}, resolution: {2} '.format(curFocPos, focPos, self.runTimeConfig.value('FOCUSER_RESOLUTION')))
                         break
                     elif( i == 5):
-                        r2c.log('E','rts2af_acquire: target position, try again, focuser values: {0}'.format(self.focuserVaules()))
+                        r2c.log('E','rts2af_acquire: target position, try again, focuser values: {0}'.format(self.focuserValues()))
                         # set value again
                         r2c.setValue('FOC_FOFF', focFoff, self.focuser)
                         r2c.setValue('FOC_DEF', focDef, self.focuser)
                         r2c.log('W','rts2af_acquire: target position again set: {0}'.format(focPos))
                     elif( i > 20):
                         r2c.log('E','rts2af_acquire: target position, breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
-                        r2c.log('E','rts2af_acquire: target position, breaking, focuser values: {0}'.format(self.focuserVaules()))
+                        r2c.log('E','rts2af_acquire: target position, breaking, focuser values: {0}'.format(self.focuserValues()))
                         break
 
                 time.sleep(1)
