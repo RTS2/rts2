@@ -128,8 +128,10 @@ class Rts2JSON:
 			r.set_debuglevel(5)
 		return r
 
-	def getResponse(self,path,args={},hlib=None):
-		url = self.prefix + path + '?' + urllib.urlencode(args)
+	def getResponse(self,path,args=None,hlib=None):
+		url = self.prefix + path
+		if args:
+			url += '?' + urllib.urlencode(args)
 		if self.verbose:
 			print 'retrieving {0}'.format(url)
 		try:
@@ -174,7 +176,7 @@ class Rts2JSON:
 	def loadData(self,path,args={},hlib=None):
 		return self.getResponse(path,args,hlib).read()
 
-	def loadJson(self,path,args={}):
+	def loadJson(self,path,args=None):
 		d = self.loadData(path,args)
 		if self.verbose:
 			print d
