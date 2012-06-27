@@ -457,7 +457,9 @@ bool FlwoWeather::isGoodWeather ()
 	}
 	if (me_sky_temp->getValueFloat () > me_sky_limit->getValueFloat ())
 	{
-		setWeatherTimeout (wait_skytemp->getValueInteger (), "skytemp is above limit");
+		std::ostringstream _os;
+		_os << "SKYTEMP " << me_sky_temp->getValueFloat () << "C, above limit of " << me_sky_limit->getValueFloat () << "C";
+		setWeatherTimeout (wait_skytemp->getValueInteger (), _os.str ().c_str ());
 		valueError (me_sky_temp);
 		return false;
 	}
