@@ -279,13 +279,18 @@ int Robofocus::init ()
 	    logStream (MESSAGE_WARNING) << "Robofocus::int driver is tested with firmware revision 3.20, current: "<< firmware->getValueString()<< sendLog ;
 
 	}
-	if( minTicks->getValueInteger() < 2)
-	  minTicks->setValueInteger(2); 
+	// 2012-06-28, wildi, temporarily disabled, due to FOC_TOFF, FOC_FOFF problem
+	// if( minTicks->getValueInteger() < 2)
+	//   minTicks->setValueInteger(2); 
+	if( minTicks->getValueInteger() < 0)
+	  minTicks->setValueInteger(0); 
 	if( minTicks->getValueInteger() > 65000)
 	  minTicks->setValueInteger(65000); 
 
-	if( maxTicks->getValueInteger() < 2)
-	  maxTicks->setValueInteger(2); 
+	// if( maxTicks->getValueInteger() < 2)
+	//   maxTicks->setValueInteger(2); 
+	if( maxTicks->getValueInteger() < 0)
+	  maxTicks->setValueInteger(0); 
 	if( maxTicks->getValueInteger() > 65000)
 	  maxTicks->setValueInteger(65000); 
 
@@ -295,8 +300,10 @@ int Robofocus::init ()
 	// if robofocus has been calibrated
 	if(maxTravel->getValueInteger()>1){
 
-	  setFocusExtend( 2.,(double)maxTravel->getValueInteger());
-	  minTicks->setValueInteger (2);
+	  // setFocusExtend( 2.,(double)maxTravel->getValueInteger());
+	  // minTicks->setValueInteger (2);
+	  setFocusExtend( 0.,(double)maxTravel->getValueInteger());
+	  minTicks->setValueInteger (0);
 	  maxTicks->setValueInteger( maxTravel->getValueInteger());
 	} else {
 
