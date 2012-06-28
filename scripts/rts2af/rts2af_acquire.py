@@ -191,6 +191,8 @@ class Acquire(rts2af.AFScript):
 
             r2c.log('I','rts2af_acquire: acquired: {0} storing at: {1}'.format(acquisitionPath, storePath))
             r2c.move(acquisitionPath, storePath)
+            if( extension== 'proof'):
+                return True
 
         try:
             if(self.test):
@@ -259,11 +261,12 @@ class Acquire(rts2af.AFScript):
             r2c.log('E','rts2af_acquire: severe error, no match for string: {0}'.format(focusLine))
 
         if setFocus:
-            # not necessary but for run time safety, 
             # loosing time in prepareAcquisition, because travelling needs: filter.OffsetToClearPath/(focuser speed) seconds
             # this are typically 15 seconds!
-            r2c.setValue('FOC_TOFF', 0, self.focuser)
-            r2c.setValue('FOC_FOFF', 0, self.focuser)
+            r2c.setValue('FOC_TOFF', 0., self.focuser)
+            r2c.setValue('FOC_FOFF', 0., self.focuser)
+            r2c.log('I','rts2af_acquire: setFittedFocus: set FOC_TOFF=FOC_FOFF=0.')
+
             if(self.temperatureCompensation):
                 r2c.setValue('TC_TEMP_REF', temperature, self.focuser)
                 r2c.log('I','rts2af_acquire: setting temperature: {0}'.format(temperature))
@@ -327,9 +330,9 @@ class Acquire(rts2af.AFScript):
         else:
             r2c.log('E','rts2af_acquire: prepareAcquisition: can not set position: lower: {0}, upper: {1}, out of limits: {2}, {3}'.format((focDef + filter.OffsetToClearPath + filter.lowerLimit), (focDef + filter.OffsetToClearPath + filter.upperLimit),self.lowerLimit , self.upperLimit))
             
-            r2c.setValue('FOC_TOFF', 0, self.focuser)
-            r2c.setValue('FOC_FOFF', 0, self.focuser)
-            r2c.log('I','rts2af_acquire: prepareAcquisition: set FOC_TOFF=FOC_FOFF=0')
+            r2c.setValue('FOC_TOFF', 0., self.focuser)
+            r2c.setValue('FOC_FOFF', 0., self.focuser)
+            r2c.log('I','rts2af_acquire: prepareAcquisition: set FOC_TOFF=FOC_FOFF=0.')
             return False
 #ToDo
     def saveState(self):
