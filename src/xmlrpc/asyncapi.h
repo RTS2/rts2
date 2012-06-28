@@ -185,6 +185,7 @@ class AsyncAPIMSet:public AsyncAPI
 		virtual void postEvent (rts2core::Event *event);
 
 		void incCalls () { pendingCalls++; }
+		void incSucc (int v) { succ += v; }
 	private:
 		int pendingCalls;
 		int succ;

@@ -971,6 +971,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			int ext = params->getInteger ("e", 0);
 
 			int vcc = 0;
+			int own_calls = 0;
 
 			AsyncAPIMSet *aa = NULL;
 
@@ -983,28 +984,36 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 				{
 					std::string devn = dn.substr (0,dot);
 					std::string vn = dn.substr (dot + 1);
-					if (isCentraldName (devn.c_str ()))
-						conn = master->getSingleCentralConn ();
-					else
-						conn = master->getOpenConnection (devn.c_str ());
-					if (conn == NULL)
-						throw JSONException ("cannot find device with name " + devn);
-					rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
-					if (rts2v == NULL)
-						throw JSONException ("cannot find variable with name " + vn);
-					if (async == 0)
+					if (devn == ((XmlRpcd *) getMasterApp ())->getDeviceName ())
 					{
-						if (aa == NULL)
-						{
-							aa = new AsyncAPIMSet (this, conn, connection, ext);
-							((XmlRpcd *) getMasterApp ())->registerAPI (aa);
-						}
-						aa->incCalls ();
-
+						((XmlRpcd *) getMasterApp ())->doOpValue (vn.c_str (), '=', iter->getValue ());
+						own_calls++;
 					}
+					else
+					{
+						if (isCentraldName (devn.c_str ()))
+							conn = master->getSingleCentralConn ();
+						else
+							conn = master->getOpenConnection (devn.c_str ());
+						if (conn == NULL)
+							throw JSONException ("cannot find device with name " + devn);
+						rts2core::Value * rts2v = master->getValue (devn.c_str (), vn.c_str ());
+						if (rts2v == NULL)
+							throw JSONException ("cannot find variable with name " + vn);
+						if (async == 0)
+						{
+							if (aa == NULL)
+							{
+								aa = new AsyncAPIMSet (this, conn, connection, ext);
+								((XmlRpcd *) getMasterApp ())->registerAPI (aa);
+							}
+							aa->incCalls ();
 
-					conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), vn, '=', std::string (iter->getValue ()), true), 0, aa);
-					vcc ++;
+						}
+
+						conn->queCommand (new rts2core::CommandChangeValue (conn->getOtherDevClient (), vn, '=', std::string (iter->getValue ()), true), 0, aa);
+						vcc++;
+					}
 				}
 			}
 			if (async)
@@ -1013,8 +1022,12 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			}
 			else
 			{
-				
-				throw XmlRpc::XmlRpcAsynchronous ();
+				if (vcc > 0)
+				{
+					aa->incSucc (own_calls);
+					throw XmlRpc::XmlRpcAsynchronous ();
+				}
+				os << "\"succ\":" << own_calls << ",\"failed\":0,\"ret\":0";
 			}
 		}
 		// return night start and end
