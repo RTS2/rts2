@@ -11,6 +11,8 @@ AM_CXXFLAGS=@NOVA_CFLAGS@
 test_SOURCES = test.cpp
 test_LDADD = -lrts2 @LIB_NOVA@
 
+EXTRA_DIST =
+
 lib_LTLIBRARIES = librts2.la librts2users.la 
 
 librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp multidev.cpp option.cpp \
@@ -25,14 +27,18 @@ librts2_la_SOURCES = hoststring.cpp app.cpp block.cpp daemon.cpp device.cpp mult
 	connopentpl.cpp connford.cpp expression.cpp nan.c connbait.cpp \
 	teld.cpp camd.cpp sensord.cpp filterd.cpp focusd.cpp mirror.cpp dome.cpp cupola.cpp domeford.cpp phot.cpp rotad.cpp \
 	gem.cpp fork.cpp tgdrive.cpp \
-	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c OakFeatureReports.c OakHidBase.c
+	clicupola.cpp cliwheel.cpp clifocuser.cpp slitazimuth.c 
+	
+if SUNCYG
+EXTRA_DIST += OakFeatureReports.c OakHidBase.c
+else
+librts2_la_SOURCES += OakFeatureReports.c OakHidBase.c
+endif
 
 librts2_la_LIBADD = model/librts2model.la
 
 
 librts2users_la_SOURCES = userlogins.cpp
-
-EXTRA_DIST =
 
 # CYGWIN workaround
 if NOT_GETADDRINFO
