@@ -806,6 +806,7 @@ AC_OUTPUT([Makefile
 	   include/rts2fits/Makefile
 	   include/rts2script/Makefile
 	   include/rts2scheduler/Makefile
+	   include/vermes/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
 	   contrib/Makefile
