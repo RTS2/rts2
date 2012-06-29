@@ -12,7 +12,7 @@ EXTRA_DIST = schedobs.ec ticket.ec ticketset.ec
 
 else
 
-EXTRA_DIST = scheduler.cpp schedbag.cpp schedule.cpp schedobs.ec ticket.ec utils.cpp
+EXTRA_DIST = schedule.cpp schedbag.cpp schedule.cpp schedobs.ec ticket.ec ticketset.ec utils.cpp
 
 endif
 
