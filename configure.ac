@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.9.3-1, petr@kubanek.net)
+AC_INIT(rts2, 0.9.4, petr@kubanek.net)
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
