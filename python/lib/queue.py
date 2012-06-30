@@ -35,6 +35,9 @@ def _nanNone(num):
 def _xmlQueueBoolAttribute(value):
 	return 'true' if value else 'false'
 
+def _getXmlBoolAttribute(node,name):
+	return node.getAttribute(name) == 'true'
+
 class QueueEntry:
 	"""Single queue entry. Provides methods to work on entry (observation request) level."""
 	def __init__(self,id=None,start=None,end=None,qid=None):
@@ -136,3 +139,19 @@ class Queue:
 		node.setAttribute('queueing',str(self.queueing))
 
 		map(lambda x:node.appendChild(x.getXmlNode(document)),self.entries)
+
+	def fromXml(self,node):
+		"""Construct queue from XML representation."""
+		self.skip_below = _getXmlBoolAttribute(node,'skip_below')
+		self.test_constr = _getXmlBoolAttribute(node,'test_constr')
+		self.remove_executed = _getXmlBoolAttribute(node,'remove_executed')
+		self.queueing = int(node.getAttribute('queueing'))
+
+		for el in node.getElementsByTagName('queueEntry'):
+			q = QueueEntry()
+			q.from_xml(el)
+			self.entries.append(el)
+	
+	def loadXml(self,f):
+		document = xml.dom.minidom.parse(f)
+		self.fromXml(document.documentElement)
