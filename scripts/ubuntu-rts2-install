@@ -73,8 +73,7 @@ if [ $with_db == 1 ]; then
 		natty)
 			extra_p="$extra_p postgresql-server-dev-8.4"
 			;;
-		oneiric)
-		precise)
+		oneiric|precise|debian)
 			extra_p="$extra_p postgresql-server-dev-9.1"
 			;;
 		*)
