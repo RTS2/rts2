@@ -512,8 +512,16 @@ int Arc::stopExposure ()
 	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
 		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
 #else
-	controller.Command (arc::TIM_ID, PEX);
-	controller.PCICommand (PCI_RESET);
+	try
+	{
+		controller.Command (arc::TIM_ID, PEX);
+		controller.PCICommand (PCI_RESET);
+	}
+	catch (std::runtime_error &er)
+	{
+		logStream (MESSAGE_ERROR) << "error in stopExposure " << er.what () << sendLog;
+		return -1;	
+	}
 #endif
 	return Camera::stopExposure ();
 }
@@ -539,17 +547,17 @@ int Arc::doReadout ()
 			return USEC_SEC / 1000.0;
 		if (controller.GetPixelCount () != chipUsedSize ())
 			return USEC_SEC / 1000.0;
+
+		arc::CDeinterlace deint;
+		deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
+		sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
+		return -2;
 	}
 	catch (std::runtime_error &er)
 	{
 		logStream (MESSAGE_ERROR) << "error in doReadout " << er.what () << sendLog;
 		return -1;	
 	}
-
-	arc::CDeinterlace deint;
-	deint.RunAlg (controller.mapFd, getUsedHeight (), getUsedWidth (), arc::CDeinterlace::DEINTERLACE_NONE);
-	sendReadoutData ((char *) controller.mapFd, chipUsedSize () * 2);
-	return -2;
 #endif
 }
 
