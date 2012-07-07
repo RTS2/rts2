@@ -36,7 +36,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import rts2.scriptcomm
-import sextractor
+import rts2.sextractor
 
 from pylab import *
 from scipy import *
@@ -160,7 +160,7 @@ class Focusing (rts2.scriptcomm.Rts2Comm):
 		keys.sort()
 		for k in keys:
 			try:
-				fwhm,nstars = sextractor.getFWHM(tries[k],min_stars,ds9display,filterGalaxies,threshold=threshold,deblendmin=deblendmin)
+				fwhm,nstars = rts2.sextractor.getFWHM(tries[k],min_stars,ds9display,filterGalaxies,threshold=threshold,deblendmin=deblendmin)
 			except Exception, ex:
 				self.log('W','offset {0}: {1}'.format(k,ex))
 				continue
