@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sextractor
+import rts2.sextractor
 import sys
 import pyfits
 import math
@@ -48,7 +48,7 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 
 	sexcols = ['X_IMAGE','Y_IMAGE','MAG_BEST','FLAGS','CLASS_STAR','FWHM_IMAGE','A_IMAGE','B_IMAGE','EXT_NUMBER','FLUX_BEST','BACKGROUND','XPEAK_IMAGE','YPEAK_IMAGE']
 
-	c = sextractor.Sextractor(sexcols,threshold=threshold)
+	c = rts2.sextractor.Sextractor(sexcols,threshold=threshold)
 	c.runSExtractor(fn)
 	c.sortObjects(2)
 
@@ -79,9 +79,12 @@ def processImage(fn,d,threshold=2.7,pr=False,ds9cat=None,bysegments=False,stars=
 			print '\t'.join(map(lambda y:str(y),x))
 		segnum = int(x[8])
 		if atm:
-			(dx,dy) = atm.xy2Detector('IM{0}'.format(segnum),x[0],x[1])
+			try:
+				(dx,dy) = atm.xy2Detector('IM{0}'.format(segnum),x[0],x[1])
+			except KeyError,ke:
+				(dx,dy) = x[0:2]
 		else:
-			(dx,dy) = x[0:1]
+			(dx,dy) = x[0:2]
 
 		for st in stars:
 			if st[0] == segnum:
