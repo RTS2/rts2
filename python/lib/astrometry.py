@@ -99,7 +99,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self,scale=None,ra=None,dec=None,replace=False,verbose=False):
+	def run(self,scale=None,ra=None,dec=None,radius=5.0,replace=False,verbose=False):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -119,7 +119,7 @@ class AstrometryScript:
 			solve_field.append('--dec')
 			solve_field.append(str(dec))
 			solve_field.append('--radius')
-			solve_field.append('5')
+			solve_field.append(str(radius))
 
 		solve_field.append(self.infpath)
 
