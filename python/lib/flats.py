@@ -2,10 +2,6 @@
 
 # Script for obtaining twilight skyflats.
 #
-# rts2.scriptcomm.py is included in RTS2 distribution. You must eithert copy it to the
-# same location as this script, or include it in PYTHONPATH. make install will
-# install it into rts2/scriptcomm.py in local dist-packages.
-#
 # If you would like to customize this file for your setup, please use something
 # similar to flat.py. This file is sometimes updated and changes made to
 # configuration might get lost.
@@ -37,7 +33,7 @@
 import sys
 import string
 import time
-import rts2.scriptcomm
+import scriptcomm
 
 # email communication
 import smtplib
@@ -86,7 +82,7 @@ class Flat:
 			return self.filter
 		return '%s_%s_%s' % (self.filter,self.binning,self.window)
 
-class FlatScript (rts2.scriptcomm.Rts2Comm):
+class FlatScript (scriptcomm.Rts2Comm):
 	"""Class for taking and processing skyflats.
 
 	:param eveningFlats: flats for evening. An array of Flat classes.
@@ -97,7 +93,7 @@ class FlatScript (rts2.scriptcomm.Rts2Comm):
 	:param expTimes: exposure times for flats attempts"""
 
 	def __init__(self,eveningFlats=[Flat(None)],morningFlats=None,maxBias=0,maxDarks=0,expTimes=range(1,20)):
-		rts2.scriptcomm.Rts2Comm.__init__(self)
+		scriptcomm.Rts2Comm.__init__(self)
 		# Configuration (filters, binning, ..) for evening, we will use
 		# reverse for morning. You fill array with Flat objects, which
 		# describes configuration. If you do not have filters, use None
@@ -235,7 +231,7 @@ class FlatScript (rts2.scriptcomm.Rts2Comm):
 		if (self.isSubWindow == True):
 			return
 		if (self.shiftRa != 0 or self.shiftDec != 0):
-			self.incrementValueType(rts2.scriptcomm.DEVICE_TELESCOPE,"OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__())
+			self.incrementValueType(scriptcomm.DEVICE_TELESCOPE,"OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__())
 
 	def fullWindow(self):
 		if (self.flat.window is None):
@@ -439,7 +435,7 @@ class FlatScript (rts2.scriptcomm.Rts2Comm):
 		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),numpy.max(m),numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
-	def run(self, domeDevice='DOME', tmpDirectory='/tmp/'):
+	def getData(self, domeDevice='DOME', tmpDirectory='/tmp/'):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
@@ -487,6 +483,21 @@ class FlatScript (rts2.scriptcomm.Rts2Comm):
 				self.goodFlats.append(self.usedFlats[i])
 			else:
 			  	self.badFlats.append(self.usedFlats[i])
+
+	def run(self, domeDevice='DOME', tmpDirectory='/tmp/', receivers=None, subject='Skyflats report'):
+		try:
+			self.getData(domeDevice, tmpDirectory)
+		except scriptcomm.Rts2NotActive,noa:
+			self.log('W','flat script interruped')
+
+			if receivers:
+				self.sendEmail(receivers,subject)
+			return
+
+		if receivers:
+			self.sendEmail(receivers,subject)
+
+		self.finish ()
 
 	def sendEmail(self,email,observatoryName):
 		msg = 'Flats finished at %s.\n\nGood flats: %s\nBad flats: %s\n\n' % (datetime.today(),string.join(map(Flat.signature,self.goodFlats),';'),string.join(map(Flat.signature,self.badFlats),';'))
