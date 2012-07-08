@@ -340,7 +340,10 @@ set_setpoint(float setpoint)
   /*     return BISYNC_ERR; */
   /*   } */
   snprintf(data, 8, "%3.1f", setpoint);
-  int ret= SSD_set_tag(ser_dev, 247, data) ;
+
+  //wildi  int ret= SSD_set_tag(ser_dev, 247, data) ;
+  // Version 5
+  int ret= SSD_set_tag(ser_dev, 269, data) ;
   if( ret == BISYNC_OK) {
     //fprintf( stderr, "set_setpoint: value %s\n", data) ; 
     return SSD650V_MS_OK ;
@@ -713,7 +716,10 @@ int connectSSD650vDevice( int power_state)
       }
 
       /* get current setpoint, accel and decel times */
-      float setpoint = SSD_qry_real(ser_dev, 247);
+      
+      //float setpoint = SSD_qry_real(ser_dev, 247);
+      //Version 5
+      float setpoint = SSD_qry_real(ser_dev, 269);
 
       if (!isnan(setpoint)) {
 	/*           IDSetNumber(&motorOperationNP, "setpoint currently is %3.1f", abs_setpoint); */
@@ -1318,7 +1324,9 @@ SSD_qry_comms_status(int sd)
 float
 SSD_qry_setpoint(int sd)
 {
-  return SSD_qry_real(sd, 247);
+  //return SSD_qry_real(sd, 247);
+  // Version 5
+  return SSD_qry_real(sd, 269);
 }
 
 /******************************************************************************

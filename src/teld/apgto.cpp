@@ -754,7 +754,7 @@ int APGTO::tel_slew_to (double ra, double dec)
       }
       return -1;
     } 
-    startCupolaSync ();
+    //startCupolaSync ();
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled, cupola synced." << sendLog;
   }
   // slew now
@@ -769,6 +769,7 @@ int APGTO::tel_slew_to (double ra, double dec)
     on_set_HA= target_HA ; // used for defining state transition while tracking
     transition_while_tracking->setValueBool(false) ;
     time(&slew_start_time);
+    slew_state->setValueBool(true) ;
     return 0;
   }
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra " << target_equ.ra << " dec " << target_equ.dec << " got '0'!=" << retstr<<"<END, NOT syncing cupola"  << sendLog;
@@ -1156,9 +1157,7 @@ int APGTO::startResync ()
 		  }
 		  return -1;
 		}
-                set_move_timeout (100);
-                slew_state->setValueBool(true) ;
-
+                set_move_timeout (10); //ToDo: used?? propbably not
 	// }
 	return 0;
 }
@@ -1233,7 +1232,6 @@ int APGTO::isMoving ()
 		case -1:
 			return -1;
 	case 1: //isMoving return 1 if (sep < 0.1) 
-		        slew_state->setValueBool(false) ;
 			return -2;
 	default: //isMoving return 0 if (sep > 0.1)  
 			return USEC_SEC / 10;
@@ -1242,7 +1240,10 @@ int APGTO::isMoving ()
 
 int APGTO::endMove ()
 {
-	sleep (5);
+  //sleep (5);
+	slew_state->setValueBool(false) ;
+	logStream (MESSAGE_ERROR) << "APGTO::endMove, move finished" << sendLog;
+
 	return Telescope::endMove ();
 }
 
@@ -1350,7 +1351,7 @@ int APGTO::startPark ()
   double park_ra= fmod(localSiderealTime()+ PARK_POSITION_RA, 360.);
   logStream (MESSAGE_ERROR) <<"APGTO::startPark "<< park_ra<<  sendLog;
   setTarget ( park_ra, PARK_POSITION_DEC);
-  startCupolaSync() ;
+  //startCupolaSync() ;
   return startResync ();
 }
 
@@ -1496,7 +1497,9 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
       return -1;
     }
     return 0 ;
-  } else if ((conn->isCommand ("move_sg"))||(conn->isCommand ("move_ha"))||(conn->isCommand ("move_ha_sg"))) {
+    // ToDo: A) the commands move_* should go to base class Telescope, because ::endMove() is never called if it is done
+    // this way.
+  } else if ((conn->isCommand ("move_sg"))||(conn->isCommand ("move_ha"))) {
     double move_ra, move_dec ;
     double move_ha ;
 
@@ -1522,29 +1525,9 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
 	return -2;
       }
       move_ra= localSiderealTime() - move_ha; // RA is a right, HA left system
-
-    } else if (conn->isCommand ("move_ha_sg")) {
-      char *move_ha_str;
-      char *move_dec_str;
-      if (conn->paramNextStringNull (&move_ha_str) || conn->paramNextStringNull (&move_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg paramNextString ra or dec failed" << sendLog;
-	return -2;
-      }
-      if(( ret= f_scansexa ( move_ha_str, &move_ha))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg parsing ra failed" << sendLog;
-	return -1;
-      }
-      move_ha *= 15. ;
-      if(( ret= f_scansexa ( move_dec_str, &move_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_ha_sg parsing dec failed" << sendLog;
-	return -1;
-      }
-      move_ra= localSiderealTime() - move_ha; // RA is a right, HA left system
     }
-    setTarget ( move_ra, move_dec);
-    startCupolaSync() ;
-    return startResync ();
-
+    
+ 
   } else if ((conn->isCommand("sync"))||(conn->isCommand("sync_sg"))||(conn->isCommand("sync_ha"))||(conn->isCommand("sync_ha_sg")||(conn->isCommand("sync_delta")))) {
     
     double sync_ra, sync_dec ;

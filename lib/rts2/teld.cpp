@@ -1296,6 +1296,7 @@ int Telescope::moveAltAz ()
 int Telescope::commandAuthorized (rts2core::Connection * conn)
 {
 	double obj_ra;
+	double obj_ha;
 	double obj_dec;
 
 	int ret;
@@ -1308,6 +1309,18 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
 		return startResyncMove (conn, 0);
+	}
+        else if (conn->isCommand ("move_ha_sg"))
+	{
+	    if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
+	      return -2;
+	    double JD = ln_get_julian_from_sys ();
+	    obj_ra= getLocSidTime ( JD) * 15.  - obj_ha ;
+
+	    oriRaDec->setValueRaDec (obj_ra, obj_dec);
+	    mpec->setValueString ("");
+	    tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
+	    return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("do_move"))
 	{
