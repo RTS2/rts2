@@ -20,8 +20,6 @@
 #include "rts2script/devscript.h"
 #include "rts2script/execcli.h"
 
-#define DEBUG_EXTRA
-
 using namespace rts2script;
 
 DevScript::DevScript (rts2core::Connection * in_script_connection) : script ()
