@@ -140,6 +140,9 @@ class FlatScript (scriptcomm.Rts2Comm):
 		# dark filter
 		self.df = None
 
+		self.goodFlats = []
+		self.badFlats = []
+
 	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
 
@@ -473,8 +476,6 @@ class FlatScript (scriptcomm.Rts2Comm):
 		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
-		self.goodFlats = []
-		self.badFlats = []
 		for i in range(0,len(self.flatImages)):
 		  	sig = self.usedFlats[i].signature()
 		  	if len(self.flatImages[i]) >= 3:
