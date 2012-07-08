@@ -48,7 +48,7 @@ import sys
 import logging
 import time
 import rts2af 
-import rts2af_meteodb
+#import rts2af_meteodb
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
@@ -149,15 +149,17 @@ class main(rts2af.AFScript):
                 print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
 
 
-        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
-            fitResultSummaryFileName= '/tmp/result-model-analyze.log'
-            if(not fitResult==None):
-                if( not fitResult.error):
-                    dc= rts2af_meteodb.ReadMeteoDB()
-                    (temperatureConsole, temperatureIss)= dc.queryMeteoDb(fitResult.dateEpoch)
-                    with open( fitResultSummaryFileName, 'a') as frs:
-                        frs.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, temperatureConsole, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
-                    frs.close()
+#        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
+#            fitResultSummaryFileName= '/tmp/result-model-analyze.log'
+#            if(not fitResult==None):
+#                if( not fitResult.error):
+                    #dc= rts2af_meteodb.ReadMeteoDB()
+                    #(temperatureConsole, temperatureIss)= dc.queryMeteoDb(fitResult.dateEpoch)
+#                    temperatureConsole= 10.
+
+#                    with open( fitResultSummaryFileName, 'a') as frs:
+#                        frs.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, temperatureConsole, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
+#                    frs.close()
 
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 

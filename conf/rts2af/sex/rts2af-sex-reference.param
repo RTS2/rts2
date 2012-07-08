@@ -1,4 +1,4 @@
-# rts2-autofocus param file 
+# rts2af param file
 NUMBER
 #X_WORLD
 #Y_WORLD
@@ -143,6 +143,5 @@ FLUX_RADIUS
 ELLIPTICITY
 #CLASS_STAR
 #VIGNET
-# rts2-autofocus, attention here if something has been changed
-VECTOR_ASSOC(14)
-NUMBER_ASSOC
+###VECTOR_ASSOC(14)
+###NUMBER_ASSOC
