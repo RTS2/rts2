@@ -41,6 +41,56 @@ class JsonDouble
 		double v;
 };
 
+class JsonString
+{
+	public:
+		JsonString (const char *s)
+		{
+			for (const char *ic = s; *ic; ic++)
+			{
+				// switch for special characters..
+				switch (*ic)
+				{
+					case '"':
+						sv += "\\\"";
+						break;
+					case '\\':
+						sv += "\\\\";
+						break;
+					case '/':
+						sv += "\\/";
+						break;
+					case '\b':
+						sv += "\\b";
+						break;
+					case '\f':
+						sv += "\\f";
+						break;
+					case '\n':
+						sv += "\\n";
+						break;
+					case '\r':
+						sv += "\\r";
+						break;
+					case '\t':
+						sv += "\\t";
+						break;
+					default:
+						if (isgraph (*ic) || isspace (*ic))
+							sv += *ic;
+				}
+			}
+		}
+		friend std::ostream & operator << (std::ostream &os, JsonString s)
+		{
+			os << s.sv;
+			return os;
+		}
+
+	private:
+		std::string sv;
+};
+
 void sendArrayValue (rts2core::Value *value, std::ostringstream &os);
 
 void sendStatValue (rts2core::Value *value, std::ostringstream &os);

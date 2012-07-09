@@ -1864,9 +1864,9 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		if (n == NULL)
 			os << "null,";
 		else
-			os << "\"" << n << "\",";
+			os << "\"" << JsonString (n) << "\",";
 
-		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec) << ",\"" << tar->getTargetInfo () << "\"";
+		os << JsonDouble (equ.ra) << ',' << JsonDouble (equ.dec) << ",\"" << JsonString (tar->getTargetInfo ()) << "\"";
 
 		if (dfrom)
 			os << ',' << JsonDouble (tar->getDistance (dfrom, JD));
