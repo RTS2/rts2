@@ -5,7 +5,7 @@ import pyfits
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn,verbose=False,blind=False,multiwcs=''):
+def run_on_image(fn,verbose=False,blind=False,multiwcs='',radius=5):
 	import rts2.astrometry
 	import rts2.libnova
 
@@ -36,7 +36,7 @@ def run_on_image(fn,verbose=False,blind=False,multiwcs=''):
 			
 	ff.close()
 
-	ret=a.run(replace=True,verbose=verbose) if blind else a.run(scale=scale,ra=ra,dec=dec,replace=True,verbose=verbose)
+	ret=a.run(replace=True,verbose=verbose) if blind else a.run(scale=scale,ra=ra,dec=dec,radius=radius,replace=True,verbose=verbose)
 
 	if ret:
 		# script needs to reopen file 
@@ -74,6 +74,7 @@ def run_on_image(fn,verbose=False,blind=False,multiwcs=''):
 parser = OptionParser()
 parser.add_option('--multi-wcs',help='Multiple WCS extension',action='store',dest='multiwcs',default='')
 parser.add_option('--blind',help='Blind solve',action='store_true',dest='blind',default=False)
+parser.add_option('--radius',help='Error radius',action='store',dest='radius',default=None)
 parser.add_option('--verbose',help='Be verbose, print what the script is doing',action='store_true',dest='verbose',default=False)
 
 (options,args) = parser.parse_args()
