@@ -37,9 +37,9 @@ using namespace XmlRpc;
 SimbadTarget::SimbadTarget (const char *in_name):ConstTarget ()
 {
 	setTargetName (in_name);
-	simbadBMag = rts2_nan ("f");
-	propMotions.ra = rts2_nan ("f");
-	propMotions.dec = rts2_nan ("f");
+	simbadBMag = NAN;
+	propMotions.ra = NAN;
+	propMotions.dec = NAN;
 
 	xmlInitParser ();
 }

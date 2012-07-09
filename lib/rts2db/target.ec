@@ -331,7 +331,7 @@ Target::Target ()
 	satisfiedProbedUntil = NAN;
 
 	tar_priority = 0;
-	tar_bonus = rts2_nan ("f");
+	tar_bonus = NAN;
 	tar_bonus_time = 0;
 	tar_next_observable = 0;
 
@@ -652,7 +652,7 @@ moveType Target::startSlew (struct ln_equ_posn *position, bool update_position)
 
 	if (isnan (position->ra) || isnan (position->dec))
 	{
-		d_obs_ra = d_obs_dec = d_obs_alt = d_obs_az = rts2_nan ("f");
+		d_obs_ra = d_obs_dec = d_obs_alt = d_obs_az = NAN;
 		d_pos_ind = -1;
 	}
 	else
@@ -1047,7 +1047,7 @@ void Target::getAltAz (struct ln_hrz_posn *hrz, double JD, struct ln_lnlat_posn 
 
 	if (isnan (object.ra) || isnan (object.dec))
 	{
-		hrz->alt = hrz->az = rts2_nan ("f");
+		hrz->alt = hrz->az = NAN;
 	}
 	else
 	{
@@ -1527,7 +1527,7 @@ double Target::getLastObsTime ()
 		if (sqlca.sqlcode == ECPG_NOT_FOUND)
 		{
 			// 1 year was the last observation..
-			return rts2_nan ("f");
+			return NAN;
 		}
 		else
 			logMsgDb ("Target::getLastObsTime", MESSAGE_ERROR);
@@ -1602,7 +1602,7 @@ double Target::getFirstObs ()
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return rts2_nan("f");
+		return NAN;
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
@@ -1626,7 +1626,7 @@ double Target::getLastObs ()
 	if (sqlca.sqlcode)
 	{
 		EXEC SQL ROLLBACK;
-		return rts2_nan("f");
+		return NAN;
 	}
 	EXEC SQL ROLLBACK;
 	return ret;
@@ -2281,7 +2281,7 @@ void Target::revalidateConstraints (int watchID)
 		{
 			delete constraints;
 			constraints = NULL;
-			satisfiedFrom = satisfiedTo = rts2_nan ("f");
+			satisfiedFrom = satisfiedTo = NAN;
 			return;
 		}
 	}

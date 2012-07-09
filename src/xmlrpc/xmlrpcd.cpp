@@ -67,7 +67,7 @@ double XmlDevInterface::getValueChangedTime (rts2core::Value *value)
 {
 	std::map <rts2core::Value *, double>::iterator iter = changedTimes.find (value);
 	if (iter == changedTimes.end ())
-		return rts2_nan ("f");
+		return NAN;
 	return iter->second;
 }
 

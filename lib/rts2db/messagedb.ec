@@ -136,7 +136,7 @@ double MessageSet::getNextCtime ()
 {
 	if (timeLogIter != end ())
 		return timeLogIter->getMessageTime ();
-	return rts2_nan ("f");
+	return NAN;
 }
 
 void MessageSet::printUntil (double time, std::ostream &os)

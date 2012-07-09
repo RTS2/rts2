@@ -70,9 +70,9 @@ class TPM:public rts2core::CliApp
 TPM::TPM (int in_argc, char **in_argv):rts2core::CliApp (in_argc, in_argv)
 {
 	tarCorType = MOUNT;
-	ra_step = rts2_nan ("f");
+	ra_step = NAN;
 	ra_offset = 0;
-	dec_step = rts2_nan ("f");
+	dec_step = NAN;
 	dec_offset = 0;
 
 	useMountFlip = false;

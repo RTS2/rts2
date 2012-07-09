@@ -381,8 +381,8 @@ class Value
 
 		int32_t getValueDisplayType () { return rts2Type & RTS2_TYPE_MASK; }
 		int32_t getBopMask () { return rts2Type & BOP_MASK; }
-		virtual double getValueDouble () { return rts2_nan ("f"); }
-		virtual float getValueFloat () { return rts2_nan ("f"); }
+		virtual double getValueDouble () { return NAN; }
+		virtual float getValueFloat () { return NAN; }
 		virtual int getValueInteger () { return -1; }
 		virtual long int getValueLong () { return getValueInteger (); }
 
@@ -964,8 +964,8 @@ class ValueRaDec: public Value
 		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
-		virtual double getValueDouble () { return rts2_nan("f"); }
-		virtual float getValueFloat () { return rts2_nan("f"); }
+		virtual double getValueDouble () { return NAN; }
+		virtual float getValueFloat () { return NAN; }
 		virtual int getValueInteger () { return INT_MAX; }
 		virtual long int getValueLong () { return INT_MAX; }
 		long inc () { return INT_MAX; }
@@ -1055,8 +1055,8 @@ class ValueAltAz: public Value
 		virtual int doOpValue (char op, Value * old_value);
 
 		virtual const char *getValue ();
-		virtual double getValueDouble () { return rts2_nan("f"); }
-		virtual float getValueFloat () { return rts2_nan("f"); }
+		virtual double getValueDouble () { return NAN; }
+		virtual float getValueFloat () { return NAN; }
 		virtual int getValueInteger () { return INT_MAX; }
 		virtual long int getValueLong () { return INT_MAX; }
 		long inc () { return INT_MAX; }

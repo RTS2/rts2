@@ -1,23 +1,9 @@
 ; this is modefile for dummy sensor from example configuration
 
-[BASIC]
+[500 kpix/sec]
 
-TEST_INT = 2
+timer_count = 50
 
-test_minmax.min = 10
+[250 kpix/sec]
 
-[ADVANCED]
-
-TEST_INT = 3
-
-test_minmax.min = 20
-test_minmax.max = 30
-
-[SUPER]
-
-;test = 20
-
-TEST_INT = 4
-
-test_minmax.max = 0
-test_minmax.min = 0
+timer_count = 60

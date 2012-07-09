@@ -50,7 +50,7 @@ class API:public GetRequestAuthorized
 		 *
 		 * @param time from which changed values will be reported. nan means that all values will be reported.
 		 */
-		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = rts2_nan ("f"), bool extended = false);
+		void sendConnectionValues (std::ostringstream &os, rts2core::Connection * conn, XmlRpc::HttpParams *params, double from = NAN, bool extended = false);
 
 		void sendOwnValues (std::ostringstream & os, XmlRpc::HttpParams *params, double from, bool extended);
 	private:

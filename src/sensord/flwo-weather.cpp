@@ -123,7 +123,7 @@ void MEarthWeather::paramNextTimeME (rts2core::ValueTime *val)
 	}
 	if (strcmp (str_num, "---") == 0)
 	{
-		val->setValueDouble (rts2_nan ("f"));
+		val->setValueDouble (NAN);
 		return;
 	}
 	throw rts2core::Error ("cannot parse " + std::string (str_num));
@@ -183,7 +183,7 @@ int MEarthWeather::process (size_t len, struct sockaddr_in &from)
 	catch (rts2core::Error er)
 	{
 		logStream (MESSAGE_DEBUG) << "cannot parse MEarth UDP packet, rest contet is " << buf << ", erorr is " << er << sendLog;
-		((FlwoWeather *) master)->me_mjd->setValueDouble (rts2_nan ("f"));
+		((FlwoWeather *) master)->me_mjd->setValueDouble (NAN);
 		return -1;
 	}
 	return 0;

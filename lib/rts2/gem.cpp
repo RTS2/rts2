@@ -206,7 +206,7 @@ int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 
 GEM::GEM (int in_argc, char **in_argv, bool diffTrack, bool hasTracking):Telescope (in_argc, in_argv, diffTrack, hasTracking)
 {
-	haZero = decZero = haCpd = decCpd = rts2_nan("f");
+	haZero = decZero = haCpd = decCpd = NAN;
 
 	ra_ticks = dec_ticks = 0;
 }

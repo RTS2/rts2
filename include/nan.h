@@ -41,10 +41,6 @@ double rts2_nan (const char *code);
 }
 #endif
 
-#else
-
-#define rts2_nan(f)  nan(f)
-
 #endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
 
 #endif	 /* !__RTS2_NAN__ */

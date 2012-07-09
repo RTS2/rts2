@@ -460,7 +460,7 @@ class Image:public FitsFile
 
 		double getPrecision ()
 		{
-			double val = rts2_nan("f");
+			double val = NAN;
 			getValue ("POS_ERR", val, false);
 			return val;
 		}

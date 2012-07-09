@@ -79,7 +79,7 @@ class Executor:public rts2db::DeviceDb
 		int switchTarget ();
 
 		int setNext (int nextId, const char *que = "next");
-		int queueTarget (int nextId, double t_start = rts2_nan("f"), double t_end = rts2_nan ("f"));
+		int queueTarget (int nextId, double t_start = NAN, double t_end = NAN);
 		int setNow (int nextId);
 		int setGrb (int grbId);
 		int setShower ();

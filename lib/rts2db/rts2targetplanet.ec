@@ -224,7 +224,7 @@ double TargetPlanet::getMagnitude (double JD)
 {
 	if (planet_info->mag_func)
 		return planet_info->mag_func (JD);
-	return rts2_nan("f");
+	return NAN;
 }
 
 double TargetPlanet::getSDiam (double JD)
@@ -232,19 +232,19 @@ double TargetPlanet::getSDiam (double JD)
 	if (planet_info->sdiam_func)
 		// return value is in arcsec..
 		return planet_info->sdiam_func (JD) / 3600.0;
-	return rts2_nan("f");
+	return NAN;
 }
 
 double TargetPlanet::getPhase (double JD)
 {
 	if (planet_info->phase_func)
 		return planet_info->phase_func (JD);
-	return rts2_nan("f");
+	return NAN;
 }
 
 double TargetPlanet::getDisk (double JD)
 {
 	if (planet_info->disk_func)
 		return planet_info->disk_func (JD);
-	return rts2_nan("f");
+	return NAN;
 }

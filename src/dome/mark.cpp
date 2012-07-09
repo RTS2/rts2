@@ -245,7 +245,7 @@ Mark::writeReg (int reg, uint16_t reg_val)
 Mark::Mark (int in_argc, char **in_argv):Cupola (in_argc,
 in_argv)
 {
-	lastFast = rts2_nan ("f");
+	lastFast = NAN;
 
 	device_file = "/dev/ttyS0";
 
@@ -456,7 +456,7 @@ Mark::slew ()
 		// can finaly stop movement..
 		cupControl &= ~(0x03);
 		writeReg (REG_CUP_CONTROL, cupControl);
-		lastFast = rts2_nan ("f");
+		lastFast = NAN;
 	}
 	// going our direction..
 	if ((cupControl & 0x01) || (cupControl & 0x02))

@@ -65,7 +65,7 @@ class RecordsSet: public std::list <Record>
 			recval_id = _recval_id;
 			value_type = -1;
 
-			min = max = rts2_nan ("f");
+			min = max = NAN;
 		}
 
 		/**

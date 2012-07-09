@@ -465,7 +465,7 @@ class Daemon:public rts2core::Block
 		/**
 		 * Send state change to all connection.
 		 */
-		void maskState (int state_mask, int new_state, const char *description = NULL, double start = rts2_nan ("f"), double end = rts2_nan ("f"), Connection *commandedConn = NULL);
+		void maskState (int state_mask, int new_state, const char *description = NULL, double start = NAN, double end = NAN, Connection *commandedConn = NULL);
 
 		/**
 		 * Raise hardware error status bit.

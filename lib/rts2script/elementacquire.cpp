@@ -29,7 +29,7 @@ using namespace rts2image;
 ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn *in_center_pos):Element (in_script)
 {
 	reqPrecision = in_precision;
-	lastPrecision = rts2_nan ("f");
+	lastPrecision = NAN;
 	expTime = in_expTime;
 	processingState = NEED_IMAGE;
 	Configuration::instance ()->getString ("imgproc", "astrometry",

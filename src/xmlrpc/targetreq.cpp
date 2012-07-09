@@ -355,7 +355,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		std::ostringstream os;
 		struct ln_equ_posn tp;
 		struct ln_hrz_posn hp;
-		double JD = rts2_nan ("f");
+		double JD = NAN;
 		JD = atof (e);
 		if (isnan (JD))
 			JD = ln_get_julian_from_sys ();
@@ -1006,7 +1006,7 @@ void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 			}
 			if (vals[0] == "new_target")
 			{
-				newTarget (params->getString ("oriname", ""), params->getString ("name", ""), params->getInteger ("tarid", INT_MAX), params->getDouble ("ra", rts2_nan ("f")), params->getDouble ("dec", rts2_nan ("f")), response_type, response, response_length);
+				newTarget (params->getString ("oriname", ""), params->getString ("name", ""), params->getInteger ("tarid", INT_MAX), params->getDouble ("ra", NAN), params->getDouble ("dec", NAN), response_type, response, response_length);
 				return;
 			}
 			if (vals[0] == "schedule")
@@ -1057,7 +1057,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 
 		struct ln_equ_posn pos;
 
-		pos.ra = pos.dec = rts2_nan ("f");
+		pos.ra = pos.dec = NAN;
 
 		// check if its among already known targets
 		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (tar);

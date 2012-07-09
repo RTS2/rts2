@@ -498,7 +498,7 @@ rts2image::AppImageCore (in_argc, in_argv, in_readOnly)
 
 	rts2opera_ext = '-';
 
-	err_ra = err_dec = err = rts2_nan ("f");
+	err_ra = err_dec = err = NAN;
 
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");

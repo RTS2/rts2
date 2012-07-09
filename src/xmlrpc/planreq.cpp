@@ -44,7 +44,7 @@ void Plan::printPlans (XmlRpc::HttpParams *params, char* &response, size_t &resp
 	std::ostringstream _os;
 
 	double t_from = params->getDouble ("from", getMasterApp ()->getNow ());
-	double t_to = params->getDouble ("to", rts2_nan ("f"));
+	double t_to = params->getDouble ("to", NAN);
 
 	std::ostringstream title;
 	title << "Plan entries from " << Timestamp (t_from);

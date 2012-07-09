@@ -145,13 +145,13 @@ int ImageSet::load (std::string in_where)
 		d_img_filter.arr[d_img_filter.len] = '\0';
 
 		if (d_img_temperature_ind < 0)
-			d_img_temperature = rts2_nan ("f");
+			d_img_temperature = NAN;
 		if (d_img_err_ra_ind < 0)
-			d_img_err_ra = rts2_nan ("f");
+			d_img_err_ra = NAN;
 		if (d_img_err_dec_ind < 0)
-			d_img_err_dec = rts2_nan ("f");
+			d_img_err_dec = NAN;
 		if (d_img_err_ind < 0)
-			d_img_err = rts2_nan ("f");
+			d_img_err = NAN;
 
 		allStat.img_alt += d_img_alt;
 		allStat.img_az  += d_img_az;

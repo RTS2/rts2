@@ -38,7 +38,7 @@ Plan::Plan ()
 	obs_id = -1;
 	observation = NULL;
 	plan_status = 0;
-	plan_start = plan_end = rts2_nan ("f");
+	plan_start = plan_end = NAN;
 }
 
 Plan::Plan (int in_plan_id)
@@ -50,7 +50,7 @@ Plan::Plan (int in_plan_id)
 	obs_id = -1;
 	observation = NULL;
 	plan_status = 0;
-	plan_start = plan_end = rts2_nan ("f");
+	plan_start = plan_end = NAN;
 }
 
 Plan::Plan (const Plan &cp)
@@ -122,7 +122,7 @@ int Plan::load ()
 		obs_id = db_obs_id;
 	plan_start = (long) db_plan_start;
 	if (db_plan_end_ind)
-		plan_end = rts2_nan ("f");
+		plan_end = NAN;
 	else
 		plan_end = db_plan_end;
 	plan_status = db_plan_status;
@@ -372,7 +372,7 @@ void Plan::read (std::istream & _is)
 	}
 	catch (rts2core::Error &er)
 	{
-		plan_end = rts2_nan ("f");
+		plan_end = NAN;
 	}
 	Target *tar = getTarget ();
 	if (tar == NULL)

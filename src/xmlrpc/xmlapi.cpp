@@ -950,7 +950,7 @@ void ListImages::sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 	for (rts2db::ImageSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 	{
 		double eRa, eDec, eRad;
-		eRa = eDec = eRad = rts2_nan ("f");
+		eRa = eDec = eRad = NAN;
 		rts2image::Image *image = *img_iter;
 		retVar["filename"] = image->getFileName ();
 		retVar["start"] = image->getExposureStart ();

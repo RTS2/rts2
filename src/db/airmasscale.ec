@@ -49,8 +49,8 @@ class Rts2AirmasScale: public rts2db::AppDb
 
 Rts2AirmasScale::Rts2AirmasScale (int in_argc, char **in_argv): rts2db::AppDb (in_argc, in_argv)
 {
-	steps = rts2_nan ("f");
-	max = rts2_nan ("f");
+	steps = NAN;
+	max = NAN;
 
 	addOption ('s', NULL, 0, "set airmass scales. Two args are scale and max airmass");
 }

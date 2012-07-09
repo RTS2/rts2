@@ -255,7 +255,7 @@ class TargetSetByName:public TargetSet
 class TargetSetCalibration:public TargetSet
 {
 	public:
-		TargetSetCalibration (Target * in_masterTarget, double JD, double airmdis = rts2_nan ("f"));
+		TargetSetCalibration (Target * in_masterTarget, double JD, double airmdis = NAN);
 };
 
 /**
@@ -306,7 +306,7 @@ class TargetSetSingleton
 class sortByAltitude
 {
 	public:
-		sortByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f"));
+		sortByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = NAN);
 		bool operator () (Target *tar1, Target *tar2) { return doSort (tar1, tar2); }
 	protected:
 		bool doSort (Target *tar1, Target *tar2);
@@ -320,7 +320,7 @@ class sortByAltitude
 class sortWestEast
 {
 	public:
-		sortWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f"));
+		sortWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = NAN);
 		bool operator () (Target *tar1, Target *tar2) { return doSort (tar1, tar2); }
 	protected:
 		bool doSort (Target *tar1, Target *tar2);

@@ -27,10 +27,10 @@ using namespace rts2core;
 void ValueDoubleStat::clearStat ()
 {
 	numMes = 0;
-	mode = rts2_nan ("f");
-	min = rts2_nan ("f");
-	max = rts2_nan ("f");
-	stdev = rts2_nan ("f");
+	mode = NAN;
+	min = NAN;
+	max = NAN;
+	stdev = NAN;
 	valueList.clear ();
 	changed ();
 }

@@ -498,8 +498,8 @@ ImageSkyDb::ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs
 	img_err = in_img_err;
 
 	// TODO fill that..
-	pos_astr.ra = rts2_nan ("f");
-	pos_astr.dec = rts2_nan ("f");
+	pos_astr.ra = NAN;
+	pos_astr.dec = NAN;
 	processBitfiedl = in_process_bitfield;
 
 	setFilter (in_img_filter);

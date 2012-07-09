@@ -221,8 +221,8 @@ void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
-	currPos.ra = rts2_nan ("f");
-	currPos.dec = rts2_nan ("f");
+	currPos.ra = NAN;
+	currPos.dec = NAN;
 }
 
 DarkTarget::~DarkTarget ()
@@ -1072,15 +1072,15 @@ void TargetSwiftFOV::load ()
 	if (swiftId < 0)
 	{
 		setTargetName ("Cannot find any Swift FOV");
-		swiftFovCenter.ra = rts2_nan ("f");
-		swiftFovCenter.dec = rts2_nan ("f");
+		swiftFovCenter.ra = NAN;
+		swiftFovCenter.dec = NAN;
 		swiftTimeStart = 0;
 		swiftTimeEnd = 0;
-		swiftRoll = rts2_nan ("f");
+		swiftRoll = NAN;
 		return;
 	}
 	if (d_swift_roll_null)
-		swiftRoll = rts2_nan ("f");
+		swiftRoll = NAN;
 	else
 		swiftRoll = d_swift_roll;
 	delete[] swiftName;
@@ -1340,8 +1340,8 @@ void TargetIntegralFOV::load ()
 	if (integralId < 0)
 	{
 		setTargetName ("Cannot find any INTEGRAL FOV");
-		integralFovCenter.ra = rts2_nan ("f");
-		integralFovCenter.dec = rts2_nan ("f");
+		integralFovCenter.ra = NAN;
+		integralFovCenter.dec = NAN;
 		integralTimeStart = 0;
 		return;
 	}

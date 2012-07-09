@@ -132,15 +132,15 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   int state_collision= NO_COLLISION ;
   int state_danger   = NO_DANGER ;
 
-  double tpp1= rts2_nan("f");
-  double tpm1= rts2_nan("f");
-  double czp1= rts2_nan("f");
-  double czm1= rts2_nan("f");
+  double tpp1= NAN;
+  double tpm1= NAN;
+  double czp1= NAN;
+  double czm1= NAN;
   
-  double tpp3= rts2_nan("f");
-  double tpm3= rts2_nan("f");
-  double czp3= rts2_nan("f");
-  double czm3= rts2_nan("f");
+  double tpp3= NAN;
+  double tpm3= NAN;
+  double czp3= NAN;
+  double czm3= NAN;
     
   double HA ;
   
@@ -290,7 +290,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
 }
 double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
   val = zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi)) ;
 
@@ -301,7 +301,7 @@ double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double 
 
 double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
   val=   zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
 	   (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
 
@@ -312,7 +312,7 @@ double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double 
 
 double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
 
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -348,7 +348,7 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
     
   val= (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -385,7 +385,7 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
@@ -420,7 +420,7 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= rts2_nan("f");
+  double val= NAN;
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 

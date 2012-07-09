@@ -169,7 +169,7 @@ int DavisUdp::receive (fd_set * set)
 	float rtOutsideTemp;
 	float rtBaroCurr;
 	float rtWindDir;
-	double cloud = rts2_nan ("f");
+	double cloud = NAN;
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
 		struct sockaddr_in from;

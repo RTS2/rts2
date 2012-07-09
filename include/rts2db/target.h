@@ -692,7 +692,7 @@ class Target:public Rts2Target
 		 */
 		TargetSet *getCalTargets () { return getCalTargets (ln_get_julian_from_sys ()); }
 
-		virtual TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
+		virtual TargetSet *getCalTargets (double JD, double minaird = NAN);
 
 		/**
 		 * Write target metadata to image.

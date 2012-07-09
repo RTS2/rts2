@@ -53,7 +53,7 @@ namespace rts2plan
 class QueuedTarget
 {
 	public:
-		QueuedTarget (rts2db::Target * _target, double _t_start = rts2_nan ("f"), double _t_end = rts2_nan ("f"), int _plan_id = -1, bool _hard = false);
+		QueuedTarget (rts2db::Target * _target, double _t_start = NAN, double _t_end = NAN, int _plan_id = -1, bool _hard = false);
 
 		/**
 		 * Copy constructor. Used in simulation queue to create copy of QueuedTarget.
@@ -240,13 +240,13 @@ class ExecutorQueue:public TargetQueue
 		ExecutorQueue (rts2db::DeviceDb *master, const char *name, struct ln_lnlat_posn **_observer, bool read_only = false);
 		virtual ~ExecutorQueue ();
 
-		int addFront (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"));
-		int addTarget (rts2db::Target *nt, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
+		int addFront (rts2db::Target *nt, double t_start = NAN, double t_end = NAN);
+		int addTarget (rts2db::Target *nt, double t_start = NAN, double t_end = NAN, int plan_id = -1, bool hard = false);
 
 		/**
 		 * Add target to the first possible position.
 		 */
-		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = rts2_nan ("f"), double t_end = rts2_nan ("f"), int plan_id = -1, bool hard = false);
+		int addFirst (rts2db::Target *nt, first_ordering_t fo, double n_start, double t_start = NAN, double t_end = NAN, int plan_id = -1, bool hard = false);
 
 		/**
 		 * Do not delete pointer to this target, as it is used somewhere else.

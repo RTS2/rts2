@@ -268,7 +268,7 @@ class IniParser: public std::vector < IniSection * >
 		/**
 		 * Return double configuration value.
 		 */
-		double getDoubleDefault (const char *section, const char *valueName, double val = rts2_nan ("f"));
+		double getDoubleDefault (const char *section, const char *valueName, double val = NAN);
 
 		int getDouble (const char *section, const char *valueName, double &value);
 

@@ -16,8 +16,8 @@ void ImageSetStat::stat ()
 	}
 	else
 	{
-		img_err = rts2_nan ("f");
-		img_err_ra = rts2_nan ("f");
-		img_err_dec = rts2_nan ("f");
+		img_err = NAN;
+		img_err_ra = NAN;
+		img_err_dec = NAN;
 	}
 }

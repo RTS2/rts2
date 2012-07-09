@@ -37,9 +37,9 @@ TargetGRB::TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs, int in_maxBon
 	dayBonusTimeout = in_dayBonusTimeout;
 	fiveBonusTimeout = in_fiveBonusTimeout;
 
-	grb.ra = rts2_nan("f");
-	grb.dec = rts2_nan("f");
-	errorbox = rts2_nan("f");
+	grb.ra = NAN;
+	grb.dec = NAN;
+	errorbox = NAN;
 	autodisabled = false;
 }
 
@@ -138,7 +138,7 @@ void TargetGRB::load ()
 	grb.ra = db_grb_ra;
 	grb.dec = db_grb_dec;
 	if (db_grb_errorbox_ind)
-		errorbox = rts2_nan ("f");
+		errorbox = NAN;
 	else
 		errorbox = db_grb_errorbox;
 	shouldUpdate = 0;
@@ -444,7 +444,7 @@ double TargetGRB::getFirstPacket ()
 	{
 		EXEC SQL CLOSE cur_grb_first_packet;
 		EXEC SQL ROLLBACK;
-		return rts2_nan ("f");
+		return NAN;
 	}
 	EXEC SQL CLOSE cur_grb_first_packet;
 	EXEC SQL ROLLBACK;

@@ -1,3 +1,6 @@
+2012-07-09
+ * global replace of rts2_nan with NAN
+
 0.9.4
 =====
 

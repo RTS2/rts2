@@ -73,7 +73,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 	printObservations = false;
 	printSatisfied = false;
 	printViolated = false;
-	printVisible = rts2_nan ("f");
+	printVisible = NAN;
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
@@ -84,7 +84,7 @@ PrintTarget::PrintTarget (int in_argc, char **in_argv):rts2db::AppDb (in_argc, i
 	
 	JD = ln_get_julian_from_sys ();
 
-	airmd = rts2_nan ("f");
+	airmd = NAN;
 
 	constraintFile = NULL;
 

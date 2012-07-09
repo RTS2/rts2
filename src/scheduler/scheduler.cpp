@@ -360,7 +360,7 @@ Rts2ScheduleApp::init ()
 	{
 		std::cout << "Generating schedule for night " << LibnovaDate (obsNight) << std::endl;
 
-		schedBag = new Rts2SchedBag (rts2_nan ("f"), rts2_nan ("f"));
+		schedBag = new Rts2SchedBag (NAN, NAN);
 		ret = schedBag->constructSchedulesFromObsSet (popSize, obsNight);
 		if (ret)
 			return ret;
@@ -394,8 +394,8 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): rts2db::AppDb (argc, 
 
 	obsNight = NULL;
 
-	startDate = rts2_nan ("f");
-	endDate = rts2_nan ("f");
+	startDate = NAN;
+	endDate = NAN;
 
 	addOption ('v', NULL, 0, "verbosity level");
 	addOption ('g', NULL, 1, "number of generations");

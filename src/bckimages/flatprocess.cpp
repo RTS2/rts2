@@ -185,8 +185,8 @@ main (int argc, char **argv)
 	int c;
 	struct stat st;
 
-	max = rts2_nan ("f"); 
-	min = rts2_nan ("f");
+	max = NAN; 
+	min = NAN;
 
 	while (1)
 	{

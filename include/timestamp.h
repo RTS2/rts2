@@ -92,7 +92,7 @@ class TimeJD:public Timestamp
 		{
 			if (isnan (JD))
 			{
-				setTs (rts2_nan("f"));
+				setTs (NAN);
 			}
 			else
 			{

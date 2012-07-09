@@ -24,8 +24,8 @@
 
 Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA)
 {
-	targetPos.ra = rts2_nan ("f");
-	targetPos.dec = rts2_nan ("f");
+	targetPos.ra = NAN;
+	targetPos.dec = NAN;
 
 	createValue (tarRa, "tar_ra", "cupola target ra", false, RTS2_DT_RA);
 	createValue (tarDec, "tar_dec", "cupola target dec", false, RTS2_DT_DEC);

@@ -69,7 +69,7 @@ class Rts2PlanApp:public rts2db::AppDb
 
 Rts2PlanApp::Rts2PlanApp (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
-	JD = rts2_nan ("f");
+	JD = NAN;
 
 	operation = NO_OP;
 

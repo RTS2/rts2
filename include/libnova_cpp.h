@@ -48,7 +48,7 @@ double timetFromJD (double JD);
 class LibnovaRa
 {
 	public:
-		LibnovaRa () { ra = rts2_nan ("f"); }
+		LibnovaRa () { ra = NAN; }
 
 		LibnovaRa (double in_ra) { ra = in_ra; }
 		
@@ -138,7 +138,7 @@ class LibnovaRaComp:public LibnovaRa
 class LibnovaDeg
 {
 	public:
-		LibnovaDeg () { deg = rts2_nan ("f"); }
+		LibnovaDeg () { deg = NAN; }
 		LibnovaDeg (double in_deg) { deg = in_deg; }
 		LibnovaDeg (struct ln_dms *deg_dms) { fromDms (deg_dms); }
 		double getDeg () { return deg; }
@@ -353,7 +353,7 @@ class LibnovaRaDec
 		{
 			if (ra)
 				return ra->getRa ();
-			return rts2_nan ("f");
+			return NAN;
 		}
 
 		void setDec (double in_dec)
@@ -366,7 +366,7 @@ class LibnovaRaDec
 		{
 			if (dec)
 				return dec->getDec ();
-			return rts2_nan ("f");
+			return NAN;
 		}
 
 		void getPos (struct ln_equ_posn *pos)
@@ -456,14 +456,14 @@ class LibnovaHrz
 		{
 			if (alt)
 				return alt->getDeg ();
-			return rts2_nan ("f");
+			return NAN;
 		}
 
 		double getAz ()
 		{
 			if (az)
 				return az->getDeg ();
-			return rts2_nan ("f");
+			return NAN;
 		}
 
 		void getHrz (struct ln_hrz_posn *hrz)

@@ -87,8 +87,8 @@ void ConstraintInterval::load (xmlNodePtr cons)
 	{
 		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
 		{
-			double lower = rts2_nan ("f");
-			double upper = rts2_nan ("f");
+			double lower = NAN;
+			double upper = NAN;
 
 			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
 			{
@@ -116,8 +116,8 @@ void ConstraintInterval::load (xmlNodePtr cons)
 
 void ConstraintInterval::parse (const char *arg)
 {
-	double lower = rts2_nan ("f");
-	double upper = rts2_nan ("f");
+	double lower = NAN;
+	double upper = NAN;
 
 	char *sint = new char [strlen (arg) + 1];
 	strcpy (sint, arg);
@@ -263,7 +263,7 @@ void mergeIntervals (const interval_arr_t master, const interval_arr_t &add, int
 
 void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int step, interval_arr_t &ret)
 {
-	double vf = rts2_nan ("f");
+	double vf = NAN;
 
 	double to_JD = ln_get_julian_from_timet (&to);
 
@@ -280,7 +280,7 @@ void Constraint::getSatisfiedIntervals (Target *tar, time_t from, time_t to, int
 			ln_get_timet_from_julian (vf, &from);
 			ln_get_timet_from_julian (t, &to);
 			ret.push_back (std::pair <time_t, time_t> (from, to));
-			vf = rts2_nan ("f");
+			vf = NAN;
 		}
 	}
 	if (!isnan (vf))
@@ -350,8 +350,8 @@ void ConstraintTime::load (xmlNodePtr cons)
 	{
 		if (xmlStrEqual (inter->name, (xmlChar *) "interval"))
 		{
-			double from = rts2_nan ("f");
-			double to = rts2_nan ("f");
+			double from = NAN;
+			double to = NAN;
 
 			for (xmlNodePtr par = inter->children; par != NULL; par = par->next)
 			{

@@ -250,7 +250,7 @@ double TermHarmonics::getValue (struct ln_equ_posn *pos, ObsConditions * obs_con
 				  break; */
 		default:
 			logStream (MESSAGE_ERROR) << "Unknow parameter " << param[i] << sendLog;
-			val = rts2_nan ("f");
+			val = NAN;
 	}
 	return val;
 }

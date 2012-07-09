@@ -204,21 +204,21 @@ void ObservationSet::load (std::string in_where)
 		if (db_tar_ind < 0)
 			db_tar_name.arr[0] = '\0';
 		if (db_obs_ra_ind < 0)
-			db_obs_ra = rts2_nan("f");
+			db_obs_ra = NAN;
 		if (db_obs_dec_ind < 0)
-			db_obs_dec = rts2_nan("f");
+			db_obs_dec = NAN;
 		if (db_obs_alt_ind < 0)
-			db_obs_alt = rts2_nan("f");
+			db_obs_alt = NAN;
 		if (db_obs_az_ind < 0)
-			db_obs_az = rts2_nan("f");
+			db_obs_az = NAN;
 		if (db_obs_slew_ind < 0)
-			db_obs_slew = rts2_nan("f");
+			db_obs_slew = NAN;
 		if (db_obs_start_ind < 0)
-			db_obs_start = rts2_nan("f");
+			db_obs_start = NAN;
 		if (db_obs_state_ind < 0)
 			db_obs_state = 0;
 		if (db_obs_end_ind < 0)
-			db_obs_end = rts2_nan("f");
+			db_obs_end = NAN;
 
 		// add new observations to vector
 		Observation obs = Observation (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
@@ -316,7 +316,7 @@ void ObservationSet::printStatistics (std::ostream & _os)
 	{
 		_os
 			<< "First images : " << firstNum << " from " << size ()
-			<< "(" << (size () > 0 ? 100 * firstNum / size () : rts2_nan ("f")) << "%)" << std::endl
+			<< "(" << (size () > 0 ? 100 * firstNum / size () : NAN) << "%)" << std::endl
 			<< "First images errors: ra " << LibnovaDegArcMin (errFirstRa)
 			<< " dec: " << LibnovaDegArcMin (errFirstDec)
 			<< " radius: " << LibnovaDegArcMin (errFirstRad) << std::endl
@@ -471,7 +471,7 @@ double ObservationSet::getNextCtime ()
 {
 	if (timeLogIter != end ())
 		return timeLogIter->getObsSlew ();
-	return rts2_nan ("f");
+	return NAN;
 }
 
 void ObservationSet::printUntil (double time, std::ostream &os)

@@ -123,7 +123,7 @@ void FocusCameraClient::center (int centerWidth, int centerHeight)
 
 FocusClient::FocusClient (int in_argc, char **in_argv):rts2core::Client (in_argc, in_argv)
 {
-	defExposure = rts2_nan ("f");
+	defExposure = NAN;
 	defCenter = 0;
 	defBin = -1;
 

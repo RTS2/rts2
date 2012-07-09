@@ -123,7 +123,7 @@ class PlanSetNight:public PlanSet
 		 * Select all plan entries for night which includes JD date specified as parameter.
 		 * If JD is nan, it will select actual night.
 		 */
-		PlanSetNight (double JD = rts2_nan ("f"));
+		PlanSetNight (double JD = NAN);
 
 		double getFrom () { return from; }
 		double getTo () { return to; }

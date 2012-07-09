@@ -152,9 +152,9 @@ Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack, bool hasTrack
 	createValue (targetStarted, "move_started", "time when movement was started", false);
 	createValue (targetReached, "move_end", "expected time when telescope will reach the destination", false);
 
-	targetDistance->setValueDouble (rts2_nan("f"));
-	targetStarted->setValueDouble (rts2_nan("f"));
-	targetReached->setValueDouble (rts2_nan("f"));
+	targetDistance->setValueDouble (NAN);
+	targetStarted->setValueDouble (NAN);
+	targetReached->setValueDouble (NAN);
 
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
@@ -1220,11 +1220,11 @@ int Telescope::startPark (rts2core::Connection * conn)
 	  	logStream (MESSAGE_INFO) << "parking telescope" << sendLog;
 		if (ret == 0)
 		{
-			tarRaDec->setValueRaDec (rts2_nan("f"), rts2_nan("f"));
+			tarRaDec->setValueRaDec (NAN, NAN);
 			tarRaDec->resetValueChanged ();
-			telTargetRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
+			telTargetRaDec->setValueRaDec (NAN, NAN);
 			telTargetRaDec->resetValueChanged ();
-			oriRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
+			oriRaDec->setValueRaDec (NAN, NAN);
 			oriRaDec->resetValueChanged ();
 			offsRaDec->resetValueChanged ();
 			corrRaDec->resetValueChanged ();
@@ -1310,17 +1310,17 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		mpec->setValueString ("");
 		return startResyncMove (conn, 0);
 	}
-        else if (conn->isCommand ("move_ha_sg"))
+	else if (conn->isCommand ("move_ha_sg"))
 	{
-	    if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
-	      return -2;
-	    double JD = ln_get_julian_from_sys ();
-	    obj_ra= getLocSidTime ( JD) * 15.  - obj_ha ;
+		if (conn->paramNextHMS (&obj_ha) || conn->paramNextDMS (&obj_dec) || !conn->paramEnd ())
+			return -2;
+		double JD = ln_get_julian_from_sys ();
+		obj_ra = getLocSidTime ( JD) * 15. - obj_ha ;
 
-	    oriRaDec->setValueRaDec (obj_ra, obj_dec);
-	    mpec->setValueString ("");
-	    tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
-	    return startResyncMove (conn, 0);
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		mpec->setValueString ("");
+		tarRaDec->setValueRaDec (NAN, NAN);
+		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("do_move"))
 	{
@@ -1329,7 +1329,7 @@ int Telescope::commandAuthorized (rts2core::Connection * conn)
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
-		tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
+		tarRaDec->setValueRaDec (NAN, NAN);
 		return startResyncMove (conn, 0);
 	}
 	else if (conn->isCommand ("move_not_model"))

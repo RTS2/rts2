@@ -1225,8 +1225,8 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, c
 	last_target = NULL;
 	last_target_time = -1;
 
-	last_ra = rts2_nan ("f");
-	last_dec = rts2_nan ("f");
+	last_ra = NAN;
+	last_dec = NAN;
 
 	do_hete_test = in_do_hete_test;
 
@@ -1235,8 +1235,8 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, c
 	nextTime += getConnTimeout ();
 
 	swiftLastPoint = 0;
-	swiftLastRa = rts2_nan ("f");
-	swiftLastDec = rts2_nan ("f");
+	swiftLastRa = NAN;
+	swiftLastDec = NAN;
 
 	addExe = in_addExe;
 	execFollowups = in_execFollowups;

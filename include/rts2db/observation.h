@@ -141,7 +141,7 @@ class Observation
 		double getObsJDMid ()
 		{
 			if (isnan (getObsStart ()) || isnan (getObsStart ()))
-				return rts2_nan("f");
+				return NAN;
 			time_t mid = (time_t) ((getObsStart () + getObsEnd ()) / 2.0);
 			return ln_get_julian_from_timet (&mid);
 		}

@@ -42,7 +42,7 @@ QueuedTarget::QueuedTarget (rts2db::Target * _target, double _t_start, double _t
 class sortQuedTargetByAltitude:public rts2db::sortByAltitude
 {
 	public:
-		sortQuedTargetByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f")):rts2db::sortByAltitude (_observer, _jd) {}
+		sortQuedTargetByAltitude (struct ln_lnlat_posn *_observer = NULL, double _jd = NAN):rts2db::sortByAltitude (_observer, _jd) {}
 		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
 };
 
@@ -52,7 +52,7 @@ class sortQuedTargetByAltitude:public rts2db::sortByAltitude
 class sortQuedTargetWestEast:public rts2db::sortWestEast
 {
 	public:
-		sortQuedTargetWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = rts2_nan ("f")):rts2db::sortWestEast (_observer, _jd) {};
+		sortQuedTargetWestEast (struct ln_lnlat_posn *_observer = NULL, double _jd = NAN):rts2db::sortWestEast (_observer, _jd) {};
 		bool operator () (QueuedTarget &tar1, QueuedTarget &tar2) { return doSort (tar1.target, tar2.target); }
 };
 
@@ -696,8 +696,8 @@ int ExecutorQueue::selectNextSimulation (SimulQueueTargets &sq, double from, dou
 
 int ExecutorQueue::queueFromConn (rts2core::Connection *conn, bool withTimes, rts2core::ConnNotify *watchConn, bool tryFirstPossible, double n_start)
 {
-	double t_start = rts2_nan ("f");
-	double t_end = rts2_nan ("f");
+	double t_start = NAN;
+	double t_end = NAN;
 	int tar_id;
 	int failed = 0;
 	first_ordering_t fo = ORDER_NONE;

@@ -101,11 +101,11 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		// sets lazy merits to nan
 		void nanLazyMerits ()
 		{
-			visRatio = rts2_nan ("f");
-			altMerit = rts2_nan ("f");
-			accMerit = rts2_nan ("f");
-			distMerit = rts2_nan ("f");
-			divTargetMerit = rts2_nan ("f");
+			visRatio = NAN;
+			altMerit = NAN;
+			accMerit = NAN;
+			distMerit = NAN;
+			divTargetMerit = NAN;
 
 			visible = UINT_MAX;
 			unvisible = UINT_MAX;

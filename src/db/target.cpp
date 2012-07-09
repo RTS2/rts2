@@ -150,8 +150,8 @@ class TargetApp:public rts2db::AppDb
 TargetApp::TargetApp (int in_argc, char **in_argv):rts2db::AppDb (in_argc, in_argv)
 {
 	op = OP_NONE;
-	new_priority = rts2_nan ("f");
-	new_bonus = rts2_nan ("f");
+	new_priority = NAN;
+	new_bonus = NAN;
 
 	camera = NULL;
 

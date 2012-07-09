@@ -437,7 +437,7 @@ class Telescope:public rts2core::Device
 		 */
 		void resetTelTarget ()
 		{
-			tarRaDec->setValueRaDec (rts2_nan ("f"), rts2_nan ("f"));
+			tarRaDec->setValueRaDec (NAN, NAN);
 		}
 
 		/**

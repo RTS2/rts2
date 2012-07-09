@@ -62,9 +62,9 @@ void RecvalsSet::load ()
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
 		if (d_from_null)
-			d_from = rts2_nan ("f");
+			d_from = NAN;
 		if (d_to_null)
-			d_to = rts2_nan ("f");
+			d_to = NAN;
 		insert (std::pair <int, Recval> (d_recval_id, Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to)));
 	}
 
@@ -102,9 +102,9 @@ void RecvalsSet::load ()
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
 		if (d_from_null)
-			d_from = rts2_nan ("f");
+			d_from = NAN;
 		if (d_to_null)
-			d_to = rts2_nan ("f");
+			d_to = NAN;
 		insert (std::pair <int, Recval> (d_recval_id, Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to)));
 	}
 

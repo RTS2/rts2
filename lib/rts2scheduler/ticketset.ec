@@ -96,12 +96,12 @@ TicketSet::load (rts2db::TargetSet *tarSet)
 		  	d_obs_num = UINT_MAX;
 
 		if (d_sched_from_ind < 0)
-			sched_from = rts2_nan ("f");
+			sched_from = NAN;
 		else
 			sched_from = ln_get_julian_from_timet (&d_sched_from);
 
 		if (d_sched_to_ind < 0)
-		  	sched_to = rts2_nan ("f");
+		  	sched_to = NAN;
 		else
 		  	sched_to = ln_get_julian_from_timet (&d_sched_to);
 
@@ -125,6 +125,6 @@ TicketSet::constructFromObsSet (rts2db::TargetSet *tarSet, rts2db::ObservationSe
 	for (std::map <int, int>::iterator iter = tarObs.begin (); iter != tarObs.end (); iter++, ticket_id++)
 	{
 		(*this)[ticket_id] = new Ticket (ticket_id, tarSet->getTarget ((*iter).first),
-			0, (*iter).second, rts2_nan ("f"), rts2_nan ("f"), -1, -1);
+			0, (*iter).second, NAN, NAN, -1, -1);
 	}
 }
