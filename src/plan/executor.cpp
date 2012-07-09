@@ -583,8 +583,8 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		{
 			return setNow (nt);
 		}
-		// switch immediately to flats..
-		if (nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+		// switch immediately to flats if in twilight
+		if ((getMasterState () == SERVERD_DUSK || getMasterState () == SERVERD_DAWN) && nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
 		{
 			return setNow (nt);
 		}
