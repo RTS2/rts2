@@ -196,14 +196,14 @@ class FlatScript (scriptcomm.Rts2Comm):
 		should not be attempted."""
 
 		exptime = expMulti * self.exptime / ratio # adjust the exposure time for the next exposure, so that it is close to the optimal value. expMulti adjust for time lost during CCD readout
-		if (exptime < self.expTimes[0]):
+		if exptime < self.expTimes[0]:
 			# too dim image. return the first value, will wait at
 			# morning for brighter sky, will move to next filter at
 			# evening
 			return self.expTimes[0]
 	
-		if (exptime > self.expTimes[-1]): # too dim image
-			if (self.isEvening () == False):
+		if exptime > self.expTimes[-1]: # too dim image
+			if self.is_evening == False:
 				 # if that happens at morning, return low
 				 # exposure time for probing The objective is
 				 # to stay at low exposure time as long as the
@@ -224,8 +224,8 @@ class FlatScript (scriptcomm.Rts2Comm):
 		# images has to be taken to properly calibrate images.
 		lastE = self.expTimes[0]
 		for e in self.expTimes:
-			if (exptime < e):
-				return lastE
+			if exptime < e:
+				return e if self.is_evening else lastE
 			lastE = e
 
 		return self.expTimes[-1]
@@ -258,8 +258,8 @@ class FlatScript (scriptcomm.Rts2Comm):
 		ret = None
 		expMulti = 1
 
-		if (not (self.isSubWindow)):
-			if (self.isEvening()):
+		if not (self.isSubWindow):
+			if self.is_evening:
 				expMulti = self.eveningMultiply
 			else:
 				expMulti = self.morningMultiply
@@ -441,8 +441,9 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def getData(self, domeDevice='DOME', tmpDirectory='/tmp/'):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
+		self.is_evening = self.isEvening()
 		# choose filter sequence..
-		if (self.isEvening()):
+		if self.is_evening:
 		  	self.usedFlats = self.eveningFlats
 			self.takeFlats(True)
 			self.log('I','finished skyflats')
