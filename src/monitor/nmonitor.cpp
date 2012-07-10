@@ -462,8 +462,9 @@ int NMonitor::init ()
 	keypad (stdscr, TRUE);
 	timeout (0);
 
+#ifndef __CYGWIN__
 	ESCDELAY = 0;
-
+#endif
 	// create & init menu
 	menu = new NMenu ();
 	NSubmenu *sub = new NSubmenu ("System");
