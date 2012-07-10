@@ -142,6 +142,7 @@ class FlatScript (scriptcomm.Rts2Comm):
 
 		self.goodFlats = []
 		self.badFlats = []
+		self.is_evening = self.isEvening()
 
 	def flatLevels(self,optimalFlat=65536/3,optimalRange=0.3,allowedOptimalDeviation=0,biasLevel=0,defaultNumberFlats=9,sleepTime=1,eveningMultiply=1,morningMultiply=1,shiftRa=10/3600.0,shiftDec=10/3600.0):
 		"""Set flat levels. Adjust diferent parameters of the algorithm.
@@ -441,7 +442,6 @@ class FlatScript (scriptcomm.Rts2Comm):
 	def getData(self, domeDevice='DOME', tmpDirectory='/tmp/'):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
-		self.is_evening = self.isEvening()
 		# choose filter sequence..
 		if self.is_evening:
 		  	self.usedFlats = self.eveningFlats
