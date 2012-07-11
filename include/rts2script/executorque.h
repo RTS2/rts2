@@ -154,8 +154,10 @@ class TargetQueue:public std::list <QueuedTarget>
 		 * Runs queue filter, remove expired observations.
 		 *
 		 * @param maxLength   maximal allowed length of observation
+		 *
+		 * @return true if front queue target can be observed, false otherwise
 		 */
-		void filter (double now, double maxLength = NAN);
+		bool filter (double now, double maxLength = NAN);
 
 		/**
 		 * Update values from the target list. Must be called after queue content changed.

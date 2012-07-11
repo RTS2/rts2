@@ -190,7 +190,7 @@ void TargetQueue::sortQueue (double now)
 	}
 }
 
-void TargetQueue::filter (double now, double maxLength)
+bool TargetQueue::filter (double now, double maxLength)
 {
 	filterExpired (now);
 	std::list <QueuedTarget> skipped;
@@ -200,6 +200,8 @@ void TargetQueue::filter (double now, double maxLength)
 		it++;
 	insert (it, skipped.begin (), skipped.end ());
 	updateVals ();
+	// if front target was not skipped, it can be observed
+	return it != begin ();
 }
 
 const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)
@@ -592,10 +594,8 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		return -1;
 	if (size () > 0)
 	{
-		struct ln_hrz_posn hrz;
 		double now = master->getNow ();
-		front ().target->getAltAz (&hrz, ln_get_julian_from_sys (), *observer);
-		if (front ().target->isAboveHorizon (&hrz) && front ().notExpired (now))
+		if (filter (now, next_length) && front ().notExpired (now))
 		{
 			if (isnan (next_length))
 			{
@@ -646,7 +646,6 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 			}
 			if (!isnan (t_start) && (isnan(next_time) || next_time > t_start))
 				next_time = t_start;
-
 		}
 	}
 	return -1;
