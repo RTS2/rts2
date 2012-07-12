@@ -203,18 +203,18 @@ class JSONProxy(Rts2JSON):
 				self.devices[x] = self.loadJson('/api/get',{'d':x})
 
 		self.devices[device] = self.loadJson('/api/get',{'d':device})['d']
+
+	def getState(self,device):
+		return self.loadJson('/api/get',{'d':device})['state']
 	
 	def getValue(self,device,value,refresh_not_found=False):
-		dc = None
 		try:
-			dc = self.devices[device]
 			return self.devices[device][value]
 		except KeyError,ke:
 			if refresh_not_found == False:
 				raise ke
 			self.refresh(device)
-			dc = self.devices[device]
-		return dc[value]
+			return self.devices[device][value]
 	
 	def setValue(self,device,name,value,async=None):
 		values = {'d':device,'n':name,'v':value,'async':async}
