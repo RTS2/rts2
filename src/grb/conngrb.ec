@@ -334,14 +334,19 @@ int ConnGrb::pr_swift_without_radec ()
 			}
 			else
 			{
-				logStream (MESSAGE_INFO) << "ConnGrb::pr_swift_without_radec grb_is_grb = false grb_id " << d_grb_id << sendLog;
+				logStream (MESSAGE_INFO) << "grb_is_grb = false grb_id " << d_grb_id << sendLog;
 				EXEC SQL COMMIT;
 			}
 			break;
-		case TYPE_SWIFT_SCALEDMAP_SRC:
-		case TYPE_SWIFT_XRT_CENTROID_SRC:
 		case TYPE_SWIFT_UVOT_IMAGE_SRC:
 		case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
+			if (lbuf[MISC] & (0x01L << 29))
+			{
+				logStream (MESSAGE_INFO) << "ignoring SWIFT UVOT SRC with UVOT_SrcList Noticed forced-out via the watchdog timeout" << sendLog;
+				return -1;
+			}
+		case TYPE_SWIFT_SCALEDMAP_SRC:
+		case TYPE_SWIFT_XRT_CENTROID_SRC:
 		case TYPE_SWIFT_UVOT_SLIST_SRC:
 		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 			grb_ra = lbuf[BURST_RA] / 10000.0;
