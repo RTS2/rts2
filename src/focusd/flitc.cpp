@@ -201,7 +201,7 @@ int Fli::processOption (int in_opt)
 }
 int Fli::willConnect (rts2core::NetworkAddress * in_addr)
 {
-    if (meteoDevice && in_addr->getType () == DEVICE_TYPE_SENSOR) {
+  if (meteoDevice && in_addr->getType () == DEVICE_TYPE_SENSOR && in_addr->isAddress (meteoDevice)) {
       logStream (MESSAGE_DEBUG) << "FLI::willConnect to DEVICE_TYPE_SENSOR: "<< meteoDevice << ", variable: "<< meteoVariable<< sendLog;
       return 1;
     }
@@ -347,17 +347,11 @@ int Fli::info ()
 void Fli::meteo()
 {
 	rts2core::Connection * connMeteo = getOpenConnection (meteoDevice);
-	if( connMeteo) {
-	  rts2core::Value *meteoDeviceTemperature =  connMeteo->getValue ( meteoVariable);
-	  if( meteoDeviceTemperature) {
-	    if( meteoDeviceTemperature->getValueType()== RTS2_VALUE_DOUBLE) {
-	      temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueDouble());
-	      //	      logStream (MESSAGE_DEBUG) << "Fli::meteo:  temperature is: " << meteoDeviceTemperature->getValueFloat() <<"retrieved: " << temperatureMeteo->getValueDouble() << sendLog;
-
-	      //temperatureMeteo->setValueDouble( meteoDeviceTemperature->getValueFloat());
-	    }  
-	  } else {
-	      logStream (MESSAGE_ERROR) << "FLI::meteo meteoDeviceTemperature=NULL : "<< sendLog;
+	if( connMeteo != NULL) {
+	  rts2core::Value *dome_tmp = connMeteo->getValue (meteoVariable);
+	  if( dome_tmp != NULL){
+	    //logStream (MESSAGE_ERROR) << "DOME_TMP " << dome_tmp->getValueDouble () << sendLog;
+	    temperatureMeteo->setValueDouble(dome_tmp->getValueDouble ());
 	  }
 	}  else {
 	  logStream (MESSAGE_ERROR) << "FLI::meteo failed on device: "<< meteoDevice<< sendLog;
