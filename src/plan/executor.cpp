@@ -574,7 +574,8 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 			return -2;
 		if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
 		{
-			stop ();
+			if (currentTarget == NULL || currentTarget->getTargetType () != TYPE_FLAT)
+				stop ();
 			delete nt;
 			return 0;
 		}
