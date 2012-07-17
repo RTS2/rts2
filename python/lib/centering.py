@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/python
 #
 # Copyright (C) 2012 Petr Kubanek <petr@kubanek.net>
 #
