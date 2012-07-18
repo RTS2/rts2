@@ -48,16 +48,15 @@ import sys
 import logging
 import time
 import rts2af 
-#import rts2af_meteodb
 
 class main(rts2af.AFScript):
-    """extract the catalgue of an images"""
+    """Do offline analysis of a set of focus images"""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
 
     def main(self):
         logformat= '%(asctime)s %(levelname)s %(message)s'
-	logging.basicConfig(filename='/tmp/rts2af-model.log', level=logging.INFO, format= logformat)
+	logging.basicConfig(filename='/tmp/rts2af-offline.log', level=logging.INFO, format= logformat)
 
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
@@ -80,7 +79,6 @@ class main(rts2af.AFScript):
 # get the list of fits files
         FitsList=[]
         FitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
-#        print '{0}'.format(FitsList)
 
 # read the SExtractor parameters
         paramsSexctractor= rts2af.SExtractorParams()
@@ -89,7 +87,6 @@ class main(rts2af.AFScript):
         if( paramsSexctractor==None):
             print "exiting"
             sys.exit(1)
-
 # create the reference catalogue
         hdur= rts2af.FitsHDU(referenceFitsFileName)
 
@@ -123,9 +120,9 @@ class main(rts2af.AFScript):
 
 # loop over hdus, create the catalogues
         for hdu  in HDUs.fitsHDUsList:
-            if( rts2af.verbose):
-                print '=======' + hdu.variableHeaderElements['FILTER'] + '=== valid=' + repr(hdu.isValid) + ' number of files at FOC_POS=%d' % hdu.variableHeaderElements['FOC_POS'] + ': %d' % HDUs.fitsHDUsList.count(hdu) + " " + hdu.fitsFileName
-            
+            if(rts2af.verbose):
+                print 'HDU {0}'.format(hdu.fitsFileName)
+
             cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
             cat.runSExtractor()
             cat.createCatalogue()
@@ -133,7 +130,9 @@ class main(rts2af.AFScript):
 #            cat.ds9DisplayCatalogue()
             # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
             if( cat.matching()):
-                #print "Added catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName
+                if(rts2af.verbose):
+                    print "Added catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName
+
                 cats.CataloguesList.append(cat)
             else:
                 logging.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName)
@@ -142,24 +141,19 @@ class main(rts2af.AFScript):
             logging.error("rts2af_offline.py: catalogues are invalid, exiting")
             sys.exit(1)
 
-        # needs CERN's root installed and rts2-fit-focus from rts2 svn repository
         fitResult= cats.fitTheValues()
         if(not fitResult==None):
             if( not fitResult.error):
-                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
+                # rts2af_offline is often called as a subprocess
+                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
+                logging.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
+            else:
+                logging.error("rts2af_offline.py: fit result is erroneous, exiting")
+                sys.exit(1)
 
-
-#        if(runTimeConfig.value('WRITE_SUMMARY_FILE')):
-#            fitResultSummaryFileName= '/tmp/result-model-analyze.log'
-#            if(not fitResult==None):
-#                if( not fitResult.error):
-                    #dc= rts2af_meteodb.ReadMeteoDB()
-                    #(temperatureConsole, temperatureIss)= dc.queryMeteoDb(fitResult.dateEpoch)
-#                    temperatureConsole= 10.
-
-#                    with open( fitResultSummaryFileName, 'a') as frs:
-#                        frs.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, temperatureConsole, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
-#                    frs.close()
+        else:
+            logging.error("rts2af_offline.py: no fit result, exiting")
+            sys.exit(1)
 
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 

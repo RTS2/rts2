@@ -12,18 +12,8 @@
 #   the wholet rts2af  analysis/fitting chain.
 #   Attention: this script does never end, kill it with CRTL-C.
 #
-#   You must install CERN's root package, recompile and install 
-#   RTS2 to get the executable rts2-fit-focus (see contrib within 
-#   RTS2 source tree).
 #
 #   Configuration is done in def __init__ below.
-#
-#   self.storePath contains the path to the fits files from a previous 
-#   focus run. These are retrieved by a glob function.
-#   Define in self.referenceFile the fits file which is near the focus.
-#
-#   Adjust the pathes according to svn checkout path or install the
-#   executables e.g. in /usr/local/bin (recommended).
 #
 #
 #   This program is free software; you can redistribute it and/or modify
@@ -57,38 +47,34 @@ class main():
     """Script to feed rts2af_acquire.py with previously taken fits files."""
     def __init__(self, scriptName='main'):
         self.scriptName= scriptName
-        self.scriptPath= '/home/wildi/rts2/scripts/'
 
-        self.storePath=[]
-        # standard set of images 
-        self.storePath.append('/home/wildi/rts2af-fits/focus/2012-06-23T11:56:24.022192/X') 
-        # true baker run 
-        #self.storePath.append('/home/wildi/rts2af-fits/focus/baker/C') 
-        self.referenceFile=[]
-        # standard reference file 
-        self.referenceFile.append('20120324001509-875-RA-refernece.fits') 
-        # true baker run 
-        #self.referenceFile.append('20120623061642-618-RA.fits') 
-        self.cmd= 'rts2af_acquire.py'
-        self.focuser = 'FOC_DMY'  
         self.verbose= True
+        #self.mode= 'feedback' # rts2af_analysis.py is replaced by rts2af_feedback_analysis.py 
+        self.mode= 'feed' # rts2af_analysis.py is used and results are fitted (the whole chain)
+        self.focuser = 'FOC_DMY'  
+        # reference file 
+        self.referenceFile='20120324001509-875-RA-reference.fits'
+        self.cmd= 'rts2af_acquire.py'
         #
         self.pexposure= re.compile( r'exposure')
-        self.fitsHDUs=[]
-        self.filtersInUse=[]
+        self.filterInUse=None
         self.runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
-        self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has no options
+        self.runTimeConfig.readConfiguration('./rts2af-acquire.cfg') # rts2 exe mechanism has no options
 
-        i= 0 # ugly
-        for storePath in self.storePath:
-            self.fitsHDUs.append( rts2af.FitsHDU( storePath + '/' + self.referenceFile[i]))
-            self.fitsHDUs[i].headerProperties()
-            if(self.fitsHDUs[i].staticHeaderElements['FILTER']== 'UNK'):
-                self.filtersInUse.append('NOFILTER')
-            else:
-                self.filtersInUse.append(self.fitsHDUs[i].staticHeaderElements['FILTER'])
-                i += 1
-                
+        self.fitsHDU= rts2af.FitsHDU( self.referenceFile)
+
+        if(self.fitsHDU.fitsFileName==None):
+            sys.exit(1)
+            
+        if( not self.fitsHDU.headerProperties()):
+            sys.exit(1)
+
+        self.runTimePath= rts2af.serviceFileOp.runTimePath
+
+        if(self.fitsHDU.staticHeaderElements['FILTER']== 'UNK'):
+            self.filterInUse='NOFILTER'
+        else:
+            self.filterInUse= self.fitsHDU.staticHeaderElements['FILTER']
 
     def ignoreOutput(self, acq):
         while(True):
@@ -106,9 +92,8 @@ class main():
 
     def main(self):
 
-        fitsFiles=[]
 
-        acquire_cmd= [ self.cmd, 'test']
+        acquire_cmd= [ self.cmd, self.mode]
         acquire= subprocess.Popen( acquire_cmd, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 
         # focuser dialog
@@ -117,52 +102,47 @@ class main():
             print 'rts2af_feed_acquire, output: >>{0}<<, focuser'.format(output, self.focuser)
         acquire.stdin.write('{0}\n'.format(self.focuser))
 
-        # filtersInUse dialog
+        # filterInUse dialog
         output= acquire.stdout.readline().strip()
-        #print 'rts2af_feed_acquire, filter request {0}'.format(output)
-        for filter in self.filtersInUse:
-            acquire.stdin.write('{0} '.format(filter))
-
+        acquire.stdin.write('{0} '.format(self.filterInUse))
         acquire.stdin.write('\n')
 
-        # loop over the different focus run directories
-        for storePath in  self.storePath:
-            fitsFiles= glob.glob( storePath + '/' + '*fits')
-            # first file is the reference catalogue
-            self.ignoreOutput(acquire)
+        fitsFiles=[]
+        fitsFiles= glob.glob( self.runTimePath + '/' + '*fits')
+        # first file is the reference catalogue
+        self.ignoreOutput(acquire)
             #time.sleep(.1)
-            acquire.stdin.write('{0}\n'.format('exposure_end'))
-            popoff= self.referenceFile.pop(0)
+        acquire.stdin.write('{0}\n'.format('exposure_end'))
+        if( self.verbose):
+            print 'rts2af_feed_acquire: reference file {0}'.format(self.referenceFile)
+
+        acquire.stdin.write('img {0} \n'.format( self.runTimePath + '/' + self.referenceFile))
+        acquire.stdin.flush()
+        
+        for fitsFile in fitsFiles:
             if( self.verbose):
-                print 'rts2af_feed_acquire: poping reference file {0}'.format(popoff)
-
-            acquire.stdin.write('img {0} \n'.format( storePath + '/' + popoff))
-            acquire.stdin.flush()
-
-            for fitsFile in fitsFiles:
-                if( self.verbose):
-                    print 'rts2af_feed_acquire, fits file     {0}'.format(fitsFile)
+                print 'rts2af_feed_acquire, fits file     {0}'.format(fitsFile)
 
                 # acquire dialog
                 # ignore lines until next exposure
-                self.ignoreOutput(acquire)
+            self.ignoreOutput(acquire)
                 #time.sleep(.1)
                 # exposure ends
-                acquire.stdin.write('{0}\n'.format('exposure_end'))
-                acquire.stdin.write('img {0} \n'.format(fitsFile))
-                acquire.stdin.flush()
-                print 'rts2af_feed_acquire, exposure ends {0}'.format(fitsFile)
-
-            # send a Q to signal rts2af_analysis.py to begin with the fitting
-            self.ignoreOutput(acquire)
-            #time.sleep(.1)
-            # exposure ends
             acquire.stdin.write('{0}\n'.format('exposure_end'))
-            acquire.stdin.write('img /abc/{0}\n'.format('Q'))
+            acquire.stdin.write('img {0} \n'.format(fitsFile))
             acquire.stdin.flush()
+            print 'rts2af_feed_acquire, exposure ends {0}'.format(fitsFile)
 
-            if( self.verbose):
-                print 'rts2af_feed_acquire, sent a Q'
+        # send a Q to signal rts2af_analysis.py to begin with the fitting
+        self.ignoreOutput(acquire)
+        #time.sleep(.1)
+        # exposure ends
+        acquire.stdin.write('{0}\n'.format('exposure_end'))
+        acquire.stdin.write('img /abc/{0}\n'.format('Q'))
+        acquire.stdin.flush()
+
+        if( self.verbose):
+            print 'rts2af_feed_acquire, sent a Q'
 
         print 'rts2af_feed_acquire ending, reading stdin for ever'
         while(True):

@@ -63,17 +63,21 @@ class Acquire(rts2af.AFScript):
         self.focuser = r2c.getValue('focuser')
         self.serviceFileOp= rts2af.serviceFileOp= rts2af.ServiceFileOperations()
         self.runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
-        self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has no options
         self.testFiltersInUse=[]
         if( test==None):
             self.test= False # normal production 
         else:
-            self.test= True  #True: feed rts2af_acquire.py with rts2af_feed_acquire.py
+            self.test= True  #True: feed back rts2af_acquire.py with rts2af_feed_acquire.py
             # retrieve the list of used filters from rts2af_feed_acquire.py
             print 'filtersInUse'
             sys.stdout.flush()
             self.testFiltersInUse= sys.stdin.readline().split()            
             r2c.log('I','rts2af_acquire.py: being in test mode, filters: {0}'.format(self.testFiltersInUse))
+
+        if( self.test):
+            self.runTimeConfig.readConfiguration('./rts2af-offline.cfg')
+        else:
+            self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has no options
 
         self.lowerLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
         self.upperLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
@@ -183,8 +187,8 @@ class Acquire(rts2af.AFScript):
 
         # move all fits files of a given filter focus run into a separate directory 
         # in test mode the files are fetched for the original path
-        storePath=self.serviceFileOp.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
         if( not self.test):
+            storePath=self.serviceFileOp.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
             if( extension):
                 elements= storePath.split('.fits')
                 storePath= '{0}-{1}.fits'.format(elements[0], extension)
@@ -398,15 +402,18 @@ class Acquire(rts2af.AFScript):
             configFileName= self.serviceFileOp.expandToTmpConfigurationPath( 'rts2af-acquire-' + filter.name + '-') 
 
             self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
-            self.serviceFileOp.createAcquisitionBasePath( filter)
+            if( not self.test):
+                self.serviceFileOp.createAcquisitionBasePath( filter)
 # ToDo wildi
             if( self.test):
-                cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_feedback_acquire.py']
+                cmd= [ 'rts2af_feedback_acquire.py']
+                # if Popen(...shell=True:
+                #cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
             else:
-                cmd= [ '/home/wildi/rts2/scripts/rts2af/rts2af_analysis.py',
+                cmd= [ 'rts2af_analysis.py',
                        '--config', configFileName
                        ]
-            
+
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
             try:

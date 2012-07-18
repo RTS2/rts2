@@ -164,7 +164,7 @@ class Configuration:
         self.cp[('DS9', 'DS9_MATCHED')]= True
         self.cp[('DS9', 'DS9_ALL')]= True
         self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
-        self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-autofocus.reg'
+        self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2af.reg'
         
         self.cp[('analysis', 'ANALYSIS_FOCUS_UPPER_LIMIT')]= 10000
         self.cp[('analysis', 'ANALYSIS_FOCUS_LOWER_LIMIT')]= 0
@@ -248,9 +248,6 @@ class Configuration:
     def defaultsIdentifiers(self):
         return sorted(self.defaults.iteritems())
         
-    def defaultsValue( self, identifier):
-        return self.defaults[ identifier]
-
     def dumpDefaults(self):
         for (identifier), value in self.configIdentifiers():
             print "dump defaults :", ', ', identifier, '=>', value
@@ -262,10 +259,6 @@ class Configuration:
     def value( self, identifier):
         return self.values[ identifier]
 
-    def dumpValues(self):
-        for (identifier), value in self.valuesIdentifiers():
-            print "dump values :", ', ', identifier, '=>', value
-
     def filterByName(self, name):
         for filter in  self.filters:
             #print "NAME>" + name + "<>" + filter.name
@@ -273,12 +266,6 @@ class Configuration:
                 #print "NAME: {0} {1}".format(name, filter.name)
                 return filter
 
-        return False
-
-    def filterInUseByName(self, name):
-        for filter in  self.filtersInUse:
-            if( name == filter.name):
-                return filter
         return False
 
     def writeDefaultConfiguration(self):
@@ -436,13 +423,6 @@ class SExtractorParams():
         self.reference= []
         self.assoc= []
 
-    def elementIndex(self, element):
-        for ele in  self.assoc:
-            if( element== ele) : 
-                return self.assoc.index(ele)
-        else:
-            return False
-
     def readSExtractorParams(self):
         params=open( self.paramsFileName, 'r')
         lines= params.readlines()
@@ -591,7 +571,7 @@ class Telescope():
     def starImageRadius(self, differencefoc_pos=0):
         return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelSize * self.focalratio) + self.seeing)/self.seeing
 
-class FitResults():
+class FitResults(): 
     """Class holding fit results"""
     def __init__(self, averageFwhm=None):
         focPosS= sorted(averageFwhm)
@@ -602,23 +582,24 @@ class FitResults():
         self.dateEpoch=None
         self.temperature=None
         self.objects=None
-        self.chi2=None
         self.constants=[]
-        self.minimumFocPos=None
-        self.minimumFwhm=None
+        self.fwhmMinimumFocPos=None
+        self.fluxMaximumFocPos=None
+        self.fwhmMinimum=None
+        self.fluxMaximum=None
         self.referenceFileName=None
         self.error=False
-        self.withinBounds= False
-#FWHM_FOCUS 3583.601214
-#FWHM parameters: chi2 6.421956e+02, p0...p2 1.386810e+03 -7.045635e-01 7.027618e-05
-#FLUX_FOCUS 3578.484908
-#FLUX parameters: chi2 9.697909e+00, p0...p2 1.205812e+01 3.578485e+03 1.109056e+00
-#rts2af_fit_focus.C: date: 2011-05-24T02:31:04.037498
-#rts2af_fit_focus.C: temperature: 10.242C
-#rts2af_fit_focus.C: result fwhm: chi2 6.421956e+02,  p(0...4)=(1.386810e+03 +/- 1.000000e+00), (-7.045635e-01 +/- 2.920952e+00), (7.027618e-05 +/- 2.920952e+00), (5.214057e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
-#rts2af_fit_focus.C: FWHM_FOCUS 3583.601214, FWHM at Minimum 4.393394
-#rts2af_fit_focus.C: result flux: chi2 9.697909e+00,  p(0...5)=(1.205812e+01 +/- 3.572544e+07), (3.578485e+03 +/- 3.572544e+07), (1.109056e+00 +/- 3.572544e+07), (2.129218e+05 +/- 7.454619e+09), (8.944915e+07 +/- 7.454619e+09), (0.000000e+00 +/- 0.000000e+00)
-#rts2af_fit_focus.C: FLUX_FOCUS 3578.484908
+        self.fwhmWithinBounds= False
+        self.fluxWithinBounds= False
+# To parse
+#rts2af_fit.py: date: 2012-07-09T11:22:33
+#rts2af_fit.py: temperature: 12.11C
+#rts2af_fit.py: objects: 13
+#rts2af_fit.py: FWHM_FOCUS 3399.8087883, FWHM at Minimum 2.34587076412
+#rts2af_fit.py: FLUX_FOCUS 3414.79248047, FWHM at Maximum 11.8584192561  
+#rts2af_fit.py: FWHM parameters: [  3.51004711e+02  -2.46516620e-01   5.45253555e-05  -3.58272548e-09]
+#rts2af_fit.py: flux parameters: [  1.18584193e+01   3.41479252e+03   2.34838248e+00  -5.58647229e+01 -3.47256366e+07]
+
         fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
         with open( fitResultFileName, 'r') as frfn:
             for line in frfn:
@@ -626,19 +607,12 @@ class FitResults():
                 fitPrgMatch= re.search( runTimeConfig.value('FITPRG') + ':', line)
                 if( fitPrgMatch==None):
                     continue
-                # error handling
-                # rts2af-fit-focus: no data found in 
-                errorMatch= re.search( runTimeConfig.value('FITPRG') + ': no data found in', line)
-                if( not errorMatch==None):
-                    logging.warning('fitResults: error received from: {0}: {1}'.format(runTimeConfig.value('FITPRG'), line))
-                    self.error=True
-                    break
                 
                 dateMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' date: (.+)', line)
                 if( not dateMatch==None):
                     self.date= dateMatch.group(1)
                     try:
-                        self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S.%f'))
+                        self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%dT%H:%M:%S'))
                     except ValueError:
                         try:
                             logging.info('DATE           {0}'.format(self.date))
@@ -646,7 +620,7 @@ class FitResults():
                             self.dateEpoch= time.mktime(time.strptime( self.date, '%Y-%m-%d-T%H:%M:%S'))
 
                         except:
-                            logging.error('fitResults: problems reading date: {0} %Y-%m-%dT%H:%M:%S'.format(self.date))
+                            logging.error('fitResults: problems reading date: {0} %Y-%m-%dT%H:%M:%S, {1}'.format(self.date, line))
                     except:
                         logging.error('fitResults: problems reading date: {0} (hint: not a value error)'.format(self.date))
                     
@@ -661,45 +635,38 @@ class FitResults():
                 if( not objectsMatch==None):
                     self.objects= objectsMatch.group(1)
                     continue
+# ToDo: complete parameters
+#               parametersMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' result fwhm\w*: (.+)', line)
+#               if( not parametersMatch==None):
+#                   print 'found something'
 
-                parametersMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' result fwhm\w*: (.+)', line)
-                if( not parametersMatch==None):
-                    parameters= parametersMatch.group(1)
-#chi2 2.445347e+00,  p(0...4)=(7.277240e+01 +/- 1.160489e+00), (8.826737e-03 +/- 4.871031e-04), (-2.223469e-05 +/- 1.425056e-07), (3.992524e-09 +/- 0.000000e+00), (0.000000e+00 +/- 0.000000e+00)
-#chi2 7.463648e-01,  p(0...4)
-                    chi2Match= re.search( r'chi2 ([\-\.0-9e+]+),  p\(0...4\)=(.+)', parameters)
-                    if( not chi2Match==None):
-                        chi2Str= chi2Match.group(1)
-                        try:
-                            self.chi2= float(chi2Str)
-                        except:
-                            logging.error('fitResults: problems reading chi2: {0}'.format(chi2Str))
-                        constStr= chi2Match.group(2)
-                        #print 'const----{0}'.format(constStr)
-                        constStr= constStr.replace('(','')
-                        constStr= constStr.replace(')','')
-                        constStr= constStr.replace(',','')
-                        constStr= constStr.replace('+/-','')
-                        items= constStr.split()
-#http://desk.stinkpot.org:8080/tricks/index.php/2007/10/extract-odd-or-even-elements-from-a-python-list/                        
-                        values= items[::2]
-                        errors= items[1::2]
-                        # keep the order
-                        i= 0
-                        for value in values:
-                            self.constants.append((value, errors[i]))
-                            i += 1
-                        continue
-#rts2af_fit_focus.C: FWHM_FOCUS 3502.305998, FWHM at Minimum 2.470353 
                 fwhmMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' FWHM_FOCUS ([\-\.0-9e+]+), FWHM at Minimum ([\-\.0-9e+]+)', line)
                 if( not fwhmMatch==None):
-                    self.minimumFocPos= float(fwhmMatch.group(1))
-                    self.minimumFwhm= float(fwhmMatch.group(2))
-                    if( self.minimumFocPos >= self.focPosMin) and( self.minimumFocPos <=self.focPosMax):
-                        self.withinBounds= True
+                    self.fwhmMinimumFocPos= float(fwhmMatch.group(1))
+                    self.fwhmMinimum= float(fwhmMatch.group(2))
+
+                    if( self.focPosMin <= self.fwhmMinimumFocPos <= self.focPosMax):
+                        self.fwhmWithinBounds= True
+                    else:
+                        self.error= True
+                    continue
+
+                fluxMatch= re.search( runTimeConfig.value('FITPRG') + ':' + ' FLUX_FOCUS ([\-\.0-9e+]+), FLUX at Maximum ([\-\.0-9e+]+)', line)
+                if( not fluxMatch==None):
+                    self.fluxMaximumFocPos= float(fluxMatch.group(1))
+                    self.fluxMaximumF= float(fluxMatch.group(2))
+                    if( self.focPosMin <= self.fluxMaximumFocPos  <= self.focPosMax):
+                        self.fluxWithinBounds= True
+                    else:
+                        self.error= True
                     continue
 
             frfn.close()
+
+# for now at least FWHM minimum must exist
+        if( self.fwhmMinimumFocPos==None):
+            self.error= True
+
        
 
 class SXObject():
@@ -1510,74 +1477,67 @@ class Catalogues():
 
 
     def fitTheValues(self):
+        if( not self.countObjectsFoundInAllFiles()):
+            logging.error('Catalogues.fitTheValues: too few objects, do not fit')
+            return None
 
-        if( self.countObjectsFoundInAllFiles()):
-            self.__average__()
-            discardedPositions= self.writeFitInputValues()
+        if( not self.__average__()):
+            logging.error('fitTheValues: no average values')
+            return None
+
+        discardedPositions= self.writeFitInputValues()
             
-            if((len(self.averageFwhm) + len(self.averageFlux)- discardedPositions)< 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
-                logging.warning('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing (see MINIMUM_FOCUSER_POSITIONS)'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
-            else:
-                pass
-# ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file
-            if(runTimeConfig.value('DISPLAYFIT')):
-                display= '1'
-            else:
-                display= '0'
+        if((len(self.averageFwhm) + len(self.averageFlux)- discardedPositions)< 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')):
+            logging.error('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing (see MINIMUM_FOCUSER_POSITIONS)'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * runTimeConfig.value('MINIMUM_FOCUSER_POSITIONS')))
+            return None
 
-            try:
-                cmd= [ runTimeConfig.value('FITPRG'),
-                       display,
-                       self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
-                       '{0}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
-                       serviceFileOp.runDateTime,
-                       str(self.numberOfObjectsFoundInAllFiles),
-                       self.dataFileNameFwhm,
-                       self.dataFileNameFlux,
-                       self.imageFilename]
-            except:
-                cmd= [ runTimeConfig.value('FITPRG'),
-                       display,
-                       self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
-                       'NoTemp',
-                       serviceFileOp.runDateTime,
-                       str(self.numberOfObjectsFoundInAllFiles),
-                       self.dataFileNameFwhm,
-                       self.dataFileNameFlux,
-                       self.imageFilename]
+        if(runTimeConfig.value('DISPLAYFIT')):
+            display= '1'
+        else:
+            display= '0'
 
-            output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        try:
+            cmd= [ runTimeConfig.value('FITPRG'),
+                   display,
+                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                   '{0:.2f}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
+                   serviceFileOp.runDateTime,
+                   str(self.numberOfObjectsFoundInAllFiles),
+                   self.dataFileNameFwhm,
+                   self.dataFileNameFlux,
+                   self.imageFilename]
+        except:
+            cmd= [ runTimeConfig.value('FITPRG'),
+                   display,
+                   self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
+                   'NoTemp',
+                   serviceFileOp.runDateTime,
+                   str(self.numberOfObjectsFoundInAllFiles),
+                   self.dataFileNameFwhm,
+                   self.dataFileNameFlux,
+                   self.imageFilename]
 
-            fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
+        output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-            with open( fitResultFileName, 'a') as frfn:
-                for item in output:
-                    frfn.write(item)
+        fitResultFileName= serviceFileOp.expandToFitResultPath('rts2af-result-') 
 
-                frfn.close()
-            #
-            # parse the fit results
-            fitResults= FitResults(self.averageFwhm)
-            #
-            from datetime import datetime
-            from dateutil import tz
+        with open( fitResultFileName, 'a') as frfn:
+            for item in output:
+                frfn.write(item)
 
-            from_zone = tz.gettz('UTC')
-            to_zone = tz.gettz('Europe/Amsterdam')
-            utc = datetime.strptime(self.referenceCatalogue.fitsHDU.variableHeaderElements['DATE-OBS'], '%Y-%m-%dT%H:%M:%S.%f')
-            utc = utc.replace(tzinfo=from_zone)
-            # ToDo: might be simpler
-            europe = utc.astimezone(to_zone)
-            # RoDo: not the right place?
-            fitResults.dateEpoch=time.mktime(europe.timetuple())
+            frfn.close()
 
+        # parse the fit results
+        fitResults= FitResults(self.averageFwhm)
+        # ToDo: today only fwhm is used, combine it with flux in case they are closer than focuser resolution
+        if( not fitResults.error):
             fitResults.referenceFileName=self.referenceCatalogue.fitsHDU.fitsFileName
-            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(fitResults.date, fitResults.dateEpoch, fitResults.minimumFocPos, fitResults.minimumFwhm, fitResults.temperature, fitResults.chi2, fitResults.withinBounds, fitResults.referenceFileName, fitResults.constants))
+            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(fitResults.date, fitResults.fwhmMinimumFocPos, fitResults.fwhmMinimum, fitResults.fwhmWithinBounds, fitResults.fluxMaximumFocPos, fitResults.fluxMaximum, fitResults.fluxWithinBounds, fitResults.temperature, fitResults.referenceFileName, fitResults.constants))
+
             return fitResults
         else:
-            logging.error('Catalogues.fitTheValues: too few objects, do not fit')
+            return None
 
-        return None
 
     def __average__(self):
         numberOfObjects = 0
@@ -1705,9 +1665,9 @@ import pyfits
 class FitsHDU():
     """Class holding fits file name and its properties"""
     def __init__(self, fitsFileName=None, referenceFitsHDU=None):
-        if(referenceFitsHDU==None):
-            
-            self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName)
+        if(referenceFitsHDU==None):            
+            self.fitsFileName= serviceFileOp.expandToRunTimePath(fitsFileName) # can be None
+             
         else:
             self.fitsFileName= fitsFileName
 
@@ -1729,7 +1689,7 @@ class FitsHDU():
             fitsHDU = pyfits.open(self.fitsFileName)
         except:
             if( self.fitsFileName):
-                logging.error('FitsHDU: file not found : ' + self.fitsFileName)
+                logging.error('FitsHDU: file not found: {0}'.format( self.fitsFileName))
             else:
                 logging.error('FitsHDU: file name not given (None)')
             return False
@@ -1743,7 +1703,6 @@ class FitsHDU():
             self.isValid= True
             self.staticHeaderElements['FILTER']= 'NOF' 
             logging.info('headerProperties: fits file ' + self.fitsFileName + ' the filter header element not found, assuming filter NOF (no filter)')
-
         try:
             self.staticHeaderElements['BINNING']= fitsHDU[0].header['BINNING']
             if( self.staticHeaderElements['BINNING'] != runTimeConfig.value('BINNING')):
@@ -1814,14 +1773,10 @@ class FitsHDU():
         keys= self.referenceFitsHDU.staticHeaderElements.keys()
         i= 0
         for key in keys:
-#            if(key == 'FOC_POS'):
-#                self.staticHeaderElements['FOC_POS']= fitsHDU[0].header['FOC_POS']
-#                continue
             if( self.assumedBinning):
                 if(key == 'BINNING'):
                     continue
             if(self.referenceFitsHDU.staticHeaderElements[key]!= fitsHDU[0].header[key]):
-##wildi                logging.error("headerProperties: fits file " + self.fitsFileName + " property " + key + " " + self.referenceFitsHDU.staticHeaderElements[key] + " " + fitsHDU[0].header[key])
                 break
             else:
                 self.staticHeaderElements[key] = fitsHDU[0].header[key]
@@ -1868,12 +1823,6 @@ class FitsHDUs():
         else:
             self.referenceHDU=None
             
-    def findHDUByFitsFileName( self, fileName):
-        for hdu in sorted(self.fitsHDUsList):
-            if( fileName== hdu.fitsFileName):
-                return hdu
-        return False
-
     def findReference(self):
         if( self.referenceHDU !=None):
             return self.referenceHDU
@@ -1970,11 +1919,7 @@ class ServiceFileOperations():
     """Class performing various task on files, e.g. expansion to (full) path"""
     def __init__(self, runTimePath=None):
         self.now= datetime.datetime.now().isoformat()
-        if( runTimePath==None):
-            self.runTimePath='/'
-        else:
-            self.runTimePath= runTimePath
-
+        self.runTimePath= runTimePath
         self.runDateTime=None
 
     def prefix( self, fileName):
@@ -1983,17 +1928,6 @@ class ServiceFileOperations():
     def notFits(self, fileName):
         items= fileName.split('/')[-1]
         return items.split('.fits')[0]
-
-    def absolutePath(self, fileName=None):
-        if( fileName==None):
-            logging.error('ServiceFileOperations.absolutePath: no file name given')
-            
-        pLeadingSlash = re.compile( r'\/.*')
-        leadingSlash = pLeadingSlash.match(fileName)
-        if( leadingSlash):
-            return True
-        else:
-            return False
 
     def fitsFilesInRunTimePath( self):
         if( verbose):
@@ -2049,11 +1983,40 @@ class ServiceFileOperations():
         fileName= items[0] + "-" + fitsHDU.staticHeaderElements['FILTER'] + "-" + self.now + ".png"
         return self.expandToTmp(self.prefix(fileName))
 
-    def expandToRunTimePath(self, fileName=None):
-        if( self.absolutePath(fileName)):
-            return fileName
+    def absolutePath(self, fileName=None):
+        if( fileName==None):
+            logging.error('ServiceFileOperations.absolutePath: no file name given')
+            
+        pLeadingSlash = re.compile( r'\/.*')
+        leadingSlash = pLeadingSlash.match(fileName)
+        if( leadingSlash):
+            return True
         else:
-            return self.runTimePath + '/' + fileName
+            return False
+
+    def defineRunTimePath(self, fileName=None):
+        for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
+            if( fileName.rstrip() in names):
+                self.runTimePath= root
+                return True
+        else:
+            logging.error('ServiceFileOperations.defineRunTimePath: file not found: {0}'.format(fileName))
+
+        return False
+
+    def expandToRunTimePath(self, pathName=None):
+        if( self.absolutePath(pathName)):
+            self.runDateTime= pathName.split('/')[-3] # it is rts2af, which creates the directory tree
+            return pathName
+        else:
+            fileName= pathName.split('/')[-1]
+            if( self.defineRunTimePath( fileName)):
+                self.runDateTime= self.runTimePath.split('/')[-2]
+ 
+                return self.runTimePath + '/' + fileName
+            else:
+                return None
+
 # ToDo: refactor with expandToSkyList
     def expandToDs9RegionFileName( self, fitsHDU=None):
         if( fitsHDU==None):
@@ -2111,24 +2074,6 @@ class ServiceFileOperations():
     def createAcquisitionBasePath(self, filter=None):
         os.makedirs( self.expandToAcquisitionBasePath( filter))
         
-    def defineRunTimePath(self, fileName=None):
-        if( self.absolutePath(fileName)):
-            self.runDateTime= fileName.split('/')[-3]
-            return fileName
-
-        for root, dirs, names in os.walk(runTimeConfig.value('BASE_DIRECTORY')):
-            if( fileName.rstrip() in names):
-                if(self.runTimePath == '/'):
-                    self.runDateTime= root.split('/')[-2]
-                else:
-                    self.runDateTime= 'NO DATE'
-                self.runTimePath= root
-                return True
-        else:
-            logging.error('ServiceFileOperations.defineRunTimePath: something is wrong')
-
-        return False
-            
     def setModeExecutable(self, path):
         #mode = os.stat(path)
         os.chmod(path, 0744)

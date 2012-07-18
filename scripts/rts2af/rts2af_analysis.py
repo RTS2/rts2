@@ -42,24 +42,24 @@ import rts2af
 
 class main(rts2af.AFScript):
     """extract the catalgue of an images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
+    def __init__(self, argv=None):
+        self.scriptName= argv[0]
+        self.argv=argv
         self.pid= os.getpid()
+        
 
     def main(self):
         logformat= '%(asctime)s %(levelname)s %(message)s'
 	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format= logformat)
 
         runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
-        args      = self.arguments()
         rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-
         configFileName=''
-        if( args.fileName):
-            configFileName= args.fileName[0]  
+        if( self.argv[2]):
+            configFileName= self.argv[2]  
         else:
             configFileName= runTimeConfig.configurationFileName()
-            logging.info('rts2af_analysis.py: logger no config file specified, taking default' + configFileName)
+            logging.info('rts2af_analysis.py: logger no config file specified, taking default ' + configFileName)
 
         runTimeConfig.readConfiguration(configFileName)
 # read the SExtractor parameters
@@ -76,15 +76,6 @@ class main(rts2af.AFScript):
 # create the reference catalogue
         referenceFitsFileName = sys.stdin.readline().strip()
 
-        if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-            print 'FOCUS: -1'
-            sys.stdout.flush()
-
-            logging.error('rts2af_analysis.py: reference file: {0} not found in base directory: {1}, exiting'.format(referenceFitsFileName, runTimeConfig.value('BASE_DIRECTORY')))
-            sys.exit(1)
-
-
-        #
         logging.info('rts2af_analysis.py: pid: {0}, starting, reference file: {1}'.format(self.pid, referenceFitsFileName))
 
         hdur= rts2af.FitsHDU(referenceFitsFileName)
@@ -130,7 +121,7 @@ class main(rts2af.AFScript):
             sys.exit(1)
         else:
             logging.info('rts2af_analysis.py: reference catalogue created with: {0} objects'.format(catr.numberReferenceObjects()))
-
+        # is needed!
         print 'info: reference catalogue created'
         sys.stdout.flush()
 
@@ -159,8 +150,8 @@ class main(rts2af.AFScript):
 
             hdu= rts2af.FitsHDU( fits, hdur)
             if(hdu.headerProperties()):
-#                if(rts2af.verbose):
-#                    logging.info('rts2af_analysis.py: append '+ hdu.fitsFileName)
+                if(rts2af.verbose):
+                    logging.info('rts2af_analysis.py: append '+ hdu.fitsFileName)
 
                 HDUs.fitsHDUsList.append(hdu)
 
@@ -177,14 +168,14 @@ class main(rts2af.AFScript):
             else:
                 logging.error('rts2af_analysis.py: could not analyze file: {0}'.format(fits))
 
-        # needs CERN's root installed and rts2af-fit-focus from rts2 svn repository
         fitResult= cats.fitTheValues()
         if not (fitResult==None):
-            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4}'.format(fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints)
-            logging.info('rts2af_analysis.py: fit result {0}, reference file: {1}'.format(fitResult.minimumFocPos, referenceFitsFileName))
+            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints)
+            sys.stdout.flush()
+            logging.info('rts2af_analysis.py: fit result {0}, reference file: {1}'.format(fitResult.fwhmMinimumFocPos, referenceFitsFileName))
             # input format for rts2af_model_analyze.py
             # uncomment that if you need it
-            logging.info('rts2af_analysis.py: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(fitResult.chi2, fitResult.temperature, fitResult.temperature, fitResult.objects, fitResult.minimumFocPos, fitResult.minimumFwhm, fitResult.dateEpoch, fitResult.withinBounds, fitResult.referenceFileName, fitResult.nrDatapoints, fitResult.constants))
+            logging.info('rts2af_analysis.py: {0} {1} {2} {3} {4} {5} {6} {7}\n'.format(fitResult.temperature, fitResult.objects, fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.dateEpoch, fitResult.fwhmWithinBounds, fitResult.referenceFileName, fitResult.nrDatapoints)) # ToDo, fitResult.constants))
 
         else:
             print 'FOCUS: fit did not converge'
@@ -194,6 +185,4 @@ class main(rts2af.AFScript):
         logging.info('rts2af_analysis.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
 
 if __name__ == '__main__':
-    main(sys.argv[0]).main()
-
-
+    main(sys.argv).main()

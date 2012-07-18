@@ -4,6 +4,7 @@
 #   usage 
 #   rts2af_fit.py 
 #   
+# This file is still work in progress
 #
 #   rts2af_fit.py is called by rts2af_analysis.py
 #
@@ -72,8 +73,10 @@ if __name__ == '__main__':
     pos_fwhm, fwhm, errx_fwhm, erry_fwhm = np.loadtxt(file_fwhm, unpack=True)
 
     par_fwhm= np.array([180., -9.0e-02, 1.0e-05, 0.])
-    par_fwhm, flag_fwhm  = optimize.leastsq(errfunc_fwhm, par_fwhm, args=(pos_fwhm, fwhm, errx_fwhm, erry_fwhm))
-
+    try:
+        par_fwhm, flag_fwhm  = optimize.leastsq(errfunc_fwhm, par_fwhm, args=(pos_fwhm, fwhm, errx_fwhm, erry_fwhm))
+    except:
+        sys.exit(1)
     #print flag_fwhm
     min_focpos_fwhm = optimize.fmin(fitfunc_r_fwhm,1000.,args=(par_fwhm), disp=0)
     val_fwhm= fitfunc_fwhm( par_fwhm, min_focpos_fwhm) 
@@ -81,7 +84,10 @@ if __name__ == '__main__':
     # flux
     pos_flux, flux, errx_flux, erry_flux = np.loadtxt(file_flux, unpack=True)
     par_flux=[100., min_focpos_fwhm, 2., 0.072, 1000. * val_fwhm]
-    par_flux, flag_flux  = optimize.leastsq(errfunc_flux, par_flux, args=(pos_flux, flux, errx_flux))
+    try:
+        par_flux, flag_flux  = optimize.leastsq(errfunc_flux, par_flux, args=(pos_flux, flux, errx_flux))
+    except:
+        sys.exit(1)
     #print flag_flux
 
     max_focpos_flux = optimize.fmin(fitfunc_r_flux,10.,args=(par_flux), disp=0)
@@ -98,14 +104,14 @@ if __name__ == '__main__':
         print 'FWHM_FOCUS {0}, {1}'.format('nan', 'nan')
 
     if( flag_flux==1):
-        print 'FLUX_FOCUS {0}, {1}'.format(max_focpos_flux[0], val_flux[0])
+        print '{0}: FLUX_FOCUS {1}, FLUX at Maximum {2}'.format(script, max_focpos_flux[0], val_flux[0])
     else:
-        print 'FLUX_FOCUS {0}, {1}'.format('nan', 'nan')
+        print '{0}: FLUX_FOCUS {1}, {2}'.format(script, 'nan', 'nan')
 
     if( flag_fwhm==1):
-        print 'FWHM parameters: {0}'.format(par_fwhm)
+        print '{0}: FWHM parameters: {1}'.format(script, par_fwhm)
     if( flag_flux==1):
-        print 'flux parameters: {0}'.format(par_flux)
+        print '{0}: flux parameters: {1}'.format(script, par_flux)
     
     x_fwhm = np.linspace(pos_fwhm.min(), pos_fwhm.max())
     x_flux = np.linspace(pos_flux.min(), pos_flux.max())
