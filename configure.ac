@@ -451,6 +451,7 @@ if test "x${prefix}" = "xNONE"; then
 else
         AC_DEFINE_UNQUOTED(RTS2_PREFIX, "$prefix", [prefix])
 fi
+AC_SUBST(RTS2_PREFIX)
   
 # Define lock file prefix
 AC_ARG_WITH(lock,
@@ -798,6 +799,7 @@ AM_CONDITIONAL(CYGWIN, test x${target_os} = xcygwin)
 AM_CONDITIONAL(SUNCYG, test x${target_os} = xcygwin -o x${target_os} = xsolaris2.8)
 
 AC_OUTPUT([Makefile
+	   rts2.initd
 	   man/Makefile
 	   man/rts2.ent
 	   include/Makefile
