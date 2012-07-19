@@ -88,6 +88,7 @@ class Gpib:public Sensor
 
 		// used only for GPIB enet interface
 		HostString *enet_addr;
+		const char *prologix;
 
 		ConnGpib *connGpib;
 		

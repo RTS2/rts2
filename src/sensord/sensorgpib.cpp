@@ -21,8 +21,33 @@
 
 #include "conngpiblinux.h"
 #include "conngpibenet.h"
+#include "conngpibprologix.h"
 
 using namespace rts2sensord;
+
+#define OPT_PROLOGIX    OPT_LOCAL + 787
+
+Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
+{
+	minor = 0;
+	pad = -1;
+	enet_addr = NULL;
+	prologix = NULL;
+
+	connGpib = NULL;
+	debug = false;
+
+	addOption ('m', NULL, 1, "board number (default to 0)");
+	addOption (OPT_PROLOGIX, "prologix", 1, "Prologix GPIB-USB serial port");
+	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
+	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
+	addOption ('v', NULL, 0, "verbose debugging");
+}
+
+Gpib::~Gpib (void)
+{
+	delete connGpib;
+}
 
 void Gpib::writeValue (const char *name, rts2core::Value *value)
 {
@@ -51,6 +76,9 @@ int Gpib::processOption (int _opt)
 			break;
 		case 'n':
 			enet_addr = new HostString (optarg, "5000");
+			break;
+		case OPT_PROLOGIX:
+			prologix = optarg;
 			break;
 		case 'v':
 			debug = true;
@@ -81,11 +109,15 @@ int Gpib::initHardware ()
 		}
 		connGpib = new ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
 	}
+	// prologix USB
+	else if (prologix != NULL)
+	{
+		connGpib = new ConnGpibPrologix (this, prologix, pad);
+	}
 	else if (pad >= 0)
 	{
 		connGpib = new ConnGpibLinux (minor, pad);
 	}
-	// enet
 	else
 	{
 		std::cerr << "Device connection was not specified, exiting" << std::endl;
@@ -93,8 +125,8 @@ int Gpib::initHardware ()
 
 	try
 	{
-		connGpib->initGpib ();
 		connGpib->setDebug (debug);
+		connGpib->initGpib ();
 	}
 	catch (rts2core::Error er)
 	{
@@ -102,24 +134,4 @@ int Gpib::initHardware ()
 		return -1;
 	}
 	return 0;
-}
-
-Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
-{
-	minor = 0;
-	pad = -1;
-	enet_addr = NULL;
-
-	connGpib = NULL;
-	debug = false;
-
-	addOption ('m', NULL, 1, "board number (default to 0)");
-	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
-	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
-	addOption ('v', NULL, 0, "verbose debugging");
-}
-
-Gpib::~Gpib (void)
-{
-	delete connGpib;
 }
