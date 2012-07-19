@@ -151,6 +151,7 @@ class Configuration:
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_LOWER_LIMIT')]= 1501
         self.cp[('focuser properties', 'FOCUSER_ABSOLUTE_UPPER_LIMIT')]= 6002
         self.cp[('focuser properties', 'FOCUSER_SPEED')]= 100.
+        self.cp[('focuser properties', 'FOCUSER_STEP_SIZE')]= 1.1428e-6
         self.cp[('focuser properties', 'FOCUSER_TEMPERATURE_COMPENSATION')]= False
         self.cp[('focuser properties', 'FOCUSER_SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
 
@@ -166,21 +167,21 @@ class Configuration:
         self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
         self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2af.reg'
         
-        self.cp[('analysis', 'ANALYSIS_FOCUS_UPPER_LIMIT')]= 10000
-        self.cp[('analysis', 'ANALYSIS_FOCUS_LOWER_LIMIT')]= 0
+##        self.cp[('analysis', 'ANALYSIS_FOCUS_UPPER_LIMIT')]= 10000
+##        self.cp[('analysis', 'ANALYSIS_FOCUS_LOWER_LIMIT')]= 0
         self.cp[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.cp[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
-        self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
-        self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
-        self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
+##        self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
+##        self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
+##        self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'rts2af-fit.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         self.cp[('analysis', 'SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
         
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
-        self.cp[('fitting', 'ACCEPTABLE_CHI2')]= 80.
-        self.cp[('fitting', 'WRITE_SUMMARY_FILE')]= False
+##        self.cp[('fitting', 'ACCEPTABLE_CHI2')]= 80.
+##        self.cp[('fitting', 'WRITE_SUMMARY_FILE')]= False
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
         self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2af/sex/rts2af-sex.cfg'
@@ -227,10 +228,10 @@ class Configuration:
         self.cp[('queuing', 'TARGETID')] = '5'
         self.cp[('queuing', 'THRESHOLD')] = 5.12
 
-        self.cp[('meteodb', 'METEODB_HOSTNAME')] = '192.168.2.67'
-        self.cp[('meteodb', 'METEODB_USERNAME')] = 'miyo'
-        self.cp[('meteodb', 'METEODB_PASSWORD')] = 'a00g2x'
-        self.cp[('meteodb', 'METEODB')] = 'meteo'
+##        self.cp[('meteodb', 'METEODB_HOSTNAME')] = '192.168.2.67'
+##        self.cp[('meteodb', 'METEODB_USERNAME')] = 'miyo'
+##        self.cp[('meteodb', 'METEODB_PASSWORD')] = 'a00g2x'
+##        self.cp[('meteodb', 'METEODB')] = 'meteo'
 
 
         self.defaults={}
@@ -479,12 +480,6 @@ class SExtractorParams():
                 print "Reference element : >"+ element+"<"
             for element in  self.assoc:
                 print "Association element : >" + element+"<"
-class Setting():
-    """Class holding settings for a given position, offset and exposure time"""
-    def __init__(self, offset=0, exposure=0):
-        self.offset= offset
-        self.exposure = exposure
-
 class CCD():
     """Class for CCD properties"""
     def __init__(self, name, binning=None, windowOffsetX=None, windowOffsetY=None, windowHeight=None, windowWidth=None, pixelSize=None):
@@ -497,42 +492,40 @@ class CCD():
         self.windowWidth=windowWidth
         self.pixelSize= pixelSize
 
+class Setting():
+    """Class holding settings for a given position, offset and exposure time"""
+    def __init__(self, offset=0, exposureFactor=0):
+        self.offset= offset
+        self.exposureFactor = exposureFactor
+
 class Filter():
     """Class for filter properties"""
     # ToDo: clarify how  this class is used
-    def __init__(self, name, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=None):
+    def __init__(self, name=None, OffsetToClearPath=None, lowerLimit=None, upperLimit=None, stepSize =None, exposureFactor=1.):
         self.name= name
-        self.OffsetToClearPath    = OffsetToClearPath
-        self.lowerLimit= lowerLimit
-        self.upperLimit= upperLimit
+        self.OffsetToClearPath= OffsetToClearPath# [tick]
+        self.relativeLowerLimit= lowerLimit# [tick]
+        self.relativeUpperLimit= upperLimit# [tick]
+        self.exposureFactor   = exposureFactor 
         self.stepSize  = stepSize # [tick]
-        self.exposureFactor  = exposureFactor 
-        self.exposure= self.exposureFactor * runTimeConfig.value('DEFAULT_EXPOSURE')
         self.settings=[]
-        for offset in range (self.lowerLimit, self.upperLimit +  self.stepSize,  self.stepSize):
-            self.settings.append(Setting( offset, self.exposure))
-
-        self.relativeLowerLimit= self.OffsetToClearPath + self.lowerLimit
-        self.relativeUpperLimit= self.OffsetToClearPath + self.upperLimit
+        for offset in range (self.relativeLowerLimit, int(self.relativeUpperLimit + self.stepSize),  self.stepSize):
+            self.settings.append(Setting( offset, self.exposureFactor))
 
 class Focuser():
     """Class for focuser properties"""
     # ToDo: clarify how/when this class is instantiated
-    def __init__(self, name, lowerLimit=None, upperLimit=None, resolution=None, speed=None):
+    def __init__(self, name=None, lowerLimit=None, upperLimit=None, resolution=None, speed=None, stepSize=None):
         self.name= name
         self.lowerLimit=lowerLimit 
         self.upperLimit=upperLimit 
         self.resolution=resolution 
         self.speed=speed 
+        self.stepSize=stepSize 
 
 class Telescope():
     """Class holding telescope properties"""
     # ToDo: clarify how/when this class is instantiated
-    # ToDo: as soon as a sensible model is available for FLUX max, implement it
-    # source: parameters of the fitted flux data
-    # a complete compensation is not necessary/desirable
-    #                                                                        
-# does not work    def __init__(self, radius=runTimeConfig.value('TEL_RADIUS'), focalLength=runTimeConfig.value('TEL_FOCALLENGTH')): # units [meter]
     def __init__(self, radius=None, focalLength=None): # units [meter]
 
         if( not radius):
@@ -552,15 +545,11 @@ class Telescope():
             self.focalratio = self.radius/1000.
 
         #ToDo: fetch that from RTS2 CCD device
-        #ToDo: dirty
         self.pixelSize= runTimeConfig.value('PIXELSIZE') # 9.e-6 #[meter]
         # self.pixelSize= pixelSize 
         
         #self.seeing= 27.0e-6 #[meter!]
         self.seeing= runTimeConfig.value('SEEING') # [meter]
-
-
-        self.fudgeFactor= 0.12 # [1...0]
 
     def quadraticExposureTimeAtFocPos(self, exposureTimeZero=0, differencefoc_pos=0):
         return ( math.pow( self.starImageRadius(differencefoc_pos), 2) * exposureTimeZero)
@@ -569,7 +558,7 @@ class Telescope():
         return  self.starImageRadius( differencefoc_pos) * exposureTimeZero
 
     def starImageRadius(self, differencefoc_pos=0):
-        return (( self.fudgeFactor * abs(differencefoc_pos) * self.pixelSize * self.focalratio) + self.seeing)/self.seeing
+        return (abs(differencefoc_pos)  * self.focalratio + self.seeing) / self.seeing
 
 class FitResults(): 
     """Class holding fit results"""
