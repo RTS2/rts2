@@ -1,5 +1,6 @@
 /* 
  * Dummy sensor for testing.
+ * Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -22,8 +23,11 @@
 namespace rts2sensord
 {
 
-//* rts2core::Event number for timer event.
+//* rts2core::Event for timer event.
 #define EVENT_TIMER_TEST     RTS2_LOCAL_EVENT + 5060
+
+//* rts2core::Event for updating random value
+#define EVENT_TIMER_RU       RTS2_LOCAL_EVENT + 5061
 
 /**
  * Simple dummy sensor. It is an excelent example how to use mechanism inside RTS2.
@@ -37,6 +41,7 @@ class Dummy:public SensorWeather
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_AUTOSAVE, 0);
 			createValue (testDouble, "TEST_DOUBLE", "test double value", true, RTS2_VALUE_WRITABLE | RTS2_VALUE_AUTOSAVE);
+			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
 			createValue (stopMoveErr, "stop_move_err", "error state of stop_move", false, RTS2_VALUE_WRITABLE);
@@ -75,7 +80,7 @@ class Dummy:public SensorWeather
 		}
 
 		/**
-		 * Handles event send by RTS2 core. We use it there only to catch timer messages.
+		 * Handles events send by RTS2 core. We use it there only to catch timer messages.
 		 */
 		virtual void postEvent (rts2core::Event *event);
 
@@ -159,6 +164,7 @@ class Dummy:public SensorWeather
 	private:
 		rts2core::ValueInteger *testInt;
 		rts2core::ValueDouble *testDouble;
+		rts2core::ValueDouble *randomDouble;
 		rts2core::ValueBool *goodWeather;
 		rts2core::ValueBool *stopMove;
 		rts2core::ValueSelection *stopMoveErr;
@@ -208,6 +214,11 @@ void Dummy::postEvent (rts2core::Event *event)
 				return;
 			}
 			break;
+		case EVENT_TIMER_RU:
+			randomDouble->setValueDouble ((double) random () / RAND_MAX);
+			sendValueAll (randomDouble);
+			addTimer (1, event);
+			return;
 	}
 	SensorWeather::postEvent (event);
 }
@@ -231,6 +242,7 @@ int Dummy::initHardware ()
 {
 	// initialize timer
 	addTimer (5, new rts2core::Event (EVENT_TIMER_TEST));
+	addTimer (1, new rts2core::Event (EVENT_TIMER_RU));
 	maskState (BOP_TRIG_EXPOSE, BOP_TRIG_EXPOSE, "block exposure, waits for sensor");
 	return 0;
 }
