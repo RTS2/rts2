@@ -904,6 +904,7 @@ void Reflex::parseStates ()
 		ret = config->getString ("TIMING", (n.str () + "NAME").c_str (), newState.name);
 		if (ret)
 			throw rts2core::Error ("cannot get state name");
+		std::transform (newState.name.begin(), newState.name.end(), newState.name.begin(), (int(*)(int)) std::toupper);
 		if (states.findName (newState.name) != states.end())
 			throw rts2core::Error ("duplicate state name " + newState.name);
 
@@ -1135,6 +1136,9 @@ void Reflex::compile ()
 	for (lnum = 0, iter = program.begin (); iter < program.end (); iter++, lnum++)
 	{
 		std::string line = *iter;
+		if (getDebug ())
+			logStream (MESSAGE_DEBUG) << "compile1 " << lnum << ": " << line << sendLog;
+
 		getToken (line, token);
 		// ignore empty lines
 		if (token.empty () || token[0] == '#')
@@ -1167,7 +1171,7 @@ void Reflex::compile ()
 		{
 			// check state name
 			if (states.findName (token) == states.end ())
-				throw rts2core::Error ("invalid state name " + token);
+				throw rts2core::Error ("cannot find state " + token);
 			address++;
 			continue;
 		}
@@ -1201,6 +1205,9 @@ void Reflex::compile ()
 			continue;
 		address++;
 
+		if (getDebug ())
+			logStream (MESSAGE_DEBUG) << "compile2 " << lnum << ": " << *iter << sendLog;
+
 		getToken (*iter, token);
 		std::string compiled_state = states.findName (token)->compiled;
 
@@ -1226,7 +1233,7 @@ void Reflex::compile ()
 			getToken (*iter, token);
 			condparam = parameterIndex (token);
 			if (condparam < 0)
-				throw rts2core::Error ("Unknow parameter " + token);
+				throw rts2core::Error ("unknow parameter " + token);
 			getToken (*iter, token);
 		}
 		if (token == "GOTO")
@@ -1234,7 +1241,7 @@ void Reflex::compile ()
 			branchflag = true;
 			getToken (*iter, token);
 			if (labels.find (token) == labels.end ())
-				throw rts2core::Error ("Unknown label " + token + " for GOTO");
+				throw rts2core::Error ("unknown label " + token + " for GOTO");
 			opcode |= 0x01;
 			jump = labels[token];
 		}
@@ -1245,7 +1252,7 @@ void Reflex::compile ()
 			{
 				getToken (*iter, token);
 				if (labels.find (token) == labels.end ())
-					throw rts2core::Error ("Unknown label " + token + " for CALL");
+					throw rts2core::Error ("unknown label " + token + " for CALL");
 				jump = labels[token];
 			}
 			else
@@ -1302,13 +1309,13 @@ void Reflex::compile ()
 				goto encode;
 			getToken (*iter, token);
 		}
-		if (iter->empty ())
+		if (iter->empty () || token.empty ())
 			goto encode;
 		decparam = parameterIndex (token);
 		if (decparam < 0)
-			throw rts2core::Error ("Unknow parameter " + token);
+			throw rts2core::Error ("unknow parameter " + token);
 		if ((nextChar (*iter) != '-') || (nextChar (*iter) != '-'))
-			throw rts2core::Error ("Error parsing decrement parameter (should be " + token + "--)");
+			throw rts2core::Error ("error parsing decrement parameter (should be " + token + "--)");
 		opcode |= 0x40; // Decrement parameter
 	encode:
 		std::ostringstream os;
