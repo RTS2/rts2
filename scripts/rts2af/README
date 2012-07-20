@@ -42,6 +42,12 @@ Assuming you did the the following RTS2 svn checkout
   insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
   insert into scripts values ('5', 'YOUR_CAMERA_NAME', '/YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
 
+  SEL (selector) configuration
+  ----------------------------
+  Replace the default in /etc/rts2/services with
+
+  selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
+
 
 Testing offline, e.g. daytime
 -----------------------------

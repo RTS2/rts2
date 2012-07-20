@@ -408,9 +408,12 @@ class Acquire(rts2af.AFScript):
                 self.serviceFileOp.createAcquisitionBasePath( filter)
 # ToDo wildi
             if( self.test):
+                # ToDo ugly
+                # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
                 #cmd= [ 'rts2af_feedback_acquire.py']
                 # if Popen(...shell=True:
-                cmd= [ 'rts2af_analysis.py --config {0}'.format(configFileName)]
+                # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
+                cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
             else:
                 # Python 2.7
                 #cmd= [ 'rts2af_analysis.py',

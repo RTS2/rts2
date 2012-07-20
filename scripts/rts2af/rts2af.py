@@ -191,8 +191,8 @@ class Configuration:
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
         self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
         self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-assoc-sky.list'
-        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex.cat'
-        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-tmp.cat'
+##        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex.cat'
+##        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
