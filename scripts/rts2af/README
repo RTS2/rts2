@@ -56,9 +56,10 @@ Testing offline, e.g. daytime
 
   sudo chgrp YOUR_GROUP /var/log/rts2-debug
   cd ~
-  wget http://azug.minpet.unibas.ch/~wildi/rts2af-test-2012-07-20.tgz
-  tar zxvf rts2af-test-2012-07-20.tgz
-  cd rts2af-test
+  cd rts2/scripts/rts2af/test/focus
+  wget http://azug.minpet.unibas.ch/~wildi/rts2af-test-focus-2012-07-20.tgz
+  tar zxvf rts2af-test-focus-2012-07-20.tgz
+  cd ..
 
   Execute the scripts beginning with run_* . A minimal help text
   is printed on terminal, mainly saying where the log files are
