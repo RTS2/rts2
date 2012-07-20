@@ -2,6 +2,11 @@ Installation and testing of rts2af autofocuser
 ==============================================
 2012-07-20, Markus Wildi, wildi.markus@bluewin.ch
 
+An overview and further information about the online image processing 
+and configuration can be found with command
+
+man rts2_imgp_analysis
+
 
 Installation
 ------------
