@@ -129,7 +129,7 @@ class Configuration:
         #                                                 relative lower acquisition limit [tick]
         #                                                        relative upper acquisition limit [tick]
         #                                                              stepsize [tick]
-        #                                                                   exposure time [sec]
+        #                                                                   exposure factor
         self.cp[('filter properties', 'f01')]= '[U, 2074, -1500, 1500, 100, 11.1]'
         self.cp[('filter properties', 'f02')]= '[B, 1712, -1500, 1500, 100, 2.5]'
         self.cp[('filter properties', 'f03')]= '[V, 1678, -1500, 1500, 100, 2.5]'

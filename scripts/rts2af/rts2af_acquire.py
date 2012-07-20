@@ -117,9 +117,9 @@ class Acquire(rts2af.AFScript):
                 slt= 1. + abs(fcPos- curFocPos) / self.speed # ToDo, sleep a bit longer, ok?
                 r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
                 # Missouri
-                #time.sleep( 45) # sleep 45 seconds
+                time.sleep( 45) # sleep 45 seconds
                 # all others 
-                time.sleep( slt)
+                #time.sleep( slt)
             else:
                 r2c.log('E','rts2af_acquire: focuser speed {0} <=0'.format(self.speed))
 
@@ -408,13 +408,16 @@ class Acquire(rts2af.AFScript):
                 self.serviceFileOp.createAcquisitionBasePath( filter)
 # ToDo wildi
             if( self.test):
-                cmd= [ 'rts2af_feedback_acquire.py']
+                #cmd= [ 'rts2af_feedback_acquire.py']
                 # if Popen(...shell=True:
-                #cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
+                cmd= [ 'rts2af_analysis.py --config {0}'.format(configFileName)]
             else:
-                cmd= [ 'rts2af_analysis.py',
-                       '--config', configFileName
-                       ]
+                # Python 2.7
+                #cmd= [ 'rts2af_analysis.py',
+                #       '--config', configFileName
+                #       ]
+                # Python 2.6
+                cmd= [ 'rts2af_analysis.py --config {0}'.format(configFileName)]
 
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
