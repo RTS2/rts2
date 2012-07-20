@@ -56,7 +56,7 @@
 <!-- murks:      <command>&dhpackage;</command>-->
 <arg choice="plain"><option>imgp_analysis.py <replaceable>/path/to/fits/file</replaceable></option></arg>
       
-<!--	<arg choice="plain"><option>[OPTIONS] -c <replaceable>configuration_file</replaceable></option></arg>
+<!--	<arg choice="plain"><option>[OPTIONS] \-\-config <replaceable>configuration_file</replaceable></option></arg>
 -->
     </cmdsynopsis>
 
@@ -70,8 +70,7 @@
         </varlistentry>
         <varlistentry>
         <term><command>astrometry.net</command> is used by
-<command>img_astrometry.py</command> to find the center of the image. 
-part of </term> 
+<command>rts2-astrometry.net</command> to find the center of the image.</term> 
         </varlistentry>
     </variablelist>   
   </refsect1>
@@ -110,7 +109,7 @@ part of </term>
       <varlistentry>
     	<term>Configured in /etc/rts2/rts2.ini <command>imgp_analysis.py</command>
 is called by IMGP and spawns processes
-<command>rts2af_fwhm.py</command> and <command>img_astrometry.py</command> in
+<command>rts2af_fwhm.py</command> and <command>rts2-astrometry.net</command> in
 parallel to define the FWHM  and the astrometric
 calibration.</term>
       </varlistentry>
@@ -195,7 +194,7 @@ maximum of flux, are independently fitted and  define the focus.
 </para>
 <para>
 The reference catalog can be cleaned up meaning that objects which carry
-a SExtractor flag other than 1 as well as close groups of objects are removed.
+a SExtractor flag other than 0 as well as close groups of objects are removed.
 This is the default behavior.
 </para> 
 <para>
@@ -288,30 +287,17 @@ default value is used. The format of the following list is parameter name, "data
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>EXP_TIME, int, 40, 30, 20, 20, 20, 10, 10 [sec]
+	<term>EXPOSURE_FACTOR, float, 1.
          </term>
-	<listitem><para>Exposure time.</para>
+	<listitem><para>Exposure factor used for the filter. This factor is
+multiplied by DEFAULT_EXPOSURE.</para>
         </listitem>
  </varlistentry> 
  </listitem> 
-<para> NOFILTER is a special entry for the case where no filter wheel is present. It's
+<para> NOFILTER is a special entry for the case where no filter wheel is present. It`s
 properties are defined in the same way as described above.
 </para>
 </varlistentry>
-
-       <varlistentry>
-	<term><option>ANALYSIS_LOWER_LIMIT, int,  0 [ticks]</option>
-         </term>
-	<listitem><para>During offline analysis images above this focuser limit are considered.</para>
-        </listitem>
- </varlistentry> 
-
-      <varlistentry>
-	<term><option>ANALYSIS_UPPER_LIMIT, int,  1e12 [ticks]</option>
-         </term>
-	<listitem><para>During offline analysis images below this focuser limit are considered.</para>
-        </listitem>
- </varlistentry> 
 
       <varlistentry>
 	<term><option>NOT implemented: AUTO_FOCUS, boolean, True</option>
@@ -319,9 +305,7 @@ properties are defined in the same way as described above.
 	<listitem><para>If set True <command>rts2af</command> takes images
 over the whole range of FOCUSER_ABSOLUTE_LOWER_LIMIT and
 FOCUSER_ABSOLUTE_UPPER_LIMIT and calculates a weighted mean based on the number
-of objects SExtractor identifies on each image. If TAKE_DATA == True the images are
-taken centered around the mean while in offline modus the image with the
-nearest focuser position is taken as the reference image. </para>
+of objects SExtractor identifies on each image. </para>
         </listitem>
  </varlistentry>
       <varlistentry>
@@ -352,17 +336,17 @@ nearest focuser position is taken as the reference image. </para>
     <option>CCD_CAMERA, string, "CD"</option>
     </term>
     <listitem>
-    <para>This device and its associated focuser and filter wheel are chosen if TAKE_DATA==True.
+    <para>This device and its associated focuser and filter wheel are chosen.
     </para>
     </listitem>
     </varlistentry>
 
     <varlistentry>
     <term>
-    <option>CCD_WINDOW, int,  to be defined</option>
+    <option>CCD_WINDOW, e.g. -1 -1 -1 -1 for full frame</option>
     </term>
     <listitem>
-    <para> ToDo: planned feature not yet there.
+    <para> Follows RTS2 script syntax.
     </para>
     </listitem>
     </varlistentry>
@@ -373,22 +357,11 @@ nearest focuser position is taken as the reference image. </para>
     </term>
     <listitem>
     <para>If set True objects which do not have SExtractor`s FLAG equal 0 and
-ELLIPTICITY smaller  than 0.1 are removed from the reference catalog as well as
+ELLIPTICITY_REFERENCE smaller  than e.g. 0.1 are removed from the reference catalog as well as
 objects which are closer than OBJECT_SEPARATION. 
     </para>
     </listitem>
     </varlistentry>
-    <varlistentry>
-    <term>
-    <option>CONFIGURATION_FILE, file name,  no default</option>
-    </term>
-    <listitem>
-    <para> The name of the file is given on the command line, see option
--c. This parameter is ignored if it appears in the configuration file.
-    </para>
-    </listitem>
-    </varlistentry>
-
       <varlistentry>
 	<term><option>DS9_ALL, boolean, True</option>
          </term>
@@ -422,11 +395,11 @@ presenting the reference number in SExtractor`s catalog file and the (x,y) coord
 
      <varlistentry>
     <term>
-    <option>DS9_REGION_FILE, base file name, "/tmp/ds9-autofocus.reg"</option>
+    <option>DS9_REGION_FILE, base file name, "/tmp/ds9-rts2af.reg"</option>
     </term>
     <listitem>
     <para>These files can be loaded into DS9. See the options above and and
-execute the file with the postfix .bash, e.g.  /tmp/ds9-autofocus-B-2009-11-13T18:22:07+0000.reg.bash.
+execute the file with the postfix .bash, e.g.  /tmp/ds9-rts2af-B-2009-11-13T18:22:07+0000.reg.bash.
     </para>
     </listitem>
     </varlistentry>
@@ -479,17 +452,18 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
      <varlistentry>
     <term>
-    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.dat"</option>
+    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-rts2af.dat"</option>
     </term>
     <listitem>
-    <para>These files are the data files (FWHM, FLUX_MAX) which are fed into rts2_focus_fit.
+    <para>These files are the data files (FWHM, FLUX_MAX) which are fed into
+fit program.
     </para>
     </listitem>
     </varlistentry>
 
       <varlistentry>
 	<term>
-      <option>FOCAL_RATIO, float, 7. to be defined</option>
+      <option>FOCALLENGTH, float, [m]</option>
           </term>
 	<listitem>
 	  <para> ToDo: planned feature not yet there.
@@ -500,7 +474,7 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
    <varlistentry>
     <term>
-    <option>FITPRG, path to the fit program,  "rts2af_fit_focus 0"</option>
+    <option>FITPRG, path to the fit program,  "rts2af_fit.py"</option>
     </term>
     </varlistentry>
 
@@ -529,21 +503,6 @@ ticks which makes a difference e.g. in FWHM.</para>
         </listitem>
  </varlistentry> 
 
-
-
-     <varlistentry>
-    <term>
-    <option>INCLUDE_AUTO_FOCUS_RUN, boolean, False</option>
-    </term>
-    <listitem>
-    <para> If True images created during the auto focus run, with the
-additional extension AUTO_FOCUS_RUN_EXTENSION (not a parameter),
-           are include in the final analysis too. Be careful, if True and images are taken
-           far off the focal plane the number of selected objects may drop rapidly.
-    </para>
-    </listitem>
-    </varlistentry>
-
     <varlistentry>
     <term>
     <option>MINIMUM_OBJECTS, int, 5</option>
@@ -553,19 +512,6 @@ additional extension AUTO_FOCUS_RUN_EXTENSION (not a parameter),
     </para>
     </listitem>
     </varlistentry>
-
-    <varlistentry>
-    <term>
-    <option>NUMBER_OF_AUTO_FOCUS_IMAGES, int, 10</option>
-    </term>
-    <listitem>
-    <para> The images are taken with a focuser step size of
-(FOCUSER_ABSOLUTE_UPPER_LIMIT-
-FOCUSER_ABSOLUTE_LOWER_LIMIT)/NUMBER_OF_AUTO_FOCUS_IMAGES beginning at FOCUSER_ABSOLUTE_LOWER_LIMIT.
-    </para>
-    </listitem>
-    </varlistentry>
-
 
     <varlistentry>
     <term>
@@ -587,83 +533,32 @@ distance larger than OBJECT_SEPARATION are accepted as reference objects.
           </para>
 	</listitem>
       </varlistentry>
-
-
-    <varlistentry>
-    <term>
-    <option>SELECT_RATIO, float,  0.05</option>
-    </term>
-    <listitem>
-    <para> The ratio is defined as number of objects found in actual image
-divided by the number of objects defined in the reference catalog.
-SELECT_RATIO is a threshold to avoid matching images from completely
-different focus runs. 
-
-    </para>
-    </listitem>
-    </varlistentry>
-
     <varlistentry>
     <term>
     <option>SET_FOCUS, boolean, False</option>
     </term>
     <listitem>
-    <para> IF True and <command>rts2af</command> yields a valid focuser
-position it is set if TAKE_DATA==True.
+    <para> IF True and <command>rts2af</command> yields a valid fitted focuser
+position this value is set.
     </para>
     </listitem>
     </varlistentry>
 
     <varlistentry>
     <term>
-    <option>SET_LIMITS_ON_FILTER_FOCUS, boolean, True</option>
-    </term>
-    <listitem>
-    <para>If True the resulting fit is performed limited on the interval
-defined in filter properties. This behavior is default in online mode. 
-    </para>
-    </listitem>
-    </varlistentry>
-
-    <varlistentry>
-    <term>
-    <option>SET_LIMITS_ON_SANITY_CHECKS, boolean, True</option>
-    </term>
-    <listitem>
-    <para>If True the resulting fit is performed symmetrical to the data
-extremum and not on the whole FOC_POS interval found in all fits files. Currently
-the fit depends on the interval limits because the data does "not behave
-well". E.g. the values of FWHM_IMAGE drop for images taken far from data extremum.
-    </para>
-    </listitem>
-    </varlistentry>
-
-     <varlistentry>
-    <term>
-    <option>SEXCATALOGUE, base file name, "/tmp/sex-autofocus.cat"</option>
-    </term>
-    <listitem>
-    <para>This is SExtractor`s catalog file.
-    </para>
-    </listitem>
-    </varlistentry>
-
-    <varlistentry>
-    <term>
-    <option>SEXCFG, file name, "/etc/rts2/autofocus/sex-autofocus.cfg"</option>
+    <option>SEXCFG, file name, "/etc/rts2/rts2af/rts2af-sex.cfg"</option>
     </term>
     <listitem>
     <para>The SExtractor configuration file.
     </para>
      <para> If a relative path is specified it is relative to BASE_DIRECTORY.
      </para>
-
     </listitem>
     </varlistentry>
 
     <varlistentry>
     <term>
-    <option>SEXPARAM, file name, "/etc/rts2/autofocus/sex-autofocus.param"</option>
+    <option>SEXPARAM, file name, "/etc/rts2/rts2af/rts2af-sex.param"</option>
     </term>
     <listitem>
     <para>The SExtractor parameter file for image analysis. This file
@@ -688,7 +583,7 @@ NUMBER_ASSOC.
 
     <varlistentry>
     <term>
-    <option>SEXREFERENCE_PARAM, file name, "/etc/rts2/autofocus/sex-autofocus-reference.param"</option>
+    <option>SEXREFERENCE_PARAM, file name, "/etc/rts2/rts2af/rts2af-sex-reference.param"</option>
     </term>
     <listitem>
     <para>The SExtractor parameter file for image analysis. 
@@ -701,23 +596,10 @@ NUMBER_ASSOC.
 
      <varlistentry>
     <term>
-    <option>SEXSKY_LIST, base file name, "/tmp/sex-autofocus-assoc-sky.list"</option>
+    <option>SEXSKY_LIST, base file name, "/tmp/sex-rts2af-assoc-sky.list"</option>
     </term>
     <listitem>
-    <para>This is SExtractor`s reference catalog. Depending on the setting of
-AUTO_FOCUS it is either created near
-%filter_focus_properties{filter}[IND_FOC_DEF] or at a position found during
-current analysis based in the maximum of objects detected.
-    </para>
-    </listitem>
-    </varlistentry>
-    <varlistentry>
-    <term>
-    <option>SEX_TMP_CATALOGUE, file name"/tmp/sex-autofocus-tmp.cat"</option>
-    </term>
-    <listitem>
-    <para> If True <command>rts2af</command> takes data, this is the
-    online mode and if False it analyses data in offline mode.
+    <para>This is SExtractor`s reference catalog.
     </para>
     </listitem>
     </varlistentry>
@@ -733,17 +615,7 @@ current analysis based in the maximum of objects detected.
 
       <varlistentry>
 	<term>
-      <option>VARIABLE_FOCUSER_STEPS, boolean, to be defined</option>
-          </term>
-	<listitem>
-	  <para> ToDo: planned feature not yet there.
-          </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-	<term>
-      <option>VARIABLE_FOCUSER_STEPS, boolean, to be defined</option>
+      <option>ToDo: VARIABLE_FOCUSER_STEPS, boolean, to be defined</option>
           </term>
 	<listitem>
 	  <para> ToDo: planned feature not yet there.
@@ -756,6 +628,7 @@ current analysis based in the maximum of objects detected.
       <option>VARIABLE_EXPOSURE_TIME, boolean, True</option>
           </term>
 	<listitem>
+	  <para> Currently a linear model is used (no choice yet)</para>
 	  <para> If True the exposure time depend on relative focus position.
           </para>
 	</listitem>
@@ -765,17 +638,17 @@ current analysis based in the maximum of objects detected.
     <title>Hints</title>
 <para>
 A focus run may fail due to various reasons. The more images
-are taken, specially far off the extrema, the fewer objects
+are taken, specially far off the extreme, the fewer objects
 are present on all images. Although a sensible result can be
 obtained with a single object it is recommended to have a reasonable
 number spread over the whole image. 
-Choose narrower lower and upper limits around the extrema. 
+Choose narrower lower and upper limits around the extreme. 
 One can define sensible limits visually inspecting the DS9 region files (see option DS9_REGION_FILE).
 </para>
 <para>
 If a star field is crowded that means many pairs of stars are within
 OBJECT_SEPARATION it may happen that only one object survives the cleaning
-process. Try to reduce OBJECT_SEPARATION and narrow (ANALYSIS_LOWER_LIMIT,ANALYSIS_UPPER_LIMIT)
+process. Try to reduce OBJECT_SEPARATION 
 to avoid overlaps of star images. If it still fails use
 CLEANUP_REFERENCE_CATALOGUE = False - but inspect then the images visually to
 gain confidence. 
@@ -904,9 +777,9 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
     </para>
   </refsect1>
   <refsect1>
-    <title>Installation</title>
+    <title>Installation and Testing</title>
     <para>
-      Please contact the author.
+      See file rts2/scripts/rts2af/README
     </para>
   </refsect1>
   <refsect1>
