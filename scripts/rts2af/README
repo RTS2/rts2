@@ -15,7 +15,6 @@ Assuming you did the the following RTS2 svn checkout
   cd ~
   svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
 
-
   Environment PATH and PYTHONPATH
   -------------------------------
   vi ~/.bashrc
@@ -63,7 +62,7 @@ Testing offline, e.g. daytime
   --------------------------
   run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files
 
-  Step2: run_rts2af_analysis.sh
+  Step 2: run_rts2af_analysis.sh
   -----------------------------
   run_rts2af_analysis.sh tests rts2af_analysis.py, sextractor and rts2af_fits.py and performs 
   the whole analysis with real images. The sextractor configuration files must be in place 
@@ -78,23 +77,78 @@ Testing offline, e.g. daytime
   run_rts2af_offline.sh tests rts2af_offline.py.
   
 
-Testing through RTS2, during state ON, nighttime
-------------------------------------------------
+Testing through RTS2, state ON, night- and daytime
+--------------------------------------------------
   Preparation
   -----------
   After all offline tests ended successfully then you can continue with online testing.
   You need to define at the time you observe at least one visible target (e.g. with tar_id 2000) in the postgres DB.
   Then:
 
-  Test
-  ----
+  Test at nighttime, clear sky
+  ---------------------------
   rts2-mon
   SEL -> selector_enabled=false
-  (EXEC -> ignore_day=true      # during daytime, only a minimal part of rts2af_acquire.py functionality can be verified)
+  EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
+                                # rts2af_feedback_acquire.py below 
   EXEC -> enabled=false
   EXEC -> auto_loop=false       # you restart the process if necessary
   F4-> yes                      # bring rts2-centrald in state ON (might not be necessary)
 
   EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
-                                # (see rts2.ini) finished the continue
+                                # (see rts2.ini) finished then continue
   EXEC -> now 5                 # tar_id 5 has been defined in the previous step and does not change target location.
+
+
+  Test during daytime
+  -------------------
+  Before you execute the above commands currently you have to edit rts2af_acquire.py.
+  Change lines
+    # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
+    #cmd= [ 'rts2af_feedback_acquire.py']
+    # if Popen(...shell=True:
+    # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
+    cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
+  to
+    # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
+    cmd= [ 'rts2af_feedback_acquire.py']
+    # if Popen(...shell=True:
+    # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
+    #cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
+
+
+Files in directory rts2/scripts/rts2af
+--------------------------------------
+
+  Documentation
+  -------------
+  README       This file.
+
+  Regular scripts
+  ---------------
+  rts2af_fwhm.py           called by imgp_analysis.py after image has been stored on disk
+  rts2af_acquire.py        defined as script for target with tar_id 5 (OnTargetFocus)
+
+  rts2af_offline.py        performs offline analysis on a sets of focus images       
+
+  Helper scripts
+  --------------
+  rts2af-queue                    called by rts2af_fwhm.py in case a focus run is necessary
+  rts2af_analysis.py              performs focuser image analysis 
+  rts2af_fit.py                   fits resulting data 
+  rts2af_print_exposure_times.py  calculates the exposure times based on the actual configuration
+
+  Test scripts
+  ------------
+  rts2af_feed_acquire.py      simulates EXEC and calls rts2af_acquire.py
+  rts2af_feedback_acquire.py  can be used in absence of real (sky) images
+
+  Library
+  -------
+  rts2af.py               
+
+  Not yet of general interest
+  --------------------------            
+  rts2af_fwhm_model.py     
+  rts2af_model_extract.py    analyzes huge sets of focus images in order to     
+  rts2af_model_analyze.py    create a temperature dependency for online position correction
