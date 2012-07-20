@@ -1,0 +1,95 @@
+Installation and testing of rts2af autofocuser
+==============================================
+2012-07-20, Markus Wildi, wildi.markus@bluewin.ch
+
+
+Installation
+------------
+Assuming you did the the following RTS2 svn checkout
+
+  cd ~
+  svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
+
+
+  Environment PATH and PYTHONPATH
+  -------------------------------
+  vi ~/.bashrc
+
+  insert:
+
+  export PATH=$PATH:/your/home/rts2/scripts:/home/wildi/rts2/scripts/rts2af
+  export PYTHONPATH=/your/home/rts2/scripts:/your/home/rts2/scripts/rts2af:$PYTHONPATH
+
+  source ~/.bashrc
+
+  Configuration files
+  -------------------
+  
+  sudo mkdir -p /etc/rts2/rts2af/sex
+  cd ~/rts2/conf/rts2af
+  cp -a * /etc/rts2/rts2af/
+
+  Edit in /etc/rts2/rts2af/rts2af-acquire.cfg all entries beginning with YOUR_* .
+  
+  Postgres DB tables target and scripts entries
+  ---------------------------------------------
+
+  psql --user YOUR_USERNAME YOUR_DB # (see /etc/rts2/rts2.ini)
+  insert into targets values ('5', 'o', 'OnTargetFocus', null, null, 'this target does not change the RA/DEC values', 't', '1');
+  insert into scripts values ('5', 'YOUR_CAMERA_NAME', '/YOUR/HOME/rts2/scripts/rts2af/rts2af_acquire.py'); #(see /etc/rts2/devices)
+
+
+Testing offline, e.g. daytime
+-----------------------------
+
+  Test scripts and image data are provided:
+
+  sudo chgrp YOUR_GROUP /var/log/rts2-debug
+  cd ~
+  wget http://azug.minpet.unibas.ch/~wildi/rts2af-test-2012-07-20.tgz
+  tar zxvf rts2af-test-2012-07-20.tgz
+  cd rts2af-test
+
+  Execute the scripts beginning with run_* . A minimal help text
+  is printed on terminal, mainly saying where the log files are
+  stored.
+
+  Step 1: run_rts2af_fits.sh
+  --------------------------
+  run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files
+
+  Step2: run_rts2af_analysis.sh
+  -----------------------------
+  run_rts2af_analysis.sh tests rts2af_analysis.py, sextractor and rts2af_fits.py and performs 
+  the whole analysis with real images. The sextractor configuration files must be in place 
+  (normally in /etc/rts2/rts2af/sex).
+
+  Step 3: run_rts2af_feed_acquire.sh
+  ----------------------------------
+  run_rts2af_feed_acquire.sh tests the whole chain and pretends being EXEC.
+
+  Step 4: run_rts2af_offline.sh
+  -----------------------------
+  run_rts2af_offline.sh tests rts2af_offline.py.
+  
+
+Testing through RTS2, during state ON, nighttime
+------------------------------------------------
+  Preparation
+  -----------
+  After all offline tests ended successfully then you can continue with online testing.
+  You need to define at the time you observe at least one visible target (e.g. with tar_id 2000) in the postgres DB.
+  Then:
+
+  Test
+  ----
+  rts2-mon
+  SEL -> selector_enabled=false
+  (EXEC -> ignore_day=true      # during daytime, only a minimal part of rts2af_acquire.py functionality can be verified)
+  EXEC -> enabled=false
+  EXEC -> auto_loop=false       # you restart the process if necessary
+  F4-> yes                      # bring rts2-centrald in state ON (might not be necessary)
+
+  EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
+                                # (see rts2.ini) finished the continue
+  EXEC -> now 5                 # tar_id 5 has been defined in the previous step and does not change target location.
