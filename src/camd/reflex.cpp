@@ -225,6 +225,8 @@ class Reflex:public Camera
 		 */
 		int parameterIndex (const std::string pname);
 
+		void defaultParameters ();
+
 		// compile program
 		void compile ();
 
@@ -361,7 +363,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 		std::ostringstream name, desc;
 		name << "sys.tp" << i;
 		desc << "20-bit value for timing core parameter " << i;
-		createRegister (0x10000001 + i, name.str ().c_str (), desc.str ().c_str (), true, true, true);
+		createRegister (0x10000001 + i, name.str ().c_str (), desc.str ().c_str (), true, true, false);
 	}
 
 	configFile = NULL;
@@ -528,6 +530,8 @@ int Reflex::initHardware ()
 
 	reloadConfig ();
 
+	defaultParameters ();
+
 	return 0;
 }
 
@@ -598,6 +602,11 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 
 RRegister * Reflex::createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa)
 {
+	if (registers.find (address) != registers.end ())
+	{
+		logStream (MESSAGE_ERROR) << "register with address " << std::hex << address << " already created! " << name << sendLog;
+		exit (1);
+	}
 	RRegister *regval;
 	int32_t flags = (writable ? RTS2_VALUE_WRITABLE : 0) | (hexa ? RTS2_DT_HEX : 0);
 	createValue (regval, name, desc, true, flags);
@@ -1059,7 +1068,7 @@ void Reflex::parseParameters ()
 	parameters.clear ();
 	int pcount;
 	if (config->getInteger ("TIMING", "PARAMETERS", pcount) || pcount < 0) 
-		throw rts2core::Error ("cannot get number of paramter lines (TIMING/PARAMETERS");
+		throw rts2core::Error ("cannot get number of parameter lines (TIMING/PARAMETERS");
 	for (int l = 0; l < pcount; l++)
 	{
 		std::string line;
@@ -1078,6 +1087,7 @@ void Reflex::parseParameters ()
 		if (nextChar (line) != '=')
 			throw rts2core::Error ("Parameters must be of the form NAME = VALUE");
 		std::string pname = token;
+		line = line.substr (1);
 		getToken (line, token);
 		char *endptr;
 		uint32_t value = strtol (token.c_str (), &endptr,0);
@@ -1098,6 +1108,20 @@ int Reflex::parameterIndex (const std::string pname)
 		ret++;
 	}
 	return -1;
+}
+
+void Reflex::defaultParameters ()
+{
+	int i = 0;
+	for (std::vector <std::pair <std::string, uint32_t> >::iterator iter = parameters.begin (); iter != parameters.end (); i++, iter++)
+	{
+		std::ostringstream name;
+		name << "sys.tp" << i;
+		rts2core::Value *v = getOwnValue (name.str ().c_str ());
+		v->setValueInteger (iter->second);
+		sendValueAll (v);
+		writeRegister (0x10000001 + i, iter->second);
+	}
 }
 
 // compile program
@@ -1473,7 +1497,7 @@ void Reflex::createBoards ()
 				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
 				// control registers
-				ba = 0x10000000 | ((bt - POWER) < 16);
+				ba = 0x10000000 | ((bt - POWER) << 16);
 				createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, false, false);
 				createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, false, false);
 
