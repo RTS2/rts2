@@ -24,6 +24,8 @@
 #include "valuearray.h"
 #include "iniparser.h"
 
+#define OPT_DRY           OPT_LOCAL + 1
+
 // only constants; class is kept in reflex.cpp
 #include "reflex.h"
 
@@ -166,6 +168,9 @@ class Reflex:public Camera
 		virtual int endReadout ();
 
 	private:
+		// if true, don't write anything
+		bool dry_run;
+
 		/**
 		 * Register map. Index is register address.
 		 */
@@ -189,7 +194,7 @@ class Reflex:public Camera
 		int CLFlush ();
 
 		int CLCommand (const char *cmd, std::string &response, int timeout, bool log);
-		int interfaceCommand (const char *cmd, std::string &response, int timeout, bool log = true);
+		int interfaceCommand (const char *cmd, std::string &response, int timeout, bool action, bool log = true);
 
 		/**
 		 * Access refelex registers.
@@ -282,6 +287,7 @@ RStates::iterator RStates::findName (std::string sname)
 Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	CLHandle = NULL;
+	dry_run = false;
 
 	createExpType ();
 
@@ -357,7 +363,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createRegister (0x00000033, "int.daughter7_flags", "Daughter 7 feature flags", false, false, true);
 	createRegister (0x00000034, "int.daughter8_flags", "Daughter 8 feature flags", false, false, true);
 
-	createRegister (0x10000000, "sys.timing_lines", "Number of lines of timining data", true, true, false);
+	createRegister (SYSTEM_CONTROL_ADDR, "sys.timing_lines", "Number of lines of timining data", true, true, false);
 	for (int i = 0; i < 64; i++)
 	{
 		std::ostringstream name, desc;
@@ -370,6 +376,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	config = NULL;
 
 	addOption ('c', NULL, 1, "configuration file (.rcf)");
+	addOption (OPT_DRY, "dry-run", 0, "don't perform any writes or commands");
 }
 
 Reflex::~Reflex (void)
@@ -484,6 +491,9 @@ int Reflex::processOption (int in_opt)
 		case 'c':
 			configFile = optarg;
 			break;
+		case OPT_DRY:
+			dry_run = true;
+			break;
 		default:
 			return Camera::processOption (in_opt);
 	}
@@ -502,11 +512,11 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 			{
 				// special registers first
 				case 0x00000004:
-					ret = interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000) ? -2 : 0;
+					ret = interfaceCommand ((new_value->getValueInteger () > 0 ? ">P1\r" : ">P0\r"), s, 5000, true) ? -2 : 0;
 					if (ret)
 						return -2;
 					info ();
-					return interfaceCommand (">TS\r", s, 5000) ? -2 : 0;
+					return interfaceCommand (">TS\r", s, 5000, true) ? -2 : 0;
 				default:	
 					return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
 			}
@@ -571,31 +581,31 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return interfaceCommand (">WARMBOOT\r", s, 100);
+		return interfaceCommand (">WARMBOOT\r", s, 100, true);
 	}
 	else if (conn->isCommand ("reboot"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return interfaceCommand (">REBOOT\r", s, 5000);
+		return interfaceCommand (">REBOOT\r", s, 5000, true);
 	}
 	else if (conn->isCommand ("standby"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return interfaceCommand (">STANDBY\r", s, 5000);
+		return interfaceCommand (">STANDBY\r", s, 5000, true);
 	}
 	else if (conn->isCommand ("resume"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return interfaceCommand (">RESUME\r", s, 5000);
+		return interfaceCommand (">RESUME\r", s, 5000, true);
 	}
 	else if (conn->isCommand ("clear"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return interfaceCommand (">E\r", s, 100);
+		return interfaceCommand (">E\r", s, 100, true);
 	}
 	return Camera::commandAuthorized (conn);
 }
@@ -799,8 +809,13 @@ int Reflex::CLCommand (const char *cmd, std::string &response, int timeout, bool
 	return 0;
 }
 
-int Reflex::interfaceCommand (const char *cmd, std::string &response, int timeout, bool log)
+int Reflex::interfaceCommand (const char *cmd, std::string &response, int timeout, bool action, bool log)
 {
+	if (action && dry_run)
+	{
+		logStream (MESSAGE_DEBUG) << "would send " << cmd << sendLog;
+		return 0;
+	}
 	return CLCommand (cmd, response, timeout, log);
 }
 
@@ -810,7 +825,7 @@ int Reflex::readRegister(unsigned addr, unsigned& data)
 	std::string ret;
 
 	snprintf(s, 100, ">R%08X\r", addr);
-	if (interfaceCommand (s, ret, 100, getDebug ()))
+	if (interfaceCommand (s, ret, 100, false, getDebug ()))
 		return -1;
 	if (ret.length() != 9)
 		return 1;
@@ -828,7 +843,7 @@ int Reflex::writeRegister(unsigned addr, unsigned data)
 	std::string ret;
 
 	snprintf (s, 100, ">W%08X%08X\r", addr, data);
-	if (interfaceCommand (s, ret, 100))
+	if (interfaceCommand (s, ret, 100, true))
 		return -1;
 	return 0;
 }
@@ -888,7 +903,7 @@ void Reflex::reloadConfig ()
 	loadTiming ();
 
 	std::string s;
-	if (interfaceCommand (">A\r", s, 5000))
+	if (interfaceCommand (">A\r", s, 5000, true))
 		throw rts2core::Error ("Failed to configure all after loading timing");
 
 	rereadAllRegisters ();
@@ -1112,15 +1127,14 @@ int Reflex::parameterIndex (const std::string pname)
 
 void Reflex::defaultParameters ()
 {
-	int i = 0;
+	int i = 1;
 	for (std::vector <std::pair <std::string, uint32_t> >::iterator iter = parameters.begin (); iter != parameters.end (); i++, iter++)
 	{
 		std::ostringstream name;
-		name << "sys.tp" << i;
-		rts2core::Value *v = getOwnValue (name.str ().c_str ());
+		rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + i];
 		v->setValueInteger (iter->second);
 		sendValueAll (v);
-		writeRegister (0x10000001 + i, iter->second);
+		writeRegister (SYSTEM_CONTROL_ADDR + i, iter->second);
 	}
 }
 
@@ -1363,18 +1377,18 @@ void Reflex::compile ()
 void Reflex::loadTiming ()
 {
 	std::string s;
-	if (interfaceCommand (">TA000\r", s, 100))
+	if (interfaceCommand (">TA000\r", s, 100, true))
 		throw rts2core::Error ("Error seting timing load address");
 	writeRegister (SYSTEM_CONTROL_ADDR, code.size ());
 	for (std::vector <std::string>::iterator iter = code.begin (); iter != code.end (); iter++)
 	{
 		std::ostringstream os;
 		os << ">T" << *iter << '\r';
-		if (interfaceCommand (os.str ().c_str (), s, 100))
+		if (interfaceCommand (os.str ().c_str (), s, 100, true))
 			throw rts2core::Error ("Error loading timing line");
 	}
 
-	if (interfaceCommand (">T\r", s, 3000))
+	if (interfaceCommand (">T\r", s, 3000, true))
 		throw rts2core::Error ("Error applying timing");
 }
 
@@ -1497,7 +1511,7 @@ void Reflex::createBoards ()
 				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
 				// control registers
-				ba = 0x10000000 | ((bt - POWER) << 16);
+				ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
 				createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, false, false);
 				createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, false, false);
 
@@ -1517,7 +1531,7 @@ void Reflex::createBoards ()
 				createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
 				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
-				ba = 0x10000000 | ((bt - POWER) << 16);
+				ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
 				createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, false, true);
 
 				for (i = 1; i < 13; i++)
@@ -1561,7 +1575,7 @@ void Reflex::createBoards ()
 					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
 				}
 
-				ba = 0x10000000 | ((bt - POWER) << 16);
+				ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
 				createRegister (ba++, (bn + "bias_enable").c_str (), "bit field identifing which biash channels to enable", true, false, true);
 
 				for (i = 1; i < 9; i++)
@@ -1625,7 +1639,7 @@ void Reflex::configSystem ()
 		throw rts2core::Error ("Unknown backplane type");
 
 //	// Disable polling to speed up configuration
-//	if (interfaceCommand(">L0\r", s, 100, false))
+//	if (interfaceCommand(">L0\r", s, 100, true, false))
 //		throw rts2core::Error ("Error disabling polling")
 
 	// Get target master clock frequency
@@ -2163,10 +2177,10 @@ void Reflex::configSystem ()
 
 
 	// Send configure system command
-	if (interfaceCommand (">C\r", s, 3000))
+	if (interfaceCommand (">C\r", s, 3000, true))
 		throw rts2core::Error ("Error configuring system");
 
-//	if (interfaceCommand(">L1\r", s, 100, false))
+//	if (interfaceCommand(">L1\r", s, 100, true, false))
 //		throw rts2core::Error ("Error enabling polling")
 }
 
@@ -2193,7 +2207,7 @@ void Reflex::configBoard (int board)
 	key = skey.c_str ();
 
 //	// Disable polling to speed up configuration
-//	if (interfaceCommand(">L0\r", s, 100, false))
+//	if (interfaceCommand(">L0\r", s, 100, true, false))
 //		throw rts2core::Error ("Error disabling polling");
 
 	// Bias board
@@ -2618,9 +2632,9 @@ void Reflex::configBoard (int board)
 	// Apply board configuration
 //	std::ostringstream cmd;
 //	cmd << ">B" << (BOARD_DAUGHTERS + board) << "\r";
-//	if (interfaceCommand(cmd.str ().c_str (), s, 3000))
+//	if (interfaceCommand(cmd.str ().c_str (), s, 3000, true))
 //			throw rts2core::Error ("Error configuring board");
-//	if (interfaceCommand(">L1\r", s, 100, false))
+//	if (interfaceCommand(">L1\r", s, 100, true, false))
 //		throw rts2core::Error ("Error enabling polling");
 }
 
@@ -2657,13 +2671,13 @@ void Reflex::configTEC ()
 		throw rts2core::Error ("Error setting TEC setpoint");
 
 	// Apply board configuration
-//	if (interfaceCommand(">B3", s, 3000))
+//	if (interfaceCommand(">B3", s, 3000, true))
 //		throw rts2core::Error ("Error configuring board");
 	// Apply TEC command twice to allow for some settling
 //	usleep(USEC_SEC / 2);
-//	if (interfaceCommand(">B3", s, 3000))
+//	if (interfaceCommand(">B3", s, 3000, true))
 //		throw rts2core::Error ("Error configuring board");
-//	if (interfaceCommand(">L1\r", s, 100, false))
+//	if (interfaceCommand(">L1\r", s, 100, true, false))
 //		throw rts2core::Error ("Error enabling polling");
 }
 
