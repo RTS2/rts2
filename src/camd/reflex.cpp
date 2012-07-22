@@ -364,13 +364,6 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createRegister (0x00000034, "int.daughter8_flags", "Daughter 8 feature flags", false, false, true);
 
 	createRegister (SYSTEM_CONTROL_ADDR, "sys.timing_lines", "Number of lines of timining data", true, true, false);
-	for (int i = 0; i < 64; i++)
-	{
-		std::ostringstream name, desc;
-		name << "sys.tp" << i;
-		desc << "20-bit value for timing core parameter " << i;
-		createRegister (0x10000001 + i, name.str ().c_str (), desc.str ().c_str (), true, true, false);
-	}
 
 	configFile = NULL;
 	config = NULL;
@@ -540,8 +533,6 @@ int Reflex::initHardware ()
 
 	reloadConfig ();
 
-	defaultParameters ();
-
 	return 0;
 }
 
@@ -607,6 +598,12 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return interfaceCommand (">E\r", s, 100, true);
 	}
+        else if (conn->isCommand ("apply_timing"))
+        {
+                if (!conn->paramEnd ())
+                        return -2;
+                return interfaceCommand (">T\r", s, 3000, true);
+        }
 	return Camera::commandAuthorized (conn);
 }
 
@@ -1130,7 +1127,14 @@ void Reflex::defaultParameters ()
 	int i = 1;
 	for (std::vector <std::pair <std::string, uint32_t> >::iterator iter = parameters.begin (); iter != parameters.end (); i++, iter++)
 	{
-		std::ostringstream name;
+		if (registers.find (SYSTEM_CONTROL_ADDR + i) == registers.end ())
+		{
+			std::ostringstream name, desc;
+			name << "sys." << iter->first;
+			desc << "20-bit value for timing core parameter " << i;
+			createRegister (SYSTEM_CONTROL_ADDR + i, name.str ().c_str (), desc.str ().c_str (), true, true, false);
+		}
+
 		rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + i];
 		v->setValueInteger (iter->second);
 		sendValueAll (v);
@@ -1387,6 +1391,8 @@ void Reflex::loadTiming ()
 		if (interfaceCommand (os.str ().c_str (), s, 100, true))
 			throw rts2core::Error ("Error loading timing line");
 	}
+
+	defaultParameters ();
 
 	if (interfaceCommand (">T\r", s, 3000, true))
 		throw rts2core::Error ("Error applying timing");
