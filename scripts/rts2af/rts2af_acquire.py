@@ -82,6 +82,7 @@ class Acquire(rts2af.AFScript):
         self.lowerLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
         self.upperLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
         self.speed= self.runTimeConfig.value('FOCUSER_SPEED')
+        self.stepSize= self.runTimeConfig.value('FOCUSER_STEP_SIZE') # ToDo for SCT focusers? (bright star image shift during daytime)
         self.setFocDefFwhmUpperLimit= self.runTimeConfig.value('SET_FOC_DEF_FWHM_UPPER_THRESHOLD')
         # ToDo: read the runtime configuration of rts2-focusd-flitc not ours!
         self.temperatureCompensation= self.runTimeConfig.value('FOCUSER_TEMPERATURE_COMPENSATION')
@@ -427,11 +428,11 @@ class Acquire(rts2af.AFScript):
             try:
                 analysis[filter.name] = subprocess.Popen( cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             except:
-                r2c.log('E','rts2af_acquire: exiting, could not start: {0}, filter: {1}, position: {2}, exposure: {3}'.format( cmd, filter.name, filter.OffsetToClearPath, filter.exposure))
+                r2c.log('E','rts2af_acquire: exiting, could not start: {0}, filter: {1}, position: {2}'.format( cmd, filter.name, filter.OffsetToClearPath))
                 sys.exit(1)
 
             # create the reference catalogue
-            if( not self.acquireImage( focDef, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'reference')): # exposure depends on position
+            if( not self.acquireImage( focDef, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'reference')):
                 msg= analysis[filter.name].stdout.readline()
                 r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg))
                 r2c.log('I','rts2af_acquire: continue with next filter')
@@ -446,8 +447,10 @@ class Acquire(rts2af.AFScript):
                     r2c.log('I','rts2af_acquire: continue with next filter')
                     continue # something went wrong                                                                                                  
             if(self.test):
+                offset= range(-1000, 1000, 80) # fake to calculate som exposure times
                 while( True):
-                    r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, exposure: {2}'.format(focDef, filter.OffsetToClearPath, self.base_exposure * filter.exposureFactor))
+                    focPos= offset.pop()
+                    r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, fake exposure: {2}'.format( filter.name, focPos, exposure))
                     filterExposureTime += self.base_exposure * filter.exposureFactor
                     if( not self.acquireImage( focDef, filter.OffsetToClearPath, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], None)):
                         break # exhausted
@@ -464,8 +467,7 @@ class Acquire(rts2af.AFScript):
             else:
                 # loop over the focuser steps
                 for setting in filter.settings:
-                    #if(( abs(setting.offset) < 410) or ( abs(setting.offset)==720)): # to reduce the time, ToDo: a true general solution
-                    exposure=  telescope.linearExposureTimeAtFocPos(setting.exposure, setting.offset)
+                    exposure=  telescope.linearExposureTimeAtFocPos(setting.exposure, setting.offset) # exposure depends on position
                     r2c.log('I','rts2af_acquire: filter: {0}, offset: {1}, exposure: {2}, true exposure: {3}'.format(filter.name, setting.offset, setting.exposure, exposure))
                     filterExposureTime += exposure
                     if( not self.acquireImage( focDef, setting.offset, exposure, filter, analysis[filter.name], None)):
@@ -481,7 +483,7 @@ class Acquire(rts2af.AFScript):
                             fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
                             if( fwhm_foc_pos_fit):
                                 # take a proof
-                                if( self.acquireImage( fwhm_foc_pos_fit, 0, filter.exposure, filter, analysis[filter.name], 'proof')):
+                                if( self.acquireImage( fwhm_foc_pos_fit, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'proof')):
                                     r2c.log('I','rts2af_acquire: proof taken at FOC_POS:{0}'.format(fwhm_foc_pos_fit))
                                 else:
                                     r2c.log('I','rts2af_acquire: could not take a proof at FOC_POS:{0}'.format(fwhm_foc_pos_fit))
