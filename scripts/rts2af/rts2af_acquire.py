@@ -449,10 +449,11 @@ class Acquire(rts2af.AFScript):
             if(self.test):
                 offset= range(-1000, 1000, 80) # fake to calculate som exposure times
                 while( True):
-                    focPos= offset.pop()
-                    r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, fake exposure: {2}'.format( filter.name, focPos, exposure))
+                    focToff= offset.pop()
+                    exposure=  telescope.linearExposureTimeAtFocPos(self.base_exposure * filter.exposureFactor, focToff * self.stepSize) # 
+                    r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, fake exposure: {2}'.format( filter.name, focToff, exposure))
                     filterExposureTime += self.base_exposure * filter.exposureFactor
-                    if( not self.acquireImage( focDef, filter.OffsetToClearPath, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], None)):
+                    if( not self.acquireImage( focDef, focToff, exposure, filter, analysis[filter.name], None)):
                         break # exhausted
 
                 r2c.log('I','rts2af_acquire: focuser exposures finished for filter: {0}'.format(filter.name))
