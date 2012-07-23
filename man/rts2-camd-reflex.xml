@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2012-07-23</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-camd-reflex">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2012</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &legal;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>RTS2's STA's Reflex camera driver documentation.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      &basicapp;
+      <arg choice="opt">
+	<arg choice="plain"><option>-c <replaceable>reflex configuration file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--dry-run</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+       This manual page describes RTS2 driver for STA Reflex controller. It
+       provides list of driver options and discuss driver operation.
+    </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>Options</title>
+    <variablelist>
+      &basicapplist;
+      <varlistentry>
+        <term><option>-c <replaceable class="parameter">reflex configuration file</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specified filename of the Reflex configuration file. Reflex
+	    configuration is a file in <emphasis>.ini</emphasis> format, which
+	    contains entries and parameters described in STA manual. Please see
+	    <ulink url="http://www.sta-inc.net/reflex/"><citetitle>STA Reflex
+	    homepage</citetitle></ulink> for details.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--dry-run</option></term>
+	<listitem>
+	  <para>
+	    Do not perform any actions which changes controller behaviours.
+	    Allow driver to only read registers. All register write and other
+	    commands will be only logged through RTS2 logging system.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Required configuration parameters</title>
+    <para>
+      For succesfull operation, RTS2 driver <emphasis>requires</emphasis> the
+      configuration file to provide following parameters. Those are used to configure 
+      controller for exposure and start a single exposure.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>LCLK</term>
+	<para>
+	  Logical clock. If set to 1, a single exposure will be taken.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>ROWSKIP, ROWREAD and ROWOVER</term>
+	<para>
+	  Describes vertical parameters of the region of interest (CCD window).
+	  <emphasis>ROWSKIP</emphasis> specifies how many rows should be
+	  skipped before readout begins. <emphasis>ROWREAD</emphasis> specifies
+	  how many rows should be read, and <emphasis>ROWOVER</emphasis> specifies
+	  how many rows will be skipped at the end of readout.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>PIXSKIP, PIXREAD and PIXOVER</term>
+      </varlistentry>
+      <varlistentry>
+        <term>EXPO</term>
+      </varlistentry>
+      <varlistentry>
+        <term>EXPTIME</term>
+      </varlistentry>
+      <varlistentry>
+        <term>LIGHT</term>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-device</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-camd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <ulink url="http://www.sta-inc.net/wp-content/uploads/2011/04/Reflex.pdf">
+        <citetitle>STA Reflex manual</citetitle>
+      </ulink>
+    </para>
+
+  </refsect1>
+</refentry>
