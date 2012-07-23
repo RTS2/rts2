@@ -438,21 +438,21 @@ class Acquire(rts2af.AFScript):
                 r2c.log('I','rts2af_acquire: continue with next filter')
                 continue # something went wrong
 
-            else:
-                filterExposureTime += self.base_exposure * filter.exposureFactor
-                msgRaw= analysis[filter.name].stdout.readline()
-                msg= re.split('\n', msgRaw)
-                r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg[0]))
-                if( msg[0] == 'FOCUS: -1'):  # check creation of reference catalogue
-                    r2c.log('I','rts2af_acquire: continue with next filter')
-                    continue # something went wrong                                                                                                  
+            filterExposureTime += self.base_exposure * filter.exposureFactor
+            msgRaw= analysis[filter.name].stdout.readline()
+            msg= re.split('\n', msgRaw)
+            r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg[0]))
+            if( msg[0] == 'FOCUS: -1'):  # check creation of reference catalogue
+                r2c.log('I','rts2af_acquire: continue with next filter')
+                continue # something went wrong                                                                                                  
+
             if(self.test):
                 offset= range(-1000, 1000, 80) # fake to calculate som exposure times
                 while( True):
                     focToff= offset.pop()
                     exposure=  telescope.linearExposureTimeAtFocPos(self.base_exposure * filter.exposureFactor, focToff * self.stepSize) # 
                     r2c.log('I','rts2af_acquire: being in test mode, filter: {0}, offset: {1}, fake exposure: {2}'.format( filter.name, focToff, exposure))
-                    filterExposureTime += self.base_exposure * filter.exposureFactor
+                    filterExposureTime += exposure
                     if( not self.acquireImage( focDef, focToff, exposure, filter, analysis[filter.name], None)):
                         break # exhausted
 
@@ -468,7 +468,7 @@ class Acquire(rts2af.AFScript):
             else:
                 # loop over the focuser steps
                 for setting in filter.settings:
-                    exposure=  telescope.linearExposureTimeAtFocPos(setting.exposure, setting.offset) # exposure depends on position
+                    exposure=  telescope.linearExposureTimeAtFocPos(self.base_exposure * filter.exposureFactor, setting.offset) # exposure depends on position
                     r2c.log('I','rts2af_acquire: filter: {0}, offset: {1}, exposure: {2}, true exposure: {3}'.format(filter.name, setting.offset, setting.exposure, exposure))
                     filterExposureTime += exposure
                     if( not self.acquireImage( focDef, setting.offset, exposure, filter, analysis[filter.name], None)):
