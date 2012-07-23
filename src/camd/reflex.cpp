@@ -50,6 +50,23 @@
 #define CL_BAUDRATE_460800                      460800
 #define CL_BAUDRATE_921600                      921600
 
+// parameters expected at Reflex configuration file.
+// please see man rts2-camd-reflex for details.
+#define pLCLK          "LCLK"
+#define pNCLEAR        "NCLEAR"
+
+#define pROWSKIP       "ROWSKIP"
+#define pROWREAD       "ROWREAD"
+#define pROWOVER       "ROWOVER"
+
+#define pPIXSKIP       "PIXSKIP"
+#define pPIXREAD       "PIXREAD"
+#define pPIXOVER       "PIXOVER"
+
+#define pEXPO          "EXPO"
+#define pEXPTIME       "EXPTIME"
+#define pLIGHT         "LIGHT"
+
 const int NUM_RING_BUFFERS = 2;
 
 #else
@@ -62,6 +79,11 @@ const int NUM_RING_BUFFERS = 2;
 namespace rts2camd
 {
 
+typedef enum {
+	CONVERSION_NONE,	// no conversion
+	CONVERSION_mK 		// convert from mK to degC
+} conversion_t;
+
 /**
  * Register class. Holds register address in Reflex controller.
  */
@@ -72,24 +94,27 @@ class RRegister:public rts2core::ValueInteger
 		{
 			reflex_addr = 0;
 			info_update = false;
+			conv = CONVERSION_NONE;
 		}
 		RRegister (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0):rts2core::ValueInteger (in_val_name, in_description, writeToFits, flags)
 		{
 			reflex_addr = 0;
 			info_update = false;
+			conv = CONVERSION_NONE;
 		}
 
 		void setRegisterAddress (uint32_t addr) { reflex_addr = addr; }
 		void setInfoUpdate () { info_update = true; }
+		void setConversionType (conversion_t co) { conv = co; }
 
 		bool infoUpdate () { return info_update; }
-
 	private:
 		uint32_t reflex_addr;
 		/**
 		 * If value should be update on info call.
 		 */
 		bool info_update;
+		conversion_t conv;
 };
 
 /**
@@ -130,7 +155,7 @@ class RStates:public std::list <RState>
 
 /**
  * Main control class for STA Reflex controller. See
- * http://www.sta-inc.net/reflex for controller details
+ * http://www.sta-inc.net/reflex for controller details.
  *
  * @author Petr Kubanek <kubanek@fzu.cz>
  */
@@ -181,7 +206,7 @@ class Reflex:public Camera
 		 *
 		 * @return 
 		 */
-		RRegister * createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa);
+		RRegister * createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv = CONVERSION_NONE);
 
 		int openInterface (int port);
 		int closeInterface ();
@@ -199,8 +224,10 @@ class Reflex:public Camera
 		/**
 		 * Access refelex registers.
 		 */
-		int readRegister(uint32_t addr, uint32_t& data);
-		int writeRegister(uint32_t addr, uint32_t data);
+		int readRegister (uint32_t addr, uint32_t& data);
+		int writeRegister (uint32_t addr, uint32_t data);
+
+		void setParameter (const char *pname, uint32_t value);
 
 		/**
 		 * Update value of all registers in memory.
@@ -395,6 +422,54 @@ void Reflex::initBinnings ()
 
 int Reflex::startExposure ()
 {
+	int width, height;
+	
+	width = getUsedWidth ();
+	height = getUsedHeight ();
+
+#ifdef CL_EDT
+	int ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
+	// int ret = pdv_setsize (CLHandle, 1024, 1024);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
+		return -1;
+	}
+	ret = pdv_auto_set_roi (CLHandle);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "call to pdv_auto_set failed" << sendLog;
+		return -1;
+	}
+	pdv_flush_fifo (CLHandle);
+	//ret = pdv_multibuf (CLHandle, NUM_RING_BUFFERS);
+	pdv_set_buffers (CLHandle, 1, NULL);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "pdv_multibuf call failed" << sendLog;
+		return -1;
+	}
+	//pdv_start_images (CLHandle, NUM_RING_BUFFERS);
+#endif
+
+/*	setParameter (pEXPTIME, getExposure () * 1000);
+
+	setParameter (pROWSKIP, chipTopY ());
+	setParameter (pROWREAD, chipUsedReadout->getHeightInt ());
+	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ());
+
+	setParameter (pPIXSKIP, chipTopX ());
+	setParameter (pPIXREAD, chipUsedReadout->getWidthInt ());
+	setParameter (pPIXOVER, getWidth () - chipTopX () - chipUsedReadout->getWidthInt ());
+
+	setParameter (pLIGHT, getExpType () ? 0 : 1); */
+
+	setParameter (pEXPO, 1);
+	setParameter (pLCLK, 1);
+
+	std::string s;
+	interfaceCommand (">TP\r", s, 3000, true);
+
 	return 0;
 }
 
@@ -410,39 +485,29 @@ long Reflex::isExposing ()
 
 int Reflex::readoutStart ()
 {
-	int width, height;
-	
-	width = getUsedWidth ();
-	height = getUsedHeight ();
-
-#ifdef CL_EDT
-	int ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "call to pdv_setsize failed" << sendLog;
-		return -1;
-	}
-	ret = pdv_auto_set_roi (CLHandle);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "call to pdv_auto_set failed" << sendLog;
-		return -1;
-	}
-	ret = pdv_multibuf (CLHandle, NUM_RING_BUFFERS);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "pdv_multibuf call failed" << sendLog;
-		return -1;
-	}
-	pdv_start_images (CLHandle, NUM_RING_BUFFERS);
 	return Camera::readoutStart ();
-#endif
 }
 
 int Reflex::doReadout ()
 {
 #ifdef CL_EDT
+  	pdv_set_timeout (CLHandle, 30000);
+	int ta = pdv_timeouts (CLHandle);
+	pdv_start_image (CLHandle);
+
+  	std::cout << "entering wait" << std::endl;
 	unsigned char * buf = pdv_wait_image (CLHandle);
+	std::cout << "wait finished " << ((void *) buf) << std::endl;
+
+	int tb = pdv_timeouts (CLHandle);
+
+	updateReadoutSpeed (getReadoutPixels ());
+	if (ta < tb)
+	{
+		logStream (MESSAGE_ERROR) << "timeout during readout" << sendLog;
+		return -1;
+	}
+
 	int i,j;
 	int lw = getUsedWidth () * 2;
 	int dw = lw * channels->size ();
@@ -598,22 +663,29 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 			return -2;
 		return interfaceCommand (">E\r", s, 100, true);
 	}
-        else if (conn->isCommand ("apply_timing"))
+        else if (conn->isCommand ("configure_timing"))
         {
                 if (!conn->paramEnd ())
                         return -2;
                 return interfaceCommand (">T\r", s, 3000, true);
         }
+        else if (conn->isCommand ("load_timing"))
+        {
+                if (!conn->paramEnd ())
+                        return -2;
+                return interfaceCommand (">TP\r", s, 3000, true);
+        }
 	return Camera::commandAuthorized (conn);
 }
 
-RRegister * Reflex::createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa)
+RRegister * Reflex::createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv)
 {
 	if (registers.find (address) != registers.end ())
 	{
 		logStream (MESSAGE_ERROR) << "register with address " << std::hex << address << " already created! " << name << sendLog;
 		exit (1);
 	}
+
 	RRegister *regval;
 	int32_t flags = (writable ? RTS2_VALUE_WRITABLE : 0) | (hexa ? RTS2_DT_HEX : 0);
 	createValue (regval, name, desc, true, flags);
@@ -816,7 +888,7 @@ int Reflex::interfaceCommand (const char *cmd, std::string &response, int timeou
 	return CLCommand (cmd, response, timeout, log);
 }
 
-int Reflex::readRegister(unsigned addr, unsigned& data)
+int Reflex::readRegister (unsigned addr, unsigned& data)
 {
 	char s[100];
 	std::string ret;
@@ -834,7 +906,7 @@ int Reflex::readRegister(unsigned addr, unsigned& data)
 	return 0;
 }
 
-int Reflex::writeRegister(unsigned addr, unsigned data)
+int Reflex::writeRegister (unsigned addr, unsigned data)
 {
 	char s[100];
 	std::string ret;
@@ -843,6 +915,20 @@ int Reflex::writeRegister(unsigned addr, unsigned data)
 	if (interfaceCommand (s, ret, 100, true))
 		return -1;
 	return 0;
+}
+
+void Reflex::setParameter (const char *pname, uint32_t value)
+{
+	int pi = parameterIndex (pname);
+	if (pi < 0)
+		throw rts2core::Error (std::string ("cannot find parameter with name ") + pname);
+	if (writeRegister (SYSTEM_CONTROL_ADDR + 1 + pi, value) < 0)
+		throw rts2core::Error (std::string ("cannot set parameter ") + pname);
+
+	// propagate changed parameter
+	rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + 1 + pi];
+	v->setValueInteger (value);
+	sendValueAll (v);
 }
 
 void Reflex::rereadAllRegisters ()
@@ -2155,6 +2241,8 @@ void Reflex::configSystem ()
 
 		setNumChannels (ct);
 		// one channel size
+		taplength = 400;
+		i = 800;
 		setSize (taplength, i, 0, 0);
 
 		// Write number of idle CameraLink lines between frames
