@@ -93,7 +93,7 @@ class main(rts2af.AFScript):
 
         logging.info('rts2af_feedback_acquire.py: performing fake fit now: {0}'.format(referenceFitsFileName))
                          
-        minimumFocPos= 17020.0
+        minimumFocPos= 3020.0
         minimumFwhm= 3.5
         temperature= '17.2C'
         objects= 88

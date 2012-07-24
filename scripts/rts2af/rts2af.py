@@ -123,6 +123,8 @@ class Configuration:
         self.cp[('basic', 'FILE_GLOB')]= '*fits'
         self.cp[('basic', 'FITS_IN_BASE_DIRECTORY')]= False
         self.cp[('basic', 'DEFAULT_FOC_POS')]= 3500
+        # ToDo new, Docu
+        self.cp[('basic', 'TEST_ACQUIRE')]= False
         self.cp[('basic', 'DEFAULT_EXPOSURE')]= 10
         #                                        name
         #                                           offset to clear path
@@ -167,21 +169,14 @@ class Configuration:
         self.cp[('DS9', 'DS9_DISPLAY_ACCEPTANCE_AREA')]= True
         self.cp[('DS9', 'DS9_REGION_FILE')]= 'ds9-rts2af.reg'
         
-##        self.cp[('analysis', 'ANALYSIS_FOCUS_UPPER_LIMIT')]= 10000
-##        self.cp[('analysis', 'ANALYSIS_FOCUS_LOWER_LIMIT')]= 0
         self.cp[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.cp[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
-##        self.cp[('analysis', 'INCLUDE_AUTO_FOCUS_RUN')]= False
-##        self.cp[('analysis', 'SET_LIMITS_ON_SANITY_CHECKS')]= True
-##        self.cp[('analysis', 'SET_LIMITS_ON_FILTER_FOCUS')]= True
         self.cp[('analysis', 'FIT_RESULT_FILE')]= 'rts2af-fit.dat'
         self.cp[('analysis', 'MATCHED_RATIO')]= 0.1
         self.cp[('analysis', 'SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
         
         self.cp[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
         self.cp[('fitting', 'DISPLAYFIT')]= True
-##        self.cp[('fitting', 'ACCEPTABLE_CHI2')]= 80.
-##        self.cp[('fitting', 'WRITE_SUMMARY_FILE')]= False
         
         self.cp[('SExtractor', 'SEXPRG')]= 'sextractor 2>/dev/null'
         self.cp[('SExtractor', 'SEXCFG')]= '/etc/rts2/rts2af/sex/rts2af-sex.cfg'
@@ -191,8 +186,6 @@ class Configuration:
         self.cp[('SExtractor', 'ELLIPTICITY')]= .1
         self.cp[('SExtractor', 'ELLIPTICITY_REFERENCE')]= .3
         self.cp[('SExtractor', 'SEXSKY_LIST')]= 'sex-assoc-sky.list'
-##        self.cp[('SExtractor', 'SEXCATALOGUE')]= 'sex.cat'
-##        self.cp[('SExtractor', 'SEX_TMP_CATALOGUE')]= 'sex-tmp.cat'
         self.cp[('SExtractor', 'CLEANUP_REFERENCE_CATALOGUE')]= True
         # ToDo so far that is good for FLI CCD
         # These factors are used for the fitting
@@ -208,7 +201,7 @@ class Configuration:
         self.cp[('sky', 'SEEING')]= 27.e-6 # unit meter
 
         self.cp[('mode', 'SET_FOCUS')]= True
-        self.cp[('mode', 'SET_INIIAL_FOC_DEF')]= False
+        self.cp[('mode', 'SET_INITIAL_FOC_DEF')]= False
 
         # mapping of fits header elements to canonical
         self.cp[('fits header mapping', 'AMBIENTTEMPERATURE')]= 'HIERARCH MET_DAV.DOME_TMP'
@@ -228,16 +221,9 @@ class Configuration:
         self.cp[('queuing', 'TARGETID')] = '5'
         self.cp[('queuing', 'THRESHOLD')] = 5.12
 
-##        self.cp[('meteodb', 'METEODB_HOSTNAME')] = '192.168.2.67'
-##        self.cp[('meteodb', 'METEODB_USERNAME')] = 'miyo'
-##        self.cp[('meteodb', 'METEODB_PASSWORD')] = 'a00g2x'
-##        self.cp[('meteodb', 'METEODB')] = 'meteo'
-
-
         self.defaults={}
         for (section, identifier), value in sorted(self.cp.iteritems()):
             self.defaults[(identifier)]= value
-        #            print 'value ', self.defaults[(identifier)]
  
 
     def configurationFileName(self):
@@ -492,12 +478,6 @@ class CCD():
         self.windowWidth=windowWidth
         self.pixelSize= pixelSize
 
-class Setting():
-    """Class holding settings for a given position, offset and exposure time"""
-    def __init__(self, offset=0, exposureFactor=0):
-        self.offset= offset
-        self.exposureFactor = exposureFactor
-
 class Filter():
     """Class for filter properties"""
     # ToDo: clarify how  this class is used
@@ -508,9 +488,7 @@ class Filter():
         self.relativeUpperLimit= upperLimit# [tick]
         self.exposureFactor   = exposureFactor 
         self.stepSize  = stepSize # [tick]
-        self.settings=[]
-        for offset in range (self.relativeLowerLimit, int(self.relativeUpperLimit + self.stepSize),  self.stepSize):
-            self.settings.append(Setting( offset, self.exposureFactor))
+        self.offsets= range (self.relativeLowerLimit, int(self.relativeUpperLimit + self.stepSize),  self.stepSize)
 
 class Focuser():
     """Class for focuser properties"""
