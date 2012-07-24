@@ -45,7 +45,7 @@ class ImgpAnalysis():
         # RTS2 has no possibilities to pass arguments to a command, defining the defaults
         self.scriptName= scriptName 
         self.fitsFileName= fitsFileName
-        self.astrometryCmd= 'img_astrometry.py'
+        self.astrometryCmd= 'rts2-astrometry.net'
         self.fwhmCmd= 'rts2af_fwhm.py'
         self.fwhmConfigFile= '/etc/rts2/rts2af/rts2af-fwhm.cfg'
         self.fwhmLogFile= '/var/log/rts2-debug'
