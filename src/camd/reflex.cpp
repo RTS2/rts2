@@ -200,6 +200,10 @@ class Reflex:public Camera
 		// if controller should be powered up after startup
 		bool powerUp;
 
+		// last tap parameters
+		int last_taplength;
+		int last_height;
+
 		/**
 		 * Register map. Index is register address.
 		 */
@@ -276,7 +280,7 @@ class Reflex:public Camera
 		void configSystem ();
 
 		// configure channels - taps - for given length
-		void configureTaps (int taplength);
+		void configureTaps (int taplength, int height);
 
 		void configBoard (int board);
 		void configTEC ();
@@ -324,6 +328,8 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	CLHandle = NULL;
 	dry_run = false;
 	powerUp = false;
+	last_taplength = -1;
+	last_height = -1;
 
 	createExpType ();
 
@@ -461,16 +467,17 @@ int Reflex::startExposure ()
 	}
 	//pdv_start_images (CLHandle, NUM_RING_BUFFERS);
 #endif
+	std::string s;
+	interfaceCommand (">TH\r", s, 3000, true);
 
 	setParameter (pEXPTIME, getExposure () * 1000);
 
-	/*setParameter (pROWSKIP, chipTopY ());
+	setParameter (pROWSKIP, chipTopY ());
 	setParameter (pROWREAD, chipUsedReadout->getHeightInt ());
-	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ()); */
+	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ());
 
 	setParameter (pPIXSKIP, chipTopX ());
 	setParameter (pPIXREAD, chipUsedReadout->getWidthInt ());
-
 	setParameter (pPIXOVER, getWidth () - chipTopX () - chipUsedReadout->getWidthInt ());
 
 	setParameter (pLIGHT, getExpType () ? 0 : 1);
@@ -478,8 +485,9 @@ int Reflex::startExposure ()
 	setParameter (pEXPO, 1);
 	setParameter (pLCLK, 1);
 
-	std::string s;
-	interfaceCommand (">TP\r", s, 3000, true);
+	configureTaps (chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt ());
+
+	interfaceCommand (">T\r", s, 3000, true);
 
 	return 0;
 }
@@ -1734,7 +1742,7 @@ void Reflex::configSystem ()
 	std::string s;
 	// System config
 	double mclk;
-	int pclk, trigin, taplength;
+	int pclk, trigin, taplength, height;
 
 	if (! (registers[BOARD_TYPE_BP]->getValueInteger () && (BT_BPX6 << 24)))
 		throw rts2core::Error ("Unknown backplane type");
@@ -1819,11 +1827,20 @@ void Reflex::configSystem ()
 			throw rts2core::Error ("Error writing Interface deinterlacing postpadding");
 	}
 
-	configureTaps (taplength);
+	if (config->getInteger ("BACKPLANE", "LINECOUNT", height) || height <= 0)
+		throw rts2core::Error ("Invalid line count");
+
+	// one channel size
+	setSize (taplength, height, 0, 0);
+
+	configureTaps (taplength, height);
 }
 
-void Reflex::configureTaps (int taplength)
+void Reflex::configureTaps (int taplength, int height)
 {
+	if (taplength == last_taplength && last_height == height)
+		return;
+
 	int i;
 	std::string s;
 
@@ -2273,16 +2290,10 @@ void Reflex::configureTaps (int taplength)
 		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_LENGTH, cllength))
 			throw rts2core::Error ("Error writing Interface deinterlacing line length");
 		// Write number of CameraLink lines per frame
-		if (config->getInteger ("BACKPLANE", "LINECOUNT", i) || i <= 0)
-			throw rts2core::Error ("Invalid line count");
-		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_COUNT, i - 1))
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_COUNT, height - 1))
 			throw rts2core::Error ("Error writing Interface deinterlacing line count");
 
 		setNumChannels (ct);
-		// one channel size
-		taplength = 400;
-		i = 800;
-		setSize (taplength, i, 0, 0);
 
 		// Write number of idle CameraLink lines between frames
 		if (config->getInteger ("BACKPLANE", "IDLELINECOUNT", i) || i <= 0)
@@ -2316,6 +2327,8 @@ void Reflex::configureTaps (int taplength)
 //	if (interfaceCommand(">L1\r", s, 100, true, false))
 //		throw rts2core::Error ("Error enabling polling")
 
+	last_taplength = taplength;
+	last_height = height;
 }
 
 void Reflex::configBoard (int board)
