@@ -50,6 +50,7 @@
       <arg choice="opt"><option>-a</option></arg>
       <arg choice="opt"><option>-m</option></arg>
       <arg choice="opt"><option>-r</option> <replaceable class="parameter">radius</replaceable></arg>
+      <arg choice="opt"><option>-f</option></arg>
       <arg choice="opt"><option>--pi</option> <replaceable class="parameter">PI name</replaceable></arg>
       <arg choice="opt"><option>--program</option> <replaceable class="parameter">program name</replaceable></arg>
       &dbapp;
@@ -99,6 +100,15 @@
 	    target already exists within given radius from your specified
 	    position, you will be asked if you would like to use it, or really
 	    enter new target.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-f</option></term>
+	<listitem>
+	  <para>
+	    Forced run. Don't ask user questions about whatever to overwrite
+	    existing target etc.
 	  </para>
 	</listitem>
       </varlistentry>

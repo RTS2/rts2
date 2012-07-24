@@ -50,6 +50,7 @@ class Rts2NewTarget:public Rts2TargetApp
 	private:
 		int n_tar_id;
 		bool tryMatch;
+		bool forcedRun;
 		const char *n_tar_name;
 		const char *n_tar_ra_dec;
 		double radius;
@@ -64,6 +65,7 @@ Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_arg
 {
 	n_tar_id = -1;
 	tryMatch = false;
+	forcedRun = false;
 	n_tar_name = NULL;
 	n_tar_ra_dec = NULL;
 
@@ -75,6 +77,7 @@ Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_arg
 	addOption ('a', NULL, 0, "autogenerate target IDs");
 	addOption ('m', NULL, 0, "try to match target name and RA DEC");
 	addOption ('r', NULL, 2, "radius for target checks");
+	addOption ('f', NULL, 0, "force run, don't ask questions about target overwrite");
 
 	addOption (OPT_PI_NAME, "pi", 1, "set PI name");
 	addOption (OPT_PROGRAM_NAME, "program", 1, "set program name");
@@ -96,6 +99,8 @@ void Rts2NewTarget::usage ()
 		<< "  " << getAppName () << " -a NGC567" << std::endl
 		<< "Specifiing RA DEC position:" << std::endl
 		<< "  " << getAppName () << " 1003 NGC567 '20:10:11 +11:14:15'" << std::endl
+		<< "Same as above, but don't bug user with questions:" << std::endl
+		<< "  " << getAppName () << " -f 1003 NGC567 '20:10:11 +11:14:15'" << std::endl
 		<< std::endl;
 }
 
@@ -115,6 +120,9 @@ int Rts2NewTarget::processOption (int in_opt)
 				radius = atof (optarg);
 			else
 				radius = 1.0 / 60.0;
+			break;
+		case 'f':
+			forcedRun = true;
 			break;
 		case OPT_PI_NAME:
 			n_pi = optarg;
@@ -198,9 +206,9 @@ int Rts2NewTarget::saveTarget ()
 	}
 
 	if (n_tar_id != INT_MIN)
-		ret = target->saveWithID (false, n_tar_id);
+		ret = target->saveWithID (forcedRun, n_tar_id);
 	else
-		ret = target->save (false);
+		ret = target->save (forcedRun);
 
 	if (ret)
 	{
@@ -279,7 +287,7 @@ int Rts2NewTarget::doProcessing ()
 		std::cerr << "cannot find target " << n_tar_name << ", inserting new target" << std::endl;
 	}
 
-	if (n_tar_id == INT_MIN)
+	if (n_tar_id == INT_MIN || forcedRun)
 		return saveTarget ();
 
 	rts2core::AskChoice selection (this);
