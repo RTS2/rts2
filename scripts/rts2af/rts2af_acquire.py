@@ -82,9 +82,7 @@ class Acquire(rts2af.AFScript):
         self.pid= os.getpid()
         self.base_exposure= 9. # ToDo !!!
         #ToDo must go away
-        self.vers= sys.version_info
-# ToDo wildi
-        if( self.vers.minor < 7): # ToDo must go away
+        if sys.version_info<(2,7,0):
             prefix= '/home/wildi/rts2/scripts/rts2af/'
         else:
             prefix=''
@@ -96,6 +94,7 @@ class Acquire(rts2af.AFScript):
             #cmd= [ '{0}rts2af_analysis.py --config'.format(prefix)]
         else:
             self.base_cmd= [ '{0}rts2af_analysis.py'.format(prefix), '--config' ]
+        self.base_cmd= ['{0}rts2af_feedback_acquire.py'.format(prefix)]
 
     def focPosWithinLimits(self, focPos=None):
 
@@ -116,7 +115,7 @@ class Acquire(rts2af.AFScript):
             slt= 1. + abs(fcPos- curFocPos) / self.speed # ToDo, sleep a bit longer, ok?
             r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
             # Missouri
-            #time.sleep( 45) # sleep 45 seconds
+            #time.sleep( 25) # sleep 45 seconds
             # all others 
             time.sleep( slt)
         else:
