@@ -274,6 +274,10 @@ class Reflex:public Camera
 
 		// configure routines
 		void configSystem ();
+
+		// configure channels - taps - for given length
+		void configureTaps (int taplength);
+
 		void configBoard (int board);
 		void configTEC ();
 
@@ -458,17 +462,18 @@ int Reflex::startExposure ()
 	//pdv_start_images (CLHandle, NUM_RING_BUFFERS);
 #endif
 
-/*	setParameter (pEXPTIME, getExposure () * 1000);
+	setParameter (pEXPTIME, getExposure () * 1000);
 
-	setParameter (pROWSKIP, chipTopY ());
+	/*setParameter (pROWSKIP, chipTopY ());
 	setParameter (pROWREAD, chipUsedReadout->getHeightInt ());
-	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ());
+	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ()); */
 
 	setParameter (pPIXSKIP, chipTopX ());
 	setParameter (pPIXREAD, chipUsedReadout->getWidthInt ());
+
 	setParameter (pPIXOVER, getWidth () - chipTopX () - chipUsedReadout->getWidthInt ());
 
-	setParameter (pLIGHT, getExpType () ? 0 : 1); */
+	setParameter (pLIGHT, getExpType () ? 0 : 1);
 
 	setParameter (pEXPO, 1);
 	setParameter (pLCLK, 1);
@@ -609,6 +614,7 @@ int Reflex::initHardware ()
 
 	if (powerUp)
 	{
+		std::string s;
 		ret = interfaceCommand (">P1\r", s, 5000, true);
 		if (ret)
 			return -1;
@@ -1724,25 +1730,11 @@ void Reflex::createBoards ()
 
 void Reflex::configSystem ()
 {
-	int i, bit;
-	unsigned u, a, b;
+	int i;
 	std::string s;
 	// System config
 	double mclk;
-	int pclk;
-	int trigin;
-	// Deinterlacing
-	bool cds, raw, used;
-	int board, boardsusedcount, adc, lines, tap, taplength, tapcount, loopcount, clmode, hdrmode, cllength, clspeed;
-	int boardsused[MAX_DAUGHTER_COUNT];
-	char dir;
-	bool tapenable[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
-	int tapstart[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
-	int tapdelta[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
-	unsigned tapaenable, tapbenable;
-	int tapasource[MAX_TAP_COUNT], tapbsource[MAX_TAP_COUNT];
-	int tapastart[MAX_TAP_COUNT], tapbstart[MAX_TAP_COUNT];
-	int tapadelta[MAX_TAP_COUNT], tapbdelta[MAX_TAP_COUNT];
+	int pclk, trigin, taplength;
 
 	if (! (registers[BOARD_TYPE_BP]->getValueInteger () && (BT_BPX6 << 24)))
 		throw rts2core::Error ("Unknown backplane type");
@@ -1790,24 +1782,9 @@ void Reflex::configSystem ()
 
 	// Set backplane deinterlacing
 
-	// Get HDR mode (0 = Normal 16 bits / pixel, 1 = HDR 32 bits / pixel)
-	config->getString ("BACKPLANE", "HDRMODE", s);
-	hdrmode = (s == "1");
-
 	// Get tap length in samples (subtract 1 since 0 = 1 sample, 1 = 2 samples, etc)
 	if (config->getInteger ("BACKPLANE", "TAPLENGTH", taplength) || taplength <= 0)
 		throw rts2core::Error ("Invalid tap length");
-	// Prototype systems had deinterlacing engine on backplane
-	if (boardRevision (BOARD_BP) == 1)
-	{
-		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAP_LENGTH, taplength - 1))
-			throw rts2core::Error ("Error writing Backplane deinterlacing tap length");
-	}
-	else
-	{
-		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LOOP_COUNT, taplength - 1))
-			throw rts2core::Error ("Error writing Interface deinterlacing tap length");
-	}
 
 	// Get padding
 	config->getInteger ("BACKPLANE", "PREPADDING", i, -1);
@@ -1842,6 +1819,33 @@ void Reflex::configSystem ()
 			throw rts2core::Error ("Error writing Interface deinterlacing postpadding");
 	}
 
+	configureTaps (taplength);
+}
+
+void Reflex::configureTaps (int taplength)
+{
+	int i;
+	std::string s;
+
+	int board, adc, lines;
+	char dir;
+
+	bool tapenable[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+	int tapstart[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+	int tapdelta[MAX_DAUGHTER_COUNT][MAX_ADC_COUNT];
+
+	// Prototype systems had deinterlacing engine on backplane
+	if (boardRevision (BOARD_BP) == 1)
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_BP + 1) << 16) | BACKPLANE_TAP_LENGTH, taplength - 1))
+			throw rts2core::Error ("Error writing Backplane deinterlacing tap length");
+	}
+	else
+	{
+		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LOOP_COUNT, taplength - 1))
+			throw rts2core::Error ("Error writing Interface deinterlacing tap length");
+	}
+
 	// All taps initially disabled
 	for (board = 0; board < MAX_DAUGHTER_COUNT; board++)
 		for (adc = 0; adc < MAX_ADC_COUNT; adc++)
@@ -1852,9 +1856,10 @@ void Reflex::configSystem ()
 		}
 
 	// Examine tap order
-	cds = false;
-	raw = false;
-	tapcount = 0;
+	bool cds = false;
+	bool raw = false;
+	int tapcount = 0;
+
 	if (config->getInteger ("BACKPLANE", "TAPCOUNT", lines) || lines < 0)
 		throw rts2core::Error ("Invalid tap count");
 
@@ -1924,11 +1929,13 @@ void Reflex::configSystem ()
 		throw rts2core::Error ("No taps selected");
 
 	// Find which boards need to be enabled for reading
-	u = 0;
-	boardsusedcount = 0;
+	int u = 0;
+	int boardsusedcount = 0;
+	int boardsused[MAX_DAUGHTER_COUNT];
+
 	for (board = 0; board < MAX_DAUGHTER_COUNT; board++)
 	{
-		used = false;
+		bool used = false;
 		for (adc = 0; adc < MAX_ADC_COUNT; adc++)
 			if (tapenable[board][adc])
 				used = true;
@@ -1964,12 +1971,19 @@ void Reflex::configSystem ()
 		}
 	}
 
+	int loopcount;
+
 	// Set tap engine loop count
 	if (raw)
 	{
 		// In raw mode an ADC board streams a single channel continuously
 		loopcount = (tapcount + 1) / 2;
 	}
+
+	// Get HDR mode (0 = Normal 16 bits / pixel, 1 = HDR 32 bits / pixel)
+	config->getString ("BACKPLANE", "HDRMODE", s);
+	bool hdrmode = (s == "1");
+
 	if (cds)
 	{
 		if (hdrmode)
@@ -1990,6 +2004,14 @@ void Reflex::configSystem ()
 		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_TAP_COUNT, loopcount - 1))
 			throw rts2core::Error ("Error writing Interface deinterlacing tap count");
 	}
+
+	int tap;
+	unsigned tapaenable, tapbenable;
+	int tapasource[MAX_TAP_COUNT], tapbsource[MAX_TAP_COUNT];
+	int tapastart[MAX_TAP_COUNT], tapbstart[MAX_TAP_COUNT];
+	int tapadelta[MAX_TAP_COUNT], tapbdelta[MAX_TAP_COUNT];
+
+	int clmode, cllength, clspeed;
 
 	// Calculate tap engine enables, sources, starts and deltas for prototype backplane
 	if (boardRevision (BOARD_BP) == 1)
@@ -2055,9 +2077,9 @@ void Reflex::configSystem ()
 		// Write tap engine A and B source words (8 tap sources per 32-bit control word)
 		for (tap = 0; tap < MAX_PROTOTYPE_TAP_COUNT / 8; tap++)
 		{
-			a = 0;
-			b = 0;
-			bit = 0;
+			unsigned a = 0;
+			unsigned b = 0;
+			int bit = 0;
 			for (i = 0; i < 8; i++)
 			{
 				a |= tapasource[tap * 8 + i] << bit;
@@ -2293,6 +2315,7 @@ void Reflex::configSystem ()
 
 //	if (interfaceCommand(">L1\r", s, 100, true, false))
 //		throw rts2core::Error ("Error enabling polling")
+
 }
 
 void Reflex::configBoard (int board)
