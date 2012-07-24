@@ -94,7 +94,6 @@ class Acquire(rts2af.AFScript):
             #cmd= [ '{0}rts2af_analysis.py --config'.format(prefix)]
         else:
             self.base_cmd= [ '{0}rts2af_analysis.py'.format(prefix), '--config' ]
-        self.base_cmd= ['{0}rts2af_feedback_acquire.py'.format(prefix)]
 
     def focPosWithinLimits(self, focPos=None):
 
@@ -115,7 +114,7 @@ class Acquire(rts2af.AFScript):
             slt= 1. + abs(fcPos- curFocPos) / self.speed # ToDo, sleep a bit longer, ok?
             r2c.log('I','rts2af_acquire: sleeping for: {0} target={1} current={2}'.format(slt, fcPos, curFocPos))
             # Missouri
-            #time.sleep( 25) # sleep 45 seconds
+            #time.sleep( 25) # sleep 25 seconds
             # all others 
             time.sleep( slt)
         else:
@@ -431,7 +430,7 @@ class Acquire(rts2af.AFScript):
 
             exposureTime += filterExposureTime 
             filterEndTime=time.time()
-            r2c.log('I','rts2af_acquire: pid: {0}, ended within: {1} seconds, accumulated exposure time: {2}, for COMMAND: {3}, filter: {4}'.format(self.pid, (filterEndTime-filterStartTime), filterExposureTime, self.cmd, filter.name))
+            r2c.log('I','rts2af_acquire: pid: {0}, ended within: {1} seconds, accumulated exposure time: {2}, for COMMAND: {3}, filter: {4}'.format(self.pid, (filterEndTime-filterStartTime), filterExposureTime, cmd, filter.name))
 
         # completed
         endTime= time.time()
