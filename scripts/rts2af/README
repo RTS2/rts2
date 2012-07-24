@@ -8,8 +8,15 @@ and configuration can be found with command
 man rts2_imgp_analysis
 
 
+
+
+
 Installation
 ------------
+
+Update to Python 2.7.x (mandatory)
+
+
 Assuming you did the the following RTS2 svn checkout
 
   cd ~
@@ -29,9 +36,8 @@ Assuming you did the the following RTS2 svn checkout
   Configuration files
   -------------------
   
-  sudo mkdir -p /etc/rts2/rts2af/sex
-  cd ~/rts2/conf/rts2af
-  cp -a * /etc/rts2/rts2af/
+  cd ~/rts2/conf
+  sudo cp -a rts2af /etc/rts2/
 
   Edit in /etc/rts2/rts2af/rts2af-acquire.cfg all entries beginning with YOUR_* .
   
@@ -48,9 +54,27 @@ Assuming you did the the following RTS2 svn checkout
 
   selector        SEL    --add-queue plan --add-queue focusing --add-queue manual
 
+  Test with dummy devices (recommended)
+  -------------------------------------
+  In file /etc/rts2/devices add dummy devices  	
 
-Testing offline, e.g. daytime
------------------------------
+   focusd dummy  F0
+   camd    dummy C0  --focdev FOC_FLI --wheeldev FTW_FLI --filter-offsets 1644:1472:1346:1349:1267:0:701
+   filterd dummy W0  -F "U:B:V:R:I:X:H"
+   teld    dummy T0
+
+  if they are not present (options -F and  --filter-offsets are not really necessary). 
+  This is usually done by script rts2/scripts/ubuntu-rts2-install 
+  Add them to the postgres DB:
+
+    cd src/sql/
+    ./rts2-configdb stars -t T0
+    ./rts2-configdb stars -c C0
+    ./rts2-configdb stars -f W0
+
+
+Testing offline
+---------------
 
   Test scripts and image data are provided:
 
@@ -67,7 +91,7 @@ Testing offline, e.g. daytime
 
   Step 1: run_rts2af_fits.sh
   --------------------------
-  run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files
+  run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files.
 
   Step 2: run_rts2af_analysis.sh
   -----------------------------
@@ -75,17 +99,13 @@ Testing offline, e.g. daytime
   the whole analysis with real images. The sextractor configuration files must be in place 
   (normally in /etc/rts2/rts2af/sex).
 
-  Step 3: run_rts2af_feed_acquire.sh
-  ----------------------------------
-  run_rts2af_feed_acquire.sh tests the whole chain and pretends being EXEC.
-
-  Step 4: run_rts2af_offline.sh
+  Step 3: run_rts2af_offline.sh
   -----------------------------
   run_rts2af_offline.sh tests rts2af_offline.py.
   
 
-Testing through RTS2, state ON, night- and daytime
---------------------------------------------------
+Testing through RTS2, night- and daytime
+----------------------------------------
   Preparation
   -----------
   After all offline tests ended successfully then you can continue with online testing.
@@ -95,12 +115,10 @@ Testing through RTS2, state ON, night- and daytime
   Test at nighttime, clear sky
   ---------------------------
   rts2-mon
-  SEL -> selector_enabled=false
+  SEL  -> selector_enabled=false
   EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
                                 # rts2af_feedback_acquire.py below 
-  EXEC -> enabled=false
   EXEC -> auto_loop=false       # you restart the process if necessary
-  F4-> yes                      # bring rts2-centrald in state ON (might not be necessary)
 
   EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
                                 # (see rts2.ini) finished then continue
@@ -109,19 +127,17 @@ Testing through RTS2, state ON, night- and daytime
 
   Test during daytime
   -------------------
-  Before you execute the above commands currently you have to edit rts2af_acquire.py.
-  Change lines
-    # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
-    #cmd= [ 'rts2af_feedback_acquire.py']
-    # if Popen(...shell=True:
-    # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
-    cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
-  to
-    # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
-    cmd= [ 'rts2af_feedback_acquire.py']
-    # if Popen(...shell=True:
-    # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
-    #cmd= [ 'rts2af_analysis.py --config {}'.format(configFileName)]
+  Before you execute the above commands during daytime add to configuration file
+  /etc/rts2/rts2af/rts2af-acquire.cfg
+
+   [basic]
+   ...
+   test_acquire=True
+
+  Setting test_acquire True invokes script rts2af_feedback_acquire.py instead of 
+  rts2af_analysis.py. It does not really fit the data, since the images contain 
+  only  random noise, but send a plausible set of formatted data to rts2af_acqure.py.
+
 
 
 Files in directory rts2/scripts/rts2af
@@ -147,7 +163,6 @@ Files in directory rts2/scripts/rts2af
 
   Test scripts
   ------------
-  rts2af_feed_acquire.py      simulates EXEC and calls rts2af_acquire.py
   rts2af_feedback_acquire.py  can be used in absence of real (sky) images
 
   Library
