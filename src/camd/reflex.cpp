@@ -1,7 +1,9 @@
 /* 
  * STA Reflex controller
- * Copyright (C) 2011 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
- * portions from STA code, Copyright 2011 Semiconductor Technology Associates, Inc.  All rights reserved.
+ * Copyright (C) 2011,2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+ *
+ * includes code from STA ReflexControl and ReflexCapture
+ * Copyright 2011 Semiconductor Technology Associates, Inc.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -514,9 +516,7 @@ int Reflex::doReadout ()
 	int ta = pdv_timeouts (CLHandle);
 	pdv_start_image (CLHandle);
 
-  	std::cout << "entering wait" << std::endl;
 	unsigned char * buf = pdv_wait_image (CLHandle);
-	std::cout << "wait finished " << ((void *) buf) << std::endl;
 
 	int tb = pdv_timeouts (CLHandle);
 
