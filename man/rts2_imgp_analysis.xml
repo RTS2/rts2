@@ -87,11 +87,6 @@
       <varlistentry>
       <term>After a focal plane analysis has been carried out a bash script is generated to view all objects as ds9 regions on all images. ds9 is the recommended tool for debugging.</term>
        </varlistentry>
-       <varlistentry>
-       <term>CERN`s root data analysis software, used to compile and link
-       <command>rts2af-fit-focus</command>.
-       </term>
-      </varlistentry>
     </variablelist>   
   </refsect1>
   <refsect1>
@@ -114,7 +109,7 @@ parallel to define the FWHM  and the astrometric
 calibration.</term>
       </varlistentry>
       <varlistentry>
-      <term><command>img_astrometry.py</command> calls solve-field
+      <term><command>rts2-astrometry.net</command> calls solve-field
 (astrometry.net) and returns
 the corrections to IGMP.</term>
       </varlistentry>
@@ -141,14 +136,14 @@ of the images.</term>
 <command>rts2af_analysis.py</command> and fits the focus.</term>
       </varlistentry>
       <varlistentry>
-      <term><command>rts2af-fit-focus</command>, alternatively fits the
-focus, see directory contrib. It will be phased out soon (2012-07-07).</term>
-      </varlistentry>
-      <varlistentry>
       <term><command>rts2af_offline.py</command> is used to analyze a set of previously taken focus images.</term>
       </varlistentry>
       <varlistentry>
- <term>All other programs in directory scripts/rts2af one can be safely ignored.</term>
+      <term><command>rts2af_feedback_acquire.py</command> is used to test
+<command>rts2af_acquire.py</command> during daytime or when no real images are available.</term>
+      </varlistentry>
+      <varlistentry>
+      <term>All other programs in directory scripts/rts2af one can be safely ignored.</term>
       </varlistentry>
     </variablelist>   
 </refsect1>
@@ -166,8 +161,7 @@ is defined in the database table named scripts with tar_id 5.
 CCD camera and its associated focuser and filter wheel if  present. It
 passes the image file names to <command>rts2af_analysis.py</command>. After FWHM
 and flux have been determined <command>rts2af_analysis.py</command> calls
-depending on its configuration either <command>rts2af_fit.py</command> or 
-<command>rts2af-fit-focus</command>. If the fit has converged, the focus
+ <command>rts2af_fit.py</command>. If the fit has converged, the focus
 position FOC_DEF is set by <command>rts2af_acquire.py</command>. FOC_DEF is
 only set for measurements without filter (clear path). For each specified filter
 a separate focus run is carried out supporting fast filter focus offset measurements.
@@ -262,7 +256,7 @@ default value is used. The format of the following list is parameter name, "data
          </term>
       </varlistentry> 
       <varlistentry>
-	<term>Fileter offset, int, 5074, 4712,  4678, 4766,  4700, 3270, 3446
+	<term>Filter offset, int, 1074, 1712,  1678, 1766,  1700, 270, 446
          </term>
 	<listitem>0 for no filter.<para></para>
         </listitem>
@@ -515,7 +509,7 @@ ticks which makes a difference e.g. in FWHM.</para>
 
     <varlistentry>
     <term>
-    <option>OBJECT_SEPARATION, boolean, 20 [pixel]</option>
+    <option>OBJECT_SEPARATION, int, 20 [pixel]</option>
     </term>
     <listitem>
     <para>If CLEANUP_REFERENCE_CATALOGUE==True only pairs of stars which have a
@@ -600,6 +594,18 @@ NUMBER_ASSOC.
     </term>
     <listitem>
     <para>This is SExtractor`s reference catalog.
+    </para>
+    </listitem>
+    </varlistentry>
+    <varlistentry>
+    <term>
+    <option>TEST_ACQUIRE, boolean, False</option>
+    </term>
+    <listitem>
+    <para> If True <command>rts2af_acquire.py</command> uses
+<command>rts2af_feedback_acquire.py</command> instead of
+<command>rts2af_analysis.py</command>. <command>rts2af_feedback_acquire.py</command>
+is used for daytime testing with no real images (see rts2/scritps/rts2af/README).
     </para>
     </listitem>
     </varlistentry>
@@ -779,7 +785,7 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   <refsect1>
     <title>Installation and Testing</title>
     <para>
-      See file rts2/scripts/rts2af/README
+      See files rts2/scripts/rts2af/README and rts2/scripts/rts2af/test/focus/README.
     </para>
   </refsect1>
   <refsect1>
