@@ -54,6 +54,9 @@
       <arg choice="opt">
 	<arg choice="plain"><option>--dry-run</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--power-up</option></arg>
+      </arg>
     </cmdsynopsis>
 
   </refsynopsisdiv>
@@ -89,6 +92,16 @@
 	    Do not perform any actions which changes controller behaviours.
 	    Allow driver to only read registers. All register write and other
 	    commands will be only logged through RTS2 logging system.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--power-up</option></term>
+	<listitem>
+	  <para>
+	    Power up controller after driver startup. As the controller has to be configured,
+	    it is powered down during driver startup. If you want to have controller automatically
+	    powered up after its initialization is finished, please provide this option.
 	  </para>
 	</listitem>
       </varlistentry>

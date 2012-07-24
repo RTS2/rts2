@@ -25,6 +25,7 @@
 #include "iniparser.h"
 
 #define OPT_DRY           OPT_LOCAL + 1
+#define OPT_POWERUP       OPT_LOCAL + 2
 
 // only constants; class is kept in reflex.cpp
 #include "reflex.h"
@@ -196,6 +197,9 @@ class Reflex:public Camera
 		// if true, don't write anything
 		bool dry_run;
 
+		// if controller should be powered up after startup
+		bool powerUp;
+
 		/**
 		 * Register map. Index is register address.
 		 */
@@ -315,6 +319,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	CLHandle = NULL;
 	dry_run = false;
+	powerUp = false;
 
 	createExpType ();
 
@@ -397,6 +402,7 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	addOption ('c', NULL, 1, "configuration file (.rcf)");
 	addOption (OPT_DRY, "dry-run", 0, "don't perform any writes or commands");
+	addOption (OPT_POWERUP, "power-up", 0, "auto power up controller");
 }
 
 Reflex::~Reflex (void)
@@ -552,6 +558,9 @@ int Reflex::processOption (int in_opt)
 		case OPT_DRY:
 			dry_run = true;
 			break;
+		case OPT_POWERUP:
+			powerUp = true;
+			break;
 		default:
 			return Camera::processOption (in_opt);
 	}
@@ -597,6 +606,14 @@ int Reflex::initHardware ()
 	rereadAllRegisters ();
 
 	reloadConfig ();
+
+	if (powerUp)
+	{
+		ret = interfaceCommand (">P1\r", s, 5000, true);
+		if (ret)
+			return -1;
+		return interfaceCommand (">TS\r", s, 5000, true) ? -1 : 0;
+	}
 
 	return 0;
 }
