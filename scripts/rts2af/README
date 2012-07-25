@@ -28,10 +28,12 @@ Assuming you did the the following RTS2 svn checkout
 
   insert:
 
-  export PATH=$PATH:/your/home/rts2/scripts:/home/wildi/rts2/scripts/rts2af
+  export PATH=/your/home/rts2/scripts:/home/wildi/rts2/scripts/rts2af:$PATH
   export PYTHONPATH=/your/home/rts2/scripts:/your/home/rts2/scripts/rts2af:$PYTHONPATH
 
   source ~/.bashrc
+
+  Repeat that for user root.
 
   Configuration files
   -------------------
@@ -64,8 +66,9 @@ Assuming you did the the following RTS2 svn checkout
    teld    dummy T0
 
   if they are not present (options -F and  --filter-offsets are not really necessary). 
-  This is usually done by script rts2/scripts/ubuntu-rts2-install 
-  Add them to the postgres DB:
+
+  Adding the devices to the Postgres DB is usually done by script 
+  rts2/scripts/ubuntu-rts2-install, in case not use:
 
     cd src/sql/
     ./rts2-configdb stars -t T0
@@ -95,8 +98,8 @@ Testing offline
 
   Step 2: run_rts2af_analysis.sh
   -----------------------------
-  run_rts2af_analysis.sh tests rts2af_analysis.py, sextractor and rts2af_fits.py and performs 
-  the whole analysis with real images. The sextractor configuration files must be in place 
+  run_rts2af_analysis.sh tests rts2af_analysis.py, SExtractor and rts2af_fits.py and performs 
+  the whole analysis with real images. The SExtractor configuration files must be in place 
   (normally in /etc/rts2/rts2af/sex).
 
   Step 3: run_rts2af_offline.sh
@@ -109,7 +112,7 @@ Testing through RTS2, night- and daytime
   Preparation
   -----------
   After all offline tests ended successfully then you can continue with online testing.
-  You need to define at the time you observe at least one visible target (e.g. with tar_id 2000) in the postgres DB.
+  You need to define at the time you observe at least one visible target (e.g. with tar_id 2000) in the Postgres DB.
   Then:
 
   Test at nighttime, clear sky
