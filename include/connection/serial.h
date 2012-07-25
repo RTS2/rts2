@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_CONN_SERIAL__
+#define __RTS2_CONN_SERIAL__
+
 #include "connnosend.h"
 #include <termios.h>
 
@@ -255,3 +258,5 @@ class ConnSerial: public ConnNoSend
 };
 
 }
+
+#endif // !__RTS2_CONN_SERIAL__

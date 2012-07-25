@@ -22,6 +22,7 @@
 #include "conngpiblinux.h"
 #include "conngpibenet.h"
 #include "conngpibprologix.h"
+#include "conngpibserial.h"
 
 using namespace rts2sensord;
 
@@ -33,11 +34,13 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	pad = -1;
 	enet_addr = NULL;
 	prologix = NULL;
+	serial_port = NULL;
 
 	connGpib = NULL;
 	debug = false;
 
 	addOption ('m', NULL, 1, "board number (default to 0)");
+	addOption ('s', NULL, 1, "RS-232 (serial) for GPIB commands send over serial port");
 	addOption (OPT_PROLOGIX, "prologix", 1, "Prologix GPIB-USB serial port");
 	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
 	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
@@ -80,6 +83,9 @@ int Gpib::processOption (int _opt)
 		case OPT_PROLOGIX:
 			prologix = optarg;
 			break;
+		case 's':
+			serial_port = optarg;
+			break;
 		case 'v':
 			debug = true;
 			break;
@@ -113,6 +119,10 @@ int Gpib::initHardware ()
 	else if (prologix != NULL)
 	{
 		connGpib = new ConnGpibPrologix (this, prologix, pad);
+	}
+	else if (serial_port != NULL)
+	{
+		connGpib = new ConnGpibSerial (this, serial_port);
 	}
 	else if (pad >= 0)
 	{
