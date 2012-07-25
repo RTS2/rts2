@@ -47,14 +47,13 @@ void ConnGpibSerial::gpibWriteBuffer (const char *cmd, int _len)
 
 void ConnGpibSerial::gpibRead (void *reply, int &blen)
 {
-	readUSBGpib ((char *) reply, blen);
+	readPort ((char *) reply, blen, '\n');
 }
 
 void ConnGpibSerial::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
-	if (rts2core::ConnSerial::writePort (cmd, strlen (cmd)) < 0)
-		throw rts2core::Error ("cannot write to port");
-	readUSBGpib (reply, blen);
+	gpibWriteBuffer (cmd, strlen (cmd));
+	gpibRead (reply, blen);
 }
 
 void ConnGpibSerial::gpibWaitSRQ ()
@@ -71,32 +70,4 @@ void ConnGpibSerial::gpibWaitSRQ ()
 void ConnGpibSerial::settmo (float _sec)
 {
 	timeout = _sec;
-}
-
-void ConnGpibSerial::readUSBGpib (char *reply, int blen)
-{
-	int att;
-	int rlen = 0;
-	for (att = 0; att < 3; att++)
-	{
-		rlen = rts2core::ConnSerial::readPort (reply, blen);
-		std::cout << "rlen " << rlen << std::endl;
-		if (rlen > 0)
-		{
-			blen -= rlen;
-			break;
-		}
-	}
-	if (att >= 3)
-		throw rts2core::Error ("cannot read from port in writeRead");
-	// read until something is available
-	std::cout << "rlen blen " << rlen << " " << blen << std::endl;
-	sleep (1);
-	while (blen > 0 && (rlen = rts2core::ConnSerial::readPortNoBlock (reply + rlen, blen)) != 0)
-	{
-		blen -= rlen;
-		std::cout << "rlen blen " << rlen << " " << blen << std::endl;
-		sleep (1);
-	}
-	std::cout << "rlen " << rlen << std::endl;
 }
