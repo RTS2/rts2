@@ -110,7 +110,8 @@ LDADD += -lrts2sensorgpib @LIB_GPIB@
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
 	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
-	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340
+	rts2-sensor-mm2500 rts2-sensor-lakeshore-330 rts2-sensor-lakeshore-340 \
+	rts2-sensor-agilent-e3631a
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
@@ -127,6 +128,8 @@ rts2_sensor_lakeshore_340_SOURCES = lakeshore-340.cpp
 rts2_sensor_triax_SOURCES = triax.cpp
 
 rts2_sensor_mm2500_SOURCES = mm2500.cpp
+
+rts2_sensor_agilent_e3631a_SOURCES = agilent-e3631a.cpp
 
 else
 

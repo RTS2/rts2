@@ -21,7 +21,7 @@
 
 using namespace rts2sensord;
 
-ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device):ConnGpib (), rts2core::ConnSerial (_device, _master, rts2core::BS115200, rts2core::C8, rts2core::NONE, 40)
+ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device):ConnGpib (), rts2core::ConnSerial (_device, _master, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40)
 {
 	eot = 1;
 	timeout = 3;
@@ -35,8 +35,6 @@ void ConnGpibSerial::initGpib ()
 {
 	if (rts2core::ConnSerial::init ())
 		throw rts2core::Error ("cannot init Serial serial connection");
-	if (rts2core::ConnSerial::writeRead ("++eot_char 10\n++eot_enable 0\n++eos 3\n++eoi 1\n++ver\n", 51, buf, 100, '\n') < 0)
-		throw rts2core::Error ("cannot read Serial version");
 }
 
 void ConnGpibSerial::gpibWriteBuffer (const char *cmd, int _len)
@@ -81,7 +79,7 @@ void ConnGpibSerial::readUSBGpib (char *reply, int blen)
 	int rlen = 0;
 	for (att = 0; att < 3; att++)
 	{
-		rlen = rts2core::ConnSerial::readPortNoBlock (reply, blen);
+		rlen = rts2core::ConnSerial::readPort (reply, blen);
 		std::cout << "rlen " << rlen << std::endl;
 		if (rlen > 0)
 		{
