@@ -293,6 +293,13 @@ class Reflex:public Camera
 
 		std::vector <std::pair <std::string, uint32_t> > parameters;
 
+#ifdef CL_EDT
+		rts2core::ValueInteger *edt_count;
+		rts2core::ValueInteger *edt_bytes;
+		int last_bytes;
+		time_t next_bytes_check;
+		double readout_started;
+#endif
 		rts2core::ValueSelection *baudRate;
 
 		// holds board/adc pair for each channel
@@ -337,6 +344,12 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createDataChannels ();
 	setNumChannels (1);
+
+#ifdef CL_EDT
+	createValue (edt_count, "edt_count", "number of done images", false);
+	createValue (edt_bytes, "edt_bytes", "bytes read from the image", false);
+	last_bytes = 0;
+#endif
 
 	createValue (baudRate, "baud_rate", "CL baud rate", true, CAM_WORKING);
 	baudRate->addSelVal ("9600", (rts2core::Rts2SelData *) CL_BAUDRATE_9600);
@@ -460,23 +473,29 @@ int Reflex::startExposure ()
 		return -1;
 	}
 	pdv_flush_fifo (CLHandle);
-	//ret = pdv_multibuf (CLHandle, NUM_RING_BUFFERS);
-	pdv_set_buffers (CLHandle, 1, NULL);
-	if (ret)
+	// ret = pdv_multibuf (CLHandle, 1); // NUM_RING_BUFFERS);
+	// ret = pdv_set_buffers (CLHandle, 1, NULL);
+	/* if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "pdv_multibuf call failed" << sendLog;
 		return -1;
-	}
+	} */
 	//pdv_start_images (CLHandle, NUM_RING_BUFFERS);
+
+	pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
+
+  	pdv_set_timeout (CLHandle, 30000);
+
+	pdv_start_image (CLHandle);
 #endif
 	std::string s;
-	interfaceCommand (">TH\r", s, 3000, true);
+	// interfaceCommand (">TH\r", s, 3000, true);
 
 	setParameter (pEXPTIME, getExposure () * 1000);
 
 	setParameter (pROWSKIP, chipTopY ());
-	setParameter (pROWREAD, chipUsedReadout->getHeightInt ());
-	setParameter (pROWOVER, getHeight () - chipTopY () - chipUsedReadout->getHeightInt ());
+	setParameter (pROWREAD, height);
+	setParameter (pROWOVER, getHeight () - chipTopY () - height);
 
 	setParameter (pPIXSKIP, chipTopX ());
 	setParameter (pPIXREAD, chipUsedReadout->getWidthInt ());
@@ -489,7 +508,7 @@ int Reflex::startExposure ()
 
 	configureTaps (chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt ());
 
-	interfaceCommand (">T\r", s, 3000, true);
+	interfaceCommand (">TP\r", s, 3000, true);
 
 	return 0;
 }
@@ -501,20 +520,51 @@ int Reflex::stopExposure ()
 
 long Reflex::isExposing ()
 {
-	return -2;
+	return Camera::isExposing ();
 }
 
 int Reflex::readoutStart ()
 {
+#ifdef CL_EDT
+	readout_started = getNow () + 30;
+	last_bytes = 0;
+	next_bytes_check = getNow () + 5;
+#endif
 	return Camera::readoutStart ();
 }
 
 int Reflex::doReadout ()
 {
 #ifdef CL_EDT
-  	pdv_set_timeout (CLHandle, 30000);
+	// still waiting for an image..
+	if (edt_done_count (CLHandle) == 0)
+	{
+		double n = getNow ();
+		if (readout_started < n)
+		{
+			logStream (MESSAGE_ERROR) << "timeout in doReadout" << sendLog;
+			return -1;
+		}
+		edt_bytes->setValueInteger (edt_get_bytecount (CLHandle));
+		if (next_bytes_check < n)
+		{
+			if (edt_bytes->getValueInteger () == last_bytes)
+			{
+				logStream (MESSAGE_ERROR) << "did not see increase in bytes received, aborting" << sendLog;
+				return -1;
+			}
+			last_bytes = edt_bytes->getValueInteger ();
+			next_bytes_check = n + 1;
+			sendValueAll (edt_bytes);
+		}
+		return 100;
+	}
+
+	edt_bytes->setValueInteger (edt_get_bytecount (CLHandle));
+	sendValueAll (edt_bytes);
+
 	int ta = pdv_timeouts (CLHandle);
-	pdv_start_image (CLHandle);
+	//pdv_start_image (CLHandle);
 
 	unsigned char * buf = pdv_wait_image (CLHandle);
 
@@ -629,11 +679,22 @@ int Reflex::initHardware ()
 		return interfaceCommand (">TS\r", s, 5000, true) ? -1 : 0;
 	}
 
+	ret = pdv_set_buffers (CLHandle, 1, NULL);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "cannot initialize buffers" << sendLog;
+		return -1;
+	}
+
 	return 0;
 }
 
 int Reflex::info ()
 {
+#ifdef CL_EDT
+	edt_count->setValueInteger (edt_done_count (CLHandle));
+	edt_bytes->setValueInteger (edt_get_bytecount (CLHandle));
+#endif
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
 		if (iter->second->infoUpdate ())
