@@ -488,7 +488,8 @@ void TargetAuger::load (int auger_id)
 
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL COMMIT;
-	Target::load ();
+	if (target_id > 0)
+		Target::load ();
 }
 
 void TargetAuger::updateShowerFields ()
