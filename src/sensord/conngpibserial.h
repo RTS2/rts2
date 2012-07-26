@@ -36,7 +36,7 @@ namespace rts2sensord
 class ConnGpibSerial:public ConnGpib, rts2core::ConnSerial
 {
 	public:
-		ConnGpibSerial (rts2core::Block *_master, const char *_device);
+		ConnGpibSerial (rts2core::Block *_master, const char *_device, rts2core::bSpeedT _baudSpeed = rts2core::BS9600, rts2core::cSizeT _cSize = rts2core::C8, rts2core::parityT _parity = rts2core::NONE, const char *_sep = "\n");
 		virtual ~ ConnGpibSerial (void);
 
 		virtual void setDebug (bool _debug = true) { rts2core::ConnSerial::setDebug (_debug); }
@@ -69,7 +69,8 @@ class ConnGpibSerial:public ConnGpib, rts2core::ConnSerial
 
 		float timeout;
 
-		uint16_t len;
+		const char *sep;
+		size_t seplen;
 };
 
 };

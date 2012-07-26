@@ -26,7 +26,14 @@
 
 using namespace rts2sensord;
 
-#define OPT_PROLOGIX    OPT_LOCAL + 787
+#define OPT_PROLOGIX        OPT_LOCAL + 787
+
+// serial port options
+#define OPT_SERIAL_BAUD     OPT_LOCAL + 788
+#define OPT_SERIAL_PARITY   OPT_LOCAL + 789
+#define OPT_SERIAL_CSIZE    OPT_LOCAL + 790
+#define OPT_SERIAL_SEP      OPT_LOCAL + 791
+
 
 Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
@@ -36,10 +43,19 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	prologix = NULL;
 	serial_port = NULL;
 
+	serial_baud = rts2core::BS9600;
+	serial_csize = rts2core::C8;
+	serial_parity = rts2core::NONE;
+	serial_sep = "\n";
+
 	connGpib = NULL;
 	debug = false;
 
 	addOption ('m', NULL, 1, "board number (default to 0)");
+	addOption (OPT_SERIAL_SEP, "serial-sep", 1, "serial separator (default to LF)");
+	addOption (OPT_SERIAL_PARITY, "serial-parity", 1, "serial parity (default to NONE)");
+	addOption (OPT_SERIAL_CSIZE, "serial-csize", 1, "serial bits per character (default to 7)");
+	addOption (OPT_SERIAL_BAUD, "serial-baud", 1, "serial baud speed (default to 9600)");
 	addOption ('s', NULL, 1, "RS-232 (serial) for GPIB commands send over serial port");
 	addOption (OPT_PROLOGIX, "prologix", 1, "Prologix GPIB-USB serial port");
 	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
@@ -86,6 +102,52 @@ int Gpib::processOption (int _opt)
 		case 's':
 			serial_port = optarg;
 			break;
+		case OPT_SERIAL_BAUD:
+			if (!strcmp (optarg, "1200"))
+				serial_baud = rts2core::BS1200;
+			else if (!strcmp (optarg, "9600"))
+				serial_baud = rts2core::BS9600;
+			else
+			{
+				std::cerr << "invalid baud speed " << optarg << ", must be 1200 or 9600" << std::endl;
+				return -1;
+			}
+			break;
+		case OPT_SERIAL_CSIZE:
+			if (!strcmp (optarg, "7"))
+				serial_csize = rts2core::C7;
+			else if (!strcmp (optarg, "8"))
+				serial_csize = rts2core::C8;
+			else
+			{
+				std::cerr << "invalid character length " << optarg << ", must be 7 or 8" << std::endl;
+				return -1;
+			}
+			break;
+		case OPT_SERIAL_PARITY:
+			if (!strcmp (optarg, "NONE"))
+				serial_parity = rts2core::NONE;
+			else if (!strcmp (optarg, "ODD"))
+				serial_parity = rts2core::ODD;
+			else if (!strcmp (optarg, "EVEN"))
+				serial_parity = rts2core::EVEN;
+			else
+			{
+				std::cerr << "invalid serial parity " << optarg << ", must be NONE, ODD or EVEN" << std::endl;
+				return -1;
+			}
+			break;
+		case OPT_SERIAL_SEP:
+			if (!strcmp (optarg, "LF"))
+				serial_sep = "\n";
+			else if (!strcmp (optarg, "CRLF"))
+				serial_sep = "\r\n";
+			else
+			{
+				std::cerr << "invalid serial separator " << optarg << ", must be LF or CRLF" << std::endl;
+				return -1;
+			}
+			break;
 		case 'v':
 			debug = true;
 			break;
@@ -122,7 +184,7 @@ int Gpib::initHardware ()
 	}
 	else if (serial_port != NULL)
 	{
-		connGpib = new ConnGpibSerial (this, serial_port);
+		connGpib = new ConnGpibSerial (this, serial_port, serial_baud, serial_csize, serial_parity, serial_sep);
 	}
 	else if (pad >= 0)
 	{

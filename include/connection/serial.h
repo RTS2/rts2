@@ -29,7 +29,7 @@ namespace rts2core
 /**
  * Enum for baud speeds.
  */
-typedef enum {BS2400, BS4800, BS9600, BS19200, BS57600, BS115200} bSpeedT;
+typedef enum {BS1200, BS2400, BS4800, BS9600, BS19200, BS57600, BS115200} bSpeedT;
 
 /**
  * Enum for data size.

@@ -72,6 +72,8 @@ const char * ConnSerial::getBaudSpeed ()
 {
 	switch (baudSpeed)
 	{
+		case BS1200:
+			return "1200";
 		case BS2400:
 			return "2400";
 		case BS4800:
@@ -108,6 +110,9 @@ int ConnSerial::init ()
 
 	switch (baudSpeed)
 	{
+		case BS1200:
+			b_speed = B1200;
+			break;
 		case BS2400:
 			b_speed = B2400;
 			break;

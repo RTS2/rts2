@@ -21,10 +21,13 @@
 
 using namespace rts2sensord;
 
-ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device):ConnGpib (), rts2core::ConnSerial (_device, _master, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40)
+ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device, rts2core::bSpeedT _baudSpeed, rts2core::cSizeT _cSize, rts2core::parityT _parity, const char *_sep):ConnGpib (), rts2core::ConnSerial (_device, _master, _baudSpeed, _cSize, _parity, 40)
 {
 	eot = 1;
 	timeout = 3;
+
+	sep = _sep;
+	seplen = strlen (sep);
 }
 
 ConnGpibSerial::~ConnGpibSerial (void)
@@ -41,13 +44,13 @@ void ConnGpibSerial::gpibWriteBuffer (const char *cmd, int _len)
 {
 	if (rts2core::ConnSerial::writePort (cmd, _len) < 0)
 		throw rts2core::Error ("cannot write command to serial port");
-	if (rts2core::ConnSerial::writePort ('\n') < 0)
+	if (rts2core::ConnSerial::writePort (sep, seplen) < 0)
 		throw rts2core::Error ("cannot write end endline");
 }
 
 void ConnGpibSerial::gpibRead (void *reply, int &blen)
 {
-	readPort ((char *) reply, blen, '\n');
+	readPort ((char *) reply, blen, sep);
 }
 
 void ConnGpibSerial::gpibWriteRead (const char *cmd, char *reply, int blen)

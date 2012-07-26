@@ -22,6 +22,7 @@
 
 #include "sensord.h"
 #include "conngpib.h"
+#include "connection/serial.h"
 
 namespace rts2sensord
 {
@@ -90,6 +91,11 @@ class Gpib:public Sensor
 		HostString *enet_addr;
 		const char *prologix;
 		const char *serial_port;
+
+		rts2core::bSpeedT serial_baud;
+		rts2core::cSizeT serial_csize;
+		rts2core::parityT serial_parity;
+		const char *serial_sep;
 
 		ConnGpib *connGpib;
 		
