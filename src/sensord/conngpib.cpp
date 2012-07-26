@@ -141,7 +141,7 @@ void ConnGpib::readValue (const char *buf, rts2core::ValueBool * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueBool (!strncmp (rb, "ON", 2));
+	val->setValueBool (!strncmp (rb, "ON", 2) || !strncmp (rb, "1", 1));
 }
 
 void ConnGpib::readValue (const char *buf, rts2core::ValueInteger * val)

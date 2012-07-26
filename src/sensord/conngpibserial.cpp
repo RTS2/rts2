@@ -23,7 +23,6 @@ using namespace rts2sensord;
 
 ConnGpibSerial::ConnGpibSerial (rts2core::Block *_master, const char *_device, rts2core::bSpeedT _baudSpeed, rts2core::cSizeT _cSize, rts2core::parityT _parity, const char *_sep):ConnGpib (), rts2core::ConnSerial (_device, _master, _baudSpeed, _cSize, _parity, 40)
 {
-	eot = 1;
 	timeout = 3;
 
 	sep = _sep;
@@ -61,13 +60,7 @@ void ConnGpibSerial::gpibWriteRead (const char *cmd, char *reply, int blen)
 
 void ConnGpibSerial::gpibWaitSRQ ()
 {
-	while (true)
-	{
-		if (rts2core::ConnSerial::writeRead ("*SRQ\n", 6, buf, 10, '\n') < 0)
-			throw rts2core::Error ("cannot writeRead *SRQ");
-		if (buf[0] == '1')
-			return;
-	}
+	return;
 }
 
 void ConnGpibSerial::settmo (float _sec)

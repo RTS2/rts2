@@ -53,18 +53,11 @@ class ConnGpibSerial:public ConnGpib, rts2core::ConnSerial
 		virtual float gettmo () { return timeout; };
 		virtual void settmo (float _sec);
 
-		/**
-		 * Sets EOT flag - whenever end characters are send.
-		 */
-		void setEot (int _eot)
-		{
-			eot = _eot;
-		}
+		virtual bool isSerial () { return true; }
 
 	private:
 		void readUSBGpib (char *reply, int blen);
 
-		int eot;
 		int eos;
 
 		float timeout;

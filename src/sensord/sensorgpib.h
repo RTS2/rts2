@@ -82,7 +82,11 @@ class Gpib:public Sensor
 		virtual int processOption (int in_opt);
 		virtual int initValues ();
 		virtual int initHardware ();
-	
+
+		bool isSerial () { return connGpib->isSerial (); }
+
+		rts2core::ValueString *idn;
+
 	private:
 		int pad;
 		int minor;

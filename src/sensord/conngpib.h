@@ -143,6 +143,9 @@ class ConnGpib
 		char getTimeoutTmo (float &_sec);
 
 		virtual void setDebug (bool _debug = true) = 0; 
+
+		// returns true if connection is not GPIB, but serial bridge for ex-GPIB devices
+		virtual bool isSerial () { return false; }
 };
 
 };

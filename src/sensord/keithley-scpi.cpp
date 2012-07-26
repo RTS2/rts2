@@ -1,6 +1,7 @@
 /* 
- * Driver for Keithley 6485 picoAmpermeter.
+ * Driver for Keithley 6485 and 6487 picoAmpermeter.
  * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,6 +44,7 @@ class Keithley:public Gpib
 		virtual int processOption (int opt);
 
 		virtual int initHardware ();
+		virtual int initValues ();
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
@@ -56,6 +58,13 @@ class Keithley:public Gpib
 
 		rts2core::ValueBool *azero;
 
+		// source parameters
+		rts2core::ValueFloat *svolt;
+		rts2core::ValueSelection *srange;
+		rts2core::ValueSelection *silim;
+		rts2core::ValueBool *soper;
+		rts2core::ValueBool *s10vinterlock;
+
 		// triggering mode
 		rts2core::ValueSelection *triggerMode;
 
@@ -68,6 +77,8 @@ class Keithley:public Gpib
 		rts2core::ValueFloat *nplc;
 
 		int groupNumber;
+
+		bool hasSource;
 };
 
 }
@@ -80,29 +91,74 @@ void Keithley::getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2co
 	char *rbuf = new char[bsize];
 	gpibWrite (buf);
 	gpibRead (rbuf, bsize);
-	// check if top contains valid header
-	if (rbuf[0] != '#' || rbuf[1] != '0')
+	int ocount = count;
+
+	if (isSerial ())
 	{
-		throw rts2core::Error ("Buffer does not start with #");
+		// parse ASCII data, which are the only option for RS-232
+		char *top = rbuf;
+		int pos = 0;
+		bool noer = true;
+		while (noer)
+		{
+			char *e = top;
+			while (*e && *e != ',')
+			{
+				e++;
+				if (*e == '\0')
+					noer = false;
+			}
+			*e = '\0';
+			float rval = atof (top);
+			switch (pos)
+			{
+				case 0:
+					sval->addValue (rval);
+					val->addValue (rval);
+					break;
+				case 1:
+					times->addValue (rval);
+					break;
+				case 2:
+					count--;
+					break;
+			}
+			pos++;
+			pos %= 3;
+			top = e + 1;
+		}
 	}
-	char *top = rbuf + 2;
-	while (top - rbuf + 13 <= bsize)
+	else
 	{
-		float rval = *((float *) (top + 0));
-		// fields are specified with FORMAT:ELEM, and are in READ,TIME,STAT order..
-		rval *= 1e+12;
-		sval->addValue (rval);
-		val->addValue (rval);
-		times->addValue (*((float *) (top + 4)));
-		count--;
-		top += 12;
+		// check if top contains valid header
+		if (rbuf[0] != '#' || rbuf[1] != '0')
+		{
+			throw rts2core::Error ("Buffer does not start with #");
+		}
+		char *top = rbuf + 2;
+		while (top - rbuf + 13 <= bsize)
+		{
+			float rval = *((float *) (top + 0));
+			// fields are specified with FORMAT:ELEM, and are in READ,TIME,STAT order..
+			rval *= 1e+12;
+			sval->addValue (rval);
+			val->addValue (rval);
+			times->addValue (*((float *) (top + 4)));
+			count--;
+			top += 12;
+		}
 	}
-	logStream (MESSAGE_DEBUG) << "received " << sval->getNumMes () << " readings." << sendLog;
+	logStream (MESSAGE_DEBUG) << "received " << (ocount - count) << " readings" << sendLog;
+	if (count != 0)
+		logStream (MESSAGE_ERROR) << "received wrong number of readings (" << count << ")!" << sendLog;
 	delete[]rbuf;
 }
 
 void Keithley::waitOpc ()
 {
+	// serial connection does not allow OPC checks, they are also not needed..
+	if (isSerial ())
+		return;
 	int icount = 0;
 	while (icount < countNum->getValueInteger ())
 	{
@@ -150,6 +206,13 @@ Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	nplc->setValueFloat (1.0);
 
 	groupNumber = 0;
+	hasSource = false;
+
+	svolt = NULL;
+	srange = NULL;
+	silim = NULL;
+	soper = NULL;
+	s10vinterlock = NULL;
 
 	addOption ('g', NULL, 1, "FITS extension group number");
 }
@@ -238,6 +301,34 @@ int Keithley::initHardware ()
 	return 0;
 }
 
+int Keithley::initValues ()
+{
+	int ret = Gpib::initValues ();
+	if (ret)
+		return ret;
+
+	if (strstr (idn->getValue (), "6487"))
+	{	
+		hasSource = true;
+		createValue (svolt, "S_VOLT", "[V] source voltage", true, RTS2_VALUE_WRITABLE);
+
+		createValue (srange, "S_RANGE", "source voltage range", true, RTS2_VALUE_WRITABLE);
+		srange->addSelVal ("10");
+		srange->addSelVal ("50");
+		srange->addSelVal ("500");
+
+		createValue (silim, "S_ILIM", "[A] source current limit", false, RTS2_VALUE_WRITABLE);
+		silim->addSelVal ("2.5e-5");
+		silim->addSelVal ("2.5e-4");
+		silim->addSelVal ("2.5e-3");
+		silim->addSelVal ("2.5e-2");
+
+		createValue (soper, "S_OPER", "source operational?", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+		createValue (s10vinterlock, "S_INTERLOCK", "source interlock", false, RTS2_VALUE_WRITABLE);
+	}
+	return 0;
+}
+
 int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == triggerMode)
@@ -258,6 +349,31 @@ int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value
 		if (old_value == azero)
 		{
 			writeValue ("SYSTEM:AZERO", new_value);
+			return 0;
+		}
+		if (old_value == svolt)
+		{
+			writeValue ("SOUR:VOLT", new_value);
+			return 0;
+		}
+		if (old_value == srange)
+		{
+			writeValue ("SOUR:VOLT:RANG", new_value);
+			return 0;
+		}
+		if (old_value == silim)
+		{
+			writeValue ("SOUR:VOLT:ILIM", new_value);
+			return 0;
+		}
+		if (old_value == soper)
+		{
+			writeValue ("SOUR:VOLT:STAT", new_value);
+			return 0;
+		}
+		if (old_value == s10vinterlock)
+		{
+			writeValue ("SOUR:VOLT:INT", new_value);
 			return 0;
 		}
 		if (old_value == countNum)
@@ -342,6 +458,44 @@ int Keithley::info ()
 		gpibWrite ("TRAC:FEED:CONT NEXT");
 		if (countNum->getValueInteger () > 200)
 			setTimeout (3);
+
+		if (hasSource)
+		{
+			// missues of svolt..
+			readValue ("SOUR:VOLT:RANG?", svolt);
+			switch (svolt->getValueInteger ())
+			{
+				case 10:
+					srange->setValueInteger (0);
+					break;
+				case 50:
+					srange->setValueInteger (1);
+					break;
+				case 500:
+					srange->setValueInteger (2);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "unknow source voltage range " << svolt->getValueDouble () << sendLog;
+					svolt->setValueDouble (NAN);
+			}
+			readValue ("SOUR:VOLT:ILIM?", svolt);
+			int i = 6;
+			float si = svolt->getValueDouble ();
+			svolt->setValueDouble (NAN);
+			while (si < 20)
+			{
+				i--;
+				si *= 10;
+			}
+			std::cout << "i " << i << std::endl;
+			if (i > 0)
+			{
+				silim->setValueInteger (i);
+			}
+			readValue ("SOUR:VOLT?", svolt);
+			readValue ("SOUR:VOLT:STAT?", soper);
+			readValue ("SOUR:VOLT:INT:FAIL?", s10vinterlock);
+		}
 	}
 	catch (rts2core::Error er)
 	{

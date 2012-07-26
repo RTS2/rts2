@@ -42,6 +42,8 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	enet_addr = NULL;
 	prologix = NULL;
 	serial_port = NULL;
+	
+	idn = NULL;
 
 	serial_baud = rts2core::BS9600;
 	serial_csize = rts2core::C8;
@@ -107,9 +109,11 @@ int Gpib::processOption (int _opt)
 				serial_baud = rts2core::BS1200;
 			else if (!strcmp (optarg, "9600"))
 				serial_baud = rts2core::BS9600;
+			else if (!strcmp (optarg, "57600"))
+				serial_baud = rts2core::BS57600;
 			else
 			{
-				std::cerr << "invalid baud speed " << optarg << ", must be 1200 or 9600" << std::endl;
+				std::cerr << "invalid baud speed " << optarg << ", must be 1200, 9600 or 57600" << std::endl;
 				return -1;
 			}
 			break;
@@ -159,7 +163,7 @@ int Gpib::processOption (int _opt)
 
 int Gpib::initValues ()
 {
-	rts2core::ValueString *idn = new rts2core::ValueString ("IDN", "identification string", true);
+	idn = new rts2core::ValueString ("IDN", "identification string", true);
 	readValue ("*IDN?", idn);
 	addConstValue (idn);
 	return Sensor::initValues ();
