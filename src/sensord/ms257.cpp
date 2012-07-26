@@ -33,7 +33,7 @@ class MS257:public Sensor
 		virtual int info ();
 
 	protected:
-		virtual int init ();
+		virtual int initHardware ();
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 		virtual int processOption (int in_opt);
@@ -323,13 +323,9 @@ int MS257::processOption (int in_opt)
 	return 0;
 }
 
-int MS257::init ()
+int MS257::initHardware ()
 {
 	int ret;
-
-	ret = Sensor::init ();
-	if (ret)
-		return ret;
 
 	ms257Dev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 200);
 	ret = ms257Dev->init ();

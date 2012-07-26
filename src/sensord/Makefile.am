@@ -1,6 +1,6 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-multi rts2-sensor-ms257 rts2-sensor-newport-lamp \
 	rts2-sensor-phytron rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
-	rts2-sensor-fram-weather rts2-sensor-bart-rain \
+	rts2-sensor-fram-weather rts2-sensor-bart-rain rts2-sensor-ms260 \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
 	rts2-sensor-hygrowin rts2-sensor-fram rts2-sensor-flwo-weather rts2-sensor-thorlaser \
@@ -19,6 +19,8 @@ rts2_sensor_dummy_SOURCES = dummy.cpp
 rts2_sensor_multi_SOURCES = multi.cpp
 
 rts2_sensor_ms257_SOURCES = ms257.cpp
+
+rts2_sensor_ms260_SOURCES = ms260.cpp
 
 rts2_sensor_newport_lamp_SOURCES = newport-lamp.cpp
 
