@@ -105,7 +105,6 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	char chan;
 	rts2core::ValueDouble *vd;
 	rts2core::ValueBool *vb;
-	rts2core::ValueSelection *vs;
 
 	for (i = 0, chan = 'A'; i < 2; i++, chan++)
 	{
@@ -113,11 +112,6 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 
 		(*(temps[i]))["SDAT"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true));
 		(*(temps[i]))["FILT"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false, RTS2_VALUE_WRITABLE));
-		(*(temps[i]))["INTYPE"].push_back (tempValue (vs, "INTYPE_SENSOR", chan, "channel input sensor type", false, RTS2_VALUE_WRITABLE));
-		vs->addSelVal ("Silicon diode");
-		vs->addSelVal ("Platinum");
-		vs->addSelVal ("GaAlAs diode");
-		vs->addSelVal ("Thermocouple");
 	}
 
 	createValue (cchan, "CCHAN", "control channel", true, RTS2_VALUE_WRITABLE);
@@ -159,9 +153,11 @@ int Lakeshore::info ()
 	{
 		int i;
 		char chan;
-		for (i = 0, chan = 'A'; i < 2; i++, chan++)
+		for (i = 1, chan = 'B'; i >= 0; i--, chan--)
 		{
 			gpibWrite ((std::string ("SCHN ") + chan).c_str ());
+			// time to change channel..
+			sleep (1);
 			for (std::map <const char*, std::list <rts2core::Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
 			{
 				std::ostringstream _os;
