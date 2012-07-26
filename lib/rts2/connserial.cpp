@@ -437,6 +437,7 @@ int ConnSerial::readPort (char *rbuf, int b_len, const char *endChar)
 			// readed till end..
 		 	if (*ch == '\0')
 			{
+				rbuf[tl - strlen (endChar)] = '\0';
 				return tl;
 			}
 			if (readPort (rl, 1) != 1)
