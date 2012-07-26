@@ -216,6 +216,7 @@ int V4L::initHardware ()
 	{
 		if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 			continue;
+#if defined(VL42_CID_EXPOSURE_AUTO) && defined (V4L2_CID_EXPOSURE_ABSOLUTE)
 		switch (queryctrl.id)
 		{
 			case V4L2_CID_EXPOSURE_AUTO:
@@ -225,6 +226,7 @@ int V4L::initHardware ()
 			default:
 				logStream (MESSAGE_DEBUG) << "unhandled option: " << queryctrl.name << " " << queryctrl.id << sendLog;
 		}
+#endif
 		queryctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 
@@ -255,6 +257,7 @@ void V4L::initDataTypes ()
 void V4L::setExposure (float in_exp)
 {
 	// set exposure time
+#if defined(V4L2_CID_EXPOSURE_AUTO) && defined(V4L2_EXPOSURE_MANUAL) && defined(V4L2_CID_EXPOSURE_ABSOLUTE)
 	struct v4l2_ext_control extc[2];
 	extc[0].id = V4L2_CID_EXPOSURE_AUTO;
 	extc[0].value = V4L2_EXPOSURE_MANUAL;
@@ -271,6 +274,7 @@ void V4L::setExposure (float in_exp)
 	{
 		logStream (MESSAGE_ERROR) << "cannot set exposure time" << sendLog;
 	}
+#endif
 }
 
 int V4L::setValue (rts2core::Value *oldValue, rts2core::Value *newValue)
