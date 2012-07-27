@@ -1,0 +1,12 @@
+#!/bin/bash
+# This is the image data directory.
+#
+# Read rts2/scripts/rts2pa/README
+
+# and fetch
+
+wget http://azug.minpet.unibas.ch/~wildi/rts2pa-test-2012-07-27.tgz
+
+# and untar it here:
+
+tar zxvf rts2pa-test-2012-07-27.tgz
