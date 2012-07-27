@@ -36,7 +36,7 @@
 namespace rts2camd
 {
 
-typedef enum {A_plus, A_minus, B, C, D} edtAlgoType;
+typedef enum {A_plus, A_minus, B, C, D, D_Harvard, P_Harvard, S_Harvard} edtAlgoType;
 
 typedef enum {CHANNEL_4, CHANNEL_16} t_controllerType;
 
@@ -127,6 +127,7 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, t_controllerType contr
 			setMax (20);
 			break;
 		case D:
+		case D_Harvard:
 			setMin (0);
 			switch (controllerType)
 			{
@@ -137,6 +138,14 @@ void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, t_controllerType contr
 					setMax (30);
 					break;
 			}
+			break;
+		case S_Harvard:
+			setMin (0);
+			setMax (10);
+			break;
+		case P_Harvard:
+			setMin (0);
+			setMax (12.5);
 			break;
 	}
 }
@@ -171,12 +180,21 @@ long ValueEdt::getHexValue (float in_v, t_controllerType controllerType)
 					val = (long) (in_v * 204.7);
 					break;
 				case CHANNEL_16:
-					val = (long) (((in_v - 3.60) / 20.40) * 4095);
+					val = (long) (((in_v - 1.25) / 20.0) * 4095);
 					break;
 			}
 			break;
 		case D:
 			val = (long) (in_v * 136.5);
+			break;
+		case D_Harvard:
+			val = (long) (((in_v - 1.38) / 30.0) * 4095);
+			break;
+		case S_Harvard:
+			val = (long) (((in_v) / 10.0) * 4095);
+			break;
+		case P_Harvard:
+			val = (long) (((in_v) / 12.5) * 4095);
 			break;
 	}
 	if (val > 0xfff)
@@ -543,7 +561,18 @@ int EdtSao::setADOffset (int ch, int offset)
 
 void EdtSao::setChannel (int ch, bool enabled, bool last)
 {
-	uint32_t o = 0x51000000 | (ch << 8) | ch | (enabled ? 0x0040 : 0x0000) | (last ? 0x8000 : 0x0000);
+	uint32_t o;
+	// hardcoded new 16ch order
+	int ch16[16] = {0x0, 0x4, 0x1, 0x5, 0x2, 0x6, 0x3, 0x7, 0x8, 0xc, 0x9, 0xd, 0xa, 0xe, 0xb, 0xf};
+	switch (controllerType)
+	{
+		case CHANNEL_4:
+			o = 0x51000000 | (ch << 8) | ch | (enabled ? 0x0040 : 0x0000) | (last ? 0x8000 : 0x0000);
+			break;
+		case CHANNEL_16:
+			o = 0x51000000 | (ch << 8) | ch16[ch] | (enabled ? 0x0040 : 0x0000) | (last ? 0x8000 : 0x0000);
+			break;
+	}
 	
 	logStream (MESSAGE_DEBUG) << "channel " << ch << ": " << std::hex << o << sendLog;
 
@@ -678,6 +707,8 @@ void EdtSao::beforeRun ()
 		exit (ret);
 
 	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
+
+	writePattern ();
 
 	ret = setEDTSplit (edtSplit->getValueBool ());
 	if (ret)
@@ -831,7 +862,7 @@ int EdtSao::writePattern ()
 	writeSkip (true, getUsedY (), addr);
 
 	// write lines till getUsedHeight line
-	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
+	setUsedHeight (writeReadPattern (true, getUsedHeight (), binningVertical () > 0 ? binningVertical () : 1, addr));
 	// skip lines till end (top) of CCD
 	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
 
@@ -850,7 +881,7 @@ int EdtSao::writePattern ()
 	// skip more lines, if we are in window mode
 	writeSkip (false, getUsedX (), addr);
 	// write read pixels
-	chipUsedReadout->setWidth (writeReadPattern (false, getUsedWidth (), binningHorizontal (), addr));
+	chipUsedReadout->setWidth (writeReadPattern (false, getUsedWidth (), binningHorizontal () > 0 ? binningHorizontal () : 1, addr));
 	// skip pixels till end of line
 	writeSkip (false, getWidth () - getUsedWidth () - getUsedX (), addr);
 
@@ -941,7 +972,7 @@ int EdtSao::startExposure ()
 	if (dofcl->getValueBool ())
 		fclr_r (fclrNum->getValueInteger ());
 
-	writeBinFile ("e2v_freezesc.bin");
+//	writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
 	/* set time */
@@ -994,7 +1025,7 @@ long EdtSao::isExposing ()
 	if ((!overrun && shutter) || overrun)
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
-	writeBinFile ("e2v_unfreezesc.bin");
+//	writeBinFile ("e2v_unfreezesc.bin");
 	return -2;
 }
 
@@ -1442,6 +1473,10 @@ int EdtSao::init ()
 		ADoffsets->addValue (0);
 	}
 
+	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
+
+	writePattern ();
+
 	return 0;
 }
 
@@ -1454,15 +1489,15 @@ int EdtSao::initValues ()
 
 	vhi->initEdt (0xA0080, A_plus, controllerType);
 	vlo->initEdt (0xA0188, A_minus, controllerType);
-	phi->initEdt (0xA0084, A_plus, controllerType);
-	plo->initEdt (0xA0184, A_minus, controllerType);
-	shi->initEdt (0xA008C, A_plus, controllerType);
-	slo->initEdt (0xA0180, A_minus, controllerType);
-	rhi->initEdt (0xA0088, A_plus, controllerType);
-	rlo->initEdt (0xA018C, A_minus, controllerType);
+	phi->initEdt (0xA0084, P_Harvard, controllerType);
+	plo->initEdt (0xA0184, P_Harvard, controllerType);
+	shi->initEdt (0xA008C, S_Harvard, controllerType);
+	slo->initEdt (0xA0180, S_Harvard, controllerType);
+	rhi->initEdt (0xA0088, P_Harvard, controllerType);
+	rlo->initEdt (0xA018C, P_Harvard, controllerType);
 	rd->initEdt (0xA0384, C, controllerType);
-	od1r->initEdt (0xA0388, D, controllerType);
-	od2l->initEdt (0xA038C, D, controllerType);
+	od1r->initEdt (0xA0388, D_Harvard, controllerType);
+	od2l->initEdt (0xA038C, D_Harvard, controllerType);
 	og1r->initEdt (0xA0288, B, controllerType);
 	og2l->initEdt (0xA028C, B, controllerType);
 	
