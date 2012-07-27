@@ -59,7 +59,7 @@ class Keithley:public Gpib
 		rts2core::ValueBool *azero;
 
 		// source parameters
-		rts2core::ValueFloat *svolt;
+		rts2core::ValueDoubleMinMax *svolt;
 		rts2core::ValueSelection *srange;
 		rts2core::ValueSelection *silim;
 		rts2core::ValueBool *soper;
@@ -113,6 +113,7 @@ void Keithley::getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2co
 			switch (pos)
 			{
 				case 0:
+					rval *= 1e+12;
 					sval->addValue (rval);
 					val->addValue (rval);
 					break;
@@ -148,6 +149,7 @@ void Keithley::getGPIB (const char *buf, rts2core::ValueDoubleStat *sval, rts2co
 			top += 12;
 		}
 	}
+	sval->calculate ();
 	logStream (MESSAGE_DEBUG) << "received " << (ocount - count) << " readings" << sendLog;
 	if (count != 0)
 		logStream (MESSAGE_ERROR) << "received wrong number of readings (" << count << ")!" << sendLog;
@@ -311,6 +313,8 @@ int Keithley::initValues ()
 	{	
 		hasSource = true;
 		createValue (svolt, "S_VOLT", "[V] source voltage", true, RTS2_VALUE_WRITABLE);
+		svolt->setMin (-500);
+		svolt->setMax (500);
 
 		createValue (srange, "S_RANGE", "source voltage range", true, RTS2_VALUE_WRITABLE);
 		srange->addSelVal ("10");
