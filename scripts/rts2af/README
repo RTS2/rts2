@@ -86,7 +86,7 @@ Testing offline
   cd rts2/scripts/rts2af/test/focus
   wget http://azug.minpet.unibas.ch/~wildi/rts2af-test-focus-2012-07-20.tgz
   tar zxvf rts2af-test-focus-2012-07-20.tgz
-  cd ..
+  cd ../..
 
   Execute the scripts beginning with run_* . A minimal help text
   is printed on terminal, mainly saying where the log files are
@@ -94,11 +94,11 @@ Testing offline
 
   Step 1: run_rts2af_fits.sh
   --------------------------
-  run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files.
+  ./run_rts2af_fits.sh tests rts2af_fits.py fitting with data from files.
 
   Step 2: run_rts2af_analysis.sh
   -----------------------------
-  run_rts2af_analysis.sh tests rts2af_analysis.py, SExtractor and rts2af_fits.py and performs 
+  ./run_rts2af_analysis.sh tests rts2af_analysis.py, SExtractor and rts2af_fits.py and performs 
   the whole analysis with real images. The SExtractor configuration files must be in place 
   (normally in /etc/rts2/rts2af/sex).
 
@@ -119,8 +119,6 @@ Testing through RTS2, night- and daytime
   ---------------------------
   rts2-mon
   SEL  -> selector_enabled=false
-  EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
-                                # rts2af_feedback_acquire.py below 
   EXEC -> auto_loop=false       # you restart the process if necessary
 
   EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
@@ -140,6 +138,11 @@ Testing through RTS2, night- and daytime
   Setting test_acquire True invokes script rts2af_feedback_acquire.py instead of 
   rts2af_analysis.py. It does not really fit the data, since the images contain 
   only  random noise, but send a plausible set of formatted data to rts2af_acqure.py.
+  
+
+  EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
+                                # rts2af_feedback_acquire.py below 
+
 
 
 
