@@ -44,7 +44,6 @@ class Keithley:public Gpib
 		virtual int processOption (int opt);
 
 		virtual int initHardware ();
-		virtual int initValues ();
 
 		virtual int setValue (rts2core::Value * old_value, rts2core::Value * new_value);
 
@@ -242,15 +241,39 @@ int Keithley::initHardware ()
 	if (ret)
 		return ret;
 
-	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
-	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
-	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
-
 	try
 	{
 		// start and setup measurements..
 		gpibWrite ("*RST");
 		// start and setup measurements..
+		char buf[100];
+		gpibWriteRead ("*IDN?", buf, 100);
+		if (strstr (buf, "6487"))
+		{
+			hasSource = true;
+			createValue (svolt, "S_VOLT", "[V] source voltage", true, RTS2_VALUE_WRITABLE);
+			svolt->setMin (-500);
+			svolt->setMax (500);
+
+			createValue (srange, "S_RANGE", "source voltage range", true, RTS2_VALUE_WRITABLE);
+			srange->addSelVal ("10");
+			srange->addSelVal ("50");
+			srange->addSelVal ("500");
+
+			createValue (silim, "S_ILIM", "[A] source current limit", false, RTS2_VALUE_WRITABLE);
+			silim->addSelVal ("2.5e-5");
+			silim->addSelVal ("2.5e-4");
+			silim->addSelVal ("2.5e-3");
+			silim->addSelVal ("2.5e-2");
+
+			createValue (soper, "S_OPER", "source operational?", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
+			createValue (s10vinterlock, "S_INTERLOCK", "source interlock", false, RTS2_VALUE_WRITABLE);
+		}
+
+		createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+		createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+		createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(groupNumber));
+
 		gpibWrite ("*CLS");
 		gpibWrite ("*SRE 0");
 
@@ -303,36 +326,6 @@ int Keithley::initHardware ()
 	return 0;
 }
 
-int Keithley::initValues ()
-{
-	int ret = Gpib::initValues ();
-	if (ret)
-		return ret;
-
-	if (strstr (idn->getValue (), "6487"))
-	{	
-		hasSource = true;
-		createValue (svolt, "S_VOLT", "[V] source voltage", true, RTS2_VALUE_WRITABLE);
-		svolt->setMin (-500);
-		svolt->setMax (500);
-
-		createValue (srange, "S_RANGE", "source voltage range", true, RTS2_VALUE_WRITABLE);
-		srange->addSelVal ("10");
-		srange->addSelVal ("50");
-		srange->addSelVal ("500");
-
-		createValue (silim, "S_ILIM", "[A] source current limit", false, RTS2_VALUE_WRITABLE);
-		silim->addSelVal ("2.5e-5");
-		silim->addSelVal ("2.5e-4");
-		silim->addSelVal ("2.5e-3");
-		silim->addSelVal ("2.5e-2");
-
-		createValue (soper, "S_OPER", "source operational?", true, RTS2_DT_ONOFF | RTS2_VALUE_WRITABLE);
-		createValue (s10vinterlock, "S_INTERLOCK", "source interlock", false, RTS2_VALUE_WRITABLE);
-	}
-	return 0;
-}
-
 int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 {
 	if (old_value == triggerMode)
@@ -357,7 +350,9 @@ int Keithley::setValue (rts2core::Value * old_value, rts2core::Value * new_value
 		}
 		if (old_value == svolt)
 		{
-			writeValue ("SOUR:VOLT", new_value);
+			std::ostringstream os;
+			os << "SOUR:VOLT " << new_value->getValueDouble ();
+			gpibWrite (os.str ().c_str ());
 			return 0;
 		}
 		if (old_value == srange)
