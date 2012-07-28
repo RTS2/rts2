@@ -58,7 +58,7 @@ class Arc:public Camera
 		virtual ~Arc ();
 
 		virtual int info ();
-
+		virtual int scriptEnds ();
 		virtual int killAll (bool callScriptEnds);
 
 	protected:
@@ -112,6 +112,9 @@ class Arc:public Camera
 		arc::CController controller;
 		long lDeviceNumber;
 		rts2core::ValueBool *synthetic;
+		
+		// if chip should be clear during exposure..
+		rts2core::ValueSelection *clearCCD;
 #endif
 };
 
@@ -144,6 +147,13 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 #ifdef ARC_API_1_7
 
 #else
+	createValue (clearCCD, "CLEAR", "clear CCD before exposure", false, RTS2_VALUE_WRITABLE);
+	clearCCD->addSelVal ("normal");
+	clearCCD->addSelVal ("first in sequence");
+	clearCCD->addSelVal ("in sequence");
+	clearCCD->addSelVal ("last in sequence");
+	clearCCD->setValueInteger (0);
+
 	createValue (synthetic, "synthetic", "use synthetic image", true, RTS2_VALUE_WRITABLE);
 	synthetic->setValueBool (false);
 #endif
@@ -192,6 +202,12 @@ int Arc::info ()
 	}
 #endif
 	return Camera::info ();
+}
+
+int Arc::scriptEnds ()
+{
+	clearCCD->setValueInteger (0);
+	return Camera::scriptEnds ();
 }
 
 int Arc::killAll (bool callScriptEnds)
@@ -462,6 +478,13 @@ int Arc::startExposure ()
 			int oRows, oCols;
 			controller.SetSubArray (oRows, oCols, y, x, bh, bw, getWidth (), 0);
 		}
+		if (clearCCD->getValueInteger ())
+		{
+			if (clearCCD->getValueInteger () == 1)
+				controller.Command (arc::TIM_ID, CLR);
+			controller.Command (arc::TIM_ID, OSH);
+			return 0;
+		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
 		controller.SetOpenShutter (getExpType () == 0);
@@ -488,6 +511,16 @@ long Arc::isExposing ()
 
 	return -2;
 #else
+	if (clearCCD->getValueInteger ())
+	{
+		int ret = Camera::isExposing ();
+		if (ret == -2)
+		{
+			controller.Command (arc::TIM_ID, CSH);
+			return (clearCCD->getValueInteger () == 3) ? -2 : -4;
+		}
+		return ret;
+	}
 	try
 	{
 		long lPixCnt = controller.GetPixelCount ();
