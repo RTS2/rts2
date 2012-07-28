@@ -197,6 +197,10 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	configFile = NULL;
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 #endif
+
+#ifdef HAVE_LIBJPEG
+	Magick::InitializeMagick (".");
+#endif
 }
 
 ImageProc::~ImageProc (void)
