@@ -128,7 +128,7 @@ class Rts2JSON:
 			r.set_debuglevel(5)
 		return r
 
-	def getResponse(self,path,args=None,hlib=None):
+	def getResponse(self, path, args=None, hlib=None):
 		url = self.prefix + path
 		if args:
 			url += '?' + urllib.urlencode(args)
@@ -173,16 +173,16 @@ class Rts2JSON:
 			if hlib is None:
 				self.hlib_lock.release()
 	
-	def loadData(self,path,args={},hlib=None):
-		return self.getResponse(path,args,hlib).read()
+	def loadData(self, path, args={}, hlib=None):
+		return self.getResponse(path, args, hlib).read()
 
-	def loadJson(self,path,args=None):
-		d = self.loadData(path,args)
+	def loadJson(self, path, args=None):
+		d = self.loadData(path, args)
 		if self.verbose:
 			print d
 		return sysjson.loads(d)
 
-	def chunkJson(self,r):
+	def chunkJson(self, r):
 		r.read_by_chunks = True
 		d = r.read()
 		if self.verbose:
@@ -192,22 +192,37 @@ class Rts2JSON:
 
 class JSONProxy(Rts2JSON):
 	"""Connection with managed cache of variables."""
-	def __init__(self,url='http://localhost:8889',username=None,password=None,verbose=False,http_proxy=None):
-		Rts2JSON.__init__(self,url,username,password,verbose,http_proxy)
+	def __init__(self, url='http://localhost:8889', username = None, password = None, verbose = False, http_proxy = None):
+		Rts2JSON.__init__(self, url, username, password, verbose, http_proxy)
 		self.devices = {}
 	
-	def refresh(self,device=None):
+	def refresh(self, device=None):
 		if device is None:
-			self.devices = {}
-			for x in self.loadJson('/api/devices'):
-				self.devices[x] = self.loadJson('/api/get',{'d':x})
+			dall = self.loadJson('/api/getall', {'e': 1})
+			self.devices = dict(map(lambda x: (x, dall[x]['d']), dall))
 
-		self.devices[device] = self.loadJson('/api/get',{'d':device})['d']
+		else:
+			self.devices[device] = self.loadJson('/api/get', {'d': device, 'e': 1})['d']
 
-	def getState(self,device):
-		return self.loadJson('/api/get',{'d':device})['state']
+	def isIdle(self, device):
+		return self.loadJson('/api/get', {'d': device, 'e' : 1})['idle']
+
+	def getState(self, device):
+		return self.loadJson('/api/get',{'d': device})['state']
+
+	def getDeviceInfo(self, device):
+		return self.loadJson('/api/deviceinfo', {'d':device})
+
+	def getDevice(self, device, refresh_not_found = False):
+		try:
+			return self.devices[device]
+		except KeyError,ke:
+			if refresh_not_found == False:
+				raise ke
+			self.refresh(device)
+			return self.devices[device]
 	
-	def getValue(self,device,value,refresh_not_found=False):
+	def getVariable(self, device, value, refresh_not_found = False):
 		try:
 			return self.devices[device][value]
 		except KeyError,ke:
@@ -215,12 +230,30 @@ class JSONProxy(Rts2JSON):
 				raise ke
 			self.refresh(device)
 			return self.devices[device][value]
-	
-	def setValue(self,device,name,value,async=None):
-		values = {'d':device,'n':name,'v':value,'async':async}
+
+	def getValue(self, device, value, refresh_not_found = False):
+		return self.getVariable(device, value, refresh_not_found)[1]
+
+	def getSelection(self, device, name, statusbar=None):
+		try:
+			return self.selection_cache[device][name]
+		except KeyError,k:
+			rep = self.loadJson('/api/selval', {'d':device, 'n':name}, statusbar)
+			try:
+				self.selection_cache[device][name] = rep
+			except KeyError,k2:
+				self.selection_cache[device] = {}
+				self.selection_cache[device][name] = rep
+			return rep
+
+	def setValue(self, device, name, value, async=None):
+		values = {'d': device, 'n': name, 'v': value, 'async': async}
 		if async:
 			values['async'] = async
-		self.loadJson('/api/set',values)
+		self.loadJson('/api/set', values)
+
+	def incValue(self, device, name, value):
+		return self.loadJson('/api/inc', {'d': device, 'n': name, 'v': value})
 
 	def setValues(self,values,device=None,async=None):
 		if device:
