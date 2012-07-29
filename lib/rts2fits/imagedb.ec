@@ -22,6 +22,7 @@
 #include "libnova_cpp.h"
 
 #include "rts2fits/imagedb.h"
+#include "rts2fits/dbfilters.h"
 
 #include <iomanip>
 #include <libnova/airmass.h>
@@ -69,6 +70,13 @@ void ImageDb::getValueInd (const char *name, float &value, int &ind, char *comme
 	}
 }
 
+int ImageDb::getDBFilter ()
+{
+	DBFilters *filters = DBFilters::instance ();
+	filters->load ();
+	return filters->getIndex (getFilter ());
+}
+
 ImageDb::ImageDb (): Image ()
 {
 	initDbImage ();
@@ -109,20 +117,21 @@ ImageDb::ImageDb (long in_img_date, int in_img_usec, float in_img_exposure):Imag
 int ImageDb::getOKCount ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_obs_id = getObsId ();
-		int db_count = 0;
+	int db_obs_id = getObsId ();
+	int db_count = 0;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL
-		SELECT
+	SELECT
 		count (*)
-		INTO
-			:db_count
-		FROM
-			images
-		WHERE
-			obs_id = :db_obs_id
-		AND ((process_bitfield & 2) = 2);
+	INTO
+		:db_count
+	FROM
+		images
+	WHERE
+		obs_id = :db_obs_id
+	AND ((process_bitfield & 2) = 2);
+
 	EXEC SQL ROLLBACK;
 
 	return db_count;
@@ -204,7 +213,7 @@ int ImageSkyDb::updateDB ()
 	int d_img_qmagmax_ind;
 	VARCHAR d_mount_name[8];
 	VARCHAR d_camera_name[8];
-	VARCHAR d_img_filter[3];
+	int d_filter_id;
 	EXEC SQL END DECLARE SECTION;
 
 	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
@@ -216,8 +225,7 @@ int ImageSkyDb::updateDB ()
 	strncpy (d_camera_name.arr, getCameraName (), 8);
 	d_camera_name.len = strlen (getCameraName ());
 
-	d_img_filter.len = strlen (getFilter()) > 3 ? 3 : strlen (getFilter());
-	strncpy (d_img_filter.arr, getFilter(), d_img_filter.len);
+	d_filter_id = getDBFilter ();
 
 	d_img_exposure = getExposureLength ();
 	getValue ("TEL_ALT", d_img_alt);
@@ -240,7 +248,7 @@ int ImageSkyDb::updateDB ()
 			camera_name,
 			img_temperature,
 			img_exposure,
-			img_filter,
+			filter_id,
 			img_alt,
 			img_az,
 			img_date,
@@ -261,7 +269,7 @@ int ImageSkyDb::updateDB ()
 			:d_camera_name,
 			:d_img_temperature :d_img_temperature_ind,
 			:d_img_exposure,
-			:d_img_filter,
+			:d_filter_id,
 			:d_img_alt,
 			:d_img_az,
 			to_timestamp (:d_img_date),
@@ -289,7 +297,7 @@ int ImageSkyDb::updateDB ()
 				img_fwhm = :d_img_fwhm :d_img_fwhm_ind,
 				img_limmag = :d_img_limmag :d_img_limmag_ind,
 				img_qmagmax = :d_img_qmagmax :d_img_qmagmax_ind,
-				img_filter = :d_img_filter
+				filter_id = :d_filter_id
 			WHERE
 				img_id = :d_img_id AND obs_id = :d_obs_id;
 		// still error.. return -1

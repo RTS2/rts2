@@ -16,7 +16,7 @@ namespace rts2db {
 class ImageSetStat
 {
 	public:
-		ImageSetStat (std::string in_filter = std::string (""))
+		ImageSetStat (int in_filter = -1)
 		{
 			filter = in_filter;
 			img_alt = 0;
@@ -27,10 +27,10 @@ class ImageSetStat
 			count = 0;
 			astro_count = 0;
 		}
-		~ImageSetStat (void)
-		{
-		}
-		std::string filter;
+
+		~ImageSetStat (void) {}
+
+		int filter;
 		float img_alt;
 		float img_az;
 		float img_err;

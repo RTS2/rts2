@@ -115,6 +115,7 @@ int Scriptor::processOption (int in_opt)
 			break;
 		case OPT_GEN:
 			scriptGen->addSelVal (optarg);
+			scriptGen->setValueInteger (1);
 			break;
 		default:
 			return rts2core::Device::processOption (in_opt);

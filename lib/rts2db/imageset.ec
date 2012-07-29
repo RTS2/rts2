@@ -21,6 +21,7 @@
 
 #include "rts2db/imageset.h"
 #include "rts2db/observation.h"
+#include "rts2fits/dbfilters.h"
 
 #include <sstream>
 
@@ -45,35 +46,35 @@ ImageSet::~ImageSet (void)
 int ImageSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		char *stmp_c;
+	char *stmp_c;
 
-		int d_tar_id;
-		int d_obs_id;
-		int d_img_id;
-		char d_obs_subtype;
-		long d_img_date;
-		int d_img_usec;
-		float d_img_exposure;
-		float d_img_temperature;
-		VARCHAR d_img_filter[3];
-		float d_img_alt;
-		float d_img_az;
-		// cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
-		VARCHAR d_camera_name[50];
-		// cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
-		VARCHAR d_mount_name[50];
-		bool d_delete_flag;
-		int d_process_bitfield;
-		double d_img_err_ra;
-		double d_img_err_dec;
-		double d_img_err;
-		VARCHAR d_img_path[101];
+	int d_tar_id;
+	int d_obs_id;
+	int d_img_id;
+	char d_obs_subtype;
+	long d_img_date;
+	int d_img_usec;
+	float d_img_exposure;
+	float d_img_temperature;
+	int d_filter_id;
+	float d_img_alt;
+	float d_img_az;
+	// cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
+	VARCHAR d_camera_name[50];
+	// cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
+	VARCHAR d_mount_name[50];
+	bool d_delete_flag;
+	int d_process_bitfield;
+	double d_img_err_ra;
+	double d_img_err_dec;
+	double d_img_err;
+	VARCHAR d_img_path[101];
 
-		int d_img_temperature_ind;
-		int d_img_err_ra_ind;
-		int d_img_err_dec_ind;
-		int d_img_err_ind;
-		int d_img_path_ind;
+	int d_img_temperature_ind;
+	int d_img_err_ra_ind;
+	int d_img_err_dec_ind;
+	int d_img_err_ind;
+	int d_img_path_ind;
 
 	EXEC SQL END DECLARE SECTION;
 
@@ -88,7 +89,7 @@ int ImageSet::load (std::string in_where)
 		"img_usec,"
 		"img_exposure,"
 		"img_temperature,"
-		"img_filter,"
+		"filter_id,"
 		"img_alt,"
 		"img_az,"
 		"camera_name,"
@@ -114,6 +115,9 @@ int ImageSet::load (std::string in_where)
 
 	delete[] stmp_c;
 
+	rts2image::DBFilters *filters = rts2image::DBFilters::instance ();
+	filters->load ();
+
 	EXEC SQL DECLARE cur_images CURSOR FOR cur_images_stmp;
 
 	EXEC SQL OPEN cur_images;
@@ -128,7 +132,7 @@ int ImageSet::load (std::string in_where)
 				:d_img_usec,
 				:d_img_exposure,
 				:d_img_temperature :d_img_temperature_ind,
-				:d_img_filter,
+				:d_filter_id,
 				:d_img_alt,
 				:d_img_az,
 				:d_camera_name,
@@ -141,8 +145,6 @@ int ImageSet::load (std::string in_where)
 				:d_img_path :d_img_path_ind;
 		if (sqlca.sqlcode)
 			break;
-
-		d_img_filter.arr[d_img_filter.len] = '\0';
 
 		if (d_img_temperature_ind < 0)
 			d_img_temperature = NAN;
@@ -165,7 +167,7 @@ int ImageSet::load (std::string in_where)
 		allStat.count++;
 		allStat.exposure += d_img_exposure;
 
-		std::vector <ImageSetStat>::iterator iter = getStat (std::string (d_img_filter.arr));
+		std::vector <ImageSetStat>::iterator iter = getStat (d_filter_id);
 
 		(*iter).img_alt += d_img_alt;
 		(*iter).img_az  += d_img_az;
@@ -187,7 +189,7 @@ int ImageSet::load (std::string in_where)
 			d_img_path.arr[d_img_path.len] = '\0';
 
 		push_back (new rts2image::ImageSkyDb (d_tar_id, d_obs_id, d_img_id, d_obs_subtype,
-			d_img_date, d_img_usec, d_img_exposure, d_img_temperature, d_img_filter.arr, d_img_alt, d_img_az,
+			d_img_date, d_img_usec, d_img_exposure, d_img_temperature, (*filters)[d_filter_id].c_str (), d_img_alt, d_img_az,
 			d_camera_name.arr, d_mount_name.arr, d_delete_flag, d_process_bitfield, d_img_err_ra,
 			d_img_err_dec, d_img_err, d_img_path.arr));
 
@@ -278,11 +280,10 @@ int ImageSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 	return aNum;
 }
 
-std::vector <ImageSetStat>::iterator ImageSet::getStat (std::string in_filter)
+std::vector <ImageSetStat>::iterator ImageSet::getStat (int in_filter)
 {
 	std::vector <ImageSetStat>::iterator iter;
-	for (iter = filterStat.begin ();
-		iter != filterStat.end (); iter++)
+	for (iter = filterStat.begin (); iter != filterStat.end (); iter++)
 	{
 		if ((*iter).filter == in_filter)
 			return iter;

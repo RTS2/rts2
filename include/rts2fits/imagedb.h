@@ -80,6 +80,8 @@ class ImageDb:public Image
 
 		void getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
 		void getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
+
+		int getDBFilter ();
 };
 
 class ImageSkyDb:public ImageDb

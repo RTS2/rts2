@@ -5,9 +5,12 @@ create table objects (
 	obj_gsc        varchar(20)
 );
 
+CREATE INDEX objects_ra on objects (obj_ra);
+CREATE INDEX objects_dec on objects (obj_dec);
+
 create table standards (
 	obj_id         integer REFERENCES objects(obj_id),
-	std_filter     varchar(3) REFERENCES filters(filter_id),
+	std_filter     integer REFERENCES filters(filter_id),
 	std_mag        float NOT NULL,
 	std_quality    integer
 );

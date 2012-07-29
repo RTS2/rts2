@@ -50,7 +50,7 @@ class ImageSet:public std::vector <rts2image::Image * >
 		void print (std::ostream & _os, int printImages);
 		int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
-		std::vector < ImageSetStat >::iterator   getStat (std::string in_filter);
+		std::vector < ImageSetStat >::iterator getStat (int in_filter);
 
 		friend std::ostream & operator << (std::ostream & _os, ImageSet & img_set)
 		{

@@ -21,16 +21,24 @@
 /**
  * @page JSON JSON (Java Script Object Notation) API calls
  *
- * The <a href='http://www.json.org'>Java Script Object Notation</a> is a protocol to transmit
- * structured information on text file (or mostly make them available as HTTP pages). 
- * The <a href='http://rts2.org>RTS2</a> API exposes various, both RTS2 devices manipulation, through
- * various calls. The calls are simply URLs, with arguments to parametrize those calls. When 
- * the URL is called, retrieved text is in JSON format. This return text containts all data need to 
+ * The <a href='http://www.json.org'>Java Script Object Notation</a> is a
+ * lightweight data-interchange format. <a href='http://rts2.org'>RTS2</a>
+ * provides JSON API which allows external programs to control the
+ * observatories and other systems running RTS2. Calls are realized over HTTP
+ * protocol as GET/POST requests, with arguments used to parametrize call.
+ * Calls are handled by XMLRPCD component of the RTS2. Data returned through
+ * HTTP protocol are JSON encoded data.
  *
- * @section Involved components
+ * In order to be able to use JSON API, \ref rts2-xmlrpcd must be installed and
+ * running on your system. Its manual page, available on most systems under
+ * <i>man rts2-xmlrpcd</i>, provides details needed for its configuration.
+ * Those pages documents available calls.
  *
- * For your installation to have available JSON API, you must have \ref rts2-xmlrpcd up and running.
- * The following diagram gets an overview how both database and device calls are handled.
+ * @section Propagation of call through RTS2.
+ *
+ * JSON calls need to be propagated through RTS2 system. Response to call must
+ * be provided only after it becomes available from RTS2 subsystems. The
+ * following diagram provides an overview how the API calls are handled.
  *
  * @dot
 digraph "JSON API calls handling" {
@@ -53,14 +61,16 @@ digraph "JSON API calls handling" {
  * @section JSON_API_errors Error handling
  *
  * Calls to existing API points with invalid arguments returns a valid JSON
- * document with error decription. This happens e.g. if one call \ref JSON_device_set
- * with devices not present in the system.
+ * document with error decription. For example call of \ref JSON_device_set
+ * with device argument pointing to device not present in the system will
+ * return this error.
  *
- * Calls to non-existent pages returns proper HTTP error codes.
+ * Calls to non-existent points returns HTTP error code.
  *
  * @section JSON_API_calls JSON API calls
  *
- * The calls were grouped to two categories, which are linked below:
+ * The calls are divided into two categories - device and SQL (database) calls.
+ * Detailed description is provided on two pages:
  *
  *  - @ref JSON_device
  *  - @ref JSON_sql
@@ -248,6 +258,20 @@ digraph "JSON API calls handling" {
  *  - <b>isWarning</b>, <i>1 if value has signalled warning</i>
  *  - <b>description</b> <i>short description of the variable</i>
  *  - ]
+ *
+ * <hr/>
+ *
+ * @section JSON_device_getall getall
+ *
+ * Get information from all devices connected to the system.
+ *
+ * @subsection Example
+ *
+ * http://localhost:8889/api/getall
+ *
+ * @subsection Parameters
+ *
+ * - <i><b>e</b> Extended format. If set to 1, returned structure will containt with values some meta-information. Default to 0.</i>
  *
  * <hr/>
  *

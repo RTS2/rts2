@@ -14,12 +14,11 @@ CREATE INDEX message_type ON message (message_type);
 
 -- filters information
 CREATE TABLE filters (
-	filter_id	varchar(3) PRIMARY KEY,
+	filter_id	integer PRIMARY KEY,
 	offset_ra	float8,
 	offset_dec	float8,
 	-- standart name - UBVR & others
-	standart_name	varchar(10),
-	description	varchar(2000),
+	standart_name	varchar(40),
 	-- medium wavelenght in nm
 	medium_wl	float,
 	-- filter width in nm

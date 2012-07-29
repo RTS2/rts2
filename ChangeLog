@@ -1,3 +1,6 @@
+2012-07-29
+ * filter_id (integer) used as index instead of filter name
+
 2012-07-09
  * global replace of rts2_nan with NAN
 

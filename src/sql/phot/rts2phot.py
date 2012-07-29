@@ -3,8 +3,8 @@
 # Photometry manipulation scripts
 # Copyright (C) 2012 Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
 
-
 import psycopg2
+import math
 
 class Phot:
 	def __init__(self):
@@ -25,9 +25,11 @@ class Phot:
 		self.conn.commit()
 		cur.close()
 	
-	def get_object(self,ra,dec):
+	def get_object(self,ra,dec,size=0.1):
 		cur = self.conn.cursor()
-		cur.execute('SELECT obj_id,obj_ra,obj_dec,obj_gsc FROM objects WHERE ',())
+		# select objects in square around star within given range
+		cur.execute('SELECT obj_id,obj_ra,obj_dec,obj_gsc FROM objects WHERE abs(obj_ra - %s) < %s and abs (obj_dec - %s) < %s',(ra, size / math.cos (math.radians(dec))),dec,size)
+		# order by distance 
 		self.conn.commit()
 		cur.close()
 

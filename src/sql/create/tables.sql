@@ -173,7 +173,7 @@ CREATE TABLE images (
 	img_usec	integer NOT NULL,
 	img_exposure	float,
 	img_temperature	float,
-	img_filter	varchar(3),
+	img_filter	integer,
 	img_alt		float,
 	img_az		float,
 	/* astrometry */
