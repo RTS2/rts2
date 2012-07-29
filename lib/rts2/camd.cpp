@@ -1460,6 +1460,9 @@ int Camera::camStartExposure ()
 		return 0;
 	}
 
+	if (((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
+		maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
+
 	return camStartExposureWithoutCheck ();
 }
 
