@@ -110,7 +110,7 @@ class Image:public FitsFile
 		// skeleton for DB image
 		Image (long in_img_date, int in_img_usec, float in_img_exposure);
 		// create image
-		Image (const char *in_filename, const struct timeval *in_exposureStart, bool _overwrite = false);
+		Image (const char *in_filename, const struct timeval *in_exposureStart, bool _overwrite = false, bool _writeConnection = true, bool _writeRTS2Values = true);
 		/**
 		 * Create image from expand path.
 		 *
@@ -119,7 +119,7 @@ class Image:public FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite = false);
+		Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite = false, bool _writeConnection = true, bool _writeRTS2Values = true);
 
 		/**
 		 * Create image for a given target.

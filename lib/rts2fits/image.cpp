@@ -25,7 +25,6 @@
 #include "expander.h"
 #include "configuration.h"
 #include "timestamp.h"
-#include "utilsfunc.h"
 #include "rts2target.h"
 #include "valuestat.h"
 #include "valuerectangle.h"
@@ -209,17 +208,20 @@ Image::Image (long in_img_date, int in_img_usec, float in_img_exposure):FitsFile
 	exposureLength = in_img_exposure;
 }
 
-Image::Image (const char *_filename, const struct timeval *in_exposureStart, bool _overwrite):FitsFile (in_exposureStart)
+Image::Image (const char *_filename, const struct timeval *in_exposureStart, bool _overwrite, bool _writeConnection, bool _writeRTS2Values):FitsFile (in_exposureStart)
 {
 	initData ();
+	setWriteConnection (_writeConnection, _writeRTS2Values);
 
 	createImage (_filename, _overwrite);
 	writeExposureStart ();
 }
 
-Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite):FitsFile (in_exposureStart)
+Image::Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, rts2core::Connection * in_connection, bool _overwrite, bool _writeConnection, bool _writeRTS2Values):FitsFile (in_exposureStart)
 {
 	initData ();
+	setWriteConnection (_writeConnection, _writeRTS2Values);
+
 	setCameraName (in_connection->getName ());
 	expNum = in_expNum;
 
@@ -300,17 +302,9 @@ std::string Image::expandVariable (char expression, size_t beg, bool &replaceNon
 {
 	switch (expression)
 	{
-		case 'A':
-			return getDateObs (getCtimeSec (), getCtimeUsec ());
 		case 'b':
 			replaceNonAlpha = false;
 			return rts2core::Configuration::instance ()->observatoryBasePath ();
-		case 'C':
-			{
-				std::ostringstream os;
-				os << getCtimeSec ();
-				return os.str ();
-			}
 		case 'c':
 			return getCameraName ();
 		case 'E':
@@ -1945,7 +1939,7 @@ void Image::print (std::ostream & _os, int in_flags)
 		<< std::setw (5) << getCameraName () << SEP
 		<< std::setw (4) << getImgId () << SEP
 		<< Timestamp (getExposureSec () + (double) getExposureUsec () /	USEC_SEC) << SEP
-		<< std::setw (3) << getFilter () << SEP
+		<< std::setw (10) << getFilter () << SEP
 		<< std::setw (8) << std::fixed << TimeDiff (getExposureLength ()) << SEP
 		<< LibnovaDegArcMin (ra_err) << SEP << LibnovaDegArcMin (dec_err) << SEP
 		<< LibnovaDegArcMin (img_err) << std::endl;
