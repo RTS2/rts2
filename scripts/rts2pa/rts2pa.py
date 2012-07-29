@@ -27,6 +27,7 @@ import logging
 from optparse import OptionParser
 import ConfigParser
 import string
+import shutil
 
 class Configuration:
     """Configuration for any PAScript"""    
@@ -39,13 +40,22 @@ class Configuration:
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2pa'
         self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
+        self.dcf[('basic', 'TEST')]= True
+
+        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 1. #[sec]
+        self.dcf[('data_taking', 'DURATION')]= 1800.    #[sec]
+        self.dcf[('data_taking', 'SLEEP')]=     480.    #[sec]
 
         self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
+        self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
+        self.dcf[('astrometry', 'VERBOSE')]= True
 
         self.dcf[('mode', 'mode')]= 'KingA'
 
-        self.dcf[('coordinates', 'ha')]= 0. # hour angle [deg]
-        self.dcf[('coordinates', 'pd')]= 1. # polar distance [deg]
+        self.dcf[('coordinates', 'HA')]= 7.5 # hour angle [deg]
+        self.dcf[('coordinates', 'PD')]= 1. # polar distance [deg]
+
+        self.dcf[('ccd', 'ARCSSEC_PER_PIX')]= 1.41 # polar distance [deg]
 
         self.cf={}
         for (section, identifier), value in sorted(self.dcf.iteritems()):
@@ -132,11 +142,14 @@ import os
 
 class Environment():
     """Class performing various task on files, e.g. expansion to (full) path"""
-    def __init__(self, runTimeConfig=None):
+    def __init__(self, runTimeConfig=None, logger=None):
         self.runTimeConfig=runTimeConfig
         self.now= datetime.datetime.now().isoformat()
+        self.logger= logger
         self.runTimePath= '{0}/{1}/'.format(self.runTimeConfig.cf['BASE_DIRECTORY'], self.now) 
-        os.makedirs( self.runTimePath)
+        if not os.path.isdir(self.runTimePath):
+            os.makedirs( self.runTimePath)
+            logger.debug('Environment: directory: {0} created'.format(self.runTimePath))
 
     def prefix( self, fileName):
         return 'rts2pa-' +fileName
@@ -148,30 +161,15 @@ class Environment():
         fileName= self.runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
 
-#    def defineRunTimePath(self, fileName=None):
-#        for root, dirs, names in os.walk(self.runTimeConfig.value('BASE_DIRECTORY')):
-#            if( fileName.rstrip() in names):
-#                self.runTimePath= root
-#                return True
-#        else:
-#            logging.error('FileOperations.defineRunTimePath: file not found: {0}'.format(fileName))
-#
-#        return False
-
-#    def expandToRunTimePath(self, pathName=None):
-#        if( os.path.isabs(pathName)):
-#            self.runDateTime= pathName.split('/')[-3] 
-#            return pathName
-#        else:
-#            fileName= pathName.split('/')[-1]
-#            if( self.defineRunTimePath( fileName)):
-#                self.runDateTime= self.runTimePath.split('/')[-2]
-# 
-#                return self.runTimePath + '/' + fileName
-#            else:
-#                return None
-
-
+    def moveToRunTimePath(self, pathName=None):
+        fn= pathName.split('/')[-1]
+        dst= '{0}{1}'.format(self.runTimePath, fn)
+        try:
+            shutil.move(pathName, dst)
+            return dst
+        except:
+            self.logger('Environment: could not move file {0} to {1}'.format(fn, dst))
+            return None
 
 
 class PAScript:
@@ -185,16 +183,24 @@ class PAScript:
 
 # fetch default configuration
         self.parser.add_option('--config',help='configuration file name',metavar='CONFIGFILE', nargs=1, type=str, dest='config', default='/etc/rts2/rts2pa/rts2pa.cfg')
-        self.parser.add_option('--loglevel',help='log level: usual levels',metavar='LOG_LEVEL', nargs=1, type=str, dest='level', default='warning')
-        self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='-')
+        self.parser.add_option('--loglevel',help='log level: usual levels',metavar='LOG_LEVEL', nargs=1, type=str, dest='level', default='DEBUG')
+        #self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='-')
+        self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='/var/log/rts2-debug')
         self.parser.add_option('--verbose',help='verbose output',metavar='', action='store_true', dest='verbose', default=False)
 #        self.parser.add_option('--',help='',metavar='', nargs=1, type=str, dest='', default='')
 
         (options,args) = self.parser.parse_args()
 
+        try:
+            fn = open(options.logTo, 'a')
+            fn.close()
+        except IOError:
+            sys.exit( 'Unable to write to logfile {0}'.format(options.logTo))
+
         logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
         try:
             logging.basicConfig(filename=options.logTo, level=options.level.upper(), format= logformat)
+            self.logger = logging.getLogger()
         except:
             print 'no log level {0}, exiting'.format(options.level)
             sys.exit(1)
@@ -203,8 +209,8 @@ class PAScript:
             soh = logging.StreamHandler(sys.stdout)
             soh.setLevel(options.level.upper())
             soh.setFormatter(logging.Formatter(logformat))
-            logger = logging.getLogger()
-            logger.addHandler(soh)
+            self.logger = logging.getLogger()
+            self.logger.addHandler(soh)
 
         self.runTimeConfig= Configuration( cfn=options.config) #default configuration, overwrite default values with the ones form options.config
-        self.environmant= Environment(runTimeConfig=self.runTimeConfig)
+        self.environment= Environment(runTimeConfig=self.runTimeConfig, logger=self.logger)

@@ -94,6 +94,8 @@ Files in directory rts2/scripts/rts2pa
 
   Library
   -------
+  rts2pa.py                    the base class and helper classes
+  astrometry.py                used to find efficiently the center based on scale, ra, dec and radius
 
   Not yet of general interest
   --------------------------
