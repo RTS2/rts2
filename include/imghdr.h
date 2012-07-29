@@ -48,8 +48,6 @@
 #define SHUTTER_CLOSED   0x02
 #define SHUTTER_SYNCHRO  0x03
 
-#define FILTER_SIZE        10
-
 #define MAX_AXES            5	 //! Maximum number of axes we should considered.
 
 // various datatypes
