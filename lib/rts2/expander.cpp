@@ -1,6 +1,6 @@
 /* 
  * Expanding mechanism.
- * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2012 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@
 #include "block.h"
 #include "expander.h"
 #include "configuration.h"
+#include "utilsfunc.h"
 
 #include <iomanip>
 #include <sstream>
@@ -147,6 +148,7 @@ std::string Expander::getNightString ()
 std::string Expander::expandVariable (char var, size_t beg, bool &replaceNonAlpha)
 {
 	std::string ret = "";
+	std::ostringstream os;
 	switch (var)
 	{
 		case '%':
@@ -158,8 +160,21 @@ std::string Expander::expandVariable (char var, size_t beg, bool &replaceNonAlph
 		case 'x':
 			ret += getShortYearString ();
 			break;
+		case 'A':
+			return getDateObs (getCtimeSec (), getCtimeUsec ());
 		case 'a':
 			ret += getYDayString ();
+			break;
+		case 'C':
+			os << getCtimeSec ();
+			ret += os.str ();
+			break;
+		case 'J':
+			{
+				time_t tim = getCtimeSec ();
+				os << std::fixed << std::setprecision (8) << (ln_get_julian_from_timet (&tim) + getCtimeUsec () / USEC_SEC / 86400.0);
+				ret += os.str ();
+			}
 			break;
 		case 'N':
 			ret += getNightString ();
