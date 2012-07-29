@@ -53,14 +53,12 @@ rts2image::Image * DevClientCameraExec::createImage (const struct timeval *expSt
 	rts2image::Image *ret;
 	if (expandPathString.length () > 0)
 	{
-		ret = new rts2image::Image (expandPathString.c_str (), getExposureNumber (), expStart, connection, expandOverwrite);
-		ret->setWriteConnection (writeConnection, writeRTS2Values);
+		ret = new rts2image::Image (expandPathString.c_str (), getExposureNumber (), expStart, connection, expandOverwrite, writeConnection, writeRTS2Values);
 		nullExpandPath ();
 	}
 	else if (expandPathValue)
 	{
-		ret = new rts2image::Image (expandPathValue->getValue (), getExposureNumber (), expStart, connection, expandOverwrite);
-		ret->setWriteConnection (writeConnection, writeRTS2Values);
+		ret = new rts2image::Image (expandPathValue->getValue (), getExposureNumber (), expStart, connection, expandOverwrite, writeConnection, writeRTS2Values);
 	}
 	else
 	{
