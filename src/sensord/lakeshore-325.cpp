@@ -56,7 +56,6 @@ class Lakeshore:public Gpib
 
 	protected:
 		virtual int init ();
-		virtual int initValues ();
 
 		virtual int setValue (rts2core::Value * oldValue, rts2core::Value * newValue);
 
@@ -233,14 +232,6 @@ int Lakeshore::info ()
 int Lakeshore::init ()
 {
 	return Gpib::init ();
-}
-
-int Lakeshore::initValues ()
-{
-	rts2core::ValueString *model = new rts2core::ValueString ("model");
-	readValue ("*IDN?", model);
-	addConstValue (model);
-	return Gpib::initValues ();
 }
 
 int Lakeshore::setValue (rts2core::Value * oldValue, rts2core::Value * newValue)
