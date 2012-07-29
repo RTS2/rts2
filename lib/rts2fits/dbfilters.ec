@@ -18,7 +18,7 @@
  */
 
 #include "rts2fits/dbfilters.h"
-#include "rts2db/sqlerror.h"
+#include "error.h"
 #include "app.h"
 
 using namespace rts2image;
@@ -63,7 +63,7 @@ void DBFilters::load ()
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
-		throw rts2db::SqlError ();
+		throw rts2core::Error (sqlca.sqlerrm.sqlerrmc);
 	EXEC SQL CLOSE all_filters;
 	EXEC SQL ROLLBACK;
 }
