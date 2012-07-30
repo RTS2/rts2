@@ -82,7 +82,7 @@ class NWindowEdit:public NWindow
 class NWindowEditIntegers:public NWindowEdit
 {
 	public:
-		NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true);
+		NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border = true, bool _hex = false);
 		
 		/**
 		 * Sets edit window value.
@@ -95,6 +95,8 @@ class NWindowEditIntegers:public NWindowEdit
 		int getValueInteger ();
 	protected:
 		virtual bool passKey (int key);
+	private:
+		bool hex;
 };
 
 /**

@@ -139,13 +139,14 @@ bool NWindowEdit::setCursor ()
 	return true;
 }
 
-NWindowEditIntegers::NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+NWindowEditIntegers::NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border, bool _hex):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
+	hex = _hex;
 }
 
 bool NWindowEditIntegers::passKey (int key)
 {
-	if (isdigit (key) || key == '+' || key == '-')
+	if (isdigit (key) || key == '+' || key == '-' || (hex && (key == 'X' || key == 'x')))
 		return true;
 	return false;
 }
@@ -155,7 +156,7 @@ int NWindowEditIntegers::getValueInteger ()
 	char buf[200];
 	char *endptr;
 	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
-	int tval = strtol (buf, &endptr, 10);
+	int tval = strtol (buf, &endptr, hex ? 0 : 10);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
 		// log error;

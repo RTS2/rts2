@@ -120,7 +120,7 @@ bool ValueBoxString::setCursor ()
 	return NWindowEdit::setCursor ();
 }
 
-ValueBoxInteger::ValueBoxInteger (NWindow * top, rts2core::ValueInteger * _val, int _x, int _y):ValueBox (top, _val),NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxInteger::ValueBoxInteger (NWindow * top, rts2core::ValueInteger * _val, int _x, int _y):ValueBox (top, _val),NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1, true, _val->getValueDisplayType () & RTS2_DT_HEX)
 {
 	setValueInteger (_val->getValueInteger ());
 }
