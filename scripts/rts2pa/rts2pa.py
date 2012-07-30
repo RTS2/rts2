@@ -38,16 +38,17 @@ class Configuration:
         self.dcf={}
         self.dcf[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2pa/rts2pa.cfg'
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2pa'
-        self.dcf[('basic', 'FILE_GLOB')]= '*fits'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'TEST')]= True
+        self.dcf[('basic', 'TEST_FIELDS')]= './test/images/20071205025927-674-RA.fits'
 
-        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 1. #[sec]
+        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 1.  #[sec]
         self.dcf[('data_taking', 'DURATION')]= 1800.    #[sec]
         self.dcf[('data_taking', 'SLEEP')]=     480.    #[sec]
 
         self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
         self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
+        self.dcf[('astrometry', 'REPLACE')]= False
         self.dcf[('astrometry', 'VERBOSE')]= True
 
         self.dcf[('mode', 'mode')]= 'KingA'
@@ -55,7 +56,7 @@ class Configuration:
         self.dcf[('coordinates', 'HA')]= 7.5 # hour angle [deg]
         self.dcf[('coordinates', 'PD')]= 1. # polar distance [deg]
 
-        self.dcf[('ccd', 'ARCSSEC_PER_PIX')]= 1.41 # polar distance [deg]
+        self.dcf[('ccd', 'ARCSSEC_PER_PIX')]= 2.0
 
         self.cf={}
         for (section, identifier), value in sorted(self.dcf.iteritems()):
@@ -137,7 +138,6 @@ class Configuration:
 
 import time
 import datetime
-import glob
 import os
 
 class Environment():

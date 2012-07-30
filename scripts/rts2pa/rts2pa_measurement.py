@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # (C) 2004-2012, Markus Wildi, wildi.markus@bluewin.ch
 #
+#   Measure the position of the our axis based on E.S. King, A.A. Rambaut
 #   
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
 
 __author__ = 'wildi.markus@bluewin.ch'
 
+import os
 import sys
 import rts2pa
 import ephem
@@ -33,9 +35,11 @@ import rts2.astrometry
 import rts2.libnova
 
 class SolveField():
+    """Solve a field with astromatry.net """
     def __init__(self, fn=None, runTimeConfig=None, logger=None):
         self.fn= fn
         self.runTimeConfig= runTimeConfig
+        self.logger = logger
         self.scale  = self.runTimeConfig.cf['ARCSSEC_PER_PIX'] 
         self.radius = self.runTimeConfig.cf['RADIUS']
         self.verbose= self.runTimeConfig.cf['VERBOSE']
@@ -43,15 +47,39 @@ class SolveField():
         self.solver = rts2.astrometry.AstrometryScript(self.fn)
         self.ra= None
         self.dec=None
-	ff=pyfits.fitsopen(self.fn,'readonly')
-	self.ra=ff[0].header['ORIRA']
-	self.dec=ff[0].header['ORIDEC']
+        self.success= True
+        self.blind= False
+
+        try:
+            ff=pyfits.open(self.fn,'readonly')
+        except:
+            self.logger.error('SolveField: file not found {0}'.format( fn)) 
+            self.success= False            
+        try:
+            self.ra=ff[0].header['ORIRA']
+        except KeyError:
+            self.logger.error('SolveField: key error {0}, solving blindly'.format( 'ORIRA')) 
+            self.blind= True
+        try:
+            self.ra=ff[0].header['ORIDEC']
+        except KeyError:
+            self.logger.error('SolveField: key error {0}, solving blindly'.format( 'ORIDEC')) 
+            self.blind= True
+
         ff.close()
 
-
     def solveField(self):
-        center=self.solver.run(scale=self.scale,ra=self.ra,dec=self.dec,radius=self.radius,replace=self.replace,verbose=self.verbose)
-        self.logger.debug('SolveField: center {0}'.format( repr(center))) 
+        if self.blind:
+            center=self.solver.run(scale=self.scale, replace=self.replace,verbose=self.verbose)
+        else:
+            center=self.solver.run(scale=self.scale,ra=self.ra,dec=self.dec,radius=self.radius,replace=self.replace,verbose=self.verbose)
+
+        if len(center)==2:
+            self.logger.debug('SolveField: found center {0}'.format( repr(center)))
+            return center
+        else:
+            self.logger.debug('SolveField: center not found')
+            return None
 
 class MeasurementThread(threading.Thread):
     def __init__(self, path_q=None, result_q=None, runTimeConfig=None, logger=None):
@@ -62,17 +90,31 @@ class MeasurementThread(threading.Thread):
         self.logger= logger
         self.stoprequest = threading.Event()
         self.logger.debug('MeasurementThread: init finished')
+        self.centers=[]
 
     def run(self):
         self.logger.debug('MeasurementThread: running')
 
         while not self.stoprequest.isSet():
+            path=None
             try:
-                path = self.path_q.get(True, 0.05)            
-                self.result_q.put(('got: {0}'.format(path)))
+                path = self.path_q.get(True, 1.)            
                 self.logger.debug('MeasurementThread: next path {0}'.format(path))
             except Queue.Empty:
                 continue
+
+            if path:
+                if self.runTimeConfig.cf['TEST']:
+                    path= self.runTimeConfig.cf['TEST_FIELDS']
+                    self.logger.debug('MeasurementThread: test replacement fits: {0}'.format(path))
+
+                sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
+                if sf.success:
+                    self.centers.append( sf.solveField())
+                    self.result_q.put(self.centers)
+                else:
+                    self.logger.error('MeasurementThread: error within solver')
+
 
     def join(self, timeout=None):
         self.logger.debug('MeasurementThread: join, timeout {0}'.format(timeout))
@@ -132,6 +174,6 @@ class AcquireData(rts2pa.PAScript):
 
 
 if __name__ == "__main__":
-    ac= AcquireData(scriptName=sys.argv[0])
-    ac.run()
+
+    ac= AcquireData(scriptName=sys.argv[0]).run()
 
