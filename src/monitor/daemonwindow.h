@@ -66,9 +66,7 @@ class NSelWindow:public NWindow
 		}
 		int getScrollHeight ()
 		{
-			int w, h;
-			getmaxyx (scrolpad, h, w);
-			return h;
+			return getmaxy (scrolpad);
 		}
 		void setLineOffset (int new_lineOffset) { lineOffset = new_lineOffset; }
 		int getPadoffY () { return padoff_y; }

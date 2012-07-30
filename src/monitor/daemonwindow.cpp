@@ -49,11 +49,17 @@ keyRet NSelWindow::injectKey (int key)
 		case KEY_END:
 			selrow = -1;
 			break;
+		case KEY_NPAGE:
+			changeSelRow (getHeight ());
+			break;
 		case KEY_DOWN:
 			changeSelRow (+1);
 			break;
 		case KEY_UP:
 			changeSelRow (-1);
+			break;
+		case KEY_PPAGE:
+			changeSelRow (-getHeight ());
 			break;
 		case KEY_LEFT:
 			if (padoff_x > 0)
