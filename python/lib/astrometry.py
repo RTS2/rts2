@@ -3,6 +3,7 @@
 # Astrometry routines.
 # (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
 # (C) 2011-2012, Petr Kubanek, Institute of Physics <kubanek@fzu.cz>
+# (C) 2012, Lee Hicks <mr337@mr337.com>
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -87,7 +88,7 @@ def cd2crota(fitsh):
 
 class AstrometryScript:
 	"""calibrate a fits image with astrometry.net."""
-	def __init__(self,fits_file,odir=None,scale_relative_error=0.05,astrometry_bin='/usr/local/astrometry/bin'):
+	def __init__(self,fits_file,odir=None,scale_relative_error=0.05,astrometry_bin='/usr/local/astrometry/bin', use_sextractor=False, sextractor_bin='/usr/bin/sex'):
 		self.scale_relative_error=scale_relative_error
 		self.astrometry_bin=astrometry_bin
 
@@ -95,6 +96,9 @@ class AstrometryScript:
 		self.odir = odir
 		if self.odir is None:
 			self.odir=tempfile.mkdtemp()
+
+		self.use_sextractor=use_sextractor
+		self.sextractor_bin=sextractor_bin
 
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
@@ -120,6 +124,11 @@ class AstrometryScript:
 			solve_field.append(str(dec))
 			solve_field.append('--radius')
 			solve_field.append(str(radius))
+
+		if self.use_sextractor == True:
+			solve_field.append('--use-sextractor')
+			solve_field.append('--sextractor-path')
+			solve_field.append(self.sextractor_bin)
 
 		solve_field.append(self.infpath)
 
