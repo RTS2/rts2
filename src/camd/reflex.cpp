@@ -788,7 +788,7 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 		if (!conn->paramEnd ())
 		{
 			int board;
-			if (conn->paramNextInteger (&board) || !conn->paramEnd () || board < 1 || board > 8)
+			if (conn->paramNextInteger (&board) || !conn->paramEnd () || board < 0 || board > 10)
 				return -2;
 			char cmd[5] = ">Bx\r";
 			cmd[2] = board + '0';
@@ -1789,6 +1789,7 @@ void Reflex::createBoard (int bt)
 					comment << "[mv] Low-voltage bias #" << i << " voltage";
 					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
 				}
+				ba++;
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
