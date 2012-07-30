@@ -27,15 +27,46 @@ import rts2pa
 import ephem
 import threading
 import Queue
-
+import math
 import rts2.scriptcomm
 r2c= rts2.scriptcomm.Rts2Comm()
 import pyfits
 import rts2.astrometry
 import rts2.libnova
+import sidereal
 
+
+class KingA():
+    """Calculate the HA, lambda based on E.S. King's method """
+    def __init__(self, results=None): # results is a list of SolverResult
+        self.results= results
+
+#        self.tau= sidereal.raToHourAngle(1., 2., 3.)     # HA of image 
+#        self.lat=math.radian(lat)   
+#        self.dX= math.radian(result2.RA - result2.RA)
+#        self.dY= math.radian(result2.DEC - result2.DEC)
+#        self.omega_sid= 2. *  math.pi / 86164.2
+#        self.dtau= (result2.rime- result1.time) * self.omega_sid
+
+
+#        self.lambda_r= math.sqrt( math.pow(self.dX,2) + math.pow(self.dY,2))/ self.dtau 
+#        self.ha= -math.atan2( self.dX, self.dY) + dtau/2. + tau
+
+#        self.A= self.lambda_r * math.sin( self.tau) / math.cos( self.lat) 
+#        self.k= self.lambda_r * math.cos( self.tau)
+
+class SolverResult():
+    """Results of astrometry.net including necessary fits headers"""
+    def __init__(self, ra=None, dec=None, jd=None, date_obs=None, lon=None, lat=None):
+        self.ra= ra
+        self.dec=dec
+        self.jd=jd
+        self.date_obs=date_obs
+        self.lon=lon
+        self.lat=lat
+    
 class SolveField():
-    """Solve a field with astromatry.net """
+    """Solve a field with astrometry.net """
     def __init__(self, fn=None, runTimeConfig=None, logger=None):
         self.fn= fn
         self.runTimeConfig= runTimeConfig
@@ -47,6 +78,8 @@ class SolveField():
         self.solver = rts2.astrometry.AstrometryScript(self.fn)
         self.ra= None
         self.dec=None
+        self.jd= None
+        self.date_obs=None
         self.success= True
         self.blind= False
 
@@ -56,15 +89,25 @@ class SolveField():
             self.logger.error('SolveField: file not found {0}'.format( fn)) 
             self.success= False            
         try:
-            self.ra=ff[0].header['ORIRA']
+            self.ra=ff[0].header[self.runTimeConfig.cf['ORIRA']]
+            self.dec=ff[0].header[self.runTimeConfig.cf['ORIDEC']]
         except KeyError:
-            self.logger.error('SolveField: key error {0}, solving blindly'.format( 'ORIRA')) 
+            self.logger.error('SolveField: coordinates key error {0} or {1}, solving blindly'.format( 'ORIRA', 'ORIDEC')) 
             self.blind= True
+
         try:
-            self.ra=ff[0].header['ORIDEC']
+            self.jd=ff[0].header[self.runTimeConfig.cf['JD']]
+            self.date_obs=ff[0].header[self.runTimeConfig.cf['DATE-OBS']]
         except KeyError:
-            self.logger.error('SolveField: key error {0}, solving blindly'.format( 'ORIDEC')) 
-            self.blind= True
+            self.logger.error('SolveField: date time key error {0} or {1}'.format(self.runTimeConfig.cf['JD'], self.runTimeConfig.cf['DATE-OBS'])) 
+            self.success=False
+
+        try:
+            self.lon=ff[0].header[self.runTimeConfig.cf['SITE-LON']]
+            self.lat=ff[0].header[self.runTimeConfig.cf['SITE-LAT']]
+        except KeyError:
+            self.logger.error('SolveField: site coordinates key error {0} or {1}'.format(self.runTimeConfig.cf['SITE-LON'], self.runTimeConfig.cf['SITE-LAT'])) 
+            self.success=False
 
         ff.close()
 
@@ -76,12 +119,13 @@ class SolveField():
 
         if len(center)==2:
             self.logger.debug('SolveField: found center {0}'.format( repr(center)))
-            return center
+            return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat)
         else:
             self.logger.debug('SolveField: center not found')
             return None
 
 class MeasurementThread(threading.Thread):
+    """Thread receives image path from rts2 and calculates the HA and polar distance of the HA axis intersection as soon as two images are present"""
     def __init__(self, path_q=None, result_q=None, runTimeConfig=None, logger=None):
         super(MeasurementThread, self).__init__()
         self.path_q = path_q
@@ -90,7 +134,7 @@ class MeasurementThread(threading.Thread):
         self.logger= logger
         self.stoprequest = threading.Event()
         self.logger.debug('MeasurementThread: init finished')
-        self.centers=[]
+        self.results=[]
 
     def run(self):
         self.logger.debug('MeasurementThread: running')
@@ -110,8 +154,15 @@ class MeasurementThread(threading.Thread):
 
                 sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
                 if sf.success:
-                    self.centers.append( sf.solveField())
-                    self.result_q.put(self.centers)
+                    sr= sf.solveField()
+                    if sr:
+                        self.results.append(sr)
+                        self.result_q.put(self.results)
+
+                        if len(self.results) > 1:
+                            kinga=KingA(self.results)
+                    else:
+                        self.logger.error('MeasurementThread: error within solver (not solving)')
                 else:
                     self.logger.error('MeasurementThread: error within solver')
 
@@ -123,6 +174,7 @@ class MeasurementThread(threading.Thread):
 
 
 class AcquireData(rts2pa.PAScript):
+    """Create a thread, set the mount, take images"""
     # __init__ of base class is executed
 
     def takeImages(self, path_q=None, ul=None):

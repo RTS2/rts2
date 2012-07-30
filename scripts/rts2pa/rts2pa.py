@@ -49,7 +49,7 @@ class Configuration:
         self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
         self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
         self.dcf[('astrometry', 'REPLACE')]= False
-        self.dcf[('astrometry', 'VERBOSE')]= True
+        self.dcf[('astrometry', 'VERBOSE')]= False
 
         self.dcf[('mode', 'mode')]= 'KingA'
 
@@ -57,6 +57,15 @@ class Configuration:
         self.dcf[('coordinates', 'PD')]= 1. # polar distance [deg]
 
         self.dcf[('ccd', 'ARCSSEC_PER_PIX')]= 2.0
+
+        self.dcf[('fits-header', 'JD')]= 'JD' 
+        self.dcf[('fits-header', 'DATE-OBS')]= 'DATE-OBS' 
+
+        self.dcf[('fits-header', 'ORIRA')]= 'CUR_RA' 
+        self.dcf[('fits-header', 'ORIDEC')]= 'CUR_DEC' 
+
+        self.dcf[('fits-header', 'SITE-LON')]= 'LONG' 
+        self.dcf[('fits-header', 'SITE-LAT')]= 'LAT' 
 
         self.cf={}
         for (section, identifier), value in sorted(self.dcf.iteritems()):
