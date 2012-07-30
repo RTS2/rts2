@@ -48,6 +48,7 @@ using namespace rts2image;
 #define OPT_NO_WRITE              OPT_LOCAL + 710
 
 bool usesNcurses = false;
+bool read100 = false;
 
 // ScriptExec class
 
@@ -76,8 +77,13 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 			if (getConnection ()->getState () & (CAM_EXPOSING | CAM_READING))
 			{
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
-				std::cout << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING ")  << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
-				std::cout.flush ();
+				if (read100 == false || fr < 100)
+				{
+					std::cout << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 16) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+					std::cout.flush ();
+					if (fr < 100)
+						read100 = false;
+				}
 			}
 			break;
 	}
@@ -89,7 +95,8 @@ imageProceRes ClientCameraScript::processImage (Image * image)
 	image->saveImage ();
 	if (usesNcurses)
 	{
-		std::cout << "READING " << ProgressIndicator (100, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << 100 << "% " << std::endl;
+		std::cout << std::setfill ('+') << std::setw (COLS) << "+ done " << std::endl;
+		read100 = true;
 	}
 	std::cout << image->getFileName () << std::endl;
 
@@ -240,6 +247,16 @@ ScriptExec::~ScriptExec (void)
 	scripts.clear ();
 
 	delete expandPath;
+}
+
+int ScriptExec::run ()
+{
+	int ret = rts2core::Client::run ();
+	if (usesNcurses == true && read100 == false)
+	{
+		std::cout << std::endl;
+	}
+	return ret;
 }
 
 void signal_winch (int sig)

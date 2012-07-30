@@ -44,6 +44,8 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 		ScriptExec (int in_argc, char **in_argv);
 		virtual ~ ScriptExec (void);
 
+		virtual int run ();
+
 		virtual int findScript (std::string deviceName, std::string & buf);
 
 		virtual rts2core::DevClient *createOtherType (rts2core::Connection * conn, int other_device_type);
