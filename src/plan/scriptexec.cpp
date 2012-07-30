@@ -19,18 +19,35 @@
 
 #include "scriptexec.h"
 #include "rts2devcliphot.h"
+#include "config.h"
 #include "configuration.h"
 
 #include "rts2script/execcli.h"
 
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <vector>
 
+#ifdef HAVE_CURSES_H
+#include <curses.h>
+#include <term.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#include <ncurses/curses.h>
+#include <ncurses/term.h>
+#endif
+
+#include <signal.h>
+
 using namespace rts2plan;
 using namespace rts2image;
 
+#define CHECK_TIMER               0.1
+#define EVENT_EXP_CHECK           RTS2_LOCAL_EVENT + 305
+
 #define OPT_NO_WRITE              OPT_LOCAL + 710
+
+bool usesNcurses = false;
 
 // ScriptExec class
 
@@ -46,12 +63,34 @@ class ClientCameraScript:public rts2script::DevClientCameraExec
 		{
 			setWriteConnnection (write_conn, write_rts2);
 		}
+
+		virtual void postEvent (rts2core::Event *event);
 		virtual imageProceRes processImage (Image * image);
 };
+
+void ClientCameraScript::postEvent (rts2core::Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_EXP_CHECK:
+			if (getConnection ()->getState () & (CAM_EXPOSING | CAM_READING))
+			{
+				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
+				std::cout << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING ")  << ProgressIndicator (fr, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+				std::cout.flush ();
+			}
+			break;
+	}
+	rts2script::DevClientCameraExec::postEvent (event);
+}
 
 imageProceRes ClientCameraScript::processImage (Image * image)
 {
 	image->saveImage ();
+	if (usesNcurses)
+	{
+		std::cout << "READING " << ProgressIndicator (100, COLS - 20) << std::fixed << std::setprecision (1) << std::setw (5) << 100 << "% " << std::endl;
+	}
 	std::cout << image->getFileName () << std::endl;
 
 	return DevClientCameraExec::processImage (image);
@@ -130,6 +169,8 @@ int ScriptExec::processOption (int in_opt)
 			scripts.push_back (new rts2script::ScriptForDeviceStream (std::string (deviceName), is));
 			deviceName = NULL;
 			break;
+		case 'o':
+			overwrite = true;
 		case 'e':
 			expandPath = new rts2core::ValueString ("expand_path");
 			expandPath->setValueString (optarg);
@@ -165,6 +206,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 	nextRunningQ = 0;
 	configFile = NULL;
 	expandPath = NULL;
+	overwrite = false;
 	templateFile = std::string ("");
 
 	defaultScript = NULL;
@@ -180,6 +222,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 	addOption ('f', NULL, 1, "script filename");
 
 	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");
+	addOption ('o', NULL, 1, "filename expand string, existing file will be overwritten");
 	addOption ('t', NULL, 1, "template filename for FITS keys");
 	addOption (OPT_NO_WRITE, "no-metadata", 0, "don't write RTS2 metadata, use only template");
 
@@ -197,6 +240,11 @@ ScriptExec::~ScriptExec (void)
 	scripts.clear ();
 
 	delete expandPath;
+}
+
+void signal_winch (int sig)
+{
+	setupterm (NULL, 2, NULL);
 }
 
 int ScriptExec::init ()
@@ -237,7 +285,15 @@ int ScriptExec::init ()
 
 	// create current target
 	currentTarget = new rts2script::ScriptTarget (this);
-
+#if defined(HAVE_ISATTY) && (defined(HAVE_CURSES_H) || defined(HAVE_NCURSES_CURSES_H))
+	if (isatty (fileno (stdout)))
+	{
+		usesNcurses = true;
+		signal (SIGWINCH, signal_winch);
+		setupterm (NULL, 2, NULL);
+		addTimer (CHECK_TIMER, new rts2core::Event (EVENT_EXP_CHECK));
+	}
+#endif // HAVE_ISATTY
 	return 0;
 }
 
@@ -256,6 +312,7 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 			break;
 		case DEVICE_TYPE_CCD:
 			cli = new ClientCameraScript (conn, expandPath, templateFile, writeConnection, writeRTS2Values);
+			((ClientCameraScript *) cli)->setOverwrite (overwrite);
 			break;
 		case DEVICE_TYPE_FOCUS:
 			cli = new rts2image::DevClientFocusImage (conn);
@@ -302,6 +359,9 @@ void ScriptExec::postEvent (rts2core::Event * event)
 		case EVENT_ALL_IMAGES_WRITTEN:
 			if (!isScriptRunning ())
 				endRunLoop ();
+			break;
+		case EVENT_EXP_CHECK:
+			addTimer (CHECK_TIMER, new rts2core::Event (EVENT_EXP_CHECK));
 			break;
 	}
 	rts2core::Client::postEvent (event);

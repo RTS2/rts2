@@ -9,7 +9,7 @@ CLEANFILES = selector.cpp rts2devcliphot.cpp
 PLAN_STDLIBS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 
 rts2_scriptexec_SOURCES = scriptexec.cpp 
-rts2_scriptexec_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
+rts2_scriptexec_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBNCURSES_CFLAGS@
 
 # LDFLAGS are defined in PGSQL/nonPGSQL
 
@@ -21,7 +21,7 @@ if PGSQL
 PG_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2db -lrts2db -L../../lib/xmlrpc++ -lrts2xmlrpc -L../../lib/rts2fits -lrts2imagedb -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CRYPT@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
-rts2_scriptexec_LDADD = ${PG_LDADD} 
+rts2_scriptexec_LDADD = ${PG_LDADD}  @LIBNCURSES_LDFLAGS@
 rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptor_LDADD = ${PG_LDADD}
 
@@ -55,7 +55,7 @@ rts2_marchive_LDADD = ${PG_LDADD}
 
 else
 
-rts2_scriptexec_LDFLAGS = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+rts2_scriptexec_LDFLAGS = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@ @LIBNCURSES_LDFLAGS@
 rts2_scriptor_LDADD = -L../../lib/rts2script -lrts2script -L../../lib/rts2fits -lrts2image -L../../lib/rts2 -lrts2 @LIBXML_LIBS@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 rts2_imgproc_SOURCES = imgproc.cpp 

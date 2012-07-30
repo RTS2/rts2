@@ -67,6 +67,7 @@ class ScriptExec:public rts2core::Client, public rts2script::ScriptInterface
 	private:
 		rts2core::ValueString *expandPath;
 		std::string templateFile;
+		bool overwrite;
 
 		std::vector < rts2script::ScriptForDevice* > scripts;
 		char *deviceName;
