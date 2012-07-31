@@ -29,12 +29,14 @@
 
 using namespace rts2ncurses;
 
-NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection):NSelWindow (10, 1, COLS - 10, LINES - 25)
+NDeviceWindow::NDeviceWindow (rts2core::Connection * in_connection, bool _hide_debug):NSelWindow (10, 1, COLS - 10, LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
 	valueBox = NULL;
 	valueBegins = 20;
+	hide_debug = _hide_debug;
+
 	draw ();
 }
 
@@ -167,8 +169,11 @@ void NDeviceWindow::drawValuesList ()
 
 	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
 	{
-		maxrow++;
-		printValue (*iter);
+		if (hide_debug == false || (*iter)->getDebugFlag () == false)
+		{
+			maxrow++;
+			printValue (*iter);
+		}
 	}
 }
 
@@ -319,7 +324,7 @@ bool NDeviceWindow::setCursor ()
 	return NSelWindow::setCursor ();
 }
 
-NDeviceCentralWindow::NDeviceCentralWindow (rts2core::Connection * in_connection):NDeviceWindow (in_connection)
+NDeviceCentralWindow::NDeviceCentralWindow (rts2core::Connection * in_connection):NDeviceWindow (in_connection, false)
 {
 }
 

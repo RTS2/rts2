@@ -29,7 +29,7 @@ namespace rts2ncurses
 class NDeviceWindow:public NSelWindow
 {
 	public:
-		NDeviceWindow (rts2core::Connection * in_connection);
+		NDeviceWindow (rts2core::Connection * in_connection, bool _hide_debug);
 		virtual ~ NDeviceWindow (void);
 
 		virtual keyRet injectKey (int key);
@@ -78,6 +78,8 @@ class NDeviceWindow:public NSelWindow
 		ValueBox *valueBox;
 		/** Index from which start value box */
 		int valueBegins;
+
+		bool hide_debug;
 };
 
 /**

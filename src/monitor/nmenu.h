@@ -32,9 +32,6 @@ namespace rts2ncurses
  */
 class NAction
 {
-	private:
-		const char *text;
-		int code;
 	public:
 		NAction (const char *in_text, int in_code)
 		{
@@ -50,6 +47,18 @@ class NAction
 		{
 			return code;
 		}
+
+		/**
+		 * Set menu text.
+		 */
+		void setText (const char *_text)
+		{
+			text = _text;
+		}
+
+	private:
+		const char *text;
+		int code;
 };
 
 /**
@@ -58,9 +67,6 @@ class NAction
  */
 class NSubmenu:public NSelWindow
 {
-	private:
-		std::vector < NAction * >actions;
-		const char *text;
 	public:
 		NSubmenu (const char *in_text);
 		virtual ~ NSubmenu (void);
@@ -68,17 +74,30 @@ class NSubmenu:public NSelWindow
 		{
 			actions.push_back (in_action);
 		}
-		void createAction (const char *in_text, int in_code)
+
+		/**
+		 * Create new menu action.
+		 *
+		 * @return created NAction object.
+		 */
+		NAction * createAction (const char *in_text, int in_code)
 		{
-			addAction (new NAction (in_text, in_code));
+			NAction *ret = new NAction (in_text, in_code);
+			addAction (ret);
 			grow (strlen (in_text) + 2, 1);
+			return ret;
 		}
+
 		void draw (WINDOW * master_window);
 		void drawSubmenu ();
 		NAction *getSelAction ()
 		{
 			return actions[getSelRow ()];
 		}
+
+	private:
+		std::vector < NAction * >actions;
+		const char *text;
 };
 
 /**
@@ -87,11 +106,6 @@ class NSubmenu:public NSelWindow
  */
 class NMenu:public NWindow
 {
-	private:
-		std::vector < NSubmenu * >submenus;
-		std::vector < NSubmenu * >::iterator selSubmenuIter;
-		NSubmenu *selSubmenu;
-		int top_x;
 	public:
 		NMenu ();
 		virtual ~ NMenu (void);
@@ -107,6 +121,11 @@ class NMenu:public NWindow
 				return selSubmenu->getSelAction ();
 			return NULL;
 		}
+	private:
+		std::vector < NSubmenu * >submenus;
+		std::vector < NSubmenu * >::iterator selSubmenuIter;
+		NSubmenu *selSubmenu;
+		int top_x;
 };
 
 }

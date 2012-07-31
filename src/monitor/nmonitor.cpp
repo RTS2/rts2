@@ -31,6 +31,7 @@
 #include "configuration.h"
 
 #define OPT_MONITOR_COMMAND    OPT_LOCAL + 307
+#define OPT_MONITOR_SHOW_DEBUG OPT_LOCAL + 308
 
 //default refresh rate
 #define MONITOR_REFRESH   0.1
@@ -134,6 +135,9 @@ int NMonitor::processOption (int in_opt)
 				*ch = '\0';
 				initCommands[std::string (optarg)].push_back (std::string (ch+1));
 			}
+			break;
+		case OPT_MONITOR_SHOW_DEBUG:
+			hideDebugValues = false;
 			break;
 		default:
 			return rts2core::Client::processOption (in_opt);
@@ -304,6 +308,11 @@ void NMonitor::menuPerform (int code)
 			refreshConnections ();
 			repaint ();
 			break;
+		case MENU_SHOW_DEBUG:
+			hideDebugValues = !hideDebugValues;
+			hideDebugMenu->setText (hideDebugValues ? "Show debug" : "Hide debug");
+			changeListConnection ();
+			break;
 	}
 }
 
@@ -336,7 +345,7 @@ void NMonitor::changeListConnection ()
 				daemonWindow = new NDeviceCentralWindow (conn);
 		// otherwise it is normal device connection
 		if (daemonWindow == NULL)
-			daemonWindow = new NDeviceWindow (conn);
+			daemonWindow = new NDeviceWindow (conn, hideDebugValues);
 	}
 	else
 	{
@@ -368,12 +377,14 @@ NMonitor::NMonitor (int in_argc, char **in_argv):rts2core::Client (in_argc, in_a
 	old_lines = 0;
 	old_cols = 0;
 
-	connOrder = ORDER_ALPHA; //RTS2;
+	connOrder = ORDER_ALPHA;
+	hideDebugValues = true;
+	hideDebugMenu = NULL;
 
 #ifdef HAVE_PGSQL
 	tarArg = NULL;
 #endif
-
+	addOption (OPT_MONITOR_SHOW_DEBUG, "show-debug", 0, "show debug values");
 	addOption ('c', NULL, 0, "don't use colors");
 	addOption ('r', NULL, 1, "refersh rate (in seconds)");
 	addOption (OPT_MONITOR_COMMAND, "command", 1, "send command to device; separate command and device with .");
@@ -471,6 +482,7 @@ int NMonitor::init ()
 	sub->createAction ("Exit", MENU_EXIT);
 	sub->createAction ("Alpha sort", MENU_SORT_ALPHA);
 	sub->createAction ("RTS2 sort", MENU_SORT_RTS2);
+	hideDebugMenu = sub->createAction ("Show debug", MENU_SHOW_DEBUG);
 	menu->addSubmenu (sub);
 
 	sub = new NSubmenu ("States");

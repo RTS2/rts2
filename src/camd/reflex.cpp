@@ -85,7 +85,9 @@ namespace rts2camd
 typedef enum {
 	CONVERSION_NONE,	// no conversion
 	CONVERSION_MILI,	// /= 1000.0
-	CONVERSION_mK 		// convert from mK to degC
+	CONVERSION_mK, 		// convert from mK to degC
+	CONVERSION_10000hex,	// 0x10000
+	CONVERSION_65k		// 65535
 } conversion_t;
 
 /**
@@ -117,6 +119,12 @@ class RRegister
 					break;
 				case CONVERSION_MILI:
 					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0);
+					break;
+				case CONVERSION_10000hex:
+					((rts2core::ValueFloat *) value)->setValueFloat (((double) rval) / 0x10000);
+					break;
+				case CONVERSION_65k:
+					((rts2core::ValueFloat *) value)->setValueFloat (rval / 65536.0);
 					break;
 				case CONVERSION_NONE:
 					value->setValueInteger (rval);
@@ -230,7 +238,7 @@ class Reflex:public Camera
 		 *
 		 * @return 
 		 */
-		RRegister * createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv = CONVERSION_NONE);
+		RRegister * createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv = CONVERSION_NONE, bool vdebug = false);
 
 		int openInterface (int port);
 		int closeInterface ();
@@ -680,6 +688,10 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 							return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
 						case CONVERSION_MILI:
 							return writeRegister (iter->first, new_value->getValueFloat () * 1000.0) ? -2 : 0;
+						case CONVERSION_10000hex:
+							return writeRegister (iter->first, new_value->getValueFloat () * 0x10000) ? -2 : 0;
+						case CONVERSION_65k:
+							return writeRegister (iter->first, new_value->getValueFloat () * 65536.0) ? -2 : 0;
 						case CONVERSION_mK:
 							return writeRegister (iter->first, (new_value->getValueFloat () + 273.15) * 1000.0) ? -2 : 0;
 					}
@@ -839,7 +851,7 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 	return Camera::commandAuthorized (conn);
 }
 
-RRegister * Reflex::createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv)
+RRegister * Reflex::createRegister (uint32_t address, const char *name, const char * desc, bool writable, bool infoupdate, bool hexa, conversion_t conv, bool vdebug)
 {
 	if (registers.find (address) != registers.end ())
 	{
@@ -847,16 +859,20 @@ RRegister * Reflex::createRegister (uint32_t address, const char *name, const ch
 		exit (1);
 	}
 
-	int32_t flags = (writable ? RTS2_VALUE_WRITABLE : 0) | (hexa ? RTS2_DT_HEX : 0);
+	int32_t flags = (writable ? RTS2_VALUE_WRITABLE : 0) | (vdebug ? RTS2_VALUE_DEBUG : 0);
 	rts2core::Value *value;
 	switch (conv)
 	{
 		case CONVERSION_MILI:
 		case CONVERSION_mK:
+		case CONVERSION_10000hex:
+		case CONVERSION_65k:
 			createValue ((rts2core::ValueFloat *&) value, name, desc, true, flags);
 			break;
 		case CONVERSION_NONE:
 			createValue ((rts2core::ValueInteger *&) value, name, desc, true, flags);
+			if (hexa)
+	 			flags |= RTS2_DT_HEX;
 			break;
 	}
 
@@ -1678,36 +1694,36 @@ void Reflex::createBoard (int bt)
 			createRegister (ba++, "daughter_enable", "bit-field specifying which AD daughter modules the backplane should read", true, false, false);
 			createRegister (ba++, "pair_count", "number of pairs of AD daughter modules the backplane should read", true, false, false);
 
-			createRegister (ba++, "pair_0chA", "daughter module to read on Channel A of Pair 0", true, false, false);
-			createRegister (ba++, "pair_0chB", "daughter module to read on Channel B of Pair 0", true, false, false);
-			createRegister (ba++, "pair_1chA", "daughter module to read on Channel A of Pair 1", true, false, false);
-			createRegister (ba++, "pair_1chB", "daughter module to read on Channel B of Pair 1", true, false, false);
-			createRegister (ba++, "pair_2chA", "daughter module to read on Channel A of Pair 2", true, false, false);
-			createRegister (ba++, "pair_2chB", "daughter module to read on Channel B of Pair 2", true, false, false);
-			createRegister (ba++, "pair_3chA", "daughter module to read on Channel A of Pair 3", true, false, false);
-			createRegister (ba++, "pair_3chB", "daughter module to read on Channel B of Pair 3", true, false, false);
+			createRegister (ba++, "pair_0chA", "daughter module to read on Channel A of Pair 0", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_0chB", "daughter module to read on Channel B of Pair 0", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_1chA", "daughter module to read on Channel A of Pair 1", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_1chB", "daughter module to read on Channel B of Pair 1", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_2chA", "daughter module to read on Channel A of Pair 2", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_2chB", "daughter module to read on Channel B of Pair 2", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_3chA", "daughter module to read on Channel A of Pair 3", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "pair_3chB", "daughter module to read on Channel B of Pair 3", true, false, false, CONVERSION_NONE, true);
 			break;
 		case BT_CLIF:
 			ba = 0x00020000;
 			createRegister (ba, "clif.temperature", "[C] camera link module temperature", false, true, false, CONVERSION_mK);
 
 			ba = 0x10020000;
-			createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, false, false);
-			createRegister (ba++, "clif.loop_count", "number active pixel clocks per line", true, false, false);
+			createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, false, false, CONVERSION_NONE, true);
+			createRegister (ba++, "clif.loop_count", "number active pixel clocks per line", true, false, false, CONVERSION_NONE, true);
 
 			for (i = 0; i < 32; i++)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapA" << i << "_start";
 				desc << "channel A tap " << i << "start address in line buffer";
-				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
+				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			for (i = 0; i < 32; i++)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapB" << i << "_start";
 				desc << "channel B tap " << i << "start address in line buffer";
-				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
+				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 
 			for (i = 0; i < 32; i++)
@@ -1715,20 +1731,20 @@ void Reflex::createBoard (int bt)
 				std::ostringstream name, desc;
 				name << "clif.tapA" << i << "_delta";
 				desc << "channel A tap " << i << "delta address in line buffer";
-				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
+				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			for (i = 0; i < 32; i++)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapB" << i << "_delta";
 				desc << "channel B tap " << i << "delta address in line buffer";
-				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false);
+				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			createRegister (ba++, "clif.line_length", "line length in camera clock cycles", true, false, false);
 			createRegister (ba++, "clif.precount", "dummy camera link clock cycles before LVAL high", true, false, false);
 			createRegister (ba++, "clif.postcount", "dummy camera link clock cycles after LVAL low", true, false, false);
-			createRegister (ba++, "clif.line_cunt", "number of camera link lines", true, false, false);
-			createRegister (ba++, "clif.idle_ount", "number of idle camera link lines between frames", true, false, false);
+			createRegister (ba++, "clif.line_count", "number of camera link lines", true, false, false);
+			createRegister (ba++, "clif.idle_count", "number of idle camera link lines between frames", true, false, false);
 			createRegister (ba++, "clif.link_mode", "camera link mode", true, false, false);
 
 			break;
@@ -1782,8 +1798,8 @@ void Reflex::createBoard (int bt)
 
 			createRegister (ba++, (bn + "raw_mode").c_str (), "CDS/raw mode", true, false, false);
 			createRegister (ba++, (bn + "raw_channel").c_str (), "AD channel to stream in raw mode, 0-7", true, false, false);
-			createRegister (ba++, (bn + "cds_gain").c_str (), "[M] fixed point gain to apply in CDS mode (0x00010000 is gain 1.0)", true, false, true);
-			createRegister (ba++, (bn + "cds_offset").c_str (), "fixed point offset to apply in CDS mode", true, false, false);
+			createRegister (ba++, (bn + "cds_gain").c_str (), "fixed point gain to apply in CDS mode (0x00010000 is gain 1.0)", true, false, true, CONVERSION_10000hex);
+			createRegister (ba++, (bn + "cds_offset").c_str (), "fixed point offset to apply in CDS mode", true, false, true, ((registers[bt]->value->getValueInteger () >> 24) & 0xFF) == BT_AD8X100 ? CONVERSION_65k : CONVERSION_NONE);
 			createRegister (ba++, (bn + "hdr_mode").c_str (), "Normal/HDR (32 bit) sample mode", true, false, false);
 
 			createRegister (ba++, (bn + "cds_reset_start").c_str (), "starting sample to use for CDS reset level after pixel clock", true, false, false);

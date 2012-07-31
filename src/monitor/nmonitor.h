@@ -76,6 +76,7 @@
 
 #define MENU_SORT_ALPHA     21
 #define MENU_SORT_RTS2      22
+#define MENU_SHOW_DEBUG     23
 
 enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON, NONE };
 
@@ -172,6 +173,8 @@ class NMonitor:public rts2core::Client
 #endif
 
 		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
+		bool hideDebugValues;
+		NAction *hideDebugMenu;
 
 		rts2core::connections_t orderedConn;
 

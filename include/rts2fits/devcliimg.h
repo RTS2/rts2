@@ -83,6 +83,9 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		 */
 		virtual imageProceRes processImage (Image * image);
 
+		/**
+		 * Clear array of images waiting to be received on connection.
+		 */
 		void clearImages ()
 		{
 			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)

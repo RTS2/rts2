@@ -132,9 +132,15 @@
  */
 #define RTS2_BASE_TYPE                0x0000000f
 
-#define RTS2_VALUE_MASK               0x000000ff
+#define RTS2_VALUE_MASK               0x0000007f
 
-#define RTS2_EXT_TYPE                 0x000000f0
+#define RTS2_EXT_TYPE                 0x00000070
+
+/**
+ * Marks debug value. Debug value will not be show in
+ * interactive output unless specified.
+ */
+#define RTS2_VALUE_DEBUG              0x00000080
 
 /**
  * When this bit is set, value is writen to FITS file.
@@ -377,6 +383,8 @@ class Value
 
 		int32_t getValueWriteFlags () { return rts2Type & RTS2_VWHEN_MASK; }
 
+		bool getDebugFlag () { return rts2Type & RTS2_VALUE_DEBUG; }
+
 		bool writeWhenChanged () { return rts2Type & RTS2_VWHEN_RECORD_CHANGE; }
 
 		int32_t getValueDisplayType () { return rts2Type & RTS2_TYPE_MASK; }
@@ -473,7 +481,7 @@ class Value
 
 		void setValueFlags (int32_t flags)
 		{
-			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_FITS_HEADERS | RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL | RTS2_VALUE_ERRORMASK | RTS2_VALUE_AUTOSAVE) & flags;
+			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_DEBUG | RTS2_FITS_HEADERS | RTS2_VALUE_WRITABLE | RTS2_VALUE_NOTNULL | RTS2_VALUE_ERRORMASK | RTS2_VALUE_AUTOSAVE) & flags;
 		}
 
 		/**

@@ -1,3 +1,6 @@
+2012-07-31
+ * add values debug flag
+
 2012-07-29
  * -o flag for rts2-scriptexec, report scriptexec progress
  * filter_id (integer) used as index instead of filter name
