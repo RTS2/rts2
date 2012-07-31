@@ -714,7 +714,9 @@ int Reflex::initHardware ()
 		ret = interfaceCommand (">P1\r", s, 5000, true);
 		if (ret)
 			return -1;
-		return interfaceCommand (">TS\r", s, 5000, true) ? -1 : 0;
+		ret = interfaceCommand (">TS\r", s, 5000, true) ? -1 : 0;
+		if (ret)
+			return -1;
 	}
 
 	ret = pdv_set_buffers (CLHandle, 1, NULL);
@@ -723,6 +725,8 @@ int Reflex::initHardware ()
 		logStream (MESSAGE_ERROR) << "cannot initialize buffers" << sendLog;
 		return -1;
 	}
+
+	setIdleInfoInterval (2);
 
 	return 0;
 }
