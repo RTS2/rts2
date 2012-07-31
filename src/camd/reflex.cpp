@@ -84,33 +84,48 @@ namespace rts2camd
 
 typedef enum {
 	CONVERSION_NONE,	// no conversion
+	CONVERSION_MILI,	// /= 1000.0
 	CONVERSION_mK 		// convert from mK to degC
 } conversion_t;
 
 /**
  * Register class. Holds register address in Reflex controller.
  */
-class RRegister:public rts2core::ValueInteger
+class RRegister
 {
 	public:
-		RRegister (std::string in_val_name):rts2core::ValueInteger (in_val_name)
+		RRegister (rts2core::Value *_value, conversion_t _conv)
 		{
 			reflex_addr = 0;
 			info_update = false;
-			conv = CONVERSION_NONE;
-		}
-		RRegister (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0):rts2core::ValueInteger (in_val_name, in_description, writeToFits, flags)
-		{
-			reflex_addr = 0;
-			info_update = false;
-			conv = CONVERSION_NONE;
+			conv = _conv;
+			value = _value;
 		}
 
 		void setRegisterAddress (uint32_t addr) { reflex_addr = addr; }
 		void setInfoUpdate () { info_update = true; }
-		void setConversionType (conversion_t co) { conv = co; }
+		conversion_t getConversionType () { return conv; }
 
 		bool infoUpdate () { return info_update; }
+
+		void setRegisterValue (uint32_t rval)
+		{
+			switch (getConversionType ())
+			{
+				case CONVERSION_mK:
+					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0 - 273.15);
+					break;
+				case CONVERSION_MILI:
+					std::cout << "rval " << rval << " " << rval / 1000.0 << std::endl;
+					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0);
+					break;
+				case CONVERSION_NONE:
+					value->setValueInteger (rval);
+					break;
+			}
+		}
+
+		rts2core::Value *value;
 	private:
 		uint32_t reflex_addr;
 		/**
@@ -309,8 +324,8 @@ class Reflex:public Camera
 		std::pair <int, int> channeltap[MAX_TAP_COUNT * 2];
 
 		// return board type for given board
-		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 24) & 0xFF; }
-		int boardRevision (int board) { return (registers[BOARD_TYPE_BP + board]->getValueInteger () >> 16) & 0xFF; }
+		int boardType (int board) { return (registers[BOARD_TYPE_BP + board]->value->getValueInteger () >> 24) & 0xFF; }
+		int boardRevision (int board) { return (registers[BOARD_TYPE_BP + board]->value->getValueInteger () >> 16) & 0xFF; }
 #ifdef CL_EDT
 		PdvDev *CLHandle;
 #else
@@ -637,7 +652,7 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 	int ret;
 	for (std::map <uint32_t, RRegister *>::iterator iter=registers.begin (); iter != registers.end (); iter++)
 	{
-		if (old_value == iter->second)
+		if (old_value == iter->second->value)
 		{
 			std::string s;
 			switch (iter->first)
@@ -649,8 +664,16 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 						return -2;
 					info ();
 					return interfaceCommand (">TS\r", s, 5000, true) ? -2 : 0;
-				default:	
-					return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
+				default:
+					switch (iter->second->getConversionType ())
+					{
+						case CONVERSION_NONE:
+							return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
+						case CONVERSION_MILI:
+							return writeRegister (iter->first, new_value->getValueFloat () * 1000.0) ? -2 : 0;
+						case CONVERSION_mK:
+							return writeRegister (iter->first, (new_value->getValueFloat () + 273.15) * 1000.0) ? -2 : 0;
+					}
 			}
 		}
 	}
@@ -720,7 +743,7 @@ int Reflex::info ()
 				logStream (MESSAGE_ERROR) << "error reading register 0x" << std::setw (8) << std::setfill ('0') << std::hex << iter->first << sendLog;
 				return -1;
 			}
-			iter->second->setValueInteger (rval);
+			iter->second->setRegisterValue (rval);
 		}
 	}
 	return Camera::info ();
@@ -807,9 +830,20 @@ RRegister * Reflex::createRegister (uint32_t address, const char *name, const ch
 		exit (1);
 	}
 
-	RRegister *regval;
 	int32_t flags = (writable ? RTS2_VALUE_WRITABLE : 0) | (hexa ? RTS2_DT_HEX : 0);
-	createValue (regval, name, desc, true, flags);
+	rts2core::Value *value;
+	switch (conv)
+	{
+		case CONVERSION_MILI:
+		case CONVERSION_mK:
+			createValue ((rts2core::ValueFloat *&) value, name, desc, true, flags);
+			break;
+		case CONVERSION_NONE:
+			createValue ((rts2core::ValueInteger *&) value, name, desc, true, flags);
+			break;
+	}
+
+	RRegister *regval = new RRegister (value, conv);
 	regval->setRegisterAddress (address);
 	if (infoupdate)
 		regval->setInfoUpdate ();
@@ -1047,7 +1081,7 @@ void Reflex::setParameter (const char *pname, uint32_t value)
 		throw rts2core::Error (std::string ("cannot set parameter ") + pname);
 
 	// propagate changed parameter
-	rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + 1 + pi];
+	rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + 1 + pi]->value;
 	v->setValueInteger (value);
 	sendValueAll (v);
 }
@@ -1064,7 +1098,7 @@ void Reflex::rereadAllRegisters ()
 			err << "error reading register 0x" << std::setw (8) << std::setfill ('0') << std::hex << iter->first;
 			throw rts2core::Error (err.str ());
 		}
-		iter->second->setValueInteger (rval);
+		iter->second->setRegisterValue (rval);
 	}
 }
 
@@ -1337,7 +1371,7 @@ void Reflex::defaultParameters ()
 			createRegister (SYSTEM_CONTROL_ADDR + i, name.str ().c_str (), desc.str ().c_str (), true, true, false);
 		}
 
-		rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + i];
+		rts2core::Value *v = registers[SYSTEM_CONTROL_ADDR + i]->value;
 		v->setValueInteger (iter->second);
 		sendValueAll (v);
 		writeRegister (SYSTEM_CONTROL_ADDR + i, iter->second);
@@ -1608,14 +1642,14 @@ void Reflex::createBoard (int bt)
 	biss << "BOARD" << (bt - BOARD_TYPE_PB);
 	std::string key = biss.str ();
 	std::string bn = biss.str () + ".";
-	switch ((registers[bt]->getValueInteger () >> 24) & 0xFF)
+	switch ((registers[bt]->value->getValueInteger () >> 24) & 0xFF)
 	{
 		case BT_NONE:
 			// empty board
 			break;
 		case BT_BPX6:
 			ba = 0x00010000;
-			createRegister (ba++, "back.temperature", "[mK] backplane module temperature", false, true, false);
+			createRegister (ba++, "back.temperature", "[C] backplane module temperature", false, true, false, CONVERSION_mK);
 			createRegister (ba, "back.status", "backplane status", false, true, true);
 
 			ba = 0x10010000;
@@ -1635,7 +1669,7 @@ void Reflex::createBoard (int bt)
 			break;
 		case BT_CLIF:
 			ba = 0x00020000;
-			createRegister (ba, "clif.temperature", "[mK] camera link module temperature", false, true, false);
+			createRegister (ba, "clif.temperature", "[C] camera link module temperature", false, true, false, CONVERSION_mK);
 
 			ba = 0x10020000;
 			createRegister (ba++, "clif.tap_count", "number of pairs per active pixel clock", true, false, false);
@@ -1680,46 +1714,46 @@ void Reflex::createBoard (int bt)
 			break;
 		case BT_PA:
 			ba = 0x00030000;
-			createRegister (ba++, "pwrA.temperature", "[mK] power module temperature", false, true, false);
+			createRegister (ba++, "pwrA.temperature", "[C] power module temperature", false, true, false, CONVERSION_mK);
 
-			createRegister (ba++, "pwrA.p5VD_V", "[mV] +5V digital supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrA.p5VD_V", "[V] +5V digital supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba++, "pwrA.p5VD_A", "[mA] +5V digital supply current reading", false, true, false);
 
-			createRegister (ba++, "pwrA.p5VA_V", "[mV] +5V analog supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrA.p5VA_V", "[V] +5V analog supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba++, "pwrA.p5VA_A", "[mA] +5V analog supply current reading", false, true, false);
 
-			createRegister (ba++, "pwrA.m5VA_V", "[mV] -5V analog supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrA.m5VA_V", "[V] -5V analog supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba, "pwrA.m5VA_A", "[mA] -5V analog supply current reading", false, true, false);
 			break;
 		case BT_PB:
 			ba = 0x00040000;
-			createRegister (ba++, "pwrB.temperature", "[mK] power module temperature", false, true, false);
+			createRegister (ba++, "pwrB.temperature", "[C] power module temperature", false, true, false, CONVERSION_mK);
 
-			createRegister (ba++, "pwrB.p30VA_V", "[mV] +30V analog supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrB.p30VA_V", "[V] +30V analog supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba++, "pwrB.p30VA_A", "[mA] +30V analog supply current reading", false, true, false);
 
-			createRegister (ba++, "pwrB.p15VA_V", "[mV] +51V analog supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrB.p15VA_V", "[V] +51V analog supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba++, "pwrB.p15VA_A", "[mA] +15V analog supply current reading", false, true, false);
 
-			createRegister (ba++, "pwrB.m15VA_V", "[mV] -15V analog supply voltage reading", false, true, false);
+			createRegister (ba++, "pwrB.m15VA_V", "[V] -15V analog supply voltage reading", false, true, false, CONVERSION_MILI);
 			createRegister (ba++, "pwrB.m15VA_A", "[mA] -15V analog supply current reading", false, true, false);
 
-			createRegister (ba++, "pwrB.TEC_mon", "[mK] monitored value of TEC setpoint", false, true, false);
-			createRegister (ba, "pwrB.TEC_actual", "[mK] current TEC temperature", false, true, false);
+			createRegister (ba++, "pwrB.TEC_mon", "[C] monitored value of TEC setpoint", false, true, false, CONVERSION_mK);
+			createRegister (ba, "pwrB.TEC_actual", "[C] current TEC temperature", false, true, false, CONVERSION_mK);
 
 			ba = 0x10040000;
-			createRegister (ba++, "pwrB.TEC_set", "[mK] TEC setpoint (zero to disable)", true, false, false);
+			createRegister (ba++, "pwrB.TEC_set", "[C] TEC setpoint (zero to disable)", true, false, false, CONVERSION_mK);
 			break;
 		case BT_AD8X120:
 		case BT_AD8X100:
 			ba = (bt - POWER) << 16;
-			createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
+			createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 			createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
 			// control registers
 			ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
-			createRegister (ba++, (bn + "clamp_low").c_str (), "[mV] clamp voltage for negative side pf differential input", true, false, false);
-			createRegister (ba++, (bn + "clamp_high").c_str (), "[mV] clamp voltage for positive side pf differential input", true, false, false);
+			createRegister (ba++, (bn + "clamp_low").c_str (), "[V] clamp voltage for negative side pf differential input", true, false, false, CONVERSION_MILI);
+			createRegister (ba++, (bn + "clamp_high").c_str (), "[V] clamp voltage for positive side pf differential input", true, false, false, CONVERSION_MILI);
 
 			createRegister (ba++, (bn + "raw_mode").c_str (), "CDS/raw mode", true, false, false);
 			createRegister (ba++, (bn + "raw_channel").c_str (), "AD channel to stream in raw mode, 0-7", true, false, false);
@@ -1734,7 +1768,7 @@ void Reflex::createBoard (int bt)
 			break;
 		case BT_DRIVER:
 			ba = (bt - POWER) << 16;
-			createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
+			createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 			createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
 			ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
@@ -1744,15 +1778,15 @@ void Reflex::createBoard (int bt)
 			{
 				std::ostringstream n;
 				n << i;
-				createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[mV] low level clock voltage for channel " + n.str ()).c_str (), true, false, false);
-				createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[mV] high level clock voltage for channel " + n.str ()).c_str (), true, false, false);
-				createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[mV] clock slew rate for channel " + n.str ()).c_str (), true, false, false);
+				createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+				createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+				createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
 			}
 			break;
 		case BT_BIAS:
 			{
 				ba = (bt - POWER) << 16;
-				createRegister (ba++, (bn + "temperature").c_str (), "[mK] module temperature", false, true, false);
+				createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 				// 8 low, 8 high labels
 				std::string labels[16];
 				rts2core::StringArray *vlabels;
@@ -1786,16 +1820,16 @@ void Reflex::createBoard (int bt)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << labels[i-1] << "_Vmeas";
-					comment << "[mv] Low-voltage bias #" << i << " voltage";
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					comment << "[V] Low-voltage bias #" << i << " voltage";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false, CONVERSION_MILI);
 				}
 				ba++;
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << labels[i+7] << "_Vmeas";
-					comment << "[mv] High-voltage bias #" << i << " voltage";
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false);
+					comment << "[V] High-voltage bias #" << i << " voltage";
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false, CONVERSION_MILI);
 				}
 				for (i = 1; i < 9; i++)
 				{
@@ -1819,15 +1853,15 @@ void Reflex::createBoard (int bt)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << labels[i-1] << "_V";
-					comment << "[mv] DC bias level for LV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false);
+					comment << "[V] DC bias level for LV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI);
 				}
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << labels[i+7] << "_V";
-					comment << "[mv] DC bias level for HV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false);
+					comment << "[V] DC bias level for HV " << i;
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI);
 				}
 				for (i = 1; i < 9; i++)
 				{
@@ -1846,7 +1880,7 @@ void Reflex::createBoard (int bt)
 			}
 			break;
 		default:
-			logStream (MESSAGE_ERROR) << "unknow board type " << std::hex << ((registers[bt]->getValueInteger () >> 24) & 0xFF) << sendLog;
+			logStream (MESSAGE_ERROR) << "unknow board type " << std::hex << ((registers[bt]->value->getValueInteger () >> 24) & 0xFF) << sendLog;
 	}
 }
 
@@ -1864,7 +1898,7 @@ void Reflex::configSystem ()
 	double mclk;
 	int pclk, trigin, taplength, height;
 
-	if (! (registers[BOARD_TYPE_BP]->getValueInteger () && (BT_BPX6 << 24)))
+	if (! (registers[BOARD_TYPE_BP]->value->getValueInteger () && (BT_BPX6 << 24)))
 		throw rts2core::Error ("Unknown backplane type");
 
 //	// Disable polling to speed up configuration
@@ -1883,7 +1917,7 @@ void Reflex::configSystem ()
 	// Pixel clock divider
 	if (boardRevision (BOARD_BP) > 1)
 	{
-		if (registers[BUILD_IF]->getValueInteger () >= 336)
+		if (registers[BUILD_IF]->value->getValueInteger () >= 336)
 		{
 			if (config->getInteger ("SYSTEM", "PIXELCLOCK", pclk, 0) || (pclk < 0) || (pclk > 16))
 				throw rts2core::Error ("Invalid pixel clock setting (must be 0 - 16)");
@@ -1894,7 +1928,7 @@ void Reflex::configSystem ()
 		}
 		
 		// Trigger in
-		if (registers[BUILD_IF]->getValueInteger () >= 354)
+		if (registers[BUILD_IF]->value->getValueInteger () >= 354)
 		{
 			config->getString ("SYSTEM", "TRIGGERIN", s, "Disabled");
 			if (s == "Normal")
@@ -2424,7 +2458,7 @@ void Reflex::configureTaps (int taplength, int height)
 		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_CL_MODE, clmode))
 			throw rts2core::Error ("Error writing Interface deinterlacing CameraLink mode");
 		// Write CameraLink speed
-		if (registers[BUILD_IF]->getValueInteger () > 356)
+		if (registers[BUILD_IF]->value->getValueInteger () > 356)
 		{
 			config->getString ("BACKPLANE", "CLSPEED", s);
 			if (s == "80")
