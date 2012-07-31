@@ -116,7 +116,6 @@ class RRegister
 					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0 - 273.15);
 					break;
 				case CONVERSION_MILI:
-					std::cout << "rval " << rval << " " << rval / 1000.0 << std::endl;
 					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0);
 					break;
 				case CONVERSION_NONE:
@@ -331,6 +330,14 @@ class Reflex:public Camera
 #else
 		hSerRef CLHandle;
 #endif
+
+		// indexes for counting boards
+		int ad;
+		int driver;
+		int bias;
+
+		// map board names to board indices
+		std::map <std::string, int> bnames2number;
 };
 
 }
@@ -356,6 +363,8 @@ Reflex::Reflex (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	powerUp = false;
 	last_taplength = -1;
 	last_height = -1;
+
+	ad = driver = bias = 0;
 
 	createExpType ();
 
@@ -814,11 +823,15 @@ int Reflex::commandAuthorized (rts2core::Connection * conn)
 	{
 		if (!conn->paramEnd ())
 		{
-			int board;
-			if (conn->paramNextInteger (&board) || !conn->paramEnd () || board < 0 || board > 10)
+			char* board;
+			if (conn->paramNextString (&board) || !conn->paramEnd ())
 				return -2;
+			std::map <std::string, int>::iterator bit = bnames2number.find (std::string (board));
+			if (bit == bnames2number.end ())
+				return -2;
+				
 			char cmd[5] = ">Bx\r";
-			cmd[2] = board + '0';
+			cmd[2] = bit->second - 5 + '0';
 			return interfaceCommand (cmd, s, 3000, true);
 		}
 		return interfaceCommand (">A\r", s, 3000, true);
@@ -1122,6 +1135,8 @@ void Reflex::reloadConfig (bool force)
 			throw rts2core::Error ("cannot parse .rcf configuration file");
 		}
 	}
+
+	ad = driver = bias = 0;
 
 	configSystem ();
 
@@ -1642,10 +1657,11 @@ void Reflex::createBoard (int bt)
 {
 	uint32_t ba;
 	int i;
-	std::ostringstream biss;
+	std::ostringstream biss, bns;
 	biss << "BOARD" << (bt - BOARD_TYPE_PB);
 	std::string key = biss.str ();
 	std::string bn = biss.str () + ".";
+
 	switch ((registers[bt]->value->getValueInteger () >> 24) & 0xFF)
 	{
 		case BT_NONE:
@@ -1751,6 +1767,11 @@ void Reflex::createBoard (int bt)
 		case BT_AD8X120:
 		case BT_AD8X100:
 			ba = (bt - POWER) << 16;
+
+			bns << "AD_" << ++ad;
+			bnames2number[bns.str ()] = bt;
+			bn = bns.str () + '.';
+
 			createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 			createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
@@ -1772,6 +1793,11 @@ void Reflex::createBoard (int bt)
 			break;
 		case BT_DRIVER:
 			ba = (bt - POWER) << 16;
+
+			bns << "DRV_" << ++driver;
+			bnames2number[bns.str ()] = bt;
+			bn = bns.str () + '.';
+
 			createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 			createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
 
@@ -1790,6 +1816,12 @@ void Reflex::createBoard (int bt)
 		case BT_BIAS:
 			{
 				ba = (bt - POWER) << 16;
+
+				bns << "BIAS_" << ++bias;
+				bnames2number[bns.str ()] = bt;
+				bn = bns.str () + '.';
+
+
 				createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 				// 8 low, 8 high labels
 				std::string labels[16];
