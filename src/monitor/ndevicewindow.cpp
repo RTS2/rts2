@@ -167,12 +167,15 @@ void NDeviceWindow::drawValuesList ()
 
 	maxrow = 0;
 
+	displayValues.clear ();
+
 	for (rts2core::ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
 	{
 		if (hide_debug == false || (*iter)->getDebugFlag () == false)
 		{
 			maxrow++;
 			printValue (*iter);
+			displayValues.push_back (*iter);
 		}
 	}
 }
@@ -180,8 +183,8 @@ void NDeviceWindow::drawValuesList ()
 rts2core::Value * NDeviceWindow::getSelValue ()
 {
 	int s = getSelRow ();
-	if (s >= 0)
-		return connection->valueAt (s);
+	if (s >= 0 && s < (int) displayValues.size ())
+		return displayValues[s];
 	return NULL;
 }
 
@@ -204,7 +207,7 @@ void NDeviceWindow::createValueBox ()
 	int s = getSelRow ();
 	if (s < 0)
 		return;
-	rts2core::Value *val = connection->valueAt (s);
+	rts2core::Value *val = displayValues[s];
 	if (!val || val->isWritable () == false)
 		return;
 	s -= getPadoffY ();
@@ -299,7 +302,7 @@ void NDeviceWindow::draw ()
 	drawValuesList ();
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,	(maxrow > getHeight ()? maxrow + 1 : getHeight ()));
+	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,	(maxrow > getHeight () ? maxrow + 1 : getHeight ()));
 	mvwaddch (window, 0, valueBegins + 1, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
 

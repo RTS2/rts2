@@ -78,8 +78,10 @@ class NDeviceWindow:public NSelWindow
 		ValueBox *valueBox;
 		/** Index from which start value box */
 		int valueBegins;
-
 		bool hide_debug;
+		
+		// draw only those values
+		std::vector <rts2core::Value *> displayValues;
 };
 
 /**
