@@ -870,9 +870,9 @@ RRegister * Reflex::createRegister (uint32_t address, const char *name, const ch
 			createValue ((rts2core::ValueFloat *&) value, name, desc, true, flags);
 			break;
 		case CONVERSION_NONE:
-			createValue ((rts2core::ValueInteger *&) value, name, desc, true, flags);
 			if (hexa)
 	 			flags |= RTS2_DT_HEX;
+			createValue ((rts2core::ValueInteger *&) value, name, desc, true, flags);
 			break;
 	}
 
