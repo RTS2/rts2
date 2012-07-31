@@ -124,7 +124,7 @@
  * Value is an array of strings.
  * @ingroup RTS2Value
  */
-#define RTS2_VALUE_ARRAY              0x00000080
+#define RTS2_VALUE_ARRAY              0x00000040
 
 /**
  * Base type mask.
