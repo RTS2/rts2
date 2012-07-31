@@ -49,7 +49,7 @@ const char *type_names[] =
 
 using namespace rts2core;
 
-Block::Block (int in_argc, char **in_argv):rts2core::App (in_argc, in_argv)
+Block::Block (int in_argc, char **in_argv):App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
 
@@ -128,7 +128,7 @@ void Block::postEvent (Event * event)
 		(*iter)->postEvent (new Event (event));
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		(*iter)->postEvent (new Event (event));
-	return rts2core::App::postEvent (event);
+	return App::postEvent (event);
 }
 
 Connection * Block::createConnection (int in_sock)

@@ -106,7 +106,7 @@ class DevClient;
  *
  * @ingroup RTS2Block
  */
-class Block: public rts2core::App
+class Block: public App
 {
 	public:
 
