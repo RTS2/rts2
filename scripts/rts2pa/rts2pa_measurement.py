@@ -40,31 +40,40 @@ class KingA():
     """Calculate the HA, lambda based on E.S. King's method """
     def __init__(self, results=None): # results is a list of SolverResult
         self.results= results
+        self.jd0= sidereal.JulianDate( j=math.modf(results[0].jd)[1], f=math.modf(results[0].jd)[0])
+        self.tau= sidereal.raToHourAngle(results[0].ra, self.jd0.datetime(), results[0].lon)     # HA of image 
+        self.lon=math.radians(self.results[0].lon)   
+        self.lat=math.radians(self.results[0].lat)   
+        self.dX= math.radians(results[-1].ra - results[0].ra)
+        self.dY= math.radians(results[-1].dec - results[-0].dec)
+        self.omega_sid= 2. *  math.pi / 86164.2
+        self.dtau= (results[-1].jd- results[0].jd) * self.omega_sid * 86400
+        self.success=True
+        self.lambda_r=None
+        try:
+            self.lambda_r= math.sqrt( math.pow(self.dX,2) + math.pow(self.dY,2))/ self.dtau 
+        except:
+            self.success=False
 
-#        self.tau= sidereal.raToHourAngle(1., 2., 3.)     # HA of image 
-#        self.lat=math.radian(lat)   
-#        self.dX= math.radian(result2.RA - result2.RA)
-#        self.dY= math.radian(result2.DEC - result2.DEC)
-#        self.omega_sid= 2. *  math.pi / 86164.2
-#        self.dtau= (result2.rime- result1.time) * self.omega_sid
-
-
-#        self.lambda_r= math.sqrt( math.pow(self.dX,2) + math.pow(self.dY,2))/ self.dtau 
-#        self.ha= -math.atan2( self.dX, self.dY) + dtau/2. + tau
-
-#        self.A= self.lambda_r * math.sin( self.tau) / math.cos( self.lat) 
-#        self.k= self.lambda_r * math.cos( self.tau)
+        self.ha= (-math.atan2( self.dX, self.dY) + self.dtau/2. + self.tau) % (2 * math.pi)
+        try: # no one observes at +/- 90. deg
+            self.A= self.lambda_r * math.sin( self.tau) / math.cos( self.lat) 
+        except:
+            self.success=False
+        if self.lambda_r:
+            self.k= self.lambda_r * math.cos( self.tau)
 
 class SolverResult():
     """Results of astrometry.net including necessary fits headers"""
-    def __init__(self, ra=None, dec=None, jd=None, date_obs=None, lon=None, lat=None):
+    def __init__(self, ra=None, dec=None, jd=None, date_obs=None, lon=None, lat=None, fn=None):
         self.ra= ra
         self.dec=dec
         self.jd=jd
         self.date_obs=date_obs
         self.lon=lon
         self.lat=lat
-    
+        self.fn= fn
+
 class SolveField():
     """Solve a field with astrometry.net """
     def __init__(self, fn=None, runTimeConfig=None, logger=None):
@@ -118,8 +127,9 @@ class SolveField():
             center=self.solver.run(scale=self.scale,ra=self.ra,dec=self.dec,radius=self.radius,replace=self.replace,verbose=self.verbose)
 
         if len(center)==2:
-            self.logger.debug('SolveField: found center {0}'.format( repr(center)))
-            return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat)
+            dhms = sidereal.MixedUnits ((60,60))
+            self.logger.debug('SolveField: found center {0} {1}'.format( dhms.singleToMix(center[0]), dhms.singleToMix(center[1])))
+            return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat, fn=self.fn)
         else:
             self.logger.debug('SolveField: center not found')
             return None
@@ -138,20 +148,28 @@ class MeasurementThread(threading.Thread):
 
     def run(self):
         self.logger.debug('MeasurementThread: running')
+        if self.runTimeConfig.cf['TEST']:
+            # expected are a list of comma separated fits pathes
+            # ascending in time
+            testPaths= self.runTimeConfig.cf['TEST_FIELDS'].split(',')
+            self.logger.debug('MeasurementThread: test replacements fits: {0}'.format(testPaths))
 
         while not self.stoprequest.isSet():
             path=None
+                
             try:
                 path = self.path_q.get(True, 1.)            
-                self.logger.debug('MeasurementThread: next path {0}'.format(path))
             except Queue.Empty:
                 continue
 
-            if path:
-                if self.runTimeConfig.cf['TEST']:
-                    path= self.runTimeConfig.cf['TEST_FIELDS']
-                    self.logger.debug('MeasurementThread: test replacement fits: {0}'.format(path))
+            if self.runTimeConfig.cf['TEST']:
+                try:
+                    path= testPaths.pop(0)
+                except:
+                    path= None
 
+            self.logger.debug('MeasurementThread: next path {0}'.format(path))
+            if path:
                 sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
                 if sf.success:
                     sr= sf.solveField()
@@ -161,6 +179,8 @@ class MeasurementThread(threading.Thread):
 
                         if len(self.results) > 1:
                             kinga=KingA(self.results)
+                            dhms = sidereal.MixedUnits ((60,60))
+                            self.logger.debug('MeasurementThread: values for KingA HA={0} lambda={1} AZ={2}, alt={3} '.format( dhms.singleToMix(math.degrees(kinga.ha)), dhms.singleToMix(math.degrees(kinga.lambda_r)),dhms.singleToMix(math.degrees(kinga.A)), dhms.singleToMix(math.degrees(kinga.k))))
                     else:
                         self.logger.error('MeasurementThread: error within solver (not solving)')
                 else:
@@ -168,7 +188,7 @@ class MeasurementThread(threading.Thread):
 
 
     def join(self, timeout=None):
-        self.logger.debug('MeasurementThread: join, timeout {0}'.format(timeout))
+        self.logger.debug('MeasurementThread: join, timeout {0}, stopping thread on request'.format(timeout))
         self.stoprequest.set()
         super(MeasurementThread, self).join(timeout)
 
@@ -178,6 +198,7 @@ class AcquireData(rts2pa.PAScript):
     # __init__ of base class is executed
 
     def takeImages(self, path_q=None, ul=None):
+        """Take images and pass them to  MeasurementThread"""
         r2c.setValue('exposure', self.runTimeConfig.cf['EXPOSURE_TIME'])
         r2c.setValue('SHUTTER','LIGHT')
 
@@ -187,9 +208,12 @@ class AcquireData(rts2pa.PAScript):
             dst= self.environment.moveToRunTimePath(path)
             path_q.put(dst)
             self.logger.debug('takeImages: destination image path {0}'.format(dst))
-            #sleep(self.runTimeConfig.cf['SLEEP'])
+            if not self.runTimeConfig.cf['TEST']:
+                self.logger.debug('takeImages sleeping for {0} seconds'.format(self.runTimeConfig.cf['SLEEP']))
+                sleep(self.runTimeConfig.cf['SLEEP'])
 
     def setMount(self):
+        """Set the mount to the configured location near the celestial pole"""
         self.logger.debug( 'setMount: Starting {0}'.format(self.runTimeConfig.cf['CONFIGURATION_FILE']))
         
         # fetch site latitude
@@ -205,6 +229,8 @@ class AcquireData(rts2pa.PAScript):
         r2c.radec( ra, dec)
 
     def run(self):
+        """Set up thread MeasurementThread and start image tacking"""
+
         path_q = Queue.Queue()
         result_q = Queue.Queue()
         mt= MeasurementThread( path_q, result_q, self.runTimeConfig, self.logger) 
@@ -214,13 +240,17 @@ class AcquireData(rts2pa.PAScript):
         try:
             ul= int(self.runTimeConfig.cf['DURATION']/self.runTimeConfig.cf['SLEEP'])
             self.logger.debug('run: steps {0}'.format(ul))
+            self.logger.info('run: the measurement lasts for {0} seconds and {0} images will be taken'.format(self.runTimeConfig.cf['DURATION'],  ul))
         except:
             self.logger.debug('run: sleep must not be zero: {0}'.format(self.runTimeConfig.cf['SLEEP']))
 
         self.takeImages(path_q, ul)
 
+        dhms = sidereal.MixedUnits ((60,60))    
         for i in range (0, ul):
-            self.logger.debug('main: {0}'.format(result_q.get()))
+            results= result_q.get()
+            for sr in results:
+                self.logger.info('run: field center at  {0} {1} for fits image {2}'.format(dhms.singleToMix(sr.ra), dhms.singleToMix(sr.dec), sr.fn))
 
         mt.join(1.)
 

@@ -2,6 +2,14 @@ Installation and testing of rts2pa polar alignment measurement
 ===============================================================
 20112-07-27, Markus Wildi, wildi.markus@bluewin.ch
 
+Prerequisites
+-------------
+
+You need to put sidereal.py available from 
+wget http://infohost.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/sidereal.py
+
+into your PYTHONPATH.
+
 
 Installation
 ------------
@@ -30,22 +38,6 @@ Assuming you did the the following RTS2 svn checkout
 )
 
 
-Testing offline, e.g. daytime
------------------------------
-
-  Test scripts and image data are provided:
-
-  sudo chgrp YOUR_GROUP /var/log/rts2-debug
-  cd ~
-  cd rts2/scripts/rts2pa/test/images
-  wget http://azug.minpet.unibas.ch/~wildi/rts2pa-test-images-2012-07-27.tgz
-  tar zxvf rts2pa-test-images-2012-07-27.tgz
-  cd ..
-
-  Execute the scripts beginning with run_* . A minimal help text
-  is printed on terminal, mainly saying where the log files are
-  stored.
-
 Testing through RTS2, state ON, night- and daytime
 --------------------------------------------------
   Preparation
@@ -67,11 +59,31 @@ Testing through RTS2, state ON, night- and daytime
 
   Test during daytime
   -------------------
+
+  sudo chgrp YOUR_GROUP /var/log/rts2-debug
+
   In addition to the above commands set   
 
   EXEC -> ignore_day=true       
 
   at the beginning.
+
+  Test scripts and image data are provided:
+
+  cd ~
+  cd rts2/scripts/rts2pa/test/images
+  wget http://azug.minpet.unibas.ch/~wildi/rts2pa-test-images-2012-07-27.tgz
+  tar zxvf rts2pa-test-images-2012-07-27.tgz
+  cd ..
+
+  Execute the scripts beginning with run_* . A minimal help text
+  is printed on terminal, mainly saying where the log files are
+  stored.
+
+  The file /etc/rts2/devices should look like
+   camd    dummy       C0      
+   teld    dummy       T0      --move fast
+
 
 
 Files in directory rts2/scripts/rts2pa
@@ -96,6 +108,36 @@ Files in directory rts2/scripts/rts2pa
   -------
   rts2pa.py                    the base class and helper classes
   astrometry.py                used to find efficiently the center based on scale, ra, dec and radius
+
+
+  
+
+  test/images
+  ----------
+
+  CNP-02-10-00-89-00-00.fits, scale
+
+   JD       = 2452183.336354
+   DATE-OBS = '2001-09-30T20:04:21.0'
+   ORIRA    = 32.5
+   ORIDEC   = 89.0
+   SITE-LON = 47.5
+   SITE-LAT = 7.601
+   
+   replaced DATE-OBS by DATE-ORI
+
+
+  CNP-02-10-30-89-00-20.fits, scale
+
+   DATE-OBS = '2001-09-30T20:34:21.0'
+   JD       = 2452183.357188
+   ORIRA    = 32.625
+   ORIDEC   = 89.00555
+   SITE-LON = 47.5
+   SITE-LAT = 7.601
+
+   replaced DATE-OBS by DATE-ORI
+
 
   Not yet of general interest
   --------------------------

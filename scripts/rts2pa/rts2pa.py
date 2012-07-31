@@ -40,11 +40,11 @@ class Configuration:
         self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2pa'
         self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
         self.dcf[('basic', 'TEST')]= True
-        self.dcf[('basic', 'TEST_FIELDS')]= './test/images/20071205025927-674-RA.fits'
+        self.dcf[('basic', 'TEST_FIELDS')]= './test/images/CNP-02-10-00-89-00-00.fits,./test/images/CNP-02-10-30-89-00-20.fits'
 
         self.dcf[('data_taking', 'EXPOSURE_TIME')]= 1.  #[sec]
         self.dcf[('data_taking', 'DURATION')]= 1800.    #[sec]
-        self.dcf[('data_taking', 'SLEEP')]=     480.    #[sec]
+        self.dcf[('data_taking', 'SLEEP')]=     900.    #[sec]
 
         self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
         self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
@@ -61,11 +61,11 @@ class Configuration:
         self.dcf[('fits-header', 'JD')]= 'JD' 
         self.dcf[('fits-header', 'DATE-OBS')]= 'DATE-OBS' 
 
-        self.dcf[('fits-header', 'ORIRA')]= 'CUR_RA' 
-        self.dcf[('fits-header', 'ORIDEC')]= 'CUR_DEC' 
+        self.dcf[('fits-header', 'ORIRA')]= 'ORIRA' 
+        self.dcf[('fits-header', 'ORIDEC')]= 'ORIDEC' 
 
-        self.dcf[('fits-header', 'SITE-LON')]= 'LONG' 
-        self.dcf[('fits-header', 'SITE-LAT')]= 'LAT' 
+        self.dcf[('fits-header', 'SITE-LON')]= 'SITE-LON' 
+        self.dcf[('fits-header', 'SITE-LAT')]= 'SITE-LAT' 
 
         self.cf={}
         for (section, identifier), value in sorted(self.dcf.iteritems()):
