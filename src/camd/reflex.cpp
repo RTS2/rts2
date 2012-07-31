@@ -680,7 +680,10 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 					if (ret)
 						return -2;
 					info ();
-					return interfaceCommand (">TS\r", s, 5000, true) ? -2 : 0;
+					if (new_value->getValueInteger () > 0)
+						return interfaceCommand (">TS\r", s, 5000, true) ? -2 : 0;
+					// don't start timing if powering down
+					return 0;
 				default:
 					switch (iter->second->getConversionType ())
 					{
@@ -1808,27 +1811,41 @@ void Reflex::createBoard (int bt)
 			createRegister (ba++, (bn + "cda_video_stop").c_str (), "last sample to use for CDS video level after pixel clock", true, false, false);
 			break;
 		case BT_DRIVER:
-			ba = (bt - POWER) << 16;
-
-			bns << "DRV_" << ++driver;
-			bnames2number[bns.str ()] = bt;
-			bn = bns.str () + '.';
-
-			createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
-			createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
-
-			ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
-			createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, false, true);
-
-			for (i = 1; i < 13; i++)
 			{
-				std::ostringstream n;
-				n << i;
-				createRegister (ba++, (bn + "ch" + n.str () + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
-				createRegister (ba++, (bn + "ch" + n.str () + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
-				createRegister (ba++, (bn + "ch" + n.str () + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+				ba = (bt - POWER) << 16;
+
+				bns << "DRV_" << ++driver;
+				bnames2number[bns.str ()] = bt;
+				bn = bns.str () + '.';
+
+				createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
+				createRegister (ba, (bn + "status").c_str (), "module status", false, true, true);
+
+				ba = SYSTEM_CONTROL_ADDR | ((bt - POWER) << 16);
+				createRegister (ba++, (bn + "driver_enable").c_str (), "bit-field indetifing which driver channels to enable", true, false, true);
+				// used labels
+				std::vector <std::string> labels;
+				// labels handling
+				rts2core::StringArray *vlabels;
+				createValue (vlabels, (bn + "labels").c_str (), "driver board channel labels", false);
+
+				for (i = 1; i < 13; i++)
+				{
+					std::ostringstream ln;
+					ln << "LABEL" << i;
+					const char *ll = config->getStringDefault (key.c_str (), ln.str ().c_str (), "");
+					std::ostringstream n;
+					n << "ch" << i;
+					if (ll[0] == '\0' || std::find (labels.begin (), labels.end (), std::string (ll)) != labels.end ())
+						ll = n.str ().c_str ();
+					createRegister (ba++, (bn + ll + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+					createRegister (ba++, (bn + ll + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+					createRegister (ba++, (bn + ll + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+					vlabels->addValue (ll);
+					labels.push_back (std::string (ll));
+				}
+				break;
 			}
-			break;
 		case BT_BIAS:
 			{
 				ba = (bt - POWER) << 16;
@@ -1836,7 +1853,6 @@ void Reflex::createBoard (int bt)
 				bns << "BIAS_" << ++bias;
 				bnames2number[bns.str ()] = bt;
 				bn = bns.str () + '.';
-
 
 				createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
 				createRegister (ba++, (bn + "status").c_str (), "module status", false, true, true);
