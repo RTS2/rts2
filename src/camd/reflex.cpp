@@ -85,6 +85,7 @@ namespace rts2camd
 typedef enum {
 	CONVERSION_NONE,	// no conversion
 	CONVERSION_MILI,	// /= 1000.0
+	CONVERSION_MILI_LIMITS, // /= 1000.0, but with limits
 	CONVERSION_mK, 		// convert from mK to degC
 	CONVERSION_10000hex,	// 0x10000
 	CONVERSION_65k		// 65535
@@ -119,6 +120,9 @@ class RRegister
 					break;
 				case CONVERSION_MILI:
 					((rts2core::ValueFloat *) value)->setValueFloat (((int32_t) rval) / 1000.0);
+					break;
+				case CONVERSION_MILI_LIMITS:
+					((rts2core::ValueDoubleMinMax *) value)->setValueDouble (((int32_t) rval) / 1000.0);
 					break;
 				case CONVERSION_10000hex:
 					((rts2core::ValueFloat *) value)->setValueFloat (((double) rval) / 0x10000);
@@ -690,6 +694,7 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 						case CONVERSION_NONE:
 							return writeRegister (iter->first, new_value->getValueInteger ()) ? -2 : 0;
 						case CONVERSION_MILI:
+						case CONVERSION_MILI_LIMITS:
 							return writeRegister (iter->first, new_value->getValueFloat () * 1000.0) ? -2 : 0;
 						case CONVERSION_10000hex:
 							return writeRegister (iter->first, new_value->getValueFloat () * 0x10000) ? -2 : 0;
@@ -871,6 +876,9 @@ RRegister * Reflex::createRegister (uint32_t address, const char *name, const ch
 		case CONVERSION_10000hex:
 		case CONVERSION_65k:
 			createValue ((rts2core::ValueFloat *&) value, name, desc, true, flags);
+			break;
+		case CONVERSION_MILI_LIMITS:
+			createValue ((rts2core::ValueDoubleMinMax *&) value, name, desc, true, flags);
 			break;
 		case CONVERSION_NONE:
 			if (hexa)
@@ -1838,9 +1846,9 @@ void Reflex::createBoard (int bt)
 					n << "ch" << i;
 					if (ll[0] == '\0' || std::find (labels.begin (), labels.end (), std::string (ll)) != labels.end ())
 						ll = n.str ().c_str ();
-					createRegister (ba++, (bn + ll + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
-					createRegister (ba++, (bn + ll + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
-					createRegister (ba++, (bn + ll + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI);
+					createRegister (ba++, (bn + ll + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
+					createRegister (ba++, (bn + ll + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
+					createRegister (ba++, (bn + ll + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
 					vlabels->addValue (ll);
 					labels.push_back (std::string (ll));
 				}
@@ -1922,14 +1930,14 @@ void Reflex::createBoard (int bt)
 					std::ostringstream vname, comment;
 					vname << bn << labels[i-1] << "_V";
 					comment << "[V] DC bias level for LV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI_LIMITS);
 				}
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
 					vname << bn << labels[i+7] << "_V";
 					comment << "[V] DC bias level for HV " << i;
-					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI);
+					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), true, false, false, CONVERSION_MILI_LIMITS);
 				}
 				for (i = 1; i < 9; i++)
 				{

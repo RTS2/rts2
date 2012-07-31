@@ -1262,8 +1262,12 @@ int Daemon::setSectionValues (IniSection *sect, int new_mode)
 					sendValueAll (val);
 					continue;
 				}
+				logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
 			}
-			logStream (MESSAGE_ERROR) << "Do not know what to do with suffix " << suffix << "." << sendLog;
+			else
+			{
+				logStream (MESSAGE_ERROR) << "Value " << val->getName () << " has wrong type: " << std::hex << val->getValueExtType () << sendLog;
+			}
 			return -1;
 		}
 		// create and set new value

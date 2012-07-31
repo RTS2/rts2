@@ -179,36 +179,21 @@ int IniParser::parseConfigFile (const char *filename, bool parseFullLine)
 				switch (pstate)
 				{
 					case NAME:
+					case SUFF:
 						if (*es == '.')
 						{
-							valName = line.substr (top - line.begin (), es - top);
+							if (pstate == SUFF)
+								valName += '.';
+							valName += line.substr (top - line.begin (), es - top);
 							pstate = SUFF;
 							top = es + 1;
 						}
 						else if (*es == '=' || isspace (*es))
 						{
-							pstate = VAL;
-							valName = line.substr (top - line.begin (), es - top);
-							while (*es != '=' && es != line.end ())
-								es++;
-							es++;
-							while (es != line.end () && isspace (*es))
-								es++;
-							if (*es == '"')
-							{
-								pstate = VAL_QUT;
-								top = es + 1;
-							}
+							if (pstate == SUFF)
+								valSuffix = line.substr (top - line.begin (), es - top);
 							else
-							{
-								top = es;
-							}
-						}
-						break;
-					case SUFF:
-						if (*es == '=' || isspace (*es))
-						{
-							valSuffix = line.substr (top - line.begin (), es - top);
+								valName = line.substr (top - line.begin (), es - top);
 							pstate = VAL;
 							while (*es != '=' && es != line.end ())
 								es++;
