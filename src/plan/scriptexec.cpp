@@ -63,11 +63,28 @@ class ClientCameraScript:public rts2script::DevClientCameraExec
 		ClientCameraScript (rts2core::Connection *conn, rts2core::ValueString *_expandPath, std::string templateFile, bool write_conn, bool write_rts2):rts2script::DevClientCameraExec (conn, _expandPath, templateFile)
 		{
 			setWriteConnnection (write_conn, write_rts2);
+			totalExp = -1;
+			currentExp = 1;
 		}
 
 		virtual void postEvent (rts2core::Event *event);
 		virtual imageProceRes processImage (Image * image);
+	
+	protected:
+		virtual void startTarget (bool b = false);
+	
+	private:
+		int totalExp;
+		int currentExp;
 };
+
+void ClientCameraScript::startTarget (bool b)
+{
+	rts2script::DevScript::startTarget (b);
+	rts2script::ScriptPtr sc = getScript ();
+	if (sc.get () != NULL)
+		totalExp = sc->getExpectedImages ();
+}
 
 void ClientCameraScript::postEvent (rts2core::Event *event)
 {
@@ -79,7 +96,7 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
 				if (read100 == false || fr < 100)
 				{
-					std::cout << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 16) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+					std::cout << currentExp << " of " << totalExp << " : " << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 25 - currentExp % 10 - totalExp % 10) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 					std::cout.flush ();
 					if (fr < 100)
 						read100 = false;
@@ -93,6 +110,7 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 imageProceRes ClientCameraScript::processImage (Image * image)
 {
 	image->saveImage ();
+	currentExp++;
 	if (usesNcurses)
 	{
 		std::cout << std::setfill ('+') << std::setw (COLS) << "+ done " << std::endl;
