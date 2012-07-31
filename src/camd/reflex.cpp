@@ -115,16 +115,16 @@ class RRegister
 			switch (getConversionType ())
 			{
 				case CONVERSION_mK:
-					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0 - 273.15);
+					((rts2core::ValueFloat *) value)->setValueFloat (((int32_t) rval) / 1000.0 - 273.15);
 					break;
 				case CONVERSION_MILI:
-					((rts2core::ValueFloat *) value)->setValueFloat (rval / 1000.0);
+					((rts2core::ValueFloat *) value)->setValueFloat (((int32_t) rval) / 1000.0);
 					break;
 				case CONVERSION_10000hex:
 					((rts2core::ValueFloat *) value)->setValueFloat (((double) rval) / 0x10000);
 					break;
 				case CONVERSION_65k:
-					((rts2core::ValueFloat *) value)->setValueFloat (rval / 65536.0);
+					((rts2core::ValueFloat *) value)->setValueFloat (((int32_t) rval) / 65536.0);
 					break;
 				case CONVERSION_NONE:
 					value->setValueInteger (rval);
