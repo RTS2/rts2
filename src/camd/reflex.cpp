@@ -1715,14 +1715,14 @@ void Reflex::createBoard (int bt)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapA" << i << "_start";
-				desc << "channel A tap " << i << "start address in line buffer";
+				desc << "channel A tap " << i << " start address in line buffer";
 				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			for (i = 0; i < 32; i++)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapB" << i << "_start";
-				desc << "channel B tap " << i << "start address in line buffer";
+				desc << "channel B tap " << i << " start address in line buffer";
 				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 
@@ -1730,14 +1730,14 @@ void Reflex::createBoard (int bt)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapA" << i << "_delta";
-				desc << "channel A tap " << i << "delta address in line buffer";
+				desc << "channel A tap " << i << " delta address in line buffer";
 				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			for (i = 0; i < 32; i++)
 			{
 				std::ostringstream name, desc;
 				name << "clif.tapB" << i << "_delta";
-				desc << "channel B tap " << i << "delta address in line buffer";
+				desc << "channel B tap " << i << " delta address in line buffer";
 				createRegister (ba++, name.str ().c_str (), desc.str ().c_str (), true, false, false, CONVERSION_NONE, true);
 			}
 			createRegister (ba++, "clif.line_length", "line length in camera clock cycles", true, false, false);
@@ -1839,6 +1839,7 @@ void Reflex::createBoard (int bt)
 
 
 				createRegister (ba++, (bn + "temperature").c_str (), "[C] module temperature", false, true, false, CONVERSION_mK);
+				createRegister (ba++, (bn + "status").c_str (), "module status", false, true, true);
 				// 8 low, 8 high labels
 				std::string labels[16];
 				rts2core::StringArray *vlabels;
@@ -1875,7 +1876,6 @@ void Reflex::createBoard (int bt)
 					comment << "[V] Low-voltage bias #" << i << " voltage";
 					createRegister (ba++, vname.str ().c_str (), comment.str ().c_str (), false, true, false, CONVERSION_MILI);
 				}
-				ba++;
 				for (i = 1; i < 9; i++)
 				{
 					std::ostringstream vname, comment;
