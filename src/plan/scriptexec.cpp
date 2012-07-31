@@ -235,6 +235,7 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 	templateFile = std::string ("");
 
 	defaultScript = NULL;
+	deviceName = NULL;
 
 	callScriptEnd = true;
 
