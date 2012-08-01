@@ -37,6 +37,26 @@ Assuming you did the the following RTS2 svn checkout
   insert into scripts values ('YOUR_TARGET_ID', 'YOUR_CAMERA_NAME', '/YOUR/HOME/rts2/scripts/rts2pa/rts2pa_measurement.py'); #(see /etc/rts2/devices\
 )
 
+Testing offline
+---------------
+  sudo chgrp YOUR_GROUP /var/log/rts2-debug
+
+  Test scripts and image data are provided:
+
+  cd ~
+  cd rts2/scripts/rts2pa/test/images
+  wget http://azug.minpet.unibas.ch/~wildi/rts2pa-test-images-2012-07-27.tgz
+  tar zxvf rts2pa-test-images-2012-07-27.tgz
+  cd ..
+
+  Execute the scripts beginning with run_* . A minimal help text
+  is printed on terminal, mainly saying where the log files are
+  stored.
+
+  The file /etc/rts2/devices should look like
+   camd    dummy       C0      
+   teld    dummy       T0      --move fast
+
 
 Testing through RTS2, state ON, night- and daytime
 --------------------------------------------------
@@ -60,7 +80,6 @@ Testing through RTS2, state ON, night- and daytime
   Test during daytime
   -------------------
 
-  sudo chgrp YOUR_GROUP /var/log/rts2-debug
 
   In addition to the above commands set   
 
@@ -68,21 +87,6 @@ Testing through RTS2, state ON, night- and daytime
 
   at the beginning.
 
-  Test scripts and image data are provided:
-
-  cd ~
-  cd rts2/scripts/rts2pa/test/images
-  wget http://azug.minpet.unibas.ch/~wildi/rts2pa-test-images-2012-07-27.tgz
-  tar zxvf rts2pa-test-images-2012-07-27.tgz
-  cd ..
-
-  Execute the scripts beginning with run_* . A minimal help text
-  is printed on terminal, mainly saying where the log files are
-  stored.
-
-  The file /etc/rts2/devices should look like
-   camd    dummy       C0      
-   teld    dummy       T0      --move fast
 
 
 

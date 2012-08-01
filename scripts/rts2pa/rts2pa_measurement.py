@@ -76,6 +76,12 @@ class SolverResult():
 class SolveField():
     """Solve a field with astrometry.net """
     def __init__(self, fn=None, runTimeConfig=None, logger=None):
+        self.success= True
+        self.blind= False
+        self.ra= None
+        self.dec=None
+        self.jd= None
+        self.date_obs=None
         self.fn= fn
         self.runTimeConfig= runTimeConfig
         self.logger = logger
@@ -84,18 +90,13 @@ class SolveField():
         self.verbose= self.runTimeConfig.cf['VERBOSE']
         self.replace= self.runTimeConfig.cf['REPLACE']
         self.solver = rts2.astrometry.AstrometryScript(self.fn)
-        self.ra= None
-        self.dec=None
-        self.jd= None
-        self.date_obs=None
-        self.success= True
-        self.blind= False
 
         try:
             ff=pyfits.open(self.fn,'readonly')
         except:
             self.logger.error('SolveField: file not found {0}'.format( fn)) 
             self.success= False            
+
         try:
             self.ra=ff[0].header[self.runTimeConfig.cf['ORIRA']]
             self.dec=ff[0].header[self.runTimeConfig.cf['ORIDEC']]
@@ -125,13 +126,17 @@ class SolveField():
         else:
             center=self.solver.run(scale=self.scale,ra=self.ra,dec=self.dec,radius=self.radius,replace=self.replace,verbose=self.verbose)
 
-        if len(center)==2:
-            dhms = sidereal.MixedUnits ((60,60))
-            self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( center[0], center[1]))
-            self.logger.debug('SolveField: found center {0} {1}'.format( dhms.singleToMix(center[0]), dhms.singleToMix(center[1])))
-            return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat, fn=self.fn)
+        if center!=None:
+            if len(center)==2:
+                dhms = sidereal.MixedUnits ((60,60))
+                self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( center[0], center[1]))
+                self.logger.debug('SolveField: found center {0} {1}'.format( dhms.singleToMix(center[0]), dhms.singleToMix(center[1])))
+                return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat, fn=self.fn)
+            else:
+                self.logger.debug('SolveField: center not found')
+                return None
         else:
-            self.logger.debug('SolveField: center not found')
+            self.logger.debug('SolveField: astrometry.py died badly for file {0}, check solve-field directly if it can find the center'.format(self.fn))
             return None
 
 class MeasurementThread(threading.Thread):
@@ -170,24 +175,30 @@ class MeasurementThread(threading.Thread):
 
             self.logger.debug('MeasurementThread: next path {0}'.format(path))
             if path:
-                sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
-                if sf.success:
-                    sr= sf.solveField()
-                    if sr:
-                        self.results.append(sr)
-                        self.result_q.put(self.results)
+                if os.path.isfile(  path):
 
-                        if len(self.results) > 1:
-                            kinga=KingA(self.results)
-                            dhms = sidereal.MixedUnits ((60,60))
-                            self.logger.debug('MeasurementThread: KingA dx={0} dy={1} arcsec'.format(math.degrees(kinga.dX) *3600., math.degrees(kinga.dY) *3600.))      
-                            self.logger.debug('MeasurementThread: KingA jd0={0} dtau={1} arcsec RA= {2} HA={3}'.format( kinga.jd0.datetime(), kinga.dtau,sr.ra,math.degrees(kinga.tau)))
-                            self.logger.debug('MeasurementThread: KingA HA={0} deg lambda={1} arcsec A={2}, k={3} arcsec'.format( math.degrees(kinga.ha), math.degrees(kinga.lambda_r)*3600,math.degrees(kinga.A) *3600., math.degrees(kinga.k) * 3600.))
+                    sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
+                    if sf.success:
+                        sr= sf.solveField()
+                        if sr:
+                            self.results.append(sr)
+                            self.result_q.put(self.results)
+
+                            if len(self.results) > 1:
+                                kinga=KingA(self.results)
+                                dhms = sidereal.MixedUnits ((60,60))
+                                self.logger.debug('MeasurementThread: KingA dx={0} dy={1} arcsec'.format(math.degrees(kinga.dX) *3600., math.degrees(kinga.dY) *3600.))      
+                                self.logger.debug('MeasurementThread: KingA jd0={0} dtau={1} arcsec RA= {2} HA={3}'.format( kinga.jd0.datetime(), kinga.dtau,sr.ra,math.degrees(kinga.tau)))
+                                self.logger.debug('MeasurementThread: KingA HA={0} deg lambda={1} arcsec A={2}, k={3} arcsec'.format( math.degrees(kinga.ha), math.degrees(kinga.lambda_r)*3600,math.degrees(kinga.A) *3600., math.degrees(kinga.k) * 3600.))
+                        else:
+                            self.result_q.put('MeasurementThread: error within solver (not solving)') # ToDo avoid waiting on results
+                            self.logger.error('MeasurementThread: error within solver (not solving)')
                     else:
-                        self.logger.error('MeasurementThread: error within solver (not solving)')
+                            self.result_q.put('MeasurementThread: error within solver (not solving)') # ToDo avoid waiting on results
+                            self.logger.error('MeasurementThread: error within solver')
                 else:
-                    self.logger.error('MeasurementThread: error within solver')
-
+                    self.result_q.put('MeasurementThread: {0} does not exist'.format( path)) # ToDo avoid waiting on results
+                    self.logger.error('MeasurementThread: {0} does not exist'.format( path))
 
     def join(self, timeout=None):
         self.logger.debug('MeasurementThread: join, timeout {0}, stopping thread on request'.format(timeout))
@@ -242,7 +253,7 @@ class AcquireData(rts2pa.PAScript):
         try:
             ul= int(self.runTimeConfig.cf['DURATION']/self.runTimeConfig.cf['SLEEP'])
             self.logger.debug('run: steps {0}'.format(ul))
-            self.logger.info('run: the measurement lasts for {0} seconds and {0} images will be taken'.format(self.runTimeConfig.cf['DURATION'],  ul))
+            self.logger.info('run: the measurement lasts for {0} seconds and {1} images will be taken'.format(self.runTimeConfig.cf['DURATION'],  ul))
         except:
             self.logger.debug('run: sleep must not be zero: {0}'.format(self.runTimeConfig.cf['SLEEP']))
 
