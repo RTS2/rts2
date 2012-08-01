@@ -511,13 +511,13 @@ int Reflex::startExposure ()
 		return -1;
 	}
 	pdv_flush_fifo (CLHandle);
-	// ret = pdv_multibuf (CLHandle, 1); // NUM_RING_BUFFERS);
-	// ret = pdv_set_buffers (CLHandle, 1, NULL);
-	/* if (ret)
+	//ret = pdv_multibuf (CLHandle, 1); // NUM_RING_BUFFERS);
+	ret = pdv_set_buffers (CLHandle, 1, NULL);
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "pdv_multibuf call failed" << sendLog;
 		return -1;
-	} */
+	}
 	//pdv_start_images (CLHandle, NUM_RING_BUFFERS);
 
 	pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
@@ -536,13 +536,13 @@ int Reflex::startExposure ()
 	setParameter (pROWOVER, getHeight () - chipTopY () - height);
 
 	setParameter (pPIXSKIP, chipTopX ());
-	setParameter (pPIXREAD, chipUsedReadout->getWidthInt ());
+	setParameter (pPIXREAD, chipUsedReadout->getWidthInt () - 1);
 	setParameter (pPIXOVER, getWidth () - chipTopX () - chipUsedReadout->getWidthInt ());
 
 	setParameter (pLIGHT, getExpType () ? 0 : 1);
 
 	setParameter (pEXPO, 1);
-	setParameter (pLCLK, 1);
+	setParameter (pLCLK, 0);
 
 	configureTaps (chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt ());
 
@@ -588,11 +588,11 @@ int Reflex::doReadout ()
 		{
 			if (edt_bytes->getValueInteger () == last_bytes)
 			{
-				logStream (MESSAGE_ERROR) << "did not see increase in bytes received, aborting" << sendLog;
+				logStream (MESSAGE_ERROR) << "number of bytes received was not increased in last two seconds, aborting on " << last_bytes << " bytes read" << sendLog;
 				return -1;
 			}
 			last_bytes = edt_bytes->getValueInteger ();
-			next_bytes_check = n + 1;
+			next_bytes_check = n + 2;
 			sendValueAll (edt_bytes);
 		}
 		return 100;
@@ -748,12 +748,12 @@ int Reflex::initHardware ()
 			return -1;
 	}
 
-	ret = pdv_set_buffers (CLHandle, 1, NULL);
+	/*ret = pdv_set_buffers (CLHandle, 1, NULL);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "cannot initialize buffers" << sendLog;
 		return -1;
-	}
+	}*/
 
 	setIdleInfoInterval (2);
 
