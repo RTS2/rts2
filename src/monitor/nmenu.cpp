@@ -22,9 +22,23 @@
 
 using namespace rts2ncurses;
 
-void NAction::draw (WINDOW * master_window, int y)
+void NAction::draw (WINDOW * window, int y)
 {
-	mvwprintw (master_window, y, 0, "%s", text);
+	mvwprintw (window, y, 0, "%s", text);
+}
+
+void NActionBool::draw (WINDOW *window, int y)
+{
+	if (isActive)
+	{
+		mvwaddch (window, y, 0, ACS_DIAMOND);
+		wprintw (window, " %s", text);
+	}
+	else
+	{
+		mvwaddch (window, y, 0, ACS_BULLET);
+		wprintw (window, " %s", text_unactive);
+	}
 }
 
 NSubmenu::NSubmenu (const char *in_text): NSelWindow (0, 0, 2, 2)

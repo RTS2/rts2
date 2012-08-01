@@ -41,7 +41,7 @@ class NAction
 		virtual ~ NAction (void)
 		{
 		}
-		void draw (WINDOW * master_window, int y);
+		virtual void draw (WINDOW * window, int y);
 
 		int getCode ()
 		{
@@ -56,9 +56,27 @@ class NAction
 			text = _text;
 		}
 
-	private:
+	protected:
 		const char *text;
+	
+	private:
 		int code;
+};
+
+/**
+ * Boolean menu - can be checked or unchecked.
+ */
+class NActionBool:public NAction
+{
+	public:
+		NActionBool (const char *_text_active, const char *_text_unactive, int _code):NAction (_text_active, _code) { isActive = true; text_unactive = _text_unactive; }
+
+		virtual void draw (WINDOW *window, int y);
+		void setActive (bool _active) { isActive = _active; }
+
+	private:
+		bool isActive;
+		const char *text_unactive;
 };
 
 /**
@@ -85,6 +103,14 @@ class NSubmenu:public NSelWindow
 			NAction *ret = new NAction (in_text, in_code);
 			addAction (ret);
 			grow (strlen (in_text) + 2, 1);
+			return ret;
+		}
+
+		NActionBool * createActionBool (const char *in_text, const char *_unactive, int in_code)
+		{
+			NActionBool *ret = new NActionBool (in_text, _unactive, in_code);
+			addAction (ret);
+			grow (strlen (in_text) + 4, 1);
 			return ret;
 		}
 

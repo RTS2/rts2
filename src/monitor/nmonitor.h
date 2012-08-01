@@ -174,7 +174,7 @@ class NMonitor:public rts2core::Client
 
 		enum { ORDER_RTS2, ORDER_ALPHA } connOrder;
 		bool hideDebugValues;
-		NAction *hideDebugMenu;
+		NActionBool *hideDebugMenu;
 
 		rts2core::connections_t orderedConn;
 

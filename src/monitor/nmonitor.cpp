@@ -309,9 +309,11 @@ void NMonitor::menuPerform (int code)
 			repaint ();
 			break;
 		case MENU_SHOW_DEBUG:
+			hideDebugMenu->setActive (hideDebugValues);
 			hideDebugValues = !hideDebugValues;
-			hideDebugMenu->setText (hideDebugValues ? "Show debug" : "Hide debug");
 			changeListConnection ();
+			if (getActiveWindow () == daemonWindow)
+				daemonWindow->enter ();
 			break;
 	}
 }
@@ -482,7 +484,8 @@ int NMonitor::init ()
 	sub->createAction ("Exit", MENU_EXIT);
 	sub->createAction ("Alpha sort", MENU_SORT_ALPHA);
 	sub->createAction ("RTS2 sort", MENU_SORT_RTS2);
-	hideDebugMenu = sub->createAction ("Show debug", MENU_SHOW_DEBUG);
+	hideDebugMenu = sub->createActionBool ("Debug", "Debug", MENU_SHOW_DEBUG);
+	hideDebugMenu->setActive (!hideDebugValues);
 	menu->addSubmenu (sub);
 
 	sub = new NSubmenu ("States");
