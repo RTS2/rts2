@@ -96,7 +96,7 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
 				if (read100 == false || fr < 100)
 				{
-					std::cout << currentExp << " of " << totalExp << " : " << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 25 - currentExp % 10 - totalExp % 10) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+					std::cout << currentExp << " of " << totalExp << " : " << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 25 - currentExp / 10 - totalExp / 10) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 					std::cout.flush ();
 					if (fr < 100)
 						read100 = false;
@@ -113,7 +113,7 @@ imageProceRes ClientCameraScript::processImage (Image * image)
 	currentExp++;
 	if (usesNcurses)
 	{
-		std::cout << std::setfill ('+') << std::setw (COLS) << "+ done " << std::endl;
+		std::cout << std::setfill ('+') << std::setw (COLS) << "+ done " << std::endl << std::setfill (' ');
 		read100 = true;
 	}
 	std::cout << image->getFileName () << std::endl;
