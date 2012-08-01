@@ -35,17 +35,16 @@ import rts2.astrometry
 import rts2.libnova
 import sidereal
 
-
 class KingA():
     """Calculate the HA, lambda based on E.S. King's method """
     def __init__(self, results=None): # results is a list of SolverResult
         self.results= results
         self.jd0= sidereal.JulianDate( j=math.modf(results[0].jd)[1], f=math.modf(results[0].jd)[0])
-        self.tau= sidereal.raToHourAngle(results[0].ra, self.jd0.datetime(), results[0].lon)     # HA of image 
+        self.tau= sidereal.raToHourAngle(math.radians(15. * results[0].ra), self.jd0.datetime(), math.radians(results[0].lon))     # HA of image 
         self.lon=math.radians(self.results[0].lon)   
         self.lat=math.radians(self.results[0].lat)   
-        self.dX= math.radians(results[-1].ra - results[0].ra)
-        self.dY= math.radians(results[-1].dec - results[-0].dec)
+        self.dY= math.radians(15. *(results[-1].ra - results[0].ra)) * math.cos(math.radians((results[-1].dec+ results[0].dec)/2.)) # astrometry.py result in RA is HH.frac
+        self.dX= math.radians(results[-1].dec - results[0].dec)
         self.omega_sid= 2. *  math.pi / 86164.2
         self.dtau= (results[-1].jd- results[0].jd) * self.omega_sid * 86400
         self.success=True
@@ -55,13 +54,13 @@ class KingA():
         except:
             self.success=False
 
-        self.ha= (-math.atan2( self.dX, self.dY) + self.dtau/2. + self.tau) % (2 * math.pi)
+        self.ha= (-math.atan2( -self.dX, -self.dY) + self.dtau/2. + self.tau) % (2 * math.pi)
         try: # no one observes at +/- 90. deg
-            self.A= self.lambda_r * math.sin( self.tau) / math.cos( self.lat) 
+            self.A= self.lambda_r * math.sin( self.ha) / math.cos( self.lat) 
         except:
             self.success=False
         if self.lambda_r:
-            self.k= self.lambda_r * math.cos( self.tau)
+            self.k= self.lambda_r * math.cos( self.ha)
 
 class SolverResult():
     """Results of astrometry.net including necessary fits headers"""
@@ -128,6 +127,7 @@ class SolveField():
 
         if len(center)==2:
             dhms = sidereal.MixedUnits ((60,60))
+            self.logger.debug('SolveField: found center {0} {1} H.d, D'.format( center[0], center[1]))
             self.logger.debug('SolveField: found center {0} {1}'.format( dhms.singleToMix(center[0]), dhms.singleToMix(center[1])))
             return SolverResult( ra=center[0], dec=center[1], jd=self.jd, date_obs=self.date_obs, lon=self.lon, lat=self.lat, fn=self.fn)
         else:
@@ -180,7 +180,9 @@ class MeasurementThread(threading.Thread):
                         if len(self.results) > 1:
                             kinga=KingA(self.results)
                             dhms = sidereal.MixedUnits ((60,60))
-                            self.logger.debug('MeasurementThread: values for KingA HA={0} lambda={1} AZ={2}, alt={3} '.format( dhms.singleToMix(math.degrees(kinga.ha)), dhms.singleToMix(math.degrees(kinga.lambda_r)),dhms.singleToMix(math.degrees(kinga.A)), dhms.singleToMix(math.degrees(kinga.k))))
+                            self.logger.debug('MeasurementThread: KingA dx={0} dy={1} arcsec'.format(math.degrees(kinga.dX) *3600., math.degrees(kinga.dY) *3600.))      
+                            self.logger.debug('MeasurementThread: KingA jd0={0} dtau={1} arcsec RA= {2} HA={3}'.format( kinga.jd0.datetime(), kinga.dtau,sr.ra,math.degrees(kinga.tau)))
+                            self.logger.debug('MeasurementThread: KingA HA={0} deg lambda={1} arcsec A={2}, k={3} arcsec'.format( math.degrees(kinga.ha), math.degrees(kinga.lambda_r)*3600,math.degrees(kinga.A) *3600., math.degrees(kinga.k) * 3600.))
                     else:
                         self.logger.error('MeasurementThread: error within solver (not solving)')
                 else:

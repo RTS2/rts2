@@ -129,8 +129,8 @@ Files in directory rts2/scripts/rts2pa
 
   CNP-02-10-30-89-00-20.fits, scale
 
-   DATE-OBS = '2001-09-30T20:34:21.0'
    JD       = 2452183.357188
+   DATE-OBS = '2001-09-30T20:34:21.0'
    ORIRA    = 32.625
    ORIDEC   = 89.00555
    SITE-LON = 47.5
@@ -138,6 +138,54 @@ Files in directory rts2/scripts/rts2pa
 
    replaced DATE-OBS by DATE-ORI
 
-
   Not yet of general interest
   --------------------------
+
+
+Comparision with  ak.c (http://leq.one-arcsec.org, section Downloads)
+---------------------------------------------------------------------
+
+  Configuration for ak.c
+   #
+   # Method King A
+   #
+   method        = King                  # Rambaut, King
+   variant       = A                     # A, B1, B2
+   obs_longitude= -7:36:03.6                 # decimal degrees or sexagesimal
+   obs_latitude  =  47:30:00             # decimal degrees or sexagesimal
+   tz_time       = 22:04:21:cest         # This format
+   tz_date       = 2001:09:30            # This format
+   correction_star_declination =  -47.5  # Star, decimal degrees or sexagesimal
+   measurement_star_rightascension=  2:10:00 # Star, decimal degrees or sexagesimal
+   resolution    =  1.                   # arcsecond/unit, unit = Grid or Pixel
+   #
+   dx            =  20.                  # Movement in X', or dx in units
+   dy            =  7.85                 # Movement in Y', or dy in units
+   dt            = 1800.                 # Duration of the measurement in seconds
+
+ Results from ak.c
+
+   dtau           :          0.13126 rad
+   Julian Date    :    2452183.336354
+   Local hourangle:        285.82 degree
+
+   King h         :         41.01 degree
+   King lambda    :        163.69 arcsec
+
+   King A         :        159.00 arcsec
+   King k         :        123.51 arcsec
+
+   Move the north end of the hour axis    159.00 units to the EAST
+   with star at declination -47.50 degree 158.40 units to the EAST
+
+   Lower elevation of the hour axis       123.51 units
+
+
+ Results from rts2pa_measurement.py
+
+  KingA h        :          40.47 degree
+  King lambda    :         161.82 arcsec 
+
+  King A         :         155.45 arcsec 
+  King           :         123.11 arcsec
+
