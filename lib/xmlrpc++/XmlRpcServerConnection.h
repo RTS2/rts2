@@ -63,6 +63,11 @@ namespace XmlRpc
 			virtual void goAsync () { _connectionState = WAIT_ASYNC; }
 
 			/**
+			 * Send chunked data.
+			 */
+			bool sendChunked (const std::string &data);
+
+			/**
 			 * Async request finished.
 			 */
 			virtual void asyncFinished ();
@@ -83,6 +88,12 @@ namespace XmlRpc
 
 			// Set response
 			void setResponse(char *_response, size_t _response_length);
+
+			// Switch connection to chunged response mode.
+			void goChunked () { _contentLength = -1; }
+
+			// return true if connection is in chunged mode
+			bool isChunked () { return _contentLength == -1; }
 
 		protected:
 

@@ -191,5 +191,7 @@ namespace XmlRpc
 		head += "\r\n\r\n";
 		size_t i = 0;
 		XmlRpcSocket::nbWrite (source->getfd (), head, &i);
+		if (contentLength == 0)
+			source->goChunked ();
 	}
 }								 // namespace XmlRpc

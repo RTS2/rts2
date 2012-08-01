@@ -14,6 +14,14 @@
 # include <string.h>
 #endif
 
+#if defined(_WINDOWS)
+#include <winsock2.h>
+#else
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#endif
+
 #include <time.h>
 
 using namespace XmlRpc;
@@ -504,10 +512,20 @@ void XmlRpcServerConnection::executeGet()
 		catch (const JSONException& fault)
 		{
 			XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: JSON fault %s.", fault.getMessage().c_str());
-			_get_response = new char[200];
-			_get_response_length = snprintf (_get_response, 200, "{\"error\":\"%s\",\"ret\":-2}", fault.getMessage().c_str());
-			response_type = "text/json";
-			http_code = fault.getCode ();
+			if (isChunked ())
+			{
+				std::ostringstream os;
+				os << "{\"error\":\"" << fault.getMessage () << "\",\"ret\":-2}";
+				sendChunked (os.str ());
+				sendChunked (std::string (""));
+			}
+			else
+			{
+				_get_response = new char[200];
+				_get_response_length = snprintf (_get_response, 200, "{\"error\":\"%s\",\"ret\":-2}", fault.getMessage().c_str());
+				response_type = "application/json";
+				http_code = fault.getCode ();
+			}
 		}
 		catch (const std::exception& ex)
 		{
@@ -699,9 +717,21 @@ void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, 
 void XmlRpcServerConnection::generateJSONFaultResponse(std::string const& errorMsg, int errorCode)
 {
 	std::string body = "{\"error\":" + errorMsg + "\", \"ret\":-2}";
-	std::string header = printHeaders (errorCode, "failed", "http/json", body.size ());
+	std::string header = printHeaders (errorCode, "failed", "application/json", body.size ());
 
 	_response = header + body;
+}
+
+bool XmlRpcServerConnection::sendChunked (const std::string &data)
+{
+	std::ostringstream tosend;
+	tosend << std::hex << data.length () << ";\r\n" << data << "\r\n";
+	if (send (getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
+	{
+		if (errno != EAGAIN && errno != EINTR)
+			return false;
+	}
+	return true;
 }
 
 void XmlRpcServerConnection::asyncFinished ()
