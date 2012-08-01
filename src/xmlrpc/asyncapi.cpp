@@ -76,24 +76,50 @@ AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source
 
 void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
 {
-	std::ostringstream os;
-	os << "{";
 	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
-		if (iter->first == _conn->getName () && iter->second == _value->getName () && source != NULL)
+		if (iter->first == _conn->getName () && _value->isValue (iter->second.c_str ()) && source != NULL)
 		{
-			os << "\"d\":\"" << iter->first << "\",\"v\":{";
-			jsonValue (_value, false, os);
-			os << "}}";
-			std::ostringstream tosend;
-			tosend << std::hex << os.str ().length () << ";\r\n" << os.str () << "\r\n";
-			if (send (source->getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
-			{
-				if (errno != EAGAIN && errno != EINTR)
-					asyncFinished ();
-			}
+			sendValue (iter->first, _value);
 			return;
 		}
+	}
+}
+
+void AsyncValueAPI::sendAllValues (rts2core::Device *device)
+{
+	rts2core::Value *val;
+	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
+	{
+		if (iter->first == device->getDeviceName ())
+		{
+			val = device->getOwnValue (iter->second.c_str ());
+		}
+		else
+		{
+			rts2core::Connection *con = device->getOpenConnection (iter->first.c_str ());
+			if (con == NULL)
+				throw XmlRpc::JSONException ("cannot find open connection with name " + iter->first);
+			val = con->getValue (iter->second.c_str ());
+		}
+		if (val == NULL)
+			throw XmlRpc::JSONException ("cannot find value " + iter->first + "." + iter->second);
+		sendValue (iter->first, val);
+	}
+}
+
+void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_value)
+{
+	std::ostringstream os;
+	os << "{\"d\":\"" << device << "\",\"v\":{";
+	jsonValue (_value, false, os);
+	os << "}}";
+	std::ostringstream tosend;
+	tosend << std::hex << os.str ().length () << ";\r\n" << os.str () << "\r\n";
+	if (send (source->getfd (), tosend.str ().c_str (), tosend.str ().length(), 0) < 0)
+	{
+		if (errno != EAGAIN && errno != EINTR)
+			asyncFinished ();
 	}
 }
 

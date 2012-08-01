@@ -92,9 +92,17 @@ class AsyncValueAPI:public AsyncAPI
 		AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
 
 		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value);
-	
+		/**
+		 * Send all registered values on JSON connection. Throw an error if value/connection
+		 * cannot be found.
+		 */
+		void sendAllValues (rts2core::Device *device);
+
 	private:
+		// values registered for ASYNC API
 		std::vector <std::pair <std::string, std::string> > values;
+
+		void sendValue (const std::string &device, rts2core::Value *_value);
 };
 
 class AsyncDataAPI:public AsyncAPI
