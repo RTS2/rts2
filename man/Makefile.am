@@ -49,7 +49,9 @@ EXTRA_DIST = \
     rts2.fitstemplate.xml \
     rts2.valuefile.xml \
     rts2_imgp_analysis.xml \
-    rts2-camd-reflex.xml
+    rts2-camd-reflex.xml\
+    rts2pa_measurement.py.xml
+
 
 
 CLEANFILES = *.1 *.5 *.7
@@ -104,7 +106,8 @@ man_MANS = \
     rts2.fitstemplate.5 \
     rts2.valuefile.5 \
     rts2_imgp_analysis.1 \
-    rts2-camd-reflex.7
+    rts2-camd-reflex.7 \
+    rts2pa_measurement.py.1
 
 XP=xsltproc --nonet
 

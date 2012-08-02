@@ -1,0 +1,299 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Markus</firstname>">
+  <!ENTITY dhsurname   "<surname>Wildi</surname>">
+  <!ENTITY dhdate      "<date>2012-07-03</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>wildi.markus@bluewin.ch</email>">
+  <!ENTITY dhusername  "Markus Wildi">
+  <!ENTITY dhpackage   "rts2pa_measurement">
+
+  <!ENTITY % rts2 SYSTEM "rts2.ent">
+  %rts2;
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>&rts2version;</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib></contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2012</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 or any later versions
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;.py</refname>
+    <refpurpose>  
+     measures the polar alignment of the hour axis.
+    </refpurpose>  
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;.py all options are fakultative</command> 
+    </cmdsynopsis>
+     <para>
+    <variablelist>   
+        <varlistentry>
+        <term><option>-h, --help</option></term>
+        <listitem>
+        <para>show this help message and exit</para>
+        </listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--config=<replaceable class="parameter">=CONFIG-FILE</replaceable></option></term> 
+        <listitem>
+        <para>configuration file name</para>
+        </listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--loglevel<replaceable class="parameter">=LOG_LEVEL</replaceable></option></term> 
+        <listitem>
+        <para>log level: usual levels</para>
+        </listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--logTo<replaceable class="parameter">=DESTINATION</replaceable></option></term> 
+        <listitem>
+        <para>log file: filename or - for stdout</para>
+        </listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--verbose</option></term> 
+        <listitem>
+        <para>verbose output</para>
+        </listitem>
+        </varlistentry>
+        <varlistentry>
+        <term><option>--dump</option></term> 
+        <listitem>
+        <para>dump default configuration to stdout</para>
+        </listitem>
+        </varlistentry>
+    </variablelist>   
+      </para>
+
+  </refsynopsisdiv>
+<refsect1><title>Dependencies</title>  
+    <para> &dhpackage; depends on the following packages</para>
+
+    <variablelist>   
+        <varlistentry>
+        <term><command>sidereal.py</command> New Mexico Tech`s astronomical python library (http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/sidereal.py).</term> 
+        </varlistentry>
+        <varlistentry>
+        <term><command>astrometry.py</command> from rts2 svn repo.</term> 
+        </varlistentry>
+    </variablelist>   
+  </refsect1>
+
+  <refsect1>
+    <title>Limitations</title>
+    <para>The script depends on astrometry.net for astrometrical calibration.
+    </para>
+<para>The script has been tested only on the northern hemisphere.</para>    
+ </refsect1>
+  <refsect1>
+    <title>Overview programs</title>
+    <variablelist>   
+      <varlistentry>
+      <term><command>rts2pa_measurement.py</command> steers the mount and CCD and calculates hour angle, polar distance as well as the corrections in AltAz coordinate system of the intersection of the hour axis.</term>
+      </varlistentry>
+    </variablelist>   
+</refsect1>
+
+<refsect1>
+<title>Autonomous operation</title>
+<para> Define a usual target in the postgres DB   with <command>rts2pa_measurement.py</command> as its associated script. If other than default values are used create and populate the configuration file /etc/rts2/rts2pa/rts2pa.cfg. </para>
+<para>If this target es executed the mount moves to a location near the celestial pole and starts a series of (at least two) exposures. After a pair of images has been acquired a first calculation is done. Depending on DURATION and SLEEP period the process continues.</para>    
+
+<para>
+Currently the results are written to the log file. It is planned to update the mount models in order to benefit immediately.</para>
+</refsect1>
+<refsect1>
+<title>Background</title>
+<para>Almost all descriptions of the socalled drift- or Julius Scheiner`s
+method (1889) found on the web are misleading or even wrong because refraction is not taken into account. Methods which do ignore refraction can only be used in the vicinity of the celestial poles.</para>    
+<para>The method used here is the one developed by Scheiner and to some degree
+popularized by E.S. King (1902). He gave in a booklet published 1931 concrete instructions how to interprete the
+observed results when carried out visually.</para>    
+<para>A.A. Rambaut devolped a method in 1893 which can be used almost anywhere in the sky and will be implemented if somebody asks for.</para>    
+<para></para>    
+</refsect1>
+
+<refsect1>
+<title>Image location</title>
+ <para>
+ Executed as a regular target script <command>&dhpackage;</command> stores the acquired images below BASE_DIRECTORY/date-time/.
+ </para>
+</refsect1>
+
+  <refsect1 id="values">
+    <title>PARAMETERS, VALUES</title>
+    <para>
+The following parameters are elements of the configuration file.
+If a parameter does not appear in the configuration file, the
+default value is used. The format of the following list is parameter name, "data type", default value.</para>
+
+      <varlistentry>
+	<term>BASE_DIRECTORY, string, '/tmp/rts2pa'
+         </term>
+	<listitem><para> path to base directory where images are stored.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>TEMP_DIRECTORY, string, '/tmp'
+         </term>
+	<listitem><para>  directory where temporary files are stored.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>TEST, boolean, False
+         </term>
+	<listitem><para> if True  fits images from TEST_FIELDS are used for analysis.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>TEST_FIELDS, string './images/CNP-02-10-00-89-00-00.fits,./images/CNP-02-10-30-89-00-20.fits'
+         </term>
+	<listitem><para>  comma separated list of  paths to fits images for test.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>EXPOSURE_TIME, float, 10. sec
+         </term>
+	<listitem><para>  exposure time.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>DURATION, float, 1800. sec
+         </term>
+	<listitem><para>  duration of the measurement.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>SLEEP, float  1800. sec
+         </term>
+	<listitem><para>  time to sleep between exposures. DURATION devided by SLEEP + 1 defines the number of taken exposures. Each pair (first,last) image is used to calculate the results.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>RADIUS, float [deg]
+         </term>
+	<listitem><para>  astrometry.py parameter, search radius.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>REPLACE, boolean, True
+         </term>
+	<listitem><para>  astrometry.py parameter, if true astrometrical calibration is written to fits image.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>VERBOSE
+         </term>
+	<listitem><para>  astrometry.py parameter, if true verbose output is handed over to EXEC (not yet useful).</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>HA, float 5. deg
+         </term>
+	<listitem><para> mount hour angle for observation.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>PD, float  1. deg
+         </term>
+	<listitem><para> mount polar distance for observation. Angles larger than 3 deg and less than.5 deg should be avoided.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ARCSEC_PER_PIX, float  2. arcsec
+         </term>
+	<listitem><para>  astrometry.py parameter, pixel scale of the CCD.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>JD, string, default JD
+         </term>
+	<listitem><para> fits header ID string for Julian date.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ORIRA, string, default ORIRA
+         </term>
+	<listitem><para> fits header ID string for the center RA component of the image.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ORIDEC, string, default ORIDEC
+         </term>
+	<listitem><para>  fits header ID string for the center DEC component of the image.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>SITE-LON, string default SITE-LON
+         </term>
+	<listitem><para>  fits header ID string for the site longitude.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>SITE-LAT, string default SITE-LAT
+         </term>
+	<listitem><para>  fits header ID string for the site latitude.</para>
+        </listitem>
+ </varlistentry> 
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+    <para>scripts/rts2pa/README, rts2pa/test/images/README </para>
+<para>
+http://leq.one-arcsec.org
+    </para>
+<para>
+https://azug.minpet.unibas.ch/wikiobsvermes/index.php
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>Installation</title>
+ <para> The installation, on- and offline testing are described in scripts/rts2pa/README.
+  </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Files</title><para>Examples of the mandatory configuration files are found in the RTS2 svn
+repository ./conf/rts2pa </para>
+    <para>rts2pa.cfg </para>
+  </refsect1>
+  <refsect1>
+    <title>BUGS</title>
+    <para>
+      Please contact the author.
+    </para>
+  </refsect1>
+</refentry>
