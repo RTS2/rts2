@@ -635,7 +635,7 @@ int Reflex::doReadout ()
 	int dw = lw * channels->size ();
 	// buffer for a single channel
 	unsigned char chanbuf[lw * getUsedHeight ()];
-	for (i = 0, j = 0; i < dataChannels->getValueInteger (); i++)
+	for (i = 0, j = 0; i < channels->size (); i++)
 	{
 		if ((*channels)[i])
 		{
