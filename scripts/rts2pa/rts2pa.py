@@ -42,11 +42,11 @@ class Configuration:
         self.dcf[('basic', 'TEST')]= True
         self.dcf[('basic', 'TEST_FIELDS')]= './images/CNP-02-10-00-89-00-00.fits,./images/CNP-02-10-30-89-00-20.fits'
 
-        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 1.  #[sec]
+        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 10.  #[sec]
         self.dcf[('data_taking', 'DURATION')]= 1800.    #[sec]
-        self.dcf[('data_taking', 'SLEEP')]=     900.    #[sec]
+        self.dcf[('data_taking', 'SLEEP')]=    1800.    #[sec]
 
-        self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
+#        self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
         self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
         self.dcf[('astrometry', 'REPLACE')]= False
         self.dcf[('astrometry', 'VERBOSE')]= False
@@ -56,7 +56,7 @@ class Configuration:
         self.dcf[('coordinates', 'HA')]= 7.5 # hour angle [deg]
         self.dcf[('coordinates', 'PD')]= 1. # polar distance [deg]
 
-        self.dcf[('ccd', 'ARCSSEC_PER_PIX')]= 2.0
+        self.dcf[('ccd', 'ARCSEC_PER_PIX')]= 2.0
 
         self.dcf[('fits-header', 'JD')]= 'JD' 
         self.dcf[('fits-header', 'DATE-OBS')]= 'DATE-OBS' 
@@ -80,25 +80,20 @@ class Configuration:
         #self.dumpDefaultConfiguration()
 
     def dumpDefaultConfiguration(self):
-        for (section, identifier), value in sorted(self.dcf.iteritems()):
-            print section, '=>', identifier, '=>', value
-            if( self.cp.has_section(section)== False):
-                self.cp.add_section(section)
+        print ('# 2012-07-27, Markus Wildi')
+        print ('# default configuration for rts2pa.py')
+        print ('#')
+        print ('#')
+        for (section, identifier), value in self.dcf.iteritems():
+            print identifier, '=', value
 
-            self.cp.set(section, identifier, value)
 
-
-        #with open( self.configFileName, 'w') as configfile:
-        with open( '', 'w') as configfile:
-            configfile.write('# 2012-07-27, Markus Wildi\n')
-            configfile.write('# default configuration for rts2pa.py\n')
-            configfile.write('#\n')
-            configfile.write('#\n')
-            self.cp.write(configfile)
 
     def dumpConfiguration(self):
         for identifier,value  in  self.cf.items():
-            logging.debug('Configuration.readConfiguration: {0}={1}'.format( identifier, value)) 
+            print ' {0}={1}'.format( identifier, value) 
+
+#            logging.debug('Configuration.readConfiguration: {0}={1}'.format( identifier, value)) 
 
 
     def readConfiguration( self):
@@ -190,12 +185,11 @@ class PAScript:
         else:
             self.parser= OptionParser()
 
-# fetch default configuration
         self.parser.add_option('--config',help='configuration file name',metavar='CONFIGFILE', nargs=1, type=str, dest='config', default='/etc/rts2/rts2pa/rts2pa.cfg')
         self.parser.add_option('--loglevel',help='log level: usual levels',metavar='LOG_LEVEL', nargs=1, type=str, dest='level', default='DEBUG')
-        #self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='-')
         self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='/var/log/rts2-debug')
         self.parser.add_option('--verbose',help='verbose output',metavar='', action='store_true', dest='verbose', default=False)
+        self.parser.add_option('--dump',help='dump default configuration to stdout',metavar='DEFAULTS', action='store_true', dest='dump', default=False)
 #        self.parser.add_option('--',help='',metavar='', nargs=1, type=str, dest='', default='')
 
         (options,args) = self.parser.parse_args()
@@ -222,4 +216,8 @@ class PAScript:
             self.logger.addHandler(soh)
 
         self.runTimeConfig= Configuration( cfn=options.config) #default configuration, overwrite default values with the ones form options.config
+        if options.dump:
+            self.runTimeConfig.dumpDefaultConfiguration()
+            sys.exit(1)
+
         self.environment= Environment(runTimeConfig=self.runTimeConfig, logger=self.logger)

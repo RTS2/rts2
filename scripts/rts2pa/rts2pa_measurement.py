@@ -85,7 +85,7 @@ class SolveField():
         self.fn= fn
         self.runTimeConfig= runTimeConfig
         self.logger = logger
-        self.scale  = self.runTimeConfig.cf['ARCSSEC_PER_PIX'] 
+        self.scale  = self.runTimeConfig.cf['ARCSEC_PER_PIX'] 
         self.radius = self.runTimeConfig.cf['RADIUS']
         self.verbose= self.runTimeConfig.cf['VERBOSE']
         self.replace= self.runTimeConfig.cf['REPLACE']
@@ -251,7 +251,7 @@ class AcquireData(rts2pa.PAScript):
         #self.setMount()
 
         try:
-            ul= int(self.runTimeConfig.cf['DURATION']/self.runTimeConfig.cf['SLEEP'])
+            ul= 1+ int(self.runTimeConfig.cf['DURATION']/self.runTimeConfig.cf['SLEEP'])
             self.logger.debug('run: steps {0}'.format(ul))
             self.logger.info('run: the measurement lasts for {0} seconds and {1} images will be taken'.format(self.runTimeConfig.cf['DURATION'],  ul))
         except:
