@@ -114,7 +114,8 @@ void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_valu
 	os << "{\"d\":\"" << device << "\",\"v\":{";
 	jsonValue (_value, false, os);
 	os << "}}";
-	source->sendChunked (os.str ());
+	if (source->sendChunked (os.str ()) == false)
+		asyncFinished ();
 }
 
 AsyncDataAPI::AsyncDataAPI (API *_req, rts2core::Connection *_conn, XmlRpc::XmlRpcServerConnection *_source, rts2core::DataAbstractRead *_data, int _chan, long _smin, long _smax, rts2image::scaling_type _scaling, int _newType):AsyncAPI (_req, _conn, _source, false)
