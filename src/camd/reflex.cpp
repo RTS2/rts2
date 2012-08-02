@@ -67,8 +67,11 @@
 #define pPIXOVER       "PIXOVER"
 
 #define pEXPO          "EXPO"
+#define nEXPO          "NEXPO"
 #define pEXPTIME       "EXPTIME"
 #define pLIGHT         "LIGHT"
+
+#define TWAIT          "TWAIT"
 
 const int NUM_RING_BUFFERS = 2;
 
@@ -504,14 +507,27 @@ void Reflex::initDataTypes ()
 int Reflex::startExposure ()
 {
 	int width, height;
-	
-	width = getUsedWidth ();
-	height = getUsedHeight ();
+
+	if (rawmode->getValueBool ())
+	{
+		width = getWidth ();
+		height = getUsedHeight ();
+
+		setUsedWidth (width * channels->size ());
+	}
+	else
+	{
+		width = getUsedWidth ();
+		height = getUsedHeight ();
+	}
 	bool hdrmode = getDataType () == RTS2_DATA_ULONG;
 
 #ifdef CL_EDT
 	int ret;
-	if (hdrmode)
+	std::cout << "chan " << dataChannels->getValueInteger () << std::endl;
+	if (rawmode->getValueBool ())
+		ret = pdv_setsize (CLHandle, width * channels->size (), height);
+	else if (hdrmode)
 		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger () * 2, height);
 	else
 		ret = pdv_setsize (CLHandle, width * dataChannels->getValueInteger (), height);
@@ -549,13 +565,23 @@ int Reflex::startExposure ()
 	setParameter (pROWOVER, getHeight () - chipTopY () - height);
 
 	setParameter (pPIXSKIP, chipTopX ());
-	setParameter (pPIXREAD, chipUsedReadout->getWidthInt () - 1);
-	setParameter (pPIXOVER, getWidth () - chipTopX () - chipUsedReadout->getWidthInt ());
+	setParameter (pPIXREAD, width - 1);
+	setParameter (pPIXOVER, getWidth () - chipTopX () - width);
 
 	setParameter (pLIGHT, getExpType () ? 0 : 1);
 
 	setParameter (pEXPO, 1);
+	setParameter (nEXPO, 1);
 	setParameter (pLCLK, 0);
+
+	if (rawmode->getValueBool ())
+	{
+		setParameter (TWAIT, 1000);
+	}
+	else
+	{
+		setParameter (TWAIT, 100);
+	}
 
 	configureTaps (chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), rawmode->getValueBool (), hdrmode);
 	for (int i = 0; i < MAX_DAUGHTER_COUNT; i++)
@@ -630,29 +656,39 @@ int Reflex::doReadout ()
 		return -1;
 	}
 
-	int i,j;
-	int lw = getUsedWidth () * 2;
-	int dw = lw * channels->size ();
-	// buffer for a single channel
-	unsigned char chanbuf[lw * getUsedHeight ()];
-	for (i = 0, j = 0; i < channels->size (); i++)
+	// single channel raw data
+	if (rawmode->getValueBool ())
 	{
-		if ((*channels)[i])
+		int ret = sendReadoutData ((char *) buf, getWriteBinaryDataSize(0), 0);
+		if (ret < 0)
+			return -1;
+	}
+	else
+	{
+		size_t i,j;
+		int lw = getUsedWidth () * 2;
+		int dw = lw * channels->size ();
+		// buffer for a single channel
+		unsigned char chanbuf[lw * getUsedHeight ()];
+		for (i = 0, j = 0; i < channels->size (); i++)
 		{
-			// copy channel to channel buffer
-			// line start pointer
-			unsigned char *ls = buf + lw * i;
-			unsigned char *ds = chanbuf;
-			for (int l = 0; l < getUsedHeight (); l++)
+			if ((*channels)[i])
 			{
-				memcpy (ds, ls, lw);
-				ls += dw;
-				ds += lw;
+				// copy channel to channel buffer
+				// line start pointer
+				unsigned char *ls = buf + lw * i;
+				unsigned char *ds = chanbuf;
+				for (int l = 0; l < getUsedHeight (); l++)
+				{
+					memcpy (ds, ls, lw);
+					ls += dw;
+					ds += lw;
+				}
+				int ret = sendChannel (i, chanbuf, j, dataChannels->getValueInteger ());
+				if (ret < 0)
+					return -1;
+				j++;
 			}
-			int ret = sendChannel (i, chanbuf, j, dataChannels->getValueInteger ());
-			if (ret < 0)
-				return -1;
-			j++;
 		}
 	}
 #endif
@@ -719,6 +755,21 @@ int Reflex::setValue (rts2core::Value * old_value, rts2core::Value * new_value)
 							return writeRegister (iter->first, (new_value->getValueFloat () + 273.15) * 1000.0) ? -2 : 0;
 					}
 			}
+		}
+	}
+	if (old_value == rawmode)
+	{
+		if (((rts2core::ValueBool *) new_value)->getValueBool ())
+		{
+			channels->setValueBool (0, true);
+			for (size_t i = 1; i < channels->size (); i++)
+				channels->setValueBool (i, false);
+		}
+		else
+		{
+			for (size_t i = 0; i < channels->size (); i++)
+				channels->setValueBool (i, true);
+			setUsedWidth (getWidth ());
 		}
 	}
 	return Camera::setValue (old_value, new_value);
@@ -1856,11 +1907,11 @@ void Reflex::createBoard (int bt)
 				{
 					std::ostringstream ln;
 					ln << "LABEL" << i;
-					const char *ll = config->getStringDefault (key.c_str (), ln.str ().c_str (), "");
+					std::string ll = std::string (config->getStringDefault (key.c_str (), ln.str ().c_str (), ""));
 					std::ostringstream n;
 					n << "ch" << i;
 					if (ll[0] == '\0' || std::find (labels.begin (), labels.end (), std::string (ll)) != labels.end ())
-						ll = n.str ().c_str ();
+						ll = n.str ();
 					createRegister (ba++, (bn + ll + "_low").c_str (), ("[V] low level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
 					createRegister (ba++, (bn + ll + "_high").c_str (), ("[V] high level clock voltage for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
 					createRegister (ba++, (bn + ll + "_slew").c_str (), ("[V] clock slew rate for channel " + n.str ()).c_str (), true, false, false, CONVERSION_MILI_LIMITS);
@@ -1977,8 +2028,21 @@ void Reflex::createBoard (int bt)
 
 void Reflex::createBoards ()
 {
+	int numchan = 0;
 	for (int bt = BOARD_TYPE_BP; bt < BOARD_TYPE_D8; bt++)
+	{
 		createBoard (bt);
+		// count channels
+		switch ((registers[bt]->value->getValueInteger () >> 24) & 0xFF)
+		{
+			case BT_AD8X100:
+			case BT_AD8X120:
+				numchan += 8;
+				break;
+		}
+	}
+	
+	setNumChannels (numchan);
 }
 
 void Reflex::configSystem ()
@@ -2126,54 +2190,50 @@ void Reflex::configureTaps (int taplength, int height, bool raw, bool hdrmode)
 
 	int ct = 0;
 
-	for (i = 0; i < lines; i++)
+	if (raw)
 	{
-		std::ostringstream os;
-		os << "TAP" << i;
-		config->getString ("BACKPLANE", os.str ().c_str (), s);
-		std::transform (s.begin(), s.end(), s.begin(), (int(*)(int)) std::toupper);
-		if (s.empty())
-			continue;
-		// Check for raw taps
-		if (s.substr (0, 3) == "RAW")
+/*		if (s.length() != 4)
+			throw rts2core::Error ("Invalid tap entry");
+		if (cds)
+			throw rts2core::Error ("Cannot mix CDS and raw taps");
+		raw = true; */
+		board = 5;
+		if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
+			throw rts2core::Error ("Invalid tap entry");
+		if (tapenable[board][0])
+			throw rts2core::Error ("Duplicate tap entry");
+		tapenable[board][0] = true;
+		channeltap[ct++] = std::pair <int, int> (board, 7);
+		tapstart[board][0] = tapcount * taplength;
+		tapdelta[board][0] = 1;
+
+		tapcount++;
+	}
+	else
+	{
+		for (i = 0; i < lines; i++)
 		{
-			throw rts2core::Error ("cannot configure RAW mode at config file - you should configure it with parameters");
-/*			if (s.length() != 4)
-				throw rts2core::Error ("Invalid tap entry");
-			if (cds)
-				throw rts2core::Error ("Cannot mix CDS and raw taps");
-			raw = true;
-			board = s[3] - 'A';
-			if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
-				throw rts2core::Error ("Invalid tap entry");
-			if (tapenable[board][0])
-				throw rts2core::Error ("Duplicate tap entry");
-			tapenable[board][0] = true;
-			channeltap[ct++] = std::pair <int, int> (board, 0);
-			tapstart[board][0] = tapcount * taplength;
-			tapdelta[board][0] = 1;*/
-		}
-		// Normal CDS taps
-		else
-		{
-		/*	if (raw)
-				throw rts2core::Error ("Cannot mix CDS and raw taps"); */
-			if (s.length() != 3)
-				throw rts2core::Error ("Invalid tap entry");
-			board = s[0] - 'A';
-			if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
-				throw rts2core::Error ("Invalid tap entry");
-			if (raw)
+			std::ostringstream os;
+			os << "TAP" << i;
+			config->getString ("BACKPLANE", os.str ().c_str (), s);
+			std::transform (s.begin(), s.end(), s.begin(), (int(*)(int)) std::toupper);
+			if (s.empty())
+				continue;
+			// Check for raw taps
+			if (s.substr (0, 3) == "RAW")
 			{
-				if (tapenable[board][0])
-					throw rts2core::Error ("Duplicate tap entry");
-				tapenable[board][0] = true;
-				channeltap[ct++] = std::pair <int, int> (board, 0);
-				tapstart[board][0] = tapcount * taplength;
-				tapdelta[board][0] = 1;
+				throw rts2core::Error ("cannot configure RAW mode at config file - you should configure it with parameters");
 			}
+			// Normal CDS taps
 			else
 			{
+			/*	if (raw)
+					throw rts2core::Error ("Cannot mix CDS and raw taps"); */
+				if (s.length() != 3)
+					throw rts2core::Error ("Invalid tap entry");
+				board = s[0] - 'A';
+				if ((board < 0) || (board >= MAX_DAUGHTER_COUNT))
+					throw rts2core::Error ("Invalid tap entry");
 				cds = true;
 				adc = s[1] - '1';
 				if ((adc < 0) || (adc >= MAX_ADC_COUNT))
@@ -2196,8 +2256,8 @@ void Reflex::configureTaps (int taplength, int height, bool raw, bool hdrmode)
 					tapdelta[board][adc] = -1;
 				}
 			}
+			tapcount++;
 		}
-		tapcount++;
 	}
 	if (tapcount == 0)
 		throw rts2core::Error ("No taps selected");
@@ -2549,8 +2609,6 @@ void Reflex::configureTaps (int taplength, int height, bool raw, bool hdrmode)
 		// Write number of CameraLink lines per frame
 		if (writeRegister(SYSTEM_CONTROL_ADDR | ((BOARD_IF + 1) << 16) | INTERFACE_REVC_LINE_COUNT, height - 1))
 			throw rts2core::Error ("Error writing Interface deinterlacing line count");
-
-		setNumChannels (ct);
 
 		// Write number of idle CameraLink lines between frames
 		if (config->getInteger ("BACKPLANE", "IDLELINECOUNT", i) || i <= 0)
@@ -3064,6 +3122,16 @@ void Reflex::configHDR (int board, bool raw, bool hdrmode)
 				throw rts2core::Error (std::string ("Error setting AD CDS mode"));
 			registers[ba]->value->setValueInteger (hdrmode ? 1 : 0);
 			sendValueAll (registers[ba]->value);
+	
+			if (raw)
+			{	
+				ba = SYSTEM_CONTROL_ADDR | ((BOARD_DAUGHTERS + board + 1) << 16) | AD8X100_RAW_CHANNEL;
+				if (writeRegister(ba, 6))
+					throw rts2core::Error ("Error setting raw channel");
+				registers[ba]->value->setValueInteger (6);
+				sendValueAll (registers[ba]->value);
+			}
+
 			cmd[2] = '0' + BOARD_DAUGHTERS + board;
 			interfaceCommand (cmd, s, 3000, true);
 			break;
