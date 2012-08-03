@@ -8,7 +8,6 @@ SUBDIRS = \
 	plan \
 	db \
 	monitor \
-	libindi \
 	camd \
 	teld \
 	focusc \

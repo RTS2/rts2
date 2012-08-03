@@ -823,9 +823,9 @@ AC_OUTPUT([Makefile
 	   lib/rts2db/Makefile
 	   lib/rts2script/Makefile
 	   lib/rts2scheduler/Makefile
+	   lib/libindi/Makefile 
 	   python/Makefile
 	   python/lib/Makefile
-	   src/libindi/Makefile 
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile

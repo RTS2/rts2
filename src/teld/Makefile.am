@@ -35,8 +35,8 @@ rts2_teld_meade_SOURCES = meade.cpp
 rts2_teld_meade_LDADD = -lrts2tellx200 ${LDADD}
 
 rts2_teld_indi_SOURCES = indibridge.cpp hms.c
-rts2_teld_indi_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
-rts2_teld_indi_CPPFLAGS = -I../libindi ${CPPFLAGS}
+rts2_teld_indi_LDADD = -L../../lib/libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
+rts2_teld_indi_CPPFLAGS = -I../../lib/libindi ${CPPFLAGS}
 
 rts2_teld_lx200gps_SOURCES = lx200gps.cpp
 rts2_teld_lx200gps_LDADD = -lrts2tellx200 ${LDADD}
