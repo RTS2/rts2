@@ -19,6 +19,8 @@
 
 #include "value.h"
 
+#include <iomanip>
+
 /**
  * Display double value as JSON - instead of nan, write null.
  *
@@ -33,7 +35,7 @@ class JsonDouble
 			if (isnan (d.v) || isinf (d.v))
 				os << "null";
 			else
-				os << d.v;
+				os << std::setprecision (20) << d.v;
 			return os;
 		}
 
