@@ -44,7 +44,7 @@ class Dummy:public SensorWeather
 			createValue (randomDouble, "random_double", "random double value", false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			createValue (stopMove, "stop_move", "if dummy sensor should stop any movement", false, RTS2_VALUE_WRITABLE);
-			createValue (stopMoveErr, "stop_move_err", "error state of stop_move", false, RTS2_VALUE_WRITABLE);
+			createValue (stopMoveErr, "stop_move_err", "error state of stop_move", false, RTS2_VALUE_WRITABLE | RTS2_VALUE_DEBUG);
 			stopMoveErr->addSelVal ("good");
 			stopMoveErr->addSelVal ("warning");
 			stopMoveErr->addSelVal ("error");
@@ -59,7 +59,7 @@ class Dummy:public SensorWeather
 			createValue (statContent1, "test_content1", "test content 1", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0) | RTS2_VALUE_WRITABLE);
 			createValue (statContent2, "test_content2", "test content 2", true, RTS2_VWHEN_TRIGGERED | RTS2_WR_GROUP_NUMBER(0));
 			createValue (statContent3, "test_content3", "test content 3", true, RTS2_VALUE_WRITABLE);
-			createValue (boolArray, "bools", "tests of boolean array", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
+			createValue (boolArray, "bools", "tests of boolean array", true, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF | RTS2_VALUE_DEBUG);
 			boolArray->addValue (false);
 			boolArray->addValue (true);
 			boolArray->addValue (true);
