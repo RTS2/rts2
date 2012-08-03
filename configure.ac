@@ -852,7 +852,7 @@ AC_OUTPUT([Makefile
 	   src/sql/phot/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
-	   src/serverd/Makefile
+	   src/centrald/Makefile
 	   src/teld/Makefile
 	   src/db/Makefile
 	   src/sensord/Makefile

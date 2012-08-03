@@ -35,7 +35,10 @@ using namespace rts2core;
 #define HOST_NAME_MAX   255
 #endif
 
-class Rts2ConnCentrald;
+namespace rts2centrald
+{
+
+class ConnCentrald;
 
 /**
  * Class for central server.
@@ -44,25 +47,25 @@ class Rts2ConnCentrald;
  *
  * - holds list of active system components
  * - authorizes new connections to the system
- * - activates pool of system BOP mask via "status_info" (Rts2CommandStatusInfo) command
+ * - activates pool of system BOP mask via "status_info" (CommandStatusInfo) command
  * - holds and manage connection priorities
  *
  * Centrald is written to be as simple as possible. Commands are ussually
  * passed directly to devices on separate connections, they do not go through
  * centrald.
  *
- * @see Rts2Device
- * @see Rts2DevConnMaster
- * @see Rts2Client
- * @see Rts2ConnCentraldClient
+ * @see Device
+ * @see DevConnMaster
+ * @see Client
+ * @see ConnCentraldClient
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Centrald:public Daemon
+class Centrald:public Daemon
 {
 	public:
-		Rts2Centrald (int argc, char **argv);
-		virtual ~ Rts2Centrald (void);
+		Centrald (int argc, char **argv);
+		virtual ~ Centrald (void);
 
 		virtual int info ();
 		virtual int idle ();
@@ -110,7 +113,7 @@ class Rts2Centrald:public Daemon
 		}
 
 		virtual rts2core::Connection *createConnection (int in_sock);
-		void connAdded (Rts2ConnCentrald * added);
+		void connAdded (ConnCentrald * added);
 
 		/**
 		 * Return connection based on conn_num.
@@ -287,14 +290,14 @@ class Rts2Centrald:public Daemon
 /**
  * Represents connection from device or client to centrald.
  *
- * It is used in Rts2Centrald.
+ * It is used in Centrald.
  */
-class Rts2ConnCentrald:public rts2core::Connection
+class ConnCentrald:public rts2core::Connection
 {
 	private:
 		int authorized;
 		char login[CLIENT_LOGIN_SIZE];
-		Rts2Centrald *master;
+		Centrald *master;
 		char hostname[HOST_NAME_MAX];
 		int port;
 		int device_type;
@@ -328,14 +331,14 @@ class Rts2ConnCentrald:public rts2core::Connection
 		virtual void setState (int in_value, char * msg);
 
 	public:
-		Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master, int in_centrald_id);
+		ConnCentrald (int in_sock, Centrald * in_master, int in_centrald_id);
 		/**
 		 * Called on connection exit.
 		 *
 		 * Delete client|device login|name, updates priorities, detach shared
 		 * memory.
 		 */
-		virtual ~ Rts2ConnCentrald (void);
+		virtual ~ ConnCentrald (void);
 		virtual int sendMessage (Message & msg);
 		int sendConnectedInfo (rts2core::Connection * conn);
 
@@ -346,4 +349,6 @@ class Rts2ConnCentrald:public rts2core::Connection
 			statusCommandRunning++;
 		}
 };
+
+}
 #endif							 /*! __RTS2_CENTRALD__ */

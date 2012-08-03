@@ -1,6 +1,6 @@
 
 SUBDIRS = \
-	serverd \
+	centrald \
 	phot	\
 	dome	\
 	focusd  \
