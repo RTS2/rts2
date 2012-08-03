@@ -5,10 +5,7 @@ Installation and testing of rts2pa polar alignment measurement
 Prerequisites
 -------------
 
-You need to put sidereal.py available from 
-wget http://infohost.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/sidereal.py
-
-into your PYTHONPATH.
+You need to install PyEphem, (http://rhodesmill.org/pyephem/)
 
 
 Installation
@@ -190,6 +187,6 @@ Comparision with  ak.c (http://leq.one-arcsec.org, section Downloads)
   KingA h        :          40.47 degree
   King lambda    :         161.82 arcsec 
 
-  King A         :         155.45 arcsec 
-  King           :         123.11 arcsec
+  King A         :         155.44 arcsec 
+  King           :         123.12 arcsec
 

@@ -54,7 +54,7 @@
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>&dhpackage;.py all options are fakultative</command> 
+      <command>&dhpackage;.py all options are facultative</command> 
     </cmdsynopsis>
      <para>
     <variablelist>   
@@ -65,7 +65,7 @@
         </listitem>
         </varlistentry>
         <varlistentry>
-        <term><option>--config=<replaceable class="parameter">=CONFIG-FILE</replaceable></option></term> 
+        <term><option>--config<replaceable class="parameter">=CONFIG-FILE</replaceable></option></term> 
         <listitem>
         <para>configuration file name</para>
         </listitem>
@@ -103,17 +103,23 @@
 
     <variablelist>   
         <varlistentry>
-        <term><command>sidereal.py</command> New Mexico Tech`s astronomical python library (http://www.nmt.edu/tcc/help/lang/python/examples/sidereal/ims/sidereal.py).</term> 
+        <term><command>PyEphem</command>  astronomical python library (http://rhodesmill.org/pyephem/).</term> 
         </varlistentry>
         <varlistentry>
-        <term><command>astrometry.py</command> from rts2 svn repo.</term> 
+        <term><command>PyFITS</command>  STScI`s interface to FITS (http://www.stsci.edu/institute/software_hardware/pyfits/).</term> 
+        </varlistentry>
+        <varlistentry>
+        <term><command>astrometry.py</command> from RTS2 svn repo.</term> 
+        </varlistentry>
+        <varlistentry>
+        <term><command>scriptcomm.py</command> from RTS2 svn repo.</term> 
         </varlistentry>
     </variablelist>   
   </refsect1>
 
   <refsect1>
     <title>Limitations</title>
-    <para>The script depends on astrometry.net for astrometrical calibration.
+    <para>The script depends on astrometry.net for astrometric calibration.
     </para>
 <para>The script has been tested only on the northern hemisphere.</para>    
  </refsect1>
@@ -128,20 +134,27 @@
 
 <refsect1>
 <title>Autonomous operation</title>
-<para> Define a usual target in the postgres DB   with <command>rts2pa_measurement.py</command> as its associated script. If other than default values are used create and populate the configuration file /etc/rts2/rts2pa/rts2pa.cfg. </para>
+<para> Define a usual target in the Postgres DB   with <command>rts2pa_measurement.py</command> as its associated script. If other than default values are used create and populate the configuration file /etc/rts2/rts2pa/rts2pa.cfg. </para>
 <para>If this target es executed the mount moves to a location near the celestial pole and starts a series of (at least two) exposures. After a pair of images has been acquired a first calculation is done. Depending on DURATION and SLEEP period the process continues.</para>    
+<para>After the first pair of images have been acquired the results are
+immediately calculated. The calculation depends on the presence of the below
+listed FITS header elements. If RA, DEC is not present astrometry.net tries to
+solve the field blindly, that may take a long time. If your header elements are
+named differently use the below listed configuration parameters to translate
+the built in to names found in the image header. 
+</para>
 
 <para>
 Currently the results are written to the log file. It is planned to update the mount models in order to benefit immediately.</para>
 </refsect1>
 <refsect1>
 <title>Background</title>
-<para>Almost all descriptions of the socalled drift- or Julius Scheiner`s
+<para>Almost all descriptions of the so called drift- or Julius Scheiner`s
 method (1889) found on the web are misleading or even wrong because refraction is not taken into account. Methods which do ignore refraction can only be used in the vicinity of the celestial poles.</para>    
 <para>The method used here is the one developed by Scheiner and to some degree
-popularized by E.S. King (1902). He gave in a booklet published 1931 concrete instructions how to interprete the
+popularized by E.S. King (1902). In a booklet published 1931 he gave concrete instructions how to interpret the
 observed results when carried out visually.</para>    
-<para>A.A. Rambaut devolped a method in 1893 which can be used almost anywhere in the sky and will be implemented if somebody asks for.</para>    
+<para>A.A. Rambaut developed a method in 1893 which can be used almost anywhere in the sky and will be implemented if somebody asks for.</para>    
 <para></para>    
 </refsect1>
 
@@ -198,7 +211,7 @@ default value is used. The format of the following list is parameter name, "data
       <varlistentry>
 	<term>SLEEP, float  1800. sec
          </term>
-	<listitem><para>  time to sleep between exposures. DURATION devided by SLEEP + 1 defines the number of taken exposures. Each pair (first,last) image is used to calculate the results.</para>
+	<listitem><para>  time to sleep between exposures. DURATION divided by SLEEP + 1 defines the number of taken exposures. Each pair (first,last) image is used to calculate the results.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
@@ -210,7 +223,7 @@ default value is used. The format of the following list is parameter name, "data
       <varlistentry>
 	<term>REPLACE, boolean, True
          </term>
-	<listitem><para>  astrometry.py parameter, if true astrometrical calibration is written to fits image.</para>
+	<listitem><para>  astrometry.py parameter, if true astrometric calibration is written to fits image.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
@@ -220,7 +233,7 @@ default value is used. The format of the following list is parameter name, "data
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>HA, float 5. deg
+	<term>HA, float 7.5 deg
          </term>
 	<listitem><para> mount hour angle for observation.</para>
         </listitem>
@@ -228,7 +241,8 @@ default value is used. The format of the following list is parameter name, "data
       <varlistentry>
 	<term>PD, float  1. deg
          </term>
-	<listitem><para> mount polar distance for observation. Angles larger than 3 deg and less than.5 deg should be avoided.</para>
+	<listitem><para> mount polar distance for observation. Angles larger
+than 3. deg and less than 0.5 deg should be avoided.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
