@@ -127,6 +127,8 @@ class DevClientCameraImage:public rts2core::DevClientCamera
 		rts2core::IniParser *fitsTemplate;
 
 	private:
+		// queue for images needed to be checked for metadata arrival
+		std::vector <Image *> checkImages;
 		/**
 		 * Convert FITS image to DataChannels.
 		 */
