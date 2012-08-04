@@ -153,6 +153,17 @@ void DevClientCameraImage::postEvent (rts2core::Event * event)
 			if (actualImage)
 				*((int *)event->getArg ()) += 1;
 			break;
+		case EVENT_METADATA_TIMEOUT:
+			{
+				for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
+				{
+					if (iter->second != event->getArg ())
+						continue;
+					processCameraImage (iter);
+					break;
+				}
+			}
+			break;
 	}
 	rts2core::DevClientCamera::postEvent (event);
 }
@@ -370,6 +381,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		else
 		{
 			logStream (MESSAGE_ERROR) << "getData, but not all metainfo - size of images:" << images.size () << sendLog;
+			getMaster ()->addTimer (60, new rts2core::Event (EVENT_METADATA_TIMEOUT, (void *) iter->second));
 		}
 	}
 	else

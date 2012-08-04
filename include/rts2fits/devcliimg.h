@@ -31,6 +31,7 @@
 
 #define EVENT_ALL_IMAGES_WRITTEN      RTS2_LOCAL_EVENT + 525
 #define EVENT_KILL_ALL                RTS2_LOCAL_EVENT + 526
+#define EVENT_METADATA_TIMEOUT        RTS2_LOCAL_EVENT + 537
 
 namespace rts2image
 {
