@@ -434,13 +434,8 @@ int Keithley::info ()
 		meas_times->clear ();
 		// start taking data
 		// arbitary units!
-		float expTi = countNum->getValueInteger () * nplc->getValueFloat ();
-		if (expTi > 1500)
-			settmo (100);
-		else if (expTi > 700)
-			settmo (30);
-		else if (countNum->getValueInteger () > 200)
-			settmo (10);
+		float expTi = countNum->getValueInteger () * nplc->getValueFloat () * 1 / 60.0;
+		settmo (expTi);
 		gpibWrite ("INIT");
 		int ret = Gpib::info ();
 		if (ret)
@@ -448,8 +443,8 @@ int Keithley::info ()
 
 		logStream (MESSAGE_DEBUG) << "trigger readout" << sendLog;
 		// now wait for SQR
+		usleep (USEC_SEC * countNum->getValueInteger () * nplc->getValueFloat () / 60.0);
 		gpibWaitSRQ ();
-		sleep (1);
 		getGPIB ("TRAC:DATA?", scurrent, current, meas_times, countNum->getValueInteger ());
 
 		readErrors ();
@@ -486,7 +481,6 @@ int Keithley::info ()
 				i--;
 				si *= 10;
 			}
-			std::cout << "i " << i << std::endl;
 			if (i > 0)
 			{
 				silim->setValueInteger (i);
