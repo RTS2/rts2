@@ -440,6 +440,11 @@ Image * DevClientCameraImage::createImage (const struct timeval *expStart)
 void DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 {
 	CameraImage *ci = (*cis).second;
+	std::vector <Image *>::iterator chi = std::find (checkImages.begin (), checkImages.end (), ci->image);
+	if (chi != checkImages.end ())
+	{
+		checkImages.erase (chi);
+	}
 	try
 	{
 		writeFilter (ci->image);

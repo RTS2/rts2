@@ -120,8 +120,8 @@ int DevClientCameraExec::getNextCommand ()
 				if (!cmdConn)
 				{
 					logStream (MESSAGE_ERROR)
-						<< "Unknow device : " << cmd_device
-						<< "for command " << nextComd->getText ()
+						<< "cannot find device : " << cmd_device
+						<< " (while running command " << nextComd->getText () << ")"
 						<< sendLog;
 					// only there try to get next command
 					continue;

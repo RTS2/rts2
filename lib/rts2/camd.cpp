@@ -570,9 +570,11 @@ rts2core::DevClient *Camera::createOtherType (rts2core::Connection * conn, int o
 
 void Camera::checkQueChanges (int fakeState)
 {
-	// do not check if we have queued exposures
-	if (quedExpNumber->getValueInteger () > 0)
+	// don't check values changes if there are qued exposures and exposure is still running
+	if (quedExpNumber->getValueInteger () > 0 && (fakeState & (CAM_EXPOSING | CAM_READING)))
 		return;
+	// do not check if we have queued exposures
+	fakeState |= (getDeviceBopState () & BOP_TRIG_EXPOSE);
 	rts2core::ScriptDevice::checkQueChanges (fakeState);
 	if (queValues.empty ())
 	{
@@ -1460,7 +1462,7 @@ int Camera::camStartExposure ()
 		return 0;
 	}
 
-	if (((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
+	if (expType && expType->getValueInteger () != 0 && ((getDeviceBopState () & BOP_TRIG_EXPOSE) || (getMasterStateFull () & BOP_TRIG_EXPOSE)))
 		maskState (BOP_WILL_EXPOSE, BOP_WILL_EXPOSE, "device plan to exposure soon", NAN, NAN, exposureConn);
 
 	return camStartExposureWithoutCheck ();
