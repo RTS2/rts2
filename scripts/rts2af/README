@@ -115,19 +115,22 @@ Testing through RTS2, night- and daytime
   You need to define at the time you observe at least one visible target (e.g. with tar_id 2000) in the Postgres DB.
   Then:
 
-  Test at nighttime, clear sky
-  ---------------------------
-  rts2-mon
-  SEL  -> selector_enabled=false
-  EXEC -> auto_loop=false       # you restart the process if necessary
+  A) Test at nighttime, clear sky
+  -------------------------------
 
-  EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
-                                # (see rts2.ini) finished then continue
-  EXEC -> now 5                 # tar_id 5 has been defined in the previous step and does not change target location.
+   Step 1: through rts2-mon
+   ------------------------
+   rts2-mon
+   SEL  -> selector_enabled=false
+   EXEC -> auto_loop=false       # you restart the process if necessary
+
+   EXEC -> now YOUR_TAR_ID       # mount moves to commanded location, once reached, and ev. the default exposure has been 
+                                 # (see rts2.ini) finished then continue
+   EXEC -> now 5                 # tar_id 5 has been defined in the previous step and does not change target location.
 
 
-  Test during daytime
-  -------------------
+  B) Test during daytime
+  ----------------------
   Before you execute the above commands during daytime add to configuration file
   /etc/rts2/rts2af/rts2af-acquire.cfg
 
@@ -135,16 +138,28 @@ Testing through RTS2, night- and daytime
    ...
    test_acquire=True
 
-  Setting test_acquire True invokes script rts2af_feedback_acquire.py instead of 
-  rts2af_analysis.py. It does not really fit the data, since the images contain 
-  only  random noise, but send a plausible set of formatted data to rts2af_acqure.py.
-  In addition to the above commands set   
+  There two possibilities during daytime.
 
-  EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
-                                # rts2af_feedback_acquire.py below 
-  at the beginning.
+   Step 1: rts2-scriptexec
+   -----------------------
 
+   cd rts2/scripts/rts2af/test
+   rts2-scriptexec -d C0 -s ' exe ../rts2af_acquire.py ' 
 
+   If the test images are in place the whole acquire/analysis/fit/set cycle is teseted.
+   If not rts2af_feedback_acquire.py is called and analysis/fit remains untested. It does 
+   not really fit the data, since the images contain only  random noise, but send a plausible 
+   set of formatted data to rts2af_acqure.py.
+
+   Step 2: through rts2-mon
+   ------------------------
+   In addition to the above commands A.1) set   
+
+    EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
+                                  # rts2af_feedback_acquire.py below 
+    at the beginning.
+
+  Do not forget to set test_acquire=False after success.
 
 Files in directory rts2/scripts/rts2af
 --------------------------------------

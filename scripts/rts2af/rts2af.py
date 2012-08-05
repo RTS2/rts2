@@ -118,6 +118,8 @@ class Configuration:
         self.dcf[('basic', 'DEFAULT_FOC_POS')]= 3500
         # ToDo new, Docu
         self.dcf[('basic', 'TEST_ACQUIRE')]= False
+        self.dcf[('basic', 'TEST_FIELDS')]= '20120324001509-875-RA-reference.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001705-200-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001820-993-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001528-966-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001722-024-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001839-935-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001602-509-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001736-702-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001900-940-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001625-517-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001749-374-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001926-496-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001646-407-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324001804-100-RA.fits,./focus/2012-06-23T11:56:24.022192/X/20120324002007-746-RA-proof.fits'
+
         self.dcf[('basic', 'DEFAULT_EXPOSURE')]= 10
         #                                        name
         #                                           offset to clear path
@@ -247,9 +249,7 @@ class Configuration:
 
     def filterByName(self, name):
         for filter in  self.filters:
-            print "NAME>" + name + "<>" + filter.name
             if name == filter.name:
-                print "NAME: {0} {1}".format(name, filter.name)
                 return filter
 
         return False
@@ -390,7 +390,7 @@ class SExtractorParams():
         for (i, line) in enumerate(lines):
             element = pElement.match(line)
             if element:
-                logging.debug('element.group(1) : '.format( element.group(1)))
+                #logging.debug('element.group(1) : '.format( element.group(1)))
                 self.reference.append(element.group(1))
                 self.assoc.append(element.group(1))
 

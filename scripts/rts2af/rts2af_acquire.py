@@ -87,8 +87,19 @@ class Acquire():
         
         if self.env.rtc.value('TEST_ACQUIRE'):
             # daytime, no real data, called by EXEC
+            self.testPaths= self.rtc.cf['TEST_FIELDS'].split(',')
+            r2c.log('I', 'rts2af_acquire:__init__ test replacements fits: {0}'.format(self.testPaths))
+
             self.base_cmd= ['{0}rts2af_feedback_acquire.py'.format(prefix)]
-        else:
+
+            for fn in self.testPaths[1:-1]:
+                if os.path.isfile( fn):
+                    r2c.log('E','rts2af_acquire: not all test images really present from list {0}'.format(self.testPaths))
+                    r2c.log('W','rts2af_acquire: using fake analysis command {0}'.format(self.base_cmd))
+                    break
+            else:
+                self.base_cmd= [ '{0}rts2af_analysis.py'.format(prefix), '--config' ]
+        else:    
             self.base_cmd= [ '{0}rts2af_analysis.py'.format(prefix), '--config' ]
 
         self.focuser = r2c.getValue('focuser')
@@ -172,8 +183,8 @@ class Acquire():
             return False
 
         r2c.setValue('exposure', exposure)
-
         r2c.setValue('FOC_FOFF', focFoff, self.focuser)
+
         self.focPosReached((focDef + focFoff + filter.OffsetToClearPath), focDef, focFoff) 
 
         acquisitionPath = r2c.exposure()
@@ -190,14 +201,17 @@ class Acquire():
         if extension== 'proof':
             return True
 
+        if self.env.rtc.value('TEST_ACQUIRE'):
+            path=self.testPaths.pop(0)
+            r2c.log('I','rts2af_acquire: replacing: {0} with: {1}'.format(storePath, path))
+            storePath=path
         try:
             # storePath ok
             analysis.stdin.write(storePath + '\n')
             return True
 
         except:
-            path= storePath
-            r2c.log('E','rts2af_acquire: could not write to pipe: {0}'.format(path))
+            r2c.log('E','rts2af_acquire: could not write to pipe: {0}'.format( storePath))
             return False
 
         return False
@@ -219,7 +233,7 @@ class Acquire():
         if not focusLineMatch == None:
             objs= int(focusLineMatch.group(4))
             dps= int(focusLineMatch.group(5))
-            if(objs > 5) and ( dps > 7): # ToDo adhoc
+            if(objs > 5) and ( dps > 5): # ToDo adhoc
 
                 fwhmFocPos= int(float(focusLineMatch.group(1)))
                 r2c.log('I','rts2af_acquire: got fitted focuser position at: {0}'.format(fwhmFocPos))
@@ -239,7 +253,7 @@ class Acquire():
                 else:
                     r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, due the sum FOC_DEF + filter.OffsetToClearPath= {1}, out of limits'.format(fwhmFocPos, fwhmFocPos + filter.OffsetToClearPath))
             else:
-                r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, due number of objects {1}<6 or datapoints <8 (adhoc!)'.format(fwhmFocPos, objs, dps))
+                r2c.log('E','rts2af_acquire: can not set FOC_DEF: {0}, due number of objects {1}<6 or datapoints {2}<8 (adhoc!)'.format(fwhmFocPos, objs, dps))
         else:
             # if there is no temperature all subsequent settings of FOC will be bad positions!
             r2c.log('E','rts2af_acquire: severe error, no match for string: {0}'.format(focusLine))
