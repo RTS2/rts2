@@ -36,6 +36,7 @@ parser.add_option('--ds9',help='plot image and detections in DS9',action='store_
 parser.add_option('--stat',help='calculate statistics (on all specified segments)',action='store_true',dest='stat',default=False)
 parser.add_option('--stat-segments',help='calculate statistics by segments',action='store_true',dest='stat_segments',default=False)
 parser.add_option('--plot-segments',help='plot histogram of segments FWHM medians',action='store_true',dest='plot_segments',default=False)
+parser.add_option('--save-regs',help='save .reg output of what sextractor found',action='store_true',dest='save_regs',default=False)
 parser.add_option('--segment',help='run statistics on given segments',action='append',dest='segments')
 parser.add_option('--max-stars',help='maximal number of stars used for statistics',action='store',dest='max_stars',default=None)
 parser.add_option('--verbose',help='produce verbose output',action='store_true',dest='verbose',default=False)
@@ -63,10 +64,19 @@ for fn in args:
 	if d:
 		# display in ds9
 		d.set('file mosaicimage iraf {0}'.format(fn))
-		i_x = c.get_field['X_IMAGE']
-		i_y = c.get_field['Y_IMAGE']
+		i_x = c.get_field('X_IMAGE')
+		i_y = c.get_field('Y_IMAGE')
 		for x in c.objects:
 			d.set('regions', 'image; circle {0} {1} 10'.format(x[i_x],x[i_y]))
+	
+	if options.save_regs:
+		i_x = c.get_field('X_IMAGE')
+		i_y = c.get_field('Y_IMAGE')
+		regf = open(fn + '.reg', 'w')
+		regf.write('image\n')
+		for x in c.objects:
+			regf.write('circle({0},{1},10)\n'.format(x[i_x],x[i_y]))
+		regf.close()
 	
 	if options.stat:
 		print fn,c.calculate_FWHM(options.max_stars,segments=options.segments)

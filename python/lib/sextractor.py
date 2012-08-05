@@ -158,6 +158,3 @@ class Sextractor:
 		except ValueError,ve:
 			traceback.print_exc()
 			raise Exception('cannot find FWHM_IMAGE value')
-
-
-
