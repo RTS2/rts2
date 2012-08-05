@@ -76,6 +76,8 @@ class ClientCameraScript:public rts2script::DevClientCameraExec
 	private:
 		int totalExp;
 		int currentExp;
+
+		std::string obsstatus ();
 };
 
 void ClientCameraScript::startTarget (bool b)
@@ -96,7 +98,8 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
 				if (read100 == false || fr < 100)
 				{
-					std::cout << currentExp << " of " << totalExp << " : " << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 25 - currentExp / 10 - totalExp / 10) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
+					std::string oss = obsstatus ();
+					std::cout << oss << " : " << ((getConnection ()->getState () & CAM_EXPOSING) ? "EXPOSING " : "READING  ")  << ProgressIndicator (fr, COLS - 19 - oss.length ()) << std::fixed << std::setprecision (1) << std::setw (5) << fr << "% \r";
 					std::cout.flush ();
 					if (fr < 100)
 						read100 = false;
@@ -113,12 +116,20 @@ imageProceRes ClientCameraScript::processImage (Image * image)
 	currentExp++;
 	if (usesNcurses)
 	{
-		std::cout << std::setfill ('+') << std::setw (COLS) << "+ done " << std::endl << std::setfill (' ');
+		std::string oss = obsstatus ();
+		std::cout << oss << " : " << image->getFileName () << " " << std::setfill ('+') << std::setw (COLS - oss.length () - strlen (image->getFileName ()) - 4) << "+ done " << std::endl << std::setfill (' ');
 		read100 = true;
 	}
 	std::cout << image->getFileName () << std::endl;
 
 	return DevClientCameraExec::processImage (image);
+}
+
+std::string ClientCameraScript::obsstatus ()
+{
+	std::ostringstream os;
+	os << currentExp << " of " << totalExp;
+	return os.str ();
 }
 
 int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
@@ -327,6 +338,7 @@ int ScriptExec::init ()
 		usesNcurses = true;
 		signal (SIGWINCH, signal_winch);
 		setupterm (NULL, 2, NULL);
+		curs_set (0);
 		addTimer (CHECK_TIMER, new rts2core::Event (EVENT_EXP_CHECK));
 	}
 #endif // HAVE_ISATTY
