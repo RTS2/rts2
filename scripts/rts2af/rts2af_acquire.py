@@ -56,29 +56,27 @@ import rts2af
 
 r2c= rts2.scriptcomm.Rts2Comm()
 
-class Acquire(rts2af.AFScript):
+class Acquire():
     """control telescope and CCD, acquire a series of focuser images and eventually set the focus"""
     def __init__(self, scriptName=None):
+
         self.scriptName= scriptName
-        self.focuser = r2c.getValue('focuser')
-        self.serviceFileOp= rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-        self.runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
-        self.runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg') # rts2 exe mechanism has no options
+        self.rtc= rts2af.Configuration('/etc/rts2/rts2af/rts2af-acquire.cfg') 
+        self.env= rts2af.Environment(rtc=self.rtc, log=None)
 
-        self.lowerLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
-        self.upperLimit= self.runTimeConfig.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
-        self.speed= self.runTimeConfig.value('FOCUSER_SPEED')
-        self.stepSize= self.runTimeConfig.value('FOCUSER_STEP_SIZE') # ToDo for SCT focusers? (bright star image shift during daytime)
-        self.setFocDefFwhmUpperLimit= self.runTimeConfig.value('SET_FOC_DEF_FWHM_UPPER_THRESHOLD')
+        self.lowerLimit= self.env.rtc.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
+        self.upperLimit= self.env.rtc.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
+        self.speed= self.env.rtc.value('FOCUSER_SPEED')
+        self.stepSize= self.env.rtc.value('FOCUSER_STEP_SIZE') # ToDo for SCT focusers? (bright star image shift during daytime)
+        self.setFocDefFwhmUpperLimit= self.env.rtc.value('SET_FOC_DEF_FWHM_UPPER_THRESHOLD')
         # ToDo: read the runtime configuration of rts2-focusd-flitc not ours!
-        self.temperatureCompensation= self.runTimeConfig.value('FOCUSER_TEMPERATURE_COMPENSATION')
-        #r2c.log('E','rts2af_acquire: this is not the rts2-focusd-flitc, configured temperature compensation option: {0}'.format(self.temperatureCompensation)) 
+        self.temperatureCompensation= self.env.rtc.value('FOCUSER_TEMPERATURE_COMPENSATION')
 
-        self.binning= self.runTimeConfig.value(self.runTimeConfig.ccd.binning)
-        self.windowOffsetX= self.runTimeConfig.ccd.windowOffsetX
-        self.windowOffsetY= self.runTimeConfig.ccd.windowOffsetY
-        self.windowWidth= self.runTimeConfig.ccd.windowWidth
-        self.windowHeight= self.runTimeConfig.ccd.windowHeight
+        self.binning= self.env.rtc.value(self.env.rtc.ccd.binning)
+        self.windowOffsetX= self.env.rtc.ccd.windowOffsetX
+        self.windowOffsetY= self.env.rtc.ccd.windowOffsetY
+        self.windowWidth= self.env.rtc.ccd.windowWidth
+        self.windowHeight= self.env.rtc.ccd.windowHeight
         self.pid= os.getpid()
         self.base_exposure= 9. # ToDo !!!
         #ToDo must go away
@@ -87,21 +85,21 @@ class Acquire(rts2af.AFScript):
         else:
             prefix=''
         
-        if( self.runTimeConfig.value('TEST_ACQUIRE')):
-            # daytime, no real data, called by EXEC or by rts2af_feed_acquire.py
+        if self.env.rtc.value('TEST_ACQUIRE'):
+            # daytime, no real data, called by EXEC
             self.base_cmd= ['{0}rts2af_feedback_acquire.py'.format(prefix)]
-            # daytime, with real data, called by rts2af_feed_acquire.py not by EXEC
-            #cmd= [ '{0}rts2af_analysis.py --config'.format(prefix)]
         else:
             self.base_cmd= [ '{0}rts2af_analysis.py'.format(prefix), '--config' ]
 
+        self.focuser = r2c.getValue('focuser')
+
     def focPosWithinLimits(self, focPos=None):
 
-        if( focPos < self.lowerLimit):
+        if focPos < self.lowerLimit:
             r2c.log('E','rts2af_acquire: focPos: {0} below minimum: {1}'.format((focPos), self.lowerLimit)) 
             return False
 
-        if( focPos > self.upperLimit):
+        if focPos > self.upperLimit:
             r2c.log('E','rts2af_acquire: focPos: {0} above maximum: {1}'.format((focPos), self.upperLimit)) 
             return False
 
@@ -126,7 +124,7 @@ class Acquire(rts2af.AFScript):
         curFocDef      =r2c.getValueFloat('FOC_DEF', self.focuser)
         curFocFoff     =r2c.getValueFloat('FOC_FOFF',self.focuser)
         curFocToff     =r2c.getValueFloat('FOC_TOFF',self.focuser)
-        if(self.temperatureCompensation):
+        if self.temperatureCompensation:
             curFocTc       =r2c.getValueFloat('FOC_TC',  self.focuser)
             curFocTempMeteo=r2c.getValueFloat('TEMP_METEO', self.focuser)
             curFocTcMode   =r2c.getValueFloat('TCMODE',     self.focuser)
@@ -140,24 +138,24 @@ class Acquire(rts2af.AFScript):
     def focPosReached(self, focPos=None, focDef=None, focFoff=None): # focFoff will go away as soon as focuser works reliably
         """Sometimes the FLI focuser does not react"""
 
-        if(not focPos==None):
+        if focPos:
             self.sleepWhileFocusTravel(fcPos=focPos)
             i= 0
-            while(True):
+            while True:
                 
                 i += 1
                 curFocPos= r2c.getValueFloat('FOC_POS',self.focuser)
 
-                if( abs(float(curFocPos-focPos)) < self.runTimeConfig.value('FOCUSER_RESOLUTION')):
-                    r2c.log('I','rts2af_acquire: target position reached, current foc_pos: {0}, target position: {1}, resolution: {2} '.format(curFocPos, focPos, self.runTimeConfig.value('FOCUSER_RESOLUTION')))
+                if abs(float(curFocPos-focPos)) < self.env.rtc.value('FOCUSER_RESOLUTION'):
+                    r2c.log('I','rts2af_acquire: target position reached, current foc_pos: {0}, target position: {1}, resolution: {2} '.format(curFocPos, focPos, self.env.rtc.value('FOCUSER_RESOLUTION')))
                     break
-                elif( i == 5):
+                elif i == 5 :
                     r2c.log('E','rts2af_acquire: target position, try again, focuser values: {0}'.format(self.focuserValues()))
                     # set value again
                     r2c.setValue('FOC_FOFF', focFoff, self.focuser)
                     r2c.setValue('FOC_DEF', focDef, self.focuser)
                     r2c.log('W','rts2af_acquire: target position again set: {0}'.format(focPos))
-                elif( i > 20):
+                elif i > 20:
                     r2c.log('E','rts2af_acquire: target position, breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
                     r2c.log('E','rts2af_acquire: target position, breaking, focuser values: {0}'.format(self.focuserValues()))
                     break
@@ -169,7 +167,7 @@ class Acquire(rts2af.AFScript):
 
     def acquireImage(self, focDef=None, focFoff=None, exposure=None, filter=None, analysis=None, extension=None):
 
-        if( not self.focPosWithinLimits( focDef + focFoff + filter.OffsetToClearPath)):
+        if not self.focPosWithinLimits( focDef + focFoff + filter.OffsetToClearPath):
             r2c.log('E','rts2af_acquire: acquireImage: can not set position: {0}, out of limits'.format(focDef + focFoff + filter.OffsetToClearPath))
             return False
 
@@ -182,14 +180,14 @@ class Acquire(rts2af.AFScript):
 
         # move all fits files of a given filter focus run into a separate directory 
         # in test mode the files are fetched for the original path
-        storePath=self.serviceFileOp.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
-        if( extension):
+        storePath=self.env.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
+        if extension:
             elements= storePath.split('.fits')
             storePath= '{0}-{1}.fits'.format(elements[0], extension)
 
         r2c.log('I','rts2af_acquire: acquired: {0} storing at: {1}'.format(acquisitionPath, storePath))
         r2c.move(acquisitionPath, storePath)
-        if( extension== 'proof'):
+        if extension== 'proof':
             return True
 
         try:
@@ -218,7 +216,7 @@ class Acquire(rts2af.AFScript):
         setFocus= False
         #                            FOCUS: 3407.743919, FWHM: 2.331747,  TEMPERATURE: 9.38888931274C, OBJECTS: 20      DATAPOINTS: 14
         focusLineMatch= re.search( r'FOCUS: ([\.0-9]+), FWHM: ([\.0-9]+), TEMPERATURE: ([\-\.0-9]+)C, OBJECTS: ([0-9]+) DATAPOINTS: ([0-9]+)', focusLine)
-        if( not focusLineMatch == None):
+        if not focusLineMatch == None:
             objs= int(focusLineMatch.group(4))
             dps= int(focusLineMatch.group(5))
             if(objs > 5) and ( dps > 7): # ToDo adhoc
@@ -226,12 +224,12 @@ class Acquire(rts2af.AFScript):
                 fwhmFocPos= int(float(focusLineMatch.group(1)))
                 r2c.log('I','rts2af_acquire: got fitted focuser position at: {0}'.format(fwhmFocPos))
                 
-                if(self.temperatureCompensation):
+                if self.temperatureCompensation:
                     temperature= float(focusLineMatch.group(3))
 
-                if( self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath)):
+                if self.focPosWithinLimits( fwhmFocPos + filter.OffsetToClearPath):
                     fwhm= float(focusLineMatch.group(2))
-                    if( 0.5 < fwhm < self.setFocDefFwhmUpperLimit): # ad hoc lower limit
+                    if 0.5 < fwhm < self.setFocDefFwhmUpperLimit: # ad hoc lower limit
                         # ok
                         #
                         setFocus= True
@@ -253,7 +251,7 @@ class Acquire(rts2af.AFScript):
             r2c.setValue('FOC_FOFF', 0., self.focuser)
             r2c.log('I','rts2af_acquire: setFittedFocus: set FOC_TOFF=FOC_FOFF=0.')
 
-            if(self.temperatureCompensation):
+            if self.temperatureCompensation:
                 r2c.setValue('TC_TEMP_REF', temperature, self.focuser)
                 r2c.log('I','rts2af_acquire: setting temperature: {0}'.format(temperature))
                 # set first mode to avoid caculation of TC Offset in focuser driver
@@ -268,7 +266,7 @@ class Acquire(rts2af.AFScript):
             self.focPosReached(fwhmFocPos, fwhmFocPos, 0)
             return fwhmFocPos
         else:
-            if(self.temperatureCompensation):
+            if self.temperatureCompensation:
                 r2c.setValue('TCMODE', 1, self.focuser) # relative temperature compensation
             else:
                 r2c.log('I','rts2af_acquire: no temperature comensation mode set, due to focuser_temperature_compensation==False')
@@ -279,19 +277,19 @@ class Acquire(rts2af.AFScript):
         r2c.setValue('binning', self.binning)
         r2c.setValue('WINDOW','%d %d %d %d' % (self.windowOffsetX, self.windowOffsetY, self.windowWidth, self.windowHeight))
 
-        if(self.temperatureCompensation):
+        if self.temperatureCompensation:
 
             r2c.setValue('TCMODE', 2, self.focuser) # no temperature compensation
             time.sleep(1)
             tcMode= r2c.getValue('TCMODE', self.focuser)
 
-            if(tcMode ==2): # ToDo 
+            if tcMode ==2: # ToDo 
                 r2c.log('E','rts2af_acquire: temperature compensation set to: {0} (none)'.format(tcMode))
             else:
                 r2c.log('E','rts2af_acquire: temperature compensation not set to none, it is: {0}'.format(tcMode))
 
 
-        if(( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeLowerLimit)) and( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeUpperLimit))):
+        if ( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeLowerLimit)) and( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeUpperLimit)):
             # the order is important
             r2c.setValue('FOC_FOFF' , 0, self.focuser)
             # ToDo: verify: triggers setting of filter offset as FOC_TOFF as defined in the rts2 devices file
@@ -301,7 +299,7 @@ class Acquire(rts2af.AFScript):
             r2c.setValue('FOC_TOFF', filter.OffsetToClearPath, self.focuser)
 
 
-            if(self.runTimeConfig.value('SET_INITIAL_FOC_DEF')):
+            if self.env.rtc.value('SET_INITIAL_FOC_DEF'):
                 r2c.setValue('FOC_DEF', focDef, self.focuser) # if not configured, the curren value is set
                 r2c.log('I','rts2af_acquire: prepareAcquisition: setting FOC_DEF: {0}'.format(focDef))
                 self.focPosReached((focDef + filter.OffsetToClearPath), focDef, 0)
@@ -324,25 +322,18 @@ class Acquire(rts2af.AFScript):
         exposureTime= 0
         startTime= time.time()
         # telescope parameter
-        telescope=rts2af.Telescope() # take the defaults from the config file or overwrite them here
+        telescope=rts2af.Telescope(radius=self.env.rtc.value('TEL_RADIUS'), focalLength=self.env.rtc.value('TEL_FOCALLENGTH'), pixelSize=self.env.rtc.value('PIXELSIZE'), seeing=self.env.rtc.value('SEEING')) # take the defaults from the config file or overwrite them here
 
         # start analysis process
         analysis={}
 
-        # create the result file for the fitted values, read by rts2af_set_fit_focus.py
-        fitResultFileName= self.serviceFileOp.expandToFitResultPath( 'rts2af-acquire-')
-        with open( fitResultFileName, 'w') as frfn:
-            frfn.write('# {0}, written by rts2af_acquire.py\n#\n'.format(fitResultFileName))
-        # rts2af_acquire.py will supply the values asynchronously
-        frfn.close()
-
         filtersInUse=[]
-        filtersInUse= self.runTimeConfig.filtersInUse
+        filtersInUse= self.env.rtc.filtersInUse
 
         fwhm_foc_pos_fit= None
-        # if True, meaning: use configured value
-        if(self.runTimeConfig.value('SET_INITIAL_FOC_DEF')):
-            focDef= self.runTimeConfig.value('DEFAULT_FOC_POS')
+
+        if self.env.rtc.value('SET_INITIAL_FOC_DEF'):
+            focDef= self.env.rtc.value('DEFAULT_FOC_POS')
             r2c.log('I','rts2af_acquire: run: setting FOC_DEF to {0}'.format(focDef))
         else:
             focDef=  r2c.getValueFloat('FOC_DEF', self.focuser)
@@ -351,30 +342,29 @@ class Acquire(rts2af.AFScript):
         for fltName in filtersInUse:
             filterExposureTime= 0
             filterStartTime=time.time()
-            filter= self.runTimeConfig.filterByName( fltName)
+            filter= self.env.rtc.filterByName( fltName)
             try:
-                r2c.log('I','rts2af_acquire: Initial setting: filter: {0}'.format(filter.name, self.runTimeConfig.configurationFileName()))
+                r2c.log('I','rts2af_acquire: Initial setting: filter: {0} {1}'.format(filter.name, self.env.rtc.configurationFileName()))
             except:
-                r2c.log('E','rts2af_acquire: no filter configuration found for  filter: {0} in {0}'.format(fltName, self.runTimeConfig.configurationFileName()))
+                r2c.log('E','rts2af_acquire: no filter configuration found for  filter: {0} in {1}'.format(fltName, self.env.rtc.configurationFileName()))
 
-            if( fwhm_foc_pos_fit):
+            if fwhm_foc_pos_fit:
                 self.prepareAcquisition( fwhm_foc_pos_fit, filter) # a previous run was successful
                 r2c.log('I','Initial setting: filter: {0}, offset: {1}, expousre: {2} (setting from clear path run)'.format( filter.name, fwhm_foc_pos_fit, self.base_exposure * filter.exposureFactor))
             else:
-
-                if( self.prepareAcquisition( focDef, filter)): 
+                if self.prepareAcquisition( focDef, filter): 
                     r2c.log('I','rts2af_acquire: Initial setting: foc_def: {0}, filter: {1}, offset: {2}, expousre: {3}'.format( focDef, filter.name, filter.OffsetToClearPath, self.base_exposure * filter.exposureFactor))
 
                 else:
                     r2c.log('I','rts2af_acquire: something went wrong in prepareAcquisition, continue with next filter')
-                    continue # something went wrong
+                    continue
 
-            configFileName= self.serviceFileOp.expandToTmpConfigurationPath( 'rts2af-acquire-' + filter.name + '-') 
+            configFileName= self.env.expandToTmpConfigurationPath( 'rts2af-acquire-' + filter.name + '-') 
 
             cmd= [ '{0} --config {1}'.format(self.base_cmd[0], configFileName)]
 
-            self.runTimeConfig.writeConfigurationForFilter(configFileName, fltName)
-            self.serviceFileOp.createAcquisitionBasePath( filter)
+            self.env.rtc.writeConfigurationForFilter(configFileName, fltName)
+            self.env.createAcquisitionBasePath( filter)
 
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
@@ -385,7 +375,7 @@ class Acquire(rts2af.AFScript):
                 sys.exit(1)
 
             # create the reference catalogue
-            if( not self.acquireImage( focDef, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'reference')):
+            if not self.acquireImage( focDef, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'reference'):
                 msg= analysis[filter.name].stdout.readline()
                 r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg))
                 r2c.log('I','rts2af_acquire: continue with next filter')
@@ -395,7 +385,7 @@ class Acquire(rts2af.AFScript):
             msgRaw= analysis[filter.name].stdout.readline()
             msg= re.split('\n', msgRaw)
             r2c.log('E','rts2af_acquire: received from pipe: {0}'.format(msg[0]))
-            if( msg[0] == 'FOCUS: -1'):  # check creation of reference catalogue
+            if msg[0] == 'FOCUS: -1':  # check creation of reference catalogue
                 r2c.log('I','rts2af_acquire: continue with next filter')
                 continue # something went wrong                                                                                                  
 
@@ -412,12 +402,12 @@ class Acquire(rts2af.AFScript):
                 analysis[filter.name].stdin.write('Q\n')
                 r2c.log('I','rts2af_acquire: focuser exposures finished for filter: {0}'.format(filter.name))
 
-                if(filter.OffsetToClearPath== 0):
-                    if( self.runTimeConfig.value('SET_FOCUS')):
+                if filter.OffsetToClearPath== 0:
+                    if self.env.rtc.value('SET_FOCUS'):
                         fwhm_foc_pos_fit= self.setFittedFocus(filter, analysis[filter.name])
-                        if( fwhm_foc_pos_fit):
+                        if fwhm_foc_pos_fit:
                             # take a proof
-                            if( self.acquireImage( fwhm_foc_pos_fit, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'proof')):
+                            if self.acquireImage( fwhm_foc_pos_fit, 0, self.base_exposure * filter.exposureFactor, filter, analysis[filter.name], 'proof'):
                                 r2c.log('I','rts2af_acquire: proof taken at FOC_POS:{0}'.format(fwhm_foc_pos_fit))
                             else:
                                 r2c.log('I','rts2af_acquire: could not take a proof at FOC_POS:{0}'.format(fwhm_foc_pos_fit))
@@ -440,10 +430,5 @@ class Acquire(rts2af.AFScript):
         return
 
 if __name__ == '__main__':
-# if any extra argument is present then rts2af_acquire.py is executed in test mode
-    if( len(sys.argv)== 2):
-        acquire= Acquire(scriptName=sys.argv[0], test=sys.argv[1])
-    else:
-        acquire= Acquire(scriptName=sys.argv[0])
 
-    acquire.run()
+    ac= Acquire(scriptName=sys.argv[0]).run()

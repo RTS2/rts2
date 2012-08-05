@@ -1,24 +1,24 @@
 #!/usr/bin/python
 
-
+import sys
 import rts2af
 import math
 
 
-def acquireImage():
+def CalculateExposureTimes():
 
     
-    serviceFileOp= rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-    runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
+    rtc= rts2af.Configuration('/etc/rts2/rts2af/rts2af-acquire.cfg')
+    env= rts2af.Environment( rtc=rtc, log=None)
 
-    runTimeConfig.readConfiguration('/etc/rts2/rts2af/rts2af-acquire.cfg')
-
-    flt= runTimeConfig.filterByName( 'C')
-    base_exposure= runTimeConfig.value('DEFAULT_EXPOSURE')
+    filter= rtc.filterByName( 'X')
+    if not filter:
+        print 'no filter config found for {0}'.format('C')
+    base_exposure= rtc.value('DEFAULT_EXPOSURE')
 
     focuser= rts2af.Focuser(name='FOC_FLI', lowerLimit=100, upperLimit=7000, resolution=20, speed=90., stepSize=1.1428e-6)
     #telescope= rts2af.Telescope(radius=.2, focalLength=4.)
-    telescope= rts2af.Telescope(radius=.09, focalLength=1.26)
+    telescope= rts2af.Telescope(radius=env.rtc.value('TEL_RADIUS'), focalLength=env.rtc.value('TEL_FOCALLENGTH'), pixelSize=env.rtc.value('PIXELSIZE'), seeing=env.rtc.value('SEEING'))
 
     print 'Telescope, CCD, sky  properties: radius: {0}, focalLength: {1}, pixelSize: {2}, seeing: {3} (meter), base exposure time: {4}'.format(telescope.radius, telescope.focalLength, telescope.pixelSize, telescope.seeing, base_exposure)
 
@@ -26,11 +26,11 @@ def acquireImage():
     i= 0
     sum_normal=0
     sum_adapted=0
-    for setting in flt.settings:
-        exposure=  telescope.linearExposureTimeAtFocPos(base_exposure * setting.exposureFactor, setting.offset * focuser.stepSize)
-        print ('rts2af_test: Linear:    filter {0} offset {1:5.0f} exposure {2}, true exposure: {3:5.1f}'.format(flt.name, setting.offset, base_exposure * setting.exposureFactor, exposure))
+    for offset in filter.offsets:
+        exposure=  telescope.linearExposureTimeAtFocPos(base_exposure * filter.exposureFactor, offset * focuser.stepSize)
+        print ('rts2af_test: Linear:    filter {0} offset {1:5.0f} exposure {2}, true exposure: {3:5.1f}'.format(filter.name, offset, base_exposure * filter.exposureFactor, exposure))
         i += 1
-        sum_normal += base_exposure * setting.exposureFactor
+        sum_normal += base_exposure * filter.exposureFactor
         sum_adapted+= exposure
 
 
@@ -39,16 +39,17 @@ def acquireImage():
     i= 0
     sum_normal=0
     sum_adapted=0
-    for setting in flt.settings:
+    for offset in filter.offsets:
 
-        exposure=  telescope.quadraticExposureTimeAtFocPos(base_exposure * setting.exposureFactor, setting.offset * focuser.stepSize)
-        print ('rts2af_test: Quadratic, filter {0} offset {1:5.0f} exposure {2}, true exposure: {3:5.1f}'.format(flt.name, setting.offset, base_exposure * setting.exposureFactor, exposure))
+        exposure=  telescope.quadraticExposureTimeAtFocPos(base_exposure * filter.exposureFactor, offset * focuser.stepSize)
+        print ('rts2af_test: Quadratic, filter {0} offset {1:5.0f} exposure {2}, true exposure: {3:5.1f}'.format(filter.name, offset, base_exposure * filter.exposureFactor, exposure))
         i += 1
-        sum_normal += base_exposure * setting.exposureFactor
+        sum_normal += base_exposure * filter.exposureFactor
         sum_adapted+= exposure
 
     print 'Quadratic summs {0}, {1}'.format(sum_normal, sum_adapted)
 
 
+if __name__ == '__main__':
 
-acquireImage()
+    CalculateExposureTimes()

@@ -138,11 +138,11 @@ Testing through RTS2, night- and daytime
   Setting test_acquire True invokes script rts2af_feedback_acquire.py instead of 
   rts2af_analysis.py. It does not really fit the data, since the images contain 
   only  random noise, but send a plausible set of formatted data to rts2af_acqure.py.
-  
+  In addition to the above commands set   
 
   EXEC -> ignore_day=true       # during daytime, only the very rts2af_acquire.py functionality can be verified, see
                                 # rts2af_feedback_acquire.py below 
-
+  at the beginning.
 
 
 
@@ -158,7 +158,7 @@ Files in directory rts2/scripts/rts2af
   rts2af_fwhm.py           called by imgp_analysis.py after image has been stored on disk
   rts2af_acquire.py        defined as script for target with tar_id 5 (OnTargetFocus)
 
-  rts2af_offline.py        performs offline analysis on a sets of focus images       
+  rts2af_offline.py        performs offline analysis on sets of focus images       
 
   Helper scripts
   --------------
@@ -169,7 +169,7 @@ Files in directory rts2/scripts/rts2af
 
   Test scripts
   ------------
-  rts2af_feedback_acquire.py  can be used in absence of real (sky) images
+  rts2af_feedback_acquire.py  is used in absence of real (sky) images, if TEST_ACQUIRE=True
 
   Library
   -------

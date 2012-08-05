@@ -1,10 +1,9 @@
 #!/usr/bin/python
-# (C) 2010, Markus Wildi, markus.wildi@one-arcsec.org
+# (C) 2010-2012, Markus Wildi, markus.wildi@one-arcsec.org
 #
 #   usage 
 #   rtsaf_offline.py --help
 #   
-#   not yet see man 1 rts2_/offline.py
 #
 #   Basic usage:
 #   Create a set of focusing images and define the reference file. The
@@ -45,121 +44,101 @@
 __author__ = 'markus.wildi@one-arcsec.org'
 
 import sys
-import logging
-import time
 import rts2af 
 
-class main(rts2af.AFScript):
+class Offline(rts2af.AFScript):
     """Do offline analysis of a set of focus images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
 
-    def main(self):
-        logformat= '%(asctime)s %(levelname)s %(message)s'
-	logging.basicConfig(filename='/tmp/rts2af-offline.log', level=logging.INFO, format= logformat)
-
-        runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
-        rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-        args         = self.arguments()
-
-        configFileName='/etc/rts2/rts2af/rts2af-offline.cfg'
-        if( args.fileName):
-            configFileName= args.fileName[0]  
-        else:
-            configFileName= runTimeConfig.configurationFileName()
-            logging.info('logger no config file specified, taking default' + configFileName)
-
-        runTimeConfig.readConfiguration(configFileName)
-
-        if( args.referenceFitsFileName):
-            referenceFitsFileName = args.referenceFitsFileName[0]
-            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logging.error('rts2af_offline.py reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
-                sys.exit(1)
+    def run(self):
 # get the list of fits files
         FitsList=[]
-        FitsList=rts2af.serviceFileOp.fitsFilesInRunTimePath()
-
+        FitsList=self.env.fitsFilesInRunTimePath()
 # read the SExtractor parameters
-        paramsSexctractor= rts2af.SExtractorParams()
+        paramsSexctractor= rts2af.SExtractorParams(paramsFileName=self.rtc.value('SEXREFERENCE_PARAM'))
         paramsSexctractor.readSExtractorParams()
 
-        if( paramsSexctractor==None):
-            print "exiting"
+        if paramsSexctractor==None:
+            print 'FOCUS: -1'
+            self.logger('run: exiting')
             sys.exit(1)
-# create the reference catalogue
-        hdur= rts2af.FitsHDU(referenceFitsFileName)
 
-        if(hdur.headerProperties()):
-            HDUs= rts2af.FitsHDUs(hdur)
-            catr= rts2af.ReferenceCatalogue(hdur,paramsSexctractor)
+# create the reference catalogue
+        hdur= rts2af.FitsHDU(env=self.env, fitsFileName=self.referenceFitsName)
+
+        if hdur.headerProperties():
+            HDUs= rts2af.FitsHDUs(minimumFocuserPositions=self.rtc.value('MINIMUM_FOCUSER_POSITIONS'), referenceHDU=hdur)
+            catr= rts2af.ReferenceCatalogue(env=self.env, fitsHDU=hdur,SExtractorParams=paramsSexctractor)
             catr.runSExtractor()
             
-            if(catr.createCatalogue()):
+            if catr.createCatalogue():
                 catr.cleanUpReference()
                 catr.writeCatalogue()
-                cats= rts2af.Catalogues(catr)
+                cats= rts2af.Catalogues(env=self.env, referenceCatalogue=catr)
             else:
                 print 'FOCUS: -1'
                 sys.exit(1)
         else:
             sys.exit(1)
             print 'FOCUS: -1'
-            
+    
 # read the files 
         for fits in FitsList:
-            hdu= rts2af.FitsHDU( fits, hdur)
-            if(hdu.headerProperties()):
-                if(rts2af.verbose):
-                    print "append "+ hdu.fitsFileName
+            hdu= rts2af.FitsHDU(env= self.env, fitsFileName=fits, referenceFitsHDU=hdur)
+            if hdu.headerProperties():
+                self.logger.debug("append "+ hdu.fitsFileName)
+                    
                 HDUs.fitsHDUsList.append(hdu)
+            else:
+                self.logger.warning( "NOT append "+ str(hdu.fitsFileName))
 
         if( not HDUs.validate()):
-            logging.error("rts2af_offline.py: HDUs are not valid, exiting")
+            self.logger.error("rts2af_offline.py: HDUs are not valid, exiting")
             sys.exit(1)
 
 # loop over hdus, create the catalogues
         for hdu  in HDUs.fitsHDUsList:
-            if(rts2af.verbose):
-                print 'HDU {0}'.format(hdu.fitsFileName)
 
-            cat= rts2af.Catalogue(hdu,paramsSexctractor, catr)
+            cat= rts2af.Catalogue(env=self.env, fitsHDU=hdu,SExtractorParams=paramsSexctractor, referenceCatalogue=catr)
             cat.runSExtractor()
             cat.createCatalogue()
             cat.cleanUp()
 #            cat.ds9DisplayCatalogue()
-            # append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
-            if( cat.matching()):
-                if(rts2af.verbose):
-                    print "Added catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName
-
+# append the catalogue only if there are more than runTimeConfig.value('MATCHED_RATIO') sxObjects 
+            cats.CataloguesAllFocPosList.append(cat)
+            if cat.matching():
                 cats.CataloguesList.append(cat)
             else:
-                logging.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName)
+                self.logger.error("rts2af_offline.py: discarded catalogue at FOC_POS=%d" % hdu.variableHeaderElements['FOC_POS'] + " file "+ hdu.fitsFileName)
 
-        if(not cats.validate()):
-            logging.error("rts2af_offline.py: catalogues are invalid, exiting")
+        if not cats.validate():
+            self.logger.error("rts2af_offline.py: catalogues are invalid, exiting")
             sys.exit(1)
 
+        extreme=False
         fitResult= cats.fitTheValues()
-        if(not fitResult==None):
-            if( not fitResult.error):
+        if fitResult:
+            if not fitResult.error:
                 # rts2af_offline is often called as a subprocess
                 print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
-                logging.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
+                self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
             else:
-                logging.error("rts2af_offline.py: fit result is erroneous, exiting")
-                sys.exit(1)
-
+                self.logger.error('rts2af_offline.py: fit result is erroneous')
+                extreme=True
         else:
-            logging.error("rts2af_offline.py: no fit result, exiting")
-            sys.exit(1)
+            extreme=True
 
+        if extreme:
+            self.logger.warning("rts2af_offline.py: no fit result, using either weighted mean or minFocPos or maxFocPos")
+            (focpos, extreme)=cats.findExtrema()
+            if focpos:
+                 print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, fitResult.temperature, -1., -1., fitResult.referenceFileName)
+                 self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, fitResult.temperature, -1., -1., fitResult.referenceFileName))
+            else:
+                 print 'FOCUS: {0}'.format(-1)
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
         #cats.ds9WriteRegionFiles()
 
 if __name__ == '__main__':
-    main(sys.argv[0]).main()
-
+    Offline(sys.argv[0],parser=None,mode=None).run()
 

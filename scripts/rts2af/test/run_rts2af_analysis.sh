@@ -4,7 +4,7 @@
 #
 #
 #
-echo "check log file /tmp/rts2af-offline.log and /var/log/rts2-debug.log"
+echo "check log files /tmp/rts2af-offline.log and /var/log/rts2-debug.log"
 echo "In case mathplotlib does not display the results see /tmp/rts2af-fit-rts2af-X-*.png"
 #
 rts2af_analysis.py --config ./rts2af-offline.cfg <<EOF

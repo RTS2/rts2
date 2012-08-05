@@ -38,30 +38,16 @@ import os
 import logging
 import rts2af 
 
-class main(rts2af.AFScript):
+class FeedBack():
     """extract the catalgue of an images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
-        self.test = False
-        self.pid= os.getpid()
+    def __init__(self, scriptName=None):
+        self.scriptName=scriptName
 
-    def main(self):
-        logformat= '%(asctime)s %(levelname)s %(message)s'
-	logging.basicConfig(filename='/var/log/rts2-debug', level=logging.INFO, format= logformat)
-        
-        runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
-        rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-
-        configFileName=''
-        runTimeConfig= rts2af.runTimeConfig= rts2af.Configuration() # default config
-        configFileName= runTimeConfig.configurationFileName()
-        logging.info('rts2af_feedback_acquire.py: taking default configuration file' + configFileName)
-
-        runTimeConfig.readConfiguration(configFileName)
+    def run(self):
 
         referenceFitsFileName = sys.stdin.readline().strip()
 
-        logging.info('rts2af_feedback_acquire.py: pid: {0}, starting, reference file: {1}'.format(self.pid, referenceFitsFileName))
+        logging.info('rts2af_feedback_acquire.py: pid: {0}, starting, reference file: {1}'.format(os.getpid(), referenceFitsFileName))
 
         print 'info: reference catalogue created'
         sys.stdout.flush()
@@ -110,11 +96,9 @@ class main(rts2af.AFScript):
         # input format for rts2af_model_analyze.py
         logging.info('rts2af_feedback_acquire.py: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(chi2, temperature, temperature, objects, minimumFocPos, minimumFwhm, dateEpoch, withinBounds, referenceFileName, nrDatapoints, constants))
         
-                
-
-        logging.info('rts2af_feedback_acquire.py: pid: {0}, ending, reference file: {1}'.format(self.pid, referenceFitsFileName))
+        logging.info('rts2af_feedback_acquire.py: pid: {0}, ending, reference file: {1}'.format(os.getpid(), referenceFitsFileName))
 
 if __name__ == '__main__':
-    main(sys.argv[0]).main()
+    FeedBack(sys.argv[0]).run()
 
 
