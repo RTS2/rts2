@@ -113,13 +113,13 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 imageProceRes ClientCameraScript::processImage (Image * image)
 {
 	image->saveImage ();
-	currentExp++;
 	if (usesNcurses)
 	{
 		std::string oss = obsstatus ();
 		std::cout << oss << " : " << image->getFileName () << " " << std::setfill ('+') << std::setw (COLS - oss.length () - strlen (image->getFileName ()) - 4) << "+ done " << std::endl << std::setfill (' ');
 		read100 = true;
 	}
+	currentExp++;
 	std::cout << image->getFileName () << std::endl;
 
 	return DevClientCameraExec::processImage (image);
