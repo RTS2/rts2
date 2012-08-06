@@ -93,8 +93,8 @@ class Acquire():
             self.base_cmd= ['{0}rts2af_feedback_acquire.py'.format(prefix)]
 
             for fn in self.testPaths[1:-1]:
-                if os.path.isfile( fn):
-                    r2c.log('E','rts2af_acquire: not all test images really present from list {0}'.format(self.testPaths))
+                if not os.path.isfile( fn):
+                    r2c.log('E','rts2af_acquire: not all test images really present from list {0}'.format(fn))
                     r2c.log('W','rts2af_acquire: using fake analysis command {0}'.format(self.base_cmd))
                     break
             else:
