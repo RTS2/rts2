@@ -76,8 +76,6 @@ class Configuration:
             sys.exit(1)
         
         self.readConfiguration()
-        #self.dumpConfiguration()
-        #self.dumpDefaultConfiguration()
 
     def dumpDefaultConfiguration(self):
         print ('# 2012-07-27, Markus Wildi')
@@ -116,17 +114,17 @@ class Configuration:
                 continue
 
             # first bool, then int !
-            if(isinstance(self.cf[identifier], bool)):
-                if( value == 'True'):
+            if isinstance(self.cf[identifier], bool):
+                if value == 'True':
                     self.cf[identifier]= True
                 else:
                     self.cf[identifier]= False
-            elif( isinstance(self.cf[identifier], int)):
+            elif isinstance(self.cf[identifier], int):
                 try:
                     self.cf[identifier]= int(value)
                 except:
                     logging.error('Configuration.readConfiguration: no int {0}  in section {1}, identifier {2} in file {3}'.format(value, section, identifier, self.cfn))
-            elif(isinstance(self.cf[identifier], float)):
+            elif isinstance(self.cf[identifier], float):
                 try:
                     self.cf[identifier]= float(value)
                 except:
@@ -159,7 +157,7 @@ class Environment():
         return 'rts2pa-' +fileName
 
     def expandToTmp( self, fileName=None):
-        if( os.path.isabs(fileName)):
+        if os.path.isabs(fileName):
             return fileName
 
         fileName= self.runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
@@ -180,7 +178,7 @@ class PAScript:
     """Class for any PA script"""
     def __init__(self, scriptName=None, parser=None):
         self.scriptName= scriptName
-        if(parser):
+        if parser:
             self.parser=parser
         else:
             self.parser= OptionParser()
