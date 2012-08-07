@@ -167,7 +167,7 @@ class Configuration:
         self.dcf[('analysis', 'MINIMUM_OBJECTS')]= 20
         self.dcf[('analysis', 'MINIMUM_FOCUSER_POSITIONS')]= 5
         self.dcf[('analysis', 'FIT_RESULT_FILE')]= 'rts2af-fit.dat'
-        self.dcf[('analysis', 'MATCHED_RATIO')]= 0.1
+        self.dcf[('analysis', 'MATCHED_RATIO')]= 0.5
         self.dcf[('analysis', 'SET_FOC_DEF_FWHM_UPPER_THRESHOLD')]= 5.
         
         self.dcf[('fitting', 'FITPRG')]= 'rts2af-fit-focus'
@@ -742,7 +742,6 @@ class Catalogue():
         itemNrFLUX_APER    = self.SExtractorParams.assoc.index('FLUX_APER') 
         itemNrFLUXERR_APER= self.SExtractorParams.assoc.index('FLUXERR_APER') 
         itemNrASSOC_NUMBER= self.SExtractorParams.assoc.index('ASSOC_NUMBER')
-
         for (lineNumber, line) in enumerate(self.lines):
             element = pElement.match(line)
             data    = pData.match(line)
@@ -783,7 +782,7 @@ class Catalogue():
                 break
 
         else: # exhausted 
-            logging.info( 'Catalogue.createCatalogue: catalogue created ' + self.fitsHDU.fitsFileName)
+            logging.info( 'Catalogue.createCatalogue: catalogue created for {0} with {1} raw objects'.format(self.fitsHDU.fitsFileName, len(self.sxObjects)))
             self.isValid= True
 
         return self.isValid
@@ -943,7 +942,9 @@ class Catalogue():
             if (float(matched)/float(self.referenceCatalogue.numberReferenceObjects())) > self.env.rtc.value('MATCHED_RATIO'):
                 return True
             else:
-                logging.error("matching: too few sxObjects matched %d" % matched + " of %d" % len(self.referenceCatalogue.sxObjects) + " required ratio is %f" % ( self.env.rtc.value('MATCHED_RATIO') * len(self.referenceCatalogue.sxObjects)) + " sxobjects at FOC_POS %d= " % self.fitsHDU.variableHeaderElements['FOC_POS'] + "file "+ self.fitsHDU.fitsFileName)
+                logging.error('matching: too few sxObjects matched {0} of {1} required are {2} sxobjects at FOC_POS {3} file {4}'.format( matched, len(self.referenceCatalogue.sxObjects), self.env.rtc.value('MATCHED_RATIO') *  len(self.referenceCatalogue.sxObjects), self.fitsHDU.variableHeaderElements['FOC_POS'], self.fitsHDU.fitsFileName))
+
+
                 return False
         else:
             logging.error('matching: should not happen here, number reference objects is {0} should be greater than 0'.format( self.referenceCatalogue.numberReferenceObjects()))
@@ -1319,7 +1320,7 @@ class Catalogues():
             # default is False
             for cat in self.CataloguesList:
                 if cat.isValid== True:
-                    logging.debug('Catalogues.validate: valid cat for: ' + cat.fitsHDU.fitsFileName)
+                    logging.debug('Catalogues.validate: valid cat for: {0}, {1}'.format(cat.fitsHDU.variableHeaderElements['FOC_POS'] , cat.fitsHDU.fitsFileName))
                     continue
                 else:
                     logging.debug('Catalogues.validate: removed cat for: ' + cat.fitsHDU.fitsFileName)
@@ -1352,51 +1353,59 @@ class Catalogues():
         else:
             return True
 
-    def writeFitInputValues(self):
+# self.averageFwhm, self.stdFwhm, self.averageFlux,  self.stdFlux
+    def writeFitInputValues(self, averageFwhm=None, stdFwhm=None, averageFlux=None, stdFlux=None, maxFwhm=None, maxFlux=None ):
         discardedPositions= 0
         fitInput= open( self.dataFileNameFwhm, 'w')
-        for focPos in sorted(self.averageFwhm):
-            if self.stdFwhm[focPos]> 0:
-                line= "%06d %f %f %f\n" % ( focPos, self.averageFwhm[focPos] * self.binning, self.env.rtc.value('FOCUSER_RESOLUTION'), self.stdFwhm[focPos] * self.binning )
+
+        for focPos in sorted( averageFwhm):
+            if stdFwhm[focPos]> 0:
+                line= "%06d %f %f %f\n" % ( focPos, averageFwhm[focPos] * self.binning, self.env.rtc.value('FOCUSER_RESOLUTION'), stdFwhm[focPos] * self.binning )
                 fitInput.write(line)
             else:
                 logging.error('writeFitInputValues: dropped focPos: {0}, due to standard deviation equals zero'.format(focPos))
-
+                discardedPositions += 1
 
         fitInput.close()
         fitInput= open( self.dataFileNameFlux, 'w')
-        for focPos in sorted(self.averageFlux):
-            line= "%06d %f %f %f\n" % ( focPos, self.averageFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning, self.env.rtc.value('FOCUSER_RESOLUTION'), self.stdFlux[focPos]/self.maxFlux * self.maxFwhm * self.binning)
+        for focPos in sorted(averageFlux):
+            line= "%06d %f %f %f\n" % ( focPos, averageFlux[focPos]/maxFlux * maxFwhm * self.binning, self.env.rtc.value('FOCUSER_RESOLUTION'), stdFlux[focPos]/maxFlux * maxFwhm * self.binning)
             fitInput.write(line)
 
         fitInput.close()
         return discardedPositions
 
-    def findExtrema(self):
-         (focposFwhm, fwhm)=self.findExtremaFwhm()
-         (focposFlux, flux)=self.findExtremaFlux()
-
-         if not focposFwhm or not focposFlux:
-             logging.error('findExtrema either focposFwhm or focposFlux is None, fit and weighted mean failed')
-             return (None,None)
-
-         if (focposFwhm-focposFlux) < 2. * self.env.rtc.value('FOCUSER_RESOLUTION'): # ToDo adhoc
-             return ((focposFwhm+focposFlux)/2., fwhm)
-         else:
-             logging.waring('findExtrema (focposFwhm-focposFlux)={0} > {2} '.format((focposFwhm-focposFlux), self.env.rtc.value('FOCUSER_RESOLUTION')))
-             return (None,None)
-
-    def findExtremaFwhm(self):
-
+    def findExtreme(self):
+        if not self.__averageAll__():
+            logging.error('findExtreme: no average values')
+            return None
+        # it enoght for fwhm
         if len(self.averageFwhmAllFocPos) < self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS'):
-            logging.warning('Catalogues.findExtremaFwhm: too few focus positions {0}<{1}'.format(len(self.averageFwhmAllFocPos), self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS')))
+            logging.warning('Catalogues.findExtreme: too few focus positions {0}<{1}'.format(len(self.averageFwhmAllFocPos), self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS')))
             return (None,None)
 
-        b = dict(map(lambda item: (item[1],item[0]),self.averageFwhm.items()))
+        (focposFwhm, fwhm)=self.findExtremeFwhm()
+        (focposFlux, flux)=self.findExtremeFlux()
+
+        if not focposFwhm or not focposFlux:
+            logging.error('findExtreme either focposFwhm or focposFlux is None, fit and weighted mean failed')
+            return (None,None)
+        #
+        # ToDo write values to file 
+        #
+        if (focposFwhm-focposFlux) < 2. * self.env.rtc.value('FOCUSER_RESOLUTION'): # ToDo adhoc
+            return ((focposFwhm+focposFlux)/2., fwhm)
+        else:
+            logging.warning('findExtreme (focposFwhm-focposFlux)={0} > {1} '.format((focposFwhm-focposFlux), self.env.rtc.value('FOCUSER_RESOLUTION')))
+            return (None,None)
+
+    def findExtremeFwhm(self):
+
+        b = dict(map(lambda item: (item[1],item[0]),self.averageFwhmAllFocPos.items()))
         try:
             minFocPos = b[min(b.keys())]
         except:
-            logging.error('Catalogues.findExtrema: something wrong with self.averageFwhm, length: {0}, returning None'.format(len(self.averageFwhm)))
+            logging.error('Catalogues.findExtremeFwhm: something wrong with self.averageFwhmAllFocPos, length: {0}, returning None'.format(len(self.averageFwhmAllFocPos)))
             return (None,None)
 
         # (inverse) weighted mean
@@ -1410,26 +1419,21 @@ class Catalogues():
                 break
         else:
             weightedMean= numpy.average(a=focPosS, axis=0, weights=weightS) 
-            logging.info('Catalogues.findExtrema: minimum position: {0}, FWHM: {1}, weighted mean: {2}, number of foc pos {3}'.format(minFocPos, self.averageFwhmAllFocPos[minFocPos]* self.binning, weightedMean, len(self.averageFwhmAllFocPos)))
+            logging.info('Catalogues.findExtremeFwhm: minimum position: {0}, FWHM: {1}, weighted mean: {2}, number of foc pos {3}'.format(minFocPos, self.averageFwhmAllFocPos[minFocPos]* self.binning, weightedMean, len(self.averageFwhmAllFocPos)))
 
             return (weightedMean, self.averageFwhmAllFocPos[minFocPos]* self.binning)
 
-        logging.warning('Catalogues.findExtrema: weighted mean failed, using minimum position: {0}, FWHM: {1}'.format(minFocPos, self.averageFwhmAllFocPos[minFocPos]* self.binning))
+        logging.warning('Catalogues.findExtremeFwhm: weighted mean failed, using minimum position: {0}, FWHM: {1}'.format(minFocPos, self.averageFwhmAllFocPos[minFocPos]* self.binning))
 
         return (minFocPos,self.averageFwhmAllFocPos[maxFocPos]* self.binning)
 
-    def findExtremaFlux(self):
+    def findExtremeFlux(self):
 
-        if len(self.averageFluxAllFocPos) < self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS'):
-            logging.warning('Catalogues.findExtremaFlux: too few focus positions {0}<{1}'.format(len(self.averageFluxAllFocPos), self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS')))
-            return (None,None)
-
-
-        b = dict(map(lambda item: (item[1],item[0]),self.averageFlux.items()))
+        b = dict(map(lambda item: (item[1],item[0]),self.averageFluxAllFocPos.items()))
         try:
             maxFocPos = b[max(b.keys())]
         except:
-            logging.error('Catalogues.findExtrema: something wrong with self.averageFwhm, length: {0}, returning None'.format(len(self.averageFwhm)))
+            logging.error('Catalogues.findExtremeFlux: something wrong with self.averageFwhmAllFocPos, length: {0}, returning None'.format(len(self.averageFwhmAllFocPos)))
             return (None,None)
 
         # weighted mean
@@ -1443,28 +1447,38 @@ class Catalogues():
                 break
         else:
             weightedMean= numpy.average(a=focPosS, axis=0, weights=weightS) 
-            logging.info('Catalogues.findExtremaFlux: maximum position: {0}, FLux: {1}, weighted mean: {2}, number of foc pos {3}'.format(maxFocPos, self.averageFluxAllFocPos[maxFocPos]* self.binning, weightedMean, len(self.averageFluxAllFocPos)))
+            logging.info('Catalogues.findExtremeFlux: maximum position: {0}, FLux: {1}, weighted mean: {2}, number of foc pos {3}'.format(maxFocPos, self.averageFluxAllFocPos[maxFocPos]* self.binning, weightedMean, len(self.averageFluxAllFocPos)))
 
             return (weightedMean, self.averageFluxAllFocPos[maxFocPos]* self.binning)
 
-        logging.warning('Catalogues.findExtremaFlux: weighted mean failed, using maximum position: {0}, FLux: {1}'.format(maxFocPos, self.averageFluxAllFocPos[maxFocPos]* self.binning))
+        logging.warning('Catalogues.findExtremeFlux: weighted mean failed, using maximum position: {0}, FLux: {1}'.format(maxFocPos, self.averageFluxAllFocPos[maxFocPos]* self.binning))
 
         return (maxFocPos, self.averageFluxAllFocPos[maxFocPos]* self.binning)
 
+    def fitAllValues(self):
 
-    def fitTheValues(self):
+        if not self.__averageAll__():
+            logging.error('fitAllValues: no average values')
+            return None
+
+        return self.__fit__(averageFwhm=self.averageFwhmAllFocPos, stdFwhm=self.stdFwhmAllFocPos, averageFlux=self.averageFluxAllFocPos, stdFlux=self.stdFluxAllFocPos, maxFwhm=self.maxFwhmAllFocPos, maxFlux=self.maxFluxAllFocPos)
+
+    def fitValues(self):
         if not self.countObjectsFoundInAllFiles():
-            logging.error('Catalogues.fitTheValues: too few objects, do not fit')
+            logging.error('Catalogues.fitValues: too few objects, do not fit')
             return None
-
         if not self.__average__():
-            logging.error('fitTheValues: no average values')
+            logging.error('fitValues: no average values')
             return None
 
-        discardedPositions= self.writeFitInputValues()
-            
-        if (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions)< 2 * self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS'):
-            logging.error('fitTheValues: too few (combined) focuser positions: {0} < {1}, continuing (see MINIMUM_FOCUSER_POSITIONS)'.format( (len(self.averageFwhm) + len(self.averageFlux)- discardedPositions), 2 * self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS')))
+        return self.__fit__(averageFwhm=self.averageFwhm, stdFwhm=self.stdFwhm, averageFlux=self.averageFlux, stdFlux=self.stdFlux, maxFwhm=self.maxFwhm, maxFlux=self.maxFlux)
+
+    def __fit__(self, averageFwhm=None, stdFwhm=None, averageFlux=None, stdFlux=None, maxFwhm=None, maxFlux=None):
+
+        discardedPositions= self.writeFitInputValues( averageFwhm, stdFwhm, averageFlux, stdFlux, maxFwhm, maxFlux)
+        
+        if (len(averageFwhm) + len(averageFlux)- discardedPositions)< 2 * self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS'):
+            logging.error('fitValues: too few (combined) focuser positions: {0} < {1}, continuing (see MINIMUM_FOCUSER_POSITIONS)'.format( (len(averageFwhm) + len(averageFlux)- discardedPositions), 2 * self.env.rtc.value('MINIMUM_FOCUSER_POSITIONS')))
             return None
 
         if self.env.rtc.value('DISPLAYFIT'):
@@ -1477,7 +1491,7 @@ class Catalogues():
                    display,
                    self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
                    '{0:.2f}C'.format(self.referenceCatalogue.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE']),
-                   self.env.runDateTime,
+                   self.env.runDateTime.split('.')[0],
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
@@ -1487,7 +1501,7 @@ class Catalogues():
                    display,
                    self.referenceCatalogue.fitsHDU.staticHeaderElements['FILTER'],
                    'NoTemp',
-                   self.env.runDateTime,
+                   self.env.runDateTime.split('.')[0],
                    str(self.numberOfObjectsFoundInAllFiles),
                    self.dataFileNameFwhm,
                    self.dataFileNameFlux,
@@ -1508,7 +1522,7 @@ class Catalogues():
         # ToDo: today only fwhm is used, combine it with flux in case they are closer than focuser resolution
         if not fitResults.error:
             fitResults.referenceFileName=self.referenceCatalogue.fitsHDU.fitsFileName
-            logging.info('Catalogues.fitTheValues: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(fitResults.date, fitResults.fwhmMinimumFocPos, fitResults.fwhmMinimum, fitResults.fwhmWithinBounds, fitResults.fluxMaximumFocPos, fitResults.fluxMaximum, fitResults.fluxWithinBounds, fitResults.temperature, fitResults.referenceFileName, fitResults.constants))
+            logging.info('Catalogues.fitValues: {0} {1} {2} {3} {4} {5} {6} {7} {8} {9}'.format(fitResults.date, fitResults.fwhmMinimumFocPos, fitResults.fwhmMinimum, fitResults.fwhmWithinBounds, fitResults.fluxMaximumFocPos, fitResults.fluxMaximum, fitResults.fluxWithinBounds, fitResults.temperature, fitResults.referenceFileName, fitResults.constants))
 
             return fitResults
         else:
@@ -1524,8 +1538,6 @@ class Catalogues():
             
         fwhm= defaultdict(list)
         flux= defaultdict(list)
-        fwhmAllFocPos= defaultdict(list)
-        fluxAllFocPos= defaultdict(list)
         fluxError= defaultdict(list)
         for sxReferenceObjectNumber, sxReferenceObject in self.referenceCatalogue.sxObjects.items():
             if sxReferenceObject.numberOfMatches== len(self.CataloguesList):
@@ -1551,22 +1563,8 @@ class Catalogues():
         for focPos in flux:
             self.averageFlux[focPos] = numpy.mean(flux[focPos], axis=0)
             self.stdFlux[focPos] = numpy.std(fluxError[focPos], axis=0)
-#
 # ToDo: FLUX_MAX, FLUX_APER
 # The standard deviation as above is meaningless
-# Try to find a better error estimator
-#            sumFlux= 0
-#            for val in flux[focPos]:
-#                sumFlux += val
-#
-#            self.averageFlux[focPos]=sumFlux
-#
-#            sumFluxError= 0
-#            for val in fluxError[focPos]:
-#                sumFluxError += math.pow(val, 2)
-#
-#            self.stdFlux[focPos] = math.sqrt(sumFluxError)
-# 
             fluxList.append(self.averageFlux[focPos])
 
 
@@ -1592,25 +1590,55 @@ class Catalogues():
             return False
 
         logging.debug("numberOfObjects %d " % (numberOfObjects))
-# in case the fit fails
-        fwhmAllFocPosList=[]
-        fluxAllFocPosList=[]
+        return True
 
+
+# in case the fit fails
+    def __averageAll__(self):
+        numberOfObjects = 0
+        fwhmAllFocPos= defaultdict(list)
+        fluxAllFocPos= defaultdict(list)
         for cat in self.CataloguesAllFocPosList:
             for (nr, obj) in cat.sxObjects.items():
                 fwhmAllFocPos[obj.focusPosition].append(obj.fwhm)
                 fluxAllFocPos[obj.focusPosition].append(obj.flux)
+                numberOfObjects += 1
 
+        fwhmAllFocPosList=[]
+        fluxAllFocPosList=[]
         for focPos in sorted(fwhmAllFocPos):
+            
             self.averageFwhmAllFocPos[focPos] = numpy.mean(fwhmAllFocPos[focPos], axis=0)
             self.stdFwhmAllFocPos[focPos] = numpy.std(fwhmAllFocPos[focPos], axis=0)
-            fwhmAllFocPosList.append(self.averageFwhm[focPos])
+            fwhmAllFocPosList.append(self.averageFwhmAllFocPos[focPos])
 
         for focPos in sorted(fluxAllFocPos):
             self.averageFluxAllFocPos[focPos] = numpy.mean(fluxAllFocPos[focPos], axis=0)
-            self.stdFluxAllFocPos[focPos] = numpy.std(fluxAllFocPos[focPos], axis=0)
-            fluxAllFocPosList.append(self.averageFlux[focPos])
+            self.stdFluxAllFocPos[focPos] = .1 * numpy.std(fluxAllFocPos[focPos], axis=0) # ToDo ad hoc
+            fluxAllFocPosList.append(self.averageFluxAllFocPos[focPos])
 
+        try:
+            self.maxFwhmAllFocPos= numpy.amax(fwhmAllFocPosList)
+        except:
+            logging.error('__averageAll__: something wrong with fwhmList maximum')
+            return False
+        try:
+            self.minFwhmAllFocPos= numpy.amax(fwhmAllFocPosList)
+        except:
+            logging.error('__averageAll__: something wrong with fwhmList minimum')
+            return False
+        try:
+            self.maxFluxAllFocPos= numpy.amax(fluxAllFocPosList)
+        except:
+            logging.error('__averageAll__: something wrong with fluxList maximum')
+            return False
+        try:
+            self.minFluxAllFocPos= numpy.amax(fluxAllFocPosList)
+        except:
+            logging.error('__averageAll__: something wrong with fluxList minimum')
+            return False
+
+        logging.debug("numberOfObjects %d " % (numberOfObjects))
         return True
 
     def ds9DisplayCatalogues(self):

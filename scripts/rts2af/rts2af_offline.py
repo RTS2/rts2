@@ -114,27 +114,26 @@ class Offline(rts2af.AFScript):
             self.logger.error("rts2af_offline.py: catalogues are invalid, exiting")
             sys.exit(1)
 
-        extreme=False
-        fitResult= cats.fitTheValues()
-        if fitResult:
-            if not fitResult.error:
-                # rts2af_offline is often called as a subprocess
-                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
-                self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
-            else:
-                self.logger.error('rts2af_offline.py: fit result is erroneous')
-                extreme=True
-        else:
-            extreme=True
+        fitResult= cats.fitValues()
+        if not fitResult:
+            self.logger.error("rts2af_offline.py: fit matching result failed, trying fit all objects")
+            fitResult= cats.fitAllValues()
 
-        if extreme:
+# fall back first matched objects, then all objects then weighted mean or extreme max/min
+        if fitResult and not fitResult.error:
+            # rts2af_offline is often called as a subprocess
+            print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName)
+            self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(fitResult.fwhmMinimumFocPos, fitResult.fwhmMinimum, fitResult.temperature, fitResult.objects, fitResult.nrDatapoints, fitResult.referenceFileName))
+        else:
+            self.logger.error('rts2af_offline.py: fit result is erroneous')
             self.logger.warning("rts2af_offline.py: no fit result, using either weighted mean or minFocPos or maxFocPos")
-            (focpos, extreme)=cats.findExtrema()
+            (focpos, extreme)=cats.findExtreme()
+            
             if focpos:
-                 print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, fitResult.temperature, -1., -1., fitResult.referenceFileName)
-                 self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, fitResult.temperature, -1., -1., fitResult.referenceFileName))
+                print 'FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, -271.15, -1., -1., self.referenceFitsName)
+                self.logger.info('FOCUS: {0}, FWHM: {1}, TEMPERATURE: {2}, OBJECTS: {3} DATAPOINTS: {4} {5}'.format(focpos, extreme, -271.15, -1., -1., self.referenceFitsName))
             else:
-                 print 'FOCUS: {0}'.format(-1)
+                print 'FOCUS: {0}'.format(-1)
 
         # executed the latest /tmp/*.sh file ro see the results with DS9 
         #cats.ds9WriteRegionFiles()

@@ -169,7 +169,13 @@ Filter focus offsets, that is the difference between focus position of a given
 filter minnus FOC_DEF, can be used as  parameters for any rts2-camd-* driver
 in file /etc/rts2/devices.
 </para>
-</refsect1>
+<para>In case the fit does not converge with the matching SExtractor objects,
+then a second fit is performed with any object which have a flag 0.
+If this fails too the weighted mean ins calculated for FWHM and flux. If they
+agree  within FOCUSER_RESOLUTION the average of both is used to set FOC_DEF.
+In the rare case an error occurs during weighted mean calculation the extrme
+of FWHM and flux are used (experimental feature).
+</para></refsect1>
 <refsect1>
 <title>Background</title>
 <para>During autonomous operation the first image taken is considered as
@@ -186,6 +192,7 @@ images are analyzed the resulting values for FWHM and flux are written to
 files and the fit program is started. The extreme, the minimum of FWHM and the
 maximum of flux, are independently fitted and  define the focus.  
 </para>
+
 <para>
 The reference catalog can be cleaned up meaning that objects which carry
 a SExtractor flag other than 0 as well as close groups of objects are removed.
@@ -605,7 +612,10 @@ NUMBER_ASSOC.
     <para> If True <command>rts2af_acquire.py</command> uses
 <command>rts2af_feedback_acquire.py</command> instead of
 <command>rts2af_analysis.py</command>. <command>rts2af_feedback_acquire.py</command>
-is used for daytime testing with no real images (see rts2/scritps/rts2af/README).
+is used for daytime testing with no real images (see
+rts2/scritps/rts2af/README). In case the images described in README are
+present, then these are fed to <command>rts2af_analysis.py</command> and the
+whole chain is tested.
     </para>
     </listitem>
     </varlistentry>
