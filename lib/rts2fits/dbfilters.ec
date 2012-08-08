@@ -40,13 +40,13 @@ void DBFilters::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_filter_id;
-	VARCHAR db_standard_name[50];
+	VARCHAR db_standart_name[50];
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL DECLARE all_filters CURSOR FOR
 	SELECT
 		filter_id,
-		standard_name
+		standart_name
 	FROM
 		filters;
 	
@@ -56,10 +56,10 @@ void DBFilters::load ()
 	{
 		EXEC SQL FETCH next FROM all_filters INTO
 			:db_filter_id,
-			:db_standard_name;
+			:db_standart_name;
 		if (sqlca.sqlcode)
 		  	break;
-		(*this)[db_filter_id] = std::string (db_standard_name.arr);
+		(*this)[db_filter_id] = std::string (db_standart_name.arr);
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -72,7 +72,7 @@ int DBFilters::getIndex (const char *filter)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_filter_id;
-	VARCHAR db_standard_name[50];
+	VARCHAR db_standart_name[50];
 	EXEC SQL END DECLARE SECTION;
 
 	DBFilters::iterator iter;
@@ -94,13 +94,13 @@ int DBFilters::getIndex (const char *filter)
 		return -1;
 	}
 
-	db_standard_name.len = strlen (filter) > 50 ? 50 : strlen (filter);
-	memcpy (db_standard_name.arr, filter, db_standard_name.len);
+	db_standart_name.len = strlen (filter) > 50 ? 50 : strlen (filter);
+	memcpy (db_standart_name.arr, filter, db_standart_name.len);
 	
 	EXEC SQL INSERT INTO
-		filters (filter_id, standard_name)
+		filters (filter_id, standart_name)
 	VALUES
-		(:db_filter_id, :db_standard_name) ;
+		(:db_filter_id, :db_standart_name) ;
 	if (sqlca.sqlcode)
 	{
 		// try to re-load filter table..
