@@ -53,6 +53,9 @@ DEVICE_TYPE_INDI      = 24
 DEVICE_TYPE_LOGD      = 25
 DEVICE_TYPE_SCRIPTOR  = 26
 
+# value types
+RTS2_VALUE_STAT       = 0x10
+
 class ChunkResponse(httplib.HTTPResponse):
 
 	read_by_chunks = False
@@ -232,7 +235,21 @@ class JSONProxy(Rts2JSON):
 			return self.devices[device][value]
 
 	def getValue(self, device, value, refresh_not_found = False):
+		"""Return full (extended) format of the value. You probably better use getSingleValue."""
 		return self.getVariable(device, value, refresh_not_found)[1]
+
+	def getFlags(self, device, value, refresh_not_found = False):
+		"""Return value flags. Please see value.h for meaning of individual bits."""
+		return self.getVariable(device, value, refresh_not_found)[0]
+
+	def getSingleValue(self, device, value, refresh_not_found = False):
+		"""Return single value - e.g. for stat values, return only value, not statics array."""
+		var = self.getVariable(device, value, refresh_not_found)
+		f = var[0]
+		v = var[1]
+		if f & RTS2_VALUE_STAT:
+			return v[1]
+		return v
 
 	def getSelection(self, device, name, statusbar=None):
 		try:
