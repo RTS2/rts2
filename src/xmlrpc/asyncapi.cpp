@@ -88,7 +88,7 @@ void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
 {
 	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
-		if (*iter == _conn->getName ())
+		if (*iter == _conn->getName () || (_conn->getOtherType () == DEVICE_TYPE_SERVERD && *iter == "centrald"))
 		{
 			sendState (_conn);
 		}
@@ -113,10 +113,17 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 	rts2core::Connection *_conn;
 	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
-		_conn = device->getOpenConnection (iter->c_str ());
-		if (_conn == NULL)
-			throw XmlRpc::JSONException ("cannot find device " + *iter);
-		sendState (_conn);
+		if (*iter == "centrald")
+		{
+			sendState (device->getSingleCentralConn ());
+		}
+		else
+		{
+			_conn = device->getOpenConnection (iter->c_str ());
+			if (_conn == NULL)
+				throw XmlRpc::JSONException ("cannot find device " + *iter);
+			sendState (_conn);
+		}
 	}
 	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
@@ -140,7 +147,7 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 void AsyncValueAPI::sendState (rts2core::Connection *_conn)
 {
 	std::ostringstream os;
-	os << "{\"d\":\"" << _conn->getName () << "\",\"s\":" << _conn->getState () << "}";
+	os << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState () << "}";
 	source->sendChunked (os.str ());
 }
 
