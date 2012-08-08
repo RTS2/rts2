@@ -54,6 +54,24 @@ DEVICE_TYPE_LOGD      = 25
 DEVICE_TYPE_SCRIPTOR  = 26
 
 # value types
+RTS2_VALUE_WRITABLE   = 0x02000000
+
+RTS2_VALUE_BASETYPE   = 0x0000000f
+
+RTS2_VALUE_STRING     = 0x00000001
+RTS2_VALUE_INTEGER    = 0x00000002
+RTS2_VALUE_TIME       = 0x00000003
+RTS2_VALUE_DOUBLE     = 0x00000004
+RTS2_VALUE_FLOAT      = 0x00000005
+RTS2_VALUE_BOOL       = 0x00000006
+RTS2_VALUE_SELECTION  = 0x00000007
+RTS2_VALUE_LONGINT    = 0x00000008
+RTS2_VALUE_RADEC      = 0x00000009
+RTS2_VALUE_ALTAZ      = 0x0000000A
+
+RTS2_VALUE_STAT       = 0x00000010
+RTS2_VALUE_MMAX       = 0x00000020
+
 RTS2_VALUE_STAT       = 0x10
 
 class ChunkResponse(httplib.HTTPResponse):
@@ -237,6 +255,12 @@ class JSONProxy(Rts2JSON):
 	def getValue(self, device, value, refresh_not_found = False):
 		"""Return full (extended) format of the value. You probably better use getSingleValue."""
 		return self.getVariable(device, value, refresh_not_found)[1]
+
+	def getValueError(self, device, value, refresh_not_found = False):
+		return self.getFlags(device, value, refresh_not_found) & 0x20000000
+	
+	def getValueWarning(self, device, value, refresh_not_found = False):
+		return self.getFlags(device, value, refresh_not_found) & 0x10000000
 
 	def getFlags(self, device, value, refresh_not_found = False):
 		"""Return value flags. Please see value.h for meaning of individual bits."""
