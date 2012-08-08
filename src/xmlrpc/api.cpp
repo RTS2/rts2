@@ -1106,7 +1106,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "push")
 		{
 			AsyncValueAPI *aa = new AsyncValueAPI (this, connection, params);
-			aa->sendAllValues ((rts2core::Device *) getMasterApp ());
+			aa->sendAll ((rts2core::Device *) getMasterApp ());
 			((XmlRpcd *) getMasterApp ())->registerAPI (aa);
 
 			throw XmlRpc::XmlRpcAsynchronous ();

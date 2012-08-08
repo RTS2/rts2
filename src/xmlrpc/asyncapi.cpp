@@ -71,7 +71,28 @@ AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source
 	req->sendAsyncDataHeader (0, _source, "application/json");
 
 	for (XmlRpc::HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
-		values.push_back (std::pair <std::string, std::string> (iter->getName (), iter->getValue ()));
+	{
+	  	// handle special values - states,..
+		if (strcmp (iter->getValue (), "__S__") == 0)
+		{
+			states.push_back (iter->getName ());
+		}
+		else
+		{
+			values.push_back (std::pair <std::string, std::string> (iter->getName (), iter->getValue ()));
+		}
+	}
+}
+
+void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
+{
+	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
+	{
+		if (*iter == _conn->getName ())
+		{
+			sendState (_conn);
+		}
+	}
 }
 
 void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
@@ -86,9 +107,17 @@ void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *
 	}
 }
 
-void AsyncValueAPI::sendAllValues (rts2core::Device *device)
+void AsyncValueAPI::sendAll (rts2core::Device *device)
 {
 	rts2core::Value *val;
+	rts2core::Connection *_conn;
+	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
+	{
+		_conn = device->getOpenConnection (iter->c_str ());
+		if (_conn == NULL)
+			throw XmlRpc::JSONException ("cannot find device " + *iter);
+		sendState (_conn);
+	}
 	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		if (iter->first == device->getDeviceName ())
@@ -106,6 +135,13 @@ void AsyncValueAPI::sendAllValues (rts2core::Device *device)
 			throw XmlRpc::JSONException ("cannot find value " + iter->first + "." + iter->second);
 		sendValue (iter->first, val);
 	}
+}
+
+void AsyncValueAPI::sendState (rts2core::Connection *_conn)
+{
+	std::ostringstream os;
+	os << "{\"d\":\"" << _conn->getName () << "\",\"s\":" << _conn->getState () << "}";
+	source->sendChunked (os.str ());
 }
 
 void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_value)
@@ -210,7 +246,7 @@ void AsyncDataAPI::fullDataReceived (rts2core::Connection *_conn, rts2core::Data
 int AsyncDataAPI::idle ()
 {
 	// see new data on shared connection
-	if (data && (data->getDataTop () - data->getDataBuff ()) > bytesSoFar)
+	if (data && (size_t) (data->getDataTop () - data->getDataBuff ()) > bytesSoFar)
 	{
 		dataReceived (conn, data);
 	}

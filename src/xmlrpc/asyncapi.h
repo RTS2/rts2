@@ -49,6 +49,7 @@ class AsyncAPI:public rts2core::Object
 		virtual void exposureFailed (rts2core::Connection *_conn, int status) {}
 		virtual void exposureEnd (rts2core::Connection *_conn) {}
 
+		virtual void stateChanged (rts2core::Connection *_conn) {};
 		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value) {};
 
 		/**
@@ -91,17 +92,21 @@ class AsyncValueAPI:public AsyncAPI
 	public:
 		AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source, XmlRpc::HttpParams *params);
 
+		virtual void stateChanged (rts2core::Connection *_conn);
+
 		virtual void valueChanged (rts2core::Connection *_conn, rts2core::Value *_value);
 		/**
-		 * Send all registered values on JSON connection. Throw an error if value/connection
+		 * Send all registered values and states on JSON connection. Throw an error if value/connection
 		 * cannot be found.
 		 */
-		void sendAllValues (rts2core::Device *device);
+		void sendAll (rts2core::Device *device);
 
 	private:
 		// values registered for ASYNC API
+		std::vector <std::string> states;
 		std::vector <std::pair <std::string, std::string> > values;
 
+		void sendState (rts2core::Connection *_conn);
 		void sendValue (const std::string &device, rts2core::Value *_value);
 };
 
