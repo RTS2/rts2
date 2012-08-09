@@ -216,6 +216,7 @@ class JSONProxy(Rts2JSON):
 	def __init__(self, url='http://localhost:8889', username = None, password = None, verbose = False, http_proxy = None):
 		Rts2JSON.__init__(self, url, username, password, verbose, http_proxy)
 		self.devices = {}
+		self.selection_cache = {}
 	
 	def refresh(self, device=None):
 		if device is None:
