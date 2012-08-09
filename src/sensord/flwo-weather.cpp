@@ -420,16 +420,17 @@ int FlwoWeather::info ()
 
 bool FlwoWeather::isGoodWeather ()
 {
+  	bool ret = true;
 	if (getLastInfoTime () > 60)
   	{
 	  	setWeatherTimeout (wait_nodata->getValueInteger (), "weather data not recived");
-		return false;
+		ret = false;
 	}
 	if (humidity->getValueFloat () > humidity_limit->getValueFloat ())
 	{
 	  	setWeatherTimeout (wait_humidity->getValueInteger (), "humidity is above limit");
 	  	valueError (humidity);
-		return false;
+		ret = false;
 	}
 	else
 	{
@@ -439,7 +440,7 @@ bool FlwoWeather::isGoodWeather ()
 	{
 		setWeatherTimeout (wait_wind->getValueInteger (), "windspeed is above limit");
 		valueError (windSpeed);
-		return false;
+		ret = false;
 	}
 	else
 	{
@@ -449,7 +450,7 @@ bool FlwoWeather::isGoodWeather ()
 	{
 		setWeatherTimeout (wait_wind->getValueInteger (), "wind gust speed is above limit");
 		valueError (windGustSpeed);
-		return false;
+		ret = false;
 	}
 	else
 	{
@@ -461,12 +462,14 @@ bool FlwoWeather::isGoodWeather ()
 		_os << "SKYTEMP " << me_sky_temp->getValueFloat () << "C, above limit of " << me_sky_limit->getValueFloat () << "C";
 		setWeatherTimeout (wait_skytemp->getValueInteger (), _os.str ().c_str ());
 		valueError (me_sky_temp);
-		return false;
+		ret = false;
 	}
 	else
 	{
 		valueGood (me_sky_temp);
 	}
+	if (ret == false)
+		return ret;  
 	return SensorWeather::isGoodWeather ();
 }
 
