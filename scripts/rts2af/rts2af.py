@@ -44,9 +44,9 @@ class AFScript:
         else:
             self.parser= OptionParser()
 
-        self.parser.add_option('--config',help='configuration file name',metavar='CONFIGFILE', nargs=1, type=str, dest='config', default='/etc/rts2/rts2pa/rts2pa.cfg')
+        self.parser.add_option('--config',help='configuration file name',metavar='CONFIGFILE', nargs=1, type=str, dest='config', default='/etc/rts2/rts2af/rts2af-acquire.cfg')
         self.parser.add_option('--reference',help='reference filename',metavar='REFERENCE', nargs=1, type=str, dest='referenceFitsName', default=None)
-        self.parser.add_option('--loglevel',help='log level: usual levels',metavar='LOG_LEVEL', nargs=1, type=str, dest='level', default='DEBUG')
+        self.parser.add_option('--loglevel',help='log level: usual levels',metavar='LOG_LEVEL', nargs=1, type=str, dest='level', default='INFO')
         self.parser.add_option('--logTo',help='log file: filename or - for stdout',metavar='DESTINATION', nargs=1, type=str, dest='logTo', default='/var/log/rts2-debug')
         self.parser.add_option('--verbose',help='verbose output',metavar='', action='store_true', dest='verbose', default=False)
         self.parser.add_option('--dump',help='dump default configuration to stdout',metavar='DEFAULTS', action='store_true', dest='dump', default=False)
@@ -1057,6 +1057,7 @@ class ReferenceCatalogue(Catalogue):
                 self.skyList,
                 '-PARAMETERS_NAME',
                 self.env.rtc.value('SEXREFERENCE_PARAM'),]
+
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
 

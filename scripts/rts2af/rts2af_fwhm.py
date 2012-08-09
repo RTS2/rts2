@@ -47,42 +47,19 @@ import rts2af
 r2c= rts2.scriptcomm.Rts2Comm()
 
 
-class main(rts2af.AFScript):
+class Fwhm(rts2af.AFScript):
     """extract the catalgue of an images"""
-    def __init__(self, scriptName='main'):
-        self.scriptName= scriptName
-
-    def main(self):
-        runTimeConfig= rts2af.runTimeConfig = rts2af.Configuration()
-        args      = self.arguments()
-        rts2af.serviceFileOp= rts2af.ServiceFileOperations()
-
-        configFileName='/etc/rts2/rts2af/rts2af-fwhm.cfg'
-        if( args.fileName):
-            configFileName= args.fileName[0]  
-        else:
-            configFileName= runTimeConfig.configurationFileName()
-            logging.debug('rts2af_fwhm.py: no config file specified, taking default: ' + configFileName)
-
-        runTimeConfig.readConfiguration(configFileName)
-
-        if( args.referenceFitsFileName):
-
-            referenceFitsFileName = args.referenceFitsFileName[0]
-            if( not rts2af.serviceFileOp.defineRunTimePath(referenceFitsFileName)):
-                logging.error('rts2af_fwhm.py: reference file '+ referenceFitsFileName + ' not found in base directory ' + runTimeConfig.value('BASE_DIRECTORY'))
-                sys.exit(1)
+    def run(self):
 # read the SExtractor parameters
-        paramsSexctractor= rts2af.SExtractorParams()
+        paramsSexctractor= rts2af.SExtractorParams(paramsFileName=self.rtc.value('SEXREFERENCE_PARAM'))
         paramsSexctractor.readSExtractorParams()
-
 
         if( paramsSexctractor==None):
             logging.error('rts2af_fwhm.py: exiting, no paramsSexctractor file given')
             sys.exit(1)
 
         try:
-            hdu= rts2af.FitsHDU( referenceFitsFileName)
+            hdu= rts2af.FitsHDU( env=self.env, fitsFileName=self.referenceFitsName)
         except:
             logging.error('rts2af_fwhm.py: exiting, no reference file given')
             sys.exit(1)
@@ -93,7 +70,7 @@ class main(rts2af.AFScript):
             logging.error('rts2af_fwhm.py: exiting due to invalid header properties inf file:{0}'.format(hdu.fitsFileName))
             sys.exit(1)
 
-        cat= rts2af.ReferenceCatalogue(hdu,paramsSexctractor)
+        cat= rts2af.ReferenceCatalogue(env=self.env, fitsHDU=hdu,SExtractorParams=paramsSexctractor)
 
 
         cat.runSExtractor()
@@ -106,32 +83,32 @@ class main(rts2af.AFScript):
             return
                 
         fwhm= cat.average('FWHM_IMAGE')
-        logging.info('rts2af_fwhm.py: FWHM: {0}, {1}, {2}, {3}, {4}, {5}'.format(cat.fitsHDU.variableHeaderElements['FOC_POS'], fwhm, numberReferenceObjects, cat.fitsHDU.staticHeaderElements['FILTER'], cat.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE'], referenceFitsFileName))
+        logging.info('rts2af_fwhm.py: FWHM: {0}, {1}, {2}, {3}, {4}, {5}'.format(cat.fitsHDU.variableHeaderElements['FOC_POS'], fwhm, numberReferenceObjects, cat.fitsHDU.staticHeaderElements['FILTER'], cat.fitsHDU.variableHeaderElements['AMBIENTTEMPERATURE'], self.referenceFitsName))
 
         # While a focus run is in progress there might still images 
         # be analyzed.
         # No new focus run is then scheduled in rts2af-queue.
-        filter= runTimeConfig.filterByName( hdu.staticHeaderElements['FILTER'])
+        filter= self.env.rtc.filterByName( hdu.staticHeaderElements['FILTER'])
         
         if( filter and filter.OffsetToClearPath== 0): # do focus run only if there is no filter, see filters NOF or X
-            threshFwhm=runTimeConfig.value('THRESHOLD')
+            threshFwhm=self.env.rtc.value('THRESHOLD')
             if( fwhm > threshFwhm):
                 ##r2c.setValue('next', 5, 'EXEC')
                 ## plain wrong were are not talking to rts2, use rts2-scriptexec
 
                 cmd= [ 'rts2af-queue',
-                       '--user={0}'.format(runTimeConfig.value('USERNAME')),
-                       '--password={0}'.format(runTimeConfig.value('PASSWORD')),
+                       '--user={0}'.format(self.env.rtc.value('USERNAME')),
+                       '--password={0}'.format(self.env.rtc.value('PASSWORD')),
                        '--clear',
-                       '--queue={0}'.format(runTimeConfig.value('QUEUENAME')),
-                       '{0}'.format(runTimeConfig.value('TARGETID'))
+                       '--queue={0}'.format(self.env.rtc.value('QUEUENAME')),
+                       '{0}'.format(self.env.rtc.value('TARGETID'))
                        ]
                 fnull = open(os.devnull, 'w')
                 proc=subprocess.Popen(cmd, shell=False, stdout = fnull, stderr = fnull)
  
-                logging.info('rts2af_fwhm.py: try to queue a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(runTimeConfig.value('QUEUENAME'), fwhm, threshFwhm, cmd, referenceFitsFileName))
+                logging.info('rts2af_fwhm.py: try to queue a focus run at SEL queue: {0}, fwhm: {1}, threshold: {2}, command: {3}, based on reference file {4}'.format(self.env.rtc.value('QUEUENAME'), fwhm, threshFwhm, cmd, self.referenceFitsName))
             else:
-                logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}, reference file: {2}'.format(fwhm, threshFwhm, referenceFitsFileName))
+                logging.info('rts2af_fwhm.py: no focus run necessary, fwhm: {0}, threshold: {1}, reference file: {2}'.format(fwhm, threshFwhm, self.referenceFitsName))
         else:
             # a focus run sets FOC_DEF and that is without filter
             if( filter):
@@ -141,4 +118,4 @@ class main(rts2af.AFScript):
 
 
 if __name__ == '__main__':
-    main(sys.argv[0]).main()
+    fwhm=Fwhm(sys.argv[0],parser=None,mode=None).run()

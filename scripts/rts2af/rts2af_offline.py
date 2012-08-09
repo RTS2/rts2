@@ -75,11 +75,11 @@ class Offline(rts2af.AFScript):
                 catr.writeCatalogue()
                 cats= rts2af.Catalogues(env=self.env, referenceCatalogue=catr)
             else:
-                print 'FOCUS: -1'
+                print 'FOCUS: -2'
                 sys.exit(1)
         else:
             sys.exit(1)
-            print 'FOCUS: -1'
+            print 'FOCUS: -3'
     
 # read the files 
         for fits in FitsList:
