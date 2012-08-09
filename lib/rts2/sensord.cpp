@@ -69,6 +69,7 @@ bool SensorWeather::isGoodWeather ()
 {
 	if (getNextGoodWeather () >= getNow ())
 		return false;
+	valueGood (nextGoodWeather);
 	return true;
 }
 
@@ -87,4 +88,5 @@ void SensorWeather::setWeatherTimeout (time_t wait_time, const char *msg)
 	next += wait_time;
 	if (next > nextGoodWeather->getValueInteger ())
 		nextGoodWeather->setValueInteger (next);
+	valueError (nextGoodWeather);
 }
