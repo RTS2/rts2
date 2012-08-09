@@ -303,9 +303,11 @@ class JSONProxy(Rts2JSON):
 			values['async'] = async
 		self.loadJson('/api/mset',values)
 
-	def executeCommand(self,device,command):
-		ret = self.loadJson('/api/cmd',{'d':device,'c':command,'e':1})
-		self.devices[device] = ret['d']
+	def executeCommand(self, device, command, async=False):
+		ret = self.loadJson('/api/cmd', {'d':device, 'c':command, 'e':1, 'async':1 if async else 0})
+		if async:
+			return 0
+	 	self.devices[device] = ret['d']
 		return ret['ret']
 	
 	def getDevicesByType(self,device_type):
