@@ -276,11 +276,11 @@ class JSONProxy(Rts2JSON):
 			return v[1]
 		return v
 
-	def getSelection(self, device, name, statusbar=None):
+	def getSelection(self, device, name):
 		try:
 			return self.selection_cache[device][name]
 		except KeyError,k:
-			rep = self.loadJson('/api/selval', {'d':device, 'n':name}, statusbar)
+			rep = self.loadJson('/api/selval', {'d':device, 'n':name})
 			try:
 				self.selection_cache[device][name] = rep
 			except KeyError,k2:
