@@ -283,7 +283,6 @@ Target::Target (int in_tar_id, struct ln_lnlat_posn *in_obs):Rts2Target ()
 	constraintsLoaded = CONSTRAINTS_NONE;
 	
 	constraintFile = NULL;
-	constraints = NULL;
 
 	groupConstraintFile = NULL;
 
@@ -320,7 +319,6 @@ Target::Target ()
 	constraintsLoaded = CONSTRAINTS_NONE;
 
 	constraintFile = NULL;
-	constraints = NULL;
 
 	groupConstraintFile = NULL;
 
@@ -345,7 +343,6 @@ Target::~Target (void)
 	delete[] target_name;
 	delete[] target_comment;
 	delete observation;
-	delete constraints;
 	delete[] constraintFile;
 }
 
@@ -2077,7 +2074,7 @@ void Target::sendInfo (Rts2InfoValStream & _os, double JD)
 void Target::sendConstraints (Rts2InfoValStream & _os, double JD)
 {
 	_os << "Constraints" << std::endl;
-	constraints->printXML (*(_os.getStream ()));
+	getConstraints ()->printXML (*(_os.getStream ()));
 	_os << std::endl;
 }
 
@@ -2217,9 +2214,10 @@ const char *Target::getGroupConstraintFile ()
 
 Constraints * Target::getConstraints ()
 {
-	// if constraints were modified, reload them..
-	if (constraints)
-		return constraints;
+	// find in cache..
+	Constraints *ret = MasterConstraints::getTargetConstraints (getTargetID ());
+	if (ret)
+		return ret;
 
 	constraintsLoaded = CONSTRAINTS_NONE;
 	watchIDs.clear ();
@@ -2228,14 +2226,14 @@ Constraints * Target::getConstraints ()
 	// check for system level constraints
 	try
 	{
-		constraints = new Constraints (MasterConstraints::getConstraint ());
+		ret = new Constraints (MasterConstraints::getConstraint ());
 		constraintsLoaded |= CONSTRAINTS_SYSTEM;
 		addWatch (rts2core::Configuration::instance ()->getMasterConstraintFile ());
 	}
 	catch (XmlError er)
 	{
 		logStream (MESSAGE_WARNING) << "cannot load master constraint file:" << er << sendLogNoEndl;
-		constraints = new Constraints ();
+		ret = new Constraints ();
 	}
 	if (stat (getGroupConstraintFile (), &fs))
 	{
@@ -2246,7 +2244,7 @@ Constraints * Target::getConstraints ()
 		// check for group constraint
 		try
 		{
-			constraints->load (getGroupConstraintFile ());
+			ret->load (getGroupConstraintFile ());
 			constraintsLoaded |= CONSTRAINTS_GROUP;
 			addWatch (getGroupConstraintFile ());
 		}
@@ -2258,7 +2256,7 @@ Constraints * Target::getConstraints ()
 	// load target constrainst
 	try
 	{
-		constraints->load (getConstraintFile ());
+		ret->load (getConstraintFile ());
 		constraintsLoaded |= CONSTRAINTS_TARGET;
 		addWatch (getConstraintFile ());
 	}
@@ -2266,7 +2264,9 @@ Constraints * Target::getConstraints ()
 	{
 		logStream (MESSAGE_WARNING) << "cannot load target constraint file " << getConstraintFile () << ":" << er << sendLogNoEndl;
 	}
-	return constraints;
+
+	MasterConstraints::setTargetConstraints (getTargetID (), ret);
+	return ret; 
 }
 
 bool Target::checkConstraints (double JD)
@@ -2280,8 +2280,7 @@ void Target::revalidateConstraints (int watchID)
 	{
 		if (*iter == watchID)
 		{
-			delete constraints;
-			constraints = NULL;
+			MasterConstraints::setTargetConstraints (getTargetID (), NULL);
 			satisfiedFrom = satisfiedTo = NAN;
 			return;
 		}

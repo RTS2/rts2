@@ -837,14 +837,8 @@ Constraint *Constraints::createConstraint (const char *name)
 
 static Constraints *masterCons = NULL;
 
-Constraints & MasterConstraints::getConstraint ()
-{
-	if (masterCons)
-		return *masterCons;
-	masterCons = new Constraints ();
-	masterCons->load (rts2core::Configuration::instance ()->getMasterConstraintFile ());
-	return *masterCons;
-}
+// target->constraint hash
+static std::map <int, Constraints *> constraintsCache;
 
 void ConstraintsList::printJSON (std::ostream &os)
 {
@@ -856,4 +850,38 @@ void ConstraintsList::printJSON (std::ostream &os)
 		os << '"' << (*iter)->getName() << '"';
 	}
 	os << "]";
+}
+
+MasterConstraints::~MasterConstraints ()
+{
+	for (std::map <int, Constraints *>::iterator ci = constraintsCache.begin (); ci != constraintsCache.end (); ci++)
+		delete ci->second;
+	constraintsCache.clear ();	
+}
+
+Constraints & MasterConstraints::getConstraint ()
+{
+	if (masterCons)
+		return *masterCons;
+	masterCons = new Constraints ();
+	masterCons->load (rts2core::Configuration::instance ()->getMasterConstraintFile ());
+	return *masterCons;
+}
+
+Constraints * MasterConstraints::getTargetConstraints (int tar_id)
+{
+	std::map <int, Constraints *>::iterator ci = constraintsCache.find (tar_id);
+	if (ci == constraintsCache.end ())
+	{
+		return NULL;
+	}
+	return ci->second;
+}
+
+void MasterConstraints::setTargetConstraints (int tar_id, Constraints * _constraints)
+{
+	Constraints *old = getTargetConstraints (tar_id);
+	if (old)
+		delete old;
+	constraintsCache[tar_id] = _constraints;
 }

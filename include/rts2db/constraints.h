@@ -440,7 +440,12 @@ class Constraints:public std::map <std::string, ConstraintPtr >
 class MasterConstraints
 {
   	public:
+		~MasterConstraints ();
+
 		static Constraints & getConstraint ();
+
+		static Constraints * getTargetConstraints (int tar_id);
+		static void setTargetConstraints (int tar_id, Constraints * _constraints);
 };
 
 }
