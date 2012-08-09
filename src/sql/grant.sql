@@ -35,6 +35,7 @@ GRANT SELECT,UPDATE ON prop_id TO GROUP observers;
 GRANT SELECT,UPDATE ON grb_tar_id TO GROUP observers;
 GRANT SELECT,UPDATE ON point_id TO GROUP observers;
 GRANT SELECT,UPDATE ON label_id TO GROUP observers;
+GRANT SELECT,UPDATE ON filter_id TO GROUP observers;
 GRANT SELECT ON images_nights TO GROUP observers;
 GRANT SELECT ON observations_nights TO GROUP observers;
 GRANT ALL ON images TO GROUP observers;
