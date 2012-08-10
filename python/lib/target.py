@@ -34,3 +34,10 @@ class Target:
 			self.name = data[1]
 		except Exception,ex:
 			self.name = None
+
+def get_target(name):
+	"""Return array with targets matching given name or target ID"""
+	try:
+		return json.getProxy().loadJson('/api/tbyid',{'id':int(name)})['d']
+	except ValueError:
+		return json.getProxy().loadJson('/api/tbyname',{'n':name})['d']

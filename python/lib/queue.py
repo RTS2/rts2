@@ -57,18 +57,18 @@ class QueueEntry:
 			self.end = iso8601.ctime(end)
 		self.qid = None
 
-	def getTarget(self):
+	def get_target(self):
 		"""Return target object associated with the queue."""
 		if self.target is None:
 			self.target = target.Target(self.id)
 			self.target.reload()
 		return self.target
 	
-	def getXmlNode(self,document):
+	def get_xmlnode(self,document):
 		en = document.createElement('queueEntry')
 		en.setAttribute('id',str(self.id))
 
-		en.setAttribute('name',self.getTarget().name)
+		en.setAttribute('name',self.get_target().name)
 		if self.start is not None:
 			en.setAttribute('start',iso8601str(self.start))
 		if self.end is not None:
@@ -89,8 +89,12 @@ class Queue:
 		if service is None:
 			self.service = json.getProxy().getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
 
+	def clear(self):
+		"""Clear the queue."""
+		json.getProxy().executeCommand(self.service,'clear {0}'.format(self.name))
+
 	def load(self):
-		"""Refresh queue from server"""
+		"""Refresh queue from server."""
 		json.getProxy().refresh(self.service)
 		self.queueing = json.getProxy().getValue(self.service,self.name + '_queing')
 		self.skip_below = json.getProxy().getValue(self.service,self.name + '_skip_below')
@@ -109,7 +113,7 @@ class Queue:
 
 	def save(self):
 		"""Save queue settings to the server."""
-		json.getProxy().executeCommand(self.service,'clear {0}'.format(self.name))
+		self.clear()
 		json.getProxy().setValues({
 			'{0}_queing'.format(self.name):self.queueing,
 			'{0}_skip_below'.format(self.name):self.skip_below,
@@ -122,25 +126,25 @@ class Queue:
 			queue_cmd += ' {0} {1} {2}'.format(x.id,_nanNone(x.start),_nanNone(x.end))
 		json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name,queue_cmd))
 	
-	def addTarget(self,id,start=None,end=None):
+	def add_target(self,id,start=None,end=None):
 		"""Add target to queue."""
 		json.getProxy().executeCommand(self.service,'queue_at {0} {1} {2} {3}'.format(self.name,id,_nanNone(start),_nanNone(end)))
 
-	def getXMLDoc(self):
+	def get_XMLdoc(self):
 		"""Serialize queue to XML document."""
 		document = xml.dom.minidom.getDOMImplementation().createDocument('http://rts2.org','queue',None)
-		self.toXml(document,document.documentElement)
+		self.to_xml(document,document.documentElement)
 		return document
 
-	def toXml(self,document,node):
+	def to_xml(self,document,node):
 		node.setAttribute('skip_below',_xmlQueueBoolAttribute(self.skip_below))
 		node.setAttribute('test_constr',_xmlQueueBoolAttribute(self.test_constr))
 		node.setAttribute('remove_executed',_xmlQueueBoolAttribute(self.remove_executed))
 		node.setAttribute('queueing',str(self.queueing))
 
-		map(lambda x:node.appendChild(x.getXmlNode(document)),self.entries)
+		map(lambda x:node.appendChild(x.get_xmlnode(document)),self.entries)
 
-	def fromXml(self,node):
+	def from_xml(self,node):
 		"""Construct queue from XML representation."""
 		self.skip_below = _getXmlBoolAttribute(node,'skip_below')
 		self.test_constr = _getXmlBoolAttribute(node,'test_constr')
@@ -152,6 +156,12 @@ class Queue:
 			q.from_xml(el)
 			self.entries.append(el)
 	
-	def loadXml(self,f):
+	def load_xml(self,f):
 		document = xml.dom.minidom.parse(f)
-		self.fromXml(document.documentElement)
+		self.from_xml(document.documentElement)
+
+	def __str__(self):
+		if len(self.entries):
+			ids = map(lambda q:str(q.id), self.entries)
+			return ' '.join(ids)
+		return 'empty'	

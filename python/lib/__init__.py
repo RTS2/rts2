@@ -20,4 +20,5 @@ from scriptcomm import Rts2Comm,Rts2Exception,Rts2NotActive
 from imgprocess import ImgProcess
 from centering import Centering
 from flats import Flat,FlatScript
-from json import Rts2JSON,JSONProxy
+from json import getProxy,createProxy
+from queue import Queue,QueueEntry
