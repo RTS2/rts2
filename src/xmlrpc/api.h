@@ -58,7 +58,7 @@ class API:public GetRequestAuthorized
 		void getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 #ifdef HAVE_PGSQL
-		void jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL);
+		void jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom = NULL, XmlRpc::XmlRpcServerConnection *chunked = NULL);
 		void jsonObservations (rts2db::ObservationSet *obss, std::ostream &os);
 		void jsonImages (rts2db::ImageSet *img_set, std::ostream &os, XmlRpc::HttpParams *params);
 		void jsonLabels (rts2db::Target *tar, std::ostream &os);

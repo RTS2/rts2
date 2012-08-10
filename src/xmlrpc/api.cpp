@@ -1252,10 +1252,22 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			const char *name = params->getString ("n", "");
 			bool ic = params->getInteger ("ic",1);
 			bool pm = params->getInteger ("pm",1);
+			bool chunked = params->getInteger ("ch", 0);
 			if (name[0] == '\0')
 				throw JSONException ("empty n parameter");
 			tar_set.loadByName (name, pm, ic);
-			jsonTargets (tar_set, os, params);
+			if (chunked)
+			{
+				sendAsyncDataHeader (0, connection, "application/json");
+				jsonTargets (tar_set, os, params, NULL, connection);
+				connection->asyncFinished ();
+				return;
+			}
+			else
+			{
+				jsonTargets (tar_set, os, params);
+			}
+
 		}
 		// returns target specified by target ID
 		else if (vals[0] == "tbyid")
@@ -1830,20 +1842,23 @@ void API::getWidgets (const std::vector <std::string> &vals, XmlRpc::HttpParams 
 }
 
 #ifdef HAVE_PGSQL
-void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom)
+void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRpc::HttpParams *params, struct ln_equ_posn *dfrom, XmlRpc::XmlRpcServerConnection * chunked)
 {
 	bool extended = params->getInteger ("e", false);
 	bool withpm = params->getInteger ("propm", false);
 	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
 	int c = 5;
+	if (chunked)
+		os << "\"rows\":" << tar_set.size () << ",";
+
 	os << "\"h\":["
 		"{\"n\":\"Target ID\",\"t\":\"n\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":0},"
 		"{\"n\":\"Target Name\",\"t\":\"a\",\"prefix\":\"" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/\",\"href\":0,\"c\":1},"
 		"{\"n\":\"RA\",\"t\":\"r\",\"c\":2},"
 		"{\"n\":\"DEC\",\"t\":\"d\",\"c\":3},"
 		"{\"n\":\"Description\",\"t\":\"s\",\"c\":4}";
-		
-	
+
+
 	struct ln_equ_posn oradec;
 
 	if (dfrom == NULL)
@@ -1874,12 +1889,23 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 		"{\"n\":\"Proper motion DEC\",\"t\":\"d\",\"c\":" << (c + 1) << "}";
 		c += 2;
 	}
-	os << "],\"d\":[" << std::fixed;
+
+	if (chunked)
+	{
+		os << "]}";
+		chunked->sendChunked (os.str ());
+		os.str ("");
+		os << std::fixed;
+	}
+	else
+	{
+		os << "],\"d\":[" << std::fixed;
+	}
 
 	double JD = ln_get_julian_from_timet (&from);
 	for (rts2db::TargetSet::iterator iter = tar_set.begin (); iter != tar_set.end (); iter++)
 	{
-		if (iter != tar_set.begin ())
+		if (iter != tar_set.begin () && chunked == NULL)
 			os << ",";
 		struct ln_equ_posn equ;
 		rts2db::Target *tar = iter->second;
@@ -1961,8 +1987,16 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostream &os, XmlRpc::Htt
 			os << "," << JsonDouble (pm.ra) << "," << JsonDouble (pm.dec);
 		}
 		os << "]";
+		if (chunked)
+		{
+			chunked->sendChunked (os.str ());
+			os.str ("");
+		}
 	}
-	os << "]";
+	if (chunked == NULL)
+	{
+		os << "]";
+	}	
 }
 
 void API::jsonObservations (rts2db::ObservationSet *obss, std::ostream &os)
