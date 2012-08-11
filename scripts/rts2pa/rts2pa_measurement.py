@@ -29,6 +29,7 @@ from datetime import datetime
 import threading
 import Queue
 import math
+import time
 import rts2.scriptcomm
 r2c= rts2.scriptcomm.Rts2Comm()
 import pyfits
@@ -80,7 +81,7 @@ class SolverResult():
 
 class SolveField():
     """Solve a field with astrometry.net """
-    def __init__(self, fn=None, runTimeConfig=None, logger=None):
+    def __init__(self, fn=None, rtc=None, logger=None):
         self.success= True
         self.blind= False
         self.ra= None
@@ -88,12 +89,12 @@ class SolveField():
         self.jd= None
         self.date_obs=None
         self.fn= fn
-        self.runTimeConfig= runTimeConfig
+        self.rtc= rtc
         self.logger = logger
-        self.scale  = self.runTimeConfig.cf['ARCSEC_PER_PIX'] 
-        self.radius = self.runTimeConfig.cf['RADIUS']
-        self.verbose= self.runTimeConfig.cf['VERBOSE']
-        self.replace= self.runTimeConfig.cf['REPLACE']
+        self.scale  = self.rtc.cp.getfloat('ccd', 'ARCSEC_PER_PIX') 
+        self.radius = self.rtc.cp.getfloat('astrometry', 'RADIUS')
+        self.replace= self.rtc.cp.getboolean('astrometry', 'REPLACE')
+        self.verbose= self.rtc.cp.getboolean('astrometry', 'VERBOSE')
         self.solver = rts2.astrometry.AstrometryScript(self.fn)
 
         try:
@@ -103,24 +104,24 @@ class SolveField():
             self.success= False            
 
         try:
-            self.ra=ff[0].header[self.runTimeConfig.cf['ORIRA']]
-            self.dec=ff[0].header[self.runTimeConfig.cf['ORIDEC']]
+            self.ra=ff[0].header[self.rtc.cp.get('fits-header','ORIRA')]
+            self.dec=ff[0].header[self.rtc.cp.get('fits-header','ORIDEC')]
         except KeyError:
             self.logger.error('SolveField: coordinates key error {0} or {1}, solving blindly'.format( 'ORIRA', 'ORIDEC')) 
             self.blind= True
 
         try:
-            self.jd=ff[0].header[self.runTimeConfig.cf['JD']]
-            self.date_obs=ff[0].header[self.runTimeConfig.cf['DATE-OBS']]
+            self.jd=ff[0].header[self.rtc.cp.get('fits-header','JD')]
+            self.date_obs=ff[0].header[self.rtc.cp.get('fits-header','DATE-OBS')]
         except KeyError:
-            self.logger.error('SolveField: date time key error {0} or {1}'.format(self.runTimeConfig.cf['JD'], self.runTimeConfig.cf['DATE-OBS'])) 
+            self.logger.error('SolveField: date time key error {0} or {1}'.format(self.rtc.cp.get('fits-header','JD'), self.rtc.cp.get('fits-header','DATE-OBS'))) 
             self.success=False
 
         try:
-            self.lon=ff[0].header[self.runTimeConfig.cf['SITE-LON']]
-            self.lat=ff[0].header[self.runTimeConfig.cf['SITE-LAT']]
+            self.lon=ff[0].header[self.rtc.cp.get('fits-header','SITE-LON')]
+            self.lat=ff[0].header[self.rtc.cp.get('fits-header','SITE-LAT')]
         except KeyError:
-            self.logger.error('SolveField: site coordinates key error {0} or {1}'.format(self.runTimeConfig.cf['SITE-LON'], self.runTimeConfig.cf['SITE-LAT'])) 
+            self.logger.error('SolveField: site coordinates key error {0} or {1}'.format(self.rtc.cp.get('fits-header','SITE-LON'), self.rtc.cp.get('fits-header','SITE-LAT'))) 
             self.success=False
 
         ff.close()
@@ -144,11 +145,11 @@ class SolveField():
 
 class MeasurementThread(threading.Thread):
     """Thread receives image path from rts2 and calculates the HA and polar distance of the HA axis intersection as soon as two images are present"""
-    def __init__(self, path_q=None, result_q=None, runTimeConfig=None, logger=None):
+    def __init__(self, path_q=None, result_q=None, rtc=None, logger=None):
         super(MeasurementThread, self).__init__()
         self.path_q = path_q
         self.result_q = result_q
-        self.runTimeConfig= runTimeConfig
+        self.rtc= rtc
         self.logger= logger
         self.stoprequest = threading.Event()
         self.logger.debug('MeasurementThread: init finished')
@@ -156,10 +157,11 @@ class MeasurementThread(threading.Thread):
 
     def run(self):
         self.logger.debug('MeasurementThread: running')
-        if self.runTimeConfig.cf['TEST']:
+        if self.rtc.cp.getboolean('basic','TEST'):
+            print 'run test'
             # expected are a list of comma separated fits pathes
             # ascending in time
-            testPaths= self.runTimeConfig.cf['TEST_FIELDS'].split(',')
+            testPaths= self.rtc.cp.get('basic','TEST_FIELDS').split(',')
             self.logger.debug('MeasurementThread: test replacements fits: {0}'.format(testPaths))
 
         while not self.stoprequest.isSet():
@@ -170,7 +172,7 @@ class MeasurementThread(threading.Thread):
             except Queue.Empty:
                 continue
 
-            if self.runTimeConfig.cf['TEST']:
+            if self.rtc.cp.getboolean('basic','TEST'):
                 try:
                     path= testPaths.pop(0)
                 except:
@@ -180,7 +182,7 @@ class MeasurementThread(threading.Thread):
             if path:
                 if os.path.isfile(  path):
 
-                    sf= SolveField(fn=path, runTimeConfig=self.runTimeConfig, logger=self.logger)
+                    sf= SolveField(fn=path, rtc=self.rtc, logger=self.logger)
                     if sf.success:
                         sr= sf.solveField()
                         if sr:
@@ -214,33 +216,33 @@ class AcquireData(rts2pa.PAScript):
 
     def takeImages(self, path_q=None, ul=None):
         """Take images and pass them to  MeasurementThread"""
-        r2c.setValue('exposure', self.runTimeConfig.cf['EXPOSURE_TIME'])
+        r2c.setValue('exposure', self.rtc.cp.getfloat('data_taking','EXPOSURE_TIME'))
         r2c.setValue('SHUTTER','LIGHT')
 
         for img in range(0, ul):
             path = r2c.exposure()
             
-            dst= self.environment.moveToRunTimePath(path)
+            dst= self.env.moveToRunTimePath(path)
             path_q.put(dst)
             self.logger.debug('takeImages: destination image path {0}'.format(dst))
-            if not self.runTimeConfig.cf['TEST']:
-                self.logger.debug('takeImages sleeping for {0} seconds'.format(self.runTimeConfig.cf['SLEEP']))
-                sleep(self.runTimeConfig.cf['SLEEP'])
+            if not self.rtc.cp.getboolean('basic','TEST'):
+                self.logger.debug('takeImages sleeping for {0} seconds'.format(self.rtc.cp.getfloat('data_taking', 'SLEEP')))
+                time.sleep(self.rtc.cp.getfloat('data_taking','SLEEP'))
 
     def setMount(self):
         """Set the mount to the configured location near the celestial pole"""
-        self.logger.debug( 'setMount: Starting {0}'.format(self.runTimeConfig.cf['CONFIGURATION_FILE']))
+        self.logger.debug( 'setMount: Starting {0}'.format(self.rtc.cp.get('basic', 'CONFIGURATION_FILE')))
         
         # fetch site latitude
         obs=ephem.Observer()
         obs.lon= str(r2c.getValueFloat('longitude', 'centrald'))
         obs.lat= str(r2c.getValueFloat('latitude', 'centrald'))
         # ha, pd to RA, DEC
-        dec= 90. - self.runTimeConfig.cf['PD'] 
+        dec= 90. - self.rtc.cp.getfloat('coordinates','PD') 
         siderealT= obs.sidereal_time() 
-        ra=  siderealT - math.radians(self.runTimeConfig.cf['HA'])
+        ra=  siderealT - math.radians(self.rtc.cp.getfloat('coordinates','HA'))
         # set mount
-        if not self.runTimeConfig.cf['TEST']:
+        if not self.rtc.cp.getboolean('basic', 'TEST'):
             r2c.radec( math.degrees(ra), dec)
             self.logger.debug('longitude: {0}, latitude {1}, sid time {2} ra {3} dec {4}'.format(obs.lon, obs.lat, siderealT, ra, dec))
 
@@ -249,16 +251,16 @@ class AcquireData(rts2pa.PAScript):
 
         path_q = Queue.Queue()
         result_q = Queue.Queue()
-        mt= MeasurementThread( path_q, result_q, self.runTimeConfig, self.logger) 
+        mt= MeasurementThread( path_q, result_q, self.rtc, self.logger) 
         mt.start()
         self.setMount()
 
         try:
-            ul= 1+ int(self.runTimeConfig.cf['DURATION']/self.runTimeConfig.cf['SLEEP'])
+            ul= 1+ int(self.rtc.cp.getfloat('data_taking','DURATION')/self.rtc.cp.getfloat('data_taking','SLEEP'))
             self.logger.debug('run: steps {0}'.format(ul))
-            self.logger.info('run: the measurement lasts for {0} seconds and {1} images will be taken'.format(self.runTimeConfig.cf['DURATION'],  ul))
+            self.logger.info('run: the measurement lasts for {0} seconds and {1} images will be taken'.format(self.rtc.cp.getfloat('data_taking', 'DURATION'),  ul))
         except:
-            self.logger.debug('run: sleep must not be zero: {0}'.format(self.runTimeConfig.cf['SLEEP']))
+            self.logger.debug('run: sleep must not be zero: {0}'.format(self.rtc.cp.getfloat('data_taking', 'SLEEP')))
 
         self.takeImages(path_q, ul)
 

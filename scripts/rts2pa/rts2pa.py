@@ -28,6 +28,7 @@ from optparse import OptionParser
 import ConfigParser
 import string
 import shutil
+import copy
 
 class Configuration:
     """Configuration for any PAScript"""    
@@ -35,108 +36,79 @@ class Configuration:
         self.cfn= cfn
         self.values={}
         self.cp = ConfigParser.RawConfigParser()
-        self.dcf={}
-        self.dcf[('basic', 'CONFIGURATION_FILE')]= '/etc/rts2/rts2pa/rts2pa.cfg'
-        self.dcf[('basic', 'BASE_DIRECTORY')]= '/tmp/rts2pa'
-        self.dcf[('basic', 'TEMP_DIRECTORY')]= '/tmp/'
-        self.dcf[('basic', 'TEST')]= True
-        self.dcf[('basic', 'TEST_FIELDS')]= './images/CNP-02-10-00-89-00-00.fits,./images/CNP-02-10-30-89-00-20.fits'
 
-        self.dcf[('data_taking', 'EXPOSURE_TIME')]= 10.  #[sec]
-        self.dcf[('data_taking', 'DURATION')]= 1800.    #[sec]
-        self.dcf[('data_taking', 'SLEEP')]=    1800.    #[sec]
+        self.cp.add_section('basic')
+        self.cp.set('basic', 'CONFIGURATION_FILE','/etc/rts2/rts2pa/rts2pa.cfg')
+        self.cp.set('basic', 'BASE_DIRECTORY','/tmp/rts2pa')
+        self.cp.set('basic', 'TEMP_DIRECTORY','/tmp/')
+        self.cp.set('basic', 'TEST', 'True')
+        self.cp.set('basic', 'TEST_FIELDS','./images/CNP-02-10-00-89-00-00.fits,./images/CNP-02-10-30-89-00-20.fits')
 
-#        self.dcf[('astrometry', 'ASTROMETRY_PRG')]= 'solve-field'
-        self.dcf[('astrometry', 'RADIUS')]= 5. #[deg]
-        self.dcf[('astrometry', 'REPLACE')]= False
-        self.dcf[('astrometry', 'VERBOSE')]= False
+        self.cp.add_section('data_taking')
+        self.cp.set('data_taking', 'EXPOSURE_TIME', 10.)  #[sec]
+        self.cp.set('data_taking', 'DURATION', 1800.)    #[sec]
+        self.cp.set('data_taking', 'SLEEP', 1800.)    #[sec]
 
-        self.dcf[('mode', 'mode')]= 'KingA'
+        self.cp.add_section('astrometry')
+#        self.cp.set('astrometry', 'ASTROMETRY_PRG','solve-field'
+        self.cp.set('astrometry', 'RADIUS', 5.) #[deg]
+        self.cp.set('astrometry', 'REPLACE', 'False')
+        self.cp.set('astrometry', 'VERBOSE', 'False')
 
-        self.dcf[('coordinates', 'HA')]= 7.5 # hour angle [deg]
-        self.dcf[('coordinates', 'PD')]= 1. # polar distance [deg]
+        self.cp.add_section('mode')
+        self.cp.set('mode', 'mode','KingA')
 
-        self.dcf[('ccd', 'ARCSEC_PER_PIX')]= 2.0
+        self.cp.add_section('coordinates')
+        self.cp.set('coordinates', 'HA', 7.5) # hour angle [deg]
+        self.cp.set('coordinates', 'PD', 1.) # polar distance [deg]
 
-        self.dcf[('fits-header', 'JD')]= 'JD' 
-        self.dcf[('fits-header', 'DATE-OBS')]= 'DATE-OBS' 
+        self.cp.add_section('ccd')
+        self.cp.set('ccd', 'ARCSEC_PER_PIX', 2.0)
 
-        self.dcf[('fits-header', 'ORIRA')]= 'ORIRA' 
-        self.dcf[('fits-header', 'ORIDEC')]= 'ORIDEC' 
+        self.cp.add_section('fits-header')
+        self.cp.set('fits-header', 'JD','JD')
+        self.cp.set('fits-header', 'DATE-OBS','DATE-OBS') 
 
-        self.dcf[('fits-header', 'SITE-LON')]= 'SITE-LON' 
-        self.dcf[('fits-header', 'SITE-LAT')]= 'SITE-LAT' 
+        self.cp.set('fits-header', 'ORIRA','ORIRA')
+        self.cp.set('fits-header', 'ORIDEC','ORIDEC') 
 
-        self.cf={}
-        for (section, identifier), value in sorted(self.dcf.iteritems()):
-            self.cf[(identifier)]= value
+        self.cp.set('fits-header', 'SITE-LON','SITE-LON') 
+        self.cp.set('fits-header', 'SITE-LAT','SITE-LAT')
+        if cfn:
+            if not os.path.isfile( cfn):
+                logging.error('config file: {0} does not exist, exiting'.format(cfn))
+                sys.exit(1)
+            self.readConfiguration()
 
-        if not os.path.isfile( cfn):
-            logging.error('config file: {0} does not exist, exiting'.format(cfn))
-            sys.exit(1)
-        
-        self.readConfiguration()
-
-    def dumpDefaultConfiguration(self):
-        print ('# 2012-07-27, Markus Wildi')
-        print ('# default configuration for rts2pa.py')
-        print ('#')
-        print ('#')
-        for (section, identifier), value in self.dcf.iteritems():
-            print identifier, '=', value
-
-
-
-    def dumpConfiguration(self):
-        for identifier,value  in  self.cf.items():
-            print ' {0}={1}'.format( identifier, value) 
-
-#            logging.debug('Configuration.readConfiguration: {0}={1}'.format( identifier, value)) 
+    def dumpDefaultConfiguration(self, conf=None):
+        print '# 2012-07-27, Markus Wildi'
+        print '# default configuration for rts2pa.py'
+        print '#'
+        print '#'
+        print conf.write(sys.stdout)
+        print '# above None no idea where it comes from'
 
 
     def readConfiguration( self):
-        config = ConfigParser.ConfigParser()
         try:
-            config.readfp(open(self.cfn))
+            self.cp.readfp(open(self.cfn))
         except:
             logging.error('Configuration.readConfiguration: config file {0}  has wrong syntax, exiting'.format(self.cfn))
             sys.exit(1)
 
-# over write the defaults
-        for (section, identifier), value in self.dcf.iteritems():
+    def dumpConfigurationDifference(self, defaultConf=None):
+        for sec in self.cp.sections():
+            print ''
+            for opt,val in self.cp.items(sec):
+                if str(val) != str(defaultConf.cp.get(sec, opt)):
+                    print '{} {}  actual :{}'.format(sec, opt, str(val))
+                    print '{} {}  default:{}'.format(sec, opt, str(defaultConf.cp.get(sec, opt)))
 
-            try:
-                value = config.get( section, identifier)
-            except KeyError:
-                logging.error('Configuration.readConfiguration: key error')
-            except:
-                #logging.info('Configuration.readConfiguration: no section {0}  or identifier {1} in file {2}'.format(section, identifier, self.cfn))
-                continue
-
-            # first bool, then int !
-            if isinstance(self.cf[identifier], bool):
-                if value == 'True':
-                    self.cf[identifier]= True
-                else:
-                    self.cf[identifier]= False
-            elif isinstance(self.cf[identifier], int):
-                try:
-                    self.cf[identifier]= int(value)
-                except:
-                    logging.error('Configuration.readConfiguration: no int {0}  in section {1}, identifier {2} in file {3}'.format(value, section, identifier, self.cfn))
-            elif isinstance(self.cf[identifier], float):
-                try:
-                    self.cf[identifier]= float(value)
-                except:
-                    logging.error('Configuration.readConfiguration: no float {0}  in section {1}, identifier {2} in file {3}'.format(value, section, identifier, self.cfn)) 
-
-            else:
-                try:
-                    self.cf[identifier]= value
-                except KeyError:
-                    logging.error('Configuration.readConfiguration: no key {0}  in section {1},  in file {3}'.format( identifier, section,  self.cfn)) 
-                except:
-                    logging.error('Configuration.readConfiguration: no string {0}  in section {1}, identifier {2} in file {3}'.format(value, section, identifier, self.cfn)) 
+    def dumpConfiguration(self):
+        for sec in self.cp.sections():
+            print ''
+            for opt,val in self.cp.items(sec):
+                print '{} {} {}'.format(sec, opt, str(val))
 
 import time
 import datetime
@@ -144,11 +116,11 @@ import os
 
 class Environment():
     """Class performing various task on files, e.g. expansion to (full) path"""
-    def __init__(self, runTimeConfig=None, logger=None):
-        self.runTimeConfig=runTimeConfig
+    def __init__(self, rtc=None, logger=None):
+        self.rtc=rtc
         self.now= datetime.datetime.now().isoformat()
         self.logger= logger
-        self.runTimePath= '{0}/{1}/'.format(self.runTimeConfig.cf['BASE_DIRECTORY'], self.now) 
+        self.runTimePath= '{0}/{1}/'.format(self.rtc.cp.get('basic','BASE_DIRECTORY'), self.now) 
         if not os.path.isdir(self.runTimePath):
             os.makedirs( self.runTimePath)
             logger.debug('Environment: directory: {0} created'.format(self.runTimePath))
@@ -160,7 +132,7 @@ class Environment():
         if os.path.isabs(fileName):
             return fileName
 
-        fileName= self.runTimeConfig.value('TEMP_DIRECTORY') + '/'+ fileName
+        fileName= self.rtc.value('TEMP_DIRECTORY') + '/'+ fileName
         return fileName
 
     def moveToRunTimePath(self, pathName=None):
@@ -192,6 +164,9 @@ class PAScript:
 
         (options,args) = self.parser.parse_args()
 
+        if options.dump:
+            Configuration(cfn=None).dumpDefaultConfiguration()
+            sys.exit(1)
         try:
             fn = open(options.logTo, 'a')
             fn.close()
@@ -213,9 +188,15 @@ class PAScript:
             self.logger = logging.getLogger()
             self.logger.addHandler(soh)
 
-        self.runTimeConfig= Configuration( cfn=options.config) #default configuration, overwrite default values with the ones form options.config
-        if options.dump:
-            self.runTimeConfig.dumpDefaultConfiguration()
-            sys.exit(1)
+        self.rtc= Configuration( cfn=options.config) #default configuration, overwrite default values with the ones form options.config
+        
+        self.env= Environment(rtc=self.rtc, logger=self.logger)
 
-        self.environment= Environment(runTimeConfig=self.runTimeConfig, logger=self.logger)
+        if self.rtc.cp.get('basic','TEST'):        
+            dfcp = type('Configuration', (object, ), dict(Configuration.__dict__))
+            dfcp = Configuration()
+
+        if options.verbose:
+            self.env.rtc.dumpConfigurationDifference(defaultConf=dfcp)
+            self.env.rtc.dumpConfiguration()
+
