@@ -75,7 +75,7 @@ class ImgpAnalysis():
         cmd= [  self.fwhmCmd,
                 '--config',
                 self.fwhmConfigFile,
-                '--logto',
+                '--logTo',
                 self.fwhmLogFile,
                 '--reference',
                 self.fitsFileName,
