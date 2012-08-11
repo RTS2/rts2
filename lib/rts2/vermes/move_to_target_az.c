@@ -198,7 +198,7 @@ void *move_to_target_azimuth( void *value)
 	if( motorState== SSD650V_MS_STOPPED) {
 	  is_synced= SYNCED ;
 	} else {
-	  is_synced= NOT_SYNCED ;
+	  is_synced= SYNCED_MOTOR_ON ;
 	}
       } else if (( abs_az_diff= fabs( curAzimutDifference/180. * M_PI)) >= limit) {
 	if( curSetPointSign !=  lastSetPointSign) {

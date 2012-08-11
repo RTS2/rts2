@@ -97,6 +97,7 @@ namespace rts2dome
 
 int Vermes::moveEnd ()
 {
+  logStream (MESSAGE_DEBUG) << "Vermes::moveEnd "<< sendLog ;
   struct ln_hrz_posn hrz;
   getTargetAltAz (&hrz);
   setCurrentAz (hrz.az);
@@ -104,7 +105,6 @@ int Vermes::moveEnd ()
 }
 int Vermes::moveStop ()
 {
-
   logStream (MESSAGE_INFO) << "Vermes::moveStop stopping cupola: "<< sendLog ;
   movementState= SYNCHRONIZATION_DISABLED ; 
 
@@ -115,7 +115,7 @@ int Vermes::moveStop ()
   int ret ;
 
   while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
-    logStream (MESSAGE_ERROR) << "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED" << sendLog ;
+    logStream (MESSAGE_WARNING) << "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED" << sendLog ;
     errno= 0;
     ret= nanosleep( &rep_slv, &rep_rsl) ;
     if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
@@ -127,10 +127,13 @@ int Vermes::moveStop ()
 long Vermes::isMoving ()
 {
   if ( is_synced== SYNCED) {
-    logStream (MESSAGE_INFO) << "Vermes::isMoving SYNCED"<< sendLog ;
+    logStream (MESSAGE_INFO) << "Vermes::isMoving cupola is SYNCED, position reached"<< sendLog ;
+    return -2;
+  } else if ( is_synced== SYNCED_MOTOR_ON) {
+    logStream (MESSAGE_WARNING) << "Vermes::isMoving cupola is SYNCED, position reached, motor is still ON"<< sendLog ;
     return -2;
   } else {
-    //logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
+    //logStream (MESSAGE_INFO) << "Vermes::isMoving its not SYNCED, position not yet reached"<< sendLog ;
   }
   return USEC_SEC;
 }
@@ -155,7 +158,7 @@ int Vermes::moveStart ()
   }
 
   movementState= SYNCHRONIZATION_ENABLED ; 
-  logStream (MESSAGE_INFO) << "Vermes::moveStart synchronization of the telescope enabled"<< sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::moveStart synchronization of the telescope enabled"<< sendLog ;
   return Cupola::moveStart ();
 }
 
@@ -178,7 +181,7 @@ int Vermes::standby ()
 
 int Vermes::off ()
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
+  logStream (MESSAGE_INFO) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
   parkCupola ();
   return Cupola::off ();
 }
@@ -193,14 +196,14 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
       lastMovementState= movementState ;
       movementState= SYNCHRONIZATION_DISABLED ;
       if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-	logStream (MESSAGE_ERROR) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
+	logStream (MESSAGE_WARNING) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
 	ssd650v_state->setValueString("motor undefined") ;
       } else {
 	logStream (MESSAGE_INFO) << "Vermes::valueChanged switched synchronization off" << sendLog ;
       }
     } else {
       movementState= lastMovementState ;
-      logStream (MESSAGE_INFO) << "Vermes::valueChanged restored synchronization mode" << sendLog ;
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged restored synchronization mode" << sendLog ;
     } 
     
     float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
@@ -210,7 +213,7 @@ void Vermes::valueChanged (rts2core::Value * changed_value)
     } else {
       if( setpoint == 0.) {
 	if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
+	  logStream (MESSAGE_WARNING) << "Vermes::valueChanged motor_off != SSD650V_MS_STOPPED" << sendLog ;
 	  ssd650v_state->setValueString("motor undefined") ;
 	} 
       } else {
@@ -257,7 +260,7 @@ int Vermes::info ()
 
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 
-    logStream (MESSAGE_ERROR) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;
+    logStream (MESSAGE_WARNING) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;
 
   }
   if( movementState == SYNCHRONIZATION_ENABLED) {
@@ -274,7 +277,9 @@ int Vermes::info ()
     ssd650v_state->setValueString("motor undefined state") ;
   }
   ssd650v_read_setpoint->setValueDouble( readSetPoint) ;
-
+  if ( is_synced== SYNCED_MOTOR_ON) {
+    logStream (MESSAGE_WARNING) << "Vermes::info is_synced== SYNCED_MOTOR_ON, keep an eye on that"<< sendLog ;
+  }
   return Cupola::info ();
 }
 int Vermes::initValues ()
@@ -286,7 +291,7 @@ int Vermes::initValues ()
 
   ret = config->loadFile ();
   if (ret) {
-    logStream (MESSAGE_ERROR) << "Vermes::initValues could not read configuration, exiting"<< sendLog ;
+    logStream (MESSAGE_ERROR) << "Vermes::initValues could not read configuration"<< sendLog ;
     return -1;
   }
   // make sure it forks before creating threads
@@ -312,7 +317,7 @@ int Vermes::initValues ()
     logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
   }
   if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-    logStream (MESSAGE_ERROR) << "Vermes::initValues motor_off != SSD650V_MS_STOPPED" << sendLog ;
+    logStream (MESSAGE_WARNING) << "Vermes::initValues motor_off != SSD650V_MS_STOPPED" << sendLog ;
     ssd650v_state->setValueString("motor undefined") ;
   } 
 

@@ -24,6 +24,7 @@
 
 #define NOT_SYNCED         0 
 #define SYNCED             1
+#define SYNCED_MOTOR_ON    2
 
 
 
