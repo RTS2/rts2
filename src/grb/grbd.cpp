@@ -166,7 +166,7 @@ int Grbd::reloadConfig ()
 	{
 		std::string conf_addExe;
 		ret = config->getString ("grbd", "add_exe", conf_addExe);
-		if (!ret)
+		if (!ret && conf_addExe.length () > 0)
 		{
 			addExe = new char[conf_addExe.length () + 1];
 			strcpy (addExe, conf_addExe.c_str ());
