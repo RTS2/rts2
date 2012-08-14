@@ -109,10 +109,10 @@ DoorVermes::updateDoorStatus ()
     maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is undefined") ;
     break;
   case DS_STOPPED_CLOSED:
-    maskState (DOME_DOME_MASK, DOME_CLOSED, "dome state is stopped, closed") ;
+    //maskState (DOME_DOME_MASK, DOME_CLOSED, "dome state is stopped, closed") ;
     break;
   case DS_STOPPED_OPENED:
-    maskState (DOME_DOME_MASK, DOME_OPENED, "dome state is stopped, open") ;
+    //NO: maskState (DOME_DOME_MASK, DOME_OPENED, "dome state is stopped, open") ;
     break;
   case DS_STOPPED_UNDEF:
     maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopped, undefined") ;
@@ -475,6 +475,7 @@ DoorVermes::init ()
 int
 DoorVermes::info ()
 {
+
   if( simulate_door->getValueBool()) { 
     oak_thread_state= THREAD_STATE_RUNNING ;
   } else {
@@ -495,7 +496,7 @@ DoorVermes::info ()
       // do not exit here 
     }
   }
-  updateDoorStatus() ;
+  //updateDoorStatus() ;
   updateDoorStatusMessage() ;
   lastMotorStop-> setValueString ( lastMotorStop_str) ; 
   double readSetPoint= get_setpoint() ;
@@ -515,12 +516,13 @@ DoorVermes::info ()
 int
 DoorVermes::startOpen ()
 {
-  logStream (MESSAGE_INFO) << "DoorVermes::startOpen" << sendLog ;
   updateDoorStatusMessage() ;
 
-  if (!isGoodWeather ())
-    return -1;
+  if (!isGoodWeather ()){
+    //logStream (MESSAGE_ERROR) << "DoorVermes::startOpen isGoodWeather==false" << sendLog;
 
+    return -1;
+  }
   if( block_door->getValueBool()) {
     logStream (MESSAGE_ERROR) << "DoorVermes::startOpen blocked door opening (see BLOCK_DOOR)" << sendLog ;
     return -1;
@@ -574,6 +576,8 @@ DoorVermes::startOpen ()
 	  return -1 ;
 	} else {  
 	  open_door->setValueBool(true) ;
+	  //wdoorState=DS_RUNNING_OPEN ;
+	  //wupdateDoorStatus() ;
 	  logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN: returning succes" << sendLog ;
 	  return 0 ;
 	}
@@ -626,12 +630,12 @@ DoorVermes::isOpened ()
 	logStream (MESSAGE_DEBUG) << "DoorVermes::isOpened simulated doorState=DS_STOPPED_OPENED"<< sendLog ;
 	return -2;
     }
-    logStream (MESSAGE_INFO) << "DoorVermes::isOpened is called"<< sendLog ;
+    //logStream (MESSAGE_INFO) << "DoorVermes::isOpened is called"<< sendLog ;
     open_door->setValueBool(true) ;
     return USEC_SEC;
   }
   doorState=DS_STOPPED_OPENED; 
-  updateDoorStatus() ;
+  //updateDoorStatus() ;
   logStream (MESSAGE_INFO) << "DoorVermes::isOpened returning -2: it is OPEN"<< sendLog ;
   return -2;
 }
@@ -644,8 +648,7 @@ DoorVermes::isOpened ()
 int
 DoorVermes::endOpen ()
 {
-  logStream (MESSAGE_ERROR) << "DoorVermes::endOpen starting" << sendLog ;
-  updateDoorStatusMessage() ;
+  //updateDoorStatusMessage() ;
 
   stop_door->setValueBool(false) ;
   open_door->setValueBool(false) ;
@@ -700,7 +703,7 @@ DoorVermes::startClose ()
     return 0;
 
   } else if( doorState== DS_STOPPED_CLOSED) {
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClose door is closed doorState== DS_STOPPED_CLOSED, ignoring startClose" << sendLog ;
+    logStream (MESSAGE_WARNING) << "DoorVermes::startClose door is closed doorState== DS_STOPPED_CLOSED, ignoring startClose" << sendLog ;
     return 0 ;
 
   } else if ( doorState== DS_STOPPED_OPENED) {
@@ -753,7 +756,7 @@ DoorVermes::startClose ()
     }
     // wildi ToDo eventually:
     // 2 minutes timeout..
-    setWeatherTimeout (120, "closing dome");
+    //setWeatherTimeout (120, "closing dome");
     return 0;
 
   } else {
@@ -880,6 +883,8 @@ DoorVermes::idle ()
     if ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING) {
       info() ;
     }
+  } else{
+    //logStream (MESSAGE_ERROR) << "DoorVermes::idle isGoodWeather==false" << sendLog;
   }
   return Dome::idle ();
 }
