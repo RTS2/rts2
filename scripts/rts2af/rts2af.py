@@ -2071,8 +2071,13 @@ class Environment():
         return self.expandToTmp(fileName + self.now + '.fit')
 
     def createAcquisitionBasePath(self, filter=None):
-        os.makedirs( self.expandToAcquisitionBasePath( filter))
-        
+        pth= self.expandToAcquisitionBasePath( filter)
+        try:
+            os.makedirs( pth)
+        except:
+             self.log.error('Environment.createAcquisitionBasePath failed for {0}'.format(pth))
+             return False
+        return True
     def setModeExecutable(self, path):
         #mode = os.stat(path)
         os.chmod(path, 0744)

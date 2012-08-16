@@ -50,6 +50,7 @@ import time
 import re
 import os
 import subprocess
+import logging
 
 import rts2.scriptcomm
 import rts2af 
@@ -61,8 +62,15 @@ class Acquire():
     def __init__(self, scriptName=None):
 
         self.scriptName= scriptName
+        # ToDo: logging within rts2af.py
+        self.lgf= '/var/log/rts2-debug'
+        logformat= '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+        logging.basicConfig(filename=self.lgf, level='DEBUG', format= logformat)
+        self.logger = logging.getLogger()
+
         self.rtc= rts2af.Configuration('/etc/rts2/rts2af/rts2af-acquire.cfg') 
-        self.env= rts2af.Environment(rtc=self.rtc, log=None)
+        self.env= rts2af.Environment(rtc=self.rtc, log=self.logger)
+        r2c.log('I','rts2af_acquire: additional messages are logged in {0}'.format(self.lgf))
 
         self.lowerLimit= self.env.rtc.value('FOCUSER_ABSOLUTE_LOWER_LIMIT')
         self.upperLimit= self.env.rtc.value('FOCUSER_ABSOLUTE_UPPER_LIMIT')
@@ -164,8 +172,9 @@ class Acquire():
                     r2c.log('E','rts2af_acquire: target position, try again, focuser values: {0}'.format(self.focuserValues()))
                     # set value again
                     r2c.setValue('FOC_FOFF', focFoff, self.focuser)
+                    time.sleep(5)
                     r2c.setValue('FOC_DEF', focDef, self.focuser)
-                    r2c.log('W','rts2af_acquire: target position again set: {0}'.format(focPos))
+                    r2c.log('W','rts2af_acquire: target position again set: {0}, (focDef: {1}, focFoff: {2}'.format(focPos, focDef, focFoff))
                 elif i > 20:
                     r2c.log('E','rts2af_acquire: target position, breaking, could not set: {0}, current foc_pos: {1}'.format(focPos, curFocPos))
                     r2c.log('E','rts2af_acquire: target position, breaking, focuser values: {0}'.format(self.focuserValues()))
@@ -192,6 +201,7 @@ class Acquire():
         # move all fits files of a given filter focus run into a separate directory 
         # in test mode the files are fetched for the original path
         storePath=self.env.expandToAcquisitionBasePath(filter) + acquisitionPath.split('/')[-1]
+
         if extension:
             elements= storePath.split('.fits')
             storePath= '{0}-{1}.fits'.format(elements[0], extension)
@@ -305,16 +315,16 @@ class Acquire():
 
         if ( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeLowerLimit)) and( self.focPosWithinLimits( focDef + filter.OffsetToClearPath + filter.relativeUpperLimit)):
             # the order is important
-            r2c.setValue('FOC_FOFF' , 0, self.focuser)
+            r2c.setValue('FOC_FOFF' , 0., self.focuser)
             # ToDo: verify: triggers setting of filter offset as FOC_TOFF as defined in the rts2 devices file
             # 2011-05-28: a manual filter wheel setting does not trigger the offset.
             r2c.setValue('filter', filter.name)
             #ToDo: remove if above is true
             r2c.setValue('FOC_TOFF', filter.OffsetToClearPath, self.focuser)
-
+            r2c.setValue('FOC_TAR', focDef, self.focuser) # it is either current or fetched from config
 
             if self.env.rtc.value('SET_INITIAL_FOC_DEF'):
-                r2c.setValue('FOC_DEF', focDef, self.focuser) # if not configured, the curren value is set
+                r2c.setValue('FOC_DEF', focDef, self.focuser) # it is either current or fetched from config
                 r2c.log('I','rts2af_acquire: prepareAcquisition: setting FOC_DEF: {0}'.format(focDef))
                 self.focPosReached((focDef + filter.OffsetToClearPath), focDef, 0)
 
@@ -351,14 +361,14 @@ class Acquire():
             r2c.log('I','rts2af_acquire: run: setting FOC_DEF to {0}'.format(focDef))
         else:
             focDef=  r2c.getValueFloat('FOC_DEF', self.focuser)
-            r2c.log('I','rts2af_acquire: run: not setting FOC_DEF (see configuration)')
+            r2c.log('I','rts2af_acquire: run: not setting FOC_DEF (see configuration), leaving at {0}'.format(focDef))
 
         for fltName in filtersInUse:
             filterExposureTime= 0
             filterStartTime=time.time()
             filter= self.env.rtc.filterByName( fltName)
             try:
-                r2c.log('I','rts2af_acquire: Initial setting: filter: {0} {1}'.format(filter.name, self.env.rtc.configurationFileName()))
+                r2c.log('I','rts2af_acquire: Initial setting: focuser: {0}, filter: {1} {2}'.format(self.focuser, filter.name, self.env.rtc.configurationFileName()))
             except:
                 r2c.log('E','rts2af_acquire: no filter configuration found for  filter: {0} in {1}'.format(fltName, self.env.rtc.configurationFileName()))
 
@@ -378,8 +388,10 @@ class Acquire():
             cmd= [ '{0} --config {1}'.format(self.base_cmd[0], configFileName)]
 
             self.env.rtc.writeConfigurationForFilter(configFileName, fltName)
-            self.env.createAcquisitionBasePath( filter)
-
+            if not self.env.createAcquisitionBasePath( filter):
+                r2c.log('E','rts2af_acquire: exiting, could not create store path {0}, see additional messages in {1}'.format( self.env.expandToAcquisitionBasePath( filter), self.lgf))
+                sys.exit(1)
+                
             r2c.log('I','rts2af_acquire: pid: {0}, start for COMMAND: {1}, filter: {2}'.format(self.pid, cmd, filter.name))
             # open the analysis suprocess
             try:
