@@ -80,12 +80,13 @@ class Configuration:
                 sys.exit(1)
             self.readConfiguration()
 
-    def dumpDefaultConfiguration(self, conf=None):
+    def dumpDefaultConfiguration(self):
         print '# 2012-07-27, Markus Wildi'
         print '# default configuration for rts2pa.py'
         print '#'
         print '#'
-        print conf.write(sys.stdout)
+        print self.cp.write(sys.stdout)
+            
         print '# above None no idea where it comes from'
 
 
@@ -165,7 +166,7 @@ class PAScript:
         (options,args) = self.parser.parse_args()
 
         if options.dump:
-            Configuration(cfn=None).dumpDefaultConfiguration()
+            Configuration().dumpDefaultConfiguration()
             sys.exit(1)
         try:
             fn = open(options.logTo, 'a')
