@@ -78,7 +78,7 @@ if __name__ == '__main__':
     except:
         sys.exit(1)
     #print flag_fwhm
-    min_focpos_fwhm = optimize.fmin(fitfunc_r_fwhm,1000.,args=(par_fwhm), disp=0)
+    min_focpos_fwhm = optimize.fmin(fitfunc_r_fwhm,(max(pos_fwhm)-min(pos_fwhm))/2.+ min(pos_fwhm),args=(par_fwhm), disp=0)
     val_fwhm= fitfunc_fwhm( par_fwhm, min_focpos_fwhm) 
 
     # flux
