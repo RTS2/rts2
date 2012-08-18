@@ -287,7 +287,7 @@ int APGTO::getAPUTCOffset()
 					temp_string[2]= '5';
 					break;
 				default:
-					logStream (MESSAGE_ERROR) << "APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
+					logStream (MESSAGE_DEBUG) << "APGTO::getAPUTCOffset string not handled >" << temp_string << "<END" << sendLog;
 					return -1;
 			}
 		}
@@ -440,7 +440,7 @@ int APGTO::setAPLongitude ()
 	
 	dtoints (APlng, &d, &m, &s);
 	snprintf (temp_string, sizeof( temp_string ), "#:Sg %03d*%02d:%02d#", d, m, s);
-	logStream (MESSAGE_ERROR) << "APGTO::setAPLongitude :"<<temp_string << sendLog;
+	logStream (MESSAGE_DEBUG) << "APGTO::setAPLongitude :"<<temp_string << sendLog;
 
   	if (( ret= serConn->writeRead ( temp_string, sizeof( temp_string ), retstr, 1)) < 0){
 		return -1;
@@ -643,7 +643,7 @@ APGTO::checkAPRelativeAngle ()
   }
   if( stop != 0) {
     if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::checkAPRelativeAngle failed to stop any tracking and motion" << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::checkAPRelativeAngle failed to stop any tracking and motion" << sendLog;
     }
     return -1 ;
   } else {
@@ -692,11 +692,11 @@ int APGTO::tel_slew_to (double ra, double dec)
   ln_get_hrz_from_equ (&target_equ, &observer, ln_get_julian_from_sys (), &hrz);
 
   if( hrz.alt < 0.) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to target_equ ra " << target_equ.ra << " dec " <<  target_equ.dec << " is below horizon" << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::tel_slew_to target_equ ra " << target_equ.ra << " dec " <<  target_equ.dec << " is below horizon" << sendLog;
     return -1 ;
   }
   if( checkAPRelativeAngle()) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to check of the declination axis failed." << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::tel_slew_to check of the declination axis failed." << sendLog;
     return -1;
   }
 
@@ -791,7 +791,7 @@ int APGTO::checkAPCoords (double ra, double dec)
   struct ln_equ_posn object, target;
 
   if ((tel_read_ra () < 0) || (tel_read_dec () < 0)) {
-    logStream (MESSAGE_ERROR) << "APGTO::checkAPCoords read ra, dec failed" << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::checkAPCoords read ra, dec failed" << sendLog;
     return -1;
   } else {
     //logStream (MESSAGE_ERROR) << "APGTO::checkAPCoords read ra:"<< getTelRa() << " dec"<<getTelDec() << sendLog;
@@ -1212,8 +1212,6 @@ void APGTO::startCupolaSync ()
 
 void APGTO::notMoveCupola ()
 {
-  fprintf(stderr, "APGTO::notMoveCupola not move cupola");
-  logStream (MESSAGE_ERROR) << "APGTO::notMoveCupola not move cupola" << sendLog;
   postEvent (new rts2core::Event (EVENT_CUP_NOT_MOVE));
 }
 
@@ -1240,9 +1238,7 @@ int APGTO::isMoving ()
 
 int APGTO::endMove ()
 {
-  //sleep (5);
 	slew_state->setValueBool(false) ;
-	logStream (MESSAGE_ERROR) << "APGTO::endMove, move finished" << sendLog;
 
 	return Telescope::endMove ();
 }
@@ -1299,7 +1295,7 @@ int APGTO::setTo (double ra, double dec)
 	char readback[101];
 
         if(block_sync_apgto->getValueBool()) {
-	  logStream (MESSAGE_INFO) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_APGTO, doing nothing" << sendLog;
+	  logStream (MESSAGE_WARNING) << "APGTO::setTo sync is blocked, see BLOCK_SYNC_APGTO, doing nothing" << sendLog;
 	  return -1 ;
 	}
 
@@ -1308,7 +1304,7 @@ int APGTO::setTo (double ra, double dec)
 	//{
         if( slew_state->getValueBool()) {
 
-		logStream (MESSAGE_INFO) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
+		logStream (MESSAGE_DEBUG) << "APGTO::setTo mount is slewing, ignore sync command to RA " << ra << "Dec "<< dec << sendLog;
 		return -1 ;
 	}
 	if ( !( collision_detection->getValueBool()))
@@ -1332,7 +1328,7 @@ int APGTO::setTo (double ra, double dec)
 	//logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SYNC" << sendLog;
 
 	if (serConn->writeRead ("#:CM#", 5, readback, 100, '#') < 0){
-	    logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# failed" << sendLog;
+	    logStream (MESSAGE_WARNING) <<"APGTO::setTo #:CM# failed" << sendLog;
 	    return -1;
 	}
 	return 0 ;
@@ -1349,7 +1345,7 @@ int APGTO::startPark ()
 
   notMoveCupola() ;
   double park_ra= fmod(localSiderealTime()+ PARK_POSITION_RA, 360.);
-  logStream (MESSAGE_ERROR) <<"APGTO::startPark "<< park_ra<<  sendLog;
+  //logStream (MESSAGE_DEBUG) <<"APGTO::startPark "<< park_ra<<  sendLog;
   setTarget ( park_ra, PARK_POSITION_DEC);
   //startCupolaSync() ;
   return startResync ();
@@ -1380,7 +1376,7 @@ int APGTO::endPark ()
 	// so no #:KA# is sent
         // serConn->writePort (":KA#", 4);
 
-	logStream (MESSAGE_ERROR) << "APGTO::endPark telescope parked successfully" << sendLog;
+	logStream (MESSAGE_INFO) << "APGTO::endPark telescope parked successfully" << sendLog;
 	return 0;
 }
 int APGTO::startDir (char *dir)
@@ -1418,7 +1414,7 @@ int APGTO::abortAnyMotion ()
       failed = 1 ;
     }
     if( failed == 0) {
-      logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion successfully stoped motion #:Q# and tracking" << sendLog;
+      logStream (MESSAGE_DEBUG) << "APGTO::abortAnyMotion successfully stoped motion #:Q# and tracking" << sendLog;
       return 0 ;
     } else {
       logStream (MESSAGE_ERROR) << "APGTO::abortAnyMotion failed: check motion and tracking now" << sendLog;
@@ -1445,7 +1441,7 @@ int APGTO::setValue (rts2core::Value * oldValue, rts2core::Value *newValue)
 
 		cmd[3] = '0' + newValue->getValueInteger ();
 		// ToDo: test 2012-05-28, could not change slew rate
-		logStream (MESSAGE_DEBUG) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
+		//logStream (MESSAGE_DEBUG) << "APGTO::setValue, sending cmd: " << cmd << sendLog; 
 		return serConn->writePort (cmd, 9) ? -2 : 0;
 	}
 	if (oldValue == raGuide || oldValue == decGuide)
@@ -1475,25 +1471,25 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
 
   if (conn->isCommand ("abort")) {
     if( (abortAnyMotion () !=0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized failed to abort any tracking and motion" << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized failed to abort any tracking and motion" << sendLog;
       return -1 ;
     }
     return 0;
   } else if (conn->isCommand ("track")) {
     trackingRate->setValueInteger (1); //TRACK_MODE_SIDEREAL
     if ( setAPTrackingMode() < 0 ) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized set track mode sidereal failed." << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized set track mode sidereal failed." << sendLog;
       return -1;
     }
     return 0 ;
   } else if (conn->isCommand ("rot")) { // move is used for a slew to a specific position
     char *direction ;
     if (conn->paramNextStringNull (&direction) || !conn->paramEnd ()) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot failed" << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized rot failed" << sendLog;
       return -2;
     }
     if( startDir( direction)){
-      logStream (MESSAGE_ERROR) <<"APGTO::commandAuthorized startDir( direction) failed" << sendLog;
+      logStream (MESSAGE_WARNING) <<"APGTO::commandAuthorized startDir( direction) failed" << sendLog;
       return -1;
     }
     return 0 ;
@@ -1507,21 +1503,21 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
       char *move_ra_str;
       char *move_dec_str;
       if (conn->paramNextStringNull (&move_ra_str) || conn->paramNextStringNull (&move_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_sg paramNextString ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized move_sg paramNextString ra or dec failed" << sendLog;
 	return -2;
       }
       if(( ret= f_scansexa ( move_ra_str, &move_ra))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized move_sg parsing ra failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized move_sg parsing ra failed" << sendLog;
 	return -1;
       }
       move_ra *= 15. ;
       if(( ret= f_scansexa ( move_dec_str, &move_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
 	return -1;
       }
     } else if(conn->isCommand ("move_ha")){
       if (conn->paramNextDouble (&move_ha) || conn->paramNextDouble (&move_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
 	return -2;
       }
       move_ra= localSiderealTime() - move_ha; // RA is a right, HA left system
@@ -1534,12 +1530,12 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
     double sync_ha ;
     if(conn->isCommand ("sync")){
       if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
 	return -2;
       }
     } else if(conn->isCommand ("sync_ha")){
       if (conn->paramNextDouble (&sync_ha) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
 	return -2;
       }
       sync_ra= localSiderealTime() - sync_ha; // RA is a right, HA left system
@@ -1548,33 +1544,33 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
       char *sync_ra_str;
       char *sync_dec_str;
       if (conn->paramNextStringNull (&sync_ra_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg paramNextString ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_sg paramNextString ra or dec failed" << sendLog;
 	return -2;
       }
       if(( ret= f_scansexa ( sync_ra_str, &sync_ra))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing ra failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_sg parsing ra failed" << sendLog;
 	return -1;
       }
       sync_ra *= 15. ;
       if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
 	return -1;
       }
     } else if (conn->isCommand ("sync_ha_sg")) {
       char *sync_ha_str;
       char *sync_dec_str;
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg" << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha_sg" << sendLog;
       if (conn->paramNextStringNull (&sync_ha_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg paramNextString ra or dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha_sg paramNextString ra or dec failed" << sendLog;
 	return -2;
       }
       if(( ret= f_scansexa ( sync_ha_str, &sync_ha))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing ra failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha_sg parsing ra failed" << sendLog;
 	return -1;
       }
       sync_ha *= 15. ;
       if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
-	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing dec failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized sync_ha_sg parsing dec failed" << sendLog;
 	return -1;
       }
       sync_ra= localSiderealTime() - sync_ha; // RA is a right, HA left system
@@ -1587,11 +1583,11 @@ int APGTO::commandAuthorized (rts2core::Connection *conn)
       sleep( 1) ;
     }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo (sync) failed" << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized setTo (sync) failed" << sendLog;
       return -1 ;
     }
     if( checkAPRelativeAngle()) {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed." << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::commandAuthorized check of the declination axis failed." << sendLog;
       return -1;
     }
     //logStream (MESSAGE_DEBUG) << "APGTO::commandAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
@@ -1613,33 +1609,33 @@ int APGTO::info ()
   if(( slew_start_time - time(&now) + TIMEOUT_SLEW_START) < 0.) {
     if( tracking->getValueBool()){
       if( (abortAnyMotion () !=0)) {
-	logStream (MESSAGE_ERROR) << "APGTO::info abortAnyMotion failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::info abortAnyMotion failed" << sendLog;
 	return -1;
       } else {
-	logStream (MESSAGE_ERROR) << "APGTO::info stopped tracking due to TIMEOUT_SLEW_START" << sendLog;
+	logStream (MESSAGE_INFO) << "APGTO::info stopped tracking due to TIMEOUT_SLEW_START" << sendLog;
       }
     }
   }
   
   if (tel_read_ra () || tel_read_dec ()) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve ra, dec  " << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve ra, dec  " << sendLog;
   } else {
 
-    //logStream (MESSAGE_ERROR) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
+    //logStream (MESSAGE_WARNING) << "APGTO::info retrieved ra, dec  "<< getTelRa() << "  " << getTelDec() << sendLog;
   }
 
   if(( ret= tel_read_local_time()) != 0) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve localtime  " << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve localtime  " << sendLog;
   }
   if(( ret= tel_read_sidereal_time()) != 0) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve sidereal time  " << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve sidereal time  " << sendLog;
   }
   if(( ret= getAPRelativeAngle()) != 0) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve position of declination axis  " << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve position of declination axis  " << sendLog;
   }
 
   if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
@@ -1648,12 +1644,12 @@ int APGTO::info ()
     telFlip->setValueInteger (0);
   } else {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve relative angle (declination axis, hour axis)" << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve relative angle (declination axis, hour axis)" << sendLog;
   }
   
   if (tel_read_azimuth () || tel_read_altitude ()) {
     error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve horizontal coordinates" << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info could not retrieve horizontal coordinates" << sendLog;
   }
 
   if( error== ERROR_IN_INFO) {
@@ -1670,7 +1666,7 @@ int APGTO::info ()
   double HA= fmod( localSiderealTime()- object.ra+ 360., 360.) ;
   if(( HA < on_set_HA)&& ( tracking->getValueBool())&& ( slew_state->getValueBool()==false)){
     transition_while_tracking->setValueBool(true) ;
-    logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::info transition while tracking occured" << sendLog;
   } else {
     // Do not reset here!
     // Do that if a new successful slew occured 
@@ -1701,13 +1697,13 @@ int APGTO::info ()
 	  if(ret != NO_COLLISION) {
 	    stop= 1 ;
 	    if(( tracking->getValueBool()) || (( slew_state->getValueBool()))) {
-	      logStream (MESSAGE_ERROR) << "APGTO::info collision detected (West)" << sendLog ;
+	      logStream (MESSAGE_WARNING) << "APGTO::info collision detected (West)" << sendLog ;
 	    }
 	  } else {
 	    if( ( HA >= 15. ) && ( HA < 180.)) { // 15. degrees are a matter of taste
 	      if( tracking->getValueBool()) {
 		stop= 1 ;
-		logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is crossing the (meridian + 15 deg), stopping any motion" << sendLog;
 	      }
 	    }
 	  }
@@ -1722,14 +1718,14 @@ int APGTO::info ()
 	  if(ret != NO_COLLISION) {
 	    stop= 1 ;
 	    if(( tracking->getValueBool()) || (( slew_state->getValueBool()))) {
-	      logStream (MESSAGE_ERROR) << "APGTO::info collision detected (East)" << sendLog ;
+	      logStream (MESSAGE_WARNING) << "APGTO::info collision detected (East)" << sendLog ;
 	    }
 	  } else {
 	    if( APAltAz->getAlt() < 10.) {
 	      if( tracking->getValueBool()) {
 		stop= 1 ;
 		notMoveCupola() ;
-		logStream (MESSAGE_ERROR) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::info t_equ ra " << getTelRa() << " dec " <<  getTelDec() << " is below 10 deg, stopping any motion" << sendLog;
 	      }
 	    }
 	  }
@@ -1742,7 +1738,7 @@ int APGTO::info ()
 	    {
 	      if ((abortAnyMotion () !=0))
 		{
-		  logStream (MESSAGE_ERROR) << "APGTO::info failed to stop any tracking and motion" << sendLog;
+		  logStream (MESSAGE_WARNING) << "APGTO::info failed to stop any tracking and motion" << sendLog;
 		  return -1;
 		}
 	    }
@@ -1751,10 +1747,10 @@ int APGTO::info ()
 	      trackingRate->setValueInteger (0);
 	      if (setAPTrackingMode() < 0 )
 		{
-		  logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
+		  logStream (MESSAGE_WARNING) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
 		  return -1;
 		}
-	      logStream (MESSAGE_ERROR) << "APGTO::info stop tracking but not motion" << sendLog;
+	      logStream (MESSAGE_WARNING) << "APGTO::info stop tracking but not motion" << sendLog;
 	    }
 	}
     }
@@ -1786,11 +1782,11 @@ int APGTO::info ()
       ln_date_to_zonedate(&utm, &ltm, -1 * timezone + 3600 * daylight); 
 
       if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
-	logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::info setting local time failed" << sendLog;
 	return -1;
       }
       if (( ret= setAPCalenderDate(ltm.days, ltm.months, ltm.years) < 0) ) {
-	logStream (MESSAGE_ERROR) << "APGTO::info setting local date failed" << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::info setting local date failed" << sendLog;
 	return -1;
       }
       sprintf( date_time, "%4d-%02d-%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
@@ -1826,7 +1822,7 @@ int APGTO::info ()
       trackingRate->setValueInteger (0);
       if (setAPTrackingMode() < 0 )
       {
-	logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
+	logStream (MESSAGE_WARNING) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
 	return -1;
       }
       
@@ -1859,7 +1855,7 @@ int APGTO::checkSiderealTime( double limit)
 
   if(( ret= tel_read_sidereal_time()) != 0) {
     // ToDo remove error = ERROR_IN_INFO ;
-    logStream (MESSAGE_ERROR) << "APGTO::checkSiderealTime could not retrieve sidereal time  " << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime could not retrieve sidereal time  " << sendLog;
   }
   logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
@@ -1867,8 +1863,8 @@ int APGTO::checkSiderealTime( double limit)
 			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
 	
   if( fabs(local_sidereal_time- lst->getValueDouble()) > limit ) { // usually 30 time seconds
-    logStream (MESSAGE_ERROR) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
-    logStream (MESSAGE_ERROR) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
+    logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- lst->getValueDouble() << sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
 			    << local_sidereal_time << " mount: "
 			    << lst->getValueDouble() 
 			    << " difference " << local_sidereal_time- lst->getValueDouble()<<sendLog;
@@ -1886,7 +1882,7 @@ int APGTO::getAPLongitude ()
 {
   double new_longitude;
   if((tel_read_hms (&new_longitude, "#:Gg#"))< 0 ) {
-    logStream (MESSAGE_ERROR) << "APGTO::tel_read_longitude failed" <<sendLog;
+    logStream (MESSAGE_WARNING) << "APGTO::tel_read_longitude failed" <<sendLog;
     return -1;
   }
   APlongitude->setValueDouble(new_longitude) ;
@@ -1902,7 +1898,7 @@ int APGTO::getAPLatitude ()
 {
   double new_latitude;
   if (tel_read_hms (&new_latitude, "#:Gt#")) {
-    logStream (MESSAGE_ERROR) <<"APGTO::tel_read_latitude failed" << sendLog;
+    logStream (MESSAGE_WARNING) <<"APGTO::tel_read_latitude failed" << sendLog;
     return -1;
   }
   APlatitude->setValueDouble(new_latitude) ;
@@ -1911,7 +1907,7 @@ int APGTO::getAPLatitude ()
 int APGTO::checkLongitudeLatitude (double limit) {
 
   if ((getAPLongitude() != 0) || (getAPLatitude() != 0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::checkLongitudeLatitude could not retrieve longitude or latitude  " << sendLog;
+      logStream (MESSAGE_WARNING) << "APGTO::checkLongitudeLatitude could not retrieve longitude or latitude  " << sendLog;
       return -1 ;
   }
   // AP mount counts positive to the west, RTS2 to east
@@ -1940,20 +1936,20 @@ int APGTO::setBasicData()
 	//if the sidereal time read from the mount is correct then consider it as a warm start 
 	if (checkSiderealTime( 1./60.) == 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
+		logStream (MESSAGE_INFO) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
 		return 0 ;
 	}
 
-	logStream (MESSAGE_ERROR) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
+	logStream (MESSAGE_INFO) << "APGTO::setBasicData performing cold start due to incorrect sidereal time" << sendLog;
 
 	if (setAPLongFormat() < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting long format failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting long format failed" << sendLog;
 		return -1;
 	}
 	if (setAPBackLashCompensation(0,0,0) < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
 		return -1;
 	}
 
@@ -1967,24 +1963,24 @@ int APGTO::setBasicData()
 	// this is local time including dst
 	if (setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local time failed" << sendLog;
 		return -1;
 	}
 
 	if (setAPCalenderDate(ltm.days, ltm.months, ltm.years) < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting local date failed" << sendLog;
 		return -1;
 	}
 	// AP mount counts positive and only to the west, RTS2 to east
 	if (setAPLongitude() < 0)
 	{  
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
 		return -1;
 	}
 	if (setAPLatitude() < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
 		return -1;
 	}
         // ToDo: make it version dependent 
@@ -2025,12 +2021,12 @@ int APGTO::setBasicData()
 
         //if(( ret = setAPUTCOffset( -2)) < 0) {
 	if(( ret = setAPUTCOffset( -2.065)) < 0) {
-           logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
+           logStream (MESSAGE_WARNING) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
            return -1;
         }
 	if (setAPUnPark() < 0)
 	{
-		logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed" << sendLog;
+		logStream (MESSAGE_WARNING) << "APGTO::setBasicData unparking failed" << sendLog;
 		return -1;
 	}
 	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking (cold start) successful" << sendLog;
@@ -2086,14 +2082,14 @@ int APGTO::initValues ()
 	// Check if longitude and latitude is correct
 	if (checkLongitudeLatitude (1./120.) != 0)
 	{
-		logStream (MESSAGE_ERROR) << "initValues longitude, latitude difference larger than 1./120, exiting" << sendLog;
+		logStream (MESSAGE_WARNING) << "initValues longitude, latitude difference larger than 1./120, exiting" << sendLog;
 		exit (1) ; // do not go beyond, at least for the moment
 	}
  
 	// Check if the sidereal time read from the mount is correct 
 	if (checkSiderealTime (1./120.) != 0)
 	{
-		logStream (MESSAGE_ERROR) << "initValues sidereal time difference larger than 1./120, exiting" << sendLog;
+		logStream (MESSAGE_WARNING) << "initValues sidereal time difference larger than 1./120, exiting" << sendLog;
 		exit (1) ; // do not go beyond, at least for the moment
 	}
 
@@ -2159,11 +2155,11 @@ int APGTO::initValues ()
 
               block_sync_apgto->setValueBool(true) ;
               block_move_apgto->setValueBool(true) ;
-              logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
+              logStream (MESSAGE_WARNING) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << " dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
            } 
         }
         if(( ret= setAPTrackingMode()) < 0 ) { 
-	  logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"  << trackingRate->getData() << " failed." << sendLog;
+	  logStream (MESSAGE_WARNING) << "APGTO::initValues setting tracking mode:"  << trackingRate->getData() << " failed." << sendLog;
            return -1;
         }
 	//exit(1) ;
