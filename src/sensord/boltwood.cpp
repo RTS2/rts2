@@ -115,6 +115,7 @@ void CloudSensorII::csII_reportSensorData(BWCloudSensorII *csII,
 
 	switch (report.cloudCond)
 	{
+		case 0: cloud = "none"; break;
 		case 1: cloud = "clear"; break;
 		case 2: cloud = "cloudy"; break;
 		case 3: cloud = "very cloudy"; break;
@@ -123,6 +124,7 @@ void CloudSensorII::csII_reportSensorData(BWCloudSensorII *csII,
 
 	switch (report.windCond)
 	{
+		case 0: wind = "still"; break;
 		case 1: wind = "ok"; break;
 		case 2: wind = "windy"; break;
 		case 3: wind = "very windy"; break;
