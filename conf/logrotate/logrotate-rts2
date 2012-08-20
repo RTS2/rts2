@@ -1,0 +1,19 @@
+#
+#
+# cron configuration for RTS2 log file rotation
+# 2012, Markus Wildi, wildi.markus@bluewin.ch
+#
+# RTS2 log files are rotated every day at noon. 
+# cron.daily (on e.g. Ubuntu systems) are excuted 
+# at 6:25 local time, that is not suitable.
+# 
+# Installation:
+# sudo cp logrotate-rts2 /etc/cron.d
+#
+#
+#
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+15 12    * * *   root	test -x /usr/sbin/logrotate && /usr/sbin/logrotate /etc/rts2/logrotate-rts2.conf
+
