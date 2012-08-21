@@ -25,10 +25,6 @@ CREATE TABLE filters (
 	width		float
 );
 
-UPDATE images SET img_filter = 'UNK' WHERE img_filter is NULL;
-
-INSERT INTO filters (filter_id, standart_name) SELECT DISTINCT img_filter, img_filter FROM images;
-
 ALTER TABLE images ADD CONSTRAINT "fk_images_filters" FOREIGN KEY (img_filter) REFERENCES filters(filter_id);
 
-CREATE INDEX images_filters ON images (img_filter);
+CREATE UNIQUE INDEX fk_filters ON filters(filter_id);
