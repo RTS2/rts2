@@ -110,7 +110,7 @@ while [ "x$1" != "x" ]; do
       shift
       fil=$1
       test_empty "x$fil"
-      run_psql "Adding filter $fil" "insert into filters values ('$fil',NULL,NULL,'$fil','$fil inserted from rts2-configdb',NULL,NULL);"
+      run_psql "Adding filter $fil" "insert into filters (filter_id,offset_ra,offset_dec,standart_name,description,medium_wl,width) values (nextval('filter_id'),NULL,NULL,'$fil','$fil inserted from rts2-configdb',NULL,NULL);"
       ;;
     --testdb)
       run_psql "Adding telescope T0" "insert into mounts values ('T0',NULL,NULL,NULL,'T0 inserted from rts2-configdb');"
