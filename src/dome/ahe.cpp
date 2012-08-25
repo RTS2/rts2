@@ -110,6 +110,17 @@ int AHE::setValue(rts2core::Value *old_value, rts2core::Value *new_value)
             startClose();
         }
     }
+    else if(old_value == ignoreComm)
+    {
+        if(new_value->getValueInteger() == 0)
+        {//false
+            ignoreCommands = false;
+        }
+        else if(new_value->getValueInteger() == 1)
+        {//true
+            ignoreCommands = true;
+        }
+    }
 
     return Dome::setValue(old_value, new_value);
 }
@@ -169,6 +180,11 @@ int AHE::info()
 
 int AHE::startOpen()
 {
+    if(ignoreCommands)
+    {//dead man switch turned on
+        return 1;
+    }
+
     status = OPENING;
     domeStatus->setValueString("Opening....");
     sendValueAll(domeStatus);
@@ -191,6 +207,11 @@ int AHE::startOpen()
 
 int AHE::startClose()
 {
+    if(ignoreCommands)
+    {//dead man switch turned on
+        return 1;
+    }
+
     status = CLOSING;
     domeStatus->setValueString("Closing....");
     sendValueAll(domeStatus);
@@ -252,13 +273,22 @@ AHE::AHE(int argc, char **argv):Dome(argc, argv)
     logStream (MESSAGE_DEBUG) << "AHE Dome constructor called" << sendLog;
     devFile = "/dev/ttyS0";
     response = '\x00';
+    ignoreCommands = false;
 
 
     createValue(domeStatus, "status", "current dome status", true);
     createValue(closeDome, "state", "switch state of dome", false, RTS2_VALUE_WRITABLE);
+    createValue(ignoreComm,"ignore_com","driver will ignore commands (not open/close dome)", false, RTS2_VALUE_WRITABLE);
+
     addOption('f',NULL,1, "path to device, default is /dev/ttyUSB0");
+
     closeDome->addSelVal("Close");
     closeDome->addSelVal("Open");
+
+    ignoreComm->addSelVal("False");
+    ignoreComm->addSelVal("True");
+
+
 
     setIdleInfoInterval(5);
 }

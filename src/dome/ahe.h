@@ -62,10 +62,12 @@ class AHE:public Dome
         char getHeartBeat();
         rts2core::ValueString * domeStatus;
         rts2core::ValueSelection* closeDome;
+        rts2core::ValueSelection* ignoreComm;
 
         rts2core::ConnSerial *sconn;
 
         char response;
+        bool ignoreCommands;
 
     protected:
         virtual int processOption(int opt);
