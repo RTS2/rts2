@@ -69,7 +69,7 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 		}
 		else
 		{
-			logStream (MESSAGE_INFO) << "loaded FITS template from " << templateFile<< sendLog;
+			logStream (MESSAGE_DEBUG) << "loaded FITS template from " << templateFile<< sendLog;
 		}
 	}
 
