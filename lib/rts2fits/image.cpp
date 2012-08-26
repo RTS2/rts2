@@ -341,7 +341,7 @@ std::string Image::expandVariable (std::string expression)
 	{
 		rts2core::Value *val = ((rts2core::Block *) getMasterApp ())->getValueExpression (expression, templateDeviceName);
 		if (val != NULL)
-			return val->getValue ();
+			return val->getDisplayValue ();
 	}
 
 	try
@@ -371,10 +371,10 @@ int Image::createImage (bool _overwrite)
 		return -1;
 	}
 
-	fits_write_key_log (getFitsFile (), (char *) "SIMPLE", 1, "conform to FITS standard", &fits_status);
-	fits_write_key_lng (getFitsFile (), (char *) "BITPIX", 16, "unsigned short data", &fits_status);
-	fits_write_key_lng (getFitsFile (), "NAXIS", 0, "number of axes", &fits_status);
-	fits_write_key_log (getFitsFile (), "EXTEND", 1, "this is FITS with extensions", &fits_status);
+	fits_write_key_log (getFitsFile (), (char *) "SIMPLE", 1, (char *) "conform to FITS standard", &fits_status);
+	fits_write_key_lng (getFitsFile (), (char *) "BITPIX", 16, (char *) "unsigned short data", &fits_status);
+	fits_write_key_lng (getFitsFile (), (char *) "NAXIS", 0, (char *) "number of axes", &fits_status);
+	fits_write_key_log (getFitsFile (), (char *) "EXTEND", 1, (char *) "this is FITS with extensions", &fits_status);
 	if (fits_status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot write keys to primary HDU: " << getFitsErrors () << sendLog;
