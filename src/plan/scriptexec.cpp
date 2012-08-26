@@ -361,7 +361,17 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 		case DEVICE_TYPE_CCD:
 			// if template was not specified, check .ini file..
 			if (templateFile.length () == 0)
-				Configuration::instance ()->getString (conn->getName (), "template", templateFile, "");
+			{
+				std::string tf;
+				Configuration::instance ()->getString (conn->getName (), "template", tf, "");
+				// default template overwrites writeConnection..
+				if (tf.length () > 0)
+				{
+					cli = new ClientCameraScript (conn, expandPath, tf, false, false);
+					((ClientCameraScript *) cli)->setOverwrite (overwrite);
+					break;
+				}
+			}
 
 			cli = new ClientCameraScript (conn, expandPath, templateFile, writeConnection, writeRTS2Values);
 			((ClientCameraScript *) cli)->setOverwrite (overwrite);
