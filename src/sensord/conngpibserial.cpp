@@ -49,11 +49,19 @@ void ConnGpibSerial::gpibWriteBuffer (const char *cmd, int _len)
 
 void ConnGpibSerial::gpibRead (void *reply, int &blen)
 {
-	readPort ((char *) reply, blen, sep);
+	int ret = readPort ((char *) reply, blen, sep);
+	if (ret < 0)
+	{
+		sleep (1);
+		std::cout << "flusing.. " << std::endl;
+		flushPortIO ();
+		throw rts2core::Error ("cannot read from serial port");
+	}
 }
 
 void ConnGpibSerial::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
+	flushPortIO ();
 	gpibWriteBuffer (cmd, strlen (cmd));
 	gpibRead (reply, blen);
 }
@@ -65,5 +73,5 @@ void ConnGpibSerial::gpibWaitSRQ ()
 
 void ConnGpibSerial::settmo (float _sec)
 {
-	timeout = _sec;
+	rts2core::ConnSerial::setVTime (_sec * 10);
 }

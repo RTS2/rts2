@@ -176,16 +176,23 @@ void Keithley::waitOpc ()
 void Keithley::readErrors ()
 {
 	int count = 0;
-	readInt ("SYST:ERR:COUN?", count);
-	for (; count >= 0; count--)
+	try
 	{
-		char rb[400];
-		gpibWriteRead ("SYST:ERR?", rb, 200);
-		char *sep = strchr (rb, '\n');
-		if (sep)
-			*sep = '\0';
-		if (atoi (rb) != 0)
-			logStream (MESSAGE_ERROR) << "error " << rb << sendLog;
+		readInt ("SYST:ERR:COUN?", count);
+		for (; count >= 0; count--)
+		{
+			char rb[400];
+			gpibWriteRead ("SYST:ERR?", rb, 200);
+			char *sep = strchr (rb, '\n');
+			if (sep)
+				*sep = '\0';
+			if (atoi (rb) != 0)
+				logStream (MESSAGE_ERROR) << "error " << rb << sendLog;
+		}
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_WARNING) << "cannot read errors: " << er << sendLog;
 	}
 	gpibWrite ("TRAC:CLE");
 }
@@ -305,7 +312,10 @@ int Keithley::initHardware ()
 		readValue (":SYSTEM:AZERO?", azero);
 	
 		// set format..
-		gpibWrite (":FORM:DATA SRE; ELEM READ,TIME,STAT ; BORD SWAP ; :TRAC:TST:FORM ABS");
+		if (isSerial ())
+			gpibWrite (":FORM:DATA ASC; ELEM READ,TIME,STAT ; BORD SWAP ; :TRAC:TST:FORM ABS");
+		else
+			gpibWrite (":FORM:DATA SRE; ELEM READ,TIME,STAT ; BORD SWAP ; :TRAC:TST:FORM ABS");
 		
 		waitOpc ();
 		// scale current
@@ -434,7 +444,9 @@ int Keithley::info ()
 		meas_times->clear ();
 		// start taking data
 		// arbitary units!
-		float expTi = countNum->getValueInteger () * nplc->getValueFloat () * 1 / 60.0;
+		float expTi = countNum->getValueInteger () * nplc->getValueFloat () / 60.0;
+		if (expTi < 2)
+			expTi = 2;
 		settmo (expTi);
 		gpibWrite ("INIT");
 		int ret = Gpib::info ();
@@ -476,7 +488,7 @@ int Keithley::info ()
 			int i = 6;
 			float si = svolt->getValueDouble ();
 			svolt->setValueDouble (NAN);
-			while (si < 20)
+			while (si !=0 && si < 20)
 			{
 				i--;
 				si *= 10;
