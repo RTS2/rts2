@@ -367,7 +367,8 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 				// default template overwrites writeConnection..
 				if (tf.length () > 0)
 				{
-					cli = new ClientCameraScript (conn, expandPath, tf, false, false);
+					bool b = !(Configuration::instance ()->getBoolean (conn->getName (), "no-metadata", true));
+					cli = new ClientCameraScript (conn, expandPath, tf, b, b);
 					((ClientCameraScript *) cli)->setOverwrite (overwrite);
 					break;
 				}

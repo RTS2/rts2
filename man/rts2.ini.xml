@@ -1140,6 +1140,16 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>no-metadata</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Do not write automatic metadata with template. Default to true.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
   </refsect1>

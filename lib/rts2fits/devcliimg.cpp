@@ -44,9 +44,19 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 	config->getString (connection->getName (), "telescop", telescop);
 	config->getString (connection->getName (), "origin", origin);
 
+	writeConnection = true;
+	writeRTS2Values = true;
+
 	// load template file..
 	if (templateFile.length () == 0)
+	{
 		config->getString (connection->getName (), "template", templateFile);
+		if (templateFile.length () > 0)
+		{
+			writeConnection = !(config->getBoolean (connection->getName (), "no-metadata", true));
+			writeRTS2Values = writeConnection;
+		}
+	}
 
 	if (templateFile.length () > 0)
 	{
@@ -68,9 +78,6 @@ DevClientCameraImage::DevClientCameraImage (rts2core::Connection * in_connection
 	expNum = 0;
 
 	triggered = false;
-
-	writeConnection = true;
-	writeRTS2Values = true;
 }
 
 DevClientCameraImage::~DevClientCameraImage (void)
