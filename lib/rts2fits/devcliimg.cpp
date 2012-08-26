@@ -224,7 +224,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 		ci->writeMetaData ((struct imghdr *) ((*(data->begin ()))->getDataBuff ()));
 
 		// detector coordinates,..
-		rts2core::DoubleArray *detsize = getDoubleArray ("DETSIZE");
+		rts2core::ValueRectangle *detsize = getRectangle ("DETSIZE");
 
 		rts2core::DoubleArray *chan1_offsets = getDoubleArray ("CHAN1_OFFSETS");
 		rts2core::DoubleArray *chan2_offsets = getDoubleArray ("CHAN2_OFFSETS");
@@ -290,7 +290,7 @@ void DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataChanne
 			if (detsize)
 			{
 				// write detector/channel orientation
-				ci->image->setValueRectange ("DETSIZE", (*detsize)[0], (*detsize)[2], (*detsize)[1], (*detsize)[3], "unbined detector size");
+				ci->image->setValueRectange ("DETSIZE", detsize->getX ()->getValueDouble (), detsize->getWidth ()->getValueDouble (), detsize->getY ()->getValueDouble (), detsize->getHeight ()->getValueDouble (), "unbined detector size");
 				ci->image->setValueRectange ("DATASEC", 1, w, 1, h, "data binned section");
 
 				if (chan1_delta && chan < chan1_delta->size () && chan2_delta && chan < chan2_delta->size () && chan1_offsets && chan < chan1_offsets->size () && chan2_offsets && chan < chan2_offsets->size ())
@@ -598,6 +598,14 @@ rts2core::DoubleArray * DevClientCameraImage::getDoubleArray (const char *name)
 	if (v == NULL || !(v->getValueExtType () == RTS2_VALUE_ARRAY && v->getValueBaseType () == RTS2_VALUE_DOUBLE))
 		return NULL;
 	return (rts2core::DoubleArray *) v;
+}
+
+rts2core::ValueRectangle * DevClientCameraImage::getRectangle (const char *name)
+{
+	rts2core::Value *v = getConnection ()->getValue (name);
+	if (v == NULL || !(v->getValueExtType () == RTS2_VALUE_RECTANGLE))
+		return NULL;
+	return (rts2core::ValueRectangle *) v;
 }
 
 DevClientTelescopeImage::DevClientTelescopeImage (rts2core::Connection * in_connection):rts2core::DevClientTelescope (in_connection)

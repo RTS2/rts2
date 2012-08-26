@@ -82,40 +82,14 @@ int ValueRectangle::setValue (Connection *connection)
 
 int ValueRectangle::setValueCharArr (const char *in_value)
 {
-	strncpy (buf, in_value, VALUE_BUF_LEN);
-	// split on spaces
-	char *top = buf;
-
-	while (!isspace (*top) && *top)
-		top++;
-	if (!*top)
+	std::vector <std::string> spl = SplitStr (std::string (in_value), std::string (":"));
+	if (spl.size () != 4)
 		return -1;
-	*top = '\0';
-	x->setValueCharArr (buf);
-	top++;
 
-	while (!isspace (*top) && *top)
-		top++;
-	if (!*top)
-		return -1;
-	*top = '\0';
-	y->setValueCharArr (buf);
-	top++;
-
-	while (!isspace (*top) && *top)
-		top++;
-	if (!*top)
-		return -1;
-	*top = '\0';
-	w->setValueCharArr (buf);
-	top++;
-
-	while (!isspace (*top) && *top)
-		top++;
-	if (!*top)
-		return -1;
-	*top = '\0';
-	h->setValueCharArr (buf);
+	x->setValueCharArr (spl[0].c_str ());
+	y->setValueCharArr (spl[1].c_str ());
+	w->setValueCharArr (spl[2].c_str ());
+	h->setValueCharArr (spl[3].c_str ());
 	checkChange ();
 	return 0;
 }
@@ -153,6 +127,24 @@ bool ValueRectangle::isEqual (Value *other_value)
 			&& h->isEqual (((ValueRectangle *)other_value)->getHeight ());
 	}
 	return false;
+}
+
+const char *ValueRectangle::getDisplayValue ()
+{
+	switch (getValueBaseType ())
+	{
+		case RTS2_VALUE_INTEGER:
+			sprintf (buf, "[%d:%d,%d:%d]", x->getValueInteger (), w->getValueInteger (), y->getValueInteger (), h->getValueInteger ());
+			break;
+		case RTS2_VALUE_LONGINT:
+			sprintf (buf, "[%ld:%ld,%ld:%ld]", x->getValueLong (), w->getValueLong (), y->getValueLong (), h->getValueLong ());
+			break;
+		case RTS2_VALUE_FLOAT:
+		case RTS2_VALUE_DOUBLE:
+			sprintf (buf, "[%g:%g,%g:%g]", x->getValueDouble (), w->getValueDouble (), y->getValueDouble (), h->getValueDouble ());
+			break;
+	}
+	return buf;
 }
 
 void ValueRectangle::resetValueChanged ()

@@ -578,7 +578,7 @@ class Camera:public rts2core::ScriptDevice
 		rts2core::ValueFloat *nightCoolTemp;
 
 		// Detector size - for DETSIZE keyword
-		rts2core::DoubleArray *detsize;
+		rts2core::ValueRectangle *detsize;
 
 		// Channel X offsets
 		rts2core::DoubleArray *chan1offset;

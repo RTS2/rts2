@@ -242,11 +242,7 @@ const char * ValueDouble::getValue ()
 
 const char * ValueDouble::getDisplayValue ()
 {
-	double absv = fabs (value);
-	if ((absv > 10e-3 && absv < 10e+8) || absv == 0)
-		sprintf (buf, "%lf", value);
-	else
-		sprintf (buf, "%.20le", value);
+	sprintf (buf, "%.20lg", value);
 	return buf;
 }
 

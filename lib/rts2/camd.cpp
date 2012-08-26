@@ -821,10 +821,12 @@ int Camera::processOption (int in_opt)
 
 		case OPT_DETSIZE:
 			{
-				std::vector <std::string> dets = SplitStr (optarg, ":");
-				createValue (detsize, "DETSIZE", "[x w y h] total detector size", false);
-				for (std::vector <std::string>::iterator iter = dets.begin (); iter != dets.end (); iter++)
-					detsize->addValue (atof (iter->c_str ()));
+				createValue (detsize, "DETSIZE", "[x w y h] total detector size", false, RTS2_VALUE_FLOAT);
+				if (detsize->setValueCharArr (optarg))
+				{
+					std::cerr << "cannot parse --detsize argument: " << optarg << ", exiting." << std::endl;
+					return -1;
+				}
 			}
 			break;
 		case OPT_TRIMS_XY:
