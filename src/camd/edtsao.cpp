@@ -650,6 +650,7 @@ void EdtSao::fclr_r (int num)
 
 int EdtSao::setParallelClockSpeed (int new_speed)
 {
+	logStream (MESSAGE_DEBUG) << "setting parallel clock speed to " << new_speed << sendLog;
   	unsigned long ns = 0x46000000;	
 	ns |= (new_speed & 0x00ff);
 	return edtwrite (ns);
@@ -657,6 +658,7 @@ int EdtSao::setParallelClockSpeed (int new_speed)
 
 int EdtSao::setGrayScale (bool _grayScale, int board)
 {
+	logStream (MESSAGE_DEBUG) << "setting gray scale to " << _grayScale << " on board " << board << sendLog;
 	edtwrite ((_grayScale ? 0x30c00000 : 0x30400000) | (board << 24));
 	return 0;
 }
