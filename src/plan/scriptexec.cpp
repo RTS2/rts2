@@ -359,6 +359,10 @@ rts2core::DevClient *ScriptExec::createOtherType (rts2core::Connection * conn, i
 			cli = new rts2script::DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
+			// if template was not specified, check .ini file..
+			if (templateFile.length () == 0)
+				Configuration::instance ()->getString (conn->getName (), "template", templateFile, "");
+
 			cli = new ClientCameraScript (conn, expandPath, templateFile, writeConnection, writeRTS2Values);
 			((ClientCameraScript *) cli)->setOverwrite (overwrite);
 			break;
