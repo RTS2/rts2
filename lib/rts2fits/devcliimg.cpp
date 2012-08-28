@@ -408,6 +408,11 @@ void DevClientCameraImage::fitsData (const char *fn)
 	{
 		img->openFile (fn, true, false);
 
+		if (actualImage == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "FITS data received without exposure start, file " << fn << " kept at its location" << std::endl;
+			return;
+		}
 		std::string abs = std::string (actualImage->image->getAbsoluteFileName ());
 		actualImage->image->deleteImage ();
 		delete actualImage;
@@ -563,7 +568,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 
 void DevClientCameraImage::exposureEnd (bool expectImage)
 {
-	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
+	logStream (MESSAGE_DEBUG) << "end of camera " << connection->getName () << " exposure" << sendLog;
 
 	if (expectImage == true && actualImage)
 	{
