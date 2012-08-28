@@ -689,7 +689,7 @@ int rts2db::lastObservationId ()
 	int d_obs_id;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL SELECT max(obs_id) INTO :d_obs_id FROM observations;
+	EXEC SQL SELECT max(obs_id) INTO :d_obs_id FROM observations WHERE obs_start is not null;
 
 	if (sqlca.sqlcode)
 		return -1;
