@@ -94,7 +94,7 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>rts2-nightreport</command> prints night(s) reports.
+      <command>rts2-nightreport</command> prints night(s) reports. If no date is specified, last observation night is printed.
     </para>
 
   </refsect1>

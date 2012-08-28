@@ -129,7 +129,9 @@ void Rts2NightReport::usage ()
 {
 	std::cout << "\t" << getAppName () << " -n 2007-12-31" << std::endl
 		<< "To print observations from 15th December 2007 to 18th December 2007:" << std::endl
-		<< "\t" << getAppName () << " -f 2007-12-15 -t 2007-12-18" << std::endl;
+		<< "\t" << getAppName () << " -f 2007-12-15 -t 2007-12-18" << std::endl
+		<< "To print observations and images from the last night with observation record:" << std::endl
+		<< "\t" << getAppName () << "-i" << std::endl;
 }
 
 int Rts2NightReport::processOption (int in_opt)
@@ -200,18 +202,32 @@ int Rts2NightReport::init ()
 	if (ret)
 		return ret;
 
-	if (t_from == 0)
-		t_from = rts2core::Configuration::instance ()->getNight ();
-	if (t_to == 0)
-	  	t_to = rts2core::Configuration::instance ()->getNight () + 86400;
-
-	if (tm_night)
+	if (tm_night == 0 && t_from == 0 && t_to == 0)
+	{
+		int lastobs = rts2db::lastObservationId ();
+		if (lastobs > -1)
+		{
+			rts2db::Observation obs (lastobs);
+			obs.load ();
+			Rts2Night night (obs.getObsJDStart (), rts2core::Configuration::instance ()->getObserver ());
+			t_from = *(night.getFrom ());
+			t_to = *(night.getTo ());
+		}
+	}
+	else if (tm_night)
 	{
 		// let's calculate time from..t_from will contains start of night
 		// local 12:00 will be at ~ give time..
-		Rts2Night night = Rts2Night (tm_night, rts2core::Configuration::instance ()->getObserver ());
+		Rts2Night night (tm_night, rts2core::Configuration::instance ()->getObserver ());
 		t_from = *(night.getFrom ());
 		t_to = *(night.getTo ());
+	}
+	else
+	{
+		if (t_from == 0)
+			t_from = rts2core::Configuration::instance ()->getNight ();
+		if (t_to == 0)
+		  	t_to = rts2core::Configuration::instance ()->getNight () + 86400;
 	}
 
 	if (t_from >= t_to)

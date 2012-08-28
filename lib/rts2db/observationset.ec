@@ -682,3 +682,16 @@ void ObservationSetDate::load (int year, int month, int day, int hour, int minut
 	EXEC SQL CLOSE obsdateimggood_cur;
 	EXEC SQL ROLLBACK;
 }
+
+int rts2db::lastObservationId ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_obs_id;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT max(obs_id) INTO :d_obs_id FROM observations;
+
+	if (sqlca.sqlcode)
+		return -1;
+	return d_obs_id;
+}

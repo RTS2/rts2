@@ -1,3 +1,6 @@
+2012-08-28
+ * rts2-nightreport prints last night data
+
 2012-08-26
  * changed DETSIZE to rectangle value, properly write rectangles (defines getDisplayValue)
 

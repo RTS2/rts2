@@ -221,5 +221,7 @@ class ObservationSetDate:public std::map <int, DateStatistics>
 		void load (int year = -1, int month = -1, int day = -1, int hour = 1, int minutes = -1);
 };
 
+int lastObservationId ();
+
 }
 #endif	 /* !__RTS2_OBS_SET__ */
