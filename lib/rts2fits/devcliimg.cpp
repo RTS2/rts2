@@ -410,7 +410,7 @@ void DevClientCameraImage::fitsData (const char *fn)
 
 		if (actualImage == NULL)
 		{
-			logStream (MESSAGE_ERROR) << "FITS data received without exposure start, file " << fn << " kept at its location" << std::endl;
+			logStream (MESSAGE_ERROR) << "FITS data received without exposure start, file " << fn << " kept at its location" << sendLog;
 			return;
 		}
 		std::string abs = std::string (actualImage->image->getAbsoluteFileName ());
