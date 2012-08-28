@@ -206,7 +206,7 @@ void DevClientCameraImage::newDataConn (int data_conn)
 {
 	if (!actualImage)
 	{
-		logStream (MESSAGE_ERROR) << "Data stream started without exposure!" << sendLog;
+		logStream (MESSAGE_ERROR) << "Data stream of camera " << getName () << " started without exposure!" << sendLog;
 		return;
 	}
 	images[data_conn] = actualImage;
