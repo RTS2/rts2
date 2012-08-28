@@ -209,7 +209,9 @@ int Rts2NightReport::init ()
 		{
 			rts2db::Observation obs (lastobs);
 			obs.load ();
-			Rts2Night night (obs.getObsJDStart (), rts2core::Configuration::instance ()->getObserver ());
+			time_t ts = obs.getObsStart ();
+			ts = rts2core::Configuration::instance ()->getNight (ts);
+			Rts2Night night (ln_get_julian_from_timet (&ts), rts2core::Configuration::instance ()->getObserver ());
 			t_from = *(night.getFrom ());
 			t_to = *(night.getTo ());
 		}
