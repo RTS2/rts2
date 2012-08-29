@@ -77,7 +77,9 @@ class QueueEntry:
 
 class Queue:
 	"""Queue abstraction. Provides methods for operation on the queue."""
-	def __init__(self,name,service=None):
+	def __init__(self,name,service=None,queueType=QueueEntry):
+		"""Create new queue. Service parameters specify RTS2 service name. Optional queueType allow
+		user to overwrite QueueEntry elements created for queue entries."""
 		self.name = name
 		self.service = service
 		self.entries = []
@@ -85,6 +87,7 @@ class Queue:
 		self.skip_below = True
 		self.test_constr = True
 		self.remove_executed = True
+		self.queueType = queueType
 
 		if service is None:
 			self.service = json.getProxy().getDevicesByType(json.DEVICE_TYPE_SELECTOR)[0]
@@ -109,7 +112,7 @@ class Queue:
 		self.entries = []
 
 		for i in range(0,len(ids)):
-			self.entries.append(QueueEntry(ids[i],start[i],end[i],qid[i]))
+			self.entries.append(self.queueType(ids[i],start[i],end[i],qid[i]))
 
 	def save(self):
 		"""Save queue settings to the server."""
@@ -152,7 +155,7 @@ class Queue:
 		self.queueing = int(node.getAttribute('queueing'))
 
 		for el in node.getElementsByTagName('queueEntry'):
-			q = QueueEntry()
+			q = self.queueType()
 			q.from_xml(el)
 			self.entries.append(el)
 	
