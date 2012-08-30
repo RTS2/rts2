@@ -318,6 +318,10 @@ def getProxy():
 	global __jsonProxy
 	return __jsonProxy
 
+def set_proxy(jsonProxy):
+	global __jsonProxy
+	__jsonProxy = jsonProxy
+
 def createProxy(url,username=None,password=None,verbose=False,http_proxy=None):
 	global __jsonProxy
 	__jsonProxy = JSONProxy(url=url,username=username,password=password,verbose=verbose,http_proxy=http_proxy)
