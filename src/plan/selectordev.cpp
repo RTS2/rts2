@@ -473,7 +473,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 			if (eq && eq->size () > 0 && eq->front ().target->getTargetID () == tar_id)
 			{
 				// log it..
-				logStream (MESSAGE_INFO) << "Selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << " ," << eq << sendLog;
+				logStream (MESSAGE_INFO) << "Selecting from queue " << queueNames[lastQueue->getValueInteger () - 1] << ", " << eq << sendLog;
 				eq->front ().target->startObservation ();
 				// update plan entry..
 				if (next_started->getValueBool () == false)

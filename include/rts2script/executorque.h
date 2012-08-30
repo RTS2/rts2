@@ -285,7 +285,7 @@ class ExecutorQueue:public TargetQueue
 		// prints queue configuration into stream
 		friend std::ostream & operator << (std::ostream &os, const ExecutorQueue *eq)
 		{
-			os << " type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
+			os << "type " << eq->queueType->getDisplayValue () << " skip below " << eq->skipBelowHorizon->getValueBool () << " test constraints " << eq->testConstraints->getValueBool () << " remove after execution " << eq->removeAfterExecution->getValueBool () << " enabled " << eq->queueEnabled->getValueBool () << " contains";
 			std::vector <int>::iterator niditer = eq->nextIds->valueBegin ();
 			std::vector <double>::iterator startiter = eq->nextStartTimes->valueBegin ();
 			std::vector <double>::iterator enditer = eq->nextEndTimes->valueBegin ();

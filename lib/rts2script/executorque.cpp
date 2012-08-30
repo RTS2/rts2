@@ -192,16 +192,20 @@ void TargetQueue::sortQueue (double now)
 
 bool TargetQueue::filter (double now, double maxLength)
 {
+	bool ret = false;
 	filterExpired (now);
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped);
 	TargetQueue::iterator it = begin ();
 	if (it != end ())
+	{
+		ret = true;	
 		it++;
+	}
 	insert (it, skipped.begin (), skipped.end ());
 	updateVals ();
 	// if front target was not skipped, it can be observed
-	return it != begin ();
+	return ret;
 }
 
 const TargetQueue::iterator TargetQueue::findTarget (rts2db::Target *tar)

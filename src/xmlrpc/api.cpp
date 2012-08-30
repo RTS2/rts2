@@ -85,8 +85,6 @@ digraph "JSON API calls handling" {
  *
  * <hr/>
  *
- * <hr/>
- *
  * @section JSON_expand expand
  *
  * Expand string expression for FITS headers.
