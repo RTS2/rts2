@@ -14,6 +14,13 @@ import sys
 import string
 import rts2
 import rts2.target
+import time
+
+def parse_time(s, n=time.time()):
+	"""Parses time provided as argument"""
+	if s[0] == '+':
+		return n + float(s)
+	return None
 
 if __name__ == '__main__':
 	server = 'localhost:8889'
@@ -23,7 +30,7 @@ if __name__ == '__main__':
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
 	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default='plan')
-	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="withtimes",default=False)
+	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
 	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option("--user",help="user name",action="store",dest='username',default='rts2obs')
 	parser.add_option("--password",help="user password",action="store",dest='password',default='&#Karel')
@@ -39,10 +46,10 @@ if __name__ == '__main__':
 		resp = q.clear()
 		print "cleared queue {0}".format(options.queue)
 
-	start = None
-	end = None
+	n = time.time()
 
-	for x in args:
+	while len(args):
+		x = args[0]
 		tars = rts2.target.get_target(x)
 		if len(tars) == 0:
 			print >> sys.stderr, "cannot find target with name {0}".format(x)
@@ -51,13 +58,23 @@ if __name__ == '__main__':
 		  	print >> sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x,'TBD')
 			sys.exit(2)
 
+		start = None
+		end = None
+
+		if options.with_times:
+			start = parse_time(args[1], n)
+			end = parse_time(args[2], n)
+			args = args[3:]
+		else:
+			args = args[1:]
+
 		tids = []
-		starts = []
-		ends = []
 		for t in tars:
-			resp = q.add_target(t[0])
+			resp = q.add_target(t[0], start, end)
 		  	tids.append(t[0])
 			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
+	
+	q.load()
 
 	q.load()
 	print "Queue {0}: {1}".format(options.queue,q)
