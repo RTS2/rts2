@@ -14,11 +14,21 @@ import sys
 import string
 import rts2
 import rts2.target
+import re
 import time
 
 def parse_time(s, n=time.time()):
 	"""Parses time provided as argument"""
+	mt = re.match('^[tT]([0-9][0-9]?):([0-9][0-9]?):([0-9][0-9]?)$', s)
+	if mt:
+		lt = time.localtime(n)
+		h = int(mt.groups()[0])
+		m = int(mt.groups()[1])
+		s = int(mt.groups()[2])
+		return time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+
 	if s[0] == '+':
+		# try to get multiplier
 		return n + float(s)
 	return None
 
