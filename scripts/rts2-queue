@@ -18,8 +18,10 @@ import re
 import time
 import calendar
 
-def parse_time(s, n=time.time()):
-	"""Parses time provided as argument"""
+def parse_time(s, n=time.time(), hour_nextday=False):
+	"""Parses time provided as argument. n is actual time, hour_nextday
+	specify if only hour information should be altered to next day if the time already passed
+	(for example T12:00 will be converdet to tomorrow T12:00 if computer time is > T12:00)"""
 	mt = re.match('^[uUtT]([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
 	if mt:
 		ut = False
@@ -41,14 +43,65 @@ def parse_time(s, n=time.time()):
 			s = int(mt.groups()[4])
 		except TypeError:
 			pass
+		ret = None
 		if ut:
-			return calendar.timegm((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+			ret = calendar.timegm((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
 		else:
-			return time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+			ret = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+		if hour_nextday and ret < n:
+				ret += 86400.0
+		return ret
+	# user specified full date
+	mt = re.match('^([0-9]+)-([0-9]+)-([0-9]+)([uUtT])([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
+	if mt:
+		ut = False
+		if mt.groups()[3] == 'u' or mt.groups()[3] == 'U':
+			ut = True
+		lt = None
+		if ut:
+			lt = time.gmtime(n)
+		else:
+			lt = time.localtime(n)
 
-	if s[0] == '+':
+		Y = int(mt.groups()[0])
+		M = int(mt.groups()[1])
+		D = int(mt.groups()[2])
+
+		h = int(mt.groups()[4])
+		m = 0
+		try:
+			m = int(mt.groups()[6])
+		except TypeError:
+			pass
+		s = 0
+		try:
+			s = int(mt.groups()[8])
+		except TypeError:
+			pass
+		ret = None
+		if ut:
+			ret = calendar.timegm((Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+		else:
+			ret = time.mktime((Y, M, D, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+		if hour_nextday and ret < n:
+				ret += 86400.0
+		return ret
+
+	if s[0] == '+' or s[0] == '-':
 		# try to get multiplier
-		return n + float(s)
+		off = 0
+		neg = (s[0] == '-')
+		s = s[1:]
+		while len(s):
+			mt = re.match('^([0-9]+(\.[0-9]*)?)([Ddhms])', s)
+			if not mt:
+				raise Exception('cannot parse {0}, exiting'.format(s))
+			off += {'D':86164, 'd':86400, 'h':3600, 's':1}[mt.groups()[2]] * float(mt.groups()[0])
+			s = s[mt.span()[1]:]
+		if neg:
+			return n - off
+		else:
+			return n + off
 	return None
 
 if __name__ == '__main__':
@@ -81,18 +134,18 @@ if __name__ == '__main__':
 		x = args[0]
 		tars = rts2.target.get_target(x)
 		if len(tars) == 0:
-			print >> sys.stderr, "cannot find target with name {0}".format(x)
+			print >>sys.stderr, "cannot find target with name {0}".format(x)
 			sys.exit(1)
 		if options.unique and len(tars) != 1:
-		  	print >> sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x,'TBD')
+		  	print >>sys.stderr, "target name {0} is not unique - returned target with IDs {1}".format(x, 'TBD')
 			sys.exit(2)
 
 		start = None
 		end = None
 
 		if options.with_times:
-			start = parse_time(args[1], n)
-			end = parse_time(args[2], n)
+			start = parse_time(args[1], n, True)
+			end = parse_time(args[2], n, True)
 			args = args[3:]
 		else:
 			args = args[1:]
@@ -100,8 +153,18 @@ if __name__ == '__main__':
 		tids = []
 		for t in tars:
 			resp = q.add_target(t[0], start, end)
+			startend = ""
+			if start is not None or end is not None:
+				startend = '('
+				if start is not None:
+					startend += 'starts {0}'.format(time.strftime('%c %Z', time.localtime(start)))
+				if end is not None:
+					if start is not None:
+						startend += ' '
+					startend += 'ends {0}'.format(time.strftime('%c %Z', time.localtime(end)))
+				startend += ')'
 		  	tids.append(t[0])
-			print 'Queued to queue {0} target {1} with ID {2} on ra dec {3} {4}'.format(options.queue,t[1],t[0],t[2],t[3])
+			print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
 	
 	q.load()
 
