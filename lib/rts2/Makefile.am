@@ -7,6 +7,7 @@ noinst_PROGRAMS = test
 bin_PROGRAMS=rts2-horizon
 
 AM_CXXFLAGS=@NOVA_CFLAGS@
+AM_CFLAGS=@NOVA_CFLAGS@
 
 test_SOURCES = test.cpp
 test_LDADD = -lrts2 @LIB_NOVA@
