@@ -107,7 +107,23 @@ def parse_time(s, n=time.time(), hour_nextday=False):
 if __name__ == '__main__':
 	server = 'localhost:8889'
 
-  	parser = OptionParser()
+  	parser = OptionParser(usage="""rts2-queue [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--verbose] <target1>..
+       rts2-queue --with-times [--unique][--clear][--queue <queue name>][--server <server>][--user <username>][--password <password>][--verbose] <target1> <start> <end>..
+
+Queue target to the queues. Targets are queued to rts2-selector service using JSON interface provided by rts2-xmlrpc, so those two services must run on target machine. Start and end times can be specified in various times, either absolute or relative to the current time.
+
+To specify absolute time, either start with T or U (for local or UT time) followed by hours and possibly minutes and seconds separated by :, or provide full datetime string. You can use U or T in datetime string to specify UT or local time.
+
+Relative times must start with + (or -). You can then provide any compinations of float numbers followed by multiplier. Multiplier d is for sidereal day (23h56m..), D is for civil day (24), h, m and s are for hours, minutes and seconds.
+
+Following list is an example of valid string for date and time:
+
++2D +2D3h2m T18:00 U10:00:00 2012-10-11T18 2012-11-12U12:00
+
+Example use:
+
+rts2-queue --queue manual SN2012A
+rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
