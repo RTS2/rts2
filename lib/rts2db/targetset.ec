@@ -616,8 +616,7 @@ TargetSet::iterator const rts2db::resolveAll (TargetSet *ts)
 
 TargetSet::iterator const rts2db::consoleResolver (TargetSet *ts)
 {
-	std::cout << "Please make a selection (or ctrl+c for end):" << std::endl
-		<< "  0) all" << std::endl;
+	std::cout << "Please make a selection (or ctrl+c for end):" << std::endl << "  0) all" << std::endl;
 	size_t i = 1;
 	TargetSet::iterator iter = ts->begin ();
 	for (; iter != ts->end (); i++, iter++)
