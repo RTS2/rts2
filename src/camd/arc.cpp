@@ -578,7 +578,7 @@ int Arc::doReadout ()
 	{
 		if (controller.IsReadout ())
 			return USEC_SEC / 1000.0;
-		if (controller.GetPixelCount () != chipUsedSize ())
+		if (controller.GetPixelCount () < chipUsedSize ())
 			return USEC_SEC / 1000.0;
 
 		arc::CDeinterlace deint;
