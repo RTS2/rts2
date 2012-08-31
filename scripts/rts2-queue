@@ -16,16 +16,35 @@ import rts2
 import rts2.target
 import re
 import time
+import calendar
 
 def parse_time(s, n=time.time()):
 	"""Parses time provided as argument"""
-	mt = re.match('^[tT]([0-9][0-9]?):([0-9][0-9]?):([0-9][0-9]?)$', s)
+	mt = re.match('^[uUtT]([0-9][0-9]?)(:([0-9][0-9]?)(:([0-9][0-9]?))?)?$', s)
 	if mt:
-		lt = time.localtime(n)
+		ut = False
+		if s[0] == 'u' or s[0] == 'U':
+			ut = True
+		lt = None
+		if ut:
+			lt = time.gmtime(n)
+		else:
+			lt = time.localtime(n)
 		h = int(mt.groups()[0])
-		m = int(mt.groups()[1])
-		s = int(mt.groups()[2])
-		return time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+		m = 0
+		try:
+			m = int(mt.groups()[2])
+		except TypeError:
+			pass
+		s = 0
+		try:
+			s = int(mt.groups()[4])
+		except TypeError:
+			pass
+		if ut:
+			return calendar.timegm((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
+		else:
+			return time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, m, s, lt.tm_wday, lt.tm_yday, lt.tm_isdst))
 
 	if s[0] == '+':
 		# try to get multiplier
