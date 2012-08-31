@@ -483,7 +483,7 @@ int Arc::startExposure ()
 			if (clearCCD->getValueInteger () == 1)
 				controller.Command (arc::TIM_ID, CLR);
 			controller.Command (arc::TIM_ID, OSH);
-			return 0;
+			return 1;
 		}
 		lReply = controller.Command (arc::TIM_ID, SET, (long) (getExposure () * 1000));
 		controller.CheckReply (lReply);
