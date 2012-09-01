@@ -146,7 +146,7 @@ class AstrometryScript:
 			if a == '':
 				break
 			if verbose:
-				print a
+				print a,
 			match=radecline.match(a)
 			if match:
 				ret=[dms.parseDMS(match.group(1)),dms.parseDMS(match.group(2))]
