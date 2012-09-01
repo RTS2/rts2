@@ -128,6 +128,8 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 	parser.add_option("--unique", help="only accept unique target names", action='store_true', dest='unique')
 	parser.add_option("--clear", help="clear given queue", action='store_true',dest='clear')
 	parser.add_option("--queue", help='specify queue name on which to act', action='store', dest='queue', default='plan')
+	parser.add_option('--load', help='add targets from XML file', action='append', dest='load_xml')
+	parser.add_option('--save', help='save queues to XML file', action='store', dest='save_xml')
 	parser.add_option("--with-times",help="specify observation time",action="store_true",dest="with_times",default=False)
 	parser.add_option('--server',help='URL to RTS2 XML-RPC server',action='store',dest='server',default='http://localhost:8889')
 	parser.add_option("--user",help="user name",action="store",dest='username',default='rts2obs')
@@ -183,6 +185,9 @@ rts2-queue --queue manual --with-times SN2012 2012-10-8T18 +2D3h""")
 			print 'Queued to queue {0} target {1} {2}with ID {3} on RA {4} DEC {5}'.format(options.queue, startend, t[1], t[0], t[2], t[3])
 	
 	q.load()
-
+	
+	if options.load_xml:
+		for xml in options.load_x:
+			rts2.queue.load_xml(xml)
 	q.load()
 	print "Queue {0}: {1}".format(options.queue,q)
