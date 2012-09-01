@@ -21,10 +21,10 @@ import calendar
 import time
 import re
 
-def iso8601str(t):
+def str(t):
 	return time.strftime("%Y-%m-%dT%H:%M:%S",time.gmtime(t))
 
-def iso8601ctime(s):
+def ctime(s):
 	# special format string - if only time is specified, it means tonight..
 	match = re.match('^(\d+):(\d+):(\d+)$',s)
 	if match:

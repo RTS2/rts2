@@ -40,10 +40,11 @@ def _getXmlBoolAttribute(node,name):
 
 class QueueEntry:
 	"""Single queue entry. Provides methods to work on entry (observation request) level."""
-	def __init__(self,id=None,start=None,end=None,qid=None):
+	def __init__(self, id, start, end, qid):
 		self.id = id
-		self.start = start
-		self.end = end
+		self.__start = self.__end = None
+		self.set_start(start)
+		self.set_end(end)
 		self.qid = qid
 		self.target = None
 	
@@ -51,10 +52,10 @@ class QueueEntry:
 		self.id = el.getAttribute('id')
 		start = el.getAttribute('start')
 		if len(start)>0:
-			self.start = iso8601.ctime(start)
+			self.set_start(iso8601.ctime(start))
 		end = el.getAttribute('end')
 		if len(end)>0:
-			self.end = iso8601.ctime(end)
+			self.set_end(iso8601.ctime(end))
 		self.qid = None
 
 	def get_target(self):
@@ -69,11 +70,23 @@ class QueueEntry:
 		en.setAttribute('id',str(self.id))
 
 		en.setAttribute('name',self.get_target().name)
-		if self.start is not None:
-			en.setAttribute('start',iso8601str(self.start))
-		if self.end is not None:
-			en.setAttribute('end',iso8601str(self.end))
+		if self.get_start() is not None:
+			en.setAttribute('start',iso8601.str(self.get_start()))
+		if self.get_end() is not None:
+			en.setAttribute('end',iso8601.str(self.get_end()))
 		return en
+	
+	def get_start(self):
+		return self.__start
+
+	def get_end(self):
+		return self.__end
+	
+	def set_start(self, start):
+		self.__start = start
+	
+	def set_end(self, end):
+		self.__end = end
 
 class Queue:
 	"""Queue abstraction. Provides methods for operation on the queue."""
@@ -118,7 +131,6 @@ class Queue:
 		"""Save queue settings to the server."""
 		self.clear()
 		json.getProxy().setValues({
-			'{0}_queing'.format(self.name):self.queueing,
 			'{0}_skip_below'.format(self.name):self.skip_below,
 			'{0}_test_constr'.format(self.name):self.test_constr,
 			'{0}_remove_executed'.format(self.name):self.remove_executed,
@@ -126,7 +138,7 @@ class Queue:
 		},device=self.service)
 		queue_cmd = ''
 		for x in self.entries:
-			queue_cmd += ' {0} {1} {2}'.format(x.id,_nanNone(x.start),_nanNone(x.end))
+			queue_cmd += ' {0} {1} {2}'.format(x.id,_nanNone(x.get_start()),_nanNone(x.get_end()))
 		json.getProxy().executeCommand(self.service,'queue_at {0}{1}'.format(self.name,queue_cmd))
 	
 	def add_target(self,id,start=None,end=None):
@@ -155,7 +167,7 @@ class Queue:
 		self.queueing = int(node.getAttribute('queueing'))
 
 		for el in node.getElementsByTagName('queueEntry'):
-			q = self.queueType()
+			q = self.queueType(None, None, None, None)
 			q.from_xml(el)
 			self.entries.append(el)
 	
