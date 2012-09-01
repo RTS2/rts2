@@ -5,11 +5,11 @@ import pyfits
 import sys
 from optparse import OptionParser
 
-def run_on_image(fn,verbose=False,blind=False,multiwcs='',radius=5):
+def run_on_image(fn, verbose=False, blind=False, multiwcs='', radius=5, scale_relative_error=0.05):
 	import rts2.astrometry
 	import rts2.libnova
 
-	a = rts2.astrometry.AstrometryScript(fn)
+	a = rts2.astrometry.AstrometryScript(fn, scale_relative_error=scale_relative_error)
 
 	ff=pyfits.fitsopen(fn,'readonly')
 
@@ -72,10 +72,11 @@ def run_on_image(fn,verbose=False,blind=False,multiwcs='',radius=5):
 
 
 parser = OptionParser()
-parser.add_option('--multi-wcs',help='Multiple WCS extension',action='store',dest='multiwcs',default='')
-parser.add_option('--blind',help='Blind solve',action='store_true',dest='blind',default=False)
-parser.add_option('--radius',help='Error radius',action='store',dest='radius',default=None)
-parser.add_option('--verbose',help='Be verbose, print what the script is doing',action='store_true',dest='verbose',default=False)
+parser.add_option('--multi-wcs', help='Multiple WCS extension', action='store', dest='multiwcs', default='')
+parser.add_option('--blind', help='Blind solve', action='store_true', dest='blind', default=False)
+parser.add_option('--radius', help='Error radius', action='store', dest='radius', default=None)
+parser.add_option('--scale-error', help='scale error in %', action='store', dest='scale_error', default=5)
+parser.add_option('--verbose', help='Be verbose, print what the script is doing', action='store_true', dest='verbose', default=False)
 
 (options,args) = parser.parse_args()
 
@@ -84,4 +85,4 @@ if not(len(args) == 1):
 	sys.exit(1)
 
 for x in args:
-	run_on_image(x,verbose=options.verbose,blind=options.blind,multiwcs=options.multiwcs)
+	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, scale_relative_error=options.scale_error / 100.0)
