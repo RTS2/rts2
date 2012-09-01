@@ -85,4 +85,4 @@ if not(len(args) == 1):
 	sys.exit(1)
 
 for x in args:
-	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, scale_relative_error=float(options.scale_error) / 100.0)
+	run_on_image(x, verbose=options.verbose, blind=options.blind, multiwcs=options.multiwcs, radius=float(options.radius), scale_relative_error=float(options.scale_error) / 100.0)
