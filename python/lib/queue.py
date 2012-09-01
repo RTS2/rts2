@@ -49,14 +49,12 @@ class QueueEntry:
 		self.target = None
 	
 	def from_xml(self,el):
-		self.id = el.getAttribute('id')
 		start = el.getAttribute('start')
 		if len(start)>0:
 			self.set_start(iso8601.ctime(start))
 		end = el.getAttribute('end')
 		if len(end)>0:
 			self.set_end(iso8601.ctime(end))
-		self.qid = None
 
 	def get_target(self):
 		"""Return target object associated with the queue."""
@@ -167,9 +165,9 @@ class Queue:
 		self.queueing = int(node.getAttribute('queueing'))
 
 		for el in node.getElementsByTagName('queueEntry'):
-			q = self.queueType(None, None, None, None)
+			q = self.queueType(el.getAttribute('id'), None, None, None)
 			q.from_xml(el)
-			self.entries.append(el)
+			self.entries.append(q)
 	
 	def load_xml(self,f):
 		document = xml.dom.minidom.parse(f)
