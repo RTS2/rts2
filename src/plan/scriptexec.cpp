@@ -46,6 +46,7 @@ using namespace rts2image;
 #define EVENT_EXP_CHECK           RTS2_LOCAL_EVENT + 305
 
 #define OPT_NO_WRITE              OPT_LOCAL + 710
+#define OPT_RESET                 OPT_LOCAL + 711
 
 bool usesNcurses = false;
 bool read100 = false;
@@ -95,7 +96,7 @@ void ClientCameraScript::postEvent (rts2core::Event *event)
 		case EVENT_EXP_CHECK:
 			if (getConnection ()->getState () & (CAM_EXPOSING | CAM_READING))
 			{
-				double fr = getConnection ()->getProgress (getMaster ()->getNow ());
+				double fr = getConnection ()->getProgress (getNow ());
 				if (read100 == false || fr < 100)
 				{
 					std::string oss = obsstatus ();
@@ -182,8 +183,10 @@ int ScriptExec::processOption (int in_opt)
 		case 'd':
 			deviceName = optarg;
 			break;
+		case OPT_RESET:
+			callScriptEnd = true;
+			break;
 		case 'S':
-			callScriptEnd = false;
 		case 's':
 			if (!deviceName)
 			{
@@ -248,14 +251,15 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv):rts2core::Client (in_argc, 
 	defaultScript = NULL;
 	deviceName = NULL;
 
-	callScriptEnd = true;
+	callScriptEnd = false;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
 	addOption ('c', NULL, 1, "name of next script camera");
 	addOption ('d', NULL, 1, "name of next script device");
+	addOption (OPT_RESET, "reset", 0, "perform device reset before taking exposure");
 	addOption ('s', NULL, 1, "device script (for device specified with d)");
-	addOption ('S', NULL, 1, "device script called without explicit script_ends (without device reset)");
+	addOption ('S', NULL, 1, "device script (for device specified with d)");
 	addOption ('f', NULL, 1, "script filename");
 
 	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");

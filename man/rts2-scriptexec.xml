@@ -52,9 +52,9 @@
       <arg choice="opt">
         <arg choice="plain">
 	   <option>-s</option> <replaceable>script</replaceable>
-           <option>-S</option> <replaceable>script</replaceable>
 	</arg>
       </arg>
+      <arg choice="opt"><option>--reset</option></arg>
       <arg choice="opt"><option>-e</option> <replaceable>expand string</replaceable></arg>
       <arg choice="opt"><option>-o</option> <replaceable>expand string</replaceable></arg>
       <arg choice="opt"><option>-t</option> <replaceable>template filename</replaceable></arg>
@@ -111,11 +111,11 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-S <replaceable class="parameter">script</replaceable></option></term>
+        <term><option>--reset</option></term>
         <listitem>
           <para>
-	    Similar to -s, but does not call script_ends before executing the
-	    script - does not reset device to default configuration.
+	    Issue command to reset values before running the script. Values specified in driver code
+	    are reset to their default configuration.
 	  </para>
         </listitem>
       </varlistentry>
@@ -218,7 +218,7 @@
     </para>
 
     <screen>
-      while true; do <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-S</option> <replaceable>'for 1000 { E 1 }'</replaceable> | while read x; do xpaset ds9 fits &lt; $x; done ; done
+      while true; do <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 1000 { E 1 }'</replaceable> | while read x; do xpaset ds9 fits &lt; $x; done ; done
     </screen>
 
   </refsect1>    
