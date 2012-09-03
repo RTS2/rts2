@@ -197,7 +197,7 @@ bool TargetQueue::filter (double now, double maxLength)
 	std::list <QueuedTarget> skipped;
 	filterUnobservable (now, maxLength, skipped);
 	TargetQueue::iterator it = begin ();
-	if (it != end ())
+	if (!empty ())
 	{
 		ret = true;	
 		it++;
