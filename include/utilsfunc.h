@@ -325,6 +325,14 @@ class ProgressIndicator
 		int w;
 };
 
+// number of seconds in msec
+#define USEC_SEC    1000000
+
+/**
+ * Return current time as double.
+ */
+double getNow ();
+
 /**
  * Creates multiple WCS name from value name and suffix.
  */

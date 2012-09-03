@@ -397,6 +397,13 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 }
 #endif
 
+double getNow ()
+{
+	struct timeval infot;
+	gettimeofday (&infot, NULL);
+	return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
+}
+
 const char * multiWCS (const char *name, char multi_wcs)
 {
 	static char ret[50];

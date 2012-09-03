@@ -1845,7 +1845,7 @@ int Connection::paramNextDoubleTime (double *num)
 	if (ret != 1)
 		return -1;
 	if (str_num[0] == '+')
-		*num += getMaster ()->getNow ();
+		*num += getNow ();
 	return 0;
 }
 
@@ -2115,7 +2115,7 @@ double Connection::getInfoTime ()
 {
 	if (info_time)
 		return info_time->getValueDouble ();
-	return getMaster ()->getNow ();
+	return getNow ();
 }
 
 void Connection::getInfoTime (struct timeval &tv)

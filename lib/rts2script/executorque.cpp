@@ -598,7 +598,7 @@ int ExecutorQueue::selectNextObservation (int &pid, int &qid, bool &hard, double
 		return -1;
 	if (size () > 0)
 	{
-		double now = master->getNow ();
+		double now = getNow ();
 		if (filter (now, next_length) && front ().notExpired (now))
 		{
 			if (isnan (next_length))
@@ -801,7 +801,7 @@ ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &ite
 	{
 		removedIds->addValue (iter->target->getTargetID ());
 		removedNames->addValue (iter->target->getTargetName ());
-		removedTimes->addValue (master->getNow ());
+		removedTimes->addValue (getNow ());
 		removedWhy->addValue (reason);
 		removedQueueEntry->addValue (iter->qid);
 
@@ -815,7 +815,7 @@ ExecutorQueue::iterator ExecutorQueue::removeEntry (ExecutorQueue::iterator &ite
 	{
 		executedIds->addValue (iter->target->getTargetID ());
 		executedNames->addValue (iter->target->getTargetName ());
-		executedTimes->addValue (master->getNow ());
+		executedTimes->addValue (getNow ());
 		executedQueueEntry->addValue (iter->qid);
 
 		master->sendValueAll (executedIds);

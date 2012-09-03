@@ -59,7 +59,7 @@ void XmlDevInterface::stateChanged (rts2core::ServerState * state)
 
 void XmlDevInterface::valueChanged (rts2core::Value * value)
 {
-	changedTimes[value] = getMaster()->getNow ();
+	changedTimes[value] = getNow ();
 	(getMaster ())->valueChangedEvent (getConnection (), value);
 }
 

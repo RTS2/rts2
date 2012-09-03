@@ -154,7 +154,7 @@ void AsyncValueAPI::sendState (rts2core::Connection *_conn)
 void AsyncValueAPI::sendValue (const std::string &device, rts2core::Value *_value)
 {
 	std::ostringstream os;
-	os << "{\"d\":\"" << device << "\",\"v\":{";
+	os << "{\"d\":\"" << device << "\",\"t\":" << getNow () << ",\"v\":{";
 	jsonValue (_value, true, os);
 	os << "}}";
 	if (source == NULL || source->sendChunked (os.str ()) == false)

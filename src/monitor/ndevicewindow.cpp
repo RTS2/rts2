@@ -50,13 +50,13 @@ void NDeviceWindow::printState ()
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
 #ifdef DEBUG	
-	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (connection->getMaster ()->getNow ()));
+	mvwprintw (window, 0, 2, "%s %s (%x) %x %3.1f", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState (), connection->getProgress (getNow ()));
 #else
 	mvwprintw (window, 0, 2, "%s %s ", connection->getName (), connection->getStateString ().c_str ());
 
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
-	double p = connection->getProgress (connection->getMaster ()->getNow ());
+	double p = connection->getProgress (getNow ());
 	if (!isnan (p))
 	{
 		std::ostringstream os;

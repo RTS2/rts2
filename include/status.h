@@ -28,9 +28,6 @@
 #ifndef __RTS2__STATUS__
 #define __RTS2__STATUS__
 
-// number of seconds in msec
-#define USEC_SEC    1000000
-
 // mask used to communicate errors which occured on device
 #define DEVICE_ERROR_MASK   0x00ff0000
 

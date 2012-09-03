@@ -289,7 +289,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	// return sun altitude
 	else if (vals.size () == 1 && vals[0] == "sunalt")
 	{
-		time_t from = params->getInteger ("from", master->getNow () - 86400);
+		time_t from = params->getInteger ("from", getNow () - 86400);
 		time_t to = params->getInteger ("to", from + 86400);
 		const int steps = params->getInteger ("step", 1000);
 
@@ -325,7 +325,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 	// return altitude of target..
 	else if (vals.size () == 1 && vals[0] == "taltitudes")
 	{
-		time_t from = params->getInteger ("from", master->getNow () - 86400);
+		time_t from = params->getInteger ("from", getNow () - 86400);
 		time_t to = params->getInteger ("to", from + 86400);
 		const int steps = params->getInteger ("steps", 1000);
 
@@ -832,7 +832,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 			if (cn[0] == '\0')
 				throw JSONException ("unknow constraint name");
 			rts2db::Target *tar = getTarget (params);
-			double from = params->getDouble ("from", master->getNow ());
+			double from = params->getDouble ("from", getNow ());
 			double to = params->getDouble ("to", from + 86400);
 			// 60 sec = 1 minute step (by default)
 			double step = params->getDouble ("step", 60);
@@ -863,7 +863,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "satisfied")
 		{
 			rts2db::Target *tar = getTarget (params);
-			time_t from = params->getDouble ("from", master->getNow ());
+			time_t from = params->getDouble ("from", getNow ());
 			time_t to = params->getDouble ("to", from + 86400);
 			double length = params->getDouble ("length", 1800);
 			int step = params->getInteger ("step", 60);
@@ -918,7 +918,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		else if (vals[0] == "cnst_time" || vals[0] == "cnst_time_v")
 		{
 			rts2db::Target *tar = getTarget (params);
-			time_t from = params->getInteger ("from", master->getNow ());
+			time_t from = params->getInteger ("from", getNow ());
 			time_t to = params->getInteger ("to", from + 86400);
 			double steps = params->getDouble ("steps", 1000);
 
@@ -1106,7 +1106,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		else if (vals[0] == "plan")
 		{
-			rts2db::PlanSet ps (params->getDouble ("from", master->getNow ()), params->getDouble ("to", NAN));
+			rts2db::PlanSet ps (params->getDouble ("from", getNow ()), params->getDouble ("to", NAN));
 			ps.load ();
 
 			os << "\"h\":["
@@ -1168,7 +1168,7 @@ void API::executeJSON (std::string path, XmlRpc::HttpParams *params, const char*
 		}
 		else if (vals[0] == "messages")
 		{
-			double to = params->getDouble ("to", master->getNow ());
+			double to = params->getDouble ("to", getNow ());
 			double from = params->getDouble ("from", to - 86400);
 			int typemask = params->getInteger ("type", MESSAGE_MASK_ALL);
 
@@ -1315,7 +1315,7 @@ void API::jsonTargets (rts2db::TargetSet &tar_set, std::ostringstream &os, XmlRp
 {
 	bool extended = params->getInteger ("e", false);
 	bool withpm = params->getInteger ("propm", false);
-	time_t from = params->getInteger ("from", getMasterApp()->getNow ());
+	time_t from = params->getInteger ("from", getNow ());
 	int c = 5;
 	if (chunked)
 		os << "\"rows\":" << tar_set.size () << ",";

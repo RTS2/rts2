@@ -425,8 +425,8 @@ void DevClientCameraImage::fitsData (const char *fn)
 		// convert FITS to data
 		fits2DataChannels (img, data);
 
-		images[0] = new CameraImage (img, getMaster ()->getNow (), prematurelyReceived);
-		images[0]->setExEnd (getMaster ()->getNow ());
+		images[0] = new CameraImage (img, getNow (), prematurelyReceived);
+		images[0]->setExEnd (getNow ());
 		writeToFitsTransfer (img);
 
 		fullDataReceived (0, data);
@@ -547,7 +547,7 @@ void DevClientCameraImage::exposureStarted (bool expectImage)
 		// delete old image
 		delete actualImage;
 		// create image
-		actualImage = new CameraImage (image, getMaster ()->getNow (), prematurelyReceived);
+		actualImage = new CameraImage (image, getNow (), prematurelyReceived);
 
 		prematurelyReceived.clear ();
 		
@@ -572,7 +572,7 @@ void DevClientCameraImage::exposureEnd (bool expectImage)
 
 	if (expectImage == true && actualImage)
 	{
-		actualImage->setExEnd (getMaster ()->getNow ());
+		actualImage->setExEnd (getNow ());
 		connection->postMaster (new rts2core::Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 	}
 
@@ -748,7 +748,7 @@ void DevClientWriteImage::postEvent (rts2core::Event * event)
 			if (connection->existWriteType (RTS2_VWHEN_BEFORE_END))
 			{
 				queCommand (new rts2core::CommandInfo (getMaster ()));
-				ci->waitForDevice (this, getMaster ()->getNow ());
+				ci->waitForDevice (this, getNow ());
 			}
 			if (connection->existWriteType (RTS2_VWHEN_TRIGGERED))
 			{

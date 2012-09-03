@@ -410,7 +410,7 @@ void Targets::callAPI (rts2db::Target *tar, HttpParams *params, const char* &res
 		rts2core::ValueRaDec *tarRaDec = (rts2core::ValueRaDec *) ((*iter)->getValueType ("TAR", RTS2_VALUE_RADEC));
 
 		std::ostringstream os;
-		os << "{\"remaining\":" << ((*iter)->getValueDouble ("move_end") - ((XmlRpcd *)getMasterApp ())->getNow ())
+		os << "{\"remaining\":" << ((*iter)->getValueDouble ("move_end") - getNow ())
 			<< ", \"tel\": {\"ra\":" << telRaDec->getRa () << ", \"dec\":" << telRaDec->getDec ()
 			<< ", \"alt\":" << telAltAz->getAlt () << ", \"az\":" << telAltAz->getAz ()
 			<< "}, \"tar\": {\"ra\":" << tarRaDec->getRa () << ", \"dec\":" << tarRaDec->getDec ()
