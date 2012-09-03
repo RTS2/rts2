@@ -147,7 +147,12 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 void AsyncValueAPI::sendState (rts2core::Connection *_conn)
 {
 	std::ostringstream os;
-	os << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState () << "}";
+	os << std::fixed << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState ();
+	if (!isnan (_conn->getProgressStart ()))
+		os << ",\"sf\":" << _conn->getProgressStart ();
+	if (!isnan (_conn->getProgressEnd ()))
+		os << ",\"st\":" << _conn->getProgressEnd ();
+	os << "}";
 	source->sendChunked (os.str ());
 }
 
