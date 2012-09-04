@@ -104,6 +104,7 @@ class AsyncValueAPI:public AsyncAPI
 	private:
 		// values registered for ASYNC API
 		std::vector <std::string> states;
+		std::vector <std::string> devices;
 		std::vector <std::pair <std::string, std::string> > values;
 
 		void sendState (rts2core::Connection *_conn);

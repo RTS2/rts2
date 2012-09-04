@@ -77,6 +77,11 @@ AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source
 		{
 			states.push_back (iter->getName ());
 		}
+		else if (strcmp (iter->getValue (), "*") == 0)
+		{
+			states.push_back (iter->getName ());
+			devices.push_back (iter->getName ());
+		}
 		else
 		{
 			values.push_back (std::pair <std::string, std::string> (iter->getName (), iter->getValue ()));
@@ -86,6 +91,9 @@ AsyncValueAPI::AsyncValueAPI (API *_req, XmlRpc::XmlRpcServerConnection *_source
 
 void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
 {
+	if (source == NULL)
+		return;
+
 	for (std::vector <std::string>::iterator iter = states.begin (); iter != states.end (); iter++)
 	{
 		if (*iter == _conn->getName () || (_conn->getOtherType () == DEVICE_TYPE_SERVERD && *iter == "centrald"))
@@ -97,9 +105,20 @@ void AsyncValueAPI::stateChanged (rts2core::Connection *_conn)
 
 void AsyncValueAPI::valueChanged (rts2core::Connection *_conn, rts2core::Value *_value)
 {
+	if (source == NULL)
+		return;
+
+	for (std::vector <std::string>::iterator iter = devices.begin (); iter != devices.end (); iter++)
+	{
+		if (*iter == _conn->getName ())
+		{
+			sendValue (*iter, _value);
+			return;
+		}
+	}
 	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
-		if (iter->first == _conn->getName () && _value->isValue (iter->second.c_str ()) && source != NULL)
+		if (iter->first == _conn->getName () && _value->isValue (iter->second.c_str ()))
 		{
 			sendValue (iter->first, _value);
 			return;
@@ -125,6 +144,18 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 			sendState (_conn);
 		}
 	}
+	for (std::vector <std::string>::iterator iter = devices.begin (); iter != devices.end (); iter++)
+	{
+		rts2core::Connection *con = device->getOpenConnection (iter->c_str ());
+		if (con == NULL)
+			throw XmlRpc::JSONException ("cannot find opened connection with name " + *iter);
+
+		for (rts2core::ValueVector::iterator viter = con->valueBegin (); viter != con->valueEnd (); viter++)
+		{
+			sendValue (*iter, *viter);
+		}
+		return;
+	}
 	for (std::vector <std::pair <std::string, std::string> >::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		if (iter->first == device->getDeviceName ())
@@ -135,7 +166,7 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 		{
 			rts2core::Connection *con = device->getOpenConnection (iter->first.c_str ());
 			if (con == NULL)
-				throw XmlRpc::JSONException ("cannot find open connection with name " + iter->first);
+				throw XmlRpc::JSONException ("cannot find opened connection with name " + iter->first);
 			val = con->getValue (iter->second.c_str ());
 		}
 		if (val == NULL)
@@ -147,7 +178,7 @@ void AsyncValueAPI::sendAll (rts2core::Device *device)
 void AsyncValueAPI::sendState (rts2core::Connection *_conn)
 {
 	std::ostringstream os;
-	os << std::fixed << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState ();
+	os << std::fixed << "{\"d\":\"" << (_conn->getOtherType () == DEVICE_TYPE_SERVERD ? "centrald" : _conn->getName ()) << "\",\"s\":" << _conn->getState () << ",\"t\":" << getNow ();
 	if (!isnan (_conn->getProgressStart ()))
 		os << ",\"sf\":" << _conn->getProgressStart ();
 	if (!isnan (_conn->getProgressEnd ()))
