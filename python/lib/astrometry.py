@@ -32,6 +32,7 @@ import pyfits
 import tempfile
 import numpy
 import math
+import signal
 
 import dms
 
@@ -103,7 +104,7 @@ class AstrometryScript:
 		self.infpath=self.odir + '/input.fits'
 		shutil.copy(self.fits_file, self.infpath)
 
-	def run(self,scale=None,ra=None,dec=None,radius=5.0,replace=False,verbose=False):
+	def run(self, scale=None, ra=None, dec=None, radius=5.0, replace=False, timeout=None, verbose=False):
 
 		solve_field=[self.astrometry_bin + '/solve-field', '-D', self.odir,'--no-plots', '--no-fits2fits']
 
@@ -136,6 +137,12 @@ class AstrometryScript:
 			print 'running',' '.join(solve_field)
 	    
 		proc=subprocess.Popen(solve_field,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+		if timeout is not None:
+			def __term_proc(sig, stack):
+				proc.terminate()
+			signal.signal(signal.SIGALRM, __term_proc)
+			signal.alarm(timeout)
 
 		radecline=re.compile('Field center: \(RA H:M:S, Dec D:M:S\) = \(([^,]*),(.*)\).')
 
