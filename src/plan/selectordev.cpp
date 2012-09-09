@@ -506,6 +506,7 @@ int SelectorDev::updateNext (bool started, int tar_id, int obs_id)
 		{
 			if (interrupt->getValueBool () == true)
 			{
+				logStream (MESSAGE_INFO) << "interrupt is set to true, executing next target with now" << sendLog;
 				(*iexec)->queCommand (new rts2core::CommandExecNow (this, next_id->getValueInteger ()));
 				interrupt->setValueBool (false);
 			}

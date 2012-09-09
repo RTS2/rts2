@@ -78,7 +78,7 @@ class Executor:public rts2db::DeviceDb
 		void doSwitch ();
 		int switchTarget ();
 
-		int setNext (int nextId, const char *que = "next");
+		int setNext (int nextId);
 		int queueTarget (int nextId, double t_start = NAN, double t_end = NAN);
 		int setNow (int nextId);
 		int setGrb (int grbId);
@@ -105,6 +105,8 @@ class Executor:public rts2db::DeviceDb
 
 		rts2core::ValueInteger *acqusitionOk;
 		rts2core::ValueInteger *acqusitionFailed;
+
+		rts2core::ValueBool *next_night;
 
 		int setNow (rts2db::Target * newTarget);
 
@@ -157,6 +159,9 @@ Executor::Executor (int in_argc, char **in_argv):rts2db::DeviceDb (in_argc, in_a
 
 	createValue (acqusitionFailed, "acqusition_failed", "number of acqusitions which failed", false);
 	acqusitionFailed->setValueInteger (0);
+
+	createValue (next_night, "next_night", "true if next target is the first target in given night");
+	next_night->setValueBool (false);
 
 	createValue (current_id, "current", "ID of current target", false);
 	createValue (current_id_sel, "current_sel", "ID of currently selected target", false);
@@ -505,15 +510,28 @@ void Executor::changeMasterState (int old_state, int new_state)
 	if (ignoreDay->getValueBool () == true)
 		return rts2db::DeviceDb::changeMasterState (old_state, new_state);
 
+	next_night->setValueBool (false);
+
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_NIGHT:
 			flatsDone->setValueBool (false);
 			sendValueAll (flatsDone);
+			// kill darks if they are running from evening
+			if (currentTarget && currentTarget->getTargetType () == TYPE_DARK)
+			{
+				setNow (activeQueue->getValueInteger ());
+				next_night->setValueBool (false);
+			}
+			else
+			{
+				next_night->setValueBool (true);
+			}
+			sendValueAll (next_night);
 		case SERVERD_MORNING:
-			// switch target if current is flats..
+			// switch target if current is flats or darks
 			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT)
-				queueTarget (activeQueue->getValueInteger ());
+				setNow (activeQueue->getValueInteger ());
 		case SERVERD_EVENING:
 		case SERVERD_DAWN:
 		case SERVERD_DUSK:
@@ -553,7 +571,7 @@ void Executor::changeMasterState (int old_state, int new_state)
 	return rts2db::DeviceDb::changeMasterState (old_state, new_state);
 }
 
-int Executor::setNext (int nextId, const char *queue)
+int Executor::setNext (int nextId)
 {
 	if (getActiveQueue ()->size() != 0)
 	{
@@ -589,9 +607,10 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		{
 			return setNow (nt);
 		}
-		// overwrite darks with something usefull..
-		if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
+		if (next_night->getValueBool () && currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
 		{
+			next_night->setValueBool (false);
+			sendValueAll (next_night);
 			return setNow (nt);
 		}
 		getActiveQueue ()->addTarget (nt, t_start, t_end);
