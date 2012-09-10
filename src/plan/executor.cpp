@@ -607,7 +607,8 @@ int Executor::queueTarget (int tarId, double t_start, double t_end)
 		{
 			return setNow (nt);
 		}
-		if (next_night->getValueBool () && currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
+		// kill darks during nights..
+		if (next_night->getValueBool () && getMasterState () == SERVERD_NIGHT && currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != TYPE_DARK)
 		{
 			next_night->setValueBool (false);
 			sendValueAll (next_night);
