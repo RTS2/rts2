@@ -850,6 +850,7 @@ AC_OUTPUT([Makefile
 	   src/sql/update/Makefile
 	   src/sql/telma/Makefile
 	   src/sql/phot/Makefile
+	   src/sql/bb/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/centrald/Makefile
