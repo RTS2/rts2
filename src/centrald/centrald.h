@@ -24,7 +24,7 @@
 
 #include <libnova/libnova.h>
 
-#include <config.h>
+#include <rts2-config.h>
 #include "daemon.h"
 #include "configuration.h"
 #include "status.h"

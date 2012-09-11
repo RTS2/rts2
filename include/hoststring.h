@@ -20,7 +20,7 @@
 #ifndef __RTS2_HOSTSTRING__
 #define __RTS2_HOSTSTRING__
 
-#include <config.h>
+#include <rts2-config.h>
 
 /**
  * Represents hostname with possible port number.
@@ -39,7 +39,7 @@ class HostString
 		 * @param hoststring  String which describes server name and possibly port.
 		 * @param defaultPort Port number which will be used if port is not specified.
 		 */
-		HostString (const char *hoststring, const char *defaultPort = CENTRALD_PORT);
+		HostString (const char *hoststring, const char *defaultPort = RTS2_CENTRALD_PORT);
 
 		const char *getHostname ()
 		{

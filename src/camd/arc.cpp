@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <config.h>
+#include <rts2-config.h>
 
 #include "camd.h"
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 #include "Driver.h"
 #include "DSPCommand.h"
 #include "LoadDspFile.h"
@@ -70,7 +70,7 @@ class Arc:public Camera
 
 		virtual int setValue (rts2core::Value *old_value, rts2core::Value *new_value);
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 		virtual int setCoolTemp (float new_temp);
@@ -92,7 +92,7 @@ class Arc:public Camera
 		rts2core::ValueString *timFile;
                 rts2core::ValueString *utilFile;
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 		HANDLE pci_fd;
 		unsigned short *mem_fd;
 
@@ -124,7 +124,7 @@ using namespace rts2camd;
 
 Arc::Arc (int argc, char **argv):Camera (argc, argv)
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	num_pci_tests = 1055;
 	num_tim_tests = 1055;
 	num_util_tests = 10;
@@ -144,7 +144,7 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (biasPosition, "bias_position", "Position of bias", true, RTS2_VALUE_WRITABLE);
 	biasPosition->setValueInteger (0);
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 	createValue (clearCCD, "CLEAR", "clear CCD before exposure", false, RTS2_VALUE_WRITABLE);
@@ -160,7 +160,7 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createValue (timFile, "time-file", "DSP timing file", false);
         createValue (utilFile, "util-file", "utility file", false);
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 	addOption ('n', NULL, 1, "Device number (default 0)");
@@ -176,7 +176,7 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 
 Arc::~Arc ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	closeDriver (pci_fd);
 	free_memory (pci_fd, mem_fd);
 #else
@@ -186,7 +186,7 @@ Arc::~Arc ()
 
 int Arc::info ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 	try
@@ -212,7 +212,7 @@ int Arc::scriptEnds ()
 
 int Arc::killAll (bool callScriptEnds)
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 	if (getState () & CAM_READING)
@@ -245,7 +245,7 @@ int Arc::processOption (int opt)
 {
 	switch (opt)
 	{
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 		case 'n':
@@ -275,7 +275,7 @@ int Arc::init ()
 	int ret = Camera::init ();
 	if (ret)
 		return ret;
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	/* Open the device driver */
 	pci_fd = openDriver("/dev/astropci0");
 
@@ -353,7 +353,7 @@ int Arc::setBinning (int in_vert, int in_hori)
 
 int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	if (old_value == power)
 	{
 		doCommand (pci_f, TIM_ID, (rts2core::ValueBool *) (new_value->getValueInteger ()) ? PON : POF, DON);
@@ -374,7 +374,7 @@ int Arc::setValue (rts2core::Value *old_value, rts2core::Value *new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 
 #else
 int Arc::setCoolTemp (float new_temp)
@@ -386,7 +386,7 @@ int Arc::setCoolTemp (float new_temp)
 
 int Arc::startExposure ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
   	// set readout area..
 	if (chipUsedReadout->wasChanged ())
 	{
@@ -503,7 +503,7 @@ int Arc::startExposure ()
 
 long Arc::isExposing ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	int status = (getHstr (pci_fd) & HTF_BITS) >> 3;
 
 	if (status != READOUT)
@@ -541,7 +541,7 @@ long Arc::isExposing ()
 
 int Arc::stopExposure ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	if (doCommand (pci_fd, TIM_ID, PEX, DON) == _ERROR)
 		logStream (MESSAGE_ERROR) << "cannot stop exposure" << sendLog;
 #else
@@ -561,7 +561,7 @@ int Arc::stopExposure ()
 
 int Arc::doReadout ()
 {
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 	int currentPixelCount;
 	ioctl (pci_fd, ASTROPCI_GET_PROGRESS, &currentPixelCount);
 
@@ -594,7 +594,7 @@ int Arc::doReadout ()
 #endif
 }
 
-#ifdef ARC_API_1_7
+#ifdef RTS2_ARC_API_1_7
 int Arc::do_controller_setup ()
 {
 	int data = 1;

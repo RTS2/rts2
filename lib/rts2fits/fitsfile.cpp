@@ -24,7 +24,7 @@
 #include "utilsfunc.h"
 #include "radecparser.h"
 
-#include "config.h"
+#include "rts2-config.h"
 
 #include <errno.h>
 #include <string.h>

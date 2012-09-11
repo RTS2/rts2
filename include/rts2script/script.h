@@ -23,7 +23,7 @@
 
 #include "element.h"
 #include "elementblock.h"
-#include <config.h>
+#include <rts2-config.h>
 
 #include "counted_ptr.h"
 #include "block.h"

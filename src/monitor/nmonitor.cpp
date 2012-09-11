@@ -276,7 +276,7 @@ void NMonitor::menuPerform (int code)
 			messageBox ("Are you sure to switch to on?", SWITCH_ON);
 			break;
 		case MENU_ABOUT:
-			messageBox ("   rts2-mon " PACKAGE_VERSION "\n"
+			messageBox ("   rts2-mon " RTS2_PACKAGE_VERSION "\n"
 "  (C) Petr Kubánek <petr@kubanek.net>");
 			break;
 		case MENU_MANUAL:

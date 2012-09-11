@@ -713,7 +713,7 @@ int Device::init ()
 	// add localhost and server..
 	if (centraldHosts.size () == 0)
 	{
-		centraldHosts.push_back (HostString ("localhost", CENTRALD_PORT));
+		centraldHosts.push_back (HostString ("localhost", RTS2_CENTRALD_PORT));
 	}
 
 	std::list <HostString>::iterator iter = centraldHosts.begin ();

@@ -524,7 +524,7 @@ int Centrald::processOption (int in_opt)
 int Centrald::init ()
 {
 	int ret;
-	setPort (atoi (CENTRALD_PORT));
+	setPort (atoi (RTS2_CENTRALD_PORT));
 	ret = Daemon::init ();
 	if (ret)
 		return ret;

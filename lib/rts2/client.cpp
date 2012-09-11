@@ -33,7 +33,7 @@
 #include "devclient.h"
 #include "logstream.h"
 
-#include <config.h>
+#include <rts2-config.h>
 
 using namespace rts2core;
 
@@ -135,7 +135,7 @@ int Client::willConnect (NetworkAddress * in_addr)
 Client::Client (int in_argc, char **in_argv):Block (in_argc, in_argv)
 {
 	central_host = "localhost";
-	central_port = CENTRALD_PORT;
+	central_port = RTS2_CENTRALD_PORT;
 
 	login = "petr";
 	password = "petr";

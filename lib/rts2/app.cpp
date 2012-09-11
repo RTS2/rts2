@@ -20,7 +20,7 @@
 #include "error.h"
 #include "app.h"
 
-#include "config.h"
+#include "rts2-config.h"
 
 #include <iostream>
 #include <signal.h>
@@ -227,7 +227,7 @@ int App::processOption (int in_opt)
 			useLocalTime = false;
 			break;
 		case OPT_VERSION:
-			std::cout << "Part of RTS2 version: " << VERSION << std::endl
+			std::cout << "Part of RTS2 version: " << RTS2_VERSION << std::endl
 				<< std::endl
 				<< "(C) 2001-2008 Petr Kubanek and others, see AUTHORS file for complete list"
 				<< std::endl
