@@ -20,4 +20,5 @@ SUBDIRS = \
 	rotad \
 	logger \
 	scheduler \
-	xmlrpc
+	xmlrpc \
+	bb
